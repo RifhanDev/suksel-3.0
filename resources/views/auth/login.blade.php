@@ -1,63 +1,81 @@
-@extends('layouts.auth')
+@extends('layouts.default')
+
 @section('content')
-<div class="row login-wrapper">
-    <div class="col-sm-6 col-sm-offset-3 well well-auth">
-        <div class="header-logo text-center">
-            <img src="/images/monitor@2x.png" alt="" width="128px">
-        </div>
-        <div class="text-center text-primary">
-            <h1>{{trans('auth.login.title')}}</h1>
-            @if ( Session::get('error') )
-                <div class="alert alert-danger">{{ Session::get('error') }}</div>
-            @endif
-            @if ( Session::get('notice') )
-                <div class="alert alert-info">{{ Session::get('notice') }}</div>
-            @endif
-            <p>Please enter username &amp; password to begin</p>
-        </div>
-        <div class="well well-primary">
-        {{Former::open_horizontal(action('AuthController@doLogin'))}}
-            <div>
-                <div class="form-group required">
-                    <label for="email" class="control-label col-md-4">Email Address <sup>*</sup></label>
-                    <div class="col-md-8">
-                        <input class="form-control" required="true" id="email" type="text" name="email">
-                    </div>
-                </div>
-                <div class="form-group required">
-                    <label for="password" class="control-label col-md-4">Password <sup>*</sup></label>
-                    <div class="col-md-8">
-                        <input class="form-control" required="true" id="password" type="password" name="password">
-                    </div>
-                </div>
-                {{Former::hidden('remember')
-                    ->value(0)}}
-                <div class="form-group required">
-                    <div class="col-md-4"></div>
-                    <div class="col-md-8">
-                        <label for="remember">
-                            <input id="remember" type="checkbox" name="remember" value="1">
-                            &nbsp;&nbsp;&nbsp;Remember Me
-                        </label> 
-                    </div>
-                </div>
-                <div class="form-group required">
-                    <div class="col-md-4"></div>
-                    <div class="col-md-8">
-                    <button type="submit" class="btn btn-yellow btn-block">{{trans('auth.login.title')}}</button> 
-                    </div>
-                </div>
-            </div>
-        {{Former::close()}}
-        </div>
-        <p class="text-right text-muted text-sm">
-            Not registered? 
-            <a href="{{action('AuthController@create')}}" class="label label-default label-lg">Register</a> or 
-            <a href="{{action('AuthController@forgotPassword')}}" class="label label-default label-lg">Forgot Password</a>
-        </p>
-        <p class="text-right text-muted text-sm">
-            <a target="blank" href="/docs/public/register" class="label label-default label-lg">MYPRO Online Help</a>
-        </p>
-    </div>
-</div>
-@stop
+	<div class="container-xl">
+		<div class="row justify-content-center">
+			<div class="col-md-6 col-lg-4">
+				<div class="card">
+					<div class="card-body">
+						<div class="text-center mb-4">
+							<img src="{{ asset('images/header.png') }}" alt="Sistem Tender Online Selangor" class="mb-3"
+								style="max-width: 200px;">
+							<h2 class="card-title">Daftar Masuk</h2>
+							<p class="text-muted">Sistem Tender Online Selangor</p>
+						</div>
+
+						@if ($errors->any())
+							<div class="alert alert-danger">
+								<ul class="mb-0">
+									@foreach ($errors->all() as $error)
+										<li>{{ $error }}</li>
+									@endforeach
+								</ul>
+							</div>
+						@endif
+
+						@if (session('error'))
+							<div class="alert alert-danger">
+								{{ session('error') }}
+							</div>
+						@endif
+
+						<form method="POST" action="{{ action('AuthController@doLogin') }}">
+							@csrf
+							<div class="mb-3">
+								<label for="email" class="form-label">Alamat Emel</label>
+								<input type="email" class="form-control @error('email') is-invalid @enderror" id="email" name="email"
+									value="{{ old('email') }}" placeholder="Alamat Emel" required autocomplete="email" autofocus>
+								@error('email')
+									<div class="invalid-feedback">{{ $message }}</div>
+								@enderror
+							</div>
+
+							<div class="mb-3">
+								<label for="password" class="form-label">Kata Laluan</label>
+								<input type="password" class="form-control @error('password') is-invalid @enderror" id="password"
+									name="password" placeholder="Kata Laluan" required autocomplete="current-password">
+								@error('password')
+									<div class="invalid-feedback">{{ $message }}</div>
+								@enderror
+							</div>
+
+							<div class="d-grid">
+								<button type="submit" class="btn btn-primary btn-lg">
+									Daftar Masuk
+								</button>
+							</div>
+						</form>
+
+						<div class="text-center mt-4">
+							<p class="mb-2">
+								<a href="{{ action('AuthController@forgotPassword') }}" class="text-decoration-none">
+									Lupa Kata Laluan?
+								</a>
+							</p>
+							<p class="mb-0">
+								<a href="{{ route('registration') }}" class="text-decoration-none">
+									Daftar Akaun Baru
+								</a>
+							</p>
+							<p class="mb-0">
+								<a href="{{ route('manuals.show', 'pendaftaran') }}" target="_blank" class="text-decoration-none">
+									Cara Mendaftar
+								</a>
+							</p>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+@endsection

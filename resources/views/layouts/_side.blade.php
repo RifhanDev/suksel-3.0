@@ -1,3 +1,6 @@
+{{-- @php
+	dd(auth()->user());
+@endphp --}}
 @if (Auth::check() && !Auth::user()->hasRole('Vendor'))
 	<aside id="left-sidebar" class="left-sidebar">
 		<div class="navbar-nav">

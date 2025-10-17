@@ -141,6 +141,7 @@ Route::get('register-user', [RegistrationController::class, 'registerUser'])->na
 Route::post('register-user', [RegistrationController::class, 'storeRegisterUser']);
 
 // Auth routes
+Route::get('auth/login', [AuthController::class, 'login'])->name('login');
 Route::post('auth/login', [AuthController::class, 'doLogin']);
 Route::get('auth/logout', [AuthController::class, 'logout'])->name('logout');
 Route::get('auth/confirm/{registration_code}', [AuthController::class, 'confirm']);
