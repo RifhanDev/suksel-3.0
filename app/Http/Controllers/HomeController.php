@@ -205,7 +205,6 @@ class HomeController extends Controller
 	public function prices(Request $request)
 	{
 
-
 		if ($request->ajax()) {
 
 			// Temporarily commented out to fix column issue
