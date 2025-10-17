@@ -1,0 +1,13 @@
+{
+  "name": "sheepit",
+  "homepage": "https://github.com/mdelrosso/sheepit",
+  "_release": "1cf6862ae3",
+  "_resolution": {
+    "type": "branch",
+    "branch": "master",
+    "commit": "1cf6862ae354a7c9fef63ab9284683f7b5c58014"
+  },
+  "_source": "git://github.com/mdelrosso/sheepit.git",
+  "_target": "*",
+  "_originalSource": "mdelrosso/sheepit"
+}
