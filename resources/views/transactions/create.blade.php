@@ -1,8 +1,8 @@
-@extends('layouts.default')
+@extends('layouts.modern')
 @section('content')
-    <h2>New Transaction</h2>
-    <hr>
-    {{ Former::open(route('transactions.store')) }}
-    @include('transactions.form')
-    @include('transactions.actions-footer', ['has_submit' => true])
+	<h2>New Transaction</h2>
+	<hr>
+	{{ Former::open(route('transactions.store')) }}
+	@include('transactions.form')
+	@include('transactions.actions-footer', ['has_submit' => true])
 @stop

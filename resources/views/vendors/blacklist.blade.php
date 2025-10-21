@@ -1,4 +1,4 @@
-@extends('layouts.default')
+@extends('layouts.modern')
 @section('content')
 
 	<h2>Senarai Hitam Syarikat <span class="label label-default">{{$vendor->name}}</span></h2>

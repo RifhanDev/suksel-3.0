@@ -1,4 +1,4 @@
-@extends('layouts.default')
+@extends('layouts.modern')
 @section('content')
 <div class="row">
     <div class="col-sm-6 col-sm-offset-3">
@@ -15,4 +15,8 @@
             </div>
         {{Former::close()}}
     </div>
- @stop
+</div>
+@endsection
+@section('scripts')
+	<script src="{{ asset('js/news.js') }}"></script>
+@endsection

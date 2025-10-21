@@ -1,12 +1,12 @@
-@extends('layouts.default')
+@extends('layouts.modern')
 @section('content')
 	<h2>
-		@if($user->confirmed === 1)
+		@if ($user->confirmed === 1)
 			<span class="pull-right label label-lg label-success">
-		@else
-			<span class="pull-right label label-lg label-warning">
+			@else
+				<span class="pull-right label label-lg label-warning">
 		@endif
-		{{$user->status()}}</span>
+		{{ $user->status() }}</span>
 		View User
 	</h2>
 	<br>

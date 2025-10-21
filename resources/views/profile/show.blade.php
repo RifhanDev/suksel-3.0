@@ -1,6 +1,5 @@
-@extends('layouts.default')
+@extends('layouts.modern')
 @section('content')
-
 	<?php $user = Auth::user(); ?>
 	<h2 class="tender-title">Profil Saya</h2>
 
@@ -13,20 +12,20 @@
 			<th class="col-lg-3">Alamat Emel</th>
 			<td>{{ $user->email }}</td>
 		</tr>
-		@if($user->hasRole('Vendor'))
+		@if ($user->hasRole('Vendor'))
 			<tr>
 				<th>Nama Syarikat</th>
 				<td>{{ $user->vendor->name }}</td>
 			</tr>
 		@endif
-		@if($user->agency)
+		@if ($user->agency)
 			<tr>
 				<th>Agensi</th>
-				<td>{{$user->agency->name}}</td>
+				<td>{{ $user->agency->name }}</td>
 			</tr>
 		@endif
-		
-			<tr>
+
+		<tr>
 			<th>Tarikh Didaftarkan</th>
 			<td>{{ \Carbon\Carbon::parse($user->created_at)->format('j M Y') }}</td>
 		</tr>
@@ -36,8 +35,6 @@
 @endsection
 
 @section('scripts')
-
 	<script src="{{ asset('js/news.js') }}"></script>
 	<script src="{{ asset('js/show.js') }}"></script>
-
 @endsection

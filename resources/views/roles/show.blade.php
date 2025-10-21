@@ -1,4 +1,4 @@
-@extends('layouts.default')
+@extends('layouts.modern')
 @section('content')
 	<h2>Paparan Peranan</h2>
 	<hr>

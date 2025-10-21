@@ -1,10 +1,8 @@
-@extends('layouts.default')
+@extends('layouts.modern')
 
 @section('styles')
-
 	<link href="{{ asset('css/application.css') }}" rel="stylesheet">
 	<link href="{{ asset('css/form.css') }}" rel="stylesheet">
-
 @endsection
 
 @section('content')
@@ -16,29 +14,33 @@
 
 	@include('tenders._notification')
 
-	@if(Auth::user() && $tender->canShowTabs())
+	@if (Auth::user() && $tender->canShowTabs())
 		<ul class="nav nav-tabs nav-justified">
-			<li><a href="{{ asset('tenders/'.$tender->id) }}">Maklumat Tender / Sebut Harga</a></li>
-			<li class="active"><a href="{{ asset('tenders/'.$tender->id.'/vendors') }}">Maklumat Syarikat</a></li>
-            @if (Auth::check() &&
-                $tender->canException() && auth()->user()->ability(['Admin', 'Agency Admin', 'Agency User'], ['ExceptionTender:list']))
-                <li><a href="{{ asset('tenders/' . $tender->id . '/exceptions') }}">Maklumat Kebenaran Khas <span
-                    class="badge">{{ $tender->exceptions()->where('status',0)->count() }}</span></a></li>
-            @endif
+			<li><a href="{{ asset('tenders/' . $tender->id) }}">Maklumat Tender / Sebut Harga</a></li>
+			<li class="active"><a href="{{ asset('tenders/' . $tender->id . '/vendors') }}">Maklumat Syarikat</a></li>
+			@if (Auth::check() &&
+					$tender->canException() &&
+					auth()->user()->ability(['Admin', 'Agency Admin', 'Agency User'], ['ExceptionTender:list']))
+				<li><a href="{{ asset('tenders/' . $tender->id . '/exceptions') }}">Maklumat Kebenaran Khas <span
+							class="badge">{{ $tender->exceptions()->where('status', 0)->count() }}</span></a></li>
+			@endif
 		</ul>
 	@endif
 
 	<br>
 
-	@if(Auth::user()->hasRole('Admin'))
+	@if (Auth::user()->hasRole('Admin'))
 		<ul class="nav nav-pills">
-			<li{{ !isset($purchases) ? ' class="active"' : '' }}><a href="{{ asset('tenders/'.$tender->id.'/eligibles') }}">Senarai Layak</a></li>
-			<li{{ isset($purchases) ? ' class="active"' : '' }}><a href="{{ asset('tenders/'.$tender->id.'/vendors') }}">Pembelian Dokumen</a></li>
+			<li{{ !isset($purchases) ? ' class="active"' : '' }}><a
+					href="{{ asset('tenders/' . $tender->id . '/eligibles') }}">Senarai Layak</a></li>
+				<li{{ isset($purchases) ? ' class="active"' : '' }}><a
+						href="{{ asset('tenders/' . $tender->id . '/vendors') }}">Pembelian Dokumen</a></li>
 		</ul>
 	@endif
-		<br>
+	<br>
 
-	<table data-path="{{ route('tenders.eligibles', $tender->id) }}" class="DT-index table table-striped table-hover table-bordered">
+	<table data-path="{{ route('tenders.eligibles', $tender->id) }}"
+		class="DT-index table table-striped table-hover table-bordered">
 		<thead class="bg-blue-selangor">
 			<tr>
 				<th>Bil.</th>
@@ -55,23 +57,38 @@
 @endsection
 
 @section('scripts')
-
 	<script src="{{ asset('js/application.js') }}"></script>
 	<script src="{{ asset('js/datatables.js') }}"></script>
 	<script type="text/javascript">
-		$('.DT-index').each(function(){
+		$('.DT-index').each(function() {
 			var target = $(this);
 			var path = target.data('path');
 			var DT = target.DataTable({
 				ajax: path,
-		    	columns: [
-					{ data: null },
-		            { data: 'vendor_registration', name: 'vendor.registration'},
-		            { data: 'vendor_name', name: 'vendor.name'},
-		            { data: 'user_email', name: 'users.email'},
-		            { data: 'created_at', name: 'created_at' },
-		            { data: 'sent_at', name: 'sent_at' }
-		      ],
+				columns: [{
+						data: null
+					},
+					{
+						data: 'vendor_registration',
+						name: 'vendor.registration'
+					},
+					{
+						data: 'vendor_name',
+						name: 'vendor.name'
+					},
+					{
+						data: 'user_email',
+						name: 'users.email'
+					},
+					{
+						data: 'created_at',
+						name: 'created_at'
+					},
+					{
+						data: 'sent_at',
+						name: 'sent_at'
+					}
+				],
 				serverSide: true,
 				stateSave: true,
 				language: {
@@ -103,11 +120,13 @@
 				// "orderable": false,
 				// "targets": 0
 				// }],
-				"order": [[1, 'asc']],
+				"order": [
+					[1, 'asc']
+				],
 				fnDrawCallback: function(oSettings) {
 					start = oSettings.oAjaxData.start + 1;
-					DT.column(0).nodes().to$().each(function(index){
-						$(this).text(start+index);
+					DT.column(0).nodes().to$().each(function(index) {
+						$(this).text(start + index);
 					});
 				}
 			});

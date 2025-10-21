@@ -1,32 +1,31 @@
-@extends('layouts.default')
+@extends('layouts.modern')
 @section('content')
 	<div class="row">
 		<div class="col-lg-9">
 			<h1 class="tender-title">
 				Kemaskini Kategori Soalan Lazim
-				
-				@if(Auth::user() && Auth::user()->hasRole('Admin'))
+
+				@if (Auth::user() && Auth::user()->hasRole('Admin'))
 					<div class="btn-group pull-right">
-						<a href="{{ asset('helps')}}" class="btn btn-sm btn-warning"><i class="fa fa-tags"></i> Soalan Lazim</a>
-						<a href="{{	asset('helpcategories')}}" class="btn btn-sm btn-primary"><i class="fa fa-chevron-up"></i> Senarai Kategori Soalan Lazim</a>
+						<a href="{{ asset('helps') }}" class="btn btn-sm btn-warning"><i class="fa fa-tags"></i> Soalan Lazim</a>
+						<a href="{{ asset('helpcategories') }}" class="btn btn-sm btn-primary"><i class="fa fa-chevron-up"></i> Senarai
+							Kategori Soalan Lazim</a>
 					</div>
 				@endif
 			</h1>
-			
-			{!! Former::open(url('helpcategories/'.$category->id)) !!}
-				{!! Former::populate($category) !!}
-				{!! Former::hidden('_method', 'PUT') !!}
-				@include('helpcategories.form')
-				<div class="form-group">
+
+			{!! Former::open(url('helpcategories/' . $category->id)) !!}
+			{!! Former::populate($category) !!}
+			{!! Former::hidden('_method', 'PUT') !!}
+			@include('helpcategories.form')
+			<div class="form-group">
 				<div class="col-lg-9 col-lg-offset-3">
-				{!! Former::submit()
-					->class('btn btn-md btn-primary')
-					->value('Simpan') !!}
+					{!! Former::submit()->class('btn btn-md btn-primary')->value('Simpan') !!}
 				</div>
-				</div>
+			</div>
 			{!! Former::close() !!}
 		</div>
-		
+
 		<div class="col-lg-3">
 			@include('layouts._register')
 			@include('layouts._news')
