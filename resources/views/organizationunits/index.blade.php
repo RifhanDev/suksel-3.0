@@ -1,45 +1,97 @@
 @extends('layouts.modern')
 @section('content')
-	<h2 class="tender-title">
-		Senarai Agensi @if (isset($type))
-			: {{ $type->name }}
-			@endif @if (isset($parent))
-				: {{ $parent->name }}
-			@endif
-
-			<div class="btn-group pull-right">
-				@if (App\OrganizationUnit::canCreate())
-					<a href="{{ asset('agencies/create') }}" class="btn btn-danger btn-sm">Masukkan Agensi Baru</a>
-				@endif
-				<button type="button" class="btn btn-primary btn-sm dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
-					Pilihan Kategori <span class="caret"></span>
-				</button>
-				<ul class="dropdown-menu pull-right" role="menu">
-					@foreach (App\OrganizationType::all() as $ou_type)
-						<li><a href="{{ route('agencies.index', ['type' => $ou_type->id]) }}">{{ $ou_type->name }}</a></li>
-					@endforeach
-				</ul>
+	<div class="row">
+		<div class="col-lg-9">
+			<div class="page-header">
+				<div class="page-title">
+					<div class="page-pretitle">
+						Sistem Tender Online
+					</div>
+				</div>
 			</div>
-	</h2>
 
-	<div class="clearfix"></div>
-
-	<table
-		data-path="/agencies<?php if(isset($type)) : ?>?type=<?php echo $type->id; ?><?php endif; ?><?php if(isset($parent)) : ?>?parent=<?php echo $parent->id; ?><?php endif; ?>"
-		class="DT-index table table-striped table-hover table-bordered">
-		<thead class="bg-blue-selangor">
-			<tr>
-				<th>Nama</th>
-				<th>Alamat</th>
-				<th>No. Telefon</th>
-				@if (!isset($type))
-					<th>Kategori</th>
+			<h2 class="page-title">
+				<i class="ti ti-building me-2"></i>Senarai Agensi
+				@if (isset($type))
+					: {{ $type->name }}
 				@endif
-				<th width="200px">&nbsp;</th>
-			</tr>
-		</thead>
-		<tbody></tbody>
-	</table>
+				@if (isset($parent))
+					: {{ $parent->name }}
+				@endif
+			</h2>
+			<br>
+
+			<div class="card">
+				<div class="card-header">
+					<div class="d-flex justify-content-between align-items-center">
+						<h3 class="card-title mb-0">
+							<i class="ti ti-list me-2"></i>Direktori Agensi
+						</h3>
+						<div class="btn-group">
+							@if (App\OrganizationUnit::canCreate())
+								<a href="{{ asset('agencies/create') }}" class="btn btn-primary btn-sm">
+									<i class="ti ti-plus me-1"></i>Masukkan Agensi Baru
+								</a>
+							@endif
+							<div class="btn-group">
+								<button type="button" class="btn btn-outline-primary btn-sm dropdown-toggle" data-bs-toggle="dropdown"
+									aria-expanded="false">
+									<i class="ti ti-filter me-1"></i>Pilihan Kategori
+								</button>
+								<ul class="dropdown-menu">
+									@foreach (App\OrganizationType::all() as $ou_type)
+										<li><a class="dropdown-item"
+												href="{{ route('agencies.index', ['type' => $ou_type->id]) }}">{{ $ou_type->name }}</a></li>
+									@endforeach
+								</ul>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="card-body">
+					<div class="table-responsive">
+						<table
+							data-path="/agencies<?php if(isset($type)) : ?>?type=<?php echo $type->id; ?><?php endif; ?><?php if(isset($parent)) : ?>?parent=<?php echo $parent->id; ?><?php endif; ?>"
+							class="DT-index table table-vcenter table-mobile-md">
+							<thead>
+								<tr>
+									<th class="w-25">
+										<i class="ti ti-building me-1"></i>Nama
+									</th>
+									<th>
+										<i class="ti ti-map-pin me-1"></i>Alamat
+									</th>
+									<th class="w-15">
+										<i class="ti ti-phone me-1"></i>No. Telefon
+									</th>
+									@if (!isset($type))
+										<th class="w-20">
+											<i class="ti ti-category me-1"></i>Kategori
+										</th>
+									@endif
+									<th class="w-10">
+										<i class="ti ti-settings me-1"></i>Tindakan
+									</th>
+								</tr>
+							</thead>
+							<tbody></tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="col-lg-3">
+			<div class="row">
+				<div class="col-12">
+					@include('layouts._register')
+				</div>
+				<div class="col-12">
+					@include('layouts._news')
+				</div>
+			</div>
+		</div>
+	</div>
 @endsection
 
 @section('scripts')

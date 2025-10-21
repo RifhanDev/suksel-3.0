@@ -1,26 +1,75 @@
 @extends('layouts.modern')
 @section('content')
-	<h2 class="tender-title">
-		Senarai Tender / Sebutharga
-		@if (App\Tender::canCreate())
-			<a href="{{ asset('tenders/create') }}" class="btn btn-sm blue pull-right"><i class="fa fa-plus"></i> Tambah Tender /
-				Sebutharga</a>
-		@endif
-	</h2>
-	<table data-path="/tenders" class="DT-index table table-striped table-hover table-bordered">
-		<thead class="bg-blue-selangor">
-			<tr>
-				<th>Maklumat Tender</th>
-				<th class="col-lg-2">Tarikh Jual</th>
-				<th class="col-lg-2">Tarikh Tutup</th>
-				<th class="col-lg-2">Harga Dokumen (RM)</th>
-				@if (Auth::check() && !Auth::user()->hasRole('Vendor'))
-					<th>Status</th>
-				@endif
-			</tr>
-		</thead>
-		<tbody></tbody>
-	</table>
+	<div class="row">
+		<div class="col-lg-9">
+			<div class="page-header">
+				<div class="page-title">
+					<div class="page-pretitle">
+						Sistem Tender Online
+					</div>
+				</div>
+			</div>
+
+			<h2 class="page-title">
+				<i class="ti ti-file-text me-2"></i>Senarai Tender / Sebutharga
+			</h2>
+			<br>
+
+			<div class="card">
+				<div class="card-header">
+					<div class="d-flex justify-content-between align-items-center">
+						<h3 class="card-title mb-0">
+							<i class="ti ti-list me-2"></i>Maklumat Tender
+						</h3>
+						@if (App\Tender::canCreate())
+							<a href="{{ asset('tenders/create') }}" class="btn btn-primary btn-sm">
+								<i class="ti ti-plus me-1"></i>Tambah Tender / Sebutharga
+							</a>
+						@endif
+					</div>
+				</div>
+				<div class="card-body">
+					<div class="table-responsive">
+						<table data-path="/tenders" class="DT-index table table-vcenter table-mobile-md">
+							<thead>
+								<tr>
+									<th>
+										<i class="ti ti-file-text me-1"></i>Maklumat Tender
+									</th>
+									<th class="w-15">
+										<i class="ti ti-calendar me-1"></i>Tarikh Jual
+									</th>
+									<th class="w-15">
+										<i class="ti ti-calendar me-1"></i>Tarikh Tutup
+									</th>
+									<th class="w-15">
+										<i class="ti ti-currency-ringgit me-1"></i>Harga Dokumen (RM)
+									</th>
+									@if (Auth::check() && !Auth::user()->hasRole('Vendor'))
+										<th class="w-10">
+											<i class="ti ti-status-change me-1"></i>Status
+										</th>
+									@endif
+								</tr>
+							</thead>
+							<tbody></tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="col-lg-3">
+			<div class="row">
+				<div class="col-12">
+					@include('layouts._register')
+				</div>
+				<div class="col-12">
+					@include('layouts._news')
+				</div>
+			</div>
+		</div>
+	</div>
 @endsection
 
 @section('scripts')
