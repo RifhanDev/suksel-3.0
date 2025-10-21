@@ -1,95 +1,180 @@
 @extends('layouts.modern')
 @section('content')
-
-	<h2 class="tender-title">
-		{{ $organizationunit->name }}
-
-		@if (Auth::check())
-			<div class="btn-group pull-right">
-				@if (Auth()->user()->hasRole('Admin'))
-					<a href="{{ asset('agencies/' . $organizationunit->id . '/edit') }}" class="btn btn-warning btn-sm"><i
-							class="fa fa-pencil"></i> Kemaskini Agensi</a>
-				@endif
-				@if (Auth::user()->ability(['Admin', 'Agency Admin', 'Agency User'], []))
-					<a href="{{ asset('tenders/create') }}" class="btn btn-primary btn-sm"><i class="fa fa-plus"></i> Tambah Tender / Sebut
-						Harga</a>
-				@endif
-			</div>
-		@endif
-	</h2>
-
-	@if (Auth::check() && App\Tender::canShowUpdate($organizationunit->id))
-		<div class="row">
-			<div class="col-lg-4">
-				<div class="alert @if (Request::get('state') == 1) alert-success @else alert-warning @endif">
-					<a href=""
-						class="btn btn-sm @if (Request::get('state') == 1) btn-success @else btn-warning @endif">{{ $count_1 }}</a>
-					tender / sebut harga belum disiarkan.
-				</div>
-			</div>
-
-			<div class="col-lg-4">
-				<div class="alert @if (Request::get('state') == 2) alert-success @else alert-warning @endif">
-					<a href=""
-						class="btn btn-sm @if (Request::get('state') == 2) btn-success @else btn-warning @endif">{{ $count_2 }}</a>
-					tender / sebut harga belum di umumkan carta tender.
-				</div>
-			</div>
-
-			<div class="col-lg-4">
-				<div class="alert @if (Request::get('state') == 3) alert-success @else alert-warning @endif">
-					<a href=""
-						class="btn btn-sm @if (Request::get('state') == 3) btn-success @else btn-warning @endif">{{ $count_3 }}</a>
-					tender / sebut harga belum diumumkan penender berjaya.
-				</div>
-			</div>
-		</div>
-	@endif
-
-	<ul class="nav nav-tabs">
-		<li class="active"><a href="{{ action('OrganizationUnitsController@show', $organizationunit->id) }}">Tender &amp; Sebut
-				Harga</a></li>
-		<li><a href="{{ action('OrganizationUnitsController@prices', $organizationunit->id) }}">Carta Tender</a></li>
-		<li><a href="{{ action('OrganizationUnitsController@results', $organizationunit->id) }}">Penender Berjaya</a></li>
-		<li class="pull-right"><a href="{{ action('OrganizationUnitsController@news', $organizationunit->id) }}">Berita</a>
-		</li>
-	</ul>
-
 	<div class="row">
-		<div class="col-md-2">
-			<ul class="nav nav-pills nav-stacked">
-				<li @if (!Request::get('type')) class="active" @endif><a
-						href="{{ action('OrganizationUnitsController@show', $organizationunit->id) }}" role="tab">Semua</a></li>
-				<li @if (Request::get('type') == 'tenders') class="active" @endif><a
-						href="{{ action('OrganizationUnitsController@show', [$organizationunit->id, 'type' => 'tenders']) }}">Tender</a>
-				</li>
-				<li @if (Request::get('type') == 'quotations') class="active" @endif><a
-						href="{{ action('OrganizationUnitsController@show', [$organizationunit->id, 'type' => 'quotations']) }}">Sebut
-						Harga</a></li>
-			</ul>
+		<div class="col-lg-9">
+			<div class="page-header">
+				<div class="page-title">
+					<div class="page-pretitle">
+						Sistem Tender Online
+					</div>
+				</div>
+			</div>
+
+			<h2 class="page-title">
+				<i class="ti ti-building me-2"></i>{{ $organizationunit->name }}
+			</h2>
+			<br>
+
+			@if (Auth::check())
+				<div class="btn-group mb-3">
+					@if (Auth()->user()->hasRole('Admin'))
+						<a href="{{ asset('agencies/' . $organizationunit->id . '/edit') }}" class="btn btn-warning btn-sm">
+							<i class="ti ti-edit me-1"></i>Kemaskini Agensi
+						</a>
+					@endif
+					@if (Auth::user()->ability(['Admin', 'Agency Admin', 'Agency User'], []))
+						<a href="{{ asset('tenders/create') }}" class="btn btn-primary btn-sm">
+							<i class="ti ti-plus me-1"></i>Tambah Tender / Sebut Harga
+						</a>
+					@endif
+				</div>
+			@endif
+
+			@if (Auth::check() && App\Tender::canShowUpdate($organizationunit->id))
+				<div class="row mb-4">
+					<div class="col-lg-4">
+						<div class="card @if (Request::get('state') == 1) border-success @else border-warning @endif">
+							<div class="card-body text-center">
+								<div class="h1 mb-2 @if (Request::get('state') == 1) text-success @else text-warning @endif">
+									{{ $count_1 }}
+								</div>
+								<div class="text-muted">
+									tender / sebut harga belum disiarkan
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div class="col-lg-4">
+						<div class="card @if (Request::get('state') == 2) border-success @else border-warning @endif">
+							<div class="card-body text-center">
+								<div class="h1 mb-2 @if (Request::get('state') == 2) text-success @else text-warning @endif">
+									{{ $count_2 }}
+								</div>
+								<div class="text-muted">
+									tender / sebut harga belum di umumkan carta tender
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div class="col-lg-4">
+						<div class="card @if (Request::get('state') == 3) border-success @else border-warning @endif">
+							<div class="card-body text-center">
+								<div class="h1 mb-2 @if (Request::get('state') == 3) text-success @else text-warning @endif">
+									{{ $count_3 }}
+								</div>
+								<div class="text-muted">
+									tender / sebut harga belum diumumkan penender berjaya
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			@endif
+
+			<div class="card">
+				<div class="card-header">
+					<ul class="nav nav-tabs card-header-tabs" data-bs-toggle="tabs">
+						<li class="nav-item">
+							<a href="{{ action('OrganizationUnitsController@show', $organizationunit->id) }}"
+								class="nav-link @if (request()->is('agencies/' . $organizationunit->id) && !request()->get('type')) active @endif">
+								<i class="ti ti-file-text me-2"></i>Tender & Sebut Harga
+							</a>
+						</li>
+						<li class="nav-item">
+							<a href="{{ action('OrganizationUnitsController@prices', $organizationunit->id) }}"
+								class="nav-link @if (request()->is('agencies/' . $organizationunit->id . '/prices')) active @endif">
+								<i class="ti ti-chart-line me-2"></i>Carta Tender
+							</a>
+						</li>
+						<li class="nav-item">
+							<a href="{{ action('OrganizationUnitsController@results', $organizationunit->id) }}"
+								class="nav-link @if (request()->is('agencies/' . $organizationunit->id . '/results')) active @endif">
+								<i class="ti ti-trophy me-2"></i>Penender Berjaya
+							</a>
+						</li>
+						<li class="nav-item ms-auto">
+							<a href="{{ action('OrganizationUnitsController@news', $organizationunit->id) }}"
+								class="nav-link @if (request()->is('agencies/' . $organizationunit->id . '/news')) active @endif">
+								<i class="ti ti-news me-2"></i>Berita
+							</a>
+						</li>
+					</ul>
+				</div>
+				<div class="card-body">
+					<div class="row">
+						<div class="col-md-2">
+							<div class="nav flex-column nav-pills" role="tablist">
+								<a href="{{ action('OrganizationUnitsController@show', $organizationunit->id) }}"
+									class="nav-link @if (!Request::get('type')) active @endif" role="tab">
+									<i class="ti ti-list me-2"></i>Semua
+								</a>
+								<a href="{{ action('OrganizationUnitsController@show', [$organizationunit->id, 'type' => 'tenders']) }}"
+									class="nav-link @if (Request::get('type') == 'tenders') active @endif" role="tab">
+									<i class="ti ti-file-text me-2"></i>Tender
+								</a>
+								<a href="{{ action('OrganizationUnitsController@show', [$organizationunit->id, 'type' => 'quotations']) }}"
+									class="nav-link @if (Request::get('type') == 'quotations') active @endif" role="tab">
+									<i class="ti ti-calculator me-2"></i>Sebut Harga
+								</a>
+							</div>
+						</div>
+
+						<div class="col-md-10">
+							<div class="table-responsive">
+								<table class="DT-show table table-vcenter table-mobile-md" data-path="{{ $path }}">
+									<thead>
+										<tr>
+											<th>
+												<i class="ti ti-file-text me-1"></i>No / Tajuk
+											</th>
+											<th class="w-15">
+												<i class="ti ti-code me-1"></i>Kod Bidang
+											</th>
+											<th class="w-15">
+												<i class="ti ti-calendar me-1"></i>Tarikh Jual
+											</th>
+											<th class="w-15">
+												<i class="ti ti-calendar me-1"></i>Tarikh Tutup
+											</th>
+											<th class="w-15">
+												<i class="ti ti-currency-ringgit me-1"></i>Harga Dokumen
+											</th>
+											@if (Auth::check() && App\Tender::canShowUpdate($organizationunit->id))
+												<th class="w-10">
+													<i class="ti ti-status-change me-1"></i>Status
+												</th>
+											@endif
+											@if (Auth::check() && App\Tender::canShowUpdate($organizationunit->id))
+												<th class="w-10">
+													<i class="ti ti-calendar me-1"></i>Jadual
+												</th>
+												<th class="w-10">
+													<i class="ti ti-settings me-1"></i>Tindakan
+												</th>
+											@endif
+										</tr>
+									</thead>
+									<tbody>
+									</tbody>
+								</table>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
 		</div>
 
-		<div class="col-md-10">
-			<table class="DT-show table table-hover table-compact" data-path="{{ $path }}">
-				<thead class="bg-blue-selangor">
-					<tr>
-						<th>No / Tajuk</th>
-						<th>Kod Bidang</th>
-						<th>Tarikh Jual</th>
-						<th>Tarikh Tutup</th>
-						<th>Harga Dokumen</th>
-						@if (Auth::check() && App\Tender::canShowUpdate($organizationunit->id))
-							<th>Status</th>
-						@endif
-						@if (Auth::check() && App\Tender::canShowUpdate($organizationunit->id))
-							<th>Jadual</th>
-							<th>&nbsp;</th>
-						@endif
-					</tr>
-				</thead>
-				<tbody>
-				</tbody>
-			</table>
+		<div class="col-lg-3">
+			<div class="row">
+				<div class="col-12">
+					@include('layouts._register')
+				</div>
+				<div class="col-12">
+					@include('layouts._news')
+				</div>
+			</div>
 		</div>
 	</div>
 @endsection

@@ -140,12 +140,14 @@
 		.navbar-nav .nav-link {
 			display: flex;
 			align-items: center;
+			justify-content: flex-start;
 			padding: var(--space-3) var(--space-4);
 			color: var(--sidebar-text-muted);
 			text-decoration: none;
 			border-radius: var(--radius-md);
 			transition: var(--transition);
 			font-weight: 500;
+			text-align: left;
 		}
 
 		.navbar-nav .nav-link:hover {
@@ -166,10 +168,13 @@
 			display: flex;
 			align-items: center;
 			justify-content: center;
+			flex-shrink: 0;
 		}
 
 		.nav-link-title {
 			font-size: 0.95rem;
+			text-align: left;
+			flex: 1;
 		}
 
 		/* Dropdown Styles */
@@ -622,7 +627,7 @@
 	</div>
 
 	<!-- Login Modal -->
-	@if (empty($user))
+	@if (!empty($user))
 		<div class="modal modal-blur fade" id="loginModal" tabindex="-1" role="dialog"
 			aria-labelledby="loginModalLabel">
 			<div class="modal-dialog modal-sm modal-dialog-centered" role="document">

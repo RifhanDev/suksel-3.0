@@ -1,27 +1,71 @@
 @extends('layouts.modern')
 @section('content')
-	<h1 class="tender-title">
-		Berita
+	<div class="row">
+		<div class="col-lg-9">
+			<div class="page-header">
+				<div class="page-title">
+					<div class="page-pretitle">
+						Sistem Tender Online
+					</div>
+				</div>
+			</div>
 
-		@if (App\News::canCreate())
-			<a href="{{ action('NewsController@create') }}" class="btn btn-primary btn-sm pull-right"><i class="fa fa-plus"></i>
-				Tambah Berita Baru</a>
-		@endif
-	</h1>
+			<h2 class="page-title">
+				<i class="ti ti-news me-2"></i>Berita
+			</h2>
+			<br>
 
+			<div class="card">
+				<div class="card-header">
+					<div class="d-flex justify-content-between align-items-center">
+						<h3 class="card-title mb-0">
+							<i class="ti ti-list me-2"></i>Senarai Berita
+						</h3>
+						@if (App\News::canCreate())
+							<a href="{{ action('NewsController@create') }}" class="btn btn-primary btn-sm">
+								<i class="ti ti-plus me-1"></i>Tambah Berita Baru
+							</a>
+						@endif
+					</div>
+				</div>
+				<div class="card-body">
+					<div class="table-responsive">
+						<table class="DT-news table table-vcenter table-mobile-md" data-path="/news">
+							<thead>
+								<tr>
+									<th class="w-15">
+										<i class="ti ti-calendar me-1"></i>Tarikh
+									</th>
+									<th class="w-20">
+										<i class="ti ti-building me-1"></i>Agensi
+									</th>
+									<th>
+										<i class="ti ti-news me-1"></i>Berita
+									</th>
+									<th class="w-10">
+										<i class="ti ti-settings me-1"></i>Tindakan
+									</th>
+								</tr>
+							</thead>
+							<tbody>
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+		</div>
 
-	<table class="DT-news table table-bordered table-striped" data-path="/news">
-		<thead class="bg-blue-selangor">
-			<tr>
-				<th width="100">Tarikh</th>
-				<th width="150">Agensi</th>
-				<th>Berita</th>
-				<th width="100">&nbsp;</th>
-			</tr>
-		</thead>
-		<tbody>
-		</tbody>
-	</table>
+		<div class="col-lg-3">
+			<div class="row">
+				<div class="col-12">
+					@include('layouts._register')
+				</div>
+				<div class="col-12">
+					@include('layouts._news')
+				</div>
+			</div>
+		</div>
+	</div>
 @endsection
 
 

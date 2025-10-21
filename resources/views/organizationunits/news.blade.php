@@ -1,41 +1,99 @@
 @extends('layouts.modern')
 @section('content')
-	<h2 class="tender-title">
-		{{ $organizationunit->name }}
-
-		@if (Auth::check())
-			<div class="btn-group pull-right">
-				@if (Auth::user()->hasRole('Admin'))
-					<a href="{{ asset('agencies/' . $organizationunit->id . '/edit') }}" class="btn btn-warning btn-sm"><i
-							class="fa fa-pencil"></i> Kemaskini Agensi</a>
-				@endif
-				@if (Auth::user()->ability(['Admin', 'Agency Admin', 'Agency User'], []))
-					<a href="{{ asset('tenders/create') }}" class="btn btn-primary btn-sm"><i class="fa fa-plus"></i> Tambah Tender / Sebut
-						Harga</a>
-				@endif
+	<div class="row">
+		<div class="col-lg-9">
+			<div class="page-header">
+				<div class="page-title">
+					<div class="page-pretitle">
+						Sistem Tender Online
+					</div>
+				</div>
 			</div>
-		@endif
-	</h2>
 
-	<ul class="nav nav-tabs">
-		<li><a href="{{ action('OrganizationUnitsController@show', $organizationunit->id) }}">Tender &amp; Sebut Harga</a></li>
-		<li><a href="{{ action('OrganizationUnitsController@prices', $organizationunit->id) }}">Carta Tender</a></li>
-		<li><a href="{{ action('OrganizationUnitsController@results', $organizationunit->id) }}">Penender Berjaya</a></li>
-		<li class="pull-right active"><a
-				href="{{ action('OrganizationUnitsController@news', $organizationunit->id) }}">Berita</a></li>
-	</ul>
+			<h2 class="page-title">
+				<i class="ti ti-building me-2"></i>{{ $organizationunit->name }}
+			</h2>
+			<br>
 
-	<table class="DT-news table table-bordered table-striped" data-path="/agencies/{{ $organizationunit->id }}/news">
-		<thead class="bg-blue-selangor">
-			<tr>
-				<th width="100">Tarikh</th>
-				<th>Berita</th>
-				<th width="100">&nbsp;</th>
-			</tr>
-		</thead>
-		<tbody>
-		</tbody>
-	</table>
+			@if (Auth::check())
+				<div class="btn-group mb-3">
+					@if (Auth::user()->hasRole('Admin'))
+						<a href="{{ asset('agencies/' . $organizationunit->id . '/edit') }}" class="btn btn-warning btn-sm">
+							<i class="ti ti-edit me-1"></i>Kemaskini Agensi
+						</a>
+					@endif
+					@if (Auth::user()->ability(['Admin', 'Agency Admin', 'Agency User'], []))
+						<a href="{{ asset('tenders/create') }}" class="btn btn-primary btn-sm">
+							<i class="ti ti-plus me-1"></i>Tambah Tender / Sebut Harga
+						</a>
+					@endif
+				</div>
+			@endif
+
+			<div class="card">
+				<div class="card-header">
+					<ul class="nav nav-tabs card-header-tabs" data-bs-toggle="tabs">
+						<li class="nav-item">
+							<a href="{{ action('OrganizationUnitsController@show', $organizationunit->id) }}"
+								class="nav-link @if (request()->is('agencies/' . $organizationunit->id) && !request()->get('type')) active @endif">
+								<i class="ti ti-file-text me-2"></i>Tender & Sebut Harga
+							</a>
+						</li>
+						<li class="nav-item">
+							<a href="{{ action('OrganizationUnitsController@prices', $organizationunit->id) }}"
+								class="nav-link @if (request()->is('agencies/' . $organizationunit->id . '/prices')) active @endif">
+								<i class="ti ti-chart-line me-2"></i>Carta Tender
+							</a>
+						</li>
+						<li class="nav-item">
+							<a href="{{ action('OrganizationUnitsController@results', $organizationunit->id) }}"
+								class="nav-link @if (request()->is('agencies/' . $organizationunit->id . '/results')) active @endif">
+								<i class="ti ti-trophy me-2"></i>Penender Berjaya
+							</a>
+						</li>
+						<li class="nav-item ms-auto">
+							<a href="{{ action('OrganizationUnitsController@news', $organizationunit->id) }}"
+								class="nav-link @if (request()->is('agencies/' . $organizationunit->id . '/news')) active @endif">
+								<i class="ti ti-news me-2"></i>Berita
+							</a>
+						</li>
+					</ul>
+				</div>
+				<div class="card-body">
+					<div class="table-responsive">
+						<table class="DT-news table table-vcenter table-mobile-md" data-path="/agencies/{{ $organizationunit->id }}/news">
+							<thead>
+								<tr>
+									<th class="w-15">
+										<i class="ti ti-calendar me-1"></i>Tarikh
+									</th>
+									<th>
+										<i class="ti ti-news me-1"></i>Berita
+									</th>
+									<th class="w-10">
+										<i class="ti ti-settings me-1"></i>Tindakan
+									</th>
+								</tr>
+							</thead>
+							<tbody>
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="col-lg-3">
+			<div class="row">
+				<div class="col-12">
+					@include('layouts._register')
+				</div>
+				<div class="col-12">
+					@include('layouts._news')
+				</div>
+			</div>
+		</div>
+	</div>
 @endsection
 
 @section('scripts')
