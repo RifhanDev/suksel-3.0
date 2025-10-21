@@ -1,4 +1,4 @@
-@extends('layouts.default')
+@extends('layouts.modern')
 
 @section('content')
 	<div class="row">
@@ -8,12 +8,13 @@
 					<div class="page-pretitle">
 						Sistem Tender Online
 					</div>
-					<h2 class="page-title">
-						<i class="ti ti-chart-line me-2"></i>Carta Tender
-					</h2>
 				</div>
 			</div>
 
+			<h2 class="page-title">
+				<i class="ti ti-chart-line"></i>Carta Tender
+			</h2>
+			<br>
 			<div class="card">
 				<div class="card-header">
 					<ul class="nav nav-tabs card-header-tabs" data-bs-toggle="tabs">

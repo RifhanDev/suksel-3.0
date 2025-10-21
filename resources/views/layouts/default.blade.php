@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en" data-bs-theme="light">
 
 <head>
 	<meta charset="UTF-8">
@@ -30,7 +30,7 @@
 
 	<style>
 		/* ========================================
-		ULTRA MODERN DESIGN SYSTEM 2024
+		MODERN SIDEBAR LAYOUT 2024
 		======================================== */
 		:root {
 			/* Modern Color Palette - Sophisticated & Contemporary */
@@ -1220,29 +1220,181 @@
 	</script>
 </head>
 
-<body class="layout-boxed">
+<body>
 	<div class="page">
-		@include('layouts._navbar')
-		@include('layouts._side')
-
-		<div class="page-wrapper">
-			@if (isset($pageTitle))
-				<div class="page-header d-print-none">
-					<div class="container-xl">
-						<div class="row g-2 align-items-center">
-							<div class="col">
-								<h2 class="page-title">
-									{{ $pageTitle }}
-									@if (isset($pageSubtitle))
-										<small class="text-muted">{{ $pageSubtitle }}</small>
-									@endif
-								</h2>
-							</div>
+		<!-- Sidebar -->
+		<aside class="navbar navbar-vertical navbar-expand-lg navbar-dark">
+			<div class="container-fluid">
+				<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#sidebar-menu"
+					aria-controls="sidebar-menu" aria-expanded="false" aria-label="Toggle navigation">
+					<span class="navbar-toggler-icon"></span>
+				</button>
+				<h1 class="navbar-brand navbar-brand-autodark">
+					<a href="/">
+						<img src="{{ asset('images/header.png') }}" width="110" height="32" alt="Sistem Tender Online Selangor"
+							class="navbar-brand-image">
+					</a>
+				</h1>
+				<div class="navbar-nav">
+					<div class="nav-item">
+						<a href="{{ action('HomeController@index') }}" class="nav-link">
+							<span class="nav-link-icon">
+								<i class="ti ti-home"></i>
+							</span>
+							<span class="nav-link-title">Utama</span>
+						</a>
+					</div>
+					<div class="nav-item">
+						<a href="{{ action('HomeController@prices') }}" class="nav-link">
+							<span class="nav-link-icon">
+								<i class="ti ti-chart-line"></i>
+							</span>
+							<span class="nav-link-title">Carta Tender</span>
+						</a>
+					</div>
+					<div class="nav-item">
+						<a href="{{ action('HomeController@results') }}" class="nav-link">
+							<span class="nav-link-icon">
+								<i class="ti ti-trophy"></i>
+							</span>
+							<span class="nav-link-title">Penender Berjaya</span>
+						</a>
+					</div>
+					<div class="nav-item">
+						<a href="{{ route('circulars.public') }}" class="nav-link">
+							<span class="nav-link-icon">
+								<i class="ti ti-file-text"></i>
+							</span>
+							<span class="nav-link-title">Pekeliling</span>
+						</a>
+					</div>
+					<div class="nav-item">
+						<a href="{{ route('aduan.create') }}" class="nav-link">
+							<span class="nav-link-icon">
+								<i class="ti ti-message-circle"></i>
+							</span>
+							<span class="nav-link-title">Aduan</span>
+						</a>
+					</div>
+					<div class="nav-item dropdown">
+						<a class="nav-link dropdown-toggle" href="#navbar-help" data-bs-toggle="dropdown" role="button"
+							aria-expanded="false">
+							<span class="nav-link-icon">
+								<i class="ti ti-help-circle"></i>
+							</span>
+							<span class="nav-link-title">Pertanyaan</span>
+						</a>
+						<div class="dropdown-menu">
+							<a class="dropdown-item" href="{{ action('HelpsController@index') }}">Bantuan</a>
+							<a class="dropdown-item" href="{{ route('manuals.show', 'pendaftaran') }}">Panduan Pengguna</a>
+						</div>
+					</div>
+					<div class="nav-item dropdown">
+						<a class="nav-link dropdown-toggle" href="#navbar-agencies" data-bs-toggle="dropdown" role="button"
+							aria-expanded="false">
+							<span class="nav-link-icon">
+								<i class="ti ti-building"></i>
+							</span>
+							<span class="nav-link-title">Direktori Agensi</span>
+						</a>
+						<div class="dropdown-menu">
+							@php
+								try {
+								    $__orgTypes = App\OrganizationType::orderBy('sort_no', 'asc')->get();
+								} catch (\Throwable $e) {
+								    $__orgTypes = collect();
+								}
+							@endphp
+							@foreach ($__orgTypes as $type)
+								<a class="dropdown-item"
+									href="{{ action('OrganizationUnitsController@index', ['type' => $type->id]) }}">{{ $type->name }}</a>
+							@endforeach
 						</div>
 					</div>
 				</div>
-			@endif
+			</div>
+		</aside>
 
+		<!-- Main Content -->
+		<div class="page-wrapper">
+			<!-- Top Navigation -->
+			<div class="navbar navbar-expand-md navbar-light d-print-none">
+				<div class="container-xl">
+					<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar-menu"
+						aria-controls="navbar-menu" aria-expanded="false" aria-label="Toggle navigation">
+						<span class="navbar-toggler-icon"></span>
+					</button>
+					<div class="navbar-nav flex-row order-md-last">
+						@if (!empty($user) && $user->hasRole('Vendor'))
+							<div class="nav-item dropdown">
+								<a href="{{ asset('cart') }}" class="nav-link d-flex lh-1 text-reset p-0">
+									<span class="avatar avatar-sm" style="background-image: url({{ asset('images/cart-icon.png') }})"></span>
+									<div class="d-none d-xl-block ps-2">
+										<div>Senarai Tempahan</div>
+										<div class="mt-1 small text-muted">{{ App\Cart::count() }} item</div>
+									</div>
+								</a>
+							</div>
+						@endif
+
+						@if (!empty($user))
+							<div class="nav-item dropdown">
+								<a href="#" class="nav-link d-flex lh-1 text-reset p-0" data-bs-toggle="dropdown">
+									<span class="avatar avatar-sm" style="background-image: url({{ asset('images/user-avatar.png') }})"></span>
+									<div class="d-none d-xl-block ps-2">
+										<div>{{ $user->vendor ? $user->vendor->name : $user->name }}</div>
+										<div class="mt-1 small text-muted">{{ $user->email }}</div>
+									</div>
+								</a>
+								<div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
+									@if ($user && $user->hasRole('Vendor') && $user->vendor)
+										<a href="/dashboard" class="dropdown-item">
+											<i class="ti ti-dashboard me-2"></i> Akaun Saya
+										</a>
+										<a href="{{ action('VendorsController@certificate', $user->vendor->id) }}" target="_blank"
+											class="dropdown-item">
+											<i class="ti ti-certificate me-2"></i> Papar Sijil Pengesahan
+										</a>
+										<a
+											href="{{ action('ReportVendorSummaryController@index', ['year' => date('Y'), 'vendor_id' => $user->vendor->id]) }}"
+											class="dropdown-item">
+											<i class="ti ti-chart-pie me-2"></i> Laporan Transaksi Syarikat
+										</a>
+									@endif
+									<a href="{{ asset('profile') }}" class="dropdown-item">
+										<i class="ti ti-user me-2"></i> Profil Saya
+									</a>
+									@if ($user && $user->hasRole('Vendor') && Auth::user()->vendor->registration_paid)
+										<a href="{{ asset('vendor/' . Auth::user()->vendor_id . '/requests') }}" class="dropdown-item">
+											<i class="ti ti-heart me-2"></i> Permintaan Kemaskini
+										</a>
+									@endif
+									@if (Session::has('original_user_id'))
+										<a href="{{ route('release_user') }}" class="dropdown-item">
+											<i class="ti ti-key me-2"></i> Kembali ke Pengguna Asal
+										</a>
+									@endif
+									<div class="dropdown-divider"></div>
+									<a href="{{ route('manuals.show', 'pendaftaran') }}" target="_blank" class="dropdown-item">
+										<i class="ti ti-book me-2"></i> Panduan Pengguna
+									</a>
+									<a href="{{ asset('auth/logout') }}" class="dropdown-item">
+										<i class="ti ti-logout me-2"></i> Daftar Keluar
+									</a>
+								</div>
+							</div>
+						@else
+							<div class="nav-item">
+								<a href="{{ route('registration') }}" class="btn btn-outline-primary me-2">Daftar Akaun</a>
+								<button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#loginModal">Daftar
+									Masuk</button>
+							</div>
+						@endif
+					</div>
+				</div>
+			</div>
+
+			<!-- Page Content -->
 			<div class="page-body">
 				<div class="container-xl">
 					@include('layouts._notification')
@@ -1251,6 +1403,58 @@
 			</div>
 		</div>
 	</div>
+
+	<!-- Login Modal -->
+	@if (empty($user))
+		<div class="modal modal-blur fade" id="loginModal" tabindex="-1" role="dialog"
+			aria-labelledby="loginModalLabel">
+			<div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h5 class="modal-title" id="loginModalLabel">Daftar Masuk</h5>
+						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+					</div>
+					<form method="POST" action="{{ action('AuthController@doLogin') }}">
+						@csrf
+						<div class="modal-body">
+							<div class="mb-3">
+								<label class="form-label">Alamat Emel</label>
+								<input type="email" class="form-control" name="email" placeholder="Alamat Emel"
+									value="{{ old('email') }}" required autocomplete="email">
+								@error('email')
+									<div class="text-danger small">{{ $message }}</div>
+								@enderror
+							</div>
+							<div class="mb-3">
+								<label class="form-label">Kata Laluan</label>
+								<input type="password" class="form-control" name="password" placeholder="Kata Laluan" required
+									autocomplete="current-password">
+								@error('password')
+									<div class="text-danger small">{{ $message }}</div>
+								@enderror
+							</div>
+							@if ($errors->has('login'))
+								<div class="alert alert-danger">
+									{{ $errors->first('login') }}
+								</div>
+							@endif
+						</div>
+						<div class="modal-footer">
+							<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+							<button type="submit" class="btn btn-primary">Daftar Masuk</button>
+						</div>
+					</form>
+					<div class="modal-body pt-0">
+						<div class="text-center">
+							<a href="{{ action('AuthController@forgotPassword') }}" class="text-muted">Lupa Kata Laluan?</a> &bullet;
+							<a href="{{ route('registration') }}" class="text-muted">Daftar Akaun!</a> &bullet;
+							<a href="{{ route('manuals.show', 'pendaftaran') }}" target="_blank" class="text-muted">Cara Mendaftar</a>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	@endif
 
 	@include('layouts._footer')
 	@include('layouts._popupModal')
