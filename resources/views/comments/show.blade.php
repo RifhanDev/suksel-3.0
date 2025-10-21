@@ -1,4 +1,4 @@
-@extends('layouts.default')
+@extends('layouts.modern')
 @section('content')
 	<h2>View Comment</h2>
 	<hr>
@@ -8,7 +8,5 @@
 	@include('comments.actions-footer')
 @endsection
 @section('scripts')
-
 	<script src="{{ asset('js/show.js') }}"></script>
-
 @endsection

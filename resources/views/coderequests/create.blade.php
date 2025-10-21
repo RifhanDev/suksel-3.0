@@ -1,4 +1,4 @@
-@extends('layouts.default')
+@extends('layouts.modern')
 @section('content')
 	<h2 class="tender-title">Masukkan Permintaan Kemaskini MOF / CIDB</h2>
 	

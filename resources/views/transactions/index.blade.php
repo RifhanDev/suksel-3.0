@@ -1,31 +1,33 @@
-@extends('layouts.default')
+@extends('layouts.modern')
 @section('content')
 	@php
-		
+
 	@endphp
 
-	<h2>Status Transaksi {{isset($subtitle2) ? ': ' . $subtitle2 : ''}}</h2>
+	<h2>Status Transaksi {{ isset($subtitle2) ? ': ' . $subtitle2 : '' }}</h2>
 	<br>
 	@include('transactions._snaps_trans_status')
 
-	<h2>Senarai Transaksi {{isset($subtitle) ? ': ' . $subtitle : ''}}</h2>
+	<h2>Senarai Transaksi {{ isset($subtitle) ? ': ' . $subtitle : '' }}</h2>
 	<br>
 	@include('transactions._snaps')
 	<hr>
-	<table data-path ="{{action('TransactionsController@index')}}?state={{isset($transaction_type) ? $transaction_type : ''}}&status={{isset($transaction_status) ? $transaction_status : ''}}" class="DT-index table table-striped table-hover table-bordered">
-      <thead class="bg-blue-selangor">
-            <tr>
-					<th>Tarikh &amp; Masa</th>
-					<th>Nama Syarikat</th>
-					<th>No Transaksi</th>
-					<th>No Rujukan Gateway</th>
-					<th>No Resit</th>
-					<th>Jenis</th>
-					<th>Saluran</th>
-					<th>Jumlah</th>
-					<th>Status</th>
-					<th class ="col-lg-1">&nbsp;</th>
-            </tr>
+	<table
+		data-path ="{{ action('TransactionsController@index') }}?state={{ isset($transaction_type) ? $transaction_type : '' }}&status={{ isset($transaction_status) ? $transaction_status : '' }}"
+		class="DT-index table table-striped table-hover table-bordered">
+		<thead class="bg-blue-selangor">
+			<tr>
+				<th>Tarikh &amp; Masa</th>
+				<th>Nama Syarikat</th>
+				<th>No Transaksi</th>
+				<th>No Rujukan Gateway</th>
+				<th>No Resit</th>
+				<th>Jenis</th>
+				<th>Saluran</th>
+				<th>Jumlah</th>
+				<th>Status</th>
+				<th class ="col-lg-1">&nbsp;</th>
+			</tr>
 		</thead>
 		<tbody></tbody>
 	</table>
@@ -33,7 +35,6 @@
 
 
 @section('scripts')
-
 	{{-- <script src="{{ asset('js/datatables.js') }}"></script>
 	<script type="text/javascript">
 		$('.DT-index').each(function(){
@@ -82,12 +83,12 @@
 			});
 		});
 	</script> --}}
-	
+
 	<link href="{{ asset('custom_library/dataTables/jquery.dataTables.css') }}" rel="stylesheet">
 	<script src="{{ asset('custom_library/dataTables/jquery.dataTables.js') }}"></script>
 
 	<script type="text/javascript">
-		$(document).ready(function () {
+		$(document).ready(function() {
 			updateFpxCount();
 
 			// Update count every second
@@ -95,7 +96,7 @@
 				updateFpxCount1();
 			}, 20000); // Do this every 20 seconds
 
-			
+
 			setInterval(function() {
 				updateFpxCount2();
 			}, 30000); // Do this every 30 seconds
@@ -107,8 +108,7 @@
 			}, 240000); // Do this every 5 minutes
 		});
 
-		function updateFpxCount()
-		{
+		function updateFpxCount() {
 			updatePendingTrans();
 			updateSuccessTrans();
 			updatePendingAuthorizationTrans();
@@ -119,15 +119,13 @@
 			updateTotalTrans();
 		}
 
-		function updateFpxCount1()
-		{
+		function updateFpxCount1() {
 			updatePendingTrans();
 			updateSuccessTrans();
 			updateFailedTrans();
 		}
 
-		function updateFpxCount2()
-		{
+		function updateFpxCount2() {
 			updatePendingAuthorizationTrans();
 			updateDeclinedTrans();
 			updateSubscriptionTrans();
@@ -135,147 +133,178 @@
 			updateTotalTrans();
 		}
 
-		function updateTotalTrans()
-		{
+		function updateTotalTrans() {
 			$.ajax({
 				type: "POST",
 				url: "{{ route('updateFpxCount') }}",
-				data: { type: "total"},
-				success: function (response) {
+				data: {
+					type: "total"
+				},
+				success: function(response) {
 					$("#total_trans_count").html(response.total_trans_count.toLocaleString('en-US'));
 				}
 			});
 		}
 
-		function updateSubscriptionTrans()
-		{
+		function updateSubscriptionTrans() {
 			$.ajax({
 				type: "POST",
 				url: "{{ route('updateFpxCount') }}",
-				data: { type: "subscribe"},
-				success: function (response) {
+				data: {
+					type: "subscribe"
+				},
+				success: function(response) {
 					$("#subscribe_trans_count").html(response.subscribe_trans_count.toLocaleString('en-US'));
 				}
 			});
 		}
 
-		function updatePurchaseTrans()
-		{
+		function updatePurchaseTrans() {
 			$.ajax({
 				type: "POST",
 				url: "{{ route('updateFpxCount') }}",
-				data: { type: "purchase"},
-				success: function (response) {
+				data: {
+					type: "purchase"
+				},
+				success: function(response) {
 					$("#purchase_trans_count").html(response.purchase_trans_count.toLocaleString('en-US'));
 				}
 			});
 		}
 
-		function updateSuccessTrans()
-		{
+		function updateSuccessTrans() {
 			$.ajax({
 				type: "POST",
 				url: "{{ route('updateFpxCount') }}",
-				data: { status: "success"},
-				success: function (response) {
+				data: {
+					status: "success"
+				},
+				success: function(response) {
 					$("#success_trans_count").html(response.success_trans_count.toLocaleString('en-US'));
 				}
 			});
 		}
 
-		function updatePendingTrans()
-		{
+		function updatePendingTrans() {
 			$.ajax({
 				type: "POST",
 				url: "{{ route('updateFpxCount') }}",
-				data: { status: "pending"},
-				success: function (response) {
+				data: {
+					status: "pending"
+				},
+				success: function(response) {
 					$("#pending_trans_count").html(response.pending_trans_count.toLocaleString('en-US'));
 				}
 			});
 		}
 
-		function updateDeclinedTrans()
-		{
+		function updateDeclinedTrans() {
 			$.ajax({
 				type: "POST",
 				url: "{{ route('updateFpxCount') }}",
-				data: { status: "declined"},
-				success: function (response) {
+				data: {
+					status: "declined"
+				},
+				success: function(response) {
 					$("#declined_trans_count").html(response.declined_trans_count.toLocaleString('en-US'));
 				}
 			});
 		}
 
-		function updateFailedTrans()
-		{
+		function updateFailedTrans() {
 			$.ajax({
 				type: "POST",
 				url: "{{ route('updateFpxCount') }}",
-				data: { status: "failed"},
-				success: function (response) {
+				data: {
+					status: "failed"
+				},
+				success: function(response) {
 					$("#failed_trans_count").html(response.failed_trans_count.toLocaleString('en-US'));
 				}
 			});
 		}
 
-		function updatePendingAuthorizationTrans()
-		{
+		function updatePendingAuthorizationTrans() {
 			$.ajax({
 				type: "POST",
 				url: "{{ route('updateFpxCount') }}",
-				data: { status: "pending_authorization"},
-				success: function (response) {
-					$("#pending_authorization_trans_count").html(response.pending_authorization_trans_count.toLocaleString('en-US'));
+				data: {
+					status: "pending_authorization"
+				},
+				success: function(response) {
+					$("#pending_authorization_trans_count").html(response.pending_authorization_trans_count
+						.toLocaleString('en-US'));
 				}
 			});
 		}
 
-		function updateFpxRequery()
-		{
+		function updateFpxRequery() {
 			$.ajax({
 				type: "GET",
 				async: false,
 				url: "{{ route('fpx_queue') }}",
-				success: function (response) {
+				success: function(response) {
 					// console.log(response);
 					// updateFpxCount();
 				}
 			});
 		}
-
 	</script>
 
 	<script type="text/javascript">
-
 		var target = $('.DT-index');
 		var path = target.data('path');
-		
+
 		let table = $('.DT-index').DataTable({
 			processing: true,
 			serverSide: true,
 			ajax: path,
-			columns: [
-				{ data: 'created_at', name: 'created_at' },
-				{ data: 'name', name: 'vendors.name' },
-				{ data: 'number', name: 'number' },
-				{ data: 'gateway_reference', name: 'gateway_reference' },
-				{ data: 'no_resit', name: 'no_resit' },
-				{ data: 'type', name: 'type' },
-				{ data: 'method', name: 'method' },
-				{ data: 'amount', name: 'amount' },
-				{ data: 'status', name: 'status' },
-				{ data: 'actions', name: 'actions' },
+			columns: [{
+					data: 'created_at',
+					name: 'created_at'
+				},
+				{
+					data: 'name',
+					name: 'vendors.name'
+				},
+				{
+					data: 'number',
+					name: 'number'
+				},
+				{
+					data: 'gateway_reference',
+					name: 'gateway_reference'
+				},
+				{
+					data: 'no_resit',
+					name: 'no_resit'
+				},
+				{
+					data: 'type',
+					name: 'type'
+				},
+				{
+					data: 'method',
+					name: 'method'
+				},
+				{
+					data: 'amount',
+					name: 'amount'
+				},
+				{
+					data: 'status',
+					name: 'status'
+				},
+				{
+					data: 'actions',
+					name: 'actions'
+				},
 			],
 			serverSide: true,
 			stateSave: true,
 			language: {
-				"url" : "{{ asset('custom_library/dataTables/lang/ms.json') }}"
+				"url": "{{ asset('custom_library/dataTables/lang/ms.json') }}"
 			}
 		});
-
 	</script>
-
 @endsection
-
-

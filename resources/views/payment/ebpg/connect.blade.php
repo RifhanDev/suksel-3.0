@@ -1,4 +1,4 @@
-@extends('layouts.default')
+@extends('layouts.modern')
 @section('content')
 	<div class="alert alert-danger">Transaksi Perbankan Kad Kredit sedang dalam proses. Harap bersabar.</div>
 	<table class="table table-bordered">
@@ -21,7 +21,7 @@
 	</table>
 
 	<form method="post" id="ebpg_connect" action="{{ $transaction->gateway->endpoint_url }}" target="_blank">
-		@foreach($ebpg->request_keys as $key => $value)
+		@foreach ($ebpg->request_keys as $key => $value)
 			<input type ="hidden" name="{{ $key }}" value="{{ $value }}">
 		@endforeach
 		<input type ="submit" value="Teruskan ke Pembayaran Kad Kredit" class="btn bg-blue-selangor">
@@ -30,9 +30,11 @@
 
 @section('scripts')
 	<script type="text/javascript">
-		$(document).ready(function(){
-			$("#ebpg_connect").submit(function(){
-				setTimeout(function(){ window.location = '{{ URL::route('txn_status', $transaction->id) }}'; }, 1000);
+		$(document).ready(function() {
+			$("#ebpg_connect").submit(function() {
+				setTimeout(function() {
+					window.location = '{{ URL::route('txn_status', $transaction->id) }}';
+				}, 1000);
 			});
 		});
 	</script>

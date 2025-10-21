@@ -1,7 +1,6 @@
-@extends('layouts.default')
+@extends('layouts.modern')
 
 @section('content')
-
 	<h1>Sejarah Perubahan Sistem Tender Selangor</h1>
 
 	<table class="table table-bordered table-hover">
@@ -55,7 +54,7 @@
 				<td>4 September 2017</td>
 				<td>
 					<strong>Penambahbaikan Modul UPEN</strong><br><br>
-				
+
 					<ol>
 						<li>Menolak pendaftaran kontraktor</li>
 						<li>Menerima pendaftaran kontraktor</li>

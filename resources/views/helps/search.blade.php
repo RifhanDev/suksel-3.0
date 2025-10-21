@@ -1,4 +1,4 @@
-@extends('layouts.default')
+@extends('layouts.modern')
 @section('content')
 	<div class="row">
 		<div class="col-lg-9">

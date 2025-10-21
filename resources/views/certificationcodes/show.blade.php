@@ -1,4 +1,4 @@
-@extends('layouts.default')
+@extends('layouts.modern')
 @section('content')
 	<h2>Lihat Kod Bidang</h2>
 	<hr>
