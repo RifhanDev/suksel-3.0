@@ -627,7 +627,7 @@
 	</div>
 
 	<!-- Login Modal -->
-	@if (empty($user))
+	@if (!empty($user))
 		<div class="modal modal-blur fade" id="loginModal" tabindex="-1" role="dialog"
 			aria-labelledby="loginModalLabel">
 			<div class="modal-dialog modal-sm modal-dialog-centered" role="document">
