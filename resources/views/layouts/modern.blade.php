@@ -690,6 +690,17 @@
 	<script src="{{ asset('js/application.js') }}"></script>
 
 	<script>
+		// Ensure Bootstrap is ready before any modal operations
+		document.addEventListener('DOMContentLoaded', function() {
+			// Initialize any modals that might need it
+			const modals = document.querySelectorAll('.modal');
+			modals.forEach(modal => {
+				if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+					new bootstrap.Modal(modal);
+				}
+			});
+		});
+
 		// Sidebar toggle for mobile
 		document.addEventListener('DOMContentLoaded', function() {
 			const sidebarToggle = document.querySelector('.navbar-toggler');
