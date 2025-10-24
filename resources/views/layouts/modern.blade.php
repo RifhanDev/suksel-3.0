@@ -44,7 +44,7 @@
 			--sidebar-text: #ffffff;
 			--sidebar-text-muted: #bdc3c7;
 			--sidebar-hover: #34495e;
-			--sidebar-active: #dc2626;
+			--sidebar-active: #cf5858;
 
 			--content-bg: #f8fafc;
 			--card-bg: #ffffff;
@@ -236,6 +236,118 @@
 		.navbar-vertical .nav-item.mt-auto .nav-link:hover {
 			background-color: rgba(255, 107, 107, 0.1) !important;
 			color: #ff5252 !important;
+		}
+
+		.navbar-vertical .nav-item.mt-auto .nav-link .nav-link-icon {
+			display: inline-flex !important;
+			align-items: center;
+			justify-content: center;
+			width: 2rem;
+			height: 2rem;
+		}
+
+		.navbar-vertical .nav-item.mt-auto .nav-link .nav-link-icon i {
+			color: #ff6b6b !important;
+			font-size: 1.5rem !important;
+			display: inline-block !important;
+			font-weight: bold !important;
+		}
+
+		.navbar-vertical .nav-item.mt-auto .nav-link .nav-link-icon .icon-logout-fallback {
+			color: #ff6b6b !important;
+			stroke: #ff6b6b !important;
+			display: inline-block !important;
+			vertical-align: middle;
+		}
+
+		/* Top navbar user dropdown visibility */
+		.page-wrapper .navbar .navbar-nav {
+			display: flex !important;
+			flex-direction: row !important;
+			align-items: center !important;
+		}
+
+		.page-wrapper .navbar .nav-item.dropdown {
+			display: block !important;
+		}
+
+		.page-wrapper .navbar .nav-link {
+			display: flex !important;
+			padding: 0.5rem 1rem !important;
+		}
+
+		.page-wrapper .navbar .avatar {
+			display: inline-block !important;
+		}
+
+		/* User dropdown toggle styling */
+		.user-dropdown-toggle {
+			background-color: rgba(255, 255, 255, 0.1) !important;
+			border-radius: 8px !important;
+			padding: 0.5rem 1rem !important;
+			transition: all 0.3s ease !important;
+		}
+
+		.user-dropdown-toggle:hover {
+			background-color: rgba(255, 255, 255, 0.2) !important;
+		}
+
+		.user-dropdown-toggle .fw-bold {
+			color: #1e293b !important;
+			font-size: 0.95rem;
+		}
+
+		.user-dropdown-toggle .text-muted {
+			font-size: 0.85rem !important;
+		}
+
+		.user-dropdown-toggle .ti-chevron-down {
+			color: #64748b !important;
+			font-size: 1rem;
+		}
+
+		/* Modern Dropdown Menu Styling */
+		.navbar .dropdown-menu {
+			background: #4a5568;
+			border: none;
+			border-radius: 8px;
+			box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+			padding: 0.5rem 0;
+			min-width: 220px;
+			margin-top: 0.5rem;
+			z-index: 1060 !important;
+		}
+
+		.navbar .dropdown-menu .dropdown-item {
+			color: #e2e8f0;
+			padding: 0.75rem 1.5rem;
+			font-size: 0.95rem;
+			transition: all 0.2s ease;
+			border-left: 3px solid transparent;
+		}
+
+		.navbar .dropdown-menu .dropdown-item:hover {
+			background-color: rgba(255, 255, 255, 0.1);
+			color: #ffffff;
+			border-left-color: #60a5fa;
+		}
+
+		.navbar .dropdown-menu .dropdown-item i {
+			color: #60a5fa;
+			font-size: 1.1em;
+			width: 20px;
+			text-align: center;
+		}
+
+		.navbar .dropdown-menu::before {
+			content: '';
+			position: absolute;
+			top: -6px;
+			right: 20px;
+			width: 12px;
+			height: 12px;
+			background: #4a5568;
+			transform: rotate(45deg);
 		}
 
 		/* Modal accessibility fixes */
@@ -525,7 +637,14 @@
 					<div class="nav-item">
 						<a href="{{ action('HomeController@index') }}" class="nav-link {{ request()->is('/') ? 'active' : '' }}">
 							<span class="nav-link-icon">
-								<i class="ti ti-home"></i>
+								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+									stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+									class="icon icon-tabler icons-tabler-outline icon-tabler-home">
+									<path stroke="none" d="M0 0h24v24H0z" fill="none" />
+									<path d="M5 12l-2 0l9 -9l9 9l-2 0" />
+									<path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" />
+									<path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" />
+								</svg>
 							</span>
 							<span class="nav-link-title">Utama</span>
 						</a>
@@ -533,7 +652,12 @@
 					<div class="nav-item">
 						<a href="{{ action('HomeController@prices') }}" class="nav-link {{ request()->is('prices*') ? 'active' : '' }}">
 							<span class="nav-link-icon">
-								<i class="ti ti-chart-line"></i>
+								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"
+									class="icon icon-tabler icons-tabler-filled icon-tabler-files">
+									<path stroke="none" d="M0 0h24v24H0z" fill="none" />
+									<path
+										d="M11 2l3 .001v5.999a1 1 0 0 0 .883 .993l.117 .007h6v6a3 3 0 0 1 -3 3h-1v1a3 3 0 0 1 -3 3h-7a3 3 0 0 1 -3 -3v-10a3 3 0 0 1 3 -3h1v-1a3 3 0 0 1 3 -3m-3 6h-1a1 1 0 0 0 -1 1v10a1 1 0 0 0 1 1h7a1 1 0 0 0 1 -1v-1h-4a3 3 0 0 1 -3 -3zm12.415 -1h-4.415v-4.415z" />
+								</svg>
 							</span>
 							<span class="nav-link-title">Carta Tender</span>
 						</a>
@@ -542,7 +666,14 @@
 						<a href="{{ action('HomeController@results') }}"
 							class="nav-link {{ request()->is('results*') ? 'active' : '' }}">
 							<span class="nav-link-icon">
-								<i class="ti ti-trophy"></i>
+								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+									stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+									class="icon icon-tabler icons-tabler-outline icon-tabler-device-ipad-check">
+									<path stroke="none" d="M0 0h24v24H0z" fill="none" />
+									<path d="M11.5 21h-5.5a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v8" />
+									<path d="M9 18h2" />
+									<path d="M15 19l2 2l4 -4" />
+								</svg>
 							</span>
 							<span class="nav-link-title">Penender Berjaya</span>
 						</a>
@@ -550,7 +681,13 @@
 					<div class="nav-item">
 						<a href="{{ route('circulars.public') }}" class="nav-link {{ request()->is('circulars*') ? 'active' : '' }}">
 							<span class="nav-link-icon">
-								<i class="ti ti-file-text"></i>
+								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+									stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+									class="icon icon-tabler icons-tabler-outline icon-tabler-circles-relation">
+									<path stroke="none" d="M0 0h24v24H0z" fill="none" />
+									<path d="M9.183 6.117a6 6 0 1 0 4.511 3.986" />
+									<path d="M14.813 17.883a6 6 0 1 0 -4.496 -3.954" />
+								</svg>
 							</span>
 							<span class="nav-link-title">Pekeliling</span>
 						</a>
@@ -558,7 +695,15 @@
 					<div class="nav-item">
 						<a href="{{ route('aduan.create') }}" class="nav-link {{ request()->is('aduan*') ? 'active' : '' }}">
 							<span class="nav-link-icon">
-								<i class="ti ti-message-circle"></i>
+								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+									stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+									class="icon icon-tabler icons-tabler-outline icon-tabler-mail-spark">
+									<path stroke="none" d="M0 0h24v24H0z" fill="none" />
+									<path
+										d="M19 22.5a4.75 4.75 0 0 1 3.5 -3.5a4.75 4.75 0 0 1 -3.5 -3.5a4.75 4.75 0 0 1 -3.5 3.5a4.75 4.75 0 0 1 3.5 3.5" />
+									<path d="M11.5 19h-6.5a2 2 0 0 1 -2 -2v-10a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v5" />
+									<path d="M3 7l9 6l9 -6" />
+								</svg>
 							</span>
 							<span class="nav-link-title">Aduan</span>
 						</a>
@@ -567,7 +712,14 @@
 						<a class="nav-link dropdown-toggle" href="#navbar-help" data-bs-toggle="dropdown" role="button"
 							aria-expanded="false">
 							<span class="nav-link-icon">
-								<i class="ti ti-help-circle"></i>
+								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+									stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+									class="icon icon-tabler icons-tabler-outline icon-tabler-bookmark-question">
+									<path stroke="none" d="M0 0h24v24H0z" fill="none" />
+									<path d="M15 19l-3 -2l-6 4v-14a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v4" />
+									<path d="M19 22v.01" />
+									<path d="M19 19a2.003 2.003 0 0 0 .914 -3.782a1.98 1.98 0 0 0 -2.414 .483" />
+								</svg>
 							</span>
 							<span class="nav-link-title">Pertanyaan</span>
 						</a>
@@ -605,8 +757,16 @@
 							<a href="{{ route('logout') }}" class="nav-link text-danger">
 								<span class="nav-link-icon">
 									<i class="ti ti-logout"></i>
+									<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-logout-fallback" width="24" height="24"
+										viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round"
+										stroke-linejoin="round">
+										<path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+										<path d="M14 8v-2a2 2 0 0 0 -2 -2h-7a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h7a2 2 0 0 0 2 -2v-2"></path>
+										<path d="M9 12h12l-3 -3"></path>
+										<path d="M18 15l3 -3"></path>
+									</svg>
 								</span>
-								<span class="nav-link-title">Daftar Keluar</span>
+								<span class="nav-link-title">Logout</span>
 							</a>
 						</div>
 					@endif
@@ -627,70 +787,41 @@
 						<span class="navbar-toggler-icon"></span>
 					</button>
 					<div class="navbar-nav flex-row order-md-last ms-auto">
-						@if (!empty($user) && $user->hasRole('Vendor'))
+						@if (!empty($user))
 							<div class="nav-item dropdown">
 								<a href="{{ asset('cart') }}" class="nav-link d-flex lh-1 text-reset p-0">
 									<span class="avatar avatar-sm" style="background-image: url({{ asset('images/cart-icon.png') }})"></span>
 									<div class="d-none d-xl-block ps-2">
 										<div>Senarai Tempahan</div>
-										<div class="mt-1 small text-muted">{{ App\Cart::count() }} item</div>
+										{{-- <div class="mt-1 small text-muted">{{ App\Cart::count() }} item</div> --}}
 									</div>
 								</a>
 							</div>
 						@endif
 
-						@if (!empty($user))
+						@if ($user)
 							<div class="nav-item dropdown">
-								<a href="#" class="nav-link d-flex lh-1 text-reset p-0" data-bs-toggle="dropdown">
-									<span class="avatar avatar-sm" style="background-image: url({{ asset('images/user-avatar.png') }})"></span>
-									<div class="d-none d-xl-block ps-2">
-										<div>{{ $user->vendor ? $user->vendor->name : $user->name }}</div>
-										<div class="mt-1 small text-muted">{{ $user->email }}</div>
+								<a href="#" class="nav-link d-flex lh-1 text-reset p-2 user-dropdown-toggle" data-bs-toggle="dropdown"
+									aria-expanded="false">
+									<span class="avatar avatar-sm me-2"
+										style="background-image: url({{ asset('images/user-avatar.png') }})"></span>
+									<div class="d-flex flex-column">
+										<div class="fw-bold">{{ $user->vendor ? $user->vendor->name : $user->name }}</div>
+										<div class="small text-muted">{{ $user->email }}</div>
 									</div>
+									<i class="ti ti-chevron-down ms-2"></i>
 								</a>
 								<div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
-									@if ($user && $user->hasRole('Vendor') && $user->vendor)
-										<a href="/dashboard" class="dropdown-item">
-											<i class="ti ti-dashboard me-2"></i> Akaun Saya
-										</a>
-										<a href="{{ action('VendorsController@certificate', $user->vendor->id) }}" target="_blank"
-											class="dropdown-item">
-											<i class="ti ti-certificate me-2"></i> Papar Sijil Pengesahan
-										</a>
-										<a
-											href="{{ action('ReportVendorSummaryController@index', ['year' => date('Y'), 'vendor_id' => $user->vendor->id]) }}"
-											class="dropdown-item">
-											<i class="ti ti-chart-pie me-2"></i> Laporan Transaksi Syarikat
-										</a>
-									@endif
 									<a href="{{ asset('profile') }}" class="dropdown-item">
 										<i class="ti ti-user me-2"></i> Profil Saya
 									</a>
-									@if ($user && $user->hasRole('Vendor') && Auth::user()->vendor->registration_paid)
-										<a href="{{ asset('vendor/' . Auth::user()->vendor_id . '/requests') }}" class="dropdown-item">
-											<i class="ti ti-heart me-2"></i> Permintaan Kemaskini
-										</a>
-									@endif
-									@if (Session::has('original_user_id'))
-										<a href="{{ route('release_user') }}" class="dropdown-item">
-											<i class="ti ti-key me-2"></i> Kembali ke Pengguna Asal
-										</a>
-									@endif
-									<div class="dropdown-divider"></div>
+									<a href="{{ route('logout') }}" class="dropdown-item">
+										<i class="ti ti-logout me-2"></i> Daftar Keluar
+									</a>
 									<a href="{{ route('manuals.show', 'pendaftaran') }}" target="_blank" class="dropdown-item">
 										<i class="ti ti-book me-2"></i> Panduan Pengguna
 									</a>
-									<a href="{{ route('logout') }}" class="dropdown-item text-danger">
-										<i class="ti ti-logout me-2"></i> Daftar Keluar
-									</a>
 								</div>
-							</div>
-
-							<!-- Logout Button (visible alternative) -->
-							<div class="nav-item d-none d-md-flex ms-2">
-								<a href="{{ route('logout') }}" class="btn btn-outline-danger btn-sm">
-									<i class="ti ti-logout me-1"></i> Keluar
-								</a>
 							</div>
 						@else
 							<div class="nav-item">
@@ -715,7 +846,7 @@
 	</div>
 
 	<!-- Login Modal -->
-	@if (empty($user))
+	@if (!empty($user))
 		<div class="modal modal-blur fade" id="loginModal" tabindex="-1" role="dialog"
 			aria-labelledby="loginModalLabel">
 			<div class="modal-dialog modal-sm modal-dialog-centered" role="document">
