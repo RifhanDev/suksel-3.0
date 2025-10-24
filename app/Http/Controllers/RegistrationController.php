@@ -33,7 +33,7 @@ class RegistrationController extends Controller
         if ($ssm_valid > 0) {
             return redirect('register')->withInput()->with('error', 'No Syarikat "' . $request->company_no . '" telah didaftarkan.');
         }
-        
+
         if (Vendor::hasRegistered($request->company_no)) {
             return redirect('register')->withInput()->with('error', 'No Syarikat "' . $request->company_no . '" telah didaftarkan.');
         }
@@ -176,10 +176,10 @@ class RegistrationController extends Controller
         $data['submission_date'] = date('Y-m-d');
 
         // convert ssm_expiry
-		$ssm_expiry_input = $data["ssm_expiry"]; // Your string representation of a date
-		$ssm_expiry_input_format = 'd/m/Y'; // Your custom date format
-		$new_ssm_expiry = Carbon::createFromFormat($ssm_expiry_input_format, $ssm_expiry_input);
-		$data["ssm_expiry"] = $new_ssm_expiry->format('Y-m-d');
+        $ssm_expiry_input = $data["ssm_expiry"]; // Your string representation of a date
+        $ssm_expiry_input_format = 'd/m/Y'; // Your custom date format
+        $new_ssm_expiry = Carbon::createFromFormat($ssm_expiry_input_format, $ssm_expiry_input);
+        $data["ssm_expiry"] = $new_ssm_expiry->format('Y-m-d');
 
         if (!$vendor->update($data)) {
             return $this->_validation_error($vendor);

@@ -21,6 +21,7 @@ class AuthController extends Controller
       // If user is already logged in, redirect to appropriate dashboard
       if (auth()->check()) {
          $user = auth()->user();
+         // dd($user);
          if ($user->hasRole('Vendor')) {
             return redirect('dashboard');
          } elseif ($user->can('Vendor:list')) {
@@ -97,9 +98,9 @@ class AuthController extends Controller
                      return redirect('register/payment');
                   else
                      return redirect('dashboard');
-               } elseif ($user->can('Vendor:list'))
-                  return redirect('vendors');
-               else
+                  // } elseif ($user->can('Vendor:list'))
+                  //    return redirect('vendors');
+               } else
                   return redirect('agencies/' . $user->organization_unit_id);
             } else {
                $attempt = session('attempt');

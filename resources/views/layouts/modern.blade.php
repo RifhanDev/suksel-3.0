@@ -197,6 +197,74 @@
 			color: var(--sidebar-text);
 		}
 
+		/* Top navbar specific styles */
+		.navbar.navbar-expand-md .navbar-nav {
+			flex-direction: row;
+			align-items: center;
+		}
+
+		.navbar.navbar-expand-md .navbar-nav .nav-item {
+			width: auto;
+		}
+
+		.navbar.navbar-expand-md .navbar-nav .nav-link {
+			justify-content: center;
+			padding: var(--space-2) var(--space-3);
+		}
+
+		/* Ensure buttons are properly positioned */
+		.navbar .navbar-nav.ms-auto {
+			margin-left: auto !important;
+		}
+
+		.navbar .navbar-nav .nav-item .btn {
+			margin-left: var(--space-2);
+		}
+
+		/* Sidebar logout button */
+		.navbar-vertical .nav-item.mt-auto {
+			margin-top: auto !important;
+			border-top: 1px solid rgba(255, 255, 255, 0.1);
+			padding-top: var(--space-3);
+		}
+
+		.navbar-vertical .nav-item.mt-auto .nav-link {
+			color: #ff6b6b !important;
+			font-weight: 600;
+		}
+
+		.navbar-vertical .nav-item.mt-auto .nav-link:hover {
+			background-color: rgba(255, 107, 107, 0.1) !important;
+			color: #ff5252 !important;
+		}
+
+		/* Modal accessibility fixes */
+		.modal {
+			z-index: 1055 !important;
+		}
+
+		.modal-backdrop {
+			z-index: 1050 !important;
+		}
+
+		.modal[aria-hidden="false"] {
+			pointer-events: auto !important;
+		}
+
+		.modal[aria-hidden="true"] {
+			pointer-events: none !important;
+		}
+
+		/* Ensure modal becomes visible when shown */
+		.modal.show {
+			opacity: 1 !important;
+			display: block !important;
+		}
+
+		.modal.show .modal-dialog {
+			transform: none !important;
+		}
+
 		/* Page Wrapper */
 		.page-wrapper {
 			flex: 1;
@@ -530,6 +598,18 @@
 							@endforeach
 						</div>
 					</div>
+
+					@if (!empty($user))
+						<!-- Logout Button in Sidebar -->
+						<div class="nav-item mt-auto">
+							<a href="{{ route('logout') }}" class="nav-link text-danger">
+								<span class="nav-link-icon">
+									<i class="ti ti-logout"></i>
+								</span>
+								<span class="nav-link-title">Daftar Keluar</span>
+							</a>
+						</div>
+					@endif
 				</div>
 			</div>
 		</aside>
@@ -538,15 +618,15 @@
 		<div class="page-wrapper">
 			<!-- Top Navigation -->
 			<div class="navbar navbar-expand-md navbar-light d-print-none">
-				<h1 class="navbar-brand navbar-brand-autodark">
-					Welcome {{ data_get($user, 'name') }} !
-				</h1>
 				<div class="container-xl">
+					<h1 class="navbar-brand navbar-brand-autodark">
+						Welcome {{ data_get($user, 'name') }} !
+					</h1>
 					<button class="navbar-toggler d-lg-none" type="button" data-bs-toggle="collapse" data-bs-target="#navbar-menu"
 						aria-controls="navbar-menu" aria-expanded="false" aria-label="Toggle navigation">
 						<span class="navbar-toggler-icon"></span>
 					</button>
-					<div class="navbar-nav flex-row order-md-last">
+					<div class="navbar-nav flex-row order-md-last ms-auto">
 						@if (!empty($user) && $user->hasRole('Vendor'))
 							<div class="nav-item dropdown">
 								<a href="{{ asset('cart') }}" class="nav-link d-flex lh-1 text-reset p-0">
@@ -600,16 +680,24 @@
 									<a href="{{ route('manuals.show', 'pendaftaran') }}" target="_blank" class="dropdown-item">
 										<i class="ti ti-book me-2"></i> Panduan Pengguna
 									</a>
-									<a href="{{ asset('auth/logout') }}" class="dropdown-item">
+									<a href="{{ route('logout') }}" class="dropdown-item text-danger">
 										<i class="ti ti-logout me-2"></i> Daftar Keluar
 									</a>
 								</div>
 							</div>
+
+							<!-- Logout Button (visible alternative) -->
+							<div class="nav-item d-none d-md-flex ms-2">
+								<a href="{{ route('logout') }}" class="btn btn-outline-danger btn-sm">
+									<i class="ti ti-logout me-1"></i> Keluar
+								</a>
+							</div>
 						@else
 							<div class="nav-item">
 								<a href="{{ route('registration') }}" class="btn btn-outline-primary me-2">Daftar Akaun</a>
-								<button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#loginModal">Daftar
-									Masuk</button>
+								<a href="{{ route('login') }}" class="btn btn-primary" data-bs-toggle="modal"
+									data-bs-target="#loginModal">Daftar
+									Masuk</a>
 							</div>
 						@endif
 					</div>
@@ -627,14 +715,14 @@
 	</div>
 
 	<!-- Login Modal -->
-	@if (!empty($user))
+	@if (empty($user))
 		<div class="modal modal-blur fade" id="loginModal" tabindex="-1" role="dialog"
 			aria-labelledby="loginModalLabel">
 			<div class="modal-dialog modal-sm modal-dialog-centered" role="document">
 				<div class="modal-content">
 					<div class="modal-header">
 						<h5 class="modal-title" id="loginModalLabel">Daftar Masuk</h5>
-						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+						<button type="button" class="btn-close" onclick="hideLoginModal()" aria-label="Close"></button>
 					</div>
 					<form method="POST" action="{{ action('AuthController@doLogin') }}">
 						@csrf
@@ -690,16 +778,167 @@
 	<script src="{{ asset('js/application.js') }}"></script>
 
 	<script>
-		// Ensure Bootstrap is ready before any modal operations
+		// Debug and fix modal functionality
 		document.addEventListener('DOMContentLoaded', function() {
-			// Initialize any modals that might need it
+			console.log('DOM loaded, initializing modals...');
+
+			// Check if Bootstrap is available
+			if (typeof bootstrap === 'undefined') {
+				console.error('Bootstrap is not loaded!');
+				return;
+			}
+
+			console.log('Bootstrap is available:', bootstrap);
+
+			// Find all modals
 			const modals = document.querySelectorAll('.modal');
-			modals.forEach(modal => {
-				if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
-					new bootstrap.Modal(modal);
+			console.log('Found modals:', modals.length);
+
+			modals.forEach((modal, index) => {
+				console.log(`Initializing modal ${index}:`, modal.id);
+
+				try {
+					const modalInstance = new bootstrap.Modal(modal, {
+						backdrop: true,
+						keyboard: true,
+						focus: true
+					});
+
+					// Fix aria-hidden attribute when modal is shown
+					modal.addEventListener('show.bs.modal', function() {
+						console.log('Modal showing:', this.id);
+						this.setAttribute('aria-hidden', 'false');
+						this.style.pointerEvents = 'auto';
+						this.style.display = 'block';
+					});
+
+					// Reset aria-hidden when modal is hidden
+					modal.addEventListener('hidden.bs.modal', function() {
+						console.log('Modal hidden:', this.id);
+						this.setAttribute('aria-hidden', 'true');
+						this.style.pointerEvents = 'none';
+					});
+
+					console.log('Modal instance created:', modalInstance);
+				} catch (error) {
+					console.error('Error creating modal instance:', error);
 				}
 			});
+
+			// Find and fix login button
+			const loginButton = document.querySelector('[data-bs-target="#loginModal"]');
+			console.log('Login button found:', loginButton);
+
+			if (loginButton) {
+				// Remove any existing event listeners
+				loginButton.replaceWith(loginButton.cloneNode(true));
+				const newLoginButton = document.querySelector('[data-bs-target="#loginModal"]');
+
+				newLoginButton.addEventListener('click', function(e) {
+					console.log('Login button clicked!');
+					const modal = document.getElementById('loginModal');
+					console.log('Modal element:', modal);
+
+					let opened = false;
+					if (modal && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+						try {
+							const modalInstance = bootstrap.Modal.getOrCreateInstance(modal);
+							modalInstance.show();
+							opened = true;
+							console.log('Modal show() called');
+						} catch (err) {
+							console.error('Bootstrap show failed:', err);
+						}
+					}
+
+					// If Bootstrap failed, try direct fallback
+					if (!opened && modal) {
+						try {
+							modal.style.display = 'block';
+							modal.classList.add('show');
+							modal.setAttribute('aria-hidden', 'false');
+							modal.setAttribute('aria-modal', 'true');
+							document.body.classList.add('modal-open');
+							const existing = document.getElementById('modal-backdrop');
+							if (!existing) {
+								const backdrop = document.createElement('div');
+								backdrop.className = 'modal-backdrop fade show';
+								backdrop.id = 'modal-backdrop';
+								document.body.appendChild(backdrop);
+							}
+							opened = true;
+							console.log('Modal shown via direct manipulation');
+						} catch (directError) {
+							console.error('Direct manipulation failed:', directError);
+						}
+					}
+
+					// Only prevent default navigation if we managed to open the modal
+					if (opened) {
+						e.preventDefault();
+						e.stopPropagation();
+					} else {
+						console.warn('Modal could not be opened, falling back to href');
+					}
+				});
+
+				console.log('Login button event listener added');
+			} else {
+				console.error('Login button not found!');
+			}
 		});
+
+		// Fallback method - simple modal without Bootstrap
+		function showLoginModal() {
+			console.log('Fallback: Showing login modal');
+			const modal = document.getElementById('loginModal');
+			if (modal) {
+				modal.style.display = 'block';
+				modal.classList.add('show');
+				modal.setAttribute('aria-hidden', 'false');
+				modal.setAttribute('aria-modal', 'true');
+				document.body.classList.add('modal-open');
+
+				// Create backdrop
+				const existingBackdrop = document.getElementById('modal-backdrop');
+				if (existingBackdrop) {
+					existingBackdrop.remove();
+				}
+
+				const backdrop = document.createElement('div');
+				backdrop.className = 'modal-backdrop fade show';
+				backdrop.id = 'modal-backdrop';
+				backdrop.onclick = hideLoginModal;
+				document.body.appendChild(backdrop);
+
+				// Focus on first input
+				const firstInput = modal.querySelector('input[type="email"]');
+				if (firstInput) {
+					setTimeout(() => firstInput.focus(), 100);
+				}
+			}
+		}
+
+		function hideLoginModal() {
+			console.log('Fallback: Hiding login modal');
+			const modal = document.getElementById('loginModal');
+			if (modal) {
+				modal.style.display = 'none';
+				modal.classList.remove('show');
+				modal.setAttribute('aria-hidden', 'true');
+				modal.removeAttribute('aria-modal');
+				document.body.classList.remove('modal-open');
+
+				const backdrop = document.getElementById('modal-backdrop');
+				if (backdrop) {
+					backdrop.remove();
+				}
+			}
+		}
+
+		// Add global functions for easy access
+		window.showLoginModal = showLoginModal;
+		window.hideLoginModal = hideLoginModal;
 
 		// Sidebar toggle for mobile
 		document.addEventListener('DOMContentLoaded', function() {
