@@ -371,10 +371,23 @@
 		.modal.show {
 			opacity: 1 !important;
 			display: block !important;
+			visibility: visible !important;
 		}
 
 		.modal.show .modal-dialog {
 			transform: none !important;
+			opacity: 1 !important;
+		}
+
+		.modal.show .modal-content {
+			opacity: 1 !important;
+			visibility: visible !important;
+		}
+
+		/* Modal backdrop */
+		.modal-backdrop.show {
+			opacity: 0.5 !important;
+			display: block !important;
 		}
 
 		/* Page Wrapper */
@@ -826,9 +839,9 @@
 						@else
 							<div class="nav-item">
 								<a href="{{ route('registration') }}" class="btn btn-outline-primary me-2">Daftar Akaun</a>
-								<a href="{{ route('login') }}" class="btn btn-primary" data-bs-toggle="modal"
-									data-bs-target="#loginModal">Daftar
-									Masuk</a>
+								<button type="button" class="btn btn-primary" id="loginButton" onclick="openLoginModal()">
+									Daftar Masuk
+								</button>
 							</div>
 						@endif
 					</div>
@@ -846,7 +859,7 @@
 	</div>
 
 	<!-- Login Modal -->
-	@if (!empty($user))
+	@if (empty($user))
 		<div class="modal modal-blur fade" id="loginModal" tabindex="-1" role="dialog"
 			aria-labelledby="loginModalLabel">
 			<div class="modal-dialog modal-sm modal-dialog-centered" role="document">
@@ -1070,6 +1083,21 @@
 		// Add global functions for easy access
 		window.showLoginModal = showLoginModal;
 		window.hideLoginModal = hideLoginModal;
+		window.openLoginModal = showLoginModal; // Alias for easier access
+
+		// Direct button handler
+		document.addEventListener('DOMContentLoaded', function() {
+			const loginBtn = document.getElementById('loginButton');
+			if (loginBtn) {
+				loginBtn.addEventListener('click', function(e) {
+					e.preventDefault();
+					e.stopPropagation();
+					console.log('Direct button click handler triggered');
+					openLoginModal();
+				});
+				console.log('Login button direct handler attached');
+			}
+		});
 
 		// Sidebar toggle for mobile
 		document.addEventListener('DOMContentLoaded', function() {
