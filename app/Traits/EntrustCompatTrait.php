@@ -22,32 +22,35 @@ trait EntrustCompatTrait
         $roleCheck = null;
         $permCheck = null;
 
-        // Use Spatie-provided helpers if available
+        // Check roles using hasRole method
         if (!empty($roles)) {
-            if (method_exists($this, 'hasAnyRole')) {
-                $roleCheck = $this->hasAnyRole($roles);
-            } else {
-                // fall back: check single role
-                $found = false;
-                foreach ($roles as $r) {
-                    if (method_exists($this, 'hasRole') && $this->hasRole($r)) {
-                        $found = true;
-                        break;
-                    }
+            $found = false;
+            foreach ($roles as $r) {
+                if (method_exists($this, 'hasRole') && $this->hasRole($r)) {
+                    $found = true;
+                    break;
                 }
-                $roleCheck = $found;
             }
+            $roleCheck = $found;
         }
 
+        // Check permissions through roles (Entrust style)
         if (!empty($permissions)) {
-            if (method_exists($this, 'hasAnyPermission')) {
-                $permCheck = $this->hasAnyPermission($permissions);
-            } else {
+            // Filter out empty permission strings
+            $permissions = array_filter($permissions, function ($p) {
+                return !empty(trim($p));
+            });
+
+            if (!empty($permissions)) {
                 $found = false;
-                foreach ($permissions as $p) {
-                    if (method_exists($this, 'hasPermissionTo') && $this->hasPermissionTo($p)) {
-                        $found = true;
-                        break;
+                if (method_exists($this, 'roles')) {
+                    foreach ($this->roles as $role) {
+                        foreach ($permissions as $permission) {
+                            if ($role->permissions()->where('name', $permission)->exists()) {
+                                $found = true;
+                                break 2; // Break out of both loops
+                            }
+                        }
                     }
                 }
                 $permCheck = $found;
@@ -68,5 +71,32 @@ trait EntrustCompatTrait
         }
 
         return (bool) ($roleCheck && $permCheck);
+    }
+
+    /**
+     * Laravel's can() method compatibility for permission checking.
+     * Checks if user has a specific permission through their roles.
+     *
+     * @param string $permission
+     * @return bool
+     */
+    public function can($permission, $arguments = [])
+    {
+        // Check if this is a built-in Laravel authorization (like policies)
+        // If parent class has can() method, defer to it for non-permission strings
+        if (method_exists(get_parent_class($this), 'can') && !str_contains($permission, ':')) {
+            return parent::can($permission, $arguments);
+        }
+
+        // Check if user has this permission through their roles
+        if (method_exists($this, 'roles')) {
+            foreach ($this->roles as $role) {
+                if ($role->permissions()->where('name', $permission)->exists()) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 }

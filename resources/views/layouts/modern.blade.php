@@ -161,6 +161,14 @@
 			color: white;
 		}
 
+		/* Keep dropdown toggle text white when clicked/focused/active */
+		.navbar-nav .nav-link:focus,
+		.navbar-nav .nav-link:active,
+		.navbar-nav .dropdown.show .nav-link {
+			color: white !important;
+			background: var(--sidebar-hover);
+		}
+
 		.nav-link-icon {
 			width: 20px;
 			height: 20px;
@@ -177,24 +185,39 @@
 			flex: 1;
 		}
 
-		/* Dropdown Styles */
+		/* Simple Dropdown Styles */
 		.navbar-nav .dropdown-menu {
 			background: #34495e;
-			border: 1px solid #4a5f7a;
-			border-radius: var(--radius-md);
-			box-shadow: var(--shadow-lg);
-			margin-top: var(--space-2);
+			border: 1px solid rgba(255, 255, 255, 0.1);
+			border-radius: 8px;
+			box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+			margin-top: 4px;
+			padding: 8px 0;
+			min-width: 200px;
 		}
 
 		.navbar-nav .dropdown-item {
-			color: var(--sidebar-text-muted);
-			padding: var(--space-2) var(--space-4);
-			transition: var(--transition);
+			color: #ffffff;
+			padding: 10px 20px;
+			font-size: 14px;
+			transition: all 0.2s ease;
+			display: flex;
+			align-items: center;
 		}
 
 		.navbar-nav .dropdown-item:hover {
-			background: var(--sidebar-hover);
-			color: var(--sidebar-text);
+			background: #c6ced6;
+			color: #ffffff;
+		}
+
+		.navbar-nav .dropdown-item i {
+			font-size: 16px;
+			margin-right: 8px;
+			color: rgba(255, 255, 255, 0.7);
+		}
+
+		.navbar-nav .dropdown-item:hover i {
+			color: #ffffff;
 		}
 
 		/* Top navbar specific styles */
@@ -281,19 +304,19 @@
 		}
 
 		/* User dropdown toggle styling */
-		.user-dropdown-toggle {
+		/* .user-dropdown-toggle {
 			background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
 			border-radius: 10px !important;
 			padding: 0.75rem 1.25rem !important;
 			transition: all 0.3s ease !important;
 			border: 2px solid rgba(255, 255, 255, 0.2) !important;
 			box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4) !important;
-		}
+		} */
 
 		.user-dropdown-toggle:hover {
 			background: linear-gradient(135deg, #764ba2 0%, #667eea 100%) !important;
 			transform: translateY(-2px) !important;
-			box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6) !important;
+			box-shadow: 0 6px 20px rgba(255, 255, 255, 0.6) !important;
 		}
 
 		.user-dropdown-toggle .fw-bold {
@@ -345,11 +368,11 @@
 			}
 		}
 
-		.dropdown-menu.show {
+		/* .dropdown-menu.show {
 			display: block !important;
 			opacity: 1 !important;
 			visibility: visible !important;
-		}
+		} */
 
 		.navbar .dropdown-menu .dropdown-item,
 		.dropdown-menu .dropdown-item {
@@ -386,19 +409,14 @@
 			transform: scale(1.1);
 		}
 
-		.navbar .dropdown-menu::before,
+		/* .navbar .dropdown-menu::before,
 		.dropdown-menu::before {
-			content: '';
 			position: absolute;
 			top: -8px;
 			right: 30px;
 			width: 16px;
 			height: 16px;
-			background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
-			transform: rotate(45deg);
-			border-left: 1px solid rgba(255, 255, 255, 0.1);
-			border-top: 1px solid rgba(255, 255, 255, 0.1);
-		}
+		} */
 
 		/* Dropdown item icons specific styling */
 		.dropdown-item i.ti-user {
@@ -839,48 +857,73 @@
 						</div>
 
 						<!-- Pengurusan Tender -->
-						<div class="nav-item dropdown">
-							<a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" role="button"
+						<div class="nav-item">
+							<a class="nav-link dropdown-toggle" href="#navbar-tender" data-bs-toggle="dropdown" role="button"
 								aria-expanded="false">
-								<span class="nav-link-icon">
-									<i class="ti ti-file-text"></i>
-								</span>
 								<span class="nav-link-title">Pengurusan Tender</span>
 							</a>
+							<b></b>
 							<div class="dropdown-menu">
 								@if (App\Tender::canList())
 									@if (Auth::user()->ability(['Admin', 'Registration Assesor', 'Front Desk'], []))
-										<a class="dropdown-item" href="{{ asset('tenders') }}">
-											<i class="ti ti-list me-2"></i> Senarai Tender
+										<a class="dropdown-item" style="color: white;" href="{{ asset('tenders') }}">
+											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
+												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
+												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
+											</svg> Senarai Tender
 										</a>
 									@else
-										<a class="dropdown-item" href="{{ asset('agencies/' . Auth::user()->organization_unit_id) }}">
-											<i class="ti ti-list me-2"></i> Senarai Tender
+										<a class="dropdown-item" style="text-color: white;"
+											href="{{ asset('agencies/' . Auth::user()->organization_unit_id) }}">
+											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
+												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
+												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
+											</svg> Senarai Tender
 										</a>
 									@endif
 								@endif
-
 								@if (App\Vendor::canList())
-									<a class="dropdown-item" href="{{ asset('vendors') }}">
-										<i class="ti ti-building me-2"></i> Senarai Syarikat
+									<a class="dropdown-item" style="color: white;"href="{{ asset('vendors') }}">
+										<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+											stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+											class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
+											<path stroke="none" d="M0 0h24v24H0z" fill="none" />
+											<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
+										</svg> Senarai Syarikat
 									</a>
 								@endif
-
 								@if (App\VendorBlacklist::canList())
-									<a class="dropdown-item" href="{{ asset('blacklists') }}">
-										<i class="ti ti-ban me-2"></i> Senarai Hitam
+									<a class="dropdown-item" style="color: white;"href="{{ asset('blacklists') }}">
+										<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+											stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+											class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
+											<path stroke="none" d="M0 0h24v24H0z" fill="none" />
+											<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
+										</svg> Senarai Hitam
 									</a>
 								@endif
-
 								@if (App\News::canList())
-									<a class="dropdown-item" href="{{ asset('news') }}">
-										<i class="ti ti-news me-2"></i> Senarai Berita
+									<a class="dropdown-item" style="color: white;"href="{{ asset('news') }}">
+										<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+											stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+											class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
+											<path stroke="none" d="M0 0h24v24H0z" fill="none" />
+											<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
+										</svg> Senarai Berita
 									</a>
 								@endif
-
 								@if (App\Transaction::canList())
-									<a class="dropdown-item" href="{{ asset('transactions') }}">
-										<i class="ti ti-receipt me-2"></i> Senarai Transaksi
+									<a class="dropdown-item" style="color: white;"href="{{ asset('transactions') }}">
+										<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+											stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+											class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
+											<path stroke="none" d="M0 0h24v24H0z" fill="none" />
+											<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
+										</svg> Senarai Transaksi
 									</a>
 								@endif
 							</div>
