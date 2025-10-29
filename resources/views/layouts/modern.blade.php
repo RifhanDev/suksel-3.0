@@ -802,7 +802,7 @@
 							<span class="nav-link-title">Aduan</span>
 						</a>
 					</div>
-					<div class="nav-item dropdown">
+					<div class="nav-item">
 						<a class="nav-link dropdown-toggle" href="#navbar-help" data-bs-toggle="dropdown" role="button"
 							aria-expanded="false">
 							<span class="nav-link-icon">
@@ -822,7 +822,7 @@
 							<a class="dropdown-item" href="{{ route('manuals.show', 'pendaftaran') }}">Panduan Pengguna</a>
 						</div>
 					</div>
-					<div class="nav-item dropdown">
+					<div class="nav-item">
 						<a class="nav-link dropdown-toggle" href="#navbar-agencies" data-bs-toggle="dropdown" role="button"
 							aria-expanded="false">
 							<span class="nav-link-icon">
@@ -862,7 +862,7 @@
 								aria-expanded="false">
 								<span class="nav-link-title">Pengurusan Tender</span>
 							</a>
-							<b></b>
+							<br>
 							<div class="dropdown-menu">
 								@if (App\Tender::canList())
 									@if (Auth::user()->ability(['Admin', 'Registration Assesor', 'Front Desk'], []))
@@ -887,7 +887,7 @@
 									@endif
 								@endif
 								@if (App\Vendor::canList())
-									<a class="dropdown-item" style="color: white;"href="{{ asset('vendors') }}">
+									<a class="dropdown-item" style="color: white;" href="{{ asset('vendors') }}">
 										<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
 											stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
 											class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
@@ -897,7 +897,7 @@
 									</a>
 								@endif
 								@if (App\VendorBlacklist::canList())
-									<a class="dropdown-item" style="color: white;"href="{{ asset('blacklists') }}">
+									<a class="dropdown-item" style="color: white;" href="{{ asset('blacklists') }}">
 										<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
 											stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
 											class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
@@ -907,7 +907,7 @@
 									</a>
 								@endif
 								@if (App\News::canList())
-									<a class="dropdown-item" style="color: white;"href="{{ asset('news') }}">
+									<a class="dropdown-item" style="color: white;" href="{{ asset('news') }}">
 										<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
 											stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
 											class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
@@ -917,7 +917,7 @@
 									</a>
 								@endif
 								@if (App\Transaction::canList())
-									<a class="dropdown-item" style="color: white;"href="{{ asset('transactions') }}">
+									<a class="dropdown-item" style="color: white;" href="{{ asset('transactions') }}">
 										<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
 											stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
 											class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
@@ -931,17 +931,21 @@
 
 						@if (App\CodeRequest::canList())
 							<!-- Pengurusan Permintaan Kemaskini -->
-							<div class="nav-item dropdown">
-								<a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" role="button"
-									aria-expanded="false">
-									<span class="nav-link-icon">
-										<i class="ti ti-edit"></i>
-									</span>
-									<span class="nav-link-title">Pengurusan Permintaan Kemaskini</span>
+							<div class="nav-item">
+								<a class="nav-link dropdown-toggle" href="#navbar-pengurusan-permintaan-kemaskini" data-bs-toggle="dropdown"
+									role="button" aria-expanded="false">
+									<span class="nav-link-title">Pengurusan Permintaan</span>
+									{{-- <span class="nav-link-title">Pengurusan Permintaan Kemaskini</span> --}}
 								</a>
+								<br>
 								<div class="dropdown-menu">
-									<a class="dropdown-item" href="{{ asset('requests') }}">
-										<i class="ti ti-edit me-2"></i> Permintaan Kemaskini
+									<a class="dropdown-item" style="color: white;" href="{{ asset('requests') }}">
+										<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+											stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+											class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
+											<path stroke="none" d="M0 0h24v24H0z" fill="none" />
+											<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
+										</svg> Permintaan Kemaskini
 									</a>
 								</div>
 							</div>
@@ -949,63 +953,89 @@
 
 						@if (Auth::user()->ability(['Admin', 'Agency Admin'], []))
 							<!-- Pengurusan Sistem -->
-							<div class="nav-item dropdown">
-								<a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" role="button"
+							<div class="nav-item">
+								<a class="nav-link dropdown-toggle" href="#navbar-sistem" data-bs-toggle="dropdown" role="button"
 									aria-expanded="false">
-									<span class="nav-link-icon">
-										<i class="ti ti-settings"></i>
-									</span>
 									<span class="nav-link-title">Pengurusan Sistem</span>
 								</a>
+								<br>
 								<div class="dropdown-menu">
 									@if (App\User::canList())
-										<a class="dropdown-item" href="{{ asset('users') }}">
-											<i class="ti ti-users me-2"></i> Senarai Pengguna
+										<a class="dropdown-item" style="color: white;" href="{{ asset('users') }}">
+											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
+												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
+												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
+											</svg> Senarai Pengguna
 										</a>
 									@endif
 									@if (Auth::user()->canApprove())
-										<a class="dropdown-item" href="{{ asset('users/pending-approval') }}">
-											<i class="ti ti-user-check me-2"></i> Senarai Permohonan Pengguna
+										<a class="dropdown-item" style="color: white;" href="{{ asset('users/pending-approval') }}">
+											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
+												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
+												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
+											</svg> Senarai Permohonan Pengguna
 										</a>
 									@endif
 									@if (App\OrganizationUnit::canList())
-										<a class="dropdown-item" href="{{ asset('agencies') }}">
-											<i class="ti ti-building me-2"></i> Senarai Agensi
+										<a class="dropdown-item" style="color: white;" href="{{ asset('agencies') }}">
+											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
+												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
+												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
+											</svg> Senarai Agensi
 										</a>
 									@endif
 									@if (Auth::user()->hasRole('Admin'))
-										<a class="dropdown-item" href="{{ asset('organizationtypes') }}">
-											<i class="ti ti-category me-2"></i> Kategori Agensi
+										<a class="dropdown-item" style="color: white;" href="{{ asset('organizationtypes') }}">
+											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
+												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
+												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
+											</svg> Kategori Agensi
 										</a>
-										<a class="dropdown-item" href="{{ asset('codes') }}">
-											<i class="ti ti-code me-2"></i> Senarai Kod Bidang
-										</a>
-										<a class="dropdown-item" href="{{ asset('helps') }}">
-											<i class="ti ti-help me-2"></i> Senarai Soalan Bantuan
-										</a>
-										<a class="dropdown-item" href="{{ asset('helpcategories') }}">
-											<i class="ti ti-category me-2"></i> Kategori Soalan Bantuan
-										</a>
-										<a class="dropdown-item" href="{{ asset('gateways') }}">
-											<i class="ti ti-credit-card me-2"></i> Tetapan Pembayaran
-										</a>
-										<a class="dropdown-item" href="{{ asset('banners') }}">
-											<i class="ti ti-photo me-2"></i> Senarai Banner
+										<a class="dropdown-item" style="color: white;" href="{{ asset('codes') }}">
+											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
+												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
+												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
+											</svg> Senarai Kod Bidang
 										</a>
 									@endif
 									@if (Auth::user()->can('System:histories'))
-										<a class="dropdown-item" href="{{ asset('version-histories') }}">
-											<i class="ti ti-history me-2"></i> Sejarah Perubahan Sistem
+										<a class="dropdown-item" style="color: white;" href="{{ asset('version-histories') }}">
+											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
+												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
+												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
+											</svg> Sejarah Perubahan Sistem
 										</a>
 									@endif
 									@if (App\Models\RejectTemplate::canList())
-										<a class="dropdown-item" href="{{ asset('reject-template') }}">
-											<i class="ti ti-x me-2"></i> Senarai Templat Penolakan
+										<a class="dropdown-item" style="color: white;" href="{{ asset('reject-template') }}">
+											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
+												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
+												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
+											</svg> Senarai Templat Penolakan
 										</a>
 									@endif
 									@if (App\Models\Circular::canList())
-										<a class="dropdown-item" href="{{ asset('circulars') }}">
-											<i class="ti ti-file-text me-2"></i> Senarai Pekeliling
+										<a class="dropdown-item" style="color: white;" href="{{ asset('circulars') }}">
+											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
+												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
+												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
+											</svg> Senarai Pekeliling
 										</a>
 									@endif
 								</div>
@@ -1014,23 +1044,31 @@
 
 						@if (Auth::user()->hasRole('Admin'))
 							<!-- Pengurusan Akses -->
-							<div class="nav-item dropdown">
-								<a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" role="button"
+							<div class="nav-item">
+								<a class="nav-link dropdown-toggle" href="#navbar-akses" data-bs-toggle="dropdown" role="button"
 									aria-expanded="false">
-									<span class="nav-link-icon">
-										<i class="ti ti-shield"></i>
-									</span>
 									<span class="nav-link-title">Pengurusan Akses</span>
 								</a>
+								<br>
 								<div class="dropdown-menu">
 									@if (App\Role::canList())
-										<a class="dropdown-item" href="{{ asset('roles') }}">
-											<i class="ti ti-user me-2"></i> Tetapan Peranan
+										<a class="dropdown-item" style="color: white;" href="{{ asset('roles') }}">
+											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
+												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
+												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
+											</svg> Tetapan Peranan
 										</a>
 									@endif
 									@if (App\Permission::canList())
-										<a class="dropdown-item" href="{{ asset('permissions') }}">
-											<i class="ti ti-key me-2"></i> Tetapan Kebenaran
+										<a class="dropdown-item" style="color: white;" href="{{ asset('permissions') }}">
+											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
+												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
+												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
+											</svg> Tetapan Kebenaran
 										</a>
 									@endif
 								</div>
@@ -1039,23 +1077,31 @@
 
 						@if (Auth::user()->ability(['Admin', 'Refund Admin'], ['Refund:list']))
 							<!-- Pengurusan Pemulangan Semula -->
-							<div class="nav-item dropdown">
-								<a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" role="button"
+							<div class="nav-item">
+								<a class="nav-link dropdown-toggle" href="#navbar-pemulangan" data-bs-toggle="dropdown" role="button"
 									aria-expanded="false">
-									<span class="nav-link-icon">
-										<i class="ti ti-refresh"></i>
-									</span>
 									<span class="nav-link-title">Pengurusan Pemulangan Semula</span>
 								</a>
+								<br>
 								<div class="dropdown-menu">
 									@if (App\Models\Refund::canList())
-										<a class="dropdown-item" href="{{ route('refunds.request.index') }}">
-											<i class="ti ti-refresh me-2"></i> Permohonan Pemulangan Semula
+										<a class="dropdown-item" style="color: white;" href="{{ route('refunds.request.index') }}">
+											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
+												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
+												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
+											</svg> Permohonan Pemulangan Semula
 										</a>
 									@endif
 									@if (App\Models\Refund::isRoleBKP())
-										<a class="dropdown-item" href="{{ route('refunds.complaint.index') }}">
-											<i class="ti ti-alert-circle me-2"></i> Aduan Permohonan Semula
+										<a class="dropdown-item" style="color: white;" href="{{ route('refunds.complaint.index') }}">
+											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
+												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
+												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
+											</svg> Aduan Permohonan Semula
 										</a>
 									@endif
 								</div>
@@ -1064,18 +1110,21 @@
 
 						@if (Auth::user()->ability(['Admin'], ['Api:canList']))
 							<!-- Pengurusan API -->
-							<div class="nav-item dropdown">
-								<a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" role="button"
+							<div class="nav-item">
+								<a class="nav-link dropdown-toggle" href="#navbar-api" data-bs-toggle="dropdown" role="button"
 									aria-expanded="false">
-									<span class="nav-link-icon">
-										<i class="ti ti-api"></i>
-									</span>
 									<span class="nav-link-title">Pengurusan API</span>
 								</a>
+								<br>
 								<div class="dropdown-menu">
 									@if (App\Models\ApiToken::canList())
-										<a class="dropdown-item" href="{{ route('apitoken.index') }}">
-											<i class="ti ti-key me-2"></i> Senarai API Token
+										<a class="dropdown-item" style="color: white;" href="{{ route('apitoken.index') }}">
+											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
+												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
+												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
+											</svg> Senarai API Token
 										</a>
 									@endif
 								</div>
@@ -1084,27 +1133,45 @@
 
 						@if (Auth::user()->ability(['Admin'], ['chatbot-manager:canList']))
 							<!-- Pengurusan ChatBot -->
-							<div class="nav-item dropdown">
-								<a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" role="button"
+							<div class="nav-item">
+								<a class="nav-link dropdown-toggle" href="#navbar-chatbot" data-bs-toggle="dropdown" role="button"
 									aria-expanded="false">
-									<span class="nav-link-icon">
-										<i class="ti ti-robot"></i>
-									</span>
 									<span class="nav-link-title">Pengurusan ChatBot</span>
 								</a>
+								<br>
 								<div class="dropdown-menu">
 									@if (App\Models\FaqCategory::canList())
-										<a class="dropdown-item" href="{{ route('chatbot-manager.category.index') }}">
-											<i class="ti ti-category me-2"></i> Senarai Kategori
+										<a class="dropdown-item" style="color: white;" href="{{ route('chatbot-manager.category.index') }}">
+											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
+												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
+												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
+											</svg> Senarai Kategori
 										</a>
-										<a class="dropdown-item" href="{{ route('chatbot-manager.question.index') }}">
-											<i class="ti ti-help me-2"></i> Senarai Soalan
+										<a class="dropdown-item" style="color: white;" href="{{ route('chatbot-manager.question.index') }}">
+											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
+												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
+												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
+											</svg> Senarai Soalan
 										</a>
-										<a class="dropdown-item" href="{{ route('chatbot-manager.chatlog.index') }}">
-											<i class="ti ti-message me-2"></i> Senarai Rekod Chat
+										<a class="dropdown-item" style="color: white;" href="{{ route('chatbot-manager.chatlog.index') }}">
+											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
+												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
+												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
+											</svg> Senarai Rekod Chat
 										</a>
-										<a class="dropdown-item" href="{{ route('chatbot-manager.newquestion.index') }}">
-											<i class="ti ti-question-mark me-2"></i> Senarai Pertanyaan Tidak Wujud
+										<a class="dropdown-item" style="color: white;" href="{{ route('chatbot-manager.newquestion.index') }}">
+											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
+												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
+												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
+											</svg> Senarai Pertanyaan Tidak Wujud
 										</a>
 									@endif
 								</div>
@@ -1113,21 +1180,32 @@
 
 						@if (Auth::user()->ability(['Admin'], ['chatbot-manager:canList']))
 							<!-- Pengurusan Email SMTP -->
-							<div class="nav-item dropdown">
-								<a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" role="button"
+							<div class="nav-item">
+								<a class="nav-link dropdown-toggle" href="#navbar-email" data-bs-toggle="dropdown" role="button"
 									aria-expanded="false">
-									<span class="nav-link-icon">
-										<i class="ti ti-mail"></i>
-									</span>
 									<span class="nav-link-title">Pengurusan Email SMTP</span>
 								</a>
+								<br>
 								<div class="dropdown-menu">
 									@if (App\Models\FaqCategory::canList())
 										<a class="dropdown-item" href="{{ route('mail-manager.smtp-setting.index') }}">
 											<i class="ti ti-settings me-2"></i> Senarai Email SMTP
 										</a>
-										<a class="dropdown-item" href="{{ route('mail-manager.mail-queue.index') }}">
-											<i class="ti ti-clock me-2"></i> Rekod Penghantaran Email
+										<a class="dropdown-item" style="color: white;" href="{{ route('mail-manager.smtp-setting.index') }}">
+											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
+												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
+												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
+											</svg> Senarai Email SMTP
+										</a>
+										<a class="dropdown-item" style="color: white;" href="{{ route('mail-manager.mail-queue.index') }}">
+											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
+												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
+												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
+											</svg> Rekod Penghantaran Email
 										</a>
 									@endif
 								</div>
@@ -1136,17 +1214,20 @@
 
 						@if (Auth::user()->ability(['Admin'], []))
 							<!-- Aduan Admin -->
-							<div class="nav-item dropdown">
-								<a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" role="button"
+							<div class="nav-item">
+								<a class="nav-link dropdown-toggle" href="#navbar-aduan" data-bs-toggle="dropdown" role="button"
 									aria-expanded="false">
-									<span class="nav-link-icon">
-										<i class="ti ti-alert-triangle"></i>
-									</span>
 									<span class="nav-link-title">Pengurusan Aduan</span>
 								</a>
+								<br>
 								<div class="dropdown-menu">
-									<a class="dropdown-item" href="{{ asset('aduan/list') }}">
-										<i class="ti ti-list me-2"></i> Senarai Aduan
+									<a class="dropdown-item" style="color: white;" href="{{ asset('aduan/list') }}">
+										<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+											stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+											class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
+											<path stroke="none" d="M0 0h24v24H0z" fill="none" />
+											<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
+										</svg> Senarai Aduan
 									</a>
 								</div>
 							</div>
@@ -1154,17 +1235,20 @@
 
 						@if (Auth::user()->ability(['Admin', 'Admin Kewangan'], []))
 							<!-- Dashboard -->
-							<div class="nav-item dropdown">
-								<a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" role="button"
+							<div class="nav-item">
+								<a class="nav-link dropdown-toggle" href="#navbar-dashboard" data-bs-toggle="dropdown" role="button"
 									aria-expanded="false">
-									<span class="nav-link-icon">
-										<i class="ti ti-dashboard"></i>
-									</span>
 									<span class="nav-link-title">Dashboard</span>
 								</a>
+								<br>
 								<div class="dropdown-menu">
-									<a class="dropdown-item" href="{{ asset('dashboard/hq') }}">
-										<i class="ti ti-chart-bar me-2"></i> Dashboard Pengurusan
+									<a class="dropdown-item" style="color: white;" href="{{ asset('dashboard/hq') }}">
+										<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+											stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+											class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
+											<path stroke="none" d="M0 0h24v24H0z" fill="none" />
+											<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
+										</svg> Dashboard Pengurusan
 									</a>
 								</div>
 							</div>
@@ -1172,120 +1256,223 @@
 
 						@if (Auth::user()->can('Report:view'))
 							<!-- Laporan -->
-							<div class="nav-item dropdown">
-								<a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" role="button"
+							<div class="nav-item">
+								<a class="nav-link dropdown-toggle" href="#navbar-laporan" data-bs-toggle="dropdown" role="button"
 									aria-expanded="false">
-									<span class="nav-link-icon">
-										<i class="ti ti-chart-bar"></i>
-									</span>
 									<span class="nav-link-title">Laporan</span>
 								</a>
+								<br>
 								<div class="dropdown-menu">
 									@if (Auth::user()->can('Report:view:revenue_yearly'))
-										<a class="dropdown-item" href="{{ asset('reports/revenue') }}">
-											<i class="ti ti-currency-dollar me-2"></i> Hasil Transaksi Tahunan
+										<a class="dropdown-item" style="color: white;" href="{{ asset('reports/revenue') }}">
+											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
+												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
+												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
+											</svg> Hasil Transaksi Tahunan
 										</a>
 									@endif
 									@if (Auth::user()->can('Report:view:agency_active'))
-										<a class="dropdown-item" href="{{ asset('reports/agency/active') }}">
-											<i class="ti ti-building me-2"></i> 10 Agensi Aktif
+										<a class="dropdown-item" style="color: white;" href="{{ asset('reports/agency/active') }}">
+											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
+												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
+												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
+											</svg> 10 Agensi Aktif
 										</a>
 									@endif
 									@if (Auth::user()->can('Report:view:agency_transaction'))
-										<a class="dropdown-item" href="{{ asset('reports/agency/all') }}">
-											<i class="ti ti-receipt me-2"></i> Transaksi Semua Agensi
+										<a class="dropdown-item" style="color: white;" href="{{ asset('reports/agency/all') }}">
+											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
+												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
+												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
+											</svg> Transaksi Semua Agensi
 										</a>
 									@endif
 									@if (Auth::user()->can('Report:view:agency_type'))
-										<a class="dropdown-item" href="{{ asset('reports/agency/type') }}">
-											<i class="ti ti-category me-2"></i> Transaksi Mengikut Kategori Agensi
+										<a class="dropdown-item" style="color: white;" href="{{ asset('reports/agency/type') }}">
+											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
+												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
+												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
+											</svg> Transaksi Mengikut Kategori Agensi
 										</a>
 									@endif
 									@if (Auth::user()->can('Report:view:agency_tender') ||
 											Auth::user()->can('Report:view:agency_tender:organization_unit_id'))
-										<a class="dropdown-item" href="{{ asset('reports/agency/transaction') }}">
-											<i class="ti ti-file-text me-2"></i> Transaksi Agensi Mengikut Tender
+										<a class="dropdown-item" style="color: white;" href="{{ asset('reports/agency/transaction') }}">
+											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
+												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
+												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
+											</svg> Transaksi Agensi Mengikut Tender
 										</a>
 									@endif
 									@if (Auth::user()->can('Report:view:agency_daily') || Auth::user()->can('Report:view:agency_daily:organization_unit_id'))
-										<a class="dropdown-item" href="{{ asset('reports/agency/daily') }}">
-											<i class="ti ti-calendar me-2"></i> Transaksi Harian Agensi
+										<a class="dropdown-item" style="color: white;" href="{{ asset('reports/agency/daily') }}">
+											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
+												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
+												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
+											</svg> Transaksi Harian Agensi
 										</a>
 									@endif
 									@if (Auth::user()->can('Report:view:gateway_daily') ||
 											Auth::user()->can('Report:view:gateway_daily:organization_unit_id'))
-										<a class="dropdown-item" href="{{ asset('reports/gateway/daily') }}">
-											<i class="ti ti-credit-card me-2"></i> Transaksi Harian Gateway
+										<a class="dropdown-item" style="color: white;" href="{{ asset('reports/gateway/daily') }}">
+											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
+												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
+												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
+											</svg> Transaksi Harian Gateway
 										</a>
 									@endif
 									@if (Auth::user()->can('Report:view:vendor_status'))
-										<a class="dropdown-item" href="{{ asset('reports/vendor/status') }}">
-											<i class="ti ti-building me-2"></i> Syarikat Mengikut Status
+										<a class="dropdown-item" style="color: white;" href="{{ asset('reports/vendor/status') }}">
+											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
+												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
+												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
+											</svg> Syarikat Mengikut Status
 										</a>
 									@endif
 									@if (Auth::user()->can('Report:view:vendor_code'))
-										<a class="dropdown-item" href="{{ asset('reports/vendor/codes') }}">
-											<i class="ti ti-code me-2"></i> Syarikat Mengikut Kod Bidang
+										<a class="dropdown-item" style="color: white;" href="{{ asset('reports/vendor/codes') }}">
+											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
+												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
+												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
+											</svg> Syarikat Mengikut Kod Bidang
 										</a>
 									@endif
 									@if (Auth::user()->can('Report:view:vendor_district'))
-										<a class="dropdown-item" href="{{ asset('reports/vendor/district') }}">
-											<i class="ti ti-map-pin me-2"></i> Syarikat Mengikut Daerah
+										<a class="dropdown-item" style="color: white;" href="{{ asset('reports/vendor/district') }}">
+											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
+												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
+												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
+											</svg> Syarikat Mengikut Daerah
 										</a>
 									@endif
 									@if (Auth::user()->can('Report:view:user_agency') || Auth::user()->can('Report:view:user_agency:organization_unit_id'))
-										<a class="dropdown-item" href="{{ asset('reports/user/agency') }}">
-											<i class="ti ti-users me-2"></i> Senarai Pengguna Agensi
+										<a class="dropdown-item" style="color: white;" href="{{ asset('reports/user/agency') }}">
+											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
+												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
+												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
+											</svg> Senarai Pengguna Agensi
 										</a>
 									@endif
 									@if (Auth::user()->can('Report:view:user_agency') || Auth::user()->can('Report:view:user_active:organization_unit_id'))
-										<a class="dropdown-item" href="{{ asset('reports/user/active') }}">
-											<i class="ti ti-user-check me-2"></i> Senarai Status Pengguna Mengikut Agensi
+										<a class="dropdown-item" style="color: white;" href="{{ asset('reports/user/active') }}">
+											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
+												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
+												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
+											</svg> Senarai Status Pengguna Mengikut Agensi
 										</a>
 									@endif
 									@if (Auth::user()->can('Report:view:user_activity'))
-										<a class="dropdown-item" href="{{ asset('reports/user/activity') }}">
-											<i class="ti ti-activity me-2"></i> Laporan Aktiviti Staf
+										<a class="dropdown-item" style="color: white;" href="{{ asset('reports/user/activity') }}">
+											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
+												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
+												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
+											</svg> Laporan Aktiviti Staf
 										</a>
 									@endif
 									@if (Auth::user()->can('Report:view:user_login'))
-										<a class="dropdown-item" href="{{ asset('reports/user/login') }}">
-											<i class="ti ti-login me-2"></i> Laporan Login Sebagai
+										<a class="dropdown-item" style="color: white;" href="{{ asset('reports/user/login') }}">
+											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
+												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
+												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
+											</svg> Laporan Login Sebagai
 										</a>
 									@endif
 									@if (Auth::user()->can('Report:view:vendor_registration_list'))
-										<a class="dropdown-item" href="{{ asset('reports/vendor/registration-list') }}">
-											<i class="ti ti-user-plus me-2"></i> Laporan Pendaftaran Syarikat
+										<a class="dropdown-item" style="color: white;" href="{{ asset('reports/vendor/registration-list') }}">
+											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
+												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
+												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
+											</svg> Laporan Pendaftaran Syarikat
 										</a>
 									@endif
 									@if (Auth::user()->can('Report:view:code_request'))
-										<a class="dropdown-item" href="{{ asset('reports/vendor/request') }}">
-											<i class="ti ti-edit me-2"></i> Laporan Permohonan Kemaskini Maklumat Syarikat
+										<a class="dropdown-item" style="color: white;" href="{{ asset('reports/vendor/request') }}">
+											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
+												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
+												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
+											</svg> Laporan Permohonan Kemaskini Maklumat Syarikat
 										</a>
 									@endif
 									@if (Auth::user()->can('Report:view:vendor_registration'))
-										<a class="dropdown-item" href="{{ asset('reports/vendor/registration') }}">
-											<i class="ti ti-user-plus me-2"></i> Laporan Pendaftaran Pengguna Sistem
+										<a class="dropdown-item" style="color: white;" href="{{ asset('reports/vendor/registration') }}">
+											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
+												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
+												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
+											</svg> Laporan Pendaftaran Pengguna Sistem
 										</a>
 									@endif
 									@if (Auth::user()->can('Report:view:staff_activity'))
-										<a class="dropdown-item" href="{{ asset('reports/staff/activity') }}">
-											<i class="ti ti-activity me-2"></i> Laporan Aktiviti Pengguna Sistem
+										<a class="dropdown-item" style="color: white;" href="{{ asset('reports/staff/activity') }}">
+											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
+												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
+												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
+											</svg> Laporan Aktiviti Pengguna Sistem
 										</a>
 									@endif
 									@if (Auth::user()->can('Report:view:code_district'))
-										<a class="dropdown-item" href="{{ asset('reports/code/district') }}">
-											<i class="ti ti-map-pin me-2"></i> Laporan Jumlah Berkaitan Kod Bidang
+										<a class="dropdown-item" style="color: white;" href="{{ asset('reports/code/district') }}">
+											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
+												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
+												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
+											</svg> Laporan Jumlah Berkaitan Kod Bidang
 										</a>
 									@endif
 									@if (Auth::user()->can('Report:view:vendor_transaction'))
-										<a class="dropdown-item" href="{{ asset('reports/vendor/transaction') }}">
-											<i class="ti ti-receipt me-2"></i> Laporan Transaksi
+										<a class="dropdown-item" style="color: white;" href="{{ asset('reports/vendor/transaction') }}">
+											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
+												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
+												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
+											</svg> Laporan Transaksi
 										</a>
 									@endif
 									@if (Auth::user()->can('Report:view:transaction_hasil'))
-										<a class="dropdown-item" href="{{ asset('reports/transaction/hasil') }}">
-											<i class="ti ti-currency-dollar me-2"></i> Laporan Transaksi Mengikut Kod Akaun Hasil
+										<a class="dropdown-item" style="color: white;" href="{{ asset('reports/transaction/hasil') }}">
+											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+												fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+												stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
+												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
+												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
+											</svg> Laporan Transaksi Mengikut Kod Akaun Hasil
 										</a>
 									@endif
 								</div>
@@ -1324,8 +1511,9 @@
 					<h1 class="navbar-brand navbar-brand-autodark">
 						Welcome {{ data_get($user, 'name') }} !
 					</h1>
-					<button class="navbar-toggler d-lg-none" type="button" data-bs-toggle="collapse" data-bs-target="#navbar-menu"
-						aria-controls="navbar-menu" aria-expanded="false" aria-label="Toggle navigation">
+					<button class="navbar-toggler d-lg-none" type="button" data-bs-toggle="collapse"
+						data-bs-target="#navbar-menu" aria-controls="navbar-menu" aria-expanded="false"
+						aria-label="Toggle navigation">
 						<span class="navbar-toggler-icon"></span>
 					</button>
 					<div class="navbar-nav flex-row order-md-last ms-auto">
@@ -1363,9 +1551,9 @@
 											<i class="ti ti-logout me-2"></i> Daftar Keluar
 										</a></li>
 									<li><a href="{{ route('manuals.show', 'pendaftaran') }}" target="_blank" class="dropdown-item">
-											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-												class="icon icon-tabler icons-tabler-outline icon-tabler-files">
+											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+												fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+												stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-files">
 												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
 												<path d="M15 3v4a1 1 0 0 0 1 1h4" />
 												<path d="M18 17h-7a2 2 0 0 1 -2 -2v-10a2 2 0 0 1 2 -2h4l5 5v7a2 2 0 0 1 -2 2z" />
