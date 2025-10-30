@@ -85,31 +85,31 @@
 		</div>
 	</div>
 
-	@if (!Auth::check())
-		<div class="row mt-4">
-			<div class="col-12">
-				<div class="card">
-					<div class="card-body">
-						<div class="row align-items-center">
-							<div class="col-lg-8">
-								<h4 class="mb-0">Dapatkan maklumat tender dan sebut harga terkini di negeri Selangor!</h4>
-							</div>
-							<div class="col-lg-4 text-end">
-								<a href="{{ asset('register') }}" class="btn btn-danger me-2">
-									<i class="ti ti-user-plus"></i> Daftar Syarikat
-								</a>
-								<a href="{{ asset('company_search') }}" class="btn btn-primary">
-									<i class="ti ti-search"></i> Semak Pendaftaran Syarikat
-								</a>
-							</div>
+	{{-- @if (!Auth::check()) --}}
+	<div class="row mt-4">
+		<div class="col-12">
+			<div class="card">
+				<div class="card-body">
+					<div class="row align-items-center">
+						<div class="col-lg-8">
+							<h4 class="mb-0">Dapatkan maklumat tender dan sebut harga terkini di negeri Selangor!</h4>
+						</div>
+						<div class="col-lg-4 text-end">
+							<a href="{{ asset('register') }}" class="btn btn-success me-2">
+								<i class="ti ti-user-plus"></i> Daftar Syarikat
+							</a>
+							<a href="{{ asset('company_search') }}" class="btn btn-primary">
+								<i class="ti ti-search"></i> Semak Pendaftaran Syarikat
+							</a>
 						</div>
 					</div>
 				</div>
 			</div>
 		</div>
-	@else
+	</div>
+	{{-- @else
 		<hr class="my-4">
-	@endif
+	@endif --}}
 
 	<div class="row">
 		<div class="col-12">
