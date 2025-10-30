@@ -173,6 +173,7 @@ return [
         // Maatwebsite\Excel\ExcelServiceProvider::class,
         Maatwebsite\Excel\ExcelServiceProvider::class,
         Unikent\Cache\TaggableFileCacheServiceProvider::class,
+        Former\FormerServiceProvider::class,
 
         /*
          * Application Service Providers...
@@ -237,6 +238,8 @@ return [
         'Permission' => Spatie\Permission\Models\Permission::class,
         'Role' => Spatie\Permission\Models\Role::class,
         'PDF' => Barryvdh\Snappy\Facades\SnappyPdf::class,
+        'Former' => Former\Facades\Former::class,
+        'Form' => Former\Facades\Former::class,
         'SnappyImage' => Barryvdh\Snappy\Facades\SnappyImage::class,
         'Excel' => Maatwebsite\Excel\Facades\Excel::class,
         'Carbon' => 'Carbon\Carbon'

@@ -17,6 +17,17 @@ use App\OrganizationUnit;
 use Illuminate\Http\Request;
 use App\Models\RejectTemplate;
 use Illuminate\Support\Facades\Validator;
+use App\Models\Ref\RefKaedahPerolehan;
+use App\Models\Ref\RefKategoriJenisPerolehan;
+use App\Models\Ref\RefOpenTo;
+use App\Models\Ref\RefSumberPeruntukan;
+use App\Models\Ref\RefTypeOfContract;
+use App\Models\Ref\RefTypeOfPemenuhan;
+use App\Models\Ref\RefTypeOfPerolehan;
+use App\Models\Ref\RefTypeOfTender;
+use App\Models\Ref\RefYesNo;
+use App\Models\Ref\RefHaveNo;
+use App\Models\OrganizationType;
 
 
 class VendorsController extends Controller
@@ -112,6 +123,7 @@ class VendorsController extends Controller
 				->make(true);
 		}
 
+
 		return view('vendors.index');
 	}
 
@@ -193,8 +205,23 @@ class VendorsController extends Controller
 		}
 
 
-		$country_states = RefState::where('display_status', 1)->get();
-		return view('vendors.create', compact('country_states'));
+		$data = [];
+		$data['country_states'] = RefState::where('display_status', 1)->get();
+		$data['disable_create_flaq'] = 0;
+		$data['vendor'] = null;
+		$data['OrganizationType'] = OrganizationType::all();
+		$data['RefKaedahPerolehan'] = RefKaedahPerolehan::all();
+		$data['RefKategoriJenisPerolehan'] = RefKategoriJenisPerolehan::all();
+		$data['RefYesNo'] = RefYesNo::all();
+		$data['RefSumberPeruntukan'] = RefSumberPeruntukan::all();
+		$data['RefTypeOfTender'] = RefTypeOfTender::all();
+		$data['RefOpenTo'] = RefOpenTo::all();
+		$data['RefHaveNo'] = RefHaveNo::all();
+		$data['RefTypeOfContract'] = RefTypeOfContract::all();
+		$data['RefJenisPemenuhan'] = RefTypeOfPemenuhan::all();
+		$data['RefTypeOfPerolehan'] = RefTypeOfPerolehan::all();
+
+		return view('vendors.create', $data);
 	}
 
 	/**
@@ -332,7 +359,9 @@ class VendorsController extends Controller
 		}
 
 		$templates = RejectTemplate::where('applicable_0', 1)->get([
-			'id', 'title', 'content'
+			'id',
+			'title',
+			'content'
 		]);
 
 		return view('vendors.show', compact('vendor', 'transactions', 'templates'));

@@ -222,7 +222,7 @@ Route::middleware(['auth'])->group(function () {
 	Route::get('profile/release', [ProfileController::class, 'releaseUser'])->name('release_user');
 
 	// Admin routes
-	Route::middleware(['role:admin'])->group(function () {
+	Route::middleware(['role:Admin'])->group(function () {
 		Route::get('users/pending-approval', [UsersController::class, 'pendingApproval'])->name('users.pending-approval');
 		Route::get('users/{user}/approval', [UsersController::class, 'approval'])->name('users.approval');
 		Route::put('users/{user}/approval', [UsersController::class, 'storeApproval'])->name('users.store-approval');
@@ -236,7 +236,9 @@ Route::middleware(['auth'])->group(function () {
 		Route::get('users/{user}/resend_confirmation', [UsersController::class, 'resendConfirmation']);
 
 		Route::get('vendors/select', [VendorsController::class, 'select']);
+		Route::get('vendors', [VendorsController::class, 'index'])->name('vendors');
 		Route::get('vendors/new', [VendorsController::class, 'pendingRegistrationIndex']);
+		Route::get('vendors/create', [VendorsController::class, 'create']);
 		Route::get('vendors/approval', [VendorsController::class, 'approvalNew1Index']);
 		Route::get('vendors/changes', [VendorsController::class, 'approvalEdit1Index']);
 		Route::get('vendors/emails', [VendorsController::class, 'emails']);
@@ -298,6 +300,7 @@ Route::middleware(['auth'])->group(function () {
 		Route::put('smtp_mails/{smtp_mail}', [SmtpMailsController::class, 'update'])->name('smtp_mails.update');
 		Route::delete('smtp_mails/{smtp_mail}', [SmtpMailsController::class, 'destroy'])->name('smtp_mails.destroy');
 
+		Route::resource('vendors', VendorsController::class);
 		Route::resource('tender_categories', TenderCategoriesController::class);
 		Route::resource('tender_types', TenderTypesController::class);
 		Route::resource('organization_unit_types', OrganizationUnitTypesController::class);
