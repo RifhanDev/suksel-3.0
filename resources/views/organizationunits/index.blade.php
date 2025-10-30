@@ -23,28 +23,26 @@
 
 			<div class="card">
 				<div class="card-header">
-					<div class="d-flex justify-content-between align-items-center">
-						<h3 class="card-title mb-0">
-							<i class="ti ti-list me-2"></i>Direktori Agensi
-						</h3>
-						<div class="btn-group">
-							@if (App\OrganizationUnit::canCreate())
-								<a href="{{ asset('agencies/create') }}" class="btn btn-primary btn-sm">
-									<i class="ti ti-plus me-1"></i>Masukkan Agensi Baru
-								</a>
-							@endif
-							<div class="btn-group">
-								<button type="button" class="btn btn-outline-primary btn-sm dropdown-toggle" data-bs-toggle="dropdown"
-									aria-expanded="false">
-									<i class="ti ti-filter me-1"></i>Pilihan Kategori
-								</button>
-								<ul class="dropdown-menu">
-									@foreach (App\OrganizationType::all() as $ou_type)
-										<li><a class="dropdown-item"
-												href="{{ route('agencies.index', ['type' => $ou_type->id]) }}">{{ $ou_type->name }}</a></li>
-									@endforeach
-								</ul>
-							</div>
+					<h3 class="card-title mb-0">
+						<i class="ti ti-list me-2"></i>Direktori Agensi
+					</h3>
+					<div class="card-actions">
+						@if (App\OrganizationUnit::canCreate())
+							<a href="{{ asset('agencies/create') }}" class="btn btn-primary btn-sm">
+								<i class="ti ti-plus me-1"></i>Masukkan Agensi Baru
+							</a>
+						@endif
+						<div class="btn-group ms-2">
+							<button type="button" class="btn btn-outline-primary btn-sm dropdown-toggle" data-bs-toggle="dropdown"
+								aria-expanded="false">
+								<i class="ti ti-filter me-1"></i>Pilihan Kategori
+							</button>
+							<ul class="dropdown-menu dropdown-menu-end">
+								@foreach (App\OrganizationType::all() as $ou_type)
+									<li><a class="dropdown-item"
+											href="{{ route('agencies.index', ['type' => $ou_type->id]) }}">{{ $ou_type->name }}</a></li>
+								@endforeach
+							</ul>
 						</div>
 					</div>
 				</div>
