@@ -236,7 +236,7 @@ Route::middleware(['auth'])->group(function () {
 		Route::get('users/{user}/resend_confirmation', [UsersController::class, 'resendConfirmation']);
 
 		Route::get('vendors/select', [VendorsController::class, 'select']);
-		Route::get('vendors', [VendorsController::class, 'index'])->name('vendors');
+		Route::get('vendors', [VendorsController::class, 'index'])->name('vendors.index');
 		Route::get('vendors/new', [VendorsController::class, 'pendingRegistrationIndex']);
 		Route::get('vendors/create', [VendorsController::class, 'create']);
 		Route::get('vendors/approval', [VendorsController::class, 'approvalNew1Index']);

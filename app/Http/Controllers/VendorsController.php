@@ -245,11 +245,11 @@ class VendorsController extends Controller
 				// 'mof'        => 'max:5120|mimes:pdf',
 				// 'cidb'       => 'max:5120|mimes:pdf',
 
-				'mof'             => ['nullable', 'mimes:pdf', 'max:5120'],
-				'cidb'            => ['nullable', 'mimes:pdf', 'max:5120'],
-				'ssm'             => ['required', 'mimes:pdf', 'max:5120'],
-				'mof_bumiputera'  => ['nullable', 'mimes:pdf', 'max:5120'],
-				'cidb_bumiputera' => ['nullable', 'mimes:pdf', 'max:5120'],
+				// 'mof'             => ['nullable', 'mimes:pdf', 'max:5120'],
+				// 'cidb'            => ['nullable', 'mimes:pdf', 'max:5120'],
+				// 'ssm'             => ['required', 'mimes:pdf', 'max:5120'],
+				// 'mof_bumiputera'  => ['nullable', 'mimes:pdf', 'max:5120'],
+				// 'cidb_bumiputera' => ['nullable', 'mimes:pdf', 'max:5120'],
 			]
 		);
 		if ($validator->fails()) {
@@ -278,10 +278,18 @@ class VendorsController extends Controller
 
 
 		// convert ssm_expiry
-		$ssm_expiry_input = $data["ssm_expiry"]; // Your string representation of a date
-		$ssm_expiry_input_format = 'd/m/Y'; // Your custom date format
-		$new_ssm_expiry = Carbon::createFromFormat($ssm_expiry_input_format, $ssm_expiry_input);
-		$data["ssm_expiry"] = $new_ssm_expiry->format('Y-m-d');
+		if (!empty($data["ssm_expiry"])) {
+			// Check if it's already in Y-m-d format (from HTML5 date input)
+			if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $data["ssm_expiry"])) {
+				// Already in Y-m-d format, no conversion needed
+				$data["ssm_expiry"] = $data["ssm_expiry"];
+			} else {
+				// Convert from d/m/Y format
+				$ssm_expiry_input_format = 'd/m/Y';
+				$new_ssm_expiry = Carbon::createFromFormat($ssm_expiry_input_format, $data["ssm_expiry"]);
+				$data["ssm_expiry"] = $new_ssm_expiry->format('Y-m-d');
+			}
+		}
 
 		if ($data["district_id"] > 0) {
 			$data["state_id"] = null;
@@ -301,6 +309,17 @@ class VendorsController extends Controller
 		// $user->vendor()->associate($user);
 		$user->vendor_id = $vendor->id;
 		$user->save();
+
+		// Send registration confirmation email
+		try {
+			Mail::send('vendors.emails.registration-received', ['vendor' => $vendor], function ($message) use ($vendor) {
+				$message->to(trim($vendor->user->email));
+				$message->subject('Sistem Tender Online Selangor: Pendaftaran Diterima');
+			});
+		} catch (\Exception $e) {
+			// Log email error but don't fail the registration
+			\Log::error('Failed to send registration email: ' . $e->getMessage());
+		}
 
 		if ($request->ajax()) {
 			return response()->json($vendor, 201);
@@ -503,10 +522,15 @@ class VendorsController extends Controller
 
 
 		// convert ssm_expiry
-		$ssm_expiry_input = $data["ssm_expiry"]; // Your string representation of a date
-		$ssm_expiry_input_format = 'd/m/Y'; // Your custom date format
-		$new_ssm_expiry = Carbon::createFromFormat($ssm_expiry_input_format, $ssm_expiry_input);
-		$data["ssm_expiry"] = $new_ssm_expiry->format('Y-m-d');
+		if (!empty($data["ssm_expiry"])) {
+			if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $data["ssm_expiry"])) {
+				$data["ssm_expiry"] = $data["ssm_expiry"];
+			} else {
+				$ssm_expiry_input_format = 'd/m/Y';
+				$new_ssm_expiry = Carbon::createFromFormat($ssm_expiry_input_format, $data["ssm_expiry"]);
+				$data["ssm_expiry"] = $new_ssm_expiry->format('Y-m-d');
+			}
+		}
 
 		if (isset($data["district_id"])) {
 			if ($data["district_id"] > 0) {
