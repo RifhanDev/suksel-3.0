@@ -84,7 +84,7 @@
 
 
 			@if (App\Vendor::canList())
-				<a href="{{ action('VendorsController@index') }}" class="btn btn-default pull-right">Senarai Syarikat</a>
+				<a href="{{ route('vendors.index') }}" class="btn btn-default pull-right">Senarai Syarikat</a>
 			@endif
 		</div>
 	</div>
