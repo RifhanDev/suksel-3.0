@@ -20,15 +20,23 @@ class BannersController extends Controller
 				'id',
 				'title',
 				'published',
-				'created_at'
+				'created_at',
+				'start',
+				'end'
 			]);
 
 			return Datatables::of($banners)
+				->editColumn('start', function ($banner) {
+					return '<div class="text-center">' . ($banner->start ? Carbon::parse($banner->start)->format('j M Y') : '-') . '</div>';
+				})
+				->editColumn('end', function ($banner) {
+					return '<div class="text-center">' . ($banner->end ? Carbon::parse($banner->end)->format('j M Y') : '-') . '</div>';
+				})
 				->editColumn('published', function ($banner) {
-					return boolean_icon($banner->published);
+					return '<div class="text-center">' . boolean_icon($banner->published) . '</div>';
 				})
 				->editColumn('created_at', function ($banner) {
-					return Carbon::parse($banner->created_at)->format('j M Y');
+					return '<div class="text-center">' . Carbon::parse($banner->created_at)->format('j M Y') . '</div>';
 				})
 				->addColumn('actions', function ($banner) {
 
@@ -59,7 +67,7 @@ class BannersController extends Controller
 					return implode(' ', $actions);
 				})
 				->removeColumn('id')
-				->rawColumns(['title', 'published', 'created_at', 'actions'])
+				->rawColumns(['title', 'start', 'end', 'published', 'created_at', 'actions'])
 				->make();
 		}
 
@@ -94,6 +102,16 @@ class BannersController extends Controller
 			return $this->_access_denied();
 
 		$data = $request->all();
+
+		// Convert date format from datepicker (d M yyyy) to database format (Y-m-d)
+		if (!empty($data['start'])) {
+			$data['start'] = date('Y-m-d', strtotime($data['start']));
+		}
+
+		if (!empty($data['end'])) {
+			$data['end'] = date('Y-m-d', strtotime($data['end']));
+		}
+
 		$banner = new Banner;
 		$banner->fill($data);
 
@@ -129,6 +147,15 @@ class BannersController extends Controller
 		$data = $request->all();
 
 		if (!isset($data['published'])) $data['published'] = 0;
+
+		// Convert date format from datepicker (d M yyyy) to database format (Y-m-d)
+		if (!empty($data['start'])) {
+			$data['start'] = date('Y-m-d', strtotime($data['start']));
+		}
+
+		if (!empty($data['end'])) {
+			$data['end'] = date('Y-m-d', strtotime($data['end']));
+		}
 
 		if (!$banner->update($data))
 			return $this->_validation_error($banner);

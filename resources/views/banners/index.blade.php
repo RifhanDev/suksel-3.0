@@ -18,11 +18,28 @@
 				'icon' => 'ti-file-text',
 			],
 			[
+				'data' => 'start',
+				'name' => 'start',
+				'label' => 'Tarikh Mula Paparan',
+				'icon' => 'ti-calendar',
+				'width' => 'w-20',
+				'class' => 'text-center',
+			],
+			[
+				'data' => 'end',
+				'name' => 'end',
+				'label' => 'Tarikh Tamat Paparan',
+				'icon' => 'ti-calendar',
+				'width' => 'w-20',
+				'class' => 'text-center',
+			],
+			[
 				'data' => 'published',
 				'name' => 'published',
 				'label' => 'Siar',
 				'icon' => 'ti-eye',
 				'width' => 'w-10',
+				'class' => 'text-center',
 			],
 			[
 				'data' => 'created_at',
@@ -30,6 +47,7 @@
 				'label' => 'Tarikh Muat Naik',
 				'icon' => 'ti-calendar',
 				'width' => 'w-20',
+				'class' => 'text-center',
 			],
 			[
 				'data' => 'actions',
@@ -57,6 +75,14 @@
 				columns: [{
 						data: 'title',
 						name: 'title'
+					},
+					{
+						data: 'start',
+						name: 'start'
+					},
+					{
+						data: 'end',
+						name: 'end'
 					},
 					{
 						data: 'published',
