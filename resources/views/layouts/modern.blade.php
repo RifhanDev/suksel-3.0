@@ -118,14 +118,14 @@
 		}
 
 		.navbar-brand {
-			margin-bottom: var(--space-8);
+			margin-top: 20px;
 			padding-bottom: var(--space-6);
-			border-bottom: 1px solid #ffffffd6;
 		}
 
 		.navbar-brand img {
-			max-width: 68px;
+			max-width: 80px;
 			height: auto;
+			margin-left: 20%;
 		}
 
 		.navbar-nav {
@@ -144,7 +144,7 @@
 			padding: var(--space-3) var(--space-4);
 			color: var(--sidebar-text-muted);
 			text-decoration: none;
-			border-radius: var(--radius-md);
+			border-radius: 20px !important;
 			transition: var(--transition);
 			font-weight: 500;
 			text-align: left;
@@ -154,6 +154,7 @@
 			background: var(--sidebar-hover);
 			color: var(--sidebar-text);
 			transform: translateX(4px);
+	
 		}
 
 		.navbar-nav .nav-link.active {
@@ -180,7 +181,7 @@
 		}
 
 		.nav-link-title {
-			font-size: 0.95rem;
+			font-size: 13px;
 			text-align: left;
 			flex: 1;
 		}
@@ -710,6 +711,10 @@
 		[class*="DEBUG"] {
 			display: none !important;
 		}
+		.navbar .dropdown-menu .dropdown-item, .dropdown-menu .dropdown-item 
+		{
+			border-radius:30px !important;
+		}
 	</style>
 </head>
 
@@ -727,6 +732,7 @@
 						<img src="{{ asset('images/02_selangor.png') }}" alt="Sistem Tender Online Selangor" class="navbar-brand-image">
 					</a>
 				</h1>
+				<hr style="margin-left:20px;margin-right:10px">
 				<div class="navbar-nav collapse navbar-collapse" id="sidebar-menu">
 					<div class="nav-item">
 						<a href="{{ action('HomeController@index') }}" class="nav-link {{ request()->is('/') ? 'active' : '' }}">
@@ -1521,7 +1527,7 @@
 							<!-- USER DROPDOWN - SUPER VISIBLE -->
 							<div class="dropdown">
 								<button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown"
-									style="background: linear-gradient(135deg, #8e9acf 0%, #8b62b4 100%) !important; color: white !important; font-size: 16px !important; padding: 10px 20px !important; margin-left: 15px !important; border: 2px solid rgba(255,255,255,0.3) !important; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4) !important; display: inline-flex !important; align-items: center !important; gap: 10px !important;">
+									style="background: linear-gradient(135deg, #8e9acf 0%, #8b62b4 100%) !important; color: white !important; font-size: 16px !important; padding: 10px 20px !important; margin-left: 15px !important; border: 2px solid rgba(255,255,255,0.3) !important; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4) !important; display: inline-flex !important; align-items: center !important; gap: 10px !important; border-radius: 20px !important;">
 									<span class="avatar avatar-sm"
 										style="background-image: url({{ asset('images/user-avatar.png') }}); width: 28px; height: 28px; border: 2px solid white; flex-shrink: 0;"></span>
 									<div style="text-align: left;">
@@ -1530,7 +1536,7 @@
 									</div>
 									<i class="ti ti-chevron-down" style="margin-left: 5px;"></i>
 								</button>
-								<ul class="dropdown-menu dropdown-menu-end">
+								<ul class="dropdown-menu dropdown-menu-end" style="border-radius:30px !important">
 									<li><a href="{{ asset('profile') }}" class="dropdown-item">
 											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
 												fill="currentColor" class="icon icon-tabler icons-tabler-filled icon-tabler-user">
