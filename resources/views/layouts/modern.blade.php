@@ -26,6 +26,7 @@
 	<link href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0-beta20/dist/css/tabler.min.css" rel="stylesheet">
 	<link href="https://cdn.jsdelivr.net/npm/@tabler/icons@2.40.0/tabler-icons.min.css" rel="stylesheet">
 	<link href="{{ asset('css/application.css') }}" rel="stylesheet">
+	<link href="{{ asset('css/modern-actions.css') }}" rel="stylesheet">
 	@yield('styles')
 
 	<style>
@@ -1007,6 +1008,38 @@
 												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
 											</svg> Senarai Kod Bidang
 										</a>
+										<a class="dropdown-item" style="color: white;" href="{{ asset('helps') }}">
+											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
+												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
+												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
+											</svg> Senarai Soalan Bantuan
+										</a>
+										<a class="dropdown-item" style="color: white;" href="{{ asset('helpcategories') }}">
+											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
+												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
+												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
+											</svg> Kategori Soalan Bantuan
+										</a>
+										<a class="dropdown-item" style="color: white;" href="{{ asset('gateways') }}">
+											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
+												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
+												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
+											</svg> Tetapan Pembayaran
+										</a>
+										<a class="dropdown-item" style="color: white;" href="{{ asset('banners') }}">
+											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
+												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
+												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
+											</svg> Senarai Banner
+										</a>
 									@endif
 									@if (Auth::user()->can('System:histories'))
 										<a class="dropdown-item" style="color: white;" href="{{ asset('version-histories') }}">
@@ -1427,9 +1460,9 @@
 									@endif
 									@if (Auth::user()->can('Report:view:vendor_registration'))
 										<a class="dropdown-item" style="color: white;" href="{{ asset('reports/vendor/registration') }}">
-											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
+											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+												fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+												stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
 												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
 												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
 											</svg> Laporan Pendaftaran Pengguna Sistem
@@ -1437,9 +1470,9 @@
 									@endif
 									@if (Auth::user()->can('Report:view:staff_activity'))
 										<a class="dropdown-item" style="color: white;" href="{{ asset('reports/staff/activity') }}">
-											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
+											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+												fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+												stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
 												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
 												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
 											</svg> Laporan Aktiviti Pengguna Sistem
@@ -1447,9 +1480,9 @@
 									@endif
 									@if (Auth::user()->can('Report:view:code_district'))
 										<a class="dropdown-item" style="color: white;" href="{{ asset('reports/code/district') }}">
-											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
+											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+												fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+												stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
 												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
 												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
 											</svg> Laporan Jumlah Berkaitan Kod Bidang
@@ -1457,9 +1490,9 @@
 									@endif
 									@if (Auth::user()->can('Report:view:vendor_transaction'))
 										<a class="dropdown-item" style="color: white;" href="{{ asset('reports/vendor/transaction') }}">
-											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
+											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+												fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+												stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
 												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
 												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
 											</svg> Laporan Transaksi

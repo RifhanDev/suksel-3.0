@@ -1,31 +1,57 @@
 @extends('layouts.modern')
-@section('content')
-	<h2 class="tender-title">Senarai Banner</h2>
 
-	<table data-path="/banners" class="DT-index table table-striped table-hover table-bordered">
-		<thead class="bg-blue-selangor">
-			<tr>
-				<th>Tajuk</th>
-				<th>Siar</th>
-				<th>Tarikh Muat Naik</th>
-				<th width="200px">&nbsp;</th>
-			</tr>
-		</thead>
-		<tbody></tbody>
-	</table>
-	<div class="well">
-		<a href="{{ asset('banners/create') }}" class="btn btn-default">Masukkan Banner Baru</a>
-	</div>
+@section('content')
+	@include('components.modern-index', [
+		'title' => 'Senarai Banner',
+		'pretitle' => 'Sistem Tender Online',
+		'icon' => 'ti-photo',
+		'cardTitle' => 'Maklumat Banner',
+		'createUrl' => asset('banners/create'),
+		'createLabel' => 'Masukkan Banner Baru',
+		'showCreate' => true,
+		'dataPath' => '/banners',
+		'columns' => [
+			[
+				'data' => 'title',
+				'name' => 'title',
+				'label' => 'Tajuk',
+				'icon' => 'ti-file-text',
+			],
+			[
+				'data' => 'published',
+				'name' => 'published',
+				'label' => 'Siar',
+				'icon' => 'ti-eye',
+				'width' => 'w-10',
+			],
+			[
+				'data' => 'created_at',
+				'name' => 'created_at',
+				'label' => 'Tarikh Muat Naik',
+				'icon' => 'ti-calendar',
+				'width' => 'w-20',
+			],
+			[
+				'data' => 'actions',
+				'name' => 'actions',
+				'label' => 'Tindakan',
+				'icon' => 'ti-settings',
+				'width' => 'w-25',
+				'orderable' => false,
+				'searchable' => false,
+			],
+		],
+		'defaultOrder' => [[2, 'desc']],
+		'pageLength' => 25,
+	])
 @endsection
 
 @section('scripts')
 	<script src="{{ asset('js/datatables.js') }}"></script>
-
-	<script>
+	<script type="text/javascript">
 		$('.DT-index').each(function() {
 			var target = $(this);
 			var path = target.data('path');
-
 			var DT = target.DataTable({
 				ajax: path,
 				columns: [{
@@ -42,7 +68,9 @@
 					},
 					{
 						data: 'actions',
-						name: 'actions'
+						name: 'actions',
+						orderable: false,
+						searchable: false
 					}
 				],
 				serverSide: true,
@@ -70,7 +98,13 @@
 						sSortDescending: ": diaktifkan kepada susunan lajur menurun"
 					}
 				},
-				aaSorting: []
+				aaSorting: [],
+				dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rtip',
+				pageLength: 25,
+				responsive: true,
+				order: [
+					[2, 'desc']
+				]
 			});
 		});
 	</script>
