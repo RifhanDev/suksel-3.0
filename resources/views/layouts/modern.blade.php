@@ -716,6 +716,13 @@
 		{
 			border-radius:30px !important;
 		}
+
+		.navbar .dropdown-menu .dropdown-item, .dropdown-menu .dropdown-item 
+		{
+			padding: 0.45rem 1.25rem;
+			font-size:13px;
+			color: #bdc3c7 !important;
+		}
 	</style>
 </head>
 
