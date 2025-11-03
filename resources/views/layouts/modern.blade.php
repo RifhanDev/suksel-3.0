@@ -1582,6 +1582,7 @@
 					@yield('content')
 				</div>
 			</div>
+				@include('layouts._footer')
 		</div>
 	</div>
 
@@ -1637,7 +1638,7 @@
 		</div>
 	@endif
 
-	@include('layouts._footer')
+
 	@include('layouts._popupModal')
 
 	<!-- jQuery -->
