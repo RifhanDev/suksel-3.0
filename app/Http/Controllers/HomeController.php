@@ -195,7 +195,36 @@ class HomeController extends Controller
 				break;
 		}
 
-		$banners = Banner::orderBy('created_at', 'desc')->where('published', 1)->get();
+		// Get banners where today is between start and end date (or no date restriction)
+		$today = date('Y-m-d');
+		$banners = Banner::where('published', 1)
+			->where(function ($query) use ($today) {
+				$query->where(function ($q) use ($today) {
+					// Has both start and end dates, and today is between them
+					$q->whereNotNull('start')
+						->whereNotNull('end')
+						->where('start', '<=', $today)
+						->where('end', '>=', $today);
+				})
+					->orWhere(function ($q) use ($today) {
+						// Has start date only, and today is after or equal to start
+						$q->whereNotNull('start')
+							->whereNull('end')
+							->where('start', '<=', $today);
+					})
+					->orWhere(function ($q) use ($today) {
+						// Has end date only, and today is before or equal to end
+						$q->whereNull('start')
+							->whereNotNull('end')
+							->where('end', '>=', $today);
+					})
+					->orWhere(function ($q) {
+						// No date restriction (both start and end are null)
+						$q->whereNull('start')->whereNull('end');
+					});
+			})
+			->orderBy('created_at', 'desc')
+			->get();
 		// $global_news = News::where('show_main', '1')->orderBy('published_at', 'desc')->get();
 		$global_news = News::where('published_at', '>=', DB::raw("DATE(DATE_SUB(SYSDATE(), INTERVAL 1 MONTH))"))->orderBy('published_at', 'desc')->get();
 		$user = auth()->user();
