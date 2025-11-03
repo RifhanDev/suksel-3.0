@@ -113,6 +113,8 @@
 		width: 3rem;
 		height: 1.5rem;
 		cursor: pointer;
+		flex-shrink: 0;
+		margin-top: 0.125rem;
 	}
 
 	.form-check-input:checked {
@@ -121,26 +123,24 @@
 	}
 
 	.form-check-label {
-		margin-left: 0.5rem;
 		cursor: pointer;
 		font-weight: 500;
+		line-height: 1.5rem;
+		display: inline-flex;
+		align-items: center;
 	}
 
 	.form-switch {
-		padding-left: 0;
-		display: flex;
-		align-items: flex-start;
-		flex-direction: column;
-		gap: 0.25rem;
+		padding-left: 0 !important;
+	}
+
+	.form-switch.d-flex {
+		align-items: flex-start !important;
 	}
 
 	.form-switch .form-check-input {
 		margin-left: 0;
-	}
-
-	.form-switch .form-check-label {
-		margin-left: 0;
-		margin-top: 0.5rem;
+		margin-top: 0;
 	}
 
 	.btn-modern {
