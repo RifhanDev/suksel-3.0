@@ -6,6 +6,7 @@ use App\Http\Controllers\OrganizationUnitsController;
 use App\Http\Controllers\HelpsController;
 use App\Http\Controllers\RegistrationController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\BannersController;
 use App\Http\Controllers\TendersController;
 use App\Http\Controllers\FpxController;
 use App\Http\Controllers\TransactionsController;
@@ -300,6 +301,8 @@ Route::middleware(['auth'])->group(function () {
 		Route::put('smtp_mails/{smtp_mail}', [SmtpMailsController::class, 'update'])->name('smtp_mails.update');
 		Route::delete('smtp_mails/{smtp_mail}', [SmtpMailsController::class, 'destroy'])->name('smtp_mails.destroy');
 
+		Route::resource('banners', BannersController::class);
+		Route::get('banners/{id}/publish', [BannersController::class, 'publish'])->name('banners.publish');
 		Route::resource('vendors', VendorsController::class);
 		Route::resource('tender_categories', TenderCategoriesController::class);
 		Route::resource('tender_types', TenderTypesController::class);

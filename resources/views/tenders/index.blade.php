@@ -1,75 +1,67 @@
 @extends('layouts.modern')
 
 @section('content')
-	<div class="row">
-		<div class="col-lg-9">
-			<div class="page-header">
-				<div class="page-title">
-					<div class="page-pretitle">
-						Sistem Tender Online
-					</div>
-				</div>
-			</div>
+	@php
+		$sidebarHtml =
+		    '<div class="row">
+			<div class="col-12 mb-3">' .
+		    view('layouts._register')->render() .
+		    '</div>
+			<div class="col-12">' .
+		    view('layouts._news')->render() .
+		    '</div>
+		</div>';
 
-			<h2 class="page-title">
-				<i class="ti ti-file-text me-2"></i>Senarai Tender / Sebutharga
-			</h2>
-			<br>
-			<div class="card">
-				<div class="card-header">
-					<h3 class="card-title">
-						<i class="ti ti-list me-2"></i>Maklumat Tender
-					</h3>
-					@if (App\Tender::canCreate())
-						<div class="card-actions">
-							<a href="{{ asset('tenders/create') }}" class="btn btn-primary">
-								<i class="ti ti-plus me-1"></i>Tambah Tender / Sebutharga
-							</a>
-						</div>
-					@endif
-				</div>
-				<div class="card-body">
-					<div class="table-responsive">
-						<table data-path="/tenders" class="DT-index table table-vcenter table-mobile-md">
-							<thead>
-								<tr>
-									<th>
-										<i class="ti ti-file-text me-1"></i>Maklumat Tender
-									</th>
-									<th class="w-15">
-										<i class="ti ti-calendar me-1"></i>Tarikh Jual
-									</th>
-									<th class="w-15">
-										<i class="ti ti-calendar me-1"></i>Tarikh Tutup
-									</th>
-									<th class="w-15">
-										<i class="ti ti-currency-ringgit me-1"></i>Harga Dokumen (RM)
-									</th>
-									@if (Auth::check() && !Auth::user()->hasRole('Vendor'))
-										<th class="w-10">
-											<i class="ti ti-status-change me-1"></i>Status
-										</th>
-									@endif
-								</tr>
-							</thead>
-							<tbody></tbody>
-						</table>
-					</div>
-				</div>
-			</div>
-		</div>
+		$columnsConfig = [
+		    ['data' => 'name', 'name' => 'name', 'label' => 'Maklumat Tender', 'icon' => 'ti-file-text'],
+		    [
+		        'data' => 'document_start_date',
+		        'name' => 'document_start_date',
+		        'label' => 'Tarikh Jual',
+		        'icon' => 'ti-calendar',
+		        'width' => 'w-15',
+		    ],
+		    [
+		        'data' => 'submission_datetime',
+		        'name' => 'submission_datetime',
+		        'label' => 'Tarikh Tutup',
+		        'icon' => 'ti-calendar',
+		        'width' => 'w-15',
+		    ],
+		    [
+		        'data' => 'price',
+		        'name' => 'price',
+		        'label' => 'Harga Dokumen (RM)',
+		        'icon' => 'ti-currency-ringgit',
+		        'width' => 'w-15',
+		    ],
+		];
 
-		<div class="col-lg-3">
-			<div class="row">
-				<div class="col-12">
-					@include('layouts._register')
-				</div>
-				<div class="col-12">
-					@include('layouts._news')
-				</div>
-			</div>
-		</div>
-	</div>
+		if (Auth::check() && !Auth::user()->hasRole('Vendor')) {
+		    $columnsConfig[] = [
+		        'data' => 'approver_id',
+		        'name' => 'approver_id',
+		        'label' => 'Status',
+		        'icon' => 'ti-status-change',
+		        'width' => 'w-10',
+		    ];
+		}
+	@endphp
+
+	@include('components.modern-index', [
+		'title' => 'Senarai Tender / Sebutharga',
+		'pretitle' => 'Sistem Tender Online',
+		'icon' => 'ti-file-text',
+		'cardTitle' => 'Maklumat Tender',
+		'createUrl' => asset('tenders/create'),
+		'createLabel' => 'Tambah Tender / Sebutharga',
+		'showCreate' => App\Tender::canCreate(),
+		'dataPath' => '/tenders',
+		'columns' => $columnsConfig,
+		'defaultOrder' => [[1, 'desc']],
+		'pageLength' => 25,
+		'sidebarContent' => $sidebarHtml,
+	])
 @endsection
 
 @section('scripts')
@@ -78,29 +70,34 @@
 		$('.DT-index').each(function() {
 			var target = $(this);
 			var path = target.data('path');
+			var columns = [{
+					data: 'name',
+					name: 'name'
+				},
+				{
+					data: 'document_start_date',
+					name: 'document_start_date'
+				},
+				{
+					data: 'submission_datetime',
+					name: 'submission_datetime'
+				},
+				{
+					data: 'price',
+					name: 'price'
+				}
+			];
+
+			@if (Auth::check() && !Auth::user()->hasRole('Vendor'))
+				columns.push({
+					data: 'approver_id',
+					name: 'approver_id'
+				});
+			@endif
+
 			var DT = target.DataTable({
 				ajax: path,
-				columns: [{
-						data: 'name',
-						name: 'name'
-					},
-					{
-						data: 'document_start_date',
-						name: 'document_start_date'
-					},
-					{
-						data: 'submission_datetime',
-						name: 'submission_datetime'
-					},
-					{
-						data: 'price',
-						name: 'price'
-					},
-					{
-						data: 'approver_id',
-						name: 'approver_id'
-					},
-				],
+				columns: columns,
 				serverSide: true,
 				stateSave: true,
 				language: {
@@ -126,7 +123,13 @@
 						sSortDescending: ": diaktifkan kepada susunan lajur menurun"
 					}
 				},
-				aaSorting: []
+				aaSorting: [],
+				dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rtip',
+				pageLength: 25,
+				responsive: true,
+				order: [
+					[1, 'desc']
+				]
 			});
 		});
 	</script>

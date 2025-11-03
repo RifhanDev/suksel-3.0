@@ -8,8 +8,8 @@ class Upload extends Model
 {
 
 	/**
-	* Fillable columns
-	*/
+	 * Fillable columns
+	 */
 	protected $fillable = [
 		'name',
 		'user_id',
@@ -23,30 +23,33 @@ class Upload extends Model
 		'public',
 		'label',
 	];
-	
-	public function getPath() {
+
+	public function getPath()
+	{
 		return $this->path . $this->name;
 	}
-	
-	public function getUrl() {
+
+	public function getUrl()
+	{
 		return $this->url . '/' . $this->name;
 	}
-	
-	public function getPublicUrl() {
+
+	public function getPublicUrl()
+	{
 		return base_url() . $this->token . $this->name;
 	}
-	
+
 	/**
-	* These attributes excluded from the model's JSON form.
-	* @var array
-	*/
+	 * These attributes excluded from the model's JSON form.
+	 * @var array
+	 */
 	protected $hidden = [
-	// 'password'
+		// 'password'
 	];
-	
+
 	/**
-	* Validation Rules
-	*/
+	 * Validation Rules
+	 */
 	static $_rules = [
 		'store' => [
 			'uploadable_type' => 'required',
@@ -57,99 +60,105 @@ class Upload extends Model
 			'path'            => 'required',
 		]
 	];
-	
+
 	static $rules = [];
-	
-	public static function setRules($name) {
+
+	public static function setRules($name)
+	{
 		self::$rules = self::$_rules[$name];
 	}
-	
+
 	/**
-	* ACL
-	*/
-	
-	public static function canCreate() {
+	 * ACL
+	 */
+
+	public static function canCreate()
+	{
 		return true;
 	}
-	
-	public function canDelete() {
+
+	public function canDelete()
+	{
 		$user = auth()->user();
 		if ($user && $user->hasRole('Admin', 'Upload Admin')) {
 			return true;
 		}
-		
+
 		if ($user && $this->user_id === $user->id) {
 			return true;
 		}
 		return true;
 	}
-	
+
 	/**
-	* Relationships
-	*/
-	
-	public function uploadable() {
+	 * Relationships
+	 */
+
+	public function uploadable()
+	{
 		return $this->morphTo();
 	}
-	
+
 	/**
-	* Boot Method
-	*/
-	
-	public static function boot() {
-	parent::boot();
-	
-	self::creating(function ($data) {
-		if(auth()->user())
-			$data->user_id = auth()->user()->id;
-		else
-			$data->user_id = 1;
+	 * Boot Method
+	 */
+
+	public static function boot()
+	{
+		parent::boot();
+
+		self::creating(function ($data) {
+			if (auth()->user())
+				$data->user_id = auth()->user()->id;
+			else
+				$data->user_id = 1;
 		});
-		
+
 		self::created(function () {
-			cache()->tags('Upload')->flush();
+			// Cache flush removed - tags not supported by file/database drivers
+			cache()->flush();
 		});
-		
+
 		self::updated(function () {
-			cache()->tags('Upload')->flush();
+			// Cache flush removed - tags not supported by file/database drivers
+			cache()->flush();
 		});
-		
+
 		self::deleted(function () {
-			cache()->tags('Upload')->flush();
+			// Cache flush removed - tags not supported by file/database drivers
+			cache()->flush();
 		});
-		
+
 		self::deleting(function ($data) {
 			File::deleteDirectory($data->path);
 			return true;
 		});
 	}
-	
+
 	/**
-	* Decorators
-	*/
-	
-	public function getSizeAttribute($bytes) {
+	 * Decorators
+	 */
+
+	public function getSizeAttribute($bytes)
+	{
 		$decimals = 2;
 		$size     = array('B', 'kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB');
-		$factor   = floor((strlen($bytes)-1)/3);
-		return sprintf("%.{$decimals}f", $bytes/pow(1024, $factor)).' '.$size[$factor];
+		$factor   = floor((strlen($bytes) - 1) / 3);
+		return sprintf("%.{$decimals}f", $bytes / pow(1024, $factor)) . ' ' . $size[$factor];
 	}
-	
-	public static function updateAdvanceUploads($id) {
+
+	public static function updateAdvanceUploads($id)
+	{
 		$token = Input::get('_token');
-		if($token) {
+		if ($token) {
 			foreach (self::where('token', $token)->get() as $upload) {
 				$upload->uploadable_id = $id;
 				$upload->save();
 			}
 		}
 	}
-	
-	public function previewUrl() {
-	
-	}
-	
-	public function fileUrl() {
-	
-	}
+
+	public function previewUrl() {}
+
+	public function fileUrl() {}
 }
