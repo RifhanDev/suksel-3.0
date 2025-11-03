@@ -1,21 +1,19 @@
 @extends('layouts.modern')
-@section('styles')
-	<link href="{{ asset('css/form.css') }}" rel="stylesheet">
-@endsection
+
 @section('content')
-	<h2 class="tender-title">Kemaskini Banner Baru</h2>
-
-	{!! Former::open_for_files(url('banners/' . $banner->id)) !!}
-	{!! Former::hidden('_method', 'PUT') !!}
-	@include('banners.form')
-
-	<div class="well">
-		{!! Former::submit('Kemaskini')->class('btn btn-primary') !!}
-		@if ($banner->file)
-			<a href=" {{ $banner->file->url . '/' . $banner->file->name }}" class="btn btn-success btn-show-banner"
-				target="_blank">Lihat Banner</a>
-		@endif
-		<a href="{{ asset('banners') }}" class="btn btn-default pull-right">Senarai Banner</a>
-	</div>
+	{!! Former::open_for_files()->put()->route('banners.update', $banner->id) !!}
+	@component('components.modern-form', [
+		'title' => 'Kemaskini Banner',
+		'pretitle' => 'Sistem Tender Online',
+		'icon' => 'ti-pencil',
+		'backUrl' => asset('banners'),
+		'backLabel' => 'Kembali ke Senarai',
+		'submitLabel' => 'Kemaskini Banner',
+		'showViewButton' => $banner->file ? true : false,
+		'viewUrl' => $banner->file ? $banner->file->url . '/' . $banner->file->name : null,
+		'viewLabel' => 'Lihat Banner',
+	])
+		@include('banners.form')
+	@endcomponent
 	{!! Former::close() !!}
 @endsection
