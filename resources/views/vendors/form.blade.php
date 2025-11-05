@@ -133,12 +133,17 @@
 									aria-selected="false">2</button>
 							</li>
 							<li class="nav-item" role="presentation">
+								<button type="button" id="maklumat-sub-pegawai-tab" class="nav-link rounded-pill" data-bs-toggle="pill"
+									data-bs-target="#maklumat-sub-pegawai" role="tab" aria-controls="maklumat-sub-pegawai"
+									aria-selected="false">3</button>
+							</li>
+							<li class="nav-item" role="presentation">
 								<button type="button" id="mof-cidb-tab" class="nav-link rounded-pill" data-bs-toggle="pill"
-									data-bs-target="#mof-cidb" role="tab" aria-controls="mof-cidb" aria-selected="false">3</button>
+									data-bs-target="#mof-cidb" role="tab" aria-controls="mof-cidb" aria-selected="false">4</button>
 							</li>
 							<li class="nav-item" role="presentation">
 								<button type="button" id="pemegang-saham-tab" class="nav-link rounded-pill" data-bs-toggle="pill"
-									data-bs-target="#pemegang-saham" role="tab" aria-controls="pemegang-saham" aria-selected="false">4</button>
+									data-bs-target="#pemegang-saham" role="tab" aria-controls="pemegang-saham" aria-selected="false">5</button>
 							</li>
 						</ul>
 					</div>
@@ -530,7 +535,74 @@
 						</div>
 					</div>
 
-					<!-- Tab 3: MOF & CIDB -->
+					<!-- Tab 3: Maklumat Sub Pegawai -->
+					<div class="tab-pane fade" id="maklumat-sub-pegawai" role="tabpanel"
+						aria-labelledby="maklumat-sub-pegawai-tab">
+						<div class="row mt-4 justify-content-center">
+							<div class="col-12">
+								<h4 class="card-title card-title-grey">MAKLUMAT SUB PEGAWAI</h4>
+							</div>
+						</div>
+						<div class="row d-flex justify-content-center">
+							<div class="col-11">
+								<!-- Nama Pegawai -->
+								<div class="col-md-12 my-2">
+									<div class="row">
+										<div class="col-md-2 d-flex justify-content-end">
+											<label for="officer_name" class="">Nama Pegawai <span class="text-danger">*</span></label>
+										</div>
+										<div class="col-md-10">
+											<input class="form-control" type="text" name="officer_name" id="officer_name"
+												value="{{ old('officer_name', isset($vendor) ? $vendor->officer_name : '') }}" required>
+										</div>
+									</div>
+								</div>
+
+								<!-- Jawatan Pegawai -->
+								<div class="col-md-12 my-2">
+									<div class="row">
+										<div class="col-md-2 d-flex justify-content-end">
+											<label for="officer_designation" class="">Jawatan Pegawai <span class="text-danger">*</span></label>
+										</div>
+										<div class="col-md-10">
+											<input class="form-control" type="text" name="officer_designation" id="officer_designation"
+												value="{{ old('officer_designation', isset($vendor) ? $vendor->officer_designation : '') }}" required>
+										</div>
+									</div>
+								</div>
+
+								<!-- No. Telefon Pegawai -->
+								<div class="col-md-12 my-2">
+									<div class="row">
+										<div class="col-md-2 d-flex justify-content-end">
+											<label for="officer_tel" class="">No. Telefon <span class="text-danger">*</span></label>
+										</div>
+										<div class="col-md-10">
+											<input class="form-control" type="text" name="officer_tel" id="officer_tel"
+												value="{{ old('officer_tel', isset($vendor) ? $vendor->officer_tel : '') }}" required>
+										</div>
+									</div>
+								</div>
+
+								<div class="row">
+									<div class="col-12 d-flex justify-content-between">
+										<div class="left">
+											<button type="button" class="btn-md-sm btn btn-info"
+												data-prevtab="maklumat-syarikat-tab">Sebelumnya</button>
+										</div>
+										<div class="right">
+											<button type="submit" class="btn-md-sm btn btn-success">Simpan</button>
+											<button type="button" class="btn btn-primary ms-auto" data-nexttab="mof-cidb-tab">
+												Seterusnya
+											</button>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<!-- Tab 4: MOF & CIDB -->
 					<div class="tab-pane fade" id="mof-cidb" role="tabpanel" aria-labelledby="mof-cidb-tab">
 						<div class="row mt-4 justify-content-center">
 							<div class="col-12">

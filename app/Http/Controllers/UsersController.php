@@ -549,7 +549,6 @@ class UsersController extends Controller
 			$to			= trim($user->email);
 			$subject 	= 'Status Permohonan Akaun Agensi';
 			$send_status = $this->sendMail("html", $to, $subject, "", "users.emails.application-approved", ['user' => $user]);
-			
 		} else {
 			// Mail::send('users.emails.application-rejected', ['user' => $user], function ($message) use ($user) {
 			// 	$message->to($user->email);
@@ -559,7 +558,7 @@ class UsersController extends Controller
 			$to			= trim($user->email);
 			$subject 	= 'Status Permohonan Akaun Agensi';
 			$send_status = $this->sendMail("html", $to, $subject, "", "users.emails.application-rejected", ['user' => $user]);
-			
+
 			$user->delete();
 		}
 
@@ -582,7 +581,7 @@ class UsersController extends Controller
 			if ($user) {
 				$user->arr = 1;
 				$user->confirmed = 1; // menukarkan semula status user kepada aktif setelah email arr dihantar dan sekiranya lebih dari 3 bulan, akaun akan disekat
-				$user->save(); 
+				$user->save();
 				return redirect()->to('/')->with('success', 'Akaun telah disemak dan anda boleh log masuk semula pada sistem.');
 			} else {
 				return redirect()->to('/')->with('error', 'Akaun tidak padan untuk dikemaskini.');
