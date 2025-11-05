@@ -67,15 +67,13 @@
 			@include('users._review_snaps')
 
 			<div class="card">
-				<div class="card-header">
-					<div class="d-flex justify-content-between align-items-center">
-						<h3 class="card-title mb-0">
-							<i class="ti ti-list me-2"></i>Senarai Pengguna
-						</h3>
-						<a href="{{ asset('users/create') }}" class="btn btn-primary btn-sm">
-							<i class="ti ti-plus me-1"></i>Masukan Pengguna Baru
-						</a>
-					</div>
+				<div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+					<h3 class="card-title mb-0">
+						<i class="ti ti-list me-2"></i>Senarai Pengguna
+					</h3>
+					<a href="{{ asset('users/create') }}" class="btn btn-primary btn-sm">
+						<i class="ti ti-plus me-1"></i>Masukan Pengguna Baru
+					</a>
 				</div>
 				<div class="card-body">
 					<div class="table-responsive">
