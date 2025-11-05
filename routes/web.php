@@ -235,6 +235,7 @@ Route::middleware(['auth'])->group(function () {
 		Route::put('users/{user}/reset_password', [UsersController::class, 'putSetPassword']);
 		Route::put('users/{user}/confirm', [UsersController::class, 'putSetConfirmation']);
 		Route::get('users/{user}/resend_confirmation', [UsersController::class, 'resendConfirmation']);
+		Route::resource('users', UsersController::class);
 
 		Route::get('vendors/select', [VendorsController::class, 'select']);
 		Route::get('vendors', [VendorsController::class, 'index'])->name('vendors.index');
