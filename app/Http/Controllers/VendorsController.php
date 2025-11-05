@@ -28,7 +28,7 @@ use App\Models\Ref\RefTypeOfTender;
 use App\Models\Ref\RefYesNo;
 use App\Models\Ref\RefHaveNo;
 use App\Models\OrganizationType;
-
+use App\Models\VendorSubUser;
 
 class VendorsController extends Controller
 {
@@ -310,6 +310,26 @@ class VendorsController extends Controller
 		$user->vendor_id = $vendor->id;
 		$user->save();
 
+		// Create sub-officers (sub users) for this vendor
+		if (isset($data['sub_officers']) && is_array($data['sub_officers'])) {
+			foreach ($data['sub_officers'] as $sub_officer) {
+				// Only create if password is provided (required for new sub-officers)
+				if (!empty($sub_officer['password'])) {
+					VendorSubUser::create([
+						'vendor_id'   => $vendor->id,
+						'name'        => $sub_officer['name'],
+						'email'       => $sub_officer['email'],
+						'phone'       => $sub_officer['phone'] ?? null,
+						'username'    => $sub_officer['email'],
+						'password'    => Hash::make($sub_officer['password']),
+						'start_date'  => $sub_officer['start_date'] ?? null,
+						'end_date'    => $sub_officer['end_date'] ?? null,
+						'confirmed'   => 1,
+					]);
+				}
+			}
+		}
+
 		// Send registration confirmation email
 		try {
 			Mail::send('vendors.emails.registration-received', ['vendor' => $vendor], function ($message) use ($vendor) {
@@ -549,6 +569,61 @@ class VendorsController extends Controller
 		if (!$vendor->update($data)) {
 			return $this->_validation_error($vendor);
 		}
+
+		// Update sub-officers (sub users) for this vendor
+		if (isset($data['sub_officers']) && is_array($data['sub_officers'])) {
+			// Get existing sub-officers IDs
+			$existingIds = [];
+
+			foreach ($data['sub_officers'] as $sub_officer) {
+				if (isset($sub_officer['id']) && !empty($sub_officer['id'])) {
+					// Update existing sub-officer
+					$existingIds[] = $sub_officer['id'];
+					$subUser = VendorSubUser::find($sub_officer['id']);
+
+					if ($subUser && $subUser->vendor_id == $vendor->id) {
+						$updateData = [
+							'name'       => $sub_officer['name'],
+							'email'      => $sub_officer['email'],
+							'phone'      => $sub_officer['phone'] ?? null,
+							'username'   => $sub_officer['email'],
+							'start_date' => $sub_officer['start_date'] ?? null,
+							'end_date'   => $sub_officer['end_date'] ?? null,
+						];
+
+						// Only update password if provided
+						if (!empty($sub_officer['password'])) {
+							$updateData['password'] = Hash::make($sub_officer['password']);
+						}
+
+						$subUser->update($updateData);
+					}
+				} else {
+					// Create new sub-officer (only if password is provided)
+					if (!empty($sub_officer['password'])) {
+						VendorSubUser::create([
+							'vendor_id'  => $vendor->id,
+							'name'       => $sub_officer['name'],
+							'email'      => $sub_officer['email'],
+							'phone'      => $sub_officer['phone'] ?? null,
+							'username'   => $sub_officer['email'],
+							'password'   => Hash::make($sub_officer['password']),
+							'start_date' => $sub_officer['start_date'] ?? null,
+							'end_date'   => $sub_officer['end_date'] ?? null,
+							'confirmed'  => 1,
+						]);
+					}
+				}
+			}
+
+			// Delete sub-officers that were removed from the form
+			if (!empty($existingIds)) {
+				VendorSubUser::where('vendor_id', $vendor->id)
+					->whereNotIn('id', $existingIds)
+					->delete();
+			}
+		}
+
 		if ($request->ajax()) {
 			return $vendor;
 		}

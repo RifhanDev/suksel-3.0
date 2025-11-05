@@ -545,45 +545,141 @@
 						</div>
 						<div class="row d-flex justify-content-center">
 							<div class="col-11">
-								<!-- Nama Pegawai -->
-								<div class="col-md-12 my-2">
-									<div class="row">
-										<div class="col-md-2 d-flex justify-content-end">
-											<label for="officer_name" class="">Nama Pegawai <span class="text-danger">*</span></label>
+								<!-- Sub Officers Container -->
+								<div id="sub-officers-container">
+									@php
+										// Check if we have existing sub-officers data (for edit mode)
+										$isEdit = isset($vendor) && $vendor->id;
+
+										// Get existing officers from relationship or old input
+										if (old('sub_officers')) {
+										    // From validation errors - use old input
+										    $existingOfficers = old('sub_officers');
+										} elseif ($isEdit && $vendor->subOfficers) {
+										    // From database - load existing sub-officers
+										    $existingOfficers = $vendor->subOfficers
+										        ->map(function ($officer) {
+										            return [
+										                'id' => $officer->id,
+										                'name' => $officer->name,
+										                'email' => $officer->email,
+										                'phone' => $officer->phone,
+										                'start_date' => $officer->start_date ? $officer->start_date->format('Y-m-d') : '',
+										                'end_date' => $officer->end_date ? $officer->end_date->format('Y-m-d') : '',
+										            ];
+										        })
+										        ->toArray();
+										} else {
+										    // New form - create one empty entry
+										    $existingOfficers = [['name' => '', 'email' => '', 'phone' => '', 'start_date' => '', 'end_date' => '']];
+										}
+									@endphp
+
+									@foreach ($existingOfficers as $index => $officer)
+										<!-- Sub Officer Card {{ $index + 1 }} -->
+										<div class="card shadow-sm mb-3 officer-card" data-index="{{ $index }}">
+											<div class="card-header bg-light d-flex justify-content-between align-items-center">
+												<h5 class="mb-0">
+													<i class="fas fa-user-tie me-2"></i>Sub Pegawai <span class="officer-number">{{ $index + 1 }}</span>
+												</h5>
+												<button type="button" class="btn btn-sm btn-danger remove-officer"
+													style="display: {{ count($existingOfficers) > 1 ? 'inline-block' : 'none' }};" title="Buang">
+													<i class="fas fa-trash"></i> Buang
+												</button>
+											</div>
+											<div class="card-body">
+												<div class="row">
+													<!-- Hidden ID for existing records -->
+													@if (isset($officer['id']))
+														<input type="hidden" name="sub_officers[{{ $index }}][id]" value="{{ $officer['id'] }}">
+													@endif
+
+													<!-- Nama -->
+													<div class="col-md-6 mb-3">
+														<label class="form-label">Nama <span class="text-danger">*</span></label>
+														<input class="form-control" type="text" name="sub_officers[{{ $index }}][name]"
+															value="{{ old('sub_officers.' . $index . '.name', $officer['name'] ?? '') }}"
+															placeholder="Masukkan nama pegawai" required>
+													</div>
+
+													<!-- Email -->
+													<div class="col-md-6 mb-3">
+														<label class="form-label">Email <span class="text-danger">*</span></label>
+														<input class="form-control" type="email" name="sub_officers[{{ $index }}][email]"
+															value="{{ old('sub_officers.' . $index . '.email', $officer['email'] ?? '') }}"
+															placeholder="Masukkan email pegawai" required>
+													</div>
+
+													<!-- No. Telefon -->
+													<div class="col-md-6 mb-3">
+														<label class="form-label">No. Telefon <span class="text-danger">*</span></label>
+														<input class="form-control" type="text" name="sub_officers[{{ $index }}][phone]"
+															value="{{ old('sub_officers.' . $index . '.phone', $officer['phone'] ?? '') }}"
+															placeholder="Contoh: 0123456789" required>
+													</div>
+
+													<!-- Spacer for alignment -->
+													<div class="col-md-6 mb-3"></div>
+
+													<!-- Kata Laluan -->
+													<div class="col-md-6 mb-3">
+														<label class="form-label">Kata Laluan @if (!$isEdit)
+																<span class="text-danger">*</span>
+															@endif
+														</label>
+														<input class="form-control password-field" type="password"
+															name="sub_officers[{{ $index }}][password]" placeholder="Minimum 8 aksara"
+															{{ $isEdit ? '' : 'required' }} minlength="8">
+														<small
+															class="text-muted">{{ $isEdit ? 'Biarkan kosong jika tidak ingin mengubah' : 'Minimum 8 aksara' }}</small>
+													</div>
+
+													<!-- Sahkan Kata Laluan -->
+													<div class="col-md-6 mb-3">
+														<label class="form-label">Sahkan Kata Laluan @if (!$isEdit)
+																<span class="text-danger">*</span>
+															@endif
+														</label>
+														<input class="form-control confirm-password-field" type="password"
+															name="sub_officers[{{ $index }}][password_confirmation]"
+															placeholder="Masukkan semula kata laluan" {{ $isEdit ? '' : 'required' }} minlength="8">
+														<small class="text-muted">Mesti sama dengan kata laluan</small>
+													</div>
+
+													<!-- Tempoh Penggunaan -->
+													<div class="col-12">
+														<label class="form-label fw-bold">Tempoh Penggunaan <span class="text-danger">*</span></label>
+													</div>
+
+													<!-- Tarikh Mula -->
+													<div class="col-md-6 mb-3">
+														<label class="form-label">Tarikh Mula</label>
+														<input class="form-control" type="date" name="sub_officers[{{ $index }}][start_date]"
+															value="{{ old('sub_officers.' . $index . '.start_date', $officer['start_date'] ?? '') }}" required>
+													</div>
+
+													<!-- Tarikh Tamat -->
+													<div class="col-md-6 mb-3">
+														<label class="form-label">Tarikh Tamat</label>
+														<input class="form-control" type="date" name="sub_officers[{{ $index }}][end_date]"
+															value="{{ old('sub_officers.' . $index . '.end_date', $officer['end_date'] ?? '') }}" required>
+													</div>
+												</div>
+											</div>
 										</div>
-										<div class="col-md-10">
-											<input class="form-control" type="text" name="officer_name" id="officer_name"
-												value="{{ old('officer_name', isset($vendor) ? $vendor->officer_name : '') }}" required>
-										</div>
+									@endforeach
+								</div>
+
+								<!-- Add More Button -->
+								<div class="row mb-4">
+									<div class="col-12">
+										<button type="button" class="btn btn-success" id="add-officer">
+											<i class="fas fa-plus-circle me-2"></i> Tambah Sub Pegawai
+										</button>
 									</div>
 								</div>
 
-								<!-- Jawatan Pegawai -->
-								<div class="col-md-12 my-2">
-									<div class="row">
-										<div class="col-md-2 d-flex justify-content-end">
-											<label for="officer_designation" class="">Jawatan Pegawai <span class="text-danger">*</span></label>
-										</div>
-										<div class="col-md-10">
-											<input class="form-control" type="text" name="officer_designation" id="officer_designation"
-												value="{{ old('officer_designation', isset($vendor) ? $vendor->officer_designation : '') }}" required>
-										</div>
-									</div>
-								</div>
-
-								<!-- No. Telefon Pegawai -->
-								<div class="col-md-12 my-2">
-									<div class="row">
-										<div class="col-md-2 d-flex justify-content-end">
-											<label for="officer_tel" class="">No. Telefon <span class="text-danger">*</span></label>
-										</div>
-										<div class="col-md-10">
-											<input class="form-control" type="text" name="officer_tel" id="officer_tel"
-												value="{{ old('officer_tel', isset($vendor) ? $vendor->officer_tel : '') }}" required>
-										</div>
-									</div>
-								</div>
-
+								<!-- Navigation Buttons -->
 								<div class="row">
 									<div class="col-12 d-flex justify-content-between">
 										<div class="left">
@@ -601,6 +697,168 @@
 							</div>
 						</div>
 					</div>
+
+					<!-- JavaScript for Dynamic Sub Officers Cards -->
+					<script>
+						document.addEventListener('DOMContentLoaded', function() {
+							// Initialize officer index based on existing cards
+							let officerIndex = document.querySelectorAll('.officer-card').length;
+							const isEditMode = {{ isset($vendor) && $vendor->id ? 'true' : 'false' }};
+
+							// Add new officer card
+							document.getElementById('add-officer').addEventListener('click', function() {
+								const container = document.getElementById('sub-officers-container');
+								const newCard = createOfficerCard(officerIndex);
+								container.insertAdjacentHTML('beforeend', newCard);
+								officerIndex++;
+								updateRemoveButtons();
+								updateCardNumbers();
+							});
+
+							// Remove officer card (delegated event)
+							document.getElementById('sub-officers-container').addEventListener('click', function(e) {
+								if (e.target.classList.contains('remove-officer') || e.target.closest('.remove-officer')) {
+									const card = e.target.closest('.officer-card');
+									card.remove();
+									updateRemoveButtons();
+									updateCardNumbers();
+								}
+							});
+
+							// Create new officer card HTML
+							function createOfficerCard(index) {
+								const passwordRequired = isEditMode ? '' : 'required';
+								const passwordLabel = isEditMode ? 'Kata Laluan' : 'Kata Laluan <span class="text-danger">*</span>';
+								const passwordHint = isEditMode ? 'Biarkan kosong jika tidak ingin mengubah' : 'Minimum 8 aksara';
+
+								return `
+						<div class="card shadow-sm mb-3 officer-card" data-index="${index}">
+							<div class="card-header bg-light d-flex justify-content-between align-items-center">
+								<h5 class="mb-0">
+									<i class="fas fa-user-tie me-2"></i>Sub Pegawai <span class="officer-number">${index + 1}</span>
+								</h5>
+								<button type="button" class="btn btn-sm btn-danger remove-officer" title="Buang">
+									<i class="fas fa-trash"></i> Buang
+								</button>
+							</div>
+							<div class="card-body">
+								<div class="row">
+									<!-- Nama -->
+									<div class="col-md-6 mb-3">
+										<label class="form-label">Nama <span class="text-danger">*</span></label>
+										<input class="form-control" type="text" name="sub_officers[${index}][name]" 
+											placeholder="Masukkan nama pegawai" required>
+									</div>
+
+									<!-- Email -->
+									<div class="col-md-6 mb-3">
+										<label class="form-label">Email <span class="text-danger">*</span></label>
+										<input class="form-control" type="email" name="sub_officers[${index}][email]" 
+											placeholder="Masukkan email pegawai" required>
+									</div>
+
+									<!-- No. Telefon -->
+									<div class="col-md-6 mb-3">
+										<label class="form-label">No. Telefon <span class="text-danger">*</span></label>
+										<input class="form-control" type="text" name="sub_officers[${index}][phone]" 
+											placeholder="Contoh: 0123456789" required>
+									</div>
+
+									<!-- Spacer for alignment -->
+									<div class="col-md-6 mb-3"></div>
+
+									<!-- Kata Laluan -->
+									<div class="col-md-6 mb-3">
+										<label class="form-label">${passwordLabel}</label>
+										<input class="form-control password-field" type="password" name="sub_officers[${index}][password]" 
+											placeholder="Minimum 8 aksara" ${passwordRequired} minlength="8">
+										<small class="text-muted">${passwordHint}</small>
+									</div>
+
+									<!-- Sahkan Kata Laluan -->
+									<div class="col-md-6 mb-3">
+										<label class="form-label">${passwordLabel}</label>
+										<input class="form-control confirm-password-field" type="password" name="sub_officers[${index}][password_confirmation]" 
+											placeholder="Masukkan semula kata laluan" ${passwordRequired} minlength="8">
+										<small class="text-muted">Mesti sama dengan kata laluan</small>
+									</div>
+
+									<!-- Tempoh Penggunaan -->
+									<div class="col-12">
+										<label class="form-label fw-bold">Tempoh Penggunaan <span class="text-danger">*</span></label>
+									</div>
+
+									<!-- Tarikh Mula -->
+									<div class="col-md-6 mb-3">
+										<label class="form-label">Tarikh Mula</label>
+										<input class="form-control" type="date" name="sub_officers[${index}][start_date]" required>
+									</div>
+
+									<!-- Tarikh Tamat -->
+									<div class="col-md-6 mb-3">
+										<label class="form-label">Tarikh Tamat</label>
+										<input class="form-control" type="date" name="sub_officers[${index}][end_date]" required>
+									</div>
+								</div>
+							</div>
+						</div>
+					`;
+							}
+
+							// Update remove buttons visibility
+							function updateRemoveButtons() {
+								const cards = document.querySelectorAll('.officer-card');
+								cards.forEach((card, index) => {
+									const removeBtn = card.querySelector('.remove-officer');
+									if (cards.length > 1) {
+										removeBtn.style.display = 'inline-block';
+									} else {
+										removeBtn.style.display = 'none';
+									}
+								});
+							}
+
+							// Update card numbers
+							function updateCardNumbers() {
+								const cards = document.querySelectorAll('.officer-card');
+								cards.forEach((card, index) => {
+									card.querySelector('.officer-number').textContent = index + 1;
+								});
+							}
+
+							// Password matching validation
+							document.getElementById('sub-officers-container').addEventListener('input', function(e) {
+								if (e.target.classList.contains('confirm-password-field')) {
+									const card = e.target.closest('.officer-card');
+									const passwordField = card.querySelector('.password-field');
+									const confirmField = e.target;
+
+									// In edit mode, if both fields are empty, it's valid (not changing password)
+									if (isEditMode && !passwordField.value && !confirmField.value) {
+										confirmField.setCustomValidity('');
+									} else if (confirmField.value !== passwordField.value) {
+										confirmField.setCustomValidity('Kata laluan tidak sepadan');
+									} else {
+										confirmField.setCustomValidity('');
+									}
+								}
+
+								if (e.target.classList.contains('password-field')) {
+									const card = e.target.closest('.officer-card');
+									const confirmField = card.querySelector('.confirm-password-field');
+
+									// In edit mode, if both fields are empty, it's valid (not changing password)
+									if (isEditMode && !e.target.value && !confirmField.value) {
+										confirmField.setCustomValidity('');
+									} else if (confirmField.value && confirmField.value !== e.target.value) {
+										confirmField.setCustomValidity('Kata laluan tidak sepadan');
+									} else {
+										confirmField.setCustomValidity('');
+									}
+								}
+							});
+						});
+					</script>
 
 					<!-- Tab 4: MOF & CIDB -->
 					<div class="tab-pane fade" id="mof-cidb" role="tabpanel" aria-labelledby="mof-cidb-tab">
