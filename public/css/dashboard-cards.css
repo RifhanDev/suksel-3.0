@@ -1,0 +1,310 @@
+/* ============================================
+   Dashboard Stats Cards - Modern Design
+   ============================================ */
+
+.stats-card {
+	background: #ffffff;
+	border-radius: 12px;
+	padding: 24px;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+	transition: all 0.3s ease;
+	border: 1px solid #f0f0f0;
+	height: 100%;
+	position: relative;
+	overflow: hidden;
+}
+
+.stats-card:hover {
+	box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+	transform: translateY(-2px);
+}
+
+/* Top border gradient for different card types */
+.stats-card::before {
+	content: '';
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	height: 4px;
+	background: linear-gradient(90deg, #4A90E2, #5BA3F5);
+}
+
+.stats-card.warning::before {
+	background: linear-gradient(90deg, #F5A623, #F7B955);
+}
+
+.stats-card.success::before {
+	background: linear-gradient(90deg, #7ED321, #95DD39);
+}
+
+.stats-card.info::before {
+	background: linear-gradient(90deg, #50E3C2, #6EEBD4);
+}
+
+.stats-card.danger::before {
+	background: linear-gradient(90deg, #E74C3C, #EC7063);
+}
+
+/* Card Header */
+.stats-card-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 16px;
+}
+
+.stats-card-title {
+	font-size: 11px;
+	font-weight: 600;
+	letter-spacing: 0.5px;
+	text-transform: uppercase;
+	color: #8492A6;
+	margin: 0;
+}
+
+/* Icon Styles */
+.stats-card-icon {
+	width: 52px;
+	height: 52px;
+	border-radius: 12px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 26px;
+	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+	color: white;
+	box-shadow: 0 4px 12px rgba(102, 126, 234, 0.25);
+	flex-shrink: 0;
+	position: relative;
+	overflow: hidden;
+}
+
+.stats-card-icon::before {
+	content: '';
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: rgba(255, 255, 255, 0.1);
+	border-radius: 12px;
+}
+
+.stats-card-icon svg {
+	display: block;
+	width: 26px;
+	height: 26px;
+	z-index: 1;
+	position: relative;
+	filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
+}
+
+.stats-card-icon i {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	line-height: 1;
+	font-weight: bold;
+	z-index: 1;
+	position: relative;
+	filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
+}
+
+.stats-card.warning .stats-card-icon {
+	background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+	box-shadow: 0 4px 12px rgba(245, 87, 108, 0.25);
+}
+
+.stats-card.success .stats-card-icon {
+	background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+	box-shadow: 0 4px 12px rgba(0, 242, 254, 0.25);
+}
+
+.stats-card.info .stats-card-icon {
+	background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+	box-shadow: 0 4px 12px rgba(56, 249, 215, 0.25);
+}
+
+.stats-card.danger .stats-card-icon {
+	background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+	box-shadow: 0 4px 12px rgba(250, 112, 154, 0.25);
+}
+
+/* Card Body */
+.stats-card-body {
+	margin-bottom: 12px;
+}
+
+.stats-card-value {
+	font-size: 36px;
+	font-weight: 700;
+	color: #2C3E50;
+	margin: 0;
+	line-height: 1.2;
+}
+
+.stats-card-label {
+	font-size: 13px;
+	color: #8492A6;
+	margin-top: 4px;
+}
+
+/* Card Footer */
+.stats-card-footer {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.stats-card-link {
+	font-size: 13px;
+	font-weight: 500;
+	color: #4A90E2;
+	text-decoration: none;
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	transition: all 0.2s ease;
+}
+
+.stats-card-link:hover {
+	color: #357ABD;
+	text-decoration: none;
+	gap: 8px;
+}
+
+.stats-card-link svg {
+	width: 16px;
+	height: 16px;
+	flex-shrink: 0;
+}
+
+.stats-card-link i {
+	font-size: 12px;
+}
+
+/* Stats Badge */
+.stats-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 4px 10px;
+	border-radius: 12px;
+	font-size: 11px;
+	font-weight: 600;
+	background: #E8F5E9;
+	color: #2E7D32;
+}
+
+.stats-badge svg {
+	width: 14px;
+	height: 14px;
+	flex-shrink: 0;
+}
+
+.stats-badge.warning {
+	background: #FFF3E0;
+	color: #E65100;
+}
+
+.stats-badge.danger {
+	background: #FFEBEE;
+	color: #C62828;
+}
+
+.stats-badge.info {
+	background: #E3F2FD;
+	color: #1565C0;
+}
+
+/* Stats Row */
+.stats-row {
+	margin-bottom: 24px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+	.stats-card {
+		margin-bottom: 16px;
+	}
+	
+	.stats-card-value {
+		font-size: 28px;
+	}
+	
+	.stats-card-icon {
+		width: 44px;
+		height: 44px;
+		font-size: 22px;
+	}
+	
+	.stats-card-icon i {
+		font-size: 22px;
+	}
+}
+
+@media (max-width: 576px) {
+	.stats-card {
+		padding: 20px;
+	}
+	
+	.stats-card-value {
+		font-size: 24px;
+	}
+}
+
+/* Optional: Animated Progress Bar */
+.stats-card-progress {
+	width: 100%;
+	height: 4px;
+	background: #E8E8E8;
+	border-radius: 2px;
+	overflow: hidden;
+	margin-top: 12px;
+}
+
+.stats-card-progress-bar {
+	height: 100%;
+	background: linear-gradient(90deg, #4A90E2, #5BA3F5);
+	border-radius: 2px;
+	transition: width 0.6s ease;
+}
+
+.stats-card.success .stats-card-progress-bar {
+	background: linear-gradient(90deg, #7ED321, #95DD39);
+}
+
+.stats-card.warning .stats-card-progress-bar {
+	background: linear-gradient(90deg, #F5A623, #F7B955);
+}
+
+.stats-card.info .stats-card-progress-bar {
+	background: linear-gradient(90deg, #50E3C2, #6EEBD4);
+}
+
+/* Optional: Loading State */
+.stats-card.loading {
+	pointer-events: none;
+	opacity: 0.6;
+}
+
+.stats-card.loading::after {
+	content: '';
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	width: 20px;
+	height: 20px;
+	margin: -10px 0 0 -10px;
+	border: 2px solid #f3f3f3;
+	border-top: 2px solid #4A90E2;
+	border-radius: 50%;
+	animation: stats-card-spin 1s linear infinite;
+}
+
+@keyframes stats-card-spin {
+	0% { transform: rotate(0deg); }
+	100% { transform: rotate(360deg); }
+}
+
