@@ -299,10 +299,10 @@
 											<div class="col-md-10">
 												<select class="form-control" name="organization_type" id="organization_type" required>
 													<option value="">- Pilih dari senarai -</option>
-													@foreach (App\Vendor::$organizationTypes as $key => $value)
-														<option value="{{ $key }}"
-															{{ old('organization_type', isset($vendor) ? $vendor->organization_type : '') == $key ? 'selected' : '' }}>
-															{{ $value }}
+													@foreach ($RefOrganizationType as $value)
+														<option value="{{ $value->id }}" data-is-ssm="{{ $value->is_ssm ?? 0 }}"
+															{{ old('organization_type', isset($vendor) ? $vendor->organization_type : '') == $value->id ? 'selected' : '' }}>
+															{{ $value->name }}
 														</option>
 													@endforeach
 												</select>
@@ -326,7 +326,7 @@
 									</div>
 
 									<!-- Tarikh Tamat Sijil SSM -->
-									<div class="col-md-12 my-2">
+									<div class="col-md-12 my-2" id="ssm_expiry_div" style="display: none;">
 										<div class="row">
 											<div class="col-md-2 d-flex justify-content-end">
 												<label for="ssm_expiry" class="">Tarikh Tamat Sijil SSM <span class="text-danger">*</span></label>
@@ -334,7 +334,7 @@
 											<div class="col-md-10">
 												<input class="form-control" type="date" name="ssm_expiry" id="ssm_expiry"
 													value="{{ old('ssm_expiry', isset($vendor) && $vendor->ssm_expiry ? $vendor->ssm_expiry->format('Y-m-d') : date('Y-m-d')) }}"
-													min="{{ date('Y-m-d') }}" required>
+													min="{{ date('Y-m-d') }}">
 											</div>
 										</div>
 									</div>
@@ -525,7 +525,7 @@
 										</div>
 										<div class="right">
 											<button type="submit" class="btn-md-sm btn btn-success">Simpan</button>
-											<button type="button" class="btn btn-primary ms-auto" data-nexttab="mof-cidb-tab">
+											<button type="button" class="btn btn-primary ms-auto" data-nexttab="maklumat-sub-pegawai-tab">
 												Seterusnya
 											</button>
 										</div>
@@ -996,6 +996,32 @@
 
 <script>
 	document.addEventListener('DOMContentLoaded', function() {
+		// Organization Type change handler - show/hide SSM expiry based on is_ssm
+		const organizationTypeSelect = document.getElementById('organization_type');
+		const ssmExpiryDiv = document.getElementById('ssm_expiry_div');
+		const ssmExpiryInput = document.getElementById('ssm_expiry');
+
+		function toggleSsmExpiry() {
+			if (organizationTypeSelect && ssmExpiryDiv && ssmExpiryInput) {
+				const selectedOption = organizationTypeSelect.options[organizationTypeSelect.selectedIndex];
+				const isSsm = selectedOption.getAttribute('data-is-ssm');
+
+				if (isSsm === '1') {
+					ssmExpiryDiv.style.display = '';
+					ssmExpiryInput.setAttribute('required', 'required');
+				} else {
+					ssmExpiryDiv.style.display = 'none';
+					ssmExpiryInput.removeAttribute('required');
+				}
+			}
+		}
+
+		// Run on page load to set initial state
+		if (organizationTypeSelect) {
+			toggleSsmExpiry();
+			organizationTypeSelect.addEventListener('change', toggleSsmExpiry);
+		}
+
 		// District change handler - show/hide state dropdown
 		const districtSelect = document.getElementById('district_id');
 		const stateDiv = document.getElementById('state_id_div');

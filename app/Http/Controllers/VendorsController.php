@@ -28,6 +28,7 @@ use App\Models\Ref\RefTypeOfTender;
 use App\Models\Ref\RefYesNo;
 use App\Models\Ref\RefHaveNo;
 use App\Models\OrganizationType;
+use App\Models\Ref\RefOrganizationType;
 use App\Models\VendorSubUser;
 
 class VendorsController extends Controller
@@ -209,7 +210,7 @@ class VendorsController extends Controller
 		$data['country_states'] = RefState::where('display_status', 1)->get();
 		$data['disable_create_flaq'] = 0;
 		$data['vendor'] = null;
-		$data['OrganizationType'] = OrganizationType::all();
+		$data['RefOrganizationType'] = RefOrganizationType::all();
 		$data['RefKaedahPerolehan'] = RefKaedahPerolehan::all();
 		$data['RefKategoriJenisPerolehan'] = RefKategoriJenisPerolehan::all();
 		$data['RefYesNo'] = RefYesNo::all();
@@ -220,6 +221,7 @@ class VendorsController extends Controller
 		$data['RefTypeOfContract'] = RefTypeOfContract::all();
 		$data['RefJenisPemenuhan'] = RefTypeOfPemenuhan::all();
 		$data['RefTypeOfPerolehan'] = RefTypeOfPerolehan::all();
+
 
 		return view('vendors.create', $data);
 	}
@@ -445,7 +447,9 @@ class VendorsController extends Controller
 		// alamat dan daerah negeri tidak boleh diubah secara terus as requested by en iskandar. (6/4/2023)
 		$disable_create_flaq = 0;  // 1: Block Editing, 0: Allow Editing
 
-		return view('vendors.edit', compact('vendor', 'country_states', 'disable_create_flaq'));
+		$RefOrganizationType = RefOrganizationType::all();
+
+		return view('vendors.edit', compact('vendor', 'country_states', 'disable_create_flaq', 'RefOrganizationType'));
 	}
 
 	/**
