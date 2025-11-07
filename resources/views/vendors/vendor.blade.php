@@ -370,6 +370,10 @@
 			</table>
 		</div>
 
+		@php
+			$canViewSensitiveIdentity = Auth::check() && Auth::user()->hasRole('Admin');
+		@endphp
+
 		<div class="tab-pane" id="vf-shareholders">
 			@if (count($vendor->shareholders) > 0)
 				<table class="table table-striped table-bordered table-hover">
@@ -385,7 +389,16 @@
 						@foreach ($vendor->shareholders as $sd)
 							<tr>
 								<td>{{ $sd->name }}</td>
-								<td>{{ $sd->identity }}</td>
+								<td>
+									@if (!empty($sd->identity))
+										@if ($canViewSensitiveIdentity)
+											<span class="identity-mask" data-identity="{{ $sd->identity }}">**********</span>
+											<button type="button" class="btn btn-link btn-xs toggle-identity">Tunjuk</button>
+										@else
+											**********
+										@endif
+									@endif
+								</td>
 								<td>{{ $sd->nationality }}</td>
 								<td>{{ $sd->bumiputera_status }}</td>
 							</tr>
@@ -433,7 +446,16 @@
 						@foreach ($vendor->directors as $sd)
 							<tr>
 								<td>{{ $sd->name }}</td>
-								<td>{{ $sd->identity }}</td>
+								<td>
+									@if (!empty($sd->identity))
+										@if ($canViewSensitiveIdentity)
+											<span class="identity-mask" data-identity="{{ $sd->identity }}">**********</span>
+											<button type="button" class="btn btn-link btn-xs toggle-identity">Tunjuk</button>
+										@else
+											**********
+										@endif
+									@endif
+								</td>
 								<td>{{ $sd->nationality }}</td>
 								<td>{{ $sd->designation }}</td>
 							</tr>
@@ -621,3 +643,27 @@
 
 	</div>
 </div>
+
+@if ($canViewSensitiveIdentity)
+	<script>
+		document.addEventListener('DOMContentLoaded', function() {
+			if (window.__identityToggleInitialized) {
+				return;
+			}
+			window.__identityToggleInitialized = true;
+			var toggleButtons = document.querySelectorAll('.toggle-identity');
+			toggleButtons.forEach(function(button) {
+				button.addEventListener('click', function(event) {
+					event.preventDefault();
+					var mask = button.previousElementSibling;
+					if (!mask || !mask.dataset || !mask.dataset.identity) {
+						return;
+					}
+					var revealed = mask.classList.toggle('identity-revealed');
+					mask.textContent = revealed ? mask.dataset.identity : '**********';
+					button.textContent = revealed ? 'Sembunyi' : 'Tunjuk';
+				});
+			});
+		});
+	</script>
+@endif
