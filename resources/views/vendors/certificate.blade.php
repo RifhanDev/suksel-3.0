@@ -17,11 +17,90 @@
 		type="text/css">
 	<link href="{{ asset('css/application.css') }}" rel="stylesheet">
 	<link href="{{ asset('css/receipt.css') }}" rel="stylesheet">
+	<style>
+		.container {
+			position: relative;
+			overflow: hidden;
+		}
+
+		#watermark {
+			position: fixed;
+			top: 50%;
+			left: 50%;
+			transform: translate(-50%, -50%);
+			width: 100%;
+			height: 100%;
+			z-index: 0;
+			pointer-events: none;
+		}
+
+		#watermark .watermark-grid {
+			position: absolute;
+			top: -20%;
+			left: -20%;
+			width: 140%;
+			height: 140%;
+			display: grid;
+			grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+			grid-auto-rows: 180px;
+			justify-items: center;
+			align-items: center;
+			gap: 32px;
+			transform: rotate(-20deg);
+			transform-origin: center;
+			opacity: 0.1;
+			-webkit-print-color-adjust: exact;
+			print-color-adjust: exact;
+		}
+
+		#watermark .watermark-grid span {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+		}
+
+		#watermark .watermark-grid span img {
+			width: 160px;
+			max-width: 100%;
+			opacity: 0.9;
+			filter: grayscale(10%);
+			-webkit-print-color-adjust: exact;
+			print-color-adjust: exact;
+		}
+
+		#bg-text {
+			position: relative;
+			z-index: 1;
+		}
+	</style>
+	<style>
+		header,
+		section.body,
+		footer {
+			position: relative;
+			z-index: 2;
+		}
+
+		@media print {
+			#watermark .watermark-grid {
+				opacity: 0.12 !important;
+			}
+
+			#watermark .watermark-grid span img {
+				opacity: 0.9 !important;
+			}
+		}
+	</style>
 </head>
 
 <body>
 	<div class="container">
 		<div id="watermark">
+			<div class="watermark-grid">
+				@for ($i = 0; $i < 36; $i++)
+					<span><img src="{{ asset('images/02_selangor.png') }}" alt="Selangor watermark"></span>
+				@endfor
+			</div>
 			<p id="bg-text">{{ $type }}</p>
 		</div>
 		<header>
