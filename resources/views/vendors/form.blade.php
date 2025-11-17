@@ -318,9 +318,30 @@
 														class="text-danger">*</span></label>
 											</div>
 											<div class="col-md-10">
+												@php
+													$incorporationDateValue = old('incorporation_date');
+													if (empty($incorporationDateValue) && isset($vendor)) {
+													    $rawIncorporationDate = $vendor->getOriginal('incorporation_date');
+													    if (!empty($rawIncorporationDate)) {
+													        try {
+													            if (\Carbon\Carbon::hasFormat($rawIncorporationDate, 'Y-m-d')) {
+													                $incorporationDateValue = \Carbon\Carbon::parse($rawIncorporationDate)->format('Y-m-d');
+													            } elseif (\Carbon\Carbon::hasFormat($rawIncorporationDate, 'd/m/Y')) {
+													                $incorporationDateValue = \Carbon\Carbon::createFromFormat(
+													                    'd/m/Y',
+													                    $rawIncorporationDate,
+													                )->format('Y-m-d');
+													            } else {
+													                $incorporationDateValue = \Carbon\Carbon::parse($rawIncorporationDate)->format('Y-m-d');
+													            }
+													        } catch (\Exception $e) {
+													            $incorporationDateValue = $rawIncorporationDate;
+													        }
+													    }
+													}
+												@endphp
 												<input class="form-control" type="date" name="incorporation_date" id="incorporation_date"
-													value="{{ old('incorporation_date', isset($vendor) ? $vendor->incorporation_date : '') }}"
-													max="{{ date('Y-m-d') }}" required>
+													value="{{ $incorporationDateValue }}" max="{{ date('Y-m-d') }}" required>
 											</div>
 										</div>
 									</div>

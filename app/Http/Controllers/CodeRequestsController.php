@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use Mail;
 use App\Vendor;
-use Datatables;
+use Yajra\DataTables\Facades\DataTables;
 use App\Approval;
 use Carbon\Carbon;
 use App\CodeRequest;
@@ -52,7 +52,8 @@ class CodeRequestsController extends Controller
 				'code_requests.status',
 				'code_requests.rejection_reason',
 				'code_requests.rejection_template_id',
-				'code_requests.vendor_id'
+				'code_requests.vendor_id',
+				'vendors.ssm_expiry'
 			]);
 
 
@@ -63,7 +64,9 @@ class CodeRequestsController extends Controller
 			}
 
 			$templates = RejectTemplate::get([
-				'id', 'title', 'content'
+				'id',
+				'title',
+				'content'
 			]);
 
 			$datatable = $datatable->editColumn('status', function ($change) {
@@ -74,6 +77,12 @@ class CodeRequestsController extends Controller
 				})
 				->editColumn('created_at', function ($change) {
 					return Carbon::parse($change->created_at)->format('j M Y H:i:s');
+				})
+				->editColumn('ssm_expiry', function ($change) {
+					if ($change->ssm_expiry) {
+						return Carbon::parse($change->ssm_expiry)->format('j M Y');
+					}
+					return '-';
 				})
 				->editColumn('approval_1_id', function ($change) use ($templates) {
 					if (!is_null($change->rejection_reason) || !is_null($change->rejection_template_id)) {
@@ -124,7 +133,7 @@ class CodeRequestsController extends Controller
 				->removeColumn('id')
 				->removeColumn('rejection_reason')
 				->removeColumn('rejection_template_id')
-				->rawColumns(['name', 'type', 'created_at', 'approval_1_id', 'status', 'actions'])
+				->rawColumns(['name', 'type', 'created_at', 'ssm_expiry', 'approval_1_id', 'status', 'actions'])
 				->make();
 		}
 
@@ -201,7 +210,9 @@ class CodeRequestsController extends Controller
 			return $this->_access_denied();
 
 		$templates = RejectTemplate::where('applicable_0', 1)->get([
-			'id', 'title', 'content'
+			'id',
+			'title',
+			'content'
 		]);
 
 		return view('coderequests.show', compact('vendor', 'request', 'templates'));
@@ -217,7 +228,9 @@ class CodeRequestsController extends Controller
 			return $this->_access_denied();
 
 		$templates = RejectTemplate::where('applicable_0', 1)->get([
-			'id', 'title', 'content'
+			'id',
+			'title',
+			'content'
 		]);
 
 		return view('coderequests.show', compact('vendor', 'request', 'templates'));

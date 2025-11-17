@@ -267,7 +267,8 @@ Route::middleware(['auth'])->group(function () {
 		Route::get('vendor/{vendor}/blacklists/{blacklists}/file', [VendorBlacklistsController::class, 'file'])->name('vendor.blacklists.file');
 		Route::put('vendor/{vendor}/blacklists/{blacklists}/cancel', [VendorBlacklistsController::class, 'cancel'])->name('vendor.blacklists.cancel');
 
-		Route::get('vendor/{vendor}/requests', [CodeRequestsController::class, 'index'])->name('vendor.requests');
+		Route::get('requests', [CodeRequestsController::class, 'index'])->name('requests.index');
+		Route::get('vendor/{vendor}/requests', [CodeRequestsController::class, 'index'])->name('vendor.requests.index');
 		Route::get('vendor/{vendor}/requests/create', [CodeRequestsController::class, 'create'])->name('vendor.requests.create');
 		Route::post('vendor/{vendor}/requests', [CodeRequestsController::class, 'store'])->name('vendor.requests.store');
 		Route::get('vendor/{vendor}/requests/{requests}', [CodeRequestsController::class, 'show'])->name('vendor.requests.show');
