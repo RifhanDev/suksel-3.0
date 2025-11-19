@@ -1,0 +1,32 @@
+/* .d-flex{
+    display: flex;
+    width: 100%;
+    height: 100%;
+}
+
+.items-center {
+    align-items: center;
+} */
+
+.bg-gray {
+    background-color: rgba(245, 245, 245, 0.641) !important;
+}
+
+.v-table *{
+    vertical-align: middle !important;
+}
+
+.box {
+    border: 1px solid black;
+    color: white;
+}
+
+.hidden {
+    margin-top: .5rem;
+    display: none;
+}
+
+.display {
+    margin-top: .5rem;
+    display: inline-block;
+}

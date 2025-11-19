@@ -1,0 +1,57 @@
+{
+  "name": "bankmy-payment-webfont",
+  "version": "1.0.4",
+  "authors": [
+    {
+      "name": "Nurfaiz Foat",
+      "email": "faiz@nrfz.org",
+      "homepage": "http://nrfz.org"
+    }
+  ],
+  "moduleType": [
+    "globals"
+  ],
+  "description": "A collection of SVG webfont that contains of all main payment methods and gateways in Malaysia",
+  "main": [
+    "bankmy.css",
+    "bankmy.less",
+    "fonts/bankmy.eot",
+    "fonts/bankmy.svg",
+    "fonts/bankmy.ttf",
+    "fonts/bankmy.woff"
+  ],
+  "keywords": [
+    "malaysian",
+    "online",
+    "banking",
+    "font",
+    "webfont",
+    "icon",
+    "css",
+    "vector",
+    "svg",
+    "maybank2u",
+    "cimbclicks"
+  ],
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "license": "MIT",
+  "homepage": "http://nrfz.org/bankmy",
+  "dependencies": {
+    "bankmy-payment-webfont": "~1.0.3"
+  },
+  "_release": "1.0.4",
+  "_resolution": {
+    "type": "version",
+    "tag": "v1.0.4",
+    "commit": "81e4a3b2a7a41a195eab6e510ef627867fd92384"
+  },
+  "_source": "git://github.com/nurfaizfoat/bankmy-payment-webfont.git",
+  "_target": "~1.0.0",
+  "_originalSource": "bankmy-payment-webfont"
+}
