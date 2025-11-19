@@ -27,7 +27,8 @@ class CreateOrganizationUnitsTable extends Migration
             $table->string('email')->nullable();
             $table->boolean('confirmation_agency')->default(false);
             $table->foreignId('user_id')->nullable()->nullOnDelete();
-            $table->foreignId('type_id')->nullable()->constrained('organization_types')->nullOnDelete();
+            $table->unsignedInteger('type_id')->nullable();
+            $table->foreign('type_id')->references('id')->on('organization_types')->nullOnDelete();
             $table->integer('sort_no')->nullable();
             $table->integer('ori_type_id')->nullable();
 
