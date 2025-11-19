@@ -10,6 +10,7 @@ class CreateOrganizationTypesTable extends Migration
     {
         Schema::create('organization_types', function (Blueprint $table) {
             $table->id();
+            $table->integer('ori_id')->nullable();
             $table->string('name');
             $table->integer('sort_no')->nullable();
             $table->timestamps();

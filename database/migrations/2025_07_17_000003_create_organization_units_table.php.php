@@ -14,21 +14,25 @@ class CreateOrganizationUnitsTable extends Migration
         Schema::create('organization_units', function (Blueprint $table) {
             $table->id();
             $table->string('name');
+            $table->string('short_name')->nullable();
+            $table->unsignedBigInteger('parent_id')->nullable()->references('id')->on('organization_units')->nullOnDelete();
+            $table->unsignedBigInteger('lft')->nullable();
+            $table->unsignedBigInteger('rgt')->nullable();
+            $table->unsignedBigInteger('depth')->nullable();
+            $table->unsignedBigInteger('district_id')->nullable();
+            $table->string('latlng',128)->nullable();
             $table->text('address')->nullable();
             $table->string('tel')->nullable();
+            $table->string('fax')->nullable();
             $table->string('email')->nullable();
-            $table->unsignedBigInteger('user_id')->nullable();
-            $table->unsignedBigInteger('type_id');
             $table->boolean('confirmation_agency')->default(false);
-            $table->unsignedBigInteger('parent_id')->nullable();
+            $table->foreignId('user_id')->nullable()->nullOnDelete();
+            $table->foreignId('type_id')->nullable()->constrained('organization_types')->nullOnDelete();
+            $table->integer('sort_no')->nullable();
+            $table->integer('ori_type_id')->nullable();
 
             $table->timestamps();
             $table->softDeletes();
-
-            // Foreign keys
-            $table->foreign('user_id')->references('id')->on('users')->nullOnDelete();
-            $table->foreign('type_id')->references('id')->on('organization_types')->cascadeOnDelete();
-            $table->foreign('parent_id')->references('id')->on('organization_units')->nullOnDelete();
         });
     }
 
