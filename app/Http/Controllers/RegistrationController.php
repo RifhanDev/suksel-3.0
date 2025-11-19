@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Gateway;
 use App\Mail\ConfirmRegistration;
 use App\Models\RefState;
+use App\Models\Ref\RefOrganizationType;
 use App\Role;
 use App\Traits\Helper;
 use App\Transaction;
@@ -108,11 +109,13 @@ class RegistrationController extends Controller
             return redirect('dashboard')->with('error', 'Proses pendaftaran vendor telah selesai.');
         }
 
+        $RefOrganizationType = RefOrganizationType::all();
+
         $validateFiles = true;
         $country_states = RefState::where('display_status', 1)->get();
         $disable_create_flaq = 3; // Allow editing Alamat, Daerah, Negeri Field for first time registration
 
-        return view('registration.company', compact('vendor', 'validateFiles', 'country_states', 'disable_create_flaq'));
+        return view('registration.company', compact('vendor', 'validateFiles', 'country_states', 'disable_create_flaq', 'RefOrganizationType'));
     }
 
     public function storeCompany(Request $request)
