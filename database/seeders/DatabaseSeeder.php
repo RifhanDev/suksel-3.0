@@ -14,6 +14,8 @@ use Database\Seeders\Ref\TypeOfPemenuhan;
 use Database\Seeders\Ref\TypeOfPerolehan;
 use Database\Seeders\Ref\TypeOfTender;
 use Database\Seeders\Ref\YesNo;
+use Database\Seeders\CreateAdminUser;
+use Database\Seeders\UserSeeder;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -43,6 +45,13 @@ class DatabaseSeeder extends Seeder
             TypeOfTender::class,
             TypeOfPerolehan::class,
             OrganizationTypes::class,
+            UserSeeder::class,
+            CreateAdminUser::class,
+            OrganizationTypesSeeder::class,
+            OrganizationUnitsSeeder::class,
+            RoleSeeder::class,
+            PermissionSeeder::class,
+            PermissionRoleSeeder::class,
         ]);
     }
 }

@@ -73,7 +73,7 @@ class RegistrationController extends Controller
                         $user->vendor()->associate($vendor);
                         $user->save();
                         $user->roles()->sync([Role::where('name', 'Vendor')->first()->id]);
-                        Mail::to($user)->send(new ConfirmRegistration($user));
+                        // Mail::to($user)->send(new ConfirmRegistration($user));
                         $notice      = 'Akaun anda telah didaftarkan. Sila semak email untuk pengesahan akaun.';
                         return redirect('/')->with('notice', $notice);
                     }
