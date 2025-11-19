@@ -91,6 +91,7 @@
 						</tr>
 					</table>
 
+
 					@if ($vendor->canCertificate())
 						@if (Auth::user()->can('Vendor:certificate'))
 							<table class="table table-condensed table-bordered">
