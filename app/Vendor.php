@@ -786,6 +786,14 @@ class Vendor extends Model
 				$vc = VendorCode::find($data['id']);
 			}
 
+			// If not found by id, check if there's an existing record with the same code_id, vendor_id, and code_type
+			if (!isset($vc)) {
+				$vc = VendorCode::where('vendor_id', $this->id)
+					->where('code_id', $data['code_id'])
+					->where('code_type', 'cidb-g')
+					->first();
+			}
+
 			if (!isset($vc)) {
 				$vc = new VendorCode;
 				$vc->code_type  = 'cidb-g';
@@ -800,7 +808,10 @@ class Vendor extends Model
 			$del_children   = array_diff($old_children, $keep_children);
 			$save_children  = array_diff($data['codes'], $keep_children);
 
-			VendorCode::whereVendorId($this->id)->whereIn('code_id', $del_children)->delete();
+			VendorCode::whereVendorId($this->id)
+				->where('parent_id', $vc->id)
+				->whereIn('code_id', $del_children)
+				->delete();
 
 			foreach ($save_children as $code_id) {
 				$code = new VendorCode;
