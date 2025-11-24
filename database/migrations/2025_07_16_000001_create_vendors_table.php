@@ -133,6 +133,12 @@ class CreateVendorsTable extends Migration
             $table->index('approval_1_id', 'fk_vendors_approvals1_idx');
             $table->index('organization_unit_id', 'fk_vendors_organization_units1_idx');
         });
+
+        Schema::table('users', function (Blueprint $table)
+        {
+            $table->foreign('vendor_id')->references('id')->on('vendors')->onDelete('set null')->onUpdate('cascade');
+            $table->foreign('approver_id')->references('id')->on('users')->onDelete('set null')->onUpdate('cascade');
+        });
     }
 
     public function down()

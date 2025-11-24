@@ -21,6 +21,11 @@ class EntrustSetupTables extends Migration
             $table->timestamps();
         });
 
+        Schema::table('users', function (Blueprint $table)
+        {
+            $table->foreign('role_applied')->references('id')->on('roles')->onDelete('set null')->onUpdate('restrict');
+        });
+
         // Create table for associating roles to users (Many-to-Many)
         Schema::create('role_user', function (Blueprint $table) {
             $table->unsignedBigInteger('user_id')->unsigned();

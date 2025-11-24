@@ -11,31 +11,45 @@ class CreateUsersTable extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
-
-            $table->string('username')->nullable();
-            $table->string('email')->unique();
-            $table->string('tel')->nullable();
-            $table->string('department')->nullable();
-            $table->string('password');
-            $table->string('confirmation_code')->nullable();
-            $table->boolean('confirmed')->default(false);
-
-            $table->unsignedBigInteger('vendor_id')->nullable();
+            $table->string('username', 128)->unique();
+            $table->string('email', 128)->unique();
+            $table->string('name', 128)->nullable();
+            $table->string('tel', 255)->nullable();
+            $table->string('department', 255)->nullable();
+            $table->string('password', 128);
+            $table->string('confirmation_code', 128)->nullable();
+            $table->unsignedTinyInteger('confirmed')->default(0);
+            $table->string('remember_token', 128)->nullable();
+            $table->string('auth_token', 128)->nullable();
             $table->unsignedBigInteger('organization_unit_id')->nullable();
-            $table->string('name');
-            $table->boolean('approved')->default(false);
-            $table->string('role_applied')->nullable();
+            $table->unsignedBigInteger('vendor_id')->nullable();
+            $table->string('email_token', 128)->nullable();
+            $table->timestamp('email_verify_at')->nullable();
+            $table->string('unconfirmed_email_token', 128)->nullable();
+            $table->string('unconfirmed_email', 128)->nullable();
+            $table->unsignedTinyInteger('approved')->nullable()->default(1);
+            $table->unsignedInteger('role_applied')->nullable();
             $table->unsignedBigInteger('approver_id')->nullable();
             $table->text('remark')->nullable();
-            $table->dateTime('last_login')->nullable();
-
-            $table->rememberToken();
+            $table->dateTime('arr_sent_at')->nullable();
+            $table->unsignedTinyInteger('arr')->nullable();
             $table->timestamps();
+            $table->timestamp('last_login')->nullable();
+            $table->string('password_reset', 5)->default('1');
 
-            // Optional foreign keys if the tables exist
-            // $table->foreign('vendor_id')->references('id')->on('vendors')->onDelete('set null');
-            // $table->foreign('organization_unit_id')->references('id')->on('organization_units')->onDelete('set null');
-            // $table->foreign('approver_id')->references('id')->on('users')->onDelete('set null');
+            // Foreign Key Constraints
+            // $table->foreign('vendor_id')->references('id')->on('vendors')->onDelete('cascade')->onUpdate('cascade');
+            // $table->foreign('approver_id')->references('id')->on('users')->onDelete('set null')->onUpdate('restrict');
+            // $table->foreign('role_applied')->references('id')->on('roles')->onDelete('set null')->onUpdate('restrict');
+            $table->foreign('organization_unit_id')->references('id')->on('organization_units')->onDelete('set null')->onUpdate('cascade');
+
+            // Indexes
+            $table->index('auth_token');
+            $table->index('username');
+            $table->index('email');
+            $table->index('vendor_id');
+            $table->index('approver_id');
+            $table->index('role_applied');
         });
     }
 
