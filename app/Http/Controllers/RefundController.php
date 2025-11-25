@@ -241,7 +241,7 @@ class RefundController extends Controller
         return view('refunds.edit', compact('refund', 'transaction', 'banks'));
     }
 
-    public function update(Request $request,$refund_id)
+    public function update(Request $request, $refund_id)
     {
         if (!auth()->user()->hasRole('Vendor') && (auth()->user()->vendor_id == $request->vendor_id))
             return $this->_access_denied();
@@ -254,15 +254,15 @@ class RefundController extends Controller
         $request['rejection_reason'] = null;
         $request['operation'] = 'updateeeeee';
         $data = $request->except('application_letter', 'bank_statement1', 'bank_statement2', 'screenshot_problem');
-        
 
-        $refund = Refund::where('id',$refund_id)->first();
+
+        $refund = Refund::where('id', $refund_id)->first();
         $refund->fill($data);
 
         if (!$refund->save())
             return $this->_validation_error($refund);
 
-        return redirect(route('refunds.show',$refund_id))->with('success', 'Permohonan Dikemaskini');
+        return redirect(route('refunds.show', $refund_id))->with('success', 'Permohonan Dikemaskini');
     }
 
     public function pendingRefundRequestIndex()
@@ -410,9 +410,9 @@ class RefundController extends Controller
         $refund->save();
 
         // email function added by zayid 29 apr 2023
-        $to			= trim($refund->user->email);
-        $subject 	= 'Permohonan Pemulangan Semula Ditolak';
-        $send_status = $this->sendMail("html", $to, $subject, "", "refunds.emails.request.rejected", ['refund'=>$refund,'refund_num' => $this->refundNumGenerator($refund->number)]);
+        $to            = trim($refund->user->email);
+        $subject     = 'Permohonan Pemulangan Semula Ditolak';
+        $send_status = $this->sendMail("html", $to, $subject, "", "refunds.emails.request.rejected", ['refund' => $refund, 'refund_num' => $this->refundNumGenerator($refund->number)]);
 
         session()->flash('info', 'Permohonan Ditolak.');
         return 'true';
@@ -430,9 +430,9 @@ class RefundController extends Controller
         $refund->save();
 
         // email function added by zayid 29 apr 2023
-        $to			= trim($refund->user->email);
-        $subject 	= 'Permohonan Pemulangan Semula Diluluskan Oleh BPM';
-        $send_status = $this->sendMail("html", $to, $subject, "", "refunds.emails.request.approved", ['refund'=>$refund,'refund_num' => $this->refundNumGenerator($refund->number)]);
+        $to            = trim($refund->user->email);
+        $subject     = 'Permohonan Pemulangan Semula Diluluskan Oleh BPM';
+        $send_status = $this->sendMail("html", $to, $subject, "", "refunds.emails.request.approved", ['refund' => $refund, 'refund_num' => $this->refundNumGenerator($refund->number)]);
 
         return redirect('refunds/request/' . $refund_id . '/show')->with('success', 'Permohonan Diluluskan.');
     }
@@ -457,9 +457,9 @@ class RefundController extends Controller
         $refund->save();
 
         // email function added by zayid 29 apr 2023
-        $to			= trim($refund->user->email);
-        $subject 	= 'Permohonan Pemulangan Semula Ditolak';
-        $send_status = $this->sendMail("html", $to, $subject, "", "refunds.emails.complaint.rejected", ['refund'=>$refund,'refund_num' => $this->refundNumGenerator($refund->number)]);
+        $to            = trim($refund->user->email);
+        $subject     = 'Permohonan Pemulangan Semula Ditolak';
+        $send_status = $this->sendMail("html", $to, $subject, "", "refunds.emails.complaint.rejected", ['refund' => $refund, 'refund_num' => $this->refundNumGenerator($refund->number)]);
 
         session()->flash('info', 'Aduan Ditolak.');
         return 'true';
@@ -477,9 +477,9 @@ class RefundController extends Controller
         $refund->save();
 
         // email function added by zayid 29 apr 2023
-        $to			= trim($refund->user->email);
-        $subject 	= 'Permohonan Pemulangan Semula Diluluskan';
-        $send_status = $this->sendMail("html", $to, $subject, "", "refunds.emails.complaint.approved", ['refund'=>$refund,'refund_num' => $this->refundNumGenerator($refund->number)]);
+        $to            = trim($refund->user->email);
+        $subject     = 'Permohonan Pemulangan Semula Diluluskan';
+        $send_status = $this->sendMail("html", $to, $subject, "", "refunds.emails.complaint.approved", ['refund' => $refund, 'refund_num' => $this->refundNumGenerator($refund->number)]);
 
         return redirect('refunds/complaint/' . $refund_id . '/show')->with('success', 'Bukti Aduan Diterima');
     }
