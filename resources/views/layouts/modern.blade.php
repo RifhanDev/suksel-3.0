@@ -102,7 +102,7 @@
 
 		/* Sidebar Styles */
 		.navbar-vertical {
-			width: 280px;
+			width: 300px;
 			background: var(--sidebar-bg);
 			border-right: 1px solid #333;
 			position: fixed;
@@ -111,7 +111,17 @@
 			height: 100vh;
 			z-index: 1000;
 			overflow-y: auto;
+			overflow-x: visible;
 			transition: var(--transition);
+		}
+
+		/* Ensure dropdowns can overflow sidebar */
+		.navbar-vertical .navbar-nav {
+			overflow: visible;
+		}
+
+		.navbar-vertical .nav-item {
+			overflow: visible;
 		}
 
 		.navbar-vertical .container-fluid {
@@ -149,6 +159,9 @@
 			transition: var(--transition);
 			font-weight: 500;
 			text-align: left;
+			width: 100%;
+			min-width: 0;
+			overflow: visible;
 		}
 
 		.navbar-nav .nav-link:hover {
@@ -184,6 +197,19 @@
 			font-size: 0.95rem;
 			text-align: left;
 			flex: 1;
+			min-width: 0;
+			overflow: visible;
+			white-space: normal;
+			word-wrap: break-word;
+			line-height: 1.4;
+			padding-right: 8px;
+		}
+
+		/* Dropdown toggle icon spacing */
+		.nav-link.dropdown-toggle::after {
+			margin-left: auto;
+			flex-shrink: 0;
+			margin-right: 0;
 		}
 
 		/* Simple Dropdown Styles */
@@ -195,15 +221,36 @@
 			margin-top: 4px;
 			padding: 8px 0;
 			min-width: 200px;
+			overflow: visible;
+		}
+
+		/* Refund dropdown - wider for long text */
+		.dropdown-menu-refund {
+			min-width: 350px !important;
+			max-width: 450px;
+			width: auto !important;
 		}
 
 		.navbar-nav .dropdown-item {
 			color: #ffffff;
-			padding: 10px 20px;
+			padding: 12px 20px;
 			font-size: 14px;
 			transition: all 0.2s ease;
 			display: flex;
-			align-items: center;
+			align-items: flex-start;
+			white-space: normal;
+			word-wrap: break-word;
+			overflow: visible;
+			min-width: 0;
+		}
+
+		.dropdown-item-text {
+			flex: 1;
+			line-height: 1.5;
+			word-break: break-word;
+			overflow: visible;
+			min-width: 0;
+			padding-right: 8px;
 		}
 
 		.navbar-nav .dropdown-item:hover {
@@ -355,6 +402,14 @@
 			z-index: 1060 !important;
 			backdrop-filter: blur(10px);
 			animation: dropdownSlideIn 0.3s ease-out;
+			overflow: visible;
+		}
+
+		/* Refund dropdown specific styling */
+		.dropdown-menu-refund {
+			min-width: 350px !important;
+			max-width: 450px;
+			width: auto !important;
 		}
 
 		@keyframes dropdownSlideIn {
@@ -384,7 +439,27 @@
 			border-radius: 10px;
 			margin: 0.25rem 0;
 			position: relative;
-			overflow: hidden;
+			overflow: visible;
+			white-space: normal;
+			word-wrap: break-word;
+			min-width: 0;
+			align-items: flex-start;
+		}
+
+		.dropdown-menu .dropdown-item .dropdown-item-text {
+			flex: 1;
+			line-height: 1.5;
+			word-break: break-word;
+			overflow: visible;
+			min-width: 0;
+			padding-right: 8px;
+		}
+
+		/* Ensure icons in dropdown items don't shrink */
+		.dropdown-menu .dropdown-item svg,
+		.dropdown-menu .dropdown-item .icon {
+			flex-shrink: 0;
+			margin-right: 0.5rem;
 		}
 
 		.navbar .dropdown-menu .dropdown-item:hover,
@@ -475,7 +550,7 @@
 		/* Page Wrapper */
 		.page-wrapper {
 			flex: 1;
-			margin-left: 280px;
+			margin-left: 300px;
 			display: flex;
 			flex-direction: column;
 			min-height: 100vh;
@@ -1109,6 +1184,7 @@
 						@endif
 
 						@if (Auth::user()->ability(['Admin', 'Refund Admin'], ['Refund:list']))
+							{{-- @if (Auth::user()->hasRole('Admin')) --}}
 							<!-- Pengurusan Pemulangan Semula -->
 							<div class="nav-item">
 								<a class="nav-link dropdown-toggle" href="#navbar-pemulangan" data-bs-toggle="dropdown" role="button"
@@ -1116,25 +1192,27 @@
 									<span class="nav-link-title">Pengurusan Pemulangan Semula</span>
 								</a>
 								<br>
-								<div class="dropdown-menu">
+								<div class="dropdown-menu dropdown-menu-refund">
 									@if (App\Models\Refund::canList())
 										<a class="dropdown-item" style="color: white;" href="{{ route('refunds.request.index') }}">
-											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+											<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
 												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
+												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right me-2 flex-shrink-0">
 												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
 												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
-											</svg> Permohonan Pemulangan Semula
+											</svg>
+											<span class="dropdown-item-text">Permohonan Pemulangan Semula</span>
 										</a>
 									@endif
 									@if (App\Models\Refund::isRoleBKP())
 										<a class="dropdown-item" style="color: white;" href="{{ route('refunds.complaint.index') }}">
-											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+											<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
 												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
+												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right me-2 flex-shrink-0">
 												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
 												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
-											</svg> Aduan Permohonan Semula
+											</svg>
+											<span class="dropdown-item-text">Aduan Permohonan Semula</span>
 										</a>
 									@endif
 								</div>
