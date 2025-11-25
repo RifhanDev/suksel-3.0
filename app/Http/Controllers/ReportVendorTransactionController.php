@@ -136,13 +136,50 @@ class ReportVendorTransactionController extends Controller
     public function fpxBuyerBankIdDictionary($fpx_buyerBankId)
     {
         $b2b = [
-            'ABB0235', 'ABMB0213', 'AGRO02', 'AMBB0208', 'BIMB0340', 'BMMB0342', 'BNP003', 'BCBB0235', 'CIT0218', 'DBB0199', 'HLB0224', 'HSBC0223', 'BKRM0602', 'KFH0346', 'MBB0228', 'OCBC0229', 'PBB0233',
-            'PBB0234', 'RHB0218', 'SCB0215', 'UOB0228'
+            'ABB0235',
+            'ABMB0213',
+            'AGRO02',
+            'AMBB0208',
+            'BIMB0340',
+            'BMMB0342',
+            'BNP003',
+            'BCBB0235',
+            'CIT0218',
+            'DBB0199',
+            'HLB0224',
+            'HSBC0223',
+            'BKRM0602',
+            'KFH0346',
+            'MBB0228',
+            'OCBC0229',
+            'PBB0233',
+            'PBB0234',
+            'RHB0218',
+            'SCB0215',
+            'UOB0228'
         ];
 
         $b2c = [
-            'ABB0233', 'ABMB0212', 'AGRO01', 'AMBB0209', 'BIMB0340', 'BMMB0341', 'BKRM0602', 'BOCM01', 'BSN0601', 'BCBB0235', 'HLB0224', 'HSBC0223', 'KFH0346', 'MBB0228',
-            'MB2U0227', 'OCBC0229', 'PBB0233', 'RHB0218', 'SCB0216', 'UOB0226'
+            'ABB0233',
+            'ABMB0212',
+            'AGRO01',
+            'AMBB0209',
+            'BIMB0340',
+            'BMMB0341',
+            'BKRM0602',
+            'BOCM01',
+            'BSN0601',
+            'BCBB0235',
+            'HLB0224',
+            'HSBC0223',
+            'KFH0346',
+            'MBB0228',
+            'MB2U0227',
+            'OCBC0229',
+            'PBB0233',
+            'RHB0218',
+            'SCB0216',
+            'UOB0226'
         ];
 
         if (in_array($fpx_buyerBankId, $b2b)) {
