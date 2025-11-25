@@ -389,6 +389,11 @@ class Vendor extends Model
 		return $this->hasMany(PetenderPerformance::class, 'vendor_id');
 	}
 
+	public function subOfficers()
+	{
+		return $this->hasMany('App\Models\VendorSubUser', 'vendor_id');
+	}
+
 	public function winningParticipations()
 	{
 		return $this->participations()->where('winner', 1);

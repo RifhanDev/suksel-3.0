@@ -133,12 +133,17 @@
 									aria-selected="false">2</button>
 							</li>
 							<li class="nav-item" role="presentation">
+								<button type="button" id="maklumat-sub-pegawai-tab" class="nav-link rounded-pill" data-bs-toggle="pill"
+									data-bs-target="#maklumat-sub-pegawai" role="tab" aria-controls="maklumat-sub-pegawai"
+									aria-selected="false">3</button>
+							</li>
+							<li class="nav-item" role="presentation">
 								<button type="button" id="mof-cidb-tab" class="nav-link rounded-pill" data-bs-toggle="pill"
-									data-bs-target="#mof-cidb" role="tab" aria-controls="mof-cidb" aria-selected="false">3</button>
+									data-bs-target="#mof-cidb" role="tab" aria-controls="mof-cidb" aria-selected="false">4</button>
 							</li>
 							<li class="nav-item" role="presentation">
 								<button type="button" id="pemegang-saham-tab" class="nav-link rounded-pill" data-bs-toggle="pill"
-									data-bs-target="#pemegang-saham" role="tab" aria-controls="pemegang-saham" aria-selected="false">4</button>
+									data-bs-target="#pemegang-saham" role="tab" aria-controls="pemegang-saham" aria-selected="false">5</button>
 							</li>
 						</ul>
 					</div>
@@ -294,10 +299,10 @@
 											<div class="col-md-10">
 												<select class="form-control" name="organization_type" id="organization_type" required>
 													<option value="">- Pilih dari senarai -</option>
-													@foreach (App\Vendor::$organizationTypes as $key => $value)
-														<option value="{{ $key }}"
-															{{ old('organization_type', isset($vendor) ? $vendor->organization_type : '') == $key ? 'selected' : '' }}>
-															{{ $value }}
+													@foreach ($RefOrganizationType as $value)
+														<option value="{{ $value->id }}" data-is-ssm="{{ $value->is_ssm ?? 0 }}"
+															{{ old('organization_type', isset($vendor) ? $vendor->organization_type : '') == $value->id ? 'selected' : '' }}>
+															{{ $value->name }}
 														</option>
 													@endforeach
 												</select>
@@ -321,7 +326,7 @@
 									</div>
 
 									<!-- Tarikh Tamat Sijil SSM -->
-									<div class="col-md-12 my-2">
+									<div class="col-md-12 my-2" id="ssm_expiry_div" style="display: none;">
 										<div class="row">
 											<div class="col-md-2 d-flex justify-content-end">
 												<label for="ssm_expiry" class="">Tarikh Tamat Sijil SSM <span class="text-danger">*</span></label>
@@ -329,7 +334,7 @@
 											<div class="col-md-10">
 												<input class="form-control" type="date" name="ssm_expiry" id="ssm_expiry"
 													value="{{ old('ssm_expiry', isset($vendor) && $vendor->ssm_expiry ? $vendor->ssm_expiry->format('Y-m-d') : date('Y-m-d')) }}"
-													min="{{ date('Y-m-d') }}" required>
+													min="{{ date('Y-m-d') }}">
 											</div>
 										</div>
 									</div>
@@ -520,6 +525,169 @@
 										</div>
 										<div class="right">
 											<button type="submit" class="btn-md-sm btn btn-success">Simpan</button>
+											<button type="button" class="btn btn-primary ms-auto" data-nexttab="maklumat-sub-pegawai-tab">
+												Seterusnya
+											</button>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<!-- Tab 3: Maklumat Sub Pegawai -->
+					<div class="tab-pane fade" id="maklumat-sub-pegawai" role="tabpanel"
+						aria-labelledby="maklumat-sub-pegawai-tab">
+						<div class="row mt-4 justify-content-center">
+							<div class="col-12">
+								<h4 class="card-title card-title-grey">MAKLUMAT SUB PEGAWAI</h4>
+							</div>
+						</div>
+						<div class="row d-flex justify-content-center">
+							<div class="col-11">
+								<!-- Sub Officers Container -->
+								<div id="sub-officers-container">
+									@php
+										// Check if we have existing sub-officers data (for edit mode)
+										$isEdit = isset($vendor) && $vendor->id;
+
+										// Get existing officers from relationship or old input
+										if (old('sub_officers')) {
+										    // From validation errors - use old input
+										    $existingOfficers = old('sub_officers');
+										} elseif ($isEdit && $vendor->subOfficers) {
+										    // From database - load existing sub-officers
+										    $existingOfficers = $vendor->subOfficers
+										        ->map(function ($officer) {
+										            return [
+										                'id' => $officer->id,
+										                'name' => $officer->name,
+										                'email' => $officer->email,
+										                'phone' => $officer->phone,
+										                'start_date' => $officer->start_date ? $officer->start_date->format('Y-m-d') : '',
+										                'end_date' => $officer->end_date ? $officer->end_date->format('Y-m-d') : '',
+										            ];
+										        })
+										        ->toArray();
+										} else {
+										    // New form - create one empty entry
+										    $existingOfficers = [['name' => '', 'email' => '', 'phone' => '', 'start_date' => '', 'end_date' => '']];
+										}
+									@endphp
+
+									@foreach ($existingOfficers as $index => $officer)
+										<!-- Sub Officer Card {{ $index + 1 }} -->
+										<div class="card shadow-sm mb-3 officer-card" data-index="{{ $index }}">
+											<div class="card-header bg-light d-flex justify-content-between align-items-center">
+												<h5 class="mb-0">
+													<i class="fas fa-user-tie me-2"></i>Sub Pegawai <span class="officer-number">{{ $index + 1 }}</span>
+												</h5>
+												<button type="button" class="btn btn-sm btn-danger remove-officer"
+													style="display: {{ count($existingOfficers) > 1 ? 'inline-block' : 'none' }};" title="Buang">
+													<i class="fas fa-trash"></i> Buang
+												</button>
+											</div>
+											<div class="card-body">
+												<div class="row">
+													<!-- Hidden ID for existing records -->
+													@if (isset($officer['id']))
+														<input type="hidden" name="sub_officers[{{ $index }}][id]" value="{{ $officer['id'] }}">
+													@endif
+
+													<!-- Nama -->
+													<div class="col-md-6 mb-3">
+														<label class="form-label">Nama <span class="text-danger">*</span></label>
+														<input class="form-control" type="text" name="sub_officers[{{ $index }}][name]"
+															value="{{ old('sub_officers.' . $index . '.name', $officer['name'] ?? '') }}"
+															placeholder="Masukkan nama pegawai" required>
+													</div>
+
+													<!-- Email -->
+													<div class="col-md-6 mb-3">
+														<label class="form-label">Email <span class="text-danger">*</span></label>
+														<input class="form-control" type="email" name="sub_officers[{{ $index }}][email]"
+															value="{{ old('sub_officers.' . $index . '.email', $officer['email'] ?? '') }}"
+															placeholder="Masukkan email pegawai" required>
+													</div>
+
+													<!-- No. Telefon -->
+													<div class="col-md-6 mb-3">
+														<label class="form-label">No. Telefon <span class="text-danger">*</span></label>
+														<input class="form-control" type="text" name="sub_officers[{{ $index }}][phone]"
+															value="{{ old('sub_officers.' . $index . '.phone', $officer['phone'] ?? '') }}"
+															placeholder="Contoh: 0123456789" required>
+													</div>
+
+													<!-- Spacer for alignment -->
+													<div class="col-md-6 mb-3"></div>
+
+													<!-- Kata Laluan -->
+													<div class="col-md-6 mb-3">
+														<label class="form-label">Kata Laluan @if (!$isEdit)
+																<span class="text-danger">*</span>
+															@endif
+														</label>
+														<input class="form-control password-field" type="password"
+															name="sub_officers[{{ $index }}][password]" placeholder="Minimum 8 aksara"
+															{{ $isEdit ? '' : 'required' }} minlength="8">
+														<small
+															class="text-muted">{{ $isEdit ? 'Biarkan kosong jika tidak ingin mengubah' : 'Minimum 8 aksara' }}</small>
+													</div>
+
+													<!-- Sahkan Kata Laluan -->
+													<div class="col-md-6 mb-3">
+														<label class="form-label">Sahkan Kata Laluan @if (!$isEdit)
+																<span class="text-danger">*</span>
+															@endif
+														</label>
+														<input class="form-control confirm-password-field" type="password"
+															name="sub_officers[{{ $index }}][password_confirmation]"
+															placeholder="Masukkan semula kata laluan" {{ $isEdit ? '' : 'required' }} minlength="8">
+														<small class="text-muted">Mesti sama dengan kata laluan</small>
+													</div>
+
+													<!-- Tempoh Penggunaan -->
+													<div class="col-12">
+														<label class="form-label fw-bold">Tempoh Penggunaan <span class="text-danger">*</span></label>
+													</div>
+
+													<!-- Tarikh Mula -->
+													<div class="col-md-6 mb-3">
+														<label class="form-label">Tarikh Mula</label>
+														<input class="form-control" type="date" name="sub_officers[{{ $index }}][start_date]"
+															value="{{ old('sub_officers.' . $index . '.start_date', $officer['start_date'] ?? '') }}" required>
+													</div>
+
+													<!-- Tarikh Tamat -->
+													<div class="col-md-6 mb-3">
+														<label class="form-label">Tarikh Tamat</label>
+														<input class="form-control" type="date" name="sub_officers[{{ $index }}][end_date]"
+															value="{{ old('sub_officers.' . $index . '.end_date', $officer['end_date'] ?? '') }}" required>
+													</div>
+												</div>
+											</div>
+										</div>
+									@endforeach
+								</div>
+
+								<!-- Add More Button -->
+								<div class="row mb-4">
+									<div class="col-12">
+										<button type="button" class="btn btn-success" id="add-officer">
+											<i class="fas fa-plus-circle me-2"></i> Tambah Sub Pegawai
+										</button>
+									</div>
+								</div>
+
+								<!-- Navigation Buttons -->
+								<div class="row">
+									<div class="col-12 d-flex justify-content-between">
+										<div class="left">
+											<button type="button" class="btn-md-sm btn btn-info"
+												data-prevtab="maklumat-syarikat-tab">Sebelumnya</button>
+										</div>
+										<div class="right">
+											<button type="submit" class="btn-md-sm btn btn-success">Simpan</button>
 											<button type="button" class="btn btn-primary ms-auto" data-nexttab="mof-cidb-tab">
 												Seterusnya
 											</button>
@@ -530,7 +698,169 @@
 						</div>
 					</div>
 
-					<!-- Tab 3: MOF & CIDB -->
+					<!-- JavaScript for Dynamic Sub Officers Cards -->
+					<script>
+						document.addEventListener('DOMContentLoaded', function() {
+							// Initialize officer index based on existing cards
+							let officerIndex = document.querySelectorAll('.officer-card').length;
+							const isEditMode = {{ isset($vendor) && $vendor->id ? 'true' : 'false' }};
+
+							// Add new officer card
+							document.getElementById('add-officer').addEventListener('click', function() {
+								const container = document.getElementById('sub-officers-container');
+								const newCard = createOfficerCard(officerIndex);
+								container.insertAdjacentHTML('beforeend', newCard);
+								officerIndex++;
+								updateRemoveButtons();
+								updateCardNumbers();
+							});
+
+							// Remove officer card (delegated event)
+							document.getElementById('sub-officers-container').addEventListener('click', function(e) {
+								if (e.target.classList.contains('remove-officer') || e.target.closest('.remove-officer')) {
+									const card = e.target.closest('.officer-card');
+									card.remove();
+									updateRemoveButtons();
+									updateCardNumbers();
+								}
+							});
+
+							// Create new officer card HTML
+							function createOfficerCard(index) {
+								const passwordRequired = isEditMode ? '' : 'required';
+								const passwordLabel = isEditMode ? 'Kata Laluan' : 'Kata Laluan <span class="text-danger">*</span>';
+								const passwordHint = isEditMode ? 'Biarkan kosong jika tidak ingin mengubah' : 'Minimum 8 aksara';
+
+								return `
+						<div class="card shadow-sm mb-3 officer-card" data-index="${index}">
+							<div class="card-header bg-light d-flex justify-content-between align-items-center">
+								<h5 class="mb-0">
+									<i class="fas fa-user-tie me-2"></i>Sub Pegawai <span class="officer-number">${index + 1}</span>
+								</h5>
+								<button type="button" class="btn btn-sm btn-danger remove-officer" title="Buang">
+									<i class="fas fa-trash"></i> Buang
+								</button>
+							</div>
+							<div class="card-body">
+								<div class="row">
+									<!-- Nama -->
+									<div class="col-md-6 mb-3">
+										<label class="form-label">Nama <span class="text-danger">*</span></label>
+										<input class="form-control" type="text" name="sub_officers[${index}][name]" 
+											placeholder="Masukkan nama pegawai" required>
+									</div>
+
+									<!-- Email -->
+									<div class="col-md-6 mb-3">
+										<label class="form-label">Email <span class="text-danger">*</span></label>
+										<input class="form-control" type="email" name="sub_officers[${index}][email]" 
+											placeholder="Masukkan email pegawai" required>
+									</div>
+
+									<!-- No. Telefon -->
+									<div class="col-md-6 mb-3">
+										<label class="form-label">No. Telefon <span class="text-danger">*</span></label>
+										<input class="form-control" type="text" name="sub_officers[${index}][phone]" 
+											placeholder="Contoh: 0123456789" required>
+									</div>
+
+									<!-- Spacer for alignment -->
+									<div class="col-md-6 mb-3"></div>
+
+									<!-- Kata Laluan -->
+									<div class="col-md-6 mb-3">
+										<label class="form-label">${passwordLabel}</label>
+										<input class="form-control password-field" type="password" name="sub_officers[${index}][password]" 
+											placeholder="Minimum 8 aksara" ${passwordRequired} minlength="8">
+										<small class="text-muted">${passwordHint}</small>
+									</div>
+
+									<!-- Sahkan Kata Laluan -->
+									<div class="col-md-6 mb-3">
+										<label class="form-label">${passwordLabel}</label>
+										<input class="form-control confirm-password-field" type="password" name="sub_officers[${index}][password_confirmation]" 
+											placeholder="Masukkan semula kata laluan" ${passwordRequired} minlength="8">
+										<small class="text-muted">Mesti sama dengan kata laluan</small>
+									</div>
+
+									<!-- Tempoh Penggunaan -->
+									<div class="col-12">
+										<label class="form-label fw-bold">Tempoh Penggunaan <span class="text-danger">*</span></label>
+									</div>
+
+									<!-- Tarikh Mula -->
+									<div class="col-md-6 mb-3">
+										<label class="form-label">Tarikh Mula</label>
+										<input class="form-control" type="date" name="sub_officers[${index}][start_date]" required>
+									</div>
+
+									<!-- Tarikh Tamat -->
+									<div class="col-md-6 mb-3">
+										<label class="form-label">Tarikh Tamat</label>
+										<input class="form-control" type="date" name="sub_officers[${index}][end_date]" required>
+									</div>
+								</div>
+							</div>
+						</div>
+					`;
+							}
+
+							// Update remove buttons visibility
+							function updateRemoveButtons() {
+								const cards = document.querySelectorAll('.officer-card');
+								cards.forEach((card, index) => {
+									const removeBtn = card.querySelector('.remove-officer');
+									if (cards.length > 1) {
+										removeBtn.style.display = 'inline-block';
+									} else {
+										removeBtn.style.display = 'none';
+									}
+								});
+							}
+
+							// Update card numbers
+							function updateCardNumbers() {
+								const cards = document.querySelectorAll('.officer-card');
+								cards.forEach((card, index) => {
+									card.querySelector('.officer-number').textContent = index + 1;
+								});
+							}
+
+							// Password matching validation
+							document.getElementById('sub-officers-container').addEventListener('input', function(e) {
+								if (e.target.classList.contains('confirm-password-field')) {
+									const card = e.target.closest('.officer-card');
+									const passwordField = card.querySelector('.password-field');
+									const confirmField = e.target;
+
+									// In edit mode, if both fields are empty, it's valid (not changing password)
+									if (isEditMode && !passwordField.value && !confirmField.value) {
+										confirmField.setCustomValidity('');
+									} else if (confirmField.value !== passwordField.value) {
+										confirmField.setCustomValidity('Kata laluan tidak sepadan');
+									} else {
+										confirmField.setCustomValidity('');
+									}
+								}
+
+								if (e.target.classList.contains('password-field')) {
+									const card = e.target.closest('.officer-card');
+									const confirmField = card.querySelector('.confirm-password-field');
+
+									// In edit mode, if both fields are empty, it's valid (not changing password)
+									if (isEditMode && !e.target.value && !confirmField.value) {
+										confirmField.setCustomValidity('');
+									} else if (confirmField.value && confirmField.value !== e.target.value) {
+										confirmField.setCustomValidity('Kata laluan tidak sepadan');
+									} else {
+										confirmField.setCustomValidity('');
+									}
+								}
+							});
+						});
+					</script>
+
+					<!-- Tab 4: MOF & CIDB -->
 					<div class="tab-pane fade" id="mof-cidb" role="tabpanel" aria-labelledby="mof-cidb-tab">
 						<div class="row mt-4 justify-content-center">
 							<div class="col-12">
@@ -666,6 +996,32 @@
 
 <script>
 	document.addEventListener('DOMContentLoaded', function() {
+		// Organization Type change handler - show/hide SSM expiry based on is_ssm
+		const organizationTypeSelect = document.getElementById('organization_type');
+		const ssmExpiryDiv = document.getElementById('ssm_expiry_div');
+		const ssmExpiryInput = document.getElementById('ssm_expiry');
+
+		function toggleSsmExpiry() {
+			if (organizationTypeSelect && ssmExpiryDiv && ssmExpiryInput) {
+				const selectedOption = organizationTypeSelect.options[organizationTypeSelect.selectedIndex];
+				const isSsm = selectedOption.getAttribute('data-is-ssm');
+
+				if (isSsm === '1') {
+					ssmExpiryDiv.style.display = '';
+					ssmExpiryInput.setAttribute('required', 'required');
+				} else {
+					ssmExpiryDiv.style.display = 'none';
+					ssmExpiryInput.removeAttribute('required');
+				}
+			}
+		}
+
+		// Run on page load to set initial state
+		if (organizationTypeSelect) {
+			toggleSsmExpiry();
+			organizationTypeSelect.addEventListener('change', toggleSsmExpiry);
+		}
+
 		// District change handler - show/hide state dropdown
 		const districtSelect = document.getElementById('district_id');
 		const stateDiv = document.getElementById('state_id_div');

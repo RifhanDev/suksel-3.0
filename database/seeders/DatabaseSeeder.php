@@ -7,6 +7,7 @@ use Database\Seeders\Ref\HaveNo;
 use Database\Seeders\Ref\KaedahPerolehanSeeder;
 use Database\Seeders\Ref\KategoriJenisPerolehan;
 use Database\Seeders\Ref\OpenTo;
+use Database\Seeders\Ref\OrganizationTypes;
 use Database\Seeders\Ref\SumberPeruntukan;
 use Database\Seeders\Ref\TypeOfContract;
 use Database\Seeders\Ref\TypeOfPemenuhan;
@@ -41,6 +42,7 @@ class DatabaseSeeder extends Seeder
             TypeOfPemenuhan::class,
             TypeOfTender::class,
             TypeOfPerolehan::class,
+            OrganizationTypes::class,
         ]);
     }
 }
