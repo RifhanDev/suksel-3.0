@@ -114,22 +114,50 @@ class Upload extends Model
 				$data->user_id = 1;
 		});
 
-		self::created(function () {
-			// Cache flush removed - tags not supported by file/database drivers
-			cache()->flush();
+		self::created(function ()
+		{
+			$store = cache()->store();
+
+			if ($store->getStore() instanceof TaggableStore)
+			{
+				$store->tags('Upload')->flush();
+			}
+			else
+			{
+				cache()->flush();
+			}
 		});
 
-		self::updated(function () {
-			// Cache flush removed - tags not supported by file/database drivers
-			cache()->flush();
-		});
+		self::updated(function ()
+		{
+			$store = cache()->store();
 
-		self::deleted(function () {
-			// Cache flush removed - tags not supported by file/database drivers
-			cache()->flush();
+			if ($store->getStore() instanceof TaggableStore)
+			{
+				$store->tags('Upload')->flush();
+			}
+			else
+			{
+				cache()->flush();
+			}
 		});
+		
+		self::deleted(function ()
+		{
+			$store = cache()->store();
 
-		self::deleting(function ($data) {
+			if ($store->getStore() instanceof TaggableStore)
+			{
+				$store->tags('Upload')->flush();
+			}
+			else
+			{
+				cache()->flush();
+			}
+		});
+		
+		self::deleting(function ($data)
+		{
 			File::deleteDirectory($data->path);
 			return true;
 		});
