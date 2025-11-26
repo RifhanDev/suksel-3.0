@@ -16,6 +16,7 @@ use Database\Seeders\Ref\TypeOfTender;
 use Database\Seeders\Ref\YesNo;
 use Database\Seeders\CreateAdminUser;
 use Database\Seeders\UserSeeder;
+use Database\Seeders\CodesSeeder;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -52,6 +53,7 @@ class DatabaseSeeder extends Seeder
             RoleSeeder::class,
             PermissionSeeder::class,
             PermissionRoleSeeder::class,
+            CodesSeeder::class,
         ]);
     }
 }
