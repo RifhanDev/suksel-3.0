@@ -1,127 +1,135 @@
-@extends('layouts.modern')
+@extends('layouts.modernLanding')
 
 @section('content')
-	<div class="row">
+	<div class="row gy-4">
+		<!-- Main carousel section -->
 		<div class="col-lg-9">
-			<div class="card">
-				<div class="card-body p-0">
-					<div id="landing-carousel" class="carousel slide" data-bs-ride="carousel">
-						<!-- Indicators -->
-						<div class="carousel-indicators">
-							@foreach (range(0, count($banners) - 1) as $c)
-								<button type="button" data-bs-target="#landing-carousel" data-bs-slide-to="{{ $c }}"
-									@if ($c == 0) class="active" @endif aria-current="true"
-									aria-label="Slide {{ $c + 1 }}"></button>
-							@endforeach
-						</div>
-
-						<!-- Wrapper for slides -->
-						<div class="carousel-inner">
-							<?php $index = 1; ?>
-							@foreach ($banners as $banner)
-								@if (\Illuminate\Support\Facades\Schema::hasTable('uploads') && $banner->file)
-									<div class="carousel-item @if ($index == 1) active @endif">
-										@if ($banner->link)
-											<a href="{{ $banner->link }}" title="{{ $banner->title }}">
-										@endif
-										<img src="{{ $banner->file->url . '/' . $banner->file->name }}" alt="{{ $banner->title }}"
-											class="d-block w-100" style="height: 300px; object-fit: cover;">
-										@if ($banner->link)
-											</a>
-										@endif
-									</div>
-									<?php $index++; ?>
-								@endif
-							@endforeach
-						</div>
-
-						<!-- Controls -->
-						<button class="carousel-control-prev" type="button" data-bs-target="#landing-carousel" data-bs-slide="prev">
-							<span class="carousel-control-prev-icon" aria-hidden="true"></span>
-							<span class="visually-hidden">Previous</span>
-						</button>
-						<button class="carousel-control-next" type="button" data-bs-target="#landing-carousel" data-bs-slide="next">
-							<span class="carousel-control-next-icon" aria-hidden="true"></span>
-							<span class="visually-hidden">Next</span>
-						</button>
+			<!-- Enhanced carousel card with better spacing and styling -->
+			<div class="card overflow-hidden border-0 shadow-sm">
+				<div id="landing-carousel" class="carousel slide" data-bs-ride="carousel">
+					<!-- Carousel indicators -->
+					<div class="carousel-indicators">
+						@foreach (range(0, count($banners) - 1) as $c)
+							<button type="button" data-bs-target="#landing-carousel" data-bs-slide-to="{{ $c }}"
+								@if ($c == 0) class="active" @endif aria-current="true"
+								aria-label="Slide {{ $c + 1 }}"></button>
+						@endforeach
 					</div>
+
+					<!-- Carousel slides -->
+					<div class="carousel-inner">
+						<?php $index = 1; ?>
+						@foreach ($banners as $banner)
+							@if (\Illuminate\Support\Facades\Schema::hasTable('uploads') && $banner->file)
+								<div class="carousel-item @if ($index == 1) active @endif">
+									@if ($banner->link)
+										<a href="{{ $banner->link }}" title="{{ $banner->title }}" class="d-block">
+									@endif
+									<img src="{{ $banner->file->url . '/' . $banner->file->name }}" alt="{{ $banner->title }}"
+										class="d-block w-100" style="height: 400px; object-fit: cover;">
+									@if ($banner->link)
+										</a>
+									@endif
+								</div>
+								<?php $index++; ?>
+							@endif
+						@endforeach
+					</div>
+
+					<!-- Carousel controls -->
+					<button class="carousel-control-prev" type="button" data-bs-target="#landing-carousel" data-bs-slide="prev">
+						<span class="carousel-control-prev-icon" aria-hidden="true"></span>
+						<span class="visually-hidden">Previous</span>
+					</button>
+					<button class="carousel-control-next" type="button" data-bs-target="#landing-carousel" data-bs-slide="next">
+						<span class="carousel-control-next-icon" aria-hidden="true"></span>
+						<span class="visually-hidden">Next</span>
+					</button>
 				</div>
 			</div>
 		</div>
 
+		<!-- Latest news sidebar -->
 		<div class="col-lg-3">
-			<div class="card">
-				<div class="card-header">
-					<h3 class="card-title">
-						<i class="ti ti-news"></i> Berita Terkini
+			<!-- Enhanced news card with better styling and spacing -->
+			<div class="card border-0 shadow-sm h-100">
+				<div class="card-header bg-white border-bottom">
+					<h3 class="card-title mb-0">
+						<i class="ti ti-newspaper text-danger"></i> Berita Terkini
 					</h3>
 				</div>
-				<div class="card-body">
+				<div class="card-body p-0">
 					<div id="announcements-ticker">
 						<div class="list-group list-group-flush">
 							@foreach ($global_news as $news)
-								<div class="list-group-item px-0">
-									<div class="row align-items-center">
-										<div class="col">
-											<a href="{{ asset('news/' . $news->id) }}" class="text-decoration-none">
-												{{ $news->title }}
-											</a>
-											<div class="text-muted small">
-												{{ \Carbon\Carbon::parse($news->published_at ?: $news->created_at)->format('j M Y') }}
-											</div>
-										</div>
-									</div>
-								</div>
+								<a href="{{ asset('news/' . $news->id) }}" class="list-group-item list-group-item-action px-4 py-3">
+									<h6 class="mb-2 fw-600">{{ $news->title }}</h6>
+									<small class="text-muted">
+										{{ \Carbon\Carbon::parse($news->published_at ?: $news->created_at)->format('j M Y') }}
+									</small>
+								</a>
 							@endforeach
 						</div>
 					</div>
-					<div class="mt-3">
-						<a href="/news" class="btn btn-primary btn-sm w-100">
-							<i class="ti ti-eye"></i> Lihat Semua
-						</a>
-					</div>
+				</div>
+				<div class="card-footer bg-white border-top">
+					<a href="/news" class="btn btn-primary btn-sm w-100">
+						<i class="ti ti-eye"></i> Lihat Semua Berita
+					</a>
 				</div>
 			</div>
 		</div>
 	</div>
 
-	{{-- @if (!Auth::check()) --}}
+	<!-- Call to action section -->
+	@if (!Auth::check())
+		<div class="row mt-4">
+			<div class="col-12">
+				<!-- Improved CTA card with better visual hierarchy -->
+				<div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);">
+					<div class="card-body py-4">
+						<div class="row align-items-center g-3">
+							<div class="col-lg-7">
+								<h4 class="mb-2 fw-bold text-danger">📋 Daftar Sebagai Penender Sekarang</h4>
+								<p class="text-muted mb-0">Dapatkan akses ke semua tender dan sebut harga terkini di negeri Selangor. Proses pendaftaran mudah, cepat, dan selamat.</p>
+							</div>
+							<div class="col-lg-5 text-lg-end">
+								<a href="{{ asset('register') }}" class="btn btn-danger me-2 mb-2 mb-lg-0">
+									<i class="ti ti-user-plus"></i> Daftar Syarikat
+								</a>
+								<a href="{{ asset('company_search') }}" class="btn btn-outline-danger">
+									<i class="ti ti-search"></i> Semak Pendaftaran
+								</a>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	@endif
+
+	<!-- Tender & Quotations section -->
 	<div class="row mt-4">
 		<div class="col-12">
-			<div class="card">
-				<div class="card-body">
+			<!-- Enhanced tender section with better card styling -->
+			<div class="card border-0 shadow-sm">
+				<div class="card-header bg-white border-bottom">
 					<div class="row align-items-center">
-						<div class="col-lg-8">
-							<h4 class="mb-0">Dapatkan maklumat tender dan sebut harga terkini di negeri Selangor!</h4>
+						<div class="col">
+							<h3 class="card-title mb-0">
+								<i class="ti ti-files-check text-danger"></i> Tender &amp; Sebut Harga
+							</h3>
 						</div>
-						<div class="col-lg-4 text-end">
-							<a href="{{ asset('register') }}" class="btn btn-success me-2">
-								<i class="ti ti-user-plus"></i> Daftar Syarikat
-							</a>
-							<a href="{{ asset('company_search') }}" class="btn btn-primary">
-								<i class="ti ti-search"></i> Semak Pendaftaran Syarikat
-							</a>
+						<div class="col-auto">
+							<small class="text-muted">
+								<i class="ti ti-info-circle"></i> Paparan 20 item terbaru
+							</small>
 						</div>
 					</div>
-				</div>
-			</div>
-		</div>
-	</div>
-	{{-- @else
-		<hr class="my-4">
-	@endif --}}
-
-	<div class="row">
-		<div class="col-12">
-			<div class="card">
-				<div class="card-header">
-					<h3 class="card-title">
-						<i class="ti ti-files"></i> Tender &amp; Sebut Harga
-					</h3>
 				</div>
 				<div class="card-body">
 					<!-- Filter Tabs -->
-					<ul class="nav nav-tabs nav-fill mb-4" role="tablist">
+					<ul class="nav nav-tabs nav-fill mb-4 border-bottom" role="tablist">
 						<li class="nav-item" role="presentation">
 							<a class="nav-link @if (!Request::get('type')) active @endif" href="{{ action('HomeController@index') }}">
 								<i class="ti ti-list"></i> Semua
@@ -136,14 +144,14 @@
 						<li class="nav-item" role="presentation">
 							<a class="nav-link @if (Request::get('type') == 'quotations') active @endif"
 								href="{{ action('HomeController@index', ['type' => 'quotations']) }}">
-								<i class="ti ti-file-invoice"></i> Sebut Harga
+								<i class="ti ti-receipt"></i> Sebut Harga
 							</a>
 						</li>
 					</ul>
 
 					<!-- Data Table -->
 					<div class="table-responsive">
-						<table class="DT2 table table-vcenter table-mobile-md card-table" data-path="{{ $path }}">
+						<table class="DT2 table table-hover card-table" data-path="{{ $path }}">
 							<thead>
 								<tr>
 									<th class="w-25">No / Tajuk</th>
@@ -220,7 +228,7 @@
 			});
 		});
 
-
+		// News ticker animation
 		$('#announcements-ticker').easyTicker({
 			direction: 'up',
 			easing: 'swing',
