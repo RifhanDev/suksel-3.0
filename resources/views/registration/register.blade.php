@@ -162,7 +162,7 @@
 <div class="row justify-content-center pt-5 pb-5">
     <div class="col-lg-9 col-md-9">
         
-        <div class="selangor-card">    
+        <div class="selangor-card">
             <div class="card-header-custom">
                 {{-- <div class="crest-icon">
                     <!-- Red Star/Emblem Icon -->

@@ -43,7 +43,7 @@
         margin-bottom: 2rem;
     }
 
-    /* The Dots on the timeline */
+    /* Dots on the timeline */
     .logic-step::before {
         content: "";
         position: absolute;
@@ -63,7 +63,7 @@
 
     /* 3. Input Styling */
     .form-group {
-        margin-bottom: 0; /* Let logic-step handle spacing */
+        margin-bottom: 0; /* Logic-step handle spacing */
     }
 
     .control-label {
@@ -91,7 +91,7 @@
         outline: none;
     }
 
-    /* Help Text Styling */
+    /* Help Text */
     .help-block, .form-text {
         font-size: 0.75rem;
         color: #6b7280;
@@ -100,7 +100,7 @@
         font-style: italic;
     }
 
-    /* 4. The Registration Promo Card */
+    /* Registration Card */
     .register-promo-card {
         background: linear-gradient(135deg, var(--sg-red) 0%, #8b1428 100%);
         border-radius: 16px;
@@ -130,7 +130,7 @@
         color: var(--sg-yellow);
     }
 
-    /* Background Pattern for Register Card */
+    /* Background for Register Card */
     .register-promo-card::after {
         content: "";
         position: absolute;

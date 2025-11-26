@@ -46,7 +46,7 @@ class AuthController extends Controller
             session()->forget('attempt_again');
          } else {
             $err_msg = trans('auth.alerts.too_many_attempts');
-            return redirect('/')->withInput($request->except('password'))->with('error', $err_msg);
+            return redirect('/auth/login')->withInput($request->except('password'))->with('error', $err_msg);
          }
       }
 
@@ -60,7 +60,7 @@ class AuthController extends Controller
 
          if (session('attempt') > 5) {
             $err_msg = trans('auth.alerts.too_many_attempts');
-            return redirect('/')->withInput($request->except('password'))->with('error', $err_msg);
+            return redirect('/auth/login')->withInput($request->except('password'))->with('error', $err_msg);
          } else {
 
             $user = User::where('username', $request->email)->where('password', md5($request->password))->orWhere('password', Hash::make($request->password))->first();
@@ -89,7 +89,7 @@ class AuthController extends Controller
                   if (is_null($user->vendor)) {
                      auth()->logout();
                      session()->flash('error', 'Akaun anda mempunyai masalah.<br>Sila berhubung dengan Bahagian Teknologi Maklumat di <u>tenderadmin@selangor.gov.my</u> dan nyatakan alamat emel <b>(' . $user->email . '</b>) yang digunakan.');
-                     return redirect('/');
+                     return redirect('/auth/login');
                   }
 
                   if (!$user->vendor->completed)
@@ -111,10 +111,10 @@ class AuthController extends Controller
                   session()->put('attempt_again', $attempt_again);
                   //note 5*60 = 5mins, 60*60 = 1hr, to set to 2hrs change it to 2*60*60
                   $err_msg = trans('auth.alerts.too_many_attempts');
-                  return redirect('/')->withInput($request->except('password'))->with('error', $err_msg);
+                  return redirect('/auth/login')->withInput($request->except('password'))->with('error', $err_msg);
                } else {
                   $err_msg = trans('auth.alerts.wrong_credentials');
-                  return redirect('/')->withInput($request->except('password'))->with('error', $err_msg);
+                  return redirect('/auth/login')->withInput($request->except('password'))->with('error', $err_msg);
                }
             }
          }

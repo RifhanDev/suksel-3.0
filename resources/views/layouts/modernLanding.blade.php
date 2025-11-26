@@ -17,9 +17,7 @@
 	<meta name="msapplication-TileColor" content="#da532c">
 	<meta name="theme-color" content="#ffffff">
 
-	<link
-		href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Poppins:wght@600;700;800&display=swap"
-		rel="stylesheet">
+	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
 
 	<!-- Tabler CSS -->
 	<link href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0-beta20/dist/css/tabler.min.css" rel="stylesheet">
@@ -28,7 +26,7 @@
 	<link href="{{ asset('css/application.css') }}" rel="stylesheet">
 	<link href="{{ asset('css/modern-actions.css') }}" rel="stylesheet">
 	@yield('styles')
-
+	    
 	<style>
 		:root {
 			--primary: #c41e3a;
@@ -57,7 +55,6 @@
 			--font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 			--font-display: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 
-			/* Spacing */
 			--sp-xs: 0.375rem;
 			--sp-sm: 0.5rem;
 			--sp-md: 0.75rem;
@@ -92,6 +89,7 @@
 			min-height: 100vh;
 		}
 
+		/* --- NAVBAR STRUCTURE --- */
 		.navbar-top {
 			background: var(--topbar-bg);
 			border-bottom: 1px solid var(--topbar-border);
@@ -104,13 +102,14 @@
 			transition: all 0.3s ease;
 		}
 
-		.navbar-top .container-xl {
+		.navbar-top .container-fluid {
 			display: flex;
 			justify-content: space-between;
 			align-items: center;
-			gap: var(--sp-xl);
-			max-width: 1400px;
 			height: 100%;
+			width: 100%;
+			padding-left: 6rem; 
+			padding-right: 2rem; 
 		}
 
 		.navbar-brand-logo {
@@ -130,7 +129,6 @@
 		}
 
 		.navbar-brand-logo:hover {
-			/* transform: translateY(-1px); */
 			text-decoration: none;
 			filter: brightness(1.05);
 		}
@@ -175,6 +173,7 @@
 			letter-spacing: 0.5px;
 		}
 
+		/* --- MENU ITEMS --- */
 		.navbar-nav-horizontal {
 			display: flex;
 			align-items: center;
@@ -203,18 +202,23 @@
 			white-space: nowrap; 
 		}
 
+		.nav-link-icon {
+			margin-bottom: 3px;
+		}
+
 		/* Hover State */
 		.navbar-nav-horizontal .nav-link:hover {
 			color: var(--primary);
 			background: transparent;
 		}
 
-		.navbar-nav-horizontal .nav-link:hover::after {
-			width: 100%;
-			opacity: 1;
+		/* Active State */
+		.navbar-nav-horizontal .nav-link.active {
+			color: var(--primary);
+			font-weight: 700;
 		}
 
-		/* Custom small indicator on hover */
+		/* Standard Underline (::after) */
 		.navbar-nav-horizontal .nav-link::after {
 			content: '';
 			position: absolute;
@@ -226,26 +230,134 @@
 			background: var(--primary);
 			border-radius: 2px;
 			transition: all 0.3s ease;
-			opacity: 0;
+			opacity: 1 !important;
 		}
 
-		/* Active State */
-		.navbar-nav-horizontal .nav-link.active {
-			color: var(--primary);
-			font-weight: 700;
-		}
-
-		/* The Active Indicator */
+		.navbar-nav-horizontal .nav-link:hover::after,
 		.navbar-nav-horizontal .nav-link.active::after {
 			width: 85%;
 			opacity: 1;
-			background: var(--primary);
-			box-shadow: 0 2px 4px rgba(196, 30, 58, 0.2);
 		}
 
-		.nav-link-icon {
-			margin-bottom: 3px;
+		.navbar-nav-horizontal .nav-item.dropdown .nav-link::after {
+			display: none !important;
 		}
+
+		/* Underline for Dropdown (::before) */
+		.navbar-nav-horizontal .nav-item.dropdown .nav-link::before {
+			content: '';
+			position: absolute;
+			bottom: 0px;
+			left: 50%;
+			transform: translateX(-50%);
+			width: 0;
+			height: 3px;
+			background: var(--sg-red);
+			border-radius: 2px;
+			transition: all 0.3s ease;
+			opacity: 0;
+		}
+
+		/* Show on Hover */
+		.navbar-nav-horizontal .nav-item.dropdown .nav-link:hover::before {
+			width: 85%;
+			opacity: 1;
+		}
+
+		.navbar-nav-horizontal .nav-item.dropdown .nav-link.show::before,
+		.navbar-nav-horizontal .nav-item.dropdown .nav-link.active.show::before {
+			width: 0 !important;
+			opacity: 0 !important;
+			transition: none;
+		}
+
+		.navbar-nav-horizontal .nav-item.dropdown .nav-link.show,
+		.navbar-nav-horizontal .nav-item.dropdown .nav-link.active {
+			color: var(--sg-red);
+			font-weight: 700;
+		}
+
+		/* Arrow Styling */
+		.navbar-nav-horizontal .nav-item.dropdown .dropdown-toggle::after {
+			display: inline-block !important;
+			content: "" !important;
+			width: 6px; 
+			height: 6px;
+			position: static !important;
+			background: transparent !important;
+			border-right: 2px solid #9ca3af; 
+			border-bottom: 2px solid #9ca3af;
+			border-top: 0;
+			border-left: 0;
+			margin-left: 8px;
+			vertical-align: 2px;
+			transform: rotate(45deg); 
+			transition: transform 0.2s ease;
+			opacity: 1 !important;
+		}
+
+		.navbar-nav-horizontal .nav-item.dropdown .dropdown-toggle.show::after {
+			transform: rotate(225deg) !important;
+			border-color: var(--sg-red) !important;
+		}
+
+		.navbar-nav-horizontal .dropdown-menu {
+			position: absolute !important;
+			top: 100% !important;
+			left: 0 !important;
+			margin-top: 14px !important; /* Snap to link bottom */
+			padding: 0.5rem 0;
+			border: 1px solid #e5e7eb;
+			border-top: 3px solid var(--sg-red) !important; 
+			border-radius: 0 0 8px 8px !important;
+			box-shadow: 0 15px 30px rgba(0,0,0,0.15) !important;
+			background: white;
+			display: none;
+			z-index: 1050;
+			min-width: 220px;
+		}
+
+		/* CRITICAL: Remove the "Triangle/Speech Bubble" from the white box */
+		.dropdown-menu::before, 
+		.dropdown-menu::after {
+			display: none !important;
+			content: none !important;
+		}
+
+		@keyframes simpleSlide {
+			from { opacity: 0; transform: translateY(10px); }
+			to   { opacity: 1; transform: translateY(0); }
+		}
+
+		.navbar-nav-horizontal .dropdown-menu.show {
+			display: block;
+			animation: simpleSlide 0.4s ease-out forwards;
+		}
+
+		.dropdown-item {
+			padding: 0.7rem 1.2rem !important;
+			font-size: 0.8rem !important;
+			font-weight: 500;
+			color: var(--nav-text) !important;
+			border-radius: 0 !important;
+			margin: 0 !important;
+		}
+
+		.dropdown-item:hover {
+			background-color: var(--nav-hover-bg) !important;
+			color: var(--sg-red) !important;
+			padding-left: 1.5rem !important;
+		}
+
+		.dropdown-item i {
+			color: var(--sg-red);
+			width: 20px;
+			text-align: center;
+			margin-right: 8px;
+			transition: transform 0.2s;
+		}
+		
+		.dropdown-item:hover i { transform: scale(1.1); }
 
 		/* --- ACTIONS --- */
 		.navbar-actions {
@@ -255,7 +367,6 @@
 			margin-left: auto;
 		}
 
-		/* Group 1: "Utility" Links */
 		.action-links {
 			display: flex;
 			flex-direction: column; 
@@ -284,11 +395,8 @@
 			text-decoration: underline;
 		}
 
-		.action-link-item i {
-			font-size: 0.8rem;
-		}
+		.action-link-item i { font-size: 0.8rem; }
 
-		/* Group 2: "Auth" Buttons */
 		.action-buttons {
 			display: flex;
 			align-items: center;
@@ -308,7 +416,6 @@
 			height: 38px;
 		}
 
-		/* Register */
 		.btn-auth-outline {
 			border: 1px solid #d1d5db;
 			background: white;
@@ -321,7 +428,6 @@
 			background: #fff1f2;
 		}
 
-		/* Login */
 		.btn-auth-solid {
 			background: var(--primary);
 			color: white;
@@ -369,180 +475,81 @@
 			flex-shrink: 0;
 		}
 
-		.user-dropdown-toggle:hover .avatar {
-			border-color: white;
-		}
+		.user-dropdown-toggle:hover .avatar { border-color: white; }
 
 		.user-dropdown-toggle .ti-chevron-down {
 			font-size: 0.75rem;
 			transition: transform 0.2s ease;
 		}
 
-		.user-dropdown-toggle:hover .ti-chevron-down {
-			transform: rotate(180deg);
-		}
+		.user-dropdown-toggle:hover .ti-chevron-down { transform: rotate(180deg); }
 
-		.dropdown-menu {
-			background: white !important;
-			border: 1px solid var(--border-color) !important;
-			border-radius: 0.625rem !important;
-			box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15) !important;
-			padding: 0.75rem 0 !important;
-			min-width: 240px !important;
-			margin-top: 0.75rem !important;
-		}
+		.dropdown-menu-end { right: 0; left: auto; }
 
-		.dropdown-menu .dropdown-item {
-			padding: 0.75rem 1.25rem !important;
-			color: var(--text-primary) !important;
-			font-weight: 500;
-			font-size: 0.85rem;
-			transition: all 0.2s ease !important;
-			display: inline-flex !important;
-			align-items: center;
-			gap: var(--sp-md);
-			border-radius: 0.375rem;
-			margin: 0.25rem 0.5rem !important;
-			letter-spacing: 0.3px;
-		}
-
-		.dropdown-menu .dropdown-item:hover {
-			background: var(--nav-hover-bg) !important;
-			color: var(--primary) !important;
-			transform: translateX(4px);
-		}
-
-		.dropdown-menu .dropdown-item i {
-			width: 18px;
-			font-size: 1rem;
-			text-align: center;
-			color: var(--primary);
-		}
-
-		.dropdown-menu .dropdown-item:hover i {
-			color: var(--primary);
-		}
-
-		.dropdown-menu .dropdown-item.text-danger {
-			color: #dc2626 !important;
-		}
-
-		.dropdown-menu .dropdown-item.text-danger i {
-			color: #dc2626;
-		}
-
-		.dropdown-menu .dropdown-item.text-danger:hover {
-			color: #991b1b !important;
-			background: #fef2f2 !important;
-		}
-
-		.dropdown-menu .dropdown-item.text-danger:hover i {
-			color: #991b1b;
-		}
-
-		.dropdown-divider {
-			margin: 0.5rem 0 !important;
-			border-color: var(--border-color) !important;
-		}
-
-		/* Page wrapper */
 		.page-wrapper {
 			flex: 1;
 			padding: var(--sp-2xl) var(--sp-xl);
 		}
 
-		.page-wrapper .container-xl {
-			max-width: 1400px;
-		}
-
+		.page-wrapper .container-xl { max-width: 1400px; }
 
 		/* Responsive Design */
-		@media (max-width: 1200px) {
-			.action-links {
-				display: none; /* Hide helper links on smaller laptops */
-			}
-			.navbar-actions {
-				gap: 0.5rem;
+		/* Large Screens */
+		@media (min-width: 1600px) {
+			.navbar-top .container-fluid {
+				padding-left: 15rem;
+				padding-right: 3rem;
 			}
 		}
 
-		@media (max-width: 992px) {
-			.navbar-nav-horizontal {
-				display: none;
-			}
+		/* 2. Laptops */
+		@media (max-width: 1200px) {
+			.action-links { display: none; }
+			.navbar-actions { gap: 0.5rem; }
+			.navbar-top .container-fluid { padding-left: 1.5rem; padding-right: 1.5rem; }
+		}
 
+		/* 3. Tablets */
+		@media (max-width: 992px) {
+			.navbar-nav-horizontal { display: none; }
+			
 			.navbar-brand-logo {
-				clip-path: none; /* Remove slant on mobile */
+				clip-path: none;
 				background: transparent;
 				padding-right: 0;
+				margin-left: 0; 
 			}
 			
-			/* Revert text colors on mobile to dark */
 			.navbar-brand-text { color: var(--primary-darker); }
 			.navbar-brand-text-sub { color: var(--primary); }
 			.logo-bg-circle { border-color: transparent; }
-
-			.navbar-top .container-xl {
-				gap: var(--sp-lg);
-			}
-
-			.navbar-actions .btn {
-				padding: 0.5rem 0.75rem;
-				font-size: 0.75rem;
-			}
+			
+			.navbar-top .container-fluid { gap: var(--sp-lg); }
+			.navbar-actions .btn { padding: 0.5rem 0.75rem; font-size: 0.75rem; }
 		}
 
+		/* 4. Mobile */
 		@media (max-width: 768px) {
-			.navbar-top {
-				padding: 0.5rem var(--sp-lg);
-				height: auto; /* Allow auto height on mobile */
+			.navbar-top { 
+				padding: 0.5rem 0; /* Vertical padding on mobile wrapper */
+				height: auto; 
+			}
+			
+			/* Padding on mobile */
+			.navbar-top .container-fluid { 
+				padding-left: 1rem; 
+				padding-right: 1rem; 
 			}
 
-			.navbar-brand-text {
-				font-size: 1.1rem;
-			}
-
-			.navbar-brand-text-sub {
-				display: none;
-			}
-
-			.navbar-brand-logo img {
-				max-width: 44px;
-			}
-
-			.navbar-actions {
-				gap: 0.375rem;
-			}
-
-			.navbar-actions .btn {
-				padding: 0.5rem;
-				font-size: 0.7rem;
-				gap: 0;
-			}
-
-			.navbar-actions .btn span {
-				display: none;
-			}
-
-			.page-wrapper {
-				padding: var(--sp-lg);
-			}
-		}
-
-		/* Animations */
-		@keyframes slideDown {
-			from {
-				opacity: 0;
-				transform: translateY(-8px);
-			}
-			to {
-				opacity: 1;
-				transform: translateY(0);
-			}
-		}
-
-		.dropdown-menu.show {
-			animation: slideDown 0.2s ease-out;
+			.navbar-brand-text { font-size: 1.1rem; }
+			.navbar-brand-text-sub { display: none; }
+			.navbar-brand-logo img { max-width: 44px; }
+			
+			.navbar-actions { gap: 0.375rem; }
+			.navbar-actions .btn { padding: 0.5rem; font-size: 0.7rem; gap: 0; }
+			.navbar-actions .btn span { display: none; }
+			
+			.page-wrapper { padding: var(--sp-lg); }
 		}
 	</style>
 </head>
@@ -550,7 +557,7 @@
 <body>
 	<div class="page">
 		<nav class="navbar-top">
-			<div class="container-xl">
+			<div class="container-fluid">
 				<a href="/" class="navbar-brand-logo" title="Sistem Tender Online Selangor">
 					<div class="logo-bg-circle">
 						<img src="{{ asset('images/02_selangor.png') }}" alt="Selangor">
@@ -579,7 +586,7 @@
 						</a>
 					</li>
 					<li class="nav-item">
-						<a href="#" class="nav-link {{ request()->is('results*') ? 'active' : '' }}" title="Penender Berjaya">
+						<a href="{{ action('HomeController@results') }}" class="nav-link {{ request()->is('results*') ? 'active' : '' }}" title="Penender Berjaya">
 							<span class="nav-link-icon">
 								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" class="icon icon-tabler icons-tabler-filled icon-tabler-trophy"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M17 3a1 1 0 0 1 .993 .883l.007 .117v2.17a3 3 0 1 1 0 5.659v.171a6.002 6.002 0 0 1 -5 5.917v2.083h3a1 1 0 0 1 .117 1.993l-.117 .007h-8a1 1 0 0 1 -.117 -1.993l.117 -.007h3v-2.083a6.002 6.002 0 0 1 -4.996 -5.692l-.004 -.225v-.171a3 3 0 0 1 -3.996 -2.653l-.003 -.176l.005 -.176a3 3 0 0 1 3.995 -2.654l-.001 -2.17a1 1 0 0 1 1 -1h10zm-12 5a1 1 0 1 0 0 2a1 1 0 0 0 0 -2zm14 0a1 1 0 1 0 0 2a1 1 0 0 0 0 -2z" /></svg>
 							</span>
@@ -587,7 +594,7 @@
 						</a>
 					</li>
 					<li class="nav-item">
-						<a href="#" class="nav-link {{ request()->is('circulars*') ? 'active' : '' }}" title="Pekeliling">
+						<a href="{{ route('circulars.public') }}" class="nav-link {{ request()->is('circulars*') ? 'active' : '' }}" title="Pekeliling">
 							<span class="nav-link-icon">
 								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" class="icon icon-tabler icons-tabler-filled icon-tabler-clipboard-list"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M17.997 4.17a3 3 0 0 1 2.003 2.83v12a3 3 0 0 1 -3 3h-10a3 3 0 0 1 -3 -3v-12a3 3 0 0 1 2.003 -2.83a4 4 0 0 0 3.997 3.83h4a4 4 0 0 0 3.98 -3.597zm-8.987 10.83h-.01a1 1 0 0 0 -.117 1.993l.127 .007a1 1 0 0 0 0 -2m5.99 0h-2a1 1 0 0 0 0 2h2a1 1 0 0 0 0 -2m-5.99 -4h-.01a1 1 0 0 0 -.117 1.993l.127 .007a1 1 0 0 0 0 -2m5.99 0h-2a1 1 0 0 0 0 2h2a1 1 0 0 0 0 -2m-1 -9a2 2 0 1 1 0 4h-4a2 2 0 1 1 0 -4z" /></svg>
 							</span>
@@ -595,36 +602,54 @@
 						</a>
 					</li>
 					<li class="nav-item">
-						<a href="{{ route('circulars.public') }}" class="nav-link {{ request()->is('circulars*') ? 'active' : '' }}" title="Pekeliling">
+						<a href="{{ route('aduan.create') }}" class="nav-link {{ request()->is('aduan*') ? 'active' : '' }}" title="Pekeliling">
 							<span class="nav-link-icon">
 								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" class="icon icon-tabler icons-tabler-filled icon-tabler-message-report"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M18 3a4 4 0 0 1 4 4v8a4 4 0 0 1 -4 4h-4.724l-4.762 2.857a1 1 0 0 1 -1.508 -.743l-.006 -.114v-2h-1a4 4 0 0 1 -3.995 -3.8l-.005 -.2v-8a4 4 0 0 1 4 -4zm-6 10a1 1 0 0 0 -1 1v.01a1 1 0 0 0 2 0v-.01a1 1 0 0 0 -1 -1m0 -6a1 1 0 0 0 -1 1v3a1 1 0 0 0 2 0v-3a1 1 0 0 0 -1 -1" /></svg>
 							</span>
 							<span>Aduan</span>
 						</a>
 					</li>
-					<li class="nav-item">
-						<a href="{{ route('circulars.public') }}" class="nav-link {{ request()->is('circulars*') ? 'active' : '' }}" title="Pekeliling">
+					<li class="nav-item dropdown">
+						<a href="#navbar-help" 
+						class="nav-link dropdown-toggle {{ request()->is('manuals*') ? 'active' : '' }}" 
+						id="navbarDropdownPertanyaan"
+						role="button" 
+						data-bs-toggle="dropdown" 
+						data-bs-auto-close="outside" 
+						data-bs-display="static" 
+						aria-expanded="false" 
+						title="Pertanyaan">
 							<span class="nav-link-icon">
 								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" class="icon icon-tabler icons-tabler-filled icon-tabler-zoom-question"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M14 3.072a8 8 0 0 1 2.32 11.834l5.387 5.387a1 1 0 0 1 -1.414 1.414l-5.388 -5.387a8 8 0 0 1 -12.905 -6.32l.005 -.285a8 8 0 0 1 11.995 -6.643m-4 8.928a1 1 0 0 0 -.993 .883l-.007 .127a1 1 0 0 0 1.993 .117l.007 -.127a1 1 0 0 0 -1 -1m-1.9 -5.123a1 1 0 0 0 1.433 1.389l.088 -.09a.5 .5 0 1 1 .379 .824a1 1 0 0 0 -.002 2a2.5 2.5 0 1 0 -1.9 -4.123" /></svg>
 							</span>
 							<span>Pertanyaan</span>
 						</a>
+						<div class="dropdown-menu" aria-labelledby="navbarDropdownPertanyaan">
+							<a class="dropdown-item" href="{{ action('HelpsController@index') }}">
+								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" class="icon icon-tabler icons-tabler-filled icon-tabler-lifebuoy"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M14.757 16.172l3.571 3.571a10.004 10.004 0 0 1 -12.656 0l3.57 -3.571a5 5 0 0 0 2.758 .828c1.02 0 1.967 -.305 2.757 -.828m-10.5 -10.5l3.571 3.57a5 5 0 0 0 -.828 2.758c0 1.02 .305 1.967 .828 2.757l-3.57 3.572a10 10 0 0 1 -2.258 -6.329l.005 -.324a10 10 0 0 1 2.252 -6.005m17.743 6.329c0 2.343 -.82 4.57 -2.257 6.328l-3.571 -3.57a5 5 0 0 0 .828 -2.758c0 -1.02 -.305 -1.967 -.828 -2.757l3.571 -3.57a10 10 0 0 1 2.257 6.327m-5 -8.66q .707 .41 1.33 .918l-3.573 3.57a5 5 0 0 0 -2.757 -.828c-1.02 0 -1.967 .305 -2.757 .828l-3.573 -3.57a10 10 0 0 1 11.33 -.918" /></svg>
+								Bantuan
+							</a>
+							<a class="dropdown-item" href="{{ route('manuals.show', 'pendaftaran') }}">
+								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" class="icon icon-tabler icons-tabler-filled icon-tabler-alert-square"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M19 2a3 3 0 0 1 2.995 2.824l.005 .176v14a3 3 0 0 1 -2.824 2.995l-.176 .005h-14a3 3 0 0 1 -2.995 -2.824l-.005 -.176v-14a3 3 0 0 1 2.824 -2.995l.176 -.005h14zm-6.99 13l-.127 .007a1 1 0 0 0 0 1.986l.117 .007l.127 -.007a1 1 0 0 0 0 -1.986l-.117 -.007zm-.01 -8a1 1 0 0 0 -.993 .883l-.007 .117v4l.007 .117a1 1 0 0 0 1.986 0l.007 -.117v-4l-.007 -.117a1 1 0 0 0 -.993 -.883z" /></svg>
+								Panduan Pengguna
+							</a>
+						</div>
 					</li>
 				</ul>
 
 				<!-- ACTIONS -->
 				<div class="navbar-actions">
 					@if (!Auth::check())
-						<!-- Group 1: Utilities (Help & Recovery) -->
+						<!-- Group 1: Utilities (Help) -->
 						<div class="action-links d-none d-xl-flex">
-							<a href="#" class="action-link-item" title="Panduan pendaftaran vendor">
+							<a href="{{ route('manuals.show', 'pendaftaran') }}" target="_blank" class="action-link-item" title="Panduan pendaftaran vendor">
 								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-help-circle"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M12 16v.01" /><path d="M12 13a2 2 0 0 0 .914 -3.782a1.98 1.98 0 0 0 -2.414 .483" /></svg>
 								Cara Mendaftar
 							</a>
-							<a href="#" class="action-link-item" title="Set semula kata laluan">
+							{{-- <a href="#" class="action-link-item" title="Set semula kata laluan">
 								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-lock-question"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M15 21h-8a2 2 0 0 1 -2 -2v-6a2 2 0 0 1 2 -2h10c.265 0 .518 .052 .75 .145" /><path d="M11 16a1 1 0 1 0 2 0a1 1 0 0 0 -2 0" /><path d="M8 11v-4a4 4 0 1 1 8 0v4" /><path d="M19 22v.01" /><path d="M19 19a2.003 2.003 0 0 0 .914 -3.782a1.98 1.98 0 0 0 -2.414 .483" /></svg>
 								Lupa Kata Laluan?
-							</a>
+							</a> --}}
 						</div>
 
 						<!-- Group 2: Primary Actions -->
