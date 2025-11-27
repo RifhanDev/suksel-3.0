@@ -170,6 +170,10 @@ Route::get('prices', [HomeController::class, 'prices']);
 Route::get('results', [HomeController::class, 'results']);
 Route::get('privacy', [HomeController::class, 'privacy']);
 
+// Place 3.0 Modules Routes Temporarily Here
+Route::view('/pelantikan-jawatankuasa', 'newModule.pelantikan_jawatankuasa')->name('pelantikanJawatankuasa');
+
+
 // Public resources
 Route::resource('comments', CommentsController::class);
 Route::get('/agencies/{id}/prices', [OrganizationUnitsController::class, 'prices']);

@@ -1591,6 +1591,44 @@
 						@endif
 					@endif
 
+					{{-- Modul 3.0 Temporary Letak Sini --}}
+					<div
+						style="border-top: 1px solid rgba(255, 255, 255, 0.1); margin: var(--space-6) 0; padding-top: var(--space-3);">
+						<div
+							style="color: rgba(255, 255, 255, 0.5); font-size: 0.75rem; padding: 0 var(--space-4); margin-bottom: var(--space-3); text-transform: uppercase; letter-spacing: 0.05em;">
+							Modul Baru (3.0)
+						</div>
+
+						<div class="nav-item">
+							<a href="#" class="nav-link {{ request()->is('circulars*') ? 'active' : '' }}">
+								<span class="nav-link-icon">
+									<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+										stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+										class="icon icon-tabler icons-tabler-outline icon-tabler-circles-relation">
+										<path stroke="none" d="M0 0h24v24H0z" fill="none" />
+										<path d="M9.183 6.117a6 6 0 1 0 4.511 3.986" />
+										<path d="M14.813 17.883a6 6 0 1 0 -4.496 -3.954" />
+									</svg>
+								</span>
+								<span class="nav-link-title">Cipta Tender</span>
+							</a>
+						</div>
+						<div class="nav-item">
+							<a href="{{ route('pelantikanJawatankuasa') }}" class="nav-link {{ request()->is('pelantikan-jawatankuasa*') ? 'active' : '' }}">
+								<span class="nav-link-icon">
+									<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+										stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+										class="icon icon-tabler icons-tabler-outline icon-tabler-circles-relation">
+										<path stroke="none" d="M0 0h24v24H0z" fill="none" />
+										<path d="M9.183 6.117a6 6 0 1 0 4.511 3.986" />
+										<path d="M14.813 17.883a6 6 0 1 0 -4.496 -3.954" />
+									</svg>
+								</span>
+								<span class="nav-link-title">Modul Pelantikan JawatanKuasa</span>
+							</a>
+						</div>
+					</div>
+
 					@if (!empty($user))
 						<!-- Logout Button in Sidebar -->
 						<div class="nav-item mt-auto">

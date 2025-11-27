@@ -367,6 +367,7 @@
 			margin-left: auto;
 		}
 
+		/* Utility Links */
 		.action-links {
 			display: flex;
 			flex-direction: column; 
@@ -390,13 +391,10 @@
 			transition: color 0.2s ease;
 		}
 
-		.action-link-item:hover {
-			color: var(--primary);
-			text-decoration: underline;
-		}
-
+		.action-link-item:hover { color: var(--primary); text-decoration: underline; }
 		.action-link-item i { font-size: 0.8rem; }
 
+		/* Buttons */
 		.action-buttons {
 			display: flex;
 			align-items: center;
@@ -421,7 +419,6 @@
 			background: white;
 			color: var(--text-primary);
 		}
-
 		.btn-auth-outline:hover {
 			border-color: var(--primary);
 			color: var(--primary);
@@ -434,7 +431,6 @@
 			border: 1px solid var(--primary);
 			box-shadow: 0 2px 4px rgba(196, 30, 58, 0.15);
 		}
-
 		.btn-auth-solid:hover {
 			background: var(--primary-dark);
 			transform: translateY(-1px);
@@ -442,49 +438,179 @@
 			color: white;
 		}
 
-		.user-dropdown-toggle {
-			display: inline-flex;
+		/* --- USER PROFILE --- */
+		.user-nav-item {
+			position: relative;
+			list-style: none;
+		}
+
+		.user-chip-toggle {
+			display: inline-flex !important;
+			flex-direction: row !important; 
 			align-items: center;
-			gap: 0.75rem;
-			padding: 0.625rem 1.25rem;
-			background: var(--primary-light);
-			border: 2px solid var(--primary);
-			border-radius: 0.5rem;
-			cursor: pointer;
-			font-weight: 600;
-			font-size: 0.85rem;
-			transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+			flex-wrap: nowrap !important;
 			white-space: nowrap;
-			letter-spacing: 0.3px;
+			gap: 0.75rem;
+			padding: 0.25rem 0.5rem 0.25rem 0.25rem;
+			border-radius: 50px;
+			transition: all 0.2s ease;
+			cursor: pointer;
+			text-decoration: none;
+			color: var(--nav-text);
+			border: 1px solid transparent;
+			background: transparent;
 		}
 
-		.user-dropdown-toggle:hover {
-			background: var(--primary);
-			color: white;
-			border-color: var(--primary-dark);
-			box-shadow: 0 8px 16px rgba(196, 30, 58, 0.25);
-			transform: translateY(-2px);
+		a.user-chip-toggle:hover,
+		a.user-chip-toggle:focus,
+		a.user-chip-toggle.show {
+			text-decoration: none !important;
 		}
 
-		.user-dropdown-toggle .avatar {
-			width: 36px;
-			height: 36px;
+		.user-chip-toggle:hover, 
+		.user-chip-toggle.show {
+			background-color: #f3f4f6;
+			border-color: #e5e7eb;
+			text-decoration: none;
+			color: var(--nav-text);
+			text-decoration: none;
+		}
+
+		.user-chip-toggle .avatar {
+			width: 34px;
+			height: 34px;
 			border-radius: 50%;
 			object-fit: cover;
-			border: 2px solid rgba(196, 30, 58, 0.3);
-			flex-shrink: 0;
+			border: 2px solid white;
+			box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+			flex-shrink: 0; /* Prevent avatar from shrinking */
 		}
 
-		.user-dropdown-toggle:hover .avatar { border-color: white; }
+		.user-info {
+			display: flex;
+			flex-direction: column;
+			line-height: 1.1;
+			margin-right: 0.25rem;
+			text-align: left;
+		}
 
-		.user-dropdown-toggle .ti-chevron-down {
-			font-size: 0.75rem;
+		.user-name {
+			font-size: 0.8rem;
+			font-weight: 700;
+			color: var(--sg-black);
+		}
+
+		.user-role {
+			font-size: 0.6rem;
+			color: #6b7280;
+			text-transform: uppercase;
+			letter-spacing: 0.5px;
+		}
+
+		/* User Toggle Arrow */
+		.user-chip-toggle::after {
+			display: inline-block !important;
+			content: "" !important;
+			width: 6px; 
+			height: 6px;
+			border-right: 2px solid #9ca3af; 
+			border-bottom: 2px solid #9ca3af;
+			border-top: 0;
+			border-left: 0;
+			margin-left: 4px;
+			margin-right: 8px;
+			vertical-align: 2px;
+			transform: rotate(45deg); 
 			transition: transform 0.2s ease;
+			opacity: 1 !important;
+			flex-shrink: 0; /* Stop arrow from causing wrap issues */
 		}
 
-		.user-dropdown-toggle:hover .ti-chevron-down { transform: rotate(180deg); }
+		.user-chip-toggle.show::after {
+			transform: rotate(225deg);
+			border-color: var(--sg-red);
+		}
 
-		.dropdown-menu-end { right: 0; left: auto; }
+		/* --- USER DROPDOWN MENU --- */
+		.user-dropdown-menu {
+			position: absolute !important;
+			top: 100% !important;
+			right: 0 !important;
+			left: auto !important;
+			margin-top: 12px !important;
+			width: 260px;
+			padding: 0;
+			border: 1px solid #e5e7eb;
+			border-top: 3px solid var(--sg-red) !important;
+			border-radius: 0 0 8px 8px !important;
+			box-shadow: 0 15px 30px rgba(0,0,0,0.15) !important;
+			background: white;
+			display: none;
+			z-index: 1050;
+		}
+
+		.user-dropdown-menu.show {
+			display: block;
+			animation: simpleSlide 0.4s ease-out forwards;
+		}
+
+		/* User Header Dropdown */
+		.dropdown-user-header {
+			padding: 1.25rem;
+			background-color: #f9fafb;
+			border-bottom: 1px solid #e5e7eb;
+			text-align: left;
+			text-decoration: none;
+		}
+
+		.dropdown-user-header h6 {
+			margin: 0;
+			font-weight: 700;
+			color: var(--sg-black);
+			font-size: 0.9rem;
+		}
+
+		.dropdown-user-header span {
+			display: block;
+			font-size: 0.75rem;
+			color: #6b7280;
+			margin-top: 2px;
+		}
+
+		/* User Menu Items */
+		.user-dropdown-menu .dropdown-item {
+			padding: 0.75rem 1.25rem;
+			font-size: 0.8rem;
+			color: var(--nav-text);
+			border-left: 3px solid transparent;
+			transition: all 0.2s;
+		}
+
+		.user-dropdown-menu .dropdown-item:hover {
+			background-color: #fef2f2 !important;
+			color: var(--sg-red) !important;
+			border-left-color: var(--sg-red);
+			padding-left: 1.5rem;
+		}
+
+		.user-dropdown-menu .dropdown-item i {
+			margin-right: 10px;
+			font-size: 1.1rem;
+			color: #9ca3af;
+			transition: color 0.2s;
+		}
+
+		.user-dropdown-menu .dropdown-item:hover i { color: var(--sg-red); }
+
+		/* Logout */
+		.item-logout { color: #dc2626 !important; }
+		.item-logout:hover {
+			background-color: #fef2f2 !important;
+			color: #b91c1c !important;
+		}
+		.item-logout i { color: #dc2626 !important; }
+
+		.dropdown-divider { margin: 0; border-color: var(--border-color); }
 
 		.page-wrapper {
 			flex: 1;
@@ -664,32 +790,53 @@
 							</a>
 						</div>
 					@else
-						<div class="dropdown">
-							<button class="user-dropdown-toggle dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Menu Pengguna">
+						<!-- USER PROFILE MENU -->
+						<div class="nav-item dropdown user-nav-item">
+							<a href="#" 
+							   class="user-chip-toggle dropdown-toggle" 
+							   data-bs-toggle="dropdown" 
+							   data-bs-auto-close="outside"
+							   data-bs-display="static"
+							   aria-expanded="false">
+								
 								<img src="https://ui-avatars.com/api/?name={{ Auth::user()->name }}&background=c41e3a&color=fff" alt="{{ Auth::user()->name }}" class="avatar">
-								<span class="d-none d-lg-inline">{{ Auth::user()->name }}</span>
-								<i class="ti ti-chevron-down"></i>
-							</button>
-							<ul class="dropdown-menu dropdown-menu-end">
-								<li><a class="dropdown-item" href="#">
-										<i class="ti ti-user"></i>
-										<span>Profil Saya</span>
-									</a></li>
-								<li><a class="dropdown-item" href="#">
-										<i class="ti ti-lock"></i>
-										<span>Tukar Kata Laluan</span>
-									</a></li>
-								<li><hr class="dropdown-divider"></li>
-								<li>
-									<form method="POST" action="{{ route('logout') }}" class="d-inline w-100">
-										@csrf
-										<button type="submit" class="dropdown-item text-danger w-100">
-											<i class="ti ti-logout"></i>
-											<span>Keluar</span>
-										</button>
-									</form>
-								</li>
-							</ul>
+								
+								<div class="user-info d-none d-xl-flex">
+									<span class="user-name mt-2">{{ Str::limit(Auth::user()->name, 15) }}</span>
+									<span class="user-role">Pengguna</span>
+								</div>
+							</a>
+
+							<div class="dropdown-menu user-dropdown-menu dropdown-menu-end">
+								<!-- Header Section -->
+								<div class="dropdown-user-header">
+									<h6>{{ Auth::user()->name }}</h6>
+									<span>{{ Auth::user()->email }}</span>
+								</div>
+
+								<!-- Menu Items -->
+								<a class="dropdown-item" href="#">
+									<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" class="icon icon-tabler icons-tabler-filled icon-tabler-user"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 2a5 5 0 1 1 -5 5l.005 -.217a5 5 0 0 1 4.995 -4.783z" /><path d="M14 14a5 5 0 0 1 5 5v1a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-1a5 5 0 0 1 5 -5h4z" /></svg>
+									Profil Saya
+								</a>
+								<a class="dropdown-item" href="#">
+									<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" class="icon icon-tabler icons-tabler-filled icon-tabler-lock"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 2a5 5 0 0 1 5 5v3a3 3 0 0 1 3 3v6a3 3 0 0 1 -3 3h-10a3 3 0 0 1 -3 -3v-6a3 3 0 0 1 3 -3v-3a5 5 0 0 1 5 -5m0 12a2 2 0 0 0 -1.995 1.85l-.005 .15a2 2 0 1 0 2 -2m0 -10a3 3 0 0 0 -3 3v3h6v-3a3 3 0 0 0 -3 -3" /></svg>
+									Tukar Kata Laluan
+								</a>
+								
+								<div class="dropdown-divider"></div>
+								
+								<!-- Logout -->
+								<a class="dropdown-item item-logout" href="{{ route('logout') }}"
+								   onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+									<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" class="icon icon-tabler icons-tabler-filled icon-tabler-dual-screen"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M19 3a1 1 0 0 1 1 1v15a1 1 0 0 1 -1 1h-5v2a1 1 0 0 1 -1.351 .936l-8 -3a1 1 0 0 1 -.649 -.936v-15a1 1 0 0 1 .212 -.616l.068 -.079l.078 -.072l.066 -.05l.092 -.058l.065 -.033l.1 -.04l.099 -.028l.046 -.01l.108 -.013l.066 -.001zm-5.649 3.064a1 1 0 0 1 .649 .936v11h4v-13h-7.486z" /></svg>
+								   	Log Keluar
+								</a>
+								
+								<form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
+									@csrf
+								</form>
+							</div>
 						</div>
 					@endif
 				</div>
