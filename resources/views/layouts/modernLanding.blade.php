@@ -317,7 +317,6 @@
 			min-width: 220px;
 		}
 
-		/* CRITICAL: Remove the "Triangle/Speech Bubble" from the white box */
 		.dropdown-menu::before, 
 		.dropdown-menu::after {
 			display: none !important;
