@@ -1,4 +1,4 @@
-@extends('layouts.modern')
+@extends('layouts.modernLanding')
 
 @section('content')
 	<div class="page-header">
