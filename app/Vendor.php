@@ -1061,7 +1061,6 @@ class Vendor extends Model
 		self::saving(function ($model) {
 			$path = public_path() . '/uploads/' . md5($model->registration);
 			if (!is_dir($path)) {
-				// Create directory with recursive flag and permissions
 				if (!file_exists(dirname($path))) {
 					mkdir(dirname($path), 0755, true);
 				}
