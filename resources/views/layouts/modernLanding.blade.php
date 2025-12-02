@@ -65,6 +65,7 @@
 
 		* {
 			box-sizing: border-box;
+            border-radius: 0 !important;
 		}
 
 		html, body {
@@ -95,7 +96,7 @@
 			border-bottom: 1px solid var(--topbar-border);
 			box-shadow: var(--topbar-shadow);
 			padding: 0; 
-			height: 74px;
+			height: 84px;
 			position: sticky;
 			top: 0;
 			z-index: 1000;
@@ -108,7 +109,7 @@
 			align-items: center;
 			height: 100%;
 			width: 100%;
-			padding-left: 6rem; 
+			padding-left: 4rem; 
 			padding-right: 2rem; 
 		}
 
@@ -133,11 +134,10 @@
 			filter: brightness(1.05);
 		}
 
-		.logo-bg-circle {
+		.logo-bg-box {
 			background: white;
-			width: 42px;
-			height: 42px;
-			border-radius: 50%;
+			width: 75px;
+			height: 75px;
 			display: flex;
 			align-items: center;
 			justify-content: center;
@@ -146,7 +146,7 @@
 		}
 
 		.navbar-brand-logo img {
-			max-width: 30px;
+			max-width: 85px;
 			height: auto;
 			display: block;
 		}
@@ -197,7 +197,6 @@
 			font-weight: 600;
 			font-size: 0.75rem; 
 			position: relative;
-			border-radius: 0.5rem;
 			transition: all 0.2s ease;
 			white-space: nowrap; 
 		}
@@ -228,7 +227,6 @@
 			width: 0;
 			height: 3px;
 			background: var(--primary);
-			border-radius: 2px;
 			transition: all 0.3s ease;
 			opacity: 1 !important;
 		}
@@ -253,7 +251,6 @@
 			width: 0;
 			height: 3px;
 			background: var(--sg-red);
-			border-radius: 2px;
 			transition: all 0.3s ease;
 			opacity: 0;
 		}
@@ -305,11 +302,10 @@
 			position: absolute !important;
 			top: 100% !important;
 			left: 0 !important;
-			margin-top: 14px !important; /* Snap to link bottom */
+			margin-top: 18px !important; /* Snap to link bottom */
 			padding: 0.5rem 0;
 			border: 1px solid #e5e7eb;
 			border-top: 3px solid var(--sg-red) !important; 
-			border-radius: 0 0 8px 8px !important;
 			box-shadow: 0 15px 30px rgba(0,0,0,0.15) !important;
 			background: white;
 			display: none;
@@ -317,7 +313,6 @@
 			min-width: 220px;
 		}
 
-		/* CRITICAL: Remove the "Triangle/Speech Bubble" from the white box */
 		.dropdown-menu::before, 
 		.dropdown-menu::after {
 			display: none !important;
@@ -339,7 +334,6 @@
 			font-size: 0.8rem !important;
 			font-weight: 500;
 			color: var(--nav-text) !important;
-			border-radius: 0 !important;
 			margin: 0 !important;
 		}
 
@@ -405,7 +399,6 @@
 			padding: 0.5rem 1rem;
 			font-size: 0.8rem;
 			font-weight: 600;
-			border-radius: 6px;
 			display: inline-flex;
 			align-items: center;
 			gap: 0.4rem;
@@ -452,7 +445,6 @@
 			white-space: nowrap;
 			gap: 0.75rem;
 			padding: 0.25rem 0.5rem 0.25rem 0.25rem;
-			border-radius: 50px;
 			transition: all 0.2s ease;
 			cursor: pointer;
 			text-decoration: none;
@@ -479,7 +471,6 @@
 		.user-chip-toggle .avatar {
 			width: 34px;
 			height: 34px;
-			border-radius: 50%;
 			object-fit: cover;
 			border: 2px solid white;
 			box-shadow: 0 2px 4px rgba(0,0,0,0.1);
@@ -542,7 +533,6 @@
 			padding: 0;
 			border: 1px solid #e5e7eb;
 			border-top: 3px solid var(--sg-red) !important;
-			border-radius: 0 0 8px 8px !important;
 			box-shadow: 0 15px 30px rgba(0,0,0,0.15) !important;
 			background: white;
 			display: none;
@@ -617,7 +607,10 @@
 			padding: var(--sp-2xl) var(--sp-xl);
 		}
 
-		.page-wrapper .container-xl { max-width: 1400px; }
+		.page-wrapper .container-fluid {
+			padding-left: 1.5rem;
+			padding-right: 1.5rem;
+		}
 
 		/* Responsive Design */
 		/* Large Screens */
@@ -648,7 +641,7 @@
 			
 			.navbar-brand-text { color: var(--primary-darker); }
 			.navbar-brand-text-sub { color: var(--primary); }
-			.logo-bg-circle { border-color: transparent; }
+			.logo-bg-box { border-color: transparent; }
 			
 			.navbar-top .container-fluid { gap: var(--sp-lg); }
 			.navbar-actions .btn { padding: 0.5rem 0.75rem; font-size: 0.75rem; }
@@ -685,7 +678,7 @@
 		<nav class="navbar-top">
 			<div class="container-fluid">
 				<a href="/" class="navbar-brand-logo" title="Sistem Tender Online Selangor">
-					<div class="logo-bg-circle">
+					<div class="logo-bg-box">
 						<img src="{{ asset('images/02_selangor.png') }}" alt="Selangor">
 					</div>
 					<div>
@@ -840,7 +833,7 @@
 
 		<!-- Page Content -->
 		<div class="page-wrapper">
-			<div class="container-xl">
+			<div class="container-fluid">
 				@yield('content')
 			</div>
 		</div>
@@ -849,7 +842,12 @@
 	<!-- Bootstrap JS -->
 	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 	<!-- jQuery -->
-	<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+	<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+	<!-- Tabler JS -->
+	{{-- kena check balik script tabler ni --}}
+	{{-- <script src="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0-beta20/dist/js/tabler.min.js"></script> --}}
+
+	{{-- <script src="{{ asset('js/application.js') }}"></script> --}}
 
 	@yield('scripts')
 </body>
