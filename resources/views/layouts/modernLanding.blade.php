@@ -616,7 +616,7 @@
 		/* Large Screens */
 		@media (min-width: 1600px) {
 			.navbar-top .container-fluid {
-				padding-left: 15rem;
+				padding-left: 1.5rem;
 				padding-right: 3rem;
 			}
 		}
