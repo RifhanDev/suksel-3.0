@@ -146,6 +146,20 @@ class User extends Authenticatable
 	 */
 	protected $hidden = array('password', 'remember_token');
 
+	/**
+	 * Override Spatie's roles relationship to use legacy role_user table
+	 * instead of model_has_roles table
+	 */
+	public function roles()
+	{
+		return $this->belongsToMany(
+			\App\Role::class,
+			'role_user',
+			'user_id',
+			'role_id'
+		);
+	}
+
 	public function organizationunit()
 	{
 		return $this->belongsTo('App\OrganizationUnit', 'organization_unit_id');

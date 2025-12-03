@@ -41,14 +41,19 @@ trait EntrustCompatTrait
                 return !empty(trim($p));
             });
 
-            if (!empty($permissions)) {
+            if (!empty($permissions))
+            {
                 $found = false;
-                if (method_exists($this, 'roles')) {
-                    foreach ($this->roles as $role) {
-                        foreach ($permissions as $permission) {
-                            if ($role->permissions()->where('name', $permission)->exists()) {
+                if (method_exists($this, 'roles'))
+                {
+                    foreach ($this->roles as $role)
+                    {
+                        foreach ($permissions as $permission)
+                        {
+                            if (method_exists($role, 'perms') && $role->perms()->where('name', $permission)->exists())
+                            {
                                 $found = true;
-                                break 2; // Break out of both loops
+                                break 2;
                             }
                         }
                     }
@@ -88,10 +93,12 @@ trait EntrustCompatTrait
             return parent::can($permission, $arguments);
         }
 
-        // Check if user has this permission through their roles
-        if (method_exists($this, 'roles')) {
-            foreach ($this->roles as $role) {
-                if ($role->permissions()->where('name', $permission)->exists()) {
+        if (method_exists($this, 'roles'))
+        {
+            foreach ($this->roles as $role)
+            {
+                if (method_exists($role, 'perms') && $role->perms()->where('name', $permission)->exists())
+                {
                     return true;
                 }
             }
