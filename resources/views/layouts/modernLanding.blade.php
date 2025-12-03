@@ -755,8 +755,8 @@
 						</div>
 					</li>
 					<li class="nav-item dropdown">
-						<a href="#navbar-agencies" 
-						class="nav-link dropdown-toggle" 
+						<a href="#navbar-agencies"
+						class="nav-link dropdown-toggle {{ request()->is('agencies*') ? 'active' : '' }}" 
 						id="navbarDropdownAgensi"
 						role="button" 
 						data-bs-toggle="dropdown" 
