@@ -187,7 +187,6 @@
 		}
 
 		.navbar-nav-horizontal .nav-link {
-			display: inline-flex;
 			align-items: center;
 			gap: 0.4rem;
 			padding: 0.75rem 0.25rem; 
@@ -271,7 +270,7 @@
 		.navbar-nav-horizontal .nav-item.dropdown .nav-link.show,
 		.navbar-nav-horizontal .nav-item.dropdown .nav-link.active {
 			color: var(--sg-red);
-			font-weight: 700;
+			font-weight: 600;
 		}
 
 		/* Arrow Styling */
