@@ -22,9 +22,11 @@
 		href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@300;400;500;600;700;800&display=swap"
 		rel="stylesheet">
 
-	<!-- Tabler CSS -->
-	<link href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0-beta20/dist/css/tabler.min.css" rel="stylesheet">
+	<!-- Bootstrap 5 + Modern Styles -->
+	<link href="{{ asset('css/modern.css') }}" rel="stylesheet">
+	<!-- Tabler Icons -->
 	<link href="https://cdn.jsdelivr.net/npm/@tabler/icons@2.40.0/tabler-icons.min.css" rel="stylesheet">
+	<!-- Legacy application.css for forms/tables styling -->
 	<link href="{{ asset('css/application.css') }}" rel="stylesheet">
 	<link href="{{ asset('css/modern-actions.css') }}" rel="stylesheet">
 	@yield('styles')
@@ -101,8 +103,8 @@
 		}
 
 		/* Sidebar Styles */
-		.navbar-vertical {
-			width: 300px;
+		.sidebar-vertical {
+			width: 280px;
 			background: var(--sidebar-bg);
 			border-right: 1px solid #333;
 			position: fixed;
@@ -110,45 +112,47 @@
 			left: 0;
 			height: 100vh;
 			z-index: 1000;
-			overflow-y: auto;
-			overflow-x: visible;
-			transition: var(--transition);
+			display: flex;
+			flex-direction: column;
+			transition: transform 0.3s ease-in-out;
 		}
 
-		/* Ensure dropdowns can overflow sidebar */
-		.navbar-vertical .navbar-nav {
-			overflow: visible;
-		}
-
-		.navbar-vertical .nav-item {
-			overflow: visible;
-		}
-
-		.navbar-vertical .container-fluid {
+		.sidebar-header {
 			padding: var(--space-6);
+			border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+			flex-shrink: 0;
 		}
 
-		.navbar-brand {
-			margin-bottom: var(--space-8);
-			padding-bottom: var(--space-6);
-			border-bottom: 1px solid #ffffffd6;
+		.sidebar-brand {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			text-decoration: none;
 		}
 
-		.navbar-brand img {
+		.sidebar-brand-image {
 			max-width: 68px;
 			height: auto;
 		}
 
-		.navbar-nav {
+		.sidebar-body {
+			flex: 1;
+			overflow-y: auto;
+			overflow-x: hidden;
+			padding: var(--space-4) var(--space-6);
+		}
+
+		.sidebar-nav {
+			display: flex;
 			flex-direction: column;
 			gap: var(--space-1);
 		}
 
-		.navbar-nav .nav-item {
+		.sidebar-nav .nav-item {
 			width: 100%;
 		}
 
-		.navbar-nav .nav-link {
+		.sidebar-nav .nav-link {
 			display: flex;
 			align-items: center;
 			justify-content: flex-start;
@@ -160,25 +164,23 @@
 			font-weight: 500;
 			text-align: left;
 			width: 100%;
-			min-width: 0;
-			overflow: visible;
 		}
 
-		.navbar-nav .nav-link:hover {
+		.sidebar-nav .nav-link:hover {
 			background: var(--sidebar-hover);
 			color: var(--sidebar-text);
 			transform: translateX(4px);
 		}
 
-		.navbar-nav .nav-link.active {
+		.sidebar-nav .nav-link.active {
 			background: var(--sidebar-active);
 			color: white;
 		}
 
 		/* Keep dropdown toggle text white when clicked/focused/active */
-		.navbar-nav .nav-link:focus,
-		.navbar-nav .nav-link:active,
-		.navbar-nav .dropdown.show .nav-link {
+		.sidebar-nav .nav-link:focus,
+		.sidebar-nav .nav-link:active,
+		.sidebar-nav .dropdown.show .nav-link {
 			color: white !important;
 			background: var(--sidebar-hover);
 		}
@@ -194,7 +196,7 @@
 		}
 
 		.nav-link-title {
-			font-size: 0.95rem;
+			font-size: 1.5rem;
 			text-align: left;
 			flex: 1;
 			min-width: 0;
@@ -212,59 +214,22 @@
 			margin-right: 0;
 		}
 
-		/* Simple Dropdown Styles */
-		.navbar-nav .dropdown-menu {
+		/* Bootstrap 5 Dropdown Styles for Sidebar */
+		.sidebar-nav .dropdown-menu {
 			background: #34495e;
 			border: 1px solid rgba(255, 255, 255, 0.1);
-			border-radius: 8px;
-			box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-			margin-top: 4px;
-			padding: 8px 0;
-			min-width: 200px;
-			overflow: visible;
+			padding: 0.5rem 0;
 		}
 
-		/* Refund dropdown - wider for long text */
-		.dropdown-menu-refund {
-			min-width: 350px !important;
-			max-width: 450px;
-			width: auto !important;
-		}
-
-		.navbar-nav .dropdown-item {
+		.sidebar-nav .dropdown-item {
 			color: #ffffff;
-			padding: 12px 20px;
-			font-size: 14px;
-			transition: all 0.2s ease;
-			display: flex;
-			align-items: flex-start;
+			padding: 0.5rem 1rem;
 			white-space: normal;
-			word-wrap: break-word;
-			overflow: visible;
-			min-width: 0;
 		}
 
-		.dropdown-item-text {
-			flex: 1;
-			line-height: 1.5;
-			word-break: break-word;
-			overflow: visible;
-			min-width: 0;
-			padding-right: 8px;
-		}
-
-		.navbar-nav .dropdown-item:hover {
-			background: #c6ced6;
-			color: #ffffff;
-		}
-
-		.navbar-nav .dropdown-item i {
-			font-size: 16px;
-			margin-right: 8px;
-			color: rgba(255, 255, 255, 0.7);
-		}
-
-		.navbar-nav .dropdown-item:hover i {
+		.sidebar-nav .dropdown-item:hover,
+		.sidebar-nav .dropdown-item:focus {
+			background: #2c3e50;
 			color: #ffffff;
 		}
 
@@ -293,23 +258,23 @@
 		}
 
 		/* Sidebar logout button */
-		.navbar-vertical .nav-item.mt-auto {
+		.sidebar-vertical .nav-item.mt-auto {
 			margin-top: auto !important;
 			border-top: 1px solid rgba(255, 255, 255, 0.1);
 			padding-top: var(--space-3);
 		}
 
-		.navbar-vertical .nav-item.mt-auto .nav-link {
+		.sidebar-vertical .nav-item.mt-auto .nav-link {
 			color: #ff6b6b !important;
 			font-weight: 600;
 		}
 
-		.navbar-vertical .nav-item.mt-auto .nav-link:hover {
+		.sidebar-vertical .nav-item.mt-auto .nav-link:hover {
 			background-color: rgba(255, 107, 107, 0.1) !important;
 			color: #ff5252 !important;
 		}
 
-		.navbar-vertical .nav-item.mt-auto .nav-link .nav-link-icon {
+		.sidebar-vertical .nav-item.mt-auto .nav-link .nav-link-icon {
 			display: inline-flex !important;
 			align-items: center;
 			justify-content: center;
@@ -317,14 +282,14 @@
 			height: 2rem;
 		}
 
-		.navbar-vertical .nav-item.mt-auto .nav-link .nav-link-icon i {
+		.sidebar-vertical .nav-item.mt-auto .nav-link .nav-link-icon i {
 			color: #ff6b6b !important;
 			font-size: 1.5rem !important;
 			display: inline-block !important;
 			font-weight: bold !important;
 		}
 
-		.navbar-vertical .nav-item.mt-auto .nav-link .nav-link-icon .icon-logout-fallback {
+		.sidebar-vertical .nav-item.mt-auto .nav-link .nav-link-icon .icon-logout-fallback {
 			color: #ff6b6b !important;
 			stroke: #ff6b6b !important;
 			display: inline-block !important;
@@ -352,159 +317,21 @@
 		}
 
 		/* User dropdown toggle styling */
-		/* .user-dropdown-toggle {
-			background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-			border-radius: 10px !important;
-			padding: 0.75rem 1.25rem !important;
-			transition: all 0.3s ease !important;
-			border: 2px solid rgba(255, 255, 255, 0.2) !important;
-			box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4) !important;
-		} */
-
-		.user-dropdown-toggle:hover {
-			background: linear-gradient(135deg, #764ba2 0%, #667eea 100%) !important;
-			transform: translateY(-2px) !important;
-			box-shadow: 0 6px 20px rgba(255, 255, 255, 0.6) !important;
+		/* Navbar dropdown override for Bootstrap 5 */
+		.navbar .dropdown-menu {
+			background: #ffffff;
+			border: 1px solid rgba(0, 0, 0, 0.15);
 		}
 
-		.user-dropdown-toggle .fw-bold {
-			color: #ffffff !important;
-			font-size: 1rem !important;
-			font-weight: 600 !important;
+		.navbar .dropdown-item {
+			padding: 0.5rem 1rem;
+			color: #212529;
 		}
 
-		.user-dropdown-toggle .text-muted {
-			color: rgba(255, 255, 255, 0.8) !important;
-			font-size: 0.85rem !important;
-		}
-
-		.user-dropdown-toggle .ti-chevron-down {
-			color: #ffffff !important;
-			font-size: 1.2rem !important;
-		}
-
-		.user-dropdown-toggle .avatar {
-			border: 2px solid #ffffff !important;
-			box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
-		}
-
-		/* Ultra Modern Dropdown Menu Styling */
-		.navbar .dropdown-menu,
-		.dropdown-menu {
-			background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
-			border: 1px solid rgba(255, 255, 255, 0.1);
-			border-radius: 16px;
-			box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5),
-				0 0 1px rgba(255, 255, 255, 0.1) inset;
-			padding: 0.75rem;
-			min-width: 280px;
-			margin-top: 0.75rem;
-			z-index: 1060 !important;
-			backdrop-filter: blur(10px);
-			animation: dropdownSlideIn 0.3s ease-out;
-			overflow: visible;
-		}
-
-		/* Refund dropdown specific styling */
-		.dropdown-menu-refund {
-			min-width: 350px !important;
-			max-width: 450px;
-			width: auto !important;
-		}
-
-		@keyframes dropdownSlideIn {
-			from {
-				opacity: 0;
-				transform: translateY(-10px);
-			}
-
-			to {
-				opacity: 1;
-				transform: translateY(0);
-			}
-		}
-
-		/* .dropdown-menu.show {
-			display: block !important;
-			opacity: 1 !important;
-			visibility: visible !important;
-		} */
-
-		.navbar .dropdown-menu .dropdown-item,
-		.dropdown-menu .dropdown-item {
-			color: rgb(255, 255, 255);
-			padding: 0.85rem 1.25rem;
-			font-size: 0.95rem;
-			transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-			border-radius: 10px;
-			margin: 0.25rem 0;
-			position: relative;
-			overflow: visible;
-			white-space: normal;
-			word-wrap: break-word;
-			min-width: 0;
-			align-items: flex-start;
-		}
-
-		.dropdown-menu .dropdown-item .dropdown-item-text {
-			flex: 1;
-			line-height: 1.5;
-			word-break: break-word;
-			overflow: visible;
-			min-width: 0;
-			padding-right: 8px;
-		}
-
-		/* Ensure icons in dropdown items don't shrink */
-		.dropdown-menu .dropdown-item svg,
-		.dropdown-menu .dropdown-item .icon {
-			flex-shrink: 0;
-			margin-right: 0.5rem;
-		}
-
-		.navbar .dropdown-menu .dropdown-item:hover,
-		.dropdown-menu .dropdown-item:hover {
-			background: linear-gradient(90deg, rgba(96, 165, 250, 0.2) 0%, rgba(139, 92, 246, 0.2) 100%);
-			color: #ffffff;
-			transform: translateX(5px);
-			box-shadow: 0 4px 12px rgba(96, 165, 250, 0.2);
-		}
-
-		.navbar .dropdown-menu .dropdown-item i,
-		.dropdown-menu .dropdown-item i {
-			color: #60a5fa;
-			font-size: 1.2em;
-			width: 24px;
-			text-align: center;
-			transition: all 0.3s ease;
-		}
-
-		.navbar .dropdown-menu .dropdown-item:hover i,
-		.dropdown-menu .dropdown-item:hover i {
-			color: #93c5fd;
-			transform: scale(1.1);
-		}
-
-		/* .navbar .dropdown-menu::before,
-		.dropdown-menu::before {
-			position: absolute;
-			top: -8px;
-			right: 30px;
-			width: 16px;
-			height: 16px;
-		} */
-
-		/* Dropdown item icons specific styling */
-		.dropdown-item i.ti-user {
-			color: #60a5fa !important;
-		}
-
-		.dropdown-item i.ti-logout {
-			color: #f87171 !important;
-		}
-
-		.dropdown-item i.ti-book {
-			color: #34d399 !important;
+		.navbar .dropdown-item:hover,
+		.navbar .dropdown-item:focus {
+			background: #f8f9fa;
+			color: #212529;
 		}
 
 		/* Modal accessibility fixes */
@@ -550,10 +377,12 @@
 		/* Page Wrapper */
 		.page-wrapper {
 			flex: 1;
-			margin-left: 300px;
+			margin-left: 280px;
 			display: flex;
 			flex-direction: column;
 			min-height: 100vh;
+			width: calc(100% - 280px);
+			transition: margin-left 0.3s ease-in-out, width 0.3s ease-in-out;
 		}
 
 		/* Top Navigation */
@@ -573,7 +402,22 @@
 		/* Page Body */
 		.page-body {
 			flex: 1;
-			padding: var(--space-8) var(--space-6);
+			padding: var(--space-6) var(--space-4);
+			width: 100%;
+		}
+
+		/* Container Constraints - Better width management */
+		.page-body .container-xl {
+			max-width: 100%;
+			width: 100%;
+			margin: 0 auto;
+			padding-left: var(--space-6);
+			padding-right: var(--space-6);
+		}
+
+		/* For forms, use better constraints */
+		.page-body .container-xl.form-container {
+			max-width: 1200px;
 		}
 
 		/* Cards */
@@ -643,6 +487,68 @@
 		.nav-tabs .nav-link.active {
 			background: var(--primary);
 			color: white;
+		}
+
+		/* Bootstrap 3 Nav Pills & Stacked - for vendor form tabs */
+		.nav-pills > li {
+			float: left;
+		}
+
+		.nav-pills > li > a {
+			border-radius: 4px;
+		}
+
+		.nav-pills > li + li {
+			margin-left: 2px;
+		}
+
+		.nav-pills > li.active > a,
+		.nav-pills > li.active > a:hover,
+		.nav-pills > li.active > a:focus {
+			color: #fff;
+			background-color: var(--primary);
+		}
+
+		.nav-stacked > li {
+			float: none;
+		}
+
+		.nav-stacked > li + li {
+			margin-top: 2px;
+			margin-left: 0;
+		}
+
+		.nav > li > a {
+			position: relative;
+			display: block;
+			padding: 10px 15px;
+		}
+
+		.nav > li > a:hover,
+		.nav > li > a:focus {
+			text-decoration: none;
+			background-color: #eee;
+		}
+
+		.nav > li.disabled > a {
+			color: #777;
+		}
+
+		.nav > li.disabled > a:hover,
+		.nav > li.disabled > a:focus {
+			color: #777;
+			text-decoration: none;
+			cursor: not-allowed;
+			background-color: transparent;
+		}
+
+		/* Tab panes */
+		.tab-content > .tab-pane {
+			display: none;
+		}
+
+		.tab-content > .active {
+			display: block;
 		}
 
 		/* Tables */
@@ -725,17 +631,69 @@
 		}
 
 		/* Responsive Design */
+		/* Tablets and below */
 		@media (max-width: 1024px) {
-			.navbar-vertical {
+			.sidebar-vertical {
 				transform: translateX(-100%);
 			}
 
-			.navbar-vertical.show {
+			.sidebar-vertical.show {
 				transform: translateX(0);
+				box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
 			}
 
 			.page-wrapper {
 				margin-left: 0;
+				width: 100%;
+			}
+
+			.page-body {
+				padding: var(--space-4) var(--space-3);
+			}
+
+			.page-body .container-xl {
+				padding-left: var(--space-4);
+				padding-right: var(--space-4);
+			}
+		}
+
+		/* Mobile phones */
+		@media (max-width: 768px) {
+			.page-body {
+				padding: var(--space-3) var(--space-2);
+			}
+
+			.page-body .container-xl {
+				padding-left: var(--space-3);
+				padding-right: var(--space-3);
+			}
+
+			.page-title {
+				font-size: 1.5rem;
+			}
+
+			.card-body {
+				padding: var(--space-4);
+			}
+		}
+
+		/* Small mobile phones */
+		@media (max-width: 480px) {
+			.sidebar-vertical {
+				width: 260px;
+			}
+
+			.page-body {
+				padding: var(--space-2);
+			}
+
+			.page-body .container-xl {
+				padding-left: var(--space-2);
+				padding-right: var(--space-2);
+			}
+
+			.page-title {
+				font-size: 1.25rem;
 			}
 		}
 
@@ -792,18 +750,14 @@
 <body>
 	<div class="page">
 		<!-- Sidebar -->
-		<aside class="navbar navbar-vertical navbar-expand-lg navbar-light" id="sidebar">
-			<div class="container-fluid">
-				<button class="navbar-toggler d-lg-none" type="button" data-bs-toggle="collapse" data-bs-target="#sidebar-menu"
-					aria-controls="sidebar-menu" aria-expanded="false" aria-label="Toggle navigation">
-					<span class="navbar-toggler-icon"></span>
-				</button>
-				<h1 class="navbar-brand navbar-brand-autodark">
-					<a href="/">
-						<img src="{{ asset('images/02_selangor.png') }}" alt="Sistem Tender Online Selangor" class="navbar-brand-image">
-					</a>
-				</h1>
-				<div class="navbar-nav collapse navbar-collapse" id="sidebar-menu">
+		<aside class="sidebar-vertical" id="sidebar">
+			<div class="sidebar-header">
+				<a href="/" class="sidebar-brand">
+					<img src="{{ asset('images/02_selangor.png') }}" alt="Sistem Tender Online Selangor" class="sidebar-brand-image">
+				</a>
+			</div>
+			<div class="sidebar-body">
+				<nav class="sidebar-nav" id="sidebar-menu">
 					<div class="nav-item">
 						<a href="{{ action('HomeController@index') }}" class="nav-link {{ request()->is('/') ? 'active' : '' }}">
 							<span class="nav-link-icon">
@@ -878,8 +832,8 @@
 							<span class="nav-link-title">Aduan</span>
 						</a>
 					</div>
-					<div class="nav-item">
-						<a class="nav-link dropdown-toggle" href="#navbar-help" data-bs-toggle="dropdown" role="button"
+					<div class="nav-item dropdown">
+						<a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" role="button"
 							aria-expanded="false">
 							<span class="nav-link-icon">
 								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
@@ -893,20 +847,20 @@
 							</span>
 							<span class="nav-link-title">Pertanyaan</span>
 						</a>
-						<div class="dropdown-menu">
-							<a class="dropdown-item" href="{{ action('HelpsController@index') }}">Bantuan</a>
-							<a class="dropdown-item" href="{{ route('manuals.show', 'pendaftaran') }}">Panduan Pengguna</a>
-						</div>
+						<ul class="dropdown-menu">
+							<li><a class="dropdown-item" href="{{ action('HelpsController@index') }}">Bantuan</a></li>
+							<li><a class="dropdown-item" href="{{ route('manuals.show', 'pendaftaran') }}">Panduan Pengguna</a></li>
+						</ul>
 					</div>
-					<div class="nav-item">
-						<a class="nav-link dropdown-toggle" href="#navbar-agencies" data-bs-toggle="dropdown" role="button"
+					<div class="nav-item dropdown">
+						<a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" role="button"
 							aria-expanded="false">
 							<span class="nav-link-icon">
 								<i class="ti ti-building"></i>
 							</span>
 							<span class="nav-link-title">Direktori Agensi</span>
 						</a>
-						<div class="dropdown-menu">
+						<ul class="dropdown-menu">
 							@php
 								try {
 								    $__orgTypes = App\OrganizationType::orderBy('sort_no', 'asc')->get();
@@ -915,10 +869,10 @@
 								}
 							@endphp
 							@foreach ($__orgTypes as $type)
-								<a class="dropdown-item"
-									href="{{ action('OrganizationUnitsController@index', ['type' => $type->id]) }}">{{ $type->name }}</a>
+								<li><a class="dropdown-item"
+									href="{{ action('OrganizationUnitsController@index', ['type' => $type->id]) }}">{{ $type->name }}</a></li>
 							@endforeach
-						</div>
+						</ul>
 					</div>
 
 					{{-- ADMIN MENU SECTION --}}
@@ -933,25 +887,24 @@
 						</div>
 
 						<!-- Pengurusan Tender -->
-						<div class="nav-item">
-							<a class="nav-link dropdown-toggle" href="#navbar-tender" data-bs-toggle="dropdown" role="button"
+						<div class="nav-item dropdown">
+							<a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" role="button"
 								aria-expanded="false">
 								<span class="nav-link-title">Pengurusan Tender</span>
 							</a>
-							<br>
-							<div class="dropdown-menu">
+							<ul class="dropdown-menu">
 								@if (App\Tender::canList())
 									@if (Auth::user()->ability(['Admin', 'Registration Assesor', 'Front Desk'], []))
-										<a class="dropdown-item" style="color: white;" href="{{ asset('tenders') }}">
+										<li><a class="dropdown-item" href="{{ asset('tenders') }}">
 											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
 												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
 												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
 												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
 												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
 											</svg> Senarai Tender
-										</a>
+										</a></li>
 									@else
-										<a class="dropdown-item" style="text-color: white;"
+										<li><a class="dropdown-item"
 											href="{{ asset('agencies/' . Auth::user()->organization_unit_id) }}">
 											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
 												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
@@ -959,242 +912,239 @@
 												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
 												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
 											</svg> Senarai Tender
-										</a>
+										</a></li>
 									@endif
 								@endif
 								@if (App\Vendor::canList())
-									<a class="dropdown-item" style="color: white;" href="{{ asset('vendors') }}">
+									<li><a class="dropdown-item" href="{{ asset('vendors') }}">
 										<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
 											stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
 											class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
 											<path stroke="none" d="M0 0h24v24H0z" fill="none" />
 											<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
 										</svg> Senarai Syarikat
-									</a>
+									</a></li>
 								@endif
 								@if (App\VendorBlacklist::canList())
-									<a class="dropdown-item" style="color: white;" href="{{ asset('blacklists') }}">
+									<li><a class="dropdown-item" href="{{ asset('blacklists') }}">
 										<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
 											stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
 											class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
 											<path stroke="none" d="M0 0h24v24H0z" fill="none" />
 											<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
 										</svg> Senarai Hitam
-									</a>
+									</a></li>
 								@endif
 								@if (App\News::canList())
-									<a class="dropdown-item" style="color: white;" href="{{ asset('news') }}">
+									<li><a class="dropdown-item" href="{{ asset('news') }}">
 										<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
 											stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
 											class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
 											<path stroke="none" d="M0 0h24v24H0z" fill="none" />
 											<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
 										</svg> Senarai Berita
-									</a>
+									</a></li>
 								@endif
 								@if (App\Transaction::canList())
-									<a class="dropdown-item" style="color: white;" href="{{ asset('transactions') }}">
+									<li><a class="dropdown-item" href="{{ asset('transactions') }}">
 										<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
 											stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
 											class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
 											<path stroke="none" d="M0 0h24v24H0z" fill="none" />
 											<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
 										</svg> Senarai Transaksi
-									</a>
+									</a></li>
 								@endif
-							</div>
+							</ul>
 						</div>
 
 						@if (App\CodeRequest::canList())
 							<!-- Pengurusan Permintaan Kemaskini -->
-							<div class="nav-item">
-								<a class="nav-link dropdown-toggle" href="#navbar-pengurusan-permintaan-kemaskini" data-bs-toggle="dropdown"
+							<div class="nav-item dropdown">
+								<a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown"
 									role="button" aria-expanded="false">
 									<span class="nav-link-title">Pengurusan Permintaan</span>
 									{{-- <span class="nav-link-title">Pengurusan Permintaan Kemaskini</span> --}}
 								</a>
-								<br>
-								<div class="dropdown-menu">
-									<a class="dropdown-item" style="color: white;" href="{{ asset('requests') }}">
+								<ul class="dropdown-menu">
+									<li><a class="dropdown-item" href="{{ asset('requests') }}">
 										<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
 											stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
 											class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
 											<path stroke="none" d="M0 0h24v24H0z" fill="none" />
 											<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
 										</svg> Permintaan Kemaskini
-									</a>
-								</div>
+									</a></li>
+								</ul>
 							</div>
 						@endif
 
 						@if (Auth::user()->ability(['Admin', 'Agency Admin'], []))
 							<!-- Pengurusan Sistem -->
-							<div class="nav-item">
-								<a class="nav-link dropdown-toggle" href="#navbar-sistem" data-bs-toggle="dropdown" role="button"
+							<div class="nav-item dropdown">
+								<a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" role="button"
 									aria-expanded="false">
 									<span class="nav-link-title">Pengurusan Sistem</span>
 								</a>
-								<br>
-								<div class="dropdown-menu">
+								<ul class="dropdown-menu">
 									@if (App\User::canList())
-										<a class="dropdown-item" style="color: white;" href="{{ asset('users') }}">
+										<li><a class="dropdown-item" href="{{ asset('users') }}">
 											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
 												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
 												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
 												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
 												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
 											</svg> Senarai Pengguna
-										</a>
+										</a></li>
 									@endif
 									@if (Auth::user()->canApprove())
-										<a class="dropdown-item" style="color: white;" href="{{ asset('users/pending-approval') }}">
+										<li><a class="dropdown-item" href="{{ asset('users/pending-approval') }}">
 											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
 												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
 												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
 												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
 												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
 											</svg> Senarai Permohonan Pengguna
-										</a>
+										</a></li>
 									@endif
 									@if (App\OrganizationUnit::canList())
-										<a class="dropdown-item" style="color: white;" href="{{ asset('agencies') }}">
+										<li><a class="dropdown-item" href="{{ asset('agencies') }}">
 											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
 												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
 												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
 												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
 												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
 											</svg> Senarai Agensi
-										</a>
+										</a></li>
 									@endif
 									@if (Auth::user()->hasRole('Admin'))
-										<a class="dropdown-item" style="color: white;" href="{{ asset('organizationtypes') }}">
+										<li><a class="dropdown-item" href="{{ asset('organizationtypes') }}">
 											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
 												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
 												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
 												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
 												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
 											</svg> Kategori Agensi
-										</a>
-										<a class="dropdown-item" style="color: white;" href="{{ asset('codes') }}">
+										</a></li>
+										<li><a class="dropdown-item" href="{{ asset('codes') }}">
 											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
 												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
 												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
 												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
 												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
 											</svg> Senarai Kod Bidang
-										</a>
-										<a class="dropdown-item" style="color: white;" href="{{ asset('helps') }}">
+										</a></li>
+										<li><a class="dropdown-item" href="{{ asset('helps') }}">
 											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
 												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
 												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
 												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
 												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
 											</svg> Senarai Soalan Bantuan
-										</a>
-										<a class="dropdown-item" style="color: white;" href="{{ asset('helpcategories') }}">
+										</a></li>
+										<li><a class="dropdown-item" href="{{ asset('helpcategories') }}">
 											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
 												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
 												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
 												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
 												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
 											</svg> Kategori Soalan Bantuan
-										</a>
-										<a class="dropdown-item" style="color: white;" href="{{ asset('gateways') }}">
+										</a></li>
+										<li><a class="dropdown-item" href="{{ asset('gateways') }}">
 											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
 												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
 												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
 												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
 												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
 											</svg> Tetapan Pembayaran
-										</a>
-										<a class="dropdown-item" style="color: white;" href="{{ asset('banners') }}">
+										</a></li>
+										<li><a class="dropdown-item" href="{{ asset('banners') }}">
 											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
 												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
 												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
 												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
 												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
 											</svg> Senarai Banner
-										</a>
+										</a></li>
 									@endif
 									@if (Auth::user()->can('System:histories'))
-										<a class="dropdown-item" style="color: white;" href="{{ asset('version-histories') }}">
+										<li><a class="dropdown-item" href="{{ asset('version-histories') }}">
 											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
 												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
 												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
 												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
 												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
 											</svg> Sejarah Perubahan Sistem
-										</a>
+										</a></li>
 									@endif
 									@if (App\Models\RejectTemplate::canList())
-										<a class="dropdown-item" style="color: white;" href="{{ asset('reject-template') }}">
+										<li><a class="dropdown-item" href="{{ asset('reject-template') }}">
 											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
 												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
 												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
 												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
 												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
 											</svg> Senarai Templat Penolakan
-										</a>
+										</a></li>
 									@endif
 									@if (App\Models\Circular::canList())
-										<a class="dropdown-item" style="color: white;" href="{{ asset('circulars') }}">
+										<li><a class="dropdown-item" href="{{ asset('circulars') }}">
 											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
 												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
 												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
 												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
 												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
 											</svg> Senarai Pekeliling
-										</a>
+										</a></li>
 									@endif
-								</div>
+								</ul>
 							</div>
 						@endif
 
 						@if (Auth::user()->hasRole('Admin'))
 							<!-- Pengurusan Akses -->
-							<div class="nav-item">
-								<a class="nav-link dropdown-toggle" href="#navbar-akses" data-bs-toggle="dropdown" role="button"
+							<div class="nav-item dropdown">
+								<a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" role="button"
 									aria-expanded="false">
 									<span class="nav-link-title">Pengurusan Akses</span>
 								</a>
-								<br>
-								<div class="dropdown-menu">
+								<ul class="dropdown-menu">
 									@if (App\Role::canList())
-										<a class="dropdown-item" style="color: white;" href="{{ asset('roles') }}">
+										<li><a class="dropdown-item" href="{{ asset('roles') }}">
 											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
 												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
 												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
 												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
 												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
 											</svg> Tetapan Peranan
-										</a>
+										</a></li>
 									@endif
 									@if (App\Permission::canList())
-										<a class="dropdown-item" style="color: white;" href="{{ asset('permissions') }}">
+										<li><a class="dropdown-item" href="{{ asset('permissions') }}">
 											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
 												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
 												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
 												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
 												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
 											</svg> Tetapan Kebenaran
-										</a>
+										</a></li>
 									@endif
-								</div>
+								</ul>
 							</div>
 						@endif
 
 						@if (Auth::user()->ability(['Admin', 'Refund Admin'], ['Refund:list']))
 							{{-- @if (Auth::user()->hasRole('Admin')) --}}
 							<!-- Pengurusan Pemulangan Semula -->
-							<div class="nav-item">
-								<a class="nav-link dropdown-toggle" href="#navbar-pemulangan" data-bs-toggle="dropdown" role="button"
+							<div class="nav-item dropdown">
+								<a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" role="button"
 									aria-expanded="false">
 									<span class="nav-link-title">Pengurusan Pemulangan Semula</span>
 								</a>
 								<br>
 								<div class="dropdown-menu dropdown-menu-refund">
 									@if (App\Models\Refund::canList())
-										<a class="dropdown-item" style="color: white;" href="{{ route('refunds.request.index') }}">
+										<li><a class="dropdown-item" href="{{ route('refunds.request.index') }}">
 											<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
 												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
 												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right me-2 flex-shrink-0">
@@ -1202,10 +1152,10 @@
 												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
 											</svg>
 											<span class="dropdown-item-text">Permohonan Pemulangan Semula</span>
-										</a>
+										</a></li>
 									@endif
 									@if (App\Models\Refund::isRoleBKP())
-										<a class="dropdown-item" style="color: white;" href="{{ route('refunds.complaint.index') }}">
+										<li><a class="dropdown-item" href="{{ route('refunds.complaint.index') }}">
 											<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
 												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
 												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right me-2 flex-shrink-0">
@@ -1213,380 +1163,374 @@
 												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
 											</svg>
 											<span class="dropdown-item-text">Aduan Permohonan Semula</span>
-										</a>
+										</a></li>
 									@endif
-								</div>
+								</ul>
 							</div>
 						@endif
 
 						@if (Auth::user()->ability(['Admin'], ['Api:canList']))
 							<!-- Pengurusan API -->
-							<div class="nav-item">
-								<a class="nav-link dropdown-toggle" href="#navbar-api" data-bs-toggle="dropdown" role="button"
+							<div class="nav-item dropdown">
+								<a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" role="button"
 									aria-expanded="false">
 									<span class="nav-link-title">Pengurusan API</span>
 								</a>
-								<br>
-								<div class="dropdown-menu">
+								<ul class="dropdown-menu">
 									@if (App\Models\ApiToken::canList())
-										<a class="dropdown-item" style="color: white;" href="{{ route('apitoken.index') }}">
+										<li><a class="dropdown-item" href="{{ route('apitoken.index') }}">
 											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
 												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
 												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
 												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
 												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
 											</svg> Senarai API Token
-										</a>
+										</a></li>
 									@endif
-								</div>
+								</ul>
 							</div>
 						@endif
 
 						@if (Auth::user()->ability(['Admin'], ['chatbot-manager:canList']))
 							<!-- Pengurusan ChatBot -->
-							<div class="nav-item">
-								<a class="nav-link dropdown-toggle" href="#navbar-chatbot" data-bs-toggle="dropdown" role="button"
+							<div class="nav-item dropdown">
+								<a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" role="button"
 									aria-expanded="false">
 									<span class="nav-link-title">Pengurusan ChatBot</span>
 								</a>
-								<br>
-								<div class="dropdown-menu">
+								<ul class="dropdown-menu">
 									@if (App\Models\FaqCategory::canList())
-										<a class="dropdown-item" style="color: white;" href="{{ route('chatbot-manager.category.index') }}">
+										<li><a class="dropdown-item" href="{{ route('chatbot-manager.category.index') }}">
 											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
 												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
 												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
 												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
 												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
 											</svg> Senarai Kategori
-										</a>
-										<a class="dropdown-item" style="color: white;" href="{{ route('chatbot-manager.question.index') }}">
+										</a></li>
+										<li><a class="dropdown-item" href="{{ route('chatbot-manager.question.index') }}">
 											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
 												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
 												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
 												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
 												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
 											</svg> Senarai Soalan
-										</a>
-										<a class="dropdown-item" style="color: white;" href="{{ route('chatbot-manager.chatlog.index') }}">
+										</a></li>
+										<li><a class="dropdown-item" href="{{ route('chatbot-manager.chatlog.index') }}">
 											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
 												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
 												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
 												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
 												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
 											</svg> Senarai Rekod Chat
-										</a>
-										<a class="dropdown-item" style="color: white;" href="{{ route('chatbot-manager.newquestion.index') }}">
+										</a></li>
+										<li><a class="dropdown-item" href="{{ route('chatbot-manager.newquestion.index') }}">
 											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
 												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
 												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
 												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
 												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
 											</svg> Senarai Pertanyaan Tidak Wujud
-										</a>
+										</a></li>
 									@endif
-								</div>
+								</ul>
 							</div>
 						@endif
 
 						@if (Auth::user()->ability(['Admin'], ['chatbot-manager:canList']))
 							<!-- Pengurusan Email SMTP -->
-							<div class="nav-item">
-								<a class="nav-link dropdown-toggle" href="#navbar-email" data-bs-toggle="dropdown" role="button"
+							<div class="nav-item dropdown">
+								<a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" role="button"
 									aria-expanded="false">
 									<span class="nav-link-title">Pengurusan Email SMTP</span>
 								</a>
-								<br>
-								<div class="dropdown-menu">
+								<ul class="dropdown-menu">
 									@if (App\Models\FaqCategory::canList())
-										<a class="dropdown-item" href="{{ route('mail-manager.smtp-setting.index') }}">
+										<li><a class="dropdown-item" href="{{ route('mail-manager.smtp-setting.index') }}">
 											<i class="ti ti-settings me-2"></i> Senarai Email SMTP
-										</a>
-										<a class="dropdown-item" style="color: white;" href="{{ route('mail-manager.smtp-setting.index') }}">
+										</a></li>
+										<li><a class="dropdown-item" href="{{ route('mail-manager.smtp-setting.index') }}">
 											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
 												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
 												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
 												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
 												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
 											</svg> Senarai Email SMTP
-										</a>
-										<a class="dropdown-item" style="color: white;" href="{{ route('mail-manager.mail-queue.index') }}">
+										</a></li>
+										<li><a class="dropdown-item" href="{{ route('mail-manager.mail-queue.index') }}">
 											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
 												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
 												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
 												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
 												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
 											</svg> Rekod Penghantaran Email
-										</a>
+										</a></li>
 									@endif
-								</div>
+								</ul>
 							</div>
 						@endif
 
 						@if (Auth::user()->ability(['Admin'], []))
 							<!-- Aduan Admin -->
-							<div class="nav-item">
-								<a class="nav-link dropdown-toggle" href="#navbar-aduan" data-bs-toggle="dropdown" role="button"
+							<div class="nav-item dropdown">
+								<a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" role="button"
 									aria-expanded="false">
 									<span class="nav-link-title">Pengurusan Aduan</span>
 								</a>
-								<br>
-								<div class="dropdown-menu">
-									<a class="dropdown-item" style="color: white;" href="{{ asset('aduan/list') }}">
+								<ul class="dropdown-menu">
+									<li><a class="dropdown-item" href="{{ asset('aduan/list') }}">
 										<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
 											stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
 											class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
 											<path stroke="none" d="M0 0h24v24H0z" fill="none" />
 											<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
 										</svg> Senarai Aduan
-									</a>
-								</div>
+									</a></li>
+								</ul>
 							</div>
 						@endif
 
 						@if (Auth::user()->ability(['Admin', 'Admin Kewangan'], []))
 							<!-- Dashboard -->
-							<div class="nav-item">
-								<a class="nav-link dropdown-toggle" href="#navbar-dashboard" data-bs-toggle="dropdown" role="button"
+							<div class="nav-item dropdown">
+								<a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" role="button"
 									aria-expanded="false">
 									<span class="nav-link-title">Dashboard</span>
 								</a>
-								<br>
-								<div class="dropdown-menu">
-									<a class="dropdown-item" style="color: white;" href="{{ asset('dashboard/hq') }}">
+								<ul class="dropdown-menu">
+									<li><a class="dropdown-item" href="{{ asset('dashboard/hq') }}">
 										<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
 											stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
 											class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
 											<path stroke="none" d="M0 0h24v24H0z" fill="none" />
 											<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
 										</svg> Dashboard Pengurusan
-									</a>
-								</div>
+									</a></li>
+								</ul>
 							</div>
 						@endif
 
 						@if (Auth::user()->can('Report:view'))
 							<!-- Laporan -->
-							<div class="nav-item">
-								<a class="nav-link dropdown-toggle" href="#navbar-laporan" data-bs-toggle="dropdown" role="button"
+							<div class="nav-item dropdown">
+								<a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" role="button"
 									aria-expanded="false">
 									<span class="nav-link-title">Laporan</span>
 								</a>
-								<br>
-								<div class="dropdown-menu">
+								<ul class="dropdown-menu">
 									@if (Auth::user()->can('Report:view:revenue_yearly'))
-										<a class="dropdown-item" style="color: white;" href="{{ asset('reports/revenue') }}">
+										<li><a class="dropdown-item" href="{{ asset('reports/revenue') }}">
 											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
 												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
 												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
 												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
 												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
 											</svg> Hasil Transaksi Tahunan
-										</a>
+										</a></li>
 									@endif
 									@if (Auth::user()->can('Report:view:agency_active'))
-										<a class="dropdown-item" style="color: white;" href="{{ asset('reports/agency/active') }}">
+										<li><a class="dropdown-item" href="{{ asset('reports/agency/active') }}">
 											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
 												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
 												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
 												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
 												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
 											</svg> 10 Agensi Aktif
-										</a>
+										</a></li>
 									@endif
 									@if (Auth::user()->can('Report:view:agency_transaction'))
-										<a class="dropdown-item" style="color: white;" href="{{ asset('reports/agency/all') }}">
+										<li><a class="dropdown-item" href="{{ asset('reports/agency/all') }}">
 											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
 												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
 												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
 												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
 												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
 											</svg> Transaksi Semua Agensi
-										</a>
+										</a></li>
 									@endif
 									@if (Auth::user()->can('Report:view:agency_type'))
-										<a class="dropdown-item" style="color: white;" href="{{ asset('reports/agency/type') }}">
+										<li><a class="dropdown-item" href="{{ asset('reports/agency/type') }}">
 											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
 												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
 												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
 												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
 												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
 											</svg> Transaksi Mengikut Kategori Agensi
-										</a>
+										</a></li>
 									@endif
 									@if (Auth::user()->can('Report:view:agency_tender') ||
 											Auth::user()->can('Report:view:agency_tender:organization_unit_id'))
-										<a class="dropdown-item" style="color: white;" href="{{ asset('reports/agency/transaction') }}">
+										<li><a class="dropdown-item" href="{{ asset('reports/agency/transaction') }}">
 											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
 												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
 												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
 												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
 												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
 											</svg> Transaksi Agensi Mengikut Tender
-										</a>
+										</a></li>
 									@endif
 									@if (Auth::user()->can('Report:view:agency_daily') || Auth::user()->can('Report:view:agency_daily:organization_unit_id'))
-										<a class="dropdown-item" style="color: white;" href="{{ asset('reports/agency/daily') }}">
+										<li><a class="dropdown-item" href="{{ asset('reports/agency/daily') }}">
 											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
 												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
 												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
 												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
 												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
 											</svg> Transaksi Harian Agensi
-										</a>
+										</a></li>
 									@endif
 									@if (Auth::user()->can('Report:view:gateway_daily') ||
 											Auth::user()->can('Report:view:gateway_daily:organization_unit_id'))
-										<a class="dropdown-item" style="color: white;" href="{{ asset('reports/gateway/daily') }}">
+										<li><a class="dropdown-item" href="{{ asset('reports/gateway/daily') }}">
 											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
 												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
 												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
 												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
 												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
 											</svg> Transaksi Harian Gateway
-										</a>
+										</a></li>
 									@endif
 									@if (Auth::user()->can('Report:view:vendor_status'))
-										<a class="dropdown-item" style="color: white;" href="{{ asset('reports/vendor/status') }}">
+										<li><a class="dropdown-item" href="{{ asset('reports/vendor/status') }}">
 											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
 												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
 												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
 												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
 												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
 											</svg> Syarikat Mengikut Status
-										</a>
+										</a></li>
 									@endif
 									@if (Auth::user()->can('Report:view:vendor_code'))
-										<a class="dropdown-item" style="color: white;" href="{{ asset('reports/vendor/codes') }}">
+										<li><a class="dropdown-item" href="{{ asset('reports/vendor/codes') }}">
 											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
 												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
 												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
 												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
 												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
 											</svg> Syarikat Mengikut Kod Bidang
-										</a>
+										</a></li>
 									@endif
 									@if (Auth::user()->can('Report:view:vendor_district'))
-										<a class="dropdown-item" style="color: white;" href="{{ asset('reports/vendor/district') }}">
+										<li><a class="dropdown-item" href="{{ asset('reports/vendor/district') }}">
 											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
 												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
 												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
 												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
 												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
 											</svg> Syarikat Mengikut Daerah
-										</a>
+										</a></li>
 									@endif
 									@if (Auth::user()->can('Report:view:user_agency') || Auth::user()->can('Report:view:user_agency:organization_unit_id'))
-										<a class="dropdown-item" style="color: white;" href="{{ asset('reports/user/agency') }}">
+										<li><a class="dropdown-item" href="{{ asset('reports/user/agency') }}">
 											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
 												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
 												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
 												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
 												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
 											</svg> Senarai Pengguna Agensi
-										</a>
+										</a></li>
 									@endif
 									@if (Auth::user()->can('Report:view:user_agency') || Auth::user()->can('Report:view:user_active:organization_unit_id'))
-										<a class="dropdown-item" style="color: white;" href="{{ asset('reports/user/active') }}">
+										<li><a class="dropdown-item" href="{{ asset('reports/user/active') }}">
 											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
 												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
 												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
 												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
 												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
 											</svg> Senarai Status Pengguna Mengikut Agensi
-										</a>
+										</a></li>
 									@endif
 									@if (Auth::user()->can('Report:view:user_activity'))
-										<a class="dropdown-item" style="color: white;" href="{{ asset('reports/user/activity') }}">
+										<li><a class="dropdown-item" href="{{ asset('reports/user/activity') }}">
 											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
 												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
 												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
 												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
 												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
 											</svg> Laporan Aktiviti Staf
-										</a>
+										</a></li>
 									@endif
 									@if (Auth::user()->can('Report:view:user_login'))
-										<a class="dropdown-item" style="color: white;" href="{{ asset('reports/user/login') }}">
+										<li><a class="dropdown-item" href="{{ asset('reports/user/login') }}">
 											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
 												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
 												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
 												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
 												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
 											</svg> Laporan Login Sebagai
-										</a>
+										</a></li>
 									@endif
 									@if (Auth::user()->can('Report:view:vendor_registration_list'))
-										<a class="dropdown-item" style="color: white;" href="{{ asset('reports/vendor/registration-list') }}">
+										<li><a class="dropdown-item" href="{{ asset('reports/vendor/registration-list') }}">
 											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
 												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
 												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
 												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
 												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
 											</svg> Laporan Pendaftaran Syarikat
-										</a>
+										</a></li>
 									@endif
 									@if (Auth::user()->can('Report:view:code_request'))
-										<a class="dropdown-item" style="color: white;" href="{{ asset('reports/vendor/request') }}">
+										<li><a class="dropdown-item" href="{{ asset('reports/vendor/request') }}">
 											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
 												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
 												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
 												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
 												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
 											</svg> Laporan Permohonan Kemaskini Maklumat Syarikat
-										</a>
+										</a></li>
 									@endif
 									@if (Auth::user()->can('Report:view:vendor_registration'))
-										<a class="dropdown-item" style="color: white;" href="{{ asset('reports/vendor/registration') }}">
+										<li><a class="dropdown-item" href="{{ asset('reports/vendor/registration') }}">
 											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
 												fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
 												stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
 												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
 												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
 											</svg> Laporan Pendaftaran Pengguna Sistem
-										</a>
+										</a></li>
 									@endif
 									@if (Auth::user()->can('Report:view:staff_activity'))
-										<a class="dropdown-item" style="color: white;" href="{{ asset('reports/staff/activity') }}">
+										<li><a class="dropdown-item" href="{{ asset('reports/staff/activity') }}">
 											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
 												fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
 												stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
 												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
 												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
 											</svg> Laporan Aktiviti Pengguna Sistem
-										</a>
+										</a></li>
 									@endif
 									@if (Auth::user()->can('Report:view:code_district'))
-										<a class="dropdown-item" style="color: white;" href="{{ asset('reports/code/district') }}">
+										<li><a class="dropdown-item" href="{{ asset('reports/code/district') }}">
 											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
 												fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
 												stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
 												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
 												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
 											</svg> Laporan Jumlah Berkaitan Kod Bidang
-										</a>
+										</a></li>
 									@endif
 									@if (Auth::user()->can('Report:view:vendor_transaction'))
-										<a class="dropdown-item" style="color: white;" href="{{ asset('reports/vendor/transaction') }}">
+										<li><a class="dropdown-item" href="{{ asset('reports/vendor/transaction') }}">
 											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
 												fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
 												stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
 												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
 												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
 											</svg> Laporan Transaksi
-										</a>
+										</a></li>
 									@endif
 									@if (Auth::user()->can('Report:view:transaction_hasil'))
-										<a class="dropdown-item" style="color: white;" href="{{ asset('reports/transaction/hasil') }}">
+										<li><a class="dropdown-item" href="{{ asset('reports/transaction/hasil') }}">
 											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
 												fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
 												stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
 												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
 												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
 											</svg> Laporan Transaksi Mengikut Kod Akaun Hasil
-										</a>
+										</a></li>
 									@endif
-								</div>
+								</ul>
 							</div>
 						@endif
 					@endif
@@ -1626,7 +1570,7 @@
 								</span>
 								<span class="nav-link-title">Modul Pelantikan JawatanKuasa</span>
 							</a>
-						</div>
+						</ul>
 					</div>
 
 					@if (!empty($user))
@@ -1648,7 +1592,7 @@
 							</a>
 						</div>
 					@endif
-				</div>
+				</nav>
 			</div>
 		</aside>
 
@@ -1669,15 +1613,13 @@
 						@if (!empty($user))
 							<!-- USER DROPDOWN - SUPER VISIBLE -->
 							<div class="dropdown">
-								<button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown"
-									style="background: linear-gradient(135deg, #8e9acf 0%, #8b62b4 100%) !important; color: white !important; font-size: 16px !important; padding: 10px 20px !important; margin-left: 15px !important; border: 2px solid rgba(255,255,255,0.3) !important; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4) !important; display: inline-flex !important; align-items: center !important; gap: 10px !important;">
-									<span class="avatar avatar-sm"
-										style="background-image: url({{ asset('images/user-avatar.png') }}); width: 28px; height: 28px; border: 2px solid white; flex-shrink: 0;"></span>
-									<div style="text-align: left;">
-										<div style="font-weight: 600; line-height: 1.2;">{{ $user->name }}</div>
-										<div style="font-size: 0.75rem; opacity: 0.9; line-height: 1.2;">{{ $user->email }}</div>
+								<button class="btn btn-primary dropdown-toggle d-flex align-items-center gap-2" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+									<span class="avatar avatar-sm" style="background-image: url({{ asset('images/user-avatar.png') }});"></span>
+									<div class="text-start">
+										<div class="fw-bold">{{ $user->name }}</div>
+										<div class="small opacity-75">{{ $user->email }}</div>
 									</div>
-									<i class="ti ti-chevron-down" style="margin-left: 5px;"></i>
+									<i class="ti ti-chevron-down"></i>
 								</button>
 								<ul class="dropdown-menu dropdown-menu-end">
 									<li><a href="{{ asset('profile') }}" class="dropdown-item">
@@ -1726,7 +1668,7 @@
 
 			<!-- Page Content -->
 			<div class="page-body">
-				<div class="container-xl">
+				<div id="container" class="container-xl">
 					@include('layouts._notification')
 					@yield('content')
 				</div>
@@ -1782,19 +1724,16 @@
 						</div>
 					</div>
 				</div>
-			</div>
+			</ul>
 		</div>
 	@endif
 
 	@include('layouts._footer')
 	@include('layouts._popupModal')
 
-	<!-- jQuery -->
-	<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-	<!-- Bootstrap 5 JS -->
-	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-	<!-- Tabler JS -->
-	<script src="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0-beta20/dist/js/tabler.min.js"></script>
+	<!-- Modern JS bundle (jQuery + Bootstrap 5) -->
+	<script src="{{ asset('js/modern.js') }}"></script>
+	<!-- Legacy application.js for vendor forms and old scripts -->
 	<script src="{{ asset('js/application.js') }}"></script>
 
 	<script>
@@ -1802,110 +1741,33 @@
 		document.addEventListener('DOMContentLoaded', function() {
 			console.log('DOM loaded, initializing modals...');
 
-			// Check if Bootstrap is available
-			if (typeof bootstrap === 'undefined') {
-				console.error('Bootstrap is not loaded!');
+			// Check if Bootstrap (v3) is available via jQuery
+			if (typeof $.fn.modal === 'undefined') {
+				console.error('Bootstrap 3 is not loaded!');
 				return;
 			}
 
-			console.log('Bootstrap is available:', bootstrap);
+			console.log('Bootstrap 3 is available via jQuery');
 
-			// Find all modals
-			const modals = document.querySelectorAll('.modal');
-			console.log('Found modals:', modals.length);
+			// Bootstrap 3 modal initialization is automatic via data-toggle
+			// Just ensure all modals are properly initialized
+			$('.modal').each(function() {
+				$(this).modal({
+					show: false
+				});
+				console.log('Modal initialized (Bootstrap 3):', this.id);
+			});
 
-			modals.forEach((modal, index) => {
-				console.log(`Initializing modal ${index}:`, modal.id);
-
-				try {
-					const modalInstance = new bootstrap.Modal(modal, {
-						backdrop: true,
-						keyboard: true,
-						focus: true
-					});
-
-					// Fix aria-hidden attribute when modal is shown
-					modal.addEventListener('show.bs.modal', function() {
-						console.log('Modal showing:', this.id);
-						this.setAttribute('aria-hidden', 'false');
-						this.style.pointerEvents = 'auto';
-						this.style.display = 'block';
-					});
-
-					// Reset aria-hidden when modal is hidden
-					modal.addEventListener('hidden.bs.modal', function() {
-						console.log('Modal hidden:', this.id);
-						this.setAttribute('aria-hidden', 'true');
-						this.style.pointerEvents = 'none';
-					});
-
-					console.log('Modal instance created:', modalInstance);
-				} catch (error) {
-					console.error('Error creating modal instance:', error);
+			// Handle data-bs-target (Bootstrap 5 syntax) and convert to data-toggle (Bootstrap 3)
+			$('[data-bs-toggle="modal"]').each(function() {
+				$(this).attr('data-toggle', 'modal');
+				const target = $(this).attr('data-bs-target');
+				if (target) {
+					$(this).attr('data-target', target);
 				}
 			});
 
-			// Find and fix login button
-			const loginButton = document.querySelector('[data-bs-target="#loginModal"]');
-			console.log('Login button found:', loginButton);
-
-			if (loginButton) {
-				// Remove any existing event listeners
-				loginButton.replaceWith(loginButton.cloneNode(true));
-				const newLoginButton = document.querySelector('[data-bs-target="#loginModal"]');
-
-				newLoginButton.addEventListener('click', function(e) {
-					console.log('Login button clicked!');
-					const modal = document.getElementById('loginModal');
-					console.log('Modal element:', modal);
-
-					let opened = false;
-					if (modal && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
-						try {
-							const modalInstance = bootstrap.Modal.getOrCreateInstance(modal);
-							modalInstance.show();
-							opened = true;
-							console.log('Modal show() called');
-						} catch (err) {
-							console.error('Bootstrap show failed:', err);
-						}
-					}
-
-					// If Bootstrap failed, try direct fallback
-					if (!opened && modal) {
-						try {
-							modal.style.display = 'block';
-							modal.classList.add('show');
-							modal.setAttribute('aria-hidden', 'false');
-							modal.setAttribute('aria-modal', 'true');
-							document.body.classList.add('modal-open');
-							const existing = document.getElementById('modal-backdrop');
-							if (!existing) {
-								const backdrop = document.createElement('div');
-								backdrop.className = 'modal-backdrop fade show';
-								backdrop.id = 'modal-backdrop';
-								document.body.appendChild(backdrop);
-							}
-							opened = true;
-							console.log('Modal shown via direct manipulation');
-						} catch (directError) {
-							console.error('Direct manipulation failed:', directError);
-						}
-					}
-
-					// Only prevent default navigation if we managed to open the modal
-					if (opened) {
-						e.preventDefault();
-						e.stopPropagation();
-					} else {
-						console.warn('Modal could not be opened, falling back to href');
-					}
-				});
-
-				console.log('Login button event listener added');
-			} else {
-				console.error('Login button not found!');
-			}
+			console.log('Bootstrap 3 modals ready');
 		});
 
 		// Fallback method - simple modal without Bootstrap
@@ -1974,42 +1836,10 @@
 				console.log('Login button direct handler attached');
 			}
 
-			// Initialize all dropdowns manually
-			const dropdownTriggers = document.querySelectorAll('[data-bs-toggle="dropdown"]');
-			console.log('Found dropdown triggers:', dropdownTriggers.length);
-
-			dropdownTriggers.forEach((trigger, index) => {
-				console.log('Initializing dropdown', index);
-
-				if (typeof bootstrap !== 'undefined' && bootstrap.Dropdown) {
-					try {
-						new bootstrap.Dropdown(trigger);
-						console.log('Dropdown initialized successfully:', index);
-					} catch (error) {
-						console.error('Error initializing dropdown:', error);
-					}
-				}
-
-				// Add manual click handler as fallback
-				trigger.addEventListener('click', function(e) {
-					e.preventDefault();
-					console.log('Dropdown clicked');
-
-					const menu = this.nextElementSibling;
-					if (menu && menu.classList.contains('dropdown-menu')) {
-						const isShown = menu.classList.contains('show');
-
-						// Close all other dropdowns
-						document.querySelectorAll('.dropdown-menu.show').forEach(m => {
-							m.classList.remove('show');
-						});
-
-						if (!isShown) {
-							menu.classList.add('show');
-							console.log('Dropdown opened manually');
-						}
-					}
-				});
+			// Convert Bootstrap 5 dropdown syntax to Bootstrap 3
+			$('[data-bs-toggle="dropdown"]').each(function() {
+				$(this).attr('data-toggle', 'dropdown');
+				console.log('Dropdown converted to Bootstrap 3:', this);
 			});
 		});
 
@@ -2024,7 +1854,86 @@
 				});
 			}
 		});
+
+		// CSRF Token Setup for AJAX Requests
+		$.ajaxSetup({
+			headers: {
+				'X-CSRF-Token': $('meta[name=_token]').attr('content')
+			}
+		});
 	</script>
+
+	<!-- Botman Chatbot Widget -->
+	<script>
+		@php $chat_id = Str::random(8); @endphp
+
+		var botmanWidget = {
+			title: 'Lela (Bot)',
+			introMessage: 'Hi, saya Lela. Saya di sini untuk membantu anda dan menjawab persoalan anda.',
+			mainColor: '#c32508',
+			aboutText: '',
+			bubbleBackground: '#c32508',
+			headerTextColor: '#fff',
+			desktopHeight: 500,
+			desktopWidth: 400,
+			bubbleAvatarUrl: '{{ asset('images/chatbot.png') }}',
+			placeholderText: 'Hantar Pesanan..',
+			frameEndpoint: "{{ route('chat_widget',['chat_id' => $chat_id]) }}",
+			userId: "{{ $chat_id }}"
+		};
+
+		window.addEventListener("message", (event) => {
+
+			// console.log(event);
+
+			if (event.data != "")
+			{
+				let data = event.data;
+
+				if(data.status == 200)
+				{
+					let messages = data.messages;
+
+					messages.forEach(row => {
+
+						if (row.text == "DataACK")
+						{
+							sender_response_detail = row.additionalParameters;
+
+							if (sender_response_detail.sender == "user_chat")
+							{
+								if (sender_response_detail.type == "image_only")
+								{
+									botmanChatWidget.say('<img src="' + sender_response_detail.response + '" alt="attach" width="120" height="120">');
+								}
+
+								if (sender_response_detail.type == "text_only")
+								{
+									botmanChatWidget.say(sender_response_detail.response);
+								}
+							}
+
+							if (sender_response_detail.sender == "bot")
+							{
+								if (sender_response_detail.type == "image_only")
+								{
+									botmanChatWidget.sayAsBot('<img src="' + sender_response_detail.response + '" alt="attach" width="120" height="120">');
+								}
+
+								if (sender_response_detail.type == "text_only")
+								{
+									botmanChatWidget.sayAsBot(sender_response_detail.response);
+								}
+							}
+						}
+					});
+					// botmanChatWidget.sayAsBot('TQ. <img src="https://botman.io/img/logo.png" alt="botsaywhat" width="20" height="20">');
+				}
+			}
+		});
+	</script>
+	{{-- <script src='https://cdn.jsdelivr.net/npm/botman-web-widget@0/build/js/widget.js'></script> --}}
+	<script src='{{ asset('packages/botman/build/js/widget.js') }}'></script>
 
 	@yield('scripts')
 </body>
