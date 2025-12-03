@@ -491,6 +491,7 @@
 
 @section('scripts')
 	<script src="{{ asset('js/datatables.js') }}"></script>
+	<script src="{{ asset('js/easy-ticker.js') }}"></script>
 	<script type="text/javascript">
 		$('.DT2').each(function() {
 			var target = $(this);
