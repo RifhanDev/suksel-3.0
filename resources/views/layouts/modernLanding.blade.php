@@ -194,17 +194,18 @@
 		}
 
 		.navbar-nav-horizontal .nav-link {
+			display: inline-flex;
 			align-items: center;
 			gap: 0.4rem;
-			padding: 0.75rem 0.25rem; 
+			padding: 0.75rem 0.25rem;
 			margin: 0 0.25rem;
 			color: #4b5563;
 			text-decoration: none;
 			font-weight: 600;
-			font-size: 0.75rem; 
+			font-size: 0.75rem;
 			position: relative;
-			transition: all 0.2s ease;
-			white-space: nowrap; 
+			transition: color 0.2s ease, background 0.2s ease;
+			white-space: nowrap;
 		}
 
 		.nav-link-icon {
@@ -278,6 +279,18 @@
 		.navbar-nav-horizontal .nav-item.dropdown .nav-link.active {
 			color: var(--sg-red);
 			font-weight: 600;
+		}
+
+		/* Fix dropdown spacing - prevent shift when opening */
+		.navbar-nav-horizontal .nav-item.dropdown .nav-link {
+			display: inline-flex !important;
+		}
+
+		.navbar-nav-horizontal .nav-item.dropdown .nav-link .nav-link-icon {
+			flex-shrink: 0;
+			width: 24px;
+			display: inline-flex;
+			justify-content: center;
 		}
 
 		/* Arrow Styling */
@@ -622,8 +635,25 @@
 		/* Large Screens */
 		@media (min-width: 1600px) {
 			.navbar-top .container-fluid {
+				padding-left: 0;
+				padding-right: 3rem;
+				max-width: 1920px;
+				margin: 0 auto;
+			}
+
+			.page-wrapper .container-fluid {
+				max-width: 1920px;
+				margin: 0 auto;
 				padding-left: 1.5rem;
 				padding-right: 3rem;
+			}
+		}
+
+		/* Medium-Large Desktop */
+		@media (min-width: 1201px) and (max-width: 1599px) {
+			.navbar-top .container-fluid {
+				padding-left: 0;
+				padding-right: 1.5rem;
 			}
 		}
 
@@ -631,7 +661,7 @@
 		@media (max-width: 1200px) {
 			.action-links { display: none; }
 			.navbar-actions { gap: 0.5rem; }
-			.navbar-top .container-fluid { padding-left: 1.5rem; padding-right: 1.5rem; }
+			.navbar-top .container-fluid { padding-left: 0; padding-right: 1.5rem; }
 		}
 
 		/* 3. Tablets */
