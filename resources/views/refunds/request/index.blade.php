@@ -1,25 +1,66 @@
 @extends('layouts.modern')
 @section('content')
-	<h2>Pemulangan Semula {{ isset($subtitle) ? ': ' . $subtitle : ': Selesai Pemulangan Semula' }}</h2>
-	<br>
-	@include('refunds.request._snaps')
-	<table data-path="{{ action('RefundController@index_request') }}{{ isset($status) ? '?state=' . $status : '' }}"
-		class="DT-index table table-striped table-hover table-bordered">
-		<thead class="bg-blue-selangor">
-			<tr>
-				<th>Bil.</th>
-				<th>No. Rujukan</th>
-				<th>Tarikh Permohonan</th>
-				<th>
-					{{ isset($status) ? $date_col : 'Tarikh Terima Bukti' }}
-				</th>
-				<th>Status</th>
-				<th>Amaun</th>
-				<th width="80px">&nbsp;</th>
-			</tr>
-		</thead>
-		<tbody></tbody>
-	</table>
+	<div class="row">
+		<div class="col-lg-12">
+			<div class="page-header">
+				<div class="page-title">
+					<div class="page-pretitle">
+						Sistem Tender Online
+					</div>
+				</div>
+			</div>
+
+			<h2 class="page-title">
+				<i class="ti ti-arrow-back-up me-2"></i>Pemulangan Semula
+				{{ isset($subtitle) ? ': ' . $subtitle : ': Selesai Pemulangan Semula' }}
+			</h2>
+			<br>
+
+			@include('refunds.request._snaps')
+
+			<div class="card">
+				<div class="card-header">
+					<h3 class="card-title mb-0">
+						<i class="ti ti-list me-2"></i>Senarai Pemulangan Semula
+					</h3>
+				</div>
+				<div class="card-body">
+					<div class="table-responsive">
+						<table data-path="{{ action('RefundController@index_request') }}{{ isset($status) ? '?state=' . $status : '' }}"
+							class="DT-index table table-vcenter table-mobile-md">
+							<thead>
+								<tr>
+									<th class="w-5">
+										<i class="ti ti-hash me-1"></i>Bil.
+									</th>
+									<th class="w-15">
+										<i class="ti ti-id me-1"></i>No. Rujukan
+									</th>
+									<th class="w-20">
+										<i class="ti ti-calendar me-1"></i>Tarikh Permohonan
+									</th>
+									<th class="w-20">
+										<i class="ti ti-calendar-check me-1"></i>
+										{{ isset($status) ? $date_col : 'Tarikh Terima Bukti' }}
+									</th>
+									<th class="w-15">
+										<i class="ti ti-status-change me-1"></i>Status
+									</th>
+									<th class="w-15">
+										<i class="ti ti-currency-ringgit me-1"></i>Amaun
+									</th>
+									<th class="w-10">
+										<i class="ti ti-settings me-1"></i>Tindakan
+									</th>
+								</tr>
+							</thead>
+							<tbody></tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
 @endsection
 
 @section('scripts')
