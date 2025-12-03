@@ -1,47 +1,67 @@
 @extends('layouts.modern')
+
 @section('content')
-	<h2>Kebenaran</h2>
-	<hr>
-	<table data-path="/permissions" class="DT-index table table-striped table-hover table-bordered">
-		<thead class="bg-blue-selangor">
-			<tr>
-				<th>Kumpulan</th>
-				<th>Nama</th>
-				<th>Keterangan</th>
-				<th width="200px">&nbsp;</th>
-			</tr>
-		</thead>
-		<tbody></tbody>
-	</table>
-	<br>
-	@include('permissions.actions-footer', ['is_list' => true])
+	@php
+		$columnsConfig = [
+		    ['data' => 'group_name', 'name' => 'group_name', 'label' => 'Kumpulan', 'icon' => 'ti-folder'],
+		    ['data' => 'name', 'name' => 'name', 'label' => 'Nama', 'icon' => 'ti-key'],
+		    ['data' => 'display_name', 'name' => 'display_name', 'label' => 'Keterangan', 'icon' => 'ti-file-text'],
+		    [
+		        'data' => 'actions',
+		        'name' => 'actions',
+		        'label' => 'Tindakan',
+		        'icon' => 'ti-settings',
+		        'width' => 'w-25',
+		        'orderable' => false,
+		        'searchable' => false,
+		    ],
+		];
+	@endphp
+
+	@include('components.modern-index', [
+		'title' => 'Senarai Kebenaran',
+		'pretitle' => 'Sistem Tender Online',
+		'icon' => 'ti-key',
+		'cardTitle' => 'Maklumat Kebenaran',
+		'createUrl' => route('permissions.create'),
+		'createLabel' => 'Tambah Kebenaran Baru',
+		'showCreate' => App\Permission::canCreate(),
+		'dataPath' => '/permissions',
+		'columns' => $columnsConfig,
+		'defaultOrder' => [[0, 'asc']],
+		'pageLength' => 25,
+	])
 @endsection
+
 @section('scripts')
 	<script src="{{ asset('js/datatables.js') }}"></script>
-	<script>
+	<script type="text/javascript">
 		$('.DT-index').each(function() {
 			var target = $(this);
 			var path = target.data('path');
+			var columns = [{
+					data: 'group_name',
+					name: 'group_name'
+				},
+				{
+					data: 'name',
+					name: 'name'
+				},
+				{
+					data: 'display_name',
+					name: 'display_name'
+				},
+				{
+					data: 'actions',
+					name: 'actions',
+					orderable: false,
+					searchable: false
+				}
+			];
 
 			var DT = target.DataTable({
 				ajax: path,
-				columns: [{
-						data: 'group_name',
-						name: 'group_name'
-					},
-					{
-						data: 'name',
-						name: 'name'
-					},
-					{
-						data: 'display_name',
-						name: 'display_name'
-					},
-					{
-						data: 'actions',
-						name: 'actions'
-					}
-				],
+				columns: columns,
 				serverSide: true,
 				stateSave: true,
 				language: {
@@ -67,7 +87,13 @@
 						sSortDescending: ": diaktifkan kepada susunan lajur menurun"
 					}
 				},
-				aaSorting: []
+				aaSorting: [],
+				dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rtip',
+				pageLength: 25,
+				responsive: true,
+				order: [
+					[0, 'asc']
+				]
 			});
 		});
 	</script>
