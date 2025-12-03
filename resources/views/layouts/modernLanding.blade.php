@@ -190,7 +190,7 @@
 			display: inline-flex;
 			align-items: center;
 			gap: 0.4rem;
-			padding: 0.75rem 0.3rem; 
+			padding: 0.75rem 0.25rem; 
 			margin: 0 0.25rem;
 			color: #4b5563;
 			text-decoration: none;
