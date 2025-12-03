@@ -564,4 +564,76 @@
 			}
 		});
 	</script>
+
+    <!-- Botman Chatbot Widget -->
+	<script>
+		@php $chat_id = Str::random(8); @endphp
+
+		var botmanWidget = {
+			title: 'Lela (Bot)',
+			introMessage: 'Hi, saya Lela. Saya di sini untuk membantu anda dan menjawab persoalan anda.',
+			mainColor: '#c32508',
+			aboutText: '',
+			bubbleBackground: '#c32508',
+			headerTextColor: '#fff',
+			desktopHeight: 500,
+			desktopWidth: 400,
+			bubbleAvatarUrl: '{{ asset('images/chatbot.png') }}',
+			placeholderText: 'Hantar Pesanan..',
+			frameEndpoint: "{{ route('chat_widget',['chat_id' => $chat_id]) }}",
+			userId: "{{ $chat_id }}"
+		};
+
+		window.addEventListener("message", (event) => {
+
+			// console.log(event);
+
+			if (event.data != "")
+			{
+				let data = event.data;
+
+				if(data.status == 200)
+				{
+					let messages = data.messages;
+
+					messages.forEach(row => {
+
+						if (row.text == "DataACK")
+						{
+							sender_response_detail = row.additionalParameters;
+
+							if (sender_response_detail.sender == "user_chat")
+							{
+								if (sender_response_detail.type == "image_only")
+								{
+									botmanChatWidget.say('<img src="' + sender_response_detail.response + '" alt="attach" width="120" height="120">');
+								}
+
+								if (sender_response_detail.type == "text_only")
+								{
+									botmanChatWidget.say(sender_response_detail.response);
+								}
+							}
+
+							if (sender_response_detail.sender == "bot")
+							{
+								if (sender_response_detail.type == "image_only")
+								{
+									botmanChatWidget.sayAsBot('<img src="' + sender_response_detail.response + '" alt="attach" width="120" height="120">');
+								}
+
+								if (sender_response_detail.type == "text_only")
+								{
+									botmanChatWidget.sayAsBot(sender_response_detail.response);
+								}
+							}
+						}
+					});
+					// botmanChatWidget.sayAsBot('TQ. <img src="https://botman.io/img/logo.png" alt="botsaywhat" width="20" height="20">');
+				}
+			}
+		});
+	</script>
+	{{-- <script src='https://cdn.jsdelivr.net/npm/botman-web-widget@0/build/js/widget.js'></script> --}}
+	<script src='{{ asset('packages/botman/build/js/widget.js') }}'></script>
 @endsection

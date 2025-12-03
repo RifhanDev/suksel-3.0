@@ -184,6 +184,10 @@ Route::get('helps/search', [HelpsController::class, 'search']);
 Route::resource('helps', HelpsController::class);
 Route::resource('manuals', ManualsController::class);
 
+// BotMan
+Route::match(['get', 'post'], 'botman', [BotManController::class, 'handle'])->name('botman');
+Route::get('chat-widget/{chat_id}', [BotManController::class, 'chatWidget'])->withoutMiddleware(['auth'])->name('chat_widget');
+
 // Company search
 Route::get('company_search', [HomeController::class, 'companySearch']);
 Route::post('company_search', [HomeController::class, 'doCompanySearch']);
@@ -242,9 +246,6 @@ Route::post('aduan', [ComplaintController::class, 'store'])->name('aduan.store')
 Route::get('aduan/list', [ComplaintController::class, 'index'])->name('aduan.index');
 Route::get('aduan/{id}', [ComplaintController::class, 'show'])->name('aduan.show');
 Route::get('aduan/{id}/{status}', [ComplaintController::class, 'updateStatus'])->name('aduan.update.status');
-
-// Chat Widget
-Route::get('chat_widget', [HomeController::class, 'chatWidget'])->name('chat_widget');
 
 // Payment
 Route::post('payment/fpx/listen', [FpxController::class, 'listen'])->name('fpx.listen');
@@ -578,10 +579,6 @@ Route::middleware(['auth'])->group(function () {
 				Route::get('{refund}/approve', [RefundController::class, 'approve_complaint'])->name('refunds.complaint.approve');
 			});
 		});
-
-		// BotMan
-		Route::match(['get', 'post'], 'botman', [BotManController::class, 'handle'])->name('botman');
-		Route::get('chat-widget/{chat_id}', [BotManController::class, 'chatWidget'])->withoutMiddleware(['auth'])->name('chat_widget');
 
 		// API Token
 		Route::get('apitoken', [ApiTokenController::class, 'index'])->name('apitoken.index');
