@@ -456,7 +456,7 @@ Route::middleware(['auth'])->group(function () {
 		Route::get('payment/ebpg/connect', [EbpgController::class, 'connect'])->name('ebpg.connect');
 		Route::post('payment/ebpg/respond', [EbpgController::class, 'respond'])->name('ebpg.respond');
 
-		Route::get('dashboard/hq', [HomeController::class, 'managementDashboard']);
+		Route::get('dashboard/hq', [HomeController::class, 'managementDashboard'])->name('dashboard.hq');
 
 		// Reports - Individual Report Controllers
 		Route::get('reports/revenue', [ReportRevenueController::class, 'index']);
