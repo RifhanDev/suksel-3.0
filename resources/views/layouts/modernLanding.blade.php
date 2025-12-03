@@ -68,6 +68,13 @@
             border-radius: 0 !important;
 		}
 
+		.desktop-closed-message-avatar {
+			border-radius: 50% !important;
+			object-fit: cover !important;
+			border: 2px solid white !important;
+			box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+		}
+
 		html, body {
 			margin: 0;
 			padding: 0;
