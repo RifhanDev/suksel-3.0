@@ -62,20 +62,22 @@ trait EntrustCompatTrait
             }
         }
 
-        // Decide result: if both checks present require both true, else return whichever is present
-        if (is_null($roleCheck) && is_null($permCheck)) {
+        if (is_null($roleCheck) && is_null($permCheck))
+        {
             return false;
         }
 
-        if (is_null($roleCheck)) {
+        if (is_null($roleCheck))
+        {
             return (bool) $permCheck;
         }
 
-        if (is_null($permCheck)) {
+        if (is_null($permCheck))
+        {
             return (bool) $roleCheck;
         }
 
-        return (bool) ($roleCheck && $permCheck);
+        return (bool) ($roleCheck || $permCheck);
     }
 
     /**
