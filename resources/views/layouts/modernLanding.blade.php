@@ -621,6 +621,180 @@
 
 		.dropdown-divider { margin: 0; border-color: var(--border-color); }
 
+		/* --- HAMBURGER MENU --- */
+		.hamburger-btn {
+			display: none;
+			flex-direction: column;
+			justify-content: space-around;
+			width: 32px;
+			height: 32px;
+			background: transparent;
+			border: none;
+			cursor: pointer;
+			padding: 4px;
+			z-index: 1060;
+			transition: all 0.3s ease;
+		}
+
+		.hamburger-btn:hover {
+			background: #f3f4f6;
+		}
+
+		.hamburger-btn span {
+			width: 100%;
+			height: 3px;
+			background: var(--sg-red);
+			transition: all 0.3s ease;
+			transform-origin: center;
+		}
+
+		.hamburger-btn.active span:nth-child(1) {
+			transform: translateY(8px) rotate(45deg);
+		}
+
+		.hamburger-btn.active span:nth-child(2) {
+			opacity: 0;
+		}
+
+		.hamburger-btn.active span:nth-child(3) {
+			transform: translateY(-8px) rotate(-45deg);
+		}
+
+		/* Mobile Sidebar Menu */
+		.mobile-sidebar {
+			position: fixed;
+			top: 84px;
+			left: -100%;
+			width: 320px;
+			height: calc(100vh - 84px);
+			background: white;
+			box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15);
+			z-index: 1050;
+			transition: left 0.3s ease;
+			overflow-y: auto;
+			padding: 1.5rem 0;
+		}
+
+		.mobile-sidebar.active {
+			left: 0;
+		}
+
+		.mobile-overlay {
+			position: fixed;
+			top: 84px;
+			left: 0;
+			width: 100%;
+			height: calc(100vh - 84px);
+			background: rgba(0, 0, 0, 0.5);
+			z-index: 1040;
+			display: none;
+			transition: opacity 0.3s ease;
+		}
+
+		.mobile-overlay.active {
+			display: block;
+		}
+
+		.mobile-nav-item {
+			border-bottom: 1px solid #f3f4f6;
+		}
+
+		.mobile-nav-link {
+			display: flex;
+			align-items: center;
+			gap: 1rem;
+			padding: 1rem 1.5rem;
+			color: var(--nav-text);
+			text-decoration: none;
+			font-weight: 600;
+			font-size: 0.9rem;
+			transition: all 0.2s ease;
+		}
+
+		.mobile-nav-link:hover,
+		.mobile-nav-link.active {
+			background: #fef2f2;
+			color: var(--sg-red);
+			border-left: 4px solid var(--sg-red);
+			padding-left: 1.375rem;
+		}
+
+		.mobile-nav-link svg {
+			width: 22px;
+			height: 22px;
+			flex-shrink: 0;
+		}
+
+		.mobile-dropdown-toggle {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			width: 100%;
+			padding: 1rem 1.5rem;
+			color: var(--nav-text);
+			text-decoration: none;
+			font-weight: 600;
+			font-size: 0.9rem;
+			background: transparent;
+			border: none;
+			text-align: left;
+			cursor: pointer;
+			transition: all 0.2s ease;
+		}
+
+		.mobile-dropdown-toggle:hover {
+			background: #fef2f2;
+			color: var(--sg-red);
+		}
+
+		.mobile-dropdown-toggle .mobile-nav-icon {
+			display: flex;
+			align-items: center;
+			gap: 1rem;
+		}
+
+		.mobile-dropdown-toggle .dropdown-arrow {
+			transition: transform 0.3s ease;
+		}
+
+		.mobile-dropdown-toggle.active .dropdown-arrow {
+			transform: rotate(180deg);
+		}
+
+		.mobile-dropdown-content {
+			max-height: 0;
+			overflow: hidden;
+			background: #f9fafb;
+			transition: max-height 0.3s ease;
+		}
+
+		.mobile-dropdown-content.active {
+			max-height: 500px;
+		}
+
+		.mobile-dropdown-item {
+			display: flex;
+			align-items: center;
+			gap: 0.75rem;
+			padding: 0.875rem 1.5rem 0.875rem 3.5rem;
+			color: #4b5563;
+			text-decoration: none;
+			font-size: 0.85rem;
+			font-weight: 500;
+			transition: all 0.2s ease;
+		}
+
+		.mobile-dropdown-item:hover {
+			background: #fff;
+			color: var(--sg-red);
+			padding-left: 3.75rem;
+		}
+
+		.mobile-dropdown-item svg {
+			width: 18px;
+			height: 18px;
+		}
+
 		.page-wrapper {
 			flex: 1;
 			padding: var(--sp-2xl) var(--sp-xl);
@@ -657,16 +831,30 @@
 			}
 		}
 
+		/* Show Hamburger Menu below 1500px */
+		@media (max-width: 1499px) {
+			.navbar-nav-horizontal {
+				display: none !important;
+			}
+
+			.hamburger-btn {
+				display: flex;
+			}
+
+			.navbar-top .container-fluid {
+				padding-left: 0;
+				padding-right: 1.5rem;
+			}
+		}
+
 		/* 2. Laptops */
 		@media (max-width: 1200px) {
 			.action-links { display: none; }
 			.navbar-actions { gap: 0.5rem; }
-			.navbar-top .container-fluid { padding-left: 0; padding-right: 1.5rem; }
 		}
 
 		/* 3. Tablets */
 		@media (max-width: 992px) {
-			.navbar-nav-horizontal { display: none; }
 			
 			.navbar-brand-logo {
 				clip-path: none;
@@ -685,26 +873,38 @@
 
 		/* 4. Mobile */
 		@media (max-width: 768px) {
-			.navbar-top { 
+			.navbar-top {
 				padding: 0.5rem 0; /* Vertical padding on mobile wrapper */
-				height: auto; 
+				height: auto;
 			}
-			
+
 			/* Padding on mobile */
-			.navbar-top .container-fluid { 
-				padding-left: 1rem; 
-				padding-right: 1rem; 
+			.navbar-top .container-fluid {
+				padding-left: 1rem;
+				padding-right: 1rem;
 			}
 
 			.navbar-brand-text { font-size: 1.1rem; }
 			.navbar-brand-text-sub { display: none; }
 			.navbar-brand-logo img { max-width: 44px; }
-			
+
 			.navbar-actions { gap: 0.375rem; }
 			.navbar-actions .btn { padding: 0.5rem; font-size: 0.7rem; gap: 0; }
 			.navbar-actions .btn span { display: none; }
-			
+
 			.page-wrapper { padding: var(--sp-lg); }
+
+			/* Adjust mobile sidebar for auto height navbar */
+			.mobile-sidebar {
+				top: 0;
+				height: 100vh;
+				padding-top: calc(var(--navbar-height, 84px));
+			}
+
+			.mobile-overlay {
+				top: 0;
+				height: 100vh;
+			}
 		}
 	</style>
 </head>
@@ -821,6 +1021,13 @@
 					</li>
 				</ul>
 
+				<!-- HAMBURGER MENU BUTTON -->
+				<button class="hamburger-btn" id="hamburgerBtn" aria-label="Toggle navigation">
+					<span></span>
+					<span></span>
+					<span></span>
+				</button>
+
 				<!-- ACTIONS -->
 				<div class="navbar-actions">
 					@if (!Auth::check())
@@ -896,6 +1103,99 @@
 			</div>
 		</nav>
 
+		<!-- MOBILE SIDEBAR MENU -->
+		<div class="mobile-overlay" id="mobileOverlay"></div>
+		<div class="mobile-sidebar" id="mobileSidebar">
+			<nav>
+				<!-- Utama -->
+				<div class="mobile-nav-item">
+					<a href="{{ action('HomeController@index') }}" class="mobile-nav-link {{ request()->is('/') ? 'active' : '' }}">
+						<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" class="icon icon-tabler icons-tabler-filled icon-tabler-home"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12.707 2.293l9 9c.63 .63 .184 1.707 -.707 1.707h-1v6a3 3 0 0 1 -3 3h-1v-7a3 3 0 0 0 -2.824 -2.995l-.176 -.005h-2a3 3 0 0 0 -3 3v7h-1a3 3 0 0 1 -3 -3v-6h-1c-.89 0 -1.337 -1.077 -.707 -1.707l9 -9a1 1 0 0 1 1.414 0m.293 11.707a1 1 0 0 1 1 1v7h-4v-7a1 1 0 0 1 .883 -.993l.117 -.007z" /></svg>
+						<span>Utama</span>
+					</a>
+				</div>
+
+				<!-- Carta Tender -->
+				<div class="mobile-nav-item">
+					<a href="{{ action('HomeController@prices') }}" class="mobile-nav-link {{ request()->is('prices*') ? 'active' : '' }}">
+						<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" class="icon icon-tabler icons-tabler-filled icon-tabler-files"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M11 2l3 .001v5.999a1 1 0 0 0 .883 .993l.117 .007h6v6a3 3 0 0 1 -3 3h-1v1a3 3 0 0 1 -3 3h-7a3 3 0 0 1 -3 -3v-10a3 3 0 0 1 3 -3h1v-1a3 3 0 0 1 3 -3m-3 6h-1a1 1 0 0 0 -1 1v10a1 1 0 0 0 1 1h7a1 1 0 0 0 1 -1v-1h-4a3 3 0 0 1 -3 -3zm12.415 -1h-4.415v-4.415z" /></svg>
+						<span>Carta Tender</span>
+					</a>
+				</div>
+
+				<!-- Penender Berjaya -->
+				<div class="mobile-nav-item">
+					<a href="{{ action('HomeController@results') }}" class="mobile-nav-link {{ request()->is('results*') ? 'active' : '' }}">
+						<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" class="icon icon-tabler icons-tabler-filled icon-tabler-trophy"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M17 3a1 1 0 0 1 .993 .883l.007 .117v2.17a3 3 0 1 1 0 5.659v.171a6.002 6.002 0 0 1 -5 5.917v2.083h3a1 1 0 0 1 .117 1.993l-.117 .007h-8a1 1 0 0 1 -.117 -1.993l.117 -.007h3v-2.083a6.002 6.002 0 0 1 -4.996 -5.692l-.004 -.225v-.171a3 3 0 0 1 -3.996 -2.653l-.003 -.176l.005 -.176a3 3 0 0 1 3.995 -2.654l-.001 -2.17a1 1 0 0 1 1 -1h10zm-12 5a1 1 0 1 0 0 2a1 1 0 0 0 0 -2zm14 0a1 1 0 1 0 0 2a1 1 0 0 0 0 -2z" /></svg>
+						<span>Penender Berjaya</span>
+					</a>
+				</div>
+
+				<!-- Pekeliling -->
+				<div class="mobile-nav-item">
+					<a href="{{ route('circulars.public') }}" class="mobile-nav-link {{ request()->is('circulars*') ? 'active' : '' }}">
+						<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" class="icon icon-tabler icons-tabler-filled icon-tabler-clipboard-list"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M17.997 4.17a3 3 0 0 1 2.003 2.83v12a3 3 0 0 1 -3 3h-10a3 3 0 0 1 -3 -3v-12a3 3 0 0 1 2.003 -2.83a4 4 0 0 0 3.997 3.83h4a4 4 0 0 0 3.98 -3.597zm-8.987 10.83h-.01a1 1 0 0 0 -.117 1.993l.127 .007a1 1 0 0 0 0 -2m5.99 0h-2a1 1 0 0 0 0 2h2a1 1 0 0 0 0 -2m-5.99 -4h-.01a1 1 0 0 0 -.117 1.993l.127 .007a1 1 0 0 0 0 -2m5.99 0h-2a1 1 0 0 0 0 2h2a1 1 0 0 0 0 -2m-1 -9a2 2 0 1 1 0 4h-4a2 2 0 1 1 0 -4z" /></svg>
+						<span>Pekeliling</span>
+					</a>
+				</div>
+
+				<!-- Aduan -->
+				<div class="mobile-nav-item">
+					<a href="{{ route('aduan.create') }}" class="mobile-nav-link {{ request()->is('aduan*') ? 'active' : '' }}">
+						<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" class="icon icon-tabler icons-tabler-filled icon-tabler-message-report"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M18 3a4 4 0 0 1 4 4v8a4 4 0 0 1 -4 4h-4.724l-4.762 2.857a1 1 0 0 1 -1.508 -.743l-.006 -.114v-2h-1a4 4 0 0 1 -3.995 -3.8l-.005 -.2v-8a4 4 0 0 1 4 -4zm-6 10a1 1 0 0 0 -1 1v.01a1 1 0 0 0 2 0v-.01a1 1 0 0 0 -1 -1m0 -6a1 1 0 0 0 -1 1v3a1 1 0 0 0 2 0v-3a1 1 0 0 0 -1 -1" /></svg>
+						<span>Aduan</span>
+					</a>
+				</div>
+
+				<!-- Pertanyaan Dropdown -->
+				<div class="mobile-nav-item">
+					<button class="mobile-dropdown-toggle" data-dropdown="pertanyaan">
+						<div class="mobile-nav-icon">
+							<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" class="icon icon-tabler icons-tabler-filled icon-tabler-zoom-question"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M14 3.072a8 8 0 0 1 2.32 11.834l5.387 5.387a1 1 0 0 1 -1.414 1.414l-5.388 -5.387a8 8 0 0 1 -12.905 -6.32l.005 -.285a8 8 0 0 1 11.995 -6.643m-4 8.928a1 1 0 0 0 -.993 .883l-.007 .127a1 1 0 0 0 1.993 .117l.007 -.127a1 1 0 0 0 -1 -1m-1.9 -5.123a1 1 0 0 0 1.433 1.389l.088 -.09a.5 .5 0 1 1 .379 .824a1 1 0 0 0 -.002 2a2.5 2.5 0 1 0 -1.9 -4.123" /></svg>
+							<span>Pertanyaan</span>
+						</div>
+						<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="dropdown-arrow"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M6 9l6 6l6 -6" /></svg>
+					</button>
+					<div class="mobile-dropdown-content" id="dropdown-pertanyaan">
+						<a href="{{ action('HelpsController@index') }}" class="mobile-dropdown-item">
+							<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" class="icon icon-tabler icons-tabler-filled icon-tabler-lifebuoy"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M14.757 16.172l3.571 3.571a10.004 10.004 0 0 1 -12.656 0l3.57 -3.571a5 5 0 0 0 2.758 .828c1.02 0 1.967 -.305 2.757 -.828m-10.5 -10.5l3.571 3.57a5 5 0 0 0 -.828 2.758c0 1.02 .305 1.967 .828 2.757l-3.57 3.572a10 10 0 0 1 -2.258 -6.329l.005 -.324a10 10 0 0 1 2.252 -6.005m17.743 6.329c0 2.343 -.82 4.57 -2.257 6.328l-3.571 -3.57a5 5 0 0 0 .828 -2.758c0 -1.02 -.305 -1.967 -.828 -2.757l3.571 -3.57a10 10 0 0 1 2.257 6.327m-5 -8.66q .707 .41 1.33 .918l-3.573 3.57a5 5 0 0 0 -2.757 -.828c-1.02 0 -1.967 .305 -2.757 .828l-3.573 -3.57a10 10 0 0 1 11.33 -.918" /></svg>
+							Bantuan
+						</a>
+						<a href="{{ route('manuals.show', 'pendaftaran') }}" class="mobile-dropdown-item">
+							<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" class="icon icon-tabler icons-tabler-filled icon-tabler-alert-square"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M19 2a3 3 0 0 1 2.995 2.824l.005 .176v14a3 3 0 0 1 -2.824 2.995l-.176 .005h-14a3 3 0 0 1 -2.995 -2.824l-.005 -.176v-14a3 3 0 0 1 2.824 -2.995l.176 -.005h14zm-6.99 13l-.127 .007a1 1 0 0 0 0 1.986l.117 .007l.127 -.007a1 1 0 0 0 0 -1.986l-.117 -.007zm-.01 -8a1 1 0 0 0 -.993 .883l-.007 .117v4l.007 .117a1 1 0 0 0 1.986 0l.007 -.117v-4l-.007 -.117a1 1 0 0 0 -.993 -.883z" /></svg>
+							Panduan Pengguna
+						</a>
+					</div>
+				</div>
+
+				<!-- Direktori Agensi Dropdown -->
+				<div class="mobile-nav-item">
+					<button class="mobile-dropdown-toggle" data-dropdown="agensi">
+						<div class="mobile-nav-icon">
+							<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" class="icon icon-tabler icons-tabler-filled icon-tabler-directions"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10 22a1 1 0 0 1 0 -2h1v-2.001l-5 .001a1 1 0 0 1 -.707 -.293l-2 -2a1 1 0 0 1 0 -1.414l2 -2a1 1 0 0 1 .707 -.293l5 -.001v-1.999h-3a1 1 0 0 1 -1 -1v-4a1 1 0 0 1 1 -1h3v-1a1 1 0 0 1 2 0v1h6a1 1 0 0 1 .707 .293l2 2a1 1 0 0 1 0 1.414l-2 2a1 1 0 0 1 -.707 .293h-6v1.999l1 .001a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1l-1 -.001v2.001h1a1 1 0 0 1 0 2z" /></svg>
+							<span>Direktori Agensi</span>
+						</div>
+						<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="dropdown-arrow"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M6 9l6 6l6 -6" /></svg>
+					</button>
+					<div class="mobile-dropdown-content" id="dropdown-agensi">
+						@php
+							try {
+								$__orgTypes = App\OrganizationType::orderBy('sort_no', 'asc')->get();
+							} catch (\Throwable $e) {
+								$__orgTypes = collect();
+							}
+						@endphp
+						@foreach ($__orgTypes as $type)
+							<a href="{{ action('OrganizationUnitsController@index', ['type' => $type->id]) }}" class="mobile-dropdown-item">
+								<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" class="icon icon-tabler icons-tabler-filled icon-tabler-building"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M18 2a3 3 0 0 1 2.995 2.824l.005 .176v16a1 1 0 0 1 -.883 .993l-.117 .007h-5a1 1 0 0 1 -.993 -.883l-.007 -.117v-3h-2v3a1 1 0 0 1 -.883 .993l-.117 .007h-5a1 1 0 0 1 -.993 -.883l-.007 -.117v-16a3 3 0 0 1 2.824 -2.995l.176 -.005h10zm-6 6h-1a1 1 0 1 0 0 2h1a1 1 0 0 0 0 -2zm4 0h-1a1 1 0 0 0 0 2h1a1 1 0 0 0 0 -2z" /></svg>
+								{{ $type->name }}
+							</a>
+						@endforeach
+					</div>
+				</div>
+			</nav>
+		</div>
+
 		<!-- Page Content -->
 		<div class="page-wrapper">
 			<div class="container-fluid">
@@ -913,6 +1213,75 @@
 	{{-- <script src="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0-beta20/dist/js/tabler.min.js"></script> --}}
 
 	{{-- <script src="{{ asset('js/application.js') }}"></script> --}}
+
+	<!-- Hamburger Menu Script -->
+	<script>
+		document.addEventListener('DOMContentLoaded', function() {
+			const hamburgerBtn = document.getElementById('hamburgerBtn');
+			const mobileSidebar = document.getElementById('mobileSidebar');
+			const mobileOverlay = document.getElementById('mobileOverlay');
+			const dropdownToggles = document.querySelectorAll('.mobile-dropdown-toggle');
+
+			// Toggle mobile menu
+			function toggleMobileMenu() {
+				hamburgerBtn.classList.toggle('active');
+				mobileSidebar.classList.toggle('active');
+				mobileOverlay.classList.toggle('active');
+
+				// Prevent body scroll when menu is open
+				if (mobileSidebar.classList.contains('active')) {
+					document.body.style.overflow = 'hidden';
+				} else {
+					document.body.style.overflow = '';
+				}
+			}
+
+			// Close mobile menu
+			function closeMobileMenu() {
+				hamburgerBtn.classList.remove('active');
+				mobileSidebar.classList.remove('active');
+				mobileOverlay.classList.remove('active');
+				document.body.style.overflow = '';
+			}
+
+			// Hamburger button click
+			if (hamburgerBtn) {
+				hamburgerBtn.addEventListener('click', toggleMobileMenu);
+			}
+
+			// Overlay click
+			if (mobileOverlay) {
+				mobileOverlay.addEventListener('click', closeMobileMenu);
+			}
+
+			// Dropdown toggles in mobile menu
+			dropdownToggles.forEach(toggle => {
+				toggle.addEventListener('click', function() {
+					const dropdownId = this.getAttribute('data-dropdown');
+					const dropdownContent = document.getElementById('dropdown-' + dropdownId);
+
+					// Toggle active class
+					this.classList.toggle('active');
+					dropdownContent.classList.toggle('active');
+				});
+			});
+
+			// Close menu when clicking on a link (not dropdown)
+			const mobileNavLinks = document.querySelectorAll('.mobile-nav-link, .mobile-dropdown-item');
+			mobileNavLinks.forEach(link => {
+				link.addEventListener('click', function() {
+					closeMobileMenu();
+				});
+			});
+
+			// Close menu on window resize if screen becomes large
+			window.addEventListener('resize', function() {
+				if (window.innerWidth >= 1500) {
+					closeMobileMenu();
+				}
+			});
+		});
+	</script>
 
 	@yield('scripts')
 </body>
