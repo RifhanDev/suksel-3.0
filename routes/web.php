@@ -173,7 +173,6 @@ Route::get('privacy', [HomeController::class, 'privacy']);
 // Place 3.0 Modules Routes Temporarily Here
 Route::view('/pelantikan-jawatankuasa', 'newModule.pelantikan_jawatankuasa')->name('pelantikanJawatankuasa');
 
-
 // Public resources
 Route::resource('comments', CommentsController::class);
 Route::get('/agencies/{id}/prices', [OrganizationUnitsController::class, 'prices']);
@@ -183,9 +182,7 @@ Route::get('/agencies/{id}/report/{tender}', [OrganizationUnitsController::class
 Route::resource('agencies', OrganizationUnitsController::class);
 Route::get('helps/search', [HelpsController::class, 'search']);
 Route::resource('helps', HelpsController::class);
-Route::get('manuals/{manual}', [HomeController::class, 'manualShow'])->name('manuals.show');
-// ManualsController exists but route handled by HomeController
-// Route::resource('manuals', ManualsController::class);
+Route::resource('manuals', ManualsController::class);
 
 // Company search
 Route::get('company_search', [HomeController::class, 'companySearch']);
@@ -232,11 +229,19 @@ Route::resource('news', NewsController::class);
 // Contact
 Route::get('contact', [HomeController::class, 'contact']);
 
-// Circulars
-Route::get('circulars', [HomeController::class, 'circulars'])->name('circulars.public');
+// Circular
+Route::resource('circulars', CircularController::class)->except(['show', 'destroy']);
+Route::get('circulars/{id}/publish', [CircularController::class, 'publish'])->name('circulars.publish');
+Route::get('circulars/list', [CircularController::class, 'public'])->name('circulars.public');
+Route::get('circulars/sort', [CircularController::class, 'sortPosition'])->name('circulars.position');
+Route::post('circulars/sort', [CircularController::class, 'updatePosition'])->name('circulars.update.position');
 
-// Aduan (Complaints) - Public
-Route::get('aduan/create', [HomeController::class, 'aduanCreate'])->name('aduan.create');
+// Complaint/Aduan
+Route::get('aduan', [ComplaintController::class, 'create'])->name('aduan.create');
+Route::post('aduan', [ComplaintController::class, 'store'])->name('aduan.store');
+Route::get('aduan/list', [ComplaintController::class, 'index'])->name('aduan.index');
+Route::get('aduan/{id}', [ComplaintController::class, 'show'])->name('aduan.show');
+Route::get('aduan/{id}/{status}', [ComplaintController::class, 'updateStatus'])->name('aduan.update.status');
 
 // Chat Widget
 Route::get('chat_widget', [HomeController::class, 'chatWidget'])->name('chat_widget');
@@ -544,13 +549,6 @@ Route::middleware(['auth'])->group(function () {
 		Route::get('tenders/{id}/approve', [TendersController::class, 'approve_exception'])->name('tender.approve.exception');
 		Route::post('tenders/{id}/reject/{exception_id}', [TendersController::class, 'reject_exception'])->name('tender.reject.exception');
 
-		// Circular
-		Route::resource('circulars', CircularController::class)->except(['show', 'destroy']);
-		Route::get('circulars/{id}/publish', [CircularController::class, 'publish'])->name('circulars.publish');
-		Route::get('circulars/list', [CircularController::class, 'public'])->name('circulars.public');
-		Route::get('circulars/sort', [CircularController::class, 'sortPosition'])->name('circulars.position');
-		Route::post('circulars/sort', [CircularController::class, 'updatePosition'])->name('circulars.update.position');
-
 		// Refunds
 		Route::prefix('refunds')->group(function () {
 			Route::post('get-transaction', [RefundController::class, 'fetch_transactions'])->name('get_transaction');
@@ -580,13 +578,6 @@ Route::middleware(['auth'])->group(function () {
 				Route::get('{refund}/approve', [RefundController::class, 'approve_complaint'])->name('refunds.complaint.approve');
 			});
 		});
-
-		// Complaint/Aduan
-		Route::get('aduan', [ComplaintController::class, 'create'])->name('aduan.create');
-		Route::post('aduan', [ComplaintController::class, 'store'])->name('aduan.store');
-		Route::get('aduan/list', [ComplaintController::class, 'index'])->name('aduan.index');
-		Route::get('aduan/{id}', [ComplaintController::class, 'show'])->name('aduan.show');
-		Route::get('aduan/{id}/{status}', [ComplaintController::class, 'updateStatus'])->name('aduan.update.status');
 
 		// BotMan
 		Route::match(['get', 'post'], 'botman', [BotManController::class, 'handle'])->name('botman');
