@@ -175,7 +175,7 @@ Route::middleware(['auth'])->group(function ()
 	Route::post('register/payment', [RegistrationController::class, 'storePayment']);
 	Route::get('register/payment_callback/{transaction_id}', [RegistrationController::class, 'callbackPayment']);
 
-	Route::get('dashboard', [HomeController::class, 'dashboard'])->name('dashboard');
+	Route::get('dashboard', [HomeController::class, 'dashboard'])->name('dashboard'); //for vendor
 	Route::get('vendor', [HomeController::class, 'vendor'])->name('vendor');
 	Route::get('renewal', [HomeController::class, 'renewal'])->name('renewal');
 	Route::post('renewal', [HomeController::class, 'storeRenewal']);
@@ -231,6 +231,8 @@ Route::middleware(['auth'])->group(function ()
 	// Admin routes
 	Route::middleware(['role:Admin'])->group(function ()
 	{
+		Route::get('dashboard/hq', [HomeController::class, 'managementDashboard'])->name('dashboard.hq');
+
 		Route::get('users/pending-approval', [UsersController::class, 'pendingApproval'])->name('users.pending-approval');
 		Route::get('users/{user}/approval', [UsersController::class, 'approval'])->name('users.approval');
 		Route::put('users/{user}/approval', [UsersController::class, 'storeApproval'])->name('users.store-approval');
@@ -370,8 +372,6 @@ Route::middleware(['auth'])->group(function ()
 		Route::get('payment/fpx/bank-list', [FpxController::class, 'bankList'])->name('fpx.bank-list');
 		Route::get('payment/ebpg/connect', [EbpgController::class, 'connect'])->name('ebpg.connect');
 		Route::post('payment/ebpg/respond', [EbpgController::class, 'respond'])->name('ebpg.respond');
-
-		Route::get('dashboard/hq', [HomeController::class, 'managementDashboard'])->name('dashboard.hq');
 
 		// Reports - Individual Report Controllers
 		Route::get('reports/revenue', [ReportRevenueController::class, 'index']);
