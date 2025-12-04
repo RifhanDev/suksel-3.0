@@ -751,6 +751,7 @@
 	<div class="page">
 		<!-- Sidebar -->
 		@include('layouts._side')
+		{{-- @include('layouts.side_new(backup)') --}}
 
 		<!-- Main Content -->
 		<div class="page-wrapper">
@@ -819,7 +820,7 @@
 		</div>
 	@endif
 
-	@include('layouts._footer')
+	{{-- @include('layouts._footer') --}}
 	@include('layouts._popupModal')
 
 	<!-- Modern JS bundle (jQuery + Bootstrap 5) -->
