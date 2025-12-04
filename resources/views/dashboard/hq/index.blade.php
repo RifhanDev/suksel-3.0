@@ -25,27 +25,74 @@
 		}
 
 		.stat-card {
-			background: white;
-			border-radius: 12px;
-			box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+			background: linear-gradient(145deg, #ffffff 0%, #fafbff 100%);
+			border-radius: 20px !important;
+			box-shadow: 0 20px 60px rgba(15, 23, 42, 0.08), 0 8px 16px rgba(15, 23, 42, 0.04);
 			overflow: hidden;
-			transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+			transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 			animation: fadeInUp 0.6s ease-out backwards;
-			margin-bottom: 20px;
+			margin-bottom: 28px;
+			border: 1px solid rgba(148, 163, 184, 0.12) !important;
+			position: relative;
+		}
+
+		/* Modern curved organic blob accent */
+		.stat-card::before {
+			content: '';
+			position: absolute;
+			top: -15%;
+			right: -8%;
+			width: 140px;
+			height: 140px;
+			background: radial-gradient(circle, rgba(99, 102, 241, 0.08) 0%, rgba(139, 92, 246, 0.05) 50%, transparent 70%);
+			border-radius: 63% 37% 54% 46% / 55% 48% 52% 45% !important;
+			filter: blur(20px);
+			pointer-events: none;
+			z-index: 0;
+			animation: float 6s ease-in-out infinite;
+		}
+
+		/* Secondary curved accent */
+		.stat-card::after {
+			content: '';
+			position: absolute;
+			bottom: -10%;
+			left: -5%;
+			width: 100px;
+			height: 100px;
+			background: radial-gradient(circle, rgba(236, 72, 153, 0.06) 0%, transparent 65%);
+			border-radius: 47% 53% 42% 58% / 63% 44% 56% 37% !important;
+			filter: blur(18px);
+			pointer-events: none;
+			z-index: 0;
+			animation: float 8s ease-in-out infinite reverse;
+		}
+
+		@keyframes float {
+			0%, 100% { transform: translate(0, 0) rotate(0deg); }
+			33% { transform: translate(10px, -15px) rotate(5deg); }
+			66% { transform: translate(-8px, 10px) rotate(-5deg); }
+		}
+
+		.stat-card > * {
+			position: relative;
+			z-index: 1;
 		}
 
 		.stat-card:hover {
-			transform: translateY(-5px);
-			box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+			transform: translateY(-8px) scale(1.02);
+			box-shadow: 0 28px 80px rgba(15, 23, 42, 0.14), 0 12px 28px rgba(99, 102, 241, 0.12);
 		}
 
 		.stat-card .card-body {
-			padding: 30px 20px;
-			background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+			padding: 36px 28px 32px;
+			background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%);
 			position: relative;
 			overflow: hidden;
+			border-radius: 20px 20px 0 0 !important;
 		}
 
+		/* Animated gradient overlay */
 		.stat-card .card-body::before {
 			content: '';
 			position: absolute;
@@ -53,37 +100,70 @@
 			right: -50%;
 			width: 200%;
 			height: 200%;
-			background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
-			transition: all 0.6s ease;
+			background: radial-gradient(circle, rgba(255, 255, 255, 0.2) 0%, transparent 60%);
+			border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
+			transition: transform 0.6s ease;
+			animation: morphing 10s ease-in-out infinite;
+		}
+
+		@keyframes morphing {
+			0%, 100% { border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%; }
+			25% { border-radius: 60% 40% 50% 50% / 50% 60% 40% 60%; }
+			50% { border-radius: 50% 50% 30% 70% / 60% 40% 60% 40%; }
+			75% { border-radius: 70% 30% 60% 40% / 50% 50% 50% 50%; }
 		}
 
 		.stat-card:hover .card-body::before {
-			transform: translate(-25%, -25%);
+			transform: translate(-15%, -15%) scale(1.1);
 		}
 
 		.stat-card .card-body h2 {
-			color: white;
-			font-size: 2.5rem;
-			font-weight: 700;
-			margin: 0;
+			color: #ffffff;
+			font-size: 3.2rem;
+			font-weight: 900;
+			margin: 0 0 8px;
+			letter-spacing: -0.02em;
 			animation: countUp 0.6s ease-out;
 			position: relative;
 			z-index: 1;
+			text-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
 		}
 
 		.stat-card .card-footer {
-			padding: 15px 20px;
-			background: #f8f9fa;
-			border-top: none;
+			padding: 20px 28px 22px;
+			background: linear-gradient(to bottom, #0f172a 0%, #1e293b 100%);
+			border-top: 1px solid rgba(148, 163, 184, 0.2);
+			position: relative;
+			border-radius: 0 0 20px 20px !important;
+		}
+
+		/* Subtle shine effect on footer */
+		.stat-card .card-footer::before {
+			content: '';
+			position: absolute;
+			top: 0;
+			left: 0;
+			right: 0;
+			height: 1px;
+			background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.1) 50%, transparent 100%);
 		}
 
 		.stat-card .card-footer span {
-			color: #495057;
-			font-weight: 600;
-			font-size: 0.95rem;
-			letter-spacing: 0.3px;
+			color: #f1f5f9;
+			font-weight: 700;
+			font-size: 1.15rem;
+			letter-spacing: 0.08em;
+			text-transform: uppercase;
+			display: flex;
+			align-items: center;
+			justify-content: center;
 		}
 
+		.stat-card .card-footer i {
+			font-size: 1.4rem;
+			margin-right: 10px;
+			opacity: 0.95;
+		}
 		.section-title {
 			font-size: 1.75rem;
 			font-weight: 700;
@@ -240,15 +320,18 @@
 @endsection
 
 @section('content')
-	<div class="row mb-3">
-		<div class="col-sm-12 text-right">
-			<a onclick="window.print()" class="print-btn hidden-print" target="_new">
+	<div class="row mb-3 align-items-center">
+		<div class="col-sm-6">
+			<h2 class="section-title mb-0"><i class="fa fa-dashboard"></i> Dashboard HQ</h2>
+		</div>
+		<div class="col-sm-6 text-right">
+			<a onclick="window.print()" class="print-btn hidden-print" target="_new" aria-label="Cetak dashboard">
 				<i class="fa fa-print"></i> Cetak
 			</a>
 		</div>
 	</div>
 
-	<ul class="nav nav-tabs nav-tabs-modern nav-justified hidden-print d-flex">
+	<ul class="nav nav-tabs nav-tabs-modern nav-justified hidden-print d-flex mb-4">
 		<li id="li_default" class="active">
 			<a href="{{ asset('dashboard/hq') }}">
 				<i class="fa fa-dashboard"></i> Dashboard Ringkasan
@@ -262,9 +345,9 @@
 	</ul>
 
 	<div class="row">
-		<div class="col-sm-12 col-lg-6">
+		<div class="col-sm-12 col-lg-6 mb-4">
 			<h3 class="section-title"><i class="fa fa-users"></i> Pengguna</h3>
-			<div class="default-dashboard">
+			<div class="default-dashboard mt-2">
 				<div class="row">
 					<div class="col-sm-6 col-md-6">
 						<div class="stat-card text-center">
@@ -305,9 +388,9 @@
 			</div>
 		</div>
 
-		<div class="col-sm-12 col-lg-6">
+		<div class="col-sm-12 col-lg-6 mb-4">
 			<h3 class="section-title"><i class="fa fa-building"></i> Syarikat</h3>
-			<div class="default-dashboard">
+			<div class="default-dashboard mt-2">
 				<div class="row">
 					<div class="col-sm-6 col-md-6">
 						<div class="stat-card text-center">
@@ -363,14 +446,14 @@
 			<h3 class="section-title"><i class="fa fa-file-text"></i> Tender & Sebutharga</h3>
 			<div class="default-dashboard">
 				<div class="form-card hidden-print">
-					<form id="tender_summary" class="form-inline">
-						<div class="form-group">
-							<label class="mr-2"><strong>Tahun :</strong></label>
+					<form id="tender_summary" class="form-inline align-items-end flex-wrap">
+						<div class="form-group mb-2 mr-sm-3">
+							<label class="mr-2 mb-0"><strong>Tahun :</strong></label>
 							<input class="form-control mr-2" id="year_summary" type="text" name="year_summary" placeholder="Masukkan tahun">
-							<button type="submit" class="btn-generate">
-								<i class="fa fa-refresh"></i> Jana
-							</button>
 						</div>
+						<button type="submit" class="btn-generate mb-2">
+							<i class="fa fa-refresh"></i> Jana
+						</button>
 					</form>
 				</div>
 				<div class="row">
@@ -414,9 +497,9 @@
 			</div>
 			<div class="chart-dashboard">
 				<div class="form-card">
-					<form id="tender_form" class="form-inline">
-						<div class="form-group mr-3">
-							<label class="mr-2"><strong>Lihat :</strong></label>
+					<form id="tender_form" class="form-inline align-items-end flex-wrap">
+						<div class="form-group mb-2 mr-sm-3">
+							<label class="mr-2 mb-0"><strong>Lihat :</strong></label>
 							<select class="form-control" name="tender_view_type" id="tender_view_type">
 								<option value="tender_yearly" selected>Tahunan</option>
 								<option value="tender_monthly">Bulanan</option>
@@ -468,14 +551,14 @@
 			<h3 class="section-title"><i class="fa fa-exchange"></i> Transaksi</h3>
 			<div class="default-dashboard">
 				<div class="form-card hidden-print">
-					<form id="transaction_summary" class="form-inline">
-						<div class="form-group">
-							<label class="mr-2"><strong>Tahun :</strong></label>
+					<form id="transaction_summary" class="form-inline align-items-end flex-wrap">
+						<div class="form-group mb-2 mr-sm-3">
+							<label class="mr-2 mb-0"><strong>Tahun :</strong></label>
 							<input class="form-control mr-2" id="year_summary" type="text" name="year_summary" placeholder="Masukkan tahun">
-							<button type="submit" class="btn-generate">
-								<i class="fa fa-refresh"></i> Jana
-							</button>
 						</div>
+						<button type="submit" class="btn-generate mb-2">
+							<i class="fa fa-refresh"></i> Jana
+						</button>
 					</form>
 				</div>
 				<div class="row">
@@ -555,9 +638,9 @@
 			</div>
 			<div class="chart-dashboard">
 				<div class="form-card">
-					<form id="transaction_form" class="form-inline">
-						<div class="form-group mr-3">
-							<label class="mr-2"><strong>Lihat :</strong></label>
+					<form id="transaction_form" class="form-inline align-items-end flex-wrap">
+						<div class="form-group mb-2 mr-sm-3">
+							<label class="mr-2 mb-0"><strong>Lihat :</strong></label>
 							<select class="form-control" name="transaction_view_type" id="transaction_view_type">
 								<option value="transaction_yearly" selected>Tahunan</option>
 								<option value="transaction_monthly">Bulanan</option>
