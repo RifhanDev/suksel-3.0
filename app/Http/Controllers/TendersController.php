@@ -256,7 +256,6 @@ class TendersController extends Controller
 	 */
 	public function show(Request $request, $id)
 	{
-
 		$tender = Tender::with('codes')
 			->with('siteVisits', 'creator', 'officer')
 			->findOrFail($id);

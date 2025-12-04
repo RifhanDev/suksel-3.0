@@ -78,7 +78,7 @@ class Role extends ModelsRole
 
 		self::created(function () {
 			try {
-				cache()->tags('Role')->flush();
+			cache()->tags('Role')->flush();
 			} catch (\BadMethodCallException $e) {
 				// Cache driver doesn't support tagging, flush entire cache instead
 				cache()->flush();
@@ -87,7 +87,7 @@ class Role extends ModelsRole
 
 		self::updated(function () {
 			try {
-				cache()->tags('Role')->flush();
+			cache()->tags('Role')->flush();
 			} catch (\BadMethodCallException $e) {
 				// Cache driver doesn't support tagging, flush entire cache instead
 				cache()->flush();
@@ -96,7 +96,7 @@ class Role extends ModelsRole
 
 		self::deleted(function () {
 			try {
-				cache()->tags('Role')->flush();
+			cache()->tags('Role')->flush();
 			} catch (\BadMethodCallException $e) {
 				// Cache driver doesn't support tagging, flush entire cache instead
 				cache()->flush();
