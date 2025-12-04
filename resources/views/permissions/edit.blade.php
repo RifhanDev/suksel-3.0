@@ -1,17 +1,19 @@
 @extends('layouts.modern')
+
 @section('content')
-	<h2>Kemaskini Kebenaran</h2>
-	<hr>
 	{!! Former::open(url('permissions/' . $permission->id)) !!}
 	{!! Former::populate($permission) !!}
 	{!! Former::hidden('_method', 'PUT') !!}
+	@component('components.modern-form', [
+		'title' => 'Kemaskini Kebenaran',
+		'pretitle' => 'Sistem Tender Online',
+		'icon' => 'ti-pencil',
+		'backUrl' => route('permissions.index'),
+		'backLabel' => 'Kembali ke Senarai',
+		'submitLabel' => 'Kemaskini Kebenaran',
+		'showViewButton' => false,
+	])
 	@include('permissions.form')
-	<div class="well">
-		{!! Former::submit('Hantar')->addClass('btn btn-primary') !!}
-
-		@if (App\Permission::canList())
-			<a href="{{ asset('permissions') }}" class="btn btn-default pull-right">Senarai Kebenaran</a>
-		@endif
-	</div>
+	@endcomponent
 	{!! Former::close() !!}
 @endsection

@@ -77,15 +77,30 @@ class Role extends ModelsRole
 		parent::boot();
 
 		self::created(function () {
+			try {
 			cache()->tags('Role')->flush();
+			} catch (\BadMethodCallException $e) {
+				// Cache driver doesn't support tagging, flush entire cache instead
+				cache()->flush();
+			}
 		});
 
 		self::updated(function () {
+			try {
 			cache()->tags('Role')->flush();
+			} catch (\BadMethodCallException $e) {
+				// Cache driver doesn't support tagging, flush entire cache instead
+				cache()->flush();
+			}
 		});
 
 		self::deleted(function () {
+			try {
 			cache()->tags('Role')->flush();
+			} catch (\BadMethodCallException $e) {
+				// Cache driver doesn't support tagging, flush entire cache instead
+				cache()->flush();
+			}
 		});
 	}
 

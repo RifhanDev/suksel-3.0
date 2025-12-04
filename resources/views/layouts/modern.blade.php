@@ -1196,7 +1196,7 @@
 							</div>
 						@endif
 
-						@if (Auth::user()->ability(['Admin', 'Refund Admin'], ['Refund:list']))
+						@if (Auth::user()->ability(['Admin'], ['Refund:list']))
 							{{-- @if (Auth::user()->hasRole('Admin')) --}}
 							<!-- Pengurusan Pemulangan Semula -->
 							<div class="nav-item">

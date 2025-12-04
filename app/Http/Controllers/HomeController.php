@@ -237,8 +237,8 @@ class HomeController extends Controller
 		if ($request->ajax()) {
 
 			// Temporarily commented out to fix column issue
-			// $base = Tender::orderBy('submission_datetime', 'desc')->forPublic()->published()->publishedPrices();
-			$base = Tender::orderBy('submission_datetime', 'desc')->forPublic()->publishedPrices();
+			// $base = Tender::orderBy('submission_datetime', 'desc')->forPublic()->published()->publishedPrices()->closed();
+			$base = Tender::orderBy('submission_datetime', 'desc')->forPublic()->publishedPrices()->closed();
 
 			switch ($request->type) {
 				case 'tenders':

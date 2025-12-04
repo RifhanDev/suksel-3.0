@@ -6,6 +6,7 @@ use App\Approval;
 use App\Gateway;
 use App\Jobs\GenerateEligible;
 use App\Models\ExceptionTender;
+use App\Models\OrganizationUnit;
 use App\Models\RefState;
 use App\Models\RejectTemplate;
 use App\Models\Upload;
@@ -147,9 +148,10 @@ class TendersController extends Controller
 		}
 
 
+		$organizations = OrganizationUnit::all();
 		$country_states = RefState::where('display_status', 1)->get();
 
-		return view('tenders.create', compact('country_states'));
+		return view('tenders.create', compact('country_states', 'organizations'));
 	}
 
 	/**
@@ -254,7 +256,6 @@ class TendersController extends Controller
 	 */
 	public function show(Request $request, $id)
 	{
-
 		$tender = Tender::with('codes')
 			->with('siteVisits', 'creator', 'officer')
 			->findOrFail($id);
@@ -301,6 +302,7 @@ class TendersController extends Controller
 		$tender = Tender::with('creator', 'officer')->findOrFail($id);
 		$visits = TenderVisit::where('tender_id', $tender->id)->get()->toArray();
 		$country_states = RefState::where('display_status', 1)->get();
+		$organizations = OrganizationUnit::all();
 
 		if ($request->ajax()) {
 			return $this->_ajax_denied();
@@ -308,7 +310,7 @@ class TendersController extends Controller
 		if (!$tender->canUpdate()) {
 			return $this->_access_denied();
 		}
-		return view('tenders.edit', compact('tender', 'visits', 'country_states'));
+		return view('tenders.edit', compact('tender', 'visits', 'country_states', 'organizations'));
 	}
 
 	/**

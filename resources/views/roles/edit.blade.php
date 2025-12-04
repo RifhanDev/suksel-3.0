@@ -1,17 +1,19 @@
 @extends('layouts.modern')
+
 @section('content')
-	<h2>Kemaskini Peranan</h2>
-	<hr>
 	{!! Former::open(url('roles/' . $role->id)) !!}
 	{!! Former::populate($role) !!}
 	{!! Former::hidden('_method', 'PUT') !!}
+	@component('components.modern-form', [
+		'title' => 'Kemaskini Peranan',
+		'pretitle' => 'Sistem Tender Online',
+		'icon' => 'ti-pencil',
+		'backUrl' => route('roles.index'),
+		'backLabel' => 'Kembali ke Senarai',
+		'submitLabel' => 'Kemaskini Peranan',
+		'showViewButton' => false,
+	])
 	@include('roles.form')
-	<div class="well">
-		{!! Former::submit('Simpan')->addClass('btn btn-primary confirm') !!}
-
-		@if (App\Role::canList())
-			<a href="{{ asset('roles') }}" class="btn btn-default pull-right">Senarai Peranan</a>
-		@endif
-	</div>
+	@endcomponent
 	{!! Former::close() !!}
 @endsection

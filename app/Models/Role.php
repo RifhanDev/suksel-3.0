@@ -7,9 +7,9 @@ use Shanmuga\LaravelEntrust\Models\EntrustRole;
 
 class Role extends EntrustRole
 {
-    /**
-	* Validation Rules
-	*/
+	/**
+	 * Validation Rules
+	 */
 	static $_rules = [
 		'store' => [
 			'name' => 'required|unique:roles,name'
@@ -18,13 +18,14 @@ class Role extends EntrustRole
 			'name' => 'required|unique:roles,name'
 		]
 	];
-	
+
 	static $rules = [];
-	
-	public static function setRules($name) {
+
+	public static function setRules($name)
+	{
 		self::$rules = self::$_rules[$name];
 	}
-	
+
 	// Don't forget to fill this array
 	protected $fillable = [
 		'name',
@@ -32,55 +33,79 @@ class Role extends EntrustRole
 
 	// Relationship (by zayid 10 nov 2022)
 
-	public function perms() {
+	public function perms()
+	{
 		return $this->belongsToMany('App\Permission', 'permission_role');
 	}
-	
-	public static function canList() {
+
+	public static function canList()
+	{
 		return (auth()->user() && auth()->user()->ability(['Admin', 'Role Admin'], ['Role:list']));
 	}
-	
-	public static function canCreate() {
+
+	public static function canCreate()
+	{
 		return (auth()->user() && auth()->user()->ability(['Admin', 'Role Admin'], ['Role:create']));
 	}
-	
-	public function canShow() {
+
+	public function canShow()
+	{
 		return (auth()->user() && auth()->user()->ability(['Admin', 'Role Admin'], ['Role:show']));
 	}
-	
-	public function canUpdate() {
+
+	public function canUpdate()
+	{
 		return (auth()->user() && auth()->user()->ability(['Admin', 'Role Admin'], ['Role:edit']));
 	}
-	
-	public function canDelete() {
+
+	public function canDelete()
+	{
 		return (auth()->user() && auth()->user()->ability(['Admin', 'Role Admin'], ['Role:delete']));
 	}
-	
-	public function scopeAvailableRoles($q) {
+
+	public function scopeAvailableRoles($q)
+	{
 		if (auth()->user()->hasRole('Agency Admin')) {
 			return $q->whereIn('name', ['Agency User', 'Agency Finance']);
 		} else {
 			return $q;
 		}
 	}
-	
-	public static function boot() {
+
+	public static function boot()
+	{
 		parent::boot();
-		
+
 		self::created(function () {
-			cache()->tags('Role')->flush();
+			try {
+				cache()->tags('Role')->flush();
+			} catch (\BadMethodCallException $e) {
+				// Cache driver doesn't support tagging, flush entire cache instead
+				cache()->flush();
+			}
 		});
-		
+
 		self::updated(function () {
-			cache()->tags('Role')->flush();
+			try {
+				cache()->tags('Role')->flush();
+			} catch (\BadMethodCallException $e) {
+				// Cache driver doesn't support tagging, flush entire cache instead
+				cache()->flush();
+			}
 		});
-		
+
 		self::deleted(function () {
-			cache()->tags('Role')->flush();
+			try {
+				cache()->tags('Role')->flush();
+			} catch (\BadMethodCallException $e) {
+				// Cache driver doesn't support tagging, flush entire cache instead
+				cache()->flush();
+			}
 		});
 	}
 
-	public function updateUniques() {
+	public function updateUniques()
+	{
 		return true;
 	}
 }
