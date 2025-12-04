@@ -346,4 +346,17 @@
 			</nav>
 		</div>
 	</aside>
+@else
+	<aside class="sidebar-vertical" id="sidebar">
+		<div class="sidebar-header">
+			<a href="/" class="sidebar-brand">
+				<img src="{{ asset('images/02_selangor.png') }}" alt="Sistem Tender Online Selangor" class="sidebar-brand-image">
+			</a>
+		</div>
+		<div class="sidebar-body">
+			<nav class="sidebar-nav" id="sidebar-menu">
+				
+			</nav>
+		</div>
+	</aside>
 @endif
