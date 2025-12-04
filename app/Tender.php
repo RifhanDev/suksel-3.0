@@ -1326,6 +1326,31 @@ class Tender extends Model
 		return $q->where('publish_winner', '>', 0);
 	}
 
+	/**
+	 * Scope to filter tenders by submission_datetime
+	 * Filters tenders where submission_datetime is less than or equal to current date and time
+	 * (i.e., tenders that have closed)
+	 *
+	 * @param \Illuminate\Database\Eloquent\Builder $q
+	 * @return \Illuminate\Database\Eloquent\Builder
+	 */
+	public function scopeClosed($q)
+	{
+		return $q->where('submission_datetime', '<=', date('Y-m-d H:i:s'));
+	}
+
+	/**
+	 * Scope to filter tenders that are still open
+	 * Filters tenders where submission_datetime is greater than current date and time
+	 *
+	 * @param \Illuminate\Database\Eloquent\Builder $q
+	 * @return \Illuminate\Database\Eloquent\Builder
+	 */
+	public function scopeOpen($q)
+	{
+		return $q->where('submission_datetime', '>', date('Y-m-d H:i:s'));
+	}
+
 	public function saveAudit($action = null)
 	{
 		$this->histories()->save(new TenderHistory([

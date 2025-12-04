@@ -11,7 +11,7 @@
 		'submitLabel' => 'Hantar Peranan',
 		'showViewButton' => false,
 	])
-		@include('roles.form')
+	@include('roles.form')
 	@endcomponent
 	{!! Former::close() !!}
 @endsection

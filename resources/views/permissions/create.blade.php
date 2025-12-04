@@ -11,7 +11,7 @@
 		'submitLabel' => 'Hantar Kebenaran',
 		'showViewButton' => false,
 	])
-		@include('permissions.form')
+	@include('permissions.form')
 	@endcomponent
 	{!! Former::close() !!}
 @endsection
