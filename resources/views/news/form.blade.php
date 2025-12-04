@@ -1,91 +1,50 @@
-{!! Former::text('title')
-    ->label('Tajuk')
-    ->required() !!}
-
-	<div class="form-group required">
-    	<label for="notification" class="control-label col-lg-3 col-sm-3">Kandungan <sup>*</sup></label>
-    	<div class="col-lg-9 col-sm-9">
-        	<textarea class="form-control" rows="4" required="true" id="notification" name="notification">{!! isset($news) ? $news->notification : '' !!}</textarea>
-        	<div id="notification-editor" class="summernote">{!! isset($news) ? $news->notification : '' !!}</div>
-    	</div>
+<div class="card modern-form-card">
+	<div class="card-header">
+		<h3 class="card-title">
+			<i class="ti ti-news"></i>
+			Maklumat Berita
+		</h3>
 	</div>
+	<div class="card-body">
+		<div class="row">
+			<!-- Title Field -->
+			<div class="col-md-12 mb-3">
+				<label class="form-label required">
+					<i class="ti ti-file-text"></i>
+					Tajuk
+				</label>
+				{!! Former::text('title')->label(false)->placeholder('Masukkan tajuk berita')->required()->class('form-control') !!}
+			</div>
 
-	@if(Auth::user()->hasRole('Admin'))
-		{!! Former::select('organization_unit_id')
-		    	->label('Agensi')
-		    	->options(App\OrganizationUnit::all()->pluck('name', 'id'))
-		    	->required() !!}
-	@endif
-	{!! Former::select('tender_id')
-    	->label('Tender')
-    	->options([])
- 		->placeholder('Sila cari menggunakan nama tender atau no rujukan...') !!}
+			<!-- Content Field -->
+			<div class="col-md-12 mb-3">
+				<label class="form-label required">
+					<i class="ti ti-file-description"></i>
+					Kandungan
+				</label>
+				<textarea class="form-control" rows="4" required="true" id="notification" name="notification">{!! isset($news) ? $news->notification : '' !!}</textarea>
+				<div id="notification-editor" class="summernote">{!! isset($news) ? $news->notification : '' !!}</div>
+			</div>
 
-@section('scripts')	
-    {{-- <script src="https://cdn.ckeditor.com/4.20.2/full/ckeditor.js"></script> --}}
-    <script src="{{ asset('custom_library/ckeditor/ckeditor.js') }}"></script>
+			<!-- Agency Field (Admin only) -->
+			@if (Auth::user()->hasRole('Admin'))
+				<div class="col-md-12 mb-3">
+					<label class="form-label required">
+						<i class="ti ti-building"></i>
+						Agensi
+					</label>
+					{!! Former::select('organization_unit_id')->label(false)->options(App\OrganizationUnit::all()->pluck('name', 'id'))->required()->class('form-control') !!}
+				</div>
+			@endif
 
-	<script type="text/javascript">
-		$("#organization_unit_id").selectize();
-		$("#tender_id").selectize({
-			valueField: 'id',
-			labelField: 'name',
-			searchField: 'name',
-			create: false,
-			render: {
-				option: function(item, escape){
-					return '<div><strong>' + escape(item.ref_number) + '</strong> ' + escape(item.name) + '</div>';
-				}
-			},
-			load: function(query, callback) {
-				if(!query.length) return callback();
-				$.ajax({
-					url: '/tenders/select?q=' + query,
-					type: 'GET',
-					success: function(res){
-						callback(res);
-					},
-					error: function(){
-						callback();
-					}
-				})
-			}
-		});
-		// $('#notification').hide();
-		// $('#notification-editor').summernote({
-		//   toolbar: [
-		// 		['style', ['bold', 'italic', 'underline', 'clear']],
-		// 		['font', ['strikethrough']],
-		// 		['fontsize', ['fontsize']],
-		// 		['color', ['color']],
-		// 		['para', ['ul', 'ol', 'paragraph']],
-		// 		['table', ['table']],
-		//   	],
-		//   	onChange: function(contents) {
-		//     	$('#notification').val(contents);
-		//   	}
-		// });
-
-		CKEDITOR.replace('notification', {
-            toolbarGroups: [
-                { name: 'document', groups: [ 'mode', 'document', 'doctools' ] },
-                { name: 'clipboard', groups: [ 'clipboard', 'undo' ] },
-                { name: 'editing', groups: [ 'find', 'selection', 'spellchecker', 'editing' ] },
-                { name: 'forms', groups: [ 'forms' ] },
-                { name: 'insert', groups: [ 'insert' ] },
-                '/',
-                { name: 'basicstyles', groups: [ 'basicstyles', 'cleanup' ] },
-                { name: 'paragraph', groups: [ 'list', 'indent', 'blocks', 'align', 'bidi', 'paragraph' ] },
-                { name: 'links', groups: [ 'links' ] },
-                '/',
-                { name: 'styles', groups: [ 'styles' ] },
-                { name: 'colors', groups: [ 'colors' ] },
-                { name: 'tools', groups: [ 'tools' ] },
-                { name: 'others', groups: [ 'others' ] },
-                { name: 'about', groups: [ 'about' ] }
-            ],
-            removeButtons: 'Flash,Iframe,Form,TextField,Checkbox,Radio,Textarea,Select,Button,ImageButton,HiddenField'
-        });
-		
-	</script>
-@endsection
+			<!-- Tender Field -->
+			<div class="col-md-12 mb-3">
+				<label class="form-label">
+					<i class="ti ti-file-text"></i>
+					Tender
+				</label>
+				{!! Former::select('tender_id')->label(false)->options([])->placeholder('Sila cari menggunakan nama tender atau no rujukan...')->class('form-control') !!}
+			</div>
+		</div>
+	</div>
+</div>
