@@ -31202,7 +31202,7 @@ messages = {
         required: 'Nama pegawai wajib di isi.'
     }
 }
-var validator = $('.form-horizontal').validate({
+var validator = $('.form-horizontal, form.jq-validate').validate({
     messages: messages,
     errorPlacement: function (error, element) {
         $(element).parents('.form-group').addClass('has-error');
@@ -31217,33 +31217,40 @@ var validator = $('.form-horizontal').validate({
         });
     }
 });
-$('.form-horizontal').on("keyup keypress", function(e) {
-  var code = e.keyCode || e.which; 
-  if (code  == 13) {               
+$('.form-horizontal, form.jq-validate').on("keyup keypress", function(e) {
+  var code = e.keyCode || e.which;
+  if (code  == 13) {
     e.preventDefault();
     return false;
   }
 });
 
-$('.nav-stacked a').on('click', function(e){
-    if($(this).parents('li').hasClass('disabled')) {
-        e.preventDefault();
-        return false;
-    }
-});
-$('.stacked-form .nav-stacked').find('li').each(function(index){
+// Duplicate handler removed - already handled at line 31242
+$('.stacked-form.modern-nav-tabs').find('li').each(function(index){
     if($("form.jq-validate").length == 0) return;
     if(index > 0) {
         $(this).addClass('disabled');
     }
 });
+
+// Prevent clicking on disabled tabs
+$('.modern-nav-tabs li.disabled a').on('click', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    return false;
+});
+
 $('#next, a[data-toggle="pill"]').on('shown.bs.tab', function (e) {
-    index   = $(e.target).parent().index();
-    length  = $('.nav-stacked').children().length - 1;
-    if( index == length ) {
+    var $currentTab = $(e.target).parent();
+    var $nextTab = $currentTab.next('li');
+
+    // Check if there's actually a next tab
+    if( $nextTab.length === 0 ) {
+        // This is the last tab - show submit button
         $("#next:visible").hide();
         $("#submit:hidden").fadeIn();
     } else {
+        // Not the last tab - show next button
         $("#submit:visible").hide();
         $("#next:hidden").fadeIn();
     }
@@ -31322,16 +31329,76 @@ $("#next").click(function(e){
     }
 
     if(errors.length == 0) {
-        $('.nav-stacked .active').next().removeClass('disabled');
-        $('.nav-stacked .active').next().children('a').tab('show');
+        // Get current and next nav items
+        var $currentNavItem = $('.modern-nav-tabs li.active');
+        var $nextNavItem = $currentNavItem.next('li');
 
+        // Check if there's a next tab
+        if($nextNavItem.length === 0) {
+            // No next tab, shouldn't happen but just in case
+            return;
+        }
+
+        // Enable next nav item and remove click prevention
+        $nextNavItem.removeClass('disabled');
+        $nextNavItem.find('a').off('click');
+
+        // Get the target tab pane ID from the next link
+        var nextTabId = $nextNavItem.find('a').attr('href');
+
+        // Manually control tab switching to avoid Bootstrap conflict
+        // Remove active from current nav item and tab pane
+        $currentNavItem.removeClass('active');
+        $('.tab-content > .tab-pane.active').removeClass('active');
+
+        // Add active to next nav item and tab pane
+        $nextNavItem.addClass('active');
+        $(nextTabId).addClass('active');
+
+        // Update button visibility based on whether there's another tab after this
+        var $tabAfterNext = $nextNavItem.next('li');
+        if($tabAfterNext.length === 0) {
+            // Next tab is the last tab - show submit button
+            $("#next:visible").hide();
+            $("#submit:hidden").fadeIn();
+        }
+
+        // Scroll to center of the next tab with offset for fixed header
+        var targetOffset = $(nextTabId).offset().top - 150; // 150px offset for header
         $("html, body").animate({
-            scrollTop: $(".tab-pane.active").offset().top
+            scrollTop: targetOffset
         }, 500);
     }
 });
 $("#submit").click(function(){
     var form = $('form.jq-validate');
+
+    // Validate the current tab first
+    var errors = [];
+    $('.tab-pane.active').find('input, textarea, select').each(function(){
+        $($(this).parents('.form-group')[0]).removeClass('has-error');
+        $($(this).parents('.col-lg-9')[0]).find('.help-block.error').remove();
+        if( !validator.element(this) ) {
+            errors.push($(this).attr('name'));
+        }
+    });
+
+    // Check required file uploads
+    var fileErrors = [];
+    $('input[type="file"][required]').each(function(){
+        if(!$(this).val() && !$(this).data('has-file')) {
+            fileErrors.push($(this).attr('name'));
+            $(this).parents('.form-group').addClass('has-error');
+            var label = $(this).parents('.form-group').find('label').text();
+            bootbox.alert('Sila muat naik fail yang diperlukan: ' + label);
+        }
+    });
+
+    if(errors.length > 0 || fileErrors.length > 0) {
+        return false;
+    }
+
+    // If validation passes, show confirmation dialog
     bootbox.confirm({
         message: "Saya mengaku bahawa maklumat yang diberikan adalah benar.<br><br>Pihak SUK Selangor berhak menolak / tidak meluluskan permohonan ini pada bila-bila masa sekiranya maklumat / keterangan yang saya kemukakan adalah tidak benar.<br><br>Saya juga memberi kuasa kepada pihak SUK Selangor untuk mendapatkan pengesahan daripada mana-mana sumber yang difikirkan benar.<br><br>Pihak SUK Selangor tidak akan dipertanggungjawabkan sekiranya berlaku kesilapan dan kesalahan semasa mengisi borang ini.",
         buttons: {
@@ -31346,9 +31413,14 @@ $("#submit").click(function(){
         },
         callback: function(result) {
             if (result) {
-                $(form).removeData('validator');
-                $(form).unbind('submit');
-                $(form).trigger('submit');
+                // Use HTMLFormElement.prototype.submit to bypass any name conflicts
+                var formElement = form[0];
+                if (formElement) {
+                    // Unbind validation handlers temporarily
+                    $(form).removeData('validator');
+                    // Call native submit method directly
+                    HTMLFormElement.prototype.submit.call(formElement);
+                }
             }
         }
     });

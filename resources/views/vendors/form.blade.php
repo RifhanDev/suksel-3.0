@@ -4,9 +4,9 @@
     @if(Request::old('shareholder'))var inputOldShareholdes = {{json_encode(Request::old('shareholder'))}}; @endif
     
 </script>
-<div class="row stacked-form" ng-controller="VendorController" {{strstr(Route::currentRouteName(), 'show') ? 'ng-init="show=true"' : 'ng-init="show=false"'}}>
-    	<div class="col-lg-2">
-			<ul class="nav nav-pills nav-stacked">
+<div ng-controller="VendorController" {{strstr(Route::currentRouteName(), 'show') ? 'ng-init="show=true"' : 'ng-init="show=false"'}}>
+<div class="modern-tabs-header">
+			<ul class="modern-nav-tabs nav nav-pills stacked-form">
 				<li class="active"><a href="#vf-main" data-toggle="pill">Maklumat Syarikat</a></li>
 				<li><a href="#vf-officer" data-toggle="pill">Maklumat Pegawai</a></li>
 				<?php if(!isset($vendor->approval_1_id) || Auth::user()->can('Vendor:override')) : ?>
@@ -24,8 +24,9 @@
 				@endif
 				<li><a href="#vf-files" data-toggle="pill">Fail</a></li>
 			</ul>
-   	</div>
-    	<div class="tab-content col-lg-10">
+</div>
+
+<div class="modern-tab-content tab-content">
         	<div class="tab-pane active" id="vf-main">
             <div class="row">
              	<div class="col-md-6">
@@ -816,7 +817,7 @@
 	            	{!! $vendor->uploadsTable() !!}
             @endif
         	</div>
-    	</div>
+</div>
 </div>
 
 @section('scripts')
