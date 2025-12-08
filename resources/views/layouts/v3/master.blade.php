@@ -77,6 +77,7 @@
             font-family: 'Inter', sans-serif;
             background-color: #f3f4f6;
             overflow-x: hidden;
+            font-size: 0.9rem;
 		}
 
 		/* ===== PAGE LAYOUT ===== */
