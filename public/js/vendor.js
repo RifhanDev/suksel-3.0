@@ -31296,8 +31296,17 @@ $("#next").click(function(e){
                 cidb_filled = false && cidb_filled;
 
             if( !mof_filled && !cidb_filled ) {
-                bootbox.alert('Sila pastikan salah satu maklumat MOF atau CIDB di isi dengan lengkap.', function(){
-                    $('#focusshareholder').focus();
+                bootbox.alert({
+                    message: 'Sila pastikan salah satu maklumat MOF atau CIDB di isi dengan lengkap.',
+                    buttons: {
+                        ok: {
+                            label: 'OK',
+                            className: 'btn-selangor'
+                        }
+                    },
+                    callback: function() {
+                        $('#focusshareholder').focus();
+                    }
                 });
                 errors.push('mof_cidb')
             }
@@ -31408,7 +31417,7 @@ $("#submit").click(function(){
             },
             'confirm': {
                 label: 'Pasti',
-                className: 'btn-primary'
+                className: 'btn-selangor'
             }
         },
         callback: function(result) {
