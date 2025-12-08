@@ -2,25 +2,17 @@
 
 @section('styles')
 <style>
-    /* ===== BRANDING & CUSTOM OVERRIDES ===== */
-    :root {
-        --sg-red: #c41e3a;
-        --sg-red-dark: #9f1239;
-    }
-
-    /* Custom Button Styles (Bootstrap doesn't have Selangor Red) */
     .btn-selangor {
         background-color: var(--sg-red);
         border-color: var(--sg-red);
         color: white;
     }
     .btn-selangor:hover {
-        background-color: var(--sg-red-dark);
-        border-color: var(--sg-red-dark);
+        background-color: var(--sg-red);
+        border-color: var(--sg-red);
         color: white;
     }
 
-    /* Action Bar Separator Line */
     .vr-custom {
         width: 1px;
         height: 24px;
@@ -28,9 +20,6 @@
         display: inline-block;
         vertical-align: middle;
     }
-
-    /* Hide the legacy right pane to prevent layout breakage */
-    #right-pane { display: none !important; }
 </style>
 @endsection
 
