@@ -1600,7 +1600,7 @@
 						</div>
 
 						<div class="nav-item">
-							<a href="#" class="nav-link {{ request()->is('circulars*') ? 'active' : '' }}">
+							<a href="{{ route('ciptaTender') }}" class="nav-link {{ request()->is('cipta-tender*') ? 'active' : '' }}">
 								<span class="nav-link-icon">
 									<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
 										stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
@@ -1624,9 +1624,41 @@
 										<path d="M14.813 17.883a6 6 0 1 0 -4.496 -3.954" />
 									</svg>
 								</span>
-								<span class="nav-link-title">Modul Pelantikan JawatanKuasa</span>
+								<span class="nav-link-title">Modul Pelantikan Jawatankuasa</span>
 							</a>
 						</div>
+
+						<div class="nav-item">
+							<a class="nav-link dropdown-toggle" href="#navbar-tender" data-bs-toggle="dropdown" role="button"
+								aria-expanded="false">
+								<span class="nav-link-title">Modul Pelantikan Jawatankuasa Spesifikasi / Pengurusan</span>
+							</a>
+							<br>
+							<div class="dropdown-menu">
+								@if (App\Tender::canList())
+									@if (Auth::user()->ability(['Admin', 'Registration Assesor', 'Front Desk'], []))
+										<a class="dropdown-item" style="color: white;" href="{{ route('jawatankuasaSpesifikasi.teknikal') }}">
+											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
+												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
+												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
+											</svg> Senarai Semak Teknikal
+										</a>
+									@endif
+									@if (App\Tender::canList())
+										<a class="dropdown-item" style="text-color: white;"
+											href="{{ route('jawatankuasaSpesifikasi.kewangan') }}">
+											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
+												<path stroke="none" d="M0 0h24v24H0z" fill="none" />
+												<path d="M13 7h-6l4 5l-4 5h6l4 -5z" />
+											</svg> Senarai Semak Kewangan
+										</a>
+									@endif
+								@endif
+
 					</div>
 
 					@if (!empty($user))

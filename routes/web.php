@@ -171,7 +171,10 @@ Route::get('results', [HomeController::class, 'results']);
 Route::get('privacy', [HomeController::class, 'privacy']);
 
 // Place 3.0 Modules Routes Temporarily Here
+Route::view('/cipta-tender', 'newModule.cipta_tender')->name('ciptaTender');
 Route::view('/pelantikan-jawatankuasa', 'newModule.pelantikan_jawatankuasa')->name('pelantikanJawatankuasa');
+Route::view('/jawatankuasa-spesifikasi/senarai-teknikal','newModule.jawatankuasaSpesifikasi.senarai_teknikal')->name('jawatankuasaSpesifikasi.teknikal');
+Route::view('/jawatankuasa-spesifikasi/senarai-kewangan','newModule.jawatankuasaSpesifikasi.senarai_kewangan')->name('jawatankuasaSpesifikasi.kewangan');
 
 
 // Public resources

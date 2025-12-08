@@ -44,7 +44,6 @@
 /* =====================
    TABLE STYLE
 ===================== */
-
 .table thead th{
     text-align:center;
     vertical-align:middle;
@@ -74,7 +73,6 @@ input[type="checkbox"]{
 
 
 <!-- ===================== PAGE LIST ====================== -->
-
 <div id="pageList">
 
 <div class="card p-4">
@@ -125,16 +123,17 @@ input[type="checkbox"]{
 
 
 <!-- ===================== PAGE DETAIL ====================== -->
-
 <div id="pageDetail" style="display:none">
 
 <div class="card p-4">
 
+<!-- Header -->
 <div class="row mb-3">
     <div class="col-md-8">
         <strong>No Tender:</strong> QT21000000023741 <br>
         <strong>PTJ:</strong> BAHAGIAN PENTADBIRAN – CAWANGAN KEWANGAN – KEMENTERIAN KEWANGAN
     </div>
+
     <div class="col-md-4 text-end">
         <strong>Status:</strong> Menunggu Penyerahan Tender
     </div>
@@ -145,34 +144,29 @@ input[type="checkbox"]{
 <h5 class="fw-bold">Maklumat Jawatankuasa</h5>
 
 <div class="committee-tabs">
-    <button class="committee-tab active" onclick="switchCommittee('spec')"> Jawatankuasa Spesifikasi</button>
+    <button class="committee-tab active" onclick="switchCommittee('spec')">Jawatankuasa Spesifikasi</button>
     <button class="committee-tab" onclick="switchCommittee('open')">Jawatankuasa Pembuka</button>
     <button class="committee-tab" onclick="switchCommittee('tech')">Jawatankuasa Penilaian Teknikal</button>
     <button class="committee-tab" onclick="switchCommittee('fin')">Jawatankuasa Penilaian Kewangan</button>
 </div>
 
-
-<!-- ===================== TAB CONTENT ====================== -->
-
 <div id="committeeContent">
 
 @foreach(['spec','open','tech','fin'] as $tab)
 
-<div id="tab-{{ $tab }}" @if($tab!='spec') style="display:none" @endif>
+<div id="tab-{{ $tab }}" @if($tab != 'spec') style="display:none" @endif>
 
-<!-- ===================== TABLE ====================== -->
-
-<table class="table table-bordered align-middle">
+<table class="table table-bordered js-table">
 
 <thead class="text-white" style="background:#2C3E9E">
 <tr>
-    <th width="40"><input type="checkbox"></th>
+    <th width="40"><input type="checkbox" class="check-all"></th>
     <th>No IC</th>
     <th>Nama</th>
     <th>Jawatan</th>
     <th>Email</th>
     <th width="70">Gred</th>
-    <th width="70">P&amp;P</th>
+    <th width="70">P&P</th>
     <th width="150">Peranan</th>
 </tr>
 </thead>
@@ -180,95 +174,122 @@ input[type="checkbox"]{
 <tbody>
 
 @php
-$rows = [
+
+$tabData = [
+
+'spec' => [
     ["100002480022","Sarah Binti Hasan","KETUA PENOLONG SETIAUSAHA KANAN","sarah@selangor.gov.my","G52","Ya","Pengerusi"],
     ["100002480024","Haris Bin Ali","PENOLONG SETIAUSAHA","haris@selangor.gov.my","G41","Tidak","Setiausaha"],
-    ["100002480023","Kamil Bin Latif","PENOLONG SETIAUSAHA","kamil@selangor.gov.my","G41","Tidak","Ahli"],
+    ["100002480025","Nur Aina Sofea","PEGAWAI TADBIR","aina@selangor.gov.my","G41","Tidak","Ahli"],
+    ["100002480026","Farid Hakimi","PEGAWAI IT","farid@selangor.gov.my","G41","Tidak","Ahli"],
+],
+
+'open' => [
+    ["200001110001","Mohd Firdaus","KETUA PENOLONG SETIAUSAHA","firdaus@selangor.gov.my","G52","Ya","Pengerusi"],
+    ["200001110002","Nabila Rashid","PENOLONG SETIAUSAHA","nabila@selangor.gov.my","G41","Tidak","Setiausaha"],
+    ["200001110003","Syafiq Rahman","PEGAWAI TADBIR","syafiq@selangor.gov.my","G41","Tidak","Ahli"],
+    ["200001110004","Amirah Azman","PEMBANTU TADBIR","amirah@selangor.gov.my","G29","Tidak","Ahli"],
+],
+
+'tech' => [
+    ["300002220001","Azlan Kamarul","ARKITEK ICT","azlan@selangor.gov.my","G48","Ya","Pengerusi"],
+    ["300002220002","Faizal Nasir","PENOLONG JURUTERA","faizal@selangor.gov.my","G41","Tidak","Setiausaha"],
+    ["300002220003","Nur Iman","PEGAWAI ICT","iman@selangor.gov.my","G41","Tidak","Ahli"],
+    ["300002220004","Hakim Arif","PELBAGAI SISTEM","hakim@selangor.gov.my","G41","Tidak","Ahli"],
+],
+
+'fin' => [
+    ["400003330001","Siti Zuraida","KETUA AKAUNTAN","zuraida@selangor.gov.my","G48","Ya","Pengerusi"],
+    ["400003330002","Aiman Rafi","PEGAWAI KEWANGAN","aimanf@selangor.gov.my","G41","Tidak","Setiausaha"],
+    ["400003330003","Izzah Farhana","PEMBANTU KEWANGAN","izzah@selangor.gov.my","G29","Tidak","Ahli"],
+    ["400003330004","Danish Hadi","ANALIS KEWANGAN","danish@selangor.gov.my","G41","Tidak","Ahli"],
+]
+
 ];
+
 @endphp
 
-@foreach($rows as $r)
+
+@foreach($tabData[$tab] as $r)
+
 <tr>
-    <td><input type="checkbox"></td>
-    <td>{{ $r[0] }}</td>
-    <td>{{ $r[1] }}</td>
-    <td>{{ $r[2] }}</td>
-    <td>{{ $r[3] }}</td>
-    <td>{{ $r[4] }}</td>
-    <td>{{ $r[5] }}</td>
-    <td>
-        <select class="form-select">
-            <option {{ $r[6]=='Pengerusi'?'selected':'' }}>Pengerusi</option>
-            <option {{ $r[6]=='Setiausaha'?'selected':'' }}>Setiausaha</option>
-            <option {{ $r[6]=='Ahli'?'selected':'' }}>Ahli</option>
-        </select>
-    </td>
+<td><input type="checkbox" class="row-check"></td>
+<td>{{ $r[0] }}</td>
+<td>{{ $r[1] }}</td>
+<td>{{ $r[2] }}</td>
+<td>{{ $r[3] }}</td>
+<td>{{ $r[4] }}</td>
+<td>{{ $r[5] }}</td>
+<td>
+<select class="form-select">
+    <option {{ $r[6]=='Pengerusi'?'selected':'' }}>Pengerusi</option>
+    <option {{ $r[6]=='Setiausaha'?'selected':'' }}>Setiausaha</option>
+    <option {{ $r[6]=='Ahli'?'selected':'' }}>Ahli</option>
+</select>
+</td>
 </tr>
+
 @endforeach
 
-<tr>
-    <tr class="add-row">
-    <td></td>
 
-    <!-- No IC dropdown -->
-    <td>
-        <select class="form-select">
-            <option selected disabled>Masukkan No. IC</option>
-        </select>
-    </td>
+<!-- Add row template -->
+<tr class="add-template">
+<td><input type="checkbox" class="row-check"></td>
 
-    <!-- Empty fields -->
-    <td></td>
-    <td></td>
-    <td></td>
-    <td></td>
-    <td></td>
+<td>
+<select class="form-select">
+    <option disabled selected>Masukkan No. IC</option>
+</select>
+</td>
 
-    <!-- Peranan dropdown -->
-    <td>
-        <select class="form-select">
-            <option selected disabled>&nbsp;</option>
-            <option>Pengerusi</option>
-            <option>Setiausaha</option>
-            <option>Ahli</option>
-        </select>
-    </td>
-</tr>
-    <td colspan="6"></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+
+<td>
+<select class="form-select">
+    <option disabled selected></option>
+    <option>Pengerusi</option>
+    <option>Setiausaha</option>
+    <option>Ahli</option>
+</select>
+</td>
+
 </tr>
 
 </tbody>
+
 </table>
 
 
 <!-- ACTION BUTTONS -->
 <div class="d-flex justify-content-end gap-2 mb-4">
-    <button class="btn btn-success">Tambah</button>
-    <button class="btn btn-danger">Hapus</button>
+    <button class="btn btn-success btn-tambah">Tambah</button>
+    <button class="btn btn-danger btn-hapus">Hapus</button>
 </div>
 
 
 <!-- CATATAN -->
 <div class="catatan-box">
-
 <div class="row">
     <div class="col-md-6">
-        <label class="fw-bold">Catatan</label>
-        <textarea class="form-control" rows="3">Catatan untuk jawatankuasa {{ strtoupper($tab) }}</textarea>
+        <label>Catatan</label>
+        <textarea class="form-control" rows="3"></textarea>
     </div>
 
     <div class="col-md-6">
-        <label class="fw-bold">Dokumen Sokongan</label><br>
+        <label>Dokumen Sokongan</label><br>
         <button class="btn btn-success mt-2">Muat Naik</button>
     </div>
 </div>
-
 </div>
 
 
 <!-- MAIN ACTION -->
 <div class="d-flex justify-content-end gap-2">
-    <button class="btn btn-primary">Simpan</button>
+    <button class="btn btn-primary btn-simpan">Simpan</button>
     <button class="btn btn-info text-white">Laporan</button>
     <button class="btn btn-success">Hantar Pemakluman</button>
 </div>
@@ -280,15 +301,13 @@ $rows = [
 
 </div>
 
-
 <hr>
 
 <div class="text-end mt-3">
-    <button class="btn btn-danger" onclick="backToList()">Kembali</button>
+    <button onclick="backToList()" class="btn btn-danger">Kembali</button>
 </div>
 
 </div>
-
 </div>
 
 
@@ -309,16 +328,57 @@ function backToList(){
 function switchCommittee(type){
 
     document.querySelectorAll('.committee-tab')
-        .forEach(btn => btn.classList.remove('active'));
-
-    document.querySelectorAll('#committeeContent > div')
-        .forEach(div => div.style.display='none');
+    .forEach(tab => tab.classList.remove('active'));
 
     document.querySelector(`[onclick="switchCommittee('${type}')"]`)
-        .classList.add('active');
+    .classList.add('active');
+
+    document.querySelectorAll('#committeeContent > div')
+    .forEach(pane => pane.style.display='none');
 
     document.getElementById(`tab-${type}`).style.display='block';
 }
+
+
+/* =============================
+   LOCAL TABLE FUNCTIONS
+============================= */
+
+// ADD ROW
+document.querySelectorAll('.btn-tambah').forEach(btn => {
+    btn.addEventListener('click', function(){
+
+        let table = this.closest('div').previousElementSibling;
+        let tbody = table.querySelector('tbody');
+
+        let template = tbody.querySelector('.add-template');
+        let clone = template.cloneNode(true);
+        clone.classList.remove('add-template');
+
+        tbody.appendChild(clone);
+    });
+});
+
+
+// DELETE SELECTED ROWS
+document.querySelectorAll('.btn-hapus').forEach(btn => {
+    btn.addEventListener('click', function(){
+
+        let table = this.closest('div').previousElementSibling;
+
+        table.querySelectorAll('.row-check:checked').forEach(cb=>{
+            cb.closest('tr').remove();
+        });
+    });
+});
+
+
+// SAVE POPUP
+document.querySelectorAll('.btn-simpan').forEach(btn => {
+    btn.addEventListener('click', function(){
+        alert("Maklumat Jawatankuasa berjaya disimpan!");
+    });
+});
 
 </script>
 
