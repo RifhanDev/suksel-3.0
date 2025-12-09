@@ -370,14 +370,6 @@
 
 				{{-- <li class="nav-section-header">Modul 3.0</li> --}}
 
-				<!-- Menu: Pelantikan Jawatankuasa -->
-				<li class="nav-item">
-					<a class="sidebar-link {{ request()->is('pelantikan-jawatankuasa*') ? 'active' : '' }}" href="{{ route('pelantikanJawatankuasa') }}" style="cursor: pointer;">
-						<svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-						<span class="nav-text">Pelantikan Jawatankuasa</span>
-					</a>
-				</li>
-
 				<!-- Menu: Cipta Tender -->
 				<li class="nav-item">
 					<a class="sidebar-link collapsed" data-bs-toggle="collapse" data-bs-target="#menuCiptaTender" aria-expanded="false" style="cursor: pointer;">
@@ -391,6 +383,14 @@
 						</ul>
 					</div>
 				</li>
+				
+				<!-- Menu: Pelantikan Jawatankuasa -->
+				<li class="nav-item">
+					<a class="sidebar-link {{ request()->is('pelantikan-jawatankuasa*') ? 'active' : '' }}" href="{{ route('pelantikanJawatankuasa') }}" style="cursor: pointer;">
+						<svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+						<span class="nav-text">Pelantikan Jawatankuasa</span>
+					</a>
+				</li>
 
 				<!-- Menu : Jawatankuasa Spesifikasi /  Pengurusan-->
 				<li class="nav-item">
@@ -402,16 +402,12 @@
 					<div class="collapse" id="menuJawatankusaSpesifikasi">
 						<ul class="sidebar-submenu">
 							<li><a class="submenu-item" href="{{ route('senaraiTeknikal') }}"><div class="submenu-icon"></div><span>Senarai Semak Teknikal</span></a></li>
-						</ul>
-					</div>
-					<div class="collapse" id="menuJawatankusaSpesifikasi">
-						<ul class="sidebar-submenu">
 							<li><a class="submenu-item" href="{{ route('senaraiKewangan') }}"><div class="submenu-icon"></div><span>Senarai Semak Kewangan</span></a></li>
 						</ul>
 					</div>
 				</li>
 
-				<<!-- Menu : Jawatankuasa Pembuka -->
+				<!-- Menu : Jawatankuasa Pembuka -->
 				<li class="nav-item">
 					<a class="sidebar-link {{ request()->is('jawatankuasa-pembuka*') ? 'active' : '' }}" href="{{ route('jawatankuasaPembuka') }}" style="cursor: pointer;">
 						<svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
