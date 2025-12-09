@@ -171,6 +171,10 @@ Route::get('chat-widget/{chat_id}', [BotManController::class, 'chatWidget'])->wi
 
 // Place 3.0 Modules Routes Temporarily Here
 Route::view('/pelantikan-jawatankuasa', 'newModule.pelantikan_jawatankuasa')->name('pelantikanJawatankuasa');
+Route::view('/senarai-teknikal', 'newModule.jawatankuasaSpesifikasi.senarai_teknikal')->name('senaraiTeknikal');
+Route::view('/senarai-kewangan', 'newModule.jawatankuasaSpesifikasi.senarai_kewangan')->name('senaraiKewangan');
+Route::view('/jawatankuasa-pembuka', 'newModule.jawatankuasa_pembuka')->name('jawatankuasaPembuka');
+
 
 // Protected routes
 Route::middleware(['auth'])->group(function ()
