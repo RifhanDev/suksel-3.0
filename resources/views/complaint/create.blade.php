@@ -1,4 +1,4 @@
-@extends('layouts.modern')
+@extends('layouts.modernLanding')
 @section('content')
 	<h2>Aduan</h2>
 	<hr>

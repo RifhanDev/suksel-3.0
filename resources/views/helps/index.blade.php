@@ -1,4 +1,4 @@
-@extends('layouts.modern')
+@extends('layouts.modernLanding')
 @section('styles')
 	<link href="{{ asset('css/form.css') }}" rel="stylesheet">
 @endsection

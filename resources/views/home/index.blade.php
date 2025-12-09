@@ -1,296 +1,296 @@
 @extends('layouts.modernLanding')
 
 @section('styles')
-<style>
-    .hero-card {
-        border-radius: 16px;
-        overflow: hidden;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-        border: none;
-        background: white;
-        height: 100%;
-        position: relative;
-    }
-
-    .carousel-item img {
-        height: 420px;
-        object-fit: cover;
-        border-radius: 16px;
-    }
-
-    .news-card-header {
-        background: #fff;
-        padding: 1.5rem;
-        border-bottom: 2px solid #f3f4f6;
-        display: flex;
-        align-items: center;
-    }
-
-    .news-title-group {
-        display: flex;
-        flex-direction: column;
-        border-left: 4px solid var(--sg-red);
-        padding-left: 1rem;
-    }
-
-    .news-title {
-		padding-top: 5px;
-        font-size: 1.1rem;
-        font-weight: 800;
-        color: #111827;
-        margin: 0;
-        line-height: 1.1;
-    }
-
-    .news-subtitle {
-        font-size: 0.7rem;
-        color: #6b7280;
-        margin-top: 3px;
-        font-weight: 500;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    .news-item {
-        border-left: 3px solid transparent;
-        transition: all 0.2s ease;
-        padding: 1rem 1.25rem !important;
-        background: transparent;
-    }
-
-    .news-item:hover {
-        background-color: #fff1f2;
-        border-left-color: var(--sg-red);
-        padding-left: 1.5rem !important;
-    }
-
-    .news-date {
-        font-size: 0.7rem;
-        color: #6b7280;
-        font-weight: 600;
-        text-transform: uppercase;
-        display: block;
-        margin-top: 4px;
-    }
-    
-    .btn-see-all {
-        color: #374151;
-        background: white;
-        border: 2px solid #e5e7eb;
-        font-weight: 700;
-        border-radius: 8px;
-        padding: 0.6rem 1rem;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        text-decoration: none;
-        display: inline-block;
-    }
-
-    .btn-see-all:hover {
-        background-color: var(--sg-red);
-        border-color: var(--sg-red);
-        color: white;
-        box-shadow: 0 8px 15px rgba(196, 30, 58, 0.25);
-        transform: translateY(-2px);
-    }
-
-    /* --- CTA SECTION --- */
-    .cta-card {
-        background: linear-gradient(135deg, var(--sg-red) 0%, #8b1428 100%);
-        border-radius: 16px;
-        border: none;
-        box-shadow: 0 10px 25px rgba(196, 30, 58, 0.25);
-        position: relative;
-        overflow: hidden;
-        color: white;
-    }
-
-    .cta-card::before {
-        content: '';
-        position: absolute;
-        top: 0; left: 0; right: 0; bottom: 0;
-        background-image: radial-gradient(rgba(255,255,255,0.1) 1px, transparent 1px);
-        background-size: 20px 20px;
-        opacity: 0.3;
-    }
-
-    .cta-btn-white {
-        background: white;
-        color: var(--sg-red);
-        font-weight: 700;
-        border: 2px solid white;
-        padding: 0.75rem 1.5rem;
-        border-radius: 8px;
-        transition: all 0.2s;
-        text-decoration: none;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        white-space: nowrap;
-    }
-    .cta-btn-white:hover { background: transparent; color: white; transform: translateY(-2px); }
-
-    .cta-btn-outline {
-        background: transparent;
-        color: white;
-        font-weight: 700;
-        border: 2px solid rgba(255,255,255,0.5);
-        padding: 0.75rem 1.5rem;
-        border-radius: 8px;
-        transition: all 0.2s;
-        text-decoration: none;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        white-space: nowrap;
-    }
-    .cta-btn-outline:hover { border-color: white; background: rgba(255,255,255,0.1); color: white; }
-
-    /* --- TENDER TABLE CONTAINER --- */
-    .tender-card {
-        border-radius: 12px;
-        border: none;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.05);
-        overflow: hidden;
-        background: white;
-    }
-
-    /* --- TENDER HEADER --- */
-    .tender-header {
-        background: #fff;
-        border-bottom: 2px solid #f3f4f6;
-        padding: 1.5rem 2rem;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        flex-wrap: wrap;
-        gap: 1rem;
-    }
-
-    /* Title */
-    .header-title-group {
-        display: flex;
-        flex-direction: column;
-        border-left: 4px solid var(--sg-red);
-        padding-left: 1rem;
-    }
-
-    .header-title {
-        font-size: 1.25rem;
-        font-weight: 800;
-        color: #111827;
-        margin: 0;
-        line-height: 1.1;
-    }
-
-    .header-subtitle {
-        font-size: 0.8rem;
-        color: #6b7280;
-        margin-top: 4px;
-        font-weight: 500;
-    }
-
-    /* Connected Tabs Styling */
-    .nav-connected {
-        display: inline-flex;
-        background: white;
-        border: 1px solid #e5e7eb;
-        border-radius: 8px;
-        overflow: hidden;
-    }
-
-    .nav-connected .nav-item {
-        margin: 0;
-        border-right: 1px solid #e5e7eb;
-    }
-    
-    .nav-connected .nav-item:last-child { border-right: none; }
-
-    .nav-connected .nav-link {
-        border: none;
-        border-radius: 0;
-        padding: 0.7rem 1.5rem;
-        color: #4b5563;
-        font-weight: 600;
-        font-size: 0.85rem;
-        background: #f9fafb;
-        transition: all 0.2s ease;
-        position: relative;
-    }
-
-    .nav-connected .nav-link:hover {
-        background: #f3f4f6;
-        color: var(--sg-red);
-    }
-
-    .nav-connected .nav-link.active {
-        background: var(--sg-red);
-        color: white;
-        box-shadow: inset 0 -3px 0 rgba(0,0,0,0.1);
-    }
-
-    .nav-connected .nav-link.active::after {
-        content: '';
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        height: 3px;
-        background: var(--sg-yellow);
-    }
-
-    /* Table */
-    .table-modern thead th {
-        background-color: #f8fafc;
-        color: #475569;
-        font-weight: 700;
-        text-transform: uppercase;
-        font-size: 0.75rem;
-        letter-spacing: 0.5px;
-        border-bottom: 2px solid #e2e8f0;
-        padding: 1.2rem 1rem;
-    }
-    .table-modern tbody td {
-        padding: 1rem;
-        vertical-align: middle;
-        border-bottom: 1px solid #f1f5f9;
-        font-size: 0.9rem;
-    }
-    .table-modern tbody tr:hover { background-color: #fef2f2; }
-
-	.fade.show {
-		opacity: 1 !important;
-	}
-
-    /* Mobile Tweaks */
-    @media (max-width: 768px) {
-        .tender-header {
-            flex-direction: column;
-            align-items: stretch;
-            padding: 1.25rem;
+    <style>
+        .hero-card {
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            border: none;
+            background: white;
+            height: 100%;
+            position: relative;
         }
-        .header-title-group {
-            margin-bottom: 1rem;
-            border-left-width: 4px;
+
+        .carousel-item img {
+            height: 420px;
+            object-fit: cover;
+            border-radius: 16px;
         }
-        .nav-connected {
+
+        .news-card-header {
+            background: #fff;
+            padding: 1.5rem;
+            border-bottom: 2px solid #f3f4f6;
             display: flex;
-            width: 100%;
+            align-items: center;
         }
-        .nav-connected .nav-item {
-            flex: 1;
-            text-align: center;
+
+        .news-title-group {
+            display: flex;
+            flex-direction: column;
+            border-left: 4px solid var(--sg-red);
+            padding-left: 1rem;
         }
-        .nav-connected .nav-link {
-            width: 100%;
-            padding: 0.7rem 0.5rem;
-            font-size: 0.75rem;
+
+        .news-title {
+            padding-top: 5px;
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: #111827;
+            margin: 0;
+            line-height: 1.1;
         }
-        .carousel-item img { height: 250px; }
+
+        .news-subtitle {
+            font-size: 0.7rem;
+            color: #6b7280;
+            margin-top: 3px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .news-item {
+            border-left: 3px solid transparent;
+            transition: all 0.2s ease;
+            padding: 1rem 1.25rem !important;
+            background: transparent;
+        }
+
+        .news-item:hover {
+            background-color: #fff1f2;
+            border-left-color: var(--sg-red);
+            padding-left: 1.5rem !important;
+        }
+
+        .news-date {
+            font-size: 0.7rem;
+            color: #6b7280;
+            font-weight: 600;
+            text-transform: uppercase;
+            display: block;
+            margin-top: 4px;
+        }
         
-        /* Mobile News Header */
-        .news-card-header { padding: 1.25rem; }
-    }
-</style>
+        .btn-see-all {
+            color: #374151;
+            background: white;
+            border: 2px solid #e5e7eb;
+            font-weight: 700;
+            border-radius: 8px;
+            padding: 0.6rem 1rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-see-all:hover {
+            background-color: var(--sg-red);
+            border-color: var(--sg-red);
+            color: white;
+            box-shadow: 0 8px 15px rgba(196, 30, 58, 0.25);
+            transform: translateY(-2px);
+        }
+
+        /* --- CTA SECTION --- */
+        .cta-card {
+            background: linear-gradient(135deg, var(--sg-red) 0%, #8b1428 100%);
+            border-radius: 16px;
+            border: none;
+            box-shadow: 0 10px 25px rgba(196, 30, 58, 0.25);
+            position: relative;
+            overflow: hidden;
+            color: white;
+        }
+
+        .cta-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image: radial-gradient(rgba(255,255,255,0.1) 1px, transparent 1px);
+            background-size: 20px 20px;
+            opacity: 0.3;
+        }
+
+        .cta-btn-white {
+            background: white;
+            color: var(--sg-red);
+            font-weight: 700;
+            border: 2px solid white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            white-space: nowrap;
+        }
+        .cta-btn-white:hover { background: transparent; color: white; transform: translateY(-2px); }
+
+        .cta-btn-outline {
+            background: transparent;
+            color: white;
+            font-weight: 700;
+            border: 2px solid rgba(255,255,255,0.5);
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            white-space: nowrap;
+        }
+        .cta-btn-outline:hover { border-color: white; background: rgba(255,255,255,0.1); color: white; }
+
+        /* --- TENDER TABLE CONTAINER --- */
+        .tender-card {
+            border-radius: 12px;
+            border: none;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            overflow: hidden;
+            background: white;
+        }
+
+        /* --- TENDER HEADER --- */
+        .tender-header {
+            background: #fff;
+            border-bottom: 2px solid #f3f4f6;
+            padding: 1.5rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        /* Title */
+        .header-title-group {
+            display: flex;
+            flex-direction: column;
+            border-left: 4px solid var(--sg-red);
+            padding-left: 1rem;
+        }
+
+        .header-title {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: #111827;
+            margin: 0;
+            line-height: 1.1;
+        }
+
+        .header-subtitle {
+            font-size: 0.8rem;
+            color: #6b7280;
+            margin-top: 4px;
+            font-weight: 500;
+        }
+
+        /* Connected Tabs Styling */
+        .nav-connected {
+            display: inline-flex;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .nav-connected .nav-item {
+            margin: 0;
+            border-right: 1px solid #e5e7eb;
+        }
+        
+        .nav-connected .nav-item:last-child { border-right: none; }
+
+        .nav-connected .nav-link {
+            border: none;
+            border-radius: 0;
+            padding: 0.7rem 1.5rem;
+            color: #4b5563;
+            font-weight: 600;
+            font-size: 0.85rem;
+            background: #f9fafb;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .nav-connected .nav-link:hover {
+            background: #f3f4f6;
+            color: var(--sg-red);
+        }
+
+        .nav-connected .nav-link.active {
+            background: var(--sg-red);
+            color: white;
+            box-shadow: inset 0 -3px 0 rgba(0,0,0,0.1);
+        }
+
+        .nav-connected .nav-link.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: var(--sg-yellow);
+        }
+
+        /* Table */
+        .table-modern thead th {
+            background-color: #f8fafc;
+            color: #475569;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid #e2e8f0;
+            padding: 1.2rem 1rem;
+        }
+        .table-modern tbody td {
+            padding: 1rem;
+            vertical-align: middle;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 0.9rem;
+        }
+        .table-modern tbody tr:hover { background-color: #fef2f2; }
+
+        .fade.show {
+            opacity: 1 !important;
+        }
+
+        /* Mobile Tweaks */
+        @media (max-width: 768px) {
+            .tender-header {
+                flex-direction: column;
+                align-items: stretch;
+                padding: 1.25rem;
+            }
+            .header-title-group {
+                margin-bottom: 1rem;
+                border-left-width: 4px;
+            }
+            .nav-connected {
+                display: flex;
+                width: 100%;
+            }
+            .nav-connected .nav-item {
+                flex: 1;
+                text-align: center;
+            }
+            .nav-connected .nav-link {
+                width: 100%;
+                padding: 0.7rem 0.5rem;
+                font-size: 0.75rem;
+            }
+            .carousel-item img { height: 250px; }
+            
+            /* Mobile News Header */
+            .news-card-header { padding: 1.25rem; }
+        }
+    </style>
 @endsection
 
 @section('content')
@@ -564,4 +564,76 @@
 			}
 		});
 	</script>
+
+    <!-- Botman Chatbot Widget -->
+	<script>
+		@php $chat_id = Str::random(8); @endphp
+
+		var botmanWidget = {
+			title: 'Lela (Bot)',
+			introMessage: 'Hi, saya Lela. Saya di sini untuk membantu anda dan menjawab persoalan anda.',
+			mainColor: '#c32508',
+			aboutText: '',
+			bubbleBackground: '#c32508',
+			headerTextColor: '#fff',
+			desktopHeight: 500,
+			desktopWidth: 400,
+			bubbleAvatarUrl: '{{ asset('images/chatbot.png') }}',
+			placeholderText: 'Hantar Pesanan..',
+			frameEndpoint: "{{ route('chat_widget',['chat_id' => $chat_id]) }}",
+			userId: "{{ $chat_id }}"
+		};
+
+		window.addEventListener("message", (event) => {
+
+			// console.log(event);
+
+			if (event.data != "")
+			{
+				let data = event.data;
+
+				if(data.status == 200)
+				{
+					let messages = data.messages;
+
+					messages.forEach(row => {
+
+						if (row.text == "DataACK")
+						{
+							sender_response_detail = row.additionalParameters;
+
+							if (sender_response_detail.sender == "user_chat")
+							{
+								if (sender_response_detail.type == "image_only")
+								{
+									botmanChatWidget.say('<img src="' + sender_response_detail.response + '" alt="attach" width="120" height="120">');
+								}
+
+								if (sender_response_detail.type == "text_only")
+								{
+									botmanChatWidget.say(sender_response_detail.response);
+								}
+							}
+
+							if (sender_response_detail.sender == "bot")
+							{
+								if (sender_response_detail.type == "image_only")
+								{
+									botmanChatWidget.sayAsBot('<img src="' + sender_response_detail.response + '" alt="attach" width="120" height="120">');
+								}
+
+								if (sender_response_detail.type == "text_only")
+								{
+									botmanChatWidget.sayAsBot(sender_response_detail.response);
+								}
+							}
+						}
+					});
+					// botmanChatWidget.sayAsBot('TQ. <img src="https://botman.io/img/logo.png" alt="botsaywhat" width="20" height="20">');
+				}
+			}
+		});
+	</script>
+	{{-- <script src='https://cdn.jsdelivr.net/npm/botman-web-widget@0/build/js/widget.js'></script> --}}
+	<script src='{{ asset('packages/botman/build/js/widget.js') }}'></script>
 @endsection

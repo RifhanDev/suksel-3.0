@@ -84,7 +84,8 @@ class AuthController extends Controller
 
                UserHistory::log($user->id, 'sign-in');
 
-               if ($user->hasRole('Vendor')) {
+               if ($user->hasRole('Vendor')) 
+               {
 
                   if (is_null($user->vendor)) {
                      auth()->logout();
@@ -100,8 +101,15 @@ class AuthController extends Controller
                      return redirect('dashboard');
                   // } elseif ($user->can('Vendor:list'))
                   //    return redirect('vendors');
-               } else
+               }
+               else if ($user->hasRole('Admin')) 
+               {
+                  return redirect()->route('dashboard.hq');
+               } 
+               else
+               {
                   return redirect('agencies/' . $user->organization_unit_id);
+               }
             } else {
                $attempt = session('attempt');
                session()->put('attempt', $attempt += 1);
