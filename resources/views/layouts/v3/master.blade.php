@@ -630,7 +630,7 @@
 	<!-- Scripts -->
 	<script src="{{ asset('js/modern.js') }}"></script>
 	<!-- Bootbox 6.x -->
-    <script src="{{ asset('packages/bootbox/bootbox.min.js') }}"></script>
+    <script src="{{ asset('packages/bootbox/bootbox.js') }}"></script>
 	<!-- Selectize.js -->
 	<script src="{{ asset('packages/selectize/dist/js/standalone/selectize.min.js') }}"></script>
 	<!-- sheepIt (Dynamic Form Repeater) -->
@@ -710,5 +710,6 @@
 	<script src='{{ asset('packages/botman/build/js/widget.js') }}'></script>
 
 	@yield('scripts')
+	@stack('scripts')
 </body>
 </html>

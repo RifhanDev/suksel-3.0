@@ -9,7 +9,7 @@ class ShareholdersController extends Controller
 {
 	public function index($parent_id) {
 		if(!Shareholder::canList($parent_id)) {
-			return $this->_access_denied();
+			return response()->json(['error' => 'Access denied', 'debug' => $debug], 403);
 		}
 		return Shareholder::where('vendor_id', $parent_id)->get();
    }

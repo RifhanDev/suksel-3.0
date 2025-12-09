@@ -1,0 +1,205 @@
+/**
+ * Modern Tabs Component
+ * Reusable tab styling for Bootstrap 5 forms
+ * Selangor Brand Theme
+ */
+
+/* ===== LAYOUT & CONTAINER ===== */
+.modern-form-wrapper {
+    padding: 1.5rem;
+    display: block;
+}
+
+.modern-form-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    border: 1px solid #e2e8f0;
+    overflow: visible;
+}
+
+/* ===== TABS NAVIGATION ===== */
+.modern-tabs-header {
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 0 1.5rem;
+    border-radius: 12px 12px 0 0;
+}
+
+.modern-nav-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    gap: 2px;
+}
+
+.modern-nav-tabs .nav-link {
+    display: block;
+    padding: 1rem 1.5rem;
+    color: #64748b;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.9rem;
+    border: none;
+    border-bottom: 3px solid transparent;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    position: relative;
+    border-radius: 0;
+}
+
+.modern-nav-tabs .nav-link:hover {
+    color: #1e293b;
+    background: rgba(196, 30, 58, 0.05);
+    border-bottom-color: rgba(196, 30, 58, 0.3);
+    border: none;
+}
+
+.modern-nav-tabs .nav-link.active {
+    color: #fff;
+    background: linear-gradient(135deg, #c41e3a 0%, #a01830 100%);
+    border-bottom: 3px solid #8b1428;
+    font-weight: 700;
+    box-shadow: 0 2px 8px rgba(196, 30, 58, 0.2);
+}
+
+.modern-nav-tabs .nav-link:focus {
+    outline: none;
+    box-shadow: none;
+}
+
+/* Disabled/Locked tabs */
+.modern-nav-tabs li.disabled .nav-link {
+    color: #cbd5e1;
+    cursor: not-allowed;
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.modern-nav-tabs li.disabled .nav-link:hover {
+    background: transparent;
+    border-bottom-color: transparent;
+}
+
+/* ===== CONTENT AREA ===== */
+.modern-tab-content {
+    padding: 2rem;
+    background: white;
+    overflow: visible;
+    border-radius: 0 0 12px 12px;
+    min-height: 500px;
+}
+
+.modern-tab-content .tab-pane {
+    animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ===== FORM GRID SYSTEM ===== */
+.form-grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    row-gap: 20px;
+    align-items: start;
+}
+
+.form-grid-1 {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 24px;
+}
+
+/* General Form */
+.modern-tab-content .form-group {
+    margin-bottom: 20px !important;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+.modern-tab-content .form-group:last-child {
+    margin-bottom: 0 !important;
+}
+
+/* ===== SELECTIZE FIXES ===== */
+.modern-tab-content .form-group select.selectize,
+.modern-tab-content .form-group select.selectized,
+.modern-tab-content select[style*="display: none"],
+.modern-tab-content .selectize-control > select {
+    display: none !important;
+    height: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    position: absolute !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    z-index: -1 !important;
+}
+
+.modern-tab-content .selectize-dropdown {
+    background: white !important;
+    z-index: 9999 !important;
+}
+
+/* ===== FORM LABELS & CONTROLS ===== */
+.modern-tab-content .control-label {
+    text-align: left !important;
+    width: 100% !important;
+    margin-bottom: 8px !important;
+    padding-top: 0 !important;
+    font-weight: 600;
+    color: #334155;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.modern-tab-content .control-label sup {
+    color: #ef4444;
+    top: -2px;
+}
+
+/* Reset Bootstrap Columns */
+.modern-tab-content .col-lg-12,
+.modern-tab-content .col-lg-9,
+.modern-tab-content .col-sm-9,
+.modern-tab-content .col-lg-3,
+.modern-tab-content .col-sm-3,
+.modern-tab-content .col-md-6 {
+    width: 100% !important;
+    padding: 0 !important;
+    float: none !important;
+}
+
+/* Form Controls */
+.modern-tab-content .form-control:not(.selectize-control) {
+    border: 1px solid #cbd5e1;
+    box-shadow: none;
+    padding: 8px 12px;
+    font-size: 0.95rem;
+    width: 100% !important;
+}
+
+.modern-tab-content .selectize-control.form-control {
+    height: auto !important;
+    border: none !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    background: transparent !important;
+}
+
+.modern-tab-content .form-control:not(.selectize-control):focus {
+    border-color: #c41e3a;
+    box-shadow: 0 0 0 3px rgba(196, 30, 58, 0.1);
+    z-index: 5;
+}
+
+
