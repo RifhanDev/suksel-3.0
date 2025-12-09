@@ -368,7 +368,9 @@
 		<div class="sidebar-scroll-area">
 			<ul class="sidebar-nav">
 
-				{{-- <li class="nav-section-header">Modul 3.0</li> --}}
+				<!-- ============================================= -->
+				<!-- NEW SECTION: MODUL 3.0 -->
+				<!-- ============================================= -->
 
 				<!-- Menu: Cipta Tender -->
 				<li class="nav-item">
@@ -383,7 +385,7 @@
 						</ul>
 					</div>
 				</li>
-				
+
 				<!-- Menu: Pelantikan Jawatankuasa -->
 				<li class="nav-item">
 					<a class="sidebar-link {{ request()->is('pelantikan-jawatankuasa*') ? 'active' : '' }}" href="{{ route('pelantikanJawatankuasa') }}" style="cursor: pointer;">

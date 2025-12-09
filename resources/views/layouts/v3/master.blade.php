@@ -27,6 +27,8 @@
 
 	<!-- Bootstrap Datepicker CSS -->
 	<link href="{{ asset('packages/bootstrap-datepicker/css/datepicker3.css') }}" rel="stylesheet">
+    {{-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@1.4.0/dist/css/tabler.min.css" /> --}}
+    <link href="https://cdn.datatables.net/v/dt/dt-2.3.5/datatables.min.css" rel="stylesheet" integrity="sha384-Lv8lYSJkh1Hc5kB9lk2YbbGdchMRCuAcwUOYWZ3Q/YIfKNVW+6W+V57wxKNv1D8l" crossorigin="anonymous">
 
 	@yield('styles')
 
@@ -627,7 +629,7 @@
 			</div>
 		</div>
 	</div>
-
+ 
 	<!-- Scripts -->
 	<script src="{{ asset('js/modern.js') }}"></script>
 	<!-- Bootbox 6.x -->
@@ -638,6 +640,8 @@
 	<script src="{{ asset('js/sheepit.js') }}"></script>
 	<!-- Bootstrap Datepicker -->
 	<script src="{{ asset('packages/bootstrap-datepicker/js/bootstrap-datepicker.js') }}"></script>
+    {{-- <script src="https://cdn.jsdelivr.net/npm/@tabler/core@1.4.0/dist/js/tabler.min.js"></script> --}}
+    <script src="https://cdn.datatables.net/v/dt/dt-2.3.5/datatables.min.js" integrity="sha384-qH0inyYSCOpaLgM/WSarLVnq0ULwworkGFzUI+E6bpx0DUCIsJePT0TRDnLnkcU1" crossorigin="anonymous"></script>
 
 	<script>
 		$(document).ready(function() {

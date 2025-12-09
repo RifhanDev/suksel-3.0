@@ -24,7 +24,7 @@
 		<div class="dropdown">
 			<button class="user-menu-btn" data-bs-toggle="dropdown" aria-expanded="false">
 				<div class="user-info">
-					<span class="user-name">{{ Str::limit(data_get($user, 'name'), 15) }}</span>
+					<span class="user-name">{{ Str::limit(data_get($user, 'name'), 30) }}</span>
 					<span class="user-role">{{ Auth::user()->roles->first()->name ?? 'Pengguna' }}</span>
 				</div>
 				<div class="user-avatar">
