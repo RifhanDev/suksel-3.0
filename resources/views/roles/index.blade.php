@@ -1,47 +1,73 @@
 @extends('layouts.modern')
+
 @section('content')
-	<h2>Peranan</h2>
-	<hr>
-	<table data-path="/roles" class="DT-index table table-striped table-hover table-bordered">
-		<thead class="bg-blue-selangor">
-			<tr>
-				<th>Name</th>
-				<th>Kebenaran Ditetapkan</th>
-				<th>Jumlah Pengguna</th>
-				<th width="200px">&nbsp;</th>
-			</tr>
-		</thead>
-		<tbody>
-		</tbody>
-	</table>
-	<br>
-	@include('roles.actions-footer', ['is_list' => true])
+	@php
+		$columnsConfig = [
+		    ['data' => 'name', 'name' => 'name', 'label' => 'Nama Peranan', 'icon' => 'ti-user'],
+		    ['data' => 'permissions', 'name' => 'permissions', 'label' => 'Kebenaran Ditetapkan', 'icon' => 'ti-key'],
+		    [
+		        'data' => 'user_count',
+		        'name' => 'user_count',
+		        'label' => 'Jumlah Pengguna',
+		        'icon' => 'ti-users',
+		        'width' => 'w-15',
+		    ],
+		    [
+		        'data' => 'actions',
+		        'name' => 'actions',
+		        'label' => 'Tindakan',
+		        'icon' => 'ti-settings',
+		        'width' => 'w-25',
+		        'orderable' => false,
+		        'searchable' => false,
+		    ],
+		];
+	@endphp
+
+	@include('components.modern-index', [
+		'title' => 'Senarai Peranan',
+		'pretitle' => 'Sistem Tender Online',
+		'icon' => 'ti-user',
+		'cardTitle' => 'Maklumat Peranan',
+		'createUrl' => route('roles.create'),
+		'createLabel' => 'Tambah Peranan Baru',
+		'showCreate' => App\Role::canCreate(),
+		'dataPath' => '/roles',
+		'columns' => $columnsConfig,
+		'defaultOrder' => [[0, 'asc']],
+		'pageLength' => 25,
+	])
 @endsection
+
 @section('scripts')
 	<script src="{{ asset('js/datatables.js') }}"></script>
 	<script type="text/javascript">
 		$('.DT-index').each(function() {
 			var target = $(this);
 			var path = target.data('path');
+			var columns = [{
+					data: 'name',
+					name: 'name'
+				},
+				{
+					data: 'permissions',
+					name: 'permissions'
+				},
+				{
+					data: 'user_count',
+					name: 'user_count'
+				},
+				{
+					data: 'actions',
+					name: 'actions',
+					orderable: false,
+					searchable: false
+				}
+			];
+
 			var DT = target.DataTable({
 				ajax: path,
-				columns: [{
-						data: 'name',
-						name: 'name'
-					},
-					{
-						data: 'permissions',
-						name: 'permissions'
-					},
-					{
-						data: 'user_count',
-						name: 'user_count'
-					},
-					{
-						data: 'actions',
-						name: 'actions'
-					},
-				],
+				columns: columns,
 				serverSide: true,
 				stateSave: true,
 				language: {
@@ -67,7 +93,13 @@
 						sSortDescending: ": diaktifkan kepada susunan lajur menurun"
 					}
 				},
-				aaSorting: []
+				aaSorting: [],
+				dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rtip',
+				pageLength: 25,
+				responsive: true,
+				order: [
+					[0, 'asc']
+				]
 			});
 		});
 	</script>

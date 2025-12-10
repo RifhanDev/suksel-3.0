@@ -256,7 +256,6 @@ class TendersController extends Controller
 	 */
 	public function show(Request $request, $id)
 	{
-
 		$tender = Tender::with('codes')
 			->with('siteVisits', 'creator', 'officer')
 			->findOrFail($id);
@@ -424,6 +423,11 @@ class TendersController extends Controller
 	{
 
 		$tender = Tender::findOrFail($id);
+
+		// Check if tender submission deadline has passed
+		if (Carbon::parse($tender->submission_datetime)->isPast()) {
+			return redirect()->back()->with('error', 'Pembelian tender telah tamat tempoh');
+		}
 
 		if (!$tender->canShow() || !auth()->user()->hasRole('Vendor') || !$tender->canParticipate(auth()->user()->vendor_id) || $tender->hasParticipate(auth()->user()->vendor_id))
 			return $this->_access_denied();
