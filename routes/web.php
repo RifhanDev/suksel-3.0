@@ -239,6 +239,17 @@ Route::middleware(['auth'])->group(function ()
 	// Iskandar Hantar e-mail Account Review Request kepada User Sistem 
 	Route::get('iskandar', [UsersController::class, 'sendArr']);
 
+	// Vendor resource routes
+	Route::resource('vendor.shareholders', ShareholdersController::class);
+	Route::resource('vendor.directors', DirectorsController::class);
+	Route::resource('vendor.contacts', ContactsController::class);
+	Route::resource('vendor.awards', AwardsController::class);
+	Route::resource('vendor.projects', ProjectsController::class);
+	Route::resource('vendor.products', ProductsController::class);
+	Route::resource('vendor.assets', AssetsController::class);
+	Route::resource('vendor.remarks', RemarksController::class);
+	Route::resource('vendor.subscriptions', SubscriptionsController::class);
+
 	// Admin routes
 	Route::middleware(['role:Admin'])->group(function ()
 	{
@@ -306,16 +317,7 @@ Route::middleware(['auth'])->group(function ()
 		Route::put('requests/{requests}/approve', [CodeRequestsController::class, 'approve'])->name('requests.approve');
 		Route::post('requests/{requests}/reject', [CodeRequestsController::class, 'reject'])->name('requests.reject');
 
-		// Vendor resource routes
-		Route::resource('vendor.shareholders', ShareholdersController::class);
-		Route::resource('vendor.directors', DirectorsController::class);
-		Route::resource('vendor.contacts', ContactsController::class);
-		Route::resource('vendor.awards', AwardsController::class);
-		Route::resource('vendor.projects', ProjectsController::class);
-		Route::resource('vendor.products', ProductsController::class);
-		Route::resource('vendor.assets', AssetsController::class);
-		Route::resource('vendor.remarks', RemarksController::class);
-		Route::resource('vendor.subscriptions', SubscriptionsController::class);
+		
 
 		Route::post('transactions/ajax', [TransactionsController::class, 'updateFpxCount'])->name('updateFpxCount');
 		Route::get('transactions/subscription', [TransactionsController::class, 'subscriptionIndex']);
