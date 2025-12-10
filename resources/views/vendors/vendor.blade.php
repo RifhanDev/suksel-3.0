@@ -701,9 +701,8 @@
                 </div>
             </div>
 
-            {{-- START: Tab Content - Rekod Penilaian Prestasi Syarikat --}}
+            {{-- Rekod Penilaian Prestasi Syarikat --}}
             @include('vendors.tab-contents.prestasi-syarikat')
-            {{-- END: Tab Content - Rekod Penilaian Prestasi Syarikat --}}
 
         </div>
     </div>
