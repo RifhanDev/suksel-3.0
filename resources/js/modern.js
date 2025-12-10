@@ -15,22 +15,22 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('Modern layout loaded with Bootstrap 5');
 
     // Initialize all tooltips
-    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-    tooltipTriggerList.map(function (tooltipTriggerEl) {
-        return new bootstrap.Tooltip(tooltipTriggerEl);
-    });
+    // const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    // tooltipTriggerList.map(function (tooltipTriggerEl) {
+    //     return new bootstrap.Tooltip(tooltipTriggerEl);
+    // });
 
     // Initialize all popovers
-    const popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
-    popoverTriggerList.map(function (popoverTriggerEl) {
-        return new bootstrap.Popover(popoverTriggerEl);
-    });
+    // const popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
+    // popoverTriggerList.map(function (popoverTriggerEl) {
+    //     return new bootstrap.Popover(popoverTriggerEl);
+    // });
 
     // Initialize all modals
-    const modalList = [].slice.call(document.querySelectorAll('.modal'));
-    modalList.map(function (modalEl) {
-        return new bootstrap.Modal(modalEl);
-    });
+    // const modalList = [].slice.call(document.querySelectorAll('.modal'));
+    // modalList.map(function (modalEl) {
+    //     return new bootstrap.Modal(modalEl);
+    // });
 });
 
 // CSRF Token for AJAX
