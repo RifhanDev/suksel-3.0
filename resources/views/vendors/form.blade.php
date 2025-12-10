@@ -234,46 +234,50 @@
                 <div style="grid-column: 1 / -1;">
                     <label class="form-label">Gred &amp; Bidang Pengkhususan</label>
                     <div id="cidb_group">
-                        <!-- Template Item -->
-                        <div id="cidb_group_template" class="repeater-item">
-                            <input type="hidden" id="cidb_group_#index#_id" class="cidb-group-id" name="cidb_group[#index#][id]">
-                            
-                            <div class="fields-wrapper">
-                                <div>
-                                    <label style="font-size: 0.7rem; color:#94a3b8; text-transform:uppercase; font-weight:700;">Gred</label>
-                                    <select id="cidb_group_#index#_code_id" class="cidb_group-code_id form-control selectize" name="cidb_group[#index#][code_id]" data-tracker="cidb_group_tracker" onchange="updateOption(this)">
-                                        <option disabled="disabled" selected="selected" value="">Sila pilih Gred</option>
-                                        @foreach(App\Code::where('type', 'cidb-g')->orderBy('code', 'asc')->get() as $code)
-                                            <option value="{{$code->id}}">{{ $code->label }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                <div>
-                                    <label style="font-size: 0.7rem; color:#94a3b8; text-transform:uppercase; font-weight:700;">Bidang Pengkhususan</label>
-                                    <select id="cidb_group_#index#_codes" class="cidb_group-codes form-control selectize" name="cidb_group[#index#][codes][]" multiple="multiple">
-                                        <option disabled="disabled" value="">Pilih Bidang</option>
-                                        @foreach(App\Code::where('type', 'cidb-c')->orderBy('code', 'asc')->get() as $code)
-                                            <option value="{{ $code->id }}">{{ $code->label }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                            </div>
-                            
-                            <div class="action-wrapper">
-                                <a class="btn btn-danger btn-sm btn-delete-cidb_group" id="cidb_group_remove_current" style="height: 42px; display: inline-flex; align-items: center; justify-content: center; width: 42px; border-radius: 8px;">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
-                                </a>
-                            </div>
-                        </div>
+                        <!-- Hidden template using <template> -->
+                        <template id="cidb_group_template">
+                            <div class="repeater-item">
+                                <input type="hidden" class="cidb-group-id" name="cidb_group[#index#][id]">
+                                <div class="fields-wrapper">
+                                    <div>
+                                        <label style="font-size: 0.7rem; color:#94a3b8; text-transform:uppercase; font-weight:700;">Gred</label>
+                                        <select class="cidb_group-code_id form-control selectize" name="cidb_group[#index#][code_id]" data-tracker="cidb_group_tracker" onchange="updateOption(this)">
+                                            <option disabled selected value="">Sila pilih Gred</option>
+                                            @foreach(App\Code::where('type','cidb-g')->orderBy('code','asc')->get() as $code)
+                                                <option value="{{ $code->id }}">{{ $code->label }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
 
+                                    <div>
+                                        <label style="font-size: 0.7rem; color:#94a3b8; text-transform:uppercase; font-weight:700;">Bidang Pengkhususan</label>
+                                        <select class="cidb_group-codes form-control selectize" name="cidb_group[#index#][codes][]" multiple>
+                                            <option disabled value="">Pilih Bidang</option>
+                                            @foreach(App\Code::where('type','cidb-c')->orderBy('code','asc')->get() as $code)
+                                                <option value="{{ $code->id }}">{{ $code->label }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="action-wrapper">
+                                    <a class="btn btn-danger btn-sm btn-delete-cidb_group" style="height: 42px; display:flex; align-items:center; justify-content:center; width:42px; border-radius:8px;">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                                    </a>
+                                </div>
+                            </div>
+                        </template>
+
+                        <!-- Shown when no forms exist -->
                         <div id="cidb_group_noforms_template" class="text-center p-3 text-muted">
                             Tiada maklumat ditambah. Sila tekan butang tambah di bawah.
                         </div>
 
+                        <!-- Controls -->
                         <div id="cidb_group_controls">
                             <div id="cidb_group_add">
                                 <a class="btn-add-repeater">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> 
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                                     Tambah Gred CIDB
                                 </a>
                             </div>
@@ -369,7 +373,7 @@
         </div>
 
         <!-- 6. PENGARAH -->
-        <div class="tab-pane" id="vf-directors" data-entity-name="directors" <?php if(isset($vendor)) { ?> data-remote="{{ asset('vendor/'.$vendor->id.'/directors') }}" <?php } ?> >
+        <div class="tab-pane" id="vf-directors" data-entity-name="director" <?php if(isset($vendor)) { ?> data-remote="{{ asset('vendor/'.$vendor->id.'/directors') }}" <?php } ?> >
             <table class="clean-table">
                 <thead>
                     <tr>
@@ -539,6 +543,33 @@
     <script src="{{ asset('js/vendor-form-init.js') }}"></script>
     <script>
         (function () {
+            // Function to prevent duplicate CIDB grade selections
+            window.updateOption = function(selectElement) {
+                const allGradeSelects = document.querySelectorAll('.cidb_group-code_id[data-tracker="cidb_group_tracker"]');
+                const selectedValues = [];
+
+                // Collect all selected values
+                allGradeSelects.forEach(function(select) {
+                    if (select.value) {
+                        selectedValues.push(select.value);
+                    }
+                });
+
+                // Update each selectize dropdown to remove already selected options
+                allGradeSelects.forEach(function(select) {
+                    if (select.selectize) {
+                        const currentValue = select.value;
+
+                        // Remove options that are selected in other dropdowns
+                        selectedValues.forEach(function(value) {
+                            if (value !== currentValue && value !== '') {
+                                select.selectize.removeOption(value);
+                            }
+                        });
+                    }
+                });
+            };
+
             function setTabState(tab, disabled) {
                 var link = tab.querySelector('a');
                 if (!link) {
@@ -560,7 +591,8 @@
                 }
             }
 
-            document.addEventListener('DOMContentLoaded', function () {
+            document.addEventListener('DOMContentLoaded', function ()
+            {
                 var tabs = document.querySelectorAll('.modern-nav-tabs .nav-item');
 
                 tabs.forEach(function (tab, index) {
@@ -591,6 +623,162 @@
                         setTabState(tabs[index], false);
                     }
                 };
+
+                const addBtn = document.querySelector(".btn-add-repeater");
+                const container = document.querySelector("#cidb_group");
+                const template = document.querySelector("#cidb_group_template");
+                const emptyState = document.querySelector("#cidb_group_noforms_template");
+
+                // Load existing CIDB data from backend
+                const loadExistingData = () => {
+                    @if(isset($vendor) && $vendor->cidbGrades)
+                        const cidbData = [
+                            @foreach($vendor->cidbGrades()->orderBy('id', 'asc')->get() as $grade)
+                                {
+                                    id: "{{ $grade->id }}",
+                                    code_id: "{{ $grade->code_id }}",
+                                    codes: @json($grade->children()->pluck('code_id'))
+                                },
+                            @endforeach
+                        ];
+
+                        cidbData.forEach((data, idx) => {
+                            const clone = template.content.cloneNode(true);
+                            const item = clone.querySelector(".repeater-item");
+
+                            // Replace #index# placeholders
+                            item.innerHTML = item.innerHTML.replace(/#index#/g, idx);
+
+                            // Insert the item
+                            const insertedItem = container.insertBefore(item, document.getElementById("cidb_group_controls"));
+
+                            // Set values
+                            const idInput = insertedItem.querySelector('.cidb-group-id');
+                            const codeSelect = insertedItem.querySelector('.cidb_group-code_id');
+                            const codesSelect = insertedItem.querySelector('.cidb_group-codes');
+
+                            if (idInput) idInput.value = data.id;
+                            if (codeSelect) codeSelect.value = data.code_id;
+
+                            // Initialize selectize
+                            if (typeof $ !== 'undefined' && typeof $.fn.selectize !== 'undefined') {
+                                if (codeSelect && !codeSelect.selectize) {
+                                    $(codeSelect).selectize();
+                                    if (codeSelect.selectize) {
+                                        codeSelect.selectize.setValue(data.code_id);
+                                    }
+                                }
+
+                                if (codesSelect && !codesSelect.selectize) {
+                                    $(codesSelect).selectize();
+                                    if (codesSelect.selectize && data.codes) {
+                                        codesSelect.selectize.setValue(data.codes);
+                                    }
+                                }
+                            }
+                        });
+                    @endif
+                };
+
+                // Initialize selectize on any pre-existing items
+                const initializeExistingItems = () => {
+                    const existingItems = container.querySelectorAll('.repeater-item');
+
+                    if (existingItems.length > 0) {
+                        emptyState.style.display = "none";
+
+                        // Initialize selectize on existing select elements
+                        if (typeof $ !== 'undefined' && typeof $.fn.selectize !== 'undefined') {
+                            existingItems.forEach(function(item) {
+                                $(item).find('select.selectize').each(function() {
+                                    if (!this.selectize) {
+                                        $(this).selectize();
+                                    }
+                                });
+                            });
+                        }
+                    } else {
+                        emptyState.style.display = "block";
+                    }
+
+                    // Set index to number of existing items
+                    return existingItems.length;
+                };
+
+                // Load data from backend first
+                loadExistingData();
+
+                // Then initialize any existing items
+                let index = initializeExistingItems();
+
+                const addItem = () =>
+                {
+                    const clone = template.content.cloneNode(true);
+                    const item = clone.querySelector(".repeater-item");
+
+                    // Replace #index# placeholders
+                    item.innerHTML = item.innerHTML.replace(/#index#/g, index);
+
+                    // Insert the item
+                    const insertedItem = container.insertBefore(item, document.getElementById("cidb_group_controls"));
+
+                    // Initialize selectize on newly added select elements
+                    if (typeof $ !== 'undefined' && typeof $.fn.selectize !== 'undefined') {
+                        $(insertedItem).find('select.selectize').each(function() {
+                            if (!this.selectize) {
+                                $(this).selectize();
+                            }
+                        });
+                    }
+
+                    // Update options to prevent duplicates
+                    if (typeof window.updateOption === 'function') {
+                        const gradeSelect = insertedItem.querySelector('.cidb_group-code_id');
+                        if (gradeSelect) {
+                            window.updateOption(gradeSelect);
+                        }
+                    }
+
+                    index++;
+                    emptyState.style.display = "none";
+                };
+
+                addBtn.addEventListener("click", addItem);
+
+                // Delegate remove events
+                container.addEventListener("click", function (e) {
+                    if (e.target.closest(".btn-delete-cidb_group")) {
+                        const row = e.target.closest(".repeater-item");
+
+                        // Track deleted item ID for backend
+                        const idInput = row.querySelector('.cidb-group-id');
+                        if (idInput && idInput.value) {
+                            const deletedInput = document.querySelector('input[name="deleted_cidb_group[]"]');
+                            if (deletedInput) {
+                                // Create new hidden input for each deleted ID
+                                const newDeletedInput = document.createElement('input');
+                                newDeletedInput.type = 'hidden';
+                                newDeletedInput.name = 'deleted_cidb_group[]';
+                                newDeletedInput.value = idInput.value;
+                                deletedInput.parentNode.appendChild(newDeletedInput);
+                            }
+                        }
+
+                        // Destroy selectize instances before removing
+                        const selectElements = row.querySelectorAll('select.selectize');
+                        selectElements.forEach(function(select) {
+                            if (select.selectize) {
+                                select.selectize.destroy();
+                            }
+                        });
+
+                        row.remove();
+
+                        if (!container.querySelector(".repeater-item")) {
+                            emptyState.style.display = "block";
+                        }
+                    }
+                });
             });
         })();
     </script>
