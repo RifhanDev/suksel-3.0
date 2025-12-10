@@ -20,7 +20,9 @@
 			<li><a href="#vf-subscriptions" data-toggle="pill">Bayaran Pendaftaran</a></li>
 			<li class="@if (isset($active_prestasi_tab)) active @endif"><a href="#vf-prestasi-syarikat" data-toggle="pill">Rekod
 					Penilaian Prestasi Syarikat</a></li>
-			<!--<li><a href="#vf-transactions" data-toggle="pill">Transaksi Pembayaran</a></li>-->
+			@if (Auth::user()->hasRole('Admin'))
+				<li><a href="#vf-transactions" data-toggle="pill">Transaksi Pembayaran</a></li>
+			@endif
 		</ul>
 	</div>
 
@@ -637,6 +639,47 @@
 				<div class="alert alert-info">Tiada maklumat langganan.</div>
 			@endif
 		</div>
+
+		<!-- Transaksi Pembayaran -->
+		@if (Auth::user()->hasRole('Admin'))
+			<div class="tab-pane" id="vf-transactions">
+				@if (count($vendor->participations) > 0)
+					<table class="DT3 table table-bordered table-condensed">
+						<thead class="bg-blue-selangor">
+							<tr>
+								<th>Tender / Sebut Harga</th>
+								<th class="col-lg-2">Tarikh Tutup</th>
+								<th class="col-lg-2">&nbsp;</th>
+							</tr>
+						</thead>
+						<tbody>
+							@foreach ($vendor->participations as $purchase)
+								<tr>
+									<td>
+										{{ $purchase->tender->tenderer->name }}<br>
+										<small><strong>{{ $purchase->tender->ref_number }}</strong></small><br>
+										<a href="{{ asset('tenders/' . $purchase->tender->id) }}">{{ $purchase->tender->name }}</a>
+									</td>
+									<td>{{ \Carbon\Carbon::parse($purchase->tender->submission_datetime)->format('j M Y') }}
+										12:00 PM</td>
+									<td>
+										<a href="{{ asset('tenders/' . $purchase->tender_id . '/receipt/' . $purchase->id) }}" target="_blank"><i
+												class="icon-printer"> Resit</i></a><br><br>
+										<a href="{{ asset('tenders/' . $purchase->tender_id . '/document/' . $purchase->id) }}" target="_blank"><i
+												class="icon-doc"> No. Siri Dokumen</i></a><br><br>
+										<a href="{{ asset('tenders/' . $purchase->tender_id) }}#tf-doc2" target="_blank"><i class="icon-list">
+												Muat
+												Turun</i></a>
+									</td>
+								</tr>
+							@endforeach
+						</tbody>
+					</table>
+				@else
+					<div class="alert alert-info">Tiada dokumen yang dibeli.</div>
+				@endif
+			</div>
+		@endif
 
 		{{-- START: Tab Content - Rekod Penilaian Prestasi Syarikat --}}
 		@include('vendors.tab-contents.prestasi-syarikat')
