@@ -12,9 +12,11 @@ use App\UserHistory;
 use App\Mail\ConfirmRegistration;
 use Carbon\Carbon;
 use Crypt;
+use App\Traits\Helper;
 
 class UsersController extends Controller
 {
+	use Helper;
 	public $set_password_message            = 'Kata Laluan disimpan.';
 	public $set_confirmation_message        = 'Pengguna diaktifkan.';
 	public $change_password_invalid_message = 'Kata Lalauan lama tidak sah.';
@@ -144,9 +146,26 @@ class UsersController extends Controller
 			return $this->_validation_error($user);
 		}
 		$user->roles()->sync($data['roles']);
-		if ($request->ajax()) {
+
+		// fix bug: send ARR email immediately after user created without waiting queue
+		if ($user->organization_unit_id)
+		{
+			$to = trim($user->email);
+			$subject = 'Permintaan Semakan Akaun Pengguna Oleh Sistem Tender '.$user->name;
+			$send_status = $this->sendMail("html", $to, $subject, "", "users.emails.account-review-request", ['user' => $user]);
+
+			$user->arr_sent_at = Carbon::now();
+			$user->arr = 0;
+			$user->save();
+		}
+		////////////////////////////////////////////////////////////////////////////////
+		
+		if ($request->ajax())
+		{
 			return response()->json($user, 201);
 		}
+
+		// dd($user);
 
 		return redirect('users')->with('success', $this->created_message);
 	}
