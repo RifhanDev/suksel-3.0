@@ -50,7 +50,7 @@ class HomeController extends Controller
 			} elseif ($user->hasRole('Admin')) {
 				return redirect()->route('dashboard.hq');
 			} else {
-				return redirect('agencies/' . $user->organization_unit_id);
+				return redirect('agency/' . $user->organization_unit_id);
 			}
 		}
 

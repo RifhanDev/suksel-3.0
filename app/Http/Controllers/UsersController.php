@@ -389,7 +389,7 @@ class UsersController extends Controller
 		} elseif ($user->ability(['Admin', 'Registration Assessor', 'Admin UPEN'], [])) {
 			$redirect = redirect('vendors');
 		} else {
-			$redirect = redirect('agencies/' . $user->organization_unit_id);
+			$redirect = redirect('agency/' . $user->organization_unit_id);
 		}
 
 		UserHistory::log($user->id, 'sign-in', $third_party_id);

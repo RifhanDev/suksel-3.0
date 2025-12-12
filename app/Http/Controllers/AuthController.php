@@ -19,15 +19,21 @@ class AuthController extends Controller
    public function login()
    {
       // If user is already logged in, redirect to appropriate dashboard
-      if (auth()->check()) {
+      if (auth()->check())
+      {
          $user = auth()->user();
          // dd($user);
-         if ($user->hasRole('Vendor')) {
+         if ($user->hasRole('Vendor'))
+         {
             return redirect('dashboard');
-         } elseif ($user->can('Vendor:list')) {
+         }
+         elseif ($user->can('Vendor:list'))
+         {
             return redirect('vendors');
-         } else {
-            return redirect('agencies/' . $user->organization_unit_id);
+         }
+         else
+         {
+            return redirect('agency/' . $user->organization_unit_id);
          }
       }
 
@@ -108,7 +114,7 @@ class AuthController extends Controller
                } 
                else
                {
-                  return redirect('agencies/' . $user->organization_unit_id);
+                  return redirect('agency/' . $user->organization_unit_id);
                }
             } else {
                $attempt = session('attempt');

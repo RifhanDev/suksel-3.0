@@ -182,6 +182,13 @@ Route::view('/jawatankuasa-pembuka', 'newModule.jawatankuasa_pembuka')->name('ja
 // Protected routes
 Route::middleware(['auth'])->group(function ()
 {
+	Route::get('/agency/{id}', [OrganizationUnitsController::class, 'agency']);
+	Route::get('/agency/{id}/prices', [OrganizationUnitsController::class, 'agencyPrices']);
+	Route::get('/agency/{id}/results', [OrganizationUnitsController::class, 'agencyResults']);
+	Route::get('/agency/{id}/news', [OrganizationUnitsController::class, 'agencyNews']);
+	Route::get('/agency/{id}/report/{tender}', [OrganizationUnitsController::class, 'agencyReport']);
+	Route::resource('agency', OrganizationUnitsController::class);
+
 	Route::get('txn_status/{id}', [HomeController::class, 'txnStatus'])->name('txn_status');
 	Route::get('register/company', [RegistrationController::class, 'company'])->name('company_registration');
 	Route::put('register/company', [RegistrationController::class, 'storeCompany']);
