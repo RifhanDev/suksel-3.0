@@ -108,6 +108,9 @@ Route::get('change_email', [HomeController::class, 'changeEmail']);
 Route::post('change_email', [HomeController::class, 'doChangeEmail']);
 Route::get('change_email/{token}', [HomeController::class, 'verifyChangeEmail'])->name('verify_change_email');
 
+// Account review (public - accessible from email link)
+Route::get('users/{user}/account-review', [UsersController::class, 'accountReview'])->name('users.account-review');
+
 // Registration routes
 Route::get('register', [RegistrationController::class, 'register'])->name('registration');
 Route::post('register', [RegistrationController::class, 'storeRegister']);
@@ -258,7 +261,6 @@ Route::middleware(['auth'])->group(function ()
 		Route::get('users/pending-approval', [UsersController::class, 'pendingApproval'])->name('users.pending-approval');
 		Route::get('users/{user}/approval', [UsersController::class, 'approval'])->name('users.approval');
 		Route::put('users/{user}/approval', [UsersController::class, 'storeApproval'])->name('users.store-approval');
-		Route::get('users/{user}/account-review', [UsersController::class, 'accountReview'])->name('users.account-review');
 		Route::get('users/{user}/histories', [UsersController::class, 'histories'])->name('users.histories');
 		Route::get('users/{user}/login', [UsersController::class, 'doLogin'])->name('users.login');
 		Route::put('users/{user}/confirm', [UsersController::class, 'confirm']);

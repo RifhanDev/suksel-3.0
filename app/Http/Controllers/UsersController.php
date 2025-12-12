@@ -150,9 +150,12 @@ class UsersController extends Controller
 		// fix bug: send ARR email immediately after user created without waiting queue
 		if ($user->organization_unit_id)
 		{
+			// Refresh user to ensure we have the latest data from database
+			$user->refresh();
+
 			$to = trim($user->email);
 			$subject = 'Permintaan Semakan Akaun Pengguna Oleh Sistem Tender '.$user->name;
-			$send_status = $this->sendMail("html", $to, $subject, "", "users.emails.account-review-request", ['user' => $user]);
+			$send_status = $this->sendMail("html", $to, $subject, "", "users.emails.account-review-request", ['emailUser' => $user]);
 
 			$user->arr_sent_at = Carbon::now();
 			$user->arr = 0;
@@ -641,14 +644,14 @@ class UsersController extends Controller
 			->get();
 
 		foreach ($users as $user) {
-			// Mail::send('users.emails.account-review-request', ['user' => $user], function ($message) use ($user) {
+			// Mail::send('users.emails.account-review-request', ['emailUser' => $user], function ($message) use ($user) {
 			//     $message->to($user->email);
 			//     $message->subject('Permintaan Semakan Akaun Oleh Sistem Tender');
 			// });
 
 			$to			= trim($user->email);
 			$subject 	= 'Permintaan Semakan Akaun Oleh Sistem Tender';
-			$send_status = $this->sendMail("html", $to, $subject, "", "users.emails.account-review-request", ['user' => $user]);
+			$send_status = $this->sendMail("html", $to, $subject, "", "users.emails.account-review-request", ['emailUser' => $user]);
 
 			$user->arr_sent_at = Carbon::now();
 			$user->arr = 0; // Jika user lebih dari 3 bulan akan bertukar tidak disemak
