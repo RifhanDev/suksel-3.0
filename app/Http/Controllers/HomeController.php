@@ -30,6 +30,29 @@ class HomeController extends Controller
 	use Helper;
 	public function index(Request $request)
 	{
+		// If user is already logged in, redirect to appropriate page
+		if (auth()->check()) {
+			$user = auth()->user();
+
+			if ($user->hasRole('Vendor')) {
+				if (is_null($user->vendor)) {
+					auth()->logout();
+					session()->flash('error', 'Akaun anda mempunyai masalah.<br>Sila berhubung dengan Bahagian Teknologi Maklumat di <u>tenderadmin@selangor.gov.my</u> dan nyatakan alamat emel <b>(' . $user->email . '</b>) yang digunakan.');
+					return redirect('/auth/login');
+				}
+
+				if (!$user->vendor->completed)
+					return redirect('register/company');
+				elseif (!$user->vendor->registration_paid)
+					return redirect('register/payment');
+				else
+					return redirect('dashboard');
+			} elseif ($user->hasRole('Admin')) {
+				return redirect()->route('dashboard.hq');
+			} else {
+				return redirect('agencies/' . $user->organization_unit_id);
+			}
+		}
 
 		if ($request->ajax()) {
 			Log::debug('This is a debug message');
