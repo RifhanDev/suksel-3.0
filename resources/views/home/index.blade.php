@@ -3,83 +3,262 @@
 @section('styles')
     <style>
         .hero-card {
-            border-radius: 16px;
-            overflow: hidden;
+            background: white;
+            border-radius: 0 !important;
             box-shadow: 0 10px 30px rgba(0,0,0,0.08);
             border: none;
-            background: white;
-            height: 100%;
+            overflow: hidden !important;
+            height: 100% !important;
             position: relative;
+            display: flex;
+            flex-direction: column;
+            z-index: 1;
+        }
+
+        #landing-carousel {
+            position: relative;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+            height: 100% !important;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            z-index: 1;
+        }
+
+        .carousel-inner {
+            position: relative;
+            width: 100%;
+            overflow: hidden !important;
+            height: 100% !important;
+            flex: 1;
+        }
+
+        .carousel-item {
+            position: relative;
+            display: none;
+            float: left;
+            width: 100%;
+            margin-right: -100%;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            transition: transform .6s ease-in-out;
+            height: 100% !important;
+        }
+
+        .carousel-item.active,
+        .carousel-item-next,
+        .carousel-item-prev {
+            display: block;
         }
 
         .carousel-item img {
-            height: 420px;
-            object-fit: cover;
-            border-radius: 16px;
+            display: block !important;
+            width: 100% !important;
+            height: 100% !important;
+            max-width: 100% !important;
+            border-radius: 0 !important;
+            object-fit: contain !important;
+            object-position: center !important;
+        }
+
+        #landing-carousel .carousel-inner {
+            overflow: hidden !important;
+            height: auto !important;
+        }
+
+        /* Controls Centering */
+        .carousel-control-prev, 
+        .carousel-control-next {
+            width: 5%;
+            height: 100%;
+            top: 0;
+            bottom: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0.6;
+            z-index: 10;
+            background: none;
+            border: none;
+        }
+
+        .carousel-control-prev:hover, 
+        .carousel-control-next:hover {
+            opacity: 1;
+            background: rgba(0,0,0,0.1);
+        }
+
+        .carousel-control-prev-icon,
+        .carousel-control-next-icon {
+            filter: invert(1) grayscale(100); 
+            width: 2rem;
+            height: 2rem;
+        }
+
+        #landing-carousel .carousel-indicators {
+            position: absolute;
+            right: 0;
+            bottom: 10px !important;
+            left: 0;
+            z-index: 15;
+            display: flex !important;
+            justify-content: center !important;
+            align-items: center !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            list-style: none;
+            width: 100% !important;
+        }
+
+        .carousel-indicators [data-bs-target] {
+            box-sizing: content-box;
+            flex: 0 1 auto;
+            width: 10px !important;
+            height: 10px !important;
+            padding: 0;
+            margin-right: 6px;
+            margin-left: 6px;
+            text-indent: -999px;
+            cursor: pointer;
+            background-color: #fff;
+            background-clip: padding-box;
+            border: 1px solid #999;
+            opacity: .5;
+            transition: opacity .6s ease;
+            border-radius: 0 !important;
+        }
+
+        .carousel-indicators .active {
+            opacity: 1;
+            background-color: var(--sg-red);
+            border-color: var(--sg-red);
+        }
+
+        .row.gy-4 {
+            display: flex;
+            align-items: stretch;
+        }
+
+        .col-lg-9, .col-lg-3 {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .news-card-wrapper {
+            background: white;
+            border-radius: 0 !important;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            overflow: hidden;
+            height: 100% !important;
+            display: flex;
+            flex-direction: column;
         }
 
         .news-card-header {
             background: #fff;
-            padding: 1.5rem;
+            padding: 1rem 1.25rem;
             border-bottom: 2px solid #f3f4f6;
             display: flex;
             align-items: center;
+            flex-shrink: 0; /* Don't shrink */
+        }
+
+        .news-card-wrapper .card-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
         }
 
         .news-title-group {
             display: flex;
             flex-direction: column;
-            border-left: 4px solid var(--sg-red);
-            padding-left: 1rem;
+            border-left: 3px solid var(--sg-red);
+            padding-left: 0.75rem;
         }
 
         .news-title {
-            padding-top: 5px;
-            font-size: 1.1rem;
+            font-size: 0.95rem;
             font-weight: 800;
             color: #111827;
             margin: 0;
-            line-height: 1.1;
+            line-height: 1.2;
         }
 
         .news-subtitle {
-            font-size: 0.7rem;
+            font-size: 0.65rem;
             color: #6b7280;
-            margin-top: 3px;
+            margin-top: 2px;
             font-weight: 500;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
 
+        .list-group-flush { margin: 0; padding: 0; width: 100%; }
+        
         .news-item {
-            border-left: 3px solid transparent;
-            transition: all 0.2s ease;
-            padding: 1rem 1.25rem !important;
-            background: transparent;
+            text-decoration: none;
+            display: block;
+            width: 100%;
+            padding: 0.85rem 1.25rem;
+            border-bottom: 1px solid #f3f4f6;
+            transition: background 0.2s;
         }
 
         .news-item:hover {
             background-color: #fff1f2;
-            border-left-color: var(--sg-red);
-            padding-left: 1.5rem !important;
+            padding-left: 1.5rem;
+        }
+
+        .news-item h6 {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 0.25rem;
+            line-height: 1.4;
+        }
+
+        .news-content {
+            font-size: 0.75rem;
+            color: #6b7280;
+            margin-bottom: 0.25rem;
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
         }
 
         .news-date {
-            font-size: 0.7rem;
-            color: #6b7280;
+            font-size: 0.65rem;
+            color: #9ca3af;
             font-weight: 600;
             text-transform: uppercase;
-            display: block;
-            margin-top: 4px;
+            display: flex;
+            align-items: center;
         }
-        
+
+        #announcements-ticker {
+            height: 100%;
+            flex: 1;
+            overflow: hidden;
+            width: 100%;
+        }
+
+        .news-card-wrapper .p-3 {
+            flex-shrink: 0;
+        }
+
         .btn-see-all {
             color: #374151;
             background: white;
             border: 2px solid #e5e7eb;
             font-weight: 700;
-            border-radius: 8px;
-            padding: 0.6rem 1rem;
+            font-size: 0.8rem;
+            border-radius: 0 !important;
+            padding: 0.5rem 0.75rem;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             text-decoration: none;
             display: inline-block;
@@ -96,7 +275,7 @@
         /* --- CTA SECTION --- */
         .cta-card {
             background: linear-gradient(135deg, var(--sg-red) 0%, #8b1428 100%);
-            border-radius: 16px;
+            border-radius: 0 !important;
             border: none;
             box-shadow: 0 10px 25px rgba(196, 30, 58, 0.25);
             position: relative;
@@ -119,15 +298,21 @@
             font-weight: 700;
             border: 2px solid white;
             padding: 0.75rem 1.5rem;
-            border-radius: 8px;
+            border-radius: 0 !important;
             transition: all 0.2s;
-            text-decoration: none;
+            text-decoration: none !important;
             display: inline-flex;
             align-items: center;
             justify-content: center;
             white-space: nowrap;
+            gap: 0.5rem;
         }
-        .cta-btn-white:hover { background: transparent; color: white; transform: translateY(-2px); }
+        .cta-btn-white:hover {
+            background: transparent;
+            color: white !important;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
 
         .cta-btn-outline {
             background: transparent;
@@ -135,26 +320,31 @@
             font-weight: 700;
             border: 2px solid rgba(255,255,255,0.5);
             padding: 0.75rem 1.5rem;
-            border-radius: 8px;
+            border-radius: 0 !important;
             transition: all 0.2s;
-            text-decoration: none;
+            text-decoration: none !important;
             display: inline-flex;
             align-items: center;
             justify-content: center;
             white-space: nowrap;
+            gap: 0.5rem;
         }
-        .cta-btn-outline:hover { border-color: white; background: rgba(255,255,255,0.1); color: white; }
+        .cta-btn-outline:hover {
+            border-color: white;
+            background: rgba(255,255,255,0.1);
+            color: white !important;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
 
-        /* --- TENDER TABLE CONTAINER --- */
+        /* --- TENDER TABLE --- */
         .tender-card {
-            border-radius: 12px;
+            border-radius: 0 !important;
             border: none;
             box-shadow: 0 4px 20px rgba(0,0,0,0.05);
             overflow: hidden;
             background: white;
         }
 
-        /* --- TENDER HEADER --- */
         .tender-header {
             background: #fff;
             border-bottom: 2px solid #f3f4f6;
@@ -166,7 +356,6 @@
             gap: 1rem;
         }
 
-        /* Title */
         .header-title-group {
             display: flex;
             flex-direction: column;
@@ -189,12 +378,11 @@
             font-weight: 500;
         }
 
-        /* Connected Tabs Styling */
         .nav-connected {
             display: inline-flex;
             background: white;
             border: 1px solid #e5e7eb;
-            border-radius: 8px;
+            border-radius: 0 !important;
             overflow: hidden;
         }
 
@@ -207,7 +395,7 @@
 
         .nav-connected .nav-link {
             border: none;
-            border-radius: 0;
+            border-radius: 0 !important;
             padding: 0.7rem 1.5rem;
             color: #4b5563;
             font-weight: 600;
@@ -263,32 +451,10 @@
 
         /* Mobile Tweaks */
         @media (max-width: 768px) {
-            .tender-header {
-                flex-direction: column;
-                align-items: stretch;
-                padding: 1.25rem;
-            }
-            .header-title-group {
-                margin-bottom: 1rem;
-                border-left-width: 4px;
-            }
-            .nav-connected {
-                display: flex;
-                width: 100%;
-            }
-            .nav-connected .nav-item {
-                flex: 1;
-                text-align: center;
-            }
-            .nav-connected .nav-link {
-                width: 100%;
-                padding: 0.7rem 0.5rem;
-                font-size: 0.75rem;
-            }
-            .carousel-item img { height: 250px; }
-            
-            /* Mobile News Header */
-            .news-card-header { padding: 1.25rem; }
+            .carousel-item img { height: auto !important; }
+            .news-card-header { padding: 0.85rem 1rem; }
+            .news-card-wrapper { margin-top: 1rem; }
+            .carousel-control-prev, .carousel-control-next { width: 10%; } /* Wider touch area on mobile */
         }
     </style>
 @endsection
@@ -334,7 +500,7 @@
 									@if ($banner->link)
 										<a href="{{ $banner->link }}" title="{{ $banner->title }}" class="d-block">
 									@endif
-									<img src="{{ $banner->file->url . '/' . $banner->file->name }}" alt="{{ $banner->title }}" class="d-block w-100">
+									<img src="{{ $banner->file->url . '/' . $banner->file->name }}" alt="{{ $banner->title }}">
                                     @if ($banner->link)
 										</a>
 									@endif
@@ -358,7 +524,7 @@
 
 		<!-- RIGHT: NEWS SIDEBAR -->
 		<div class="col-lg-3">
-			<div class="hero-card h-100 d-flex flex-column">
+			<div class="news-card-wrapper">
 
 				<div class="news-card-header">
 					<div class="news-title-group">
@@ -368,15 +534,18 @@
 				</div>
 				
 				<div class="card-body p-0 flex-grow-1">
-					<div id="announcements-ticker" style="height: 320px; overflow: hidden;">
+					<div id="announcements-ticker">
 						<div class="list-group list-group-flush">
 							@foreach ($global_news as $news)
-								<a href="{{ asset('news/' . $news->id) }}" class="list-group-item list-group-item-action news-item">
-									<div class="d-flex w-100 justify-content-between">
-										<h6 class="mb-1 fw-bold text-dark" style="font-size: 0.9rem;">{{ Str::limit($news->title, 55) }}</h6>
-									</div>
+								<a href="{{ asset('news/' . $news->id) }}" class="news-item">
+									<h6 class="text-dark">{{ Str::limit($news->title, 50) }}</h6>
+
+									@if(isset($news->body) && $news->body)
+										<p class="news-content">{{ strip_tags(Str::limit($news->body, 90)) }}</p>
+									@endif
+
 									<span class="news-date">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-1" style="vertical-align: -1px;"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 7a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12z" /><path d="M16 3v4" /><path d="M8 3v4" /><path d="M4 11h16" /><path d="M11 15h1" /><path d="M12 15v3" /></svg>
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-1" style="vertical-align: -1px;"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 7a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12z" /><path d="M16 3v4" /><path d="M8 3v4" /><path d="M4 11h16" /><path d="M11 15h1" /><path d="M12 15v3" /></svg>
 										{{ \Carbon\Carbon::parse($news->published_at ?: $news->created_at)->format('j M Y') }}
 									</span>
 								</a>
@@ -384,7 +553,7 @@
 						</div>
 					</div>
 				</div>
-				
+
 				<div class="p-3 bg-light border-top text-center">
 					<a href="/news" class="btn btn-see-all btn-sm w-100">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-1"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" /><path d="M21 12c-2.4 4 -5.4 6 -9 6c-3.6 0 -6.6 -2 -9 -6c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6" /></svg>
@@ -552,7 +721,7 @@
 			easing: 'swing',
 			speed: 'slow',
 			interval: 2000,
-			height: '200px',
+			height: 'auto',
 			visible: 4,
 			mousePause: 1,
 			controls: {
