@@ -21,7 +21,7 @@
 
 	<!-- Tabler CSS -->
 	<link href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0-beta20/dist/css/tabler.min.css" rel="stylesheet">
-	<link href="https://cdn.jsdelivr.net/npm/@tabler/icons@2.40.0/tabler-icons.min.css" rel="stylesheet">
+	{{-- <link href="https://cdn.jsdelivr.net/npm/@tabler/icons@2.40.0/tabler-icons.min.css" rel="stylesheet"> --}}
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 	<link href="{{ asset('css/application.css') }}" rel="stylesheet">
 	<link href="{{ asset('css/modern-actions.css') }}" rel="stylesheet">
@@ -816,7 +816,7 @@
 			}
 
 			.page-wrapper .container-fluid {
-				max-width: 1920px;
+				/* max-width: 1920px; */
 				margin: 0 auto;
 				padding-left: 1.5rem;
 				padding-right: 3rem;
