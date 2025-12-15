@@ -1,5 +1,6 @@
 {{-- {{ App\Libraries\Asset::push('css', 'form') }} --}}
 
+@push('styles')
 <style>
     .nav-pills-custom .nav-link.active {
         background-color: #fff1f2 !important;
@@ -25,6 +26,7 @@
         overflow-y: auto;
     }
 </style>
+@endpush
 
 <div class="row g-4">
     
@@ -395,7 +397,9 @@
                                                     @if (!empty($sd->identity))
                                                         @if ($canViewSensitiveIdentity)
                                                             <span class="identity-mask font-monospace" data-identity="{{ $sd->identity }}">**********</span>
-                                                            <button type="button" class="btn btn-link btn-sm p-0 ms-2 toggle-identity text-decoration-none small">Tunjuk</button>
+                                                            <button type="button" class="btn btn-sm p-0 mb-1 ms-2 toggle-identity text-decoration-none" style="color: var(--bs-primary);" title="Tunjuk">
+                                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                                            </button>
                                                         @else
                                                             <span class="font-monospace">**********</span>
                                                         @endif
@@ -465,7 +469,9 @@
                                                     @if (!empty($sd->identity))
                                                         @if ($canViewSensitiveIdentity)
                                                             <span class="identity-mask font-monospace" data-identity="{{ $sd->identity }}">**********</span>
-                                                            <button type="button" class="btn btn-link btn-sm p-0 ms-2 toggle-identity text-decoration-none small">Tunjuk</button>
+                                                            <button type="button" class="btn btn-sm p-0 mb-1 ms-2 toggle-identity text-decoration-none" style="color: var(--bs-primary);" title="Tunjuk">
+                                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                                            </button>
                                                         @else
                                                             <span class="font-monospace">**********</span>
                                                         @endif
@@ -708,6 +714,7 @@
     </div>
 </div>
 
+@push('modals')
 <!-- MODAL -->
 <div class="modal fade" id="pdfViewerModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
@@ -718,7 +725,9 @@
         </div>
     </div>
 </div>
+@endpush
 
+@push('scripts')
 <script>
     document.addEventListener("DOMContentLoaded", function() 
 	{    
@@ -754,11 +763,16 @@
     });
 </script>
 
+<!-- Show/Hide Sensitive Info (IC. NO.) -->
 @if ($canViewSensitiveIdentity)
 	<script>
 		document.addEventListener('DOMContentLoaded', function() {
 			if (window.__identityToggleInitialized) return;
 			window.__identityToggleInitialized = true;
+
+            const iconShow = '<svg style="color: var(--bs-primary);" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>'; 
+            const iconHide = '<svg style="color: var(--bs-primary);" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>';
+
 			var toggleButtons = document.querySelectorAll('.toggle-identity');
 			toggleButtons.forEach(function(button) {
 				button.addEventListener('click', function(event) {
@@ -766,10 +780,15 @@
 					var mask = button.previousElementSibling;
 					if (!mask || !mask.dataset || !mask.dataset.identity) return;
 					var revealed = mask.classList.toggle('identity-revealed');
-					mask.textContent = revealed ? mask.dataset.identity : '**********';
-					button.textContent = revealed ? 'Sembunyi' : 'Tunjuk';
+					// Toggle Text Content
+                    mask.textContent = revealed ? mask.dataset.identity : '**********';
+                    // Toggle Icon
+                    button.innerHTML = revealed ? iconHide : iconShow;
+                    // Tooltip Title
+                    button.title = revealed ? 'Sembunyi' : 'Tunjuk';
 				});
 			});
 		});
 	</script>
 @endif
+@endpush
