@@ -74,8 +74,13 @@ class RegistrationController extends Controller
                         $user->vendor()->associate($vendor);
                         $user->save();
                         $user->roles()->sync([Role::where('name', 'Vendor')->first()->id]);
-                        Mail::to($user)->send(new ConfirmRegistration($user));
-                        $notice      = 'Akaun anda telah didaftarkan. Sila semak email untuk pengesahan akaun.';
+
+                        // Send email verification
+                        $to = trim($user->email);
+                        $subject = 'Sahkan Alamat Emel - Sistem Tender Online Selangor';
+                        $send_status = $this->sendMail("html", $to, $subject, "", "auth.emails.confirm", ['emailUser' => $user, 'user_name' => $user->name, 'confirmation_code' => $user->confirmation_code]);
+
+                        $notice = 'Akaun anda telah didaftarkan. Sila semak email untuk pengesahan akaun.';
                         return redirect('/')->with('notice', $notice);
                     }
 

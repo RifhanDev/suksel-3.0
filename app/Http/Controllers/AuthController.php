@@ -114,7 +114,7 @@ class AuthController extends Controller
                } 
                else
                {
-                  return redirect('agency/' . $user->organization_unit_id);
+                  return redirect('agencies/' . $user->organization_unit_id);
                }
             } else {
                $attempt = session('attempt');
@@ -187,7 +187,7 @@ class AuthController extends Controller
       $user = User::where('confirmation_code', $code)->first();
 
       if ($user) {
-         // $user->confirmed = 1;
+         $user->confirmed = 1;
          $user->save();
          $notice_msg = trans('auth.alerts.confirmation');
          return redirect('/')->with('notice', $notice_msg);

@@ -182,6 +182,13 @@ Route::view('/jawatankuasa-pembuka', 'newModule.jawatankuasa_pembuka')->name('ja
 // Protected routes
 Route::middleware(['auth'])->group(function ()
 {
+	// Route::get('tender/select', [TendersController::class, 'select']);
+	Route::resource('tender', TendersController::class);
+	// Route::get('tender/{id}/prices', [TendersController::class, 'prices'])->name('tenders.prices');
+	// Route::get('tender/{tender_id}/files/{id}', [TendersController::class, 'file'])->name('tenders.files');
+	// Route::get('tender/{id}/vendors', [TendersController::class, 'vendors'])->name('tenders.vendors');
+	// Route::post('tender/{id}/exception', [TendersController::class, 'exception'])->name('tenders.exception');
+
 	Route::get('/agency/{id}', [OrganizationUnitsController::class, 'agency']);
 	Route::get('/agency/{id}/prices', [OrganizationUnitsController::class, 'agencyPrices']);
 	Route::get('/agency/{id}/results', [OrganizationUnitsController::class, 'agencyResults']);
