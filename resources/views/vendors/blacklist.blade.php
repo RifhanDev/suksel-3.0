@@ -5,7 +5,7 @@
 	<br>
 	
 	{!! Former::open_for_files(action('VendorsController@doBlacklist', $vendor->id)) !!}
-		{!! Former::populate($vendor)}}
+		{!! Former::populate($vendor)!!}
 		{!! Former::hidden('_method', 'PUT') !!}
 		
 		{!! Former::text('blacklisted_until')

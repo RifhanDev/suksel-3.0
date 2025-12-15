@@ -8,7 +8,7 @@
 					<img src="{{ asset('images/02_selangor.png') }}" alt="Logo" class="sidebar-logo">
 				</div>
 				<div class="sidebar-brand-text">
-					<span class="brand-title">STOS 3.0</span>
+					<span class="brand-title">E-Perolehan</span>
 					<span class="brand-subtitle">Sistem Tender Online Selangor</span>
 				</div>
 			</a>

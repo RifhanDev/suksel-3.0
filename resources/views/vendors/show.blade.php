@@ -10,7 +10,7 @@
         vertical-align: middle;
     }
 
-     /* === NEW: Grey Dropdown Style === */
+    /* Note: Nanti standardizekan dropdown menu dkt master */
     .dropdown-menu-gray {
         background-color: #f8fafc; /* Subtle Grey-Blue tint */
         border: 1px solid #e2e8f0;
@@ -28,6 +28,32 @@
     .dropdown-menu-gray .dropdown-item.text-danger:hover {
         background-color: #fee2e2; /* Light red hover for dangerous items */
         color: #dc2626;
+    }
+
+    .link-slide-underline {
+        position: relative;
+        text-decoration: none !important;
+        transition: color 0.3s ease-in-out;
+        padding-bottom: 3px;
+    }
+
+    .link-slide-underline:hover {
+        color: var(--sg-red) !important;
+    }
+
+    .link-slide-underline::after {
+        content: '';
+        position: absolute;
+        width: 0;
+        height: 2px;
+        bottom: 0;
+        left: 0;
+        background-color: var(--sg-red);
+        transition: width 0.3s ease-in-out;
+    }
+
+    .link-slide-underline:hover::after {
+        width: 100%;
     }
 </style>
 @endsection
@@ -85,7 +111,7 @@
                 <!-- LEFT SIDE: Navigation -->
                 <div>
                     @if (App\Vendor::canList())
-                        <a href="{{ route('vendors.index') }}" class="btn btn-link text-secondary text-decoration-none d-flex align-items-center gap-2 ps-0">
+                        <a href="{{ route('vendors.index') }}" class="btn btn-link text-secondary text-decoration-none d-flex align-items-center gap-2 ps-0 link-slide-underline">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
                             <span class="fw-bold">Kembali</span>
                         </a>
@@ -95,7 +121,6 @@
                 <!-- RIGHT SIDE: Actions -->
                 <div class="d-flex align-items-center gap-2">
 
-                    <!-- 1. "TINDAKAN LANJUT" DROPDOWN (Added .dropdown-menu-gray) -->
                     <div class="dropdown">
                         <button class="btn btn-light border dropdown-toggle d-flex align-items-center gap-2 fw-medium" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg>
@@ -168,7 +193,6 @@
                         </ul>
                     </div>
 
-                    <!-- 2. EDIT GROUP (Added .dropdown-menu-gray) -->
                     @if ($vendor->canUpdate())
                         <div class="btn-group">
                             <a href="{{ action('VendorsController@edit', $vendor->id) }}" class="btn btn-light border d-flex align-items-center gap-2 fw-medium">
@@ -190,7 +214,7 @@
                         </div>
                     @endif
 
-                    <!-- 3. DECISION ACTIONS -->
+                    <!-- DECISION ACTIONS -->
                     @if ($vendor->canApprove())
                         <div class="vr-custom mx-1"></div>
                         
@@ -199,7 +223,7 @@
                             Tolak
                         </button>
 
-                        <a href="{{ action('VendorsController@approve', [$vendor->id]) }}" class="btn btn-selangor d-flex align-items-center gap-2 fw-medium px-3 link-confirm">
+                        <a href="{{ action('VendorsController@approve', [$vendor->id]) }}" class="btn btn-success d-flex align-items-center gap-2 fw-medium px-3 link-confirm">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                             Lulus
                         </a>
@@ -210,46 +234,78 @@
         </div>
 
     </div>
-
-    <!-- Legacy Right Pane (Hidden) -->
-    <div class="d-none" id="right-pane"></div>
-
 </div>
 
-<!-- 1. THE BOOTSTRAP 5 MODAL SKELETON -->
-<div class="modal fade" id="rejectModal" tabindex="-1" aria-hidden="true" style="z-index: 1060;">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg rounded-3">
-            <!-- Header -->
-            <div class="modal-header bg-danger text-white">
-                <h5 class="modal-title fw-bold d-flex align-items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
-                    Tolak Permohonan
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
+<!-- MODAL -->
+@if ($vendor->canApprove())
+    <div class="modal fade" id="rejectModal" tabindex="-1" aria-hidden="true" style="z-index: 1060;">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-3">
+                
+                <!-- Header -->
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title fw-bold d-flex align-items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+                        Tolak Permohonan
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
 
-            <!-- NEW: Error Message Container -->
-            <div id="rejectErrorContainer"></div>
-            
-            <!-- Body: Content will be injected here via JS -->
-            <div class="modal-body p-4 bg-light" id="modalBodyContainer">
-                <!-- Javascript will put the form here -->
-            </div>
+                <!-- Body -->
+                <div class="modal-body p-2 bg-light">
+                    
+                    <!-- Error Alert -->
+                    <div id="rejectErrorContainer"></div>
 
-            <!-- Footer -->
-            <div class="modal-footer bg-white border-top-0">
-                <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Batal</button>
-                <button type="button" class="btn btn-danger d-flex align-items-center gap-2" id="confirmRejectBtn">
-                    Tolak
-                </button>
+                    <form id="rejectForm">
+                        <!-- 1. Manual Input -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold text-secondary small text-uppercase">Alasan Penolakan Manual</label>
+                            <textarea class="form-control" id="reason" name="reason" rows="3" placeholder="Sila nyatakan sebab penolakan di sini..."></textarea>
+                        </div>
+
+                        @if (isset($templates) && count($templates) > 0)
+                            <!-- 2. Divider -->
+                            <div class="d-flex align-items-center my-3">
+                                <hr class="flex-grow-1 text-muted">
+                                <span class="px-3 text-muted small fw-bold text-uppercase bg-white rounded">Atau Pilih Templat</span>
+                                <hr class="flex-grow-1 text-muted">
+                            </div>
+
+                            <!-- 3. Template List -->
+                            <div class="mb-3">
+                                <label class="form-label fw-bold text-secondary small text-uppercase">Templat Penolakan</label>
+                                
+                                <!-- Scrollable Container -->
+                                <div class="border rounded bg-white p-3 shadow-sm" style="max-height: 200px; overflow-y: auto;">
+                                    @foreach ($templates as $template)
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input" type="checkbox" id="cb{{ $template->id }}" name="template" value="{{ $template->id }}">
+                                            <label class="form-check-label text-dark" for="cb{{ $template->id }}" 
+                                                data-bs-toggle="tooltip" 
+                                                data-bs-placement="right" 
+                                                title="{{ $template->content }}">
+                                                {{ $template->title }}
+                                            </label>
+                                        </div>
+                                    @endforeach
+                                </div>
+                                <div class="form-text small mt-1 text-muted">
+                                    <i class="ti ti-info-circle"></i> Anda boleh memilih lebih daripada satu templat.
+                                </div>
+                            </div>
+                        @endif
+                    </form>
+                </div>
+                <div class="modal-footer bg-white border-top-0">
+                    <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-danger d-flex align-items-center gap-2" id="confirmRejectBtn">
+                        Tolak
+                    </button>
+                </div>
             </div>
         </div>
     </div>
-</div>
-
-@if ($vendor->canApprove())
-    @include('vendors.reject-modal')
 @endif
 
 @endsection
@@ -273,41 +329,32 @@
 	<script>
         document.addEventListener("DOMContentLoaded", function() {
             
-            // --- 1. OPEN MODAL ---
+            // --- OPEN MODAL ---
             var rejectBtn = document.getElementById('btnTriggerReject');
             
             if (rejectBtn) {
                 rejectBtn.addEventListener('click', function(e) {
                     e.preventDefault();
 
+                    // Clear previous errors
                     $("#rejectErrorContainer").empty();
                     
-                    // Grab the HTML
-                    var sourceHtml = $("#rejectForm").html();
-                    
-                    // Inject it into the Bootstrap Modal Body
-                    $("#modalBodyContainer").html(sourceHtml);
-                    
-                    // Show the Bootstrap Modal
+                    // Reset Form Inputs
+                    $("#rejectForm")[0].reset(); 
+
+                    // Show Modal
                     var myModal = new bootstrap.Modal(document.getElementById('rejectModal'));
                     myModal.show();
-                    
-                    // D. Re-initialize tooltips inside the modal (since content is dynamic)
-                    var modalTooltips = [].slice.call(document.querySelectorAll('#rejectModal [data-bs-toggle="tooltip"]'));
-                    modalTooltips.map(function (el) { return new bootstrap.Tooltip(el) });
                 });
             }
 
-            // --- 2. SUBMIT LOGIC ---
-            // Replaces: callback: function(result) { ... }
+            // --- SUBMIT LOGIC ---
             $('#confirmRejectBtn').click(function() {
-                
-                // IMPORTANT: Select inputs INSIDE the modal body (#modalBodyContainer)
-                var container = $("#modalBodyContainer");
-                var reason = container.find("[name=reason]").val();
+                // Direct Selectors from the form
+                var reason = $("#reason").val();
                 var template = [];
                 
-                container.find("input[name='template']:checked").each(function() {
+                $("input[name='template']:checked").each(function() {
                     template.push($(this).val());
                 });
 
@@ -319,7 +366,6 @@
                     var originalText = $btn.html();
                     $btn.prop('disabled', true).html('Menolak...');
 
-                    // AJAX Post
                     $.post('/vendor/{{ $vendor->id }}/reject', {
                             reason: reason,
                             template: template
@@ -337,7 +383,7 @@
                         });
                 } else {
                     $("#rejectErrorContainer").html(`
-                        <div class="alert alert-danger d-flex align-items-center p-2 m-2 rounded-2" role="alert">
+                        <div class="alert alert-danger d-flex align-items-center rounded-2" role="alert">
                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
                             <div class="small fw-bold">
                                 Sila nyatakan sebab penolakan atau pilih templat.

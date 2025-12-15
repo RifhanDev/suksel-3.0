@@ -31,6 +31,7 @@
     <link href="https://cdn.datatables.net/v/dt/dt-2.3.5/datatables.min.css" rel="stylesheet" integrity="sha384-Lv8lYSJkh1Hc5kB9lk2YbbGdchMRCuAcwUOYWZ3Q/YIfKNVW+6W+V57wxKNv1D8l" crossorigin="anonymous">
 
 	@yield('styles')
+    @stack('styles')
 
 	<style>
 		:root {
@@ -553,7 +554,9 @@
             .content-wrapper { padding: 1rem; }
 		}
 
-        /* Custom Bootstrap color for bootbox modal */
+        /* CUSTOM: Bawah ni nanti asingkan masuk dlm separate css file.  */
+
+        /* ===== BUTTON ===== */
         .btn-selangor {
             background-color: var(--sg-red) !important;
             border-color: var(--sg-red) !important;
@@ -563,6 +566,20 @@
         .btn-selangor:hover {
             background-color: var(--sg-red-dark) !important;
             border-color: var(--sg-red-dark) !important;
+        }
+
+        /* ===== FORM INPUT ===== */
+        .form-control:focus, 
+        .form-select:focus {
+            border-color: var(--sg-red) !important;
+            box-shadow: 0 0 0 3px rgba(196, 30, 58, 0.1) !important;
+            outline: none;
+        }
+
+        /* checks/radios */
+        .form-check-input:checked {
+            background-color: var(--sg-red) !important;
+            border-color: var(--sg-red) !important;
         }
 
 		/* ===== FORM VALIDATION ===== */
@@ -629,6 +646,8 @@
 			</div>
 		</div>
 	</div>
+
+    @stack('modals')
  
 	<!-- Scripts -->
 	<script src="{{ asset('js/modern.js') }}"></script>
