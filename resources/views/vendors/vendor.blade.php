@@ -629,7 +629,20 @@
 								<td>{{ $transaction->receipt != 'old' ? $transaction->receipt : $transaction->receipt_number }}</td>
 								<td>{{ $transaction->start_date }} - {{ $transaction->end_date }}</td>
 								<td>
-									{{ link_to_route('vendors.subscriptions.receipt', 'Resit', [$vendor->id, $transaction->subscription_id], ['target' => 'new']) }}
+									@if (Auth::user()->hasRole('Admin') || Auth::user()->hasRole('Agency Admin'))
+										<a
+											href="{{ route('vendors.subscriptions.receipt', [$vendor->id, $transaction->subscription_id]) }}?type=ASAL"
+											target="_new" class="btn btn-sm btn-primary">
+											<i class="ti ti-file-text me-1"></i>Resit Asal
+										</a>
+										<a
+											href="{{ route('vendors.subscriptions.receipt', [$vendor->id, $transaction->subscription_id]) }}?type=SALINAN"
+											target="_new" class="btn btn-sm btn-secondary">
+											<i class="ti ti-copy me-1"></i>Resit Salinan
+										</a>
+									@else
+										{{ link_to_route('vendors.subscriptions.receipt', 'Resit', [$vendor->id, $transaction->subscription_id], ['target' => 'new']) }}
+									@endif
 								</td>
 							</tr>
 						@endforeach
