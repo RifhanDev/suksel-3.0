@@ -115,13 +115,13 @@ class AuthController extends Controller
                   // } elseif ($user->can('Vendor:list'))
                   //    return redirect('vendors');
                }
-               else if ($user->hasRole('Admin')) 
+               else if ($user->hasRole('Admin'))
                {
                   return redirect()->route('dashboard.hq');
-               } 
+               }
                else
                {
-                  return redirect('agencies/' . $user->organization_unit_id);
+                  return redirect('agency/' . $user->organization_unit_id);
                }
             } else {
                $attempt = session('attempt');

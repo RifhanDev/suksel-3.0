@@ -900,7 +900,7 @@ class OrganizationUnitsController extends Controller
 		}
 
 		session()->forget('_old_input');
-		return redirect('agencies/' . $organizationunit->id)->with('success', $this->updated_message);
+		return redirect('agency/' . $organizationunit->id)->with('success', $this->updated_message);
 	}
 
 	/**
