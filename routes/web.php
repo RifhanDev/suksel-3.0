@@ -189,6 +189,10 @@ Route::middleware(['auth'])->group(function ()
 	// Route::get('tender/{id}/vendors', [TendersController::class, 'vendors'])->name('tenders.vendors');
 	// Route::post('tender/{id}/exception', [TendersController::class, 'exception'])->name('tenders.exception');
 
+	Route::get('vendor/{vendor_id}/blacklist', [VendorsController::class, 'blacklist']);
+	Route::put('vendor/{vendor_id}/blacklist', [VendorsController::class, 'doBlacklist']);
+	Route::get('vendor/{vendor_id}/cancelBlacklist', [VendorsController::class, 'cancelBlacklist']);
+
 	Route::get('/agency/{id}', [OrganizationUnitsController::class, 'agency']);
 	Route::get('/agency/{id}/prices', [OrganizationUnitsController::class, 'agencyPrices']);
 	Route::get('/agency/{id}/results', [OrganizationUnitsController::class, 'agencyResults']);
@@ -267,6 +271,12 @@ Route::middleware(['auth'])->group(function ()
 	Route::resource('vendor.remarks', RemarksController::class);
 	Route::resource('vendor.subscriptions', SubscriptionsController::class);
 
+	Route::get('vendor/{vendor}/requests', [CodeRequestsController::class, 'index'])->name('vendor.requests.index');
+	Route::get('vendor/{vendor}/requests/create', [CodeRequestsController::class, 'create'])->name('vendor.requests.create');
+	Route::post('vendor/{vendor}/requests', [CodeRequestsController::class, 'store'])->name('vendor.requests.store');
+	Route::get('vendor/{vendor}/requests/{requests}', [CodeRequestsController::class, 'show'])->name('vendor.requests.show');
+	Route::delete('vendor/{vendor}/requests/{requests}', [CodeRequestsController::class, 'destroy'])->name('vendor.requests.destroy');
+
 	// Admin routes
 	Route::middleware(['role:Admin'])->group(function ()
 	{
@@ -297,9 +307,6 @@ Route::middleware(['auth'])->group(function ()
 
 		Route::get('vendor/{vendor_id}/approve', [VendorsController::class, 'approve']);
 		Route::post('vendor/{vendor_id}/reject', [VendorsController::class, 'reject']);
-		Route::get('vendor/{vendor_id}/blacklist', [VendorsController::class, 'blacklist']);
-		Route::put('vendor/{vendor_id}/blacklist', [VendorsController::class, 'doBlacklist']);
-		Route::get('vendor/{vendor_id}/cancelBlacklist', [VendorsController::class, 'cancelBlacklist']);
 
 		Route::get('vendors/{vendor}/subscriptions/{id}/receipt', [SubscriptionsController::class, 'receipt'])->name('vendors.subscriptions.receipt');
 		Route::get('vendors/{user}/edit_email', [VendorsController::class, 'editEmail']);
@@ -307,25 +314,13 @@ Route::middleware(['auth'])->group(function ()
 		Route::get('vendors/{user}/histories', [VendorsController::class, 'histories']);
 		Route::get('vendors/{user}/certificate', [VendorsController::class, 'certificate']);
 
-		Route::get('vendor/{vendor}/blacklists', [VendorBlacklistsController::class, 'index'])->name('vendor.blacklists');
-		Route::get('vendor/{vendor}/blacklists/create', [VendorBlacklistsController::class, 'create'])->name('vendor.blacklists.create');
-		Route::post('vendor/{vendor}/blacklists', [VendorBlacklistsController::class, 'store'])->name('vendor.blacklists.store');
-		Route::get('vendor/{vendor}/blacklists/{blacklists}', [VendorBlacklistsController::class, 'show'])->name('vendor.blacklists.show');
-		Route::get('vendor/{vendor}/blacklists/{blacklists}/edit', [VendorBlacklistsController::class, 'edit'])->name('vendor.blacklists.edit');
-		Route::put('vendor/{vendor}/blacklists/{blacklists}', [VendorBlacklistsController::class, 'update'])->name('vendor.blacklists.update');
-		Route::delete('vendor/{vendor}/blacklists/{blacklists}', [VendorBlacklistsController::class, 'destroy'])->name('vendor.blacklists.destroy');
+		Route::resource('vendor.blacklists', VendorBlacklistsController::class);
 		Route::get('vendor/{vendor}/blacklists/{blacklists}/file', [VendorBlacklistsController::class, 'file'])->name('vendor.blacklists.file');
 		Route::put('vendor/{vendor}/blacklists/{blacklists}/cancel', [VendorBlacklistsController::class, 'cancel'])->name('vendor.blacklists.cancel');
-		Route::get('vendor/{vendor}/blacklists/{blacklists}/unblacklist', [VendorBlacklistsController::class, 'unblacklist'])->name('vendor.blacklists.unblacklist');
 
 		Route::get('requests', [CodeRequestsController::class, 'index'])->name('requests.index');
-		Route::get('vendor/{vendor}/requests', [CodeRequestsController::class, 'index'])->name('vendor.requests.index');
-		Route::get('vendor/{vendor}/requests/create', [CodeRequestsController::class, 'create'])->name('vendor.requests.create');
-		Route::post('vendor/{vendor}/requests', [CodeRequestsController::class, 'store'])->name('vendor.requests.store');
-		Route::get('vendor/{vendor}/requests/{requests}', [CodeRequestsController::class, 'show'])->name('vendor.requests.show');
 		Route::get('vendor/{vendor}/requests/{requests}/edit', [CodeRequestsController::class, 'edit'])->name('vendor.requests.edit');
 		Route::put('vendor/{vendor}/requests/{requests}', [CodeRequestsController::class, 'update'])->name('vendor.requests.update');
-		Route::delete('vendor/{vendor}/requests/{requests}', [CodeRequestsController::class, 'destroy'])->name('vendor.requests.destroy');
 		Route::put('vendor/{vendor}/requests/{requests}/approve', [CodeRequestsController::class, 'approve_vendor'])->name('vendor.requests.approve');
 		Route::post('vendor/{vendor}/requests/{requests}/reject', [CodeRequestsController::class, 'reject_vendor'])->name('vendor.requests.reject');
 
@@ -351,6 +346,11 @@ Route::middleware(['auth'])->group(function ()
 		Route::get('transactions/{id}/temp_receipt', [TransactionsController::class, 'temp_receipt'])->name('transactions.temp_receipt');
 
 		Route::resource('blacklists', VendorBlacklistsController::class);
+		Route::prefix('vendor/{vendor}/blacklists/{blacklists}')->name('vendor.blacklists.')->controller(VendorBlacklistsController::class)->group(function ()
+		{
+			Route::put('cancel', 'cancel')->name('cancel');
+			Route::get('unblacklist', 'unblacklist')->name('unblacklist');
+		});
 
 		// Settings - Controller doesn't exist, commented out
 		// Route::get('settings', [SettingsController::class, 'index'])->name('settings');
