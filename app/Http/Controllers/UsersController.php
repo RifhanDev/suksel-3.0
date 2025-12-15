@@ -424,7 +424,7 @@ class UsersController extends Controller
 					return UserHistory::$types[$history->action];
 				})
 				->editColumn('created_at', function ($history) {
-					return $history->created_at->format('d/m/Y H:i:s');
+					return \Carbon\Carbon::parse($history->created_at)->format('d/m/Y H:i:s');
 				})
 				->editColumn('3p_id', function ($history) {
 					return $history->third_party ? $history->third_party->name : '<span class ="glyphicon glyphicon-remove"></span>';
