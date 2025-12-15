@@ -6,4 +6,4 @@
 			<br>
 			<p class="text-center">Sila kembali ke halaman utama</p>
 		</div>
-	@stop
+@endsection
