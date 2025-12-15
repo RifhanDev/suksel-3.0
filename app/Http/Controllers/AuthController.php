@@ -82,6 +82,13 @@ class AuthController extends Controller
 
                $user = auth()->user();
 
+               // Check if vendor has verified their email
+               if ($user->hasRole('Vendor') && !$user->confirmed) {
+                  auth()->logout();
+                  session()->flash('error', 'Sila sahkan alamat emel anda terlebih dahulu. Semak inbox emel anda untuk pautan pengesahan.');
+                  return redirect('/auth/login');
+               }
+
                session()->forget('attempt');
 
                // Save session before redirect
