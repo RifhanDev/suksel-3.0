@@ -34,26 +34,26 @@
 				<div class="card-header">
 					<ul class="nav nav-tabs card-header-tabs" data-bs-toggle="tabs">
 						<li class="nav-item">
-							<a href="{{ action('OrganizationUnitsController@show', $organizationunit->id) }}"
-								class="nav-link @if (request()->is('agencies/' . $organizationunit->id) && !request()->get('type')) active @endif">
+							<a href="{{ action('OrganizationUnitsController@agency', $organizationunit->id) }}"
+								class="nav-link @if (request()->is('agency/' . $organizationunit->id) && !request()->get('type')) active @endif">
 								<i class="ti ti-file-text me-2"></i>Tender & Sebut Harga
 							</a>
 						</li>
 						<li class="nav-item">
-							<a href="{{ action('OrganizationUnitsController@prices', $organizationunit->id) }}"
-								class="nav-link @if (request()->is('agencies/' . $organizationunit->id . '/prices')) active @endif">
+							<a href="{{ action('OrganizationUnitsController@agencyPrices', $organizationunit->id) }}"
+								class="nav-link @if (request()->is('agency/' . $organizationunit->id . '/prices')) active @endif">
 								<i class="ti ti-chart-line me-2"></i>Carta Tender
 							</a>
 						</li>
 						<li class="nav-item">
-							<a href="{{ action('OrganizationUnitsController@results', $organizationunit->id) }}"
-								class="nav-link @if (request()->is('agencies/' . $organizationunit->id . '/results')) active @endif">
+							<a href="{{ action('OrganizationUnitsController@agencyResults', $organizationunit->id) }}"
+								class="nav-link @if (request()->is('agency/' . $organizationunit->id . '/results')) active @endif">
 								<i class="ti ti-trophy me-2"></i>Penender Berjaya
 							</a>
 						</li>
 						<li class="nav-item ms-auto">
-							<a href="{{ action('OrganizationUnitsController@news', $organizationunit->id) }}"
-								class="nav-link @if (request()->is('agencies/' . $organizationunit->id . '/news')) active @endif">
+							<a href="{{ action('OrganizationUnitsController@agencyNews', $organizationunit->id) }}"
+								class="nav-link @if (request()->is('agency/' . $organizationunit->id . '/news')) active @endif">
 								<i class="ti ti-news me-2"></i>Berita
 							</a>
 						</li>
@@ -63,15 +63,15 @@
 					<div class="row">
 						<div class="col-md-2">
 							<div class="nav flex-column nav-pills" role="tablist">
-								<a href="{{ action('OrganizationUnitsController@prices', $organizationunit->id) }}"
+								<a href="{{ action('OrganizationUnitsController@agencyPrices', $organizationunit->id) }}"
 									class="nav-link @if (!Request::get('type')) active @endif" role="tab">
 									<i class="ti ti-list me-2"></i>Semua
 								</a>
-								<a href="{{ action('OrganizationUnitsController@prices', [$organizationunit->id, 'type' => 'tenders']) }}"
+								<a href="{{ action('OrganizationUnitsController@agencyPrices', [$organizationunit->id, 'type' => 'tenders']) }}"
 									class="nav-link @if (Request::get('type') == 'tenders') active @endif" role="tab">
 									<i class="ti ti-file-text me-2"></i>Tender
 								</a>
-								<a href="{{ action('OrganizationUnitsController@prices', [$organizationunit->id, 'type' => 'quotations']) }}"
+								<a href="{{ action('OrganizationUnitsController@agencyPrices', [$organizationunit->id, 'type' => 'quotations']) }}"
 									class="nav-link @if (Request::get('type') == 'quotations') active @endif" role="tab">
 									<i class="ti ti-calculator me-2"></i>Sebut Harga
 								</a>

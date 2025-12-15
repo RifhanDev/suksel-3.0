@@ -216,7 +216,15 @@ class OrganizationUnitsController extends Controller
 			{
 					$string   = [];
 					$string[] = '<small><strong>' . $tender->ref_number . '</strong></small>';
-					$string[] = link_to_route('tenders.show', $tender->name, $tender->id, ['class' => 'table-tender-title']);
+					if(!auth()->check())
+					{
+						$string[] = link_to_route('tenders.show', $tender->name, $tender->id, ['class' => 'table-tender-title']);
+					}
+					else
+					{
+						$string[] = link_to_route('tender.show', $tender->name, $tender->id, ['class' => 'table-tender-title']);
+					}
+					// $string[] = link_to_route('tender.show', $tender->name, $tender->id, ['class' => 'table-tender-title']);
 
 					if ($tender->briefing_required)
 					{
@@ -848,7 +856,8 @@ class OrganizationUnitsController extends Controller
 		if ($request->ajax()) {
 			return _ajax_denied();
 		}
-		if (!$organizationunit->canUpdate() || !auth()->check() || auth()->user()->hasRole('Vendor')) {
+		if (!$organizationunit->canUpdate() || !auth()->check() || auth()->user()->hasRole('Vendor'))
+		{
 			return $this->_access_denied();
 		}
 		view()->share('global_ou', $organizationunit);
