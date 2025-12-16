@@ -77,15 +77,27 @@ class Role extends ModelsRole
 		parent::boot();
 
 		self::created(function () {
-			cache()->tags('Role')->flush();
+			try {
+				cache()->tags('Role')->flush();
+			} catch (\Exception $e) {
+				cache()->flush();
+			}
 		});
 
 		self::updated(function () {
-			cache()->tags('Role')->flush();
+			try {
+				cache()->tags('Role')->flush();
+			} catch (\Exception $e) {
+				cache()->flush();
+			}
 		});
 
 		self::deleted(function () {
-			cache()->tags('Role')->flush();
+			try {
+				cache()->tags('Role')->flush();
+			} catch (\Exception $e) {
+				cache()->flush();
+			}
 		});
 	}
 
