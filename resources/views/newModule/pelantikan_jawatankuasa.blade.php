@@ -237,9 +237,11 @@ $tabData = [
 <td><input type="checkbox" class="row-check"></td>
 
 <td>
-<select class="form-select">
-    <option disabled selected>Masukkan No. IC</option>
-</select>
+    <input 
+        type="text"
+        class="form-control"
+        placeholder="Masukkan No. IC"
+    >
 </td>
 
 <td></td>
@@ -291,7 +293,7 @@ $tabData = [
 <div class="d-flex justify-content-end gap-2">
     <button class="btn btn-primary btn-simpan">Simpan</button>
     <button class="btn btn-info text-white">Laporan</button>
-    <button class="btn btn-success">Hantar Pemakluman</button>
+    <button class="btn btn-success btn-hantar">Hantar Pemakluman</button>
 </div>
 
 
@@ -306,6 +308,31 @@ $tabData = [
 <div class="text-end mt-3">
     <button onclick="backToList()" class="btn btn-danger">Kembali</button>
 </div>
+
+<!-- ===================== SUCCESS POPUP ====================== -->
+<div id="successPopup" class="modal fade" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content text-center p-4">
+
+            <div class="mb-3">
+                <svg width="60" height="60" viewBox="0 0 24 24" fill="none">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"
+                          fill="#E6F7F3"/>
+                    <path d="M10 14.2l-2.2-2.2-1.4 1.4L10 17 18 9l-1.4-1.4z"
+                          fill="#19c1a7"/>
+                </svg>
+            </div>
+
+            <h6 class="fw-bold mb-3">Maklumat telah berjaya disimpan</h6>
+
+            <button type="button" class="btn btn-primary px-4" data-bs-dismiss="modal">
+                Tutup
+            </button>
+
+        </div>
+    </div>
+</div>
+
 
 </div>
 </div>
@@ -400,12 +427,27 @@ document.querySelectorAll('.check-all').forEach(checkAll => {
 
 
 // SAVE POPUP
-document.querySelectorAll('.btn-simpan').forEach(btn => {
-    btn.addEventListener('click', function(){
-        alert("Maklumat Jawatankuasa berjaya disimpan!");
-    });
-});
+document.addEventListener('DOMContentLoaded', function () {
 
+    const successModal = new bootstrap.Modal(
+        document.getElementById('successPopup')
+    );
+
+    // SIMPAN
+    document.querySelectorAll('.btn-simpan').forEach(btn => {
+        btn.addEventListener('click', function () {
+            successModal.show();
+        });
+    });
+
+    // HANTAR
+    document.querySelectorAll('.btn-hantar').forEach(btn => {
+        btn.addEventListener('click', function () {
+            successModal.show();
+        });
+    });
+
+});
 </script>
 
 @endsection
