@@ -26,7 +26,15 @@
 						<svg xmlns="http://www.w3.org/2000/svg" class="nav-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
 					</a>
 					<div class="collapse" id="menuTender">
+						
 						<ul class="sidebar-submenu">
+
+							<li class="submenu-section-header">Cipta Tender & Sebut Harga</li>
+
+							<li><a class="submenu-item" href="{{ route('ciptaTender') }}"><div class="submenu-icon"></div><span>Cipta Tender</span></a></li>
+
+							<li class="submenu-section-header">Senarai</li>
+
 							@if (App\Tender::canList())
 								@if (Auth::user()->ability(['Admin', 'Registration Assesor', 'Front Desk'], []))
 									<li><a class="submenu-item" href="{{ asset('tenders') }}"><div class="submenu-icon"></div><span>Senarai Tender</span></a></li>
@@ -325,20 +333,6 @@
 
 				<li class="nav-section-header my-3">Modul 3.0</li>
 
-				<!-- Menu: Cipta Tender -->
-				<li class="nav-item">
-					<a class="sidebar-link collapsed" data-bs-toggle="collapse" data-bs-target="#menuCiptaTender" aria-expanded="false" style="cursor: pointer;">
-						<svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-						<span class="nav-text">Cipta Tender</span>
-						<svg xmlns="http://www.w3.org/2000/svg" class="nav-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-					</a>
-					<div class="collapse" id="menuCiptaTender">
-						<ul class="sidebar-submenu">
-							<li><a class="submenu-item" href="#"><div class="submenu-icon"></div><span>Coming Soon</span></a></li>
-						</ul>
-					</div>
-				</li>
-
 				<!-- Menu: Pelantikan Jawatankuasa -->
 				<li class="nav-item">
 					<a class="sidebar-link {{ request()->is('pelantikan-jawatankuasa*') ? 'active' : '' }}" href="{{ route('pelantikanJawatankuasa') }}" style="cursor: pointer;">
@@ -409,20 +403,6 @@
 				<!-- ============================================= -->
 				<!-- NEW SECTION: MODUL 3.0 -->
 				<!-- ============================================= -->
-
-				<!-- Menu: Cipta Tender -->
-				<li class="nav-item">
-					<a class="sidebar-link collapsed" data-bs-toggle="collapse" data-bs-target="#menuCiptaTender" aria-expanded="false" style="cursor: pointer;">
-						<svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-						<span class="nav-text">Cipta Tender</span>
-						<svg xmlns="http://www.w3.org/2000/svg" class="nav-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-					</a>
-					<div class="collapse" id="menuCiptaTender">
-						<ul class="sidebar-submenu">
-							<li><a class="submenu-item" href="#"><div class="submenu-icon"></div><span>Coming Soon</span></a></li>
-						</ul>
-					</div>
-				</li>
 
 				<!-- Menu: Pelantikan Jawatankuasa -->
 				<li class="nav-item">
