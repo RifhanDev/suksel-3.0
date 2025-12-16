@@ -177,6 +177,9 @@ Route::view('/pelantikan-jawatankuasa', 'newModule.pelantikan_jawatankuasa')->na
 Route::view('/senarai-teknikal', 'newModule.jawatankuasaSpesifikasi.senarai_teknikal')->name('senaraiTeknikal');
 Route::view('/senarai-kewangan', 'newModule.jawatankuasaSpesifikasi.senarai_kewangan')->name('senaraiKewangan');
 Route::view('/jawatankuasa-pembuka', 'newModule.jawatankuasa_pembuka')->name('jawatankuasaPembuka');
+Route::view('/penilaian-teknikal', 'newModule.penilaian.teknikal')->name('penilaianTeknikal');
+Route::view('/penilaian-kewangan', 'newModule.penilaian.kewangan')->name('penilaianKewangan');
+Route::view('/keputusan-mesyuarat', 'newModule.keputusan_mesyuarat')->name('keputusanMesyuarat');
 
 
 // Protected routes
