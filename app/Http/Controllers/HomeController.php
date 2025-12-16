@@ -260,8 +260,8 @@ class HomeController extends Controller
 		if ($request->ajax()) {
 
 			// Temporarily commented out to fix column issue
-			// $base = Tender::orderBy('submission_datetime', 'desc')->forPublic()->published()->publishedPrices();
-			$base = Tender::orderBy('submission_datetime', 'desc')->forPublic()->publishedPrices();
+			// $base = Tender::orderBy('submission_datetime', 'desc')->forPublic()->published()->publishedPrices()->closed();
+			$base = Tender::orderBy('submission_datetime', 'desc')->forPublic()->publishedPrices()->closed();
 
 			switch ($request->type) {
 				case 'tenders':
@@ -477,8 +477,9 @@ class HomeController extends Controller
 
 		$fpx    = Gateway::whereType('fpx')->whereDefault(1)->whereActive(1)->first();
 		$ebpg   = Gateway::whereType('ebpg')->whereDefault(1)->whereActive(1)->first();
+		$duitnow = Gateway::whereType('duitnow')->whereDefault(1)->whereActive(1)->first();
 
-		return view('home.renewal', compact('start_date', 'end_date', 'fpx', 'ebpg'));
+		return view('home.renewal', compact('start_date', 'end_date', 'fpx', 'ebpg', 'duitnow'));
 	}
 
 	public function storeRenewal(Request $request)
@@ -487,7 +488,7 @@ class HomeController extends Controller
 		$user   = auth()->user();
 		$vendor = $user->vendor;
 
-		if (!in_array($request->method, ['fpx-1', 'fpx-2', 'ebpg']))
+		if (!in_array($request->method, ['fpx-1', 'fpx-2', 'ebpg', 'duitnow']))
 			return redirect()->back()->with('error', 'Sila pilih saluran pembayaran yang sah.');
 
 		if ($vendor->expired) {

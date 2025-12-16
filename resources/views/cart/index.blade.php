@@ -2,7 +2,7 @@
 
 @section('content')
 	<h4>Senarai Tempahan</h4>
-	@if (!$fpx && !$ebpg)
+	@if (!$fpx && !$ebpg && !$duitnow)
 		<div class="alert alert-danger">Harap Maaf! Pembayaran tidak dapat dilakukan buat masa ini.</div>
 	@else
 		<table class="DT table table-hover table-compact">
