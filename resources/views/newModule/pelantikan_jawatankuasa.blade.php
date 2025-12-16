@@ -366,10 +366,36 @@ document.querySelectorAll('.btn-hapus').forEach(btn => {
 
         let table = this.closest('div').previousElementSibling;
 
-        table.querySelectorAll('.row-check:checked').forEach(cb=>{
-            cb.closest('tr').remove();
+        table.querySelectorAll('.row-check:checked').forEach(cb => {
+
+            let row = cb.closest('tr');
+
+            // ❗ DO NOT delete template row
+            if (!row.classList.contains('add-template')) {
+                row.remove();
+            }
+
         });
     });
+});
+
+
+// CHECK/UNCHECK ALL ROWS
+document.querySelectorAll('.check-all').forEach(checkAll => {
+
+    checkAll.addEventListener('change', function () {
+
+        // find the table this checkbox belongs to
+        let table = this.closest('table');
+
+        // find all row checkboxes in that table
+        let rows = table.querySelectorAll('.row-check');
+
+        rows.forEach(cb => {
+            cb.checked = this.checked;
+        });
+    });
+
 });
 
 
