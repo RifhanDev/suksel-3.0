@@ -26,7 +26,15 @@
 						<svg xmlns="http://www.w3.org/2000/svg" class="nav-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
 					</a>
 					<div class="collapse" id="menuTender">
+						
 						<ul class="sidebar-submenu">
+
+							<li class="submenu-section-header">Cipta Tender & Sebut Harga</li>
+
+							<li><a class="submenu-item" href="{{ route('ciptaTender') }}"><div class="submenu-icon"></div><span>Cipta Tender</span></a></li>
+
+							<li class="submenu-section-header">Senarai</li>
+
 							@if (App\Tender::canList())
 								@if (Auth::user()->ability(['Admin', 'Registration Assesor', 'Front Desk'], []))
 									<li><a class="submenu-item" href="{{ asset('tenders') }}"><div class="submenu-icon"></div><span>Senarai Tender</span></a></li>
@@ -325,26 +333,50 @@
 
 				<li class="nav-section-header my-3">Modul 3.0</li>
 
-				<!-- Menu: Cipta Tender -->
-				<li class="nav-item">
-					<a class="sidebar-link collapsed" data-bs-toggle="collapse" data-bs-target="#menuCiptaTender" aria-expanded="false" style="cursor: pointer;">
-						<svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-						<span class="nav-text">Cipta Tender</span>
-						<svg xmlns="http://www.w3.org/2000/svg" class="nav-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-					</a>
-					<div class="collapse" id="menuCiptaTender">
-						<ul class="sidebar-submenu">
-							<li><a class="submenu-item" href="#"><div class="submenu-icon"></div><span>Coming Soon</span></a></li>
-						</ul>
-					</div>
-				</li>
-
 				<!-- Menu: Pelantikan Jawatankuasa -->
 				<li class="nav-item">
 					<a class="sidebar-link {{ request()->is('pelantikan-jawatankuasa*') ? 'active' : '' }}" href="{{ route('pelantikanJawatankuasa') }}" style="cursor: pointer;">
 						<svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
 						<span class="nav-text">Pelantikan Jawatankuasa</span>
 					</a>
+				</li>
+
+				<!-- Menu : Jawatankuasa Spesifikasi /  Pengurusan -->
+				<li class="nav-item">
+					<a class="sidebar-link collapsed" data-bs-toggle="collapse" data-bs-target="#menuJawatankusaSpesifikasi" aria-expanded="false" style="cursor: pointer;">
+						<svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+						<span class="nav-text">Jawatankuasa Spesifikasi / Pengurusan </span>
+						<svg xmlns="http://www.w3.org/2000/svg" class="nav-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+					</a>
+					<div class="collapse" id="menuJawatankusaSpesifikasi">
+						<ul class="sidebar-submenu">
+							<li><a class="submenu-item" href="{{ route('senaraiTeknikal') }}"><div class="submenu-icon"></div><span>Senarai Semak Teknikal</span></a></li>
+							<li><a class="submenu-item" href="{{ route('senaraiKewangan') }}"><div class="submenu-icon"></div><span>Senarai Semak Kewangan</span></a></li>
+						</ul>
+					</div>
+				</li>
+
+				<!-- Menu : Jawatankuasa Pembuka -->
+				<li class="nav-item">
+					<a class="sidebar-link {{ request()->is('jawatankuasa-pembuka*') ? 'active' : '' }}" href="{{ route('jawatankuasaPembuka') }}" style="cursor: pointer;">
+						<svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+						<span class="nav-text">Jawatankuasa Pembuka</span>
+					</a>
+				</li>
+
+				<!-- Menu : Penilaian Teknikal & Kewangan -->
+				<li class="nav-item">
+					<a class="sidebar-link collapsed" data-bs-toggle="collapse" data-bs-target="#menuPenilaianTeknikalKewangan" aria-expanded="false" style="cursor: pointer;">
+						<svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+						<span class="nav-text">Penilaian Teknikal & Kewangan</span>
+						<svg xmlns="http://www.w3.org/2000/svg" class="nav-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+					</a>
+					<div class="collapse" id="menuPenilaianTeknikalKewangan">
+						<ul class="sidebar-submenu">
+							<li><a class="submenu-item" href="{{ route('penilaianTeknikal') }}"><div class="submenu-icon"></div><span>Penilaian Teknikal</span></a></li>
+							<li><a class="submenu-item" href="{{ route('penilaianKewangan') }}"><div class="submenu-icon"></div><span>Penilaian Kewangan</span></a></li>
+						</ul>
+					</div>
 				</li>
 
 			</ul>
@@ -371,20 +403,6 @@
 				<!-- ============================================= -->
 				<!-- NEW SECTION: MODUL 3.0 -->
 				<!-- ============================================= -->
-
-				<!-- Menu: Cipta Tender -->
-				<li class="nav-item">
-					<a class="sidebar-link collapsed" data-bs-toggle="collapse" data-bs-target="#menuCiptaTender" aria-expanded="false" style="cursor: pointer;">
-						<svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-						<span class="nav-text">Cipta Tender</span>
-						<svg xmlns="http://www.w3.org/2000/svg" class="nav-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-					</a>
-					<div class="collapse" id="menuCiptaTender">
-						<ul class="sidebar-submenu">
-							<li><a class="submenu-item" href="#"><div class="submenu-icon"></div><span>Coming Soon</span></a></li>
-						</ul>
-					</div>
-				</li>
 
 				<!-- Menu: Pelantikan Jawatankuasa -->
 				<li class="nav-item">
@@ -416,6 +434,30 @@
 						<span class="nav-text">Jawatankuasa Pembuka</span>
 					</a>
 				</li>
+
+				<!-- Menu : Penilaian Teknikal & Kewangan -->
+				<li class="nav-item">
+					<a class="sidebar-link collapsed" data-bs-toggle="collapse" data-bs-target="#menuPenilaianTeknikalKewangan" aria-expanded="false" style="cursor: pointer;">
+						<svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+						<span class="nav-text">Penilaian Teknikal & Kewangan</span>
+						<svg xmlns="http://www.w3.org/2000/svg" class="nav-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+					</a>
+					<div class="collapse" id="menuPenilaianTeknikalKewangan">
+						<ul class="sidebar-submenu">
+							<li><a class="submenu-item" href="{{ route('penilaianTeknikal') }}"><div class="submenu-icon"></div><span>Penilaian Teknikal</span></a></li>
+							<li><a class="submenu-item" href="{{ route('penilaianKewangan') }}"><div class="submenu-icon"></div><span>Penilaian Kewangan</span></a></li>
+						</ul>
+					</div>
+				</li>
+
+				<!-- Menu : Keputusan Mesyuarat -->
+				<li class="nav-item">
+					<a class="sidebar-link {{ request()->is('keputusan-mesyuarat*') ? 'active' : '' }}" href="{{ route('keputusanMesyuarat') }}" style="cursor: pointer;">
+						<svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+						<span class="nav-text">Keputusan Mesyuarat</span>
+					</a>
+				</li>
+
 
 			</ul>
 		</div>

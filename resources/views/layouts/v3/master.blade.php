@@ -311,6 +311,17 @@
             margin: 0 0.5rem; 
 		}
 
+        .submenu-section-header {
+            padding: 0.75rem 1rem 0.25rem 1.5rem;
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            font-weight: 700;
+            color: var(--sg-yellow);
+            display: block;
+            opacity: 0.9;
+        }
+
         .submenu-icon {
             width: 6px;
             height: 6px;
@@ -676,6 +687,48 @@
 			$.ajaxSetup({ headers: { 'X-CSRF-Token': $('meta[name=_token]').attr('content') } });
 		});
 	</script>
+    <script>
+        // Sidebar Auto Scroll When Opening Long Submenu
+        $(document).ready(function() {
+            $('.sidebar .collapse').on('show.bs.collapse', function () {
+                var $container = $('.sidebar-scroll-area');
+                var $collapse = $(this);
+                var $parentLi = $collapse.closest('.nav-item');
+                var $innerList = $collapse.find('.sidebar-submenu');
+
+                var $clone = $innerList.clone().css({
+                    'display': 'block',
+                    'visibility': 'hidden',
+                    'position': 'absolute',
+                    'top': '-9999px',
+                    'left': '-9999px'
+                }).appendTo($parentLi);
+                
+                var submenuHeight = $clone.outerHeight();
+                $clone.remove();
+
+                var containerHeight = $container.height();
+                var containerScroll = $container.scrollTop();
+                
+                var headerRect = $parentLi[0].getBoundingClientRect();
+                var containerRect = $container[0].getBoundingClientRect();
+                
+                var relativeTop = headerRect.top - containerRect.top;
+                var headerHeight = $parentLi.find('.sidebar-link').outerHeight();
+
+                var totalExpectedHeight = headerHeight + submenuHeight;
+                var expectedBottomEdge = relativeTop + totalExpectedHeight;
+
+                if (expectedBottomEdge > containerHeight) {
+                    var scrollAmount = expectedBottomEdge - containerHeight + 20;
+
+                    $container.animate({
+                        scrollTop: containerScroll + scrollAmount
+                    }, 300);
+                }
+            });
+        });
+    </script>
 	<!-- Botman Chatbot Widget -->
 	<script>
 		@php $chat_id = Str::random(8); @endphp
