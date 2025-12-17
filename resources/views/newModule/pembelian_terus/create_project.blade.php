@@ -3,137 +3,81 @@
 @section('content')
 
 <style>
-    /* Breadcrumb Styles */
-    .breadcrumb-nav {
-        background: transparent;
-        padding: 10px 0;
-        margin-bottom: 20px;
-    }
-
-    .breadcrumb-nav .breadcrumb {
-        margin: 0;
-        padding: 0;
-        background: transparent;
-    }
-
-    .breadcrumb-nav .breadcrumb-item {
-        color: #6c757d;
-        font-size: 14px;
-    }
-
-    .breadcrumb-nav .breadcrumb-item.active {
-        color: #495057;
-        font-weight: 600;
-    }
-
-    .breadcrumb-nav .breadcrumb-item+.breadcrumb-item::before {
-        content: ">";
-        padding: 0 8px;
-        color: #6c757d;
-    }
-
     /* Progress Bar Styles */
     .progress-wrapper {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin: 20px 0 30px 0;
-        padding: 0 20px;
         position: relative;
     }
 
     .progress-step {
-        flex: 1;
-        text-align: center;
         position: relative;
         z-index: 1;
+        flex: 1;
     }
 
+    /* Connector line */
     .progress-step:not(:last-child)::after {
         content: '';
         position: absolute;
         top: 18px;
+        /* center of circle (36px / 2) */
         left: 50%;
         width: 100%;
         height: 3px;
-        background: #e0e0e0;
+        background: var(--topbar-border, #e5e7eb);
         z-index: 0;
     }
 
+    /* Active / done line */
     .progress-step.active:not(:last-child)::after,
     .progress-step.done:not(:last-child)::after {
-        background: #1F3A8A;
+        background: var(--sg-red);
     }
 
+    /* Reset future steps */
+    .progress-step.active~.progress-step:not(:last-child)::after {
+        background: var(--topbar-border, #e5e7eb);
+    }
+
+    /* Step circle */
     .step-number {
         width: 36px;
         height: 36px;
-        line-height: 36px;
         border-radius: 50%;
-        background: #e0e0e0;
-        color: #6c757d;
-        margin: 0 auto 8px;
-        font-weight: bold;
+        background: var(--topbar-border, #e5e7eb);
+        color: var(--topbar-text, #374151);
         position: relative;
         z-index: 2;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
+    /* Active & done states */
     .progress-step.active .step-number,
     .progress-step.done .step-number {
-        background: #1F3A8A;
-        color: white;
+        background: var(--sg-red);
+        color: #fff;
     }
 
     .step-label {
         font-size: 13px;
-        font-weight: 600;
-        color: #495057;
+        color: var(--topbar-text, #374151);
     }
 
     .progress-step.active .step-label,
     .progress-step.done .step-label {
-        color: #1F3A8A;
+        color: var(--sg-red-dark);
     }
+
 
     /* Form Styles */
     .form-title {
         font-size: 18px;
         font-weight: bold;
-        color: #1F3A8A;
+        color: var(--sg-red-dark);
         margin-bottom: 25px;
         padding-bottom: 10px;
-        border-bottom: 2px solid #e0e0e0;
-    }
-
-    .form-row-horizontal {
-        display: flex;
-        align-items: center;
-        margin-bottom: 15px;
-    }
-
-    .form-row-horizontal .form-label {
-        width: 200px;
-        min-width: 200px;
-        margin-bottom: 0;
-        margin-right: 15px;
-        text-align: right;
-        font-weight: 600;
-        color: #495057;
-    }
-
-    .form-row-horizontal .form-label.required::after {
-        content: " *";
-        color: #dc3545;
-    }
-
-    .form-row-horizontal .form-control-wrapper {
-        flex: 1;
-    }
-
-    .form-label {
-        font-weight: 600;
-        color: #495057;
-        margin-bottom: 8px;
+        border-bottom: 2px solid var(--topbar-border, #e5e7eb);
     }
 
     .form-label.required::after {
@@ -141,95 +85,85 @@
         color: #dc3545;
     }
 
-    .form-control,
-    .form-select {
-        border-radius: 4px;
-        border: 1px solid #ced4da;
-        padding: 8px 12px;
-        width: 100%;
-    }
-
     .form-control:focus,
     .form-select:focus {
-        border-color: #1F3A8A;
-        box-shadow: 0 0 0 0.2rem rgba(31, 58, 138, 0.25);
-        outline: none;
+        border-color: var(--sg-red);
+        box-shadow: 0 0 0 0.2rem rgba(196, 30, 58, 0.25);
     }
 
-    .input-group-text {
-        background: #f8f9fa;
-        border: 1px solid #ced4da;
-        cursor: pointer;
-    }
-
-    .form-check-input {
-        margin-top: 0.4rem;
-    }
-
-    .form-check-label {
-        margin-left: 8px;
+    .form-control:read-only,
+    .form-select:disabled,
+    textarea:read-only {
+        background-color: #f9fafb;
+        cursor: not-allowed;
+        color: #10b981;
         font-weight: 500;
     }
 
-    .radio-group {
-        display: flex;
-        gap: 15px;
+    .form-control:read-only:focus,
+    textarea:read-only:focus {
+        border-color: #d1d5db;
+        box-shadow: none;
+    }
+
+    .btn-or-dan {
+        background: var(--sg-red);
+        color: white;
+        border: none;
+        padding: 6px 16px;
+        border-radius: 4px;
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+    .btn-or-dan:hover {
+        background: var(--sg-red-deep);
+        color: white;
     }
 
     /* Button Styles */
     .btn-simpan {
-        background: #00a988;
-        color: white;
-        padding: 10px 30px;
-        border-radius: 6px;
-        font-weight: bold;
-        border: none;
+        background: var(--sg-bg);
+        color: var(--sg-black);
+        border: 1px solid var(--sg-black);
     }
 
     .btn-simpan:hover {
-        background: #008f73;
-        color: white;
+        background: var(--sg-black);
+        color: var(--sg-bg);
+        border-color: var(--sg-black);
     }
 
     .btn-seterusnya {
-        background: #1F3A8A;
+        background: var(--sg-red);
         color: white;
-        padding: 10px 30px;
-        border-radius: 6px;
-        font-weight: bold;
         border: none;
     }
 
     .btn-seterusnya:hover {
-        background: #152a6b;
+        background: var(--sg-red-deep);
         color: white;
     }
 
     .btn-sebelumnya {
-        background: #6c757d;
+        background: var(--topbar-text, #374151);
         color: white;
-        padding: 10px 30px;
-        border-radius: 6px;
-        font-weight: bold;
         border: none;
     }
 
     .btn-sebelumnya:hover {
-        background: #5a6268;
+        background: var(--sg-black);
         color: white;
     }
 
     .btn-tambah {
-        background: #00a988;
+        background: var(--sg-red);
         color: white;
-        padding: 8px 20px;
-        border-radius: 6px;
-        font-weight: bold;
         border: none;
     }
 
     .btn-tambah:hover {
-        background: #008f73;
+        background: var(--sg-red-dark);
         color: white;
     }
 
@@ -239,24 +173,17 @@
         border: none;
         padding: 5px 8px;
         cursor: pointer;
-        color: #6c757d;
+        color: var(--topbar-text, #374151);
     }
 
     .btn-edit:hover {
-        color: #1F3A8A;
+        color: var(--sg-red);
     }
 
     .btn-delete:hover {
-        color: #dc3545;
+        color: var(--sg-red-dark);
     }
 
-    .step-content {
-        display: none;
-    }
-
-    .step-content.active {
-        display: block;
-    }
 
     .spec-table {
         width: 100%;
@@ -265,7 +192,7 @@
     }
 
     .spec-table thead {
-        background: #1F3A8A;
+        background: var(--sg-red);
         color: white;
     }
 
@@ -273,12 +200,13 @@
     .spec-table td {
         padding: 12px;
         text-align: left;
-        border: 1px solid #dee2e6;
+        border: 1px solid var(--topbar-border, #e5e7eb);
     }
 
     .spec-table th {
         font-weight: bold;
         text-align: center;
+        color: white;
     }
 
     .spec-table tbody tr {
@@ -286,102 +214,15 @@
     }
 
     .spec-table tbody tr:hover {
-        background: #f8f9fa;
+        background: var(--sg-bg);
     }
 
-    .modal-header {
-        border-bottom: 1px solid #dee2e6;
-        padding: 15px 20px;
+    .spec-table td {
+        color: var(--sg-black);
     }
 
     .modal-title {
-        font-size: 18px;
-        font-weight: bold;
-        color: #1F3A8A;
-    }
-
-    .modal-body {
-        padding: 20px;
-    }
-
-    .modal-footer {
-        border-top: 1px solid #dee2e6;
-        padding: 15px 20px;
-        display: flex;
-        justify-content: flex-end;
-    }
-
-    .modal {
-        display: none;
-        position: fixed;
-        z-index: 1050;
-        left: 0;
-        top: 0;
-        width: 100%;
-        height: 100%;
-        overflow: auto;
-        background-color: rgba(0, 0, 0, 0.4);
-    }
-
-    .modal.show {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .modal-dialog {
-        position: relative;
-        width: auto;
-        max-width: 500px;
-        margin: 1.75rem auto;
-    }
-
-    .modal-content {
-        position: relative;
-        background-color: #fff;
-        border: 1px solid rgba(0, 0, 0, .2);
-        border-radius: 0.3rem;
-        box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, .5);
-        outline: 0;
-    }
-
-    .modal-backdrop {
-        position: fixed;
-        top: 0;
-        left: 0;
-        z-index: 1040;
-        width: 100vw;
-        height: 100vh;
-        background-color: #000;
-    }
-
-    .modal-backdrop.fade {
-        opacity: 0;
-    }
-
-    .modal-backdrop.show {
-        opacity: 0.5;
-    }
-
-    select[multiple] {
-        min-height: 100px;
-        padding: 8px 12px;
-    }
-
-    select[multiple] option {
-        padding: 5px;
-    }
-
-    .text-muted {
-        font-size: 12px;
-        color: #6c757d;
-        margin-top: 5px;
-        display: block;
-    }
-
-    .success-icon {
-        color: #00a988;
-        margin-bottom: 20px;
+        color: var(--sg-red-dark);
     }
 </style>
 
@@ -389,49 +230,54 @@
     <div class="card-body p-4">
 
         {{-- Breadcrumb Navigation --}}
-        <nav class="breadcrumb-nav">
-            <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="#">STOS</a></li>
-                <li class="breadcrumb-item active">Cipta Projek Pembelian Terus</li>
+        <nav class="py-2 mb-4">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="#" class="text-muted text-decoration-none">STOS</a></li>
+                <li class="breadcrumb-item active fw-semibold">Cipta Projek Pembelian Terus</li>
             </ol>
         </nav>
 
         {{-- Progress Bar --}}
-        <div class="progress-wrapper">
-            <div class="progress-step" id="step1Indicator">
-                <div class="step-number">1</div>
-                <div class="step-label">Cipta Projek</div>
+
+
+        <div class="progress-wrapper d-flex align-items-center my-4 my-md-5 px-3 px-md-4">
+            <div class="progress-step text-center active" id="step1Indicator">
+                <div class="step-number mx-auto mb-2 fw-bold">1</div>
+                <div class="step-label fw-semibold">Cipta Projek</div>
             </div>
-            <div class="progress-step" id="step2Indicator">
-                <div class="step-number">2</div>
-                <div class="step-label">Maklumat Spesifikasi</div>
+
+            <div class="progress-step text-center" id="step2Indicator">
+                <div class="step-number mx-auto mb-2 fw-bold">2</div>
+                <div class="step-label fw-semibold">Kod Bidang</div>
             </div>
-            <div class="progress-step" id="step3Indicator">
-                <div class="step-number">3</div>
-                <div class="step-label">Kod Bidang</div>
+
+            <div class="progress-step text-center" id="step3Indicator">
+                <div class="step-number mx-auto mb-2 fw-bold">3</div>
+                <div class="step-label fw-semibold">Maklumat Spesifikasi</div>
             </div>
         </div>
 
+
         {{-- STEP 1: Cipta Projek --}}
-        <div class="step-content active" id="step1Content">
+        <div class="d-none" id="step1Content">
             <h4 class="form-title">CIPTA PROJEK UNTUK PEMBELIAN TERUS</h4>
 
             {{-- Form --}}
             <form>
                 {{-- Single Column Fields --}}
-                <div class="form-row-horizontal">
-                    <label class="form-label required">Tajuk Perolehan</label>
-                    <div class="form-control-wrapper">
+                <div class="d-flex align-items-center mb-3">
+                    <label class="form-label required w-25 me-3 text-end mb-0">Tajuk Perolehan</label>
+                    <div class="flex-fill">
                         <textarea class="form-control" rows="3" placeholder="Masukkan tajuk perolehan">BEKALAN BARANGAN PERSEKOLAHAN</textarea>
                     </div>
                 </div>
 
-                <div class="form-row-horizontal">
-                    <label class="form-label required">Disediakan Untuk PTJ</label>
-                    <div class="form-control-wrapper">
+                <div class="d-flex align-items-center mb-3">
+                    <label class="form-label required w-25 me-3 text-end mb-0">Disediakan Untuk PTJ</label>
+                    <div class="flex-fill">
                         <div class="input-group">
                             <input type="text" class="form-control" value="BAHAGIAN PENTADBIRAN - CAWANGAN KEWANGAN - KEMENTERIAN KEWANGAN">
-                            <span class="input-group-text">
+                            <span class="input-group-text" style="background: var(--sg-bg); border-color: var(--topbar-border, #e5e7eb); cursor: pointer;">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <circle cx="11" cy="11" r="8"></circle>
                                     <path d="m21 21-4.35-4.35"></path>
@@ -444,17 +290,17 @@
                 {{-- Two Column Fields --}}
                 <div class="row mb-3">
                     <div class="col-md-6">
-                        <div class="form-row-horizontal">
-                            <label class="form-label required">No. Rujukan Fail</label>
-                            <div class="form-control-wrapper">
+                        <div class="d-flex align-items-center">
+                            <label class="form-label required w-50 me-3 text-end mb-0">No. Rujukan Fail</label>
+                            <div class="flex-fill">
                                 <input type="text" class="form-control" value="SH/DF/TRG">
                             </div>
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <div class="form-row-horizontal">
-                            <label class="form-label required">Harga Indikatif Jabatan</label>
-                            <div class="form-control-wrapper">
+                        <div class="d-flex align-items-center">
+                            <label class="form-label required w-50 me-3 text-end mb-0">Harga Indikatif Jabatan</label>
+                            <div class="flex-fill">
                                 <input type="text" class="form-control" placeholder="Masukkan harga indikatif">
                             </div>
                         </div>
@@ -463,17 +309,17 @@
 
                 <div class="row mb-3">
                     <div class="col-md-6">
-                        <div class="form-row-horizontal">
-                            <label class="form-label">Tarikh Buka</label>
-                            <div class="form-control-wrapper">
+                        <div class="d-flex align-items-center">
+                            <label class="form-label w-50 me-3 text-end mb-0">Tarikh Buka</label>
+                            <div class="flex-fill">
                                 <input type="text" class="form-control" value="17/09/2021" placeholder="DD/MM/YYYY">
                             </div>
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <div class="form-row-horizontal">
-                            <label class="form-label">Tarikh Tutup</label>
-                            <div class="form-control-wrapper">
+                        <div class="d-flex align-items-center">
+                            <label class="form-label w-50 me-3 text-end mb-0">Tarikh Tutup</label>
+                            <div class="flex-fill">
                                 <input type="text" class="form-control" value="17/10/2021" placeholder="DD/MM/YYYY">
                             </div>
                         </div>
@@ -482,10 +328,10 @@
 
                 <div class="row mb-3">
                     <div class="col-md-6">
-                        <div class="form-row-horizontal">
-                            <label class="form-label">Zon / Lokasi</label>
-                            <div class="form-control-wrapper">
-                                <div class="radio-group">
+                        <div class="d-flex align-items-center">
+                            <label class="form-label w-50 me-3 text-end mb-0">Zon / Lokasi</label>
+                            <div class="flex-fill">
+                                <div class="d-flex gap-3">
                                     <div class="form-check">
                                         <input class="form-check-input" type="radio" name="zon_lokasi" id="zon_ya" value="ya">
                                         <label class="form-check-label" for="zon_ya">Ya</label>
@@ -499,10 +345,10 @@
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <div class="form-row-horizontal">
-                            <label class="form-label required">Sumber Peruntukan</label>
-                            <div class="form-control-wrapper">
-                                <div class="radio-group">
+                        <div class="d-flex align-items-center">
+                            <label class="form-label required w-50 me-3 text-end mb-0">Sumber Peruntukan</label>
+                            <div class="flex-fill">
+                                <div class="d-flex gap-3">
                                     <div class="form-check">
                                         <input class="form-check-input" type="radio" name="sumber_peruntukan" id="sumber_pembangunan" value="pembangunan" checked>
                                         <label class="form-check-label" for="sumber_pembangunan">Pembangunan</label>
@@ -519,9 +365,9 @@
 
                 <div class="row mb-3">
                     <div class="col-md-6">
-                        <div class="form-row-horizontal">
-                            <label class="form-label">Lokaliti Liputan</label>
-                            <div class="form-control-wrapper">
+                        <div class="d-flex align-items-center">
+                            <label class="form-label w-50 me-3 text-end mb-0">Lokaliti Liputan</label>
+                            <div class="flex-fill">
                                 <select class="form-select">
                                     <option value="">-- Sila Pilih --</option>
                                 </select>
@@ -529,10 +375,10 @@
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <div class="form-row-horizontal">
-                            <label class="form-label required">Terbuka Kepada</label>
-                            <div class="form-control-wrapper">
-                                <div class="radio-group">
+                        <div class="d-flex align-items-center">
+                            <label class="form-label required w-50 me-3 text-end mb-0">Terbuka Kepada</label>
+                            <div class="flex-fill">
+                                <div class="d-flex gap-3">
                                     <div class="form-check">
                                         <input class="form-check-input" type="radio" name="terbuka_kepada" id="terbuka_bumiputra" value="bumiputra">
                                         <label class="form-check-label" for="terbuka_bumiputra">Bumiputra</label>
@@ -549,9 +395,9 @@
 
                 <div class="row mb-4">
                     <div class="col-md-6">
-                        <div class="form-row-horizontal">
-                            <label class="form-label required">Kategori Perolehan</label>
-                            <div class="form-control-wrapper">
+                        <div class="d-flex align-items-center">
+                            <label class="form-label required w-50 me-3 text-end mb-0">Kategori Perolehan</label>
+                            <div class="flex-fill">
                                 <select class="form-select">
                                     <option value="ICT" selected>ICT</option>
                                     <option value="">-- Sila Pilih --</option>
@@ -566,14 +412,14 @@
 
                 {{-- Action Buttons --}}
                 <div class="d-flex justify-content-end gap-2 mt-4">
-                    <button type="button" class="btn btn-simpan">Simpan</button>
-                    <button type="button" class="btn btn-seterusnya" onclick="showStep(2)">Seterusnya</button>
+                    <button type="button" class="btn btn-simpan px-4 py-2 rounded fw-bold">Simpan</button>
+                    <button type="button" class="btn btn-seterusnya px-4 py-2 rounded fw-bold" onclick="showStep(2)">Seterusnya</button>
                 </div>
             </form>
         </div>
 
         {{-- STEP 2: Maklumat Spesifikasi --}}
-        <div class="step-content" id="step2Content">
+        <div class="d-none" id="step2Content">
             <h4 class="form-title">MAKLUMAT SPESIFIKASI KAJIAN</h4>
 
             <table class="spec-table">
@@ -591,42 +437,41 @@
             </table>
 
             <div class="d-flex justify-content-end mb-4">
-                <button type="button" class="btn btn-tambah" onclick="openSpecificationModal()">Tambah</button>
+                <button type="button" class="btn btn-tambah px-4 py-2 rounded fw-bold" onclick="openSpecificationModal()">Tambah</button>
             </div>
 
             {{-- Navigation Buttons --}}
             <div class="d-flex justify-content-between mt-4">
-                <button type="button" class="btn btn-sebelumnya" onclick="showStep(1)">Sebelumnya</button>
+                <button type="button" class="btn btn-sebelumnya px-4 py-2 rounded fw-bold" onclick="showStep(1)">Sebelumnya</button>
                 <div class="d-flex gap-2">
-                    <button type="button" class="btn btn-simpan">Simpan</button>
-                    <button type="button" class="btn btn-seterusnya" onclick="showStep(3)">Seterusnya</button>
+                    <button type="button" class="btn btn-simpan px-4 py-2 rounded fw-bold">Simpan</button>
+                    <button type="button" class="btn btn-seterusnya px-4 py-2 rounded fw-bold" onclick="showStep(3)">Seterusnya</button>
                 </div>
             </div>
         </div>
 
         {{-- STEP 3: Kod Bidang --}}
-        <div class="step-content" id="step3Content">
+        <div class="d-none" id="step3Content">
             <h4 class="form-title">KOD BIDANG</h4>
 
             <div class="row mb-3">
                 <div class="col-md-6">
-                    <div class="form-row-horizontal">
-                        <label class="form-label">Kod Bidang MOF</label>
-                        <div class="form-control-wrapper">
-                            <select class="form-select" id="mofCodes" multiple>
+                    <div class="d-flex align-items-center">
+                        <label class="form-label w-50 me-3 text-end mb-0">Kod Bidang MOF</label>
+                        <div class="flex-fill">
+                            <select class="form-select" id="mofCodes">
                                 <option value="">-- Sila Pilih --</option>
                                 <option value="1">Kod MOF 1</option>
                                 <option value="2">Kod MOF 2</option>
                                 <option value="3">Kod MOF 3</option>
                             </select>
-                            <small class="text-muted">Tekan Ctrl untuk pilih berbilang</small>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-6">
-                    <div class="form-row-horizontal">
-                        <label class="form-label">Gred CIDB</label>
-                        <div class="form-control-wrapper">
+                    <div class="d-flex align-items-center">
+                        <label class="form-label w-50 me-3 text-end mb-0">Gred CIDB</label>
+                        <div class="flex-fill">
                             <select class="form-select" id="cidbGrade">
                                 <option value="">-- Sila Pilih --</option>
                                 <option value="1">Gred 1</option>
@@ -639,17 +484,16 @@
             </div>
 
             <div class="row mb-3">
-                <div class="col-md-12">
-                    <div class="form-row-horizontal">
-                        <label class="form-label">Bidang Pengkhususan CIDB</label>
-                        <div class="form-control-wrapper">
-                            <select class="form-select" id="cidbCodes" multiple>
+                <div class="col-md-6">
+                    <div class="d-flex align-items-center">
+                        <label class="form-label w-50 me-3 text-end mb-0">Bidang Pengkhususan CIDB</label>
+                        <div class="flex-fill">
+                            <select class="form-select" id="cidbCodes">
                                 <option value="">-- Sila Pilih --</option>
                                 <option value="1">Bidang CIDB 1</option>
                                 <option value="2">Bidang CIDB 2</option>
                                 <option value="3">Bidang CIDB 3</option>
                             </select>
-                            <small class="text-muted">Tekan Ctrl untuk pilih berbilang</small>
                         </div>
                     </div>
                 </div>
@@ -657,52 +501,52 @@
 
             {{-- Navigation Buttons --}}
             <div class="d-flex justify-content-between mt-4">
-                <button type="button" class="btn btn-sebelumnya" onclick="showStep(2)">Sebelumnya</button>
+                <button type="button" class="btn btn-sebelumnya px-4 py-2 rounded fw-bold" onclick="showStep(2)">Sebelumnya</button>
                 <div class="d-flex gap-2">
-                    <button type="button" class="btn btn-simpan" onclick="saveProject()">Simpan</button>
-                    <button type="button" class="btn btn-seterusnya" onclick="publishProject()">Terbitkan</button>
+                    <button type="button" class="btn btn-simpan px-4 py-2 rounded fw-bold" onclick="saveProject()">Simpan</button>
+                    <button type="button" class="btn btn-seterusnya px-4 py-2 rounded fw-bold" onclick="publishProject()">Terbitkan</button>
                 </div>
             </div>
         </div>
 
         {{-- STEP 4: Success Message Page for Simpan --}}
-        <div class="step-content" id="step4Content" style="display: none;">
-            <div style="text-align: center; padding: 60px 20px;">
-                <div style="margin-bottom: 30px;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="#00a988" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin: 0 auto;">
+        <div class="d-none" id="step4Content">
+            <div class="text-center py-5 px-4">
+                <div class="mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="var(--sg-red)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="d-block mx-auto">
                         <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
                         <polyline points="22 4 12 14.01 9 11.01"></polyline>
                     </svg>
                 </div>
-                <h3 style="color: #1F3A8A; font-weight: bold; margin-bottom: 20px;">Projek Berjaya Disimpan!</h3>
-                <p style="color: #6c757d; font-size: 16px; margin-bottom: 40px; max-width: 600px; margin-left: auto; margin-right: auto;">
+                <h3 class="fw-bold mb-3" style="color: var(--sg-red-dark);">Projek Berjaya Disimpan!</h3>
+                <p class="text-muted fs-5 mb-5 mx-auto" style="max-width: 600px;">
                     Projek pembelian terus anda telah berjaya disimpan sebagai draf. Anda boleh mengemaskini projek ini kemudian atau menerbitkannya apabila sudah siap.
                 </p>
-                <div class="d-flex justify-content-center gap-2">
-                    <button type="button" class="btn btn-sebelumnya" onclick="showStep(3)">Kembali</button>
-                    <button type="button" class="btn btn-seterusnya" onclick="goToNewProject()">Cipta Projek Baru</button>
-                    <button type="button" class="btn btn-simpan" onclick="goToList()">Lihat Senarai Projek</button>
+                <div class="d-flex justify-content-center gap-2 flex-wrap">
+                    <button type="button" class="btn btn-sebelumnya px-4 py-2 rounded fw-bold" onclick="showStep(3)">Kembali</button>
+                    <button type="button" class="btn btn-seterusnya px-4 py-2 rounded fw-bold" onclick="goToNewProject()">Cipta Projek Baru</button>
+                    <button type="button" class="btn btn-simpan px-4 py-2 rounded fw-bold" onclick="goToList()">Lihat Senarai Projek</button>
                 </div>
             </div>
         </div>
 
         {{-- STEP 5: Success Message Page for Terbitkan --}}
-        <div class="step-content" id="step5Content" style="display: none;">
-            <div style="text-align: center; padding: 60px 20px;">
-                <div style="margin-bottom: 30px;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="#00a988" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin: 0 auto;">
+        <div class="d-none" id="step5Content">
+            <div class="text-center py-5 px-4">
+                <div class="mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="var(--sg-red)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="d-block mx-auto">
                         <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
                         <polyline points="22 4 12 14.01 9 11.01"></polyline>
                     </svg>
                 </div>
-                <h3 style="color: #1F3A8A; font-weight: bold; margin-bottom: 20px;">Projek Berjaya Diterbitkan!</h3>
-                <p style="color: #6c757d; font-size: 16px; margin-bottom: 40px; max-width: 600px; margin-left: auto; margin-right: auto;">
+                <h3 class="fw-bold mb-3" style="color: var(--sg-red-dark);">Projek Berjaya Diterbitkan!</h3>
+                <p class="text-muted fs-5 mb-5 mx-auto" style="max-width: 600px;">
                     Projek pembelian terus anda telah berjaya diterbitkan. Projek ini kini aktif dan boleh diakses oleh syarikat-syarikat yang layak.
                 </p>
-                <div class="d-flex justify-content-center gap-2">
-                    <button type="button" class="btn btn-sebelumnya" onclick="showStep(3)">Kembali</button>
-                    <button type="button" class="btn btn-seterusnya" onclick="goToNewProject()">Cipta Projek Baru</button>
-                    <button type="button" class="btn btn-simpan" onclick="goToList()">Lihat Senarai Projek</button>
+                <div class="d-flex justify-content-center gap-2 flex-wrap">
+                    <button type="button" class="btn btn-sebelumnya px-4 py-2 rounded fw-bold" onclick="showStep(3)">Kembali</button>
+                    <button type="button" class="btn btn-seterusnya px-4 py-2 rounded fw-bold" onclick="goToNewProject()">Cipta Projek Baru</button>
+                    <button type="button" class="btn btn-simpan px-4 py-2 rounded fw-bold" onclick="goToList()">Lihat Senarai Projek</button>
                 </div>
             </div>
         </div>
@@ -716,7 +560,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="specificationModalLabel">Cipta Spesifikasi</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="border: none; background: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <form id="specificationForm">
@@ -739,7 +583,7 @@
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-simpan" onclick="saveSpecification()">Simpan</button>
+                <button type="button" class="btn btn-simpan px-4 py-2 rounded fw-bold" onclick="saveSpecification()">Simpan</button>
             </div>
         </div>
     </div>
@@ -750,12 +594,10 @@
     let specificationCounter = 1;
 
     function showStep(step) {
-        console.log('showStep called with:', step);
-
         // Hide all steps
-        document.querySelectorAll('.step-content').forEach(content => {
-            content.classList.remove('active');
-            content.style.display = 'none';
+        document.querySelectorAll('[id$="Content"]').forEach(content => {
+            content.classList.add('d-none');
+            content.classList.remove('d-block');
         });
 
         // Remove active and done classes from all step indicators
@@ -763,29 +605,43 @@
             indicator.classList.remove('active', 'done');
         });
 
-        // Mark previous steps as done (blue) - only for steps 1-3
+        // Mark previous steps as done - only for steps 1-3
         for (let i = 1; i < step && i <= 3; i++) {
             const prevIndicator = document.getElementById('step' + i + 'Indicator');
-            if (prevIndicator) {
-                prevIndicator.classList.add('done');
-            }
+            if (prevIndicator) prevIndicator.classList.add('done');
         }
 
-        // Mark current step as active (blue) - only for steps 1-3
+        // Mark current step as active - only for steps 1-3
         if (step <= 3) {
             const stepIndicator = document.getElementById('step' + step + 'Indicator');
-            if (stepIndicator) {
-                stepIndicator.classList.add('active');
-            }
+            if (stepIndicator) stepIndicator.classList.add('active');
         }
 
         // Show selected step content
         const stepContent = document.getElementById('step' + step + 'Content');
         if (stepContent) {
-            stepContent.classList.add('active');
-            stepContent.style.display = 'block';
-        } else {
-            console.error('Step content not found:', 'step' + step + 'Content');
+            stepContent.classList.remove('d-none');
+            stepContent.classList.add('d-block');
+        }
+
+        currentStep = step;
+    }
+
+    function showSuccessPage(step) {
+        document.querySelectorAll('.progress-step').forEach(indicator => {
+            indicator.classList.remove('active');
+            indicator.classList.add('done');
+        });
+
+        document.querySelectorAll('[id$="Content"]').forEach(content => {
+            content.classList.add('d-none');
+            content.classList.remove('d-block');
+        });
+
+        const successContent = document.getElementById('step' + step + 'Content');
+        if (successContent) {
+            successContent.classList.remove('d-none');
+            successContent.classList.add('d-block');
         }
 
         currentStep = step;
@@ -793,79 +649,25 @@
 
     function saveProject() {
         // TODO: Add actual save logic here (AJAX call to backend)
-        console.log('Saving project...');
-
-        // Mark all steps as done
-        document.querySelectorAll('.progress-step').forEach(indicator => {
-            indicator.classList.remove('active');
-            indicator.classList.add('done');
-        });
-
-        // Hide all step contents
-        document.querySelectorAll('.step-content').forEach(content => {
-            content.classList.remove('active');
-            content.style.display = 'none';
-        });
-
-        // Show success page for Simpan
-        const successContent = document.getElementById('step4Content');
-        if (successContent) {
-            successContent.style.display = 'block';
-            successContent.classList.add('active');
-        }
-
-        currentStep = 4;
+        showSuccessPage(4);
     }
 
     function publishProject() {
         // TODO: Add actual publish logic here (AJAX call to backend)
-        console.log('Publishing project...');
-
-        // Mark all steps as done
-        document.querySelectorAll('.progress-step').forEach(indicator => {
-            indicator.classList.remove('active');
-            indicator.classList.add('done');
-        });
-
-        // Hide all step contents
-        document.querySelectorAll('.step-content').forEach(content => {
-            content.classList.remove('active');
-            content.style.display = 'none';
-        });
-
-        // Show success page for Terbitkan
-        const successContent = document.getElementById('step5Content');
-        if (successContent) {
-            successContent.style.display = 'block';
-            successContent.classList.add('active');
-        }
-
-        currentStep = 5;
+        showSuccessPage(5);
     }
 
     // Make showStep available globally
     window.showStep = showStep;
 
     function openSpecificationModal() {
-        // Reset form
         document.getElementById('itemName').value = '';
         document.getElementById('itemQuantity').value = '';
         document.getElementById('itemSST').value = '';
 
-        // Open modal - check if Bootstrap is available
         const modalElement = document.getElementById('specificationModal');
         if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
-            const modal = new bootstrap.Modal(modalElement);
-            modal.show();
-        } else {
-            // Fallback: show modal using jQuery or plain JavaScript
-            modalElement.style.display = 'block';
-            modalElement.classList.add('show');
-            document.body.classList.add('modal-open');
-            const backdrop = document.createElement('div');
-            backdrop.className = 'modal-backdrop fade show';
-            backdrop.id = 'modalBackdrop';
-            document.body.appendChild(backdrop);
+            new bootstrap.Modal(modalElement).show();
         }
     }
 
@@ -923,38 +725,10 @@
         const modalElement = document.getElementById('specificationModal');
         if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
             const modal = bootstrap.Modal.getInstance(modalElement);
-            if (modal) {
-                modal.hide();
-            }
-        } else {
-            // Fallback: hide modal
-            modalElement.style.display = 'none';
-            modalElement.classList.remove('show');
-            document.body.classList.remove('modal-open');
-            const backdrop = document.getElementById('modalBackdrop');
-            if (backdrop) {
-                backdrop.remove();
-            }
+            if (modal) modal.hide();
         }
     }
 
-    // Close modal when clicking close button
-    document.addEventListener('DOMContentLoaded', function() {
-        const closeBtn = document.querySelector('#specificationModal .btn-close');
-        if (closeBtn) {
-            closeBtn.addEventListener('click', closeModal);
-        }
-
-        // Close modal when clicking outside
-        const modalElement = document.getElementById('specificationModal');
-        if (modalElement) {
-            modalElement.addEventListener('click', function(e) {
-                if (e.target === modalElement) {
-                    closeModal();
-                }
-            });
-        }
-    });
 
     function goToNewProject() {
         window.location.href = '{{ route("pembelianTerus.createProject") }}';
@@ -968,12 +742,6 @@
     // Initialize step 1 as active when page loads
     document.addEventListener('DOMContentLoaded', function() {
         showStep(1);
-
-        // Initialize multi-select styling if needed
-        const multiSelects = document.querySelectorAll('select[multiple]');
-        multiSelects.forEach(select => {
-            select.style.minHeight = '100px';
-        });
     });
 </script>
 

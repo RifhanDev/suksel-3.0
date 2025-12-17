@@ -91,6 +91,7 @@ Route::view('/jawatankuasa-spesifikasi/senarai-kewangan', 'newModule.jawatankuas
 Route::prefix('pembelian-terus')->controller(PembelianTerusController::class)->group(function () {
 	Route::get('/cipta-projek', 'createProject')->name('pembelianTerus.createProject');
 	Route::get('/sebut-harga', 'quoteProject')->name('pembelianTerus.quoteProject');
+	Route::get('/maklumat-projek/{tender_no}', 'detailProject')->name('pembelianTerus.detailProject');
 });
 
 
