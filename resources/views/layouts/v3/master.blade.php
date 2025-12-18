@@ -21,6 +21,7 @@
 
     <!-- Custom Styles -->
     <link href="{{ asset('css/modern.css') }}" rel="stylesheet">
+    <link href="{{ asset('css/components/form-components.css') }}" rel="stylesheet">
 
 	<!-- Selectize CSS -->
 	<link href="{{ asset('packages/selectize/dist/css/selectize.default.css') }}" rel="stylesheet">
@@ -584,20 +585,6 @@
         .btn-selangor:hover {
             background-color: var(--sg-red-dark) !important;
             border-color: var(--sg-red-dark) !important;
-        }
-
-        /* ===== FORM INPUT ===== */
-        .form-control:focus, 
-        .form-select:focus {
-            border-color: var(--sg-red) !important;
-            box-shadow: 0 0 0 3px rgba(196, 30, 58, 0.1) !important;
-            outline: none;
-        }
-
-        /* checks/radios */
-        .form-check-input:checked {
-            background-color: var(--sg-red) !important;
-            border-color: var(--sg-red) !important;
         }
 
 		/* ===== FORM VALIDATION ===== */

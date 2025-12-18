@@ -52,6 +52,7 @@ use App\Http\Controllers\CertificationCodesController;
 use App\Http\Controllers\GatewaysController;
 use App\Http\Controllers\PaymentsController;
 use App\Http\Controllers\HelpCategoriesController;
+use App\Http\Controllers\PembelianTerusController;
 use App\Http\Controllers\ReportRevenueController;
 use App\Http\Controllers\ReportAgencyActiveController;
 use App\Http\Controllers\ReportAgencyAllController;
@@ -84,8 +85,14 @@ Route::get('privacy', [HomeController::class, 'privacy']);
 // Place 3.0 Modules Routes Temporarily Here
 Route::view('/cipta-tender', 'newModule.cipta_tender')->name('ciptaTender');
 Route::view('/pelantikan-jawatankuasa', 'newModule.pelantikan_jawatankuasa')->name('pelantikanJawatankuasa');
-Route::view('/jawatankuasa-spesifikasi/senarai-teknikal','newModule.jawatankuasaSpesifikasi.senarai_teknikal')->name('jawatankuasaSpesifikasi.teknikal');
-Route::view('/jawatankuasa-spesifikasi/senarai-kewangan','newModule.jawatankuasaSpesifikasi.senarai_kewangan')->name('jawatankuasaSpesifikasi.kewangan');
+Route::view('/jawatankuasa-spesifikasi/senarai-teknikal', 'newModule.jawatankuasaSpesifikasi.senarai_teknikal')->name('jawatankuasaSpesifikasi.teknikal');
+Route::view('/jawatankuasa-spesifikasi/senarai-kewangan', 'newModule.jawatankuasaSpesifikasi.senarai_kewangan')->name('jawatankuasaSpesifikasi.kewangan');
+
+Route::prefix('pembelian-terus')->controller(PembelianTerusController::class)->group(function () {
+	Route::get('/cipta-projek', 'createProject')->name('pembelianTerus.createProject');
+	Route::get('/sebut-harga', 'quoteProject')->name('pembelianTerus.quoteProject');
+	Route::get('/maklumat-projek/{tender_no}', 'detailProject')->name('pembelianTerus.detailProject');
+});
 
 
 // Public resources
@@ -136,8 +143,7 @@ Route::get('tenders/{id}/vendors', [TendersController::class, 'vendors'])->name(
 Route::post('tenders/{id}/exception', [TendersController::class, 'exception'])->name('tenders.exception');
 
 // Petender Performance
-Route::prefix('petenders')->controller(PetenderPerformanceController::class)->group(function ()
-{
+Route::prefix('petenders')->controller(PetenderPerformanceController::class)->group(function () {
 	Route::post('petender-performance/{tender}/{vendor}', 'store')->name('store.PetenderPerformance');
 	Route::get('{tender}', 'vendorPetender')->name('index.TenderVendor');
 });
@@ -183,8 +189,7 @@ Route::view('/keputusan-mesyuarat', 'newModule.keputusan_mesyuarat')->name('kepu
 
 
 // Protected routes
-Route::middleware(['auth'])->group(function ()
-{
+Route::middleware(['auth'])->group(function () {
 	// Route::get('tender/select', [TendersController::class, 'select']);
 	Route::resource('tender', TendersController::class);
 	// Route::get('tender/{id}/prices', [TendersController::class, 'prices'])->name('tenders.prices');
@@ -281,8 +286,7 @@ Route::middleware(['auth'])->group(function ()
 	Route::delete('vendor/{vendor}/requests/{requests}', [CodeRequestsController::class, 'destroy'])->name('vendor.requests.destroy');
 
 	// Admin routes
-	Route::middleware(['role:Admin'])->group(function ()
-	{
+	Route::middleware(['role:Admin'])->group(function () {
 		Route::get('dashboard/hq', [HomeController::class, 'managementDashboard'])->name('dashboard.hq');
 
 		Route::get('users/pending-approval', [UsersController::class, 'pendingApproval'])->name('users.pending-approval');
@@ -331,7 +335,7 @@ Route::middleware(['auth'])->group(function ()
 		Route::put('requests/{requests}/approve', [CodeRequestsController::class, 'approve'])->name('requests.approve');
 		Route::post('requests/{requests}/reject', [CodeRequestsController::class, 'reject'])->name('requests.reject');
 
-		
+
 
 		Route::post('transactions/ajax', [TransactionsController::class, 'updateFpxCount'])->name('updateFpxCount');
 		Route::get('transactions/subscription', [TransactionsController::class, 'subscriptionIndex']);
@@ -349,8 +353,7 @@ Route::middleware(['auth'])->group(function ()
 		Route::get('transactions/{id}/temp_receipt', [TransactionsController::class, 'temp_receipt'])->name('transactions.temp_receipt');
 
 		Route::resource('blacklists', VendorBlacklistsController::class);
-		Route::prefix('vendor/{vendor}/blacklists/{blacklists}')->name('vendor.blacklists.')->controller(VendorBlacklistsController::class)->group(function ()
-		{
+		Route::prefix('vendor/{vendor}/blacklists/{blacklists}')->name('vendor.blacklists.')->controller(VendorBlacklistsController::class)->group(function () {
 			Route::put('cancel', 'cancel')->name('cancel');
 			Route::get('unblacklist', 'unblacklist')->name('unblacklist');
 		});
