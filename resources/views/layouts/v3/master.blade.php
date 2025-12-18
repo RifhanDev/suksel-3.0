@@ -39,6 +39,7 @@
 			--sg-red: #c41e3a;
 			--sg-red-dark: #8b1428;
 			--sg-red-deep: #5a0d1a;
+            --sg-red-soft: rgba(196, 30, 58, 0.05);
 			--sg-yellow: #ffcc00;
 			--sg-black: #1f1f1f;
 			--sg-bg: #f8f9fa;
@@ -69,6 +70,12 @@
             --scrollbar-thumb: rgba(255, 255, 255, 0.2);
             --scrollbar-track: transparent;
             --transition-speed: 0.3s;
+
+            /* ===== Input Fields ===== */
+            --input-bg: #ffffff;
+            --input-border: #e2e8f0;
+            --label-color: #64748b;
+            --text-dark: #334155;
 		}
 
 		* { box-sizing: border-box; }
