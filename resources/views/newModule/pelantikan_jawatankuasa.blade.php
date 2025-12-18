@@ -121,7 +121,7 @@ input[type="checkbox"]{
 </div>
 </div>
 
-
+<div id="laporanArea">
 <!-- ===================== PAGE DETAIL ====================== -->
 <div id="pageDetail" style="display:none">
 
@@ -244,11 +244,41 @@ $tabData = [
     >
 </td>
 
-<td></td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
+<td>
+    <input 
+        type="text"
+        class="form-control"
+        placeholder="Masukkan Nama"
+    >
+</td>
+<td>
+    <input 
+        type="text"
+        class="form-control"
+        placeholder="Masukkan Jawatan"
+    >
+</td>
+<td>
+    <input 
+        type="email"
+        class="form-control"
+        placeholder="Masukkan Email"
+    >
+</td>
+<td>
+    <input 
+        type="text"
+        class="form-control"
+        placeholder="Gred"
+    >
+</td>
+<td>
+    <select class="form-select">
+        <option disabled selected></option>
+        <option>Ya</option>
+        <option>Tidak</option>
+    </select>
+</td>
 
 <td>
 <select class="form-select">
@@ -265,7 +295,6 @@ $tabData = [
 
 </table>
 
-
 <!-- ACTION BUTTONS -->
 <div class="d-flex justify-content-end gap-2 mb-4">
     <button class="btn btn-success btn-tambah">Tambah</button>
@@ -281,10 +310,28 @@ $tabData = [
         <textarea class="form-control" rows="3"></textarea>
     </div>
 
-    <div class="col-md-6">
-        <label>Dokumen Sokongan</label><br>
-        <button class="btn btn-success mt-2">Muat Naik</button>
-    </div>
+   <div class="col-md-6">
+    <label>Dokumen Sokongan</label><br>
+
+    <!-- Hidden file input -->
+    <input 
+        type="file"
+        id="dokumenSokongan"
+        class="d-none"
+    >
+
+    <!-- Trigger button -->
+    <button 
+        type="button"
+        class="btn btn-success mt-2"
+        onclick="document.getElementById('dokumenSokongan').click()"
+    >
+        Muat Naik
+    </button>
+</div>
+
+<div class="mt-2 text-muted small" id="fileName"></div>
+
 </div>
 </div>
 
@@ -292,7 +339,7 @@ $tabData = [
 <!-- MAIN ACTION -->
 <div class="d-flex justify-content-end gap-2">
     <button class="btn btn-primary btn-simpan">Simpan</button>
-    <button class="btn btn-info text-white">Laporan</button>
+    <button class="btn btn-info text-white" onclick="printLaporan()">Laporan</button>
     <button class="btn btn-success btn-hantar">Hantar Pemakluman</button>
 </div>
 
@@ -334,6 +381,7 @@ $tabData = [
 </div>
 
 
+</div>
 </div>
 </div>
 
@@ -448,6 +496,25 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
 });
+
+// DISPLAY UPLOADED FILE NAME
+document.getElementById('dokumenSokongan').addEventListener('change', function () {
+    if (this.files.length > 0) {
+        document.getElementById('fileName').innerText = this.files[0].name;
+    }
+});
+
+// PRINT REPORT
+function printLaporan() {
+    const content = document.getElementById('laporanArea').innerHTML;
+    const original = document.body.innerHTML;
+
+    document.body.innerHTML = content;
+    window.print();
+    document.body.innerHTML = original;
+    location.reload(); // restore JS & styles
+}
+
 </script>
 
 @endsection
