@@ -27,25 +27,28 @@
 						<svg xmlns="http://www.w3.org/2000/svg" class="nav-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
 					</a>
 					<div class="collapse {{ request()->routeIs('ciptaTender') ? 'show' : '' }}" id="menuTender">
-						
 						<ul class="sidebar-submenu">
-
-						<li class="submenu-section-header">Cipta Tender & Sebut Harga</li>
-
-							<li><a class="submenu-item" href="{{ route('ciptaTender') }}"><div class="submenu-icon" style="{{ request()->routeIs('ciptaTender') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}"></div><span class="{{ request()->routeIs('ciptaTender') ? 'text-white' : '' }}">Cipta Tender</span></a></li>
-
-						<li class="submenu-section-header">Senarai</li>
-
-						@if (App\Tender::canList())
-						@if (Auth::user()->ability(['Admin', 'Registration Assesor', 'Front Desk'], []))
-						<li><a class="submenu-item" href="{{ asset('tenders') }}">
-								<div class="submenu-icon"></div><span>Senarai Tender</span>
-							</a></li>
-						@else
-						<li><a class="submenu-item" href="{{ asset('agencies/' . Auth::user()->organization_unit_id) }}">
-								<div class="submenu-icon"></div><span>Senarai Tender</span>
-							</a></li>
+						{{-- <li class="submenu-section-header">Cipta Tender & Sebut Harga</li> --}}
+						@if ($user->can('Tender:excecute'))
+							<li>
+								<a class="submenu-item" href="{{ route('ciptaTender') }}">
+									<div class="submenu-icon" style="{{ request()->routeIs('ciptaTender') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}"></div>
+									<span class="{{ request()->routeIs('ciptaTender') ? 'text-white' : '' }}">Cipta Tender/Sebut Harga</span>
+								</a>
+							</li>
 						@endif
+						
+						{{-- <li class="submenu-section-header">Senarai</li> --}}
+						@if (App\Tender::canList())
+							@if (Auth::user()->ability(['Admin', 'Registration Assesor', 'Front Desk'], []))
+							<li><a class="submenu-item" href="{{ asset('tenders') }}">
+									<div class="submenu-icon"></div><span>Senarai Tender</span>
+								</a></li>
+							@else
+							<li><a class="submenu-item" href="{{ asset('agencies/' . Auth::user()->organization_unit_id) }}">
+									<div class="submenu-icon"></div><span>Senarai Tender</span>
+								</a></li>
+							@endif
 						@endif
 						@if (App\Vendor::canList())
 						<li><a class="submenu-item" href="{{ asset('vendors') }}">
