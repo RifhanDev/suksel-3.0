@@ -12,6 +12,7 @@ use App\Http\Controllers\BannersController;
 use App\Http\Controllers\TendersController;
 use App\Http\Controllers\FpxController;
 use App\Http\Controllers\EbpgController;
+use App\Http\Controllers\DuitNowController;
 use App\Http\Controllers\TransactionsController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\ProfileController;
@@ -446,6 +447,9 @@ Route::middleware(['auth'])->group(function () {
 		Route::get('payment/fpx/bank-list', [FpxController::class, 'bankList'])->name('fpx.bank-list');
 		Route::get('payment/ebpg/connect', [EbpgController::class, 'connect'])->name('ebpg.connect');
 		Route::post('payment/ebpg/respond', [EbpgController::class, 'respond'])->name('ebpg.respond');
+		Route::get('payment/duitnow/connect', [DuitNowController::class, 'connect'])->name('duitnow.connect');
+		Route::post('payment/duitnow/respond', [DuitNowController::class, 'respond'])->name('duitnow.respond');
+		Route::post('payment/duitnow/callback', [DuitNowController::class, 'callback'])->name('duitnow.callback');
 
 		Route::get('dashboard/hq', [HomeController::class, 'managementDashboard']);
 
