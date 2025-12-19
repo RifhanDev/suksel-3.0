@@ -21,6 +21,7 @@
 
     <!-- Custom Styles -->
     <link href="{{ asset('css/modern.css') }}" rel="stylesheet">
+    <link href="{{ asset('css/components/form-components.css') }}" rel="stylesheet">
 
 	<!-- Selectize CSS -->
 	<link href="{{ asset('packages/selectize/dist/css/selectize.default.css') }}" rel="stylesheet">
@@ -39,6 +40,7 @@
 			--sg-red: #c41e3a;
 			--sg-red-dark: #8b1428;
 			--sg-red-deep: #5a0d1a;
+            --sg-red-soft: rgba(196, 30, 58, 0.05);
 			--sg-yellow: #ffcc00;
 			--sg-black: #1f1f1f;
 			--sg-bg: #f8f9fa;
@@ -69,6 +71,12 @@
             --scrollbar-thumb: rgba(255, 255, 255, 0.2);
             --scrollbar-track: transparent;
             --transition-speed: 0.3s;
+
+            /* ===== Input Fields ===== */
+            --input-bg: #ffffff;
+            --input-border: #e2e8f0;
+            --label-color: #64748b;
+            --text-dark: #334155;
 		}
 
 		* { box-sizing: border-box; }
@@ -577,20 +585,6 @@
         .btn-selangor:hover {
             background-color: var(--sg-red-dark) !important;
             border-color: var(--sg-red-dark) !important;
-        }
-
-        /* ===== FORM INPUT ===== */
-        .form-control:focus, 
-        .form-select:focus {
-            border-color: var(--sg-red) !important;
-            box-shadow: 0 0 0 3px rgba(196, 30, 58, 0.1) !important;
-            outline: none;
-        }
-
-        /* checks/radios */
-        .form-check-input:checked {
-            background-color: var(--sg-red) !important;
-            border-color: var(--sg-red) !important;
         }
 
 		/* ===== FORM VALIDATION ===== */

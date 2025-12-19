@@ -82,7 +82,7 @@
                                 data-page="1">
                                 <thead>
                                     <tr>
-                                        <th class="text-center"><input type="checkbox" class="form-check-input px-0" name="" id=""></th>
+                                        <th class="text-center"><input type="checkbox" class="form-check-input px-0 check-all-kewangan">
                                         <th>Tajuk / Dokumen</th>
                                         <th class="text-center">Mekanisma</th>
                                         <th class="text-center">Tindakan Pembekal</th>
@@ -94,7 +94,7 @@
                                 </thead>
                                 <tbody>
                                     <tr>
-                                        <td class="text-center"><input type="checkbox" class="form-check-input px-0" name="" id=""></td>
+                                        <td class="text-center"><input type="checkbox" class="form-check-input px-0 check-all-kewangan"></td>
                                         <td>Perkhidmatan Penilaian Forensik Keatas Sistem XXXX</td>
                                         <td class="text-center">Spesifikasi</td>
                                         <td class="text-center">Kunci Masuk</td>
@@ -104,7 +104,7 @@
                                         <td class="text-center"><i class='bx bxs-pencil'></i></td>
                                     </tr>
                                     <tr>
-                                        <td class="text-center"><input type="checkbox" class="form-check-input px-0" name="" id=""></td>
+                                        <td class="text-center"><input type="checkbox" class="form-check-input px-0 check-all-kewangan"></td>
                                         <td>Maklumat Profil Petender</td>
                                         <td class="text-center">Borang Atas Talian</td>
                                         <td class="text-center">Kunci Masuk</td>
@@ -114,7 +114,7 @@
                                         <td class="text-center"></td>
                                     </tr>
                                     <tr>
-                                        <td class="text-center"><input type="checkbox" class="form-check-input px-0" name="" id=""></td>
+                                        <td class="text-center"><input type="checkbox" class="form-check-input px-0 check-all-kewangan"></td>
                                         <td>Penyata Bank Terkini (3 Bulan Terakhir) Syarikat</td>
                                         <td class="text-center">Borang Atas Talian</td>
                                         <td class="text-center">Kunci Masuk</td>
@@ -124,7 +124,7 @@
                                         <td class="text-center"></td>
                                     </tr>
                                     <tr>
-                                        <td class="text-center"><input type="checkbox" class="form-check-input px-0" name="" id=""></td>
+                                        <td class="text-center"><input type="checkbox" class="form-check-input px-0 check-all-kewangan"></td>
                                         <td>Salinan Sijil Pendaftaran dengan Kementerian Kewangan</td>
                                         <td class="text-center">
                                             <select name="" id="" class="form-control">
@@ -138,7 +138,7 @@
                                         <td class="text-center"></td>
                                     </tr>
                                     <tr>
-                                        <td class="text-center"><input type="checkbox" class="form-check-input px-0" name="" id=""></td>
+                                        <td class="text-center"><input type="checkbox" class="form-check-input px-0 check-all-kewangan"></td>
                                         <td>Salinan Sijil Akuan Syarikat Bumiputera dengan Kementerian Kewangan</td>
                                         <td class="text-center">
                                             <select name="" id="" class="form-control">
@@ -152,7 +152,7 @@
                                         <td class="text-center"></td>
                                     </tr>
                                     <tr>
-                                        <td class="text-center"><input type="checkbox" class="form-check-input px-0" name="" id=""></td>
+                                        <td class="text-center"><input type="checkbox" class="form-check-input px-0 check-all-kewangan"></td>
                                         <td>Salinan Sijil Suruhanjaya Syarikat Malaysia (SSM)</td>
                                         <td class="text-center">
                                             <select name="" id="" class="form-control">
@@ -166,7 +166,7 @@
                                         <td class="text-center"></td>
                                     </tr>
                                     <tr>
-                                        <td class="text-center"><input type="checkbox" class="form-check-input px-0" name="" id=""></td>
+                                        <td class="text-center"><input type="checkbox" class="form-check-input px-0 check-all-kewangan"></td>
                                         <td>Salinan Surat Pendaftaran Cukai Jualan Dan Cukai Perkhidmatan (CJCP)</td>
                                         <td class="text-center">
                                             <select name="" id="" class="form-control">
@@ -180,7 +180,7 @@
                                         <td class="text-center"></td>
                                     </tr>
                                     <tr>
-                                        <td class="text-center"><input type="checkbox" class="form-check-input px-0" name="" id=""></td>
+                                        <td class="text-center"><input type="checkbox" class="form-check-input px-0 check-all-kewangan"></td>
                                         <td>Surat Akuan Pembida</td>
                                         <td class="text-center">
                                             <select name="" id="" class="form-control">
@@ -198,7 +198,7 @@
                                         <td class="text-center"></td>
                                     </tr>
                                     <tr>
-                                        <td class="text-center"><input type="checkbox" class="form-check-input px-0" name="" id=""></td>
+                                        <td class="text-center"><input type="checkbox" class="form-check-input px-0 check-all-kewangan"></td>
                                         <td>Surat Perwakilan Kuasa</td>
                                         <td class="text-center">
                                             <select name="" id="" class="form-control">
@@ -216,7 +216,7 @@
                                         <td class="text-center"></td>
                                     </tr>
                                     <tr>
-                                        <td class="text-center"><input type="checkbox" class="form-check-input px-0" name="" id=""></td>
+                                        <td class="text-center"><input type="checkbox" class="form-check-input px-0 check-all-kewangan"></td>
                                         <td>Surat Setuju Terima</td>
                                         <td class="text-center">
                                             <select name="" id="" class="form-control">
@@ -234,7 +234,7 @@
                                         <td class="text-center"></td>
                                     </tr>
                                     <tr>
-                                        <td class="text-center"><input type="checkbox" class="form-check-input px-0" name="" id=""></td>
+                                        <td class="text-center"><input type="checkbox" class="form-check-input px-0 check-all-kewangan"></td>
                                         <td>Surat Akuan Pembida Berjaya (Lampiran B)</td>
                                         <td class="text-center">
                                             <select name="" id="" class="form-control">
@@ -252,7 +252,7 @@
                                         <td class="text-center"></td>
                                     </tr>
                                     <tr>
-                                        <td class="text-center"><input type="checkbox" class="form-check-input px-0" name="" id=""></td>
+                                        <td class="text-center"><input type="checkbox" class="form-check-input px-0 check-all-kewangan"></td>
                                         <td>Surat Akuan Sumpah Syarikat (Lampiran C)</td>
                                         <td class="text-center">
                                             <select name="" id="" class="form-control">
@@ -270,7 +270,7 @@
                                         <td class="text-center"></td>
                                     </tr>
                                     <tr>
-                                        <td class="text-center"><input type="checkbox" class="form-check-input px-0" name="" id=""></td>
+                                        <td class="text-center"><input type="checkbox" class="form-check-input px-0 check-all-kewangan"></td>
                                         <td>Penyata Kewangan (2 Tahun) Syarikat yang telah diaudit</td>
                                         <td class="text-center">
                                             <select name="" id="" class="form-control">
@@ -293,18 +293,41 @@
                         <div class="row mb-5">
                             <div class="col-12 d-flex justify-content-end">
                                 <a href="#" class="btn-md-sm btn btn-success mx-1" data-bs-toggle="modal" data-bs-target="#senaraiSemakStandard">Senarai Semak Standard</a>
-                                <a href="#" class="btn-md-sm btn btn-success mx-1">Tambah</a>
-                                <a href="#" class="btn-md-sm btn btn-danger mx-1">Hapus</a>
+                                <button type="button" class="btn-md-sm btn btn-success mx-1 btn-tambah-kewangan">Tambah</button>
+                                <button type="button" class="btn-md-sm btn btn-danger mx-1 btn-hapus-kewangan">Hapus</button>
                             </div>
                         </div>
                     <!-- Penetapan Skor -->
                     
                     <div class="row">
                         <div class="col-12 d-flex justify-content-end">
-                            <a href="#" class="btn-md-sm btn btn-success mx-1">Simpan</a>
-                            <a href="#" class="btn-md-sm btn btn-primary mx-1">Hantar</a>
+                            <button type="button" class="btn-md-sm btn btn-success mx-1 btn-simpan">Simpan</button>
+                            <button type="button" class="btn-md-sm btn btn-primary mx-1 btn-hantar">Hantar</button>
                         </div>
                     </div>
+                    <div class="modal fade" id="successModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content text-center p-4">
+
+            <div class="mb-3">
+                <svg width="64" height="64" viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="12" r="10" fill="#E6F7F3"/>
+                    <path d="M10 14.2L7.8 12l-1.4 1.4L10 17l8-8-1.4-1.4L10 14.2z"
+                          fill="#19c1a7"/>
+                </svg>
+            </div>
+
+            <h5 class="fw-bold mb-2">Berjaya</h5>
+            <p class="text-muted mb-4">Maklumat telah berjaya disimpan.</p>
+
+            <button type="button" class="btn btn-primary px-4" data-bs-dismiss="modal">
+                Tutup
+            </button>
+
+        </div>
+    </div>
+</div>
+
                 </div>
             </div>
         </div> <!-- end col -->
@@ -361,4 +384,88 @@
             </div>
         </div>
     </div>
+
+    <script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    /* =============================
+       TABLE: SENARAI SEMAK KEWANGAN
+    ============================== */
+    const table = document.querySelector('#datatable-buttons');
+    if (!table) return;
+
+    const tbody = table.querySelector('tbody');
+    const checkAll = table.querySelector('.check-all-kewangan');
+
+    // CHECK / UNCHECK ALL
+    checkAll.addEventListener('change', function () {
+        tbody.querySelectorAll('.row-check-kewangan')
+            .forEach(cb => cb.checked = this.checked);
+    });
+
+    // UPDATE HEADER CHECKBOX
+    tbody.addEventListener('change', function () {
+        const total = tbody.querySelectorAll('.row-check-kewangan').length;
+        const checked = tbody.querySelectorAll('.row-check-kewangan:checked').length;
+        checkAll.checked = total > 0 && total === checked;
+    });
+
+    /* =============================
+       TAMBAH ROW
+    ============================== */
+    document.querySelector('.btn-tambah-kewangan')
+        .addEventListener('click', function () {
+
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td class="text-center">
+                    <input type="checkbox" class="form-check-input row-check-kewangan">
+                </td>
+                <td><input type="text" class="form-control form-control-sm" placeholder="Tajuk / Dokumen"></td>
+                <td class="text-center">Borang</td>
+                <td class="text-center">Muat Naik</td>
+                <td class="text-center">
+                    <input type="checkbox" class="form-check-input">
+                </td>
+                <td>Baharu</td>
+                <td></td>
+                <td class="text-center">
+                    <i class="bx bxs-pencil"></i>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+
+    /* =============================
+       HAPUS ROW (CHECKED ONLY)
+    ============================== */
+    document.querySelector('.btn-hapus-kewangan')
+        .addEventListener('click', function () {
+
+            const checked = tbody.querySelectorAll('.row-check-kewangan:checked');
+            if (checked.length === 0) {
+                alert('Sila pilih sekurang-kurangnya satu rekod.');
+                return;
+            }
+
+            checked.forEach(cb => cb.closest('tr').remove());
+            checkAll.checked = false;
+        });
+
+    /* =============================
+       SUCCESS MODAL (SIMPAN & HANTAR)
+    ============================== */
+    const successModal = new bootstrap.Modal(
+        document.getElementById('successModal')
+    );
+
+    document.querySelector('.btn-simpan')
+        .addEventListener('click', () => successModal.show());
+
+    document.querySelector('.btn-hantar')
+        .addEventListener('click', () => successModal.show());
+
+});
+</script>
+    
 @endsection

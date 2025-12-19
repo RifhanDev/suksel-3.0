@@ -1,0 +1,162 @@
+/* ===================================================================
+   FORM COMPONENTS - Reusable form elements and UI components
+   Created from: cipta_tender.blade.php
+   ================================================================== */
+
+/* --- FORM LABELS --- */
+.form-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--label-color);
+    margin-bottom: 6px;
+    display: block;
+}
+
+/* --- FORM INPUTS --- */
+.form-control,
+.form-select {
+    font-size: 0.85rem;
+    padding: 0.55rem 0.85rem;
+    border-color: var(--input-border);
+    background-color: var(--input-bg);
+    border-radius: 8px;
+    transition: all 0.2s;
+    color: var(--text-dark);
+    font-weight: 500;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--sg-red);
+    box-shadow: 0 0 0 3px rgba(196, 30, 58, 0.1);
+    outline: none;
+}
+
+/* --- INPUT GROUP --- */
+.input-group-text {
+    background: #f8fafc;
+    border-color: var(--input-border);
+    color: #64748b;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+/* --- CHECKBOX / RADIO CHECKED STATE --- */
+.form-check-input:checked {
+    background-color: var(--sg-red);
+    border-color: var(--sg-red);
+}
+
+/* --- SEGMENTED CONTROL (Modern Radio Buttons) --- */
+.segmented-control {
+    display: flex;
+    background: #f1f5f9;
+    padding: 3px;
+    border-radius: 8px;
+    width: 100%;
+}
+
+.segmented-control input {
+    display: none;
+}
+
+.segmented-control label {
+    flex: 1;
+    text-align: center;
+    padding: 6px 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 6px;
+    color: #64748b;
+    transition: all 0.2s;
+    margin: 0;
+}
+
+.segmented-control input:checked + label {
+    background: var(--sg-red);
+    color: white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* --- ALERT SELANGOR --- */
+.alert-selangor {
+    background-color: rgba(255, 204, 0, 0.1);
+    border: 1px solid var(--sg-yellow);
+    border-left: 5px solid var(--sg-red);
+    border-radius: 8px;
+    padding: 1rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+    color: #4b5563;
+}
+
+.alert-selangor-icon {
+    color: var(--sg-red);
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.alert-selangor strong {
+    color: var(--sg-red);
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    display: block;
+    margin-bottom: 2px;
+}
+
+/* --- MODERN CARD --- */
+.modern-card {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.05);
+    border: 1px solid #f1f5f9;
+    overflow: hidden;
+}
+
+/* --- SETTINGS GRID BOX --- */
+.settings-grid-box {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 10px 15px;
+    height: 100%;
+}
+
+/* --- ADD CONDITION BUTTON --- */
+.btn-add-condition {
+    width: 100%;
+    padding: 12px;
+    background: #f8fafc;
+    border: 2px dashed #e2e8f0;
+    border-radius: 0 0 12px 12px;
+    color: #64748b;
+    font-weight: 600;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-add-condition:hover {
+    background: #f1f5f9;
+    border-color: var(--sg-red);
+    color: var(--sg-red);
+}
+
+.btn-add-condition svg {
+    transition: transform 0.2s;
+}
+
+.btn-add-condition:hover svg {
+    transform: scale(1.1);
+}
