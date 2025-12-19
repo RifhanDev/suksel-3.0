@@ -234,6 +234,7 @@
 				@endif
 
 				<!-- 10. DASHBOARD -->
+				{{-- @if (Auth::user()->ability(['Admin', 'Admin Kewangan', 'Admin UPEN'], [])) --}}
 				@if (Auth::user()->ability(['Admin', 'Admin Kewangan'], []))
 				<li class="nav-item">
 					<a class="sidebar-link collapsed" data-bs-toggle="collapse" data-bs-target="#menuDashboard" aria-expanded="false" style="cursor: pointer;">
@@ -243,7 +244,21 @@
 					</a>
 					<div class="collapse" id="menuDashboard">
 						<ul class="sidebar-submenu">
-							<li><a class="submenu-item" href="{{ asset('dashboard/hq') }}"><div class="submenu-icon"></div><span>Dashboard Pengurusan</span></a></li>
+							@if (Auth::user()->hasRole('Admin') && Auth::user()->hasRole('Admin Kewangan'))
+								<li>
+									<a class="submenu-item" href="{{ asset('dashboard/hq') }}">
+										<div class="submenu-icon"></div>
+										<span>Dashboard</span>
+									</a>
+								</li>
+							@else
+								{{-- <li>
+									<a class="submenu-item" href="{{ route('dashboard', ['id' => Auth::user()->organization_unit_id]) }}">
+										<div class="submenu-icon"></div>
+										<span>Dashboard</span>
+									</a>
+								</li> --}}
+							@endif
 						</ul>
 					</div>
 				</li>

@@ -76,6 +76,7 @@ use App\Http\Controllers\ReportVendorDistrictController;
 use App\Http\Controllers\ReportUserActivityController;
 use App\Http\Controllers\ReportUserLoginController;
 
+
 // Basic routes to get the application running
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('prices', [HomeController::class, 'prices']);
@@ -193,6 +194,27 @@ Route::middleware(['auth'])->group(function ()
 	// Route::get('tender/{id}/vendors', [TendersController::class, 'vendors'])->name('tenders.vendors');
 	// Route::post('tender/{id}/exception', [TendersController::class, 'exception'])->name('tenders.exception');
 
+	Route::resource('vendors', VendorsController::class);
+	Route::get('vendors/select', [VendorsController::class, 'select']);
+	Route::get('vendors/new', [VendorsController::class, 'pendingRegistrationIndex']);
+	Route::get('vendors/approval', [VendorsController::class, 'approvalNew1Index']);
+	Route::get('vendors/changes', [VendorsController::class, 'approvalEdit1Index']);
+	Route::get('vendors/emails', [VendorsController::class, 'emails']);
+	Route::get('vendor/{vendor_id}/approve', [VendorsController::class, 'approve']);
+	Route::post('vendor/{vendor_id}/reject', [VendorsController::class, 'reject']);
+	Route::get('vendors/{vendor}/subscriptions/{id}/receipt', [SubscriptionsController::class, 'receipt'])->name('vendors.subscriptions.receipt');
+	Route::get('vendors/{user}/edit_email', [VendorsController::class, 'editEmail']);
+	Route::put('vendors/{user}/edit_email', [VendorsController::class, 'updateEmail']);
+	Route::get('vendors/{user}/histories', [VendorsController::class, 'histories']);
+	Route::get('vendors/{user}/certificate', [VendorsController::class, 'certificate']);
+	Route::resource('vendor.blacklists', VendorBlacklistsController::class);
+	Route::get('vendor/{vendor}/blacklists/{blacklists}/file', [VendorBlacklistsController::class, 'file'])->name('vendor.blacklists.file');
+	Route::put('vendor/{vendor}/blacklists/{blacklists}/cancel', [VendorBlacklistsController::class, 'cancel'])->name('vendor.blacklists.cancel');
+	Route::get('requests', [CodeRequestsController::class, 'index'])->name('requests.index');
+	Route::get('vendor/{vendor}/requests/{requests}/edit', [CodeRequestsController::class, 'edit'])->name('vendor.requests.edit');
+	Route::put('vendor/{vendor}/requests/{requests}', [CodeRequestsController::class, 'update'])->name('vendor.requests.update');
+	Route::put('vendor/{vendor}/requests/{requests}/approve', [CodeRequestsController::class, 'approve_vendor'])->name('vendor.requests.approve');
+	Route::post('vendor/{vendor}/requests/{requests}/reject', [CodeRequestsController::class, 'reject_vendor'])->name('vendor.requests.reject');
 	Route::get('vendor/{vendor_id}/blacklist', [VendorsController::class, 'blacklist']);
 	Route::put('vendor/{vendor_id}/blacklist', [VendorsController::class, 'doBlacklist']);
 	Route::get('vendor/{vendor_id}/cancelBlacklist', [VendorsController::class, 'cancelBlacklist']);
@@ -211,7 +233,10 @@ Route::middleware(['auth'])->group(function ()
 	Route::post('register/payment', [RegistrationController::class, 'storePayment']);
 	Route::get('register/payment_callback/{transaction_id}', [RegistrationController::class, 'callbackPayment']);
 
-	Route::get('dashboard', [HomeController::class, 'dashboard'])->name('dashboard'); //for vendor
+	// Admin dashboard must come before general dashboard route to avoid route conflict
+	Route::get('dashboard/hq', [HomeController::class, 'managementDashboard'])->name('dashboard.hq')->middleware(['role:Admin']);
+
+	Route::get('dashboard/{id?}', [HomeController::class, 'dashboard'])->name('dashboard'); //for vendor
 	Route::get('vendor', [HomeController::class, 'vendor'])->name('vendor');
 	Route::get('renewal', [HomeController::class, 'renewal'])->name('renewal');
 	Route::post('renewal', [HomeController::class, 'storeRenewal']);
@@ -301,32 +326,7 @@ Route::middleware(['auth'])->group(function ()
 		Route::post('user/byagency', [UsersController::class, 'getUserByAgencies'])->name('user.by.agency');
 		Route::post('user/byid', [UsersController::class, 'getUserById'])->name('user.by.id');
 
-		Route::get('vendors/select', [VendorsController::class, 'select']);
-		Route::get('vendors', [VendorsController::class, 'index'])->name('vendors.index');
-		Route::get('vendors/new', [VendorsController::class, 'pendingRegistrationIndex']);
-		Route::get('vendors/create', [VendorsController::class, 'create']);
-		Route::get('vendors/approval', [VendorsController::class, 'approvalNew1Index']);
-		Route::get('vendors/changes', [VendorsController::class, 'approvalEdit1Index']);
-		Route::get('vendors/emails', [VendorsController::class, 'emails']);
-
-		Route::get('vendor/{vendor_id}/approve', [VendorsController::class, 'approve']);
-		Route::post('vendor/{vendor_id}/reject', [VendorsController::class, 'reject']);
-
-		Route::get('vendors/{vendor}/subscriptions/{id}/receipt', [SubscriptionsController::class, 'receipt'])->name('vendors.subscriptions.receipt');
-		Route::get('vendors/{user}/edit_email', [VendorsController::class, 'editEmail']);
-		Route::put('vendors/{user}/edit_email', [VendorsController::class, 'updateEmail']);
-		Route::get('vendors/{user}/histories', [VendorsController::class, 'histories']);
-		Route::get('vendors/{user}/certificate', [VendorsController::class, 'certificate']);
-
-		Route::resource('vendor.blacklists', VendorBlacklistsController::class);
-		Route::get('vendor/{vendor}/blacklists/{blacklists}/file', [VendorBlacklistsController::class, 'file'])->name('vendor.blacklists.file');
-		Route::put('vendor/{vendor}/blacklists/{blacklists}/cancel', [VendorBlacklistsController::class, 'cancel'])->name('vendor.blacklists.cancel');
-
-		Route::get('requests', [CodeRequestsController::class, 'index'])->name('requests.index');
-		Route::get('vendor/{vendor}/requests/{requests}/edit', [CodeRequestsController::class, 'edit'])->name('vendor.requests.edit');
-		Route::put('vendor/{vendor}/requests/{requests}', [CodeRequestsController::class, 'update'])->name('vendor.requests.update');
-		Route::put('vendor/{vendor}/requests/{requests}/approve', [CodeRequestsController::class, 'approve_vendor'])->name('vendor.requests.approve');
-		Route::post('vendor/{vendor}/requests/{requests}/reject', [CodeRequestsController::class, 'reject_vendor'])->name('vendor.requests.reject');
+		
 
 		Route::get('requests/show/{request_id}', [CodeRequestsController::class, 'showAll'])->name('requests.showAll');
 		Route::put('requests/{requests}/approve', [CodeRequestsController::class, 'approve'])->name('requests.approve');
@@ -375,7 +375,7 @@ Route::middleware(['auth'])->group(function ()
 
 		Route::resource('banners', BannersController::class);
 		Route::get('banners/{id}/publish', [BannersController::class, 'publish'])->name('banners.publish');
-		Route::resource('vendors', VendorsController::class);
+		// Route::resource('vendors', VendorsController::class);
 
 		// Organization Types
 		Route::resource('organizationtypes', OrganizationTypesController::class);

@@ -82,8 +82,8 @@ class AuthController extends Controller
 
                $user = auth()->user();
 
-               // Check if vendor has verified their email
-               if ($user->hasRole('Vendor') && !$user->confirmed) {
+               if ($user->hasRole('Vendor') && !$user->confirmed)
+               {
                   auth()->logout();
                   session()->flash('error', 'Sila sahkan alamat emel anda terlebih dahulu. Semak inbox emel anda untuk pautan pengesahan.');
                   return redirect('/auth/login');
@@ -115,13 +115,18 @@ class AuthController extends Controller
                   // } elseif ($user->can('Vendor:list'))
                   //    return redirect('vendors');
                }
+               elseif($user->can('Vendor:list'))
+               {
+                  return redirect('vendors');
+               }
                else if ($user->hasRole('Admin'))
                {
                   return redirect()->route('dashboard.hq');
                }
                else
                {
-                  return redirect('agency/' . $user->organization_unit_id);
+                  return redirect()->route('dashboard', ['id' => $user->organization_unit_id]);
+                  // return redirect('agency/' . $user->organization_unit_id);
                }
             } else {
                $attempt = session('attempt');
