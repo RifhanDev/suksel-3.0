@@ -532,14 +532,14 @@
 
         {{-- STEP 5: Success Message Page for Terbitkan --}}
         <div class="d-none" id="step5Content">
-            <div class="text-center py-5 px-4">
+            <div class="text-center py-5">
                 <div class="mb-4">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="var(--sg-red)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="d-block mx-auto">
-                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
-                    </svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="var(--success-color)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="d-block mx-auto">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                        </svg>
                 </div>
-                <h3 class="fw-bold mb-3" style="color: var(--sg-red-dark);">Projek Berjaya Diterbitkan!</h3>
+                <h3 class="fw-bold mb-3" >Projek Berjaya Diterbitkan!</h3>
                 <p class="text-muted fs-5 mb-5 mx-auto" style="max-width: 600px;">
                     Projek pembelian terus anda telah berjaya diterbitkan. Projek ini kini aktif dan boleh diakses oleh syarikat-syarikat yang layak.
                 </p>

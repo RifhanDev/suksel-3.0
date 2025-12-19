@@ -45,6 +45,9 @@
 			--sg-black: #1f1f1f;
 			--sg-bg: #f8f9fa;
 
+            /* ===== SUCCESS COLORS ===== */
+            --success-color: #10b981;
+
 			/* ===== SIDEBAR VARIABLES ===== */
 			--sidebar-width: 290px;
             --sidebar-width-mobile: 260px;
