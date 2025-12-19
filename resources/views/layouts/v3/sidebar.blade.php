@@ -29,7 +29,7 @@
 					<div class="collapse {{ request()->routeIs('ciptaTender') ? 'show' : '' }}" id="menuTender">
 						<ul class="sidebar-submenu">
 						{{-- <li class="submenu-section-header">Cipta Tender & Sebut Harga</li> --}}
-						@if ($user->can('Tender:excecute'))
+						@if ($user->can('Tender:excecute')) <!-- new permission -->
 							<li>
 								<a class="submenu-item" href="{{ route('ciptaTender') }}">
 									<div class="submenu-icon" style="{{ request()->routeIs('ciptaTender') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}"></div>
