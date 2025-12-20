@@ -3,9 +3,9 @@
 
 @section('content')
     <style>
-        #datatable-buttons th {
-            background-color: #405393 !important; 
-            color: white !important;
+       #datatable-buttons th {
+            background-color: #A4161A !important; /* RED */
+            color: #ffffff !important;
             border: 1px solid #848484;
         }
         .btn-primary {
