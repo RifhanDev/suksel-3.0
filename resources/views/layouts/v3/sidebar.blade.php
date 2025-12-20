@@ -90,8 +90,11 @@
 
 			<!-- 2. PERMINTAAN KEMASKINI -->
 			@if (App\CodeRequest::canList())
+			@php
+				$isRequestMenuActive = request()->is('requests*') || request()->routeIs('requests*');
+			@endphp
 			<li class="nav-item">
-				<a class="sidebar-link collapsed" data-bs-toggle="collapse" data-bs-target="#menuRequest" aria-expanded="false" style="cursor: pointer;">
+				<a class="sidebar-link {{ $isRequestMenuActive ? 'active' : 'collapsed' }}" data-bs-toggle="collapse" data-bs-target="#menuRequest" aria-expanded="{{ $isRequestMenuActive ? 'true' : 'false' }}" style="cursor: pointer;">
 					<svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
 						<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
 						<path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
@@ -101,10 +104,10 @@
 						<polyline points="9 18 15 12 9 6"></polyline>
 					</svg>
 				</a>
-				<div class="collapse" id="menuRequest">
+				<div class="collapse {{ $isRequestMenuActive ? 'show' : '' }}" id="menuRequest">
 					<ul class="sidebar-submenu">
-						<li><a class="submenu-item" href="{{ asset('requests') }}">
-								<div class="submenu-icon"></div><span>Permintaan Kemaskini</span>
+						<li><a class="submenu-item {{ request()->is('requests*') || request()->routeIs('requests*') ? 'active' : '' }}" href="{{ asset('requests') }}">
+								<div class="submenu-icon" style="{{ request()->is('requests*') || request()->routeIs('requests*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}"></div><span class="{{ request()->is('requests*') || request()->routeIs('requests*') ? 'text-white' : '' }}">Permintaan Kemaskini</span>
 							</a></li>
 					</ul>
 				</div>
