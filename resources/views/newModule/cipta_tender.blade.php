@@ -750,7 +750,8 @@
                                     <label class="form-label">Lokaliti Liputan</label>
                                     <select class="form-select form-select-sm" name="lokaliti">
                                         <option selected disabled>Pilih...</option>
-                                        <option value="selangor">Selangor</option>
+                                        <option value="daerah_terpilih">Daerah Terpilih</option>
+                                        <option value="zon_terpilih">Zon Terpilih</option>
                                     </select>
                                 </div>
                                 <!-- Zon Toggle -->
