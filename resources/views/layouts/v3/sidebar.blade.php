@@ -14,41 +14,49 @@
 		</a>
 	</div>
 
-		<!-- Scrollable Area -->
-		<div class="sidebar-scroll-area">
-			<ul class="sidebar-nav">
-				
-				<!-- 1. PENGURUSAN TENDER -->
-				<li class="nav-item">
-					<!-- Temporary guna ciptaTender route untuk active menu -->
-					<a class="sidebar-link {{ request()->routeIs('ciptaTender') ? 'active' : 'collapsed' }}" data-bs-toggle="collapse" data-bs-target="#menuTender" aria-expanded="{{ request()->routeIs('ciptaTender') ? 'true' : 'false' }}" style="cursor: pointer;">
-						<svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z"/><line x1="9" y1="9" x2="10" y2="9"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>
-						<span class="nav-text">Pengurusan Tender</span>
-						<svg xmlns="http://www.w3.org/2000/svg" class="nav-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-					</a>
-					<div class="collapse {{ request()->routeIs('ciptaTender') ? 'show' : '' }}" id="menuTender">
-						<ul class="sidebar-submenu">
+	<!-- Scrollable Area -->
+	<div class="sidebar-scroll-area">
+		<ul class="sidebar-nav">
+
+			<!-- 1. PENGURUSAN TENDER -->
+			<li class="nav-item">
+				<!-- Temporary guna ciptaTender route untuk active menu -->
+				<a class="sidebar-link {{ request()->routeIs('ciptaTender') ? 'active' : 'collapsed' }}" data-bs-toggle="collapse" data-bs-target="#menuTender" aria-expanded="{{ request()->routeIs('ciptaTender') ? 'true' : 'false' }}" style="cursor: pointer;">
+					<svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+						<path d="M14 3v4a1 1 0 0 0 1 1h4" />
+						<path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z" />
+						<line x1="9" y1="9" x2="10" y2="9" />
+						<line x1="9" y1="13" x2="15" y2="13" />
+						<line x1="9" y1="17" x2="15" y2="17" />
+					</svg>
+					<span class="nav-text">Pengurusan Tender</span>
+					<svg xmlns="http://www.w3.org/2000/svg" class="nav-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+						<polyline points="9 18 15 12 9 6"></polyline>
+					</svg>
+				</a>
+				<div class="collapse {{ request()->routeIs('ciptaTender') ? 'show' : '' }}" id="menuTender">
+					<ul class="sidebar-submenu">
 						{{-- <li class="submenu-section-header">Cipta Tender & Sebut Harga</li> --}}
 						@if ($user->can('Tender:excecute')) <!-- new permission -->
-							<li>
-								<a class="submenu-item" href="{{ route('ciptaTender') }}">
-									<div class="submenu-icon" style="{{ request()->routeIs('ciptaTender') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}"></div>
-									<span class="{{ request()->routeIs('ciptaTender') ? 'text-white' : '' }}">Cipta Tender/Sebut Harga</span>
-								</a>
-							</li>
+						<li>
+							<a class="submenu-item" href="{{ route('ciptaTender') }}">
+								<div class="submenu-icon" style="{{ request()->routeIs('ciptaTender') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}"></div>
+								<span class="{{ request()->routeIs('ciptaTender') ? 'text-white' : '' }}">Cipta Tender/Sebut Harga</span>
+							</a>
+						</li>
 						@endif
-						
+
 						{{-- <li class="submenu-section-header">Senarai</li> --}}
 						@if (App\Tender::canList())
-							@if (Auth::user()->ability(['Admin', 'Registration Assesor', 'Front Desk'], []))
-							<li><a class="submenu-item" href="{{ asset('tenders') }}">
-									<div class="submenu-icon"></div><span>Senarai Tender</span>
-								</a></li>
-							@else
-							<li><a class="submenu-item" href="{{ asset('agencies/' . Auth::user()->organization_unit_id) }}">
-									<div class="submenu-icon"></div><span>Senarai Tender</span>
-								</a></li>
-							@endif
+						@if (Auth::user()->ability(['Admin', 'Registration Assesor', 'Front Desk'], []))
+						<li><a class="submenu-item" href="{{ asset('tenders') }}">
+								<div class="submenu-icon"></div><span>Senarai Tender</span>
+							</a></li>
+						@else
+						<li><a class="submenu-item" href="{{ asset('agencies/' . Auth::user()->organization_unit_id) }}">
+								<div class="submenu-icon"></div><span>Senarai Tender</span>
+							</a></li>
+						@endif
 						@endif
 						@if (App\Vendor::canList())
 						<li><a class="submenu-item" href="{{ asset('vendors') }}">
@@ -344,268 +352,292 @@
 			@if (Auth::user()->ability(['Admin', 'Admin Kewangan'], []))
 			<li class="nav-item">
 				<a class="sidebar-link collapsed" data-bs-toggle="collapse" data-bs-target="#menuDashboard" aria-expanded="false" style="cursor: pointer;">
-					<svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+					<svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+						<rect x="3" y="3" width="7" height="9" />
+						<rect x="14" y="3" width="7" height="5" />
+						<rect x="14" y="12" width="7" height="9" />
+						<rect x="3" y="16" width="7" height="5" />
+					</svg>
 					<span class="nav-text">Dashboard</span>
-					<svg xmlns="http://www.w3.org/2000/svg" class="nav-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+					<svg xmlns="http://www.w3.org/2000/svg" class="nav-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+						<polyline points="9 18 15 12 9 6"></polyline>
+					</svg>
 				</a>
 				<div class="collapse" id="menuDashboard">
 					<ul class="sidebar-submenu">
 						@if (Auth::user()->hasRole('Admin') && Auth::user()->hasRole('Admin Kewangan'))
-							<li>
-								<a class="submenu-item" href="{{ asset('dashboard/hq') }}">
-									<div class="submenu-icon"></div>
-									<span>Dashboard</span>
-								</a>
-							</li>
+						<li>
+							<a class="submenu-item" href="{{ asset('dashboard/hq') }}">
+								<div class="submenu-icon"></div>
+								<span>Dashboard</span>
+							</a>
+						</li>
 						@else
-							{{-- <li>
+						{{-- <li>
 								<a class="submenu-item" href="{{ route('dashboard', ['id' => Auth::user()->organization_unit_id]) }}">
-									<div class="submenu-icon"></div>
-									<span>Dashboard</span>
-								</a>
-							</li> --}}
-						@endif
-					</ul>
-				</div>
-			</li>
+						<div class="submenu-icon"></div>
+						<span>Dashboard</span>
+						</a>
+			</li> --}}
 			@endif
-
-			<!-- 11. LAPORAN -->
-			@if (Auth::user()->can('Report:view'))
-			<li class="nav-item">
-				<a class="sidebar-link collapsed" data-bs-toggle="collapse" data-bs-target="#menuReport" aria-expanded="false" style="cursor: pointer;">
-					<svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-						<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-						<polyline points="14 2 14 8 20 8" />
-						<line x1="16" y1="13" x2="8" y2="13" />
-						<line x1="16" y1="17" x2="8" y2="17" />
-						<polyline points="10 9 9 9 8 9" />
-					</svg>
-					<span class="nav-text">Laporan</span>
-					<svg xmlns="http://www.w3.org/2000/svg" class="nav-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-						<polyline points="9 18 15 12 9 6"></polyline>
-					</svg>
-				</a>
-				<div class="collapse" id="menuReport">
-					<ul class="sidebar-submenu">
-						@if (Auth::user()->can('Report:view:revenue_yearly'))
-						<li><a class="submenu-item" href="{{ asset('reports/revenue') }}">
-								<div class="submenu-icon"></div><span>Hasil Transaksi Tahunan</span>
-							</a></li>
-						@endif
-						@if (Auth::user()->can('Report:view:agency_active'))
-						<li><a class="submenu-item" href="{{ asset('reports/agency/active') }}">
-								<div class="submenu-icon"></div><span>10 Agensi Aktif</span>
-							</a></li>
-						@endif
-						@if (Auth::user()->can('Report:view:agency_transaction'))
-						<li><a class="submenu-item" href="{{ asset('reports/agency/all') }}">
-								<div class="submenu-icon"></div><span>Transaksi Semua Agensi</span>
-							</a></li>
-						@endif
-						@if (Auth::user()->can('reports/agency/type'))
-						<li><a class="submenu-item" href="{{ asset('reports/agency/type') }}">
-								<div class="submenu-icon"></div><span>Transaksi Mengikut Kategori Agensi</span>
-							</a></li>
-						@endif
-						@if (Auth::user()->can('Report:view:agency_tender') || Auth::user()->can('Report:view:agency_tender:organization_unit_id'))
-						<li><a class="submenu-item" href="{{ asset('reports/agency/transaction') }}">
-								<div class="submenu-icon"></div><span>Transaksi Agensi Mengikut Tender</span>
-							</a></li>
-						@endif
-						@if (Auth::user()->can('Report:view:agency_daily') || Auth::user()->can('Report:view:agency_daily:organization_unit_id'))
-						<li><a class="submenu-item" href="{{ asset('reports/agency/daily') }}">
-								<div class="submenu-icon"></div><span>Transaksi Harian Agensi</span>
-							</a></li>
-						@endif
-						@if (Auth::user()->can('Report:view:gateway_daily') || Auth::user()->can('Report:view:gateway_daily:organization_unit_id'))
-						<li><a class="submenu-item" href="{{ asset('reports/gateway/daily') }}">
-								<div class="submenu-icon"></div><span>Transaksi Harian Gateway</span>
-							</a></li>
-						@endif
-						@if (Auth::user()->can('Report:view:vendor_status'))
-						<li><a class="submenu-item" href="{{ asset('reports/vendor/status') }}">
-								<div class="submenu-icon"></div><span>Syarikat Mengikut Status</span>
-							</a></li>
-						@endif
-						@if (Auth::user()->can('Report:view:vendor_code'))
-						<li><a class="submenu-item" href="{{ asset('reports/vendor/codes') }}">
-								<div class="submenu-icon"></div><span>Syarikat Mengikut Kod Bidang</span>
-							</a></li>
-						@endif
-						@if (Auth::user()->can('Report:view:vendor_district'))
-						<li><a class="submenu-item" href="{{ asset('reports/vendor/district') }}">
-								<div class="submenu-icon"></div><span>Syarikat Mengikut Daerah</span>
-							</a></li>
-						@endif
-						@if (Auth::user()->can('Report:view:user_agency') || Auth::user()->can('Report:view:user_agency:organization_unit_id'))
-						<li><a class="submenu-item" href="{{ asset('reports/user/agency') }}">
-								<div class="submenu-icon"></div><span>Senarai Pengguna Agensi</span>
-							</a></li>
-						@endif
-						@if (Auth::user()->can('Report:view:user_agency') || Auth::user()->can('Report:view:user_active:organization_unit_id'))
-						<li><a class="submenu-item" href="{{ asset('reports/user/active') }}">
-								<div class="submenu-icon"></div><span>Senarai Status Pengguna Mengikut Agensi</span>
-							</a></li>
-						@endif
-						@if (Auth::user()->can('Report:view:user_activity'))
-						<li><a class="submenu-item" href="{{ asset('reports/user/activity') }}">
-								<div class="submenu-icon"></div><span>Laporan Aktiviti Staf</span>
-							</a></li>
-						@endif
-						@if (Auth::user()->can('Report:view:user_login'))
-						<li><a class="submenu-item" href="{{ asset('reports/user/login') }}">
-								<div class="submenu-icon"></div><span>Laporan Login Sebagai</span>
-							</a></li>
-						@endif
-						@if (Auth::user()->can('Report:view:vendor_registration_list'))
-						<li><a class="submenu-item" href="{{ asset('reports/vendor/registration-list') }}">
-								<div class="submenu-icon"></div><span>Laporan Pendaftaran Syarikat</span>
-							</a></li>
-						@endif
-						@if (Auth::user()->can('Report:view:code_request'))
-						<li><a class="submenu-item" href="{{ asset('reports/vendor/request') }}">
-								<div class="submenu-icon"></div><span>Laporan Permohonan Kemaskini Maklumat Syarikat</span>
-							</a></li>
-						@endif
-						@if (Auth::user()->can('Report:view:vendor_registration'))
-						<li><a class="submenu-item" href="{{ asset('reports/vendor/registration') }}">
-								<div class="submenu-icon"></div><span>Laporan Pendaftaran Pengguna Sistem</span>
-							</a></li>
-						@endif
-						@if (Auth::user()->can('Report:view:staff_activity'))
-						<li><a class="submenu-item" href="{{ asset('reports/staff/activity') }}">
-								<div class="submenu-icon"></div><span>Laporan Aktiviti Pengguna Sistem</span>
-							</a></li>
-						@endif
-						@if (Auth::user()->can('Report:view:code_district'))
-						<li><a class="submenu-item" href="{{ asset('reports/code/district') }}">
-								<div class="submenu-icon"></div><span>Laporan Jumlah Berkaitan Kod Bidang</span>
-							</a></li>
-						@endif
-						@if (Auth::user()->can('Report:view:vendor_transaction'))
-						<li><a class="submenu-item" href="{{ asset('reports/vendor/transaction') }}">
-								<div class="submenu-icon"></div><span>Laporan Transaksi</span>
-							</a></li>
-						@endif
-						@if (Auth::user()->can('Report:view:transaction_hasil'))
-						<li><a class="submenu-item" href="{{ asset('reports/transaction/hasil') }}">
-								<div class="submenu-icon"></div><span>Laporan Transaksi Mengikut Kod Akaun Hasil</span>
-							</a></li>
-						@endif
-					</ul>
-				</div>
-			</li>
-			@endif
-
-			<!-- ============================================= -->
-			<!-- NEW SECTION: MODUL 3.0 -->
-			<!-- ============================================= -->
-
-			<li class="nav-section-header my-3">Modul 3.0</li>
-
-			<!-- Menu: Pelantikan Jawatankuasa -->
-			<li class="nav-item">
-				<a class="sidebar-link {{ request()->is('pelantikan-jawatankuasa*') ? 'active' : '' }}" href="{{ route('pelantikanJawatankuasa') }}" style="cursor: pointer;">
-					<svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-						<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-						<circle cx="9" cy="7" r="4"></circle>
-						<path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-						<path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-					</svg>
-					<span class="nav-text">Pelantikan Jawatankuasa</span>
-				</a>
-			</li>
-			<!-- Menu: Pembelian Terus -->
-			<li class="nav-item">
-				<a class="sidebar-link {{ request()->is('pembelian-terus*') ? '' : 'collapsed' }}" data-bs-toggle="collapse" data-bs-target="#menuPembelianTerus" aria-expanded="{{ request()->is('pembelian-terus*') ? 'true' : 'false' }}" style="cursor: pointer;">
-					<svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-						<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-						<path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-					</svg>
-					<span class="nav-text">Pembelian Terus</span>
-					<svg xmlns="http://www.w3.org/2000/svg" class="nav-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-						<polyline points="9 18 15 12 9 6"></polyline>
-					</svg>
-				</a>
-				<div class="collapse {{ request()->is('pembelian-terus*') ? 'show' : '' }}" id="menuPembelianTerus">
-					<ul class="sidebar-submenu">
-						<li>
-							<a class="submenu-item {{ request()->routeIs('pembelianTerus.createProject') || request()->is('pembelian-terus/cipta-projek*') ? 'active' : '' }}" href="{{ route('pembelianTerus.createProject') }}" style="cursor: pointer;">
-								<div class="submenu-icon" style="{{ request()->routeIs('pembelianTerus.createProject') || request()->is('pembelian-terus/cipta-projek*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}"></div><span class="{{ request()->routeIs('pembelianTerus.createProject') || request()->is('pembelian-terus/cipta-projek*') ? 'text-white' : '' }}">Cipta Projek</span>
-							</a>
-						</li>
-						<li>
-							<a class="submenu-item {{ request()->routeIs('pembelianTerus.quoteProject') || request()->is('pembelian-terus/sebut-harga*') ? 'active' : '' }}" href="{{ route('pembelianTerus.quoteProject') }}" style="cursor: pointer;">
-								<div class="submenu-icon" style="{{ request()->routeIs('pembelianTerus.quoteProject') || request()->is('pembelian-terus/sebut-harga*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}"></div><span class="{{ request()->routeIs('pembelianTerus.quoteProject') || request()->is('pembelian-terus/sebut-harga*') ? 'text-white' : '' }}">Sebut Harga</span>
-							</a>
-						</li>
-					</ul>
-				</div>
-			</li>
-
-			<!-- Menu : Jawatankuasa Spesifikasi /  Pengurusan -->
-			<li class="nav-item">
-				<a class="sidebar-link collapsed" data-bs-toggle="collapse" data-bs-target="#menuJawatankusaSpesifikasi" aria-expanded="false" style="cursor: pointer;">
-					<svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-						<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-						<path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-					</svg>
-					<span class="nav-text">Jawatankuasa Spesifikasi / Pengurusan </span>
-					<svg xmlns="http://www.w3.org/2000/svg" class="nav-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-						<polyline points="9 18 15 12 9 6"></polyline>
-					</svg>
-				</a>
-				<div class="collapse" id="menuJawatankusaSpesifikasi">
-					<ul class="sidebar-submenu">
-						<li><a class="submenu-item" href="{{ route('senaraiTeknikal') }}">
-								<div class="submenu-icon"></div><span>Senarai Semak Teknikal</span>
-							</a></li>
-						<li><a class="submenu-item" href="{{ route('senaraiKewangan') }}">
-								<div class="submenu-icon"></div><span>Senarai Semak Kewangan</span>
-							</a></li>
-					</ul>
-				</div>
-			</li>
-
-			<!-- Menu : Jawatankuasa Pembuka -->
-			<li class="nav-item">
-				<a class="sidebar-link {{ request()->is('jawatankuasa-pembuka*') ? 'active' : '' }}" href="{{ route('jawatankuasaPembuka') }}" style="cursor: pointer;">
-					<svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-						<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-						<circle cx="9" cy="7" r="4"></circle>
-						<path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-						<path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-					</svg>
-					<span class="nav-text">Jawatankuasa Pembuka</span>
-				</a>
-			</li>
-
-			<!-- Menu : Penilaian Teknikal & Kewangan -->
-			<li class="nav-item">
-				<a class="sidebar-link collapsed" data-bs-toggle="collapse" data-bs-target="#menuPenilaianTeknikalKewangan" aria-expanded="false" style="cursor: pointer;">
-					<svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-						<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-						<path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-					</svg>
-					<span class="nav-text">Penilaian Teknikal & Kewangan</span>
-					<svg xmlns="http://www.w3.org/2000/svg" class="nav-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-						<polyline points="9 18 15 12 9 6"></polyline>
-					</svg>
-				</a>
-				<div class="collapse" id="menuPenilaianTeknikalKewangan">
-					<ul class="sidebar-submenu">
-						<li><a class="submenu-item" href="{{ route('penilaianTeknikal') }}">
-								<div class="submenu-icon"></div><span>Penilaian Teknikal</span>
-							</a></li>
-						<li><a class="submenu-item" href="{{ route('penilaianKewangan') }}">
-								<div class="submenu-icon"></div><span>Penilaian Kewangan</span>
-							</a></li>
-					</ul>
-				</div>
-			</li>
-
 		</ul>
+	</div>
+	</li>
+	@endif
+
+	<!-- 11. LAPORAN -->
+	@if (Auth::user()->can('Report:view'))
+	<li class="nav-item">
+		<a class="sidebar-link collapsed" data-bs-toggle="collapse" data-bs-target="#menuReport" aria-expanded="false" style="cursor: pointer;">
+			<svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+				<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+				<polyline points="14 2 14 8 20 8" />
+				<line x1="16" y1="13" x2="8" y2="13" />
+				<line x1="16" y1="17" x2="8" y2="17" />
+				<polyline points="10 9 9 9 8 9" />
+			</svg>
+			<span class="nav-text">Laporan</span>
+			<svg xmlns="http://www.w3.org/2000/svg" class="nav-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+				<polyline points="9 18 15 12 9 6"></polyline>
+			</svg>
+		</a>
+		<div class="collapse" id="menuReport">
+			<ul class="sidebar-submenu">
+				@if (Auth::user()->can('Report:view:revenue_yearly'))
+				<li><a class="submenu-item" href="{{ asset('reports/revenue') }}">
+						<div class="submenu-icon"></div><span>Hasil Transaksi Tahunan</span>
+					</a></li>
+				@endif
+				@if (Auth::user()->can('Report:view:agency_active'))
+				<li><a class="submenu-item" href="{{ asset('reports/agency/active') }}">
+						<div class="submenu-icon"></div><span>10 Agensi Aktif</span>
+					</a></li>
+				@endif
+				@if (Auth::user()->can('Report:view:agency_transaction'))
+				<li><a class="submenu-item" href="{{ asset('reports/agency/all') }}">
+						<div class="submenu-icon"></div><span>Transaksi Semua Agensi</span>
+					</a></li>
+				@endif
+				@if (Auth::user()->can('reports/agency/type'))
+				<li><a class="submenu-item" href="{{ asset('reports/agency/type') }}">
+						<div class="submenu-icon"></div><span>Transaksi Mengikut Kategori Agensi</span>
+					</a></li>
+				@endif
+				@if (Auth::user()->can('Report:view:agency_tender') || Auth::user()->can('Report:view:agency_tender:organization_unit_id'))
+				<li><a class="submenu-item" href="{{ asset('reports/agency/transaction') }}">
+						<div class="submenu-icon"></div><span>Transaksi Agensi Mengikut Tender</span>
+					</a></li>
+				@endif
+				@if (Auth::user()->can('Report:view:agency_daily') || Auth::user()->can('Report:view:agency_daily:organization_unit_id'))
+				<li><a class="submenu-item" href="{{ asset('reports/agency/daily') }}">
+						<div class="submenu-icon"></div><span>Transaksi Harian Agensi</span>
+					</a></li>
+				@endif
+				@if (Auth::user()->can('Report:view:gateway_daily') || Auth::user()->can('Report:view:gateway_daily:organization_unit_id'))
+				<li><a class="submenu-item" href="{{ asset('reports/gateway/daily') }}">
+						<div class="submenu-icon"></div><span>Transaksi Harian Gateway</span>
+					</a></li>
+				@endif
+				@if (Auth::user()->can('Report:view:vendor_status'))
+				<li><a class="submenu-item" href="{{ asset('reports/vendor/status') }}">
+						<div class="submenu-icon"></div><span>Syarikat Mengikut Status</span>
+					</a></li>
+				@endif
+				@if (Auth::user()->can('Report:view:vendor_code'))
+				<li><a class="submenu-item" href="{{ asset('reports/vendor/codes') }}">
+						<div class="submenu-icon"></div><span>Syarikat Mengikut Kod Bidang</span>
+					</a></li>
+				@endif
+				@if (Auth::user()->can('Report:view:vendor_district'))
+				<li><a class="submenu-item" href="{{ asset('reports/vendor/district') }}">
+						<div class="submenu-icon"></div><span>Syarikat Mengikut Daerah</span>
+					</a></li>
+				@endif
+				@if (Auth::user()->can('Report:view:user_agency') || Auth::user()->can('Report:view:user_agency:organization_unit_id'))
+				<li><a class="submenu-item" href="{{ asset('reports/user/agency') }}">
+						<div class="submenu-icon"></div><span>Senarai Pengguna Agensi</span>
+					</a></li>
+				@endif
+				@if (Auth::user()->can('Report:view:user_agency') || Auth::user()->can('Report:view:user_active:organization_unit_id'))
+				<li><a class="submenu-item" href="{{ asset('reports/user/active') }}">
+						<div class="submenu-icon"></div><span>Senarai Status Pengguna Mengikut Agensi</span>
+					</a></li>
+				@endif
+				@if (Auth::user()->can('Report:view:user_activity'))
+				<li><a class="submenu-item" href="{{ asset('reports/user/activity') }}">
+						<div class="submenu-icon"></div><span>Laporan Aktiviti Staf</span>
+					</a></li>
+				@endif
+				@if (Auth::user()->can('Report:view:user_login'))
+				<li><a class="submenu-item" href="{{ asset('reports/user/login') }}">
+						<div class="submenu-icon"></div><span>Laporan Login Sebagai</span>
+					</a></li>
+				@endif
+				@if (Auth::user()->can('Report:view:vendor_registration_list'))
+				<li><a class="submenu-item" href="{{ asset('reports/vendor/registration-list') }}">
+						<div class="submenu-icon"></div><span>Laporan Pendaftaran Syarikat</span>
+					</a></li>
+				@endif
+				@if (Auth::user()->can('Report:view:code_request'))
+				<li><a class="submenu-item" href="{{ asset('reports/vendor/request') }}">
+						<div class="submenu-icon"></div><span>Laporan Permohonan Kemaskini Maklumat Syarikat</span>
+					</a></li>
+				@endif
+				@if (Auth::user()->can('Report:view:vendor_registration'))
+				<li><a class="submenu-item" href="{{ asset('reports/vendor/registration') }}">
+						<div class="submenu-icon"></div><span>Laporan Pendaftaran Pengguna Sistem</span>
+					</a></li>
+				@endif
+				@if (Auth::user()->can('Report:view:staff_activity'))
+				<li><a class="submenu-item" href="{{ asset('reports/staff/activity') }}">
+						<div class="submenu-icon"></div><span>Laporan Aktiviti Pengguna Sistem</span>
+					</a></li>
+				@endif
+				@if (Auth::user()->can('Report:view:code_district'))
+				<li><a class="submenu-item" href="{{ asset('reports/code/district') }}">
+						<div class="submenu-icon"></div><span>Laporan Jumlah Berkaitan Kod Bidang</span>
+					</a></li>
+				@endif
+				@if (Auth::user()->can('Report:view:vendor_transaction'))
+				<li><a class="submenu-item" href="{{ asset('reports/vendor/transaction') }}">
+						<div class="submenu-icon"></div><span>Laporan Transaksi</span>
+					</a></li>
+				@endif
+				@if (Auth::user()->can('Report:view:transaction_hasil'))
+				<li><a class="submenu-item" href="{{ asset('reports/transaction/hasil') }}">
+						<div class="submenu-icon"></div><span>Laporan Transaksi Mengikut Kod Akaun Hasil</span>
+					</a></li>
+				@endif
+			</ul>
+		</div>
+	</li>
+	@endif
+
+	<!-- ============================================= -->
+	<!-- NEW SECTION: MODUL 3.0 -->
+	<!-- ============================================= -->
+
+	<li class="nav-section-header my-3">Modul 3.0</li>
+
+	<!-- Menu: Pelantikan Jawatankuasa -->
+	<li class="nav-item">
+		<a class="sidebar-link {{ request()->is('pelantikan-jawatankuasa*') ? 'active' : '' }}" href="{{ route('pelantikanJawatankuasa') }}" style="cursor: pointer;">
+			<svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+				<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+				<circle cx="9" cy="7" r="4"></circle>
+				<path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+				<path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+			</svg>
+			<span class="nav-text">Pelantikan Jawatankuasa</span>
+		</a>
+	</li>
+	<!-- Menu: Pembelian Terus -->
+	<li class="nav-item">
+		<a class="sidebar-link {{ request()->is('pembelian-terus*') ? '' : 'collapsed' }}" data-bs-toggle="collapse" data-bs-target="#menuPembelianTerus" aria-expanded="{{ request()->is('pembelian-terus*') ? 'true' : 'false' }}" style="cursor: pointer;">
+			<svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+				<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+				<path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+			</svg>
+			<span class="nav-text">Pembelian Terus</span>
+			<svg xmlns="http://www.w3.org/2000/svg" class="nav-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+				<polyline points="9 18 15 12 9 6"></polyline>
+			</svg>
+		</a>
+		<div class="collapse {{ request()->is('pembelian-terus*') ? 'show' : '' }}" id="menuPembelianTerus">
+			<ul class="sidebar-submenu">
+				<li>
+					<a class="submenu-item {{ request()->routeIs('pembelianTerus.createProject') || request()->is('pembelian-terus/cipta-projek*') ? 'active' : '' }}" href="{{ route('pembelianTerus.createProject') }}" style="cursor: pointer;">
+						<div class="submenu-icon" style="{{ request()->routeIs('pembelianTerus.createProject') || request()->is('pembelian-terus/cipta-projek*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}"></div><span class="{{ request()->routeIs('pembelianTerus.createProject') || request()->is('pembelian-terus/cipta-projek*') ? 'text-white' : '' }}">Cipta Projek</span>
+					</a>
+				</li>
+				<li>
+					<a class="submenu-item {{ request()->routeIs('pembelianTerus.quoteProject') || request()->is('pembelian-terus/sebut-harga*') ? 'active' : '' }}" href="{{ route('pembelianTerus.quoteProject') }}" style="cursor: pointer;">
+						<div class="submenu-icon" style="{{ request()->routeIs('pembelianTerus.quoteProject') || request()->is('pembelian-terus/sebut-harga*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}"></div><span class="{{ request()->routeIs('pembelianTerus.quoteProject') || request()->is('pembelian-terus/sebut-harga*') ? 'text-white' : '' }}">Sebut Harga</span>
+					</a>
+				</li>
+				<li>
+					<a class="submenu-item {{ request()->routeIs('pembelianTerus.cutOffProject') || request()->routeIs('pembelianTerus.cutOffDetails') || request()->is('pembelian-terus/cut-off-projek*') || request()->is('pembelian-terus/cut-off-details*') ? 'active' : '' }}" href="{{ route('pembelianTerus.cutOffProject') }}" style="cursor: pointer;">
+						<div class="submenu-icon" style="{{ request()->routeIs('pembelianTerus.cutOffProject') || request()->routeIs('pembelianTerus.cutOffDetails') || request()->is('pembelian-terus/cut-off-projek*') || request()->is('pembelian-terus/cut-off-details*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}"></div><span class="{{ request()->routeIs('pembelianTerus.cutOffProject') || request()->routeIs('pembelianTerus.cutOffDetails') || request()->is('pembelian-terus/cut-off-projek*') || request()->is('pembelian-terus/cut-off-details*') ? 'text-white' : '' }}">
+							Cut Off Projek
+						</span>
+					</a>
+				</li>
+						<li>
+							<a class="submenu-item {{ request()->routeIs('pembelianTerus.pemilihanSyarikat') || request()->routeIs('pembelianTerus.pemilihanSyarikatDetails') || request()->is('pembelian-terus/pemilihan-syarikat*') ? 'active' : '' }}" href="{{ route('pembelianTerus.pemilihanSyarikat') }}" style="cursor: pointer;">
+								<div class="submenu-icon" style="{{ request()->routeIs('pembelianTerus.pemilihanSyarikat') || request()->routeIs('pembelianTerus.pemilihanSyarikatDetails') || request()->is('pembelian-terus/pemilihan-syarikat*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}"></div><span class="{{ request()->routeIs('pembelianTerus.pemilihanSyarikat') || request()->routeIs('pembelianTerus.pemilihanSyarikatDetails') || request()->is('pembelian-terus/pemilihan-syarikat*') ? 'text-white' : '' }}">Pemilihan Syarikat</span>
+							</a>
+						</li>
+						<li>
+							<a class="submenu-item {{ request()->routeIs('pembelianTerus.keputusanSyarikat') || request()->routeIs('pembelianTerus.keputusanSyarikatDetails') || request()->is('pembelian-terus/keputusan-syarikat*') ? 'active' : '' }}" href="{{ route('pembelianTerus.keputusanSyarikat') }}" style="cursor: pointer;">
+								<div class="submenu-icon" style="{{ request()->routeIs('pembelianTerus.keputusanSyarikat') || request()->routeIs('pembelianTerus.keputusanSyarikatDetails') || request()->is('pembelian-terus/keputusan-syarikat*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}"></div><span class="{{ request()->routeIs('pembelianTerus.keputusanSyarikat') || request()->routeIs('pembelianTerus.keputusanSyarikatDetails') || request()->is('pembelian-terus/keputusan-syarikat*') ? 'text-white' : '' }}">Keputusan Syarikat</span>
+							</a>
+						</li>
+					</ul>
+				</div>
+	</li>
+
+	<!-- Menu : Jawatankuasa Spesifikasi /  Pengurusan -->
+	<li class="nav-item">
+		<a class="sidebar-link collapsed" data-bs-toggle="collapse" data-bs-target="#menuJawatankusaSpesifikasi" aria-expanded="false" style="cursor: pointer;">
+			<svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+				<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+				<path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+			</svg>
+			<span class="nav-text">Jawatankuasa Spesifikasi / Pengurusan </span>
+			<svg xmlns="http://www.w3.org/2000/svg" class="nav-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+				<polyline points="9 18 15 12 9 6"></polyline>
+			</svg>
+		</a>
+		<div class="collapse" id="menuJawatankusaSpesifikasi">
+			<ul class="sidebar-submenu">
+				<li><a class="submenu-item" href="{{ route('senaraiTeknikal') }}">
+						<div class="submenu-icon"></div><span>Senarai Semak Teknikal</span>
+					</a></li>
+				<li><a class="submenu-item" href="{{ route('senaraiKewangan') }}">
+						<div class="submenu-icon"></div><span>Senarai Semak Kewangan</span>
+					</a></li>
+			</ul>
+		</div>
+	</li>
+
+	<!-- Menu : Jawatankuasa Pembuka -->
+	<li class="nav-item">
+		<a class="sidebar-link {{ request()->is('jawatankuasa-pembuka*') ? 'active' : '' }}" href="{{ route('jawatankuasaPembuka') }}" style="cursor: pointer;">
+			<svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+				<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+				<circle cx="9" cy="7" r="4"></circle>
+				<path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+				<path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+			</svg>
+			<span class="nav-text">Jawatankuasa Pembuka</span>
+		</a>
+	</li>
+
+	<!-- Menu : Penilaian Teknikal & Kewangan -->
+	<li class="nav-item">
+		<a class="sidebar-link collapsed" data-bs-toggle="collapse" data-bs-target="#menuPenilaianTeknikalKewangan" aria-expanded="false" style="cursor: pointer;">
+			<svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+				<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+				<path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+			</svg>
+			<span class="nav-text">Penilaian Teknikal & Kewangan</span>
+			<svg xmlns="http://www.w3.org/2000/svg" class="nav-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+				<polyline points="9 18 15 12 9 6"></polyline>
+			</svg>
+		</a>
+		<div class="collapse" id="menuPenilaianTeknikalKewangan">
+			<ul class="sidebar-submenu">
+				<li><a class="submenu-item" href="{{ route('penilaianTeknikal') }}">
+						<div class="submenu-icon"></div><span>Penilaian Teknikal</span>
+					</a></li>
+				<li><a class="submenu-item" href="{{ route('penilaianKewangan') }}">
+						<div class="submenu-icon"></div><span>Penilaian Kewangan</span>
+					</a></li>
+			</ul>
+		</div>
+	</li>
+
+	</ul>
 	</div>
 </aside>
 @else

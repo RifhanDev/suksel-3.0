@@ -41,4 +41,174 @@ class PembelianTerusController extends Controller
             'contracts' => $contracts
         ]);
     }
+
+    // cut off
+    public function cutOffProject()
+    {
+        return view('newModule.pembelian_terus.cut_off_project');
+    }
+
+    public function cutOffDetails($tender_no)
+    {
+        $suppliers = [
+            [
+                'name' => 'Z & Z PROJECT MANAGEMENT SDN BHD',
+                'price' => '410,400.00',
+                'items' => [
+                    ['item' => 'MONITOR', 'kuantiti' => '10', 'harga' => '100,000.00'],
+                    ['item' => 'PRINTER', 'kuantiti' => '10', 'harga' => '190,000.00'],
+                    ['item' => 'PROJECTOR', 'kuantiti' => '10', 'harga' => '90,000.00']
+                ],
+                'totalPrice' => '380,000.00',
+                'totalPriceSST' => '410,400.00'
+            ],
+            [
+                'name' => 'ADNA JAYA ENTERPRISE',
+                'price' => '510,024.00',
+                'items' => [
+                    ['item' => 'MONITOR', 'kuantiti' => '10', 'harga' => '100,000.00'],
+                    ['item' => 'PRINTER', 'kuantiti' => '10', 'harga' => '190,000.00'],
+                    ['item' => 'PROJECTOR', 'kuantiti' => '10', 'harga' => '90,000.00']
+                ],
+                'totalPrice' => '380,000.00',
+                'totalPriceSST' => '510,024.00'
+            ],
+            [
+                'name' => 'WILAYAH OFFICE TRADING',
+                'price' => '510,124.00',
+                'items' => [
+                    ['item' => 'MONITOR', 'kuantiti' => '10', 'harga' => '100,000.00'],
+                    ['item' => 'PRINTER', 'kuantiti' => '10', 'harga' => '190,000.00'],
+                    ['item' => 'PROJECTOR', 'kuantiti' => '10', 'harga' => '90,000.00']
+                ],
+                'totalPrice' => '380,000.00',
+                'totalPriceSST' => '510,124.00'
+            ],
+            [
+                'name' => 'A2ZOFFICE',
+                'price' => '510,134.00',
+                'items' => [
+                    ['item' => 'MONITOR', 'kuantiti' => '10', 'harga' => '100,000.00'],
+                    ['item' => 'PRINTER', 'kuantiti' => '10', 'harga' => '190,000.00'],
+                    ['item' => 'PROJECTOR', 'kuantiti' => '10', 'harga' => '90,000.00']
+                ],
+                'totalPrice' => '380,000.00',
+                'totalPriceSST' => '510,134.00'
+            ],
+            [
+                'name' => 'SAIDINA GROUP',
+                'price' => '510,200.00',
+                'items' => [
+                    ['item' => 'MONITOR', 'kuantiti' => '10', 'harga' => '100,000.00'],
+                    ['item' => 'PRINTER', 'kuantiti' => '10', 'harga' => '190,000.00'],
+                    ['item' => 'PROJECTOR', 'kuantiti' => '10', 'harga' => '90,000.00']
+                ],
+                'totalPrice' => '380,000.00',
+                'totalPriceSST' => '510,200.00'
+            ],
+            [
+                'name' => 'XYM FURNITURE',
+                'price' => '510,220.00',
+                'items' => [
+                    ['item' => 'MONITOR', 'kuantiti' => '10', 'harga' => '100,000.00'],
+                    ['item' => 'PRINTER', 'kuantiti' => '10', 'harga' => '190,000.00'],
+                    ['item' => 'PROJECTOR', 'kuantiti' => '10', 'harga' => '90,000.00']
+                ],
+                'totalPrice' => '380,000.00',
+                'totalPriceSST' => '510,220.00'
+            ]
+        ];
+
+        return view('newModule.pembelian_terus.cut_off_details', [
+            'tender_no' => $tender_no,
+            'suppliers' => $suppliers
+        ]);
+    }
+
+    public function pemilihanSyarikat()
+    {
+        return view('newModule.pembelian_terus.pemilihan_syarikat');
+    }
+
+    public function pemilihanSyarikatDetails($tender_no)
+    {
+        $suppliers = [
+            [
+                'name' => 'Z & Z PROJECT MANAGEMENT SDN BHD',
+                'price' => '410,400.00',
+                'items' => [
+                    ['item' => 'MONITOR', 'kuantiti' => '10', 'harga' => '100,000.00'],
+                    ['item' => 'PRINTER', 'kuantiti' => '10', 'harga' => '190,000.00'],
+                    ['item' => 'PROJECTOR', 'kuantiti' => '10', 'harga' => '90,000.00']
+                ],
+                'totalPrice' => '380,000.00',
+                'totalPriceSST' => '410,400.00'
+            ],
+            [
+                'name' => 'ADNA JAYA ENTERPRISE',
+                'price' => '510,024.00',
+                'items' => [
+                    ['item' => 'MONITOR', 'kuantiti' => '10', 'harga' => '100,000.00'],
+                    ['item' => 'PRINTER', 'kuantiti' => '10', 'harga' => '190,000.00'],
+                    ['item' => 'PROJECTOR', 'kuantiti' => '10', 'harga' => '90,000.00']
+                ],
+                'totalPrice' => '380,000.00',
+                'totalPriceSST' => '510,024.00'
+            ],
+            [
+                'name' => 'WILAYAH OFFICE TRADING',
+                'price' => '510,124.00',
+                'items' => [
+                    ['item' => 'MONITOR', 'kuantiti' => '10', 'harga' => '100,000.00'],
+                    ['item' => 'PRINTER', 'kuantiti' => '10', 'harga' => '190,000.00'],
+                    ['item' => 'PROJECTOR', 'kuantiti' => '10', 'harga' => '90,000.00']
+                ],
+                'totalPrice' => '380,000.00',
+                'totalPriceSST' => '510,124.00'
+            ]
+        ];
+
+        return view('newModule.pembelian_terus.pemilihan_syarikat_details', [
+            'tender_no' => $tender_no,
+            'suppliers' => $suppliers
+        ]);
+    }
+
+    public function keputusanSyarikat()
+    {
+        return view('newModule.pembelian_terus.keputusan_syarikat');
+    }
+
+    public function keputusanSyarikatDetails($tender_no)
+    {
+        $results = [
+            [
+                'tender_no' => 'QT210000000023741',
+                'tajuk_perolehan' => 'TENDER PERKHIDMATAN DIGITAL FORENSIK KE ATAS ALIRAN PROSES SISTEM XXXX',
+                'nama_syarikat' => 'Z & Z PROJECT MANAGEMENT SDN BHD',
+                'harga_sst' => '410,400.00'
+            ]
+        ];
+
+        return view('newModule.pembelian_terus.keputusan_syarikat_details', [
+            'tender_no' => $tender_no,
+            'results' => $results
+        ]);
+    }
+
+    public function downloadSuratSetujuTerima($tender_no)
+    {
+        // Download sample PDF from external URL
+        $pdfUrl = 'https://ontheline.trincoll.edu/images/bookdown/sample-local-pdf.pdf';
+        
+        try {
+            $pdfContent = file_get_contents($pdfUrl);
+            
+            return response($pdfContent)
+                ->header('Content-Type', 'application/pdf')
+                ->header('Content-Disposition', 'attachment; filename="Surat_Setuju_Terima_' . $tender_no . '.pdf"');
+        } catch (\Exception $e) {
+            abort(500, 'Failed to download PDF');
+        }
+    }
 }

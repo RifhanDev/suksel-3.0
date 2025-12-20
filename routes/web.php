@@ -94,6 +94,14 @@ Route::prefix('pembelian-terus')->controller(PembelianTerusController::class)->g
 	Route::get('/cipta-projek', 'createProject')->name('pembelianTerus.createProject');
 	Route::get('/sebut-harga', 'quoteProject')->name('pembelianTerus.quoteProject');
 	Route::get('/maklumat-projek/{tender_no}', 'detailProject')->name('pembelianTerus.detailProject');
+	Route::get('/cut-off-projek', 'cutOffProject')->name('pembelianTerus.cutOffProject');
+	Route::get('/cut-off-details/{tender_no}', 'cutOffDetails')->name('pembelianTerus.cutOffDetails');
+	Route::get('/pemilihan-syarikat', 'pemilihanSyarikat')->name('pembelianTerus.pemilihanSyarikat');
+	Route::get('/pemilihan-syarikat-details/{tender_no}', 'pemilihanSyarikatDetails')->name('pembelianTerus.pemilihanSyarikatDetails');
+	Route::get('/keputusan-syarikat', 'keputusanSyarikat')->name('pembelianTerus.keputusanSyarikat');
+	Route::get('/keputusan-syarikat-details/{tender_no}', 'keputusanSyarikatDetails')->name('pembelianTerus.keputusanSyarikatDetails');
+	Route::get('/surat-setuju-terima/{tender_no}', 'downloadSuratSetujuTerima')->name('pembelianTerus.downloadSuratSetujuTerima');
+
 });
 
 
