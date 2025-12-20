@@ -8,9 +8,9 @@
 </script>
 
 <div data-show-mode="{{strstr(Route::currentRouteName(), 'show') ? 'true' : 'false'}}">
-    
-    <!-- TABS HEADER -->
-    <div class="modern-tabs-header" style="padding-top:0; padding-bottom:0;">
+
+    <!-- TABS NAV -->
+    <div class="tabs-nav-wrapper">
         <ul class="modern-nav-tabs nav nav-tabs" role="tablist">
             <li class="nav-item active" role="presentation">
                 <a class="nav-link active" href="#vf-main" data-bs-toggle="tab" role="tab" aria-controls="vf-main" aria-selected="true">Syarikat</a>
@@ -61,9 +61,20 @@
 
     <!-- TAB CONTENT -->
     <div class="modern-tab-content tab-content">
-        
+
         <!-- 1. MAKLUMAT SYARIKAT -->
         <div class="tab-pane active" id="vf-main">
+            <!-- Tab Section Header -->
+            <div class="tab-section-header">
+                <div class="tab-section-header-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                </div>
+                <div class="tab-section-header-text">
+                    <h3>Maklumat Syarikat</h3>
+                    <p>Maklumat asas pendaftaran syarikat anda</p>
+                </div>
+            </div>
+
             <div class="form-grid-2">
                 <!-- Left Column -->
                 <div>
@@ -161,6 +172,17 @@
 
         <!-- 2. MAKLUMAT PEGAWAI -->
         <div class="tab-pane" id="vf-officer">
+            <!-- Tab Section Header -->
+            <div class="tab-section-header">
+                <div class="tab-section-header-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                </div>
+                <div class="tab-section-header-text">
+                    <h3>Maklumat Pegawai</h3>
+                    <p>Pegawai yang bertanggungjawab untuk urusan syarikat</p>
+                </div>
+            </div>
+
             <div class="form-grid-2">
                 <div>
                     {!! Former::text('officer_name')->label('Nama Pegawai')->required() !!}
@@ -179,6 +201,17 @@
         <?php if(!isset($vendor->approval_1_id) || Auth::user()->can('Vendor:override')) : ?>
         <!-- 3. MOF -->
         <div class="tab-pane" id="vf-mof">
+            <!-- Tab Section Header -->
+            <div class="tab-section-header">
+                <div class="tab-section-header-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
+                </div>
+                <div class="tab-section-header-text">
+                    <h3>Pendaftaran MOF</h3>
+                    <p>Maklumat pendaftaran Kementerian Kewangan Malaysia</p>
+                </div>
+            </div>
+
             <div class="form-grid-2">
                 <div>
                     {!! Former::text('mof_ref_no')->label('No Rujukan Pendaftaran MOF') !!}
@@ -206,6 +239,17 @@
 
         <!-- 4. CIDB -->
         <div class="tab-pane" id="vf-cidb">
+            <!-- Tab Section Header -->
+            <div class="tab-section-header">
+                <div class="tab-section-header-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h.01"></path><path d="M7 20v-4"></path><path d="M12 20v-8"></path><path d="M17 20V8"></path><path d="M22 4v16"></path></svg>
+                </div>
+                <div class="tab-section-header-text">
+                    <h3>Pendaftaran CIDB</h3>
+                    <p>Maklumat pendaftaran Lembaga Pembangunan Industri Pembinaan</p>
+                </div>
+            </div>
+
             <div class="form-grid-2">
                 <!-- Top Section -->
                 <div>
@@ -261,16 +305,17 @@
                                 </div>
 
                                 <div class="action-wrapper">
-                                    <a class="btn btn-danger btn-sm btn-delete-cidb_group" style="height: 42px; display:flex; align-items:center; justify-content:center; width:42px; border-radius:8px;">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
-                                    </a>
+                                    <button type="button" class="table-btn table-btn-delete btn-delete-cidb_group" title="Padam">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                                    </button>
                                 </div>
                             </div>
                         </template>
 
                         <!-- Shown when no forms exist -->
-                        <div id="cidb_group_noforms_template" class="text-center p-3 text-muted">
-                            Tiada maklumat ditambah. Sila tekan butang tambah di bawah.
+                        <div id="cidb_group_noforms_template" class="empty-state">
+                            <svg class="empty-state-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>
+                            <p class="empty-state-text">Tiada maklumat ditambah. Sila tekan butang tambah di bawah.</p>
                         </div>
 
                         <!-- Controls -->
@@ -291,6 +336,16 @@
 
         <!-- 5. PEMEGANG SAHAM -->
         <div class="tab-pane" id="vf-shareholders" data-entity-name="shareholder" <?php if(isset($vendor)) { ?> data-remote="{{ asset('vendor/'.$vendor->id.'/shareholders') }}" <?php } ?> >
+            <!-- Tab Section Header -->
+            <div class="tab-section-header">
+                <div class="tab-section-header-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                </div>
+                <div class="tab-section-header-text">
+                    <h3>Pemegang Saham</h3>
+                    <p>Senarai pemegang saham syarikat</p>
+                </div>
+            </div>
 
             <table class="clean-table">
                 <thead>
@@ -320,18 +375,20 @@
                         </td>
                         <td><select class="form-control input-sm" data-field="bumiputera_status"></select></td>
                         <td class="text-center">
-                            <button type="button" class="btn btn-primary btn-sm" data-action="save">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                            </button>
-                            <button type="button" class="btn btn-secondary btn-sm" data-action="clear">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                            </button>
+                            <div class="table-btn-group">
+                                <button type="button" class="table-btn table-btn-save" data-action="save" title="Simpan">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                </button>
+                                <button type="button" class="table-btn table-btn-clear" data-action="clear" title="Kosongkan">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                </button>
+                            </div>
                         </td>
                     </tr>
                 </tfoot>
             </table>
 
-            <h4 style="margin-top: 2rem; font-size: 1rem; font-weight: 700;">Ringkasan Pegangan Saham <sup>*</sup></h4>
+            <h4 class="section-header">Ringkasan Pegangan Saham <sup>*</sup></h4>
             <table class="clean-table">
                 <thead>
                     <tr>
@@ -374,6 +431,17 @@
 
         <!-- 6. PENGARAH -->
         <div class="tab-pane" id="vf-directors" data-entity-name="director" <?php if(isset($vendor)) { ?> data-remote="{{ asset('vendor/'.$vendor->id.'/directors') }}" <?php } ?> >
+            <!-- Tab Section Header -->
+            <div class="tab-section-header">
+                <div class="tab-section-header-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
+                </div>
+                <div class="tab-section-header-text">
+                    <h3>Pengarah Syarikat</h3>
+                    <p>Senarai pengarah yang dilantik</p>
+                </div>
+            </div>
+
             <table class="clean-table">
                 <thead>
                     <tr>
@@ -408,12 +476,14 @@
                             </select>
                         </td>
                         <td class="text-center">
-                            <button type="button" class="btn btn-primary btn-sm" data-action="save">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                            </button>
-                            <button type="button" class="btn btn-secondary btn-sm" data-action="clear">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                            </button>
+                            <div class="table-btn-group">
+                                <button type="button" class="table-btn table-btn-save" data-action="save" title="Simpan">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                </button>
+                                <button type="button" class="table-btn table-btn-clear" data-action="clear" title="Kosongkan">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                </button>
+                            </div>
                         </td>
                     </tr>
                 </tfoot>
@@ -423,6 +493,17 @@
         @if(isset($vendor) && $vendor->approval_1_id > 0)
             <!-- 7. KAKITANGAN -->
             <div class="tab-pane" id="vf-contacts" data-entity-name="contact" <?php if(isset($vendor)) { ?> data-remote="{{ asset('vendor/'.$vendor->id.'/contacts') }}" <?php } ?> >
+                <!-- Tab Section Header -->
+                <div class="tab-section-header">
+                    <div class="tab-section-header-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                    </div>
+                    <div class="tab-section-header-text">
+                        <h3>Kakitangan Syarikat</h3>
+                        <p>Senarai kakitangan yang bekerja dalam syarikat</p>
+                    </div>
+                </div>
+
                 <table class="clean-table">
                     <thead>
                         <tr>
@@ -451,8 +532,10 @@
                             </td>
                             <td><select class="form-control input-sm" data-field="status"></select></td>
                             <td class="text-center">
-                                <button type="button" class="btn btn-primary btn-sm" data-action="save"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></button>
-                                <button type="button" class="btn btn-secondary btn-sm" data-action="clear"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+                                <div class="table-btn-group">
+                                    <button type="button" class="table-btn table-btn-save" data-action="save" title="Simpan"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></button>
+                                    <button type="button" class="table-btn table-btn-clear" data-action="clear" title="Kosongkan"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+                                </div>
                             </td>
                         </tr>
                     </tfoot>
@@ -461,52 +544,107 @@
 
             <!-- 8. ANUGERAH -->
             <div class="tab-pane" id="vf-awards" data-entity-name="award" <?php if(isset($vendor)) { ?> data-remote="{{ asset('vendor/'.$vendor->id.'/awards') }}" <?php } ?> >
+                <!-- Tab Section Header -->
+                <div class="tab-section-header">
+                    <div class="tab-section-header-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg>
+                    </div>
+                    <div class="tab-section-header-text">
+                        <h3>Anugerah & Pengiktirafan</h3>
+                        <p>Senarai anugerah yang diterima oleh syarikat</p>
+                    </div>
+                </div>
+
                 <table class="clean-table">
                     <thead><tr><th data-field="name">Nama</th><th data-field="description">Keterangan</th><th data-field="by">Pemberi</th><?php if(!strstr(Route::currentRouteName(), 'show')) { ?><th data-field="actions" width="100" class="text-center">Tindakan</th><?php } ?></tr></thead>
                     <tbody>
                         <!-- Rows generated by ItemController -->
                     </tbody>
-                    <tfoot <?php if(strstr(Route::currentRouteName(), 'show')) { ?>style="display:none;"<?php } ?>><tr style="background:#f8fafc;"><td><input class="form-control input-sm" data-field="name" type="text"></td><td><input class="form-control input-sm" data-field="description" type="text"></td><td><input class="form-control input-sm" data-field="by" type="text"></td><td class="text-center"><button type="button" class="btn btn-primary btn-sm" data-action="save"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></button> <button type="button" class="btn btn-secondary btn-sm" data-action="clear"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button></td></tr></tfoot>
+                    <tfoot <?php if(strstr(Route::currentRouteName(), 'show')) { ?>style="display:none;"<?php } ?>><tr><td><input class="form-control input-sm" data-field="name" type="text"></td><td><input class="form-control input-sm" data-field="description" type="text"></td><td><input class="form-control input-sm" data-field="by" type="text"></td><td class="text-center"><div class="table-btn-group"><button type="button" class="table-btn table-btn-save" data-action="save" title="Simpan"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></button><button type="button" class="table-btn table-btn-clear" data-action="clear" title="Kosongkan"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button></div></td></tr></tfoot>
                 </table>
             </div>
 
             <!-- 9. ASET -->
             <div class="tab-pane" id="vf-assets" data-entity-name="asset" <?php if(isset($vendor)) { ?> data-remote="{{ asset('vendor/'.$vendor->id.'/assets') }}" <?php } ?> >
+                <!-- Tab Section Header -->
+                <div class="tab-section-header">
+                    <div class="tab-section-header-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+                    </div>
+                    <div class="tab-section-header-text">
+                        <h3>Aset Syarikat</h3>
+                        <p>Senarai aset yang dimiliki oleh syarikat</p>
+                    </div>
+                </div>
+
                 <table class="clean-table">
                     <thead><tr><th data-field="name">Nama</th><th data-field="value" width="200">Nilai (RM)</th><?php if(!strstr(Route::currentRouteName(), 'show')) { ?><th data-field="actions" width="100" class="text-center">Tindakan</th><?php } ?></tr></thead>
                     <tbody>
                         <!-- Rows generated by ItemController -->
                     </tbody>
-                    <tfoot <?php if(strstr(Route::currentRouteName(), 'show')) { ?>style="display:none;"<?php } ?>><tr style="background:#f8fafc;"><td><input class="form-control input-sm" data-field="name" type="text"></td><td><div class="modern-input-group"><div class="addon">RM</div><input class="form-control input-sm" data-field="value" type="text"></div></td><td class="text-center"><button type="button" class="btn btn-primary btn-sm" data-action="save"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></button> <button type="button" class="btn btn-secondary btn-sm" data-action="clear"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button></td></tr></tfoot>
+                    <tfoot <?php if(strstr(Route::currentRouteName(), 'show')) { ?>style="display:none;"<?php } ?>><tr><td><input class="form-control input-sm" data-field="name" type="text"></td><td><div class="modern-input-group"><div class="addon">RM</div><input class="form-control input-sm" data-field="value" type="text"></div></td><td class="text-center"><div class="table-btn-group"><button type="button" class="table-btn table-btn-save" data-action="save" title="Simpan"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></button><button type="button" class="table-btn table-btn-clear" data-action="clear" title="Kosongkan"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button></div></td></tr></tfoot>
                 </table>
             </div>
             
             <!-- 10. PROJEK -->
             <div class="tab-pane" id="vf-projects" data-entity-name="project" <?php if(isset($vendor)) { ?> data-remote="{{ asset('vendor/'.$vendor->id.'/projects') }}" <?php } ?> >
+                <!-- Tab Section Header -->
+                <div class="tab-section-header">
+                    <div class="tab-section-header-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+                    </div>
+                    <div class="tab-section-header-text">
+                        <h3>Projek Lepas</h3>
+                        <p>Senarai projek yang telah dilaksanakan</p>
+                    </div>
+                </div>
+
                 <table class="clean-table">
                     <thead><tr><th data-field="name">Nama</th><th data-field="customer">Pelanggan</th><th data-field="period">Tempoh</th><th data-field="value">Nilai (RM)</th><th data-field="done">Siap</th><?php if(!strstr(Route::currentRouteName(), 'show')) { ?><th data-field="actions" width="100" class="text-center">Tindakan</th><?php } ?></tr></thead>
                     <tbody>
                         <!-- Rows generated by ItemController -->
                     </tbody>
-                    <tfoot <?php if(strstr(Route::currentRouteName(), 'show')) { ?>style="display:none;"<?php } ?>><tr style="background:#f8fafc;"><td><input class="form-control input-sm" data-field="name" type="text"></td><td><input class="form-control input-sm" data-field="customer" type="text"></td><td><input class="form-control input-sm" data-field="period" type="text"></td><td><div class="modern-input-group"><div class="addon">RM</div><input class="form-control input-sm" data-field="value" type="text"></div></td><td><input data-field="done" type="checkbox"></td><td class="text-center"><button type="button" class="btn btn-primary btn-sm" data-action="save"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></button> <button type="button" class="btn btn-secondary btn-sm" data-action="clear"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button></td></tr></tfoot>
+                    <tfoot <?php if(strstr(Route::currentRouteName(), 'show')) { ?>style="display:none;"<?php } ?>><tr><td><input class="form-control input-sm" data-field="name" type="text"></td><td><input class="form-control input-sm" data-field="customer" type="text"></td><td><input class="form-control input-sm" data-field="period" type="text"></td><td><div class="modern-input-group"><div class="addon">RM</div><input class="form-control input-sm" data-field="value" type="text"></div></td><td><input data-field="done" type="checkbox"></td><td class="text-center"><div class="table-btn-group"><button type="button" class="table-btn table-btn-save" data-action="save" title="Simpan"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></button><button type="button" class="table-btn table-btn-clear" data-action="clear" title="Kosongkan"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button></div></td></tr></tfoot>
                 </table>
             </div>
 
             <!-- 11. PRODUK -->
             <div class="tab-pane" id="vf-products" data-entity-name="product" <?php if(isset($vendor)) { ?> data-remote="{{ asset('vendor/'.$vendor->id.'/products') }}" <?php } ?> >
+                <!-- Tab Section Header -->
+                <div class="tab-section-header">
+                    <div class="tab-section-header-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                    </div>
+                    <div class="tab-section-header-text">
+                        <h3>Produk & Perkhidmatan</h3>
+                        <p>Senarai produk atau perkhidmatan yang ditawarkan</p>
+                    </div>
+                </div>
+
                  <table class="clean-table">
                      <thead><tr><th data-field="name">Nama</th><th data-field="description">Keterangan</th><th data-field="implementations">Pengguna</th><?php if(!strstr(Route::currentRouteName(), 'show')) { ?><th data-field="actions" width="100" class="text-center">Tindakan</th><?php } ?></tr></thead>
                      <tbody>
                          <!-- Rows generated by ItemController -->
                      </tbody>
-                     <tfoot <?php if(strstr(Route::currentRouteName(), 'show')) { ?>style="display:none;"<?php } ?>><tr style="background:#f8fafc;"><td><input class="form-control input-sm" data-field="name" type="text"></td><td><input class="form-control input-sm" data-field="description" type="text"></td><td><input class="form-control input-sm" data-field="implementations" type="text"></td><td class="text-center"><button type="button" class="btn btn-primary btn-sm" data-action="save"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></button> <button type="button" class="btn btn-secondary btn-sm" data-action="clear"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button></td></tr></tfoot>
+                     <tfoot <?php if(strstr(Route::currentRouteName(), 'show')) { ?>style="display:none;"<?php } ?>><tr><td><input class="form-control input-sm" data-field="name" type="text"></td><td><input class="form-control input-sm" data-field="description" type="text"></td><td><input class="form-control input-sm" data-field="implementations" type="text"></td><td class="text-center"><div class="table-btn-group"><button type="button" class="table-btn table-btn-save" data-action="save" title="Simpan"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></button><button type="button" class="table-btn table-btn-clear" data-action="clear" title="Kosongkan"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button></div></td></tr></tfoot>
                  </table>
             </div>
         @endif
 
         <!-- 12. FAIL -->
         <div class="tab-pane" id="vf-files">
-            <div class="alert alert-warning" style="border-radius: 8px; display:flex; align-items:center; gap:10px;">
+            <!-- Tab Section Header -->
+            <div class="tab-section-header">
+                <div class="tab-section-header-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                </div>
+                <div class="tab-section-header-text">
+                    <h3>Muat Naik Fail</h3>
+                    <p>Dokumen sijil dan fail sokongan</p>
+                </div>
+            </div>
+
+            <div class="info-alert">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
                 Hanya fail beformat PDF dan bersaiz maksimum 5MB boleh dimuat naik.
             </div>
@@ -525,8 +663,7 @@
             </div>
 
             @if(isset($vendor) && count($vendor->uploads) > 0)
-                <h3 style="margin-top: 2rem; color: #374151; font-weight: 600;">Fail Dimuat Naik</h3>
-                <br>
+                <h4 class="section-header">Fail Dimuat Naik</h4>
                 <div class="table-responsive">
                     {!! $vendor->uploadsTable() !!}
                 </div>

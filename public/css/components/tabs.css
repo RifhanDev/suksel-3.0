@@ -1,15 +1,10 @@
 /**
- * Modern Tabs Component
+ * Modern Tabs Component - Segmented Control Style
  * Reusable tab styling for Bootstrap 5 forms
  * Selangor Brand Theme
  */
 
 /* ===== LAYOUT & CONTAINER ===== */
-.modern-form-wrapper {
-    padding: 1.5rem;
-    display: block;
-}
-
 .modern-form-card {
     background: white;
     border-radius: 12px;
@@ -18,51 +13,78 @@
     overflow: visible;
 }
 
-/* ===== TABS NAVIGATION ===== */
-.modern-tabs-header {
-    background: #f8fafc;
+/* ===== TABS NAV WRAPPER ===== */
+.tabs-nav-wrapper {
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
     border-bottom: 1px solid #e2e8f0;
-    padding: 0 1.5rem;
+    /* padding: 1rem 1.5rem; */
     border-radius: 12px 12px 0 0;
 }
 
+/* ===== SEGMENTED CONTROL TABS ===== */
 .modern-nav-tabs {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     list-style: none;
-    padding: 0;
+    padding: 10px 10px;
     margin: 0;
-    gap: 2px;
+    background: #e2e8f0;
+    border-radius: 8px 8px 0 0;
+    gap: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    width: 100%;
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 transparent;
+}
+
+.modern-nav-tabs::-webkit-scrollbar {
+    height: 4px;
+}
+
+.modern-nav-tabs::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.modern-nav-tabs::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+
+.modern-nav-tabs .nav-item {
+    margin-bottom: 0;
+    flex: 1;
+    text-align: center;
 }
 
 .modern-nav-tabs .nav-link {
     display: block;
-    padding: 1rem 1.5rem;
+    padding: 0.6rem 1.1rem;
     color: #64748b;
     text-decoration: none;
     font-weight: 600;
-    font-size: 0.9rem;
+    font-size: 0.8rem;
     border: none;
-    border-bottom: 3px solid transparent;
-    transition: all 0.3s ease;
+    background: transparent;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     cursor: pointer;
     position: relative;
-    border-radius: 0;
+    border-radius: 6px;
+    white-space: nowrap;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
 }
 
-.modern-nav-tabs .nav-link:hover {
-    color: #1e293b;
-    background: rgba(196, 30, 58, 0.05);
-    border-bottom-color: rgba(196, 30, 58, 0.3);
-    border: none;
+.modern-nav-tabs .nav-link:hover:not(.active) {
+    color: #334155;
+    background: rgba(255, 255, 255, 0.5);
 }
 
 .modern-nav-tabs .nav-link.active {
     color: #fff;
     background: linear-gradient(135deg, #c41e3a 0%, #a01830 100%);
-    border-bottom: 3px solid #8b1428;
     font-weight: 700;
-    box-shadow: 0 2px 8px rgba(196, 30, 58, 0.2);
+    box-shadow: 0 2px 8px rgba(196, 30, 58, 0.3);
 }
 
 .modern-nav-tabs .nav-link:focus {
@@ -71,16 +93,14 @@
 }
 
 /* Disabled/Locked tabs */
-.modern-nav-tabs li.disabled .nav-link {
-    color: #cbd5e1;
+.modern-nav-tabs .nav-item.disabled .nav-link,
+.modern-nav-tabs .nav-item.tab-disabled .nav-link,
+.modern-nav-tabs .nav-link.disabled {
+    color: #94a3b8;
     cursor: not-allowed;
-    opacity: 0.5;
+    opacity: 0.6;
     pointer-events: none;
-}
-
-.modern-nav-tabs li.disabled .nav-link:hover {
-    background: transparent;
-    border-bottom-color: transparent;
+    background: transparent !important;
 }
 
 /* ===== CONTENT AREA ===== */
@@ -89,7 +109,7 @@
     background: white;
     overflow: visible;
     border-radius: 0 0 12px 12px;
-    min-height: 500px;
+    min-height: 400px;
 }
 
 .modern-tab-content .tab-pane {
@@ -97,7 +117,7 @@
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(5px); }
+    from { opacity: 0; transform: translateY(8px); }
     to { opacity: 1; transform: translateY(0); }
 }
 
@@ -110,13 +130,20 @@
     align-items: start;
 }
 
+.form-grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    align-items: start;
+}
+
 .form-grid-1 {
     display: grid;
     grid-template-columns: 1fr;
-    gap: 24px;
+    gap: 20px;
 }
 
-/* General Form */
+/* ===== FORMER FIXES - Required for proper form rendering ===== */
 .modern-tab-content .form-group {
     margin-bottom: 20px !important;
     display: flex;
@@ -128,7 +155,7 @@
     margin-bottom: 0 !important;
 }
 
-/* ===== SELECTIZE FIXES ===== */
+/* Hide selectize original selects */
 .modern-tab-content .form-group select.selectize,
 .modern-tab-content .form-group select.selectized,
 .modern-tab-content select[style*="display: none"],
@@ -149,15 +176,15 @@
     z-index: 9999 !important;
 }
 
-/* ===== FORM LABELS & CONTROLS ===== */
+/* Form Labels - Override Former defaults */
 .modern-tab-content .control-label {
     text-align: left !important;
     width: 100% !important;
     margin-bottom: 8px !important;
     padding-top: 0 !important;
-    font-weight: 600;
-    color: #334155;
-    font-size: 0.85rem;
+    font-weight: 700;
+    color: #475569;
+    font-size: 0.7rem;
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
@@ -167,7 +194,7 @@
     top: -2px;
 }
 
-/* Reset Bootstrap Columns */
+/* Reset Bootstrap Columns from Former */
 .modern-tab-content .col-lg-12,
 .modern-tab-content .col-lg-9,
 .modern-tab-content .col-sm-9,
@@ -182,10 +209,12 @@
 /* Form Controls */
 .modern-tab-content .form-control:not(.selectize-control) {
     border: 1px solid #cbd5e1;
+    border-radius: 8px;
     box-shadow: none;
-    padding: 8px 12px;
-    font-size: 0.95rem;
+    padding: 10px 14px;
+    font-size: 0.9rem;
     width: 100% !important;
+    transition: all 0.2s;
 }
 
 .modern-tab-content .selectize-control.form-control {
@@ -202,4 +231,34 @@
     z-index: 5;
 }
 
+/* ===== RESPONSIVE ===== */
+@media (max-width: 992px) {
+    .form-grid-2,
+    .form-grid-3 {
+        grid-template-columns: 1fr;
+    }
 
+    .tabs-nav-wrapper {
+        padding: 0.875rem 1rem;
+    }
+
+    .modern-nav-tabs .nav-link {
+        padding: 0.5rem 0.9rem;
+        font-size: 0.75rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .modern-tab-content {
+        padding: 1.25rem;
+    }
+
+    .tabs-nav-wrapper {
+        padding: 0.75rem;
+    }
+
+    .modern-nav-tabs .nav-link {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.7rem;
+    }
+}
