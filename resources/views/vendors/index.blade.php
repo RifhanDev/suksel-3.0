@@ -15,7 +15,7 @@
 	<!-- Stats Cards -->
 	@include('vendors._snaps')
 
-	<!-- Main Table Card -->
+	<!-- Table -->
 	<div class="stats-card p-0">
 		<div class="stats-card-header p-4 pb-3 border-bottom">
 			<div class="d-flex align-items-center gap-3">
@@ -55,9 +55,10 @@
 		</div>
 	</div>
 	
-	<div class="mt-4">
+	{{-- nanti nk mintak abg wan check kenapa tak boleh msok page --}}
+	{{-- <div class="mt-4">
 		@include('vendors.actions-footer', ['is_list' => true])
-	</div>
+	</div> --}}
 @endsection
 
 @section('scripts')

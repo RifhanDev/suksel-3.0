@@ -364,10 +364,10 @@ class ItemController {
         if (this.editingItem === item) {
             const badge = document.createElement('span');
             badge.className = 'badge text-bg-warning';
-            badge.textContent = 'Editing';
+            badge.textContent = 'Sedang Dikemaskini';
             cell.appendChild(badge);
         } else {
-            const editBtn = this.createButton('edit', 'btn-info');
+            const editBtn = this.createButton('edit', 'btn-warning');
             const deleteBtn = this.createButton('remove', 'btn-danger');
 
             cell.appendChild(editBtn);
