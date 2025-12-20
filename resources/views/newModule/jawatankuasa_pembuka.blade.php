@@ -72,6 +72,15 @@
     margin:10px 0 10px;
 }
 
+.btn-primary{
+    background-color:#A4161A !important;
+    border-color:#A4161A !important;
+}
+
+.btn-primary:hover{
+    background-color:#8F1215 !important;
+    border-color:#8F1215 !important;
+}
 </style>
 
 <div class="card">

@@ -4,6 +4,9 @@
 
 <style>
 
+/* =====================
+   GENERAL LINKS
+===================== */
 .tender-link{
     color:#3751FF;
     font-weight:600;
@@ -12,7 +15,7 @@
 }
 
 /* =====================
-   TABS STYLE
+   COMMITTEE TABS
 ===================== */
 .committee-tabs{
     display:flex;
@@ -30,15 +33,50 @@
     font-weight:600;
     cursor:pointer;
     transition:0.2s;
+    color:#333;
 }
 
 .committee-tab:hover{
-    background:#e6e9ff;
+    background:#f5c2c7; /* light red hover */
 }
 
+/* ACTIVE TAB = RED */
 .committee-tab.active{
-    background:#3751FF;
-    color:#fff;
+    background:#A4161A !important;
+    color:#fff !important;
+}
+
+/* =====================
+   BUTTON COLORS
+===================== */
+
+/* PRIMARY BUTTON (TAPIS, SIMPAN) */
+.btn-primary{
+    background-color:#A4161A !important;
+    border-color:#A4161A !important;
+}
+
+.btn-primary:hover{
+    background-color:#8F1215 !important;
+    border-color:#8F1215 !important;
+}
+
+/* SUCCESS BUTTON */
+.btn-success{
+    background-color:#198754;
+    border-color:#198754;
+}
+
+/* DANGER BUTTON */
+.btn-danger{
+    background-color:#dc3545;
+    border-color:#dc3545;
+}
+
+/* INFO BUTTON (LAPORAN) */
+.btn-info{
+    background-color:#0dcaf0;
+    border-color:#0dcaf0;
 }
 
 /* =====================
@@ -49,19 +87,32 @@
     vertical-align:middle;
 }
 
+/* RED TABLE HEADER */
+.thead-red{
+    background:#A4161A !important;
+    color:#fff !important;
+}
+
 .table tbody td{
     vertical-align:middle;
 }
 
+/* =====================
+   FORM ELEMENTS
+===================== */
 input[type="checkbox"]{
     width:16px;
     height:16px;
 }
 
-.form-select{
+.form-select,
+.form-control{
     padding:6px 10px;
 }
 
+/* =====================
+   CATATAN BOX
+===================== */
 .catatan-box{
     background:#f3f3f3;
     padding:15px;
@@ -95,7 +146,7 @@ input[type="checkbox"]{
 <button class="btn btn-primary w-100 mb-3">Tapis</button>
 
 <table class="table table-bordered">
-<thead class="text-white" style="background:#2C3E9E">
+<thead class="thead-red">
 <tr>
     <th>No Tender</th>
     <th>Tajuk Perolehan</th>

@@ -2,6 +2,25 @@
 
 @section('content')
  <style>
+/* ========================
+   GLOBAL
+======================== */
+body{
+    background:#F3F4F6;
+}
+
+.card{
+    border-radius:12px;
+    border:1px solid #E5E7EB;
+}
+
+.card-body{
+    padding:24px;
+}
+
+hr{
+    border:1px solid #E5E7EB;
+}
 
 /* ========================
    HEADER SUMMARY
@@ -15,16 +34,18 @@
 }
 
 .card-body b{
-    color:#000;
-    font-size:14px;
+    font-size:13px;
+    color:#374151;
 }
 
 /* ========================
    STEPPER
 ======================== */
 .progress-nav{
-    border-top:1px solid #E5E7EB;
-    border-bottom:1px solid #E5E7EB;
+    background:#FFFFFF;
+    border-radius:12px;
+    padding:20px;
+    border:1px solid #E5E7EB;
 }
 
 .progress-bar-tab{
@@ -35,67 +56,132 @@
 .progress-bar-tab .nav-item{
     flex:1;
     text-align:center;
+    position:relative;
 }
 
 .progress-bar-tab .nav-link{
     margin:auto;
-    width:40px;
-    height:40px;
+    width:42px;
+    height:42px;
     border-radius:50%;
     background:#1E3A8A;
     color:white;
-    font-weight:600;
+    font-weight:700;
     display:flex;
     align-items:center;
     justify-content:center;
+    border:none;
 }
 
 .progress-bar-tab .nav-link.active{
-    background:#10b981;
+    background:#10B981;
 }
 
-/* step label bawah circle */
+/* label bawah step */
 .progress-bar-tab .nav-item::after{
     content:attr(role);
     display:block;
-    margin-top:6px;
+    margin-top:8px;
     font-size:13px;
-    color:#000;
+    color:#374151;
+    font-weight:500;
 }
 
-/* horizontal connector */
+/* connector */
 .progress{
     height:2px!important;
+    background:#E5E7EB;
 }
+
 .progress-bar{
     background:#1E3A8A!important;
 }
 
 /* =========================
-   SECTION TITLE
+   SECTION TITLES
 ========================= */
 .card-title-grey{
-    background:#F5F5F5;
-    padding:10px 15px;
-    border-left:5px solid #1E3A8A;
-    font-weight:600;
+    background:#F9FAFB;
+    padding:12px 16px;
+    border-left:5px solid #C0392B;
+    font-weight:700;
+    font-size:15px;
+    border-radius:6px;
 }
 
 /* ==========================
-   SUB TAB (Kewangan | Rumusan)
+   SUB TABS (Teknikal | Rumusan)
 ========================== */
 .custom-tab-size .nav-link{
-    border-radius:0!important;
-    background:#fff;
-    color:#000;
+    border-radius:8px 8px 0 0;
+    background:#FFFFFF;
+    color:#374151;
     border:1px solid #E5E7EB;
     font-weight:600;
+    padding:10px 18px;
 }
 
 .custom-tab-size .nav-link.active{
     background:#C0392B!important;
-    color:#fff!important;
+    color:#FFFFFF!important;
     border-color:#C0392B!important;
+}
+
+/* ==========================
+   TABLE
+========================== */
+.table{
+    border-radius:10px;
+    overflow:hidden;
+}
+
+.table thead th{
+    background:#1E3A8A;
+    color:white;
+    text-align:center;
+    font-size:13px;
+    padding:12px;
+}
+
+.table td{
+    font-size:13px;
+    padding:12px;
+    vertical-align:middle;
+}
+
+.table tbody tr:hover{
+    background:#F9FAFB;
+}
+
+/* ==========================
+   BUTTONS
+========================== */
+.btn{
+    border-radius:8px;
+    font-weight:600;
+    padding:8px 16px;
+}
+
+.btn-success{
+    background:#16A34A;
+    border:none;
+}
+
+.btn-success:hover{
+    background:#15803D;
+}
+
+.btn-primary{
+    background:#1E3A8A;
+    border:none;
+}
+
+.btn-primary:hover{
+    background:#1E40AF;
+}
+
+.btn-outline-secondary{
+    border-radius:8px;
 }
 
 /* ==========================
@@ -107,49 +193,143 @@
 }
 
 /* ==========================
-   TABLE
+   FORM
 ========================== */
-.table thead th{
-    background:#1E3A8A;
-    color:white;
-    text-align:center;
+.form-control,
+.form-select{
+    border-radius:8px;
+    font-size:13px;
 }
 
-.table td,
-.table th{
-    vertical-align:middle;
-}
-
-/* ==========================
-   BUTTON
-========================== */
-.btn-success{
-    background:#16A34A;
-    border:none;
-}
-
-.btn-primary{
-    background:#1E3A8A;
-    border:none;
+.form-check-label{
+    font-size:13px;
 }
 
 /* ==========================
    MODAL
 ========================== */
+.modal-content{
+    border-radius:14px;
+}
+
 .modal-header{
     background:#1E3A8A;
+    color:white;
 }
 
 .modal-title{
     color:white;
+    font-weight:700;
+}
+
+.modal-footer{
+    border-top:1px solid #E5E7EB;
 }
 
 /* ==========================
-   FORMS
+   TEXT HINTS
 ========================== */
-.form-control,
-.form-select{
-    border-radius:6px;
+.card-title-desc{
+    font-size:13px;
+    margin-bottom:12px;
+}
+
+/* ==========================
+   ACTION FOOTER
+========================== */
+.d-flex.justify-content-end.gap-2 button{
+    min-width:120px;
+}
+/* ==========================
+   TABLE – RED THEME OVERRIDE
+========================== */
+
+/* Table header */
+.table thead th,
+.table-primary thead th,
+.table-primary th {
+    background-color:#C0392B !important;
+    color:#FFFFFF !important;
+    text-align:center;
+    border-color:#A93226 !important;
+}
+
+/* Table header row */
+.table thead tr {
+    background-color:#C0392B !important;
+}
+
+/* Table borders */
+.table-bordered > :not(caption) > * {
+    border-color:#E5B4AF;
+}
+
+/* Table hover */
+.table tbody tr:hover {
+    background:#FDEDEC;
+}
+
+/* Badges inside table */
+.table .badge.bg-success{
+    background:#16A34A !important;
+}
+
+.table .badge.bg-warning{
+    background:#F59E0B !important;
+}
+
+/* Action buttons inside table */
+.table .btn-success{
+    background:#16A34A;
+}
+
+.table .btn-primary{
+    background:#C0392B;
+    border:none;
+}
+
+.table .btn-primary:hover{
+    background:#A93226;
+}
+
+/* Pencil / icon buttons */
+.table .btn-outline-secondary{
+    border-color:#C0392B;
+    color:#C0392B;
+}
+
+.table .btn-outline-secondary:hover{
+    background:#C0392B;
+    color:#fff;
+}
+/* =========================
+   STEPPER – CHANGE BLUE TO RED
+========================= */
+
+/* Default step circle (inactive) */
+.progress-bar-tab .nav-link{
+    background:#C0392B !important;   /* red */
+    color:#fff !important;
+}
+
+/* Active step (current step) */
+.progress-bar-tab .nav-link.active{
+    background:#16A34A !important;   /* keep green for current (optional) */
+}
+
+/* Step label text */
+.progress-bar-tab .nav-item::after{
+    color:#000;
+    font-weight:500;
+}
+
+/* Horizontal connector line */
+.progress{
+    height:2px !important;
+}
+
+.progress-bar{
+    background:#C0392B !important;
 }
 
 </style>
@@ -196,20 +376,20 @@
                                     aria-valuemin="0" aria-valuemax="100"></div>
                             </div>
                             <ul class="nav nav-pills progress-bar-tab custom-nav" role="tablist">
-                                <li class="nav-item" role="peringkat-pematuhan-cadangan-teknikal">
+                                <li class="nav-item" role="Peringkat pematuhan cadangan teknikal">
                                     <button type="button" id="pematuhan-tab" class="nav-link rounded-pill active"
                                         data-progressbar="custom-progress-bar" data-bs-toggle="pill"
                                         data-bs-target="#pematuhan"
                                         data-title="@lang('translation.application-information')" role="tab"
                                         aria-controls="pematuhan" aria-selected="true">1</button>
                                 </li>
-                                <li class="nav-item" role="penilaian-spesifikasi-teknikal">
+                                <li class="nav-item" role="Penilaian Spesifikasi Teknikal">
                                     <button type="button" id="penilaian-tab" class="nav-link rounded-pill"
                                         data-progressbar="custom-progress-bar" data-bs-toggle="pill"
                                         data-bs-target="#penilaian" data-title="@lang('translation.program-information')"
                                         role="tab" aria-controls="penilaian" aria-selected="false">2</button>
                                 </li>
-                                <li class="nav-item" role="laporan">
+                                <li class="nav-item" role="Laporan">
                                     <button type="button" id="laporan-tab" class="nav-link rounded-pill"
                                         data-progressbar="custom-progress-bar" data-bs-toggle="pill"
                                         data-bs-target="#laporan" data-title="@lang('translation.program-information')"
@@ -284,7 +464,7 @@
                                     </table>
                                     <div class="row mb-3 px-3">
                                         <div class="col-md-12 d-flex justify-content-end">
-                                            <button class="btn btn-primary">Seterusnya</button>
+                                            <button class="btn btn-primary btn-seterusnya">Seterusnya</button>
                                         </div>
                                     </div>
                                 </div>
@@ -902,6 +1082,27 @@
                         document.getElementById('senaraiSpesifikasiTeknikal').removeEventListener('hidden.bs.modal', handler);
                     });
                 });
+                
+document.addEventListener('DOMContentLoaded', function () {
+
+    document.querySelectorAll('.btn-seterusnya').forEach(btn => {
+        btn.addEventListener('click', function () {
+
+            // Find current active step button
+            const currentStep = document.querySelector('.progress-bar-tab .nav-link.active');
+            if (!currentStep) return;
+
+            // Find next step button
+            const nextStep = currentStep.closest('.nav-item')?.nextElementSibling?.querySelector('.nav-link');
+            if (!nextStep) return;
+
+            // Trigger click (Bootstrap handles tab switching)
+            nextStep.click();
+        });
+    });
+
+});
+
             </script>
         </div>
 
