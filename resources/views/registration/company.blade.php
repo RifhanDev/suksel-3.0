@@ -2,149 +2,24 @@
 
 @section('styles')
     <link href="{{ asset('css/components/tabs.css') }}" rel="stylesheet">
+    <link href="{{ asset('css/components/form-components.css') }}" rel="stylesheet">
 
     <style>
-        /* ===== INPUT GROUPS ===== */
-        .modern-input-group {
-            display: flex;
-            align-items: center;
-            width: 100%;
-        }
+        /* ===== PAGE-SPECIFIC STYLES ===== */
 
-        .modern-input-group > :first-child {
-            border-top-right-radius: 0 !important;
-            border-bottom-right-radius: 0 !important;
-            border-right: 0;
-            z-index: 2;
-        }
-
-        .modern-input-group > :last-child {
-            border-top-left-radius: 0 !important;
-            border-bottom-left-radius: 0 !important;
-            border-left: 1px solid #cbd5e1;
-        }
-
-        .modern-input-group .addon {
-            background: #f1f5f9;
-            border: 1px solid #cbd5e1;
-            border-left: 0;
-            border-right: 0;
-            padding: 0 15px;
-            height: 42px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: #64748b;
-            white-space: nowrap;
-            border-radius: 0 !important;
-        }
-
-        .modern-input-group > *:focus {
-            z-index: 10;
-            border-color: #c41e3a;
-            position: relative;
-        }
-
+        /* Currency Select */
         .currency-select {
             flex: 0 0 100px !important;
             width: 100px !important;
             background-color: #f8fafc;
         }
 
-        /* ===== ALIGNMENT HELPERS ===== */
+        /* Checkbox Alignment */
         .checkbox-align-wrapper {
             height: 42px;
             display: flex;
             align-items: center;
             padding-bottom: 40px;
-        }
-
-        /* ===== TABLES ===== */
-        .clean-table {
-            width: 100%;
-            border-collapse: separate;
-            border-spacing: 0;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            overflow: hidden;
-            margin-bottom: 1rem;
-        }
-
-        .clean-table thead th {
-            background: #f1f5f9;
-            color: #475569;
-            font-weight: 700;
-            padding: 12px 16px;
-            text-transform: uppercase;
-            font-size: 0.8rem;
-            border-bottom: 1px solid #e2e8f0;
-        }
-
-        .clean-table tbody td,
-        .clean-table tfoot td {
-            padding: 12px 16px;
-            border-bottom: 1px solid #f1f5f9;
-            vertical-align: middle;
-        }
-
-        .clean-table tbody tr:last-child td {
-            border-bottom: none;
-        }
-
-        .clean-table tbody tr:hover {
-            background: #f8fafc;
-        }
-
-        /* ===== REPEATER ===== */
-        .repeater-item {
-            display: flex;
-            gap: 15px;
-            align-items: flex-end;
-            background: white;
-            padding: 15px;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            margin-bottom: 10px;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-        }
-
-        .repeater-item .fields-wrapper {
-            flex: 1;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-        }
-
-        .btn-add-repeater {
-            width: 100%;
-            border: 2px dashed #cbd5e1;
-            background: white;
-            color: #64748b;
-            font-weight: 600;
-            padding: 12px;
-            border-radius: 8px;
-            transition: all 0.2s;
-            text-align: center;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-
-        .btn-add-repeater:hover {
-            border-color: #c41e3a;
-            color: #c41e3a;
-            background: #fff1f2;
-        }
-
-        /* ===== ICONS ===== */
-        .icon-svg {
-            width: 18px;
-            height: 18px;
-            stroke-width: 2;
         }
 
         /* ===== ACTION FOOTER ===== */
@@ -161,7 +36,7 @@
         /* ===== MODERN BUTTONS ===== */
         .modern-btn {
             padding: 12px 28px;
-            border-radius: 8px;
+            border-radius: 12px;
             font-weight: 600;
             font-size: 0.95rem;
             border: none;
@@ -183,7 +58,6 @@
             transform: translateY(0);
         }
 
-        /* Back Button */
         .modern-btn-back {
             background: white;
             color: #64748b;
@@ -196,7 +70,6 @@
             border-color: #cbd5e1;
         }
 
-        /* Next Button */
         .modern-btn-next {
             background: linear-gradient(135deg, #c41e3a 0%, #a01830 100%);
             color: white;
@@ -208,7 +81,6 @@
             box-shadow: 0 6px 20px rgba(196, 30, 58, 0.4);
         }
 
-        /* Submit Button */
         .modern-btn-submit {
             background: linear-gradient(135deg, #059669 0%, #047857 100%);
             color: white;
@@ -225,35 +97,37 @@
             height: 20px;
             stroke-width: 2.5;
         }
-
-        /* ===== RESPONSIVE ===== */
-        @media (max-width: 992px) {
-            .form-grid-2 {
-                grid-template-columns: 1fr;
-            }
-
-            .repeater-item {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
-            .repeater-item .fields-wrapper {
-                grid-template-columns: 1fr;
-            }
-        }
     </style>
 @endsection
 
 @section('content')
-	<div class="modern-form-wrapper">
-		<div class="modern-form-card">
-			<div class="modern-tabs-header">
-                <div style="padding: 1.5rem 0;">
-				    <h2 style="margin: 0; font-size: 1.5rem; font-weight: 700; color: #1e293b; font-family: 'Poppins', sans-serif;">Pendaftaran Syarikat</h2>
-                </div>
-			</div>
+    <!-- HEADER -->
+    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center mb-4">
+        <div class="mb-3 mb-lg-0">
+            <h3 class="fw-bold text-dark m-0" style="letter-spacing: -0.5px;">Pendaftaran Syarikat</h3>
+            <p class="text-muted small m-0">Sila lengkapkan maklumat syarikat anda.</p>
+        </div>
 
-			{!! Former::open_for_files(action('RegistrationController@storeCompany'))->addClass('form-uppercase jq-validate') !!}
+        @if(isset($vendor) && $vendor->registration)
+        <div class="d-flex flex-wrap align-items-center gap-3 bg-white px-3 py-2 rounded-2 shadow-sm border">
+            <div class="d-flex align-items-center gap-2">
+                <span class="badge bg-light text-dark border" style="font-size: 0.65rem;">NO. PENDAFTARAN</span>
+                <span class="small fw-bold text-dark">{{ $vendor->registration }}</span>
+            </div>
+            @if($vendor->approval_1_id)
+            <div class="vr d-none d-lg-block text-muted opacity-25" style="height: 20px;"></div>
+            <div class="d-flex align-items-center gap-2">
+                <span class="badge bg-light text-dark border" style="font-size: 0.65rem;">STATUS</span>
+                <span class="small fw-bold" style="color: #059669;">Disahkan</span>
+            </div>
+            @endif
+        </div>
+        @endif
+    </div>
+
+    <!-- FORM CARD -->
+    <div class="modern-form-card">
+        {!! Former::open_for_files(action('RegistrationController@storeCompany'))->addClass('form-uppercase jq-validate') !!}
 				{!! Former::populate($vendor) !!}
 				{!! Former::hidden('_method', 'PUT') !!}
 				
@@ -274,10 +148,9 @@
 							Hantar
 						</button>
 					</div>
-				</div>
-			{!! Former::close() !!}
-		</div>
-	</div>
+            </div>
+        {!! Former::close() !!}
+    </div>
 @endsection
 
 @section('scripts')

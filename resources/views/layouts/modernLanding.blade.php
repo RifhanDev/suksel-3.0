@@ -906,6 +906,11 @@
 				height: 100vh;
 			}
 		}
+
+		/* Fix for Bootstrap 5 fade transition (application.css conflict) */
+		.fade.show {
+			opacity: 1 !important;
+		}
 	</style>
 </head>
 
@@ -918,8 +923,8 @@
 						<img src="{{ asset('images/02_selangor.png') }}" alt="Selangor">
 					</div>
 					<div>
-						<h1 class="navbar-brand-text">STOS 3.0</h1>
-						<span class="navbar-brand-text-sub">Sistem Tender Online Selangor</span>
+						<h1 class="navbar-brand-text">E-Perolehan</h1>
+						<span class="navbar-brand-text-sub">Sistem e-Perolehan Selangor</span>
 					</div>
 				</a>
 
@@ -1199,6 +1204,24 @@
 		<!-- Page Content -->
 		<div class="page-wrapper">
 			<div class="container-fluid">
+
+				<!-- ALERTS -->
+				@if(session('notice'))
+					<div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+						<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M9 12l2 2l4 -4" /></svg>
+						{{ session('notice') }}
+						<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+					</div>
+				@endif
+
+				@if(session('error'))
+					<div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+						<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M12 8v4" /><path d="M12 16h.01" /></svg>
+						{{ session('error') }}
+						<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+					</div>
+				@endif
+
 				@yield('content')
 			</div>
 		</div>

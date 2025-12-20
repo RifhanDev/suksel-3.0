@@ -559,7 +559,7 @@
     </div>
     <div class="stepper-item" id="step2-indicator">
         <div class="step-counter"><span>2</span></div>
-        <div class="step-name">Bidang & Dokumen</div>
+        <div class="step-name">Kod Bidang</div>
     </div>
 </div>
 
@@ -662,13 +662,26 @@
                         <input type="text" class="form-control datepicker" name="tarikh_dicipta" placeholder="Pilih tarikh..." required readonly>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label">Jenis Tender / Sebut Harga<span class="text-danger">*</span></label>
-                        <select class="form-select" name="jenis_tender" required>
-                            <option selected disabled>Pilih...</option>
-                            <option value="reka_bina">Reka & Bina</option>
-                            <option value="konvensional">Konvensional</option>
-                            <option value="terhad">Terhad</option>
-                        </select>
+                        <!-- For Kerja -->
+                        <div id="jenis_tender_group" class="d-none">
+                            <label class="form-label">Jenis Tender / Sebut Harga<span class="text-danger">*</span></label>
+                            <select class="form-select" name="jenis_tender" id="jenis_tender">
+                                <option selected disabled>Pilih...</option>
+                                <option value="reka_bina">Reka & Bina</option>
+                                <option value="konvensional">Konvensional</option>
+                                <option value="terhad">Terhad</option>
+                            </select>
+                        </div>
+                        <!-- For Perkhidmatan / Bekalan -->
+                        <div id="jenis_kontrak_group" class="d-none">
+                            <label class="form-label">Jenis Kontrak<span class="text-danger">*</span></label>
+                            <select class="form-select" name="jenis_kontrak" id="jenis_kontrak">
+                                <option selected disabled>Pilih...</option>
+                                <option value="kementerian">Kementerian</option>
+                                <option value="jabatan">Jabatan</option>
+                                <option value="agensi">Agensi</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
 
@@ -696,13 +709,21 @@
                             </div>
                             <div class="row">
                                 <div class="col-12">
-                                    <label class="form-label">Tempoh Siap Maksima</label>
-                                    <div class="input-group input-group-md">
-                                        <input type="number" class="form-control" name="tempoh_siap_val" placeholder="0">
-                                        <select class="form-select" name="tempoh_siap_unit" style="max-width: 100px;">
-                                            <option value="minggu">Minggu</option>
-                                            <option value="bulan">Bulan</option>
-                                        </select>
+                                    <!-- For Kerja -->
+                                    <div id="tempoh_siap_group" class="d-none">
+                                        <label class="form-label">Tempoh Siap Maksima</label>
+                                        <div class="input-group input-group-md">
+                                            <input type="number" class="form-control" name="tempoh_siap_val" placeholder="0">
+                                            <select class="form-select" name="tempoh_siap_unit" style="max-width: 100px;">
+                                                <option value="minggu">Minggu</option>
+                                                <option value="bulan">Bulan</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <!-- For Perkhidmatan / Bekalan -->
+                                    <div id="tempoh_kontrak_group" class="d-none">
+                                        <label class="form-label">Tempoh Kontrak / Penyiapan (Bulan)</label>
+                                        <input type="number" class="form-control" name="tempoh_kontrak_bulan" placeholder="0" min="0">
                                     </div>
                                 </div>
                             </div>
@@ -715,11 +736,9 @@
                             <div class="row g-2">
                                 <div class="col-12">
                                     <label class="form-label">Kategori Perolehan<span class="text-danger">*</span></label>
-                                    <select class="form-select form-select-sm" name="kategori_perolehan">
+                                    <select class="form-select form-select-sm" name="kategori_perolehan_detail" id="kategori_perolehan_detail">
                                         <option selected disabled>Pilih...</option>
-                                        <option value="bangunan">Bangunan</option>
-                                        <option value="kejuruteraan_awam">Kejuruteraan Awam</option>
-                                        <option value="mekanikal_elektrikal">Mekanikal & Elektrikal</option>
+                                        <!-- Options will be set dynamically by JavaScript -->
                                     </select>
                                 </div>
                                 <div class="col-12">
@@ -731,7 +750,8 @@
                                     <label class="form-label">Lokaliti Liputan</label>
                                     <select class="form-select form-select-sm" name="lokaliti">
                                         <option selected disabled>Pilih...</option>
-                                        <option value="selangor">Selangor</option>
+                                        <option value="daerah_terpilih">Daerah Terpilih</option>
+                                        <option value="zon_terpilih">Zon Terpilih</option>
                                     </select>
                                 </div>
                                 <!-- Zon Toggle -->
@@ -753,7 +773,7 @@
                         <div class="settings-grid-box">
                             <div class="row g-2">
                                 <!-- JK Toggle -->
-                                <div class="col-12">
+                                <div class="col-12" id="jawatankuasa_group">
                                     <label class="form-label">Jawatankuasa Spesifikasi<span class="text-danger">*</span></label>
                                     <div class="segmented-control">
                                         <input type="radio" name="jawatankuasa" id="jk_y" value="1">
@@ -934,7 +954,7 @@
                                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"></rect><path d="M12 12h.01"></path><path d="M17 12h.01"></path><path d="M7 12h.01"></path></svg>
                                 </div>
                                 <div>
-                                    <h6>Kod Bidang CIDB</h6>
+                                    <h6>Kod Bidang</h6>
                                     <small>Lembaga Pembangunan Industri Pembinaan</small>
                                 </div>
                             </div>
@@ -1031,6 +1051,115 @@
     var cidbSpecOptions = `@foreach(App\Code::where('type', 'cidb-c')->orderBy('code')->get() as $code)<option value="{{ $code->id }}">{{ $code->label }}</option>@endforeach`;
 
     $(document).ready(function() {
+
+        // --- DYNAMIC FIELDS BASED ON KATEGORI PEROLEHAN ---
+        const kategoriPerolehanDropdown = $('select[name="kategori_perolehan"]');
+        const kategoriDetailDropdown = $('select[name="kategori_perolehan_detail"]');
+        
+        // Options for each kategori
+        const kategoriOptions = {
+            'kerja': [
+                { value: 'bangunan', label: 'Bangunan' },
+                { value: 'kejuruteraan_awam', label: 'Kejuruteraan Awam' },
+                { value: 'm_and_e', label: 'M&E' },
+                { value: 'landskap', label: 'Landskap' },
+                { value: 'kerja_khas', label: 'Kerja Khas' }
+            ],
+            'perkhidmatan_bekalan': [
+                { value: 'ict', label: 'ICT' },
+                { value: 'bekalan', label: 'Bekalan' },
+                { value: 'perkhidmatan', label: 'Perkhidmatan' },
+                { value: 'kerja', label: 'Kerja' },
+                { value: 'perunding', label: 'Perunding' },
+                { value: 'sewaan', label: 'Sewaan' }
+            ]
+        };
+
+        // Function to update kategori perolehan options
+        function updateKategoriPerolehanOptions() {
+            const selectedKategori = kategoriPerolehanDropdown.val();
+            kategoriDetailDropdown.empty();
+            kategoriDetailDropdown.append('<option selected disabled>Pilih...</option>');
+            
+            if (selectedKategori && kategoriOptions[selectedKategori]) {
+                kategoriOptions[selectedKategori].forEach(option => {
+                    kategoriDetailDropdown.append(`<option value="${option.value}">${option.label}</option>`);
+                });
+            }
+        }
+
+        // Function to toggle between Jenis Tender and Jenis Kontrak
+        function updateJenisField() {
+            const selectedKategori = kategoriPerolehanDropdown.val();
+            const jenisTenderGroup = $('#jenis_tender_group');
+            const jenisKontrakGroup = $('#jenis_kontrak_group');
+            const jenisTenderSelect = $('#jenis_tender');
+            const jenisKontrakSelect = $('#jenis_kontrak');
+
+            if (selectedKategori === 'perkhidmatan_bekalan') {
+                // Show Jenis Kontrak, hide Jenis Tender
+                jenisTenderGroup.addClass('d-none');
+                jenisTenderSelect.removeAttr('required');
+                
+                jenisKontrakGroup.removeClass('d-none');
+                jenisKontrakSelect.attr('required', 'required');
+            } else {
+                // Show Jenis Tender, hide Jenis Kontrak
+                jenisTenderGroup.removeClass('d-none');
+                jenisTenderSelect.attr('required', 'required');
+                
+                jenisKontrakGroup.addClass('d-none');
+                jenisKontrakSelect.removeAttr('required');
+            }
+        }
+
+        // Function to toggle between Tempoh Siap and Tempoh Kontrak
+        function updateTempohField() {
+            const selectedKategori = kategoriPerolehanDropdown.val();
+            const tempohSiapGroup = $('#tempoh_siap_group');
+            const tempohKontrakGroup = $('#tempoh_kontrak_group');
+
+            if (selectedKategori === 'perkhidmatan_bekalan') {
+                // Show Tempoh Kontrak, hide Tempoh Siap
+                tempohSiapGroup.addClass('d-none');
+                tempohKontrakGroup.removeClass('d-none');
+            } else {
+                // Show Tempoh Siap, hide Tempoh Kontrak
+                tempohSiapGroup.removeClass('d-none');
+                tempohKontrakGroup.addClass('d-none');
+            }
+        }
+
+        // Function to toggle Jawatankuasa Spesifikasi field
+        function updateJawatankuasaField() {
+            const selectedKategori = kategoriPerolehanDropdown.val();
+            const jawatankuasaGroup = $('#jawatankuasa_group');
+            const jawatankuasaInput = $('input[name="jawatankuasa"]');
+
+            if (selectedKategori === 'perkhidmatan_bekalan') {
+                // Hide Jawatankuasa for Perkhidmatan / Bekalan
+                jawatankuasaGroup.addClass('d-none');
+                jawatankuasaInput.removeAttr('required');
+            } else {
+                // Show Jawatankuasa for Kerja
+                jawatankuasaGroup.removeClass('d-none');
+                jawatankuasaInput.attr('required', 'required');
+            }
+        }
+
+        // Initial setup on page load
+        updateKategoriPerolehanOptions();
+        updateJenisField();
+        updateTempohField();
+        updateJawatankuasaField();
+
+        // Listen for changes
+        kategoriPerolehanDropdown.change(function() {
+            updateKategoriPerolehanOptions();
+            updateJenisField();
+            updateTempohField();
+            updateJawatankuasaField();
+        });
 
         // --- SELECTIZE INITIALIZATION ---
         $('#step2-content select.selectize').each(function() {

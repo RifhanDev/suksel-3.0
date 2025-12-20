@@ -445,9 +445,7 @@
         }
         .table-modern tbody tr:hover { background-color: #fef2f2; }
 
-        .fade.show {
-            opacity: 1 !important;
-        }
+        /* NOTE: .fade.show CSS moved to modernLanding.blade.php */
 
         /* Mobile Tweaks */
         @media (max-width: 768px) {
@@ -460,23 +458,8 @@
 @endsection
 
 @section('content')
-	
-    <!-- ALERTS -->
-    @if(session('notice'))
-		<div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
-			<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M9 12l2 2l4 -4" /></svg> 
-            {{ session('notice') }}
-			<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-		</div>
-	@endif
 
-	@if(session('error'))
-		<div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
-			<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M12 8v4" /><path d="M12 16h.01" /></svg>
-            {{ session('error') }}
-			<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-		</div>
-	@endif
+	<!-- NOTE: Session alerts now handled by modernLanding.blade.php -->
 
 	<div class="row gy-4 mb-5">
 		
