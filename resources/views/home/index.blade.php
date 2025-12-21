@@ -4,11 +4,11 @@
     <style>
         .hero-card {
             background: white;
-            border-radius: 0 !important;
+            border-radius: var(--radius-sm);
             box-shadow: 0 10px 30px rgba(0,0,0,0.08);
             border: none;
-            overflow: hidden !important;
-            height: 100% !important;
+            overflow: hidden;
+            height: 100%;
             position: relative;
             display: flex;
             flex-direction: column;
@@ -20,7 +20,7 @@
             width: 100%;
             margin: 0;
             padding: 0;
-            height: 100% !important;
+            height: 100%;
             flex: 1;
             display: flex;
             flex-direction: column;
@@ -30,8 +30,8 @@
         .carousel-inner {
             position: relative;
             width: 100%;
-            overflow: hidden !important;
-            height: 100% !important;
+            overflow: hidden;
+            height: 100%;
             flex: 1;
         }
 
@@ -44,7 +44,7 @@
             -webkit-backface-visibility: hidden;
             backface-visibility: hidden;
             transition: transform .6s ease-in-out;
-            height: 100% !important;
+            height: 100%;
         }
 
         .carousel-item.active,
@@ -54,21 +54,20 @@
         }
 
         .carousel-item img {
-            display: block !important;
-            width: 100% !important;
-            height: 100% !important;
-            max-width: 100% !important;
-            border-radius: 0 !important;
-            object-fit: contain !important;
-            object-position: center !important;
+            display: block;
+            width: 100%;
+            height: 100%;
+            max-width: 100%;
+            border-radius: 0;
+            object-fit: contain;
+            object-position: center;
         }
 
         #landing-carousel .carousel-inner {
-            overflow: hidden !important;
-            height: auto !important;
+            overflow: hidden;
+            height: auto;
         }
 
-        /* Controls Centering */
         .carousel-control-prev, 
         .carousel-control-next {
             width: 5%;
@@ -100,23 +99,23 @@
         #landing-carousel .carousel-indicators {
             position: absolute;
             right: 0;
-            bottom: 10px !important;
+            bottom: 10px;
             left: 0;
             z-index: 15;
-            display: flex !important;
-            justify-content: center !important;
-            align-items: center !important;
-            padding: 0 !important;
-            margin: 0 !important;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 0;
+            margin: 0;
             list-style: none;
-            width: 100% !important;
+            width: 100%;
         }
 
         .carousel-indicators [data-bs-target] {
             box-sizing: content-box;
             flex: 0 1 auto;
-            width: 10px !important;
-            height: 10px !important;
+            width: 10px;
+            height: 10px;
             padding: 0;
             margin-right: 6px;
             margin-left: 6px;
@@ -127,7 +126,7 @@
             border: 1px solid #999;
             opacity: .5;
             transition: opacity .6s ease;
-            border-radius: 0 !important;
+            border-radius: var(--radius-sm);
         }
 
         .carousel-indicators .active {
@@ -136,33 +135,23 @@
             border-color: var(--sg-red);
         }
 
-        .row.gy-4 {
-            display: flex;
-            align-items: stretch;
-        }
-
-        .col-lg-9, .col-lg-3 {
-            display: flex;
-            flex-direction: column;
-        }
-
         .news-card-wrapper {
             background: white;
-            border-radius: 0 !important;
+            border-radius: var(--radius-sm);
             box-shadow: 0 10px 30px rgba(0,0,0,0.08);
             overflow: hidden;
-            height: 100% !important;
+            height: 100%;
             display: flex;
             flex-direction: column;
         }
 
         .news-card-header {
             background: #fff;
-            padding: 1rem 1.25rem;
-            border-bottom: 2px solid #f3f4f6;
+            padding: 1rem 1rem;
+            border-bottom: 1px solid #f3f4f6;
             display: flex;
             align-items: center;
-            flex-shrink: 0; /* Don't shrink */
+            flex-shrink: 0;
         }
 
         .news-card-wrapper .card-body {
@@ -175,8 +164,10 @@
         .news-title-group {
             display: flex;
             flex-direction: column;
+            justify-content: center;
             border-left: 3px solid var(--sg-red);
             padding-left: 0.75rem;
+            min-height: 38px;
         }
 
         .news-title {
@@ -188,7 +179,7 @@
         }
 
         .news-subtitle {
-            font-size: 0.65rem;
+            font-size: 0.6rem;
             color: #6b7280;
             margin-top: 2px;
             font-weight: 500;
@@ -197,47 +188,110 @@
         }
 
         .list-group-flush { margin: 0; padding: 0; width: 100%; }
-        
+
         .news-item {
             text-decoration: none;
-            display: block;
+            display: flex;
             width: 100%;
-            padding: 0.85rem 1.25rem;
+            padding: 0.85rem 1rem;
             border-bottom: 1px solid #f3f4f6;
-            transition: background 0.2s;
+            transition: all 0.2s ease;
+            gap: 0.75rem;
+            align-items: flex-start;
         }
 
         .news-item:hover {
-            background-color: #fff1f2;
-            padding-left: 1.5rem;
+            background-color: #fef2f2;
         }
 
-        .news-item h6 {
-            font-size: 0.85rem;
+        .news-item:hover .news-date-box {
+            background: var(--sg-red);
+            border-color: var(--sg-red);
+        }
+
+        .news-item:hover .news-date-box .news-day,
+        .news-item:hover .news-date-box .news-month {
+            color: white;
+        }
+
+        .news-date-box {
+            min-width: 48px;
+            height: 48px;
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: var(--radius-sm);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: all 0.2s ease;
+        }
+
+        .news-day {
+            font-size: 1rem;
+            font-weight: 800;
+            color: var(--sg-red);
+            line-height: 1;
+            transition: color 0.2s ease;
+        }
+
+        .news-month {
+            font-size: 0.55rem;
+            font-weight: 700;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            line-height: 1;
+            margin-top: 2px;
+            transition: color 0.2s ease;
+        }
+
+        .news-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .news-item-title {
+            font-size: 0.8rem;
             font-weight: 700;
             color: #1f2937;
-            margin-bottom: 0.25rem;
-            line-height: 1.4;
-        }
-
-        .news-content {
-            font-size: 0.75rem;
-            color: #6b7280;
-            margin-bottom: 0.25rem;
-            line-height: 1.4;
+            margin: 0 0 0.25rem 0;
+            line-height: 1.35;
             display: -webkit-box;
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
             overflow: hidden;
+            transition: color 0.2s ease;
         }
 
-        .news-date {
-            font-size: 0.65rem;
-            color: #9ca3af;
-            font-weight: 600;
-            text-transform: uppercase;
+        .news-item:hover .news-item-title {
+            color: var(--sg-red);
+        }
+
+        .news-item-meta {
             display: flex;
             align-items: center;
+            gap: 0.5rem;
+        }
+
+        .news-tag {
+            font-size: 0.6rem;
+            font-weight: 600;
+            color: var(--sg-red);
+            background: #fef2f2;
+            padding: 0.15rem 0.4rem;
+            border-radius: 2px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .news-time {
+            font-size: 0.65rem;
+            color: #9ca3af;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
         }
 
         #announcements-ticker {
@@ -257,7 +311,7 @@
             border: 2px solid #e5e7eb;
             font-weight: 700;
             font-size: 0.8rem;
-            border-radius: 0 !important;
+            border-radius: var(--radius-sm);
             padding: 0.5rem 0.75rem;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             text-decoration: none;
@@ -272,158 +326,210 @@
             transform: translateY(-2px);
         }
 
-        /* --- CTA SECTION --- */
-        .cta-card {
-            background: linear-gradient(135deg, var(--sg-red) 0%, #8b1428 100%);
-            border-radius: 0 !important;
-            border: none;
-            box-shadow: 0 10px 25px rgba(196, 30, 58, 0.25);
+        /* ==========================================================================
+           VENDOR REGISTER CARD
+           ========================================================================== */
+        .cta-promo-card {
+            background: linear-gradient(100deg, #ffffff 50%, #fff1f2 100%);
+            border: 1px solid #ffe4e6;
+            border-radius: var(--radius-md);
+            padding: 1.5rem 2rem; /* Reduced padding for compact look */
             position: relative;
+            box-shadow: 0 4px 15px rgba(196, 30, 58, 0.05);
             overflow: hidden;
-            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 2rem;
         }
 
-        .cta-card::before {
+        /* Decorative Pattern */
+        .cta-promo-card::after {
             content: '';
             position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background-image: radial-gradient(rgba(255,255,255,0.1) 1px, transparent 1px);
-            background-size: 20px 20px;
-            opacity: 0.3;
+            right: 0;
+            top: 0;
+            height: 100%;
+            width: 150px;
+            background-image: repeating-linear-gradient(45deg, rgba(196, 30, 58, 0.03) 0, rgba(196, 30, 58, 0.03) 2px, transparent 0, transparent 50%);
+            z-index: 0;
+            pointer-events: none;
         }
 
-        .cta-btn-white {
-            background: white;
-            color: var(--sg-red);
-            font-weight: 700;
-            border: 2px solid white;
-            padding: 0.75rem 1.5rem;
-            border-radius: 0 !important;
-            transition: all 0.2s;
-            text-decoration: none !important;
-            display: inline-flex;
+        .promo-content {
+            display: flex;
             align-items: center;
-            justify-content: center;
-            white-space: nowrap;
-            gap: 0.5rem;
-        }
-        .cta-btn-white:hover {
-            background: transparent;
-            color: white !important;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            gap: 1.25rem;
+            position: relative;
+            z-index: 2;
         }
 
-        .cta-btn-outline {
-            background: transparent;
+        .promo-icon-badge {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--sg-red) 0%, #b91c1c 100%);
             color: white;
-            font-weight: 700;
-            border: 2px solid rgba(255,255,255,0.5);
-            padding: 0.75rem 1.5rem;
-            border-radius: 0 !important;
-            transition: all 0.2s;
-            text-decoration: none !important;
-            display: inline-flex;
+            border-radius: 12px;
+            display: flex;
             align-items: center;
             justify-content: center;
-            white-space: nowrap;
-            gap: 0.5rem;
-        }
-        .cta-btn-outline:hover {
-            border-color: white;
-            background: rgba(255,255,255,0.1);
-            color: white !important;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            box-shadow: 0 4px 10px rgba(196, 30, 58, 0.2);
+            flex-shrink: 0;
         }
 
-        /* --- TENDER TABLE --- */
-        .tender-card {
-            border-radius: 0 !important;
-            border: none;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
-            overflow: hidden;
+        .promo-text h4 {
+            font-family: var(--font-display);
+            font-weight: 700;
+            font-size: 1.15rem;
+            color: #111827;
+            margin: 0 0 0.15rem 0;
+        }
+
+        .promo-text p {
+            font-size: 0.85rem;
+            color: #6b7280;
+            margin: 0;
+        }
+        
+        .promo-tag {
+            background: #fff;
+            color: var(--sg-red);
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            padding: 2px 8px;
+            border-radius: 4px;
+            border: 1px solid #ffe4e6;
+            margin-bottom: 4px;
+            display: inline-block;
+        }
+
+        .promo-actions {
+            display: flex;
+            gap: 0.75rem;
+            position: relative;
+            z-index: 2;
+        }
+
+        .btn-promo-main {
+            background: var(--sg-red);
+            color: white;
+            font-size: 0.85rem;
+            font-weight: 600;
+            padding: 0.6rem 1.25rem;
+            border-radius: var(--radius-sm);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            box-shadow: 0 2px 4px rgba(196, 30, 58, 0.2);
+            border: 1px solid var(--sg-red);
+        }
+
+        .btn-promo-main:hover {
+            background: #9f1239;
+            color: white;
+            border-color: #9f1239;
+        }
+
+        .btn-promo-sub {
             background: white;
+            color: #374151;
+            font-size: 0.85rem;
+            font-weight: 600;
+            padding: 0.6rem 1.25rem;
+            border-radius: var(--radius-sm);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            border: 1px solid #e5e7eb;
+        }
+
+        .btn-promo-sub:hover {
+            border-color: #d1d5db;
+            background: #f9fafb;
+            color: #111827;
+        }
+
+        /* ==========================================================================
+           TABLE HEADER
+           ========================================================================== */
+        .tender-card {
+            background: white;
+            border-radius: var(--radius-sm);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            border: none;
+            overflow: hidden;
         }
 
         .tender-header {
             background: #fff;
-            border-bottom: 2px solid #f3f4f6;
-            padding: 1.5rem 2rem;
+            padding: 1.25rem 2rem;
             display: flex;
             align-items: center;
             justify-content: space-between;
             flex-wrap: wrap;
             gap: 1rem;
+            border-bottom: 1px solid #f3f4f6;
         }
 
         .header-title-group {
             display: flex;
             flex-direction: column;
+            justify-content: center; 
             border-left: 4px solid var(--sg-red);
             padding-left: 1rem;
+            min-height: 42px;
         }
 
         .header-title {
-            font-size: 1.25rem;
-            font-weight: 800;
+            font-family: var(--font-display);
+            font-size: 1.2rem;
+            font-weight: 700;
             color: #111827;
             margin: 0;
-            line-height: 1.1;
+            line-height: 1.2;
         }
 
         .header-subtitle {
             font-size: 0.8rem;
             color: #6b7280;
-            margin-top: 4px;
-            font-weight: 500;
+            margin: 2px 0 0 0;
+            font-weight: 400;
+            line-height: 1.2;
         }
 
-        .nav-connected {
+        /* Tabs */
+        .nav-modern-tabs {
             display: inline-flex;
-            background: white;
-            border: 1px solid #e5e7eb;
-            border-radius: 0 !important;
-            overflow: hidden;
-        }
-
-        .nav-connected .nav-item {
+            background: #f3f4f6;
+            padding: 4px;
+            border-radius: var(--radius-sm);
+            list-style: none;
             margin: 0;
-            border-right: 1px solid #e5e7eb;
         }
-        
-        .nav-connected .nav-item:last-child { border-right: none; }
 
-        .nav-connected .nav-link {
+        .nav-modern-tabs .nav-item { margin: 0; }
+
+        .nav-modern-tabs .nav-link {
             border: none;
-            border-radius: 0 !important;
-            padding: 0.7rem 1.5rem;
-            color: #4b5563;
+            padding: 0.5rem 1.25rem;
+            color: #64748b;
             font-weight: 600;
             font-size: 0.85rem;
-            background: #f9fafb;
+            background: transparent;
+            border-radius: var(--radius-sm);
             transition: all 0.2s ease;
-            position: relative;
         }
 
-        .nav-connected .nav-link:hover {
-            background: #f3f4f6;
+        .nav-modern-tabs .nav-link:hover { color: #1f2937; }
+
+        .nav-modern-tabs .nav-link.active {
+            background: white;
             color: var(--sg-red);
-        }
-
-        .nav-connected .nav-link.active {
-            background: var(--sg-red);
-            color: white;
-            box-shadow: inset 0 -3px 0 rgba(0,0,0,0.1);
-        }
-
-        .nav-connected .nav-link.active::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 3px;
-            background: var(--sg-yellow);
+            font-weight: 700;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
 
         /* Table */
@@ -434,36 +540,41 @@
             text-transform: uppercase;
             font-size: 0.75rem;
             letter-spacing: 0.5px;
-            border-bottom: 2px solid #e2e8f0;
-            padding: 1.2rem 1rem;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 1rem 1.5rem;
         }
         .table-modern tbody td {
-            padding: 1rem;
+            padding: 0.9rem 1.5rem;
             vertical-align: middle;
             border-bottom: 1px solid #f1f5f9;
             font-size: 0.9rem;
+            color: #334155;
         }
         .table-modern tbody tr:hover { background-color: #fef2f2; }
 
-        /* NOTE: .fade.show CSS moved to modernLanding.blade.php */
-
-        /* Mobile Tweaks */
-        @media (max-width: 768px) {
-            .carousel-item img { height: auto !important; }
-            .news-card-header { padding: 0.85rem 1rem; }
-            .news-card-wrapper { margin-top: 1rem; }
-            .carousel-control-prev, .carousel-control-next { width: 10%; } /* Wider touch area on mobile */
+        /* Responsive */
+        @media (max-width: 992px) {
+            .cta-promo-card {
+                flex-direction: column;
+                padding: 1.5rem;
+                text-align: center;
+                gap: 1.25rem;
+            }
+            .promo-content { flex-direction: column; }
+            .promo-actions { width: 100%; justify-content: center; }
+            
+            .tender-header { flex-direction: column; align-items: flex-start; }
+            .header-title-group { width: 100%; border-left: 4px solid var(--sg-red); }
+            .nav-modern-tabs { width: 100%; justify-content: space-between; }
+            .nav-modern-tabs .nav-link { flex: 1; text-align: center; }
         }
     </style>
 @endsection
 
 @section('content')
 
-	<!-- NOTE: Session alerts now handled by modernLanding.blade.php -->
-
-	<div class="row gy-4 mb-5">
-		
-        <!-- LEFT: CAROUSEL -->
+	<div class="row gy-4 mb-4">
+		<!-- LEFT: CAROUSEL -->
 		<div class="col-lg-9">
 			<div class="hero-card">
 				<div id="landing-carousel" class="carousel slide" data-bs-ride="carousel">
@@ -505,7 +616,7 @@
 			</div>
 		</div>
 
-		<!-- RIGHT: NEWS SIDEBAR -->
+		<!-- RIGHT: NEWS -->
 		<div class="col-lg-3">
 			<div class="news-card-wrapper">
 
@@ -520,17 +631,24 @@
 					<div id="announcements-ticker">
 						<div class="list-group list-group-flush">
 							@foreach ($global_news as $news)
+								@php
+									$newsDate = \Carbon\Carbon::parse($news->published_at ?: $news->created_at);
+								@endphp
 								<a href="{{ asset('news/' . $news->id) }}" class="news-item">
-									<h6 class="text-dark">{{ Str::limit($news->title, 50) }}</h6>
-
-									@if(isset($news->body) && $news->body)
-										<p class="news-content">{{ strip_tags(Str::limit($news->body, 90)) }}</p>
-									@endif
-
-									<span class="news-date">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-1" style="vertical-align: -1px;"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 7a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12z" /><path d="M16 3v4" /><path d="M8 3v4" /><path d="M4 11h16" /><path d="M11 15h1" /><path d="M12 15v3" /></svg>
-										{{ \Carbon\Carbon::parse($news->published_at ?: $news->created_at)->format('j M Y') }}
-									</span>
+									<div class="news-date-box">
+										<span class="news-day">{{ $newsDate->format('d') }}</span>
+										<span class="news-month">{{ $newsDate->format('M') }}</span>
+									</div>
+									<div class="news-info">
+										<h6 class="news-item-title">{{ Str::limit($news->title, 55) }}</h6>
+										<div class="news-item-meta">
+											<span class="news-tag">Berita</span>
+											<span class="news-time">
+												<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M12 7v5l3 3" /></svg>
+												{{ $newsDate->format('Y') }}
+											</span>
+										</div>
+									</div>
 								</a>
 							@endforeach
 						</div>
@@ -547,46 +665,42 @@
 		</div>
 	</div>
 
-	<!-- CTA SECTION -->
+    <!-- VENDOR REGISTER CARD -->
 	@if (!Auth::check())
-		<div class="row mb-5">
+		<div class="row mb-4">
 			<div class="col-12">
-				<div class="cta-card">
-					<div class="card-body py-4 px-4 px-lg-5">
-						<div class="row align-items-center g-4 text-center text-lg-start">
-							<div class="col-lg-7 position-relative" style="z-index: 2;">
-								<h3 class="fw-bold mb-2">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-2 text-warning" style="vertical-align: -4px;"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 21l18 0" /><path d="M9 8l1 0" /><path d="M9 12l1 0" /><path d="M9 16l1 0" /><path d="M14 8l1 0" /><path d="M14 12l1 0" /><path d="M14 16l1 0" /><path d="M5 21v-16a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v16" /></svg>
-                                    Daftar Sebagai Vendor Sekarang
-                                </h3>
-								<p class="mb-0 text-white-50">
-                                    Dapatkan akses penuh ke semua tender dan sebut harga terkini kerajaan negeri Selangor.
-                                </p>
-							</div>
+				<div class="cta-promo-card">
+					
+                    <div class="promo-content">
+                        <div class="promo-icon-badge">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M12 10m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" /><path d="M6.168 18.849a4 4 0 0 1 3.832 -2.849h4a4 4 0 0 1 3.834 2.855" /></svg>
+                        </div>
+                        <div class="promo-text">
+                            <span class="promo-tag">Akses Vendor</span>
+                            <h4>Daftar Akaun Vendor</h4>
+                            <p>Dapatkan akses penuh dokumen tender & sebut harga.</p>
+                        </div>
+                    </div>
 
-							<div class="col-lg-5 position-relative" style="z-index: 2;">
-								<div class="d-flex flex-column flex-sm-row justify-content-center justify-content-lg-end gap-2">
-									<a href="{{ asset('register') }}" class="cta-btn-white">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-1"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0" /><path d="M16 19h6" /><path d="M19 16v6" /><path d="M6 21v-2a4 4 0 0 1 4 -3.85" /></svg>
-										Daftar Syarikat
-									</a>
-									<a href="{{ asset('company_search') }}" class="cta-btn-outline">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-1"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" /><path d="M21 21l-6 -6" /></svg>
-										Semak Status
-									</a>
-								</div>
-							</div>
-						</div>
-					</div>
+                    <div class="promo-actions">
+                        <a href="{{ asset('company_search') }}" class="btn-promo-sub">
+                            Semak Status
+                        </a>
+                        <a href="{{ asset('register') }}" class="btn-promo-main">
+                            Daftar Sekarang
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l14 0" /><path d="M15 16l4 -4" /><path d="M15 8l4 4" /></svg>
+                        </a>
+                    </div>
+
 				</div>
 			</div>
 		</div>
 	@endif
 
-	<!-- TENDER TABLE SECTION -->
-	<div class="row mb-5">
+	<!-- TABLE -->
+	<div class="row mb-3">
 		<div class="col-12">
-			<div class="tender-card bg-white">
+			<div class="tender-card">
 				<div class="tender-header">
 					
                     <div class="header-title-group">
@@ -596,8 +710,8 @@
 						<p class="header-subtitle">Paparan 20 item terkini yang sedang aktif</p>
 					</div>
                     
-                    <!-- TABS -->
-                    <ul class="nav nav-connected" role="tablist">
+                    <!-- Tabs -->
+                    <ul class="nav nav-modern-tabs" role="tablist">
                         <li class="nav-item">
                             <a class="nav-link @if (!Request::get('type')) active @endif" href="{{ action('HomeController@index') }}">
                                 Semua
@@ -642,7 +756,7 @@
 @endsection
 
 @section('scripts')
-	<script src="{{ asset('js/datatables.js') }}"></script>
+	{{-- <script src="{{ asset('js/datatables.js') }}"></script> --}}
 	<script src="{{ asset('js/easy-ticker.js') }}"></script>
 	<script type="text/javascript">
 		$('.DT2').each(function() {

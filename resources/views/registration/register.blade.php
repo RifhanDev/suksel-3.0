@@ -4,9 +4,9 @@
 <style>
     .selangor-card {
         background: white;
-        border-radius: 16px;
-        box-shadow: 0 10px 40px -10px rgba(196, 30, 58, 0.15); /* Red tinted shadow */
-        border: none;
+        border-radius: var(--radius-lg);
+        box-shadow: 0 5px 25px -5px rgba(196, 30, 58, 0.08);
+        border: 1px solid rgba(0,0,0,0.05);
         overflow: hidden;
         position: relative;
     }
@@ -17,35 +17,38 @@
         top: 0;
         left: 0;
         width: 100%;
-        height: 8px;
+        height: 5px;
         background: linear-gradient(90deg, var(--sg-red) 50%, var(--sg-yellow) 50%);
     }
 
     .card-header-custom {
-        padding: 2.5rem 2.5rem 1rem 2.5rem;
+        color: var(--sg-red);
+        padding: 2rem 2rem 0.5rem 2rem;
         text-align: center;
     }
 
     .card-body-custom {
-        padding: 1rem 2.5rem 2.5rem 2.5rem;
+        padding: 0.5rem 2rem 2rem 2rem;
     }
 
-    /* --- TYPOGRAPHY --- */
+    /* =========================================
+        FORM ELEMENTS
+       ========================================= */
     .form-label {
-        font-size: 0.75rem;
+        font-size: 0.7rem;
         font-weight: 800;
         text-transform: uppercase;
         letter-spacing: 0.05em;
-        color: var(--sg-black);
-        margin-bottom: 0.5rem;
+        color: #374151;
+        margin-bottom: 0.3rem;
     }
 
-    /* --- INPUT STYLING --- */
     .form-control {
-        border: 2px solid #e5e7eb;
-        border-radius: 8px;
-        padding: 0.8rem 1rem;
+        border: 1px solid #e5e7eb;
+        border-radius: var(--radius-sm);
+        padding: 0.6rem 0.9rem;
         font-weight: 600;
+        font-size: 0.85rem;
         color: var(--sg-black);
         background-color: #f9fafb;
         transition: all 0.2s ease;
@@ -54,30 +57,38 @@
     .form-control::placeholder {
         color: #9ca3af;
         font-weight: 400;
+        font-size: 0.85rem;
     }
 
     .form-control:focus {
         background-color: #fff;
         border-color: var(--sg-red);
-        box-shadow: 0 0 0 4px rgba(255, 204, 0, 0.2); 
+        box-shadow: 0 0 0 3px rgba(196, 30, 58, 0.1); 
+        color: var(--sg-black);
+    }
+    
+    .text-uppercase-input {
+        text-transform: uppercase;
     }
 
-    /* --- SECTION DIVIDERS --- */
+    /* =========================================
+        SECTION DIVIDERS
+       ========================================= */
     .form-section-title {
         display: flex;
         align-items: center;
-        margin-top: 1.5rem;
-        margin-bottom: 1.2rem;
+        margin-top: 1.25rem;
+        margin-bottom: 1rem;
     }
 
     .form-section-title span {
-        background-color: var(--sg-yellow); /* Yellow Highlight */
-        color: var(--sg-black);
-        font-size: 0.7rem;
+        background-color: var(--sg-yellow);
+        color: #111827;
+        font-size: 0.65rem;
         font-weight: 800;
         text-transform: uppercase;
-        letter-spacing: 1px;
-        padding: 4px 12px;
+        letter-spacing: 0.5px;
+        padding: 4px 10px;
         border-radius: 4px;
         margin-right: 10px;
     }
@@ -86,161 +97,227 @@
         content: "";
         flex: 1;
         height: 1px;
-        background: #e5e7eb;
+        background: #f3f4f6;
     }
 
-    /* --- BUTTONS --- */
+    /* =========================================
+       BUTTONS
+       ========================================= */
     .btn-selangor {
         background-color: var(--sg-red);
         color: white;
         font-weight: 700;
-        padding: 0.9rem;
-        border-radius: 8px;
-        border: none;
-        position: relative;
-        overflow: hidden;
-        transition: all 0.3s ease;
-        box-shadow: 0 4px 12px rgba(196, 30, 58, 0.3);
+        padding: 0.75rem;
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--sg-red);
+        width: 100%;
+        transition: all 0.2s ease;
+        font-size: 0.9rem;
     }
 
     .btn-selangor:hover {
-        background-color: #a01830;
-        transform: translateY(-2px);
-        box-shadow: 0 8px 15px rgba(196, 30, 58, 0.4);
+        background-color: var(--sg-red-dark);
+        border-color: var(--sg-red-dark);
         color: #fff;
+        transform: translateY(-1px);
     }
 
-    .btn-selangor::after {
-        content: "";
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        height: 3px;
-        background-color: var(--sg-yellow);
-    }
-
-    .btn-check-status {
-        /* background-color: #fff;
-        border: 2px solid var(--sg-yellow);
-        color: var(--sg-black);
-        font-weight: 700;
-        padding: 0.5rem 1.2rem;
-        border-radius: 8px;
+    .btn-check-link {
+        color: #4b5563;
+        font-weight: 600;
         font-size: 0.85rem;
-        transition: all 0.2s; */
-		color: var(--sg-black);
-		transition: all 0.2s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.4rem 1rem;
+        border-radius: 50px;
+        transition: all 0.2s;
     }
 
-    .btn-check-status:hover {
-        /* background-color: var(--sg-yellow); */
-        color: var(--sg-yellow);
+    .btn-check-link:hover {
+        color: white;
+        background-color: var(--sg-red);
+    }
+
+    /* =========================================
+       NOTES & ALERTS
+       ========================================= */
+    .note-box {
+        background-color: #fffbeb;
+        border: 1px solid #fde68a;
+        border-radius: var(--radius-sm);
+        padding: 0.75rem 1rem;
+        font-size: 0.8rem;
+        line-height: 1.4;
     }
     
-    .crest-icon {
-        width: 70px; 
-        height: 70px; 
-        background: #fff;
-        border: 2px solid var(--sg-yellow);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin: 0 auto 1rem auto;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    .invalid-feedback {
+        font-size: 0.7rem;
+        font-weight: 600;
+        color: #dc2626;
+        margin-top: 0.2rem;
     }
 
     @media (max-width: 768px) {
-        .card-header-custom { padding: 2rem 1.5rem 0 1.5rem; }
-        .card-body-custom { padding: 1rem 1.5rem 2rem 1.5rem; }
+        .card-header-custom { padding: 2rem 1.5rem 0.5rem 1.5rem; }
+        .card-body-custom { padding: 0.5rem 1.5rem 2rem 1.5rem; }
     }
 </style>
 @endsection
 
 @section('content')
-<div class="row justify-content-center pt-5 pb-5">
-    <div class="col-lg-9 col-md-9">
+<div class="row justify-content-center py-5">
+    <div class="col-lg-7 col-md-9">
         
         <div class="selangor-card">
+            
+            <!-- Header -->
             <div class="card-header-custom">
-                {{-- <div class="crest-icon">
-                    <!-- Red Star/Emblem Icon -->
-                    <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="#c41e3a" class="icon icon-tabler icons-tabler-filled icon-tabler-star"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 17.75l-6.172 3.245l1.179 -6.873l-5 -4.867l6.9 -1l3.086 -6.253l3.086 6.253l6.9 1l-5 4.867l1.179 6.873z" /></svg>
-                </div> --}}
-                <h1 class="h3 fw-bold mb-1 text-uppercase" style="letter-spacing: 1px; color: var(--sg-red);">Pendaftaran Syarikat</h1>
-                <p class="text-muted small fw-semibold">Sistem Tender Online Selangor (STOS 3.0)</p>
+                <h1 class="h4 fw-bold mb-1 text-uppercase" style="letter-spacing: -0.5px;">
+                    Pendaftaran Syarikat
+                </h1>
+                <p class="text-muted small fw-semibold mb-0" style="font-size: 0.75rem;">Sistem e-Perolehan Selangor</p>
             </div>
 
+            <!-- Body -->
             <div class="card-body-custom">
-                {!! Former::open(url('register'))->addClass('form-uppercase')->autocomplete('false') !!}
+                
+                <form method="POST" action="{{ url('register') }}" autocomplete="off" class="needs-validation">
+                    @csrf
 
-                <!-- Section 1: Yellow Tag -->
-                <div class="form-section-title">
-                    <span>Maklumat Organisasi</span>
-                </div>
+                    <!-- SECTION : ORGANIZATION -->
+                    <div class="form-section-title mt-2">
+                        <span>Maklumat Organisasi</span>
+                    </div>
 
-                <div class="row g-3">
-                    <div class="col-12">
-                        {!! Former::text('company_no')->label('No. Pendaftaran (SSM)')->required()->addClass('form-control')->placeholder('Contoh: 202401009999') !!}
-                    </div>
-                    <div class="col-12">
-                        {!! Former::text('company_name')->label('Nama Syarikat')->required()->addClass('form-control')->placeholder('Contoh: BINA JAYA SDN BHD') !!}
-                    </div>
-                </div>
+                    <div class="row g-2">
+                        <!-- Company No -->
+                        <div class="col-md-4">
+                            <label for="company_no" class="form-label">No. Pendaftaran (SSM) <span class="text-danger">*</span></label>
+                            <input type="text" 
+                                   class="form-control text-uppercase-input @error('company_no') is-invalid @enderror" 
+                                   id="company_no" 
+                                   name="company_no" 
+                                   value="{{ old('company_no') }}" 
+                                   placeholder="202401..." 
+                                   required>
+                            @error('company_no')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
 
-                <!-- Section 2: Yellow Tag -->
-                <div class="form-section-title">
-                    <span>Akses & Keselamatan</span>
-                </div>
-
-                <div class="row g-3">
-                    <div class="col-md-6">
-                        {!! Former::text('name')->label('Nama Pegawai Pendaftar')->required()->addClass('form-control')->placeholder('Nama Penuh') !!}
-                    </div>
-                    <div class="col-md-6">
-                        {!! Former::email('email')->label('Alamat Emel Rasmi')->required()->addClass('form-control x-uppercase')->placeholder('email@syarikat.com') !!}
-                    </div>
-                    <div class="col-md-6">
-                        {!! Former::password('password')->label('Kata Laluan')->required()->addClass('form-control x-uppercase')->placeholder('••••••••') !!}
-                    </div>
-                    <div class="col-md-6">
-                        {!! Former::password('password_confirmation')->label('Sahkan Kata Laluan')->required()->addClass('form-control x-uppercase')->placeholder('••••••••') !!}
-                    </div>
-                </div>
-
-                <!-- Footer Info Area -->
-                <div class="mt-4 p-3 rounded" style="background-color: #fff9db; border: 1px solid #ffe066;">
-                    <div class="d-flex gap-3 align-items-center">
-                        <i class="ti ti-info-circle text-dark fs-2"></i>
-                        <div class="small lh-sm text-dark">
-                            <strong>Nota Penting:</strong> Sila pastikan maklumat di atas adalah tepat seperti dalam sijil SSM. Maklumat ini tidak boleh diubah selepas pendaftaran.
+                        <!-- Company Name -->
+                        <div class="col-md-8">
+                            <label for="company_name" class="form-label">Nama Syarikat <span class="text-danger">*</span></label>
+                            <input type="text" 
+                                   class="form-control text-uppercase-input @error('company_name') is-invalid @enderror" 
+                                   id="company_name" 
+                                   name="company_name" 
+                                   value="{{ old('company_name') }}" 
+                                   placeholder="CONTOH: BINA JAYA SDN BHD" 
+                                   required>
+                            @error('company_name')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
                         </div>
                     </div>
-                </div>
 
-                <!-- Action Button -->
-                <div class="d-grid mt-4 mb-2">
-                    <button type="submit" class="btn-selangor btn-lg">
-                        Sahkan Alamat Emel
-                    </button>
-                </div>
+                    <!-- SECTION : ACCESS & SECURITY -->
+                    <div class="form-section-title">
+                        <span>Akses & Keselamatan</span>
+                    </div>
 
-                {!! Former::close() !!}
+                    <div class="row g-2">
+                        <!-- Name -->
+                        <div class="col-md-6">
+                            <label for="name" class="form-label">Nama Pegawai <span class="text-danger">*</span></label>
+                            <input type="text" 
+                                   class="form-control text-uppercase-input @error('name') is-invalid @enderror" 
+                                   id="name" 
+                                   name="name" 
+                                   value="{{ old('name') }}" 
+                                   placeholder="Nama Penuh" 
+                                   required>
+                            @error('name')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <!-- Email -->
+                        <div class="col-md-6">
+                            <label for="email" class="form-label">Alamat Emel <span class="text-danger">*</span></label>
+                            <input type="email" 
+                                   class="form-control @error('email') is-invalid @enderror" 
+                                   id="email" 
+                                   name="email" 
+                                   value="{{ old('email') }}" 
+                                   placeholder="email@syarikat.com" 
+                                   required>
+                            @error('email')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <!-- Password -->
+                        <div class="col-md-6">
+                            <label for="password" class="form-label">Kata Laluan <span class="text-danger">*</span></label>
+                            <input type="password" 
+                                   class="form-control @error('password') is-invalid @enderror" 
+                                   id="password" 
+                                   name="password" 
+                                   placeholder="••••••••" 
+                                   required>
+                            @error('password')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <!-- Confirm Password -->
+                        <div class="col-md-6">
+                            <label for="password_confirmation" class="form-label">Sahkan Laluan <span class="text-danger">*</span></label>
+                            <input type="password" 
+                                   class="form-control" 
+                                   id="password_confirmation" 
+                                   name="password_confirmation" 
+                                   placeholder="••••••••" 
+                                   required>
+                        </div>
+                    </div>
+
+                    <!-- Important Note -->
+                    <div class="note-box mt-3 mb-3">
+                        <div class="d-flex gap-2 align-items-start">
+                            <div class="flex-shrink-0 pt-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4" /><path d="M10.363 3.591l-8.106 13.534a1.914 1.914 0 0 0 1.636 2.871h16.214a1.914 1.914 0 0 0 1.636 -2.87l-8.106 -13.536a1.914 1.914 0 0 0 -3.274 0z" /><path d="M12 16h.01" /></svg>
+                            </div>
+                            <div>
+                                <strong>Nota Penting:</strong> Pastikan maklumat tepat seperti sijil SSM. No. SSM tidak boleh diubah selepas pendaftaran.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn-selangor">
+                            Sahkan & Daftar Akaun
+                        </button>
+                    </div>
+
+                </form>
             </div>
             
-            <div class="py-3 px-4 text-center border-top bg-light">
+            <!-- Footer Links -->
+            <div class="py-2 px-4 text-center border-top bg-light">
                 <div class="d-flex flex-column flex-sm-row justify-content-center align-items-center gap-1">
-                    <span class="text-muted small fw-semibold">Sudah mempunyai akaun atau rekod?</span>
-                    <a href="{{ action('HomeController@companySearch') }}" class="btn-check-status">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-zoom"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" /><path d="M21 21l-6 -6" /></svg>
-						Semak Status
+                    <span class="text-muted small fw-semibold" style="font-size: 0.75rem;">Sudah mempunyai akaun?</span>
+                    <a href="{{ action('HomeController@companySearch') }}" class="btn-check-link">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" /><path d="M21 21l-6 -6" /></svg>
+						Semak Status Pendaftaran
                     </a>
                 </div>
             </div>
 
         </div>
-		<!-- End Card -->
     </div>
 </div>
 @endsection
