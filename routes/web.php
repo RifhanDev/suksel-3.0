@@ -590,7 +590,7 @@ Route::middleware(['auth'])->group(function () {
 		Route::get('aduan/{id}/{status}', [ComplaintController::class, 'updateStatus'])->name('aduan.update.status');
 
 		// BotMan
-		Route::match(['get', 'post'], 'botman', [BotManController::class, 'handle'])->name('botman');
+		Route::match(['get', 'post'], 'botman', [BotManController::class, 'handle'])->withoutMiddleware(['auth'])->name('botman');
 		Route::get('chat-widget/{chat_id}', [BotManController::class, 'chatWidget'])->withoutMiddleware(['auth'])->name('chat_widget');
 
 		// API Token

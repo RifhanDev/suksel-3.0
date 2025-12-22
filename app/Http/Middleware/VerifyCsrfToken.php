@@ -22,6 +22,7 @@ class VerifyCsrfToken extends Middleware
         'payment/ebpg/respond',
         'payment/fpx/respond',
         'transactions/*/ebpg_requery',
-        'payment/fpx/listen'
+        'payment/fpx/listen',
+        'botman'
     ];
 }
