@@ -136,6 +136,12 @@ class UsersController extends Controller
 			User::setRules('store');
 		}
 
+		// Validate the request
+		$validator = Validator::make($data, User::$rules);
+		if ($validator->fails()) {
+			return redirect()->back()->withErrors($validator)->withInput();
+		}
+
 		$data['name']      = $data['name'];
 		$data['username']  = $data['email'];
 		$data['confirmed'] = 1;

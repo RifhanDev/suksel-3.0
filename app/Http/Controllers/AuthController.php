@@ -12,6 +12,7 @@ use Hash;
 use Auth;
 use Mail;
 use Log;
+use Carbon\Carbon;
 
 class AuthController extends Controller
 {
@@ -86,7 +87,8 @@ class AuthController extends Controller
 
                // Check if password needs to be changed (6 months expiration)
                if ($user->password_changed_at) {
-                  $passwordAge = $user->password_changed_at->diffInMonths(now());
+                  // password_changed_at is already a Carbon instance due to $dates array
+                  $passwordAge = $user->password_changed_at->diffInMonths(Carbon::now());
                   if ($passwordAge >= 6) {
                      // Password expired, redirect to change password
                      session()->flash('warning', 'Kata laluan anda telah tamat tempoh (6 bulan). Sila tukar kata laluan anda.');
