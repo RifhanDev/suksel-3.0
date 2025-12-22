@@ -1764,7 +1764,7 @@
 	<script>
 		// Debug and fix modal functionality
 		document.addEventListener('DOMContentLoaded', function() {
-			console.log('DOM loaded, initializing modals...');
+			// console.log('DOM loaded, initializing modals...');
 
 			// Check if Bootstrap is available
 			if (typeof bootstrap === 'undefined') {
@@ -1772,14 +1772,14 @@
 				return;
 			}
 
-			console.log('Bootstrap is available:', bootstrap);
+			// console.log('Bootstrap is available:', bootstrap);
 
 			// Find all modals
 			const modals = document.querySelectorAll('.modal');
-			console.log('Found modals:', modals.length);
+			// console.log('Found modals:', modals.length);
 
 			modals.forEach((modal, index) => {
-				console.log(`Initializing modal ${index}:`, modal.id);
+				// console.log(`Initializing modal ${index}:`, modal.id);
 
 				try {
 					const modalInstance = new bootstrap.Modal(modal, {
@@ -1790,7 +1790,7 @@
 
 					// Fix aria-hidden attribute when modal is shown
 					modal.addEventListener('show.bs.modal', function() {
-						console.log('Modal showing:', this.id);
+						// console.log('Modal showing:', this.id);
 						this.setAttribute('aria-hidden', 'false');
 						this.style.pointerEvents = 'auto';
 						this.style.display = 'block';
@@ -1798,12 +1798,12 @@
 
 					// Reset aria-hidden when modal is hidden
 					modal.addEventListener('hidden.bs.modal', function() {
-						console.log('Modal hidden:', this.id);
+						// console.log('Modal hidden:', this.id);
 						this.setAttribute('aria-hidden', 'true');
 						this.style.pointerEvents = 'none';
 					});
 
-					console.log('Modal instance created:', modalInstance);
+					// console.log('Modal instance created:', modalInstance);
 				} catch (error) {
 					console.error('Error creating modal instance:', error);
 				}
@@ -1811,7 +1811,7 @@
 
 			// Find and fix login button
 			const loginButton = document.querySelector('[data-bs-target="#loginModal"]');
-			console.log('Login button found:', loginButton);
+			// console.log('Login button found:', loginButton);
 
 			if (loginButton) {
 				// Remove any existing event listeners
@@ -1819,9 +1819,9 @@
 				const newLoginButton = document.querySelector('[data-bs-target="#loginModal"]');
 
 				newLoginButton.addEventListener('click', function(e) {
-					console.log('Login button clicked!');
+					// console.log('Login button clicked!');
 					const modal = document.getElementById('loginModal');
-					console.log('Modal element:', modal);
+					// console.log('Modal element:', modal);
 
 					let opened = false;
 					if (modal && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
@@ -1829,7 +1829,7 @@
 							const modalInstance = bootstrap.Modal.getOrCreateInstance(modal);
 							modalInstance.show();
 							opened = true;
-							console.log('Modal show() called');
+							// console.log('Modal show() called');
 						} catch (err) {
 							console.error('Bootstrap show failed:', err);
 						}
@@ -1851,7 +1851,7 @@
 								document.body.appendChild(backdrop);
 							}
 							opened = true;
-							console.log('Modal shown via direct manipulation');
+							// console.log('Modal shown via direct manipulation');
 						} catch (directError) {
 							console.error('Direct manipulation failed:', directError);
 						}
@@ -1866,7 +1866,7 @@
 					}
 				});
 
-				console.log('Login button event listener added');
+				// console.log('Login button event listener added');
 			} else {
 				console.error('Login button not found!');
 			}
@@ -1874,7 +1874,7 @@
 
 		// Fallback method - simple modal without Bootstrap
 		function showLoginModal() {
-			console.log('Fallback: Showing login modal');
+			// console.log('Fallback: Showing login modal');
 			const modal = document.getElementById('loginModal');
 			if (modal) {
 				modal.style.display = 'block';
@@ -1904,7 +1904,7 @@
 		}
 
 		function hideLoginModal() {
-			console.log('Fallback: Hiding login modal');
+			// console.log('Fallback: Hiding login modal');
 			const modal = document.getElementById('loginModal');
 			if (modal) {
 				modal.style.display = 'none';
@@ -1932,23 +1932,23 @@
 				loginBtn.addEventListener('click', function(e) {
 					e.preventDefault();
 					e.stopPropagation();
-					console.log('Direct button click handler triggered');
+					// console.log('Direct button click handler triggered');
 					openLoginModal();
 				});
-				console.log('Login button direct handler attached');
+				// console.log('Login button direct handler attached');
 			}
 
 			// Initialize all dropdowns manually
 			const dropdownTriggers = document.querySelectorAll('[data-bs-toggle="dropdown"]');
-			console.log('Found dropdown triggers:', dropdownTriggers.length);
+			// console.log('Found dropdown triggers:', dropdownTriggers.length);
 
 			dropdownTriggers.forEach((trigger, index) => {
-				console.log('Initializing dropdown', index);
+				// console.log('Initializing dropdown', index);
 
 				if (typeof bootstrap !== 'undefined' && bootstrap.Dropdown) {
 					try {
 						new bootstrap.Dropdown(trigger);
-						console.log('Dropdown initialized successfully:', index);
+						// console.log('Dropdown initialized successfully:', index);
 					} catch (error) {
 						console.error('Error initializing dropdown:', error);
 					}
@@ -1957,7 +1957,7 @@
 				// Add manual click handler as fallback
 				trigger.addEventListener('click', function(e) {
 					e.preventDefault();
-					console.log('Dropdown clicked');
+					// console.log('Dropdown clicked');
 
 					const menu = this.nextElementSibling;
 					if (menu && menu.classList.contains('dropdown-menu')) {
@@ -1970,7 +1970,7 @@
 
 						if (!isShown) {
 							menu.classList.add('show');
-							console.log('Dropdown opened manually');
+							// console.log('Dropdown opened manually');
 						}
 					}
 				});
@@ -1987,6 +1987,390 @@
 					sidebar.classList.toggle('show');
 				});
 			}
+		});
+	</script>
+
+	<!-- Modern Chatbot Widget Styles -->
+	<style>
+		/* Universal Modern Chatbot Widget Styles */
+		*[id*="botman"],
+		*[class*="botman"],
+		.botman-widget-container,
+		.botman-widget,
+		div[id*="botman-widget"] {
+			font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+		}
+
+		/* Modern Chat Bubble Button - Universal Selectors */
+		*[id*="botman"] button,
+		*[class*="botman"] button,
+		.botman-widget-container button,
+		.botman-widget-bubble,
+		div[class*="bubble"] button,
+		button[class*="botman"],
+		button[id*="botman"] {
+			background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%) !important;
+			border-radius: 50% !important;
+			box-shadow: 0 8px 24px rgba(220, 38, 38, 0.4),
+				0 4px 12px rgba(220, 38, 38, 0.3),
+				0 0 0 8px rgba(220, 38, 38, 0.1) !important;
+			transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+			width: 64px !important;
+			height: 64px !important;
+			animation: pulse-glow 2s ease-in-out infinite !important;
+			border: none !important;
+			cursor: pointer !important;
+		}
+
+		*[id*="botman"] button:hover,
+		*[class*="botman"] button:hover,
+		.botman-widget-container button:hover,
+		.botman-widget-bubble:hover,
+		div[class*="bubble"] button:hover,
+		button[class*="botman"]:hover,
+		button[id*="botman"]:hover {
+			transform: scale(1.1) !important;
+			box-shadow: 0 12px 32px rgba(220, 38, 38, 0.5),
+				0 6px 16px rgba(220, 38, 38, 0.4),
+				0 0 0 12px rgba(220, 38, 38, 0.15) !important;
+		}
+
+		*[id*="botman"] button:active,
+		*[class*="botman"] button:active,
+		.botman-widget-container button:active,
+		.botman-widget-bubble:active {
+			transform: scale(0.95) !important;
+		}
+
+
+		@keyframes pulse-glow {
+
+			0%,
+			100% {
+				box-shadow: 0 8px 24px rgba(220, 38, 38, 0.4),
+					0 4px 12px rgba(220, 38, 38, 0.3),
+					0 0 0 8px rgba(220, 38, 38, 0.1);
+			}
+
+			50% {
+				box-shadow: 0 8px 24px rgba(220, 38, 38, 0.5),
+					0 4px 12px rgba(220, 38, 38, 0.4),
+					0 0 0 12px rgba(220, 38, 38, 0.15);
+			}
+		}
+
+		/* Modern Chat Window */
+		.botman-widget-container .botman-widget-window {
+			border-radius: 20px !important;
+			box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3),
+				0 8px 24px rgba(0, 0, 0, 0.2) !important;
+			border: none !important;
+			overflow: hidden !important;
+			animation: slide-up 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+		}
+
+		@keyframes slide-up {
+			from {
+				opacity: 0;
+				transform: translateY(20px) scale(0.95);
+			}
+
+			to {
+				opacity: 1;
+				transform: translateY(0) scale(1);
+			}
+		}
+
+		/* Modern Header */
+		.botman-widget-container .botman-widget-header {
+			background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%) !important;
+			padding: 20px 24px !important;
+			border-bottom: none !important;
+			box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+		}
+
+		.botman-widget-container .botman-widget-header-title {
+			font-weight: 600 !important;
+			font-size: 18px !important;
+			letter-spacing: -0.02em !important;
+		}
+
+		/* Modern Chat Messages */
+		.botman-widget-container .botman-widget-message {
+			border-radius: 18px !important;
+			padding: 12px 16px !important;
+			margin: 8px 0 !important;
+			font-size: 14px !important;
+			line-height: 1.5 !important;
+			word-wrap: break-word !important;
+			animation: message-fade-in 0.3s ease-out !important;
+		}
+
+		@keyframes message-fade-in {
+			from {
+				opacity: 0;
+				transform: translateY(10px);
+			}
+
+			to {
+				opacity: 1;
+				transform: translateY(0);
+			}
+		}
+
+		.botman-widget-container .botman-widget-message-bot {
+			background: #f3f4f6 !important;
+			color: #1f2937 !important;
+			border-bottom-left-radius: 4px !important;
+		}
+
+		.botman-widget-container .botman-widget-message-user {
+			background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%) !important;
+			color: #ffffff !important;
+			border-bottom-right-radius: 4px !important;
+			margin-left: auto !important;
+		}
+
+		/* Modern Input Area */
+		.botman-widget-container .botman-widget-input {
+			border-radius: 12px !important;
+			border: 2px solid #e5e7eb !important;
+			padding: 12px 16px !important;
+			font-size: 14px !important;
+			transition: all 0.2s ease !important;
+			background: #ffffff !important;
+		}
+
+		.botman-widget-container .botman-widget-input:focus {
+			outline: none !important;
+			border-color: #dc2626 !important;
+			box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1) !important;
+		}
+
+		.botman-widget-container .botman-widget-send-button {
+			background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%) !important;
+			border-radius: 12px !important;
+			border: none !important;
+			padding: 12px 20px !important;
+			transition: all 0.2s ease !important;
+			box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3) !important;
+		}
+
+		.botman-widget-container .botman-widget-send-button:hover {
+			transform: translateY(-2px) !important;
+			box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4) !important;
+		}
+
+		.botman-widget-container .botman-widget-send-button:active {
+			transform: translateY(0) !important;
+		}
+
+		/* Modern Scrollbar */
+		.botman-widget-container .botman-widget-messages::-webkit-scrollbar {
+			width: 6px !important;
+		}
+
+		.botman-widget-container .botman-widget-messages::-webkit-scrollbar-track {
+			background: #f3f4f6 !important;
+			border-radius: 10px !important;
+		}
+
+		.botman-widget-container .botman-widget-messages::-webkit-scrollbar-thumb {
+			background: #d1d5db !important;
+			border-radius: 10px !important;
+		}
+
+		.botman-widget-container .botman-widget-messages::-webkit-scrollbar-thumb:hover {
+			background: #9ca3af !important;
+		}
+
+		/* Typing Indicator */
+		.botman-widget-container .botman-widget-typing {
+			display: flex !important;
+			gap: 4px !important;
+			padding: 12px 16px !important;
+		}
+
+		.botman-widget-container .botman-widget-typing-dot {
+			width: 8px !important;
+			height: 8px !important;
+			border-radius: 50% !important;
+			background: #9ca3af !important;
+			animation: typing-bounce 1.4s infinite ease-in-out !important;
+		}
+
+		.botman-widget-container .botman-widget-typing-dot:nth-child(1) {
+			animation-delay: -0.32s !important;
+		}
+
+		.botman-widget-container .botman-widget-typing-dot:nth-child(2) {
+			animation-delay: -0.16s !important;
+		}
+
+		@keyframes typing-bounce {
+
+			0%,
+			80%,
+			100% {
+				transform: scale(0.8);
+				opacity: 0.5;
+			}
+
+			40% {
+				transform: scale(1);
+				opacity: 1;
+			}
+		}
+
+		/* Responsive Design */
+		@media (max-width: 768px) {
+			.botman-widget-container .botman-widget-window {
+				border-radius: 16px 16px 0 0 !important;
+				max-height: 90vh !important;
+			}
+
+			.botman-widget-container .botman-widget-bubble {
+				width: 56px !important;
+				height: 56px !important;
+			}
+		}
+	</style>
+
+	<!-- Chatbot Widget -->
+	<script>
+		@php $chat_id = Str::random(8); @endphp
+
+		var botmanWidget = {
+			title: 'Lela (Bot)',
+			introMessage: 'Hi, saya Lela. Saya di sini untuk membantu anda dan menjawab persoalan anda. 👋',
+			mainColor: '#dc2626',
+			aboutText: 'Chatbot Bantuan SUK Selangor',
+			bubbleBackground: '#dc2626',
+			headerTextColor: '#fff',
+			desktopHeight: 600,
+			desktopWidth: 420,
+			mobileHeight: '80%',
+			mobileWidth: '100%',
+			bubbleAvatarUrl: '{{ asset('images/chatbot.png') }}',
+			placeholderText: 'Tulis mesej anda di sini...',
+			frameEndpoint: "{{ route('chat_widget', ['chat_id' => $chat_id]) }}",
+			userId: "{{ $chat_id }}",
+			aboutLink: '',
+			displayMessageTime: true,
+			alwaysUseFloatingButton: false,
+			useChatInput: true
+		};
+
+		window.addEventListener("message", (event) => {
+			if (event.data != "") {
+				let data = event.data;
+
+				if (data.status == 200) {
+					let messages = data.messages;
+
+					messages.forEach(row => {
+						if (row.text == "DataACK") {
+							sender_response_detail = row.additionalParameters;
+
+							if (sender_response_detail.sender == "user_chat") {
+								if (sender_response_detail.type == "image_only") {
+									botmanChatWidget.say('<img src="' + sender_response_detail.response +
+										'" alt="attach" width="120" height="120">');
+								}
+
+								if (sender_response_detail.type == "text_only") {
+									botmanChatWidget.say(sender_response_detail.response);
+								}
+							}
+
+							if (sender_response_detail.sender == "bot") {
+								if (sender_response_detail.type == "image_only") {
+									botmanChatWidget.sayAsBot('<img src="' + sender_response_detail.response +
+										'" alt="attach" width="120" height="120">');
+								}
+
+								if (sender_response_detail.type == "text_only") {
+									botmanChatWidget.sayAsBot(sender_response_detail.response);
+								}
+							}
+						}
+					});
+				}
+			}
+		});
+	</script>
+	<script src='{{ asset('packages/botman/build/js/widget.js') }}'></script>
+	<script type="text/javascript">
+		$.ajaxSetup({
+			headers: {
+				'X-CSRF-Token': $('meta[name=_token]').attr('content')
+			}
+		});
+
+		// Enhanced Modern Chatbot Widget Initialization
+		document.addEventListener('DOMContentLoaded', function() {
+			// Wait for BotMan widget to initialize
+			setTimeout(function() {
+				// Apply modern enhancements to the widget
+				const widgetContainer = document.querySelector('.botman-widget-container') ||
+					document.querySelector('[id*="botman"]') ||
+					document.querySelector('.botman');
+
+				if (widgetContainer) {
+					// Add modern class for styling
+					widgetContainer.classList.add('modern-chatbot-widget');
+
+					// Enhance bubble button
+					const bubble = widgetContainer.querySelector('.botman-widget-bubble') ||
+						widgetContainer.querySelector('[class*="bubble"]') ||
+						widgetContainer.querySelector('button');
+
+					if (bubble) {
+						bubble.style.transition = 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+						bubble.addEventListener('mouseenter', function() {
+							this.style.transform = 'scale(1.1)';
+						});
+						bubble.addEventListener('mouseleave', function() {
+							this.style.transform = 'scale(1)';
+						});
+					}
+
+					// Enhance chat window
+					const chatWindow = widgetContainer.querySelector('.botman-widget-window') ||
+						widgetContainer.querySelector('[class*="window"]') ||
+						widgetContainer.querySelector('iframe');
+
+					if (chatWindow) {
+						chatWindow.style.transition = 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+					}
+				}
+
+				// Add smooth animations to messages
+				const observer = new MutationObserver(function(mutations) {
+					mutations.forEach(function(mutation) {
+						mutation.addedNodes.forEach(function(node) {
+							if (node.nodeType === 1) { // Element node
+								const messages = node.querySelectorAll && node
+									.querySelectorAll('[class*="message"]');
+								if (messages && messages.length > 0) {
+									messages.forEach(function(msg, index) {
+										msg.style.animation =
+											`message-fade-in 0.3s ease-out ${index * 0.1}s both`;
+									});
+								}
+							}
+						});
+					});
+				});
+
+				// Observe widget container for new messages
+				if (widgetContainer) {
+					observer.observe(widgetContainer, {
+						childList: true,
+						subtree: true
+					});
+				}
+			}, 1000);
 		});
 	</script>
 
