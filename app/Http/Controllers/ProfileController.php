@@ -72,7 +72,7 @@ class ProfileController extends Controller
           if($user->can('Vendor:list'))
             return redirect('vendors');
           else
-            return redirect('agencies/'.$user->organization_unit_id);
+            return redirect('agency/'.$user->organization_unit_id);
         	// return redirect('users/'.$currentUserId.'/edit');
 
    }

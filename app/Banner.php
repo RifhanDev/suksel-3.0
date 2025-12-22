@@ -91,6 +91,11 @@ class Banner extends Model
 				$upload['uploadable_type']  = 'App\Banner';
 				$upload['uploadable_id']    = $banner->id;
 
+				// Create directory if it doesn't exist
+				if (!file_exists($upload['path'])) {
+					mkdir($upload['path'], 0755, true);
+				}
+
 				$file->move($upload['path'], $upload['name']);
 
 				$new_upload = new Upload;

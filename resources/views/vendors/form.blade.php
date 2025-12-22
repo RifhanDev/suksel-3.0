@@ -1,1100 +1,922 @@
-<style>
-	/* ===== Top info strip ===== */
-	.header-band {
-		background: #f6eaea;
-		border: 1px solid #e7d1d1;
-		border-radius: .5rem;
-		padding: .75rem 1rem;
-	}
-
-	.header-band .item small {
-		display: block;
-		font-size: .75rem;
-		text-transform: uppercase;
-		letter-spacing: .03em;
-		color: #666;
-		font-weight: 700;
-		line-height: 1.1;
-	}
-
-	.header-band .item .val {
-		font-weight: 700;
-		margin-top: .15rem;
-		white-space: nowrap;
-	}
-
-	.header-band .ok {
-		color: #19c1a7;
-	}
-
-	/* ===== Wizard progress pills ===== */
-	.progress-nav {
-		border-bottom: 4px solid #d9d9d9;
-	}
-
-	.progress-nav .progress {
-		height: 4px;
-		background: #e8e8e8;
-		margin: 0;
-		border-radius: 2px;
-	}
-
-	.progress-nav .progress-bar {
-		background: #a84545;
-		transition: width .3s ease;
-	}
-
-	.progress-nav .custom-nav {
-		gap: 1rem;
-		padding-top: .5rem;
-	}
-
-	.progress-nav .nav-link {
-		border: 0 !important;
-		background: transparent !important;
-		color: #2b2b2b;
-		font-weight: 700;
-		padding: .45rem 1rem;
-		border-radius: .75rem;
-	}
-
-	.progress-nav .nav-link.active {
-		background: #a84545 !important;
-		color: #fff !important;
-		box-shadow: 0 2px 6px rgba(168, 69, 69, .25);
-	}
-
-	/* Force tab content to show */
-	.tab-content {
-		display: block !important;
-	}
-
-	.tab-pane {
-		display: none;
-	}
-
-	.tab-pane.active {
-		display: block !important;
-	}
-
-	.tab-pane.show {
-		opacity: 1 !important;
-		visibility: visible !important;
-	}
-</style>
-
-<div class="header-band d-flex flex-wrap align-items-center gap-4 mb-3">
-	<div class="item">
-		<small>Vendor Status</small>
-		<span class="val ok">{{ isset($vendor) ? ($vendor->approved ? 'Approved' : 'Pending') : 'New' }}</span>
-	</div>
-
-	<div class="item flex-grow-1">
-		<small>Company</small>
-		<span class="val">{{ isset($vendor) ? $vendor->name : 'New Vendor Registration' }}</span>
-	</div>
-</div>
-
-<div class="col-12">
-	<div class="card">
-		<form action="{{ isset($vendor) ? route('vendors.update', $vendor->id) : route('vendors.store') }}" method="POST"
-			enctype="multipart/form-data">
-			@if (isset($vendor))
-				@method('PUT')
-			@endif
-			@csrf
-			<div class="card-body">
-				<div class="row">
-					<div class="col-12">
-						<div class="d-flex align-items-center justify-content-between mb-3">
-							<div>Vendor Management</div>
-							<div class="item ms-auto text-end">
-								<small>Status</small>
-								<span
-									class="val">{{ isset($vendor) ? ($vendor->approved ? 'Active' : 'Pending Approval') : 'New Registration' }}</span>
-							</div>
-						</div>
-					</div>
-					<hr>
-					<div id="custom-progress-bar" class="progress-nav mb-4 p-2">
-						<div class="progress" style="height: 1px;">
-							<div class="progress-bar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0"
-								aria-valuemax="100"></div>
-						</div>
-						<ul class="nav nav-pills progress-bar-tab custom-nav" role="tablist">
-							<li class="nav-item" role="presentation">
-								<button type="button" id="maklumat-syarikat-tab" class="nav-link rounded-pill active"
-									data-progressbar="custom-progress-bar" data-bs-toggle="pill" data-bs-target="#maklumat-syarikat" role="tab"
-									aria-controls="maklumat-syarikat" aria-selected="true">1</button>
-							</li>
-							<li class="nav-item" role="presentation">
-								<button type="button" id="maklumat-pegawai-tab" class="nav-link rounded-pill" data-bs-toggle="pill"
-									data-bs-target="#maklumat-pegawai" role="tab" aria-controls="maklumat-pegawai"
-									aria-selected="false">2</button>
-							</li>
-							<li class="nav-item" role="presentation">
-								<button type="button" id="maklumat-sub-pegawai-tab" class="nav-link rounded-pill" data-bs-toggle="pill"
-									data-bs-target="#maklumat-sub-pegawai" role="tab" aria-controls="maklumat-sub-pegawai"
-									aria-selected="false">3</button>
-							</li>
-							<li class="nav-item" role="presentation">
-								<button type="button" id="mof-cidb-tab" class="nav-link rounded-pill" data-bs-toggle="pill"
-									data-bs-target="#mof-cidb" role="tab" aria-controls="mof-cidb" aria-selected="false">4</button>
-							</li>
-							<li class="nav-item" role="presentation">
-								<button type="button" id="pemegang-saham-tab" class="nav-link rounded-pill" data-bs-toggle="pill"
-									data-bs-target="#pemegang-saham" role="tab" aria-controls="pemegang-saham" aria-selected="false">5</button>
-							</li>
-						</ul>
-					</div>
-				</div>
-
-				<div class="tab-content" id="vendor-content">
-					<!-- Tab 1: Maklumat Syarikat -->
-					<div class="tab-pane fade show active" id="maklumat-syarikat" role="tabpanel"
-						aria-labelledby="maklumat-syarikat-tab">
-						<div class="row mt-4 justify-content-center">
-							<div class="col-12">
-								<h4 class="card-title card-title-grey">MAKLUMAT SYARIKAT</h4>
-								<p class="card-title-desc text-primary fst-italic">
-									Sila isi maklumat syarikat dengan lengkap dan tepat
-								</p>
-							</div>
-						</div>
-						<div class="row d-flex justify-content-center">
-							<div class="col-11">
-								<div class="row">
-									<!-- Email -->
-									<div class="col-md-12 my-2">
-										<div class="row">
-											<div class="col-md-2 d-flex justify-content-end">
-												<label for="email" class="">Alamat Emel <span class="text-danger">*</span></label>
-											</div>
-											<div class="col-md-10">
-												<input class="form-control" type="email" name="email" id="email"
-													value="{{ old('email', isset($vendor) ? $vendor->user->email : '') }}"
-													{{ isset($vendor) && !Auth::user()->hasRole('Admin') ? 'disabled' : '' }} required>
-											</div>
-										</div>
-									</div>
-
-									<!-- No. Pendaftaran -->
-									<div class="col-md-12 my-2">
-										<div class="row">
-											<div class="col-md-2 d-flex justify-content-end">
-												<label for="registration" class="">No. Pendaftaran <span class="text-danger">*</span></label>
-											</div>
-											<div class="col-md-10">
-												<input class="form-control" type="text" name="registration" id="registration"
-													value="{{ old('registration', isset($vendor) ? $vendor->registration : '') }}"
-													placeholder="Aksara, Nombor dan tanda '-' Sahaja"
-													{{ isset($vendor) && !Auth::user()->hasRole('Admin') ? 'disabled' : '' }} required>
-											</div>
-										</div>
-									</div>
-
-									<!-- Nama Syarikat -->
-									<div class="col-md-12 my-2">
-										<div class="row">
-											<div class="col-md-2 d-flex justify-content-end">
-												<label for="name" class="">Nama Syarikat / Perniagaan <span
-														class="text-danger">*</span></label>
-											</div>
-											<div class="col-md-10">
-												<input class="form-control" type="text" name="name" id="name"
-													value="{{ old('name', isset($vendor) ? $vendor->name : '') }}" required>
-											</div>
-										</div>
-									</div>
-
-									<!-- Alamat -->
-									<div class="col-md-12 my-2">
-										<div class="row">
-											<div class="col-md-2 d-flex justify-content-end">
-												<label for="address" class="">Alamat <span class="text-danger">*</span></label>
-											</div>
-											<div class="col-md-10">
-												<textarea class="form-control" name="address" id="address" rows="4" required>{{ old('address', isset($vendor) ? $vendor->address : '') }}</textarea>
-											</div>
-										</div>
-									</div>
-
-									<!-- Daerah -->
-									<div class="col-md-12 my-2">
-										<div class="row">
-											<div class="col-md-2 d-flex justify-content-end">
-												<label for="district_id" class="">Daerah <span class="text-danger">*</span></label>
-											</div>
-											<div class="col-md-10">
-												<select class="form-control" name="district_id" id="district_id" required>
-													<option value="">- Pilihan daerah -</option>
-													@foreach (App\Vendor::$districts as $key => $value)
-														<option value="{{ $key }}"
-															{{ old('district_id', isset($vendor) ? $vendor->district_id : '') == $key ? 'selected' : '' }}>
-															{{ strtoupper($value) }}
-														</option>
-													@endforeach
-												</select>
-											</div>
-										</div>
-									</div>
-
-									<!-- Negeri (shown when district is 0 - Luar Selangor) -->
-									<div class="col-md-12 my-2" id="state_id_div"
-										style="{{ old('district_id', isset($vendor) ? $vendor->district_id : '') == '0' ? '' : 'display:none' }}">
-										<div class="row">
-											<div class="col-md-2 d-flex justify-content-end">
-												<label for="state_id" class="">Negeri <span class="text-danger">*</span></label>
-											</div>
-											<div class="col-md-10">
-												<select class="form-control" name="state_id" id="state_id">
-													<option value="">- Pilihan Negeri -</option>
-													@if (isset($country_states))
-														@foreach ($country_states as $state)
-															<option value="{{ $state->id }}"
-																{{ old('state_id', isset($vendor) ? $vendor->state_id : '') == $state->id ? 'selected' : '' }}>
-																{{ $state->description }}
-															</option>
-														@endforeach
-													@endif
-												</select>
-											</div>
-										</div>
-									</div>
-
-									<!-- No. Telefon -->
-									<div class="col-md-12 my-2">
-										<div class="row">
-											<div class="col-md-2 d-flex justify-content-end">
-												<label for="tel" class="">No. Telefon <span class="text-danger">*</span></label>
-											</div>
-											<div class="col-md-10">
-												<input class="form-control" type="text" name="tel" id="tel"
-													value="{{ old('tel', isset($vendor) ? $vendor->tel : '') }}" pattern="^[+0-9]{9,}$"
-													placeholder="Tanda '+' dan nombor sahaja" required>
-											</div>
-										</div>
-									</div>
-
-									<!-- No. Faks -->
-									<div class="col-md-12 my-2">
-										<div class="row">
-											<div class="col-md-2 d-flex justify-content-end">
-												<label for="fax" class="">No. Faks</label>
-											</div>
-											<div class="col-md-10">
-												<input class="form-control" type="text" name="fax" id="fax"
-													value="{{ old('fax', isset($vendor) ? $vendor->fax : '') }}" pattern="^[+0-9]{9,}$"
-													placeholder="Tanda '+' dan nombor sahaja">
-											</div>
-										</div>
-									</div>
-
-									<!-- Jenis Perniagaan -->
-									<div class="col-md-12 my-2">
-										<div class="row">
-											<div class="col-md-2 d-flex justify-content-end">
-												<label for="organization_type" class="">Jenis Perniagaan <span class="text-danger">*</span></label>
-											</div>
-											<div class="col-md-10">
-												<select class="form-control" name="organization_type" id="organization_type" required>
-													<option value="">- Pilih dari senarai -</option>
-													@foreach ($RefOrganizationType as $value)
-														<option value="{{ $value->id }}" data-is-ssm="{{ $value->is_ssm ?? 0 }}"
-															{{ old('organization_type', isset($vendor) ? $vendor->organization_type : '') == $value->id ? 'selected' : '' }}>
-															{{ $value->name }}
-														</option>
-													@endforeach
-												</select>
-											</div>
-										</div>
-									</div>
-
-									<!-- Tarikh Penubuhan -->
-									<div class="col-md-12 my-2">
-										<div class="row">
-											<div class="col-md-2 d-flex justify-content-end">
-												<label for="incorporation_date" class="">Tarikh Penubuhan <span
-														class="text-danger">*</span></label>
-											</div>
-											<div class="col-md-10">
-												@php
-													$incorporationDateValue = old('incorporation_date');
-													if (empty($incorporationDateValue) && isset($vendor)) {
-													    $rawIncorporationDate = $vendor->getOriginal('incorporation_date');
-													    if (!empty($rawIncorporationDate)) {
-													        try {
-													            if (\Carbon\Carbon::hasFormat($rawIncorporationDate, 'Y-m-d')) {
-													                $incorporationDateValue = \Carbon\Carbon::parse($rawIncorporationDate)->format('Y-m-d');
-													            } elseif (\Carbon\Carbon::hasFormat($rawIncorporationDate, 'd/m/Y')) {
-													                $incorporationDateValue = \Carbon\Carbon::createFromFormat(
-													                    'd/m/Y',
-													                    $rawIncorporationDate,
-													                )->format('Y-m-d');
-													            } else {
-													                $incorporationDateValue = \Carbon\Carbon::parse($rawIncorporationDate)->format('Y-m-d');
-													            }
-													        } catch (\Exception $e) {
-													            $incorporationDateValue = $rawIncorporationDate;
-													        }
-													    }
-													}
-												@endphp
-												<input class="form-control" type="date" name="incorporation_date" id="incorporation_date"
-													value="{{ $incorporationDateValue }}" max="{{ date('Y-m-d') }}" required>
-											</div>
-										</div>
-									</div>
-
-									<!-- Tarikh Tamat Sijil SSM -->
-									<div class="col-md-12 my-2" id="ssm_expiry_div" style="display: none;">
-										<div class="row">
-											<div class="col-md-2 d-flex justify-content-end">
-												<label for="ssm_expiry" class="">Tarikh Tamat Sijil SSM <span class="text-danger">*</span></label>
-											</div>
-											<div class="col-md-10">
-												<input class="form-control" type="date" name="ssm_expiry" id="ssm_expiry"
-													value="{{ old('ssm_expiry', isset($vendor) && $vendor->ssm_expiry ? $vendor->ssm_expiry->format('Y-m-d') : date('Y-m-d')) }}"
-													min="{{ date('Y-m-d') }}">
-											</div>
-										</div>
-									</div>
-
-									<!-- Modal Dibenarkan -->
-									<div class="col-md-12 my-2">
-										<div class="row">
-											<div class="col-md-2 d-flex justify-content-end">
-												<label for="authorized_capital" class="">Modal Dibenarkan</label>
-											</div>
-											<div class="col-md-3">
-												<select class="form-control" name="authorized_capital_currency">
-													@foreach (App\Vendor::$currencies as $key => $value)
-														<option value="{{ $key }}"
-															{{ old('authorized_capital_currency', isset($vendor) ? $vendor->authorized_capital_currency : 'MYR') == $key ? 'selected' : '' }}>
-															{{ $value }}
-														</option>
-													@endforeach
-												</select>
-											</div>
-											<div class="col-md-7">
-												<input class="form-control" type="number" step="0.01" name="authorized_capital"
-													id="authorized_capital"
-													value="{{ old('authorized_capital', isset($vendor) ? $vendor->authorized_capital : '0.00') }}">
-											</div>
-										</div>
-									</div>
-
-									<!-- Modal Berbayar -->
-									<div class="col-md-12 my-2">
-										<div class="row">
-											<div class="col-md-2 d-flex justify-content-end">
-												<label for="paidup_capital" class="">Modal Berbayar</label>
-											</div>
-											<div class="col-md-3">
-												<select class="form-control" name="paidup_capital_currency">
-													@foreach (App\Vendor::$currencies as $key => $value)
-														<option value="{{ $key }}"
-															{{ old('paidup_capital_currency', isset($vendor) ? $vendor->paidup_capital_currency : 'MYR') == $key ? 'selected' : '' }}>
-															{{ $value }}
-														</option>
-													@endforeach
-												</select>
-											</div>
-											<div class="col-md-7">
-												<input class="form-control" type="number" step="0.01" name="paidup_capital" id="paidup_capital"
-													value="{{ old('paidup_capital', isset($vendor) ? $vendor->paidup_capital : '0.00') }}">
-											</div>
-										</div>
-									</div>
-
-									<!-- No. Rujukan Cukai -->
-									<div class="col-md-12 my-2">
-										<div class="row">
-											<div class="col-md-2 d-flex justify-content-end">
-												<label for="tax_no" class="">No. Rujukan Cukai</label>
-											</div>
-											<div class="col-md-10">
-												<input class="form-control" type="text" name="tax_no" id="tax_no"
-													value="{{ old('tax_no', isset($vendor) ? $vendor->tax_no : '') }}">
-											</div>
-										</div>
-									</div>
-
-									<!-- No Pendaftaran GST -->
-									<div class="col-md-12 my-2">
-										<div class="row">
-											<div class="col-md-2 d-flex justify-content-end">
-												<label for="gst_no" class="">No Pendaftaran GST</label>
-											</div>
-											<div class="col-md-10">
-												<input class="form-control" type="text" name="gst_no" id="gst_no"
-													value="{{ old('gst_no', isset($vendor) ? $vendor->gst_no : '') }}">
-											</div>
-										</div>
-									</div>
-
-									<!-- Laman Web -->
-									<div class="col-md-12 my-2">
-										<div class="row">
-											<div class="col-md-2 d-flex justify-content-end">
-												<label for="website" class="">Laman Web</label>
-											</div>
-											<div class="col-md-10">
-												<input class="form-control" type="url" name="website" id="website"
-													value="{{ old('website', isset($vendor) ? $vendor->website : '') }}">
-											</div>
-										</div>
-									</div>
-								</div>
-
-								<div class="row">
-									<div class="col-12 d-flex justify-content-between">
-										<div class="left"></div>
-										<div class="right">
-											<button type="submit" class="btn-md-sm btn btn-success">Simpan</button>
-											<button type="button" class="btn btn-primary ms-auto" data-nexttab="maklumat-pegawai-tab">
-												Seterusnya
-											</button>
-										</div>
-									</div>
-								</div>
-							</div>
-						</div>
-					</div>
-
-					<!-- Tab 2: Maklumat Pegawai -->
-					<div class="tab-pane fade" id="maklumat-pegawai" role="tabpanel" aria-labelledby="maklumat-pegawai-tab">
-						<div class="row mt-4 justify-content-center">
-							<div class="col-12">
-								<h4 class="card-title card-title-grey">MAKLUMAT PEGAWAI</h4>
-							</div>
-						</div>
-						<div class="row d-flex justify-content-center">
-							<div class="col-11">
-								<!-- Nama Pegawai -->
-								<div class="col-md-12 my-2">
-									<div class="row">
-										<div class="col-md-2 d-flex justify-content-end">
-											<label for="officer_name" class="">Nama Pegawai <span class="text-danger">*</span></label>
-										</div>
-										<div class="col-md-10">
-											<input class="form-control" type="text" name="officer_name" id="officer_name"
-												value="{{ old('officer_name', isset($vendor) ? $vendor->officer_name : '') }}" required>
-										</div>
-									</div>
-								</div>
-
-								<!-- Jawatan Pegawai -->
-								<div class="col-md-12 my-2">
-									<div class="row">
-										<div class="col-md-2 d-flex justify-content-end">
-											<label for="officer_designation" class="">Jawatan Pegawai <span class="text-danger">*</span></label>
-										</div>
-										<div class="col-md-10">
-											<input class="form-control" type="text" name="officer_designation" id="officer_designation"
-												value="{{ old('officer_designation', isset($vendor) ? $vendor->officer_designation : '') }}" required>
-										</div>
-									</div>
-								</div>
-
-								<!-- No. Telefon Pegawai -->
-								<div class="col-md-12 my-2">
-									<div class="row">
-										<div class="col-md-2 d-flex justify-content-end">
-											<label for="officer_tel" class="">No. Telefon <span class="text-danger">*</span></label>
-										</div>
-										<div class="col-md-10">
-											<input class="form-control" type="text" name="officer_tel" id="officer_tel"
-												value="{{ old('officer_tel', isset($vendor) ? $vendor->officer_tel : '') }}" required>
-										</div>
-									</div>
-								</div>
-
-								@if (!isset($vendor))
-									<!-- Password -->
-									<div class="col-md-12 my-2">
-										<div class="row">
-											<div class="col-md-2 d-flex justify-content-end">
-												<label for="password" class="">Kata Laluan <span class="text-danger">*</span></label>
-											</div>
-											<div class="col-md-10">
-												<input class="form-control" type="password" name="password" id="password" required>
-											</div>
-										</div>
-									</div>
-
-									<!-- Password Confirmation -->
-									<div class="col-md-12 my-2">
-										<div class="row">
-											<div class="col-md-2 d-flex justify-content-end">
-												<label for="password_confirmation" class="">Sahkan Kata Laluan <span
-														class="text-danger">*</span></label>
-											</div>
-											<div class="col-md-10">
-												<input class="form-control" type="password" name="password_confirmation" id="password_confirmation"
-													required>
-											</div>
-										</div>
-									</div>
-								@endif
-
-								<div class="row">
-									<div class="col-12 d-flex justify-content-between">
-										<div class="left">
-											<button type="button" class="btn-md-sm btn btn-info"
-												data-prevtab="maklumat-syarikat-tab">Sebelumnya</button>
-										</div>
-										<div class="right">
-											<button type="submit" class="btn-md-sm btn btn-success">Simpan</button>
-											<button type="button" class="btn btn-primary ms-auto" data-nexttab="maklumat-sub-pegawai-tab">
-												Seterusnya
-											</button>
-										</div>
-									</div>
-								</div>
-							</div>
-						</div>
-					</div>
-
-					<!-- Tab 3: Maklumat Sub Pegawai -->
-					<div class="tab-pane fade" id="maklumat-sub-pegawai" role="tabpanel"
-						aria-labelledby="maklumat-sub-pegawai-tab">
-						<div class="row mt-4 justify-content-center">
-							<div class="col-12">
-								<h4 class="card-title card-title-grey">MAKLUMAT SUB PEGAWAI</h4>
-							</div>
-						</div>
-						<div class="row d-flex justify-content-center">
-							<div class="col-11">
-								<!-- Sub Officers Container -->
-								<div id="sub-officers-container">
-									@php
-										// Check if we have existing sub-officers data (for edit mode)
-										$isEdit = isset($vendor) && $vendor->id;
-
-										// Get existing officers from relationship or old input
-										if (old('sub_officers')) {
-										    // From validation errors - use old input
-										    $existingOfficers = old('sub_officers');
-										} elseif ($isEdit && $vendor->subOfficers) {
-										    // From database - load existing sub-officers
-										    $existingOfficers = $vendor->subOfficers
-										        ->map(function ($officer) {
-										            return [
-										                'id' => $officer->id,
-										                'name' => $officer->name,
-										                'email' => $officer->email,
-										                'phone' => $officer->phone,
-										                'start_date' => $officer->start_date ? $officer->start_date->format('Y-m-d') : '',
-										                'end_date' => $officer->end_date ? $officer->end_date->format('Y-m-d') : '',
-										            ];
-										        })
-										        ->toArray();
-										} else {
-										    // New form - create one empty entry
-										    $existingOfficers = [['name' => '', 'email' => '', 'phone' => '', 'start_date' => '', 'end_date' => '']];
-										}
-									@endphp
-
-									@foreach ($existingOfficers as $index => $officer)
-										<!-- Sub Officer Card {{ $index + 1 }} -->
-										<div class="card shadow-sm mb-3 officer-card" data-index="{{ $index }}">
-											<div class="card-header bg-light d-flex justify-content-between align-items-center">
-												<h5 class="mb-0">
-													<i class="fas fa-user-tie me-2"></i>Sub Pegawai <span class="officer-number">{{ $index + 1 }}</span>
-												</h5>
-												<button type="button" class="btn btn-sm btn-danger remove-officer"
-													style="display: {{ count($existingOfficers) > 1 ? 'inline-block' : 'none' }};" title="Buang">
-													<i class="fas fa-trash"></i> Buang
-												</button>
-											</div>
-											<div class="card-body">
-												<div class="row">
-													<!-- Hidden ID for existing records -->
-													@if (isset($officer['id']))
-														<input type="hidden" name="sub_officers[{{ $index }}][id]" value="{{ $officer['id'] }}">
-													@endif
-
-													<!-- Nama -->
-													<div class="col-md-6 mb-3">
-														<label class="form-label">Nama <span class="text-danger">*</span></label>
-														<input class="form-control" type="text" name="sub_officers[{{ $index }}][name]"
-															value="{{ old('sub_officers.' . $index . '.name', $officer['name'] ?? '') }}"
-															placeholder="Masukkan nama pegawai" required>
-													</div>
-
-													<!-- Email -->
-													<div class="col-md-6 mb-3">
-														<label class="form-label">Email <span class="text-danger">*</span></label>
-														<input class="form-control" type="email" name="sub_officers[{{ $index }}][email]"
-															value="{{ old('sub_officers.' . $index . '.email', $officer['email'] ?? '') }}"
-															placeholder="Masukkan email pegawai" required>
-													</div>
-
-													<!-- No. Telefon -->
-													<div class="col-md-6 mb-3">
-														<label class="form-label">No. Telefon <span class="text-danger">*</span></label>
-														<input class="form-control" type="text" name="sub_officers[{{ $index }}][phone]"
-															value="{{ old('sub_officers.' . $index . '.phone', $officer['phone'] ?? '') }}"
-															placeholder="Contoh: 0123456789" required>
-													</div>
-
-													<!-- Spacer for alignment -->
-													<div class="col-md-6 mb-3"></div>
-
-													<!-- Kata Laluan -->
-													<div class="col-md-6 mb-3">
-														<label class="form-label">Kata Laluan @if (!$isEdit)
-																<span class="text-danger">*</span>
-															@endif
-														</label>
-														<input class="form-control password-field" type="password"
-															name="sub_officers[{{ $index }}][password]" placeholder="Minimum 8 aksara"
-															{{ $isEdit ? '' : 'required' }} minlength="8">
-														<small
-															class="text-muted">{{ $isEdit ? 'Biarkan kosong jika tidak ingin mengubah' : 'Minimum 8 aksara' }}</small>
-													</div>
-
-													<!-- Sahkan Kata Laluan -->
-													<div class="col-md-6 mb-3">
-														<label class="form-label">Sahkan Kata Laluan @if (!$isEdit)
-																<span class="text-danger">*</span>
-															@endif
-														</label>
-														<input class="form-control confirm-password-field" type="password"
-															name="sub_officers[{{ $index }}][password_confirmation]"
-															placeholder="Masukkan semula kata laluan" {{ $isEdit ? '' : 'required' }} minlength="8">
-														<small class="text-muted">Mesti sama dengan kata laluan</small>
-													</div>
-
-													<!-- Tempoh Penggunaan -->
-													<div class="col-12">
-														<label class="form-label fw-bold">Tempoh Penggunaan <span class="text-danger">*</span></label>
-													</div>
-
-													<!-- Tarikh Mula -->
-													<div class="col-md-6 mb-3">
-														<label class="form-label">Tarikh Mula</label>
-														<input class="form-control" type="date" name="sub_officers[{{ $index }}][start_date]"
-															value="{{ old('sub_officers.' . $index . '.start_date', $officer['start_date'] ?? '') }}" required>
-													</div>
-
-													<!-- Tarikh Tamat -->
-													<div class="col-md-6 mb-3">
-														<label class="form-label">Tarikh Tamat</label>
-														<input class="form-control" type="date" name="sub_officers[{{ $index }}][end_date]"
-															value="{{ old('sub_officers.' . $index . '.end_date', $officer['end_date'] ?? '') }}" required>
-													</div>
-												</div>
-											</div>
-										</div>
-									@endforeach
-								</div>
-
-								<!-- Add More Button -->
-								<div class="row mb-4">
-									<div class="col-12">
-										<button type="button" class="btn btn-success" id="add-officer">
-											<i class="fas fa-plus-circle me-2"></i> Tambah Sub Pegawai
-										</button>
-									</div>
-								</div>
-
-								<!-- Navigation Buttons -->
-								<div class="row">
-									<div class="col-12 d-flex justify-content-between">
-										<div class="left">
-											<button type="button" class="btn-md-sm btn btn-info"
-												data-prevtab="maklumat-syarikat-tab">Sebelumnya</button>
-										</div>
-										<div class="right">
-											<button type="submit" class="btn-md-sm btn btn-success">Simpan</button>
-											<button type="button" class="btn btn-primary ms-auto" data-nexttab="mof-cidb-tab">
-												Seterusnya
-											</button>
-										</div>
-									</div>
-								</div>
-							</div>
-						</div>
-					</div>
-
-					<!-- JavaScript for Dynamic Sub Officers Cards -->
-					<script>
-						document.addEventListener('DOMContentLoaded', function() {
-							// Initialize officer index based on existing cards
-							let officerIndex = document.querySelectorAll('.officer-card').length;
-							const isEditMode = {{ isset($vendor) && $vendor->id ? 'true' : 'false' }};
-
-							// Add new officer card
-							document.getElementById('add-officer').addEventListener('click', function() {
-								const container = document.getElementById('sub-officers-container');
-								const newCard = createOfficerCard(officerIndex);
-								container.insertAdjacentHTML('beforeend', newCard);
-								officerIndex++;
-								updateRemoveButtons();
-								updateCardNumbers();
-							});
-
-							// Remove officer card (delegated event)
-							document.getElementById('sub-officers-container').addEventListener('click', function(e) {
-								if (e.target.classList.contains('remove-officer') || e.target.closest('.remove-officer')) {
-									const card = e.target.closest('.officer-card');
-									card.remove();
-									updateRemoveButtons();
-									updateCardNumbers();
-								}
-							});
-
-							// Create new officer card HTML
-							function createOfficerCard(index) {
-								const passwordRequired = isEditMode ? '' : 'required';
-								const passwordLabel = isEditMode ? 'Kata Laluan' : 'Kata Laluan <span class="text-danger">*</span>';
-								const passwordHint = isEditMode ? 'Biarkan kosong jika tidak ingin mengubah' : 'Minimum 8 aksara';
-
-								return `
-						<div class="card shadow-sm mb-3 officer-card" data-index="${index}">
-							<div class="card-header bg-light d-flex justify-content-between align-items-center">
-								<h5 class="mb-0">
-									<i class="fas fa-user-tie me-2"></i>Sub Pegawai <span class="officer-number">${index + 1}</span>
-								</h5>
-								<button type="button" class="btn btn-sm btn-danger remove-officer" title="Buang">
-									<i class="fas fa-trash"></i> Buang
-								</button>
-							</div>
-							<div class="card-body">
-								<div class="row">
-									<!-- Nama -->
-									<div class="col-md-6 mb-3">
-										<label class="form-label">Nama <span class="text-danger">*</span></label>
-										<input class="form-control" type="text" name="sub_officers[${index}][name]" 
-											placeholder="Masukkan nama pegawai" required>
-									</div>
-
-									<!-- Email -->
-									<div class="col-md-6 mb-3">
-										<label class="form-label">Email <span class="text-danger">*</span></label>
-										<input class="form-control" type="email" name="sub_officers[${index}][email]" 
-											placeholder="Masukkan email pegawai" required>
-									</div>
-
-									<!-- No. Telefon -->
-									<div class="col-md-6 mb-3">
-										<label class="form-label">No. Telefon <span class="text-danger">*</span></label>
-										<input class="form-control" type="text" name="sub_officers[${index}][phone]" 
-											placeholder="Contoh: 0123456789" required>
-									</div>
-
-									<!-- Spacer for alignment -->
-									<div class="col-md-6 mb-3"></div>
-
-									<!-- Kata Laluan -->
-									<div class="col-md-6 mb-3">
-										<label class="form-label">${passwordLabel}</label>
-										<input class="form-control password-field" type="password" name="sub_officers[${index}][password]" 
-											placeholder="Minimum 8 aksara" ${passwordRequired} minlength="8">
-										<small class="text-muted">${passwordHint}</small>
-									</div>
-
-									<!-- Sahkan Kata Laluan -->
-									<div class="col-md-6 mb-3">
-										<label class="form-label">${passwordLabel}</label>
-										<input class="form-control confirm-password-field" type="password" name="sub_officers[${index}][password_confirmation]" 
-											placeholder="Masukkan semula kata laluan" ${passwordRequired} minlength="8">
-										<small class="text-muted">Mesti sama dengan kata laluan</small>
-									</div>
-
-									<!-- Tempoh Penggunaan -->
-									<div class="col-12">
-										<label class="form-label fw-bold">Tempoh Penggunaan <span class="text-danger">*</span></label>
-									</div>
-
-									<!-- Tarikh Mula -->
-									<div class="col-md-6 mb-3">
-										<label class="form-label">Tarikh Mula</label>
-										<input class="form-control" type="date" name="sub_officers[${index}][start_date]" required>
-									</div>
-
-									<!-- Tarikh Tamat -->
-									<div class="col-md-6 mb-3">
-										<label class="form-label">Tarikh Tamat</label>
-										<input class="form-control" type="date" name="sub_officers[${index}][end_date]" required>
-									</div>
-								</div>
-							</div>
-						</div>
-					`;
-							}
-
-							// Update remove buttons visibility
-							function updateRemoveButtons() {
-								const cards = document.querySelectorAll('.officer-card');
-								cards.forEach((card, index) => {
-									const removeBtn = card.querySelector('.remove-officer');
-									if (cards.length > 1) {
-										removeBtn.style.display = 'inline-block';
-									} else {
-										removeBtn.style.display = 'none';
-									}
-								});
-							}
-
-							// Update card numbers
-							function updateCardNumbers() {
-								const cards = document.querySelectorAll('.officer-card');
-								cards.forEach((card, index) => {
-									card.querySelector('.officer-number').textContent = index + 1;
-								});
-							}
-
-							// Password matching validation
-							document.getElementById('sub-officers-container').addEventListener('input', function(e) {
-								if (e.target.classList.contains('confirm-password-field')) {
-									const card = e.target.closest('.officer-card');
-									const passwordField = card.querySelector('.password-field');
-									const confirmField = e.target;
-
-									// In edit mode, if both fields are empty, it's valid (not changing password)
-									if (isEditMode && !passwordField.value && !confirmField.value) {
-										confirmField.setCustomValidity('');
-									} else if (confirmField.value !== passwordField.value) {
-										confirmField.setCustomValidity('Kata laluan tidak sepadan');
-									} else {
-										confirmField.setCustomValidity('');
-									}
-								}
-
-								if (e.target.classList.contains('password-field')) {
-									const card = e.target.closest('.officer-card');
-									const confirmField = card.querySelector('.confirm-password-field');
-
-									// In edit mode, if both fields are empty, it's valid (not changing password)
-									if (isEditMode && !e.target.value && !confirmField.value) {
-										confirmField.setCustomValidity('');
-									} else if (confirmField.value && confirmField.value !== e.target.value) {
-										confirmField.setCustomValidity('Kata laluan tidak sepadan');
-									} else {
-										confirmField.setCustomValidity('');
-									}
-								}
-							});
-						});
-					</script>
-
-					<!-- Tab 4: MOF & CIDB -->
-					<div class="tab-pane fade" id="mof-cidb" role="tabpanel" aria-labelledby="mof-cidb-tab">
-						<div class="row mt-4 justify-content-center">
-							<div class="col-12">
-								<h4 class="card-title card-title-grey">MAKLUMAT MOF & CIDB</h4>
-							</div>
-						</div>
-						<div class="row d-flex justify-content-center">
-							<div class="col-11">
-								<!-- MOF Section -->
-								<div class="col-md-12 my-2">
-									<h5>Maklumat MOF</h5>
-								</div>
-
-								<!-- No Rujukan MOF -->
-								<div class="col-md-12 my-2">
-									<div class="row">
-										<div class="col-md-2 d-flex justify-content-end">
-											<label for="mof_ref_no" class="">No Rujukan Pendaftaran MOF</label>
-										</div>
-										<div class="col-md-10">
-											<input class="form-control" type="text" name="mof_ref_no" id="mof_ref_no"
-												value="{{ old('mof_ref_no', isset($vendor) ? $vendor->mof_ref_no : '') }}">
-										</div>
-									</div>
-								</div>
-
-								<!-- Tarikh Aktif MOF -->
-								<div class="col-md-12 my-2">
-									<div class="row">
-										<div class="col-md-2 d-flex justify-content-end">
-											<label for="mof_start_date" class="">Tarikh Aktif MOF</label>
-										</div>
-										<div class="col-md-4">
-											<input class="form-control" type="date" name="mof_start_date" id="mof_start_date"
-												value="{{ old('mof_start_date', isset($vendor) && $vendor->mof_start_date ? Carbon\Carbon::parse($vendor->mof_start_date)->format('Y-m-d') : '') }}">
-										</div>
-										<div class="col-md-1 d-flex align-items-center justify-content-center">
-											<span>hingga</span>
-										</div>
-										<div class="col-md-4">
-											<input class="form-control" type="date" name="mof_end_date" id="mof_end_date"
-												value="{{ old('mof_end_date', isset($vendor) && $vendor->mof_end_date ? Carbon\Carbon::parse($vendor->mof_end_date)->format('Y-m-d') : '') }}">
-										</div>
-									</div>
-								</div>
-
-								<!-- CIDB Section -->
-								<div class="col-md-12 my-2 mt-4">
-									<h5>Maklumat CIDB</h5>
-								</div>
-
-								<!-- No Sijil CIDB -->
-								<div class="col-md-12 my-2">
-									<div class="row">
-										<div class="col-md-2 d-flex justify-content-end">
-											<label for="cidb_ref_no" class="">No Sijil CIDB</label>
-										</div>
-										<div class="col-md-10">
-											<input class="form-control" type="text" name="cidb_ref_no" id="cidb_ref_no"
-												value="{{ old('cidb_ref_no', isset($vendor) ? $vendor->cidb_ref_no : '') }}">
-										</div>
-									</div>
-								</div>
-
-								<!-- Tarikh Aktif CIDB -->
-								<div class="col-md-12 my-2">
-									<div class="row">
-										<div class="col-md-2 d-flex justify-content-end">
-											<label for="cidb_start_date" class="">Tarikh Aktif CIDB</label>
-										</div>
-										<div class="col-md-4">
-											<input class="form-control" type="date" name="cidb_start_date" id="cidb_start_date"
-												value="{{ old('cidb_start_date', isset($vendor) && $vendor->cidb_start_date ? Carbon\Carbon::parse($vendor->cidb_start_date)->format('Y-m-d') : '') }}">
-										</div>
-										<div class="col-md-1 d-flex align-items-center justify-content-center">
-											<span>hingga</span>
-										</div>
-										<div class="col-md-4">
-											<input class="form-control" type="date" name="cidb_end_date" id="cidb_end_date"
-												value="{{ old('cidb_end_date', isset($vendor) && $vendor->cidb_end_date ? Carbon\Carbon::parse($vendor->cidb_end_date)->format('Y-m-d') : '') }}">
-										</div>
-									</div>
-								</div>
-
-								<div class="row">
-									<div class="col-12 d-flex justify-content-between">
-										<div class="left">
-											<button type="button" class="btn-md-sm btn btn-info"
-												data-prevtab="maklumat-pegawai-tab">Sebelumnya</button>
-										</div>
-										<div class="right">
-											<button type="submit" class="btn-md-sm btn btn-success">Simpan</button>
-											<button type="button" class="btn btn-primary ms-auto" data-nexttab="pemegang-saham-tab">
-												Seterusnya
-											</button>
-										</div>
-									</div>
-								</div>
-							</div>
-						</div>
-					</div>
-
-					<!-- Tab 4: Pemegang Saham -->
-					<div class="tab-pane fade" id="pemegang-saham" role="tabpanel" aria-labelledby="pemegang-saham-tab">
-						<div class="row mt-4 justify-content-center">
-							<div class="col-12">
-								<h4 class="card-title card-title-grey">PEMEGANG SAHAM</h4>
-							</div>
-						</div>
-						<div class="row d-flex justify-content-center">
-							<div class="col-11">
-								<p class="text-muted">Pemegang saham will be managed here</p>
-
-								<div class="row">
-									<div class="col-12 d-flex justify-content-between">
-										<div class="left">
-											<button type="button" class="btn-md-sm btn btn-info" data-prevtab="mof-cidb-tab">Sebelumnya</button>
-										</div>
-										<div class="right">
-											<button type="submit" class="btn-md-sm btn btn-success">Simpan</button>
-											<button type="submit" class="btn-md-sm btn btn-primary">Hantar</button>
-										</div>
-									</div>
-								</div>
-							</div>
-						</div>
-					</div>
-				</div>
-			</div>
-		</form>
-	</div>
-</div>
-
 <script>
-	document.addEventListener('DOMContentLoaded', function() {
-		// Organization Type change handler - show/hide SSM expiry based on is_ssm
-		const organizationTypeSelect = document.getElementById('organization_type');
-		const ssmExpiryDiv = document.getElementById('ssm_expiry_div');
-		const ssmExpiryInput = document.getElementById('ssm_expiry');
-
-		function toggleSsmExpiry() {
-			if (organizationTypeSelect && ssmExpiryDiv && ssmExpiryInput) {
-				const selectedOption = organizationTypeSelect.options[organizationTypeSelect.selectedIndex];
-				const isSsm = selectedOption.getAttribute('data-is-ssm');
-
-				if (isSsm === '1') {
-					ssmExpiryDiv.style.display = '';
-					ssmExpiryInput.setAttribute('required', 'required');
-				} else {
-					ssmExpiryDiv.style.display = 'none';
-					ssmExpiryInput.removeAttribute('required');
-				}
-			}
-		}
-
-		// Run on page load to set initial state
-		if (organizationTypeSelect) {
-			toggleSsmExpiry();
-			organizationTypeSelect.addEventListener('change', toggleSsmExpiry);
-		}
-
-		// District change handler - show/hide state dropdown
-		const districtSelect = document.getElementById('district_id');
-		const stateDiv = document.getElementById('state_id_div');
-
-		if (districtSelect && stateDiv) {
-			districtSelect.addEventListener('change', function() {
-				if (this.value == '0') {
-					stateDiv.style.display = '';
-				} else {
-					stateDiv.style.display = 'none';
-				}
-			});
-		}
-
-		// Tab navigation buttons
-		const nextButtons = document.querySelectorAll('[data-nexttab]');
-		const prevButtons = document.querySelectorAll('[data-prevtab]');
-
-		nextButtons.forEach(btn => {
-			btn.addEventListener('click', function() {
-				const nextTabId = this.getAttribute('data-nexttab');
-				const nextTabEl = document.getElementById(nextTabId);
-				if (nextTabEl) new bootstrap.Tab(nextTabEl).show();
-			});
-		});
-
-		prevButtons.forEach(btn => {
-			btn.addEventListener('click', function() {
-				const prevTabId = this.getAttribute('data-prevtab');
-				const prevTabEl = document.getElementById(prevTabId);
-				if (prevTabEl) new bootstrap.Tab(prevTabEl).show();
-			});
-		});
-
-		// Progress bar update
-		const barWrap = document.getElementById('custom-progress-bar');
-		const tabButtons = barWrap ? Array.from(barWrap.querySelectorAll('[data-bs-toggle="pill"]')) : [];
-		const bar = barWrap ? barWrap.querySelector('.progress-bar') : null;
-
-		function updateProgress(targetBtn) {
-			if (!bar || !tabButtons.length) return;
-			const idx = tabButtons.indexOf(targetBtn);
-			const pct = (idx / Math.max(1, tabButtons.length - 1)) * 100;
-			bar.style.width = pct + '%';
-			bar.setAttribute('aria-valuenow', pct);
-		}
-
-		tabButtons.forEach(btn => {
-			btn.addEventListener('shown.bs.tab', (e) => updateProgress(e.target));
-		});
-
-		const initialActive = tabButtons.find(b => b.classList.contains('active')) || tabButtons[0];
-		if (initialActive) updateProgress(initialActive);
-	});
+    // Global variables for the form
+    var isAdmin = {{(Auth::user() && !Auth::user()->hasRole('Vendor') ? 'true' : 'false')}};
+    var show = {{strstr(Route::currentRouteName(), 'show') ? 'true' : 'false'}};
+    var shareHolderTypes = ['Bumiputera', 'Bukan Bumiputera', 'Warga Asing'];
+    var nationalities = @json(App\Vendor::$nationalities);
+    @if(Request::old('shareholder'))var inputOldShareholdes = {{json_encode(Request::old('shareholder'))}}; @endif
 </script>
+
+<div data-show-mode="{{strstr(Route::currentRouteName(), 'show') ? 'true' : 'false'}}">
+
+    <!-- TABS NAV -->
+    <div class="tabs-nav-wrapper">
+        <ul class="modern-nav-tabs nav nav-tabs" role="tablist">
+            <li class="nav-item active" role="presentation">
+                <a class="nav-link active" href="#vf-main" data-bs-toggle="tab" role="tab" aria-controls="vf-main" aria-selected="true">Syarikat</a>
+            </li>
+            <li class="nav-item" role="presentation">
+                <a class="nav-link" href="#vf-officer" data-bs-toggle="tab" role="tab" aria-controls="vf-officer" aria-selected="false">Pegawai</a>
+            </li>
+
+            <?php if(!isset($vendor->approval_1_id) || Auth::user()->can('Vendor:override')) : ?>
+                <li class="nav-item" role="presentation">
+                    <a class="nav-link" href="#vf-mof" data-bs-toggle="tab" role="tab" aria-controls="vf-mof" aria-selected="false">MOF</a>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <a class="nav-link" href="#vf-cidb" data-bs-toggle="tab" role="tab" aria-controls="vf-cidb" aria-selected="false">CIDB</a>
+                </li>
+            <?php endif; ?>
+
+            <li class="nav-item" role="presentation">
+                <a class="nav-link" href="#vf-shareholders" data-bs-toggle="tab" role="tab" aria-controls="vf-shareholders" aria-selected="false">Pemegang Saham</a>
+            </li>
+            <li class="nav-item" role="presentation">
+                <a class="nav-link" href="#vf-directors" data-bs-toggle="tab" role="tab" aria-controls="vf-directors" aria-selected="false">Pengarah</a>
+            </li>
+
+            @if(isset($vendor) && $vendor->approval_1_id > 0)
+                <li class="nav-item" role="presentation">
+                    <a class="nav-link" href="#vf-contacts" data-bs-toggle="tab" role="tab" aria-controls="vf-contacts" aria-selected="false">Kakitangan</a>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <a class="nav-link" href="#vf-awards" data-bs-toggle="tab" role="tab" aria-controls="vf-awards" aria-selected="false">Anugerah</a>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <a class="nav-link" href="#vf-assets" data-bs-toggle="tab" role="tab" aria-controls="vf-assets" aria-selected="false">Aset</a>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <a class="nav-link" href="#vf-projects" data-bs-toggle="tab" role="tab" aria-controls="vf-projects" aria-selected="false">Projek</a>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <a class="nav-link" href="#vf-products" data-bs-toggle="tab" role="tab" aria-controls="vf-products" aria-selected="false">Produk</a>
+                </li>
+            @endif
+
+            <li class="nav-item" role="presentation">
+                <a class="nav-link" href="#vf-files" data-bs-toggle="tab" role="tab" aria-controls="vf-files" aria-selected="false">Fail</a>
+            </li>
+        </ul>
+    </div>
+
+    <!-- TAB CONTENT -->
+    <div class="modern-tab-content tab-content">
+
+        <!-- 1. MAKLUMAT SYARIKAT -->
+        <div class="tab-pane active" id="vf-main">
+            <!-- Tab Section Header -->
+            <div class="tab-section-header">
+                <div class="tab-section-header-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                </div>
+                <div class="tab-section-header-text">
+                    <h3>Maklumat Syarikat</h3>
+                    <p>Maklumat asas pendaftaran syarikat anda</p>
+                </div>
+            </div>
+
+            <div class="form-grid-2">
+                <!-- Left Column -->
+                <div>
+                    @if(!isset($vendor))
+                        {!! Former::text('email')->label('Alamat Emel')->addClass('x-uppercase')->required() !!}	
+                        {!! Former::text('registration')->required()->placeholder("Aksara, Nombor dan tanda '-' Sahaja")->label('No. Pendaftaran') !!}
+                    @else
+                        <?php 
+                            $email = Former::text('email')->label('Alamat Emel')->addClass('x-uppercase')->forceValue($vendor->user->email);
+                            if(!Auth::user()->hasRole('Admin')) $email = $email->disabled(); 
+                        ?>
+                        {!! $email !!}
+                        <?php 
+                            $registration = Former::text('registration')->label('No Pendaftaran');
+                            if(!Auth::user()->hasRole('Admin')) $registration = $registration->disabled(); 
+                        ?>
+                        {!! $registration !!}
+                    @endif
+
+                    {!! Former::text('name')->label('Nama Syarikat / Perniagaan')->required() !!}
+                    
+                    @if (Auth::user() && !Auth::user()->hasRole('Vendor') && $disable_create_flaq == 0 )
+                        {!! Former::textarea('address')->label('Alamat')->rows(4)->required() !!}
+                    @elseif ($disable_create_flaq == 3 )
+                        {!! Former::textarea('address')->label('Alamat')->rows(4)->required() !!}
+                    @else( isset($disable_create_flaq) && $disable_create_flaq == 1 )
+                        {!! Former::textarea('address')->label('Alamat')->rows(4)->readonly() !!}
+                    @endif
+
+                    <?php $districts = []; foreach(App\Vendor::$districts as $key => $val) $districts[$key] = strtoupper($val); ?>
+                    <?php if (isset($vendor)) { $district = $vendor['district_id'] ?: '0'; } else { $district = null; } ?>
+
+                    @if (Auth::user() && !Auth::user()->hasRole('Vendor') && $disable_create_flaq == 0 )
+                        {!! Former::select('district_id')->label('Daerah')->options($districts)->placeholder('Pilihan daerah...')->disabled(Auth::user()->hasRole('Vendor') && !is_null($vendor->approval_1_id))->value($district)->required() !!}
+                    @elseif ($disable_create_flaq == 3 )
+                        {!! Former::select('district_id')->label('Daerah')->options($districts)->placeholder('Pilihan daerah...')->disabled(Auth::user()->hasRole('Vendor') && !is_null($vendor->approval_1_id))->value($district)->required() !!}
+                    @else
+                        {!! Former::select('district_id')->label('Daerah')->options($districts)->placeholder('Pilihan daerah...')->disabled(Auth::user()->hasRole('Vendor') && !is_null($vendor->approval_1_id))->value($district)->disabled() !!}
+                    @endif
+
+                    <div id="state_id_div" class="mb-3" style="{{ ($district == 0) ? '' : 'display:none' }}">
+                        <label for="state_id" class="form-label">Negeri<sup>*</sup></label>
+                        <select class="form-control" name="state_id" id="state_id" {{ (Auth::user() && !Auth::user()->hasRole('Vendor')) || $disable_create_flaq == 3 ? '' : 'disabled' }}>
+                            <option value="0" disabled selected>Pilihan Negeri...</option>
+                            @foreach ($country_states as $state)
+                                <option value="{{ $state->id }}" {{ $vendor->state_id == $state->id ? "selected" : "" }}>{{ $state->description }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    {!! Former::text('tel')->pattern('^[+0-9]{9,}$')->label('No. Telefon')->placeholder("Tanda '+' dan nombor sahaja")->required() !!}
+                    {!! Former::text('fax')->pattern('^[+0-9]{9,}$')->placeholder("Tanda '+' dan nombor sahaja")->label('No. Faks') !!}
+                </div>
+                
+                <!-- Right Column -->
+                <div>
+                    {!! Former::select('organization_type')->label('Jenis Perniagaan')->placeholder('Pilih dari senarai')->options(App\Vendor::$organizationTypes)->required() !!}
+                    {!! Former::text('incorporation_date')->label('Tarikh Penubuhan')->required()->data_date_end_date(date('d/m/Y')) !!}
+
+                    <div class="mb-3">
+                        <label for="ssm_expiry" class="form-label">Tarikh Tamat Sijil SSM <sup>*</sup></label>
+                        <input class="form-control valid" date-date-start-date="{{ date('d/m/Y') }}" required aria-required="true" id="ssm_expiry" type="text" name="ssm_expiry" value="{{ (isset($vendor->ssm_expiry) && $vendor->ssm_expiry != "") ? $vendor->ssm_expiry->format('d/m/Y') : date('d/m/Y') }}">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="authorized_capital" class="form-label">Modal Dibenarkan</label>
+                        <div class="modern-input-group">
+                            <select class="form-control currency-select" name="authorized_capital_currency" id="authorized_capital_currency">
+                                @foreach(App\Vendor::$currencies as $key => $value)
+                                    <option value="{{ $key }}" {{ (isset($vendor) && $vendor->authorized_capital_currency == $key) || (!isset($vendor) && $key == 'MYR') ? 'selected' : '' }}>{{ $value }}</option>
+                                @endforeach
+                            </select>
+                            <input class="form-control" id="authorized_capital" type="text" name="authorized_capital" value="{{ isset($vendor) ? $vendor->authorized_capital : '0.00'}}">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="paidup_capital" class="form-label">Modal Berbayar</label>
+                        <div class="modern-input-group">
+                            <select class="form-control currency-select" name="paidup_capital_currency" id="paidup_capital_currency">
+                                @foreach(App\Vendor::$currencies as $key => $value)
+                                    <option value="{{ $key }}" {{ (isset($vendor) && $vendor->paidup_capital_currency == $key) || (!isset($vendor) && $key == 'MYR') ? 'selected' : '' }}>{{ $value }}</option>
+                                @endforeach
+                            </select>
+                            <input class="form-control" id="paidup_capital" type="text" name="paidup_capital" value="{{ isset($vendor) ? $vendor->paidup_capital : '0.00'}}">
+                        </div>
+                    </div>
+
+                    {!! Former::text('tax_no')->label('No. Rujukan Cukai') !!}
+                    {!! Former::text('gst_no')->label('No Pendaftaran GST') !!}
+                    {!! Former::text('website')->label('Laman Web')->addClass('x-uppercase') !!}
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. MAKLUMAT PEGAWAI -->
+        <div class="tab-pane" id="vf-officer">
+            <!-- Tab Section Header -->
+            <div class="tab-section-header">
+                <div class="tab-section-header-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                </div>
+                <div class="tab-section-header-text">
+                    <h3>Maklumat Pegawai</h3>
+                    <p>Pegawai yang bertanggungjawab untuk urusan syarikat</p>
+                </div>
+            </div>
+
+            <div class="form-grid-2">
+                <div>
+                    {!! Former::text('officer_name')->label('Nama Pegawai')->required() !!}
+                    {!! Former::text('officer_designation')->label('Jawatan Pegawai')->required() !!}
+                </div>
+                <div>
+                    {!! Former::text('officer_tel')->label('No. Telefon')->required() !!}
+                    @if(!isset($vendor))
+                        {!! Former::password('password')->label('Kata Laluan')->required() !!}
+                        {!! Former::password('password_confirmation')->label('Sahkan Kata Laluan')->required() !!}
+                    @endif
+                </div>
+            </div>
+        </div>
+
+        <?php if(!isset($vendor->approval_1_id) || Auth::user()->can('Vendor:override')) : ?>
+        <!-- 3. MOF -->
+        <div class="tab-pane" id="vf-mof">
+            <!-- Tab Section Header -->
+            <div class="tab-section-header">
+                <div class="tab-section-header-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
+                </div>
+                <div class="tab-section-header-text">
+                    <h3>Pendaftaran MOF</h3>
+                    <p>Maklumat pendaftaran Kementerian Kewangan Malaysia</p>
+                </div>
+            </div>
+
+            <div class="form-grid-2">
+                <div>
+                    {!! Former::text('mof_ref_no')->label('No Rujukan Pendaftaran MOF') !!}
+                    <div class="mb-3">
+                        <label for="mof_start_date" class="form-label">Tarikh Aktif</label>
+                        <div class="modern-input-group">
+                            <input class="form-control x-uppercase" id="mof_start_date" type="text" name="mof_start_date" value="{{ isset($vendor) && !empty($vendor->mof_start_date) ? Carbon\Carbon::parse($vendor->mof_start_date)->format('j M Y') : '' }}">
+                            <div class="addon">hingga</div>
+                            <input class="form-control x-uppercase" id="mof_end_date" type="text" name="mof_end_date" value="{{ isset($vendor) && !empty($vendor->mof_end_date) ? Carbon\Carbon::parse($vendor->mof_end_date)->format('j M Y') : '' }}">
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <div class="mb-3">
+                        <label class="form-label">&nbsp;</label>
+                        <div class="checkbox-align-wrapper">
+                            <input type="hidden" name="mof_bumi" value="0">
+                            {!! Former::checkbox('mof_bumi')->inline()->label('Syarikat Bumiputera')->checked(isset($vendor) && !empty($vendor->mof_bumi))->forceValue(1) !!}
+                        </div>
+                    </div>
+                    {!! Former::select('mof_codes')->id('mof_codes')->name('mof_codes[]')->label('Kod Bidang')->multiple(true)->placeholder('Pilih kod bidang MOF')->class('selectize')->options(App\Code::where('type', 'mof')->orderBy('code')->get()->pluck('label', 'id'), isset($vendor) ? $vendor->vendorCodes()->where('code_type', 'mof')->pluck('code_id') : '') !!}
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. CIDB -->
+        <div class="tab-pane" id="vf-cidb">
+            <!-- Tab Section Header -->
+            <div class="tab-section-header">
+                <div class="tab-section-header-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h.01"></path><path d="M7 20v-4"></path><path d="M12 20v-8"></path><path d="M17 20V8"></path><path d="M22 4v16"></path></svg>
+                </div>
+                <div class="tab-section-header-text">
+                    <h3>Pendaftaran CIDB</h3>
+                    <p>Maklumat pendaftaran Lembaga Pembangunan Industri Pembinaan</p>
+                </div>
+            </div>
+
+            <div class="form-grid-2">
+                <!-- Top Section -->
+                <div>
+                    {!! Former::text('cidb_ref_no')->label('No Sijil CIDB') !!}
+                    <div class="mb-3">
+                        <label for="cidb_start_date" class="form-label">Tarikh Aktif</label>
+                        <div class="modern-input-group">
+                            <input class="form-control x-uppercase" id="cidb_start_date" type="text" name="cidb_start_date" value="{{ isset($vendor) && !empty($vendor->cidb_start_date) ? Carbon\Carbon::parse($vendor->cidb_start_date)->format('j M Y') : '' }}">
+                            <div class="addon">hingga</div>
+                            <input class="form-control x-uppercase" id="cidb_end_date" type="text" name="cidb_end_date" value="{{ isset($vendor) && !empty($vendor->cidb_end_date) ? Carbon\Carbon::parse($vendor->cidb_end_date)->format('j M Y') : '' }}">
+                        </div>
+                    </div>
+                </div>
+                
+                <div>
+                     <div class="mb-3">
+                        <label class="form-label">&nbsp;</label>
+                        <div class="checkbox-align-wrapper">
+                            <input type="hidden" name="cidb_bumi" value="0">
+                            {!! Former::checkbox('cidb_bumi')->inline()->label('Syarikat Bumiputera')->checked(isset($vendor) && !empty($vendor->cidb_bumi))->forceValue(1) !!}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bottom Section: REPEATER -->
+                <div style="grid-column: 1 / -1;">
+                    <label class="form-label">Gred &amp; Bidang Pengkhususan</label>
+                    <div id="cidb_group">
+                        <!-- Hidden template using <template> -->
+                        <template id="cidb_group_template">
+                            <div class="repeater-item">
+                                <input type="hidden" class="cidb-group-id" name="cidb_group[#index#][id]">
+                                <div class="fields-wrapper">
+                                    <div>
+                                        <label style="font-size: 0.7rem; color:#94a3b8; text-transform:uppercase; font-weight:700;">Gred</label>
+                                        <select class="cidb_group-code_id form-control selectize" name="cidb_group[#index#][code_id]" data-tracker="cidb_group_tracker" onchange="updateOption(this)">
+                                            <option disabled selected value="">Sila pilih Gred</option>
+                                            @foreach(App\Code::where('type','cidb-g')->orderBy('code','asc')->get() as $code)
+                                                <option value="{{ $code->id }}">{{ $code->label }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label style="font-size: 0.7rem; color:#94a3b8; text-transform:uppercase; font-weight:700;">Bidang Pengkhususan</label>
+                                        <select class="cidb_group-codes form-control selectize" name="cidb_group[#index#][codes][]" multiple>
+                                            <option disabled value="">Pilih Bidang</option>
+                                            @foreach(App\Code::where('type','cidb-c')->orderBy('code','asc')->get() as $code)
+                                                <option value="{{ $code->id }}">{{ $code->label }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="action-wrapper">
+                                    <button type="button" class="table-btn table-btn-delete btn-delete-cidb_group" title="Padam">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </template>
+
+                        <!-- Shown when no forms exist -->
+                        <div id="cidb_group_noforms_template" class="empty-state">
+                            <svg class="empty-state-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>
+                            <p class="empty-state-text">Tiada maklumat ditambah. Sila tekan butang tambah di bawah.</p>
+                        </div>
+
+                        <!-- Controls -->
+                        <div id="cidb_group_controls">
+                            <div id="cidb_group_add">
+                                <a class="btn-add-repeater">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                    Tambah Gred CIDB
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <input type="hidden" name="deleted_cidb_group[]">
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
+
+        <!-- 5. PEMEGANG SAHAM -->
+        <div class="tab-pane" id="vf-shareholders" data-entity-name="shareholder" <?php if(isset($vendor)) { ?> data-remote="{{ asset('vendor/'.$vendor->id.'/shareholders') }}" <?php } ?> >
+            <!-- Tab Section Header -->
+            <div class="tab-section-header">
+                <div class="tab-section-header-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                </div>
+                <div class="tab-section-header-text">
+                    <h3>Pemegang Saham</h3>
+                    <p>Senarai pemegang saham syarikat</p>
+                </div>
+            </div>
+
+            <table class="clean-table">
+                <thead>
+                    <tr>
+                        <th data-field="name">Nama</th>
+                        <th data-field="identity">IC / Pasport</th>
+                        <th data-field="nationality">Kewarganegaraan</th>
+                        <th data-field="bumiputera_status">Taraf</th>
+                        <?php if(!strstr(Route::currentRouteName(), 'show')) { ?>
+                            <th data-field="actions" width="100" class="text-center">Tindakan</th>
+                        <?php } ?>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Rows generated by ItemController -->
+                </tbody>
+                <tfoot <?php if(strstr(Route::currentRouteName(), 'show')) { ?>style="display:none;"<?php } ?>>
+                    <tr style="background: #f8fafc;">
+                        <td><input class="form-control input-sm" data-field="name" type="text" placeholder="Nama Penuh"></td>
+                        <td><input class="form-control input-sm" data-field="identity" type="text" placeholder="IC / Passport"></td>
+                        <td>
+                            <select class="form-control input-sm" name="nat" data-field="nationality">
+                                @foreach(App\Vendor::$nationalities as $key => $value)
+                                    <option value="{{ $key }}" {{ $key == 'MALAYSIAN' ? 'selected' : '' }}>{{ $value }}</option>
+                                @endforeach
+                            </select>
+                        </td>
+                        <td><select class="form-control input-sm" data-field="bumiputera_status"></select></td>
+                        <td class="text-center">
+                            <div class="table-btn-group">
+                                <button type="button" class="table-btn table-btn-save" data-action="save" title="Simpan">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                </button>
+                                <button type="button" class="table-btn table-btn-clear" data-action="clear" title="Kosongkan">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                </tfoot>
+            </table>
+
+            <h4 class="section-header">Ringkasan Pegangan Saham <sup>*</sup></h4>
+            <table class="clean-table">
+                <thead>
+                    <tr>
+                        <th>Bumiputera</th>
+                        <th>Bukan Bumiputera</th>
+                        <th>Warga Asing</th>
+                        <th>Jumlah</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>
+                            <div class="modern-input-group">
+                                <input name="bumi_percentage" min="0" type="number" class="form-control" value="{{ Request::old('bumi_percentage', isset($vendor) ? $vendor->bumi_percentage : 0) }}">
+                                <div class="addon">%</div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="modern-input-group">
+                                <input name="nonbumi_percentage" min="0" type="number" class="form-control" value="{{ Request::old('nonbumi_percentage', isset($vendor) ? $vendor->nonbumi_percentage : 0) }}">
+                                <div class="addon">%</div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="modern-input-group">
+                                <input name="foreigner_percentage" min="0" type="number" class="form-control" value="{{ Request::old('foreigner_percentage', isset($vendor) ? $vendor->foreigner_percentage : 0) }}">
+                                <div class="addon">%</div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="modern-input-group">
+                                <input class="form-control" disabled="disabled">
+                                <div class="addon">%</div>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 6. PENGARAH -->
+        <div class="tab-pane" id="vf-directors" data-entity-name="director" <?php if(isset($vendor)) { ?> data-remote="{{ asset('vendor/'.$vendor->id.'/directors') }}" <?php } ?> >
+            <!-- Tab Section Header -->
+            <div class="tab-section-header">
+                <div class="tab-section-header-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
+                </div>
+                <div class="tab-section-header-text">
+                    <h3>Pengarah Syarikat</h3>
+                    <p>Senarai pengarah yang dilantik</p>
+                </div>
+            </div>
+
+            <table class="clean-table">
+                <thead>
+                    <tr>
+                        <th data-field="name" class="col-4">Nama</th>
+                        <th data-field="identity" class="col-2">IC / Pasport</th>
+                        <th data-field="nationality">Kewarganegaraan</th>
+                        <th data-field="designation">Jawatan</th>
+                        <?php if(!strstr(Route::currentRouteName(), 'show')) { ?>
+                            <th data-field="actions" width="100" class="text-center">Tindakan</th>
+                        <?php } ?>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Rows generated by ItemController -->
+                </tbody>
+                <tfoot <?php if(strstr(Route::currentRouteName(), 'show')) { ?>style="display:none;"<?php } ?>>
+                    <tr style="background: #f8fafc;">
+                        <td><input class="form-control input-sm" data-field="name" type="text" placeholder="Nama Penuh"></td>
+                        <td><input class="form-control input-sm" data-field="identity" type="text" placeholder="IC / Passport"></td>
+                        <td>
+                            <select class="form-control input-sm" name="nat" data-field="nationality">
+                                @foreach(App\Vendor::$nationalities as $key => $value)
+                                    <option value="{{ $key }}" {{ $key == 'MALAYSIAN' ? 'selected' : '' }}>{{ $value }}</option>
+                                @endforeach
+                            </select>
+                        </td>
+                        <td>
+                            <select class="form-control input-sm" name="nat" data-field="designation">
+                                @foreach(App\Vendor::$directorDesignations as $key => $value)
+                                    <option value="{{ $key }}" {{ $key == 'PENGARAH' ? 'selected' : '' }}>{{ $value }}</option>
+                                @endforeach
+                            </select>
+                        </td>
+                        <td class="text-center">
+                            <div class="table-btn-group">
+                                <button type="button" class="table-btn table-btn-save" data-action="save" title="Simpan">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                </button>
+                                <button type="button" class="table-btn table-btn-clear" data-action="clear" title="Kosongkan">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+
+        @if(isset($vendor) && $vendor->approval_1_id > 0)
+            <!-- 7. KAKITANGAN -->
+            <div class="tab-pane" id="vf-contacts" data-entity-name="contact" <?php if(isset($vendor)) { ?> data-remote="{{ asset('vendor/'.$vendor->id.'/contacts') }}" <?php } ?> >
+                <!-- Tab Section Header -->
+                <div class="tab-section-header">
+                    <div class="tab-section-header-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                    </div>
+                    <div class="tab-section-header-text">
+                        <h3>Kakitangan Syarikat</h3>
+                        <p>Senarai kakitangan yang bekerja dalam syarikat</p>
+                    </div>
+                </div>
+
+                <table class="clean-table">
+                    <thead>
+                        <tr>
+                            <th data-field="name">Nama</th>
+                            <th data-field="designation">Jawatan</th>
+                            <th data-field="nationality">Warga Negara</th>
+                            <th data-field="status">Taraf</th>
+                            <?php if(!strstr(Route::currentRouteName(), 'show')) { ?>
+                                <th data-field="actions" width="100" class="text-center">Tindakan</th>
+                            <?php } ?>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Rows generated by ItemController -->
+                    </tbody>
+                    <tfoot <?php if(strstr(Route::currentRouteName(), 'show')) { ?>style="display:none;"<?php } ?>>
+                        <tr style="background: #f8fafc;">
+                            <td><input class="form-control input-sm" data-field="name" type="text" placeholder="Nama Penuh"></td>
+                            <td><input class="form-control input-sm" data-field="designation" type="text" placeholder="Jawatan"></td>
+                            <td>
+                                <select class="form-control input-sm" name="nat" data-field="nationality">
+                                    @foreach(App\Vendor::$nationalities as $key => $value)
+                                        <option value="{{ $key }}" {{ $key == 'MALAYSIAN' ? 'selected' : '' }}>{{ $value }}</option>
+                                    @endforeach
+                                </select>
+                            </td>
+                            <td><select class="form-control input-sm" data-field="status"></select></td>
+                            <td class="text-center">
+                                <div class="table-btn-group">
+                                    <button type="button" class="table-btn table-btn-save" data-action="save" title="Simpan"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></button>
+                                    <button type="button" class="table-btn table-btn-clear" data-action="clear" title="Kosongkan"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+
+            <!-- 8. ANUGERAH -->
+            <div class="tab-pane" id="vf-awards" data-entity-name="award" <?php if(isset($vendor)) { ?> data-remote="{{ asset('vendor/'.$vendor->id.'/awards') }}" <?php } ?> >
+                <!-- Tab Section Header -->
+                <div class="tab-section-header">
+                    <div class="tab-section-header-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg>
+                    </div>
+                    <div class="tab-section-header-text">
+                        <h3>Anugerah & Pengiktirafan</h3>
+                        <p>Senarai anugerah yang diterima oleh syarikat</p>
+                    </div>
+                </div>
+
+                <table class="clean-table">
+                    <thead><tr><th data-field="name">Nama</th><th data-field="description">Keterangan</th><th data-field="by">Pemberi</th><?php if(!strstr(Route::currentRouteName(), 'show')) { ?><th data-field="actions" width="100" class="text-center">Tindakan</th><?php } ?></tr></thead>
+                    <tbody>
+                        <!-- Rows generated by ItemController -->
+                    </tbody>
+                    <tfoot <?php if(strstr(Route::currentRouteName(), 'show')) { ?>style="display:none;"<?php } ?>><tr><td><input class="form-control input-sm" data-field="name" type="text"></td><td><input class="form-control input-sm" data-field="description" type="text"></td><td><input class="form-control input-sm" data-field="by" type="text"></td><td class="text-center"><div class="table-btn-group"><button type="button" class="table-btn table-btn-save" data-action="save" title="Simpan"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></button><button type="button" class="table-btn table-btn-clear" data-action="clear" title="Kosongkan"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button></div></td></tr></tfoot>
+                </table>
+            </div>
+
+            <!-- 9. ASET -->
+            <div class="tab-pane" id="vf-assets" data-entity-name="asset" <?php if(isset($vendor)) { ?> data-remote="{{ asset('vendor/'.$vendor->id.'/assets') }}" <?php } ?> >
+                <!-- Tab Section Header -->
+                <div class="tab-section-header">
+                    <div class="tab-section-header-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+                    </div>
+                    <div class="tab-section-header-text">
+                        <h3>Aset Syarikat</h3>
+                        <p>Senarai aset yang dimiliki oleh syarikat</p>
+                    </div>
+                </div>
+
+                <table class="clean-table">
+                    <thead><tr><th data-field="name">Nama</th><th data-field="value" width="200">Nilai (RM)</th><?php if(!strstr(Route::currentRouteName(), 'show')) { ?><th data-field="actions" width="100" class="text-center">Tindakan</th><?php } ?></tr></thead>
+                    <tbody>
+                        <!-- Rows generated by ItemController -->
+                    </tbody>
+                    <tfoot <?php if(strstr(Route::currentRouteName(), 'show')) { ?>style="display:none;"<?php } ?>><tr><td><input class="form-control input-sm" data-field="name" type="text"></td><td><div class="modern-input-group"><div class="addon">RM</div><input class="form-control input-sm" data-field="value" type="text"></div></td><td class="text-center"><div class="table-btn-group"><button type="button" class="table-btn table-btn-save" data-action="save" title="Simpan"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></button><button type="button" class="table-btn table-btn-clear" data-action="clear" title="Kosongkan"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button></div></td></tr></tfoot>
+                </table>
+            </div>
+            
+            <!-- 10. PROJEK -->
+            <div class="tab-pane" id="vf-projects" data-entity-name="project" <?php if(isset($vendor)) { ?> data-remote="{{ asset('vendor/'.$vendor->id.'/projects') }}" <?php } ?> >
+                <!-- Tab Section Header -->
+                <div class="tab-section-header">
+                    <div class="tab-section-header-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+                    </div>
+                    <div class="tab-section-header-text">
+                        <h3>Projek Lepas</h3>
+                        <p>Senarai projek yang telah dilaksanakan</p>
+                    </div>
+                </div>
+
+                <table class="clean-table">
+                    <thead><tr><th data-field="name">Nama</th><th data-field="customer">Pelanggan</th><th data-field="period">Tempoh</th><th data-field="value">Nilai (RM)</th><th data-field="done">Siap</th><?php if(!strstr(Route::currentRouteName(), 'show')) { ?><th data-field="actions" width="100" class="text-center">Tindakan</th><?php } ?></tr></thead>
+                    <tbody>
+                        <!-- Rows generated by ItemController -->
+                    </tbody>
+                    <tfoot <?php if(strstr(Route::currentRouteName(), 'show')) { ?>style="display:none;"<?php } ?>><tr><td><input class="form-control input-sm" data-field="name" type="text"></td><td><input class="form-control input-sm" data-field="customer" type="text"></td><td><input class="form-control input-sm" data-field="period" type="text"></td><td><div class="modern-input-group"><div class="addon">RM</div><input class="form-control input-sm" data-field="value" type="text"></div></td><td><input data-field="done" type="checkbox"></td><td class="text-center"><div class="table-btn-group"><button type="button" class="table-btn table-btn-save" data-action="save" title="Simpan"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></button><button type="button" class="table-btn table-btn-clear" data-action="clear" title="Kosongkan"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button></div></td></tr></tfoot>
+                </table>
+            </div>
+
+            <!-- 11. PRODUK -->
+            <div class="tab-pane" id="vf-products" data-entity-name="product" <?php if(isset($vendor)) { ?> data-remote="{{ asset('vendor/'.$vendor->id.'/products') }}" <?php } ?> >
+                <!-- Tab Section Header -->
+                <div class="tab-section-header">
+                    <div class="tab-section-header-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                    </div>
+                    <div class="tab-section-header-text">
+                        <h3>Produk & Perkhidmatan</h3>
+                        <p>Senarai produk atau perkhidmatan yang ditawarkan</p>
+                    </div>
+                </div>
+
+                 <table class="clean-table">
+                     <thead><tr><th data-field="name">Nama</th><th data-field="description">Keterangan</th><th data-field="implementations">Pengguna</th><?php if(!strstr(Route::currentRouteName(), 'show')) { ?><th data-field="actions" width="100" class="text-center">Tindakan</th><?php } ?></tr></thead>
+                     <tbody>
+                         <!-- Rows generated by ItemController -->
+                     </tbody>
+                     <tfoot <?php if(strstr(Route::currentRouteName(), 'show')) { ?>style="display:none;"<?php } ?>><tr><td><input class="form-control input-sm" data-field="name" type="text"></td><td><input class="form-control input-sm" data-field="description" type="text"></td><td><input class="form-control input-sm" data-field="implementations" type="text"></td><td class="text-center"><div class="table-btn-group"><button type="button" class="table-btn table-btn-save" data-action="save" title="Simpan"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></button><button type="button" class="table-btn table-btn-clear" data-action="clear" title="Kosongkan"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button></div></td></tr></tfoot>
+                 </table>
+            </div>
+        @endif
+
+        <!-- 12. FAIL -->
+        <div class="tab-pane" id="vf-files">
+            <!-- Tab Section Header -->
+            <div class="tab-section-header">
+                <div class="tab-section-header-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                </div>
+                <div class="tab-section-header-text">
+                    <h3>Muat Naik Fail</h3>
+                    <p>Dokumen sijil dan fail sokongan</p>
+                </div>
+            </div>
+
+            <div class="info-alert">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                Hanya fail beformat PDF dan bersaiz maksimum 5MB boleh dimuat naik.
+            </div>
+            
+            <div class="form-grid-1">
+                <?php $ssm = Former::file('ssm')->label('Sijil SSM')->accept('application/pdf')->addClass('file_input'); ?>
+                <?php if(!isset($vendor) || !$vendor->completed || !$vendor->hasFile('ssm')) $ssm = $ssm->required(); ?>
+                {!! $ssm !!}
+
+                @if( !isset($vendor) || !$vendor->completed || Auth::user()->hasRole('Admin') )
+                    {!! Former::file('mof')->label('Sijil MOF')->accept('application/pdf')->addClass('file_input') !!}
+                    {!! Former::file('mof_bumiputera')->label('Sijil Bumiputera MOF')->accept('application/pdf')->addClass('file_input') !!}
+                    {!! Former::file('cidb')->label('Sijil CIDB & SPKK')->accept('application/pdf')->addClass('file_input')->help('Muat naik fail sijil SPKK & CIDB sebagai satu fail sahaja.') !!}
+                    {!! Former::file('cidb_bumiputera')->label('Sijil Bumiputera PKK')->accept('application/pdf')->addClass('file_input') !!}
+                @endif
+            </div>
+
+            @if(isset($vendor) && count($vendor->uploads) > 0)
+                <h4 class="section-header">Fail Dimuat Naik</h4>
+                <div class="table-responsive">
+                    {!! $vendor->uploadsTable() !!}
+                </div>
+            @endif
+        </div>
+    </div>
+</div>
+@push('scripts')
+    <script src="{{ asset('js/ajax-loader.js') }}"></script>
+    <script src="{{ asset('js/item-controller.js') }}"></script>
+    <script src="{{ asset('js/two-way-binding.js') }}"></script>
+    <script src="{{ asset('js/form-validator.js') }}"></script>
+    <script src="{{ asset('js/percentage-calculator.js') }}"></script>
+    <script src="{{ asset('js/vendor-form-init.js') }}"></script>
+    <script>
+        (function () {
+            // Function to prevent duplicate CIDB grade selections
+            window.updateOption = function(selectElement) {
+                const allGradeSelects = document.querySelectorAll('.cidb_group-code_id[data-tracker="cidb_group_tracker"]');
+                const selectedValues = [];
+
+                // Collect all selected values
+                allGradeSelects.forEach(function(select) {
+                    if (select.value) {
+                        selectedValues.push(select.value);
+                    }
+                });
+
+                // Update each selectize dropdown to remove already selected options
+                allGradeSelects.forEach(function(select) {
+                    if (select.selectize) {
+                        const currentValue = select.value;
+
+                        // Remove options that are selected in other dropdowns
+                        selectedValues.forEach(function(value) {
+                            if (value !== currentValue && value !== '') {
+                                select.selectize.removeOption(value);
+                            }
+                        });
+                    }
+                });
+            };
+
+            function setTabState(tab, disabled) {
+                var link = tab.querySelector('a');
+                if (!link) {
+                    return;
+                }
+
+                if (disabled) {
+                    tab.classList.add('tab-disabled');
+                    tab.classList.add('disabled');
+                    link.classList.add('disabled');
+                    link.setAttribute('tabindex', '-1');
+                    link.setAttribute('aria-disabled', 'true');
+                } else {
+                    tab.classList.remove('tab-disabled');
+                    tab.classList.remove('disabled');
+                    link.classList.remove('disabled');
+                    link.removeAttribute('tabindex');
+                    link.removeAttribute('aria-disabled');
+                }
+            }
+
+            document.addEventListener('DOMContentLoaded', function ()
+            {
+                var tabs = document.querySelectorAll('.modern-nav-tabs .nav-item');
+
+                tabs.forEach(function (tab, index) {
+                    var link = tab.querySelector('a');
+                    if (!link) {
+                        return;
+                    }
+
+                    if (!link.dataset.tabGuardInitialized) {
+                        link.addEventListener('click', function (event) {
+                            if (tab.classList.contains('tab-disabled')) {
+                                event.preventDefault();
+                                event.stopImmediatePropagation();
+                            }
+                        });
+                        link.dataset.tabGuardInitialized = 'true';
+                    }
+
+                    setTabState(tab, index !== 0);
+                });
+
+                window.VendorTabManager = {
+                    enableTabByIndex: function (index) {
+                        var tabs = document.querySelectorAll('.modern-nav-tabs .nav-item');
+                        if (index < 0 || index >= tabs.length) {
+                            return;
+                        }
+                        setTabState(tabs[index], false);
+                    }
+                };
+
+                const addBtn = document.querySelector(".btn-add-repeater");
+                const container = document.querySelector("#cidb_group");
+                const template = document.querySelector("#cidb_group_template");
+                const emptyState = document.querySelector("#cidb_group_noforms_template");
+
+                // Load existing CIDB data from backend
+                const loadExistingData = () => {
+                    @if(isset($vendor) && $vendor->cidbGrades)
+                        const cidbData = [
+                            @foreach($vendor->cidbGrades()->orderBy('id', 'asc')->get() as $grade)
+                                {
+                                    id: "{{ $grade->id }}",
+                                    code_id: "{{ $grade->code_id }}",
+                                    codes: @json($grade->children()->pluck('code_id'))
+                                },
+                            @endforeach
+                        ];
+
+                        cidbData.forEach((data, idx) => {
+                            const clone = template.content.cloneNode(true);
+                            const item = clone.querySelector(".repeater-item");
+
+                            // Replace #index# placeholders
+                            item.innerHTML = item.innerHTML.replace(/#index#/g, idx);
+
+                            // Insert the item
+                            const insertedItem = container.insertBefore(item, document.getElementById("cidb_group_controls"));
+
+                            // Set values
+                            const idInput = insertedItem.querySelector('.cidb-group-id');
+                            const codeSelect = insertedItem.querySelector('.cidb_group-code_id');
+                            const codesSelect = insertedItem.querySelector('.cidb_group-codes');
+
+                            if (idInput) idInput.value = data.id;
+                            if (codeSelect) codeSelect.value = data.code_id;
+
+                            // Initialize selectize
+                            if (typeof $ !== 'undefined' && typeof $.fn.selectize !== 'undefined') {
+                                if (codeSelect && !codeSelect.selectize) {
+                                    $(codeSelect).selectize();
+                                    if (codeSelect.selectize) {
+                                        codeSelect.selectize.setValue(data.code_id);
+                                    }
+                                }
+
+                                if (codesSelect && !codesSelect.selectize) {
+                                    $(codesSelect).selectize();
+                                    if (codesSelect.selectize && data.codes) {
+                                        codesSelect.selectize.setValue(data.codes);
+                                    }
+                                }
+                            }
+                        });
+                    @endif
+                };
+
+                // Initialize selectize on any pre-existing items
+                const initializeExistingItems = () => {
+                    const existingItems = container.querySelectorAll('.repeater-item');
+
+                    if (existingItems.length > 0) {
+                        emptyState.style.display = "none";
+
+                        // Initialize selectize on existing select elements
+                        if (typeof $ !== 'undefined' && typeof $.fn.selectize !== 'undefined') {
+                            existingItems.forEach(function(item) {
+                                $(item).find('select.selectize').each(function() {
+                                    if (!this.selectize) {
+                                        $(this).selectize();
+                                    }
+                                });
+                            });
+                        }
+                    } else {
+                        emptyState.style.display = "block";
+                    }
+
+                    // Set index to number of existing items
+                    return existingItems.length;
+                };
+
+                // Load data from backend first
+                loadExistingData();
+
+                // Then initialize any existing items
+                let index = initializeExistingItems();
+
+                const addItem = () =>
+                {
+                    const clone = template.content.cloneNode(true);
+                    const item = clone.querySelector(".repeater-item");
+
+                    // Replace #index# placeholders
+                    item.innerHTML = item.innerHTML.replace(/#index#/g, index);
+
+                    // Insert the item
+                    const insertedItem = container.insertBefore(item, document.getElementById("cidb_group_controls"));
+
+                    // Initialize selectize on newly added select elements
+                    if (typeof $ !== 'undefined' && typeof $.fn.selectize !== 'undefined') {
+                        $(insertedItem).find('select.selectize').each(function() {
+                            if (!this.selectize) {
+                                $(this).selectize();
+                            }
+                        });
+                    }
+
+                    // Update options to prevent duplicates
+                    if (typeof window.updateOption === 'function') {
+                        const gradeSelect = insertedItem.querySelector('.cidb_group-code_id');
+                        if (gradeSelect) {
+                            window.updateOption(gradeSelect);
+                        }
+                    }
+
+                    index++;
+                    emptyState.style.display = "none";
+                };
+
+                addBtn.addEventListener("click", addItem);
+
+                // Delegate remove events
+                container.addEventListener("click", function (e) {
+                    if (e.target.closest(".btn-delete-cidb_group")) {
+                        const row = e.target.closest(".repeater-item");
+
+                        // Track deleted item ID for backend
+                        const idInput = row.querySelector('.cidb-group-id');
+                        if (idInput && idInput.value) {
+                            const deletedInput = document.querySelector('input[name="deleted_cidb_group[]"]');
+                            if (deletedInput) {
+                                // Create new hidden input for each deleted ID
+                                const newDeletedInput = document.createElement('input');
+                                newDeletedInput.type = 'hidden';
+                                newDeletedInput.name = 'deleted_cidb_group[]';
+                                newDeletedInput.value = idInput.value;
+                                deletedInput.parentNode.appendChild(newDeletedInput);
+                            }
+                        }
+
+                        // Destroy selectize instances before removing
+                        const selectElements = row.querySelectorAll('select.selectize');
+                        selectElements.forEach(function(select) {
+                            if (select.selectize) {
+                                select.selectize.destroy();
+                            }
+                        });
+
+                        row.remove();
+
+                        if (!container.querySelector(".repeater-item")) {
+                            emptyState.style.display = "block";
+                        }
+                    }
+                });
+            });
+        })();
+    </script>
+@endpush

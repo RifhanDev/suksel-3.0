@@ -44,7 +44,10 @@ class Controller extends BaseController
 			if (request()->ajax()) {
 				return response()->json($this->access_denied_message, 403);
 			}
-			return $this->_redirect()->with('danger', $this->access_denied_message);
+			if (config('app.env') === 'production') {
+				abort(404);
+			}
+			abort(403);
 		}
 		
 		protected function _validation_error($obj) {

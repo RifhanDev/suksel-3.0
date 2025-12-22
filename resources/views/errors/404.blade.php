@@ -1,4 +1,3 @@
-@extends('layouts.modern')
 @section('content')
 	<div class="row">
 		<div class="col-sm-6 col-sm-offset-3">
@@ -6,4 +5,4 @@
 			<br>
 			<p class="text-center">Sila kembali ke halaman utama</p>
 		</div>
-	@stop
+@endsection

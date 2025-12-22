@@ -12,9 +12,11 @@ use App\UserHistory;
 use App\Mail\ConfirmRegistration;
 use Carbon\Carbon;
 use Crypt;
+use App\Traits\Helper;
 
 class UsersController extends Controller
 {
+	use Helper;
 	public $set_password_message            = 'Kata Laluan disimpan.';
 	public $set_confirmation_message        = 'Pengguna diaktifkan.';
 	public $change_password_invalid_message = 'Kata Lalauan lama tidak sah.';
@@ -144,9 +146,29 @@ class UsersController extends Controller
 			return $this->_validation_error($user);
 		}
 		$user->roles()->sync($data['roles']);
-		if ($request->ajax()) {
+
+		// fix bug: send ARR email immediately after user created without waiting queue
+		if ($user->organization_unit_id)
+		{
+			// Refresh user to ensure we have the latest data from database
+			$user->refresh();
+
+			$to = trim($user->email);
+			$subject = 'Permintaan Semakan Akaun Pengguna Oleh Sistem Tender '.$user->name;
+			$send_status = $this->sendMail("html", $to, $subject, "", "users.emails.account-review-request", ['emailUser' => $user]);
+
+			$user->arr_sent_at = Carbon::now();
+			$user->arr = 0;
+			$user->save();
+		}
+		////////////////////////////////////////////////////////////////////////////////
+		
+		if ($request->ajax())
+		{
 			return response()->json($user, 201);
 		}
+
+		// dd($user);
 
 		return redirect('users')->with('success', $this->created_message);
 	}
@@ -367,7 +389,7 @@ class UsersController extends Controller
 		} elseif ($user->ability(['Admin', 'Registration Assessor', 'Admin UPEN'], [])) {
 			$redirect = redirect('vendors');
 		} else {
-			$redirect = redirect('agencies/' . $user->organization_unit_id);
+			$redirect = redirect('agency/' . $user->organization_unit_id);
 		}
 
 		UserHistory::log($user->id, 'sign-in', $third_party_id);
@@ -402,7 +424,7 @@ class UsersController extends Controller
 					return UserHistory::$types[$history->action];
 				})
 				->editColumn('created_at', function ($history) {
-					return $history->created_at->format('d/m/Y H:i:s');
+					return \Carbon\Carbon::parse($history->created_at)->format('d/m/Y H:i:s');
 				})
 				->editColumn('3p_id', function ($history) {
 					return $history->third_party ? $history->third_party->name : '<span class ="glyphicon glyphicon-remove"></span>';
@@ -622,14 +644,14 @@ class UsersController extends Controller
 			->get();
 
 		foreach ($users as $user) {
-			// Mail::send('users.emails.account-review-request', ['user' => $user], function ($message) use ($user) {
+			// Mail::send('users.emails.account-review-request', ['emailUser' => $user], function ($message) use ($user) {
 			//     $message->to($user->email);
 			//     $message->subject('Permintaan Semakan Akaun Oleh Sistem Tender');
 			// });
 
 			$to			= trim($user->email);
 			$subject 	= 'Permintaan Semakan Akaun Oleh Sistem Tender';
-			$send_status = $this->sendMail("html", $to, $subject, "", "users.emails.account-review-request", ['user' => $user]);
+			$send_status = $this->sendMail("html", $to, $subject, "", "users.emails.account-review-request", ['emailUser' => $user]);
 
 			$user->arr_sent_at = Carbon::now();
 			$user->arr = 0; // Jika user lebih dari 3 bulan akan bertukar tidak disemak

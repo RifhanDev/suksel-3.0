@@ -6,9 +6,11 @@ use Illuminate\Console\Command;
 use Carbon\Carbon;
 use Mail;
 use App\User;
+use App\Traits\Helper;
 
 class AccountReviewRequest extends Command
 {
+    use Helper;
     /**
      * The name and signature of the console command.
      *
@@ -51,14 +53,14 @@ class AccountReviewRequest extends Command
             ->get();
 
         foreach ($users as $user) {
-            // Mail::send('users.emails.account-review-request', ['user' => $user], function ($message) use ($user) {
+            // Mail::send('users.emails.account-review-request', ['emailUser' => $user], function ($message) use ($user) {
             //     $message->to($user->email);
             //     $message->subject('Permintaan Semakan Akaun Oleh Sistem Tender');
             // });
 
             $to			= trim($user->email);
             $subject 	= 'Permintaan Semakan Akaun Pengguna Oleh Sistem Tender';
-            $send_status = $this->sendMail("html", $to, $subject, "", "users.emails.account-review-request", ['user' => $user]);
+            $send_status = $this->sendMail("html", $to, $subject, "", "users.emails.account-review-request", ['emailUser' => $user]);
 
 
             $user->arr_sent_at = Carbon::now();

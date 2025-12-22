@@ -1,726 +1,794 @@
-{{ App\Libraries\Asset::push('css', 'form') }}
-<div class="row stacked-form">
-	<div class="col-lg-2">
-		<ul class="nav nav-pills nav-stacked">
-			<li class="@if (!isset($active_prestasi_tab)) active @endif"><a href="#vf-main" data-toggle="pill">Maklumat Syarikat</a>
-			</li>
-			<li><a href="#vf-officer" data-toggle="pill">Maklumat Pegawai</a></li>
-			<li><a href="#vf-mof" data-toggle="pill">MOF</a></li>
-			<li><a href="#vf-cidb" data-toggle="pill">CIDB</a></li>
-			<li><a href="#vf-shareholders" data-toggle="pill">Pemegang Saham</a></li>
-			<li><a href="#vf-directors" data-toggle="pill">Pengarah</a></li>
-			@if (isset($vendor) && $vendor->approval_1_id > 0)
-				<li><a href="#vf-contacts" data-toggle="pill">Kakitangan</a></li>
-				<li><a href="#vf-awards" data-toggle="pill">Anugerah</a></li>
-				<li><a href="#vf-assets" data-toggle="pill">Aset</a></li>
-				<li><a href="#vf-projects" data-toggle="pill">Projek</a></li>
-				<li><a href="#vf-products" data-toggle="pill">Produk</a></li>
-			@endif
-			<li><a href="#vf-files" data-toggle="pill">Fail</a></li>
-			<li><a href="#vf-subscriptions" data-toggle="pill">Bayaran Pendaftaran</a></li>
-			<li class="@if (isset($active_prestasi_tab)) active @endif"><a href="#vf-prestasi-syarikat" data-toggle="pill">Rekod
-					Penilaian Prestasi Syarikat</a></li>
-			@if (Auth::user()->hasRole('Admin'))
-				<li><a href="#vf-transactions" data-toggle="pill">Transaksi Pembayaran</a></li>
-			@endif
-		</ul>
-	</div>
+{{-- {{ App\Libraries\Asset::push('css', 'form') }} --}}
 
-	<div class="tab-content col-lg-10">
-		<div class="tab-pane @if (!isset($active_prestasi_tab)) active @endif" id="vf-main">
-			<div class="row">
-				<div class="col-lg-6">
-					<table class="table table-condensed table-bordered">
-						<tr>
-							<th class="col-lg-3">Alamat Emel</th>
-							<td>{{ $vendor->user->email }}</td>
-						</tr>
-						<tr>
-							<th class="col-lg-3">No Pendaftaran</th>
-							<td>{{ $vendor->registration }}</td>
-						</tr>
-						<tr>
-							<th>Nama Perniagaan / Syarikat</th>
-							<td>{{ $vendor->name }}</td>
-						</tr>
-						<tr>
-							<th>Alamat</th>
-							<td>{!! nl2br($vendor->address) !!}</td>
-						</tr>
-						<tr>
-							<th>Daerah</th>
-							<td>
-								@if ($vendor->district_id)
-									{{ App\Vendor::$districts[$vendor->district_id] }}
-								@elseif(($vendor->state_id ?? 0) == 0 && ($vendor->district_id ?? 0) == 0)
-									Sila Kemaskini
-								@else
-									Luar Negeri Selangor
-								@endif
-							</td>
-						</tr>
-						<tr>
-							<th>Negeri</th>
-							<td>
-								@if ($vendor->state_id && ($vendor->district_id ?? 0) == 0)
-									{{ App\Vendor::$states[$vendor->state_id] }}
-								@elseif(($vendor->state_id ?? 0) == 0 && ($vendor->district_id ?? 0) == 0)
-									Sila Kemaskini
-								@else
-									Selangor
-								@endif
-							</td>
-						</tr>
-						<tr>
-							<th>No. Telefon</th>
-							<td>
-								@if ($vendor->tel)
-									{{ $vendor->tel }}
-								@else
-									<span class="glyphicon glyphicon-remove"></span>
-								@endif
-							</td>
-						</tr>
-						<tr>
-							<th>No. Faks</th>
-							<td>
-								@if ($vendor->fax)
-									{{ $vendor->fax }}
-								@else
-									<span class="glyphicon glyphicon-remove"></span>
-								@endif
-							</td>
-						</tr>
-					</table>
+@push('styles')
+<style>
+    .nav-pills-custom .nav-link.active {
+        background-color: #fff1f2 !important;
+        color: #c41e3a !important;
+        border: 1px solid #fecaca;
+        font-weight: 700;
+    }
+    .nav-pills-custom .nav-link {
+        color: #64748b;
+        font-weight: 500;
+    }
+    .nav-pills-custom .nav-link:hover {
+        background-color: #f8fafc;
+        color: #1e293b;
+    }
+    /* Icons */
+    .nav-link svg { opacity: 0.5; transition: 0.2s; }
+    .nav-link.active svg { opacity: 1; stroke: #c41e3a; }
+    
+    /* Scrollable Code List */
+    .code-list-scroll {
+        max-height: 300px;
+        overflow-y: auto;
+    }
+</style>
+@endpush
 
+<div class="row g-4">
+    
+    <!-- LEFT NAVIGATION -->
+    <div class="col-lg-3 col-xl-3">
+        <div class="sticky-top" style="top: 130px; z-index: 10;">
+            <div class="card border shadow-sm rounded-3 p-2">
+                <ul class="nav nav-pills nav-pills-custom flex-column gap-1">
+                    <li class="nav-item">
+                        <a class="nav-link d-flex justify-content-between align-items-center @if (!isset($active_prestasi_tab)) active @endif" href="#vf-main" data-bs-toggle="pill">
+                            Maklumat Syarikat
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link d-flex justify-content-between align-items-center" href="#vf-officer" data-bs-toggle="pill">
+                            Maklumat Pegawai
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link d-flex justify-content-between align-items-center" href="#vf-mof" data-bs-toggle="pill">
+                            MOF
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link d-flex justify-content-between align-items-center" href="#vf-cidb" data-bs-toggle="pill">
+                            CIDB
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link d-flex justify-content-between align-items-center" href="#vf-shareholders" data-bs-toggle="pill">
+                            Pemegang Saham
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link d-flex justify-content-between align-items-center" href="#vf-directors" data-bs-toggle="pill">
+                            Pengarah
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                        </a>
+                    </li>
+                    @if (isset($vendor) && $vendor->approval_1_id > 0)
+                        <li class="nav-item"><a class="nav-link d-flex justify-content-between align-items-center" href="#vf-contacts" data-bs-toggle="pill">Kakitangan <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></a></li>
+                        <li class="nav-item"><a class="nav-link d-flex justify-content-between align-items-center" href="#vf-awards" data-bs-toggle="pill">Anugerah <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></a></li>
+                        <li class="nav-item"><a class="nav-link d-flex justify-content-between align-items-center" href="#vf-assets" data-bs-toggle="pill">Aset <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></a></li>
+                        <li class="nav-item"><a class="nav-link d-flex justify-content-between align-items-center" href="#vf-projects" data-bs-toggle="pill">Projek <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></a></li>
+                        <li class="nav-item"><a class="nav-link d-flex justify-content-between align-items-center" href="#vf-products" data-bs-toggle="pill">Produk <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></a></li>
+                    @endif
+                    <li class="nav-item">
+                        <a class="nav-link d-flex justify-content-between align-items-center" href="#vf-files" data-bs-toggle="pill">
+                            Fail
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link d-flex justify-content-between align-items-center" href="#vf-subscriptions" data-bs-toggle="pill">
+                            Bayaran Pendaftaran
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link d-flex justify-content-between align-items-center @if (isset($active_prestasi_tab)) active @endif" href="#vf-prestasi-syarikat" data-bs-toggle="pill">
+                            Rekod Prestasi
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
 
-					@if ($vendor->canCertificate())
-						@if (Auth::user()->can('Vendor:certificate'))
-							<table class="table table-condensed table-bordered">
-								<tr>
-									<th class="col-lg-6">Kod Pengesahan Sijil</th>
-									<td>{{ $vendor->token }}</td>
-								</tr>
-							</table>
-						@endif
-						<a href="{{ action('VendorsController@certificate', $vendor->id) }}" target="_blank"
-							class="btn btn-xs btn-danger pull-right">Papar Sijil Pengesahan</a>
-					@endif
-					{{-- <a href="{{ rotue('ReportVendorSummaryController@index', ['year' => date('Y'),'vendor_id' => $vendor->id]) }}" target="_blank" class="btn btn-xs btn-primary pull-right">Laporan Transaksi Syarikat</a> --}}
-				</div>
+    <!-- RIGHT CONTENT -->
+    <div class="col-lg-9 col-xl-9">
+        <div class="tab-content">
+            
+            <!-- 1. MAKLUMAT SYARIKAT -->
+            <div class="tab-pane fade @if (!isset($active_prestasi_tab)) show active @endif" id="vf-main">
+                <div class="card border shadow-sm rounded-3 overflow-hidden mb-4">
+                    <div class="card-header bg-light py-3 border-bottom d-flex align-items-center gap-2 fw-bold text-secondary">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
+                        Butiran Syarikat
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <label class="small text-muted fw-bold text-uppercase d-block mb-1">Alamat Emel</label>
+                                <div class="fw-medium text-dark">{{ $vendor->user->email }}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="small text-muted fw-bold text-uppercase d-block mb-1">No Pendaftaran</label>
+                                <div class="fw-medium text-dark">{{ $vendor->registration }}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="small text-muted fw-bold text-uppercase d-block mb-1">Nama Syarikat</label>
+                                <div class="fw-medium text-dark">{{ $vendor->name }}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="small text-muted fw-bold text-uppercase d-block mb-1">Alamat</label>
+                                <div class="fw-medium text-dark">{!! nl2br($vendor->address) !!}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="small text-muted fw-bold text-uppercase d-block mb-1">Daerah</label>
+                                <div class="fw-medium text-dark">
+                                    @if ($vendor->district_id)
+                                        {{ App\Vendor::$districts[$vendor->district_id] }}
+                                    @elseif(($vendor->state_id ?? 0) == 0 && ($vendor->district_id ?? 0) == 0)
+                                        <span class="text-danger">Sila Kemaskini</span>
+                                    @else
+                                        Luar Negeri Selangor
+                                    @endif
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="small text-muted fw-bold text-uppercase d-block mb-1">Negeri</label>
+                                <div class="fw-medium text-dark">
+                                    @if ($vendor->state_id && ($vendor->district_id ?? 0) == 0)
+                                        {{ App\Vendor::$states[$vendor->state_id] }}
+                                    @elseif(($vendor->state_id ?? 0) == 0 && ($vendor->district_id ?? 0) == 0)
+                                        <span class="text-danger">Sila Kemaskini</span>
+                                    @else
+                                        Selangor
+                                    @endif
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="small text-muted fw-bold text-uppercase d-block mb-1">No. Telefon</label>
+                                <div class="fw-medium text-dark">{{ $vendor->tel ?? '-' }}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="small text-muted fw-bold text-uppercase d-block mb-1">No. Faks</label>
+                                <div class="fw-medium text-dark">{{ $vendor->fax ?? '-' }}</div>
+                            </div>
+                        </div>
 
-				<div class="col-lg-6">
-					<table class="table table-condensed table-bordered">
-						<tr>
-							<th class="col-lg-3">Jenis Perniagaan</th>
-							<td>{{ $vendor->organization_type }}</td>
-						</tr>
-						<tr>
-							<th>Tarikh Penubuhan</th>
-							<td>{{ $vendor->incorporation_date }}</td>
-						</tr>
-						<tr>
-							<th>Modal Dibenarkan</th>
-							<td>{{ $vendor->authorized_capital_currency }} {{ $vendor->authorized_capital }}</td>
-						</tr>
-						<tr>
-							<th>Modal Berbayar</th>
-							<td>{{ $vendor->paidup_capital_currency }} {{ $vendor->paidup_capital }}</td>
-						</tr>
-						<tr>
-							<th>No. Rujukan Cukai</th>
-							<td>
-								@if ($vendor->tax_no)
-									{{ $vendor->tax_no }}
-								@else
-									<span class="glyphicon glyphicon-remove"></span>
-								@endif
-							</td>
-						</tr>
-						<tr>
-							<th>No. Pendaftaran GST</th>
-							<td>
-								@if ($vendor->gst_no)
-									{{ $vendor->gst_no }}
-								@else
-									<span class="glyphicon glyphicon-remove"></span>
-								@endif
-							</td>
-						</tr>
-						<tr>
-							<th>Laman Web</th>
-							<td>
-								@if ($vendor->website)
-									{{ $vendor->website }}
-								@else
-									<span class="glyphicon glyphicon-remove"></span>
-								@endif
-							</td>
-						</tr>
-					</table>
-				</div>
-			</div>
-		</div>
+                        @if ($vendor->canCertificate() && Auth::user()->can('Vendor:certificate'))
+                            <hr class="my-4">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <label class="small text-muted fw-bold text-uppercase d-block mb-1">Kod Pengesahan Sijil</label>
+                                    <span class="badge bg-light text-dark border font-monospace">{{ $vendor->token }}</span>
+                                </div>
+                                <a href="{{ action('VendorsController@certificate', $vendor->id) }}" class="btn btn-sm btn-outline-danger d-flex align-items-center gap-2 view-pdf-btn">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                                    Papar Sijil
+                                </a>
+                            </div>
+                        @endif
+                    </div>
+                </div>
 
-		<div class="tab-pane" id="vf-officer">
-			<table class="table table-condensed table-bordered">
-				<tr>
-					<th class="col-lg-3">Nama Pegawai</th>
-					<td>{{ $vendor->user->name }}</td>
-				</tr>
-				<tr>
-					<th>Jawatan Pegawai</th>
-					<td>{{ $vendor->officer_designation }}</td>
-				</tr>
-				<tr>
-					<th>No. Telefon</th>
-					<td>{{ $vendor->officer_tel }}</td>
-				</tr>
-			</table>
-		</div>
+                <div class="card border shadow-sm rounded-3 overflow-hidden mb-4">
+                    <div class="card-header bg-light py-3 border-bottom d-flex align-items-center gap-2 fw-bold text-secondary">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a4.5 4.5 0 0 0-4.5 4.5v9a4.5 4.5 0 0 0 4.5 4.5H17"></path></svg>
+                        Maklumat Kewangan & Korporat
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <label class="small text-muted fw-bold text-uppercase d-block mb-1">Jenis Perniagaan</label>
+                                <div class="fw-medium text-dark">{{ $vendor->organization_type }}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="small text-muted fw-bold text-uppercase d-block mb-1">Tarikh Penubuhan</label>
+                                <div class="fw-medium text-dark">{{ $vendor->incorporation_date }}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="small text-muted fw-bold text-uppercase d-block mb-1">Modal Dibenarkan</label>
+                                <div class="fw-medium text-dark">{{ $vendor->authorized_capital_currency }} {{ $vendor->authorized_capital }}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="small text-muted fw-bold text-uppercase d-block mb-1">Modal Berbayar</label>
+                                <div class="fw-medium text-dark">{{ $vendor->paidup_capital_currency }} {{ $vendor->paidup_capital }}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="small text-muted fw-bold text-uppercase d-block mb-1">No. Rujukan Cukai</label>
+                                <div class="fw-medium text-dark">{{ $vendor->tax_no ?? '-' }}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="small text-muted fw-bold text-uppercase d-block mb-1">No. Pendaftaran GST</label>
+                                <div class="fw-medium text-dark">{{ $vendor->gst_no ?? '-' }}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="small text-muted fw-bold text-uppercase d-block mb-1">Laman Web</label>
+                                <div class="fw-medium text-dark">
+                                    @if ($vendor->website)
+                                        <a href="{{ $vendor->website }}" target="_blank" class="text-danger text-decoration-none">{{ $vendor->website }}</a>
+                                    @else
+                                        -
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-		<div class="tab-pane" id="vf-mof">
-			<table class="table table-condensed table-bordered">
-				<tr>
-					<th class="col-lg-3">No Rujukan Pendaftaran MOF</th>
-					<td>
-						@if ($vendor->mof_ref_no)
-							{{ $vendor->mof_ref_no }}
-						@else
-							<span class="glyphicon glyphicon-remove"></span>
-						@endif
-					</td>
-				</tr>
-				<tr>
-					<th>Tarikh Aktif MOF</th>
-					<td>
-						@if ($vendor->mof_start_date && $vendor->mof_end_date)
-							{{ Carbon\Carbon::parse($vendor->mof_start_date)->format('d M Y') }} -
-							{{ Carbon\Carbon::parse($vendor->mof_end_date)->format('d M Y') }}
-						@else
-							<span class="glyphicon glyphicon-remove"></span>
-						@endif
-					</td>
-				</tr>
-				<tr>
-					<th>Syarikat Bumiputera</th>
-					<td>
-						@if ($vendor->mof_bumi)
-							<span class="glyphicon glyphicon-ok"></span>
-						@else
-							<span class="glyphicon glyphicon-remove"></span>
-						@endif
-					</td>
-				</tr>
-				<tr>
-					<th>Kod Bidang MOF</th>
-					<td>
-						<div style="max-height: 500px;overflow-y:auto;">
-							@if (count($vendor->mofCodes) > 0)
-								<u>Jumlah Kod Bidang: {{ count($vendor->mofCodes) }}</u><br>
-								<ul>
-									@foreach ($vendor->mofCodes->sortBy('code.code') as $code)
-										<li>{!! $code->code->label2 !!}</li>
-									@endforeach
-								</ul>
-							@else
-								<span class="glyphicon glyphicon-remove"></span>
-							@endif
-						</div>
-					</td>
-				</tr>
-			</table>
-		</div>
+            <!-- 2. MAKLUMAT PEGAWAI -->
+            <div class="tab-pane fade" id="vf-officer">
+                <div class="card border shadow-sm rounded-3 overflow-hidden mb-4">
+                    <div class="card-header bg-light py-3 border-bottom fw-bold text-secondary">Maklumat Pegawai Utama</div>
+                    <div class="card-body p-4">
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <label class="small text-muted fw-bold text-uppercase d-block mb-1">Nama Pegawai</label>
+                                <div class="fw-medium text-dark">{{ $vendor->user->name }}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="small text-muted fw-bold text-uppercase d-block mb-1">Jawatan</label>
+                                <div class="fw-medium text-dark">{{ $vendor->officer_designation }}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="small text-muted fw-bold text-uppercase d-block mb-1">No. Telefon</label>
+                                <div class="fw-medium text-dark">{{ $vendor->officer_tel }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-		<div class="tab-pane" id="vf-cidb">
-			<table class="table table-condensed table-bordered">
-				<tr>
-					<th class="col-lg-3">No Sijil CIDB</th>
-					<td>
-						@if ($vendor->cidb_ref_no)
-							{!! $vendor->cidb_ref_no !!}
-						@else
-							<span class="glyphicon glyphicon-remove"></span>
-						@endif
-					</td>
-				</tr>
-				<tr>
-					<th>Tarikh Aktif CIDB</th>
-					<td>
-						@if ($vendor->cidb_start_date && $vendor->cidb_end_date)
-							{{ Carbon\Carbon::parse($vendor->cidb_start_date)->format('d M Y') }} -
-							{{ Carbon\Carbon::parse($vendor->cidb_end_date)->format('d M Y') }}
-						@else
-							<span class="glyphicon glyphicon-remove"></span>
-						@endif
-					</td>
-				</tr>
-				<tr>
-					<th>Syarikat Bumiputera</th>
-					<td>
-						@if ($vendor->cidb_bumi)
-							<span class="glyphicon glyphicon-ok"></span>
-						@else
-							<span class="glyphicon glyphicon-remove"></span>
-						@endif
-					</td>
-				</tr>
-				<tr>
-					<th>Gred &amp; Bidang Pengkhususan</th>
-					<td>
-						<div style="max-height: 500px;overflow-y:auto;">
-							@forelse($vendor->cidbGrades()->orderBy('id')->get() as $grade)
-								<u><b>{{ $grade->code->label }}</b></u><br>
-								<small>Jumlah Bidang Pengkhususan: {{ count($grade->children) }}</small><br><br>
+            <!-- 3. MOF -->
+            <div class="tab-pane fade" id="vf-mof">
+                <div class="card border shadow-sm rounded-3 overflow-hidden mb-4">
+                    <div class="card-header bg-light py-3 border-bottom fw-bold text-secondary">Sijil Kementerian Kewangan (MOF)</div>
+                    <div class="card-body p-4">
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <label class="small text-muted fw-bold text-uppercase d-block mb-1">No Rujukan</label>
+                                <div class="fw-medium text-dark">{{ $vendor->mof_ref_no ?? '-' }}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="small text-muted fw-bold text-uppercase d-block mb-1">Tarikh Aktif</label>
+                                <div class="fw-medium text-dark">
+                                    @if ($vendor->mof_start_date && $vendor->mof_end_date)
+                                        {{ Carbon\Carbon::parse($vendor->mof_start_date)->format('d M Y') }} -
+                                        {{ Carbon\Carbon::parse($vendor->mof_end_date)->format('d M Y') }}
+                                    @else
+                                        -
+                                    @endif
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="small text-muted fw-bold text-uppercase d-block mb-1">Status Bumiputera</label>
+                                <div>
+                                    @if ($vendor->mof_bumi)
+                                        <span class="badge rounded-pill bg-success bg-opacity-10 text-success border border-success"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="me-1"><polyline points="20 6 9 17 4 12"></polyline></svg> Ya</span>
+                                    @else
+                                        <span class="badge rounded-pill bg-danger bg-opacity-10 text-danger border border-danger">Tidak</span>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <hr class="my-4">
+                        
+                        <label class="small text-muted fw-bold text-uppercase d-block mb-2">Kod Bidang MOF ({{ count($vendor->mofCodes) }})</label>
+                        <div class="bg-light p-3 rounded border code-list-scroll">
+                            @if (count($vendor->mofCodes) > 0)
+                                <ul class="mb-0 ps-3">
+                                    @foreach ($vendor->mofCodes->sortBy('code.code') as $code)
+                                        <li class="mb-1">{!! $code->code->label2 !!}</li>
+                                    @endforeach
+                                </ul>
+                            @else
+                                <div class="text-muted text-center fst-italic">Tiada Kod Bidang.</div>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-								<?php $a_codes = App\Code::whereIn('id', $grade->children->pluck('code_id'))
-								    ->where('code', 'LIKE', 'A%')
-								    ->orderBy('code')
-								    ->get(); ?>
-								@if (count($a_codes) > 0)
-									<u><b>A</b></u>
-									<ul>
-										@foreach ($a_codes as $code)
-											<li>{!! $code->label2 !!}</li>
-										@endforeach
-									</ul>
-								@endif
+            <!-- 4. CIDB -->
+            <div class="tab-pane fade" id="vf-cidb">
+                <div class="card border shadow-sm rounded-3 overflow-hidden mb-4">
+                    <div class="card-header bg-light py-3 border-bottom fw-bold text-secondary">Lembaga Pembangunan Industri Pembinaan (CIDB)</div>
+                    <div class="card-body p-4">
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <label class="small text-muted fw-bold text-uppercase d-block mb-1">No Sijil CIDB</label>
+                                <div class="fw-medium text-dark">{!! $vendor->cidb_ref_no ?? '-' !!}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="small text-muted fw-bold text-uppercase d-block mb-1">Tarikh Aktif</label>
+                                <div class="fw-medium text-dark">
+                                    @if ($vendor->cidb_start_date && $vendor->cidb_end_date)
+                                        {{ Carbon\Carbon::parse($vendor->cidb_start_date)->format('d M Y') }} -
+                                        {{ Carbon\Carbon::parse($vendor->cidb_end_date)->format('d M Y') }}
+                                    @else
+                                        -
+                                    @endif
+                                </div>
+                            </div>
+                             <div class="col-md-6">
+                                <label class="small text-muted fw-bold text-uppercase d-block mb-1">Status Bumiputera</label>
+                                <div>
+                                    @if ($vendor->cidb_bumi)
+                                        <span class="badge rounded-pill bg-success bg-opacity-10 text-success border border-success"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="me-1"><polyline points="20 6 9 17 4 12"></polyline></svg> Ya</span>
+                                    @else
+                                        <span class="badge rounded-pill bg-danger bg-opacity-10 text-danger border border-danger">Tidak</span>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
 
-								<?php $b_codes = App\Code::whereIn('id', $grade->children->pluck('code_id'))
-								    ->where('code', 'LIKE', 'B%')
-								    ->orderBy('code')
-								    ->get(); ?>
-								@if (count($b_codes) > 0)
-									<u><b>B</b></u>
-									<ul>
-										@foreach ($b_codes as $code)
-											<li>{!! $code->label2 !!}</li>
-										@endforeach
-									</ul>
-								@endif
+                        <hr class="my-4">
 
-								<?php $ce_codes = App\Code::whereIn('id', $grade->children->pluck('code_id'))
-								    ->where('code', 'LIKE', 'CE%')
-								    ->orderBy('code')
-								    ->get(); ?>
-								@if (count($ce_codes) > 0)
-									<u><b>CE</b></u>
-									<ul>
-										@foreach ($ce_codes as $code)
-											<li>{!! $code->label2 !!}</li>
-										@endforeach
-									</ul>
-								@endif
+                        <label class="small text-muted fw-bold text-uppercase d-block mb-2">Gred & Bidang Pengkhususan</label>
+                        <div class="bg-light p-3 rounded border code-list-scroll">
+                            @forelse($vendor->cidbGrades()->orderBy('id')->get() as $grade)
+                                <div class="mb-3">
+                                    <strong class="text-danger">{{ $grade->code->label }}</strong>
+                                    <div class="ps-3 mt-1 small">
+                                        {{-- Group A --}}
+                                        @php $a_codes = App\Code::whereIn('id', $grade->children->pluck('code_id'))->where('code', 'LIKE', 'A%')->orderBy('code')->get(); @endphp
+                                        @if(count($a_codes) > 0)
+                                            <div><strong>A:</strong> {{ $a_codes->pluck('description')->implode(', ') }}</div>
+                                        @endif
+                                        {{-- Group B --}}
+                                        @php $b_codes = App\Code::whereIn('id', $grade->children->pluck('code_id'))->where('code', 'LIKE', 'B%')->orderBy('code')->get(); @endphp
+                                        @if(count($b_codes) > 0)
+                                            <div><strong>B:</strong> {{ $b_codes->pluck('description')->implode(', ') }}</div>
+                                        @endif
+                                        {{-- Group CE --}}
+                                        @php $ce_codes = App\Code::whereIn('id', $grade->children->pluck('code_id'))->where('code', 'LIKE', 'CE%')->orderBy('code')->get(); @endphp
+                                        @if(count($ce_codes) > 0)
+                                            <div><strong>CE:</strong> {{ $ce_codes->pluck('description')->implode(', ') }}</div>
+                                        @endif
+                                         {{-- Group ME --}}
+                                        @php $me_codes = App\Code::whereIn('id', $grade->children->pluck('code_id'))->where('code', 'REGEXP', '^[ME]')->orderBy('code')->get(); @endphp
+                                        @if(count($me_codes) > 0)
+                                            <div><strong>ME:</strong> {{ $me_codes->pluck('description')->implode(', ') }}</div>
+                                        @endif
+                                    </div>
+                                </div>
+                            @empty
+                                <div class="text-muted text-center fst-italic">Tiada maklumat Gred.</div>
+                            @endforelse
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-								<?php $f_codes = App\Code::whereIn('id', $grade->children->pluck('code_id'))
-								    ->where('code', 'LIKE', 'F%')
-								    ->orderBy('code')
-								    ->get(); ?>
-								@if (count($f_codes) > 0)
-									<u><b>F</b></u>
-									<ul>
-										@foreach ($f_codes as $code)
-											<li>{!! $code->label2 !!}</li>
-										@endforeach
-									</ul>
-								@endif
+            @php $canViewSensitiveIdentity = Auth::check() && Auth::user()->hasRole('Admin'); @endphp
 
-								<?php $me_codes = App\Code::whereIn('id', $grade->children->pluck('code_id'))
-								    ->where('code', 'REGEXP', '^[ME]')
-								    ->orderBy('code')
-								    ->get(); ?>
-								@if (count($me_codes) > 0)
-									<u><b>ME</b></u>
-									<ul>
-										@foreach ($me_codes as $code)
-											<li>{!! $code->label2 !!}</li>
-										@endforeach
-									</ul>
-								@endif
+            <!-- 5. SHAREHOLDERS -->
+            <div class="tab-pane fade" id="vf-shareholders">
+                 <div class="card border shadow-sm rounded-3 overflow-hidden mb-4">
+                    <div class="card-header bg-white py-3 border-bottom fw-bold">Senarai Pemegang Saham</div>
+                    <div class="card-body p-0">
+                        @if (count($vendor->shareholders) > 0)
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="bg-light">
+                                        <tr>
+                                            <th class="px-4 py-3 border-bottom-0 text-uppercase small text-muted font-weight-bold">Nama</th>
+                                            <th class="px-4 py-3 border-bottom-0 text-uppercase small text-muted font-weight-bold">IC / Pasport</th>
+                                            <th class="px-4 py-3 border-bottom-0 text-uppercase small text-muted font-weight-bold">Warganegara</th>
+                                            <th class="px-4 py-3 border-bottom-0 text-uppercase small text-muted font-weight-bold">Taraf</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach ($vendor->shareholders as $sd)
+                                            <tr>
+                                                <td class="px-4">{{ $sd->name }}</td>
+                                                <td class="px-4">
+                                                    @if (!empty($sd->identity))
+                                                        @if ($canViewSensitiveIdentity)
+                                                            <span class="identity-mask font-monospace" data-identity="{{ $sd->identity }}">**********</span>
+                                                            <button type="button" class="btn btn-sm p-0 mb-1 ms-2 toggle-identity text-decoration-none" style="color: var(--bs-primary);" title="Tunjuk">
+                                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                                            </button>
+                                                        @else
+                                                            <span class="font-monospace">**********</span>
+                                                        @endif
+                                                    @endif
+                                                </td>
+                                                <td class="px-4">{{ $sd->nationality }}</td>
+                                                <td class="px-4">{{ $sd->bumiputera_status }}</td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        @else
+                            <div class="p-4 text-center text-muted fst-italic">Tiada maklumat pemegang saham.</div>
+                        @endif
+                    </div>
+                </div>
 
-								<?php $p_codes = App\Code::whereIn('id', $grade->children->pluck('code_id'))
-								    ->where('code', 'LIKE', 'P%')
-								    ->orderBy('code')
-								    ->get(); ?>
-								@if (count($p_codes) > 0)
-									<u><b>P</b></u>
-									<ul>
-										@foreach ($p_codes as $code)
-											<li>{!! $code->label2 !!}</li>
-										@endforeach
-									</ul>
-								@endif
+                <div class="card border shadow-sm rounded-3 overflow-hidden mb-4">
+                     <div class="card-header bg-white py-3 border-bottom fw-bold">Ringkasan Pegangan Saham</div>
+                     <div class="card-body p-0">
+                         <div class="table-responsive">
+                             <table class="table table-bordered mb-0">
+                                <thead class="bg-light">
+                                    <tr>
+                                        <th class="text-center py-3">Bumiputera</th>
+                                        <th class="text-center py-3">Bukan Bumiputera</th>
+                                        <th class="text-center py-3">Warga Asing</th>
+                                        <th class="text-center py-3 bg-white">Jumlah</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="text-center">
+                                        <td class="py-3">{{ $vendor->bumi_percentage }} %</td>
+                                        <td class="py-3">{{ $vendor->nonbumi_percentage }} %</td>
+                                        <td class="py-3">{{ $vendor->foreigner_percentage }} %</td>
+                                        <td class="py-3 fw-bold bg-white">{{ sprintf('%.2f', $vendor->bumi_percentage + $vendor->nonbumi_percentage + $vendor->foreigner_percentage) }} %</td>
+                                    </tr>
+                                </tbody>
+                             </table>
+                         </div>
+                     </div>
+                </div>
+            </div>
 
-								<?php $it_codes = App\Code::whereIn('id', $grade->children->pluck('code_id'))
-								    ->where('code', 'LIKE', 'IT%')
-								    ->orderBy('code')
-								    ->get(); ?>
-								@if (count($it_codes) > 0)
-									<u><b>IT</b></u>
-									<ul>
-										@foreach ($it_codes as $code)
-											<li>{!! $code->label2 !!}</li>
-										@endforeach
-									</ul>
-								@endif
+            <!-- 6. DIRECTORS -->
+            <div class="tab-pane fade" id="vf-directors">
+                <div class="card border shadow-sm rounded-3 overflow-hidden mb-4">
+                    <div class="card-header bg-white py-3 border-bottom fw-bold">Senarai Pengarah</div>
+                    <div class="card-body p-0">
+                        @if (count($vendor->directors) > 0)
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="bg-light">
+                                        <tr>
+                                            <th class="px-4 py-3 border-bottom-0 text-uppercase small text-muted">Nama</th>
+                                            <th class="px-4 py-3 border-bottom-0 text-uppercase small text-muted">IC / Pasport</th>
+                                            <th class="px-4 py-3 border-bottom-0 text-uppercase small text-muted">Warganegara</th>
+                                            <th class="px-4 py-3 border-bottom-0 text-uppercase small text-muted">Jawatan</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach ($vendor->directors as $sd)
+                                            <tr>
+                                                <td class="px-4">{{ $sd->name }}</td>
+                                                <td class="px-4">
+                                                    @if (!empty($sd->identity))
+                                                        @if ($canViewSensitiveIdentity)
+                                                            <span class="identity-mask font-monospace" data-identity="{{ $sd->identity }}">**********</span>
+                                                            <button type="button" class="btn btn-sm p-0 mb-1 ms-2 toggle-identity text-decoration-none" style="color: var(--bs-primary);" title="Tunjuk">
+                                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                                            </button>
+                                                        @else
+                                                            <span class="font-monospace">**********</span>
+                                                        @endif
+                                                    @endif
+                                                </td>
+                                                <td class="px-4">{{ $sd->nationality }}</td>
+                                                <td class="px-4">{{ $sd->designation }}</td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        @else
+                             <div class="p-4 text-center text-muted fst-italic">Tiada maklumat pengarah.</div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 7. CONTACTS -->
+            <div class="tab-pane fade" id="vf-contacts">
+                <div class="card border shadow-sm rounded-3 overflow-hidden mb-4">
+                    <div class="card-header bg-white py-3 border-bottom fw-bold">Kakitangan</div>
+                     <div class="card-body p-0">
+                        @if (count($vendor->contacts) > 0)
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="bg-light">
+                                        <tr>
+                                            <th class="px-4 py-3 border-bottom-0 text-uppercase small text-muted">Nama</th>
+                                            <th class="px-4 py-3 border-bottom-0 text-uppercase small text-muted">Jawatan</th>
+                                            <th class="px-4 py-3 border-bottom-0 text-uppercase small text-muted">Warganegara</th>
+                                            <th class="px-4 py-3 border-bottom-0 text-uppercase small text-muted">Status</th>
+                                        </tr>
+                                    </thead>
+                                     <tbody>
+                                        @foreach ($vendor->contacts()->orderBy('name', 'asc')->get() as $contact)
+                                            <tr>
+                                                <td class="px-4">{{ $contact->name }}</td>
+                                                <td class="px-4">{{ $contact->designation }}</td>
+                                                <td class="px-4">{{ $contact->nationality }}</td>
+                                                <td class="px-4">{{ $contact->status }}</td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        @else
+                             <div class="p-4 text-center text-muted fst-italic">Tiada maklumat kakitangan.</div>
+                        @endif
+                     </div>
+                </div>
+            </div>
 
-							@empty
-								<span class="glyphicon glyphicon-remove"></span>
-							@endforelse
-						</div>
-					</td>
-				</tr>
-			</table>
-		</div>
+            <!-- 8. AWARDS -->
+            <div class="tab-pane fade" id="vf-awards">
+                <div class="card border shadow-sm rounded-3 overflow-hidden mb-4">
+                    <div class="card-header bg-white py-3 border-bottom fw-bold">Anugerah</div>
+                    <div class="card-body p-0">
+                         @if (count($vendor->awards) > 0)
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="bg-light">
+                                        <tr>
+                                            <th class="px-4 py-3 border-bottom-0 text-uppercase small text-muted">Nama</th>
+                                            <th class="px-4 py-3 border-bottom-0 text-uppercase small text-muted">Keterangan</th>
+                                            <th class="px-4 py-3 border-bottom-0 text-uppercase small text-muted">Pemberi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach ($vendor->awards()->orderBy('name', 'asc')->get() as $award)
+                                            <tr>
+                                                <td class="px-4">{{ $award->name }}</td>
+                                                <td class="px-4">{{ $award->description }}</td>
+                                                <td class="px-4">{{ $award->by }}</td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                         @else
+                            <div class="p-4 text-center text-muted fst-italic">Tiada maklumat anugerah.</div>
+                         @endif
+                    </div>
+                </div>
+            </div>
 
-		@php
-			$canViewSensitiveIdentity = Auth::check() && Auth::user()->hasRole('Admin');
-		@endphp
+            <!-- 9. ASSETS -->
+             <div class="tab-pane fade" id="vf-assets">
+                 <div class="card border shadow-sm rounded-3 overflow-hidden mb-4">
+                    <div class="card-header bg-white py-3 border-bottom fw-bold">Aset</div>
+                    <div class="card-body p-0">
+                        @if (count($vendor->assets) > 0)
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="bg-light">
+                                        <tr>
+                                            <th class="px-4 py-3 border-bottom-0 text-uppercase small text-muted">Nama</th>
+                                            <th class="px-4 py-3 border-bottom-0 text-uppercase small text-muted">Nilai (RM)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach ($vendor->assets()->orderBy('name', 'asc')->get() as $asset)
+                                            <tr>
+                                                <td class="px-4">{{ $asset->name }}</td>
+                                                <td class="px-4">{{ $asset->value }}</td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        @else
+                            <div class="p-4 text-center text-muted fst-italic">Tiada maklumat aset.</div>
+                        @endif
+                    </div>
+                 </div>
+             </div>
 
-		<div class="tab-pane" id="vf-shareholders">
-			@if (count($vendor->shareholders) > 0)
-				<table class="table table-striped table-bordered table-hover">
-					<thead class="bg-blue-selangor">
-						<tr>
-							<th>Nama</th>
-							<th>IC / Pasport</th>
-							<th>Kewarganegaraan</th>
-							<th>Taraf</th>
-						</tr>
-					</thead>
-					<tbody>
-						@foreach ($vendor->shareholders as $sd)
-							<tr>
-								<td>{{ $sd->name }}</td>
-								<td>
-									@if (!empty($sd->identity))
-										@if ($canViewSensitiveIdentity)
-											<span class="identity-mask" data-identity="{{ $sd->identity }}">**********</span>
-											<button type="button" class="btn btn-link btn-xs toggle-identity">Tunjuk</button>
-										@else
-											**********
-										@endif
-									@endif
-								</td>
-								<td>{{ $sd->nationality }}</td>
-								<td>{{ $sd->bumiputera_status }}</td>
-							</tr>
-						@endforeach
-					</tbody>
-				</table>
-			@else
-				<div class="alert alert-warning">Tiada maklumat pemegang saham.</div>
-			@endif
+            <!-- 10. PROJECTS -->
+            <div class="tab-pane fade" id="vf-projects">
+                <div class="card border shadow-sm rounded-3 overflow-hidden mb-4">
+                    <div class="card-header bg-white py-3 border-bottom fw-bold">Projek</div>
+                     <div class="card-body p-0">
+                        @if (count($vendor->projects) > 0)
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="bg-light">
+                                        <tr>
+                                            <th class="px-4 py-3 border-bottom-0 text-uppercase small text-muted">Nama</th>
+                                            <th class="px-4 py-3 border-bottom-0 text-uppercase small text-muted">Pelanggan</th>
+                                            <th class="px-4 py-3 border-bottom-0 text-uppercase small text-muted">Tempoh</th>
+                                            <th class="px-4 py-3 border-bottom-0 text-uppercase small text-muted">Nilai (RM)</th>
+                                            <th class="px-4 py-3 border-bottom-0 text-uppercase small text-muted">Siap</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach ($vendor->projects()->orderBy('name', 'asc')->get() as $project)
+                                            <tr>
+                                                <td class="px-4">{{ $project->name }}</td>
+                                                <td class="px-4">{{ $project->customer }}</td>
+                                                <td class="px-4">{{ $project->period }}</td>
+                                                <td class="px-4">{{ $project->value }}</td>
+                                                <td class="px-4">{!! boolean_icon($project->done) !!}</td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        @else
+                             <div class="p-4 text-center text-muted fst-italic">Tiada maklumat projek.</div>
+                        @endif
+                     </div>
+                </div>
+            </div>
 
-			<h4>Ringkasan</h4>
-			<table class="table table-bordered">
-				<thead class="bg-blue-selangor">
-					<tr>
-						<th>Bumiputera</th>
-						<th>Bukan Bumiputera</th>
-						<th>Warga Asing</th>
-						<th>Jumlah</th>
-					</tr>
-				</thead>
-				<tbody>
-					<tr>
-						<td>{{ $vendor->bumi_percentage }} %</td>
-						<td>{{ $vendor->nonbumi_percentage }} %</td>
-						<td>{{ $vendor->foreigner_percentage }} %</td>
-						<td>{{ sprintf('%.2f', $vendor->bumi_percentage + $vendor->nonbumi_percentage + $vendor->foreigner_percentage) }}
-							%</td>
-					</tr>
-				</tbody>
-			</table>
-		</div>
+            <!-- 11. PRODUCTS -->
+            <div class="tab-pane fade" id="vf-products">
+                 <div class="card border shadow-sm rounded-3 overflow-hidden mb-4">
+                    <div class="card-header bg-white py-3 border-bottom fw-bold">Produk</div>
+                     <div class="card-body p-0">
+                        @if (count($vendor->products) > 0)
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="bg-light">
+                                        <tr>
+                                            <th class="px-4 py-3 border-bottom-0 text-uppercase small text-muted">Nama</th>
+                                            <th class="px-4 py-3 border-bottom-0 text-uppercase small text-muted">Keterangan</th>
+                                            <th class="px-4 py-3 border-bottom-0 text-uppercase small text-muted">Pengguna</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach ($vendor->products()->orderBy('name', 'asc')->get() as $product)
+                                            <tr>
+                                                <td class="px-4">{{ $product->name }}</td>
+                                                <td class="px-4">{{ $product->description }}</td>
+                                                <td class="px-4">{{ $product->implementations }}</td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        @else
+                             <div class="p-4 text-center text-muted fst-italic">Tiada maklumat produk.</div>
+                        @endif
+                     </div>
+                 </div>
+            </div>
 
-		<div class="tab-pane" id="vf-directors">
-			@if (count($vendor->directors) > 0)
-				<table class="table table-striped table-bordered table-hover">
-					<thead class="bg-blue-selangor">
-						<tr>
-							<th>Nama</th>
-							<th>IC / Pasport</th>
-							<th>Kewarganegaraan</th>
-							<th>Jawatan</th>
-						</tr>
-					</thead>
-					<tbody>
-						@foreach ($vendor->directors as $sd)
-							<tr>
-								<td>{{ $sd->name }}</td>
-								<td>
-									@if (!empty($sd->identity))
-										@if ($canViewSensitiveIdentity)
-											<span class="identity-mask" data-identity="{{ $sd->identity }}">**********</span>
-											<button type="button" class="btn btn-link btn-xs toggle-identity">Tunjuk</button>
-										@else
-											**********
-										@endif
-									@endif
-								</td>
-								<td>{{ $sd->nationality }}</td>
-								<td>{{ $sd->designation }}</td>
-							</tr>
-						@endforeach
-					</tbody>
-				</table>
-			@else
-				<div class="alert alert-warning">Tiada maklumat pengarah.</div>
-			@endif
-		</div>
+            <!-- 12. FILES -->
+            <div class="tab-pane fade" id="vf-files">
+                <div class="card border shadow-sm rounded-3 overflow-hidden mb-4">
+                    <div class="card-header bg-white py-3 border-bottom fw-bold">Dokumen Dimuat Naik</div>
+                    <div class="card-body">
+                        {!! $vendor->uploadsTable() !!}
+                    </div>
+                </div>
+            </div>
 
-		<div class="tab-pane" id="vf-contacts">
-			@if (count($vendor->contacts) > 0)
-				<table class="table table-striped table-bordered table-hover">
-					<thead class="bg-blue-selangor">
-						<tr>
-							<th>Nama</th>
-							<th>Jawatan</th>
-							<th>Warga Negara</th>
-							<th>Status</th>
-						</tr>
-					</thead>
-					<tbody>
-						@foreach ($vendor->contacts()->orderBy('name', 'asc')->get() as $contact)
-							<tr>
-								<td>{{ $contact->name }}</td>
-								<td>{{ $contact->designation }}</td>
-								<td>{{ $contact->nationality }}</td>
-								<td>{{ $contact->status }}</td>
-							</tr>
-						@endforeach
-					</tbody>
-				</table>
-			@else
-				<div class="alert alert-warning">Tiada maklumat kakitangan.</div>
-			@endif
-		</div>
+            <!-- 13. SUBSCRIPTIONS -->
+            <div class="tab-pane fade" id="vf-subscriptions">
+                <div class="card border shadow-sm rounded-3 overflow-hidden mb-4">
+                    <div class="card-header bg-white py-3 border-bottom fw-bold">Bayaran Pendaftaran</div>
+                    <div class="card-body p-0">
+                        @if ($vendor->subscriptions()->count() > 0)
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="bg-light">
+                                        <tr>
+                                            <th class="px-4 py-3 border-bottom-0 text-uppercase small text-muted">No Transaksi</th>
+                                            <th class="px-4 py-3 border-bottom-0 text-uppercase small text-muted">No Resit</th>
+                                            <th class="px-4 py-3 border-bottom-0 text-uppercase small text-muted">Tempoh Langganan</th>
+                                            <th class="px-4 py-3 border-bottom-0 text-uppercase small text-muted">Tindakan</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach ($transactions as $transaction)
+                                            <tr>
+                                                <td class="px-4">{{ $transaction->number }} </td>
+                                                <td class="px-4">{{ $transaction->receipt != 'old' ? $transaction->receipt : $transaction->receipt_number }}</td>
+                                                <td class="px-4">{{ $transaction->start_date }} - {{ $transaction->end_date }}</td>
+                                                <td class="px-4">
+                                                    {{ link_to_route('vendors.subscriptions.receipt', 'Resit', [$vendor->id, $transaction->subscription_id], ['target' => 'new', 'class' => 'btn btn-xs btn-outline-danger']) }}
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        @else
+                             <div class="p-4 text-center text-muted fst-italic">Tiada maklumat langganan.</div>
+                        @endif
+                    </div>
+                </div>
+            </div>
 
-		<div class="tab-pane" id="vf-awards">
-			@if (count($vendor->awards) > 0)
-				<table class="table table-striped table-bordered table-hover">
-					<thead class="bg-blue-selangor">
-						<tr>
-							<th>Nama</th>
-							<th>Keterangan</th>
-							<th>Pemberi Anugerah</th>
-						</tr>
-					</thead>
-					<tbody>
-						@foreach ($vendor->awards()->orderBy('name', 'asc')->get() as $award)
-							<tr>
-								<td>{{ $award->name }}</td>
-								<td>{{ $award->description }}</td>
-								<td>{{ $award->by }}</td>
-							</tr>
-						@endforeach
-					</tbody>
-				</table>
-			@else
-				<div class="alert alert-warning">Tiada maklumat anugerah.</div>
-			@endif
-		</div>
+            {{-- Rekod Penilaian Prestasi Syarikat --}}
+            @include('vendors.tab-contents.prestasi-syarikat')
 
-		<div class="tab-pane" id="vf-assets">
-			@if (count($vendor->assets) > 0)
-				<table class="table table-striped table-bordered table-hover">
-					<thead class="bg-blue-selangor">
-						<tr>
-							<th>Nama</th>
-							<th class="col-lg-2">Nilai (RM)</th>
-						</tr>
-					</thead>
-					<tbody>
-						@foreach ($vendor->assets()->orderBy('name', 'asc')->get() as $asset)
-							<tr>
-								<td>{{ $asset->name }}</td>
-								<td>{{ $asset->value }}</td>
-							</tr>
-						@endforeach
-					</tbody>
-				</table>
-			@else
-				<div class="alert alert-warning">Tiada maklumat aset.</div>
-			@endif
-		</div>
-
-		<div class="tab-pane" id="vf-projects">
-			@if (count($vendor->projects) > 0)
-				<table class="table table-striped table-bordered table-hover">
-					<thead class="bg-blue-selangor">
-						<tr>
-							<th>Nama</th>
-							<th>Pelanggan</th>
-							<th>Tempoh Projek</th>
-							<th>Nilai Projek (RM)</th>
-							<th>Projek Siap</th>
-						</tr>
-					</thead>
-					<tbody>
-						@foreach ($vendor->projects()->orderBy('name', 'asc')->get() as $project)
-							<tr>
-								<td>{{ $project->name }}</td>
-								<td>{{ $project->customer }}</td>
-								<td>{{ $project->period }}</td>
-								<td>{{ $project->value }}</td>
-								<td>{!! boolean_icon($project->done) !!}</td>
-							</tr>
-						@endforeach
-					</tbody>
-				</table>
-			@else
-				<div class="alert alert-warning">Tiada maklumat projek.</div>
-			@endif
-		</div>
-
-		<div class="tab-pane" id="vf-products">
-			@if (count($vendor->products) > 0)
-				<table class="table table-striped table-bordered table-hover">
-					<thead class="bg-blue-selangor">
-						<tr>
-							<th>Nama</th>
-							<th>Keterangan</th>
-							<th>Pengguna</th>
-						</tr>
-					</thead>
-					<tbody>
-						@foreach ($vendor->products()->orderBy('name', 'asc')->get() as $product)
-							<tr>
-								<td>{{ $product->name }}</td>
-								<td>{{ $product->description }}</td>
-								<td>{{ $product->implementations }}</td>
-							</tr>
-						@endforeach
-					</tbody>
-				</table>
-			@else
-				<div class="alert alert-warning">Tiada maklumat produk.</div>
-			@endif
-		</div>
-
-		<div class="tab-pane" id="vf-files">
-			{!! $vendor->uploadsTable() !!}
-		</div>
-
-		<div class="tab-pane" id="vf-subscriptions">
-			@if ($vendor->subscriptions()->count() > 0)
-				<table class="table table-condensed table-bordered table-striped">
-					<thead class="bg-blue-selangor">
-						<tr>
-							<th>No Tranksaksi</th>
-							<th>No Resit</th>
-							<th>Tempoh Langganan</th>
-							<th>&nbsp;</th>
-						</tr>
-					</thead>
-					<tbody>
-						{{-- @foreach ($vendor->subscriptions()->orderBy('start_date', 'asc')->get() as $sub)
-							<tr>
-								<td>{{ $sub->transaction->number }}  | {{ $sub->id }} | {{ $sub->transaction->id }} </td>
-								<td>{{ $sub->transaction->receipt_number }}</td>
-								<td>{{\Carbon\Carbon::parse($sub->start_date)->format('d/m/Y')}} - {{\Carbon\Carbon::parse($sub->end_date)->format('d/m/Y')}}</td>
-								<td>{{ link_to_route('vendors.subscriptions.receipt', 'Resit', [$vendor->id, $sub->id], ['target' => 'new'])}}</td>
-							</tr>
-						@endforeach --}}
-						@foreach ($transactions as $transaction)
-							<tr>
-								<td>{{ $transaction->number }} </td>
-								<td>{{ $transaction->receipt != 'old' ? $transaction->receipt : $transaction->receipt_number }}</td>
-								<td>{{ $transaction->start_date }} - {{ $transaction->end_date }}</td>
-								<td>
-									@if (Auth::user()->hasRole('Admin') || Auth::user()->hasRole('Agency Admin'))
-										<a
-											href="{{ route('vendors.subscriptions.receipt', [$vendor->id, $transaction->subscription_id]) }}?type=ASAL"
-											target="_new" class="btn btn-sm btn-primary">
-											<i class="ti ti-file-text me-1"></i>Resit Asal
-										</a>
-										<a
-											href="{{ route('vendors.subscriptions.receipt', [$vendor->id, $transaction->subscription_id]) }}?type=SALINAN"
-											target="_new" class="btn btn-sm btn-secondary">
-											<i class="ti ti-copy me-1"></i>Resit Salinan
-										</a>
-									@else
-										{{ link_to_route('vendors.subscriptions.receipt', 'Resit', [$vendor->id, $transaction->subscription_id], ['target' => 'new']) }}
-									@endif
-								</td>
-							</tr>
-						@endforeach
-					</tbody>
-				</table>
-			@else
-				<div class="alert alert-info">Tiada maklumat langganan.</div>
-			@endif
-		</div>
-
-		<!-- Transaksi Pembayaran -->
-		@if (Auth::user()->hasRole('Admin'))
-			<div class="tab-pane" id="vf-transactions">
-				@if (count($vendor->participations) > 0)
-					<table class="DT3 table table-bordered table-condensed">
-						<thead class="bg-blue-selangor">
-							<tr>
-								<th>Tender / Sebut Harga</th>
-								<th class="col-lg-2">Tarikh Tutup</th>
-								<th class="col-lg-2">&nbsp;</th>
-							</tr>
-						</thead>
-						<tbody>
-							@foreach ($vendor->participations as $purchase)
-								<tr>
-									<td>
-										{{ $purchase->tender->tenderer->name }}<br>
-										<small><strong>{{ $purchase->tender->ref_number }}</strong></small><br>
-										<a href="{{ asset('tenders/' . $purchase->tender->id) }}">{{ $purchase->tender->name }}</a>
-									</td>
-									<td>{{ \Carbon\Carbon::parse($purchase->tender->submission_datetime)->format('j M Y') }}
-										12:00 PM</td>
-									<td>
-										<a href="{{ asset('tenders/' . $purchase->tender_id . '/receipt/' . $purchase->id) }}" target="_blank"><i
-												class="icon-printer"> Resit</i></a><br><br>
-										<a href="{{ asset('tenders/' . $purchase->tender_id . '/document/' . $purchase->id) }}" target="_blank"><i
-												class="icon-doc"> No. Siri Dokumen</i></a><br><br>
-										<a href="{{ asset('tenders/' . $purchase->tender_id) }}#tf-doc2" target="_blank"><i class="icon-list">
-												Muat
-												Turun</i></a>
-									</td>
-								</tr>
-							@endforeach
-						</tbody>
-					</table>
-				@else
-					<div class="alert alert-info">Tiada dokumen yang dibeli.</div>
-				@endif
-			</div>
-		@endif
-
-		{{-- START: Tab Content - Rekod Penilaian Prestasi Syarikat --}}
-		@include('vendors.tab-contents.prestasi-syarikat')
-		{{-- END: Tab Content - Rekod Penilaian Prestasi Syarikat --}}
-
-	</div>
+        </div>
+    </div>
 </div>
 
+@push('modals')
+<!-- MODAL -->
+<div class="modal fade" id="pdfViewerModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content h-100 border-0 shadow-lg rounded-3">
+            <div class="modal-body p-0 bg-light">
+                <iframe id="pdfIframe" src="" width="100%" height="100%" style="border:none; min-height: 85vh;"></iframe>
+            </div>
+        </div>
+    </div>
+</div>
+@endpush
+
+@push('scripts')
+<script>
+    document.addEventListener("DOMContentLoaded", function() 
+	{    
+        document.body.addEventListener('click', function(e) 
+		{    
+            var target = e.target.closest('.view-pdf-btn, .btn-file-view');
+
+            if (target) {
+                e.preventDefault();
+
+                var url = target.getAttribute('data-url') || target.getAttribute('href');
+
+                if (url) {
+                    // Open Modal
+                    var iframe = document.getElementById('pdfIframe');
+                    var modalEl = document.getElementById('pdfViewerModal');
+
+                    if (iframe && modalEl) {
+                        iframe.src = url;
+                        var myModal = new bootstrap.Modal(modalEl);
+                        myModal.show();
+                    }
+                }
+            }
+        });
+
+        var pdfModal = document.getElementById('pdfViewerModal');
+        if (pdfModal) {
+            pdfModal.addEventListener('hidden.bs.modal', function () {
+                document.getElementById('pdfIframe').src = '';
+            });
+        }
+    });
+</script>
+
+<!-- Show/Hide Sensitive Info (IC. NO.) -->
 @if ($canViewSensitiveIdentity)
 	<script>
 		document.addEventListener('DOMContentLoaded', function() {
-			if (window.__identityToggleInitialized) {
-				return;
-			}
+			if (window.__identityToggleInitialized) return;
 			window.__identityToggleInitialized = true;
+
+            const iconShow = '<svg style="color: var(--bs-primary);" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>'; 
+            const iconHide = '<svg style="color: var(--bs-primary);" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>';
+
 			var toggleButtons = document.querySelectorAll('.toggle-identity');
 			toggleButtons.forEach(function(button) {
 				button.addEventListener('click', function(event) {
 					event.preventDefault();
 					var mask = button.previousElementSibling;
-					if (!mask || !mask.dataset || !mask.dataset.identity) {
-						return;
-					}
+					if (!mask || !mask.dataset || !mask.dataset.identity) return;
 					var revealed = mask.classList.toggle('identity-revealed');
-					mask.textContent = revealed ? mask.dataset.identity : '**********';
-					button.textContent = revealed ? 'Sembunyi' : 'Tunjuk';
+					// Toggle Text Content
+                    mask.textContent = revealed ? mask.dataset.identity : '**********';
+                    // Toggle Icon
+                    button.innerHTML = revealed ? iconHide : iconShow;
+                    // Tooltip Title
+                    button.title = revealed ? 'Sembunyi' : 'Tunjuk';
 				});
 			});
 		});
 	</script>
 @endif
+@endpush

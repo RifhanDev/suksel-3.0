@@ -19,15 +19,21 @@ class AuthController extends Controller
    public function login()
    {
       // If user is already logged in, redirect to appropriate dashboard
-      if (auth()->check()) {
+      if (auth()->check())
+      {
          $user = auth()->user();
          // dd($user);
-         if ($user->hasRole('Vendor')) {
+         if ($user->hasRole('Vendor'))
+         {
             return redirect('dashboard');
-         } elseif ($user->can('Vendor:list')) {
+         }
+         elseif ($user->can('Vendor:list'))
+         {
             return redirect('vendors');
-         } else {
-            return redirect('agencies/' . $user->organization_unit_id);
+         }
+         else
+         {
+            return redirect('agency/' . $user->organization_unit_id);
          }
       }
 
@@ -46,7 +52,7 @@ class AuthController extends Controller
             session()->forget('attempt_again');
          } else {
             $err_msg = trans('auth.alerts.too_many_attempts');
-            return redirect('/')->withInput($request->except('password'))->with('error', $err_msg);
+            return redirect('/auth/login')->withInput($request->except('password'))->with('error', $err_msg);
          }
       }
 
@@ -60,7 +66,7 @@ class AuthController extends Controller
 
          if (session('attempt') > 5) {
             $err_msg = trans('auth.alerts.too_many_attempts');
-            return redirect('/')->withInput($request->except('password'))->with('error', $err_msg);
+            return redirect('/auth/login')->withInput($request->except('password'))->with('error', $err_msg);
          } else {
 
             $user = User::where('username', $request->email)->where('password', md5($request->password))->orWhere('password', Hash::make($request->password))->first();
@@ -76,6 +82,13 @@ class AuthController extends Controller
 
                $user = auth()->user();
 
+               if ($user->hasRole('Vendor') && !$user->confirmed)
+               {
+                  auth()->logout();
+                  session()->flash('error', 'Sila sahkan alamat emel anda terlebih dahulu. Semak inbox emel anda untuk pautan pengesahan.');
+                  return redirect('/auth/login');
+               }
+
                session()->forget('attempt');
 
                // Save session before redirect
@@ -84,12 +97,13 @@ class AuthController extends Controller
 
                UserHistory::log($user->id, 'sign-in');
 
-               if ($user->hasRole('Vendor')) {
+               if ($user->hasRole('Vendor')) 
+               {
 
                   if (is_null($user->vendor)) {
                      auth()->logout();
                      session()->flash('error', 'Akaun anda mempunyai masalah.<br>Sila berhubung dengan Bahagian Teknologi Maklumat di <u>tenderadmin@selangor.gov.my</u> dan nyatakan alamat emel <b>(' . $user->email . '</b>) yang digunakan.');
-                     return redirect('/');
+                     return redirect('/auth/login');
                   }
 
                   if (!$user->vendor->completed)
@@ -100,8 +114,20 @@ class AuthController extends Controller
                      return redirect('dashboard');
                   // } elseif ($user->can('Vendor:list'))
                   //    return redirect('vendors');
-               } else
-                  return redirect('agencies/' . $user->organization_unit_id);
+               }
+               elseif($user->can('Vendor:list'))
+               {
+                  return redirect('vendors');
+               }
+               else if ($user->hasRole('Admin'))
+               {
+                  return redirect()->route('dashboard.hq');
+               }
+               else
+               {
+                  return redirect()->route('dashboard', ['id' => $user->organization_unit_id]);
+                  // return redirect('agency/' . $user->organization_unit_id);
+               }
             } else {
                $attempt = session('attempt');
                session()->put('attempt', $attempt += 1);
@@ -111,10 +137,10 @@ class AuthController extends Controller
                   session()->put('attempt_again', $attempt_again);
                   //note 5*60 = 5mins, 60*60 = 1hr, to set to 2hrs change it to 2*60*60
                   $err_msg = trans('auth.alerts.too_many_attempts');
-                  return redirect('/')->withInput($request->except('password'))->with('error', $err_msg);
+                  return redirect('/auth/login')->withInput($request->except('password'))->with('error', $err_msg);
                } else {
                   $err_msg = trans('auth.alerts.wrong_credentials');
-                  return redirect('/')->withInput($request->except('password'))->with('error', $err_msg);
+                  return redirect('/auth/login')->withInput($request->except('password'))->with('error', $err_msg);
                }
             }
          }
@@ -173,7 +199,7 @@ class AuthController extends Controller
       $user = User::where('confirmation_code', $code)->first();
 
       if ($user) {
-         // $user->confirmed = 1;
+         $user->confirmed = 1;
          $user->save();
          $notice_msg = trans('auth.alerts.confirmation');
          return redirect('/')->with('notice', $notice_msg);

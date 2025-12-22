@@ -41,8 +41,8 @@ class TendersController extends Controller
 	 */
 	public function index(Request $request)
 	{
-
-		if ($request->ajax()) {
+		if ($request->ajax())
+			{
 
 			$tenders = Tender::orderBy('submission_datetime', 'desc');
 
@@ -256,9 +256,7 @@ class TendersController extends Controller
 	 */
 	public function show(Request $request, $id)
 	{
-		$tender = Tender::with('codes')
-			->with('siteVisits', 'creator', 'officer')
-			->findOrFail($id);
+		$tender = Tender::with('codes')->with('siteVisits', 'creator', 'officer')->findOrFail($id);
 
 		$organizationunit   = $tender->tenderer;
 		$invites            = $tender->invites()->has('vendor')->get();
@@ -266,29 +264,39 @@ class TendersController extends Controller
 		$tender_winner = null;
 		$tender_vendors	= $tender->participants;
 
-		foreach ($tender_vendors as $tender_vendor) {
-			if ($tender_vendor->winner == 1) {
+		foreach ($tender_vendors as $tender_vendor)
+		{
+			if ($tender_vendor->winner == 1)
+			{
 				$tender_winner = $tender_vendor;
 			}
 		}
 
 		$exception = null;
 
-		if (auth()->check()) {
+		if (auth()->check())
+		{
 			$exception          = $tender->exceptions()->with('files')->where('vendor_id', auth()->user()->vendor_id)->orderBy('created_at', 'desc')->first();
 		}
 
 		$templates 			= RejectTemplate::where('applicable_2', 1)->get(['id', 'title', 'content']);
 
-		if (!$tender->canShow()) {
+		if (!$tender->canShow())
+		{
 			return $this->_access_denied();
 		}
-		if ($request->ajax()) {
+		if ($request->ajax())
+		{
 			return response()->json($tender);
 		}
 
 		view()->share('global_ou', $tender->tenderer);
-		return view('tenders.show', compact('tender', 'organizationunit', 'invites', 'histories', 'exception', 'templates', 'tender_winner'));
+
+		if (!auth()->check())
+		{
+			return view('tenders.show', compact('tender', 'organizationunit', 'invites', 'histories', 'exception', 'templates', 'tender_winner'));
+		}
+		return view('tenders.auth.show', compact('tender', 'organizationunit', 'invites', 'histories', 'exception', 'templates', 'tender_winner'));
 	}
 
 	/**
