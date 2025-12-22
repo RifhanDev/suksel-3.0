@@ -33,7 +33,7 @@
 						<div class="mb-3">
 							<label class="form-label">Alamat Emel</label>
 							<input type="email" class="form-control @error('email') is-invalid @enderror" name="email"
-								placeholder="Alamat Emel" value="{{ old('email') }}" required autocomplete="email" autofocus>
+								placeholder="Alamat Emel" value="{{ old('email') }}" required autocomplete="off" autofocus>
 							@error('email')
 								<div class="invalid-feedback">{{ $message }}</div>
 							@enderror
@@ -42,7 +42,7 @@
 						<div class="mb-2">
 							<label class="form-label">Kata Laluan</label>
 							<input type="password" class="form-control @error('password') is-invalid @enderror" name="password"
-								placeholder="Kata Laluan" required autocomplete="current-password">
+								placeholder="Kata Laluan" required autocomplete="new-password">
 							@error('password')
 								<div class="invalid-feedback">{{ $message }}</div>
 							@enderror
