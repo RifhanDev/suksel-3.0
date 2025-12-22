@@ -14,10 +14,10 @@
 
 	{!! Former::text('name')->disabled()->label('Nama') !!}
 	{!! Former::text('email')->disabled()->label('Alamat Emel') !!}
-	{!! Former::password('password')->required()->pattern('.{8,}')->help(
-	        'Sekurang-kurangnya 8 aksara dan kombinasi antara abjad dan nombor, huruf besar dan kecil. Sila tukar kata laluan setiap 90 hari',
+	{!! Former::password('password')->required()->pattern('.{8,}')->autocomplete('new-password')->help(
+	        'Sekurang-kurangnya 8 aksara dan kombinasi antara abjad dan nombor, huruf besar dan kecil. Sila tukar kata laluan setiap 6 bulan',
 	    )->label('Kata Laluan') !!}
-	{!! Former::password('password_confirmation')->required()->label('Pastikan Kata Laluan') !!}
+	{!! Former::password('password_confirmation')->required()->autocomplete('new-password')->label('Pastikan Kata Laluan') !!}
 
 	<div class="well">
 		<input type="submit" value="Kemaskini" class="btn btn-primary">

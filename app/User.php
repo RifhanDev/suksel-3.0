@@ -52,6 +52,7 @@ class User extends Authenticatable
 		'tel',
 		'department',
 		'password',
+		'password_changed_at',
 		'confirmation_code',
 		'confirmed',
 		'vendor_id',
@@ -145,6 +146,8 @@ class User extends Authenticatable
 	 * @var array
 	 */
 	protected $hidden = array('password', 'remember_token');
+
+	protected $dates = ['password_changed_at'];
 
 	public function organizationunit()
 	{

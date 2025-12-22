@@ -84,6 +84,20 @@ class AuthController extends Controller
 
                UserHistory::log($user->id, 'sign-in');
 
+               // Check if password needs to be changed (6 months expiration)
+               if ($user->password_changed_at) {
+                  $passwordAge = $user->password_changed_at->diffInMonths(now());
+                  if ($passwordAge >= 6) {
+                     // Password expired, redirect to change password
+                     session()->flash('warning', 'Kata laluan anda telah tamat tempoh (6 bulan). Sila tukar kata laluan anda.');
+                     return redirect('users/' . $user->id . '/reset_password');
+                  }
+               } else {
+                  // Password never changed, force change
+                  session()->flash('warning', 'Sila tetapkan kata laluan anda.');
+                  return redirect('users/' . $user->id . '/reset_password');
+               }
+
                if ($user->hasRole('Vendor')) {
 
                   if (is_null($user->vendor)) {
@@ -254,6 +268,7 @@ class AuthController extends Controller
          if ($email) {
             $user = User::where('email', $email->email)->first();
             $user->password = Hash::make($request->password);
+            $user->password_changed_at = now();
 
             if ($user->save()) {
                PasswordReminder::where('email', $email->email)->where('token', $request->token)->delete();

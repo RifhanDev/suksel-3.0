@@ -317,6 +317,7 @@ Route::middleware(['auth'])->group(function () {
 		Route::put('users/{user}/confirm', [UsersController::class, 'confirm']);
 		Route::get('users/{user}/reset_password', [UsersController::class, 'getSetPassword'])->name('user.reset-password');
 		Route::put('users/{user}/reset_password', [UsersController::class, 'putSetPassword']);
+		Route::get('users/{user}/send_reset_password', [UsersController::class, 'sendResetPasswordEmail'])->name('user.send-reset-password');
 		Route::put('users/{user}/confirm', [UsersController::class, 'putSetConfirmation']);
 		Route::get('users/{user}/resend_confirmation', [UsersController::class, 'resendConfirmation']);
 		Route::resource('users', UsersController::class);
