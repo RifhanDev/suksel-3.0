@@ -60,7 +60,9 @@ class User extends Authenticatable
 		'approved',
 		'role_applied',
 		'approver_id',
-		'remark'
+		'remark',
+		'two_factor_code',
+		'two_factor_expires_at'
 	];
 
 	/**

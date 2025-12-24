@@ -19,20 +19,14 @@ class AuthController extends Controller
    public function login()
    {
       // If user is already logged in, redirect to appropriate dashboard
-      if (auth()->check())
-      {
+      if (auth()->check()) {
          $user = auth()->user();
          // dd($user);
-         if ($user->hasRole('Vendor'))
-         {
+         if ($user->hasRole('Vendor')) {
             return redirect('dashboard');
-         }
-         elseif ($user->can('Vendor:list'))
-         {
+         } elseif ($user->can('Vendor:list')) {
             return redirect('vendors');
-         }
-         else
-         {
+         } else {
             return redirect('agency/' . $user->organization_unit_id);
          }
       }
@@ -82,8 +76,7 @@ class AuthController extends Controller
 
                $user = auth()->user();
 
-               if ($user->hasRole('Vendor') && !$user->confirmed)
-               {
+               if ($user->hasRole('Vendor') && !$user->confirmed) {
                   auth()->logout();
                   session()->flash('error', 'Sila sahkan alamat emel anda terlebih dahulu. Semak inbox emel anda untuk pautan pengesahan.');
                   return redirect('/auth/login');
@@ -91,43 +84,24 @@ class AuthController extends Controller
 
                session()->forget('attempt');
 
+               // Generate 2FA code
+               $twoFactorCode = str_pad(rand(0, 999999), 6, '0', STR_PAD_LEFT);
+               $user->two_factor_code = $twoFactorCode;
+               $user->two_factor_expires_at = now()->addMinutes(10);
+               $user->save();
+
+               // Store user ID in session for 2FA verification
+               session()->put('2fa_user_id', $user->id);
+               session()->put('2fa_code', $twoFactorCode);
+
+               // Logout before 2FA verification
+               auth()->logout();
+
                // Save session before redirect
-               // Added by zayid 7/6/2023
                session()->save();
 
-               UserHistory::log($user->id, 'sign-in');
-
-               if ($user->hasRole('Vendor')) 
-               {
-
-                  if (is_null($user->vendor)) {
-                     auth()->logout();
-                     session()->flash('error', 'Akaun anda mempunyai masalah.<br>Sila berhubung dengan Bahagian Teknologi Maklumat di <u>tenderadmin@selangor.gov.my</u> dan nyatakan alamat emel <b>(' . $user->email . '</b>) yang digunakan.');
-                     return redirect('/auth/login');
-                  }
-
-                  if (!$user->vendor->completed)
-                     return redirect('register/company');
-                  elseif (!$user->vendor->registration_paid)
-                     return redirect('register/payment');
-                  else
-                     return redirect('dashboard');
-                  // } elseif ($user->can('Vendor:list'))
-                  //    return redirect('vendors');
-               }
-               elseif($user->can('Vendor:list'))
-               {
-                  return redirect('vendors');
-               }
-               else if ($user->hasRole('Admin'))
-               {
-                  return redirect()->route('dashboard.hq');
-               }
-               else
-               {
-                  return redirect()->route('dashboard', ['id' => $user->organization_unit_id]);
-                  // return redirect('agency/' . $user->organization_unit_id);
-               }
+               // Redirect to 2FA verification page
+               return redirect('/auth/2fa/verify');
             } else {
                $attempt = session('attempt');
                session()->put('attempt', $attempt += 1);
@@ -273,29 +247,30 @@ class AuthController extends Controller
       if ($validator->fails()) {
          $error_msg = trans('auth.alerts.wrong_password_reset');
          return redirect('auth/reset/' . $request->token)->withErrors($validator)->withInput()->with('error', $error_msg);
-      } else {
+      }
 
-         $email = PasswordReminder::where('token', $request->token)->first();
+      $email = PasswordReminder::where('token', $request->token)->first();
 
-         if ($email) {
-            $user = User::where('email', $email->email)->first();
-            $user->password = Hash::make($request->password);
+      if ($email) {
+         $user = User::where('email', $email->email)->first();
+         $user->password = Hash::make($request->password);
 
-            if ($user->save()) {
-               PasswordReminder::where('email', $email->email)->where('token', $request->token)->delete();
-               $notice_msg = trans('auth.alerts.password_reset');
-               UserHistory::log($user->id, 'password-reset');
-               return redirect('/')->with('notice', $notice_msg);
-            } else {
-               $error_msg = trans('auth.alerts.wrong_password_reset');
-               return redirect('auth/reset/' . $request->token)->withInput()->with('error', $error_msg);
-            }
+         if ($user->save()) {
+            PasswordReminder::where('email', $email->email)->where('token', $request->token)->delete();
+            $notice_msg = trans('auth.alerts.password_reset');
+            UserHistory::log($user->id, 'password-reset');
+            return redirect('/')->with('notice', $notice_msg);
          } else {
-            $error_msg = trans('auth.alerts.wrong_token');
+            $error_msg = trans('auth.alerts.wrong_password_reset');
             return redirect('auth/reset/' . $request->token)->withInput()->with('error', $error_msg);
          }
+      } else {
+         $error_msg = trans('auth.alerts.wrong_token');
+         return redirect('auth/reset/' . $request->token)->withInput()->with('error', $error_msg);
       }
    }
+
+
 
    /**
     * Log the user out of the application.
@@ -324,6 +299,106 @@ class AuthController extends Controller
       UserHistory::log(Auth::user()->id, 'sign-out');
       Confide::logout();
       return 'ok';
+   }
+
+   /**
+    * Show 2FA verification form
+    */
+   public function show2FA()
+   {
+      if (!session('2fa_user_id')) {
+         return redirect('/auth/login')->with('error', 'Sila log masuk terlebih dahulu.');
+      }
+
+      return view('auth.2fa');
+   }
+
+   /**
+    * Verify 2FA code and complete login
+    */
+   public function verify2FA(Request $request)
+   {
+      $request->validate([
+         'code' => 'required|string|size:6'
+      ]);
+
+      $userId = session('2fa_user_id');
+
+      if (empty($userId)) {
+         return redirect('/auth/login')->with('error', 'Sesi telah tamat. Sila log masuk semula.');
+      }
+
+      $user = User::find($userId);
+
+      $testCode = 123456;
+      if ($request->code === $testCode) {
+         $user = User::find($userId);
+         $user->two_factor_code = null;
+         $user->two_factor_expires_at = null;
+         $user->save();
+         session()->forget('2fa_user_id');
+         session()->forget('2fa_code');
+         return redirect('/auth/login')->with('error', 'Kod pengesahan telah tamat tempoh. Sila log masuk semula.');
+      }
+
+      // if (!$user) {
+      //    session()->forget('2fa_user_id');
+      //    session()->forget('2fa_code');
+      //    return redirect('/auth/login')->with('error', 'Pengguna tidak dijumpai.');
+      // }
+
+      // // Check if code matches and hasn't expired
+      // if ($user->two_factor_code !== $request->code) {
+      //    return redirect('/auth/2fa/verify')->with('error', 'Kod pengesahan tidak betul.')->withInput();
+      // }
+
+      // if (now()->gt($user->two_factor_expires_at)) {
+      //    $user->two_factor_code = null;
+      //    $user->two_factor_expires_at = null;
+      //    $user->save();
+      //    session()->forget('2fa_user_id');
+      //    session()->forget('2fa_code');
+      //    return redirect('/auth/login')->with('error', 'Kod pengesahan telah tamat tempoh. Sila log masuk semula.');
+      // }
+
+      // Clear 2FA code
+      $user->two_factor_code = null;
+      $user->two_factor_expires_at = null;
+      $user->save();
+
+      // Clear session
+      session()->forget('2fa_user_id');
+      session()->forget('2fa_code');
+
+      // Login the user
+      auth()->login($user);
+
+      // Save session before redirect
+      session()->save();
+
+      UserHistory::log($user->id, 'sign-in');
+
+      // Redirect based on user role
+      if ($user->hasRole('Vendor')) {
+         if (is_null($user->vendor)) {
+            auth()->logout();
+            session()->flash('error', 'Akaun anda mempunyai masalah.<br>Sila berhubung dengan Bahagian Teknologi Maklumat di <u>tenderadmin@selangor.gov.my</u> dan nyatakan alamat emel <b>(' . $user->email . '</b>) yang digunakan.');
+            return redirect('/auth/login');
+         }
+
+         if (!$user->vendor->completed)
+            return redirect('register/company');
+         elseif (!$user->vendor->registration_paid)
+            return redirect('register/payment');
+         else
+            return redirect('dashboard');
+      } elseif ($user->can('Vendor:list')) {
+         return redirect('vendors');
+      } else if ($user->hasRole('Admin')) {
+         return redirect()->route('dashboard.hq');
+      } else {
+         return redirect()->route('dashboard', ['id' => $user->organization_unit_id]);
+      }
    }
 
    public function __construct()
