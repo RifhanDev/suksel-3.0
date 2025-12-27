@@ -85,7 +85,6 @@ Route::get('results', [HomeController::class, 'results']);
 Route::get('privacy', [HomeController::class, 'privacy']);
 
 // Place 3.0 Modules Routes Temporarily Here
-Route::view('/cipta-tender', 'newModule.cipta_tender')->name('ciptaTender');
 Route::view('/pelantikan-jawatankuasa', 'newModule.pelantikan_jawatankuasa')->name('pelantikanJawatankuasa');
 Route::view('/jawatankuasa-spesifikasi/senarai-teknikal', 'newModule.jawatankuasaSpesifikasi.senarai_teknikal')->name('jawatankuasaSpesifikasi.teknikal');
 Route::view('/jawatankuasa-spesifikasi/senarai-kewangan', 'newModule.jawatankuasaSpesifikasi.senarai_kewangan')->name('jawatankuasaSpesifikasi.kewangan');
@@ -205,6 +204,10 @@ Route::middleware(['auth'])->group(function () {
 	// Route::get('tender/{tender_id}/files/{id}', [TendersController::class, 'file'])->name('tenders.files');
 	// Route::get('tender/{id}/vendors', [TendersController::class, 'vendors'])->name('tenders.vendors');
 	// Route::post('tender/{id}/exception', [TendersController::class, 'exception'])->name('tenders.exception');
+
+	// Version 3.0 tender creation routes
+	Route::get('/cipta-tender', [TendersController::class, 'createNew'])->name('ciptaTender');
+	Route::post('/cipta-tender', [TendersController::class, 'storeNew'])->name('storeCiptaTender');
 
 	Route::resource('vendors', VendorsController::class);
 	Route::get('vendors/select', [VendorsController::class, 'select']);

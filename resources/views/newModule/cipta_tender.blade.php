@@ -563,7 +563,7 @@
     </div>
 </div>
 
-<form id="createTenderForm" action="" method="POST">
+<form id="createTenderForm" action="{{ route('storeCiptaTender') }}" method="POST">
     @csrf
     
     <div class="modern-card">

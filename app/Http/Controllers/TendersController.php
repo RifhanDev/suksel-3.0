@@ -249,6 +249,142 @@ class TendersController extends Controller
 	}
 
 	/**
+	 * Show the form for creating a new tender (Version 3.0)
+	 *
+	 * @return Response
+	 */
+	public function createNew(Request $request)
+	{
+		if ($request->ajax()) {
+			return $this->_ajax_denied($request);
+		}
+		if (!Tender::canCreate()) {
+			return $this->_access_denied();
+		}
+
+		$organizations = OrganizationUnit::all();
+		$country_states = RefState::where('display_status', 1)->get();
+
+		// Fetch reference data for new fields
+		$kaedahPerolehan = \App\Models\Ref\RefKaedahPerolehan::all();
+		$kategoriPerolehan = \App\Models\Ref\RefKategoriJenisPerolehan::all();
+		$jenisTender = \App\Models\Ref\RefTypeOfTender::all();
+		$jenisKontrak = \App\Models\Ref\RefTypeOfContract::all();
+
+		return view('newModule.cipta_tender', compact(
+			'country_states',
+			'organizations',
+			'kaedahPerolehan',
+			'kategoriPerolehan',
+			'jenisTender',
+			'jenisKontrak'
+		));
+	}
+
+	/**
+	 * Store a newly created tender in storage (Version 3.0)
+	 *
+	 * @return Response
+	 */
+	public function storeNew(Request $request)
+	{
+		dd($request->all());
+		if (!Tender::canCreate()) {
+			return $this->_access_denied();
+		}
+
+		$data = $request->all();
+		$user = auth()->user();
+
+		// Map form fields to database columns
+		$data['name'] = $data['tajuk_perolehan'];
+		$data['ref_number'] = $data['no_rujukan'] ?? null;
+		$data['price'] = $data['anggaran_jabatan'];
+
+		// Set creator
+		$data['creator_id'] = $user->id;
+
+		// Set organization unit
+		if (isset($data['ptj_id']) && auth()->user()->hasRole('Admin')) {
+			$data['organization_unit_id'] = $data['ptj_id'];
+		} else {
+			$data['organization_unit_id'] = $user->organizationunit->id;
+		}
+
+		// Date conversions
+		if (isset($data['tarikh_dicipta'])) {
+			$data['tarikh_dicipta'] = Carbon::parse($data['tarikh_dicipta'])->format('Y-m-d');
+		}
+
+		// For now, set default dates for required fields if not provided
+		// You can adjust this based on your actual form fields
+		$data['advertise_start_date'] = isset($data['advertise_start_date']) ? Carbon::parse($data['advertise_start_date'])->format('Y-m-d') : now()->format('Y-m-d');
+		$data['advertise_stop_date'] = isset($data['advertise_stop_date']) ? Carbon::parse($data['advertise_stop_date'])->format('Y-m-d') : now()->addDays(7)->format('Y-m-d');
+		$data['document_start_date'] = isset($data['document_start_date']) ? Carbon::parse($data['document_start_date'])->format('Y-m-d') : now()->format('Y-m-d');
+		$data['document_stop_date'] = isset($data['document_stop_date']) ? Carbon::parse($data['document_stop_date'])->format('Y-m-d') : now()->addDays(14)->format('Y-m-d');
+		$data['submission_datetime'] = isset($data['submission_datetime']) ? Carbon::parse($data['submission_datetime'])->format('Y-m-d 12:00:00') : now()->addDays(21)->format('Y-m-d 12:00:00');
+
+		// Default submission location and tender rules if not provided
+		$data['submission_location_address'] = $data['submission_location_address'] ?? 'To be confirmed';
+		$data['tender_rules'] = $data['tender_rules'] ?? 'Standard tender rules apply';
+
+		// Set defaults for required fields
+		if (!array_key_exists('allow_exception', $data)) {
+			$data['allow_exception'] = 0;
+		}
+
+		// Convert boolean fields
+		$data['zon_lokasi'] = isset($data['zon_lokasi']) && $data['zon_lokasi'] == 1 ? true : false;
+		$data['jawatankuasa'] = isset($data['jawatankuasa']) && $data['jawatankuasa'] == 1 ? true : false;
+		$data['lawatan_tapak'] = isset($data['lawatan_tapak']) && $data['lawatan_tapak'] == 1 ? true : false;
+		$data['penilaian_fizikal'] = isset($data['fizikal']) && $data['fizikal'] == 1 ? true : false;
+
+		// Map kaedah_perolehan to type if needed
+		if (isset($data['kaedah_perolehan'])) {
+			$data['type'] = $data['kaedah_perolehan'] == 'tender' ? 'tender' : 'quotation';
+		}
+
+		// Handle MOF and CIDB codes
+		$district_list = $request->district_id_new ?? [];
+		$state_list = $request->state_id_new ?? [];
+		$district_list_rule = [];
+
+		if (count($district_list) > 0) {
+			foreach ($district_list as $idx => $input_district_id) {
+				$state_id = isset($state_list[$idx]) ? $state_list[$idx] : "0";
+				$district_list_rule[] = array(
+					"district_id" => $input_district_id,
+					"state_id" => $state_id,
+				);
+			}
+		}
+
+		if (isset($data["only_selangor"]) && $data["only_selangor"] != 3) {
+			$data["district_list_rule"] = json_encode($district_list_rule);
+		} else {
+			$data["district_list_rule"] = json_encode(array());
+		}
+
+		// Create tender
+		Tender::setRules('store');
+		$tender = new Tender;
+		$tender->fill($data);
+
+		if (!$tender->save()) {
+			return $this->_validation_error($tender);
+		}
+
+		// Process MOF and CIDB codes
+		$tender->updateTender(false);
+
+		if ($request->ajax()) {
+			return response()->json($tender, 201);
+		}
+
+		return redirect('tenders/' . $tender->id)->with('success', $this->created_message);
+	}
+
+	/**
 	 * Display the specified tender.
 	 *
 	 * @param  int  $id
