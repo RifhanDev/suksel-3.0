@@ -14,54 +14,89 @@
 }
 
 /* ================================
-   STEPPER DESIGN (IMAGE 3 STYLE)
+   STEPPER DESIGN (WORKFLOW)
 ================================ */
-.stepper-wrapper{
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    margin:25px 0;
+:root{
+    --sg-red:#C81E1E;
+    --sg-red-dark:#A4161A;
+    --topbar-border:#E5E7EB;
+    --topbar-text:#374151;
 }
-.stepper-item{
+
+.progress-wrapper{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    position:relative;
+}
+
+/* Each step */
+.progress-step{
     flex:1;
     text-align:center;
     position:relative;
     cursor:pointer;
 }
-.stepper-item::after{
+
+/* Connector line */
+.progress-step:not(:last-child)::after{
     content:'';
     position:absolute;
-    top:18px;
+    top:18px; /* center of 36px circle */
     left:50%;
     width:100%;
     height:3px;
-    background:#C7CED8;
+    background:var(--topbar-border);
     z-index:0;
 }
-.stepper-item:last-child::after{
-    display:none;
+
+/* Active & completed line */
+.progress-step.active:not(:last-child)::after,
+.progress-step.done:not(:last-child)::after{
+    background:var(--sg-red);
 }
-.step-counter{
+
+/* Reset future steps line */
+.progress-step.active ~ .progress-step:not(:last-child)::after{
+    background:var(--topbar-border);
+}
+
+/* Step circle */
+.step-number{
     width:36px;
     height:36px;
-    background:#9CA3AF;
     border-radius:50%;
-    color:white;
-    line-height:36px;
+    background:var(--topbar-border);
+    color:var(--topbar-text);
+    display:flex;
+    align-items:center;
+    justify-content:center;
     margin:0 auto;
-    font-weight:bold;
-    z-index:1;
+    font-weight:600;
     position:relative;
+    z-index:2;
 }
-.step-title{
+
+/* Active & done circle */
+.progress-step.active .step-number,
+.progress-step.done .step-number{
+    background:var(--sg-red);
+    color:#fff;
+}
+
+/* Label */
+.step-label{
     margin-top:8px;
-    font-size:14px;
+    font-size:13px;
+    color:var(--topbar-text);
+    font-weight:500;
 }
-.stepper-item.active .step-counter{
-    background:#10B981;
-}
-.stepper-item.completed .step-counter{
-    background:#2563EB;
+
+/* Active & done label */
+.progress-step.active .step-label,
+.progress-step.done .step-label{
+    color:var(--sg-red-dark);
+    font-weight:600;
 }
 
 /* ================================
@@ -157,24 +192,25 @@
 <hr>
 
 <!-- ========== STEPPER ========== -->
-<div class="stepper-wrapper">
+<div class="d-flex progress-wrapper mb-4">
 
-    <div id="step1" class="stepper-item active" onclick="goToFR1()">
-        <div class="step-counter">1</div>
-        <div class="step-title">Peringkat Pematuhan Teknikal</div>
+    <div id="step1" class="progress-step active" onclick="goToFR1()">
+        <div class="step-number">1</div>
+        <div class="step-label">Peringkat Pematuhan Teknikal</div>
     </div>
 
-    <div id="step2" class="stepper-item" onclick="goToFR2()">
-        <div class="step-counter">2</div>
-        <div class="step-title">Peringkat Pematuhan Kewangan</div>
+    <div id="step2" class="progress-step" onclick="goToFR2()">
+        <div class="step-number">2</div>
+        <div class="step-label">Peringkat Pematuhan Kewangan</div>
     </div>
 
-    <div id="step3" class="stepper-item" onclick="goToFR3()">
-        <div class="step-counter">3</div>
-        <div class="step-title">Rumusan</div>
+    <div id="step3" class="progress-step" onclick="goToFR3()">
+        <div class="step-number">3</div>
+        <div class="step-label">Rumusan</div>
     </div>
 
 </div>
+
 
 
 <!-- ========================= FR1 ========================= -->
@@ -378,12 +414,13 @@ function updateStepper(step)
 {
     for(let i=1;i<=3;i++){
         let el=document.getElementById("step"+i);
-        el.classList.remove("active","completed");
+        el.classList.remove("active","done");
 
-        if(i < step) el.classList.add("completed");
+        if(i < step) el.classList.add("done");
         if(i === step) el.classList.add("active");
     }
 }
+
 
 </script>
 
