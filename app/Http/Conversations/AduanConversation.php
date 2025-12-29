@@ -184,6 +184,7 @@ class AduanConversation extends Conversation
 
         // Get user email if authenticated, otherwise use default
         $user_email = Auth::check() ? Auth::user()->email : 'chatbot@selangor.gov.my';
+        $user_id = Auth::check() ? Auth::user()->id : null;
 
         // Append attachment URLs to content if any
         if (!empty($attachments)) {
@@ -194,6 +195,7 @@ class AduanConversation extends Conversation
         }
 
         $arr = [
+            'user_id' => $user_id,
             'subject' => 'Aduan via Chatbot' . (!empty($attachments) ? ' (Dengan Lampiran)' : ''),
             'content' => $content,
             'email' => $user_email
@@ -232,12 +234,14 @@ class AduanConversation extends Conversation
             }
 
             // Send email to each admin
+            $emailsSent = 0;
+            $emailsFailed = 0;
             foreach ($adminUsers as $admin) {
                 if (filter_var(trim($admin->email), FILTER_VALIDATE_EMAIL)) {
                     $to = trim($admin->email);
                     $subject = 'Aduan Baru Diterima - ' . $complaint->subject;
 
-                    $this->sendMail(
+                    $result = $this->sendMail(
                         "html",
                         $to,
                         $subject,
@@ -245,10 +249,18 @@ class AduanConversation extends Conversation
                         "complaint.emails.new-complaint",
                         ['complaint' => $complaint]
                     );
+
+                    if ($result === "Email send to queue" || strpos($result, "Email") !== false) {
+                        $emailsSent++;
+                        Log::info("Complaint email queued for admin: {$to}");
+                    } else {
+                        $emailsFailed++;
+                        Log::warning("Failed to queue complaint email for admin {$to}: {$result}");
+                    }
                 }
             }
 
-            Log::info('Complaint notification emails sent to ' . $adminUsers->count() . ' admin(s)');
+            Log::info('Complaint notification emails: ' . $emailsSent . ' queued, ' . $emailsFailed . ' failed out of ' . $adminUsers->count() . ' admin(s)');
         } catch (\Exception $e) {
             Log::error('Failed to send complaint notification emails: ' . $e->getMessage());
             // Don't fail the complaint submission if email fails

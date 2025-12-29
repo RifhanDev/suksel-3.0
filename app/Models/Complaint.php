@@ -10,9 +10,13 @@ class Complaint extends Model
     use HasFactory;
 
     protected $fillable = [
+        'user_id',
         'email',
         'subject',
-        'content'
+        'content',
+        'admin_reply',
+        'replied_by',
+        'replied_at'
     ];
 
     public function complaintStatus()
@@ -42,6 +46,22 @@ class Complaint extends Model
                 # code...
                 break;
         }
+    }
+
+    /**
+     * Get the user that owns the complaint.
+     */
+    public function user()
+    {
+        return $this->belongsTo('App\User', 'user_id');
+    }
+
+    /**
+     * Get the admin user who replied to the complaint.
+     */
+    public function repliedBy()
+    {
+        return $this->belongsTo('App\User', 'replied_by');
     }
 
 
