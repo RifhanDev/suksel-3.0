@@ -289,6 +289,10 @@ Route::middleware(['auth'])->group(function () {
 	Route::put('profile/change_password', [ProfileController::class, 'doChangePassword']);
 	Route::get('profile/release', [ProfileController::class, 'releaseUser'])->name('release_user');
 
+	// User's own complaints (Aduan)
+	Route::get('my-aduan', [ComplaintController::class, 'myComplaints'])->name('my.aduan.index');
+	Route::get('my-aduan/{id}', [ComplaintController::class, 'myComplaintShow'])->name('my.aduan.show');
+
 	// Dashboard fetch routes
 	Route::post('dashboard/fetch/tender', [HomeController::class, 'tender_dashboard'])->name('dashboard.tender');
 	Route::post('dashboard/fetch/tender-summary', [HomeController::class, 'tender_summary_dashboard'])->name('dashboard.tender.summary');
@@ -587,6 +591,7 @@ Route::middleware(['auth'])->group(function () {
 		Route::post('aduan', [ComplaintController::class, 'store'])->name('aduan.store');
 		Route::get('aduan/list', [ComplaintController::class, 'index'])->name('aduan.index');
 		Route::get('aduan/{id}', [ComplaintController::class, 'show'])->name('aduan.show');
+		Route::post('aduan/{id}/reply', [ComplaintController::class, 'reply'])->name('aduan.reply');
 		Route::get('aduan/{id}/{status}', [ComplaintController::class, 'updateStatus'])->name('aduan.update.status');
 
 		// BotMan

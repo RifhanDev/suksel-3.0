@@ -1,46 +1,74 @@
 @extends('layouts.modern')
 
-@section('styles')
-	<style>
-		.pdfobject-container {
-			height: 60rem;
-		}
-	</style>
-@endsection
 @section('content')
-	<h2 class="tender-title">Senarai Aduan</h2>
-
-	<table data-path="/aduan/list" class="DT-index table table-striped table-hover table-bordered">
-		<thead class="bg-blue-selangor">
-			<tr>
-				<th>Subjek</th>
-				<th>Kandungan</th>
-				<th>Email</th>
-				<th>Status</th>
-				<th>Tarikh Aduan</th>
-				<th width="200px">&nbsp;</th>
-			</tr>
-		</thead>
-		<tbody></tbody>
-	</table>{{-- 
-    <div class="well">
-        <a href="{{ asset('circulars/create') }}" class="btn btn-default">Masukkan Pekeliling Baru</a>
-        <a href="{{ asset('circulars/sort') }}" class="btn btn-default">Kemaskini Susunan Pekeliling</a>
-    </div> --}}
+	@include('components.modern-index', [
+		'title' => 'Senarai Aduan',
+		'pretitle' => 'Sistem Tender Online',
+		'icon' => 'ti-message-circle',
+		'cardTitle' => 'Maklumat Aduan',
+		'createUrl' => null,
+		'createLabel' => '',
+		'showCreate' => false,
+		'dataPath' => '/aduan/list',
+		'columns' => [
+			[
+				'data' => 'subject',
+				'name' => 'subject',
+				'label' => 'Subjek',
+				'icon' => 'ti-file-text',
+			],
+			[
+				'data' => 'content',
+				'name' => 'content',
+				'label' => 'Kandungan',
+				'icon' => 'ti-notes',
+			],
+			[
+				'data' => 'email',
+				'name' => 'email',
+				'label' => 'Email',
+				'icon' => 'ti-mail',
+				'width' => 'w-20',
+			],
+			[
+				'data' => 'status',
+				'name' => 'status',
+				'label' => 'Status',
+				'icon' => 'ti-status-change',
+				'width' => 'w-15',
+				'class' => 'text-center',
+			],
+			[
+				'data' => 'created_at',
+				'name' => 'created_at',
+				'label' => 'Tarikh Aduan',
+				'icon' => 'ti-calendar',
+				'width' => 'w-20',
+				'class' => 'text-center',
+			],
+			[
+				'data' => 'actions',
+				'name' => 'actions',
+				'label' => 'Tindakan',
+				'icon' => 'ti-settings',
+				'width' => 'w-15',
+				'orderable' => false,
+				'searchable' => false,
+			],
+		],
+		'defaultOrder' => [[4, 'desc']],
+		'pageLength' => 25,
+	])
 @endsection
 
 @section('scripts')
 	<script src="{{ asset('js/datatables.js') }}"></script>
-
-	<script>
+	<script type="text/javascript">
 		$('.DT-index').each(function() {
 			var target = $(this);
 			var path = target.data('path');
 
 			var DT = target.DataTable({
-				order: [
-					[4, 'desc']
-				],
 				ajax: path,
 				columns: [{
 						data: 'subject',
@@ -64,7 +92,9 @@
 					},
 					{
 						data: 'actions',
-						name: 'actions'
+						name: 'actions',
+						orderable: false,
+						searchable: false
 					}
 				],
 				serverSide: true,
@@ -92,7 +122,13 @@
 						sSortDescending: ": diaktifkan kepada susunan lajur menurun"
 					}
 				},
-				aaSorting: []
+				aaSorting: [],
+				dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rtip',
+				pageLength: 25,
+				responsive: true,
+				order: [
+					[4, 'desc']
+				]
 			});
 		});
 	</script>

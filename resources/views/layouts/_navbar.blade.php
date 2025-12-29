@@ -66,6 +66,9 @@
 						<a href="{{ asset('profile') }}" class="dropdown-item">
 							<i class="ti ti-user me-2"></i> Profil Saya
 						</a>
+						<a href="{{ route('my.aduan.index') }}" class="dropdown-item">
+							<i class="ti ti-message-circle me-2"></i> Aduan Saya
+						</a>
 						@if ($user && $user->hasRole('Vendor') && Auth::user()->vendor->registration_paid)
 							<a href="{{ asset('vendor/' . Auth::user()->vendor_id . '/requests') }}" class="dropdown-item">
 								<i class="ti ti-heart me-2"></i> Permintaan Kemaskini
