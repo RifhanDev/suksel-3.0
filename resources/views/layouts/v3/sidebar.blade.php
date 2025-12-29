@@ -5,11 +5,14 @@
 	<div class="sidebar-header">
 		<a href="/" class="sidebar-brand">
 			<div class="sidebar-logo-container">
-				<img src="{{ asset('images/02_selangor.png') }}" alt="Logo" class="sidebar-logo">
+				<img src="{{ asset('images/Jata_Negeri_Selangor_2025.png') }}" alt="Logo" class="sidebar-logo">
 			</div>
 			<div class="sidebar-brand-text">
-				<span class="brand-title">e-Perolehan</span>
-				<span class="brand-subtitle">Sistem e-Perolehan Selangor</span>
+				<span class="brand-title">
+					<span class="brand-title-top">Perolehan</span>
+					<span class="brand-title-bottom">Selangor</span>
+				</span>
+				<span class="brand-subtitle">Sistem Perolehan Selangor</span>
 			</div>
 		</a>
 	</div>
@@ -682,8 +685,11 @@
 				<img src="{{ asset('images/02_selangor.png') }}" alt="Logo" class="sidebar-logo">
 			</div>
 			<div class="sidebar-brand-text">
-				<span class="brand-title">e-Perolehan</span>
-				<span class="brand-subtitle">Sistem e-Perolehan Selangor</span>
+				<span class="brand-title">
+					<span class="brand-title-top">Perolehan</span>
+					<span class="brand-title-bottom">Selangor</span>
+				</span>
+				<span class="brand-subtitle">Sistem Perolehan Negeri</span>
 			</div>
 		</a>
 	</div>
