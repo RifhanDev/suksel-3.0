@@ -12,6 +12,18 @@
 			<th class="col-lg-3">Alamat Emel</th>
 			<td>{{ $user->email }}</td>
 		</tr>
+		@if ($user->roles->count() > 0)
+			<tr>
+				<th class="col-lg-3">
+					<i class="ti ti-shield me-1"></i>Peranan
+				</th>
+				<td>
+					@foreach ($user->roles as $role)
+						<span class="badge bg-primary me-1">{{ $role->name }}</span>
+					@endforeach
+				</td>
+			</tr>
+		@endif
 		@if ($user->hasRole('Vendor'))
 			<tr>
 				<th>Nama Syarikat</th>

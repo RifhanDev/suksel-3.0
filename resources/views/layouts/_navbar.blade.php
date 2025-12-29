@@ -47,6 +47,13 @@
 						<div class="d-none d-xl-block ps-2">
 							<div>{{ $user->vendor ? $user->vendor->name : $user->name }}</div>
 							<div class="mt-1 small text-muted">{{ $user->email }}</div>
+							@if ($user->roles->count() > 0)
+								<div class="mt-1">
+									@foreach ($user->roles as $role)
+										<span class="badge bg-primary badge-sm me-1" style="font-size: 0.65rem;">{{ $role->name }}</span>
+									@endforeach
+								</div>
+							@endif
 						</div>
 					</a>
 					<div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">

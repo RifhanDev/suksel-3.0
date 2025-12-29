@@ -1640,6 +1640,13 @@
 									<div style="text-align: left;">
 										<div style="font-weight: 600; line-height: 1.2;">{{ $user->name }}</div>
 										<div style="font-size: 0.75rem; opacity: 0.9; line-height: 1.2;">{{ $user->email }}</div>
+										@if ($user->roles->count() > 0)
+											<div class="mt-1">
+												@foreach ($user->roles as $role)
+													<span class="badge bg-primary badge-sm me-1" style="font-size: 0.65rem;">{{ $role->name }}</span>
+												@endforeach
+											</div>
+										@endif
 									</div>
 									<i class="ti ti-chevron-down" style="margin-left: 5px;"></i>
 								</button>
