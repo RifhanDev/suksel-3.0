@@ -953,7 +953,7 @@
 											</svg> Senarai Tender
 										</a>
 									@else
-										<a class="dropdown-item" style="text-color: white;"
+										<a class="dropdown-item" style="color: white;"
 											href="{{ asset('agencies/' . Auth::user()->organization_unit_id) }}">
 											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
 												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
