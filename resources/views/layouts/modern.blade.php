@@ -953,7 +953,7 @@
 											</svg> Senarai Tender
 										</a>
 									@else
-										<a class="dropdown-item" style="text-color: white;"
+										<a class="dropdown-item" style="color: white;"
 											href="{{ asset('agencies/' . Auth::user()->organization_unit_id) }}">
 											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
 												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
@@ -1640,6 +1640,13 @@
 									<div style="text-align: left;">
 										<div style="font-weight: 600; line-height: 1.2;">{{ $user->name }}</div>
 										<div style="font-size: 0.75rem; opacity: 0.9; line-height: 1.2;">{{ $user->email }}</div>
+										@if ($user->roles->count() > 0)
+											<div class="mt-1">
+												@foreach ($user->roles as $role)
+													<span class="badge bg-primary badge-sm me-1" style="font-size: 0.65rem;">{{ $role->name }}</span>
+												@endforeach
+											</div>
+										@endif
 									</div>
 									<i class="ti ti-chevron-down" style="margin-left: 5px;"></i>
 								</button>

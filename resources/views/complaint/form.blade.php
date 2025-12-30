@@ -3,8 +3,86 @@
 		.fixed_width {
 			resize: vertical;
 		}
+
+		.user-info-card {
+			background-color: #f8f9fa;
+			border: 1px solid #dee2e6;
+			border-radius: 0.375rem;
+			padding: 1rem;
+			margin-bottom: 1.5rem;
+		}
+
+		.user-info-row {
+			display: flex;
+			align-items: center;
+			margin-bottom: 0.5rem;
+		}
+
+		.user-info-row:last-child {
+			margin-bottom: 0;
+		}
+
+		.user-info-label {
+			font-weight: 600;
+			color: #495057;
+			min-width: 120px;
+			margin-right: 0.5rem;
+		}
+
+		.user-info-value {
+			color: #212529;
+		}
 	</style>
 @endsection
+
+@if (auth()->check())
+	<?php $user = auth()->user(); ?>
+	<div class="user-info-card">
+		<h5 class="mb-3">
+			<i class="ti ti-user me-2"></i>Maklumat Pengguna
+		</h5>
+		<div class="user-info-row">
+			<span class="user-info-label">
+				<i class="ti ti-user me-1"></i>Nama:
+			</span>
+			<span class="user-info-value">{{ $user->name }}</span>
+		</div>
+		<div class="user-info-row">
+			<span class="user-info-label">
+				<i class="ti ti-mail me-1"></i>Email:
+			</span>
+			<span class="user-info-value">{{ $user->email }}</span>
+		</div>
+		@if ($user->roles->count() > 0)
+			<div class="user-info-row">
+				<span class="user-info-label">
+					<i class="ti ti-shield me-1"></i>Peranan:
+				</span>
+				<span class="user-info-value">
+					@foreach ($user->roles as $role)
+						<span class="badge bg-primary me-1">{{ $role->name }}</span>
+					@endforeach
+				</span>
+			</div>
+		@endif
+		@if ($user->hasRole('Vendor') && $user->vendor)
+			<div class="user-info-row">
+				<span class="user-info-label">
+					<i class="ti ti-building me-1"></i>Nama Syarikat:
+				</span>
+				<span class="user-info-value">{{ $user->vendor->name }}</span>
+			</div>
+		@endif
+		@if ($user->agency)
+			<div class="user-info-row">
+				<span class="user-info-label">
+					<i class="ti ti-building me-1"></i>Agensi:
+				</span>
+				<span class="user-info-value">{{ $user->agency->name }}</span>
+			</div>
+		@endif
+	</div>
+@endif
 
 <div class="row">
 	@if (!auth()->check())
