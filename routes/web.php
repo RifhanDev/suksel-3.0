@@ -76,6 +76,7 @@ use App\Http\Controllers\ReportUserActiveController;
 use App\Http\Controllers\ReportVendorDistrictController;
 use App\Http\Controllers\ReportUserActivityController;
 use App\Http\Controllers\ReportUserLoginController;
+use App\Http\Controllers\DummyController;
 
 
 // Basic routes to get the application running
@@ -197,7 +198,12 @@ Route::view('/penilaian-teknikal', 'newModule.penilaian.teknikal')->name('penila
 Route::view('/penilaian-kewangan', 'newModule.penilaian.kewangan')->name('penilaianKewangan');
 Route::view('/lawatan-tapak', 'newModule.syarikatPembekal.lawatan_tapak')->name('lawatanTapak');
 
-
+// Dummy Controller 
+Route::get('/tender/cipta', [DummyController::class, 'create'])->name('tender.create');
+Route::post('/tender/store', [DummyController::class, 'store'])->name('tender.store');
+Route::get('/tender/bekalan', [DummyController::class, 'bekalan'])->name('tender.bekalan');
+Route::get('/tender/kerja', [DummyController::class, 'kerja'])->name('tender.kerja');
+Route::get('/tender/status/{status}', [DummyController::class, 'viewByStatus'])->name('tender.status');
 
 // Protected routes
 Route::middleware(['auth'])->group(function () {

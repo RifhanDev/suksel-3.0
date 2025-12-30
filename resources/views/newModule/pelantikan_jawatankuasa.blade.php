@@ -146,28 +146,54 @@ input[type="checkbox"]{
 <button class="btn btn-primary w-100 mb-3">Tapis</button>
 
 <table class="table table-bordered">
-<thead class="thead-red">
-<tr>
-    <th>No Tender</th>
-    <th>Tajuk Perolehan</th>
-    <th>Tarikh</th>
-    <th>Status</th>
-</tr>
-</thead>
+    <thead class="thead-red">
+        <tr>
+            <th class="text-center">No Tender</th>
+            <th>Tajuk Perolehan</th>
+            <th class="text-center">Tarikh</th>
+            <th class="text-center">Status</th>
+        </tr>
+    </thead>
 
-<tbody>
-<tr>
-    <td class="text-center">QT21000000023741</td>
-    <td>
-        <span class="tender-link" onclick="openPage2()">
-            TENDER PERKHIDMATAN DIGITAL FORENSIK KE ATAS ALIRAN PROSES SISTEM XXXX
-        </span>
-    </td>
-    <td class="text-center">3/3/2024</td>
-    <td class="text-center">Dalam Proses</td>
-</tr>
-</tbody>
+    <tbody>
+        <!-- ===============================
+             PERKHIDMATAN / BEKALAN
+        =============================== -->
+        <tr>
+            <td class="text-center">QT21000000023741</td>
+            <td>
+                <span class="tender-link"
+                    data-kategori="perkhidmatan_bekalan"
+                    onclick="openTender(this)">
+                    TENDER PERKHIDMATAN DIGITAL FORENSIK KE ATAS ALIRAN PROSES SISTEM XXXX
+                </span>
+            </td>
+            <td class="text-center">03/03/2024</td>
+            <td class="text-center">
+                <span class="badge bg-warning text-dark">Dalam Proses</span>
+            </td>
+        </tr>
+
+        <!-- ===============================
+             KERJA
+        =============================== -->
+        <tr>
+            <td class="text-center">QT21000000023799</td>
+            <td>
+                <span class="tender-link"
+                    data-kategori="kerja"
+                    onclick="openTender(this)">
+                    TENDER KERJA-KERJA NAIK TARAF INFRASTRUKTUR RANGKAIAN ICT
+                </span>
+            </td>
+            <td class="text-center">05/03/2024</td>
+            <td class="text-center">
+                <span class="badge bg-success">Aktif</span>
+            </td>
+        </tr>
+    </tbody>
 </table>
+
 
 </div>
 </div>
@@ -195,10 +221,29 @@ input[type="checkbox"]{
 <h5 class="fw-bold">Maklumat Jawatankuasa</h5>
 
 <div class="committee-tabs">
-    <button class="committee-tab active" onclick="switchCommittee('spec')">Jawatankuasa Spesifikasi</button>
-    <button class="committee-tab" onclick="switchCommittee('open')">Jawatankuasa Pembuka</button>
-    <button class="committee-tab" onclick="switchCommittee('tech')">Jawatankuasa Penilaian Teknikal</button>
-    <button class="committee-tab" onclick="switchCommittee('fin')">Jawatankuasa Penilaian Kewangan</button>
+    <button class="committee-tab active"
+            data-tab="spec"
+            onclick="switchCommittee('spec')">
+        Jawatankuasa Spesifikasi
+    </button>
+
+    <button class="committee-tab"
+            data-tab="open"
+            onclick="switchCommittee('open')">
+        Jawatankuasa Pembuka
+    </button>
+
+    <button class="committee-tab"
+            data-tab="tech"
+            onclick="switchCommittee('tech')">
+        Jawatankuasa Penilaian Teknikal
+    </button>
+
+    <button class="committee-tab"
+            data-tab="fin"
+            onclick="switchCommittee('fin')">
+        Jawatankuasa Penilaian Kewangan
+    </button>
 </div>
 
 <div id="committeeContent">
@@ -440,6 +485,57 @@ $tabData = [
 <!-- ===================== JAVASCRIPT ====================== -->
 
 <script>
+
+function openTender(el){
+
+    const kategori = el.dataset.kategori;
+
+    // show detail page
+    pageList.style.display = 'none';
+    pageDetail.style.display = 'block';
+
+    // reset all tabs
+    document.querySelectorAll('.committee-tab').forEach(tab=>{
+        tab.style.display = 'none';
+        tab.classList.remove('active');
+    });
+
+    document.querySelectorAll('#committeeContent > div')
+        .forEach(pane => pane.style.display = 'none');
+
+    // ===========================
+    // PERKHIDMATAN / BEKALAN
+    // ===========================
+    if(kategori === 'perkhidmatan_bekalan'){
+        showTabs(['spec','open','tech','fin'], 'spec');
+    }
+
+    // ===========================
+    // KERJA (IMEJ ANDA MAHU)
+    // ===========================
+    if(kategori === 'kerja'){
+        showTabs(['open','tech','fin'], 'open');
+    }
+}
+
+// helper
+function showTabs(tabList, activeTab){
+
+    tabList.forEach(type=>{
+        const btn = document.querySelector(`[data-tab="${type}"]`);
+        const pane = document.getElementById(`tab-${type}`);
+
+        if(btn && pane){
+            btn.style.display = 'block';
+            pane.style.display = 'none';
+        }
+    });
+
+    // active
+    document.querySelector(`[data-tab="${activeTab}"]`).classList.add('active');
+    document.getElementById(`tab-${activeTab}`).style.display = 'block';
+}
+
 
 function openPage2(){
     pageList.style.display='none';
