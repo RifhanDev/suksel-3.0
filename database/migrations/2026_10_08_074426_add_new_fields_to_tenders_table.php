@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class AddNewFieldToTendersTable extends Migration
+class AddNewFieldsToTendersTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,8 +13,8 @@ class AddNewFieldToTendersTable extends Migration
      */
     public function up()
     {
-        Schema::table('tenders', function (Blueprint $table) {
-            // Reference fields to lookup tables
+        Schema::table('tenders', function (Blueprint $table) 
+        {
             $table->unsignedBigInteger('kaedah_perolehan_id')->nullable()->after('type');
             $table->unsignedBigInteger('kategori_perolehan_id')->nullable()->after('kaedah_perolehan_id');
             $table->unsignedBigInteger('kategori_perolehan_detail_id')->nullable()->after('kategori_perolehan_id');
@@ -48,6 +48,14 @@ class AddNewFieldToTendersTable extends Migration
             $table->boolean('jawatankuasa')->default(false)->after('zon_lokasi');
             $table->boolean('lawatan_tapak')->default(false)->after('jawatankuasa');
             $table->boolean('penilaian_fizikal')->default(false)->after('lawatan_tapak');
+
+            // Add foreign key constraints
+            $table->foreign('kaedah_perolehan_id')->references('id')->on('ref_kaedah_perolehans')->onDelete('set null')->onUpdate('cascade');
+            $table->foreign('kategori_perolehan_id')->references('id')->on('ref_kategori_jenis_perolehans')->onDelete('set null')->onUpdate('cascade');
+            $table->foreign('kategori_perolehan_detail_id')->references('id')->on('ref_type_of_perolehans')->onDelete('set null')->onUpdate('cascade');
+            $table->foreign('jenis_tender_id')->references('id')->on('ref_type_of_tenders')->onDelete('set null')->onUpdate('cascade');
+            $table->foreign('jenis_kontrak_id')->references('id')->on('ref_type_of_contracts')->onDelete('set null')->onUpdate('cascade');
+            $table->foreign('lokaliti_id')->references('id')->on('ref_lokalitis')->onDelete('set null')->onUpdate('cascade');
         });
     }
 
@@ -58,8 +66,17 @@ class AddNewFieldToTendersTable extends Migration
      */
     public function down()
     {
-        Schema::table('tenders', function (Blueprint $table) {
-            $table->dropColumn([
+        Schema::table('tenders', function (Blueprint $table)
+        {
+            $table->dropForeign(['kaedah_perolehan_id']);
+            $table->dropForeign(['kategori_perolehan_id']);
+            $table->dropForeign(['kategori_perolehan_detail_id']);
+            $table->dropForeign(['jenis_tender_id']);
+            $table->dropForeign(['jenis_kontrak_id']);
+            $table->dropForeign(['lokaliti_id']);
+
+            $table->dropColumn(
+            [
                 'kaedah_perolehan_id',
                 'kategori_perolehan_id',
                 'kategori_perolehan_detail_id',

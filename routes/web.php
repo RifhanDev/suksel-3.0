@@ -28,6 +28,7 @@ use App\Http\Controllers\CountriesController;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\ManualsController;
 use App\Http\Controllers\CircularController;
+use App\Http\Controllers\RefKategoriJenisPerolehanController;
 use App\Http\Controllers\ComplaintController;
 use App\Http\Controllers\RefundController;
 use App\Http\Controllers\RejectTemplateController;
@@ -208,6 +209,9 @@ Route::middleware(['auth'])->group(function () {
 	// Version 3.0 tender creation routes
 	Route::get('/cipta-tender', [TendersController::class, 'createNew'])->name('ciptaTender');
 	Route::post('/cipta-tender', [TendersController::class, 'storeNew'])->name('storeCiptaTender');
+	
+	// Get type of perolehan by kategori jenis perolehan
+	Route::get('/ref/type-of-perolehan-by-kategori', [RefKategoriJenisPerolehanController::class, 'getTypeOfPerolehanByKategori'])->name('getTypeOfPerolehanByKategori');
 
 	Route::resource('vendors', VendorsController::class);
 	Route::get('vendors/select', [VendorsController::class, 'select']);

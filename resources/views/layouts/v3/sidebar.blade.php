@@ -38,7 +38,7 @@
 				</a>
 				<div class="collapse {{ $isTenderMenuActive ? 'show' : '' }}" id="menuTender">
 					<ul class="sidebar-submenu">
-						@if ($user->can('Tender:excecute')) <!-- new permission -->
+						@if ($user->can('Tender:execute')) <!-- new permission -->
 						<li>
 							<a class="submenu-item" href="{{ route('ciptaTender') }}">
 								<div class="submenu-icon" style="{{ request()->routeIs('ciptaTender') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}"></div>
