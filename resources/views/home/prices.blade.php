@@ -36,69 +36,6 @@
 		];
 	@endphp
 
-	<style>
-		/* Modern Card Styling */
-		.modern-card {
-			border: none;
-			border-radius: 12px;
-			box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-			transition: all 0.3s ease;
-		}
-
-		.modern-card:hover {
-			box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
-		}
-
-		.page-header-modern {
-			background: linear-gradient(135deg, #e0dfdf 0%, #c44f4f 100%);
-			color: white;
-			padding: 2rem;
-			border-radius: 12px;
-			margin-bottom: 2rem;
-		}
-
-		.page-header-modern h2 {
-			margin: 0;
-			font-weight: 600;
-			font-size: 1.75rem;
-		}
-
-		.page-header-modern .page-pretitle {
-			opacity: 0.9;
-			font-size: 0.875rem;
-			margin-bottom: 0.5rem;
-		}
-
-		.modern-table {
-			border-collapse: separate;
-			border-spacing: 0;
-		}
-
-		.modern-table thead th {
-			background: #f8f9fa;
-			border-bottom: 2px solid #dee2e6;
-			font-weight: 600;
-			text-transform: uppercase;
-			font-size: 0.75rem;
-			letter-spacing: 0.05em;
-			padding: 1rem;
-			color: #495057;
-		}
-
-		.modern-table tbody tr {
-			transition: all 0.2s ease;
-		}
-
-		.modern-table tbody tr:hover {
-			background: #f8f9fa;
-		}
-
-		.modern-table tbody td {
-			padding: 1rem;
-			vertical-align: middle;
-		}
-	</style>
-
 	<div class="row">
 		<div class="col-lg-9">
 			<!-- Page Header -->
