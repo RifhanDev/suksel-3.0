@@ -1,39 +1,65 @@
-<?php $user = Auth::user();?>
+{{-- Type Transaction Cards --}}
 
-@if($user->ability(['Admin', 'Registration Assessor'], ['Vendor:approve']))
-	<div class="row">
-		<div class="col-sm-4">
-			<div class="panel panel-primary text-center">
-				<div class="panel-body">
-					<h1 id="subscribe_trans_count"><span style="font-size:12px">Sedang diproses...</span></h1>
+@php $user = Auth::user(); @endphp
+
+@if ($user->ability(['Admin', 'Registration Assessor'], ['Vendor:approve']))
+	<div class="row stats-row mb-4">
+		<div class="col-sm-6 col-md-4 mb-3">
+			<div class="stats-card">
+				<div class="stats-card-header">
+					<h6 class="stats-card-title">Langganan</h6>
+					<div class="stats-card-icon">
+						<i class="ti ti-repeat"></i>
+					</div>
 				</div>
-				<div class="panel-heading">
-					<a href="{{action('TransactionsController@subscriptionIndex')}}" style="color:white">
-						Langganan
+				<div class="stats-card-body">
+					<h2 class="stats-card-value" id="subscribe_trans_count">
+						<span style="font-size:14px; font-weight:400;">Sedang diproses...</span>
+					</h2>
+				</div>
+				<div class="stats-card-footer">
+					<a href="{{ action('TransactionsController@subscriptionIndex') }}" class="stats-card-link">
+						Lihat Semua <i class="ti ti-arrow-right"></i>
 					</a>
 				</div>
 			</div>
 		</div>
-		<div class="col-sm-4">
-			<div class="panel panel-primary text-center">
-				<div class="panel-body">
-					<h1 id="purchase_trans_count"><span style="font-size:12px">Sedang diproses...</span></h1>
+		<div class="col-sm-6 col-md-4 mb-3">
+			<div class="stats-card warning">
+				<div class="stats-card-header">
+					<h6 class="stats-card-title">Pembelian Dokumen</h6>
+					<div class="stats-card-icon">
+						<i class="ti ti-shopping-cart"></i>
+					</div>
 				</div>
-				<div class="panel-heading">
-					<a href="{{action('TransactionsController@purchaseIndex')}}" style="color:white">
-						Pembelian Dokumen
+				<div class="stats-card-body">
+					<h2 class="stats-card-value" id="purchase_trans_count">
+						<span style="font-size:14px; font-weight:400;">Sedang diproses...</span>
+					</h2>
+				</div>
+				<div class="stats-card-footer">
+					<a href="{{ action('TransactionsController@purchaseIndex') }}" class="stats-card-link">
+						Lihat Semua <i class="ti ti-arrow-right"></i>
 					</a>
 				</div>
 			</div>
 		</div>
-		<div class="col-sm-4">
-			<div class="panel panel-primary text-center">
-				<div class="panel-body">
-					<h1 id="total_trans_count"><span style="font-size:12px">Sedang diproses...</span></h1>
+		<div class="col-sm-6 col-md-4 mb-3">
+			<div class="stats-card success">
+				<div class="stats-card-header">
+					<h6 class="stats-card-title">Jumlah Transaksi</h6>
+					<div class="stats-card-icon">
+						<i class="ti ti-chart-bar"></i>
+					</div>
 				</div>
-				<div class="panel-heading">
-					<a href="/transactions" style="color:white">
-						 Transaksi
+				<div class="stats-card-body">
+					<h2 class="stats-card-value" id="total_trans_count">
+						<span style="font-size:14px; font-weight:400;">Sedang diproses...</span>
+					</h2>
+				</div>
+				<div class="stats-card-footer">
+					<a href="/transactions" class="stats-card-link">
+						Lihat Semua <i class="ti ti-arrow-right"></i>
 					</a>
 				</div>
 			</div>
