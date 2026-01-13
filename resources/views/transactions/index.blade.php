@@ -4,33 +4,79 @@
 
 	@endphp
 
-	<h2>Status Transaksi {{ isset($subtitle2) ? ': ' . $subtitle2 : '' }}</h2>
-	<br>
+	<!-- Page Header -->
+	<div class="page-header-modern">
+		<div class="page-pretitle">
+			<i class="ti ti-credit-card me-2"></i>Sistem Tender Online
+		</div>
+		<h2>
+			<i class="ti ti-credit-card me-2"></i>Transaksi
+			@if (isset($subtitle2))
+				: {{ $subtitle2 }}
+			@elseif (isset($subtitle))
+				: {{ $subtitle }}
+			@endif
+		</h2>
+	</div>
+
+	<!-- Status Cards -->
 	@include('transactions._snaps_trans_status')
 
-	<h2>Senarai Transaksi {{ isset($subtitle) ? ': ' . $subtitle : '' }}</h2>
-	<br>
+	<!-- Type Cards -->
 	@include('transactions._snaps')
-	<hr>
-	<table
-		data-path ="{{ action('TransactionsController@index') }}?state={{ isset($transaction_type) ? $transaction_type : '' }}&status={{ isset($transaction_status) ? $transaction_status : '' }}"
-		class="DT-index table table-striped table-hover table-bordered">
-		<thead class="bg-blue-selangor">
-			<tr>
-				<th>Tarikh &amp; Masa</th>
-				<th>Nama Syarikat</th>
-				<th>No Transaksi</th>
-				<th>No Rujukan Gateway</th>
-				<th>No Resit</th>
-				<th>Jenis</th>
-				<th>Saluran</th>
-				<th>Jumlah</th>
-				<th>Status</th>
-				<th class ="col-lg-1">&nbsp;</th>
-			</tr>
-		</thead>
-		<tbody></tbody>
-	</table>
+
+	<!-- Main Card -->
+	<div class="card modern-card">
+		<div class="card-header" style="background: white; border-bottom: 1px solid #e9ecef;">
+			<h3 class="card-title-modern mb-0">
+				<i class="ti ti-list"></i>
+				Senarai Transaksi
+			</h3>
+		</div>
+		<div class="card-body">
+			<div class="table-responsive">
+				<table
+					data-path="{{ action('TransactionsController@index') }}?state={{ isset($transaction_type) ? $transaction_type : '' }}&status={{ isset($transaction_status) ? $transaction_status : '' }}"
+					class="DT-index table modern-table table-hover">
+					<thead>
+						<tr>
+							<th>
+								<i class="ti ti-calendar me-1"></i>Tarikh &amp; Masa
+							</th>
+							<th>
+								<i class="ti ti-building me-1"></i>Nama Syarikat
+							</th>
+							<th>
+								<i class="ti ti-hash me-1"></i>No Transaksi
+							</th>
+							<th>
+								<i class="ti ti-key me-1"></i>No Rujukan Gateway
+							</th>
+							<th>
+								<i class="ti ti-receipt me-1"></i>No Resit
+							</th>
+							<th>
+								<i class="ti ti-category me-1"></i>Jenis
+							</th>
+							<th>
+								<i class="ti ti-credit-card me-1"></i>Saluran
+							</th>
+							<th>
+								<i class="ti ti-currency-dollar me-1"></i>Jumlah
+							</th>
+							<th>
+								<i class="ti ti-info-circle me-1"></i>Status
+							</th>
+							<th class="col-lg-1">
+								<i class="ti ti-settings me-1"></i>Tindakan
+							</th>
+						</tr>
+					</thead>
+					<tbody></tbody>
+				</table>
+			</div>
+		</div>
+	</div>
 @endsection
 
 
@@ -304,7 +350,13 @@
 			stateSave: true,
 			language: {
 				"url": "{{ asset('custom_library/dataTables/lang/ms.json') }}"
-			}
+			},
+			dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rtip',
+			pageLength: 25,
+			responsive: true,
+			order: [
+				[0, 'desc']
+			]
 		});
 	</script>
 @endsection

@@ -472,6 +472,14 @@
 			box-shadow: 0 4px 12px rgba(96, 165, 250, 0.2);
 		}
 
+		.navbar .dropdown-menu .dropdown-item.active,
+		.dropdown-menu .dropdown-item.active {
+			background: linear-gradient(90deg, rgba(207, 88, 88, 0.3) 0%, rgba(220, 38, 38, 0.3) 100%);
+			color: #ffffff;
+			font-weight: 600;
+			border-left: 3px solid var(--sidebar-active);
+		}
+
 		.navbar .dropdown-menu .dropdown-item i,
 		.dropdown-menu .dropdown-item i {
 			color: #60a5fa;
@@ -801,6 +809,47 @@
 			box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
 		}
 
+		.modern-form-card {
+			border: none;
+			border-radius: 12px;
+			box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+			margin-bottom: 1.5rem;
+		}
+
+		.modern-form-card .card-header {
+			background: white;
+			border-bottom: 1px solid #e9ecef;
+			padding: 1.5rem;
+		}
+
+		.modern-form-card .card-title {
+			font-weight: 600;
+			color: #2c3e50;
+			margin: 0;
+			display: flex;
+			align-items: center;
+			gap: 0.5rem;
+		}
+
+		.modern-form-card .card-body {
+			padding: 2rem;
+		}
+
+		.form-label {
+			font-weight: 500;
+			color: #495057;
+			margin-bottom: 0.5rem;
+			display: flex;
+			align-items: center;
+			gap: 0.25rem;
+		}
+
+		.form-label.required::after {
+			content: '*';
+			color: #dc3545;
+			margin-left: 4px;
+		}
+
 		.page-header-modern {
 			background: linear-gradient(135deg, #e0dfdf 0%, #c44f4f 100%);
 			color: white;
@@ -941,9 +990,12 @@
 							<span class="nav-link-title">Aduan</span>
 						</a>
 					</div>
-					<div class="nav-item">
-						<a class="nav-link dropdown-toggle" href="#navbar-help" data-bs-toggle="dropdown" role="button"
-							aria-expanded="false">
+					<div
+						class="nav-item dropdown {{ request()->is('helps*') || request()->is('helpcategories*') || request()->is('manuals*') ? 'show' : '' }}">
+						<a
+							class="nav-link dropdown-toggle {{ request()->is('helps*') || request()->is('helpcategories*') || request()->is('manuals*') ? 'active' : '' }}"
+							href="#navbar-help" data-bs-toggle="dropdown" role="button"
+							aria-expanded="{{ request()->is('helps*') || request()->is('helpcategories*') || request()->is('manuals*') ? 'true' : 'false' }}">
 							<span class="nav-link-icon">
 								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
 									stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
@@ -956,20 +1008,27 @@
 							</span>
 							<span class="nav-link-title">Pertanyaan</span>
 						</a>
-						<div class="dropdown-menu">
-							<a class="dropdown-item" href="{{ action('HelpsController@index') }}">Bantuan</a>
-							<a class="dropdown-item" href="{{ route('manuals.show', 'pendaftaran') }}">Panduan Pengguna</a>
+						<div
+							class="dropdown-menu {{ request()->is('helps*') || request()->is('helpcategories*') || request()->is('manuals*') ? 'show' : '' }}">
+							<a class="dropdown-item {{ request()->is('helps*') || request()->is('helpcategories*') ? 'active' : '' }}"
+								href="{{ action('HelpsController@index') }}">Bantuan</a>
+							<a class="dropdown-item {{ request()->is('manuals*') ? 'active' : '' }}"
+								href="{{ route('manuals.show', 'pendaftaran') }}">Panduan Pengguna</a>
 						</div>
 					</div>
-					<div class="nav-item">
-						<a class="nav-link dropdown-toggle" href="#navbar-agencies" data-bs-toggle="dropdown" role="button"
-							aria-expanded="false">
+					<div
+						class="nav-item dropdown {{ request()->is('agencies*') || request()->is('organizationunits*') ? 'show' : '' }}">
+						<a
+							class="nav-link dropdown-toggle {{ request()->is('agencies*') || request()->is('organizationunits*') ? 'active' : '' }}"
+							href="#navbar-agencies" data-bs-toggle="dropdown" role="button"
+							aria-expanded="{{ request()->is('agencies*') || request()->is('organizationunits*') ? 'true' : 'false' }}">
 							<span class="nav-link-icon">
 								<i class="ti ti-building"></i>
 							</span>
 							<span class="nav-link-title">Direktori Agensi</span>
 						</a>
-						<div class="dropdown-menu">
+						<div
+							class="dropdown-menu {{ request()->is('agencies*') || request()->is('organizationunits*') ? 'show' : '' }}">
 							@php
 								try {
 								    $__orgTypes = App\OrganizationType::orderBy('sort_no', 'asc')->get();
@@ -978,7 +1037,7 @@
 								}
 							@endphp
 							@foreach ($__orgTypes as $type)
-								<a class="dropdown-item"
+								<a class="dropdown-item {{ request()->get('type') == $type->id ? 'active' : '' }}"
 									href="{{ action('OrganizationUnitsController@index', ['type' => $type->id]) }}">{{ $type->name }}</a>
 							@endforeach
 						</div>
@@ -996,16 +1055,21 @@
 						</div>
 
 						<!-- Pengurusan Tender -->
-						<div class="nav-item">
-							<a class="nav-link dropdown-toggle" href="#navbar-tender" data-bs-toggle="dropdown" role="button"
-								aria-expanded="false">
+						<div
+							class="nav-item dropdown {{ request()->is('tenders*') || request()->is('vendors*') || request()->is('blacklists*') || request()->is('news*') ? 'show' : '' }}">
+							<a
+								class="nav-link dropdown-toggle {{ request()->is('tenders*') || request()->is('vendors*') || request()->is('blacklists*') || request()->is('news*') ? 'active' : '' }}"
+								href="#navbar-tender" data-bs-toggle="dropdown" role="button"
+								aria-expanded="{{ request()->is('tenders*') || request()->is('vendors*') || request()->is('blacklists*') || request()->is('news*') ? 'true' : 'false' }}">
 								<span class="nav-link-title">Pengurusan Tender</span>
 							</a>
 							<br>
-							<div class="dropdown-menu">
+							<div
+								class="dropdown-menu {{ request()->is('tenders*') || request()->is('vendors*') || request()->is('blacklists*') || request()->is('news*') ? 'show' : '' }}">
 								@if (App\Tender::canList())
 									@if (Auth::user()->ability(['Admin', 'Registration Assesor', 'Front Desk'], []))
-										<a class="dropdown-item" style="color: white;" href="{{ asset('tenders') }}">
+										<a class="dropdown-item {{ request()->is('tenders*') ? 'active' : '' }}" style="color: white;"
+											href="{{ asset('tenders') }}">
 											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
 												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
 												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
@@ -1014,8 +1078,9 @@
 											</svg> Senarai Tender
 										</a>
 									@else
-										<a class="dropdown-item" style="color: white;"
-											href="{{ asset('agencies/' . Auth::user()->organization_unit_id) }}">
+										<a
+											class="dropdown-item {{ request()->is('agencies/' . Auth::user()->organization_unit_id . '*') ? 'active' : '' }}"
+											style="color: white;" href="{{ asset('agencies/' . Auth::user()->organization_unit_id) }}">
 											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
 												stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
 												class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
@@ -1026,7 +1091,8 @@
 									@endif
 								@endif
 								@if (App\Vendor::canList())
-									<a class="dropdown-item" style="color: white;" href="{{ asset('vendors') }}">
+									<a class="dropdown-item {{ request()->is('vendors*') ? 'active' : '' }}" style="color: white;"
+										href="{{ asset('vendors') }}">
 										<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
 											stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
 											class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
@@ -1036,7 +1102,8 @@
 									</a>
 								@endif
 								@if (App\VendorBlacklist::canList())
-									<a class="dropdown-item" style="color: white;" href="{{ asset('blacklists') }}">
+									<a class="dropdown-item {{ request()->is('blacklists*') ? 'active' : '' }}" style="color: white;"
+										href="{{ asset('blacklists') }}">
 										<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
 											stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
 											class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
@@ -1046,7 +1113,8 @@
 									</a>
 								@endif
 								@if (App\News::canList())
-									<a class="dropdown-item" style="color: white;" href="{{ asset('news') }}">
+									<a class="dropdown-item {{ request()->is('news*') ? 'active' : '' }}" style="color: white;"
+										href="{{ asset('news') }}">
 										<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
 											stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
 											class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-badge-right">
@@ -1810,7 +1878,8 @@
 						<div class="text-center">
 							<a href="{{ action('AuthController@forgotPassword') }}" class="text-muted">Lupa Kata Laluan?</a> &bullet;
 							<a href="{{ route('registration') }}" class="text-muted">Daftar Akaun!</a> &bullet;
-							<a href="{{ route('manuals.show', 'pendaftaran') }}" target="_blank" class="text-muted">Cara Mendaftar</a>
+							<a href="{{ route('manuals.show', 'pendaftaran') }}" target="_blank" class="text-muted">Cara
+								Mendaftar</a>
 						</div>
 					</div>
 				</div>
@@ -2439,6 +2508,95 @@
 					});
 				}
 			}, 1000);
+		});
+	</script>
+
+	<script>
+		// Auto-highlight active menu items and expand dropdowns
+		document.addEventListener('DOMContentLoaded', function() {
+			const currentUrl = window.location.href;
+			const currentPath = window.location.pathname;
+
+			// Find all nav links and check if they match current URL
+			document.querySelectorAll('.nav-link').forEach(function(link) {
+				const href = link.getAttribute('href');
+				if (href && href !== '#' && href !== 'javascript:;') {
+					try {
+						const linkUrl = new URL(href, window.location.origin);
+						const linkPath = linkUrl.pathname;
+
+						// Check if current path matches or starts with link path
+						if (currentPath === linkPath || currentPath.startsWith(linkPath + '/')) {
+							link.classList.add('active');
+							// If it's a dropdown toggle, expand it
+							if (link.classList.contains('dropdown-toggle')) {
+								const dropdown = link.closest('.dropdown');
+								if (dropdown) {
+									dropdown.classList.add('show');
+									link.setAttribute('aria-expanded', 'true');
+									const menu = dropdown.querySelector('.dropdown-menu');
+									if (menu) {
+										menu.classList.add('show');
+									}
+								}
+							}
+						}
+					} catch (e) {
+						// If URL parsing fails, try simple string matching
+						if (currentUrl.includes(href) || currentPath.includes(href)) {
+							link.classList.add('active');
+						}
+					}
+				}
+			});
+
+			// Check dropdown items
+			document.querySelectorAll('.dropdown-item').forEach(function(item) {
+				const href = item.getAttribute('href');
+				if (href && href !== '#' && href !== 'javascript:;') {
+					try {
+						const itemUrl = new URL(href, window.location.origin);
+						const itemPath = itemUrl.pathname;
+
+						// Check if current path matches
+						if (currentPath === itemPath || currentPath.startsWith(itemPath + '/')) {
+							item.classList.add('active');
+							// Expand parent dropdown
+							const dropdown = item.closest('.dropdown');
+							if (dropdown) {
+								dropdown.classList.add('show');
+								const toggle = dropdown.querySelector('.dropdown-toggle');
+								if (toggle) {
+									toggle.classList.add('active');
+									toggle.setAttribute('aria-expanded', 'true');
+								}
+								const menu = dropdown.querySelector('.dropdown-menu');
+								if (menu) {
+									menu.classList.add('show');
+								}
+							}
+						}
+					} catch (e) {
+						// Simple string matching fallback
+						if (currentUrl.includes(href) || currentPath.includes(href)) {
+							item.classList.add('active');
+							const dropdown = item.closest('.dropdown');
+							if (dropdown) {
+								dropdown.classList.add('show');
+								const toggle = dropdown.querySelector('.dropdown-toggle');
+								if (toggle) {
+									toggle.classList.add('active');
+									toggle.setAttribute('aria-expanded', 'true');
+								}
+								const menu = dropdown.querySelector('.dropdown-menu');
+								if (menu) {
+									menu.classList.add('show');
+								}
+							}
+						}
+					}
+				}
+			});
 		});
 	</script>
 
