@@ -789,9 +789,15 @@
 					</a>
 					<div class="collapse" id="menuSyarikatPembekal">
 						<ul class="sidebar-submenu">
+							<li><a class="submenu-item" href="{{ route('syaratTender') }}">
+									<div class="submenu-icon"></div><span>Syarat Tender</span>
+								</a></li>
 							<li><a class="submenu-item" href="{{ route('lawatanTapak') }}">
 									<div class="submenu-icon"></div><span>Lawatan Tapak</span>
-								</a></li>
+								</a></li>	
+							<li><a class="submenu-item" href="{{ route('kodBidang') }}">
+								<div class="submenu-icon"></div><span>Kod - Kod Bidang</span>
+							</a></li>
 							<li><a class="submenu-item" href="">
 									<div class="submenu-icon"></div><span>Coming soon</span>
 								</a></li>

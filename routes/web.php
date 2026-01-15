@@ -199,6 +199,9 @@ Route::view('/jawatankuasa-pembuka', 'newModule.jawatankuasa_pembuka')->name('ja
 Route::view('/penilaian-teknikal', 'newModule.penilaian.teknikal')->name('penilaianTeknikal');
 Route::view('/penilaian-kewangan', 'newModule.penilaian.kewangan')->name('penilaianKewangan');
 Route::view('/lawatan-tapak', 'newModule.syarikatPembekal.lawatan_tapak')->name('lawatanTapak');
+Route::view('/syarat-tender', 'newModule.syarikatPembekal.syarat_tender')->name('syaratTender');
+Route::view('/kod-bidang', 'newModule.syarikatPembekal.kod_bidang')->name('kodBidang');
+
 
 // Dummy Controller 
 Route::get('/tender/cipta', [DummyController::class, 'create'])->name('tender.create');
