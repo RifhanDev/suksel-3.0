@@ -1279,7 +1279,7 @@
 							@endphp
 							@foreach ($__orgTypes as $type)
 								<a class="dropdown-item"
-									href="{{ action('OrganizationUnitsController@index', ['type' => $type->id]) }}">{{ $type->name }}</a>
+									href="{{ url('/agencies') }}?type={{ $type->id }}">{{ $type->name }}</a>
 							@endforeach
 						</div>
 					</li>
@@ -1446,7 +1446,7 @@
 							}
 						@endphp
 						@foreach ($__orgTypes as $type)
-							<a href="{{ action('OrganizationUnitsController@index', ['type' => $type->id]) }}" class="mobile-dropdown-item">
+							<a href="{{ url('/agencies') }}?type={{ $type->id }}" class="mobile-dropdown-item">
 								<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M18 2a3 3 0 0 1 2.995 2.824l.005 .176v16a1 1 0 0 1 -.883 .993l-.117 .007h-5a1 1 0 0 1 -.993 -.883l-.007 -.117v-3h-2v3a1 1 0 0 1 -.883 .993l-.117 .007h-5a1 1 0 0 1 -.993 -.883l-.007 -.117v-16a3 3 0 0 1 2.824 -2.995l.176 -.005h10zm-6 6h-1a1 1 0 1 0 0 2h1a1 1 0 0 0 0 -2zm4 0h-1a1 1 0 0 0 0 2h1a1 1 0 0 0 0 -2z" /></svg>
 								{{ $type->name }}
 							</a>

@@ -13,4 +13,9 @@ class RefKategoriJenisPerolehan extends Model
     ];
 
     protected $guarded = [];
+
+    public function typeOfPerolehans()
+    {
+        return $this->hasMany(RefTypeOfPerolehan::class, 'ref_kategori_jenis_perolehan_id');
+    }
 }

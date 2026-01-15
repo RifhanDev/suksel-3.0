@@ -38,7 +38,7 @@
 				</a>
 				<div class="collapse {{ $isTenderMenuActive ? 'show' : '' }}" id="menuTender">
 					<ul class="sidebar-submenu">
-						@if ($user->can('Tender:excecute')) <!-- new permission -->
+						@if ($user->can('Tender:execute')) <!-- new permission -->
 						<li>
 							<a class="submenu-item" href="{{ route('ciptaTender') }}">
 								<div class="submenu-icon" style="{{ request()->routeIs('ciptaTender') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}"></div>
@@ -49,9 +49,9 @@
 
 						@if (App\Tender::canList())
 						@if (Auth::user()->ability(['Admin', 'Registration Assesor', 'Front Desk'], []))
-						<li><a class="submenu-item" href="{{ asset('tenders') }}">
-								<div class="submenu-icon" style="{{ request()->is('tenders*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}"></div>
-								<span class="{{ request()->is('tenders*') ? 'text-white' : '' }}">Senarai Tender</span>
+						<li><a class="submenu-item" href="{{ asset('tender') }}">
+								<div class="submenu-icon" style="{{ request()->is('tender*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}"></div>
+								<span class="{{ request()->is('tender*') ? 'text-white' : '' }}">Senarai Tender</span>
 							</a></li>
 						@else
 						<li><a class="submenu-item" href="{{ asset('agencies/' . Auth::user()->organization_unit_id) }}">

@@ -28,6 +28,7 @@ use App\Http\Controllers\CountriesController;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\ManualsController;
 use App\Http\Controllers\CircularController;
+use App\Http\Controllers\RefKategoriJenisPerolehanController;
 use App\Http\Controllers\ComplaintController;
 use App\Http\Controllers\RefundController;
 use App\Http\Controllers\RejectTemplateController;
@@ -85,7 +86,6 @@ Route::get('results', [HomeController::class, 'results']);
 Route::get('privacy', [HomeController::class, 'privacy']);
 
 // Place 3.0 Modules Routes Temporarily Here
-Route::view('/cipta-tender', 'newModule.cipta_tender')->name('ciptaTender');
 Route::view('/pelantikan-jawatankuasa', 'newModule.pelantikan_jawatankuasa')->name('pelantikanJawatankuasa');
 Route::view('/jawatankuasa-spesifikasi/senarai-teknikal', 'newModule.jawatankuasaSpesifikasi.senarai_teknikal')->name('jawatankuasaSpesifikasi.teknikal');
 Route::view('/jawatankuasa-spesifikasi/senarai-kewangan', 'newModule.jawatankuasaSpesifikasi.senarai_kewangan')->name('jawatankuasaSpesifikasi.kewangan');
@@ -206,6 +206,13 @@ Route::middleware(['auth'])->group(function () {
 	// Route::get('tender/{id}/vendors', [TendersController::class, 'vendors'])->name('tenders.vendors');
 	// Route::post('tender/{id}/exception', [TendersController::class, 'exception'])->name('tenders.exception');
 
+	// Version 3.0 tender creation routes
+	Route::get('/cipta-tender', [TendersController::class, 'createNew'])->name('ciptaTender');
+	Route::post('/cipta-tender', [TendersController::class, 'storeNew'])->name('storeCiptaTender');
+	
+	// Get type of perolehan by kategori jenis perolehan
+	Route::get('/ref/type-of-perolehan-by-kategori', [RefKategoriJenisPerolehanController::class, 'getTypeOfPerolehanByKategori'])->name('getTypeOfPerolehanByKategori');
+
 	Route::resource('vendors', VendorsController::class);
 	Route::get('vendors/select', [VendorsController::class, 'select']);
 	Route::get('vendors/new', [VendorsController::class, 'pendingRegistrationIndex']);
@@ -265,11 +272,15 @@ Route::middleware(['auth'])->group(function () {
 	Route::get('tenders/{id}/publishPrices', [TendersController::class, 'publishPrices'])->name('tenders.publishPrices');
 	Route::get('tenders/{id}/publishWinner', [TendersController::class, 'publishWinner'])->name('tenders.publishWinner');
 	Route::get('tenders/{tender_id}/vendor/{id}', [TendersController::class, 'vendor'])->name('tenders.vendor');
-
 	Route::get('tenders/{id}/vendors/print', [TendersController::class, 'printVendors'])->name('tenders.vendors.print');
 	Route::get('tenders/{id}/vendors/template', [TendersController::class, 'template'])->name('tenders.template');
 	Route::post('tenders/bulkUpdate', [TendersController::class, 'bulkUpdate'])->name('tenders.bulkUpdate');
 	Route::get('tenders/{id}/eligibles', [TendersController::class, 'eligibles'])->name('tenders.eligibles');
+	Route::post('tenders/exception/store', [TendersController::class, 'storeException'])->name('tender.store.exception');
+	Route::get('tenders/{id}/exceptions', [TendersController::class, 'exceptions'])->name('tender.exceptions');
+	Route::get('tenders/{id}/approve', [TendersController::class, 'approve_exception'])->name('tender.approve.exception');
+	Route::post('tenders/{id}/reject/{exception_id}', [TendersController::class, 'reject_exception'])->name('tender.reject.exception');
+	Route::get('tenders/{id}/publishPrice', [TendersController::class, 'publishPrice']);
 
 	Route::get('cart', [CartController::class, 'index'])->name('cart');
 	Route::get('cart/clear', [CartController::class, 'clear'])->name('cart.clear');
@@ -406,11 +417,6 @@ Route::middleware(['auth'])->group(function () {
 		Route::resource('payments', PaymentsController::class);
 		Route::resource('helpcategories', HelpCategoriesController::class);
 
-		// Tender routes - additional
-		Route::get('tenders/{id}/publish', [TendersController::class, 'publish'])->name('tenders.publish');
-		Route::get('tenders/{id}/publishPrice', [TendersController::class, 'publishPrice']);
-		Route::get('tenders/{id}/publishWinner', [TendersController::class, 'publishWinner'])->name('tenders.publishWinner');
-
 		// News
 		Route::get('news/{id}/publish', [NewsController::class, 'publish'])->name('news.publish');
 
@@ -508,12 +514,6 @@ Route::middleware(['auth'])->group(function () {
 		Route::get('reports/user/login', [ReportUserLoginController::class, 'index']);
 		Route::post('reports/user/login', [ReportUserLoginController::class, 'view']);
 		Route::get('reports/user/login/excel', [ReportUserLoginController::class, 'excel']);
-
-		// Exception
-		Route::post('tenders/exception/store', [TendersController::class, 'storeException'])->name('tender.store.exception');
-		Route::get('tenders/{id}/exceptions', [TendersController::class, 'exceptions'])->name('tender.exceptions');
-		Route::get('tenders/{id}/approve', [TendersController::class, 'approve_exception'])->name('tender.approve.exception');
-		Route::post('tenders/{id}/reject/{exception_id}', [TendersController::class, 'reject_exception'])->name('tender.reject.exception');
 
 		// Refunds
 		Route::prefix('refunds')->group(function () {

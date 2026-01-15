@@ -80,7 +80,29 @@ class Tender extends Model
 		'type',
 		'only_advertise',
 		'mof_cidb_rule',
-		'district_list_rule'
+		'district_list_rule',
+		// New fields for version 3.0
+		'kaedah_perolehan_id',
+		'kategori_perolehan_id',
+		'kategori_perolehan_detail_id',
+		'jenis_tender_id',
+		'jenis_kontrak_id',
+		'lokaliti_id',
+		'no_tender',
+		'no_kontrak',
+		'sumber_lain_text',
+		'harga_indikatif',
+		'anggaran_jabatan',
+		'tarikh_dicipta',
+		'sumber_peruntukan',
+		'terbuka_kepada',
+		'tempoh_siap_val',
+		'tempoh_siap_unit',
+		'tempoh_kontrak_bulan',
+		'zon_lokasi',
+		'jawatankuasa',
+		'lawatan_tapak',
+		'penilaian_fizikal'
 	];
 
 	/**

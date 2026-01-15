@@ -11,15 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('ref_type_of_perolehans', function (Blueprint $table) {
+        Schema::create('ref_lokalitis', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('ref_kategori_jenis_perolehan_id')->nullable();
             $table->string('name', 255)->nullable();
             $table->string('description', 255)->nullable();
-            $table->boolean('active')->nullable();
+            $table->boolean('active')->default(true);
             $table->timestamps();
-            
-            $table->foreign('ref_kategori_jenis_perolehan_id')->references('id')->on('ref_kategori_jenis_perolehans')->onDelete('cascade');
         });
     }
 
@@ -28,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('ref_type_of_perolehans');
+        Schema::dropIfExists('ref_lokalitis');
     }
 };
