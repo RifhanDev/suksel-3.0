@@ -284,6 +284,10 @@ Route::middleware(['auth'])->group(function () {
 	Route::put('profile/change_password', [ProfileController::class, 'doChangePassword']);
 	Route::get('profile/release', [ProfileController::class, 'releaseUser'])->name('release_user');
 
+	// User's own complaints (Aduan)
+	Route::get('my-aduan', [ComplaintController::class, 'myComplaints'])->name('my.aduan.index');
+	Route::get('my-aduan/{id}', [ComplaintController::class, 'myComplaintShow'])->name('my.aduan.show');
+
 	// Dashboard fetch routes
 	Route::post('dashboard/fetch/tender', [HomeController::class, 'tender_dashboard'])->name('dashboard.tender');
 	Route::post('dashboard/fetch/tender-summary', [HomeController::class, 'tender_summary_dashboard'])->name('dashboard.tender.summary');
@@ -330,6 +334,7 @@ Route::middleware(['auth'])->group(function () {
 		Route::put('users/{user}/confirm', [UsersController::class, 'confirm']);
 		Route::get('users/{user}/reset_password', [UsersController::class, 'getSetPassword'])->name('user.reset-password');
 		Route::put('users/{user}/reset_password', [UsersController::class, 'putSetPassword']);
+		Route::get('users/{user}/send_reset_password', [UsersController::class, 'sendResetPasswordEmail'])->name('user.send-reset-password');
 		Route::put('users/{user}/confirm', [UsersController::class, 'putSetConfirmation']);
 		Route::get('users/{user}/resend_confirmation', [UsersController::class, 'resendConfirmation']);
 		Route::resource('users', UsersController::class);
