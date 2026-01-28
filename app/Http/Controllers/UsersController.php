@@ -172,6 +172,13 @@ class UsersController extends Controller
 		}
 		$user->roles()->sync($data['roles']);
 
+		// Hantar emel pengesahan pendaftaran kepada pengguna baharu
+		try {
+			Mail::to($user)->send(new ConfirmRegistration($user));
+		} catch (\Exception $e) {
+			\Log::error('Failed to send registration confirmation email: ' . $e->getMessage());
+		}
+
 		// Send reset password email if option is 'reset'
 		if ($passwordOption === 'reset') {
 			try {
