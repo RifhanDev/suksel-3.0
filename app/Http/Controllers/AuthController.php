@@ -73,9 +73,16 @@ class AuthController extends Controller
 
             $credentials = $request->only('email', 'password');
 
-            if (auth()->attempt($credentials)) {
+           if (auth()->attempt($credentials)) {
 
                $user = auth()->user();
+
+               // Pastikan akaun telah disahkan sebelum dibenarkan log masuk
+               if (!$user->confirmed) {
+                  auth()->logout();
+                  $err_msg = trans('auth.alerts.not_confirmed');
+                  return redirect('/')->withInput($request->except('password'))->with('error', $err_msg);
+               }
 
                session()->forget('attempt');
 
@@ -189,7 +196,9 @@ class AuthController extends Controller
       $user = User::where('confirmation_code', $code)->first();
 
       if ($user) {
-         // $user->confirmed = 1;
+         // Sahkan akaun pengguna apabila pautan pengesahan diklik
+         $user->confirmed = 1;
+         $user->confirmation_code = null;
          $user->save();
          $notice_msg = trans('auth.alerts.confirmation');
          return redirect('/')->with('notice', $notice_msg);

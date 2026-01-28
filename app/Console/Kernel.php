@@ -24,10 +24,8 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        //$schedule->command('send:eligible-email')->everyTwoMinutes();
+        $schedule->command('send:eligible-email')->everyTwoMinutes();
         $schedule->command('requery:fpx')->everyMinute();
-        // Hantar emel Account Review Request kepada semua pengguna aktif
-        // pada 1 Mac dan 1 September setiap tahun, pukul 12:00 pagi.
         $schedule->command('send:account-review-request')
             ->cron('0 0 1 3,9 *');
     }
@@ -39,7 +37,7 @@ class Kernel extends ConsoleKernel
      */
     protected function commands()
     {
-        $this->load(__DIR__.'/Commands');
+        $this->load(__DIR__ . '/Commands');
 
         require base_path('routes/console.php');
     }
