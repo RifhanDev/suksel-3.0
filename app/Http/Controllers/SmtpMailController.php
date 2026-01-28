@@ -46,22 +46,14 @@ class SmtpMailController extends Controller
 
 			foreach ($results as $rows) {
 
-                $enc_id = $this->encryptString($rows->id);
-
-				$actions    = [];
-                $actions[] = SmtpMails::canShow() ? "<a class='btn btn-xs btn-primary' href='".route('mail-manager.smtp-setting.show', ['smtp_setting' => $enc_id])."'>Papar</a>" : '';
-                $actions[] = SmtpMails::canUpdate() ? "<a class='btn btn-xs btn-warning' href='".route('mail-manager.smtp-setting.edit', ['smtp_setting' => $enc_id])."'>Kemaskini</a>" : '';
-                // $actions[] = SmtpMails::canDelete() ? "<button class='btn btn-xs btn-danger' onclick='deleteSmtpMail(".'"'.$enc_id.'"'.")'>Padam</button>" : '';
-				
-				$action_column = '<div class ="btn-group">' . implode(' ', $actions) . '</div>';
-
+				// Untuk elakkan ralat parameter laluan, buat paparan ringkas tanpa pautan aksi
 				$datatable_data[] = array(
-					"created_at" => $rows->created_at->format('d-m-Y'),
-					"mail_server" => $rows->mail_server,
-					"mail_port" => $rows->mail_port,
-					"mail_username" => $rows->mail_username,
-					"mail_message_ratelimit" => $rows->mail_message_ratelimit,
-					"actions" => $action_column,
+					"created_at"            => $rows->created_at->format('d-m-Y'),
+					"mail_server"           => $rows->mail_server,
+					"mail_port"             => $rows->mail_port,
+					"mail_username"         => $rows->mail_username,
+					"mail_message_ratelimit"=> $rows->mail_message_ratelimit,
+					"actions"               => '', // boleh ditambah semula kemudian dengan pengendalian parameter yang lebih selamat
 				);
 			}
 

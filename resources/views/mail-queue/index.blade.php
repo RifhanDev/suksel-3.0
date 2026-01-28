@@ -32,6 +32,8 @@
 		let table = $('.DT-index').DataTable({
 			processing: true,
 			serverSide: true,
+			pageLength: 100, // papar 100 rekod setiap halaman
+			lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
 			ajax: path,
 			columnDefs: [{
 				"targets": [1],
