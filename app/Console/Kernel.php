@@ -26,7 +26,10 @@ class Kernel extends ConsoleKernel
     {
         //$schedule->command('send:eligible-email')->everyTwoMinutes();
         $schedule->command('requery:fpx')->everyMinute();
-        //$schedule->command('send:account-review-request')->monthly();
+        // Hantar emel Account Review Request kepada semua pengguna aktif
+        // pada 1 Mac dan 1 September setiap tahun, pukul 12:00 pagi.
+        $schedule->command('send:account-review-request')
+            ->cron('0 0 1 3,9 *');
     }
 
     /**
