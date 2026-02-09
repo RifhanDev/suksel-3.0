@@ -116,6 +116,7 @@ use App\Http\Controllers\CountriesController;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\ManualsController;
 use App\Http\Controllers\CircularController;
+use App\Http\Controllers\VersionHistoryController;
 use App\Http\Controllers\ComplaintController;
 use App\Http\Controllers\RefundController;
 use App\Http\Controllers\RejectTemplateController;
@@ -302,7 +303,7 @@ Route::middleware(['auth'])->group(function () {
 	Route::post('dashboard/fetch/transaction-value-summary', [HomeController::class, 'transaction_value_summary_dashboard'])->name('dashboard.transaction-value.summary');
 
 	// Version histories
-	Route::get('version-histories', [HomeController::class, 'versionHistories'])->name('version-histories');
+	// Route::get('version-histories', [HomeController::class, 'versionHistories'])->name('version-histories');
 
 	// Test routes (keep for now)
 	// Route::get('tenders/send-eligible', [TendersController::class, 'sendEligible']);
@@ -555,6 +556,17 @@ Route::middleware(['auth'])->group(function () {
 		Route::get('circulars/list', [CircularController::class, 'public'])->name('circulars.public');
 		Route::get('circulars/sort', [CircularController::class, 'sortPosition'])->name('circulars.position');
 		Route::post('circulars/sort', [CircularController::class, 'updatePosition'])->name('circulars.update.position');
+
+		// Version histories (CRUD – admin)
+		Route::resource('version-histories', VersionHistoryController::class)->names([
+			'index' => 'version-histories.index',
+			'create' => 'version-histories.create',
+			'store' => 'version-histories.store',
+			'show' => 'version-histories.show',
+			'edit' => 'version-histories.edit',
+			'update' => 'version-histories.update',
+			'destroy' => 'version-histories.destroy',
+		]);
 
 		// Refunds
 		Route::prefix('refunds')->group(function () {
