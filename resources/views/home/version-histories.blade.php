@@ -1,70 +1,80 @@
 @extends('layouts.modern')
 
 @section('content')
-	<h1>Sejarah Perubahan Sistem Tender Selangor</h1>
+	<div class="row">
+		<div class="col-lg-9">
+			<!-- Page Header -->
+			<div class="page-header-modern">
+				<div class="page-pretitle">
+					<i class="ti ti-info-circle me-2"></i>Sistem Tender Online Selangor
+				</div>
+				<h2>
+					<i class="ti ti-history me-2"></i>Sejarah Perubahan Sistem
+				</h2>
+			</div>
 
-	<table class="table table-bordered table-hover">
-		<thead class="bg-blue-selangor">
-			<tr>
-				<th class="col-lg-2">Versi</th>
-				<th class="col-lg-2">Tarikh</th>
-				<th>Nota</th>
-			</tr>
-		</thead>
-		<tbody>
-			<tr>
-				<td>1.0</td>
-				<td>8 Jun 2015</td>
-				<td>Live</td>
-			</tr>
-			<tr>
-				<td>1.1</td>
-				<td>1 November 2015</td>
-				<td>
-					<ol>
-						<li>Masukkan Syarikat Tidak Layak Tender / Sebut Harga Menggunakan Fungsi Kebenaran Khas</li>
-						<li>Cetak Resit Pembayaran Untuk Tender / Sebut Harga Secara Pukal</li>
-					</ol>
-				</td>
-			</tr>
-			<tr>
-				<td>1.2</td>
-				<td>14 Oktober 2016</td>
-				<td>
-					<ol>
-						<li>Halang Transaksi Pembayaran Agensi</li>
-						<li>Mengemaskini semula data-data maklumat hubungan kontraktor</li>
-						<li>Semakan pendaftaran syarikat</li>
-						<li>Buang agensi pengesahan</li>
-						<li>Paparan kod bidang CIDB</li>
-						<li>Maklumat ralat</li>
-						<li>Muat turun laporan dalam format Excel</li>
-						<li>Laporan syarikat berdasarkan kod bidang</li>
-						<li>Laporan produktiviti Staff</li>
-						<li>Paparan notifikasi kod bidang tidak layak</li>
-						<li>Penukaran alamat emel oleh pegawai syarikat</li>
-						<li>Paparan status pembayaran sewaktu transaksi</li>
-						<li>Medan “Daerah” dalam data syarikat</li>
-						<li>Muat naik kehadiran syarikat ke taklimat &amp; lawatan tapak</li>
-					</ol>
-				</td>
-			</tr>
-			<tr>
-				<td>1.3</td>
-				<td>4 September 2017</td>
-				<td>
-					<strong>Penambahbaikan Modul UPEN</strong><br><br>
+			<!-- Main Card -->
+			<div class="card modern-card">
+				<div class="card-header" style="background: white; border-bottom: 1px solid #e9ecef;">
+					<h3 class="card-title mb-0">
+						<i class="ti ti-versions me-2"></i>Rekod Versi
+					</h3>
+				</div>
+				<div class="card-body p-0">
+					@if ($versionHistories->isEmpty())
+						<div class="empty p-5">
+							<div class="empty-icon">
+								<i class="ti ti-history"></i>
+							</div>
+							<p class="empty-title">Tiada rekod versi</p>
+							<p class="empty-subtitle text-muted">
+								Tiada sejarah perubahan sistem pada masa ini.
+							</p>
+						</div>
+					@else
+						<div class="table-responsive">
+							<table class="table modern-table table-hover mb-0">
+								<thead>
+									<tr>
+										<th class="text-nowrap" style="width: 120px;">
+											<i class="ti ti-tag me-1"></i>Versi
+										</th>
+										<th class="text-nowrap" style="width: 140px;">
+											<i class="ti ti-calendar me-1"></i>Tarikh
+										</th>
+										<th><i class="ti ti-notes me-1"></i>Nota</th>
+									</tr>
+								</thead>
+								<tbody>
+									@foreach ($versionHistories as $item)
+										<tr>
+											<td><span class="badge bg-primary">{{ $item->version }}</span></td>
+											<td>{{ $item->formatted_date }}</td>
+											<td>
+												@if (count($item->notes_lines) > 0)
+													<ol class="mb-0 ps-3">
+														@foreach ($item->notes_lines as $line)
+															<li>{!! nl2br(e($line)) !!}</li>
+														@endforeach
+													</ol>
+												@else
+													{{ $item->notes ?: '—' }}
+												@endif
+											</td>
+										</tr>
+									@endforeach
+								</tbody>
+							</table>
+						</div>
+					@endif
+				</div>
+			</div>
+		</div>
 
-					<ol>
-						<li>Menolak pendaftaran kontraktor</li>
-						<li>Menerima pendaftaran kontraktor</li>
-						<li>Menolak permintaan perubahan kontraktor</li>
-						<li>Menerima permintaan perubahan kontraktor</li>
-						<li>Menyenarai hitam kontraktor</li>
-						<li>Tetapan peranan</li>
-					</ol>
-				</td>
-			</tr>
-		</tbody>
-	</table>
+		<!-- Sidebar -->
+		<div class="col-lg-3">
+			@include('layouts._register')
+			@include('layouts._news')
+		</div>
+	</div>
 @endsection
