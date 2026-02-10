@@ -768,6 +768,9 @@
 						<li><a class="submenu-item" href="{{ route('penilaianTeknikal') }}">
 								<div class="submenu-icon"></div><span>Penilaian Teknikal</span>
 							</a></li>
+							<li><a class="submenu-item" href="{{ route('penilaianTeknikalKerja') }}">
+								<div class="submenu-icon"></div><span>Penilaian Teknikal Kerja</span>
+							</a></li>
 						<li><a class="submenu-item" href="{{ route('penilaianKewangan') }}">
 								<div class="submenu-icon"></div><span>Penilaian Kewangan</span>
 							</a></li>
@@ -822,8 +825,8 @@
 							<li><a class="submenu-item" href="{{ route('keputusanMesyuarat') }}">
 									<div class="submenu-icon"></div><span>Keputusan Mesyuarat</span>
 								</a></li>
-							<li><a class="submenu-item" href="{{ route('penilaianKewangan') }}">
-									<div class="submenu-icon"></div><span>Penilaian Kewangan</span>
+							<li><a class="submenu-item" href="#">
+									<div class="submenu-icon"></div><span>Comming Soon</span>
 								</a></li>
 						</ul>
 					</div>

@@ -49,7 +49,7 @@
 }
 
 /* =====================
-   TABS UTAMA (lebih dekat dgn screenshot)
+   TABS UTAMA 
 ===================== */
 .custom-tabs{
     border-bottom:1px solid #e9edf3;
@@ -84,7 +84,7 @@
 }
 
 /* =====================
-   BUTTON COLORS (ikut contoh)
+   BUTTON COLORS 
 ===================== */
 .btn-primary{
     background-color:#A4161A !important;
@@ -111,10 +111,23 @@
 }
 
 /* =====================
-   FORM ELEMENTS
+   RED TABLE HEADER 
 ===================== */
-input[type="checkbox"]{ width:16px; height:16px; }
-.form-select, .form-control{ padding:6px 10px; }
+.table thead th{
+    background-color:#B11217 !important;
+    color:#ffffff !important;
+    text-align:left;              
+    vertical-align:middle;
+    font-weight:600;
+    border-color:#B11217 !important;
+}
+
+/* checkbox column alignment */
+.table thead th:first-child{
+    text-align:center;
+    width:40px;
+}
+
 </style>
 
 <div class="container-fluid mt-3 page-wrap">
@@ -229,7 +242,7 @@ input[type="checkbox"]{ width:16px; height:16px; }
                     </div>
                 </div>
 
-                {{-- Tabs utama (current code) --}}
+               {{-- Tabs utama (current code) --}}
                 <ul class="nav nav-tabs custom-tabs" id="mainTabs" role="tablist">
 
                     <li class="nav-item" role="presentation">
@@ -259,6 +272,28 @@ input[type="checkbox"]{ width:16px; height:16px; }
                                 data-bs-target="#tab-pemilihan"
                                 type="button" role="tab">
                             Memuktamadkan Pemilihan Pembekal
+                        </button>
+                    </li>
+
+                    {{-- NEW: Pengesyoran Pembekal --}}
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link main-tab-btn"
+                                id="tab-pengesyoran-btn"
+                                data-bs-toggle="tab"
+                                data-bs-target="#tab-pengesyoran"
+                                type="button" role="tab">
+                            Pengesyoran Pembekal
+                        </button>
+                    </li>
+
+                    {{-- NEW: Penyediaan Jadual Bidaan --}}
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link main-tab-btn"
+                                id="tab-jadual-bidaan-btn"
+                                data-bs-toggle="tab"
+                                data-bs-target="#tab-jadual-bidaan"
+                                type="button" role="tab">
+                            Penyediaan Jadual Bidaan
                         </button>
                     </li>
 
@@ -485,67 +520,198 @@ input[type="checkbox"]{ width:16px; height:16px; }
                 </div>
                     </div>
 
+                    {{-- ============ TAB: Pengesyoran Pembekal ============ --}}
+<div class="tab-pane fade" id="tab-pengesyoran" role="tabpanel">
+
+
+    <div class="section-grey">Senarai Item</div>
+    <div class="text-primary small mb-2" style="font-style:italic;">
+        Sila klik pada item untuk melihat senarai pembekal
+    </div>
+
+    <div class="table-responsive mb-3">
+        <table class="table table-bordered table-blue align-middle">
+            <thead class="text-center">
+            <tr>
+                <th style="width:36px;"></th>
+                <th>Item</th>
+                <th style="width:140px;">Jenis Item</th>
+                <th style="width:120px;">Unit Ukuran</th>
+                <th style="width:120px;">Jenis Harga</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td class="text-center"><input type="checkbox"></td>
+                <td>Tender Perkhidmatan Penilaian Forensik Keatas Sistem XXXX</td>
+                <td class="text-center">Perkhidmatan</td>
+                <td class="text-center">Activity Unit</td>
+                <td class="text-center">Biasa Standard</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section-grey">Senarai Pembekal</div>
+    <div class="table-responsive mb-3">
+        <table class="table table-bordered table-blue text-center align-middle">
+            <thead>
+            <tr>
+                <th style="width:60px;">Bil</th>
+                <th style="width:110px;">Status Bumiputra</th>
+                <th style="width:120px;">Harga Tawaran (RM)</th>
+                <th style="width:90px;">Jumlah Skor</th>
+                <th style="width:130px;">Kedudukan Penilaian Teknikal</th>
+                <th style="width:150px;">Status Pendaftaran MOF</th>
+                <th colspan="2" style="width:220px;">Maklumat Tambahan</th>
+                <th style="width:180px;">Kaedah Memuktamadkan Pembekal oleh SULP</th>
+                <th style="width:120px;">Harga Bidaan (RM)</th>
+            </tr>
+            <tr>
+                <th colspan="6"></th>
+                <th>Tindakan Disiplin Diambil</th>
+                <th>Lembaga Pengarah</th>
+                <th colspan="2"></th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>2/2</td>
+                <td>Ya</td>
+                <td>360,000.00</td>
+                <td>96.43</td>
+                <td>1</td>
+                <td>Aktif</td>
+                <td></td>
+                <td><button class="btn btn-light btn-sm"><i class="bi bi-file-earmark"></i></button></td>
+                <td>Bidaan</td>
+                <td>300,000</td>
+            </tr>
+            <tr>
+                <td>1/2</td>
+                <td>Tidak</td>
+                <td>330,000.00</td>
+                <td>94.53</td>
+                <td>2</td>
+                <td>Aktif</td>
+                <td></td>
+                <td><button class="btn btn-light btn-sm"><i class="bi bi-file-earmark"></i></button></td>
+                <td>Bidaan</td>
+                <td>330,000</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section-grey">Catatan</div>
+    <div class="row g-3 align-items-start">
+        <div class="col-md-6">
+            <textarea class="form-control" rows="4"></textarea>
+            <div class="form-check mt-2">
+                <input class="form-check-input" type="checkbox" id="sahBidaan">
+                <label class="form-check-label" for="sahBidaan">Saya mengesahkan Bidaan</label>
+            </div>
+        </div>
+        <div class="col-md-6 d-flex justify-content-end align-items-end">
+            <div class="d-flex gap-2">
+                <button class="btn btn-teal px-4">Simpan</button>
+                <button class="btn btn-navy px-4">Hantar</button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+{{-- ============ TAB: Penyediaan Jadual Bidaan ============ --}}
+<div class="tab-pane fade" id="tab-jadual-bidaan" role="tabpanel">
+    <h6 class="fw-bold">Penyediaan Jadual Bidaan</h6>
+
+    <div class="row mb-3">
+        <div class="col-md-3">
+            <label class="form-label">Tarikh Bidaan Mula<span class="text-danger">*</span></label>
+            <input type="date" class="form-control" value="2021-10-11">
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Masa Bidaan Mula<span class="text-danger">*</span></label>
+            <input type="time" class="form-control" value="12:00">
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Tarikh Bidaan Tamat<span class="text-danger">*</span></label>
+            <input type="date" class="form-control" value="2021-10-11">
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Masa Bidaan Tamat<span class="text-danger">*</span></label>
+            <input type="time" class="form-control" value="17:00">
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-end">
+        <button class="btn btn-primary">Mula Bidaan</button>
+    </div>
+</div>
+
+
                     {{-- ============ TAB 4: Kertas Keputusan ============ --}}
                     <div class="tab-pane fade" id="tab-keputusan" role="tabpanel">
                         <div class="section-title-bar">KERTAS KEPUTUSAN</div>
-<div class="section-header text-uppercase">Syarat-Syarat</div>
-                <div class="py-3">
-                    <div class="row g-3 align-items-center">
-                        <div class="col-md-3">
-                            <label class="form-label mb-0">Dengan Syarat</label>
-                        </div>
-                        <div class="col-md-9">
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="radio" name="syarat" id="syaratYa" value="Ya">
-                                <label class="form-check-label" for="syaratYa">Ya</label>
+                <div class="section-header text-uppercase">Syarat-Syarat</div>
+                    <div class="py-3">
+                        <div class="row g-3 align-items-center">
+                            <div class="col-md-3">
+                                <label class="form-label mb-0">Dengan Syarat</label>
                             </div>
-                            <div class="form-check form-check-inline ms-3">
-                                <input class="form-check-input" type="radio" name="syarat" id="syaratTidak" value="Tidak"
-                                    checked>
-                                <label class="form-check-label" for="syaratTidak">Tidak</label>
+                            <div class="col-md-9">
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="syarat" id="syaratYa" value="Ya">
+                                    <label class="form-check-label" for="syaratYa">Ya</label>
+                                </div>
+                                <div class="form-check form-check-inline ms-3">
+                                    <input class="form-check-input" type="radio" name="syarat" id="syaratTidak" value="Tidak"
+                                        checked>
+                                    <label class="form-check-label" for="syaratTidak">Tidak</label>
+                                </div>
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="form-label">Jika Ya, sila nyatakan</label>
+                            </div>
+                            <div class="col-md-9">
+                                <textarea class="form-control" rows="3"></textarea>
                             </div>
                         </div>
+                    </div>
 
-                        <div class="col-md-3">
-                            <label class="form-label">Jika Ya, sila nyatakan</label>
-                        </div>
-                        <div class="col-md-9">
-                            <textarea class="form-control" rows="3"></textarea>
+                    {{-- PENGESYORAN --}}
+                    <div class="section-header text-uppercase mt-3">Pengesyoran</div>
+                    <div class="py-3">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label class="form-label mb-0">Catatan</label>
+                            </div>
+                            <div class="col-md-9">
+                                <textarea class="form-control" rows="3"
+                                    placeholder="Pengesyoran Urusetia Perolehan adalah berdasarkan keputusan Jawatankuasa Penilaian...."></textarea>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                {{-- PENGESYORAN --}}
-                <div class="section-header text-uppercase mt-3">Pengesyoran</div>
-                <div class="py-3">
-                    <div class="row g-3">
-                        <div class="col-md-3">
-                            <label class="form-label mb-0">Catatan</label>
-                        </div>
-                        <div class="col-md-9">
-                            <textarea class="form-control" rows="3"
-                                placeholder="Pengesyoran Urusetia Perolehan adalah berdasarkan keputusan Jawatankuasa Penilaian...."></textarea>
+                    {{-- JUSTIFIKASI --}}
+                    <div class="section-header text-uppercase mt-3">Justifikasi</div>
+                    <div class="py-3">
+                        <div class="row g-3 align-items-center">
+                            <div class="col-md-3">
+                                <label class="form-label mb-0">Justifikasi Pemilihan Pembekal <span
+                                        class="text-danger">*</span></label>
+                            </div>
+                            <div class="col-md-9">
+                                <select class="form-select">
+                                    <option selected>Harga dalam lingkungan harga indikatif jabatan</option>
+                                    <option>Prestasi kerja terdahulu</option>
+                                    <option>Kepakaran teknikal</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
-                </div>
-
-                {{-- JUSTIFIKASI --}}
-                <div class="section-header text-uppercase mt-3">Justifikasi</div>
-                <div class="py-3">
-                    <div class="row g-3 align-items-center">
-                        <div class="col-md-3">
-                            <label class="form-label mb-0">Justifikasi Pemilihan Pembekal <span
-                                    class="text-danger">*</span></label>
-                        </div>
-                        <div class="col-md-9">
-                            <select class="form-select">
-                                <option selected>Harga dalam lingkungan harga indikatif jabatan</option>
-                                <option>Prestasi kerja terdahulu</option>
-                                <option>Kepakaran teknikal</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
 
                 {{-- KERTAS KEPUTUSAN (OPTIONAL) --}}
                 <div class="section-header text-uppercase mt-3">Kertas Keputusan (Optional)</div>
@@ -607,7 +773,34 @@ input[type="checkbox"]{ width:16px; height:16px; }
                 <div class="d-flex justify-content-end gap-3 mt-2">
                     <button type="button" class="btn" style="background-color:#19c1a7;color:#fff;">Simpan</button>
                     <button type="button" class="btn" style="background-color:#324d92;color:#fff;">Hantar</button>
-                </div>                    </div>
+                </div>                    
+            
+            </div>
+
+            <div class="tab-pane fade" id="jadual-bidaan">
+                <h6 class="fw-bold">Penyediaan Jadual Bidaan</h6>
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <label class="form-label">Tarikh Bidaan Mula<span class="text-danger">*</span></label>
+                        <input type="date" class="form-control" value="2021-10-11">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Masa Bidaan Mula<span class="text-danger">*</span></label>
+                        <input type="time" class="form-control" value="12:00">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Tarikh Bidaan Tamat<span class="text-danger">*</span></label>
+                        <input type="date" class="form-control" value="2021-10-11">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Masa Bidaan Tamat<span class="text-danger">*</span></label>
+                        <input type="time" class="form-control" value="17:00">
+                    </div>
+                </div>
+                <div class="d-flex justify-content-end">
+                    <button class="btn btn-primary">Mula Bidaan</button>
+                </div>
+            </div>
 
                 </div>
 
