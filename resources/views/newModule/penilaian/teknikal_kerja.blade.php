@@ -2,17 +2,17 @@
 
 @section('content')
 <style>
-:root{
-    --brand-red:#B11217;
-    --soft-grey:#e9ecef;
-    --line:#d9dde5;
+    :root{
+        --brand-red:#B11217;
+        --soft-grey:#e9ecef;
+        --line:#d9dde5;
 
-    --btn-primary: var(--brand-red);
-    --btn-primary-hover:#991014;
+        --btn-primary: var(--brand-red);
+        --btn-primary-hover:#991014;
 
-    --btn-teal:#19c1a7;
-    --btn-green:#17a34a;
-}
+        --btn-teal:#19c1a7;
+        --btn-green:#17a34a;
+    }
 
 /* ====== PAGE VISIBILITY ====== */
 #pageDetail{ display:none; }
