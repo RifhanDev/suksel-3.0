@@ -144,7 +144,8 @@ class UsersController extends Controller
 
 		$data['name']      = $data['name'];
 		$data['username']  = $data['email'];
-		$data['confirmed'] = 1;
+		// Pengguna baharu perlu sahkan emel sebelum akaun diaktifkan
+		$data['confirmed'] = 0;
 		$data['roles']     = isset($data['roles']) ? $data['roles'] : [];
 
 		if (isset($data['organization_unit_id']) && empty($data['organization_unit_id'])) {
@@ -157,6 +158,8 @@ class UsersController extends Controller
 
 		$user = new User;
 		$user->fill($data);
+		// Jana kod pengesahan untuk emel pengesahan
+		$user->confirmation_code = md5(uniqid(mt_rand(), true));
 
 		if ($passwordOption === 'reset') {
 			// Generate a random temporary password that user will never use
@@ -171,6 +174,13 @@ class UsersController extends Controller
 			return $this->_validation_error($user);
 		}
 		$user->roles()->sync($data['roles']);
+
+		// Hantar emel pengesahan pendaftaran kepada pengguna baharu
+		try {
+			Mail::to($user)->send(new ConfirmRegistration($user));
+		} catch (\Exception $e) {
+			\Log::error('Failed to send registration confirmation email: ' . $e->getMessage());
+		}
 
 		// Send reset password email if option is 'reset'
 		if ($passwordOption === 'reset') {

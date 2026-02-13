@@ -7,6 +7,7 @@ use App\CodeRequest;
 use App\Comment;
 use App\Gateway;
 use App\Models\Refund;
+use App\Models\VersionHistory;
 use App\News;
 use App\Tender;
 use App\TenderEligible;
@@ -1040,7 +1041,8 @@ class HomeController extends Controller
 			return $this->_access_denied();
 		}
 
-		return view('home.version-histories');
+		$versionHistories = VersionHistory::orderBy('released_at', 'desc')->get();
+		return view('home.version-histories', compact('versionHistories'));
 	}
 
 	public function privacy()

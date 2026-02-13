@@ -131,7 +131,7 @@ html { -webkit-text-size-adjust:none; -ms-text-size-adjust: none;}
         <div style="line-height: 30px;">
           <font face="Arial, Helvetica, sans-serif" size="5" color="#4db3a4" style="font-size: 17px;">
           <span style="font-family: Arial, Helvetica, sans-serif; font-size: 17px; color: #4db3a4;">
-            Hi, {{ $emailUser->name }}!
+            Hi, {{ $user->name ?? 'Pengguna' }}!
           </span></font>
         </div>
         <!-- padding --><div style="height: 35px; line-height: 35px; font-size: 10px;">&nbsp;</div>
@@ -153,12 +153,14 @@ html { -webkit-text-size-adjust:none; -ms-text-size-adjust: none;}
       </td></tr>
       <tr><td align="center">
         <div style="line-height:24px;">
-          <?php $id = Crypt::encrypt($emailUser->id); ?>
+          <?php $id = isset($user) ? Crypt::encrypt($user->id) : null; ?>
+          @if($id)
           <a href="{{ url('users/'.$id.'/account-review') }}" target="_blank" style="background: #F3565D; font-family: Arial, Helvetica, sans-serif; font-size: 13px; padding: 15px 30px;  text-decoration: none;">
             <font face="Arial, Helvetica, sans-serif; font-size: 13px; text-decoration: none;" size="3" color="#fff">
               Semak Akaun Saya
             </font>
           </a>
+          @endif
         </div>
         <!-- padding --><div style="height: 100px; line-height: 100px; font-size: 10px;">&nbsp;</div>
       </td></tr>
