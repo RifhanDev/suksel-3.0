@@ -117,58 +117,35 @@
 @endsection
 
 @section('content')
-<div class="row justify-content-center py-4">
-    <div class="col-lg-8 col-xl-7">
-        
-        <div class="selangor-card">
-            
-            <!-- Header -->
-            <div class="card-header-custom">
-                <div class="header-icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 9h8" /><path d="M8 13h6" /><path d="M18 4a3 3 0 0 1 3 3v8a3 3 0 0 1 -3 3h-5l-5 3v-3h-2a3 3 0 0 1 -3 -3v-8a3 3 0 0 1 3 -3h12z" /></svg>
-                </div>
-                <div>
-                    <h1 class="h5 fw-bold mb-0 text-dark text-uppercase" style="letter-spacing: -0.2px;">
-                        Aduan & Maklum Balas
-                    </h1>
-                    <p class="text-muted small mb-0" style="font-size: 0.75rem;">
-                        Sila lengkapkan butiran di bawah.
-                    </p>
-                </div>
-            </div>
+	<div class="page-header">
+		<div class="page-title">
+			<div class="page-pretitle">
+				Sistem Tender Online
+			</div>
+		</div>
+	</div>
 
-            <!-- Body -->
-            <div class="card-body-custom">
-                
-                <!-- Info Note -->
-                <div class="note-box">
-                    <i class="ti ti-info-circle fs-5 mt-1"></i>
-                    <div>
-                        <strong>Perhatian:</strong> Pastikan maklumat tepat untuk memudahkan kami menghubungi anda semula.
-                    </div>
-                </div>
+	<h2 class="page-title">
+		<i class="ti ti-message-circle me-2"></i>Aduan
+	</h2>
+	<br>
 
-                <form method="POST" action="{{ url('aduan') }}">
-                    @csrf
-                    
-                    @include('complaint.form')
-
-                    <!-- Action Bar -->
-                    <div class="d-flex justify-content-end pt-3 border-top mt-2">
-                        <button type="submit" class="btn-selangor">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14l11 -11" /><path d="M21 3l-6.5 18a.55 .55 0 0 1 -1 0l-3.5 -7l-7 -3.5a.55 .55 0 0 1 0 -1l18 -6.5" /></svg>
-                            Hantar Aduan
-                        </button>
-                    </div>
-
-                </form>
-            </div>
-        </div>
-
-    </div>
-</div>
-@endsection
-
-@section('scripts')
-    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
-@endsection
+	<div class="card">
+		<div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+			<h3 class="card-title mb-0">
+				<i class="ti ti-file-text me-2"></i>Hantar Aduan
+			</h3>
+			<a href="{{ auth()->check() ? route('my.aduan.index') : url('/') }}" class="btn btn-outline-secondary btn-sm">
+				<i class="ti ti-arrow-left me-1"></i>Kembali
+			</a>
+		</div>
+		<div class="card-body">
+			{!! Former::open(url('aduan')) !!}
+			@include('complaint.form')
+			<div class="d-flex justify-content-end gap-2 mt-4">
+				{!! Former::submit('Hantar')->class('btn btn-primary') !!}
+			</div>
+			{!! Former::close() !!}
+		</div>
+	</div>
+@stop

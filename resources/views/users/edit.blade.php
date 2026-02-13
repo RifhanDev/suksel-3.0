@@ -77,6 +77,13 @@
 							</a>
 						@endif
 
+						@if (Auth::user()->hasRole('Admin') || Auth::user()->hasRole('Agency Admin'))
+							<a href="{{ action('UsersController@sendResetPasswordEmail', $currentUser->id) }}" class="btn btn-outline-info"
+								onclick="return confirm('Adakah anda pasti mahu menghantar emel reset kata laluan kepada pengguna ini?');">
+								<i class="ti ti-mail me-1"></i>Hantar Emel Reset Kata Laluan
+							</a>
+						@endif
+
 						@if ($currentUser->canSetConfirmation())
 							{!! Former::open(action('UsersController@putSetConfirmation', $currentUser->id))->class('d-inline') !!}
 							{!! Former::hidden('_method', 'PUT') !!}

@@ -28,6 +28,7 @@ use App\Http\Controllers\CountriesController;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\ManualsController;
 use App\Http\Controllers\CircularController;
+use App\Http\Controllers\VersionHistoryController;
 use App\Http\Controllers\ComplaintController;
 use App\Http\Controllers\RefundController;
 use App\Http\Controllers\RejectTemplateController;
@@ -286,6 +287,10 @@ Route::middleware(['auth'])->group(function () {
 	Route::put('profile/change_password', [ProfileController::class, 'doChangePassword']);
 	Route::get('profile/release', [ProfileController::class, 'releaseUser'])->name('release_user');
 
+	// User's own complaints (Aduan)
+	Route::get('my-aduan', [ComplaintController::class, 'myComplaints'])->name('my.aduan.index');
+	Route::get('my-aduan/{id}', [ComplaintController::class, 'myComplaintShow'])->name('my.aduan.show');
+
 	// Dashboard fetch routes
 	Route::post('dashboard/fetch/tender', [HomeController::class, 'tender_dashboard'])->name('dashboard.tender');
 	Route::post('dashboard/fetch/tender-summary', [HomeController::class, 'tender_summary_dashboard'])->name('dashboard.tender.summary');
@@ -295,7 +300,7 @@ Route::middleware(['auth'])->group(function () {
 	Route::post('dashboard/fetch/transaction-value-summary', [HomeController::class, 'transaction_value_summary_dashboard'])->name('dashboard.transaction-value.summary');
 
 	// Version histories
-	Route::get('version-histories', [HomeController::class, 'versionHistories'])->name('version-histories');
+	// Route::get('version-histories', [HomeController::class, 'versionHistories'])->name('version-histories');
 
 	// Test routes (keep for now)
 	// Route::get('tenders/send-eligible', [TendersController::class, 'sendEligible']);
@@ -332,6 +337,7 @@ Route::middleware(['auth'])->group(function () {
 		Route::put('users/{user}/confirm', [UsersController::class, 'confirm']);
 		Route::get('users/{user}/reset_password', [UsersController::class, 'getSetPassword'])->name('user.reset-password');
 		Route::put('users/{user}/reset_password', [UsersController::class, 'putSetPassword']);
+		Route::get('users/{user}/send_reset_password', [UsersController::class, 'sendResetPasswordEmail'])->name('user.send-reset-password');
 		Route::put('users/{user}/confirm', [UsersController::class, 'putSetConfirmation']);
 		Route::get('users/{user}/resend_confirmation', [UsersController::class, 'resendConfirmation']);
 		Route::resource('users', UsersController::class);
@@ -512,6 +518,24 @@ Route::middleware(['auth'])->group(function () {
 		Route::get('tenders/{id}/approve', [TendersController::class, 'approve_exception'])->name('tender.approve.exception');
 		Route::post('tenders/{id}/reject/{exception_id}', [TendersController::class, 'reject_exception'])->name('tender.reject.exception');
 
+		// Circular
+		Route::resource('circulars', CircularController::class)->except(['show', 'destroy']);
+		Route::get('circulars/{id}/publish', [CircularController::class, 'publish'])->name('circulars.publish');
+		Route::get('circulars/list', [CircularController::class, 'public'])->name('circulars.public');
+		Route::get('circulars/sort', [CircularController::class, 'sortPosition'])->name('circulars.position');
+		Route::post('circulars/sort', [CircularController::class, 'updatePosition'])->name('circulars.update.position');
+
+		// Version histories (CRUD – admin)
+		Route::resource('version-histories', VersionHistoryController::class)->names([
+			'index' => 'version-histories.index',
+			'create' => 'version-histories.create',
+			'store' => 'version-histories.store',
+			'show' => 'version-histories.show',
+			'edit' => 'version-histories.edit',
+			'update' => 'version-histories.update',
+			'destroy' => 'version-histories.destroy',
+		]);
+
 		// Refunds
 		Route::prefix('refunds')->group(function () {
 			Route::post('get-transaction', [RefundController::class, 'fetch_transactions'])->name('get_transaction');
@@ -541,6 +565,18 @@ Route::middleware(['auth'])->group(function () {
 				Route::get('{refund}/approve', [RefundController::class, 'approve_complaint'])->name('refunds.complaint.approve');
 			});
 		});
+
+		// Complaint/Aduan
+		Route::get('aduan', [ComplaintController::class, 'create'])->name('aduan.create');
+		Route::post('aduan', [ComplaintController::class, 'store'])->name('aduan.store');
+		Route::get('aduan/list', [ComplaintController::class, 'index'])->name('aduan.index');
+		Route::get('aduan/{id}', [ComplaintController::class, 'show'])->name('aduan.show');
+		Route::post('aduan/{id}/reply', [ComplaintController::class, 'reply'])->name('aduan.reply');
+		Route::get('aduan/{id}/{status}', [ComplaintController::class, 'updateStatus'])->name('aduan.update.status');
+
+		// BotMan
+		Route::match(['get', 'post'], 'botman', [BotManController::class, 'handle'])->withoutMiddleware(['auth'])->name('botman');
+		Route::get('chat-widget/{chat_id}', [BotManController::class, 'chatWidget'])->withoutMiddleware(['auth'])->name('chat_widget');
 
 		// API Token
 		Route::get('apitoken', [ApiTokenController::class, 'index'])->name('apitoken.index');

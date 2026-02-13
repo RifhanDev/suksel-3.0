@@ -243,32 +243,25 @@
                     </div>
                 @endif
 
-                <!-- FORM -->
-                <form method="POST" action="{{ action('AuthController@doLogin') }}" autocomplete="off">
-                    @csrf
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Alamat Emel</label>
-                        <input type="email" class="form-control @error('email') is-invalid @enderror" name="email"
-                                placeholder="nama@syarikat.com" value="{{ old('email') }}" required autocomplete="email" autofocus>
-                        @error('email')
-                            <div class="invalid-feedback d-block small mt-1">{{ $message }}</div>
-                        @enderror
-                    </div>
+					<form method="POST" action="{{ action('AuthController@doLogin') }}" autocomplete="off">
+						@csrf
+						<div class="mb-3">
+							<label class="form-label">Alamat Emel</label>
+							<input type="email" class="form-control @error('email') is-invalid @enderror" name="email"
+								placeholder="Alamat Emel" value="{{ old('email') }}" required autocomplete="off" autofocus>
+							@error('email')
+								<div class="invalid-feedback">{{ $message }}</div>
+							@enderror
+						</div>
 
-                    <div class="mb-4">
-                        <div class="d-flex justify-content-between align-items-center mb-1">
-                            <label class="form-label mb-0">Kata Laluan</label>
-                            <a href="{{ action('AuthController@forgotPassword') }}" class="forgot-pass-link" style="font-size: 0.7rem; font-weight: 500;">
-                                Lupa Kata Laluan?
-                            </a>
-                        </div>
-                        <input type="password" class="form-control @error('password') is-invalid @enderror" name="password"
-                                placeholder="••••••••" required autocomplete="current-password">
-                        @error('password')
-                            <div class="invalid-feedback d-block small mt-1">{{ $message }}</div>
-                        @enderror
-                    </div>
+						<div class="mb-2">
+							<label class="form-label">Kata Laluan</label>
+							<input type="password" class="form-control @error('password') is-invalid @enderror" name="password"
+								placeholder="Kata Laluan" required autocomplete="new-password">
+							@error('password')
+								<div class="invalid-feedback">{{ $message }}</div>
+							@enderror
+						</div>
 
                     <div class="mt-2">
                         <button type="submit" class="btn-selangor">

@@ -43,25 +43,25 @@ class AccountReviewRequest extends Command
     public function handle()
     {
         $today = Carbon::today();
+
+        // Hantar emel Account Review Request kepada SEMUA pengguna aktif
+        // (kecuali emel anonymous / tenderadmin) tanpa mengira tarikh arr_sent_at.
+        // Tarikh arr_sent_at akan dikemas kini ke tarikh semasa selepas emel dihantar.
         $users = User::active()
-            ->where(function ($query) use ($today) {
-                $query->whereNull('arr_sent_at')
-                    ->orWhere('arr_sent_at', '<', $today->subMonths(5));
-            })
             ->whereNotNull('organization_unit_id')
             ->whereNotIn('email', ['anonymous', 'tenderadmin@selangor.gov.my'])
             ->get();
 
         foreach ($users as $user) {
-            // Mail::send('users.emails.account-review-request', ['emailUser' => $user], function ($message) use ($user) {
-            //     $message->to($user->email);
-            //     $message->subject('Permintaan Semakan Akaun Oleh Sistem Tender');
-            // });
-
-            $to			= trim($user->email);
-            $subject 	= 'Permintaan Semakan Akaun Pengguna Oleh Sistem Tender';
-            $send_status = $this->sendMail("html", $to, $subject, "", "users.emails.account-review-request", ['emailUser' => $user]);
-
+            // Hantar emel menggunakan view sedia ada
+            Mail::send(
+                'users.emails.account-review-request',
+                ['user' => $user],
+                function ($message) use ($user) {
+                    $message->to(trim($user->email));
+                    $message->subject('Permintaan Semakan Akaun Pengguna Oleh Sistem Tender');
+                }
+            );
 
             $user->arr_sent_at = Carbon::now();
             $user->arr = 0;

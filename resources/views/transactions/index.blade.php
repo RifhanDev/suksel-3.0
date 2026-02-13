@@ -21,47 +21,74 @@
 		</div>
 	</div>
 
-	<!-- Transaction Status Stats -->
-	<div class="mb-2">
-		<h5 class="fw-bold text-dark mb-3">Status Transaksi {{ isset($subtitle2) ? ': ' . $subtitle2 : '' }}</h5>
+	@endphp
+
+	<!-- Page Header -->
+	<div class="page-header-modern">
+		<div class="page-pretitle">
+			<i class="ti ti-credit-card me-2"></i>Sistem Tender Online
+		</div>
+		<h2>
+			<i class="ti ti-credit-card me-2"></i>Transaksi
+			@if (isset($subtitle2))
+				: {{ $subtitle2 }}
+			@elseif (isset($subtitle))
+				: {{ $subtitle }}
+			@endif
+		</h2>
 	</div>
+
+	<!-- Status Cards -->
 	@include('transactions._snaps_trans_status')
 
-	<!-- Transaction Type Stats -->
-	<div class="mb-2">
-		<h5 class="fw-bold text-dark mb-3">Jenis Transaksi</h5>
-	</div>
+	<!-- Type Cards -->
 	@include('transactions._snaps')
 
-	<!-- Main Table Card -->
-	<div class="stats-card p-0">
-		<div class="stats-card-header p-4 pb-3 border-bottom">
-			<div class="d-flex align-items-center gap-3">
-				<div class="stats-card-icon" style="width: 38px; height: 38px;">
-					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
-				</div>
-				<h3 class="stats-card-title" style="font-size: 1rem;">Senarai Transaksi</h3>
-			</div>
+	<!-- Main Card -->
+	<div class="card modern-card">
+		<div class="card-header" style="background: white; border-bottom: 1px solid #e9ecef;">
+			<h3 class="card-title-modern mb-0">
+				<i class="ti ti-list"></i>
+				Senarai Transaksi
+			</h3>
 		</div>
-
-		<!-- Table Body -->
-		<div class="stats-card-body p-2">
+		<div class="card-body">
 			<div class="table-responsive">
 				<table
 					data-path="{{ action('TransactionsController@index') }}?state={{ isset($transaction_type) ? $transaction_type : '' }}&status={{ isset($transaction_status) ? $transaction_status : '' }}"
-					class="DT-index table table-hover align-middle mb-0 w-100">
-					<thead class="bg-light">
+					class="DT-index table modern-table table-hover">
+					<thead>
 						<tr>
-							<th class="text-uppercase text-muted small fw-bold py-3 ps-4">Tarikh & Masa</th>
-							<th class="text-uppercase text-muted small fw-bold py-3">Nama Syarikat</th>
-							<th class="text-uppercase text-muted small fw-bold py-3">No Transaksi</th>
-							<th class="text-uppercase text-muted small fw-bold py-3">No Rujukan Gateway</th>
-							<th class="text-uppercase text-muted small fw-bold py-3">No Resit</th>
-							<th class="text-uppercase text-muted small fw-bold py-3">Jenis</th>
-							<th class="text-uppercase text-muted small fw-bold py-3">Saluran</th>
-							<th class="text-uppercase text-muted small fw-bold py-3">Jumlah</th>
-							<th class="text-uppercase text-muted small fw-bold py-3">Status</th>
-							<th class="text-uppercase text-muted small fw-bold py-3 pe-4">Tindakan</th>
+							<th>
+								<i class="ti ti-calendar me-1"></i>Tarikh &amp; Masa
+							</th>
+							<th>
+								<i class="ti ti-building me-1"></i>Nama Syarikat
+							</th>
+							<th>
+								<i class="ti ti-hash me-1"></i>No Transaksi
+							</th>
+							<th>
+								<i class="ti ti-key me-1"></i>No Rujukan Gateway
+							</th>
+							<th>
+								<i class="ti ti-receipt me-1"></i>No Resit
+							</th>
+							<th>
+								<i class="ti ti-category me-1"></i>Jenis
+							</th>
+							<th>
+								<i class="ti ti-credit-card me-1"></i>Saluran
+							</th>
+							<th>
+								<i class="ti ti-currency-dollar me-1"></i>Jumlah
+							</th>
+							<th>
+								<i class="ti ti-info-circle me-1"></i>Status
+							</th>
+							<th class="col-lg-1">
+								<i class="ti ti-settings me-1"></i>Tindakan
+							</th>
 						</tr>
 					</thead>
 					<tbody></tbody>
@@ -291,7 +318,13 @@
 			stateSave: true,
 			language: {
 				"url": "{{ asset('custom_library/dataTables/lang/ms.json') }}"
-			}
+			},
+			dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rtip',
+			pageLength: 25,
+			responsive: true,
+			order: [
+				[0, 'desc']
+			]
 		});
 	</script>
 @endsection

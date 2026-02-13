@@ -120,15 +120,34 @@ class UsersController extends Controller
 	public function store(Request $request)
 	{
 
-		User::setRules('store');
 		$data = $request->all();
 		if (!User::canCreate()) {
 			return $this->_access_denied();
 		}
 
+		$passwordOption = $request->input('password_option', 'assign');
+
+		// If password_option is 'reset', make password optional
+		if ($passwordOption === 'reset') {
+			$rules = User::$_rules['storeUser'];
+			unset($rules['password']);
+			unset($rules['password_confirmation']);
+			User::setRules('storeUser');
+			User::$rules = $rules;
+		} else {
+			User::setRules('store');
+		}
+
+		// Validate the request
+		$validator = Validator::make($data, User::$rules);
+		if ($validator->fails()) {
+			return redirect()->back()->withErrors($validator)->withInput();
+		}
+
 		$data['name']      = $data['name'];
 		$data['username']  = $data['email'];
-		$data['confirmed'] = 1;
+		// Pengguna baharu perlu sahkan emel sebelum akaun diaktifkan
+		$data['confirmed'] = 0;
 		$data['roles']     = isset($data['roles']) ? $data['roles'] : [];
 
 		if (isset($data['organization_unit_id']) && empty($data['organization_unit_id'])) {
@@ -141,30 +160,41 @@ class UsersController extends Controller
 
 		$user = new User;
 		$user->fill($data);
-		$user->password = Hash::make($request->password);
+		// Jana kod pengesahan untuk emel pengesahan
+		$user->confirmation_code = md5(uniqid(mt_rand(), true));
+
+		if ($passwordOption === 'reset') {
+			// Generate a random temporary password that user will never use
+			$user->password = Hash::make(\Illuminate\Support\Str::random(32));
+			$user->password_changed_at = null; // User hasn't set password yet
+		} else {
+			$user->password = Hash::make($request->password);
+			$user->password_changed_at = now();
+		}
+
 		if (!$user->save()) {
 			return $this->_validation_error($user);
 		}
 		$user->roles()->sync($data['roles']);
 
-		// fix bug: send ARR email immediately after user created without waiting queue
-		if ($user->organization_unit_id)
-		{
-			// Refresh user to ensure we have the latest data from database
-			$user->refresh();
-
-			$to = trim($user->email);
-			$subject = 'Permintaan Semakan Akaun Pengguna Oleh Sistem Tender '.$user->name;
-			$send_status = $this->sendMail("html", $to, $subject, "", "users.emails.account-review-request", ['emailUser' => $user]);
-
-			$user->arr_sent_at = Carbon::now();
-			$user->arr = 0;
-			$user->save();
+		// Hantar emel pengesahan pendaftaran kepada pengguna baharu
+		try {
+			Mail::to($user)->send(new ConfirmRegistration($user));
+		} catch (\Exception $e) {
+			\Log::error('Failed to send registration confirmation email: ' . $e->getMessage());
 		}
-		////////////////////////////////////////////////////////////////////////////////
-		
-		if ($request->ajax())
-		{
+
+		// Send reset password email if option is 'reset'
+		if ($passwordOption === 'reset') {
+			try {
+				Mail::to($user)->send(new \App\Mail\ForgotPassword($user));
+				UserHistory::log($user->id, 'password-reset-sent', auth()->user()->id);
+			} catch (\Exception $e) {
+				\Log::error('Failed to send password reset email: ' . $e->getMessage());
+			}
+		}
+
+		if ($request->ajax()) {
 			return response()->json($user, 201);
 		}
 
@@ -305,6 +335,7 @@ class UsersController extends Controller
 		} else {
 
 			$user->password = Hash::make($request->password);
+			$user->password_changed_at = now();
 			$user->save();
 
 			if ($user->hasRole('Vendor')) {
@@ -316,6 +347,42 @@ class UsersController extends Controller
 			UserHistory::log($user->id, 'password-update', auth()->user()->id);
 
 			return $redirect->with('success', $this->set_password_message);
+		}
+	}
+
+	/**
+	 * Send reset password email to user (for Admin/Agency Admin)
+	 */
+	public function sendResetPasswordEmail($id)
+	{
+		$user = User::findOrFail($id);
+
+		// Check if current user has permission (Admin or Agency Admin)
+		if (!auth()->user()->hasRole('Admin') && !auth()->user()->hasRole('Agency Admin')) {
+			return $this->_access_denied();
+		}
+
+		// Agency Admin can only send to users in their organization
+		if (auth()->user()->hasRole('Agency Admin') && !auth()->user()->hasRole('Admin')) {
+			if ($user->organization_unit_id != auth()->user()->organization_unit_id) {
+				return $this->_access_denied();
+			}
+		}
+
+		try {
+			Mail::to($user)->send(new \App\Mail\ForgotPassword($user));
+			UserHistory::log($user->id, 'password-reset-sent', auth()->user()->id);
+
+			if ($user->hasRole('Vendor')) {
+				$redirect = redirect('vendors/' . $user->vendor_id);
+			} else {
+				$redirect = redirect('users/' . $user->id . '/edit');
+			}
+
+			return $redirect->with('success', 'Emel reset kata laluan telah dihantar kepada pengguna.');
+		} catch (\Exception $e) {
+			\Log::error('Failed to send password reset email: ' . $e->getMessage());
+			return redirect()->back()->with('error', 'Gagal menghantar emel reset kata laluan. Sila cuba lagi.');
 		}
 	}
 

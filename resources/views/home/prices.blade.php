@@ -277,82 +277,68 @@
         ];
     @endphp
 
-    <div class="row g-4">
-        <!-- LEFT CONTENT: TABLE -->
-        <div class="col-lg-9">
+	<div class="row">
+		<div class="col-lg-9">
+			<!-- Page Header -->
+			<div class="page-header-modern">
+				<div class="page-pretitle">
+					<i class="ti ti-chart-line me-2"></i>Sistem Tender Online
+				</div>
+				<h2>
+					<i class="ti ti-chart-line me-2"></i>Carta Tender
+				</h2>
+			</div>
 
-            <div class="page-header-modern">
-                <div class="header-content">
-                    <div class="header-pretitle">Sistem e-Perolehan Selangor</div>
-                    <h2 class="header-title">Carta Tender</h2>
-                    <p class="header-subtitle">
-                        Senarai perolehan rasmi Kerajaan Negeri Selangor yang aktif, sedang dibuka untuk bidaan, dan dikemaskini secara langsung.
-                    </p>
-                </div>
-                
-                <div class="header-icon-box d-none d-md-flex">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0" /><path d="M12 9h.01" /><path d="M11 12h1v4h1" /></svg>
-                </div>
-            </div>
+			<!-- Main Card -->
+			<div class="card modern-card">
+				<div class="card-header" style="background: white; border-bottom: 1px solid #e9ecef;">
+					<ul class="nav nav-tabs card-header-tabs" data-bs-toggle="tabs">
+						<li class="nav-item">
+							<a href="{{ asset('prices') }}" class="nav-link @if (!Request::get('type')) active @endif">
+								<i class="ti ti-list me-2"></i>Semua
+							</a>
+						</li>
+						<li class="nav-item">
+							<a href="{{ action('HomeController@prices', ['type' => 'tenders']) }}"
+								class="nav-link @if (Request::get('type') == 'tenders') active @endif">
+								<i class="ti ti-file-text me-2"></i>Tender
+							</a>
+						</li>
+						<li class="nav-item">
+							<a href="{{ action('HomeController@prices', ['type' => 'quotations']) }}"
+								class="nav-link @if (Request::get('type') == 'quotations') active @endif">
+								<i class="ti ti-calculator me-2"></i>Sebut Harga
+							</a>
+						</li>
+					</ul>
+				</div>
+				<div class="card-body">
+					<div class="table-responsive">
+						<table data-path="{{ $path }}" class="DT-index table modern-table table-hover">
+							<thead>
+								<tr>
+									@foreach ($columnsConfig as $col)
+										<th class="{{ $col['width'] ?? '' }}">
+											@if (isset($col['icon']))
+												<i class="ti {{ $col['icon'] }} me-1"></i>
+											@endif
+											{{ $col['label'] ?? ucfirst($col['name']) }}
+										</th>
+									@endforeach
+								</tr>
+							</thead>
+							<tbody></tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+		</div>
 
-            <div class="tender-card">
-
-                <div class="tender-toolbar">
-                    <ul class="nav nav-modern-tabs">
-                        <li class="nav-item">
-                            <a href="{{ asset('prices') }}" class="nav-link @if (!Request::get('type')) active @endif">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l11 0" /><path d="M9 12l11 0" /><path d="M9 18l11 0" /><path d="M5 6l0 .01" /><path d="M5 12l0 .01" /><path d="M5 18l0 .01" /></svg>
-                                Semua
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="{{ action('HomeController@prices', ['type' => 'tenders']) }}"
-                                class="nav-link @if (Request::get('type') == 'tenders') active @endif">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v4a1 1 0 0 0 1 1h4" /><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z" /><path d="M9 9l1 0" /><path d="M9 13l6 0" /><path d="M9 17l6 0" /></svg>
-                                Tender
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="{{ action('HomeController@prices', ['type' => 'quotations']) }}"
-                                class="nav-link @if (Request::get('type') == 'quotations') active @endif">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h10.5a.5 .5 0 0 1 .5 .5v11a.5 .5 0 0 1 -.5 .5h-14.5a.5 .5 0 0 1 -.5 -.5v-11a.5 .5 0 0 1 .5 -.5h1.5" /><path d="M14 6v-3h-4v3" /><path d="M6 12h2" /><path d="M6 15h2" /></svg>
-                                Sebut Harga
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-
-                <!-- Table -->
-                <div class="card-body p-3">
-                    <div class="table-responsive">
-                        <table data-path="{{ $path }}" class="DT-index table table-modern w-100 mb-0">
-                            <thead>
-                                <tr>
-                                    @foreach ($columnsConfig as $col)
-                                        <th class="{{ $col['width'] ?? '' }}">
-                                            @if (isset($col['icon']))
-                                                <!-- can check icon classes here if needed -->
-                                            @endif
-                                            {{ $col['label'] ?? ucfirst($col['name']) }}
-                                        </th>
-                                    @endforeach
-                                </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- RIGHT SIDEBAR -->
-        <div class="col-lg-3">
-            <div class="d-flex flex-column gap-3">
-                @include('layouts._register')
-                @include('layouts._news')
-            </div>
-        </div>
-    </div>
+		<!-- Sidebar -->
+		<div class="col-lg-3">
+			{!! $sidebarHtml !!}
+		</div>
+	</div>
 @endsection
 
 @section('scripts')

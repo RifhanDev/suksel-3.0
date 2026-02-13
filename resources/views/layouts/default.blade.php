@@ -1364,6 +1364,9 @@
 									<a href="{{ asset('profile') }}" class="dropdown-item">
 										<i class="ti ti-user me-2"></i> Profil Saya
 									</a>
+									<a href="{{ route('my.aduan.index') }}" class="dropdown-item">
+										<i class="ti ti-message-circle me-2"></i> Aduan Saya
+									</a>
 									@if ($user && $user->hasRole('Vendor') && Auth::user()->vendor->registration_paid)
 										<a href="{{ asset('vendor/' . Auth::user()->vendor_id . '/requests') }}" class="dropdown-item">
 											<i class="ti ti-heart me-2"></i> Permintaan Kemaskini
@@ -1414,13 +1417,13 @@
 						<h5 class="modal-title" id="loginModalLabel">Daftar Masuk</h5>
 						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 					</div>
-					<form method="POST" action="{{ action('AuthController@doLogin') }}">
+					<form method="POST" action="{{ action('AuthController@doLogin') }}" autocomplete="off">
 						@csrf
 						<div class="modal-body">
 							<div class="mb-3">
 								<label class="form-label">Alamat Emel</label>
 								<input type="email" class="form-control" name="email" placeholder="Alamat Emel"
-									value="{{ old('email') }}" required autocomplete="email">
+									value="{{ old('email') }}" required autocomplete="off">
 								@error('email')
 									<div class="text-danger small">{{ $message }}</div>
 								@enderror
@@ -1428,7 +1431,7 @@
 							<div class="mb-3">
 								<label class="form-label">Kata Laluan</label>
 								<input type="password" class="form-control" name="password" placeholder="Kata Laluan" required
-									autocomplete="current-password">
+									autocomplete="new-password">
 								@error('password')
 									<div class="text-danger small">{{ $message }}</div>
 								@enderror
