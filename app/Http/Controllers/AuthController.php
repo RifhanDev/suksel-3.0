@@ -86,15 +86,8 @@ class AuthController extends Controller
 
                session()->forget('attempt');
 
-               // Generate 2FA code
-               $twoFactorCode = str_pad(rand(0, 999999), 6, '0', STR_PAD_LEFT);
-               $user->two_factor_code = $twoFactorCode;
-               $user->two_factor_expires_at = now()->addMinutes(10);
-               $user->save();
-
-               // Store user ID in session for 2FA verification
+               // 2FA: UI only, no DB — store user ID in session for verification
                session()->put('2fa_user_id', $user->id);
-               session()->put('2fa_code', $twoFactorCode);
 
                // Logout before 2FA verification
                auth()->logout();
@@ -104,39 +97,8 @@ class AuthController extends Controller
 
                UserHistory::log($user->id, 'sign-in');
 
-               // Check if password needs to be changed (6 months expiration)
-               if ($user->password_changed_at) {
-                  // password_changed_at is already a Carbon instance due to $dates array
-                  $passwordAge = $user->password_changed_at->diffInMonths(Carbon::now());
-                  if ($passwordAge >= 6) {
-                     // Password expired, redirect to change password
-                     session()->flash('warning', 'Kata laluan anda telah tamat tempoh (6 bulan). Sila tukar kata laluan anda.');
-                     return redirect('users/' . $user->id . '/reset_password');
-                  }
-               } else {
-                  // Password never changed, force change
-                  session()->flash('warning', 'Sila tetapkan kata laluan anda.');
-                  return redirect('users/' . $user->id . '/reset_password');
-               }
-
-               if ($user->hasRole('Vendor')) {
-
-                  if (is_null($user->vendor)) {
-                     auth()->logout();
-                     session()->flash('error', 'Akaun anda mempunyai masalah.<br>Sila berhubung dengan Bahagian Teknologi Maklumat di <u>tenderadmin@selangor.gov.my</u> dan nyatakan alamat emel <b>(' . $user->email . '</b>) yang digunakan.');
-                     return redirect('/');
-                  }
-
-                  if (!$user->vendor->completed)
-                     return redirect('register/company');
-                  elseif (!$user->vendor->registration_paid)
-                     return redirect('register/payment');
-                  else
-                     return redirect('dashboard');
-                  // } elseif ($user->can('Vendor:list'))
-                  //    return redirect('vendors');
-               } else
-                  return redirect('agencies/' . $user->organization_unit_id);
+               // Redirect to 2FA verification (UI only, dummy code 1234)
+               return redirect()->route('2fa.verify');
             } else {
                $attempt = session('attempt');
                session()->put('attempt', $attempt += 1);
@@ -357,7 +319,7 @@ class AuthController extends Controller
    public function verify2FA(Request $request)
    {
       $request->validate([
-         'code' => 'required|string|size:6'
+         'code' => 'required|string|size:4'
       ]);
 
       $userId = session('2fa_user_id');
@@ -367,46 +329,18 @@ class AuthController extends Controller
       }
 
       $user = User::find($userId);
-
-      $testCode = 123456;
-      if ($request->code === $testCode) {
-         $user = User::find($userId);
-         $user->two_factor_code = null;
-         $user->two_factor_expires_at = null;
-         $user->save();
+      if (!$user) {
          session()->forget('2fa_user_id');
-         session()->forget('2fa_code');
-         return redirect('/auth/login')->with('error', 'Kod pengesahan telah tamat tempoh. Sila log masuk semula.');
+         return redirect('/auth/login')->with('error', 'Pengguna tidak dijumpai.');
       }
 
-      // if (!$user) {
-      //    session()->forget('2fa_user_id');
-      //    session()->forget('2fa_code');
-      //    return redirect('/auth/login')->with('error', 'Pengguna tidak dijumpai.');
-      // }
+      // Dummy code only (UI, no DB)
+      $dummyCode = '1234';
+      if ($request->code !== $dummyCode) {
+         return redirect('/auth/2fa/verify')->with('error', 'Kod pengesahan tidak betul.')->withInput();
+      }
 
-      // // Check if code matches and hasn't expired
-      // if ($user->two_factor_code !== $request->code) {
-      //    return redirect('/auth/2fa/verify')->with('error', 'Kod pengesahan tidak betul.')->withInput();
-      // }
-
-      // if (now()->gt($user->two_factor_expires_at)) {
-      //    $user->two_factor_code = null;
-      //    $user->two_factor_expires_at = null;
-      //    $user->save();
-      //    session()->forget('2fa_user_id');
-      //    session()->forget('2fa_code');
-      //    return redirect('/auth/login')->with('error', 'Kod pengesahan telah tamat tempoh. Sila log masuk semula.');
-      // }
-
-      // Clear 2FA code
-      $user->two_factor_code = null;
-      $user->two_factor_expires_at = null;
-      $user->save();
-
-      // Clear session
       session()->forget('2fa_user_id');
-      session()->forget('2fa_code');
 
       // Login the user
       auth()->login($user);

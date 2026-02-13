@@ -196,10 +196,16 @@
                     </div>
                 @endif
 
+                <!-- DUMMY CODE (for testing) -->
+                <div class="mb-3 p-3 rounded text-center" style="background: #fef3c7; border: 1px dashed #d97706;">
+                    <span class="small text-uppercase fw-bold text-muted d-block mb-1">Kod dummy (uji sahaja)</span>
+                    <code class="fs-4 fw-bold" style="color: #b45309;">1234</code>
+                </div>
+
                 <!-- INFO MESSAGE -->
                 <div class="info-text">
-                    <p class="mb-2">Kod pengesahan 6 digit telah dihantar.</p>
-                    <p class="mb-0">Sila masukkan kod untuk meneruskan log masuk.</p>
+                    <p class="mb-2">Sila masukkan kod pengesahan 4 digit.</p>
+                    <p class="mb-0">Gunakan kod dummy di atas untuk ujian.</p>
                 </div>
 
                 <!-- FORM -->
@@ -212,13 +218,13 @@
                                class="form-control @error('code') is-invalid @enderror" 
                                name="code"
                                id="code"
-                               placeholder="000000" 
+                               placeholder="1234" 
                                value="{{ old('code') }}" 
                                required 
                                autocomplete="off" 
                                autofocus
-                               maxlength="6"
-                               pattern="[0-9]{6}"
+                               maxlength="4"
+                               pattern="[0-9]{4}"
                                inputmode="numeric">
                         @error('code')
                             <div class="invalid-feedback d-block small mt-1">{{ $message }}</div>
@@ -254,10 +260,9 @@ document.addEventListener('DOMContentLoaded', function() {
         this.value = this.value.replace(/[^0-9]/g, '');
     });
 
-    // Auto-submit when 6 digits are entered
+    // Auto-submit when 4 digits are entered
     codeInput.addEventListener('input', function(e) {
-        if (this.value.length === 6) {
-            // Small delay to allow user to see the complete code
+        if (this.value.length === 4) {
             setTimeout(() => {
                 document.getElementById('2fa-form').submit();
             }, 300);
