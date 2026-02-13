@@ -3,97 +3,177 @@
 @section('content')
 
 <style>
-    .stepper-wrapper {
-        display: flex;
-        justify-content: space-between;
-        margin: 20px 0;
-        padding: 0 40px;
-    }
-    .stepper-item {
-        text-align: center;
-        flex: 1;
-    }
-    .step-counter {
-        width: 36px;
-        height: 36px;
-        line-height: 36px;
-        border-radius: 50%;
-        background: #1F3A8A;
-        color: white;
-        margin: 0 auto;
-        font-weight: bold;
-        transition: background .2s;
-    }
-    .step-counter.active-step {
-        background: #1abc9c !important;
-    }
-    .step-label {
-        margin-top: 8px;
-        font-size: 14px;
-        font-weight: 600;
-    }
+/* =====================================================
+   STEPPER WRAPPER
+===================================================== */
+.stepper-wrapper {
+    display: flex;
+    justify-content: space-between;
+    margin: 20px 0;
+    padding: 0 40px;
+    position: relative;
+}
 
-    .table-header {
-        background: #1F3A8A;
-        color: white;
-        text-align: center;
-        font-weight: bold;
-    }
+/* =====================================================
+   STEPPER ITEM
+===================================================== */
+.stepper-item {
+    flex: 1;
+    text-align: center;
+    position: relative;
+}
 
-    .btn-papar {
-        background: #00a988;
-        color: white;
-        padding: 6px 18px;
-        font-weight: bold;
-        border-radius: 6px;
-    }
-    .btn-simpan {
-        background: #00a988;
-        color: white;
-        padding: 8px 24px;
-        border-radius: 6px;
-        font-weight: bold;
-    }
+/* =====================================================
+   CONNECTOR LINE
+===================================================== */
+.stepper-item:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    top: 18px;                 /* vertical center of circle */
+    left: 50%;
+    width: 100%;
+    height: 3px;
+    background: #E5E7EB;       /* light grey (default) */
+    z-index: 0;
+}
 
-    .section-title {
-        background: #f5f5f5;
-        padding: 8px 12px;
-        font-weight: bold;
-        border-left: 4px solid #1F3A8A;
-        margin: 15px 0;
-    }
+/* Connector for COMPLETED step */
+.stepper-item.done:not(:last-child)::after {
+    background: #C0392B;       /* red */
+}
 
-    .sub-note {
-        font-size: 12px;
-        color: #007aff;
-        margin-bottom: 5px;
-    }
+/* Reset future connectors */
+.stepper-item.active ~ .stepper-item:not(:last-child)::after {
+    background: #E5E7EB;
+}
 
-    .grey-strip {
-        background: #f0f0f0;
-        font-weight: 600;
-        padding: 6px 10px;
-        font-size: 13px;
-    }
+/* =====================================================
+   STEP CIRCLE
+===================================================== */
+.step-counter {
+    width: 36px;
+    height: 36px;
+    line-height: 36px;
+    border-radius: 50%;
+    background: #E5E7EB;       /* grey (default) */
+    color: #374151;            /* dark grey text */
+    font-weight: 700;
+    margin: 0 auto;
+    position: relative;
+    z-index: 2;
+}
 
-    /* Nested tabs (Kewangan / Rumusan) */
-    .nested-tabs {
-        border-bottom: 1px solid #ddd;
-        margin-bottom: 10px;
-    }
-    .nested-tab-btn {
-        border: none;
-        background: transparent;
-        padding: 6px 20px;
-        font-weight: 600;
-        cursor: pointer;
-        margin-right: 3px;
-    }
-    .nested-tab-btn.active {
-        background: #c0392b;
-        color: #fff;
-        border-radius: 4px 4px 0 0;
-    }
+/* ACTIVE STEP (current) */
+.stepper-item.active .step-counter {
+    background: #C0392B;       /* red */
+    color: #FFFFFF;
+}
+
+/* COMPLETED STEP */
+.stepper-item.done .step-counter {
+    background: #C0392B;       /* red */
+    color: #FFFFFF;
+}
+
+/* =====================================================
+   STEP LABEL
+===================================================== */
+.step-label {
+    margin-top: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #6B7280;            /* grey */
+}
+
+/* Active & completed label */
+.stepper-item.active .step-label,
+.stepper-item.done .step-label {
+    color: #C0392B;            /* red */
+}
+
+
+/* =====================================================
+   TABLE HEADER
+   ===================================================== */
+.table-header {
+    background: #C0392B;
+    color: white;
+    text-align: center;
+    font-weight: bold;
+}
+
+/* =====================================================
+   BUTTONS
+   ===================================================== */
+.btn-papar {
+    background: #00a988;
+    color: white;
+    padding: 6px 18px;
+    font-weight: bold;
+    border-radius: 6px;
+}
+
+.btn-simpan {
+    background: #00a988;
+    color: white;
+    padding: 8px 24px;
+    border-radius: 6px;
+    font-weight: bold;
+}
+
+/* =====================================================
+   SECTION TITLES
+   ===================================================== */
+.section-title {
+    background: #f5f5f5;
+    padding: 8px 12px;
+    font-weight: bold;
+    border-left: 4px solid #C0392B;
+    margin: 15px 0;
+}
+
+/* =====================================================
+   SUB NOTES / HINTS
+   ===================================================== */
+.sub-note {
+    font-size: 12px;
+    color: #007aff;
+    margin-bottom: 5px;
+}
+
+/* =====================================================
+   GREY STRIP (SUMMARY HEADERS)
+   ===================================================== */
+.grey-strip {
+    background: #f0f0f0;
+    font-weight: 600;
+    padding: 6px 10px;
+    font-size: 13px;
+}
+
+/* =====================================================
+   NESTED TABS (KEWANGAN / RUMUSAN)
+   ===================================================== */
+.nested-tabs {
+    border-bottom: 1px solid #ddd;
+    margin-bottom: 10px;
+}
+
+.nested-tab-btn {
+    border: none;
+    background: transparent;
+    padding: 6px 20px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-right: 3px;
+}
+
+/* Active nested tab */
+.nested-tab-btn.active {
+    background: #c0392b;
+    color: #fff;
+    border-radius: 4px 4px 0 0;
+}
 </style>
 
 <div class="card">
@@ -129,27 +209,28 @@
 
         {{-- ====================== STEPPER (ALWAYS VISIBLE) ====================== --}}
         <div class="stepper-wrapper">
-            <div class="stepper-item">
-                <div class="step-counter active-step" id="stepCircle1">1</div>
+            <div class="stepper-item active" id="stepItem1">
+                <div class="step-counter" id="stepCircle1">1</div>
                 <div class="step-label">Pematuhan Dokumentasi</div>
             </div>
-            <div class="stepper-item">
+
+            <div class="stepper-item" id="stepItem2">
                 <div class="step-counter" id="stepCircle2">2</div>
                 <div class="step-label">Penyata Bulanan Bank</div>
             </div>
-            <div class="stepper-item">
+
+            <div class="stepper-item" id="stepItem3">
                 <div class="step-counter" id="stepCircle3">3</div>
                 <div class="step-label">Pematuhan Spesifikasi Kewangan</div>
             </div>
-            <div class="stepper-item">
+
+            <div class="stepper-item" id="stepItem4">
                 <div class="step-counter" id="stepCircle4">4</div>
                 <div class="step-label">Penyediaan Laporan</div>
             </div>
-        </div>
 
-        {{-- ================================================================ --}}
+        </div>
         {{-- ====================== STEP 1 CONTENT ========================== --}}
-        {{-- ================================================================ --}}
         <div id="step1Content">
 
             <div class="section-title">PEMATUHAN CADANGAN KEWANGAN</div>
@@ -295,9 +376,7 @@
             </div>
         </div>
 
-        {{-- ================================================================ --}}
         {{-- ====================== STEP 2 CONTENT ========================== --}}
-        {{-- ================================================================ --}}
         <div id="step2Content" style="display:none;">
 
             <div class="section-title">PENYATA BULANAN BANK</div>
@@ -340,7 +419,7 @@
                 </div>
             </div>
 
-            {{-- STEP 2 - RUMUSAN (gambar 2 rumusan-style) --}}
+            {{-- STEP 2 - RUMUSAN--}}
             <div id="step2TabRumusan" style="display:none;">
 
                 <div class="grey-strip">
@@ -417,9 +496,7 @@
             </div>
         </div>
 
-        {{-- ================================================================ --}}
         {{-- ====================== STEP 3 CONTENT ========================== --}}
-        {{-- ================================================================ --}}
         <div id="step3Content" style="display:none;">
 
             <div class="section-title">CADANGAN KEWANGAN</div>
@@ -471,7 +548,7 @@
                 </div>
             </div>
 
-            {{-- STEP 3 - RUMUSAN (gambar 3) --}}
+            {{-- STEP 3 - RUMUSAN --}}
             <div id="step3TabRumusan" style="display:none;">
 
                 <div class="row mb-2">
@@ -574,9 +651,7 @@
             </div>
         </div>
 
-        {{-- ================================================================ --}}
-        {{-- ====================== STEP 4 CONTENT ========================== --}}
-        {{-- ================================================================ --}}
+        {{-- =============================== STEP 4 CONTENT =============================== --}}
         <div id="step4Content" style="display:none;">
 
             <div class="section-title">PENILAIAN PERINGKAT PERTAMA</div>
@@ -1015,87 +1090,115 @@ Dengan ini, PTJ mengesyorkan XX (YY) untuk melaksanakan projek ini berdasarkan j
 
 {{-- ====================== JAVASCRIPT ====================== --}}
 <script>
+/* =====================================================
+   STEP VIEW SWITCHING (MAIN STEPPER)
+   ===================================================== */
 
-    /* ==============================
-       STEP VIEW SWITCHING
-       ============================== */
+function showStep(step) {
 
-    function showStep(step) {
-        // hide all step contents
-        ['step1Content', 'step2Content', 'step3Content', 'step4Content'].forEach(function (id, index) {
+    /* ---------------------------------
+       1. SHOW / HIDE STEP CONTENT
+       --------------------------------- */
+    ['step1Content', 'step2Content', 'step3Content', 'step4Content']
+        .forEach((id, index) => {
             const el = document.getElementById(id);
-            if (el) el.style.display = (index + 1 === step) ? 'block' : 'none';
+            if (el) {
+                el.style.display = (index + 1 === step) ? 'block' : 'none';
+            }
         });
 
-        // update stepper circles
-        [1,2,3,4].forEach(function (i) {
-            const circle = document.getElementById('stepCircle' + i);
-            if (circle) circle.classList.remove('active-step');
-        });
-        const active = document.getElementById('stepCircle' + step);
-        if (active) active.classList.add('active-step');
-    }
+    /* ---------------------------------
+       2. UPDATE STEPPER STATE
+       active  = current step
+       done    = completed step
+       --------------------------------- */
+    document.querySelectorAll('.stepper-item').forEach((item, index) => {
 
+        item.classList.remove('active', 'done');
 
-    /* ==============================
-       NESTED TABS PER STEP
-       ============================== */
+        if (index + 1 < step) {
+            item.classList.add('done');       // completed
+        }
 
-    function showNestedTab(step, tab) {
-        // buttons
-        document.querySelectorAll('.nested-tab-btn[data-step="' + step + '"]').forEach(function (btn) {
-            btn.classList.remove('active');
-        });
+        if (index + 1 === step) {
+            item.classList.add('active');     // current
+        }
+    });
 
-        const activeBtn = document.querySelector('.nested-tab-btn[data-step="' + step + '"][data-tab="' + tab + '"]');
-        if (activeBtn) activeBtn.classList.add('active');
+    /* ---------------------------------
+       3. BACKWARD COMPATIBILITY
+       (keep your existing active-step)
+       --------------------------------- */
+    [1,2,3,4].forEach(i => {
+        const circle = document.getElementById('stepCircle' + i);
+        if (circle) circle.classList.remove('active-step');
+    });
 
-        // contents
-        ['kewangan', 'rumusan'].forEach(function (t) {
-            const divId = 'step' + step + 'Tab' + t.charAt(0).toUpperCase() + t.slice(1);
-            const div = document.getElementById(divId);
-            if (div) div.style.display = (t === tab) ? 'block' : 'none';
-        });
-    }
+    const activeCircle = document.getElementById('stepCircle' + step);
+    if (activeCircle) activeCircle.classList.add('active-step');
+}
 
+/* =====================================================
+   NESTED TABS PER STEP (KEWANGAN / RUMUSAN)
+   ===================================================== */
+function showNestedTab(step, tab) {
 
-    /* ==============================
-       OPEN MODAL GENERICALLY
-       ============================== */
+    /* Toggle tab buttons */
+    document
+        .querySelectorAll(`.nested-tab-btn[data-step="${step}"]`)
+        .forEach(btn => btn.classList.remove('active'));
 
-    function openPenilaianModal(screenId) {
-        const tpl = document.getElementById('tpl-' + screenId);
-        if (!tpl) return;
+    const activeBtn = document.querySelector(
+        `.nested-tab-btn[data-step="${step}"][data-tab="${tab}"]`
+    );
+    if (activeBtn) activeBtn.classList.add('active');
 
-        const modalBody = document.getElementById('penilaianModalBody');
-        modalBody.innerHTML = tpl.innerHTML;
+    /* Toggle tab content */
+    ['kewangan', 'rumusan'].forEach(t => {
+        const divId =
+            'step' + step + 'Tab' + t.charAt(0).toUpperCase() + t.slice(1);
+        const div = document.getElementById(divId);
+        if (div) div.style.display = (t === tab) ? 'block' : 'none';
+    });
+}
 
-        let modal = new bootstrap.Modal(document.getElementById('penilaianModal'));
-        modal.show();
-    }
+/* =====================================================
+   GENERIC MODAL LOADER
+   ===================================================== */
+function openPenilaianModal(screenId) {
+    const tpl = document.getElementById('tpl-' + screenId);
+    if (!tpl) return;
 
+    document.getElementById('penilaianModalBody').innerHTML = tpl.innerHTML;
 
+    new bootstrap.Modal(
+        document.getElementById('penilaianModal')
+    ).show();
+}
 
-    /* ==============================
-       STEP 2 SPECIAL BEHAVIOR
-       Show details only after click
-       ============================== */
+/* =====================================================
+   STEP 2 SPECIAL MODAL BEHAVIOUR
+   ===================================================== */
+function openStep2Modal() {
+    new bootstrap.Modal(
+        document.getElementById('modalPenilaian2')
+    ).show();
 
-    function openStep2Modal() {
-        let modal = new bootstrap.Modal(document.getElementById('modalPenilaian2'));
-        modal.show();
+    document.getElementById('screen2A').style.display = 'block';
+    document.getElementById('screen2B').style.display = 'none';
+}
 
-        // Reset display
-        document.getElementById('screen2A').style.display = 'block';
-        document.getElementById('screen2B').style.display = 'none';
-    }
+function showStep2Details() {
+    document.getElementById('screen2A').style.display = 'none';
+    document.getElementById('screen2B').style.display = 'block';
+}
 
-    function showStep2Details() {
-        document.getElementById('screen2A').style.display = 'none';
-        document.getElementById('screen2B').style.display = 'block';
-    }
-
+/* =====================================================
+   INIT – ALWAYS START AT STEP 1
+   ===================================================== */
+document.addEventListener('DOMContentLoaded', () => {
+    showStep(1);
+});
 </script>
-
 
 @endsection

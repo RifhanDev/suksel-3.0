@@ -87,9 +87,9 @@
                                         <th>Tajuk / Dokumen</th>
                                         <th class="text-center">Mekanisma</th>
                                         <th class="text-center">Tindakan Pembekal</th>
-                                        <th class="text-center">Skor</th>
-                                        <th class="text-center">Status Spesifikasi</th>
-                                        <th class="text-center">Dokumen</th>
+                                        <th class="text-center">Skema</th>
+                                        <th class="text-center">Status</th>
+                                        <th class="text-center">Rujukan</th>
                                         <th class="text-center">Tindakan</th>
                                     </tr>
                                 </thead>
@@ -299,6 +299,59 @@
                             </div>
                         </div>
                     <!-- Penetapan Skor -->
+
+                    <!-- ===================== CONTENT BLOCK ===================== -->
+
+
+        <!-- HARGA INDIKATIF -->
+        <div class="card-title-grey mb-3">
+            <strong>HARGA INDIKATIF</strong>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <label class="form-label">Harga Indikatif (RM)</label>
+                <input type="text" class="form-control" value="29,000.00">
+            </div>
+        </div>
+
+        <!-- PENETAPAN SKOR -->
+        <div class="card-title-grey mb-3">
+            <strong>PENETAPAN PENANDA ARAS TAHAP LULUS (%)</strong>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <label class="form-label">Penilaian Kewangan</label>
+                <div class="d-flex align-items-center gap-2">
+                    <input type="number" class="form-control w-50">
+                    <span>/ 70</span>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <label class="form-label">Tahap Lulus</label>
+                <input type="text" class="form-control" placeholder="XX Peratus" disabled>
+            </div>
+        </div>
+
+        <!-- DOKUMEN SOKONGAN -->
+        <div class="card-title-grey mb-3">
+            <strong>DOKUMEN SOKONGAN / RUJUKAN</strong>
+        </div>
+
+        <div class="row mb-2">
+            <div class="col-md-4">
+                <input type="text" class="form-control" placeholder="Nama Dokumen">
+            </div>
+            <div class="col-md-4">
+                <input type="file" class="form-control">
+            </div>
+            <div class="col-md-2">
+                <button class="btn btn-primary w-100">Tambah Dokumen</button>
+            </div>
+        </div>
+
              
                     <div class="row">
                         <div class="col-12 d-flex justify-content-end">

@@ -252,7 +252,7 @@
                                    id="email" 
                                    name="email" 
                                    value="{{ old('email') }}" 
-                                   placeholder="email@syarikat.com" 
+                                   placeholder="emel@syarikat.com" 
                                    required>
                             @error('email')
                                 <div class="invalid-feedback">{{ $message }}</div>

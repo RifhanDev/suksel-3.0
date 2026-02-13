@@ -6,7 +6,7 @@
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<meta name="_token" content="{{ csrf_token() }}">
-	<title>Sistem Tender Online Selangor</title>
+	<title>Sistem Perolehan Selangor</title>
 
 	<link rel="apple-touch-icon" sizes="120x120" href="{{ asset('favicon/apple-touch-icon.png') }}">
 	<link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon/favicon-32x32.png') }}">
@@ -174,25 +174,40 @@
             flex-shrink: 0;
 		}
 
-		.sidebar-logo { width: 70px; height: auto; }
+		.sidebar-logo { width: 57px; height: 70px; }
         
         .sidebar-brand-text { display: flex; flex-direction: column; }
 
         .brand-title {
             font-family: 'Poppins', sans-serif;
-            font-weight: 800;
-            font-size: 1.2rem;
+            display: flex;
+            flex-direction: column;
             line-height: 1;
+        }
+
+        .brand-title-top {
+            font-weight: 500;
+            font-size: 0.7rem;
+            color: rgba(255, 255, 255, 0.85);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .brand-title-bottom {
+            font-weight: 800;
+            font-size: 1.35rem;
             color: #fff;
-            letter-spacing: 0.5px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-top: 2px;
         }
 
         .brand-subtitle {
-            font-size: 0.65rem;
+            font-size: 0.60rem;
             color: var(--sg-yellow);
             text-transform: uppercase;
             letter-spacing: 1px;
-            margin-top: 4px;
+            margin-top: 6px;
             font-weight: 600;
         }
 

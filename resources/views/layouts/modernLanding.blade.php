@@ -7,7 +7,7 @@
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<meta name="_token" content="{{ csrf_token() }}">
-	<title>Sistem e-Perolehan Selangor</title>
+	<title>Sistem Perolehan Selangor</title>
 
 	<link rel="apple-touch-icon" sizes="120x120" href="{{ asset('favicon/apple-touch-icon.png') }}">
 	<link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon/favicon-32x32.png') }}">
@@ -175,34 +175,48 @@
 			justify-content: center;
 			border: 2px solid var(--sg-yellow);
 			box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+			animation: brandSlideIn 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+    		will-change: transform, opacity; /* Optimizes performance */
 		}
 
 		.navbar-brand-logo img {
-			max-width: 85px;
-			height: auto;
+			max-width: 90px;
+			height: 75px;
 			display: block;
 		}
 
-		.navbar-brand-text {
+		.brand-text-stack {
+			display: flex;
+			flex-direction: column;
+			justify-content: center;
+			line-height: 1.3;
+			margin-top: 2px;
+		}
+
+		.brand-line-top {
+			font-family: var(--font-display);
+			font-weight: 600;
+			font-size: 0.85rem;
+			color: rgba(255, 255, 255, 0.95);
+			letter-spacing: 1px;
+			text-transform: uppercase;
+			display: block;
+			opacity: 0;
+			animation: brandSlideIn 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) 0.1s forwards;
+			will-change: transform, opacity;
+		}
+
+		.brand-line-btm {
 			font-family: var(--font-display);
 			font-weight: 800;
-			font-size: 1.3rem;
-			color: #ffffff;
-			margin: 0;
-			line-height: 1;
-			letter-spacing: -0.3px;
-			text-transform: uppercase;
-			text-decoration: none;
-			text-shadow: 0 1px 2px rgba(0,0,0,0.2);
-		}
-
-		.navbar-brand-text-sub {
-			display: block;
-			font-size: 0.65rem;
-			font-weight: 700;
+			font-size: 1.4rem;
 			color: var(--sg-yellow);
-			margin-top: 0.25rem;
-			letter-spacing: 0.5px;
+			letter-spacing: 1px;
+			text-transform: uppercase;
+			display: block;
+			opacity: 0;
+			animation: brandSlideIn 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) 0.2s forwards;
+			will-change: transform, opacity;
 		}
 
 		/* ============================================
@@ -920,16 +934,18 @@
 				margin-left: 0;
 			}
 
-			.navbar-brand-text {
-				color: var(--sg-red-darker);
+			.brand-line-top {
+				color: var(--sg-red);
 			}
 
-			.navbar-brand-text-sub {
-				color: var(--sg-red);
+			.brand-line-btm {
+				color: var(--sg-red-dark);
 			}
 
 			.logo-bg-box {
 				border-color: transparent;
+				animation: brandSlideIn 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+    			will-change: transform, opacity; /* Optimizes performance */
 			}
 
 			.navbar-top .container-fluid {
@@ -958,16 +974,17 @@
 				padding-right: 1rem;
 			}
 
-			.navbar-brand-text {
-				font-size: 1.1rem;
+			.brand-line-top {
+				font-size: 0.65rem;
 			}
 
-			.navbar-brand-text-sub {
-				display: none;
+			.brand-line-btm {
+				font-size: 1rem;
 			}
 
 			.navbar-brand-logo img {
 				max-width: 44px;
+				max-height: 44px;
 			}
 
 			.logo-bg-box {
@@ -1008,10 +1025,6 @@
 
 		/* Small Mobile (max 480px) */
 		@media (max-width: 480px) {
-			.navbar-brand-text {
-				font-size: 0.95rem;
-			}
-
 			.logo-bg-box {
 				width: 44px;
 				height: 44px;
@@ -1019,6 +1032,7 @@
 
 			.navbar-brand-logo img {
 				max-width: 38px;
+				max-height: 38px;
 			}
 
 			.page-wrapper {
@@ -1170,6 +1184,22 @@
 				font-size: 0.7rem;
 			}
 		}
+
+		/* ============================================
+		ANIMATION
+		============================================ */
+
+		/* Brand Animation (Slide In) */
+		@keyframes brandSlideIn {
+			0% {
+				opacity: 0;
+				transform: translateX(-20px); /* Start 20px to the left */
+			}
+			100% {
+				opacity: 1;
+				transform: translateX(0); /* End at original position */
+			}
+		}
 	</style>
 </head>
 
@@ -1179,11 +1209,11 @@
 			<div class="container-fluid">
 				<a href="/" class="navbar-brand-logo" title="Sistem Tender Online Selangor">
 					<div class="logo-bg-box">
-						<img src="{{ asset('images/02_selangor.png') }}" alt="Selangor">
+						<img src="{{ asset('images/Jata_Negeri_Selangor_2025.png') }}" alt="Selangor">
 					</div>
-					<div>
-						<h1 class="navbar-brand-text">E-Perolehan</h1>
-						<span class="navbar-brand-text-sub">Sistem e-Perolehan Selangor</span>
+					<div class="brand-text-stack">
+						<span class="brand-line-top">Perolehan</span>
+						<span class="brand-line-btm">SELANGOR</span>
 					</div>
 				</a>
 
@@ -1197,11 +1227,11 @@
 						</a>
 					</li>
 					<li class="nav-item">
-						<a href="{{ action('HomeController@prices') }}" class="nav-link {{ request()->is('prices*') ? 'active' : '' }}" title="Carta Tender">
+						<a href="{{ action('HomeController@prices') }}" class="nav-link {{ request()->is('prices*') ? 'active' : '' }}" title="Senarai Tender">
 							<span class="nav-link-icon">
 								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" class="icon icon-tabler icons-tabler-filled icon-tabler-files"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M11 2l3 .001v5.999a1 1 0 0 0 .883 .993l.117 .007h6v6a3 3 0 0 1 -3 3h-1v1a3 3 0 0 1 -3 3h-7a3 3 0 0 1 -3 -3v-10a3 3 0 0 1 3 -3h1v-1a3 3 0 0 1 3 -3m-3 6h-1a1 1 0 0 0 -1 1v10a1 1 0 0 0 1 1h7a1 1 0 0 0 1 -1v-1h-4a3 3 0 0 1 -3 -3zm12.415 -1h-4.415v-4.415z" /></svg>
 							</span>
-							<span>Carta Tender</span>
+							<span>Senarai Tender</span>
 						</a>
 					</li>
 					<li class="nav-item">
@@ -1375,11 +1405,11 @@
 					</a>
 				</div>
 
-				<!-- Carta Tender -->
+				<!-- Senarai Tender -->
 				<div class="mobile-nav-item">
 					<a href="{{ action('HomeController@prices') }}" class="mobile-nav-link {{ request()->is('prices*') ? 'active' : '' }}">
 						<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M11 2l3 .001v5.999a1 1 0 0 0 .883 .993l.117 .007h6v6a3 3 0 0 1 -3 3h-1v1a3 3 0 0 1 -3 3h-7a3 3 0 0 1 -3 -3v-10a3 3 0 0 1 3 -3h1v-1a3 3 0 0 1 3 -3m-3 6h-1a1 1 0 0 0 -1 1v10a1 1 0 0 0 1 1h7a1 1 0 0 0 1 -1v-1h-4a3 3 0 0 1 -3 -3zm12.415 -1h-4.415v-4.415z" /></svg>
-						<span>Carta Tender</span>
+						<span>Senarai Tender</span>
 					</a>
 				</div>
 

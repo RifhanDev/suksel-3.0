@@ -5,11 +5,14 @@
 	<div class="sidebar-header">
 		<a href="/" class="sidebar-brand">
 			<div class="sidebar-logo-container">
-				<img src="{{ asset('images/02_selangor.png') }}" alt="Logo" class="sidebar-logo">
+				<img src="{{ asset('images/Jata_Negeri_Selangor_2025.png') }}" alt="Logo" class="sidebar-logo">
 			</div>
 			<div class="sidebar-brand-text">
-				<span class="brand-title">e-Perolehan</span>
-				<span class="brand-subtitle">Sistem e-Perolehan Selangor</span>
+				<span class="brand-title">
+					<span class="brand-title-top">Perolehan</span>
+					<span class="brand-title-bottom">Selangor</span>
+				</span>
+				<span class="brand-subtitle">Sistem Perolehan Selangor</span>
 			</div>
 		</a>
 	</div>
@@ -646,6 +649,30 @@
 		</div>
 	</li>
 
+	<!-- Menu : Syarikat / Pembekal -->
+	<li class="nav-item">
+		<a class="sidebar-link collapsed" data-bs-toggle="collapse" data-bs-target="#menuSyarikatPembekal" aria-expanded="false" style="cursor: pointer;">
+			<svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+				<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+				<path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+			</svg>
+			<span class="nav-text">Syarikat / Pembekal</span>
+			<svg xmlns="http://www.w3.org/2000/svg" class="nav-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+				<polyline points="9 18 15 12 9 6"></polyline>
+			</svg>
+		</a>
+		<div class="collapse" id="menuSyarikatPembekal">
+			<ul class="sidebar-submenu">
+				<li><a class="submenu-item" href="{{ route('lawatanTapak') }}">
+						<div class="submenu-icon"></div><span>Lawatan Tapak</span>
+					</a></li>
+				<li><a class="submenu-item" href="">
+						<div class="submenu-icon"></div><span>Coming soon</span>
+					</a></li>
+			</ul>
+		</div>
+	</li>
+
 	</ul>
 	</div>
 </aside>
@@ -658,8 +685,11 @@
 				<img src="{{ asset('images/02_selangor.png') }}" alt="Logo" class="sidebar-logo">
 			</div>
 			<div class="sidebar-brand-text">
-				<span class="brand-title">e-Perolehan</span>
-				<span class="brand-subtitle">Sistem e-Perolehan Selangor</span>
+				<span class="brand-title">
+					<span class="brand-title-top">Perolehan</span>
+					<span class="brand-title-bottom">Selangor</span>
+				</span>
+				<span class="brand-subtitle">Sistem Perolehan Negeri</span>
 			</div>
 		</a>
 	</div>
@@ -738,12 +768,70 @@
 						<li><a class="submenu-item" href="{{ route('penilaianTeknikal') }}">
 								<div class="submenu-icon"></div><span>Penilaian Teknikal</span>
 							</a></li>
+							<li><a class="submenu-item" href="{{ route('penilaianTeknikalKerja') }}">
+								<div class="submenu-icon"></div><span>Penilaian Teknikal Kerja</span>
+							</a></li>
 						<li><a class="submenu-item" href="{{ route('penilaianKewangan') }}">
 								<div class="submenu-icon"></div><span>Penilaian Kewangan</span>
 							</a></li>
 					</ul>
 				</div>
 			</li>
+
+			<!-- Menu : Syarikat / Pembekal -->
+				<li class="nav-item">
+					<a class="sidebar-link collapsed" data-bs-toggle="collapse" data-bs-target="#menuSyarikatPembekal" aria-expanded="false" style="cursor: pointer;">
+						<svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+							<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+							<path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+						</svg>
+						<span class="nav-text">Syarikat / Pembekal</span>
+						<svg xmlns="http://www.w3.org/2000/svg" class="nav-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+							<polyline points="9 18 15 12 9 6"></polyline>
+						</svg>
+					</a>
+					<div class="collapse" id="menuSyarikatPembekal">
+						<ul class="sidebar-submenu">
+							<li><a class="submenu-item" href="{{ route('syaratTender') }}">
+									<div class="submenu-icon"></div><span>Syarat Tender</span>
+								</a></li>
+							<li><a class="submenu-item" href="{{ route('lawatanTapak') }}">
+									<div class="submenu-icon"></div><span>Lawatan Tapak</span>
+								</a></li>	
+							<li><a class="submenu-item" href="{{ route('kodBidang') }}">
+								<div class="submenu-icon"></div><span>Kod - Kod Bidang</span>
+							</a></li>
+							<li><a class="submenu-item" href="">
+									<div class="submenu-icon"></div><span>Coming soon</span>
+								</a></li>
+						</ul>
+					</div>
+				</li>
+
+				<!-- Menu : E-Bidding -->
+				<li class="nav-item">
+					<a class="sidebar-link collapsed" data-bs-toggle="collapse" data-bs-target="#menuEBidding" aria-expanded="false" style="cursor: pointer;">
+						<svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+							<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+							<path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+						</svg>
+						<span class="nav-text">E-Bidding</span>
+						<svg xmlns="http://www.w3.org/2000/svg" class="nav-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+							<polyline points="9 18 15 12 9 6"></polyline>
+						</svg>
+					</a>
+					<div class="collapse" id="menuEBidding">
+						<ul class="sidebar-submenu">
+							<li><a class="submenu-item" href="{{ route('keputusanMesyuarat') }}">
+									<div class="submenu-icon"></div><span>Keputusan Mesyuarat</span>
+								</a></li>
+							<li><a class="submenu-item" href="#">
+									<div class="submenu-icon"></div><span>Comming Soon</span>
+								</a></li>
+						</ul>
+					</div>
+				</li>
+
 		</ul>
 	</div>
 </aside>

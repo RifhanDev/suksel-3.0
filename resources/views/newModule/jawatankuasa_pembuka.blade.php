@@ -14,54 +14,89 @@
 }
 
 /* ================================
-   STEPPER DESIGN (IMAGE 3 STYLE)
+   STEPPER DESIGN (WORKFLOW)
 ================================ */
-.stepper-wrapper{
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    margin:25px 0;
+:root{
+    --sg-red:#C81E1E;
+    --sg-red-dark:#A4161A;
+    --topbar-border:#E5E7EB;
+    --topbar-text:#374151;
 }
-.stepper-item{
+
+.progress-wrapper{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    position:relative;
+}
+
+/* Each step */
+.progress-step{
     flex:1;
     text-align:center;
     position:relative;
     cursor:pointer;
 }
-.stepper-item::after{
+
+/* Connector line */
+.progress-step:not(:last-child)::after{
     content:'';
     position:absolute;
-    top:18px;
+    top:18px; /* center of 36px circle */
     left:50%;
     width:100%;
     height:3px;
-    background:#C7CED8;
+    background:var(--topbar-border);
     z-index:0;
 }
-.stepper-item:last-child::after{
-    display:none;
+
+/* Active & completed line */
+.progress-step.active:not(:last-child)::after,
+.progress-step.done:not(:last-child)::after{
+    background:var(--sg-red);
 }
-.step-counter{
+
+/* Reset future steps line */
+.progress-step.active ~ .progress-step:not(:last-child)::after{
+    background:var(--topbar-border);
+}
+
+/* Step circle */
+.step-number{
     width:36px;
     height:36px;
-    background:#9CA3AF;
     border-radius:50%;
-    color:white;
-    line-height:36px;
+    background:var(--topbar-border);
+    color:var(--topbar-text);
+    display:flex;
+    align-items:center;
+    justify-content:center;
     margin:0 auto;
-    font-weight:bold;
-    z-index:1;
+    font-weight:600;
     position:relative;
+    z-index:2;
 }
-.step-title{
+
+/* Active & done circle */
+.progress-step.active .step-number,
+.progress-step.done .step-number{
+    background:var(--sg-red);
+    color:#fff;
+}
+
+/* Label */
+.step-label{
     margin-top:8px;
-    font-size:14px;
+    font-size:13px;
+    color:var(--topbar-text);
+    font-weight:500;
 }
-.stepper-item.active .step-counter{
-    background:#10B981;
-}
-.stepper-item.completed .step-counter{
-    background:#2563EB;
+
+/* Active & done label */
+.progress-step.active .step-label,
+.progress-step.done .step-label{
+    color:var(--sg-red-dark);
+    font-weight:600;
 }
 
 /* ================================
@@ -126,14 +161,30 @@
             </thead>
 
             <tbody>
-                <tr style="cursor:pointer" onclick="openWorkflow()">
+                {{-- perkhidmatan bekalan --}}
+                <tr style="cursor:pointer">
                     <td>QT21000000023741</td>
                     <td class="text-primary text-decoration-underline">
-                        TENDER PERKHIDMATAN DIGITAL FORENSIK KE ATAS ALIRAN PROSES SISTEM XXXX
+                        <span data-kategori="perkhidmatan_bekalan" onclick="openTender(this)">
+                            TENDER PERKHIDMATAN DIGITAL FORENSIK KE ATAS ALIRAN PROSES SISTEM XXXX
+                        </span>
                     </td>
                     <td>03/03/2024</td>
                     <td>Dalam Proses</td>
                 </tr>
+
+                {{-- kerja --}}
+                <tr style="cursor:pointer">
+                    <td>QT21000000023799</td>
+                    <td class="text-primary text-decoration-underline">
+                        <span data-kategori="kerja" onclick="openTender(this)">
+                            TENDER KERJA-KERJA NAIK TARAF INFRASTRUKTUR RANGKAIAN ICT
+                        </span>
+                    </td>
+                    <td>05/03/2024</td>
+                    <td>Dalam Proses</td>
+                </tr>
+
             </tbody>
 
         </table>
@@ -157,24 +208,43 @@
 <hr>
 
 <!-- ========== STEPPER ========== -->
-<div class="stepper-wrapper">
+<!-- ========== STEPPER (BEKALAN) ========== -->
+<div id="stepper-bekalan" class="progress-wrapper mb-4" style="display:none;">
 
-    <div id="step1" class="stepper-item active" onclick="goToFR1()">
-        <div class="step-counter">1</div>
-        <div class="step-title">Peringkat Pematuhan Teknikal</div>
+    <div id="step1" class="progress-step active" onclick="goToFR1()">
+        <div class="step-number">1</div>
+        <div class="step-label">Peringkat Pematuhan Teknikal</div>
     </div>
 
-    <div id="step2" class="stepper-item" onclick="goToFR2()">
-        <div class="step-counter">2</div>
-        <div class="step-title">Peringkat Pematuhan Kewangan</div>
+    <div id="step2" class="progress-step" onclick="goToFR2()">
+        <div class="step-number">2</div>
+        <div class="step-label">Peringkat Pematuhan Kewangan</div>
     </div>
 
-    <div id="step3" class="stepper-item" onclick="goToFR3()">
-        <div class="step-counter">3</div>
-        <div class="step-title">Rumusan</div>
+    <div id="step3" class="progress-step" onclick="goToFR3()">
+        <div class="step-number">3</div>
+        <div class="step-label">Rumusan</div>
     </div>
 
 </div>
+
+
+<!-- ========== STEPPER (KERJA) ========== -->
+<div id="stepper-kerja" class="progress-wrapper mb-4" style="display:none;">
+        
+    <div id="k-step1" class="progress-step active" onclick="goToKerjaStep(1)">
+        <div class="step-number">1</div>
+        <div class="step-label">Peringkat Pematuhan Kewangan</div>
+    </div>
+
+    <div id="k-step2" class="progress-step" onclick="goToKerjaStep(2)">
+        <div class="step-number">2</div>
+        <div class="step-label">Rumusan</div>
+    </div>
+
+</div>
+
+
 
 
 <!-- ========================= FR1 ========================= -->
@@ -346,43 +416,244 @@
 </div>
 
 </div>
+
+<!-- ========================= KERJA : STEP 1 ========================= -->
+<div id="kerja-fr1" style="display:none;">
+    <div class="section-title">PEMATUHAN CADANGAN KEWANGAN</div>
+
+    <!-- ====== STEP 1 CONTENT (IMAGE 1) ====== -->
+    <table class="table table-bordered">
+        <thead class="table-header">
+            <tr>
+                <th>Tajuk / Dokumen</th>
+                <th>Mekanisma</th>
+                <th>Status Penilaian</th>
+                <th>Tindakan</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Lembaran Imbangan</td>
+                <td>Borang Atas Talian</td>
+                <td>Menunggu Penyerahan</td>
+                <td><button class="btn btn-success btn-sm">Semak</button></td>
+            </tr>
+            <tr>
+                <td>Penyata Bulanan / Akaun Bank</td>
+                <td>Borang Atas Talian</td>
+                <td>Menunggu Penyerahan</td>
+                <td><button class="btn btn-success btn-sm">Semak</button></td>
+            </tr>
+            <tr>
+                <td>Bon atau Saham</td>
+                <td>Borang Atas Talian</td>
+                <td>Menunggu Penyerahan</td>
+                <td><button class="btn btn-success btn-sm">Semak</button></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="text-end">
+        <button class="btn btn-primary" onclick="goToKerjaStep(2)">Seterusnya</button>
+    </div>
+
+</div>
+
+
+<!-- ========================= KERJA : STEP 2 ========================= -->
+<div id="kerja-fr2" style="display:none;">
+    <div class="section-title">RUMUSAN</div>
+
+    <!-- ====== SENARAI PEMBEKAL LAYAK ====== -->
+    <h5>Senarai Pembekal Layak Untuk Dinilai</h5>
+
+    <table class="table table-bordered">
+        <thead class="table-header">
+            <tr>
+                <th>Bil</th>
+                <th>Nama Syarikat</th>
+                <th>Taraf Bumiputera</th>
+                <th>Harga Tawaran</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>1/2</td>
+                <td>Syarikat A</td>
+                <td>
+                    <select class="form-select">
+                        <option>Ya</option>
+                        <option>Tidak</option>
+                    </select>
+                </td>
+                <td><input class="form-control"></td>
+            </tr>
+            <tr>
+                <td>2/2</td>
+                <td>Syarikat B</td>
+                <td>
+                    <select class="form-select">
+                        <option>Ya</option>
+                        <option>Tidak</option>
+                    </select>
+                </td>
+                <td><input class="form-control"></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="mt-3">
+        <label><input type="radio" name="rumusan"> Saya mengesahkan petender perlu melalui proses Cut-Off</label><br>
+        <label><input type="radio" name="rumusan"> Saya mengesahkan semua petender telah disemak dan layak untuk dinilai</label>
+    </div>
+
+    <!-- ====== SENARAI PEMBEKAL TIDAK LAYAK ====== -->
+    <h5 class="mt-4">Senarai Pembekal Tidak Layak Untuk Dinilai</h5>
+
+    <table class="table table-bordered">
+        <thead class="table-header">
+            <tr>
+                <th>Nama Syarikat</th>
+                <th>Catatan</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td colspan="2" class="text-center">Tiada Rekod</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="d-flex justify-content-between">
+        <button class="btn btn-secondary" onclick="goToKerjaStep(1)">Sebelumnya</button>
+        <div>
+            <button class="btn btn-info">Laporan</button>
+            <button class="btn btn-success">Hantar</button>
+        </div>
+    </div>
+
+</div>
+    
+
 <!-- ========================= END WORKFLOW ========================= -->
 
 </div>
 </div>
 
-
 <script>
 
-function openWorkflow()
+let CURRENT_KATEGORI = null;
+
+/* =========================
+   OPEN TENDER
+========================= */
+function openTender(el)
 {
+    const kategori = el.dataset.kategori;
+    CURRENT_KATEGORI = kategori;
+
+    // Show workflow, hide list
     document.getElementById('tenderList').style.display = 'none';
     document.getElementById('workflow').style.display = 'block';
-    showStep(1);
+
+    resetUI();   // always reset everything first
+
+    if (kategori === 'perkhidmatan_bekalan') {
+        // Show only bekalan stepper
+        document.getElementById('stepper-bekalan').style.display = 'flex';
+
+        // Default to FR1
+        showBekalanStep(1);
+    } 
+    else if (kategori === 'kerja') {
+        // Show only kerja stepper
+        document.getElementById('stepper-kerja').style.display = 'flex';
+
+        // Default to Kerja Step 1
+        goToKerjaStep(1);
+    }
 }
 
-function goToFR1(){ showStep(1); }
-function goToFR2(){ showStep(2); }
-function goToFR3(){ showStep(3); }
 
-function showStep(step)
+/* =========================
+   RESET UI
+========================= */
+function resetUI()
 {
-    ["fr1","fr2","fr3"].forEach((s,i)=>{
-        document.getElementById(s).style.display = ((i+1)===step) ? "block" : "none";
+    // Hide steppers
+    document.getElementById('stepper-bekalan').style.display = 'none';
+    document.getElementById('stepper-kerja').style.display = 'none';
+
+    // Hide all content
+    const sections = ['fr1','fr2','fr3','kerja-fr1','kerja-fr2'];
+    sections.forEach(id => {
+        const el = document.getElementById(id);
+        if(el) el.style.display = 'none';
     });
 
-    updateStepper(step);
+    // Reset bekalan stepper UI
+    for(let i=1;i<=3;i++){
+        const el = document.getElementById('step'+i);
+        if(el) el.classList.remove('active','done');
+    }
+
+    // Reset kerja stepper UI
+    ['k-step1','k-step2'].forEach(id=>{
+        const el = document.getElementById(id);
+        if(el) el.classList.remove('active','done');
+    });
 }
 
-function updateStepper(step)
-{
-    for(let i=1;i<=3;i++){
-        let el=document.getElementById("step"+i);
-        el.classList.remove("active","completed");
 
-        if(i < step) el.classList.add("completed");
-        if(i === step) el.classList.add("active");
+/* =========================
+   BEKALAN FLOW
+========================= */
+function showBekalanStep(step)
+{
+    ['fr1','fr2','fr3'].forEach((id,i)=>{
+        document.getElementById(id).style.display = (i+1 === step) ? 'block' : 'none';
+    });
+
+    for(let i=1;i<=3;i++){
+        const el = document.getElementById('step'+i);
+        el.classList.remove('active','done');
+
+        if(i < step) el.classList.add('done');
+        if(i === step) el.classList.add('active');
     }
+}
+
+function goToFR1(){ showBekalanStep(1); }
+function goToFR2(){ showBekalanStep(2); }
+function goToFR3(){ showBekalanStep(3); }
+
+
+/* =========================
+   KERJA FLOW
+========================= */
+function goToKerjaStep(step)
+{
+    // Hide all kerja sections
+    document.getElementById('kerja-fr1').style.display = 'none';
+    document.getElementById('kerja-fr2').style.display = 'none';
+
+    // Show selected step
+    if(step === 1){
+        document.getElementById('kerja-fr1').style.display = 'block';
+    }
+
+    if(step === 2){
+        document.getElementById('kerja-fr2').style.display = 'block';
+    }
+
+    // Update stepper UI
+    ['k-step1','k-step2'].forEach((id,i)=>{
+        const el = document.getElementById(id);
+        el.classList.remove('active','done');
+
+        if(i+1 < step) el.classList.add('done');
+        if(i+1 === step) el.classList.add('active');
+    });
 }
 
 </script>
