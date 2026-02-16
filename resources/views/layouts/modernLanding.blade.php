@@ -123,6 +123,26 @@
 		}
 
 		/* ============================================
+		BRAND ANIMATION (Slide In)
+		============================================ */
+		@keyframes brandSlideIn {
+			0% {
+				opacity: 0;
+				transform: translateX(-20px); /* Start 20px to the left */
+			}
+			100% {
+				opacity: 1;
+				transform: translateX(0); /* End at original position */
+			}
+		}
+
+		/* Animate the Logo Box First */
+		.logo-bg-box {
+			animation: brandSlideIn 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+			will-change: transform, opacity; /* Optimizes performance */
+		}
+
+		/* ============================================
 		   NAVBAR STRUCTURE
 		   ============================================ */
 		.navbar-top {
