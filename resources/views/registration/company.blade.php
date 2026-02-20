@@ -1,4 +1,4 @@
-@extends('layouts.v3.master')
+@extends('layouts.modernLanding')
 
 @section('styles')
     <link href="{{ asset('css/components/tabs.css') }}" rel="stylesheet">
@@ -108,47 +108,60 @@
             <p class="text-muted small m-0">Sila lengkapkan maklumat syarikat anda.</p>
         </div>
 
-        @if(isset($vendor) && $vendor->registration)
-        <div class="d-flex flex-wrap align-items-center gap-3 bg-white px-3 py-2 rounded-2 shadow-sm border">
-            <div class="d-flex align-items-center gap-2">
-                <span class="badge bg-light text-dark border" style="font-size: 0.65rem;">NO. PENDAFTARAN</span>
-                <span class="small fw-bold text-dark">{{ $vendor->registration }}</span>
+        @if (isset($vendor) && $vendor->registration)
+            <div class="d-flex flex-wrap align-items-center gap-3 bg-white px-3 py-2 rounded-2 shadow-sm border">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-light text-dark border" style="font-size: 0.65rem;">NO. PENDAFTARAN</span>
+                    <span class="small fw-bold text-dark">{{ $vendor->registration }}</span>
+                </div>
+                @if ($vendor->approval_1_id)
+                    <div class="vr d-none d-lg-block text-muted opacity-25" style="height: 20px;"></div>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge bg-light text-dark border" style="font-size: 0.65rem;">STATUS</span>
+                        <span class="small fw-bold" style="color: #059669;">Disahkan</span>
+                    </div>
+                @endif
             </div>
-            @if($vendor->approval_1_id)
-            <div class="vr d-none d-lg-block text-muted opacity-25" style="height: 20px;"></div>
-            <div class="d-flex align-items-center gap-2">
-                <span class="badge bg-light text-dark border" style="font-size: 0.65rem;">STATUS</span>
-                <span class="small fw-bold" style="color: #059669;">Disahkan</span>
-            </div>
-            @endif
-        </div>
         @endif
     </div>
 
     <!-- FORM CARD -->
     <div class="modern-form-card">
-        {!! Former::open_for_files(action('RegistrationController@storeCompany'))->addClass('form-uppercase jq-validate') !!}
-				{!! Former::populate($vendor) !!}
-				{!! Former::hidden('_method', 'PUT') !!}
-				
-                @include('vendors.form')
+        {!! Former::open_for_files(action('RegistrationController@storeCompany'))->addClass(
+            'form-uppercase jq-validate',
+        ) !!}
+        {!! Former::populate($vendor) !!}
+        {!! Former::hidden('_method', 'PUT') !!}
 
-				<div class="modern-form-actions">
-					<a href="{{ asset('dashboard')}}" class="modern-btn modern-btn-back">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-                        Kembali
-					</a>
-					<div style="display: flex; gap: 12px;">
-						<button type="button" id="next" class="modern-btn modern-btn-next">
-							Seterusnya
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
-						</button>
-						<button type="submit" id="submit" class="modern-btn modern-btn-submit" style="display: none;">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-							Hantar
-						</button>
-					</div>
+        @include('vendors.form')
+
+        <div class="modern-form-actions">
+            <a href="{{ asset('dashboard') }}" class="modern-btn modern-btn-back">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+                Kembali
+            </a>
+            <div style="display: flex; gap: 12px;">
+                <button type="button" id="next" class="modern-btn modern-btn-next">
+                    Seterusnya
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                        <polyline points="12 5 19 12 12 19"></polyline>
+                    </svg>
+                </button>
+                <button type="submit" id="submit" class="modern-btn modern-btn-submit" style="display: none;">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    Hantar
+                </button>
             </div>
+        </div>
         {!! Former::close() !!}
     </div>
 @endsection
@@ -156,7 +169,7 @@
 @section('scripts')
     @parent
     <script>
-        (function () {
+        (function() {
             function getTabs() {
                 return document.querySelectorAll('.modern-nav-tabs .nav-item');
             }
@@ -192,7 +205,7 @@
 
                 var isValid = true;
                 var inputs = pane.querySelectorAll('input, select, textarea');
-                inputs.forEach(function (input) {
+                inputs.forEach(function(input) {
                     validator.touched.add(input);
                     if (!validator.validateInput(input)) {
                         isValid = false;
@@ -258,7 +271,7 @@
                 }
             }
 
-            document.addEventListener('DOMContentLoaded', function () {
+            document.addEventListener('DOMContentLoaded', function() {
                 console.log('Company registration: Next button handler initializing...');
                 var nextButton = document.getElementById('next');
                 if (!nextButton) {
@@ -269,36 +282,156 @@
                 console.log('Next button found:', nextButton);
                 updateActionButtons();
 
-                nextButton.addEventListener('click', function (e) {
-                    console.log('Next button clicked!');
-                    console.log('VendorForm:', window.VendorForm);
-                    console.log('Active tab index:', getActiveTabIndex());
-                    
+                nextButton.addEventListener('click', function(e) {
+                    console.log('Next button clicked');
+
                     if (!validateActiveTab()) {
-                        console.log('Validation failed, staying on current tab');
                         return;
                     }
 
-                    console.log('Validation passed, moving to next tab');
+                    // MOF/CIDB Validation Logic when leaving CIDB tab
+                    var activePane = getActivePane();
+                    if (activePane && activePane.id === 'vf-cidb') {
+                        var mofStart = document.getElementById('mof_start_date');
+                        var mofEnd = document.getElementById('mof_end_date');
+                        var mofRef = document.getElementById('mof_ref_no');
+                        var mofCodes = document.getElementById('mof_codes');
+
+                        var cidbStart = document.getElementById('cidb_start_date');
+                        var cidbEnd = document.getElementById('cidb_end_date');
+                        var cidbRef = document.getElementById('cidb_ref_no');
+
+                        var mofFilled = true;
+                        if (!mofStart || !mofStart.value) mofFilled = false;
+                        if (!mofEnd || !mofEnd.value) mofFilled = false;
+                        if (!mofRef || !mofRef.value) mofFilled = false;
+                        if (mofCodes && mofCodes.selectize) {
+                            if (mofCodes.selectize.getValue().length === 0) mofFilled = false;
+                        } else if (mofCodes && mofCodes.selectedOptions.length === 0) {
+                            mofFilled = false;
+                        }
+
+                        var cidbFilled = true;
+                        if (!cidbStart || !cidbStart.value) cidbFilled = false;
+                        if (!cidbEnd || !cidbEnd.value) cidbFilled = false;
+                        if (!cidbRef || !cidbRef.value) cidbFilled = false;
+
+                        if (!mofFilled && !cidbFilled) {
+                            if (window.VendorForm && window.VendorForm.alert) {
+                                window.VendorForm.alert(
+                                    'Sila pastikan salah satu maklumat MOF atau CIDB di isi dengan lengkap.'
+                                );
+                            } else {
+                                alert(
+                                    'Sila pastikan salah satu maklumat MOF atau CIDB di isi dengan lengkap.'
+                                );
+                            }
+                            return;
+                        }
+
+                        // Toggle required attribute on file inputs based on data filled
+                        var cidbFile = document.querySelector('input[name="cidb"][type="file"]');
+                        if (cidbFile) {
+                            if (cidbFilled) cidbFile.setAttribute('required', 'required');
+                            // else cidbFile.removeAttribute('required'); // Don't remove if it was originally required by backend
+                        }
+
+                        var mofFile = document.querySelector('input[name="mof"][type="file"]');
+                        if (mofFile) {
+                            if (mofFilled) mofFile.setAttribute('required', 'required');
+                            // else mofFile.removeAttribute('required');
+                        }
+                    }
+
                     var nextIndex = getActiveTabIndex() + 1;
-                    console.log('Next tab index:', nextIndex);
                     goToTab(nextIndex);
                     updateActionButtons();
                 });
 
-                document.addEventListener('shown.bs.tab', function (event) {
+                // Submit Button Handler
+                var submitButton = document.getElementById('submit');
+                if (submitButton) {
+                    submitButton.addEventListener('click', function(e) {
+                        e.preventDefault();
+
+                        // Validate current tab first
+                        if (!validateActiveTab()) return;
+
+                        // Check required file uploads
+                        var fileErrors = [];
+                        var fileInputs = document.querySelectorAll('input[type="file"][required]');
+
+                        fileInputs.forEach(function(input) {
+                            if (!input.value) {
+                                // Check if there is a "file uploaded" indicator if needed, 
+                                // but standard backend logic removes 'required' if file exists.
+                                // So here, if required is present, value MUST be present.
+                                var label = input.closest('.form-group') ? input.closest(
+                                        '.form-group').querySelector('label').innerText : input
+                                    .name;
+                                fileErrors.push(label.replace('*', '').trim());
+                            }
+                        });
+
+                        if (fileErrors.length > 0) {
+                            var msg = 'Sila muat naik fail yang diperlukan: ' + fileErrors[0];
+                            if (window.VendorForm && window.VendorForm.alert) {
+                                window.VendorForm.alert(msg);
+                            } else {
+                                alert(msg);
+                            }
+                            return;
+                        }
+
+                        // Final Confirmation
+                        var disclaimer =
+                            "Saya mengaku bahawa maklumat yang diberikan adalah benar.<br><br>Pihak SUK Selangor berhak menolak / tidak meluluskan permohonan ini pada bila-bila masa sekiranya maklumat / keterangan yang saya kemukakan adalah tidak benar.<br><br>Saya juga memberi kuasa kepada pihak SUK Selangor untuk mendapatkan pengesahan daripada mana-mana sumber yang difikirkan benar.<br><br>Pihak SUK Selangor tidak akan dipertanggungjawabkan sekiranya berlaku kesilapan dan kesalahan semasa mengisi borang ini.";
+
+                        if (window.VendorForm && window.VendorForm.confirm) {
+                            window.VendorForm.confirm(disclaimer, function(result) {
+                                if (result) {
+                                    var form = document.querySelector('form.jq-validate');
+                                    if (form) {
+                                        HTMLFormElement.prototype.submit.call(form);
+                                    }
+                                }
+                            });
+                        } else {
+                            if (confirm(disclaimer.replace(/<[^>]*>/g, ''))) {
+                                var form = document.querySelector('form.jq-validate');
+                                if (form) {
+                                    HTMLFormElement.prototype.submit.call(form);
+                                }
+                            }
+                        }
+                    });
+                }
+
+                document.addEventListener('shown.bs.tab', function(event) {
                     if (event.target && event.target.closest('.modern-nav-tabs')) {
                         updateActionButtons();
-                        setTimeout(function () {
-                            var pane = getActivePane();
-                            if (pane) {
-                                pane.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        // Scroll to page title to ensure full context
+                        setTimeout(function() {
+                            var pageTitle = document.querySelector('h3.fw-bold');
+                            if (pageTitle) {
+                                pageTitle.scrollIntoView({
+                                    behavior: 'smooth',
+                                    block: 'start'
+                                });
+                            } else {
+                                // Fallback to tabs container
+                                var tabsContainer = document.querySelector('.modern-nav-tabs');
+                                if (tabsContainer) {
+                                    tabsContainer.scrollIntoView({
+                                        behavior: 'smooth',
+                                        block: 'start'
+                                    });
+                                }
                             }
-                        }, 0);
+                        }, 100);
                     }
                 });
             });
         })();
     </script>
 @endsection
-
