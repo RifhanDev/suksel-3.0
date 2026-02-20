@@ -4,7 +4,7 @@
  * Replaces Angular.js vendor app
  */
 
-(function() {
+(function () {
     'use strict';
 
     // Global configuration
@@ -117,7 +117,7 @@
 
         if (nameInput) {
             nameInput.setAttribute('data-field', 'name');
-            nameInput.addEventListener('keyup', function() {
+            nameInput.addEventListener('keyup', function () {
                 this.value = this.value.toUpperCase();
             });
         }
@@ -150,7 +150,7 @@
 
         if (nameInput) {
             nameInput.setAttribute('data-field', 'name');
-            nameInput.addEventListener('keyup', function() {
+            nameInput.addEventListener('keyup', function () {
                 this.value = this.value.toUpperCase();
             });
         }
@@ -173,13 +173,13 @@
 
         if (nameInput) {
             nameInput.setAttribute('data-field', 'name');
-            nameInput.addEventListener('keyup', function() {
+            nameInput.addEventListener('keyup', function () {
                 this.value = this.value.toUpperCase();
             });
         }
         if (designationInput) {
             designationInput.setAttribute('data-field', 'designation');
-            designationInput.addEventListener('keyup', function() {
+            designationInput.addEventListener('keyup', function () {
                 this.value = this.value.toUpperCase();
             });
         }
@@ -273,7 +273,7 @@
                 foreignerInput,
                 totalInput,
                 {
-                    onChange: function(percentages, total) {
+                    onChange: function (percentages, total) {
                         // Update total display
                         totalInput.value = total;
 
@@ -305,7 +305,7 @@
             });
 
             // Add custom validator for percentage total
-            VendorForm.validators.main.addValidator('percentageTotal', function(value, element) {
+            VendorForm.validators.main.addValidator('percentageTotal', function (value, element) {
                 if (VendorForm.calculators.shareholder) {
                     return VendorForm.calculators.shareholder.isValid();
                 }
@@ -320,7 +320,7 @@
     function initUppercaseInputs() {
         const uppercaseInputs = document.querySelectorAll('.x-uppercase');
         uppercaseInputs.forEach(input => {
-            input.addEventListener('input', function() {
+            input.addEventListener('input', function () {
                 const start = this.selectionStart;
                 const end = this.selectionEnd;
                 this.value = this.value.toUpperCase();
@@ -439,10 +439,10 @@
         initDatepickers();
         initSelectize();
 
-        console.log('Vendor Form initialized successfully!');
+        // console.log('Vendor Form initialized successfully!');
 
-        // Expose to window for debugging
-        window.VendorForm = VendorForm;
+        // Merge into existing window.VendorForm (preserve .alert/.confirm helpers from form.blade.php)
+        window.VendorForm = Object.assign(window.VendorForm || {}, VendorForm);
     }
 
     /**
@@ -520,7 +520,7 @@
         }
 
         // Initialize all CIDB group selectize fields (for dynamically added items)
-        $('.cidb_group-code_id.selectize, .cidb_group-codes.selectize').each(function() {
+        $('.cidb_group-code_id.selectize, .cidb_group-codes.selectize').each(function () {
             if (!this.selectize) {
                 $(this).selectize({
                     allowEmptyOption: true
@@ -539,7 +539,7 @@
             return;
         }
 
-        $(container).find('.selectize').each(function() {
+        $(container).find('.selectize').each(function () {
             if (!this.selectize) {
                 $(this).selectize({
                     allowEmptyOption: true
