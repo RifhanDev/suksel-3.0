@@ -815,24 +815,57 @@
 											<ul class="sidebar-submenu sub-submenu-level-2">
 												<li><a class="submenu-item" href="{{ route('borang3') }}">Borang 3</a></li>
 												<li><a class="submenu-item" href="{{ route('lembaran') }}">Lembaran Imbangan</a></li>
-												<li><a class="submenu-item" href="#">Akaun Bank</a></li>
-												<li><a class="submenu-item" href="#">Bon atau Saham</a></li>
+												<li><a class="submenu-item" href="{{ route('akaunBank') }}">Akaun Bank</a></li>
+												<li><a class="submenu-item" href="{{ route('bonSaham') }}">Bon atau Saham</a></li>
 											</ul>
 										</div>
 									</li>
 
-									<li><a class="submenu-item" href="#">Borang 4</a></li>
-									<li><a class="submenu-item" href="#">Borang 5</a></li>
-									<li><a class="submenu-item" href="#">Borang 6</a></li>
-									<li><a class="submenu-item" href="#">Borang 7</a></li>
-									<li><a class="submenu-item" href="#">Borang 8</a></li>
-									<li><a class="submenu-item" href="#">Borang 9</a></li>
-									<li><a class="submenu-item" href="#">Borang 10</a></li>
-									<li><a class="submenu-item" href="#">Borang 11</a></li>
-									<li><a class="submenu-item" href="#">Borang 12</a></li>
-									<li><a class="submenu-item" href="#">Borang 13</a></li>
-									<li><a class="submenu-item" href="#">Borang 14</a></li>
-									<li><a class="submenu-item" href="#">Borang 15</a></li>
+									<li><a class="submenu-item" href="{{ route('borang4') }}">Borang 4</a></li>
+									<li><a class="submenu-item" href="{{ route('borang5') }}">Borang 5</a></li>
+									<li><a class="submenu-item" href="{{ route('borang6') }}">Borang 6</a></li>
+									
+									<li>
+										<a class="submenu-item d-flex justify-content-between align-items-center"
+										data-bs-toggle="collapse"
+										href="#menuBorang7"
+										role="button">
+											<span>Borang 7</span>
+											<span>▸</span>
+										</a>
+										<div class="collapse" id="menuBorang7">
+											<ul class="sidebar-submenu sub-submenu-level-2">
+												<li><a class="submenu-item" href="{{ route('serupa') }}">Serupa</a></li>
+												<li><a class="submenu-item" href="{{ route('sebanding') }}">Sebanding</a></li>
+											</ul>
+										</div>
+									</li>		
+									
+									<li><a class="submenu-item" href="{{ route('borang8') }}">Borang 8</a></li>
+
+									<li>
+										<a class="submenu-item d-flex justify-content-between align-items-center"
+										data-bs-toggle="collapse"
+										href="#menuBorang9"
+										role="button">
+											<span>Borang 9</span>
+											<span>▸</span>
+										</a>
+										<div class="collapse" id="menuBorang9">
+											<ul class="sidebar-submenu sub-submenu-level-2">
+												<li><a class="submenu-item" href="{{ route('borang9') }}">Borang 9</a></li>
+												<li><a class="submenu-item" href="{{ route('kerjaSerupa') }}">Kerja Serupa</a></li>
+												<li><a class="submenu-item" href="{{ route('kerjaSebanding') }}">Kerja Sebanding</a></li>
+											</ul>
+										</div>
+									</li>	
+
+									<li><a class="submenu-item" href="{{ route('borang10') }}">Borang 10</a></li>
+									<li><a class="submenu-item" href="{{ route('borang11') }}">Borang 11</a></li>
+									<li><a class="submenu-item" href="{{ route('borang12') }}">Borang 12</a></li>
+									<li><a class="submenu-item" href="{{ route('borang13') }}">Borang 13</a></li>
+									<li><a class="submenu-item" href="{{ route('borang14') }}">Borang 14</a></li>
+									<li><a class="submenu-item" href="{{ route('borang15') }}">Borang 15</a></li>
 
 								</ul>
 							</div>

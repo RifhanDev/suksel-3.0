@@ -204,6 +204,23 @@ Route::view('/penilaian-kewangan-kerja', 'newModule.penilaian.borang1')->name('b
 Route::view('/penilaian-kewangan-kerja-borang2', 'newModule.penilaian.borang2')->name('borang2');
 Route::view('/penilaian-kewangan-kerja-borang3', 'newModule.penilaian.borang3')->name('borang3');
 Route::view('/penilaian-kewangan-kerja-lembaran', 'newModule.penilaian.lembaran')->name('lembaran');
+Route::view('/penilaian-kewangan-kerja-akaun-bank', 'newModule.penilaian.akaun_bank')->name('akaunBank');
+Route::view('/penilaian-kewangan-kerja-bon-saham', 'newModule.penilaian.bon_saham')->name('bonSaham');	
+Route::view('/penilaian-kewangan-kerja-borang4', 'newModule.penilaian.borang4')->name('borang4');
+Route::view('/penilaian-kewangan-kerja-borang5', 'newModule.penilaian.borang5')->name('borang5');
+Route::view('/penilaian-kewangan-kerja-borang6', 'newModule.penilaian.borang6')->name('borang6');
+Route::view('/penilaian-kewangan-kerja-borang7-serupa', 'newModule.penilaian.borang7_serupa')->name('serupa');
+Route::view('/penilaian-kewangan-kerja-borang7-sebanding', 'newModule.penilaian.borang7_sebanding')->name('sebanding');
+Route::view('/penilaian-kewangan-kerja-borang8', 'newModule.penilaian.borang8')->name('borang8');
+Route::view('/penilaian-kewangan-kerja-borang9', 'newModule.penilaian.borang9')->name('borang9');
+Route::view('/penilaian-kewangan-kerja-borang9-serupa', 'newModule.penilaian.borang9_serupa')->name('kerjaSerupa');
+Route::view('/penilaian-kewangan-kerja-borang9-sebanding', 'newModule.penilaian.borang9_sebanding')->name('kerjaSebanding');
+Route::view('/penilaian-kewangan-kerja-borang10', 'newModule.penilaian.borang10')->name('borang10');
+Route::view('/penilaian-kewangan-kerja-borang11', 'newModule.penilaian.borang11')->name('borang11');
+Route::view('/penilaian-kewangan-kerja-borang12', 'newModule.penilaian.borang12')->name('borang12');
+Route::view('/penilaian-kewangan-kerja-borang13', 'newModule.penilaian.borang13')->name('borang13');
+Route::view('/penilaian-kewangan-kerja-borang14', 'newModule.penilaian.borang14')->name('borang14');
+Route::view('/penilaian-kewangan-kerja-borang15', 'newModule.penilaian.borang15')->name('borang15');
 
 
 Route::view('/lawatan-tapak', 'newModule.syarikatPembekal.lawatan_tapak')->name('lawatanTapak');
