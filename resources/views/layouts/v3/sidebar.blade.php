@@ -766,13 +766,8 @@
 				<div class="collapse" id="menuPenilaianTeknikalKewangan">
 					<ul class="sidebar-submenu">
 						<li>
-							<a class="submenu-item" href="{{ route('penilaianTeknikal') }}">
-								<div class="submenu-icon"></div><span>Penilaian Teknikal</span>
-							</a>
-						</li>
-						<li>
 							<a class="submenu-item" href="{{ route('penilaianTeknikalKerja') }}">
-								<div class="submenu-icon"></div><span>Penilaian Teknikal Kerja</span>
+								<div class="submenu-icon"></div><span>Penilaian Teknikal</span>
 							</a>
 						</li>
 						<li>
