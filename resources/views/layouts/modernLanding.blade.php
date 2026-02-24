@@ -38,6 +38,7 @@
     {{-- <link href="{{ asset('css/modern-actions.css') }}" rel="stylesheet"> --}}
 
     @yield('styles')
+    @stack('styles')
 
     <style>
         /* ============================================
@@ -1723,6 +1724,8 @@
 
     <!-- Bootstrap Datepicker -->
     <script src="{{ asset('packages/bootstrap-datepicker/js/bootstrap-datepicker.js') }}"></script>
+    <!-- sheepIt (Dynamic Form Repeater) -->
+	<script src="{{ asset('js/sheepit.js') }}"></script>
     <!-- Selectize.js -->
     <script src="{{ asset('packages/selectize/dist/js/standalone/selectize.min.js') }}"></script>
 
