@@ -142,7 +142,7 @@
                     <line x1="19" y1="12" x2="5" y2="12"></line>
                     <polyline points="12 19 5 12 12 5"></polyline>
                 </svg>
-                Kembali
+                Kembali ke Laman Utama
             </a>
             <div style="display: flex; gap: 12px;">
                 <button type="button" id="next" class="modern-btn modern-btn-next">

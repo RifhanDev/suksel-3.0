@@ -1,4 +1,4 @@
-@extends('layouts.v3.master')
+@extends(Auth::user()->hasRole('Vendor') ? 'layouts.modernLanding' : 'layouts.v3.master')
 
 @section('styles')
     <style>

@@ -1,4 +1,5 @@
-@extends('layouts.v3.master')
+{{-- @extends('layouts.v3.master') --}}
+@extends(Auth::user()->hasRole('Vendor') ? 'layouts.modernLanding' : 'layouts.v3.master') {{-- temporary, buat dynamic layout sebab tak tau lg in future process, vendor boleh nampak tak sidebar --}}
 
 @section('styles')
 <style>
