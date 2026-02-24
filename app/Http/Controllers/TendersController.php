@@ -26,10 +26,12 @@ use DB;
 use Datatables;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
 use Mail;
 use PDF;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use Log;
 
 class TendersController extends Controller
 {
@@ -246,6 +248,208 @@ class TendersController extends Controller
 		}
 
 		return redirect('tenders/' . $tender->id)->with('success', $this->created_message);
+	}
+
+	/**
+	 * Show the form for creating a new tender (Version 3.0)
+	 *
+	 * @return Response
+	 */
+	public function createNew(Request $request)
+	{
+		if (!auth()->check())
+		{
+			return $this->_access_denied();
+		}
+
+		$user = auth()->user();
+
+		if (!$user->hasRole('Admin') && !$user->can('Tender:execute'))
+		{
+			return $this->_access_denied();
+		}
+
+		$organizations = OrganizationUnit::all();
+		$country_states = RefState::where('display_status', 1)->get();
+
+		// Fetch reference data for new fields
+		$kaedahPerolehan = \App\Models\Ref\RefKaedahPerolehan::all();
+		$kategoriPerolehan = \App\Models\Ref\RefKategoriJenisPerolehan::all();
+		$jenisTender = \App\Models\Ref\RefTypeOfTender::all();
+		$jenisKontrak = \App\Models\Ref\RefTypeOfContract::all();
+		$typePerolehan = \App\Models\Ref\RefTypeOfPerolehan::all();
+		$lokalitis = \App\Models\Ref\RefLokaliti::where('active', true)->get();
+
+		return view('newModule.cipta_tender', compact(
+			'country_states',
+			'organizations',
+			'kaedahPerolehan',
+			'kategoriPerolehan',
+			'jenisTender',
+			'jenisKontrak',
+			'typePerolehan',
+			'lokalitis'
+		));
+	}
+
+	/**
+	 * Store a newly created tender in storage (Version 3.0)
+	 *
+	 * @return Response
+	 */
+	public function storeNew(Request $request)
+	{
+		if (!auth()->check())
+		{
+			return $this->_access_denied();
+		}
+
+		$user = auth()->user();
+
+		if (!$user->hasRole('Admin') && !$user->can('Tender:execute'))
+		{
+			return $this->_access_denied();
+		}
+
+		$payload = $request->all();
+		$payload['creator_id'] = $user->id;
+
+		if (isset($payload['ptj_id']) && auth()->user()->hasRole('Admin'))
+		{
+			$payload['organization_unit_id'] = $payload['ptj_id'];
+		}
+		else
+		{
+			$payload['organization_unit_id'] = $user->organizationunit->id;
+		}
+
+		if (isset($payload['mof']) && is_array($payload['mof']))
+		{
+			$mofCodes = [];
+			foreach ($payload['mof'] as $index => $mofGroup)
+			{
+				if (isset($mofGroup['code']) && is_array($mofGroup['code']))
+				{
+					$joinRule = 'and';
+					if (isset($payload['mof_logic_' . $index]))
+					{
+						$joinRule = strtolower($payload['mof_logic_' . $index]);
+					}
+
+					$mofCodes[] = 
+					[
+						'codes' => $mofGroup['code'],
+						'inner_rule' => strtolower($mofGroup['logic_mid'] ?? 'or'),
+						'join_rule' => $joinRule
+					];
+				}
+			}
+			$payload['mof_codes'] = $mofCodes;
+			unset($payload['mof']);
+		}
+
+		if (isset($payload['cidb']) && is_array($payload['cidb']))
+		{
+			$cidbCodes = [];
+			$cidbGrades = [];
+
+			foreach ($payload['cidb'] as $index => $cidbGroup)
+			{
+				if (isset($cidbGroup['grade']) && is_array($cidbGroup['grade']))
+				{
+					$cidbGrades = array_merge($cidbGrades, $cidbGroup['grade']);
+				}
+
+				if (isset($cidbGroup['spec']) && is_array($cidbGroup['spec']))
+				{
+					$joinRule = 'or';
+
+					if (isset($payload['cidb_logic_' . $index]))
+					{
+						$joinRule = strtolower($payload['cidb_logic_' . $index]);
+					}
+
+					$cidbCodes[] = 
+					[
+						'codes' => $cidbGroup['spec'],
+						'inner_rule' => strtolower($cidbGroup['logic_mid'] ?? 'and'),
+						'join_rule' => $joinRule
+					];
+				}
+			}
+
+			if (count($cidbCodes) > 0)
+			{
+				$payload['cidb_codes'] = $cidbCodes;
+			}
+
+			if (count($cidbGrades) > 0)
+			{
+				$payload['cidb_grade'] = array_unique($cidbGrades);
+			}
+
+			unset($payload['cidb']);
+		}
+
+		foreach ($payload as $key => $value)
+		{
+			if (strpos($key, 'mof_logic_') === 0 || strpos($key, 'cidb_logic_') === 0)
+			{
+				unset($payload[$key]);
+			}
+		}
+
+		$errorCheck = false;
+		try
+		{
+			$response = Http::withoutVerifying()->timeout(30)->withHeaders(
+			[
+				'X-API-Key' => config('services.stos_backend.api_key'),
+				'Accept' => 'application/json'
+			])->post(config('services.stos_backend.url') . '/api/tenders', $payload);
+
+			if ($response->successful())
+			{
+				$data = $response->json();
+				Log::info('Tender created via backend API',
+				[
+					'tender_id' => $data['tender_id'],
+					'ref_number' => $data['ref_number']
+				]);
+
+				if ($request->ajax())
+				{
+					return response()->json($data, 201);
+				}
+
+				return redirect('tenders/' . $data['tender_id'])->with('success', 'Tender berjaya dicipta');
+			}
+			else
+			{
+				Log::error('Backend API error',
+				[
+					'status' => $response->status(),
+					'body' => $response->body()
+				]);
+
+				$errorCheck = true;
+			}
+
+		}
+		catch (\Exception $e)
+		{
+			Log::error('Failed to create tender via API',
+			[
+				'error' => $e->getMessage()
+			]);
+
+			$errorCheck = true;
+		}
+
+		if ($errorCheck)
+		{
+			return redirect()->route('ciptaTender')->withInput()->with('error', 'Gagal mencipta tender. Sila cuba lagi.');
+		}
 	}
 
 	/**

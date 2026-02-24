@@ -21,109 +21,75 @@
         <div class="sidebar-scroll-area">
             <ul class="sidebar-nav">
 
-                <!-- 1. PENGURUSAN TENDER -->
-                @php
-                    $isTenderMenuActive =
-                        request()->routeIs('ciptaTender') ||
-                        request()->is('tenders*') ||
-                        request()->is('agencies/*') ||
-                        request()->is('vendors*') ||
-                        request()->is('blacklists*') ||
-                        request()->is('news*') ||
-                        request()->is('transactions*');
-                @endphp
-                <li class="nav-item">
-                    <a class="sidebar-link {{ $isTenderMenuActive ? 'active' : 'collapsed' }}" data-bs-toggle="collapse"
-                        data-bs-target="#menuTender" aria-expanded="{{ $isTenderMenuActive ? 'true' : 'false' }}"
-                        style="cursor: pointer;">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M14 3v4a1 1 0 0 0 1 1h4" />
-                            <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z" />
-                            <line x1="9" y1="9" x2="10" y2="9" />
-                            <line x1="9" y1="13" x2="15" y2="13" />
-                            <line x1="9" y1="17" x2="15" y2="17" />
-                        </svg>
-                        <span class="nav-text">Pengurusan Tender</span>
-                        <svg xmlns="http://www.w3.org/2000/svg" class="nav-arrow" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="9 18 15 12 9 6"></polyline>
-                        </svg>
-                    </a>
-                    <div class="collapse {{ $isTenderMenuActive ? 'show' : '' }}" id="menuTender">
-                        <ul class="sidebar-submenu">
-                            @if ($user->can('Tender:excecute'))
-                                <!-- new permission -->
-                                <li>
-                                    <a class="submenu-item" href="{{ route('ciptaTender') }}">
-                                        <div class="submenu-icon"
-                                            style="{{ request()->routeIs('ciptaTender') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}">
-                                        </div>
-                                        <span class="{{ request()->routeIs('ciptaTender') ? 'text-white' : '' }}">Cipta
-                                            Tender/Sebut Harga</span>
-                                    </a>
-                                </li>
-                            @endif
+			<!-- 1. PENGURUSAN TENDER -->
+			@php
+				$isTenderMenuActive = request()->routeIs('ciptaTender') || request()->is('tenders*') || request()->is('agencies/*') || request()->is('vendors*') || request()->is('blacklists*') || request()->is('news*') || request()->is('transactions*');
+			@endphp
+			<li class="nav-item">
+				<a class="sidebar-link {{ $isTenderMenuActive ? 'active' : 'collapsed' }}" data-bs-toggle="collapse" data-bs-target="#menuTender" aria-expanded="{{ $isTenderMenuActive ? 'true' : 'false' }}" style="cursor: pointer;">
+					<svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+						<path d="M14 3v4a1 1 0 0 0 1 1h4" />
+						<path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z" />
+						<line x1="9" y1="9" x2="10" y2="9" />
+						<line x1="9" y1="13" x2="15" y2="13" />
+						<line x1="9" y1="17" x2="15" y2="17" />
+					</svg>
+					<span class="nav-text">Pengurusan Tender</span>
+					<svg xmlns="http://www.w3.org/2000/svg" class="nav-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+						<polyline points="9 18 15 12 9 6"></polyline>
+					</svg>
+				</a>
+				<div class="collapse {{ $isTenderMenuActive ? 'show' : '' }}" id="menuTender">
+					<ul class="sidebar-submenu">
+						@if ($user->can('Tender:execute')) <!-- new permission -->
+						<li>
+							<a class="submenu-item" href="{{ route('ciptaTender') }}">
+								<div class="submenu-icon" style="{{ request()->routeIs('ciptaTender') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}"></div>
+								<span class="{{ request()->routeIs('ciptaTender') ? 'text-white' : '' }}">Cipta Tender/Sebut Harga</span>
+							</a>
+						</li>
+						@endif
 
-                            @if (App\Tender::canList())
-                                @if (Auth::user()->ability(['Admin', 'Registration Assesor', 'Front Desk'], []))
-                                    <li><a class="submenu-item" href="{{ asset('tenders') }}">
-                                            <div class="submenu-icon"
-                                                style="{{ request()->is('tenders*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}">
-                                            </div>
-                                            <span class="{{ request()->is('tenders*') ? 'text-white' : '' }}">Senarai
-                                                Tender</span>
-                                        </a></li>
-                                @else
-                                    <li><a class="submenu-item"
-                                            href="{{ asset('agencies/' . Auth::user()->organization_unit_id) }}">
-                                            <div class="submenu-icon"
-                                                style="{{ request()->is('agencies/*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}">
-                                            </div>
-                                            <span class="{{ request()->is('agencies/*') ? 'text-white' : '' }}">Senarai
-                                                Tender</span>
-                                        </a></li>
-                                @endif
-                            @endif
-                            @if (App\Vendor::canList())
-                                <li><a class="submenu-item" href="{{ asset('vendors') }}">
-                                        <div class="submenu-icon"
-                                            style="{{ request()->is('vendors*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}">
-                                        </div>
-                                        <span class="{{ request()->is('vendors*') ? 'text-white' : '' }}">Senarai
-                                            Syarikat</span>
-                                    </a></li>
-                            @endif
-                            @if (App\VendorBlacklist::canList())
-                                <li><a class="submenu-item" href="{{ asset('blacklists') }}">
-                                        <div class="submenu-icon"
-                                            style="{{ request()->is('blacklists*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}">
-                                        </div>
-                                        <span class="{{ request()->is('blacklists*') ? 'text-white' : '' }}">Senarai
-                                            Hitam</span>
-                                    </a></li>
-                            @endif
-                            @if (App\News::canList())
-                                <li><a class="submenu-item" href="{{ asset('news') }}">
-                                        <div class="submenu-icon"
-                                            style="{{ request()->is('news*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}">
-                                        </div>
-                                        <span class="{{ request()->is('news*') ? 'text-white' : '' }}">Senarai
-                                            Berita</span>
-                                    </a></li>
-                            @endif
-                            @if (App\Transaction::canList())
-                                <li><a class="submenu-item" href="{{ asset('transactions') }}">
-                                        <div class="submenu-icon"
-                                            style="{{ request()->is('transactions*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}">
-                                        </div>
-                                        <span class="{{ request()->is('transactions*') ? 'text-white' : '' }}">Senarai
-                                            Transaksi</span>
-                                    </a></li>
-                            @endif
-                        </ul>
-                    </div>
-                </li>
+						@if (App\Tender::canList())
+						@if (Auth::user()->ability(['Admin', 'Registration Assesor', 'Front Desk'], []))
+						<li><a class="submenu-item" href="{{ asset('tender') }}">
+								<div class="submenu-icon" style="{{ request()->is('tender*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}"></div>
+								<span class="{{ request()->is('tender*') ? 'text-white' : '' }}">Senarai Tender</span>
+							</a></li>
+						@else
+						<li><a class="submenu-item" href="{{ asset('agencies/' . Auth::user()->organization_unit_id) }}">
+								<div class="submenu-icon" style="{{ request()->is('agencies/*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}"></div>
+								<span class="{{ request()->is('agencies/*') ? 'text-white' : '' }}">Senarai Tender</span>
+							</a></li>
+						@endif
+						@endif
+						@if (App\Vendor::canList())
+						<li><a class="submenu-item" href="{{ asset('vendors') }}">
+								<div class="submenu-icon" style="{{ request()->is('vendors*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}"></div>
+								<span class="{{ request()->is('vendors*') ? 'text-white' : '' }}">Senarai Syarikat</span>
+							</a></li>
+						@endif
+						@if (App\VendorBlacklist::canList())
+						<li><a class="submenu-item" href="{{ asset('blacklists') }}">
+								<div class="submenu-icon" style="{{ request()->is('blacklists*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}"></div>
+								<span class="{{ request()->is('blacklists*') ? 'text-white' : '' }}">Senarai Hitam</span>
+							</a></li>
+						@endif
+						@if (App\News::canList())
+						<li><a class="submenu-item" href="{{ asset('news') }}">
+								<div class="submenu-icon" style="{{ request()->is('news*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}"></div>
+								<span class="{{ request()->is('news*') ? 'text-white' : '' }}">Senarai Berita</span>
+							</a></li>
+						@endif
+						@if (App\Transaction::canList())
+						<li><a class="submenu-item" href="{{ asset('transactions') }}">
+								<div class="submenu-icon" style="{{ request()->is('transactions*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}"></div>
+								<span class="{{ request()->is('transactions*') ? 'text-white' : '' }}">Senarai Transaksi</span>
+							</a></li>
+						@endif
+					</ul>
+				</div>
+			</li>
 
                 <!-- 2. PERMINTAAN KEMASKINI -->
                 @if (App\CodeRequest::canList())
