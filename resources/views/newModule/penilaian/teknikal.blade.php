@@ -163,7 +163,7 @@ hr{
 }
 
 /* ==========================
-   SUB TABS (Teknikal | Rumusan)
+   SUB TABS 
 ========================== */
 .custom-tab-size .nav-link{
     border-radius:8px 8px 0 0;

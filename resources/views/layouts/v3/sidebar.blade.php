@@ -893,50 +893,44 @@
                     </a>
                 </li>
 
-                <!-- Menu : Penilaian Teknikal & Kewangan -->
-                <li class="nav-item">
-                    <a class="sidebar-link collapsed" data-bs-toggle="collapse"
-                        data-bs-target="#menuPenilaianTeknikalKewangan" aria-expanded="false"
-                        style="cursor: pointer;">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                        </svg>
-                        <span class="nav-text">Penilaian Teknikal & Kewangan</span>
-                        <svg xmlns="http://www.w3.org/2000/svg" class="nav-arrow" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="9 18 15 12 9 6"></polyline>
-                        </svg>
-                    </a>
-                    <div class="collapse" id="menuPenilaianTeknikalKewangan">
-                        <ul class="sidebar-submenu">
-                            <li>
-                                <a class="submenu-item" href="{{ route('penilaianTeknikal') }}">
-                                    <div class="submenu-icon"></div><span>Penilaian Teknikal</span>
-                                </a>
-                            </li>
-                            <li>
-                                <a class="submenu-item" href="{{ route('penilaianTeknikalKerja') }}">
-                                    <div class="submenu-icon"></div><span>Penilaian Teknikal Kerja</span>
-                                </a>
-                            </li>
-                            <li>
-                                <a class="submenu-item" href="{{ route('penilaianKewangan') }}">
-                                    <div class="submenu-icon"></div><span>Penilaian Kewangan</span>
-                                </a>
-                            </li>
-                            <li>
-                                {{-- MAIN SUBMENU --}}
-                                <a class="submenu-item d-flex justify-content-between align-items-center"
-                                    data-bs-toggle="collapse" href="#menuKewanganKerja" role="button"
-                                    aria-expanded="false" aria-controls="menuKewanganKerja">
-                                    <span>
-                                        <div class="submenu-icon"></div>
-                                        Penilaian Kewangan Kerja
-                                    </span>
-                                    <span>▾</span>
-                                </a>
+			<!-- Menu : Penilaian Teknikal & Kewangan -->
+			<li class="nav-item">
+				<a class="sidebar-link collapsed" data-bs-toggle="collapse" data-bs-target="#menuPenilaianTeknikalKewangan" aria-expanded="false" style="cursor: pointer;">
+					<svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+						<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+						<path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+					</svg>
+					<span class="nav-text">Penilaian Teknikal & Kewangan</span>
+					<svg xmlns="http://www.w3.org/2000/svg" class="nav-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+						<polyline points="9 18 15 12 9 6"></polyline>
+					</svg>
+				</a>
+				<div class="collapse" id="menuPenilaianTeknikalKewangan">
+					<ul class="sidebar-submenu">
+						<li>
+							<a class="submenu-item" href="{{ route('penilaianTeknikalKerja') }}">
+								<div class="submenu-icon"></div><span>Penilaian Teknikal</span>
+							</a>
+						</li>
+						<li>
+							<a class="submenu-item" href="{{ route('penilaianKewangan') }}">
+								<div class="submenu-icon"></div><span>Penilaian Kewangan</span>
+							</a>
+						</li>
+						<li>
+							{{-- MAIN SUBMENU --}}
+							<a class="submenu-item d-flex justify-content-between align-items-center"
+							data-bs-toggle="collapse"
+							href="#menuKewanganKerja"
+							role="button"
+							aria-expanded="false"
+							aria-controls="menuKewanganKerja">
+								<span>
+									<div class="submenu-icon"></div>
+									Penilaian Kewangan Kerja
+								</span>
+								<span>▾</span>
+							</a>
 
                                 <div class="collapse" id="menuKewanganKerja">
                                     <ul class="sidebar-submenu sub-submenu">
@@ -952,30 +946,61 @@
                                                 <span>▸</span>
                                             </a>
 
-                                            <div class="collapse" id="menuBorang3">
-                                                <ul class="sidebar-submenu sub-submenu-level-2">
-                                                    <li><a class="submenu-item" href="{{ route('borang3') }}">Borang
-                                                            3</a></li>
-                                                    <li><a class="submenu-item"
-                                                            href="{{ route('lembaran') }}">Lembaran Imbangan</a></li>
-                                                    <li><a class="submenu-item" href="#">Akaun Bank</a></li>
-                                                    <li><a class="submenu-item" href="#">Bon atau Saham</a></li>
-                                                </ul>
-                                            </div>
-                                        </li>
+										<div class="collapse" id="menuBorang3">
+											<ul class="sidebar-submenu sub-submenu-level-2">
+												<li><a class="submenu-item" href="{{ route('borang3') }}">Borang 3</a></li>
+												<li><a class="submenu-item" href="{{ route('lembaran') }}">Lembaran Imbangan</a></li>
+												<li><a class="submenu-item" href="{{ route('akaunBank') }}">Akaun Bank</a></li>
+												<li><a class="submenu-item" href="{{ route('bonSaham') }}">Bon atau Saham</a></li>
+											</ul>
+										</div>
+									</li>
 
-                                        <li><a class="submenu-item" href="#">Borang 4</a></li>
-                                        <li><a class="submenu-item" href="#">Borang 5</a></li>
-                                        <li><a class="submenu-item" href="#">Borang 6</a></li>
-                                        <li><a class="submenu-item" href="#">Borang 7</a></li>
-                                        <li><a class="submenu-item" href="#">Borang 8</a></li>
-                                        <li><a class="submenu-item" href="#">Borang 9</a></li>
-                                        <li><a class="submenu-item" href="#">Borang 10</a></li>
-                                        <li><a class="submenu-item" href="#">Borang 11</a></li>
-                                        <li><a class="submenu-item" href="#">Borang 12</a></li>
-                                        <li><a class="submenu-item" href="#">Borang 13</a></li>
-                                        <li><a class="submenu-item" href="#">Borang 14</a></li>
-                                        <li><a class="submenu-item" href="#">Borang 15</a></li>
+									<li><a class="submenu-item" href="{{ route('borang4') }}">Borang 4</a></li>
+									<li><a class="submenu-item" href="{{ route('borang5') }}">Borang 5</a></li>
+									<li><a class="submenu-item" href="{{ route('borang6') }}">Borang 6</a></li>
+									
+									<li>
+										<a class="submenu-item d-flex justify-content-between align-items-center"
+										data-bs-toggle="collapse"
+										href="#menuBorang7"
+										role="button">
+											<span>Borang 7</span>
+											<span>▸</span>
+										</a>
+										<div class="collapse" id="menuBorang7">
+											<ul class="sidebar-submenu sub-submenu-level-2">
+												<li><a class="submenu-item" href="{{ route('serupa') }}">Serupa</a></li>
+												<li><a class="submenu-item" href="{{ route('sebanding') }}">Sebanding</a></li>
+											</ul>
+										</div>
+									</li>		
+									
+									<li><a class="submenu-item" href="{{ route('borang8') }}">Borang 8</a></li>
+
+									<li>
+										<a class="submenu-item d-flex justify-content-between align-items-center"
+										data-bs-toggle="collapse"
+										href="#menuBorang9"
+										role="button">
+											<span>Borang 9</span>
+											<span>▸</span>
+										</a>
+										<div class="collapse" id="menuBorang9">
+											<ul class="sidebar-submenu sub-submenu-level-2">
+												<li><a class="submenu-item" href="{{ route('borang9') }}">Borang 9</a></li>
+												<li><a class="submenu-item" href="{{ route('kerjaSerupa') }}">Kerja Serupa</a></li>
+												<li><a class="submenu-item" href="{{ route('kerjaSebanding') }}">Kerja Sebanding</a></li>
+											</ul>
+										</div>
+									</li>	
+
+									<li><a class="submenu-item" href="{{ route('borang10') }}">Borang 10</a></li>
+									<li><a class="submenu-item" href="{{ route('borang11') }}">Borang 11</a></li>
+									<li><a class="submenu-item" href="{{ route('borang12') }}">Borang 12</a></li>
+									<li><a class="submenu-item" href="{{ route('borang13') }}">Borang 13</a></li>
+									<li><a class="submenu-item" href="{{ route('borang14') }}">Borang 14</a></li>
+									<li><a class="submenu-item" href="{{ route('borang15') }}">Borang 15</a></li>
 
                                     </ul>
                                 </div>
