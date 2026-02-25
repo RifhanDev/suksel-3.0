@@ -49,6 +49,8 @@ class User extends Authenticatable
 	protected $fillable = [
 		'username', // used in usercontroller@create
 		'email',
+		'ic_number',
+		'gred',
 		'tel',
 		'department',
 		'password',

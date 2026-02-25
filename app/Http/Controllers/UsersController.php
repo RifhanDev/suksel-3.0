@@ -134,6 +134,18 @@ class UsersController extends Controller
 		if (isset($data['organization_unit_id']) && empty($data['organization_unit_id'])) {
 			$data['organization_unit_id'] = null;
 		}
+		if (isset($data['ic_number'])) {
+			$data['ic_number'] = trim($data['ic_number']);
+			if ($data['ic_number'] === '') {
+				$data['ic_number'] = null;
+			}
+		}
+		if (isset($data['gred'])) {
+			$data['gred'] = trim($data['gred']);
+			if ($data['gred'] === '') {
+				$data['gred'] = null;
+			}
+		}
 
 		if (!auth()->user()->hasRole('Admin')) {
 			$data['organization_unit_id'] = auth()->user()->organization_unit_id;
@@ -234,6 +246,18 @@ class UsersController extends Controller
 			}
 			if (isset($data['organization_unit_id']) && empty($data['organization_unit_id'])) {
 				$data['organization_unit_id'] = null;
+			}
+			if (isset($data['ic_number'])) {
+				$data['ic_number'] = trim($data['ic_number']);
+				if ($data['ic_number'] === '') {
+					$data['ic_number'] = null;
+				}
+			}
+			if (isset($data['gred'])) {
+				$data['gred'] = trim($data['gred']);
+				if ($data['gred'] === '') {
+					$data['gred'] = null;
+				}
 			}
 
 			if (!$user->canUpdate()) {

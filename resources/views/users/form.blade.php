@@ -4,6 +4,10 @@
 {!! Former::email('email')
 		->label('Alamat Emel')
 		->required() !!}
+{!! Former::text('ic_number')
+		->label('Nombor Kad Pengenalan') !!}
+{!! Former::text('gred')
+		->label('Gred') !!}
 {!! Former::multiselect('roles')
 		->label('Peranan')
 		->required()
