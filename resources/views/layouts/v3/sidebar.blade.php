@@ -162,9 +162,24 @@
 
                 <!-- 3. PENGURUSAN SISTEM -->
                 @if (Auth::user()->ability(['Admin', 'Agency Admin'], []))
+                    @php
+                        $isSystemMenuActive =
+                            request()->is('users*') ||
+                            request()->is('agencies*') ||
+                            request()->is('organizationtypes*') ||
+                            request()->is('codes*') ||
+                            request()->is('helps*') ||
+                            request()->is('helpcategories*') ||
+                            request()->is('gateways*') ||
+                            request()->is('banners*') ||
+                            request()->is('version-histories*') ||
+                            request()->is('reject-template*') ||
+                            request()->is('circulars*');
+                    @endphp
                     <li class="nav-item">
-                        <a class="sidebar-link collapsed" data-bs-toggle="collapse" data-bs-target="#menuSystem"
-                            aria-expanded="false" style="cursor: pointer;">
+                        <a class="sidebar-link {{ $isSystemMenuActive ? 'active' : 'collapsed' }}"
+                            data-bs-toggle="collapse" data-bs-target="#menuSystem"
+                            aria-expanded="{{ $isSystemMenuActive ? 'true' : 'false' }}" style="cursor: pointer;">
                             <svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24"
                                 fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
                                 <circle cx="12" cy="12" r="3" />
@@ -177,56 +192,104 @@
                                 <polyline points="9 18 15 12 9 6"></polyline>
                             </svg>
                         </a>
-                        <div class="collapse" id="menuSystem">
+                        <div class="collapse {{ $isSystemMenuActive ? 'show' : '' }}" id="menuSystem">
                             <ul class="sidebar-submenu">
                                 @if (App\User::canList())
                                     <li><a class="submenu-item" href="{{ asset('users') }}">
-                                            <div class="submenu-icon"></div><span>Senarai Pengguna</span>
+                                            <div class="submenu-icon"
+                                                style="{{ request()->is('users') || request()->is('users/create') || request()->is('users/*/edit') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}">
+                                            </div><span
+                                                class="{{ request()->is('users') || request()->is('users/create') || request()->is('users/*/edit') ? 'text-white' : '' }}">Senarai
+                                                Pengguna</span>
                                         </a></li>
                                 @endif
                                 @if (Auth::user()->canApprove())
                                     <li><a class="submenu-item" href="{{ asset('users/pending-approval') }}">
-                                            <div class="submenu-icon"></div><span>Permohonan Pengguna</span>
+                                            <div class="submenu-icon"
+                                                style="{{ request()->is('users/pending-approval') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}">
+                                            </div><span
+                                                class="{{ request()->is('users/pending-approval') ? 'text-white' : '' }}">Permohonan
+                                                Pengguna</span>
                                         </a></li>
                                 @endif
                                 @if (App\OrganizationUnit::canList())
                                     <li><a class="submenu-item" href="{{ asset('agencies') }}">
-                                            <div class="submenu-icon"></div><span>Senarai Agensi</span>
+                                            <div class="submenu-icon"
+                                                style="{{ request()->is('agencies') || request()->is('agencies/create') || request()->is('agencies/*/edit') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}">
+                                            </div><span
+                                                class="{{ request()->is('agencies') || request()->is('agencies/create') || request()->is('agencies/*/edit') ? 'text-white' : '' }}">Senarai
+                                                Agensi</span>
                                         </a></li>
                                 @endif
                                 @if (Auth::user()->hasRole('Admin'))
                                     <li><a class="submenu-item" href="{{ asset('organizationtypes') }}">
-                                            <div class="submenu-icon"></div><span>Kategori Agensi</span>
+                                            <div class="submenu-icon"
+                                                style="{{ request()->is('organizationtypes*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}">
+                                            </div><span
+                                                class="{{ request()->is('organizationtypes*') ? 'text-white' : '' }}">Kategori
+                                                Agensi</span>
                                         </a></li>
                                     <li><a class="submenu-item" href="{{ asset('codes') }}">
-                                            <div class="submenu-icon"></div><span>Senarai Kod Bidang</span>
+                                            <div class="submenu-icon"
+                                                style="{{ request()->is('codes*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}">
+                                            </div><span
+                                                class="{{ request()->is('codes*') ? 'text-white' : '' }}">Senarai Kod
+                                                Bidang</span>
                                         </a></li>
                                     <li><a class="submenu-item" href="{{ asset('helps') }}">
-                                            <div class="submenu-icon"></div><span>Soalan Bantuan</span>
+                                            <div class="submenu-icon"
+                                                style="{{ request()->is('helps*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}">
+                                            </div><span
+                                                class="{{ request()->is('helps*') ? 'text-white' : '' }}">Soalan
+                                                Bantuan</span>
                                         </a></li>
                                     <li><a class="submenu-item" href="{{ asset('helpcategories') }}">
-                                            <div class="submenu-icon"></div><span>Kategori Bantuan</span>
+                                            <div class="submenu-icon"
+                                                style="{{ request()->is('helpcategories*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}">
+                                            </div><span
+                                                class="{{ request()->is('helpcategories*') ? 'text-white' : '' }}">Kategori
+                                                Bantuan</span>
                                         </a></li>
                                     <li><a class="submenu-item" href="{{ asset('gateways') }}">
-                                            <div class="submenu-icon"></div><span>Tetapan Pembayaran</span>
+                                            <div class="submenu-icon"
+                                                style="{{ request()->is('gateways*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}">
+                                            </div><span
+                                                class="{{ request()->is('gateways*') ? 'text-white' : '' }}">Tetapan
+                                                Pembayaran</span>
                                         </a></li>
                                     <li><a class="submenu-item" href="{{ asset('banners') }}">
-                                            <div class="submenu-icon"></div><span>Senarai Banner</span>
+                                            <div class="submenu-icon"
+                                                style="{{ request()->is('banners*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}">
+                                            </div><span
+                                                class="{{ request()->is('banners*') ? 'text-white' : '' }}">Senarai
+                                                Banner</span>
                                         </a></li>
                                 @endif
                                 @if (Auth::user()->can('System:histories'))
                                     <li><a class="submenu-item" href="{{ asset('version-histories') }}">
-                                            <div class="submenu-icon"></div><span>Sejarah Sistem</span>
+                                            <div class="submenu-icon"
+                                                style="{{ request()->is('version-histories*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}">
+                                            </div><span
+                                                class="{{ request()->is('version-histories*') ? 'text-white' : '' }}">Sejarah
+                                                Sistem</span>
                                         </a></li>
                                 @endif
                                 @if (App\Models\RejectTemplate::canList())
                                     <li><a class="submenu-item" href="{{ asset('reject-template') }}">
-                                            <div class="submenu-icon"></div><span>Templat Penolakan</span>
+                                            <div class="submenu-icon"
+                                                style="{{ request()->is('reject-template*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}">
+                                            </div><span
+                                                class="{{ request()->is('reject-template*') ? 'text-white' : '' }}">Templat
+                                                Penolakan</span>
                                         </a></li>
                                 @endif
                                 @if (App\Models\Circular::canList())
                                     <li><a class="submenu-item" href="{{ asset('circulars') }}">
-                                            <div class="submenu-icon"></div><span>Senarai Pekeliling</span>
+                                            <div class="submenu-icon"
+                                                style="{{ request()->is('circulars*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}">
+                                            </div><span
+                                                class="{{ request()->is('circulars*') ? 'text-white' : '' }}">Senarai
+                                                Pekeliling</span>
                                         </a></li>
                                 @endif
                             </ul>
@@ -293,7 +356,8 @@
                                 @if (App\Models\Refund::isRoleBKP())
                                     <li><a class="submenu-item" href="{{ route('refunds.complaint.index') }}">
                                             <div class="submenu-icon"></div><span>Aduan Permohonan Semula</span>
-                                        </a></li>
+                                        </a>
+                                    </li>
                                 @endif
                             </ul>
                         </div>
