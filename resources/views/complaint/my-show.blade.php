@@ -58,6 +58,16 @@
 				</div>
 			</div>
 			@endif
+			@if ($complaint->tender_id && $complaint->tender)
+			<div class="row mb-3">
+				<div class="col-md-3 fw-bold text-muted">
+					<i class="ti ti-file-text me-1"></i>Tender / Sebut Harga:
+				</div>
+				<div class="col-md-9">
+					<a href="{{ url('tenders/' . $complaint->tender_id) }}">{{ $complaint->tender->ref_number }} – {{ $complaint->tender->name }}</a>
+				</div>
+			</div>
+			@endif
 			<div class="row mb-3">
 				<div class="col-md-3 fw-bold text-muted">
 					<i class="ti ti-notes me-1"></i>Kandungan:

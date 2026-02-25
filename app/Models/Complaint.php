@@ -14,11 +14,20 @@ class Complaint extends Model
         'email',
         'subject',
         'module',
+        'tender_id',
         'content',
         'admin_reply',
         'replied_by',
         'replied_at'
     ];
+
+    /**
+     * Get the tender related to this complaint (when module is tender).
+     */
+    public function tender()
+    {
+        return $this->belongsTo(\App\Tender::class, 'tender_id');
+    }
 
     /**
      * Get the display label for the complaint module (main issue).
