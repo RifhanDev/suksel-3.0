@@ -109,13 +109,39 @@
 		<label class="form-label required">
 			<i class="ti ti-category me-1"></i>Isu utama / Modul sistem
 		</label>
-		<select name="module" class="form-select" required>
+		<select name="module" id="complaint-module" class="form-select" required>
 			<option value="">-- Sila pilih modul --</option>
 			@foreach ($modules as $key => $label)
 				<option value="{{ $key }}" {{ old('module') === $key ? 'selected' : '' }}>{{ $label }}</option>
 			@endforeach
 		</select>
 		<small class="text-muted">Pilih bahagian sistem yang berkaitan dengan aduan anda.</small>
+	</div>
+
+	{{-- Tender field: show when "Tender / Sebut Harga" is selected. Always render wrap so JS can show/hide it. --}}
+	<div class="col-md-12 mb-3" id="complaint-tender-wrap" style="display: none;">
+		@if (isset($userTenders) && $userTenders->isNotEmpty())
+			<label class="form-label" id="complaint-tender-label">
+				<i class="ti ti-file-text me-1"></i>Pilih Tender / Sebut Harga
+			</label>
+			<select name="tender_id" id="complaint-tender-id" class="form-select">
+				<option value="">-- Sila pilih tender --</option>
+				@foreach ($userTenders as $t)
+					<option value="{{ $t->id }}" {{ old('tender_id') == $t->id ? 'selected' : '' }}>
+						{{ $t->ref_number }} – {{ $t->name }} ({{ $t->type === 'quotation' ? 'Sebut Harga' : 'Tender' }})
+					</option>
+				@endforeach
+			</select>
+			<small class="text-muted">Hanya tender yang anda layak dipaparkan.</small>
+		@elseif (auth()->check())
+			<div class="alert alert-info mb-0">
+				<i class="ti ti-info-circle me-2"></i>Tiada tender untuk dipilih. Anda boleh terus hantar aduan tanpa memilih tender tertentu.
+			</div>
+		@else
+			<div class="alert alert-secondary mb-0">
+				<i class="ti ti-info-circle me-2"></i>Daftar masuk untuk memilih tender tertentu (jika ada).
+			</div>
+		@endif
 	</div>
 	@endif
 
@@ -126,11 +152,40 @@
 		{!! Former::textarea('content')->id('content')->addClass('fixed_width')->rows(10)->label(false)->placeholder('Masukkan kandungan aduan anda')->required()->class('form-control') !!}
 	</div>
 
+	@if (config('captcha.site'))
 	<div class="col-md-12 mb-3">
-		<div class="g-recaptcha" data-sitekey="{{ Config::get('captcha.site') }}"></div>
+		<div class="g-recaptcha" data-sitekey="{{ config('captcha.site') }}"></div>
 	</div>
+	@else
+	<div class="col-md-12 mb-3">
+		<input type="hidden" name="g-recaptcha-response" value="bypass-no-key">
+	</div>
+	@endif
 </div>
 
 @section('scripts')
+	@if (config('captcha.site'))
 	<script src="https://www.google.com/recaptcha/api.js" async defer></script>
+	@endif
+	<script>
+		document.addEventListener('DOMContentLoaded', function() {
+			var moduleSelect = document.getElementById('complaint-module');
+			var tenderWrap = document.getElementById('complaint-tender-wrap');
+			var tenderSelect = document.getElementById('complaint-tender-id');
+			if (!moduleSelect || !tenderWrap) return;
+
+			function toggleTender() {
+				var isTender = moduleSelect.value === 'tender';
+				tenderWrap.style.display = isTender ? 'block' : 'none';
+				if (tenderSelect) {
+					tenderSelect.value = isTender ? tenderSelect.value : '';
+					tenderSelect.disabled = !isTender;
+					tenderSelect.required = isTender && tenderSelect.options && tenderSelect.options.length > 1;
+				}
+			}
+
+			moduleSelect.addEventListener('change', toggleTender);
+			toggleTender();
+		});
+	</script>
 @endsection

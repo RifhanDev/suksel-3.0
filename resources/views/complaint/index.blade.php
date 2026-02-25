@@ -25,6 +25,13 @@
 				'width' => 'w-20',
 			],
 			[
+				'data' => 'tender_id',
+				'name' => 'tender_id',
+				'label' => 'Tender',
+				'icon' => 'ti-file-text',
+				'width' => 'w-20',
+			],
+			[
 				'data' => 'content',
 				'name' => 'content',
 				'label' => 'Kandungan',
@@ -63,7 +70,7 @@
 				'searchable' => false,
 			],
 		],
-		'defaultOrder' => [[5, 'desc']],
+		'defaultOrder' => [[6, 'desc']],
 		'pageLength' => 25,
 	])
 @endsection
@@ -84,6 +91,10 @@
 					{
 						data: 'module',
 						name: 'module'
+					},
+					{
+						data: 'tender_id',
+						name: 'tender_id'
 					},
 					{
 						data: 'content',
@@ -138,7 +149,7 @@
 				pageLength: 25,
 				responsive: true,
 				order: [
-					[5, 'desc']
+					[6, 'desc']
 				]
 			});
 		});

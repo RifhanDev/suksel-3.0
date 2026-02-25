@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Datatables;
 use Carbon\Carbon;
 use App\Models\Complaint;
+use App\Tender;
+use App\TenderVendor;
 use App\User;
 use App\Traits\Helper;
 use Illuminate\Http\Request;
@@ -26,7 +28,7 @@ class ComplaintController extends Controller
             return $this->_access_denied();
 
         if ($request->ajax()) {
-            $complaints = Complaint::select('*');
+            $complaints = Complaint::with('tender')->select('*');
 
             return Datatables::of($complaints)
                 ->editColumn('content', function ($complaint) {
@@ -34,6 +36,10 @@ class ComplaintController extends Controller
                 })
                 ->editColumn('module', function ($complaint) {
                     return $complaint->module_label ?? '—';
+                })
+                ->editColumn('tender_id', function ($complaint) {
+                    if (!$complaint->tender_id || !$complaint->tender) return '—';
+                    return '<a href="' . url('tenders/' . $complaint->tender_id) . '">' . e($complaint->tender->ref_number . ' – ' . $complaint->tender->name) . '</a>';
                 })
                 ->editColumn('created_at', function ($complaint) {
                     return Carbon::parse($complaint->created_at)->format('j M Y h:i a');
@@ -50,7 +56,7 @@ class ComplaintController extends Controller
                     return implode(' ', $actions);
                 })
                 ->removeColumn('id')
-                ->rawColumns(['subject', 'content', 'status', 'created_at', 'actions'])
+                ->rawColumns(['subject', 'content', 'status', 'created_at', 'tender_id', 'actions'])
                 ->make();
         }
 
@@ -65,7 +71,39 @@ class ComplaintController extends Controller
     public function create()
     {
         $modules = config('complaint_modules.modules', []);
-        return view('complaint.create', compact('modules'));
+        $userTenders = $this->getTendersForCurrentUser();
+        return view('complaint.create', compact('modules', 'userTenders'));
+    }
+
+    /**
+     * Get tenders valid for the current user only (Vendor: participated; Agency: own org tenders).
+     *
+     * @return \Illuminate\Support\Collection
+     */
+    protected function getTendersForCurrentUser()
+    {
+        if (!auth()->check()) {
+            return collect([]);
+        }
+        $user = auth()->user();
+
+        if ($user->hasRole('Vendor') && $user->vendor_id) {
+            $tenderIds = TenderVendor::where('vendor_id', $user->vendor_id)->pluck('tender_id')->unique()->filter();
+            if ($tenderIds->isEmpty()) {
+                return collect([]);
+            }
+            return Tender::whereIn('id', $tenderIds)
+                ->orderBy('submission_datetime', 'desc')
+                ->get(['id', 'name', 'ref_number', 'type', 'submission_datetime']);
+        }
+
+        if (!empty($user->organization_unit_id)) {
+            return Tender::where('organization_unit_id', $user->organization_unit_id)
+                ->orderBy('submission_datetime', 'desc')
+                ->get(['id', 'name', 'ref_number', 'type', 'submission_datetime']);
+        }
+
+        return collect([]);
     }
 
     /**
@@ -77,16 +115,17 @@ class ComplaintController extends Controller
     public function store(Request $request)
     {
         $moduleKeys = array_keys(config('complaint_modules.modules', []));
-        $rules = [
-            'g-recaptcha-response' => 'required|recaptcha',
-        ];
+        $rules = [];
+        if (config('captcha.site')) {
+            $rules['g-recaptcha-response'] = 'required|recaptcha';
+        }
         if (!empty($moduleKeys)) {
             $rules['module'] = 'required|string|in:' . implode(',', $moduleKeys);
         }
         $validator = Validator::make($request->all(), $rules);
 
         if ($validator->fails()) {
-            return redirect()->back()->with('error', 'Tidak berjaya dihantar. Sila Tanda reCAPTCHA')
+            return redirect()->back()->with('error', $validator->getMessageBag()->first() ?: 'Sila lengkapkan maklumat yang diperlukan.')
                 ->withInput();
         }
 
@@ -94,6 +133,17 @@ class ComplaintController extends Controller
         // Add user_id if user is authenticated
         if (auth()->check()) {
             $data['user_id'] = auth()->user()->id;
+        }
+        // When module is tender, validate and add tender_id (must be in user's allowed list)
+        if ($request->input('module') === 'tender') {
+            $allowedTenderIds = $this->getTendersForCurrentUser()->pluck('id')->toArray();
+            $tenderId = $request->input('tender_id');
+            if (!empty($allowedTenderIds)) {
+                if (empty($tenderId) || !in_array((int) $tenderId, $allowedTenderIds, true)) {
+                    return redirect()->back()->with('error', 'Sila pilih tender yang sah untuk aduan anda.')->withInput();
+                }
+                $data['tender_id'] = (int) $tenderId;
+            }
         }
         // dd($data);
         $complaint = new Complaint;
@@ -125,7 +175,7 @@ class ComplaintController extends Controller
         if (!Complaint::canShow())
             return $this->_access_denied();
 
-        $complaint = Complaint::findOrFail($id);
+        $complaint = Complaint::with('tender')->findOrFail($id);
 
         return view('complaint.show', compact('complaint'));
     }
@@ -222,7 +272,7 @@ class ComplaintController extends Controller
         }
 
         if ($request->ajax()) {
-            $complaints = Complaint::where('user_id', auth()->user()->id);
+            $complaints = Complaint::where('user_id', auth()->user()->id)->with('tender');
 
             return Datatables::of($complaints)
                 ->editColumn('content', function ($complaint) {
@@ -230,6 +280,10 @@ class ComplaintController extends Controller
                 })
                 ->editColumn('module', function ($complaint) {
                     return $complaint->module_label ?? '—';
+                })
+                ->editColumn('tender_id', function ($complaint) {
+                    if (!$complaint->tender_id || !$complaint->tender) return '—';
+                    return '<a href="' . url('tenders/' . $complaint->tender_id) . '">' . e($complaint->tender->ref_number . ' – ' . $complaint->tender->name) . '</a>';
                 })
                 ->editColumn('created_at', function ($complaint) {
                     return Carbon::parse($complaint->created_at)->format('j M Y h:i a');
@@ -245,7 +299,7 @@ class ComplaintController extends Controller
                     return implode(' ', $actions);
                 })
                 ->removeColumn('id')
-                ->rawColumns(['subject', 'content', 'status', 'created_at', 'actions'])
+                ->rawColumns(['subject', 'content', 'status', 'created_at', 'tender_id', 'actions'])
                 ->make();
         }
 
@@ -264,7 +318,7 @@ class ComplaintController extends Controller
             return redirect()->route('login')->with('error', 'Sila daftar masuk untuk melihat aduan anda.');
         }
 
-        $complaint = Complaint::findOrFail($id);
+        $complaint = Complaint::with('tender')->findOrFail($id);
 
         // Ensure user can only view their own complaint
         if ($complaint->user_id !== auth()->user()->id) {
