@@ -13,11 +13,24 @@ class Complaint extends Model
         'user_id',
         'email',
         'subject',
+        'module',
         'content',
         'admin_reply',
         'replied_by',
         'replied_at'
     ];
+
+    /**
+     * Get the display label for the complaint module (main issue).
+     */
+    public function getModuleLabelAttribute(): ?string
+    {
+        if (empty($this->module)) {
+            return null;
+        }
+        $modules = config('complaint_modules.modules', []);
+        return $modules[$this->module] ?? $this->module;
+    }
 
     public function complaintStatus()
     {

@@ -48,6 +48,16 @@
 					{{ $complaint->subject }}
 				</div>
 			</div>
+			@if ($complaint->module_label)
+			<div class="row mb-3">
+				<div class="col-md-3 fw-bold text-muted">
+					<i class="ti ti-category me-1"></i>Isu utama / Modul:
+				</div>
+				<div class="col-md-9">
+					{{ $complaint->module_label }}
+				</div>
+			</div>
+			@endif
 			<div class="row mb-3">
 				<div class="col-md-3 fw-bold text-muted">
 					<i class="ti ti-notes me-1"></i>Kandungan:

@@ -104,6 +104,21 @@
 		{!! Former::text('subject')->label(false)->placeholder('Masukkan subjek aduan')->required()->class('form-control') !!}
 	</div>
 
+	@if (!empty($modules))
+	<div class="col-md-12 mb-3">
+		<label class="form-label required">
+			<i class="ti ti-category me-1"></i>Isu utama / Modul sistem
+		</label>
+		<select name="module" class="form-select" required>
+			<option value="">-- Sila pilih modul --</option>
+			@foreach ($modules as $key => $label)
+				<option value="{{ $key }}" {{ old('module') === $key ? 'selected' : '' }}>{{ $label }}</option>
+			@endforeach
+		</select>
+		<small class="text-muted">Pilih bahagian sistem yang berkaitan dengan aduan anda.</small>
+	</div>
+	@endif
+
 	<div class="col-md-12 mb-3">
 		<label class="form-label required">
 			<i class="ti ti-notes me-1"></i>Kandungan
