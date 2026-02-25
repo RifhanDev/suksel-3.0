@@ -14,6 +14,7 @@
 		<thead class="bg-blue-selangor">
 			<tr>
 				<th>Subjek</th>
+				<th>Isu utama / Modul</th>
 				<th>Kandungan</th>
 				<th>Status</th>
 				<th>Tarikh Aduan</th>
@@ -38,12 +39,16 @@
 
 			var DT = target.DataTable({
 				order: [
-					[3, 'desc']
+					[4, 'desc']
 				],
 				ajax: path,
 				columns: [{
 						data: 'subject',
 						name: 'subject'
+					},
+					{
+						data: 'module',
+						name: 'module'
 					},
 					{
 						data: 'content',

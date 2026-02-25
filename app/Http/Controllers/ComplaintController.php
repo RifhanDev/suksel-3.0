@@ -32,6 +32,9 @@ class ComplaintController extends Controller
                 ->editColumn('content', function ($complaint) {
                     return (strlen($complaint->content) > 70) ? substr($complaint->content, 0, 70) . '...' : $complaint->content;
                 })
+                ->editColumn('module', function ($complaint) {
+                    return $complaint->module_label ?? '—';
+                })
                 ->editColumn('created_at', function ($complaint) {
                     return Carbon::parse($complaint->created_at)->format('j M Y h:i a');
                 })
@@ -61,7 +64,8 @@ class ComplaintController extends Controller
      */
     public function create()
     {
-        return view('complaint.create');
+        $modules = config('complaint_modules.modules', []);
+        return view('complaint.create', compact('modules'));
     }
 
     /**
@@ -72,17 +76,21 @@ class ComplaintController extends Controller
      */
     public function store(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            // Your other validation rules here
+        $moduleKeys = array_keys(config('complaint_modules.modules', []));
+        $rules = [
             'g-recaptcha-response' => 'required|recaptcha',
-        ]);
+        ];
+        if (!empty($moduleKeys)) {
+            $rules['module'] = 'required|string|in:' . implode(',', $moduleKeys);
+        }
+        $validator = Validator::make($request->all(), $rules);
 
         if ($validator->fails()) {
             return redirect()->back()->with('error', 'Tidak berjaya dihantar. Sila Tanda reCAPTCHA')
                 ->withInput();
         }
 
-        $data = $request->all();
+        $data = $request->only(['email', 'subject', 'module', 'content']);
         // Add user_id if user is authenticated
         if (auth()->check()) {
             $data['user_id'] = auth()->user()->id;
@@ -219,6 +227,9 @@ class ComplaintController extends Controller
             return Datatables::of($complaints)
                 ->editColumn('content', function ($complaint) {
                     return (strlen($complaint->content) > 70) ? substr($complaint->content, 0, 70) . '...' : $complaint->content;
+                })
+                ->editColumn('module', function ($complaint) {
+                    return $complaint->module_label ?? '—';
                 })
                 ->editColumn('created_at', function ($complaint) {
                     return Carbon::parse($complaint->created_at)->format('j M Y h:i a');

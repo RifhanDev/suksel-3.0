@@ -18,6 +18,13 @@
 				'icon' => 'ti-file-text',
 			],
 			[
+				'data' => 'module',
+				'name' => 'module',
+				'label' => 'Isu utama / Modul',
+				'icon' => 'ti-category',
+				'width' => 'w-20',
+			],
+			[
 				'data' => 'content',
 				'name' => 'content',
 				'label' => 'Kandungan',
@@ -56,7 +63,7 @@
 				'searchable' => false,
 			],
 		],
-		'defaultOrder' => [[4, 'desc']],
+		'defaultOrder' => [[5, 'desc']],
 		'pageLength' => 25,
 	])
 @endsection
@@ -73,6 +80,10 @@
 				columns: [{
 						data: 'subject',
 						name: 'subject'
+					},
+					{
+						data: 'module',
+						name: 'module'
 					},
 					{
 						data: 'content',
@@ -127,7 +138,7 @@
 				pageLength: 25,
 				responsive: true,
 				order: [
-					[4, 'desc']
+					[5, 'desc']
 				]
 			});
 		});
