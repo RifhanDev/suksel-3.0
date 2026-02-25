@@ -3,8 +3,8 @@
 @section('styles')
     <style>
         /* =====================
-            GENERAL LINKS
-        ===================== */
+                GENERAL LINKS
+            ===================== */
         .tender-link {
             color: #3751FF;
             font-weight: 600;
@@ -13,8 +13,8 @@
         }
 
         /* =====================
-            COMMITTEE TABS
-        ===================== */
+                COMMITTEE TABS
+            ===================== */
         .committee-tabs {
             display: flex;
             background: #f1f3ff;
@@ -46,8 +46,8 @@
         }
 
         /* =====================
-            BUTTON COLORS
-        ===================== */
+                BUTTON COLORS
+            ===================== */
 
         /* PRIMARY BUTTON (TAPIS, SIMPAN) */
         .btn-primary {
@@ -79,8 +79,8 @@
         }
 
         /* =====================
-            TABLE STYLE
-        ===================== */
+                TABLE STYLE
+            ===================== */
         .table thead th {
             text-align: center;
             vertical-align: middle;
@@ -97,8 +97,8 @@
         }
 
         /* =====================
-            FORM ELEMENTS
-        ===================== */
+                FORM ELEMENTS
+            ===================== */
         input[type="checkbox"] {
             width: 16px;
             height: 16px;
@@ -110,8 +110,8 @@
         }
 
         /* =====================
-            CATATAN BOX
-        ===================== */
+                CATATAN BOX
+            ===================== */
         .catatan-box {
             background: #f3f3f3;
             padding: 15px;
@@ -156,8 +156,8 @@
 
                 <tbody>
                     <!-- ===============================
-                        PERKHIDMATAN / BEKALAN
-                    =============================== -->
+                            PERKHIDMATAN / BEKALAN
+                        =============================== -->
                     <tr>
                         <td class="text-center">QT21000000023741</td>
                         <td>
@@ -172,8 +172,8 @@
                     </tr>
 
                     <!-- ===============================
-                        KERJA
-                    =============================== -->
+                            KERJA
+                        =============================== -->
                     <tr>
                         <td class="text-center">QT21000000023799</td>
                         <td>
@@ -231,15 +231,11 @@
                     <button class="committee-tab" data-tab="fin" onclick="switchCommittee('fin')">
                         Jawatankuasa Penilaian Kewangan
                     </button>
-
-                    <button class="committee-tab" data-tab="harga" onclick="switchCommittee('harga')">
-                        Jawatankuasa Penilaian Sebut Harga / Tender
-                    </button>
                 </div>
 
                 <div id="committeeContent">
 
-                    @foreach (['spec', 'open', 'tech', 'fin', 'harga'] as $tab)
+                    @foreach (['spec', 'open', 'tech', 'fin'] as $tab)
                         <div id="tab-{{ $tab }}" @if ($tab != 'spec') style="display:none" @endif>
 
                             <table class="table table-bordered js-table">
@@ -367,7 +363,7 @@
             // PERKHIDMATAN / BEKALAN
             // ===========================
             if (kategori === 'perkhidmatan_bekalan') {
-                showTabs(['spec', 'open', 'tech', 'fin', 'harga'], 'spec');
+                showTabs(['spec', 'open', 'tech', 'fin'], 'spec');
             }
 
             // ===========================
