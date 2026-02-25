@@ -364,15 +364,15 @@
                 <td><input type="text" class="form-control bg-light" placeholder="-" readonly></td>
                 <td>
                     <select class="form-select">
-                        <option>Ya</option>
-                        <option>Tidak</option>
+                        <option value="1">Ya</option>
+                        <option value="0">Tidak</option>
                     </select>
                 </td>
                 <td>
                     <select class="form-select">
-                        <option>Pengerusi</option>
-                        <option>Setiausaha</option>
-                        <option>Ahli</option>
+                        <option value="1">Pengerusi</option>
+                        <option value="2">Setiausaha</option>
+                        <option value="3">Ahli</option>
                     </select>
                 </td>
             `;

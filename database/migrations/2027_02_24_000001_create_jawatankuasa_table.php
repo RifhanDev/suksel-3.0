@@ -12,6 +12,8 @@ class CreateJawatankuasaTable extends Migration
             $table->id();
             $table->unsignedBigInteger('tender_id')->nullable();
             $table->enum('jenis_jawatankuasa', ['spec', 'open', 'tech', 'fin'])->index();
+            $table->enum('p_p', ['1', '0'])->index();
+            $table->enum('peranan', ['1', '2', '3'])->index();
             $table->unsignedBigInteger('user_id')->nullable();
             $table->text('catatan')->nullable();
             $table->string('dokumen_sokongan_nama')->nullable();
