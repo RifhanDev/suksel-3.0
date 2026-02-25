@@ -304,7 +304,9 @@ class AuthController extends Controller
    public function logout()
    {
 
-      UserHistory::log(Auth::user()->id, 'sign-out');
+      if (auth()->check()) {
+         UserHistory::log(auth()->user()->id, 'sign-out');
+      }
       auth()->logout();
       session()->flush();
 
@@ -321,7 +323,9 @@ class AuthController extends Controller
     */
    public function mobileLogout()
    {
-      UserHistory::log(Auth::user()->id, 'sign-out');
+      if (auth()->check()) {
+         UserHistory::log(auth()->user()->id, 'sign-out');
+      }
       Confide::logout();
       return 'ok';
    }
