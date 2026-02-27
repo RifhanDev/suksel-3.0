@@ -75,7 +75,7 @@
     margin: 0;
 }
 
-.segmented-control input:checked + label {
+.segmented-control input:checked+label {
     background: var(--sg-red);
     color: white;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
@@ -115,7 +115,7 @@
     border-radius: 12px;
     box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.05);
     border: 1px solid #f1f5f9;
-    overflow: hidden;
+    /* overflow: hidden; Removed to allow selectize dropdowns to overflow */
 }
 
 /* --- SETTINGS GRID BOX --- */
@@ -452,13 +452,13 @@
     width: 100%;
 }
 
-.modern-input-group > :first-child {
+.modern-input-group> :first-child {
     border-top-right-radius: 0 !important;
     border-bottom-right-radius: 0 !important;
     border-right: 0;
 }
 
-.modern-input-group > :last-child {
+.modern-input-group> :last-child {
     border-top-left-radius: 0 !important;
     border-bottom-left-radius: 0 !important;
 }
