@@ -335,7 +335,7 @@
                     option: function(item, escape) {
                         return '<div>' +
                             '<strong>' + escape(item.ic_number || '-') + '</strong>' +
-                            '<br><small class="text-muted">' + escape(item.name || '-') + ' | ' + escape(item.email || '-') + '</small>' +
+                            '<br><small class="text-muted">' + escape(item.name || '-') + ' | ' + escape(item.email || '-') + ' | ' + escape(item.jawatan || '-') + '</small>' +
                             '</div>';
                     },
                     item: function(item, escape) {
@@ -354,7 +354,7 @@
                     let item = this.options[value];
                     if (item) {
                         tr.find('td:eq(2) input').val(item.name || '-');
-                        tr.find('td:eq(3) input').val(item.roles_column || 'Pegawai');
+                        tr.find('td:eq(3) input').val(item.jawatan || '-');
                         tr.find('td:eq(4) input').val(item.email || '-');
                         tr.find('td:eq(5) input').val(item.gred || 'G41');
                     } else {
@@ -406,13 +406,13 @@
                         ic_number: rowData.ic_number || '-',
                         name: rowData.name || '-',
                         email: rowData.email || '-',
-                        roles_column: rowData.jawatan || 'Pegawai',
+                        jawatan: rowData.jawatan || '-',
                         gred: rowData.gred || '-',
                     });
                 }
                 selectize.setValue(String(rowData.user_id), true);
                 tr.querySelector('.member-name').value = rowData.name || '-';
-                tr.querySelector('.member-jawatan').value = rowData.jawatan || 'Pegawai';
+                tr.querySelector('.member-jawatan').value = rowData.jawatan || '-';
                 tr.querySelector('.member-email').value = rowData.email || '-';
                 tr.querySelector('.member-gred').value = rowData.gred || '-';
             }
@@ -469,47 +469,58 @@
             return rows;
         }
 
-        function buildDraftFormData(tabPane) {
-            const jenis = tabPane.dataset.jenis;
-            const rows = collectRows(tabPane);
+        function buildDraftFormDataAll() {
             const formData = new FormData();
-            const fileInput = tabPane.querySelector('.committee-dokumen-input');
 
             formData.append('_token', $('meta[name=_token]').attr('content'));
             formData.append('tender_uuid', tenderUuid || '');
-            formData.append('jenis', jenis || '');
-            formData.append('catatan', (tabPane.querySelector('.committee-catatan') && tabPane.querySelector('.committee-catatan').value) || '');
 
-            rows.forEach((row, index) => {
-                formData.append(`rows[${index}][user_id]`, row.user_id);
-                formData.append(`rows[${index}][p_p]`, row.p_p);
-                formData.append(`rows[${index}][peranan]`, row.peranan);
+            document.querySelectorAll('.committee-pane').forEach(function(tabPane) {
+                const jenis = tabPane.dataset.jenis;
+                if (!supportedDraftJenis.includes(jenis)) {
+                    return;
+                }
+
+                const rows = collectRows(tabPane);
+                const fileInput = tabPane.querySelector('.committee-dokumen-input');
+                const catatanValue = (tabPane.querySelector('.committee-catatan') && tabPane.querySelector('.committee-catatan').value) || '';
+
+                formData.append(`tabs[${jenis}][catatan]`, catatanValue);
+
+                rows.forEach((row, index) => {
+                    formData.append(`tabs[${jenis}][rows][${index}][user_id]`, row.user_id);
+                    formData.append(`tabs[${jenis}][rows][${index}][p_p]`, row.p_p);
+                    formData.append(`tabs[${jenis}][rows][${index}][peranan]`, row.peranan);
+                });
+
+                if (fileInput && fileInput.files && fileInput.files.length > 0) {
+                    formData.append(`tabs[${jenis}][dokumen_sokongan]`, fileInput.files[0]);
+                }
             });
-
-            if (fileInput && fileInput.files && fileInput.files.length > 0) {
-                formData.append('dokumen_sokongan', fileInput.files[0]);
-            }
 
             return formData;
         }
 
-        function saveDraft(tabPane, button, successModal) {
-            const jenis = tabPane.dataset.jenis;
-
+        function saveAllDrafts(triggerButton, successModal) {
             if (!tenderUuid) {
                 alert('Tender tidak ditemui. Sila buka semula halaman menggunakan pautan tender.');
                 return;
             }
 
-            if (!supportedDraftJenis.includes(jenis)) {
-                alert('Tab ini belum disokong untuk Simpan [Draf].');
-                return;
-            }
+            const formData = buildDraftFormDataAll();
+            const saveButtons = Array.from(document.querySelectorAll('.btn-simpan'));
+            const buttonStates = saveButtons.map(function(btn) {
+                return {
+                    button: btn,
+                    text: btn.textContent,
+                    disabled: btn.disabled,
+                };
+            });
 
-            const formData = buildDraftFormData(tabPane);
-            const originalButtonText = button.textContent;
-            button.disabled = true;
-            button.textContent = 'Menyimpan...';
+            saveButtons.forEach(function(btn) {
+                btn.disabled = true;
+                btn.textContent = 'Menyimpan...';
+            });
 
             $.ajax({
                 url: saveDraftUrl,
@@ -527,8 +538,10 @@
                     alert(message);
                 },
                 complete: function() {
-                    button.disabled = false;
-                    button.textContent = originalButtonText;
+                    buttonStates.forEach(function(state) {
+                        state.button.disabled = state.disabled;
+                        state.button.textContent = state.text;
+                    });
                 }
             });
         }
@@ -588,8 +601,7 @@
             // SIMPAN
             document.querySelectorAll('.btn-simpan').forEach(btn => {
                 btn.addEventListener('click', function() {
-                    const tabPane = this.closest('.committee-pane');
-                    saveDraft(tabPane, this, successModal);
+                    saveAllDrafts(this, successModal);
                 });
             });
 
