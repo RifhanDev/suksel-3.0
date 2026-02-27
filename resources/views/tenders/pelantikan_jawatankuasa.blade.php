@@ -122,6 +122,13 @@
 @endsection
 
 @section('content')
+    @php
+        $availableTabs = ['spec', 'open', 'tech', 'fin', 'harga'];
+        $draftTenderUuid = optional($tender)->uuid ?? request('tender');
+        $supportedDraftJenisData = $supportedDraftJenis ?? ['spec', 'open', 'tech', 'fin'];
+        $localIcUsersData = $icUsers ?? [];
+    @endphp
+
     <div id="laporanArea">
         <!-- ===================== PAGE DETAIL ====================== -->
         <div id="pageDetail">
@@ -131,12 +138,12 @@
                 <!-- Header -->
                 <div class="row mb-3">
                     <div class="col-md-8">
-                        <strong>No Tender:</strong> QT21000000023741 <br>
-                        <strong>PTJ:</strong> BAHAGIAN PENTADBIRAN – CAWANGAN KEWANGAN – KEMENTERIAN KEWANGAN
+                        <strong>No Tender:</strong> {{ $tender->ref_number ?? request('tender_id', '-') }} <br>
+                        <strong>PTJ:</strong> {{ optional(optional($tender)->tenderer)->name ?? '-' }}
                     </div>
 
                     <div class="col-md-4 text-end">
-                        <strong>Status:</strong> Menunggu Penyerahan Tender
+                        <strong>Status:</strong> {{ $tender->status ?? '-' }}
                     </div>
                 </div>
 
@@ -168,8 +175,9 @@
 
                 <div id="committeeContent">
 
-                    @foreach (['spec', 'open', 'tech', 'fin', 'harga'] as $tab)
-                        <div id="tab-{{ $tab }}" @if ($tab != 'spec') style="display:none" @endif>
+                    @foreach ($availableTabs as $tab)
+                        <div id="tab-{{ $tab }}" class="committee-pane" data-jenis="{{ $tab }}"
+                            @if ($tab != 'spec') style="display:none" @endif>
 
                             <table class="table table-bordered js-table">
 
@@ -193,8 +201,8 @@
 
                             <!-- ACTION BUTTONS -->
                             <div class="d-flex justify-content-end gap-2 mb-4">
-                                <button class="btn btn-success btn-tambah">Tambah</button>
-                                <button class="btn btn-danger btn-hapus">Hapus</button>
+                                <button type="button" class="btn btn-success btn-tambah">Tambah</button>
+                                <button type="button" class="btn btn-danger btn-hapus">Hapus</button>
                             </div>
 
 
@@ -203,23 +211,22 @@
                                 <div class="row">
                                     <div class="col-md-6">
                                         <label>Catatan</label>
-                                        <textarea class="form-control" rows="3"></textarea>
+                                        <textarea class="form-control committee-catatan" rows="3">{{ $committeeDrafts[$tab]['catatan'] ?? '' }}</textarea>
                                     </div>
 
                                     <div class="col-md-6">
                                         <label>Dokumen Sokongan</label><br>
 
-                                        <!-- Hidden file input -->
-                                        <input type="file" id="dokumenSokongan" class="d-none">
+                                        <input type="file" class="d-none committee-dokumen-input" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png">
 
-                                        <!-- Trigger button -->
-                                        <button type="button" class="btn btn-success mt-2"
-                                            onclick="document.getElementById('dokumenSokongan').click()">
+                                        <button type="button" class="btn btn-success mt-2 btn-upload-dokumen">
                                             Muat Naik
                                         </button>
                                     </div>
 
-                                    <div class="mt-2 text-muted small" id="fileName"></div>
+                                    <div class="mt-2 text-muted small committee-file-name">
+                                        {{ $committeeDrafts[$tab]['dokumen_sokongan_nama'] ?? '' }}
+                                    </div>
 
                                 </div>
                             </div>
@@ -227,9 +234,9 @@
 
                             <!-- MAIN ACTION -->
                             <div class="d-flex justify-content-end gap-2">
-                                <button class="btn btn-primary btn-simpan">Simpan</button>
-                                <button class="btn btn-info text-white" onclick="printLaporan()">Laporan</button>
-                                <button class="btn btn-success btn-hantar">Hantar Pemakluman</button>
+                                <button type="button" class="btn btn-primary btn-simpan">Simpan [Draf]</button>
+                                <button type="button" class="btn btn-info text-white" onclick="printLaporan()">Laporan</button>
+                                <button type="button" class="btn btn-success btn-hantar">Hantar Pemakluman</button>
                             </div>
 
 
@@ -271,6 +278,12 @@
 
 @section('scripts')
     <script>
+        const initialCommitteeDrafts = @json($committeeDrafts ?? []);
+        const tenderUuid = @json($draftTenderUuid);
+        const saveDraftUrl = @json(route('jawatankuasa.store'));
+        const supportedDraftJenis = @json($supportedDraftJenisData);
+        const localIcUsers = @json($localIcUsersData);
+
         // helper
         function showTabs(tabList, activeTab) {
 
@@ -310,87 +323,220 @@
 
         /* Shared Selectize initialization function */
         function initSelectize(el) {
-            $(el).selectize({
+            const selectizeInstance = $(el).selectize({
                 valueField: 'id',
-                labelField: 'name',
-                searchField: 'name',
+                labelField: 'ic_number',
+                searchField: ['ic_number', 'name', 'email'],
+                options: localIcUsers,
                 maxItems: 1,
                 create: false,
-                placeholder: 'Taip Nama...',
+                placeholder: 'Taip No IC...',
                 render: {
                     option: function(item, escape) {
                         return '<div>' +
-                            '<strong>' + escape(item.name) + '</strong>' +
-                            '<br><small class="text-muted">' + escape(item.email) + '</small>' +
+                            '<strong>' + escape(item.ic_number || '-') + '</strong>' +
+                            '<br><small class="text-muted">' + escape(item.name || '-') + ' | ' + escape(item.email || '-') + '</small>' +
                             '</div>';
+                    },
+                    item: function(item, escape) {
+                        return '<div>' + escape(item.ic_number || '-') + '</div>';
                     }
                 },
-                load: function(query, callback) {
-                    if (!query.length) return callback();
-                    $.ajax({
-                        url: '{{ url('api/search-users') }}?q=' + encodeURIComponent(query),
-                        type: 'GET',
-                        success: function(res) {
-                            callback(res);
-                        },
-                        error: function() {
-                            callback();
-                        }
-                    });
-                },
                 onChange: function(value) {
-                    if (!value) return;
+                    let tr = $(this.$wrapper).closest('tr');
+                    if (!value) {
+                        tr.find('td:eq(2) input').val('-');
+                        tr.find('td:eq(3) input').val('-');
+                        tr.find('td:eq(4) input').val('-');
+                        tr.find('td:eq(5) input').val('-');
+                        return;
+                    }
                     let item = this.options[value];
                     if (item) {
-                        let tr = $(this.$wrapper).closest('tr');
                         tr.find('td:eq(2) input').val(item.name || '-');
                         tr.find('td:eq(3) input').val(item.roles_column || 'Pegawai');
                         tr.find('td:eq(4) input').val(item.email || '-');
-                        tr.find('td:eq(5) input').val('G41');
+                        tr.find('td:eq(5) input').val(item.gred || 'G41');
+                    } else {
+                        tr.find('td:eq(2) input').val('-');
+                        tr.find('td:eq(3) input').val('-');
+                        tr.find('td:eq(4) input').val('-');
+                        tr.find('td:eq(5) input').val('-');
+                    }
+                }
+            });
+
+            return selectizeInstance[0].selectize;
+        }
+
+        /* Build and append a fresh row to a tbody, then initialize Selectize on its IC input */
+        function createRow(tbody, rowData = null) {
+            let tr = document.createElement('tr');
+            const pAndP = (rowData && rowData.p_p) ? String(rowData.p_p) : '1';
+            const peranan = (rowData && rowData.peranan) ? String(rowData.peranan) : '1';
+            tr.innerHTML = `
+                <td><input type="checkbox" class="row-check"></td>
+                <td><input type="text" class="ic-search-select form-control" placeholder="Taip No IC..."></td>
+                <td><input type="text" class="form-control bg-light member-name" placeholder="-" readonly></td>
+                <td><input type="text" class="form-control bg-light member-jawatan" placeholder="-" readonly></td>
+                <td><input type="email" class="form-control bg-light member-email" placeholder="-" readonly></td>
+                <td><input type="text" class="form-control bg-light member-gred" placeholder="-" readonly></td>
+                <td>
+                    <select class="form-select pp-select">
+                        <option value="1" ${pAndP === '1' ? 'selected' : ''}>Ya</option>
+                        <option value="0" ${pAndP === '0' ? 'selected' : ''}>Tidak</option>
+                    </select>
+                </td>
+                <td>
+                    <select class="form-select peranan-select">
+                        <option value="1" ${peranan === '1' ? 'selected' : ''}>Pengerusi</option>
+                        <option value="2" ${peranan === '2' ? 'selected' : ''}>Setiausaha</option>
+                        <option value="3" ${peranan === '3' ? 'selected' : ''}>Ahli</option>
+                    </select>
+                </td>
+            `;
+            tbody.appendChild(tr);
+            const input = tr.querySelector('.ic-search-select');
+            const selectize = initSelectize(input);
+
+            if (rowData && rowData.user_id) {
+                if (!selectize.options[String(rowData.user_id)]) {
+                    selectize.addOption({
+                        id: String(rowData.user_id),
+                        ic_number: rowData.ic_number || '-',
+                        name: rowData.name || '-',
+                        email: rowData.email || '-',
+                        roles_column: rowData.jawatan || 'Pegawai',
+                        gred: rowData.gred || '-',
+                    });
+                }
+                selectize.setValue(String(rowData.user_id), true);
+                tr.querySelector('.member-name').value = rowData.name || '-';
+                tr.querySelector('.member-jawatan').value = rowData.jawatan || 'Pegawai';
+                tr.querySelector('.member-email').value = rowData.email || '-';
+                tr.querySelector('.member-gred').value = rowData.gred || '-';
+            }
+        }
+
+        function seedCommitteeRows() {
+            document.querySelectorAll('.committee-pane').forEach(function(tabPane) {
+                const jenis = tabPane.dataset.jenis;
+                const draftData = initialCommitteeDrafts[jenis] || {};
+                const tbody = tabPane.querySelector('.committee-tbody');
+                tbody.innerHTML = '';
+
+                if (Array.isArray(draftData.rows) && draftData.rows.length > 0) {
+                    draftData.rows.forEach(function(row) {
+                        createRow(tbody, row);
+                    });
+                } else {
+                    createRow(tbody);
+                }
+
+                const fileNameEl = tabPane.querySelector('.committee-file-name');
+                if (fileNameEl && draftData.dokumen_sokongan_nama) {
+                    fileNameEl.textContent = draftData.dokumen_sokongan_nama;
+                }
+
+                if (!supportedDraftJenis.includes(jenis)) {
+                    const saveButton = tabPane.querySelector('.btn-simpan');
+                    if (saveButton) {
+                        saveButton.disabled = true;
+                        saveButton.title = 'Tab ini belum disokong untuk simpan draf.';
                     }
                 }
             });
         }
 
-        /* Build and append a fresh row to a tbody, then initialize Selectize on its IC input */
-        function createRow(tbody) {
-            let tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td><input type="checkbox" class="row-check"></td>
-                <td><input type="text" class="ic-search-select form-control" placeholder="Taip Nama..."></td>
-                <td><input type="text" class="form-control bg-light" placeholder="-" readonly></td>
-                <td><input type="text" class="form-control bg-light" placeholder="-" readonly></td>
-                <td><input type="email" class="form-control bg-light" placeholder="-" readonly></td>
-                <td><input type="text" class="form-control bg-light" placeholder="-" readonly></td>
-                <td>
-                    <select class="form-select">
-                        <option value="1">Ya</option>
-                        <option value="0">Tidak</option>
-                    </select>
-                </td>
-                <td>
-                    <select class="form-select">
-                        <option value="1">Pengerusi</option>
-                        <option value="2">Setiausaha</option>
-                        <option value="3">Ahli</option>
-                    </select>
-                </td>
-            `;
-            tbody.appendChild(tr);
-            initSelectize(tr.querySelector('.ic-search-select'));
+        function collectRows(tabPane) {
+            const rows = [];
+            tabPane.querySelectorAll('.committee-tbody tr').forEach(function(tr) {
+                const selectInput = tr.querySelector('.ic-search-select');
+                const selectize = selectInput ? selectInput.selectize : null;
+                const userId = selectize ? selectize.getValue() : '';
+
+                if (!userId) {
+                    return;
+                }
+
+                rows.push({
+                    user_id: userId,
+                    p_p: (tr.querySelector('.pp-select') && tr.querySelector('.pp-select').value) || '1',
+                    peranan: (tr.querySelector('.peranan-select') && tr.querySelector('.peranan-select').value) || '3',
+                });
+            });
+
+            return rows;
         }
 
-        // On page load: seed one empty row in every committee tbody
-        document.addEventListener('DOMContentLoaded', function() {
-            document.querySelectorAll('.committee-tbody').forEach(function(tbody) {
-                createRow(tbody);
+        function buildDraftFormData(tabPane) {
+            const jenis = tabPane.dataset.jenis;
+            const rows = collectRows(tabPane);
+            const formData = new FormData();
+            const fileInput = tabPane.querySelector('.committee-dokumen-input');
+
+            formData.append('_token', $('meta[name=_token]').attr('content'));
+            formData.append('tender_uuid', tenderUuid || '');
+            formData.append('jenis', jenis || '');
+            formData.append('catatan', (tabPane.querySelector('.committee-catatan') && tabPane.querySelector('.committee-catatan').value) || '');
+
+            rows.forEach((row, index) => {
+                formData.append(`rows[${index}][user_id]`, row.user_id);
+                formData.append(`rows[${index}][p_p]`, row.p_p);
+                formData.append(`rows[${index}][peranan]`, row.peranan);
             });
-        });
+
+            if (fileInput && fileInput.files && fileInput.files.length > 0) {
+                formData.append('dokumen_sokongan', fileInput.files[0]);
+            }
+
+            return formData;
+        }
+
+        function saveDraft(tabPane, button, successModal) {
+            const jenis = tabPane.dataset.jenis;
+
+            if (!tenderUuid) {
+                alert('Tender tidak ditemui. Sila buka semula halaman menggunakan pautan tender.');
+                return;
+            }
+
+            if (!supportedDraftJenis.includes(jenis)) {
+                alert('Tab ini belum disokong untuk Simpan [Draf].');
+                return;
+            }
+
+            const formData = buildDraftFormData(tabPane);
+            const originalButtonText = button.textContent;
+            button.disabled = true;
+            button.textContent = 'Menyimpan...';
+
+            $.ajax({
+                url: saveDraftUrl,
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function() {
+                    successModal.show();
+                },
+                error: function(xhr) {
+                    const message = (xhr && xhr.responseJSON && xhr.responseJSON.message)
+                        ? xhr.responseJSON.message
+                        : 'Simpan draf gagal. Sila cuba semula.';
+                    alert(message);
+                },
+                complete: function() {
+                    button.disabled = false;
+                    button.textContent = originalButtonText;
+                }
+            });
+        }
 
         // ADD ROW
         document.querySelectorAll('.btn-tambah').forEach(btn => {
             btn.addEventListener('click', function() {
-                let tabPane = this.closest('[id^="tab-"]');
+                let tabPane = this.closest('.committee-pane');
                 let tbody = tabPane.querySelector('.committee-tbody');
                 createRow(tbody);
             });
@@ -399,11 +545,15 @@
         // DELETE SELECTED ROWS
         document.querySelectorAll('.btn-hapus').forEach(btn => {
             btn.addEventListener('click', function() {
-                let tabPane = this.closest('[id^="tab-"]');
+                let tabPane = this.closest('.committee-pane');
                 let table = tabPane.querySelector('table');
                 table.querySelectorAll('.row-check:checked').forEach(cb => {
                     cb.closest('tr').remove();
                 });
+
+                if (tabPane.querySelectorAll('.committee-tbody tr').length === 0) {
+                    createRow(tabPane.querySelector('.committee-tbody'));
+                }
             });
         });
 
@@ -433,11 +583,13 @@
             const successModal = new bootstrap.Modal(
                 document.getElementById('successPopup')
             );
+            seedCommitteeRows();
 
             // SIMPAN
             document.querySelectorAll('.btn-simpan').forEach(btn => {
                 btn.addEventListener('click', function() {
-                    successModal.show();
+                    const tabPane = this.closest('.committee-pane');
+                    saveDraft(tabPane, this, successModal);
                 });
             });
 
@@ -448,13 +600,30 @@
                 });
             });
 
-        });
+            // FILE UPLOAD BUTTON + FILE NAME
+            document.querySelectorAll('.btn-upload-dokumen').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const tabPane = this.closest('.committee-pane');
+                    const fileInput = tabPane.querySelector('.committee-dokumen-input');
+                    if (fileInput) {
+                        fileInput.click();
+                    }
+                });
+            });
 
-        // DISPLAY UPLOADED FILE NAME
-        document.getElementById('dokumenSokongan').addEventListener('change', function() {
-            if (this.files.length > 0) {
-                document.getElementById('fileName').innerText = this.files[0].name;
-            }
+            document.querySelectorAll('.committee-dokumen-input').forEach(input => {
+                input.addEventListener('change', function() {
+                    const tabPane = this.closest('.committee-pane');
+                    const fileNameEl = tabPane.querySelector('.committee-file-name');
+
+                    if (!fileNameEl) {
+                        return;
+                    }
+
+                    fileNameEl.textContent = this.files.length > 0 ? this.files[0].name : '';
+                });
+            });
+
         });
 
         // PRINT REPORT

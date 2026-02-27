@@ -1113,8 +1113,9 @@ class Tender extends Model
 	{
 		$requiredJenis   = ['spec', 'open', 'tech', 'fin'];
 		$requiredPeranan = ['1', '2', '3'];
+		$tableName = DB::getSchemaBuilder()->hasTable('jawatankuasas') ? 'jawatankuasas' : 'jawatankuasa';
 
-		$jawatankuasas = DB::table('jawatankuasa')
+		$jawatankuasas = DB::table($tableName)
 			->where('tender_id', $this->id)
 			->whereIn('jenis_jawatankuasa', $requiredJenis)
 			->whereNotNull('user_id')

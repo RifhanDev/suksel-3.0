@@ -8,6 +8,8 @@
 		->label('Nombor Kad Pengenalan') !!}
 {!! Former::text('gred')
 		->label('Gred') !!}
+{!! Former::text('jawatan')
+		->label('Jawatan') !!}
 {!! Former::multiselect('roles')
 		->label('Peranan')
 		->required()

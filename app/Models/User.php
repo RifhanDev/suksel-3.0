@@ -50,6 +50,7 @@ class User extends Authenticatable
 		'username', // used in usercontroller@create
 		'email',
 		'ic_number',
+		'jawatan',
 		'gred',
 		'tel',
 		'department',

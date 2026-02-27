@@ -146,6 +146,12 @@ class UsersController extends Controller
 				$data['gred'] = null;
 			}
 		}
+		if (isset($data['jawatan'])) {
+			$data['jawatan'] = trim($data['jawatan']);
+			if ($data['jawatan'] === '') {
+				$data['jawatan'] = null;
+			}
+		}
 
 		if (!auth()->user()->hasRole('Admin')) {
 			$data['organization_unit_id'] = auth()->user()->organization_unit_id;
@@ -257,6 +263,12 @@ class UsersController extends Controller
 				$data['gred'] = trim($data['gred']);
 				if ($data['gred'] === '') {
 					$data['gred'] = null;
+				}
+			}
+			if (isset($data['jawatan'])) {
+				$data['jawatan'] = trim($data['jawatan']);
+				if ($data['jawatan'] === '') {
+					$data['jawatan'] = null;
 				}
 			}
 

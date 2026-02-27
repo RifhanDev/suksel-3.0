@@ -187,13 +187,7 @@
                         orderable: false,
                         searchable: false,
                         render: function(data, type, row) {
-                            // BACKEND: Return HTML in 'actions' field or use row.id
-                            if (data) return data;
-
-                            // TEMPORARY
-                            return '<a href="{{ asset('tenders/create') }}" class="btn btn-sm btn-selangor">' +
-                                   'Tambah Tender' +
-                                   '</a>';
+                            return data || '';
                         }
                     });
                 @endif
