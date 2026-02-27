@@ -160,15 +160,11 @@
                     <button class="committee-tab" data-tab="fin" onclick="switchCommittee('fin')">
                         Jawatankuasa Penilaian Kewangan
                     </button>
-
-                    <button class="committee-tab" data-tab="harga" onclick="switchCommittee('harga')">
-                        Jawatankuasa Penilaian Sebut Harga / Tender
-                    </button>
                 </div>
 
                 <div id="committeeContent">
 
-                    @foreach (['spec', 'open', 'tech', 'fin', 'harga'] as $tab)
+                    @foreach (['spec', 'open', 'tech', 'fin'] as $tab)
                         <div id="tab-{{ $tab }}" @if ($tab != 'spec') style="display:none" @endif>
 
                             <table class="table table-bordered js-table">
