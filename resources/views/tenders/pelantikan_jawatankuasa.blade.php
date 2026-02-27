@@ -167,10 +167,6 @@
                     <button class="committee-tab" data-tab="fin" onclick="switchCommittee('fin')">
                         Jawatankuasa Penilaian Kewangan
                     </button>
-
-                    <button class="committee-tab" data-tab="harga" onclick="switchCommittee('harga')">
-                        Jawatankuasa Penilaian Sebut Harga / Tender
-                    </button>
                 </div>
 
                 <div id="committeeContent">
