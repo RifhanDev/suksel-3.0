@@ -1090,6 +1090,10 @@ class Tender extends Model
 
 	public function getStatusAttribute()
 	{
+		if (!$this->hasCompleteJawatankuasa()) {
+			return 'Tiada Jawatan Kuasa';
+		}
+
 		if (!$this->approver_id) {
 			return 'Belum Disiarkan';
 		} elseif ($this->approver_id) {
@@ -1103,6 +1107,38 @@ class Tender extends Model
 				return 'Disiarkan';
 			}
 		}
+	}
+
+	public function hasCompleteJawatankuasa()
+	{
+		$requiredJenis   = ['spec', 'open', 'tech', 'fin'];
+		$requiredPeranan = ['1', '2', '3'];
+
+		$jawatankuasas = DB::table('jawatankuasa')
+			->where('tender_id', $this->id)
+			->whereIn('jenis_jawatankuasa', $requiredJenis)
+			->whereNotNull('user_id')
+			->get(['jenis_jawatankuasa', 'peranan', 'user_id']);
+
+		foreach ($requiredJenis as $jenis) {
+			$jenisRecords = $jawatankuasas->where('jenis_jawatankuasa', $jenis);
+
+			foreach ($requiredPeranan as $peranan) {
+				$hasPeranan = $jenisRecords->contains(function ($row) use ($peranan) {
+					return (string) $row->peranan === $peranan && !empty($row->user_id);
+				});
+
+				if (!$hasPeranan) {
+					return false;
+				}
+			}
+
+			if ($jenisRecords->pluck('user_id')->filter()->unique()->count() < 3) {
+				return false;
+			}
+		}
+
+		return true;
 	}
 
 	public function getNegeriListExist()

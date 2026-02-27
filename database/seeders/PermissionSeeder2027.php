@@ -22,9 +22,18 @@ class PermissionSeeder2027 extends Seeder
             ]
         );
         DB::table('permissions')->updateOrInsert(
+            ['name' => 'committee:create'],
+            [
+                'group_name' => 'Tender',
+                'display_name' => 'Create tender committee',
+                'updated_at' => now(),
+                'created_at' => now(),
+            ]
+        );
+        DB::table('permissions')->updateOrInsert(
             ['name' => 'specification:create'],
             [
-                'group_name' => 'Tender specification',
+                'group_name' => 'Tender',
                 'display_name' => 'Create tender specification',
                 'updated_at' => now(),
                 'created_at' => now(),

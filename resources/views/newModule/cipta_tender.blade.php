@@ -1056,6 +1056,7 @@
         {
             const kategoriPerolehanDropdown = $('select[name="kategori_perolehan"]');
             const kategoriDetailDropdown = $('select[name="kategori_perolehan_detail"]');
+            const oldKategoriDetail = '{{ old("kategori_perolehan_detail") }}';
 
             function updateKategoriPerolehanOptions()
             {
@@ -1079,6 +1080,9 @@
                         {
                             kategoriDetailDropdown.append(`<option value="${option.id}">${option.name}</option>`);
                         });
+                        if (oldKategoriDetail) {
+                            kategoriDetailDropdown.val(oldKategoriDetail);
+                        }
                     },
                     error: function(xhr, status, error)
                     {
