@@ -634,15 +634,14 @@
 
         });
 
-        // PRINT REPORT
+        // GENERATE REPORT PDF
         function printLaporan() {
-            const content = document.getElementById('laporanArea').innerHTML;
-            const original = document.body.innerHTML;
-
-            document.body.innerHTML = content;
-            window.print();
-            document.body.innerHTML = original;
-            location.reload(); // restore JS & styles
+            if (!tenderUuid) {
+                alert('Tender tidak ditemui. Sila buka semula halaman menggunakan pautan tender.');
+                return;
+            }
+            const url = @json(route('jawatankuasa.laporan')) + '?tender=' + encodeURIComponent(tenderUuid);
+            window.open(url, '_blank');
         }
     </script>
 @endsection

@@ -241,6 +241,46 @@ class JawatankuasaController extends Controller
         }
     }
 
+    public function laporan(Request $request)
+    {
+        $tenderUuid = $request->input('tender');
+
+        if (empty($tenderUuid)) {
+            abort(404, 'Tender tidak ditemui.');
+        }
+
+        $tender = Tender::with('tenderer')->where('uuid', $tenderUuid)->firstOrFail();
+
+        $committeeDrafts = Jawatankuasa::with('user')
+            ->where('tender_id', $tender->id)
+            ->orderBy('id')
+            ->get()
+            ->groupBy('jenis_jawatankuasa')
+            ->map(function ($rows) {
+                $firstRow = $rows->first();
+
+                return [
+                    'catatan' => optional($firstRow)->catatan,
+                    'rows' => $rows
+                        ->filter(fn($row) => !empty($row->user_id) && !empty($row->user))
+                        ->map(fn($row) => [
+                            'ic_number' => $row->user->ic_number ?? '',
+                            'name' => $row->user->name,
+                            'email' => $row->user->email,
+                            'jawatan' => $row->user->jawatan ?? '-',
+                            'gred' => $row->user->gred ?? '-',
+                            'p_p' => (string) $row->p_p,
+                            'peranan' => (string) $row->peranan,
+                        ])
+                        ->values()
+                        ->toArray(),
+                ];
+            })
+            ->toArray();
+
+        return view('tenders.laporan_jawatankuasa', compact('tender', 'committeeDrafts'));
+    }
+
     /**
      * Display the specified resource.
      */
