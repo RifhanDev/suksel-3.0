@@ -277,6 +277,7 @@
         const initialCommitteeDrafts = @json($committeeDrafts ?? []);
         const tenderUuid = @json($draftTenderUuid);
         const saveDraftUrl = @json(route('jawatankuasa.store'));
+        const hantarPemaklumanUrl = @json(route('jawatankuasa.hantarPemakluman'));
         const supportedDraftJenis = @json($supportedDraftJenisData);
         const localIcUsers = @json($localIcUsersData);
 
@@ -601,10 +602,85 @@
                 });
             });
 
-            // HANTAR
+            // HANTAR PEMAKLUMAN
             document.querySelectorAll('.btn-hantar').forEach(btn => {
                 btn.addEventListener('click', function() {
-                    successModal.show();
+                    if (!tenderUuid) {
+                        alert('Tender tidak ditemui. Sila buka semula halaman menggunakan pautan tender.');
+                        return;
+                    }
+
+                    // Validate all 4 tabs have Pengerusi(1), Setiausaha(2), Ahli(3)
+                    const requiredTabs = ['spec', 'open', 'tech', 'fin'];
+                    const requiredPeranan = ['1', '2', '3'];
+
+                    for (let i = 0; i < requiredTabs.length; i++) {
+                        const tab = requiredTabs[i];
+                        const tabPane = document.getElementById('tab-' + tab);
+                        if (!tabPane) {
+                            alert('Jawatan Kuasa tidak Mencukupi');
+                            return;
+                        }
+
+                        const rows = tabPane.querySelectorAll('.committee-tbody tr');
+                        const existingPeranan = [];
+
+                        rows.forEach(function(tr) {
+                            const selectInput = tr.querySelector('.ic-search-select');
+                            const selectize = selectInput ? selectInput.selectize : null;
+                            const userId = selectize ? selectize.getValue() : '';
+                            if (!userId) return;
+
+                            const perananSelect = tr.querySelector('.peranan-select');
+                            if (perananSelect) {
+                                existingPeranan.push(perananSelect.value);
+                            }
+                        });
+
+                        for (let j = 0; j < requiredPeranan.length; j++) {
+                            if (existingPeranan.indexOf(requiredPeranan[j]) === -1) {
+                                alert('Jawatan Kuasa tidak Mencukupi');
+                                return;
+                            }
+                        }
+                    }
+
+                    if (!confirm('Adakah anda pasti untuk menghantar pemakluman kepada semua ahli jawatankuasa?')) {
+                        return;
+                    }
+
+                    const hantarButtons = Array.from(document.querySelectorAll('.btn-hantar'));
+                    hantarButtons.forEach(function(b) {
+                        b.disabled = true;
+                        b.textContent = 'Menghantar...';
+                    });
+
+                    $.ajax({
+                        url: hantarPemaklumanUrl,
+                        type: 'POST',
+                        timeout: 300000,
+                        data: {
+                            _token: $('meta[name=_token]').attr('content'),
+                            tender_uuid: tenderUuid,
+                        },
+                        dataType: 'json',
+                        success: function(res) {
+                            alert(res.message || 'Pemakluman berjaya dihantar.');
+                            window.location.href = '/tenders';
+                        },
+                        error: function(xhr) {
+                            const message = (xhr && xhr.responseJSON && xhr.responseJSON.message)
+                                ? xhr.responseJSON.message
+                                : 'Hantar pemakluman gagal. Sila cuba semula.';
+                            alert(message);
+                        },
+                        complete: function() {
+                            hantarButtons.forEach(function(b) {
+                                b.disabled = false;
+                                b.textContent = 'Hantar Pemakluman';
+                            });
+                        }
+                    });
                 });
             });
 

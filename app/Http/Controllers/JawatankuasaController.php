@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Jawatankuasa;
 use App\Tender;
 use App\User;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -279,6 +280,100 @@ class JawatankuasaController extends Controller
             ->toArray();
 
         return view('tenders.laporan_jawatankuasa', compact('tender', 'committeeDrafts'));
+    }
+
+    public function hantarPemakluman(Request $request)
+    {
+        set_time_limit(300);
+
+        $validated = $request->validate([
+            'tender_uuid' => ['required', 'string', 'exists:tenders,uuid'],
+        ]);
+
+        $tender = Tender::with('tenderer')->where('uuid', $validated['tender_uuid'])->firstOrFail();
+
+        $jenisLabels = [
+            'spec' => 'Jawatankuasa Spesifikasi',
+            'open' => 'Jawatankuasa Pembuka',
+            'tech' => 'Jawatankuasa Penilaian Teknikal',
+            'fin'  => 'Jawatankuasa Penilaian Kewangan',
+        ];
+
+        $perananLabels = [
+            '1' => 'Pengerusi',
+            '2' => 'Setiausaha',
+            '3' => 'Ahli',
+        ];
+
+        $members = Jawatankuasa::with('user')
+            ->where('tender_id', $tender->id)
+            ->whereNotNull('user_id')
+            ->get();
+
+        if ($members->isEmpty()) {
+            return response()->json([
+                'message' => 'Tiada ahli jawatankuasa untuk dihantar pemakluman.',
+            ], 422);
+        }
+
+        $requiredJenis = ['spec', 'open', 'tech', 'fin'];
+        $requiredPeranan = ['1', '2', '3']; // Pengerusi, Setiausaha, Ahli
+
+        $grouped = $members->groupBy('jenis_jawatankuasa');
+
+        foreach ($requiredJenis as $jenis) {
+            $tabMembers = $grouped->get($jenis, collect());
+            $existingPeranan = $tabMembers->pluck('peranan')->map(fn($p) => (string) $p)->unique()->values()->toArray();
+
+            foreach ($requiredPeranan as $peranan) {
+                if (!in_array($peranan, $existingPeranan)) {
+                    return response()->json([
+                        'message' => 'Jawatan Kuasa tidak Mencukupi',
+                    ], 422);
+                }
+            }
+        }
+
+        $emailCount = 0;
+
+        ob_start();
+
+        foreach ($members as $member) {
+            if (empty($member->user) || empty($member->user->email)) {
+                continue;
+            }
+
+            $jenisLabel = $jenisLabels[$member->jenis_jawatankuasa] ?? $member->jenis_jawatankuasa;
+            $perananLabel = $perananLabels[(string) $member->peranan] ?? 'Ahli';
+
+            $this->sendMail(
+                'html',
+                trim($member->user->email),
+                'Pemakluman Pelantikan ' . $jenisLabel . ' - ' . ($tender->ref_number ?? ''),
+                '',
+                'emails.pemakluman_jawatankuasa',
+                [
+                    'emailUser' => $member->user,
+                    'jenisLabel' => $jenisLabel,
+                    'perananLabel' => $perananLabel,
+                    'tenderRefNumber' => $tender->ref_number ?? '-',
+                    'tenderPtj' => optional($tender->tenderer)->name ?? '-',
+                ]
+            );
+
+            $emailCount++;
+        }
+
+        ob_end_clean();
+
+        Jawatankuasa::where('tender_id', $tender->id)
+            ->whereNotNull('user_id')
+            ->update(['dihantar_pemakluman_pada' => Carbon::now()]);
+
+        return response()->json([
+            'message' => "Pemakluman berjaya dihantar kepada {$emailCount} ahli jawatankuasa.",
+            'email_count' => $emailCount,
+        ]);
     }
 
     /**
