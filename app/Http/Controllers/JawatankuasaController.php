@@ -335,8 +335,7 @@ class JawatankuasaController extends Controller
         }
 
         $emailCount = 0;
-
-        ob_start();
+        $useQueue = config('mail.use_queue', false);
 
         foreach ($members as $member) {
             if (empty($member->user) || empty($member->user->email)) {
@@ -346,29 +345,58 @@ class JawatankuasaController extends Controller
             $jenisLabel = $jenisLabels[$member->jenis_jawatankuasa] ?? $member->jenis_jawatankuasa;
             $perananLabel = $perananLabels[(string) $member->peranan] ?? 'Ahli';
 
-            $this->sendMail(
-                'html',
-                trim($member->user->email),
-                'Pemakluman Pelantikan ' . $jenisLabel . ' - ' . ($tender->ref_number ?? ''),
-                '',
-                'emails.pemakluman_jawatankuasa',
-                [
-                    'emailUser' => $member->user,
-                    'jenisLabel' => $jenisLabel,
-                    'perananLabel' => $perananLabel,
-                    'tenderRefNumber' => $tender->ref_number ?? '-',
-                    'tenderPtj' => optional($tender->tenderer)->name ?? '-',
-                ]
-            );
+            $to = trim($member->user->email);
+            $subject = 'Pemakluman Pelantikan ' . $jenisLabel . ' - ' . ($tender->ref_number ?? '');
+            $viewParams = [
+                'emailUser' => $member->user,
+                'jenisLabel' => $jenisLabel,
+                'perananLabel' => $perananLabel,
+                'tenderRefNumber' => $tender->ref_number ?? '-',
+                'tenderPtj' => optional($tender->tenderer)->name ?? '-',
+            ];
+
+            if ($useQueue) {
+                $content = view('emails.pemakluman_jawatankuasa', $viewParams)->render();
+                $available_config = $this->getAvailableEmailConfig();
+
+                if (count($available_config) > 0) {
+                    $config = $this->setEmailConfig($available_config);
+                    $payload = [
+                        'from' => $config['mail_username'],
+                        'alias' => $config['mail_alias'],
+                        'to' => $to,
+                        'subject' => $subject,
+                    ];
+
+                    $mailQueueRepo = new \App\Repositories\MailQueueRepository();
+                    $new_queue = $mailQueueRepo->createMailQueue([
+                        'smtp_mail_id' => $available_config['id'],
+                        'content' => $content,
+                        'config' => json_encode($config),
+                        'payload' => json_encode($payload),
+                        'status' => 'N',
+                    ]);
+
+                    $unique_id = $this->encryptString($new_queue->id);
+                    dispatch(new \App\Jobs\SendEmailJob($unique_id))->afterResponse();
+                }
+            } else {
+                ob_start();
+                $this->sendMail('html', $to, $subject, '', 'emails.pemakluman_jawatankuasa', $viewParams);
+                ob_end_clean();
+            }
 
             $emailCount++;
         }
 
-        ob_end_clean();
-
         Jawatankuasa::where('tender_id', $tender->id)
             ->whereNotNull('user_id')
             ->update(['dihantar_pemakluman_pada' => Carbon::now()]);
+
+        Log::debug('hantarPemakluman completed', [
+            'email_count' => $emailCount,
+            'use_queue' => $useQueue,
+        ]);
 
         return response()->json([
             'message' => "Pemakluman berjaya dihantar kepada {$emailCount} ahli jawatankuasa.",
