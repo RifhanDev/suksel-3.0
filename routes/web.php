@@ -148,12 +148,12 @@ Route::get('auth/reset/{token}', [AuthController::class, 'resetPassword']);
 Route::post('auth/reset', [AuthController::class, 'doResetPassword']);
 
 // Tenders
-Route::get('tenders/select', [TendersController::class, 'select']);
-Route::resource('tenders', TendersController::class);
-Route::get('tenders/{id}/prices', [TendersController::class, 'prices'])->name('tenders.prices');
-Route::get('tenders/{tender_id}/files/{id}', [TendersController::class, 'file'])->name('tenders.files');
-Route::get('tenders/{id}/vendors', [TendersController::class, 'vendors'])->name('tenders.vendors');
-Route::post('tenders/{id}/exception', [TendersController::class, 'exception'])->name('tenders.exception');
+// Route::get('tenders/select', [TendersController::class, 'select']);
+// Route::resource('tenders', TendersController::class);
+// Route::get('tenders/{id}/prices', [TendersController::class, 'prices'])->name('tenders.prices');
+// Route::get('tenders/{tender_id}/files/{id}', [TendersController::class, 'file'])->name('tenders.files');
+// Route::get('tenders/{id}/vendors', [TendersController::class, 'vendors'])->name('tenders.vendors');
+// Route::post('tenders/{id}/exception', [TendersController::class, 'exception'])->name('tenders.exception');
 
 // Petender Performance
 Route::prefix('petenders')->controller(PetenderPerformanceController::class)->group(function () {
