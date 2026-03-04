@@ -1,5 +1,5 @@
 <?php
-
+/*
 use App\Http\Controllers\BotManController;
 use App\Http\Controllers\PetenderPerformanceController;
 use App\Http\Controllers\HomeController;
@@ -217,108 +217,105 @@ Route::get('tenders/{id}/vendors', ['as' => 'tenders.vendors', 'uses' => [Tender
 Route::post('tenders/{id}/exception', ['as' => 'tenders.exception', 'uses' => [TendersController::class, 'exception']]);
 
 // Petender Performance
-Route::prefix('/petenders']->controller(PetenderPerformanceController::class)->group(function () {
-	Route::post('/petender-performance/{tender}/{vendor}', 'store']->name('store.PetenderPerformance'];
-	Route::get('/{tender}', 'vendorPetender']->name('index.TenderVendor'];
+Route::prefix('/petenders')->controller(PetenderPerformanceController::class)->group(function () {
+	Route::post('/petender-performance/{tender}/{vendor}', 'store')->name('store.PetenderPerformance');
+	Route::get('/{tender}', 'vendorPetender')->name('index.TenderVendor');
 });
 
 // News
 Route::resource('news', [NewsController::class]);
 // Contact
-Route::get('contact', [HomeController::class, 'contact'];
-//Route::post('contact', [HomeController::class, 'doContact'];
+Route::get('contact', [HomeController::class, 'contact']);
+Route::post('contact', [HomeController::class, 'doContact']);
 
-Route::post('payment/fpx/listen', ['as' => 'fpx.listen', 'uses' => [FpxController::class, listen']);
+Route::post('payment/fpx/listen', ['as' => 'fpx.listen', 'uses' => [FpxController::class, 'listen']]);
 
-Route::post('transactions/{id}/ebpg_requery', ['as' => 'transactions.ebpg_requery', 'uses' => [TransactionsController::class, ebpg_requery']);
+Route::post('transactions/{id}/ebpg_requery', ['as' => 'transactions.ebpg_requery', 'uses' => [TransactionsController::class, 'ebpg_requery']]);
 
 // Authenticated routes
 Route::group(['before' => 'auth'], function () {
-	Route::get('txn_status/{id}', ['as' => 'txn_status', 'uses' => [HomeController::class, 'txnStatus']);
-	Route::get('register/company', ['as' => 'company_registration', 'uses' => [RegistrationController::class, company']);
-	Route::put('register/company', [RegistrationController::class, storeCompany'];
-	Route::get('register/payment', ['as' => 'payment_registration', 'uses' => [RegistrationController::class, payment']);
-	Route::post('register/payment', [RegistrationController::class, storePayment'];
-	Route::get('register/payment_callback/{transaction_id}', [RegistrationController::class, callbackPayment'];
+	Route::get('txn_status/{id}', ['as' => 'txn_status', 'uses' => [HomeController::class, 'txnStatus']]);
+	Route::get('register/company', ['as' => 'company_registration', 'uses' => [RegistrationController::class, 'company']]);
+	Route::put('register/company', [RegistrationController::class, 'storeCompany']);
+	Route::get('register/payment', ['as' => 'payment_registration', 'uses' => [RegistrationController::class, 'payment']]);
+	Route::post('register/payment', [RegistrationController::class, 'storePayment']);
+	Route::get('register/payment_callback/{transaction_id}', [RegistrationController::class, 'callbackPayment']);
+	Route::get('dashboard', ['as' => 'dashboard', 'uses' => [HomeController::class, 'dashboard']]);
+	Route::get('vendor', ['as' => 'vendor', 'uses' => [HomeController::class, 'vendor']]);
+	Route::get('renewal', ['as' => 'renewal', 'uses' => [HomeController::class, 'renewal']]);
+	Route::post('renewal', [HomeController::class, 'storeRenewal']);
+	Route::get('renewal_callback/{transaction_id}', [HomeController::class, 'callbackRenewal']);
 
-	Route::get('dashboard', ['as' => 'dashboard', 'uses' => [HomeController::class, 'dashboard']);
-	Route::get('vendor', ['as' => 'vendor', 'uses' => [HomeController::class, 'vendor']);
-	Route::get('renewal', ['as' => 'renewal', 'uses' => [HomeController::class, 'renewal']);
-	Route::post('renewal', [HomeController::class, 'storeRenewal'];
-	Route::get('renewal_callback/{transaction_id}', [HomeController::class, 'callbackRenewal'];
-
-	Route::get('tenders/{id}/buy', ['as' => 'tenders.buy', 'uses' => [TendersController::class, buy']);
-	Route::get('tenders/{tender}/receipt/{id}', ['as' => 'tenders.receipt', 'uses' => [TendersController::class, receipt']);
-	Route::get('tenders/{tender}/document/{id}', ['as' => 'tenders.document', 'uses' => [TendersController::class, document']);
-	Route::post('tenders/{id}/vendors', [TendersController::class, updateVendors'];
-	Route::post('tenders/{id}/invites', [TendersController::class, updateInvites'];
-	Route::post('tenders/{id}/vendor', ['as' => 'tenders.addVendor', 'uses' => [TendersController::class, addVendor']);
-	Route::get('tenders/{id}/publish', ['as' => 'tenders.publish', 'uses' => [TendersController::class, publish']);
-	Route::get('tenders/{id}/cancel', ['as' => 'tenders.cancel', 'uses' => [TendersController::class, cancel']);
-	Route::get('tenders/{id}/publishPrices', ['as' => 'tenders.publishPrices', 'uses' => [TendersController::class, publishPrices']);
-	Route::get('tenders/{id}/publishWinner', ['as' => 'tenders.publishWinner', 'uses' => [TendersController::class, publishWinner']);
-	Route::get('tenders/{tender_id}/vendor/{id}', ['as' => 'tenders.vendor', 'uses' => [TendersController::class, vendor']);
+	Route::get('tenders/{id}/buy', ['as' => 'tenders.buy', 'uses' => [TendersController::class, 'buy']]);
+	Route::get('tenders/{tender}/receipt/{id}', ['as' => 'tenders.receipt', 'uses' => [TendersController::class, 'receipt']]);
+	Route::get('tenders/{tender}/document/{id}', ['as' => 'tenders.document', 'uses' => [TendersController::class, 'document']]);
+	Route::post('tenders/{id}/vendors', [TendersController::class, 'updateVendors']);
+	Route::post('tenders/{id}/invites', [TendersController::class, 'updateInvites']);
+	Route::post('tenders/{id}/vendor', ['as' => 'tenders.addVendor', 'uses' => [TendersController::class, 'addVendor']]);
+	Route::get('tenders/{id}/publish', ['as' => 'tenders.publish', 'uses' => [TendersController::class, 'publish']]);
+	Route::get('tenders/{id}/cancel', ['as' => 'tenders.cancel', 'uses' => [TendersController::class, 'cancel']]);
+	Route::get('tenders/{id}/publishPrices', ['as' => 'tenders.publishPrices', 'uses' => [TendersController::class, 'publishPrices']]);
+	Route::get('tenders/{id}/publishWinner', ['as' => 'tenders.publishWinner', 'uses' => [TendersController::class, 'publishWinner']]);
+	Route::get('tenders/{tender_id}/vendor/{id}', ['as' => 'tenders.vendor', 'uses' => [TendersController::class, 'vendor']]);
 	Route::get(
 		'tenders/{id}/vendors/print',
-		['as' => 'tenders.vendors.print', 'uses' => [TendersController::class, printVendors']
+		['as' => 'tenders.vendors.print', 'uses' => [TendersController::class, 'printVendors']]
 	);
-	Route::get('tenders/{id}/vendors/template', ['as' => 'tenders.template', 'uses' => [TendersController::class, template']);
+	Route::get('tenders/{id}/vendors/template', ['as' => 'tenders.template', 'uses' => [TendersController::class, 'template']]);
 	Route::post(
 		'tenders/{id}/vendors/bulkUpdate',
-		['as' => 'tenders.bulkUpdate', 'uses' => [TendersController::class, bulkUpdate']
+		['as' => 'tenders.bulkUpdate', 'uses' => [TendersController::class, 'bulkUpdate']]
 	);
-	Route::get('tenders/{id}/eligibles', ['as' => 'tenders.eligibles', 'uses' => [TendersController::class, eligibles']);
+	Route::get('tenders/{id}/eligibles', ['as' => 'tenders.eligibles', 'uses' => [TendersController::class, 'eligibles']]);
 
-	Route::get('cart', ['as' => 'cart', 'uses' => [CartController::class, index']);
-	Route::get('cart/clear', ['as' => 'cart.clear', 'uses' => [CartController::class, clear']);
-	Route::get('cart/checkout', ['as' => 'cart.checkout', 'uses' => [CartController::class, checkout']);
-	Route::get('cart/delete/{id}', ['as' => 'cart.delete', 'uses' => [CartController::class, delete']);
-	Route::post('cart', ['as' => 'cart.process', 'uses' => [CartController::class, process']);
-	Route::get('cart/callback/{transaction_id}', [CartController::class, callback'];
-	Route::get('cart/receipt/{transaction_id}', ['as' => 'cart.receipt', 'uses' => [CartController::class, callback']);
+	Route::get('cart', ['as' => 'cart', 'uses' => [CartController::class, 'index']]);
+	Route::get('cart/clear', ['as' => 'cart.clear', 'uses' => [CartController::class, 'clear']]);
+	Route::get('cart/checkout', ['as' => 'cart.checkout', 'uses' => [CartController::class, 'checkout']]);
+	Route::get('cart/delete/{id}', ['as' => 'cart.delete', 'uses' => [CartController::class, 'delete']]);
+	Route::post('cart', ['as' => 'cart.process', 'uses' => [CartController::class, 'process']]);
+	Route::get('cart/callback/{transaction_id}', [CartController::class, 'callback']);
+	Route::get('cart/receipt/{transaction_id}', ['as' => 'cart.receipt', 'uses' => [CartController::class, 'callback']]);
 
-	Route::get('profile', ['as' => 'profile', 'uses' => [ProfileController::class, show']);
-	Route::get('profile/change_password', ['as' => 'change_password', 'uses' => [ProfileController::class, changePassword']);
-	Route::put('profile/change_password', [ProfileController::class, doChangePassword'];
-	Route::get('profile/release', ['uses' => [ProfileController::class, releaseUser', 'as' => 'release_user']);
+	Route::get('profile', ['as' => 'profile', 'uses' => [ProfileController::class, 'show']]);
+	Route::get('profile/change_password', ['as' => 'change_password', 'uses' => [ProfileController::class, 'changePassword']]);
+	Route::put('profile/change_password', [ProfileController::class, 'doChangePassword']);
+	Route::get('profile/release', ['uses' => [ProfileController::class, 'releaseUser'], 'as' => 'release_user']);
 
 	// User Approval
-	Route::get('users/pending-approval', ['as' => 'users.pending-approval', 'uses' => [UsersController::class, pendingApproval']);
-	Route::get('users/{user}/approval', ['as' => 'users.approval', 'uses' => [UsersController::class, approval']);
-	Route::put('users/{user}/approval', ['as' => 'users.store-approval', 'uses' => [UsersController::class, storeApproval']);
+	Route::get('users/pending-approval', ['as' => 'users.pending-approval', 'uses' => [UsersController::class, 'pendingApproval']]);
+	Route::get('users/{user}/approval', ['as' => 'users.approval', 'uses' => [UsersController::class, 'approval']]);
+	Route::put('users/{user}/approval', ['as' => 'users.store-approval', 'uses' => [UsersController::class, 'storeApproval']]);
 
 	// User Account Review Request
-	Route::get('users/{user}/account-review', ['as' => 'users.account-review', 'uses' => [UsersController::class, accountReview']);
+	Route::get('users/{user}/account-review', ['as' => 'users.account-review', 'uses' => [UsersController::class, 'accountReview']]);
 
 	Route::resource('users', [UsersController::class]);
-	Route::get('users/{user}/histories', ['as' => 'users.histories', 'uses' => [UsersController::class, histories']);
-	Route::get('users/{user}/login', ['as' => 'users.login', 'uses' => [UsersController::class, doLogin']);
-	Route::put('users/{user}/confirm', [UsersController::class, confirm'];
-	Route::get('users/{user}/reset_password', ['as' => 'user.reset-password', 'uses' => [UsersController::class, getSetPassword']);
-	Route::put('users/{user}/reset_password', [UsersController::class, putSetPassword'];
-	Route::put('users/{user}/confirm', [UsersController::class, putSetConfirmation'];
-	Route::get('users/{user}/resend_confirmation', [UsersController::class, resendConfirmation'];
-
-	Route::get('vendors/select', [VendorsController::class, select'];
-	Route::get('vendors/new', [VendorsController::class, pendingRegistrationIndex'];
-	Route::get('vendors/approval', [VendorsController::class, approvalNew1Index'];
-	Route::get('vendors/changes', [VendorsController::class, approvalEdit1Index'];
-
-	Route::get('vendors/emails', [VendorsController::class, emails'];
+	Route::get('users/{user}/histories', ['as' => 'users.histories', 'uses' => [UsersController::class, 'histories']]);
+	Route::get('users/{user}/login', ['as' => 'users.login', 'uses' => [UsersController::class, 'doLogin']]);
+	Route::put('users/{user}/confirm', [UsersController::class, 'confirm']);
+	Route::get('users/{user}/reset_password', ['as' => 'user.reset-password', 'uses' => [UsersController::class, 'getSetPassword']]);
+	Route::put('users/{user}/reset_password', [UsersController::class, 'putSetPassword']);
+	Route::put('users/{user}/confirm', [UsersController::class, 'putSetConfirmation']);
+	Route::get('users/{user}/resend_confirmation', [UsersController::class, 'resendConfirmation']);
+	Route::get('vendors/select', [VendorsController::class, 'select']);
+	Route::get('vendors/new', [VendorsController::class, 'pendingRegistrationIndex']);
+	Route::get('vendors/approval', [VendorsController::class, 'approvalNew1Index']);
+	Route::get('vendors/changes', [VendorsController::class, 'approvalEdit1Index']);
+	Route::get('vendors/emails', [VendorsController::class, 'emails']);
 
 	Route::resource('vendors', [VendorsController::class]);
-	Route::get('vendor/{vendor_id}/approve', [VendorsController::class, approve'];
-	Route::post('vendor/{vendor_id}/reject', [VendorsController::class, reject'];
-	Route::get('vendor/{vendor_id}/blacklist', [VendorsController::class, blacklist'];
-	Route::put('vendor/{vendor_id}/blacklist', [VendorsController::class, doBlacklist'];
-	Route::get('vendor/{vendor_id}/cancelBlacklist', [VendorsController::class, cancelBlacklist'];
+	Route::get('vendor/{vendor_id}/approve', [VendorsController::class, 'approve']);
+	Route::post('vendor/{vendor_id}/reject', [VendorsController::class, 'reject']);
+	Route::get('vendor/{vendor_id}/blacklist', [VendorsController::class, 'blacklist']);
+	Route::put('vendor/{vendor_id}/blacklist', [VendorsController::class, 'doBlacklist']);
+	Route::get('vendor/{vendor_id}/cancelBlacklist', [VendorsController::class, 'cancelBlacklist']);
 
 	Route::resource('vendors.subscriptions', [SubscriptionsController::class]);
-	Route::get('vendors/{vendor}/subscriptions/{id}/receipt', ['as' => 'vendors.subscriptions.receipt', 'uses' => [SubscriptionsController::class, receipt']);
-	Route::get('vendors/{user}/edit_email', [VendorsController::class, editEmail'];
-	Route::put('vendors/{user}/edit_email', [VendorsController::class, updateEmail'];
-	Route::get('vendors/{user}/histories', [VendorsController::class, histories'];
-	Route::get('vendors/{user}/certificate', [VendorsController::class, certificate'];
+	Route::get('vendors/{vendor}/subscriptions/{id}/receipt', ['as' => 'vendors.subscriptions.receipt', 'uses' => [SubscriptionsController::class, 'receipt']]);
+	Route::get('vendors/{user}/edit_email', [VendorsController::class, 'editEmail']);
+	Route::put('vendors/{user}/edit_email', [VendorsController::class, 'updateEmail']);
+	Route::get('vendors/{user}/histories', [VendorsController::class, 'histories']);
+	Route::get('vendors/{user}/certificate', [VendorsController::class, 'certificate']);
 
 	Route::resource('vendor.shareholders', [ShareholdersController::class]);
 	Route::resource('vendor.directors', [DirectorsController::class]);
@@ -331,17 +328,16 @@ Route::group(['before' => 'auth'], function () {
 	Route::resource('vendor.subscriptions', [SubscriptionsController::class]);
 
 	Route::resource('vendor.blacklists', [VendorBlacklistsController::class]);
-	Route::get('vendor/{vendor}/blacklists/{blacklists}/file', ['as' => 'vendor.blacklists.file', 'uses' => [VendorBlacklistsController::class, file']);
-	Route::put('vendor/{vendor}/blacklists/{blacklists}/cancel', ['as' => 'vendor.blacklists.cancel', 'uses' => [VendorBlacklistsController::class, cancel']);
+	Route::get('vendor/{vendor}/blacklists/{blacklists}/file', ['as' => 'vendor.blacklists.file', 'uses' => [VendorBlacklistsController::class, 'file']]);
+	Route::put('vendor/{vendor}/blacklists/{blacklists}/cancel', ['as' => 'vendor.blacklists.cancel', 'uses' => [VendorBlacklistsController::class, 'cancel']]);
 
 	Route::resource('vendor.requests', [CodeRequestsController::class]);
-	Route::put('vendor/{vendor}/requests/{requests}/approve', ['as' => 'vendor.requests.approve', 'uses' => [CodeRequestsController::class, approve_vendor']);
-	Route::post('vendor/{vendor}/requests/{requests}/reject', ['as' => 'vendor.requests.reject', 'uses' => [CodeRequestsController::class, reject_vendor']);
+	Route::put('vendor/{vendor}/requests/{requests}/approve', ['as' => 'vendor.requests.approve', 'uses' => [CodeRequestsController::class, 'approve_vendor']]);
+	Route::post('vendor/{vendor}/requests/{requests}/reject', ['as' => 'vendor.requests.reject', 'uses' => [CodeRequestsController::class, 'reject_vendor']]);
 	Route::resource('requests', [CodeRequestsController::class]);
-	Route::get('requests/show/{request_id}', ['as' => 'requests.showAll', 'uses' => [CodeRequestsController::class, showAll']);
-	Route::put('requests/{requests}/approve', ['as' => 'requests.approve', 'uses' => [CodeRequestsController::class, approve']);
-	Route::post('requests/{requests}/reject', ['as' => 'requests.reject', 'uses' => [CodeRequestsController::class, reject']);
-
+	Route::get('requests/show/{request_id}', ['as' => 'requests.showAll', 'uses' => [CodeRequestsController::class, 'showAll']]);
+	Route::put('requests/{requests}/approve', ['as' => 'requests.approve', 'uses' => [CodeRequestsController::class, 'approve']]);
+	Route::post('requests/{requests}/reject', ['as' => 'requests.reject', 'uses' => [CodeRequestsController::class, 'reject']]);
 	Route::post('transactions/ajax', [TransactionsController::class, updateFpxCount']->name('updateFpxCount'];
 	Route::get('transactions/subscription', [TransactionsController::class, subscriptionIndex'];
 	Route::get('transactions/purchase', [TransactionsController::class, purchaseIndex'];
@@ -430,7 +426,7 @@ Route::group(['before' => 'auth'], function () {
 	Route::get('reports/vendor/status/csv/{view}', 'ReportVendorStatusController@csv'];
 	Route::get('reports/vendor/status/excel/{view}', 'ReportVendorStatusController@excel'];
 
-	/* add by zayid 4-jan-23 */
+	// add by zayid 4-jan-23
 	Route::get('reports/vendor/summary/{year}/{vendor_id}', 'ReportVendorSummaryController@index']->name('report.vendor.summary'];
 
 	Route::get('reports/vendor/request', 'ReportCodeRequestController@index'];
@@ -454,7 +450,7 @@ Route::group(['before' => 'auth'], function () {
 	Route::get('reports/transaction/hasil', 'ReportTransactionByHasilController@index'];
 	Route::post('reports/transaction/hasil', 'ReportTransactionByHasilController@view'];
 
-	/* end by zayid */
+	//end by zayid
 
 	Route::get('reports/vendor/codes', 'ReportVendorCodeController@index'];
 	Route::post('reports/vendor/codes', 'ReportVendorCodeController@view'];
@@ -536,11 +532,11 @@ Route::group(['before' => 'auth'], function () {
 	Route::post('user/byagency', ['as' => 'user.by.agency', 'uses' => [UsersController::class, getUserByAgencies']);
 	Route::post('user/byid', ['as' => 'user.by.id', 'uses' => [UsersController::class, getUserById']);
 
-	/* // Petender Performance
-	Route::prefix('/tenders']->controller(PetenderPerformanceController::class)->group(function () {
-		Route::post('/petender-performance/{tender}/{vendor}', 'store']->name('store.PetenderPerformance'];
-		Route::get('/{tender}/{vendor}', 'vendorPetender']->name('index.TenderVendor'];
-	}); */
+	// Petender Performance
+	// Route::prefix('/tenders']->controller(PetenderPerformanceController::class)->group(function () {
+	// 	Route::post('/petender-performance/{tender}/{vendor}', 'store']->name('store.PetenderPerformance'];
+	// 	Route::get('/{tender}/{vendor}', 'vendorPetender']->name('index.TenderVendor'];
+	// });
 
 	Route::post('dashboard/fetch/tender', ['as' => 'dashboard.tender', 'uses' => [HomeController::class, 'tender_dashboard']);
 	Route::post('dashboard/fetch/tender-summary', ['as' => 'dashboard.tender.summary', 'uses' => [HomeController::class, 'tender_summary_dashboard']);
@@ -580,3 +576,4 @@ Route::group(['before' => 'auth'], function () {
 	});
 });
 
+*/

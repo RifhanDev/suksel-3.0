@@ -43,39 +43,19 @@ trait EntrustCompatTrait
                 return !empty(trim($p));
             });
 
-            if (!empty($permissions)) {
+            if (!empty($permissions))
+            {
                 $found = false;
-                if (method_exists($this, 'roles')) {
-                    foreach ($this->roles as $role) {
-                        foreach ($permissions as $permission) {
-                            // Check Spatie Permission table (role_has_permissions)
-                            if (method_exists($role, 'permissions')) {
-                                if ($role->permissions()->where('name', $permission)->exists()) {
-                                    $found = true;
-                                    break 2;
-                                }
-                            }
-
-                            // Also check old Entrust table (permission_role) as fallback
-                            $permissionId = DB::table('permissions')->where('name', $permission)->value('id');
-                            if ($permissionId) {
-                                $hasPerm = DB::table('permission_role')
-                                    ->where('role_id', $role->id)
-                                    ->where('permission_id', $permissionId)
-                                    ->exists();
-
-                                if ($hasPerm) {
-                                    $found = true;
-                                    break 2;
-                                }
-                            }
-
-                            // Check custom perms() method if exists
-                            if (method_exists($role, 'perms')) {
-                                if ($role->perms()->where('name', $permission)->exists()) {
-                                    $found = true;
-                                    break 2;
-                                }
+                if (method_exists($this, 'roles'))
+                {
+                    foreach ($this->roles as $role)
+                    {
+                        foreach ($permissions as $permission)
+                        {
+                            if (method_exists($role, 'perms') && $role->perms()->where('name', $permission)->exists())
+                            {
+                                $found = true;
+                                break 2;
                             }
                         }
                     }
@@ -84,20 +64,22 @@ trait EntrustCompatTrait
             }
         }
 
-        // Decide result: if both checks present require both true, else return whichever is present
-        if (is_null($roleCheck) && is_null($permCheck)) {
+        if (is_null($roleCheck) && is_null($permCheck))
+        {
             return false;
         }
 
-        if (is_null($roleCheck)) {
+        if (is_null($roleCheck))
+        {
             return (bool) $permCheck;
         }
 
-        if (is_null($permCheck)) {
+        if (is_null($permCheck))
+        {
             return (bool) $roleCheck;
         }
 
-        return (bool) ($roleCheck && $permCheck);
+        return (bool) ($roleCheck || $permCheck);
     }
 
     /**
@@ -115,34 +97,13 @@ trait EntrustCompatTrait
             return parent::can($permission, $arguments);
         }
 
-        // Check if user has this permission through their roles
-        if (method_exists($this, 'roles')) {
-            foreach ($this->roles as $role) {
-                // Check Spatie Permission table (role_has_permissions)
-                if (method_exists($role, 'permissions')) {
-                    if ($role->permissions()->where('name', $permission)->exists()) {
-                        return true;
-                    }
-                }
-
-                // Also check old Entrust table (permission_role) as fallback
-                $permissionId = DB::table('permissions')->where('name', $permission)->value('id');
-                if ($permissionId) {
-                    $hasPerm = DB::table('permission_role')
-                        ->where('role_id', $role->id)
-                        ->where('permission_id', $permissionId)
-                        ->exists();
-
-                    if ($hasPerm) {
-                        return true;
-                    }
-                }
-
-                // Check custom perms() method if exists
-                if (method_exists($role, 'perms')) {
-                    if ($role->perms()->where('name', $permission)->exists()) {
-                        return true;
-                    }
+        if (method_exists($this, 'roles'))
+        {
+            foreach ($this->roles as $role)
+            {
+                if (method_exists($role, 'perms') && $role->perms()->where('name', $permission)->exists())
+                {
+                    return true;
                 }
             }
         }

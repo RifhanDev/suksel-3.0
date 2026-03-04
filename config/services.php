@@ -44,4 +44,9 @@ return [
         ],
     ],
 
+    'stos_backend' => [
+        'url' => env('STOS_BACKEND_URL', 'https://stos-epenilaian-web.test'),
+        'api_key' => env('STOS_BACKEND_API_KEY'),
+    ],
+
 ];

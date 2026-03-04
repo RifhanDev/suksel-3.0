@@ -16,6 +16,8 @@ return [
     |
     */
 
+    'use_queue' => env('MAIL_USE_QUEUE', false),
+
     'driver' => env('MAIL_DRIVER', 'smtp'),
 
     /*

@@ -250,23 +250,21 @@ trait Helper
 
     public function encryptString(string $string)
     {
-        // Store cipher method
-        $ciphering = "BF-CBC";
+        $ciphering = "AES-256-CBC";
 
-        // Use OpenSSl encryption method
-        // $iv_length = openssl_cipher_iv_length($ciphering);
+        $iv_length = openssl_cipher_iv_length($ciphering);
         $options = 0;
 
-        // Use random_bytes() function which gives
-        // randomly 16 digit values
-        $encryption_iv = "lala6699";
+        $encryption_iv = substr("lala6699lala6699", 0, $iv_length);
 
-        // Alternatively, we can use any 16 digit
-        // characters or numeric for iv
-        $encryption_key = md5('suksuk2023');
+        $encryption_key = substr(md5('suksuk2023'), 0, 32);
 
-        // Encryption of string process starts
         $encryption = openssl_encrypt($string, $ciphering, $encryption_key, $options, $encryption_iv);
+
+        if ($encryption === false) {
+            \Log::error('Encryption failed for string: ' . $string . ' Error: ' . openssl_error_string());
+            return false;
+        }
 
         return base64_encode($encryption);
     }
@@ -274,21 +272,15 @@ trait Helper
     public function decryptString(string $hash_string)
     {
         $hash_string = base64_decode($hash_string);
-        // Store cipher method
-        $ciphering = "BF-CBC";
+        $ciphering = "AES-256-CBC";
 
-        // Use OpenSSl encryption method
         $iv_length = openssl_cipher_iv_length($ciphering);
         $options = 0;
 
-        // Use random_bytes() function which gives
-        // randomly 16 digit values
-        $encryption_iv = "lala6699";
+        $encryption_iv = substr("lala6699lala6699", 0, $iv_length);
 
-        // Store the decryption key
-        $decryption_key = md5('suksuk2023');
+        $decryption_key = substr(md5('suksuk2023'), 0, 32);
 
-        // Descrypt the string
         $decryption = openssl_decrypt($hash_string, $ciphering, $decryption_key, $options, $encryption_iv);
 
         return $decryption;

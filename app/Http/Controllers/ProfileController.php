@@ -72,10 +72,16 @@ class ProfileController extends Controller
 
 		auth()->login($user);
 
+		if (!$user || !$user->hasRole('Admin')) {
+			return redirect()->back()->with('error', 'Not authorized.');
+		}
+
+		auth()->login($user);
+
 		if ($user->can('Vendor:list'))
 			return redirect('vendors');
 		else
-			return redirect('agencies/' . $user->organization_unit_id);
+			return redirect('agency/' . $user->organization_unit_id);
 		// return redirect('users/'.$currentUserId.'/edit');
 
 	}
