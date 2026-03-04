@@ -11,6 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (Schema::hasTable('vendor_blacklists')) {
+            return;
+        }
         Schema::create('vendor_blacklists', function (Blueprint $table) {
             $table->id();
             $table->string('reason', 45);

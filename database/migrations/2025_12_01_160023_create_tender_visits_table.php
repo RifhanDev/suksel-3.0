@@ -22,9 +22,9 @@ return new class extends Migration
             $table->timestamps(0);
 
             $table->foreign('tender_id')
-                  ->references('id')->on('tenders')
-                  ->onDelete('cascade')
-                  ->onUpdate('cascade');
+                ->references('id')->on('tenders')
+                ->onDelete('cascade')
+                ->onUpdate('cascade');
 
             $table->index('tender_id');
         });

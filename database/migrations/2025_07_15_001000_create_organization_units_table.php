@@ -11,6 +11,9 @@ class CreateOrganizationUnitsTable extends Migration
      */
     public function up(): void
     {
+        if (Schema::hasTable('organization_units')) {
+            return;
+        }
         Schema::create('organization_units', function (Blueprint $table) {
             $table->id();
             $table->string('name');
