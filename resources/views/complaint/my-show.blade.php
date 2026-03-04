@@ -1,4 +1,4 @@
-@extends('layouts.modern')
+@extends('layouts.v3.master')
 @section('content')
 	<div class="page-header">
 		<div class="page-title">
@@ -49,24 +49,25 @@
 				</div>
 			</div>
 			@if ($complaint->module_label)
-			<div class="row mb-3">
-				<div class="col-md-3 fw-bold text-muted">
-					<i class="ti ti-category me-1"></i>Isu utama / Modul:
+				<div class="row mb-3">
+					<div class="col-md-3 fw-bold text-muted">
+						<i class="ti ti-category me-1"></i>Isu utama / Modul:
+					</div>
+					<div class="col-md-9">
+						{{ $complaint->module_label }}
+					</div>
 				</div>
-				<div class="col-md-9">
-					{{ $complaint->module_label }}
-				</div>
-			</div>
 			@endif
 			@if ($complaint->tender_id && $complaint->tender)
-			<div class="row mb-3">
-				<div class="col-md-3 fw-bold text-muted">
-					<i class="ti ti-file-text me-1"></i>Tender / Sebut Harga:
+				<div class="row mb-3">
+					<div class="col-md-3 fw-bold text-muted">
+						<i class="ti ti-file-text me-1"></i>Tender / Sebut Harga:
+					</div>
+					<div class="col-md-9">
+						<a href="{{ url('tenders/' . $complaint->tender_id) }}">{{ $complaint->tender->ref_number }} –
+							{{ $complaint->tender->name }}</a>
+					</div>
 				</div>
-				<div class="col-md-9">
-					<a href="{{ url('tenders/' . $complaint->tender_id) }}">{{ $complaint->tender->ref_number }} – {{ $complaint->tender->name }}</a>
-				</div>
-			</div>
 			@endif
 			<div class="row mb-3">
 				<div class="col-md-3 fw-bold text-muted">

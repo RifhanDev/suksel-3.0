@@ -1,4 +1,4 @@
-@extends('layouts.modern')
+@extends('layouts.v3.master')
 
 @section('content')
 	<div class="row">
@@ -71,14 +71,36 @@
 				var path = target.data('path');
 				var DT = target.DataTable({
 					ajax: path,
-					columns: [
-						{ data: 'subject', name: 'subject' },
-						{ data: 'module', name: 'module' },
-						{ data: 'tender_id', name: 'tender_id' },
-						{ data: 'content', name: 'content' },
-						{ data: 'status', name: 'status' },
-						{ data: 'created_at', name: 'created_at' },
-						{ data: 'actions', name: 'actions', orderable: false, searchable: false }
+					columns: [{
+							data: 'subject',
+							name: 'subject'
+						},
+						{
+							data: 'module',
+							name: 'module'
+						},
+						{
+							data: 'tender_id',
+							name: 'tender_id'
+						},
+						{
+							data: 'content',
+							name: 'content'
+						},
+						{
+							data: 'status',
+							name: 'status'
+						},
+						{
+							data: 'created_at',
+							name: 'created_at'
+						},
+						{
+							data: 'actions',
+							name: 'actions',
+							orderable: false,
+							searchable: false
+						}
 					],
 					serverSide: true,
 					stateSave: true,
@@ -106,7 +128,9 @@
 					dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rtip',
 					pageLength: 25,
 					responsive: true,
-					order: [[5, 'desc']]
+					order: [
+						[5, 'desc']
+					]
 				});
 			});
 		});

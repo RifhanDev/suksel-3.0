@@ -1,4 +1,4 @@
-@extends('layouts.modern')
+@extends('layouts.v3.master')
 @section('content')
 	<h2 class="pull-left">
 		Senarai Soalan ChatBot
@@ -82,7 +82,7 @@
 		function popupDelete(id) {
 			$("#modal_title").html(
 				'<h4 class="modal-title"><i class="fa fa-exclamation-triangle" aria-hidden="true"></i>&emsp;<b>Amaran</b></h4>'
-				);
+			);
 			$("#button_cancel").html("Tidak");
 			$("#button_confirm").html("Ya");
 			$("#button_confirm").attr("type", "submit");

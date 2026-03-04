@@ -1,4 +1,4 @@
-@extends('layouts.modern')
+@extends('layouts.v3.master')
 @section('content')
 	<h4 class="tender-title">Laporan Sistem Tender Online: 10 Agensi Aktif</h4>
 

@@ -1,4 +1,4 @@
-@extends('layouts.modern')
+@extends('layouts.v3.master')
 @section('content')
 	<div class="row">
 		<div class="col-lg-9">
@@ -71,7 +71,8 @@
 									class="nav-link @if (Request::get('type') == 'tenders') active @endif" role="tab">
 									<i class="ti ti-file-text me-2"></i>Tender
 								</a>
-								<a href="{{ action('OrganizationUnitsController@agencyPrices', [$organizationunit->id, 'type' => 'quotations']) }}"
+								<a
+									href="{{ action('OrganizationUnitsController@agencyPrices', [$organizationunit->id, 'type' => 'quotations']) }}"
 									class="nav-link @if (Request::get('type') == 'quotations') active @endif" role="tab">
 									<i class="ti ti-calculator me-2"></i>Sebut Harga
 								</a>

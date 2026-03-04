@@ -1,4 +1,4 @@
-@extends('layouts.modern')
+@extends('layouts.v3.master')
 @section('content')
 	<h2>Tambah Kategori Soalan ChatBot</h2>
 	<hr>
