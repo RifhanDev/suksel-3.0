@@ -24,9 +24,11 @@
 		href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@300;400;500;600;700;800&display=swap"
 		rel="stylesheet">
 
-	<!-- Tabler CSS -->
-	<link href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0-beta20/dist/css/tabler.min.css" rel="stylesheet">
+	<!-- Bootstrap 5 + Modern Styles -->
+	<link href="{{ asset('css/modern.css') }}" rel="stylesheet">
+	<!-- Tabler Icons -->
 	<link href="https://cdn.jsdelivr.net/npm/@tabler/icons@2.40.0/tabler-icons.min.css" rel="stylesheet">
+	<!-- Legacy application.css for forms/tables styling -->
 	<link href="{{ asset('css/application.css') }}" rel="stylesheet">
 	<link href="{{ asset('css/modern-actions.css') }}" rel="stylesheet">
 	@yield('styles')
@@ -103,8 +105,8 @@
 		}
 
 		/* Sidebar Styles */
-		.navbar-vertical {
-			width: 300px;
+		.sidebar-vertical {
+			width: 280px;
 			background: var(--sidebar-bg);
 			border-right: 1px solid #333;
 			position: fixed;
@@ -112,45 +114,47 @@
 			left: 0;
 			height: 100vh;
 			z-index: 1000;
-			overflow-y: auto;
-			overflow-x: visible;
-			transition: var(--transition);
+			display: flex;
+			flex-direction: column;
+			transition: transform 0.3s ease-in-out;
 		}
 
-		/* Ensure dropdowns can overflow sidebar */
-		.navbar-vertical .navbar-nav {
-			overflow: visible;
-		}
-
-		.navbar-vertical .nav-item {
-			overflow: visible;
-		}
-
-		.navbar-vertical .container-fluid {
+		.sidebar-header {
 			padding: var(--space-6);
+			border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+			flex-shrink: 0;
 		}
 
-		.navbar-brand {
-			margin-bottom: var(--space-8);
-			padding-bottom: var(--space-6);
-			border-bottom: 1px solid #ffffffd6;
+		.sidebar-brand {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			text-decoration: none;
 		}
 
-		.navbar-brand img {
+		.sidebar-brand-image {
 			max-width: 68px;
 			height: auto;
 		}
 
-		.navbar-nav {
+		.sidebar-body {
+			flex: 1;
+			overflow-y: auto;
+			overflow-x: hidden;
+			padding: var(--space-4) var(--space-6);
+		}
+
+		.sidebar-nav {
+			display: flex;
 			flex-direction: column;
 			gap: var(--space-1);
 		}
 
-		.navbar-nav .nav-item {
+		.sidebar-nav .nav-item {
 			width: 100%;
 		}
 
-		.navbar-nav .nav-link {
+		.sidebar-nav .nav-link {
 			display: flex;
 			align-items: center;
 			justify-content: flex-start;
@@ -162,25 +166,23 @@
 			font-weight: 500;
 			text-align: left;
 			width: 100%;
-			min-width: 0;
-			overflow: visible;
 		}
 
-		.navbar-nav .nav-link:hover {
+		.sidebar-nav .nav-link:hover {
 			background: var(--sidebar-hover);
 			color: var(--sidebar-text);
 			transform: translateX(4px);
 		}
 
-		.navbar-nav .nav-link.active {
+		.sidebar-nav .nav-link.active {
 			background: var(--sidebar-active);
 			color: white;
 		}
 
 		/* Keep dropdown toggle text white when clicked/focused/active */
-		.navbar-nav .nav-link:focus,
-		.navbar-nav .nav-link:active,
-		.navbar-nav .dropdown.show .nav-link {
+		.sidebar-nav .nav-link:focus,
+		.sidebar-nav .nav-link:active,
+		.sidebar-nav .dropdown.show .nav-link {
 			color: white !important;
 			background: var(--sidebar-hover);
 		}
@@ -196,7 +198,7 @@
 		}
 
 		.nav-link-title {
-			font-size: 0.95rem;
+			font-size: 1.5rem;
 			text-align: left;
 			flex: 1;
 			min-width: 0;
@@ -214,59 +216,22 @@
 			margin-right: 0;
 		}
 
-		/* Simple Dropdown Styles */
-		.navbar-nav .dropdown-menu {
+		/* Bootstrap 5 Dropdown Styles for Sidebar */
+		.sidebar-nav .dropdown-menu {
 			background: #34495e;
 			border: 1px solid rgba(255, 255, 255, 0.1);
-			border-radius: 8px;
-			box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-			margin-top: 4px;
-			padding: 8px 0;
-			min-width: 200px;
-			overflow: visible;
+			padding: 0.5rem 0;
 		}
 
-		/* Refund dropdown - wider for long text */
-		.dropdown-menu-refund {
-			min-width: 350px !important;
-			max-width: 450px;
-			width: auto !important;
-		}
-
-		.navbar-nav .dropdown-item {
+		.sidebar-nav .dropdown-item {
 			color: #ffffff;
-			padding: 12px 20px;
-			font-size: 14px;
-			transition: all 0.2s ease;
-			display: flex;
-			align-items: flex-start;
+			padding: 0.5rem 1rem;
 			white-space: normal;
-			word-wrap: break-word;
-			overflow: visible;
-			min-width: 0;
 		}
 
-		.dropdown-item-text {
-			flex: 1;
-			line-height: 1.5;
-			word-break: break-word;
-			overflow: visible;
-			min-width: 0;
-			padding-right: 8px;
-		}
-
-		.navbar-nav .dropdown-item:hover {
-			background: #c6ced6;
-			color: #ffffff;
-		}
-
-		.navbar-nav .dropdown-item i {
-			font-size: 16px;
-			margin-right: 8px;
-			color: rgba(255, 255, 255, 0.7);
-		}
-
-		.navbar-nav .dropdown-item:hover i {
+		.sidebar-nav .dropdown-item:hover,
+		.sidebar-nav .dropdown-item:focus {
+			background: #2c3e50;
 			color: #ffffff;
 		}
 
@@ -295,23 +260,23 @@
 		}
 
 		/* Sidebar logout button */
-		.navbar-vertical .nav-item.mt-auto {
+		.sidebar-vertical .nav-item.mt-auto {
 			margin-top: auto !important;
 			border-top: 1px solid rgba(255, 255, 255, 0.1);
 			padding-top: var(--space-3);
 		}
 
-		.navbar-vertical .nav-item.mt-auto .nav-link {
+		.sidebar-vertical .nav-item.mt-auto .nav-link {
 			color: #ff6b6b !important;
 			font-weight: 600;
 		}
 
-		.navbar-vertical .nav-item.mt-auto .nav-link:hover {
+		.sidebar-vertical .nav-item.mt-auto .nav-link:hover {
 			background-color: rgba(255, 107, 107, 0.1) !important;
 			color: #ff5252 !important;
 		}
 
-		.navbar-vertical .nav-item.mt-auto .nav-link .nav-link-icon {
+		.sidebar-vertical .nav-item.mt-auto .nav-link .nav-link-icon {
 			display: inline-flex !important;
 			align-items: center;
 			justify-content: center;
@@ -319,14 +284,14 @@
 			height: 2rem;
 		}
 
-		.navbar-vertical .nav-item.mt-auto .nav-link .nav-link-icon i {
+		.sidebar-vertical .nav-item.mt-auto .nav-link .nav-link-icon i {
 			color: #ff6b6b !important;
 			font-size: 1.5rem !important;
 			display: inline-block !important;
 			font-weight: bold !important;
 		}
 
-		.navbar-vertical .nav-item.mt-auto .nav-link .nav-link-icon .icon-logout-fallback {
+		.sidebar-vertical .nav-item.mt-auto .nav-link .nav-link-icon .icon-logout-fallback {
 			color: #ff6b6b !important;
 			stroke: #ff6b6b !important;
 			display: inline-block !important;
@@ -354,25 +319,15 @@
 		}
 
 		/* User dropdown toggle styling */
-		/* .user-dropdown-toggle {
-			background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-			border-radius: 10px !important;
-			padding: 0.75rem 1.25rem !important;
-			transition: all 0.3s ease !important;
-			border: 2px solid rgba(255, 255, 255, 0.2) !important;
-			box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4) !important;
-		} */
-
-		.user-dropdown-toggle:hover {
-			background: linear-gradient(135deg, #764ba2 0%, #667eea 100%) !important;
-			transform: translateY(-2px) !important;
-			box-shadow: 0 6px 20px rgba(255, 255, 255, 0.6) !important;
+		/* Navbar dropdown override for Bootstrap 5 */
+		.navbar .dropdown-menu {
+			background: #ffffff;
+			border: 1px solid rgba(0, 0, 0, 0.15);
 		}
 
-		.user-dropdown-toggle .fw-bold {
-			color: #ffffff !important;
-			font-size: 1rem !important;
-			font-weight: 600 !important;
+		.navbar .dropdown-item {
+			padding: 0.5rem 1rem;
+			color: #212529;
 		}
 
 		.user-dropdown-toggle .text-muted {
@@ -515,389 +470,525 @@
 
 		.dropdown-item i.ti-book {
 			color: #34d399 !important;
-		}
 
-		/* Modal accessibility fixes */
-		.modal {
-			z-index: 1055 !important;
-		}
-
-		.modal-backdrop {
-			z-index: 1050 !important;
-		}
-
-		.modal[aria-hidden="false"] {
-			pointer-events: auto !important;
-		}
-
-		.modal[aria-hidden="true"] {
-			pointer-events: none !important;
-		}
-
-		/* Ensure modal becomes visible when shown */
-		.modal.show {
-			opacity: 1 !important;
-			display: block !important;
-			visibility: visible !important;
-		}
-
-		.modal.show .modal-dialog {
-			transform: none !important;
-			opacity: 1 !important;
-		}
-
-		.modal.show .modal-content {
-			opacity: 1 !important;
-			visibility: visible !important;
-		}
-
-		/* Modal backdrop */
-		.modal-backdrop.show {
-			opacity: 0.5 !important;
-			display: block !important;
-		}
-
-		/* Page Wrapper */
-		.page-wrapper {
-			flex: 1;
-			margin-left: 300px;
-			display: flex;
-			flex-direction: column;
-			min-height: 100vh;
-		}
-
-		/* Top Navigation */
-		.page-wrapper .navbar {
-			background: var(--card-bg);
-			border-bottom: 1px solid var(--border-color);
-			box-shadow: var(--shadow-sm);
-			padding: var(--space-4) var(--space-6);
-		}
-
-		.page-wrapper .navbar .container-xl {
-			display: flex;
-			justify-content: space-between;
-			align-items: center;
-		}
-
-		/* Page Body */
-		.page-body {
-			flex: 1;
-			padding: var(--space-8) var(--space-6);
-		}
-
-		/* Cards */
-		.card {
-			background: var(--card-bg);
-			border: 1px solid var(--border-color);
-			border-radius: var(--radius-lg);
-			box-shadow: var(--shadow-sm);
-			transition: var(--transition);
-		}
-
-		.card:hover {
-			box-shadow: var(--shadow-md);
-		}
-
-		.card-header {
-			background: var(--card-bg);
-			border-bottom: 1px solid var(--border-color);
-			padding: var(--space-6);
-		}
-
-		.card-body {
-			padding: var(--space-6);
-		}
-
-		/* Page Header */
-		.page-header {
-			margin-bottom: var(--space-8);
-		}
-
-		.page-pretitle {
-			font-size: 0.875rem;
-			font-weight: 500;
-			color: var(--text-muted);
-			text-transform: uppercase;
-			letter-spacing: 0.05em;
-			margin-bottom: var(--space-2);
-		}
-
-		.page-title {
-			font-family: var(--font-display);
-			font-size: 2rem;
-			font-weight: 700;
-			color: var(--text-primary);
-			margin: 0;
-		}
-
-		/* Tabs */
-		.nav-tabs {
-			border-bottom: 1px solid var(--border-color);
-		}
-
-		.nav-tabs .nav-link {
-			border: none;
-			border-radius: var(--radius-md) var(--radius-md) 0 0;
-			margin-right: var(--space-2);
-			font-weight: 500;
-			color: var(--text-muted);
-			transition: var(--transition);
-		}
-
-		.nav-tabs .nav-link:hover {
-			background: var(--primary-light);
-			color: var(--primary);
-		}
-
-		.nav-tabs .nav-link.active {
-			background: var(--primary);
-			color: white;
-		}
-
-		/* Tables */
-		.table {
-			background: var(--card-bg);
-			border-radius: var(--radius-lg);
-			overflow: hidden;
-		}
-
-		.table th {
-			background: var(--primary-light);
-			border: none;
-			font-weight: 600;
-			color: var(--text-primary);
-			padding: var(--space-4);
-		}
-
-		.table td {
-			border: none;
-			border-bottom: 1px solid var(--border-color);
-			padding: var(--space-4);
-		}
-
-		.table tbody tr:hover {
-			background: #f8fafc;
-		}
-
-		/* Buttons */
-		.btn {
-			border-radius: var(--radius-md);
-			font-weight: 500;
-			transition: var(--transition);
-		}
-
-		.btn-primary {
-			background: var(--primary);
-			border-color: var(--primary);
-		}
-
-		.btn-primary:hover {
-			background: var(--primary-dark);
-			border-color: var(--primary-dark);
-			transform: translateY(-1px);
-		}
-
-		.btn-outline-primary {
-			color: var(--primary);
-			border-color: var(--primary);
-		}
-
-		.btn-outline-primary:hover {
-			background: var(--primary);
-			border-color: var(--primary);
-		}
-
-		/* Forms */
-		.form-control {
-			border: 1px solid var(--border-color);
-			border-radius: var(--radius-md);
-			padding: var(--space-3) var(--space-4);
-			transition: var(--transition);
-		}
-
-		.form-control:focus {
-			border-color: var(--primary);
-			box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
-		}
-
-		/* DataTable Enhancements */
-		.dataTables_wrapper .dataTables_length,
-		.dataTables_wrapper .dataTables_filter {
-			margin-bottom: var(--space-4);
-		}
-
-		.dataTables_wrapper .dataTables_length select,
-		.dataTables_wrapper .dataTables_filter input {
-			border: 1px solid var(--border-color);
-			border-radius: var(--radius-md);
-			padding: var(--space-2) var(--space-3);
-		}
-
-		/* Responsive Design */
-		@media (max-width: 1024px) {
-			.navbar-vertical {
-				transform: translateX(-100%);
+			.navbar .dropdown-item:hover,
+			.navbar .dropdown-item:focus {
+				background: #f8f9fa;
+				color: #212529;
 			}
 
-			.navbar-vertical.show {
-				transform: translateX(0);
+			/* Modal accessibility fixes */
+			.modal {
+				z-index: 1055 !important;
 			}
 
+			.modal-backdrop {
+				z-index: 1050 !important;
+			}
+
+			.modal[aria-hidden="false"] {
+				pointer-events: auto !important;
+			}
+
+			.modal[aria-hidden="true"] {
+				pointer-events: none !important;
+			}
+
+			/* Ensure modal becomes visible when shown */
+			.modal.show {
+				opacity: 1 !important;
+				display: block !important;
+				visibility: visible !important;
+			}
+
+			.modal.show .modal-dialog {
+				transform: none !important;
+				opacity: 1 !important;
+			}
+
+			.modal.show .modal-content {
+				opacity: 1 !important;
+				visibility: visible !important;
+			}
+
+			/* Modal backdrop */
+			.modal-backdrop.show {
+				opacity: 0.5 !important;
+				display: block !important;
+			}
+
+			/* Page Wrapper */
 			.page-wrapper {
+				flex: 1;
+				margin-left: 280px;
+				display: flex;
+				flex-direction: column;
+				min-height: 100vh;
+				width: calc(100% - 280px);
+				transition: margin-left 0.3s ease-in-out, width 0.3s ease-in-out;
+			}
+
+			/* Top Navigation */
+			.page-wrapper .navbar {
+				background: var(--card-bg);
+				border-bottom: 1px solid var(--border-color);
+				box-shadow: var(--shadow-sm);
+				padding: var(--space-4) var(--space-6);
+			}
+
+			.page-wrapper .navbar .container-xl {
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+			}
+
+			/* Page Body */
+			.page-body {
+				flex: 1;
+				padding: var(--space-6) var(--space-4);
+				width: 100%;
+			}
+
+			/* Container Constraints - Better width management */
+			.page-body .container-xl {
+				max-width: 100%;
+				width: 100%;
+				margin: 0 auto;
+				padding-left: var(--space-6);
+				padding-right: var(--space-6);
+			}
+
+			/* For forms, use better constraints */
+			.page-body .container-xl.form-container {
+				max-width: 1200px;
+			}
+
+			/* Cards */
+			.card {
+				background: var(--card-bg);
+				border: 1px solid var(--border-color);
+				border-radius: var(--radius-lg);
+				box-shadow: var(--shadow-sm);
+				transition: var(--transition);
+			}
+
+			.card:hover {
+				box-shadow: var(--shadow-md);
+			}
+
+			.card-header {
+				background: var(--card-bg);
+				border-bottom: 1px solid var(--border-color);
+				padding: var(--space-6);
+			}
+
+			.card-body {
+				padding: var(--space-6);
+			}
+
+			/* Page Header */
+			.page-header {
+				margin-bottom: var(--space-8);
+			}
+
+			.page-pretitle {
+				font-size: 0.875rem;
+				font-weight: 500;
+				color: var(--text-muted);
+				text-transform: uppercase;
+				letter-spacing: 0.05em;
+				margin-bottom: var(--space-2);
+			}
+
+			.page-title {
+				font-family: var(--font-display);
+				font-size: 2rem;
+				font-weight: 700;
+				color: var(--text-primary);
+				margin: 0;
+			}
+
+			/* Tabs */
+			.nav-tabs {
+				border-bottom: 1px solid var(--border-color);
+			}
+
+			.nav-tabs .nav-link {
+				border: none;
+				border-radius: var(--radius-md) var(--radius-md) 0 0;
+				margin-right: var(--space-2);
+				font-weight: 500;
+				color: var(--text-muted);
+				transition: var(--transition);
+			}
+
+			.nav-tabs .nav-link:hover {
+				background: var(--primary-light);
+				color: var(--primary);
+			}
+
+			.nav-tabs .nav-link.active {
+				background: var(--primary);
+				color: white;
+			}
+
+			/* Bootstrap 3 Nav Pills & Stacked - for vendor form tabs */
+			.nav-pills>li {
+				float: left;
+			}
+
+			.nav-pills>li>a {
+				border-radius: 4px;
+			}
+
+			.nav-pills>li+li {
+				margin-left: 2px;
+			}
+
+			.nav-pills>li.active>a,
+			.nav-pills>li.active>a:hover,
+			.nav-pills>li.active>a:focus {
+				color: #fff;
+				background-color: var(--primary);
+			}
+
+			.nav-stacked>li {
+				float: none;
+			}
+
+			.nav-stacked>li+li {
+				margin-top: 2px;
 				margin-left: 0;
 			}
-		}
 
-		/* Mobile Sidebar Toggle */
-		.navbar-toggler {
-			display: none;
-		}
+			.nav>li>a {
+				position: relative;
+				display: block;
+				padding: 10px 15px;
+			}
 
-		@media (max-width: 1024px) {
-			.navbar-toggler {
+			.nav>li>a:hover,
+			.nav>li>a:focus {
+				text-decoration: none;
+				background-color: #eee;
+			}
+
+			.nav>li.disabled>a {
+				color: #777;
+			}
+
+			.nav>li.disabled>a:hover,
+			.nav>li.disabled>a:focus {
+				color: #777;
+				text-decoration: none;
+				cursor: not-allowed;
+				background-color: transparent;
+			}
+
+			/* Tab panes */
+			.tab-content>.tab-pane {
+				display: none;
+			}
+
+			.tab-content>.active {
 				display: block;
 			}
-		}
 
-		/* Animations */
-		@keyframes slideIn {
-			from {
-				opacity: 0;
-				transform: translateY(20px);
+			/* Tables */
+			.table {
+				background: var(--card-bg);
+				border-radius: var(--radius-lg);
+				overflow: hidden;
 			}
 
-			to {
-				opacity: 1;
-				transform: translateY(0);
+			.table th {
+				background: var(--primary-light);
+				border: none;
+				font-weight: 600;
+				color: var(--text-primary);
+				padding: var(--space-4);
 			}
-		}
 
-		.animate-slideIn {
-			animation: slideIn 0.3s ease-out;
-		}
+			.table td {
+				border: none;
+				border-bottom: 1px solid var(--border-color);
+				padding: var(--space-4);
+			}
 
-		/* Hide Laravel Debug Bar */
-		#phpdebugbar,
-		.phpdebugbar,
-		[class*="phpdebugbar"],
-		[class*="debugbar"] {
-			display: none !important;
-			visibility: hidden !important;
-			opacity: 0 !important;
-			height: 0 !important;
-			width: 0 !important;
-			overflow: hidden !important;
-		}
+			.table tbody tr:hover {
+				background: #f8fafc;
+			}
 
-		/* Hide any debug elements */
-		[class*="debug"],
-		[class*="Debug"],
-		[class*="DEBUG"] {
-			display: none !important;
-		}
+			/* Buttons */
+			.btn {
+				border-radius: var(--radius-md);
+				font-weight: 500;
+				transition: var(--transition);
+			}
 
-		/* Modern Card Styling */
-		.modern-card {
-			border: none;
-			border-radius: 12px;
-			box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-			transition: all 0.3s ease;
-		}
+			.btn-primary {
+				background: var(--primary);
+				border-color: var(--primary);
+			}
 
-		.modern-card:hover {
-			box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
-		}
+			.btn-primary:hover {
+				background: var(--primary-dark);
+				border-color: var(--primary-dark);
+				transform: translateY(-1px);
+			}
 
-		.modern-form-card {
-			border: none;
-			border-radius: 12px;
-			box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-			margin-bottom: 1.5rem;
-		}
+			.btn-outline-primary {
+				color: var(--primary);
+				border-color: var(--primary);
+			}
 
-		.modern-form-card .card-header {
-			background: white;
-			border-bottom: 1px solid #e9ecef;
-			padding: 1.5rem;
-		}
+			.btn-outline-primary:hover {
+				background: var(--primary);
+				border-color: var(--primary);
+			}
 
-		.modern-form-card .card-title {
-			font-weight: 600;
-			color: #2c3e50;
-			margin: 0;
-			display: flex;
-			align-items: center;
-			gap: 0.5rem;
-		}
+			/* Forms */
+			.form-control {
+				border: 1px solid var(--border-color);
+				border-radius: var(--radius-md);
+				padding: var(--space-3) var(--space-4);
+				transition: var(--transition);
+			}
 
-		.modern-form-card .card-body {
-			padding: 2rem;
-		}
+			.form-control:focus {
+				border-color: var(--primary);
+				box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+			}
 
-		.form-label {
-			font-weight: 500;
-			color: #495057;
-			margin-bottom: 0.5rem;
-			display: flex;
-			align-items: center;
-			gap: 0.25rem;
-		}
+			/* DataTable Enhancements */
+			.dataTables_wrapper .dataTables_length,
+			.dataTables_wrapper .dataTables_filter {
+				margin-bottom: var(--space-4);
+			}
 
-		.form-label.required::after {
-			content: '*';
-			color: #dc3545;
-			margin-left: 4px;
-		}
+			.dataTables_wrapper .dataTables_length select,
+			.dataTables_wrapper .dataTables_filter input {
+				border: 1px solid var(--border-color);
+				border-radius: var(--radius-md);
+				padding: var(--space-2) var(--space-3);
+			}
 
-		.page-header-modern {
-			background: linear-gradient(135deg, #e0dfdf 0%, #c44f4f 100%);
-			color: white;
-			padding: 2rem;
-			border-radius: 12px;
-			margin-bottom: 2rem;
-		}
+			/* Responsive Design */
+			/* Tablets and below */
+			@media (max-width: 1024px) {
+				.sidebar-vertical {
+					transform: translateX(-100%);
+				}
 
-		.page-header-modern h2 {
-			margin: 0;
-			font-weight: 600;
-			font-size: 1.75rem;
-		}
+				.sidebar-vertical.show {
+					transform: translateX(0);
+					box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
+				}
 
-		.page-header-modern .page-pretitle {
-			opacity: 0.9;
-			font-size: 0.875rem;
-			margin-bottom: 0.5rem;
-		}
+				.page-wrapper {
+					margin-left: 0;
+					width: 100%;
+				}
 
-		.modern-table {
-			border-collapse: separate;
-			border-spacing: 0;
-		}
+				.page-body {
+					padding: var(--space-4) var(--space-3);
+				}
 
-		.modern-table thead th {
-			background: #f8f9fa;
-			border-bottom: 2px solid #dee2e6;
-			font-weight: 600;
-			text-transform: uppercase;
-			font-size: 0.75rem;
-			letter-spacing: 0.05em;
-			padding: 1rem;
-			color: #495057;
-		}
+				.page-body .container-xl {
+					padding-left: var(--space-4);
+					padding-right: var(--space-4);
+				}
+			}
 
-		.modern-table tbody tr {
-			transition: all 0.2s ease;
-		}
+			/* Mobile phones */
+			@media (max-width: 768px) {
+				.page-body {
+					padding: var(--space-3) var(--space-2);
+				}
 
-		.modern-table tbody tr:hover {
-			background: #f8f9fa;
-		}
+				.page-body .container-xl {
+					padding-left: var(--space-3);
+					padding-right: var(--space-3);
+				}
 
-		.modern-table tbody td {
-			padding: 1rem;
-			vertical-align: middle;
-		}
+				.page-title {
+					font-size: 1.5rem;
+				}
+
+				.card-body {
+					padding: var(--space-4);
+				}
+			}
+
+			/* Small mobile phones */
+			@media (max-width: 480px) {
+				.sidebar-vertical {
+					width: 260px;
+				}
+
+				.page-body {
+					padding: var(--space-2);
+				}
+
+				.page-body .container-xl {
+					padding-left: var(--space-2);
+					padding-right: var(--space-2);
+				}
+
+				.page-title {
+					font-size: 1.25rem;
+				}
+			}
+
+			/* Mobile Sidebar Toggle */
+			.navbar-toggler {
+				display: none;
+			}
+
+			@media (max-width: 1024px) {
+				.navbar-toggler {
+					display: block;
+				}
+			}
+
+			/* Animations */
+			@keyframes slideIn {
+				from {
+					opacity: 0;
+					transform: translateY(20px);
+				}
+
+				to {
+					opacity: 1;
+					transform: translateY(0);
+				}
+			}
+
+			.animate-slideIn {
+				animation: slideIn 0.3s ease-out;
+			}
+
+			/* Hide Laravel Debug Bar */
+			#phpdebugbar,
+			.phpdebugbar,
+			[class*="phpdebugbar"],
+			[class*="debugbar"] {
+				display: none !important;
+				visibility: hidden !important;
+				opacity: 0 !important;
+				height: 0 !important;
+				width: 0 !important;
+				overflow: hidden !important;
+			}
+
+			/* Hide any debug elements */
+			[class*="debug"],
+			[class*="Debug"],
+			[class*="DEBUG"] {
+				display: none !important;
+			}
+
+			/* Modern Card Styling */
+			.modern-card {
+				border: none;
+				border-radius: 12px;
+				box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+				transition: all 0.3s ease;
+			}
+
+			.modern-card:hover {
+				box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+			}
+
+			.modern-form-card {
+				border: none;
+				border-radius: 12px;
+				box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+				margin-bottom: 1.5rem;
+			}
+
+			.modern-form-card .card-header {
+				background: white;
+				border-bottom: 1px solid #e9ecef;
+				padding: 1.5rem;
+			}
+
+			.modern-form-card .card-title {
+				font-weight: 600;
+				color: #2c3e50;
+				margin: 0;
+				display: flex;
+				align-items: center;
+				gap: 0.5rem;
+			}
+
+			.modern-form-card .card-body {
+				padding: 2rem;
+			}
+
+			.form-label {
+				font-weight: 500;
+				color: #495057;
+				margin-bottom: 0.5rem;
+				display: flex;
+				align-items: center;
+				gap: 0.25rem;
+			}
+
+			.form-label.required::after {
+				content: '*';
+				color: #dc3545;
+				margin-left: 4px;
+			}
+
+			.page-header-modern {
+				background: linear-gradient(135deg, #e0dfdf 0%, #c44f4f 100%);
+				color: white;
+				padding: 2rem;
+				border-radius: 12px;
+				margin-bottom: 2rem;
+			}
+
+			.page-header-modern h2 {
+				margin: 0;
+				font-weight: 600;
+				font-size: 1.75rem;
+			}
+
+			.page-header-modern .page-pretitle {
+				opacity: 0.9;
+				font-size: 0.875rem;
+				margin-bottom: 0.5rem;
+			}
+
+			.modern-table {
+				border-collapse: separate;
+				border-spacing: 0;
+			}
+
+			.modern-table thead th {
+				background: #f8f9fa;
+				border-bottom: 2px solid #dee2e6;
+				font-weight: 600;
+				text-transform: uppercase;
+				font-size: 0.75rem;
+				letter-spacing: 0.05em;
+				padding: 1rem;
+				color: #495057;
+			}
+
+			.modern-table tbody tr {
+				transition: all 0.2s ease;
+			}
+
+			.modern-table tbody tr:hover {
+				background: #f8f9fa;
+			}
+
+			.modern-table tbody td {
+				padding: 1rem;
+				vertical-align: middle;
+			}
 	</style>
 </head>
 
@@ -1744,6 +1835,8 @@
 				</div>
 			</div>
 		</aside>
+		@include('layouts._side')
+		{{-- @include('layouts.side_new(backup)') --}}
 
 		<!-- Main Content -->
 		<div class="page-wrapper">
@@ -1823,10 +1916,11 @@
 					</div>
 				</div>
 			</div>
+			@include('layouts._topbar')
 
 			<!-- Page Content -->
 			<div class="page-body">
-				<div class="container-xl">
+				<div id="container" class="container-xl">
 					@include('layouts._notification')
 					@yield('content')
 				</div>
@@ -1883,19 +1977,16 @@
 						</div>
 					</div>
 				</div>
+				</ul>
 			</div>
-		</div>
 	@endif
 
-	@include('layouts._footer')
+	{{-- @include('layouts._footer') --}}
 	@include('layouts._popupModal')
 
-	<!-- jQuery -->
-	<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-	<!-- Bootstrap 5 JS -->
-	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-	<!-- Tabler JS -->
-	<script src="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0-beta20/dist/js/tabler.min.js"></script>
+	<!-- Modern JS bundle (jQuery + Bootstrap 5) -->
+	<script src="{{ asset('js/modern.js') }}"></script>
+	<!-- Legacy application.js for vendor forms and old scripts -->
 	<script src="{{ asset('js/application.js') }}"></script>
 
 	<script>
@@ -1903,9 +1994,9 @@
 		document.addEventListener('DOMContentLoaded', function() {
 			// console.log('DOM loaded, initializing modals...');
 
-			// Check if Bootstrap is available
-			if (typeof bootstrap === 'undefined') {
-				console.error('Bootstrap is not loaded!');
+			// Check if Bootstrap (v3) is available via jQuery
+			if (typeof $.fn.modal === 'undefined') {
+				console.error('Bootstrap 3 is not loaded!');
 				return;
 			}
 
@@ -2007,6 +2098,27 @@
 			} else {
 				console.error('Login button not found!');
 			}
+			console.log('Bootstrap 3 is available via jQuery');
+
+			// Bootstrap 3 modal initialization is automatic via data-toggle
+			// Just ensure all modals are properly initialized
+			$('.modal').each(function() {
+				$(this).modal({
+					show: false
+				});
+				console.log('Modal initialized (Bootstrap 3):', this.id);
+			});
+
+			// Handle data-bs-target (Bootstrap 5 syntax) and convert to data-toggle (Bootstrap 3)
+			$('[data-bs-toggle="modal"]').each(function() {
+				$(this).attr('data-toggle', 'modal');
+				const target = $(this).attr('data-bs-target');
+				if (target) {
+					$(this).attr('data-target', target);
+				}
+			});
+
+			console.log('Bootstrap 3 modals ready');
 		});
 
 		// Fallback method - simple modal without Bootstrap
@@ -2064,67 +2176,78 @@
 
 		// Direct button handler
 		document.addEventListener('DOMContentLoaded', function() {
-			const loginBtn = document.getElementById('loginButton');
-			if (loginBtn) {
-				loginBtn.addEventListener('click', function(e) {
-					e.preventDefault();
-					e.stopPropagation();
-					// console.log('Direct button click handler triggered');
-					openLoginModal();
-				});
-				// console.log('Login button direct handler attached');
-			}
-
-			// Initialize all dropdowns manually
-			const dropdownTriggers = document.querySelectorAll('[data-bs-toggle="dropdown"]');
-			// console.log('Found dropdown triggers:', dropdownTriggers.length);
-
-			dropdownTriggers.forEach((trigger, index) => {
-				// console.log('Initializing dropdown', index);
-
-				if (typeof bootstrap !== 'undefined' && bootstrap.Dropdown) {
-					try {
-						new bootstrap.Dropdown(trigger);
-						// console.log('Dropdown initialized successfully:', index);
-					} catch (error) {
-						console.error('Error initializing dropdown:', error);
-					}
-				}
-
-				// Add manual click handler as fallback
-				trigger.addEventListener('click', function(e) {
-					e.preventDefault();
-					// console.log('Dropdown clicked');
-
-					const menu = this.nextElementSibling;
-					if (menu && menu.classList.contains('dropdown-menu')) {
-						const isShown = menu.classList.contains('show');
-
-						// Close all other dropdowns
-						document.querySelectorAll('.dropdown-menu.show').forEach(m => {
-							m.classList.remove('show');
+					const loginBtn = document.getElementById('loginButton');
+					if (loginBtn) {
+						loginBtn.addEventListener('click', function(e) {
+							e.preventDefault();
+							e.stopPropagation();
+							// console.log('Direct button click handler triggered');
+							openLoginModal();
 						});
-
-						if (!isShown) {
-							menu.classList.add('show');
-							// console.log('Dropdown opened manually');
-						}
+						// console.log('Login button direct handler attached');
 					}
-				});
-			});
-		});
 
-		// Sidebar toggle for mobile
-		document.addEventListener('DOMContentLoaded', function() {
-			const sidebarToggle = document.querySelector('.navbar-toggler');
-			const sidebar = document.getElementById('sidebar');
+					// Initialize all dropdowns manually
+					const dropdownTriggers = document.querySelectorAll('[data-bs-toggle="dropdown"]');
+					// console.log('Found dropdown triggers:', dropdownTriggers.length);
 
-			if (sidebarToggle && sidebar) {
-				sidebarToggle.addEventListener('click', function() {
-					sidebar.classList.toggle('show');
-				});
-			}
-		});
+					dropdownTriggers.forEach((trigger, index) => {
+						// console.log('Initializing dropdown', index);
+
+						if (typeof bootstrap !== 'undefined' && bootstrap.Dropdown) {
+							try {
+								new bootstrap.Dropdown(trigger);
+								// console.log('Dropdown initialized successfully:', index);
+							} catch (error) {
+								console.error('Error initializing dropdown:', error);
+							}
+						}
+
+						// Add manual click handler as fallback
+						trigger.addEventListener('click', function(e) {
+							e.preventDefault();
+							// console.log('Dropdown clicked');
+
+							const menu = this.nextElementSibling;
+							if (menu && menu.classList.contains('dropdown-menu')) {
+								const isShown = menu.classList.contains('show');
+
+								// Close all other dropdowns
+								document.querySelectorAll('.dropdown-menu.show').forEach(m => {
+									m.classList.remove('show');
+								});
+
+								if (!isShown) {
+									menu.classList.add('show');
+									// console.log('Dropdown opened manually');
+								}
+							}
+						});
+						// Convert Bootstrap 5 dropdown syntax to Bootstrap 3
+						$('[data-bs-toggle="dropdown"]').each(function() {
+							$(this).attr('data-toggle', 'dropdown');
+							console.log('Dropdown converted to Bootstrap 3:', this);
+						});
+					});
+
+					// Sidebar toggle for mobile
+					document.addEventListener('DOMContentLoaded', function() {
+						const sidebarToggle = document.querySelector('.navbar-toggler');
+						const sidebar = document.getElementById('sidebar');
+
+						if (sidebarToggle && sidebar) {
+							sidebarToggle.addEventListener('click', function() {
+								sidebar.classList.toggle('show');
+							});
+						}
+					});
+
+					// CSRF Token Setup for AJAX Requests
+					$.ajaxSetup({
+						headers: {
+							'X-CSRF-Token': $('meta[name=_token]').attr('content')
+						}
+					});
 	</script>
 
 	<!-- Modern Chatbot Widget Styles -->
@@ -2374,6 +2497,7 @@
 	</style>
 
 	<!-- Chatbot Widget -->
+	<!-- Botman Chatbot Widget -->
 	<script>
 		@php $chat_id = Str::random(8); @endphp
 
@@ -2399,42 +2523,110 @@
 		};
 
 		window.addEventListener("message", (event) => {
-			if (event.data != "") {
-				let data = event.data;
+					if (event.data != "") {
+						let data = event.data;
 
-				if (data.status == 200) {
-					let messages = data.messages;
+						if (data.status == 200) {
+							let messages = data.messages;
 
-					messages.forEach(row => {
-						if (row.text == "DataACK") {
-							sender_response_detail = row.additionalParameters;
+							messages.forEach(row => {
+										if (row.text == "DataACK") {
+											sender_response_detail = row.additionalParameters;
 
-							if (sender_response_detail.sender == "user_chat") {
-								if (sender_response_detail.type == "image_only") {
-									botmanChatWidget.say('<img src="' + sender_response_detail.response +
-										'" alt="attach" width="120" height="120">');
-								}
+											if (sender_response_detail.sender == "user_chat") {
+												if (sender_response_detail.type == "image_only") {
+													botmanChatWidget.say('<img src="' + sender_response_detail.response +
+														'" alt="attach" width="120" height="120">');
+												}
 
-								if (sender_response_detail.type == "text_only") {
-									botmanChatWidget.say(sender_response_detail.response);
-								}
-							}
+												if (sender_response_detail.type == "text_only") {
+													introMessage: 'Hi, saya Lela. Saya di sini untuk membantu anda dan menjawab persoalan anda.',
+													mainColor: '#c32508',
+													aboutText: '',
+													bubbleBackground: '#c32508',
+													headerTextColor: '#fff',
+													desktopHeight: 500,
+													desktopWidth: 400,
+													bubbleAvatarUrl: '{{ asset('images/chatbot.png') }}',
+													placeholderText: 'Hantar Pesanan..',
+													frameEndpoint: "{{ route('chat_widget', ['chat_id' => $chat_id]) }}",
+													userId: "{{ $chat_id }}"
+												};
 
-							if (sender_response_detail.sender == "bot") {
-								if (sender_response_detail.type == "image_only") {
-									botmanChatWidget.sayAsBot('<img src="' + sender_response_detail.response +
-										'" alt="attach" width="120" height="120">');
-								}
+												window.addEventListener("message", (event) => {
 
-								if (sender_response_detail.type == "text_only") {
-									botmanChatWidget.sayAsBot(sender_response_detail.response);
-								}
-							}
-						}
-					});
-				}
-			}
-		});
+															// console.log(event);
+
+															if (event.data != "") {
+																let data = event.data;
+
+																if (data.status == 200) {
+																	let messages = data.messages;
+
+																	messages.forEach(row => {
+
+																			if (row.text == "DataACK") {
+																				sender_response_detail = row
+																					.additionalParameters;
+
+																				if (sender_response_detail.sender ==
+																					"user_chat") {
+																					if (sender_response_detail.type ==
+																						"image_only") {
+																						botmanChatWidget.say('<img src="' +
+																							sender_response_detail
+																							.response +
+																							'" alt="attach" width="120" height="120">'
+																							);
+																					}
+
+																					if (sender_response_detail.type ==
+																						"text_only") {
+																						botmanChatWidget.say(
+																							sender_response_detail
+																							.response);
+																					}
+																				}
+
+																				if (sender_response_detail.sender ==
+																					"bot") {
+																					if (sender_response_detail.type ==
+																						"image_only") {
+																						botmanChatWidget.sayAsBot(
+																							'<img src="' +
+																							sender_response_detail
+																							.response +
+																							'" alt="attach" width="120" height="120">'
+																							);
+																					}
+
+																					if (sender_response_detail.type ==
+																						"text_only") {
+																						if (sender_response_detail
+																							.sender == "bot") {
+																							if (sender_response_detail
+																								.type == "image_only") {
+																								botmanChatWidget.sayAsBot(
+																									'<img src="' +
+																									sender_response_detail
+																									.response +
+																									'" alt="attach" width="120" height="120">'
+																									);
+																							}
+
+																							if (sender_response_detail
+																								.type == "text_only") {
+																								botmanChatWidget.sayAsBot(
+																									sender_response_detail
+																									.response);
+																							}
+																						}
+																					}
+																				});
+																			// botmanChatWidget.sayAsBot('TQ. <img src="https://botman.io/img/logo.png" alt="botsaywhat" width="20" height="20">');
+																		}
+																	}
+																});
 	</script>
 	<script src='{{ asset('packages/botman/build/js/widget.js') }}'></script>
 	<script type="text/javascript">
@@ -2599,6 +2791,8 @@
 			});
 		});
 	</script>
+	{{-- <script src='https://cdn.jsdelivr.net/npm/botman-web-widget@0/build/js/widget.js'></script> --}}
+	<script src='{{ asset('packages/botman/build/js/widget.js') }}'></script>
 
 	@yield('scripts')
 </body>

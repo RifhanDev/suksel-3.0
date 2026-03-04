@@ -9,13 +9,22 @@ class CreateOrganizationTypesTable extends Migration
     public function up(): void
     {
         Schema::create('organization_types', function (Blueprint $table) {
-            $table->id();
-            $table->string('name');
+            $table->increments('id');
+
+            $table->string('name', 45)->charset('utf8mb3')->collation('utf8mb3_general_ci');
+
+            $table->dateTime('created_at')->nullable();
+            $table->dateTime('updated_at')->nullable();
+
             $table->integer('sort_no')->nullable();
-            $table->timestamps();
+
+            $table->integer('ori_id')->nullable();
         });
     }
 
+    /**
+     * Reverse the migrations.
+     */
     public function down(): void
     {
         Schema::dropIfExists('organization_types');

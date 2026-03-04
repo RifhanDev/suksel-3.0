@@ -1,75 +1,71 @@
-@extends('layouts.modern')
+@extends('layouts.v3.master')
+
+@section('styles')
+	<link href="{{ asset('css/dashboard-cards.css') }}" rel="stylesheet">
+@endsection
+
 @section('content')
-	@php
-
-	@endphp
-
 	<!-- Page Header -->
-	<div class="page-header-modern">
-		<div class="page-pretitle">
-			<i class="ti ti-credit-card me-2"></i>Sistem Tender Online
+	<div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center mb-4">
+		<div class="mb-3 mb-lg-0">
+			<h3 class="fw-bold text-dark m-0" style="letter-spacing: -0.5px;">
+				Senarai Transaksi {{ isset($subtitle) ? ': ' . $subtitle : '' }}
+			</h3>
+			<p class="text-muted small m-0">Pengurusan transaksi Sistem e-Perolehan Selangor</p>
 		</div>
-		<h2>
-			<i class="ti ti-credit-card me-2"></i>Transaksi
-			@if (isset($subtitle2))
-				: {{ $subtitle2 }}
-			@elseif (isset($subtitle))
-				: {{ $subtitle }}
-			@endif
-		</h2>
+		<div class="d-flex flex-wrap align-items-center gap-3 bg-white px-3 py-2 rounded-2 shadow-sm border">
+			<div class="d-flex align-items-center gap-2">
+				<span class="badge bg-light text-dark border">TARIKH</span>
+				<span class="small text-muted fw-bold">{{ date('d/m/Y') }}</span>
+			</div>
+		</div>
 	</div>
 
-	<!-- Status Cards -->
+	<!-- Transaction Status Stats -->
+	<div class="mb-2">
+		<h5 class="fw-bold text-dark mb-3">Status Transaksi {{ isset($subtitle2) ? ': ' . $subtitle2 : '' }}</h5>
+	</div>
 	@include('transactions._snaps_trans_status')
 
-	<!-- Type Cards -->
+	<!-- Transaction Type Stats -->
+	<div class="mb-2">
+		<h5 class="fw-bold text-dark mb-3">Jenis Transaksi</h5>
+	</div>
 	@include('transactions._snaps')
 
-	<!-- Main Card -->
-	<div class="card modern-card">
-		<div class="card-header" style="background: white; border-bottom: 1px solid #e9ecef;">
-			<h3 class="card-title-modern mb-0">
-				<i class="ti ti-list"></i>
-				Senarai Transaksi
-			</h3>
+	<!-- Main Table Card -->
+	<div class="stats-card p-0">
+		<div class="stats-card-header p-4 pb-3 border-bottom">
+			<div class="d-flex align-items-center gap-3">
+				<div class="stats-card-icon" style="width: 38px; height: 38px;">
+					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+						stroke-linecap="round" stroke-linejoin="round">
+						<rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+						<line x1="1" y1="10" x2="23" y2="10"></line>
+					</svg>
+				</div>
+				<h3 class="stats-card-title" style="font-size: 1rem;">Senarai Transaksi</h3>
+			</div>
 		</div>
-		<div class="card-body">
+
+		<!-- Table Body -->
+		<div class="stats-card-body p-2">
 			<div class="table-responsive">
 				<table
 					data-path="{{ action('TransactionsController@index') }}?state={{ isset($transaction_type) ? $transaction_type : '' }}&status={{ isset($transaction_status) ? $transaction_status : '' }}"
-					class="DT-index table modern-table table-hover">
-					<thead>
+					class="DT-index table table-hover align-middle mb-0 w-100">
+					<thead class="bg-light">
 						<tr>
-							<th>
-								<i class="ti ti-calendar me-1"></i>Tarikh &amp; Masa
-							</th>
-							<th>
-								<i class="ti ti-building me-1"></i>Nama Syarikat
-							</th>
-							<th>
-								<i class="ti ti-hash me-1"></i>No Transaksi
-							</th>
-							<th>
-								<i class="ti ti-key me-1"></i>No Rujukan Gateway
-							</th>
-							<th>
-								<i class="ti ti-receipt me-1"></i>No Resit
-							</th>
-							<th>
-								<i class="ti ti-category me-1"></i>Jenis
-							</th>
-							<th>
-								<i class="ti ti-credit-card me-1"></i>Saluran
-							</th>
-							<th>
-								<i class="ti ti-currency-dollar me-1"></i>Jumlah
-							</th>
-							<th>
-								<i class="ti ti-info-circle me-1"></i>Status
-							</th>
-							<th class="col-lg-1">
-								<i class="ti ti-settings me-1"></i>Tindakan
-							</th>
+							<th class="text-uppercase text-muted small fw-bold py-3 ps-4">Tarikh & Masa</th>
+							<th class="text-uppercase text-muted small fw-bold py-3">Nama Syarikat</th>
+							<th class="text-uppercase text-muted small fw-bold py-3">No Transaksi</th>
+							<th class="text-uppercase text-muted small fw-bold py-3">No Rujukan Gateway</th>
+							<th class="text-uppercase text-muted small fw-bold py-3">No Resit</th>
+							<th class="text-uppercase text-muted small fw-bold py-3">Jenis</th>
+							<th class="text-uppercase text-muted small fw-bold py-3">Saluran</th>
+							<th class="text-uppercase text-muted small fw-bold py-3">Jumlah</th>
+							<th class="text-uppercase text-muted small fw-bold py-3">Status</th>
+							<th class="text-uppercase text-muted small fw-bold py-3 pe-4">Tindakan</th>
 						</tr>
 					</thead>
 					<tbody></tbody>
@@ -81,55 +77,6 @@
 
 
 @section('scripts')
-	{{-- <script src="{{ asset('js/datatables.js') }}"></script>
-	<script type="text/javascript">
-		$('.DT-index').each(function(){
-		  	var target = $(this);
-		  	var path = target.data('path');
-		  	var DT = target.DataTable({
-		    	ajax: path,
-    	    	columns: [
-		            { data: 'created_at', name: 'created_at' },
-		            { data: 'name', name: 'vendors.name' },
-		            { data: 'number', name: 'number' },
-		            { data: 'gateway_reference', name: 'gateway_reference' },
-		            { data: 'no_resit', name: 'no_resit' },
-		            { data: 'type', name: 'type' },
-		            { data: 'method', name: 'method' },
-		            { data: 'amount', name: 'amount' },
-		            { data: 'status', name: 'status' },
-		            { data: 'actions', name: 'actions' },
-		      ],
-		    	serverSide: true,
-		    	stateSave: true,
-		    	language: {
-		      	sEmptyTable: "Tiada data",
-			      sInfo: "Paparan dari _START_ hingga _END_ dari _TOTAL_ rekod",
-			      sInfoEmpty: "Paparan 0 hingga 0 dari 0 rekod",
-			      sInfoFiltered: "(Ditapis dari jumlah _MAX_ rekod)",
-			      sInfoPostFix: "",
-			      sInfoThousands: ",",
-			      sLengthMenu: "Papar _MENU_ rekod",
-			      sLoadingRecords: "Diproses...",
-			      sProcessing: "Sedang diproses...",
-			      sSearch: "Carian:",
-			      sZeroRecords: "Tiada padanan rekod yang dijumpai.",
-			      oPaginate: {
-			      sFirst: "Pertama",
-			      sPrevious: "Sebelum",
-			      sNext: "Kemudian",
-			      sLast: "Akhir"
-		      },
-		      oAria: {
-		        	sSortAscending: ": diaktifkan kepada susunan lajur menaik",
-		        	sSortDescending: ": diaktifkan kepada susunan lajur menurun"
-		      }
-		   },
-		   aaSorting: []
-			});
-		});
-	</script> --}}
-
 	<link href="{{ asset('custom_library/dataTables/jquery.dataTables.css') }}" rel="stylesheet">
 	<script src="{{ asset('custom_library/dataTables/jquery.dataTables.js') }}"></script>
 
@@ -137,21 +84,20 @@
 		$(document).ready(function() {
 			updateFpxCount();
 
-			// Update count every second
+			// Update count every 20 seconds
 			setInterval(function() {
 				updateFpxCount1();
-			}, 20000); // Do this every 20 seconds
+			}, 20000);
 
-
+			// Update count every 30 seconds
 			setInterval(function() {
 				updateFpxCount2();
-			}, 30000); // Do this every 30 seconds
+			}, 30000);
 
-
-			// Check payment transaction status every 10 minute
+			// Check payment transaction status every 4 minutes
 			setInterval(function() {
 				updateFpxRequery();
-			}, 240000); // Do this every 5 minutes
+			}, 240000);
 		});
 
 		function updateFpxCount() {
@@ -346,7 +292,6 @@
 					name: 'actions'
 				},
 			],
-			serverSide: true,
 			stateSave: true,
 			language: {
 				"url": "{{ asset('custom_library/dataTables/lang/ms.json') }}"

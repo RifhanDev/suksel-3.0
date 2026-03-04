@@ -1,4 +1,4 @@
-@extends('layouts.modern')
+@extends('layouts.v3.master')
 
 @section('content')
 	{!! Former::open(url('roles/' . $role->id)) !!}

@@ -45,9 +45,10 @@ class NewsController extends Controller
 					return $news->agency->name;
 				})
 				->editColumn('title', function ($news) {
-					$string = '';
-					$string .= '<h4>' . $news->title . '</h4>';
-					$string .= '<p>' . Str::words($news->notification, 20) . '</p>';
+					$string = '<div class="news-content">';
+					$string .= '<div class="news-title">' . $news->title . '</div>';
+					$string .= '<div class="news-excerpt">' . Str::words($news->notification, 25) . '</div>';
+					$string .= '</div>';
 					return $string;
 				})
 				->addColumn('actions', function ($news) {

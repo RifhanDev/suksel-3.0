@@ -1,4 +1,4 @@
-@extends('layouts.modern')
+@extends('layouts.modernLanding')
 @section('content')
 
 	<div class="row">
@@ -8,8 +8,8 @@
 					<div id="MainMenu">
 						<div class="list-group panel">
 							<!-- VENDOR -->
-							<a href="#syarikat" class="list-group-item list-group-item-success" data-toggle="collapse"
-								data-parent="#MainMenu">SYARIKAT<i class="fa fa-caret-down"></i></a>
+							<a href="#syarikat" class="list-group-item list-group-item-success" data-bs-toggle="collapse"
+								data-bs-parent="#MainMenu">SYARIKAT<i class="fa fa-caret-down"></i></a>
 							<div class="collapse" id="syarikat">
 								<a href="{{ asset('manuals/pendaftaran') }}" class="list-group-item">Daftar Syarikat</a>
 								<a href="{{ asset('manuals/pengesahan_syarikat') }}" class="list-group-item">Pengesahan Syarikat</a>
@@ -24,8 +24,8 @@
 							</div>
 							<!-- REGISTRATION ASSESSOR -->
 							@if ($user->ability(['Admin'], ['Vendor:approve']))
-								<a href="#umum" class="list-group-item list-group-item-success" data-toggle="collapse"
-									data-parent="#MainMenu">PENGESAHAN<i class="fa fa-caret-down"></i></a>
+								<a href="#umum" class="list-group-item list-group-item-success" data-bs-toggle="collapse"
+									data-bs-parent="#MainMenu">PENGESAHAN<i class="fa fa-caret-down"></i></a>
 								<div class="collapse" id="umum">
 									<a href="{{ action('ManualsController@show', 'pengesahan_pendaftaran') }}" class="list-group-item">Pegesahan
 										Pendaftaran</a>
@@ -35,8 +35,8 @@
 							@endif
 							<!-- AGENCY USER -->
 							@if ($user->ability(['Admin'], ['Tender:create']))
-								<a href="#tender" class="list-group-item list-group-item-success" data-toggle="collapse"
-									data-parent="#MainMenu">TENDER<i class="fa fa-caret-down"></i></a>
+								<a href="#tender" class="list-group-item list-group-item-success" data-bs-toggle="collapse"
+									data-bs-parent="#MainMenu">TENDER<i class="fa fa-caret-down"></i></a>
 								<div class="collapse" id="tender">
 									<a href="{{ action('ManualsController@show', 'tambah_tender') }}" class="list-group-item">TAMBAH TENDER</a>
 									<a href="{{ action('ManualsController@show', 'siar') }}" class="list-group-item">SIAR/BATAL SIAR TENDER</a>
@@ -46,8 +46,8 @@
 							@endif
 							<!-- AGENCY ADMIN -->
 							@if ($user->ability(['Admin', 'Agency Admin'], []))
-								<a href="#aadmin" class="list-group-item list-group-item-success" data-toggle="collapse"
-									data-parent="#MainMenu">PENGURUSAN TENDER<i class="fa fa-caret-down"></i></a>
+								<a href="#aadmin" class="list-group-item list-group-item-success" data-bs-toggle="collapse"
+									data-bs-parent="#MainMenu">PENGURUSAN TENDER<i class="fa fa-caret-down"></i></a>
 								<div class="collapse" id="aadmin">
 									@if ($user->ability(['Admin'], []))
 										<a href="{{ action('ManualsController@show', 'senarai_hitam_admin') }}" class="list-group-item">TAMBAH SENARAI
@@ -62,16 +62,16 @@
 							@endif
 							<!-- AGENCY ADMIN -->
 							@if ($user->ability(['Admin', 'Agency Admin'], []))
-								<a href="#aadmin-akses" class="list-group-item list-group-item-success" data-toggle="collapse"
-									data-parent="#MainMenu">PENGURUSAN AKSES PENGGUNA<i class="fa fa-caret-down"></i></a>
+								<a href="#aadmin-akses" class="list-group-item list-group-item-success" data-bs-toggle="collapse"
+									data-bs-parent="#MainMenu">PENGURUSAN AKSES PENGGUNA<i class="fa fa-caret-down"></i></a>
 								<div class="collapse" id="aadmin-akses">
 									<a href="{{ action('ManualsController@show', 'mohon_id_agensi') }}" class="list-group-item">PERMOHONAN PENGGUNA
 										AGENSI</a>
 									<a href="{{ action('ManualsController@show', 'nilai_id_agensi') }}" class="list-group-item">PENILAIAN PENGGUNA
 										AGENSI</a>
 								</div>
-								<a href="#aadmin-semak" class="list-group-item list-group-item-success" data-toggle="collapse"
-									data-parent="#MainMenu">SEMAK AKSES PENGGUNA<i class="fa fa-caret-down"></i></a>
+								<a href="#aadmin-semak" class="list-group-item list-group-item-success" data-bs-toggle="collapse"
+									data-bs-parent="#MainMenu">SEMAK AKSES PENGGUNA<i class="fa fa-caret-down"></i></a>
 								<div class="collapse" id="aadmin-semak">
 									<a href="{{ action('ManualsController@show', 'semak_akaun') }}" class="list-group-item">SEMAK AKAUN</a>
 									<a href="{{ action('ManualsController@show', 'status_semak') }}" class="list-group-item">PAPAR STATUS SEMAK
@@ -83,8 +83,8 @@
 				@else
 					<div id="MainMenu">
 						<div class="list-group panel">
-							<a href="#public" class="list-group-item list-group-item-success" data-toggle="collapse"
-								data-parent="#MainMenu">UMUM<i class="fa fa-caret-down"></i></a>
+							<a href="#public" class="list-group-item list-group-item-success" data-bs-toggle="collapse"
+								data-bs-parent="#MainMenu">UMUM<i class="fa fa-caret-down"></i></a>
 							<div class="collapse" id="public">
 								<a href="{{ action('ManualsController@show', 'pendaftaran') }}" class="list-group-item">DAFTAR SYARIKAT</a>
 								<a href="{{ action('ManualsController@show', 'forgot_pass') }}" class="list-group-item">LUPA KATA LALUAN</a>
