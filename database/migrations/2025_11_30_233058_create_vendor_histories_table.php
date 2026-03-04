@@ -21,7 +21,7 @@ return new class extends Migration
             $table->integer('user_id');
             $table->string('rejection_reason');
             $table->string('rejection_template_id')->nullable();
-            
+
             $table->timestamp('created_at')->useCurrent();
 
             $table->index('action');

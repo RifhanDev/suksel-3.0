@@ -19,14 +19,14 @@ return new class extends Migration
             $table->timestamps(0);
 
             $table->foreign('vendor_id')
-                  ->references('id')->on('vendors')
-                  ->onDelete('cascade')
-                  ->onUpdate('cascade');
+                ->references('id')->on('vendors')
+                ->onDelete('cascade')
+                ->onUpdate('cascade');
 
             $table->foreign('visit_id')
-                  ->references('id')->on('tender_visits')
-                  ->onDelete('cascade')
-                  ->onUpdate('cascade');
+                ->references('id')->on('tender_visits')
+                ->onDelete('cascade')
+                ->onUpdate('cascade');
 
             $table->index('vendor_id');
             $table->index('visit_id');
