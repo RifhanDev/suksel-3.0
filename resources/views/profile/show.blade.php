@@ -1,4 +1,4 @@
-@extends('layouts.modern')
+@extends('layouts.v3.master')
 @section('content')
 	<?php $user = Auth::user(); ?>
 	<h2 class="tender-title">Profil Saya</h2>

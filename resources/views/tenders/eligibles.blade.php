@@ -1,4 +1,4 @@
-@extends('layouts.modern')
+@extends('layouts.v3.master')
 
 @section('styles')
 	<link href="{{ asset('css/application.css') }}" rel="stylesheet">

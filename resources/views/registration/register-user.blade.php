@@ -1,4 +1,4 @@
-@extends('layouts.modern')
+@extends('layouts.v3.master')
 @section('content')
 	<h2>Pendaftaran Pengguna</h2>
 
@@ -11,7 +11,7 @@
 	<div class="portlet box">
 		<div class="portlet-body ">
 			{!! Former::open(action('RegistrationController@storeRegisterUser'))->addClass('form-uppercase')->autocomplete('false') !!}
-			
+
 			<div>
 				{!! Former::select('organization_unit_id')->label('Agensi')->options(App\OrganizationUnit::pluck('name', 'id'))->required() !!}
 				{!! Former::select('role_applied')->label('Peranan')->options(App\Role::where('name', 'like', 'Agency%')->pluck('name', 'id'), null)->required() !!}

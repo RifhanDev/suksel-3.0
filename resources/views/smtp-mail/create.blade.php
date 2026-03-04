@@ -1,4 +1,4 @@
-@extends('layouts.modern')
+@extends('layouts.v3.master')
 @section('content')
 	<h2>Tambah Email SMTP</h2>
 	<hr>
@@ -104,7 +104,7 @@
 			$("#modal_body").empty();
 			$("#modal_body").append(
 				"Sila Masukkan Destinasi Email yang ingin dihantar : <input class='form-control' type='email' id='target_email' name='target_email' value='' />"
-				);
+			);
 			$("#modal_body").append("<input type='hidden' id='mail_host' name='mail_host' value='" + $("#mail_server").val() +
 				"' />");
 			$("#modal_body").append("<input type='hidden' id='mail_port' name='mail_port' value='" + $("#mail_port").val() +

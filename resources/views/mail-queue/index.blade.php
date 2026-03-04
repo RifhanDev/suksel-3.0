@@ -1,4 +1,4 @@
-@extends('layouts.modern')
+@extends('layouts.v3.master')
 @section('content')
 	<h2 class="pull-left">
 		Rekod Penghantaran Email
@@ -33,7 +33,10 @@
 			processing: true,
 			serverSide: true,
 			pageLength: 100, // papar 100 rekod setiap halaman
-			lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
+			lengthMenu: [
+				[10, 25, 50, 100],
+				[10, 25, 50, 100]
+			],
 			ajax: path,
 			columnDefs: [{
 				"targets": [1],

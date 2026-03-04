@@ -1,4 +1,4 @@
-@extends('layouts.modern')
+@extends('layouts.v3.master')
 @section('content')
 	<h2 class="tender-title">Kemaskini Kata Laluan</h2>
 	{!! Former::open(action('ProfileController@doChangePassword'))->autocomplete('off') !!}
