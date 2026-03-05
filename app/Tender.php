@@ -1119,7 +1119,7 @@ class Tender extends Model
 			->where('tender_id', $this->id)
 			->whereIn('jenis_jawatankuasa', $requiredJenis)
 			->whereNotNull('user_id')
-			->get(['jenis_jawatankuasa', 'peranan', 'user_id']);
+			->get(['jenis_jawatankuasa', 'peranan', 'user_id', 'dihantar_pemakluman_pada']);
 
 		foreach ($requiredJenis as $jenis) {
 			$jenisRecords = $jawatankuasas->where('jenis_jawatankuasa', $jenis);
@@ -1134,9 +1134,18 @@ class Tender extends Model
 				}
 			}
 
-			if ($jenisRecords->pluck('user_id')->filter()->unique()->count() < 3) {
-				return false;
-			}
+			// if ($jenisRecords->pluck('user_id')->filter()->unique()->count() < 3) {
+			// 	return false;
+			// }
+		}
+
+		// All members must have been notified (dihantar_pemakluman_pada not null)
+		$hasUnnotified = $jawatankuasas->contains(function ($row) {
+			return empty($row->dihantar_pemakluman_pada);
+		});
+
+		if ($hasUnnotified) {
+			return false;
 		}
 
 		return true;

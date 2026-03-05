@@ -110,6 +110,44 @@
         }
 
         /* =====================
+            PAGE OVERLAY
+        ===================== */
+        #pageOverlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.45);
+            z-index: 9999;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 14px;
+        }
+
+        #pageOverlay.active {
+            display: flex;
+        }
+
+        #pageOverlay .overlay-spinner {
+            width: 48px;
+            height: 48px;
+            border: 5px solid rgba(255,255,255,0.3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        #pageOverlay .overlay-text {
+            color: #fff;
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* =====================
             CATATAN BOX
         ===================== */
         .catatan-box {
@@ -269,6 +307,12 @@
 
             </div>
         </div>
+    </div>
+
+    <!-- PAGE BLOCK OVERLAY -->
+    <div id="pageOverlay">
+        <div class="overlay-spinner"></div>
+        <div class="overlay-text" id="overlayText">Menghantar pemakluman...</div>
     </div>
 @endsection
 
@@ -649,11 +693,11 @@
                         return;
                     }
 
-                    const hantarButtons = Array.from(document.querySelectorAll('.btn-hantar'));
-                    hantarButtons.forEach(function(b) {
-                        b.disabled = true;
-                        b.textContent = 'Menghantar...';
-                    });
+                    const overlay = document.getElementById('pageOverlay');
+                    const overlayText = document.getElementById('overlayText');
+
+                    overlay.classList.add('active');
+                    overlayText.textContent = 'Menghantar pemakluman...';
 
                     $.ajax({
                         url: hantarPemaklumanUrl,
@@ -665,20 +709,16 @@
                         },
                         dataType: 'json',
                         success: function(res) {
+                            overlay.classList.remove('active');
                             alert(res.message || 'Pemakluman berjaya dihantar.');
-                            window.location.href = '/tenders';
+                            window.location.href = '/tender';
                         },
                         error: function(xhr) {
+                            overlay.classList.remove('active');
                             const message = (xhr && xhr.responseJSON && xhr.responseJSON.message)
                                 ? xhr.responseJSON.message
                                 : 'Hantar pemakluman gagal. Sila cuba semula.';
                             alert(message);
-                        },
-                        complete: function() {
-                            hantarButtons.forEach(function(b) {
-                                b.disabled = false;
-                                b.textContent = 'Hantar Pemakluman';
-                            });
                         }
                     });
                 });

@@ -234,7 +234,7 @@ class OrganizationUnitsController extends Controller
 					$string[] = '<small><strong>' . $tender->ref_number . '</strong></small>';
 					if(!auth()->check())
 					{
-						$string[] = link_to_route('tenders.show', $tender->name, $tender->id, ['class' => 'table-tender-title']);
+						$string[] = link_to_route('tender.show', $tender->name, $tender->id, ['class' => 'table-tender-title']);
 					}
 					else
 					{
@@ -359,7 +359,7 @@ class OrganizationUnitsController extends Controller
 				{
 					$str   = [];
 					$str[] = '<div class="btn-group btn-group-vertical">';
-					if (empty($tender->approver_id)) $str[] = link_to_route('tenders.edit', 'Kemaskini', $tender->id, ['class' => 'btn btn-xs btn-primary']);
+					if (empty($tender->approver_id)) $str[] = link_to_route('tender.edit', 'Kemaskini', $tender->id, ['class' => 'btn btn-xs btn-primary']);
 					if ($tender->canCancel() && $tender->approver_id > 0)
 						$str[] = link_to_action('TendersController@cancel', 'Batal Siar', $tender->id, ['class' => 'btn btn-xs btn-danger']);
 					if ($tender->canUpdate() && empty($tender->approver_id))
@@ -480,7 +480,7 @@ class OrganizationUnitsController extends Controller
 				->editColumn('name', function ($tender) {
 					$string   = [];
 					$string[] = '<small><strong>' . $tender->ref_number . '</strong></small>';
-					$string[] = link_to_route('tenders.show', $tender->name, $tender->id, ['class' => 'table-tender-title']);
+					$string[] = link_to_route('tender.show', $tender->name, $tender->id, ['class' => 'table-tender-title']);
 
 					if ($tender->briefing_required) {
 						$string[] = '';
@@ -587,7 +587,7 @@ class OrganizationUnitsController extends Controller
 				$datatable = $datatable->addColumn('actions', function ($tender) {
 					$str   = [];
 					$str[] = '<div class="btn-group btn-group-vertical">';
-					if (empty($tender->approver_id)) $str[] = link_to_route('tenders.edit', 'Kemaskini', $tender->id, ['class' => 'btn btn-xs btn-primary']);
+					if (empty($tender->approver_id)) $str[] = link_to_route('tender.edit', 'Kemaskini', $tender->id, ['class' => 'btn btn-xs btn-primary']);
 					if ($tender->canCancel() && $tender->approver_id > 0)
 						$str[] = link_to_action('TendersController@cancel', 'Batal Siar', $tender->id, ['class' => 'btn btn-xs btn-danger']);
 					if ($tender->canUpdate() && empty($tender->approver_id))

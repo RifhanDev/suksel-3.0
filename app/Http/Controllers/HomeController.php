@@ -98,7 +98,7 @@ class HomeController extends Controller
 					$string   = [];
 					$string[] = '<strong><u>' . $tender->tenderer->name . '</u></strong>';
 					$string[] = '<small><strong>' . $tender->ref_number . '</strong></small>';
-					$string[] = '<a class="table-tender-title" href="' . route('tenders.show', $tender->id) . '">' . $tender->name . '</a>';
+					$string[] = '<a class="table-tender-title" href="' . route('tender.show', $tender->id) . '">' . $tender->name . '</a>';
 
 					if ($tender->briefing_required) {
 						$string[] = '';
@@ -515,7 +515,7 @@ class HomeController extends Controller
 						$string[] = '<small><strong>' . $tender->ref_number . '</strong></small>';
 						if(!auth()->check())
 						{
-							$string[] = link_to_route('tenders.show', $tender->name, $tender->id, ['class' => 'table-tender-title']);
+							$string[] = link_to_route('tender.show', $tender->name, $tender->id, ['class' => 'table-tender-title']);
 						}
 						else
 						{
