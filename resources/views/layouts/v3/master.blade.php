@@ -684,7 +684,8 @@
     <!-- Bootstrap Datepicker -->
     <script src="{{ asset('packages/bootstrap-datepicker/js/bootstrap-datepicker.js') }}"></script>
     {{-- <script src="https://cdn.jsdelivr.net/npm/@tabler/core@1.4.0/dist/js/tabler.min.js"></script> --}}
-    <script src="https://cdn.datatables.net/v/dt/dt-2.3.5/datatables.min.js" integrity="sha384-qH0inyYSCOpaLgM/WSarLVnq0ULwworkGFzUI+E6bpx0DUCIsJePT0TRDnLnkcU1" crossorigin="anonymous"></script>
+    <!-- DataTables JS (local 1.10.2 with Bootstrap extension) -->
+    <script src="{{ asset('js/datatables.js') }}"></script>
 
     <script>
         $(document).ready(function() {

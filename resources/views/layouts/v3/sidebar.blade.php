@@ -75,14 +75,12 @@
                                                 Tender</span>
                                         </a></li>
                                 @else
-                                    <li><a class="submenu-item"
-                                            href="{{ asset('agencies/' . Auth::user()->organization_unit_id) }}">
-                                            <div class="submenu-icon"
-                                                style="{{ request()->is('agencies/*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}">
-                                            </div>
-                                            <span class="{{ request()->is('agencies/*') ? 'text-white' : '' }}">Senarai
-                                                Tender</span>
-                                        </a></li>
+                                    <li>
+                                        <a class="submenu-item" href="{{ asset('agency/' . Auth::user()->organization_unit_id) }}">
+                                            <div class="submenu-icon" style="{{ request()->is('agency/*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}"></div>
+                                            <span class="{{ request()->is('agency/*') ? 'text-white' : '' }}">Senarai Tender</span>
+                                        </a>
+                                    </li>
                                 @endif
                             @endif
                             @if (App\Vendor::canList())

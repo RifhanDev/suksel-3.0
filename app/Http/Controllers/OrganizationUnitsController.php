@@ -213,6 +213,7 @@ class OrganizationUnitsController extends Controller
 			$tenders = $tenders->select(
 			[
 				'id',
+			'uuid',
 				'name',
 				'document_start_date',
 				'submission_datetime',
@@ -282,7 +283,10 @@ class OrganizationUnitsController extends Controller
 			})
 			->addColumn('status', function ($tender)
 			{
-				return $tender->status;
+				if ($tender->status === 'Tiada Jawatan Kuasa' && auth()->check() && auth()->user()->ability([], ['committee:create'])) {
+				                    return '<a href="/pelantikan-jawatankuasa?tender=' . $tender->uuid . '" class="btn btn-xs btn-warning">Lantik Jawatan Kuasa</a>';
+				                }
+				                return '';
 			})
 			->addColumn('codes', function ($tender)
 			{
@@ -396,7 +400,7 @@ class OrganizationUnitsController extends Controller
 				->removeColumn('briefing_required')
 				->removeColumn('briefing_datetime')
 				->removeColumn('briefing_address')
-				->rawColumns(['name', 'codes', 'document_start_date', 'submission_datetime', 'price', 'actions', 'report'])
+				->rawColumns(['name', 'codes', 'document_start_date', 'submission_datetime', 'price', 'status', 'actions', 'report'])
 				->make();
 		}
 
@@ -460,6 +464,7 @@ class OrganizationUnitsController extends Controller
 		if ($request->ajax()) {
 			$tenders = $tenders->select([
 				'id',
+			'uuid',
 				'name',
 				'document_start_date',
 				'submission_datetime',
@@ -516,7 +521,10 @@ class OrganizationUnitsController extends Controller
 					return sprintf('RM %.2f', $tender->price);
 				})
 				->addColumn('status', function ($tender) {
-					return $tender->status;
+					if ($tender->status === 'Tiada Jawatan Kuasa' && auth()->check() && auth()->user()->ability([], ['committee:create'])) {
+					                    return '<a href="/pelantikan-jawatankuasa?tender=' . $tender->uuid . '" class="btn btn-xs btn-warning">Lantik Jawatan Kuasa</a>';
+					                }
+					                return '';
 				})
 				->addColumn('codes', function ($tender) {
 					$string = '';
@@ -620,7 +628,7 @@ class OrganizationUnitsController extends Controller
 				->removeColumn('briefing_required')
 				->removeColumn('briefing_datetime')
 				->removeColumn('briefing_address')
-				->rawColumns(['name', 'codes', 'document_start_date', 'submission_datetime', 'price', 'actions', 'report'])
+				->rawColumns(['name', 'codes', 'document_start_date', 'submission_datetime', 'price', 'status', 'actions', 'report'])
 				->make();
 		}
 
@@ -738,6 +746,7 @@ class OrganizationUnitsController extends Controller
 			$news = $news->select(
 			[
 				'id',
+			'uuid',
 				'created_at',
 				'title',
 				'notification',
@@ -779,6 +788,7 @@ class OrganizationUnitsController extends Controller
 			$news = News::where('organization_unit_id', $organizationunit->id)->where('publish', 1)->orderBy('published_at', 'desc');
 			$news = $news->select([
 				'id',
+			'uuid',
 				'created_at',
 				'title',
 				'notification',
