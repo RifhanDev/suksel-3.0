@@ -33,6 +33,8 @@ class SendEmailJob implements ShouldQueue
      */
     public function handle()
     {
+        ob_start();
         $this->trigger_mail_server($this->unique_id);
+        ob_end_clean();
     }
 }

@@ -41,60 +41,113 @@ hr{
 /* ========================
    STEPPER
 ======================== */
-.progress-nav{
-    background:#FFFFFF;
-    border-radius:12px;
-    padding:20px;
-    border:1px solid #E5E7EB;
+:root{
+    --sg-red:#C4161C;
+    --sg-red-dark:#9F1216;
+    --step-grey:#E5E7EB;
+    --text-grey:#6B7280;
 }
 
-.progress-bar-tab{
+/* ========================
+   STEPPER WRAPPER
+======================== */
+.progress-wrapper{
     display:flex;
     justify-content:space-between;
+    align-items:flex-start;
+    position:relative;
+    margin:20px 0;
+    padding:10px 20px;
 }
 
-.progress-bar-tab .nav-item{
+/* ========================
+   STEPPER ITEM
+======================== */
+.progress-step{
     flex:1;
     text-align:center;
     position:relative;
 }
 
-.progress-bar-tab .nav-link{
-    margin:auto;
-    width:42px;
-    height:42px;
+/* ========================
+   CONNECTOR LINE
+======================== */
+.progress-step:not(:last-child)::after{
+    content:'';
+    position:absolute;
+    top:22px;                 /* aligns with circle center */
+    left:50%;
+    width:100%;
+    height:3px;
+    background:var(--step-grey);
+    z-index:0;
+}
+
+/* Active / completed connector */
+.progress-step.done:not(:last-child)::after,
+.progress-step.active:not(:last-child)::after{
+    background:var(--sg-red);
+}
+
+/* Reset future connectors */
+.progress-step.active ~ .progress-step:not(:last-child)::after{
+    background:var(--step-grey);
+}
+
+/* ========================
+   STEP CIRCLE
+======================== */
+.step-number{
+    width:36px;
+    height:36px;
     border-radius:50%;
-    background:#1E3A8A;
-    color:white;
+    background:var(--step-grey);
+    color:#374151;
     font-weight:700;
     display:flex;
     align-items:center;
     justify-content:center;
+    margin:0 auto;
     border:none;
+    position:relative;
+    z-index:2;                /* ABOVE line */
+    cursor:pointer;
 }
 
-.progress-bar-tab .nav-link.active{
-    background:#10B981;
+/* Active & done circle */
+.progress-step.active .step-number,
+.progress-step.done .step-number{
+    background:var(--sg-red);
+    color:#fff;
 }
 
-/* label bawah step */
-.progress-bar-tab .nav-item::after{
-    content:attr(role);
-    display:block;
+/* ========================
+   STEP LABEL
+======================== */
+.step-label{
     margin-top:8px;
     font-size:13px;
-    color:#374151;
-    font-weight:500;
+    color:var(--text-grey);
+    line-height:1.3;
 }
 
-/* connector */
-.progress{
-    height:2px!important;
-    background:#E5E7EB;
+/* Active & done label */
+.progress-step.active .step-label,
+.progress-step.done .step-label{
+    color:var(--sg-red-dark);
+    font-weight:600;
 }
 
-.progress-bar{
-    background:#1E3A8A!important;
+/* ========================
+   OPTIONAL UX ENHANCEMENTS
+======================== */
+.progress-step:hover .step-number{
+    transform:scale(1.05);
+    transition:0.2s;
+}
+
+.progress-step:hover .step-label{
+    color:var(--sg-red-dark);
 }
 
 /* =========================
@@ -110,7 +163,7 @@ hr{
 }
 
 /* ==========================
-   SUB TABS (Teknikal | Rumusan)
+   SUB TABS 
 ========================== */
 .custom-tab-size .nav-link{
     border-radius:8px 8px 0 0;
@@ -368,210 +421,216 @@ hr{
                 </div>
             </div>
         </div>
+            <div class="row">
+                <div id="custom-progress-bar" class="progress-nav mb-4 p-2">
 
-                    <div class="row">
-                        <div id="custom-progress-bar" class="progress-nav mb-4 p-2">
-                            <div class="progress" style="height: 1px;">
-                                <div class="progress-bar" role="progressbar" style="width: 0%;" aria-valuenow="0"
-                                    aria-valuemin="0" aria-valuemax="100"></div>
+                    <ul class="nav progress-wrapper" role="tablist">
+
+                        <li class="nav-item progress-step active" role="Peringkat pematuhan cadangan teknikal">
+                            <button type="button"
+                                    id="pematuhan-tab"
+                                    class="nav-link step-number active"
+                                    data-bs-toggle="pill"
+                                    data-bs-target="#pematuhan"
+                                    role="tab">1</button>
+                            <div class="step-label">Peringkat pematuhan cadangan teknikal</div>
+                        </li>
+
+                        <li class="nav-item progress-step" role="Penilaian Spesifikasi Teknikal">
+                            <button type="button"
+                                    id="penilaian-tab"
+                                    class="nav-link step-number"
+                                    data-bs-toggle="pill"
+                                    data-bs-target="#penilaian"
+                                    role="tab">2</button>
+                            <div class="step-label">Penilaian Spesifikasi Teknikal</div>
+                        </li>
+
+                        <li class="nav-item progress-step" role="Laporan">
+                            <button type="button"
+                                    id="laporan-tab"
+                                    class="nav-link step-number"
+                                    data-bs-toggle="pill"
+                                    data-bs-target="#laporan"
+                                    role="tab">3</button>
+                            <div class="step-label">Laporan</div>
+                        </li>
+
+                    </ul>
+                </div>
+            </div>
+                <div class="tab-content px-3" id="application-content">
+
+                    <!-- Outer Tab 1 Content -->
+                    <div class="tab-pane fade show active" id="pematuhan" role="tabpanel"
+                        aria-labelledby="pematuhan-tab">
+
+                        <!-- Inner tabs for outer tab 1 -->
+                        <ul class="nav nav-pills custom-tab-size mb-3" role="tablist">
+                            <li class="nav-item waves-effect waves-light">
+                                <a class="nav-link active" data-bs-toggle="tab" href="#teknikal-1" role="tab"
+                                    aria-selected="true">Teknikal</a>
+                            </li>
+                            <li class="nav-item waves-effect waves-light">
+                                <a class="nav-link" data-bs-toggle="tab" href="#rumusan-1" role="tab"
+                                    aria-selected="false">Rumusan</a>
+                            </li>
+                        </ul>
+
+                        <div class="tab-content">
+                            <div class="tab-pane fade show active" id="teknikal-1" role="tabpanel">
+                                <!-- Content for Teknikal of progress 1 -->
+                                <h4 class="card-title card-title-grey">PEMATUHAN CADANGAN TEKNIKAL</h4>
+                                <p class="card-title-desc text-primary fst-italic">Klik butang Semak untuk meneruskan
+                                    penilaian pematuhan</p>
+                                <table class="table table-bordered dt-responsive nowrap w-100">
+                                    <thead>
+                                        <tr>
+                                            <th class="text-center">Tajuk / Dokumen</th>
+                                            <th class="text-center">Mekanisma</th>
+                                            <th class="text-center">Status Penilaian</th>
+                                            <th class="text-center">Tindakan</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td class="">Perkhidmatan Penilaian Forensik Ke atas Sistem XXXX</td>
+                                            <td class="">Spesifikasi</td>
+                                            <td class="">Menunggu Penyerahan</td>
+                                            <td class="text-center">
+                                                <button class="btn btn-success" data-bs-toggle="modal"
+                                                    data-bs-target="#modalSemakanKetepatanDokumenTeknikal">Menilai</button>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="">Surat Pengesahan Prinsipal yang lengkap ditandatangani</td>
+                                            <td class="">Petender Muat Naik</td>
+                                            <td class="">Selesai</td>
+                                            <td class="text-center">
+                                                <button class="btn btn-success">Papar</button>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="">Senarai Kakitangan Teknikal dan Carta Organisasi Pasukan Projek
+                                            </td>
+                                            <td class="">Petender Muat Naik</td>
+                                            <td class="">Selesai</td>
+                                            <td class="text-center">
+                                                <button class="btn btn-success">Papar</button>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                <div class="row mb-3 px-3">
+                                    <div class="col-md-12 d-flex justify-content-end">
+                                        <button class="btn btn-primary btn-seterusnya">Seterusnya</button>
+                                    </div>
+                                </div>
                             </div>
-                            <ul class="nav nav-pills progress-bar-tab custom-nav" role="tablist">
-                                <li class="nav-item" role="Peringkat pematuhan cadangan teknikal">
-                                    <button type="button" id="pematuhan-tab" class="nav-link rounded-pill active"
-                                        data-progressbar="custom-progress-bar" data-bs-toggle="pill"
-                                        data-bs-target="#pematuhan"
-                                        data-title="@lang('translation.application-information')" role="tab"
-                                        aria-controls="pematuhan" aria-selected="true">1</button>
-                                </li>
-                                <li class="nav-item" role="Penilaian Spesifikasi Teknikal">
-                                    <button type="button" id="penilaian-tab" class="nav-link rounded-pill"
-                                        data-progressbar="custom-progress-bar" data-bs-toggle="pill"
-                                        data-bs-target="#penilaian" data-title="@lang('translation.program-information')"
-                                        role="tab" aria-controls="penilaian" aria-selected="false">2</button>
-                                </li>
-                                <li class="nav-item" role="Laporan">
-                                    <button type="button" id="laporan-tab" class="nav-link rounded-pill"
-                                        data-progressbar="custom-progress-bar" data-bs-toggle="pill"
-                                        data-bs-target="#laporan" data-title="@lang('translation.program-information')"
-                                        role="tab" aria-controls="laporan" aria-selected="false">3</button>
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
 
+                            <div class="tab-pane fade" id="rumusan-1" role="tabpanel" aria-labelledby="rumusan-tab">
+                                <div class="container-fluid mt-3">
+                                    <!-- SECTION 1: Pembekal Melepasi -->
+                                    <div class="row">
+                                        <div class="col-12 bg-light p-2 fw-bold">
+                                            SENARAI PEMBEKAL YANG MELEPASI PENILAIAN PEMATUHAN DOKUMENTASI
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <table class="table table-bordered mt-2">
+                                                <thead class="table-primary text-center text-white">
+                                                    <tr>
+                                                        <th>Bil</th>
+                                                        <th>Ulasan</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr>
+                                                        <td class="text-center">1/2</td>
+                                                        <td class="text-center">XXX</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-center">2/2</td>
+                                                        <td class="text-center">XXX</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
 
-                    <div class="tab-content px-3" id="application-content">
+                                    <!-- Bilangan Pembekal + Checkbox -->
+                                    <div class="row my-3 align-items-center">
+                                        <div class="col-md-2 text-end fw-bold">Bilangan Pembekal</div>
+                                        <div class="col-md-1">
+                                            <input type="text" class="form-control text-center" value="2" readonly>
+                                        </div>
+                                    </div>
+                                    <div class="row mb-4">
+                                        <div class="col-md-12">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="confirmLayak">
+                                                <label class="form-check-label" for="confirmLayak">
+                                                    Saya mengesahkan petender diatas layak untuk penilaian peringkat
+                                                    seterusnya.
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
 
-                        <!-- Outer Tab 1 Content -->
-                        <div class="tab-pane fade show active" id="pematuhan" role="tabpanel"
-                            aria-labelledby="pematuhan-tab">
+                                    <!-- SECTION 2: Pembekal Tidak Melepasi -->
+                                    <div class="row">
+                                        <div class="col-12 bg-light p-2 fw-bold">
+                                            SENARAI PEMBEKAL TIDAK MELEPASI PENILAIAN PEMATUHAN DOKUMENTASI
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <table class="table table-bordered mt-2">
+                                                <thead class="table-primary text-center text-white">
+                                                    <tr>
+                                                        <th>Bil</th>
+                                                        <th>Ulasan</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr>
+                                                        <td class="text-center" colspan="2">Tiada rekod dijumpai</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
 
-                            <!-- Inner tabs for outer tab 1 -->
-                            <ul class="nav nav-pills custom-tab-size mb-3" role="tablist">
-                                <li class="nav-item waves-effect waves-light">
-                                    <a class="nav-link active" data-bs-toggle="tab" href="#teknikal-1" role="tab"
-                                        aria-selected="true">Teknikal</a>
-                                </li>
-                                <li class="nav-item waves-effect waves-light">
-                                    <a class="nav-link" data-bs-toggle="tab" href="#rumusan-1" role="tab"
-                                        aria-selected="false">Rumusan</a>
-                                </li>
-                            </ul>
+                                    <!-- Bilangan Pembekal Tidak Melepasi -->
+                                    <div class="row mb-4 align-items-center">
+                                        <div class="col-md-2 text-end fw-bold">Bilangan Pembekal</div>
+                                        <div class="col-md-1">
+                                            <input type="text" class="form-control text-center" value="0" readonly>
+                                        </div>
+                                    </div>
 
-                            <div class="tab-content">
-                                <div class="tab-pane fade show active" id="teknikal-1" role="tabpanel">
-                                    <!-- Content for Teknikal of progress 1 -->
-                                    <h4 class="card-title card-title-grey">PEMATUHAN CADANGAN TEKNIKAL</h4>
-                                    <p class="card-title-desc text-primary fst-italic">Klik butang Semak untuk meneruskan
-                                        penilaian pematuhan</p>
-                                    <table class="table table-bordered dt-responsive nowrap w-100">
-                                        <thead>
-                                            <tr>
-                                                <th class="text-center">Tajuk / Dokumen</th>
-                                                <th class="text-center">Mekanisma</th>
-                                                <th class="text-center">Status Penilaian</th>
-                                                <th class="text-center">Tindakan</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr>
-                                                <td class="">Perkhidmatan Penilaian Forensik Ke atas Sistem XXXX</td>
-                                                <td class="">Spesifikasi</td>
-                                                <td class="">Menunggu Penyerahan</td>
-                                                <td class="text-center">
-                                                    <button class="btn btn-success" data-bs-toggle="modal"
-                                                        data-bs-target="#modalSemakanKetepatanDokumenTeknikal">Menilai</button>
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td class="">Surat Pengesahan Prinsipal yang lengkap ditandatangani</td>
-                                                <td class="">Petender Muat Naik</td>
-                                                <td class="">Selesai</td>
-                                                <td class="text-center">
-                                                    <button class="btn btn-success">Papar</button>
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td class="">Senarai Kakitangan Teknikal dan Carta Organisasi Pasukan Projek
-                                                </td>
-                                                <td class="">Petender Muat Naik</td>
-                                                <td class="">Selesai</td>
-                                                <td class="text-center">
-                                                    <button class="btn btn-success">Papar</button>
-                                                </td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                    <div class="row mb-3 px-3">
+                                    <!-- Action Button -->
+                                    <div class="row mb-3">
                                         <div class="col-md-12 d-flex justify-content-end">
                                             <button class="btn btn-primary btn-seterusnya">Seterusnya</button>
                                         </div>
                                     </div>
                                 </div>
-
-                                <div class="tab-pane fade" id="rumusan-1" role="tabpanel" aria-labelledby="rumusan-tab">
-                                    <div class="container-fluid mt-3">
-                                        <!-- SECTION 1: Pembekal Melepasi -->
-                                        <div class="row">
-                                            <div class="col-12 bg-light p-2 fw-bold">
-                                                SENARAI PEMBEKAL YANG MELEPASI PENILAIAN PEMATUHAN DOKUMENTASI
-                                            </div>
-                                        </div>
-                                        <div class="row">
-                                            <div class="col-12">
-                                                <table class="table table-bordered mt-2">
-                                                    <thead class="table-primary text-center text-white">
-                                                        <tr>
-                                                            <th>Bil</th>
-                                                            <th>Ulasan</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        <tr>
-                                                            <td class="text-center">1/2</td>
-                                                            <td class="text-center">XXX</td>
-                                                        </tr>
-                                                        <tr>
-                                                            <td class="text-center">2/2</td>
-                                                            <td class="text-center">XXX</td>
-                                                        </tr>
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        </div>
-
-                                        <!-- Bilangan Pembekal + Checkbox -->
-                                        <div class="row my-3 align-items-center">
-                                            <div class="col-md-2 text-end fw-bold">Bilangan Pembekal</div>
-                                            <div class="col-md-1">
-                                                <input type="text" class="form-control text-center" value="2" readonly>
-                                            </div>
-                                        </div>
-                                        <div class="row mb-4">
-                                            <div class="col-md-12">
-                                                <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox" id="confirmLayak">
-                                                    <label class="form-check-label" for="confirmLayak">
-                                                        Saya mengesahkan petender diatas layak untuk penilaian peringkat
-                                                        seterusnya.
-                                                    </label>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <!-- SECTION 2: Pembekal Tidak Melepasi -->
-                                        <div class="row">
-                                            <div class="col-12 bg-light p-2 fw-bold">
-                                                SENARAI PEMBEKAL TIDAK MELEPASI PENILAIAN PEMATUHAN DOKUMENTASI
-                                            </div>
-                                        </div>
-                                        <div class="row">
-                                            <div class="col-12">
-                                                <table class="table table-bordered mt-2">
-                                                    <thead class="table-primary text-center text-white">
-                                                        <tr>
-                                                            <th>Bil</th>
-                                                            <th>Ulasan</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        <tr>
-                                                            <td class="text-center" colspan="2">Tiada rekod dijumpai</td>
-                                                        </tr>
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        </div>
-
-                                        <!-- Bilangan Pembekal Tidak Melepasi -->
-                                        <div class="row mb-4 align-items-center">
-                                            <div class="col-md-2 text-end fw-bold">Bilangan Pembekal</div>
-                                            <div class="col-md-1">
-                                                <input type="text" class="form-control text-center" value="0" readonly>
-                                            </div>
-                                        </div>
-
-                                        <!-- Action Button -->
-                                        <div class="row mb-3">
-                                            <div class="col-md-12 d-flex justify-content-end">
-                                                <button class="btn btn-primary">Seterusnya</button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
                             </div>
                         </div>
+                    </div>
 
-                        <!-- Outer Tab 2 Content -->
-                        <div class="tab-pane fade" id="penilaian" role="tabpanel" aria-labelledby="penilaian-tab">
+                    <!-- Outer Tab 2 Content -->
+                    <div class="tab-pane fade" id="penilaian" role="tabpanel" aria-labelledby="penilaian-tab">
 
-                            <!-- Inner tabs for outer tab 2 -->
-                            <ul class="nav nav-pills custom-tab-size mb-3" role="tablist">
-                                <li class="nav-item waves-effect waves-light">
-                                    <a class="nav-link active" data-bs-toggle="tab" href="#teknikal-2" role="tab"
-                                        aria-selected="true">Teknikal</a>
-                                </li>
-                                <li class="nav-item waves-effect waves-light">
+                        <!-- Inner tabs for outer tab 2 -->
+                        <ul class="nav nav-pills custom-tab-size mb-3" role="tablist">
+                            <li class="nav-item waves-effect waves-light">
+                                <a class="nav-link active" data-bs-toggle="tab" href="#teknikal-2" role="tab"
+                                    aria-selected="true">Teknikal</a>
+                            </li>
+                            <li class="nav-item waves-effect waves-light">
                                     <a class="nav-link" data-bs-toggle="tab" href="#rumusan-2" role="tab"
                                         aria-selected="false">Rumusan</a>
                                 </li>
@@ -619,7 +678,7 @@ hr{
                                     </table>
                                     <div class="row mb-3 px-3">
                                         <div class="col-md-12 d-flex justify-content-end">
-                                            <button class="btn btn-primary">Seterusnya</button>
+                                            <button class="btn btn-primary btn-seterusnya">Seterusnya</button>
                                         </div>
                                     </div>
                                 </div>
@@ -720,7 +779,7 @@ hr{
                                         <!-- Action Button -->
                                         <div class="row mb-3">
                                             <div class="col-md-12 d-flex justify-content-end">
-                                                <button class="btn btn-primary">Seterusnya</button>
+                                            <button class="btn btn-primary btn-seterusnya">Seterusnya</button>
                                             </div>
                                         </div>
                                     </div>
@@ -1060,52 +1119,43 @@ hr{
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
 
-            <script>
-                document.getElementById('btnSimpanSenarai').addEventListener('click', function () {
-                    const currentModal = bootstrap.Modal.getInstance(document.getElementById('senaraiSpesifikasiTeknikal'));
+<script>
+document.addEventListener('DOMContentLoaded', () => {
 
-                    currentModal.hide();
+    const steps = document.querySelectorAll('.progress-step');
+    const tabs  = document.querySelectorAll('.step-number');
 
-                    // Wait for the modal to fully hide
-                    document.getElementById('senaraiSpesifikasiTeknikal').addEventListener('hidden.bs.modal', function handler() {
-                        // Clean up lingering backdrops manually
-                        document.querySelectorAll('.modal-backdrop').forEach(backdrop => backdrop.remove());
-                        document.body.classList.remove('modal-open');
-                        document.body.style = '';
+    function updateStepper(activeIndex){
+        steps.forEach((step, i) => {
+            step.classList.remove('active','done');
 
-                        // Now show the original modal
-                        const nextModal = new bootstrap.Modal(document.getElementById('modalSpesifikasiTeknikal1'));
-                        nextModal.show();
+            if(i < activeIndex) step.classList.add('done');
+            if(i === activeIndex) step.classList.add('active');
+        });
+    }
 
-                        // Remove event listener to avoid multiple triggers
-                        document.getElementById('senaraiSpesifikasiTeknikal').removeEventListener('hidden.bs.modal', handler);
-                    });
-                });
-                
-document.addEventListener('DOMContentLoaded', function () {
-
-    document.querySelectorAll('.btn-seterusnya').forEach(btn => {
-        btn.addEventListener('click', function () {
-
-            // Find current active step button
-            const currentStep = document.querySelector('.progress-bar-tab .nav-link.active');
-            if (!currentStep) return;
-
-            // Find next step button
-            const nextStep = currentStep.closest('.nav-item')?.nextElementSibling?.querySelector('.nav-link');
-            if (!nextStep) return;
-
-            // Trigger click (Bootstrap handles tab switching)
-            nextStep.click();
+    tabs.forEach((tab, index) => {
+        tab.addEventListener('shown.bs.tab', () => {
+            updateStepper(index);
         });
     });
 
+    // Init
+    updateStepper(0);
 });
 
-            </script>
-        </div>
+// Seterusnya Button Functionality
+document.querySelectorAll('.btn-seterusnya').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+        const current = document.querySelector('.step-number.active');
+        const next = current?.closest('.progress-step')?.nextElementSibling?.querySelector('.step-number');
+        if(next) next.click();
+    });
+});
 
-    </div>
+</script>
 
 @endsection

@@ -80,7 +80,29 @@ class Tender extends Model
 		'type',
 		'only_advertise',
 		'mof_cidb_rule',
-		'district_list_rule'
+		'district_list_rule',
+		// New fields for version 3.0
+		'kaedah_perolehan_id',
+		'kategori_perolehan_id',
+		'kategori_perolehan_detail_id',
+		'jenis_tender_id',
+		'jenis_kontrak_id',
+		'lokaliti_id',
+		'no_tender',
+		'no_kontrak',
+		'sumber_lain_text',
+		'harga_indikatif',
+		'anggaran_jabatan',
+		'tarikh_dicipta',
+		'sumber_peruntukan',
+		'terbuka_kepada',
+		'tempoh_siap_val',
+		'tempoh_siap_unit',
+		'tempoh_kontrak_bulan',
+		'zon_lokasi',
+		'jawatankuasa',
+		'lawatan_tapak',
+		'penilaian_fizikal'
 	];
 
 	/**
@@ -1068,6 +1090,10 @@ class Tender extends Model
 
 	public function getStatusAttribute()
 	{
+		if (!$this->hasCompleteJawatankuasa()) {
+			return 'Tiada Jawatan Kuasa';
+		}
+
 		if (!$this->approver_id) {
 			return 'Belum Disiarkan';
 		} elseif ($this->approver_id) {
@@ -1081,6 +1107,48 @@ class Tender extends Model
 				return 'Disiarkan';
 			}
 		}
+	}
+
+	public function hasCompleteJawatankuasa()
+	{
+		$requiredJenis   = ['spec', 'open', 'tech', 'fin'];
+		$requiredPeranan = ['1', '2', '3'];
+		$tableName = DB::getSchemaBuilder()->hasTable('jawatankuasas') ? 'jawatankuasas' : 'jawatankuasa';
+
+		$jawatankuasas = DB::table($tableName)
+			->where('tender_id', $this->id)
+			->whereIn('jenis_jawatankuasa', $requiredJenis)
+			->whereNotNull('user_id')
+			->get(['jenis_jawatankuasa', 'peranan', 'user_id', 'dihantar_pemakluman_pada']);
+
+		foreach ($requiredJenis as $jenis) {
+			$jenisRecords = $jawatankuasas->where('jenis_jawatankuasa', $jenis);
+
+			foreach ($requiredPeranan as $peranan) {
+				$hasPeranan = $jenisRecords->contains(function ($row) use ($peranan) {
+					return (string) $row->peranan === $peranan && !empty($row->user_id);
+				});
+
+				if (!$hasPeranan) {
+					return false;
+				}
+			}
+
+			// if ($jenisRecords->pluck('user_id')->filter()->unique()->count() < 3) {
+			// 	return false;
+			// }
+		}
+
+		// All members must have been notified (dihantar_pemakluman_pada not null)
+		$hasUnnotified = $jawatankuasas->contains(function ($row) {
+			return empty($row->dihantar_pemakluman_pada);
+		});
+
+		if ($hasUnnotified) {
+			return false;
+		}
+
+		return true;
 	}
 
 	public function getNegeriListExist()

@@ -64,13 +64,29 @@ class OrganizationUnitsController extends Controller
 			$datatable = Datatables::of($organization_units)
 				->addColumn('actions', function ($organization_unit) use ($request) {
 					$actions   = [];
-					$actions[] = $organization_unit->canShow() ? '<a href="' . route('agencies.show', $organization_unit->id) . '" class="btn btn-xs btn-primary">Lihat Tender</a>' : '';
+                    
+                    if ($organization_unit->canShow()) {
+                        $actions[] = '<a href="' . route('agencies.show', $organization_unit->id) . '" class="btn btn-sm btn-primary text-nowrap mb-1" data-bs-toggle="tooltip" title="Lihat Tender">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-1"><path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" /><path d="M21 12c-2.4 4 -5.4 6 -9 6c-3.6 0 -6.6 -2 -9 -6c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6" /></svg>
+                            Lihat Tender
+                        </a>';
+                    }
 
-					if (($organization_unit->type_id > 3) && ($organization_unit->canShow()) && ($organization_unit->children()->count() > 0) && ($organization_unit->id != $request->parent))
-						$actions[] = '<a href="' . route('agencies.index', ['parent' => $organization_unit->id]) . '" class="btn btn-xs btn-warning">Lihat Agensi Bawahan</a>';
+					if (($organization_unit->type_id > 3) && ($organization_unit->canShow()) && ($organization_unit->children()->count() > 0) && ($organization_unit->id != $request->parent)) {
+						$actions[] = '<a href="' . route('agencies.index', ['parent' => $organization_unit->id]) . '" class="btn btn-sm btn-warning text-nowrap mb-1" data-bs-toggle="tooltip" title="Lihat Agensi Bawahan">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-1"><path d="M3 21l18 0" /><path d="M9 8l1 0" /><path d="M9 12l1 0" /><path d="M9 16l1 0" /><path d="M14 8l1 0" /><path d="M14 12l1 0" /><path d="M14 16l1 0" /><path d="M5 21v-16a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v16" /></svg>
+                            Agensi Bawahan
+                        </a>';
+                    }
 
-					$actions[] = $organization_unit->canUpdate() ? '<a href="' . route('agencies.edit', $organization_unit->id) . '" class="btn btn-xs btn-success">Kemaskini</a>' : '';
-					return implode('<br>', $actions);
+                    if ($organization_unit->canUpdate()) {
+					    $actions[] = '<a href="' . route('agencies.edit', $organization_unit->id) . '" class="btn btn-sm btn-success text-nowrap mb-1" data-bs-toggle="tooltip" title="Kemaskini">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-1"><path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" /><path d="M13.5 6.5l4 4" /></svg>
+                            Kemaskini
+                        </a>';
+                    }
+                    
+					return '<div class="d-flex flex-wrap justify-content-center gap-1" style="max-width: 250px;">' . implode('', $actions) . '</div>';
 				})
 				->removeColumn('id');
 
@@ -197,6 +213,7 @@ class OrganizationUnitsController extends Controller
 			$tenders = $tenders->select(
 			[
 				'id',
+			'uuid',
 				'name',
 				'document_start_date',
 				'submission_datetime',
@@ -218,7 +235,7 @@ class OrganizationUnitsController extends Controller
 					$string[] = '<small><strong>' . $tender->ref_number . '</strong></small>';
 					if(!auth()->check())
 					{
-						$string[] = link_to_route('tenders.show', $tender->name, $tender->id, ['class' => 'table-tender-title']);
+						$string[] = link_to_route('tender.show', $tender->name, $tender->id, ['class' => 'table-tender-title']);
 					}
 					else
 					{
@@ -266,7 +283,10 @@ class OrganizationUnitsController extends Controller
 			})
 			->addColumn('status', function ($tender)
 			{
-				return $tender->status;
+				if ($tender->status === 'Tiada Jawatan Kuasa' && auth()->check() && auth()->user()->ability([], ['committee:create'])) {
+				                    return '<a href="/pelantikan-jawatankuasa?tender=' . $tender->uuid . '" class="btn btn-xs btn-warning">Lantik Jawatan Kuasa</a>';
+				                }
+				                return '';
 			})
 			->addColumn('codes', function ($tender)
 			{
@@ -343,7 +363,7 @@ class OrganizationUnitsController extends Controller
 				{
 					$str   = [];
 					$str[] = '<div class="btn-group btn-group-vertical">';
-					if (empty($tender->approver_id)) $str[] = link_to_route('tenders.edit', 'Kemaskini', $tender->id, ['class' => 'btn btn-xs btn-primary']);
+					if (empty($tender->approver_id)) $str[] = link_to_route('tender.edit', 'Kemaskini', $tender->id, ['class' => 'btn btn-xs btn-primary']);
 					if ($tender->canCancel() && $tender->approver_id > 0)
 						$str[] = link_to_action('TendersController@cancel', 'Batal Siar', $tender->id, ['class' => 'btn btn-xs btn-danger']);
 					if ($tender->canUpdate() && empty($tender->approver_id))
@@ -380,7 +400,7 @@ class OrganizationUnitsController extends Controller
 				->removeColumn('briefing_required')
 				->removeColumn('briefing_datetime')
 				->removeColumn('briefing_address')
-				->rawColumns(['name', 'codes', 'document_start_date', 'submission_datetime', 'price', 'actions', 'report'])
+				->rawColumns(['name', 'codes', 'document_start_date', 'submission_datetime', 'price', 'status', 'actions', 'report'])
 				->make();
 		}
 
@@ -444,6 +464,7 @@ class OrganizationUnitsController extends Controller
 		if ($request->ajax()) {
 			$tenders = $tenders->select([
 				'id',
+			'uuid',
 				'name',
 				'document_start_date',
 				'submission_datetime',
@@ -464,7 +485,7 @@ class OrganizationUnitsController extends Controller
 				->editColumn('name', function ($tender) {
 					$string   = [];
 					$string[] = '<small><strong>' . $tender->ref_number . '</strong></small>';
-					$string[] = link_to_route('tenders.show', $tender->name, $tender->id, ['class' => 'table-tender-title']);
+					$string[] = link_to_route('tender.show', $tender->name, $tender->id, ['class' => 'table-tender-title']);
 
 					if ($tender->briefing_required) {
 						$string[] = '';
@@ -500,7 +521,10 @@ class OrganizationUnitsController extends Controller
 					return sprintf('RM %.2f', $tender->price);
 				})
 				->addColumn('status', function ($tender) {
-					return $tender->status;
+					if ($tender->status === 'Tiada Jawatan Kuasa' && auth()->check() && auth()->user()->ability([], ['committee:create'])) {
+					                    return '<a href="/pelantikan-jawatankuasa?tender=' . $tender->uuid . '" class="btn btn-xs btn-warning">Lantik Jawatan Kuasa</a>';
+					                }
+					                return '';
 				})
 				->addColumn('codes', function ($tender) {
 					$string = '';
@@ -571,7 +595,7 @@ class OrganizationUnitsController extends Controller
 				$datatable = $datatable->addColumn('actions', function ($tender) {
 					$str   = [];
 					$str[] = '<div class="btn-group btn-group-vertical">';
-					if (empty($tender->approver_id)) $str[] = link_to_route('tenders.edit', 'Kemaskini', $tender->id, ['class' => 'btn btn-xs btn-primary']);
+					if (empty($tender->approver_id)) $str[] = link_to_route('tender.edit', 'Kemaskini', $tender->id, ['class' => 'btn btn-xs btn-primary']);
 					if ($tender->canCancel() && $tender->approver_id > 0)
 						$str[] = link_to_action('TendersController@cancel', 'Batal Siar', $tender->id, ['class' => 'btn btn-xs btn-danger']);
 					if ($tender->canUpdate() && empty($tender->approver_id))
@@ -604,7 +628,7 @@ class OrganizationUnitsController extends Controller
 				->removeColumn('briefing_required')
 				->removeColumn('briefing_datetime')
 				->removeColumn('briefing_address')
-				->rawColumns(['name', 'codes', 'document_start_date', 'submission_datetime', 'price', 'actions', 'report'])
+				->rawColumns(['name', 'codes', 'document_start_date', 'submission_datetime', 'price', 'status', 'actions', 'report'])
 				->make();
 		}
 
@@ -722,6 +746,7 @@ class OrganizationUnitsController extends Controller
 			$news = $news->select(
 			[
 				'id',
+			'uuid',
 				'created_at',
 				'title',
 				'notification',
@@ -763,6 +788,7 @@ class OrganizationUnitsController extends Controller
 			$news = News::where('organization_unit_id', $organizationunit->id)->where('publish', 1)->orderBy('published_at', 'desc');
 			$news = $news->select([
 				'id',
+			'uuid',
 				'created_at',
 				'title',
 				'notification',

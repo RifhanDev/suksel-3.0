@@ -28,7 +28,7 @@ use App\Http\Controllers\CountriesController;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\ManualsController;
 use App\Http\Controllers\CircularController;
-use App\Http\Controllers\VersionHistoryController;
+use App\Http\Controllers\RefKategoriJenisPerolehanController;
 use App\Http\Controllers\ComplaintController;
 use App\Http\Controllers\RefundController;
 use App\Http\Controllers\RejectTemplateController;
@@ -77,6 +77,8 @@ use App\Http\Controllers\ReportUserActiveController;
 use App\Http\Controllers\ReportVendorDistrictController;
 use App\Http\Controllers\ReportUserActivityController;
 use App\Http\Controllers\ReportUserLoginController;
+use App\Http\Controllers\DummyController;
+use App\Http\Controllers\JawatankuasaController;
 
 
 // Basic routes to get the application running
@@ -86,8 +88,6 @@ Route::get('results', [HomeController::class, 'results']);
 Route::get('privacy', [HomeController::class, 'privacy']);
 
 // Place 3.0 Modules Routes Temporarily Here
-Route::view('/cipta-tender', 'newModule.cipta_tender')->name('ciptaTender');
-Route::view('/pelantikan-jawatankuasa', 'newModule.pelantikan_jawatankuasa')->name('pelantikanJawatankuasa');
 Route::view('/jawatankuasa-spesifikasi/senarai-teknikal', 'newModule.jawatankuasaSpesifikasi.senarai_teknikal')->name('jawatankuasaSpesifikasi.teknikal');
 Route::view('/jawatankuasa-spesifikasi/senarai-kewangan', 'newModule.jawatankuasaSpesifikasi.senarai_kewangan')->name('jawatankuasaSpesifikasi.kewangan');
 
@@ -148,12 +148,12 @@ Route::get('auth/reset/{token}', [AuthController::class, 'resetPassword']);
 Route::post('auth/reset', [AuthController::class, 'doResetPassword']);
 
 // Tenders
-Route::get('tenders/select', [TendersController::class, 'select']);
-Route::resource('tenders', TendersController::class);
-Route::get('tenders/{id}/prices', [TendersController::class, 'prices'])->name('tenders.prices');
-Route::get('tenders/{tender_id}/files/{id}', [TendersController::class, 'file'])->name('tenders.files');
-Route::get('tenders/{id}/vendors', [TendersController::class, 'vendors'])->name('tenders.vendors');
-Route::post('tenders/{id}/exception', [TendersController::class, 'exception'])->name('tenders.exception');
+// Route::get('tenders/select', [TendersController::class, 'select']);
+// Route::resource('tenders', TendersController::class);
+// Route::get('tenders/{id}/prices', [TendersController::class, 'prices'])->name('tenders.prices');
+// Route::get('tenders/{tender_id}/files/{id}', [TendersController::class, 'file'])->name('tenders.files');
+// Route::get('tenders/{id}/vendors', [TendersController::class, 'vendors'])->name('tenders.vendors');
+// Route::post('tenders/{id}/exception', [TendersController::class, 'exception'])->name('tenders.exception');
 
 // Petender Performance
 Route::prefix('petenders')->controller(PetenderPerformanceController::class)->group(function () {
@@ -192,22 +192,67 @@ Route::match(['get', 'post'], 'botman', [BotManController::class, 'handle'])->na
 Route::get('chat-widget/{chat_id}', [BotManController::class, 'chatWidget'])->withoutMiddleware(['auth'])->name('chat_widget');
 
 // Place 3.0 Modules Routes Temporarily Here
-Route::view('/pelantikan-jawatankuasa', 'newModule.pelantikan_jawatankuasa')->name('pelantikanJawatankuasa');
+Route::get('/pelantikan-jawatankuasa', [JawatankuasaController::class, 'create'])->middleware(['auth'])->name('pelantikanJawatankuasa');
+Route::get('/pelantikan-jawatankuasa/laporan', [JawatankuasaController::class, 'laporan'])->middleware(['auth'])->name('jawatankuasa.laporan');
+Route::post('/pelantikan-jawatankuasa/hantar-pemakluman', [JawatankuasaController::class, 'hantarPemakluman'])->middleware(['auth'])->name('jawatankuasa.hantarPemakluman');
 Route::view('/senarai-teknikal', 'newModule.jawatankuasaSpesifikasi.senarai_teknikal')->name('senaraiTeknikal');
 Route::view('/senarai-kewangan', 'newModule.jawatankuasaSpesifikasi.senarai_kewangan')->name('senaraiKewangan');
 Route::view('/jawatankuasa-pembuka', 'newModule.jawatankuasa_pembuka')->name('jawatankuasaPembuka');
 Route::view('/penilaian-teknikal', 'newModule.penilaian.teknikal')->name('penilaianTeknikal');
+Route::view('/penilaian-teknikal-kerja', 'newModule.penilaian.teknikal_kerja')->name('penilaianTeknikalKerja');
 Route::view('/penilaian-kewangan', 'newModule.penilaian.kewangan')->name('penilaianKewangan');
 
+Route::view('/penilaian-kewangan-kerja', 'newModule.penilaian.borang1')->name('borang1');
+Route::view('/penilaian-kewangan-kerja-borang2', 'newModule.penilaian.borang2')->name('borang2');
+Route::view('/penilaian-kewangan-kerja-borang3', 'newModule.penilaian.borang3')->name('borang3');
+Route::view('/penilaian-kewangan-kerja-lembaran', 'newModule.penilaian.lembaran')->name('lembaran');
+Route::view('/penilaian-kewangan-kerja-akaun-bank', 'newModule.penilaian.akaun_bank')->name('akaunBank');
+Route::view('/penilaian-kewangan-kerja-bon-saham', 'newModule.penilaian.bon_saham')->name('bonSaham');	
+Route::view('/penilaian-kewangan-kerja-borang4', 'newModule.penilaian.borang4')->name('borang4');
+Route::view('/penilaian-kewangan-kerja-borang5', 'newModule.penilaian.borang5')->name('borang5');
+Route::view('/penilaian-kewangan-kerja-borang6', 'newModule.penilaian.borang6')->name('borang6');
+Route::view('/penilaian-kewangan-kerja-borang7-serupa', 'newModule.penilaian.borang7_serupa')->name('serupa');
+Route::view('/penilaian-kewangan-kerja-borang7-sebanding', 'newModule.penilaian.borang7_sebanding')->name('sebanding');
+Route::view('/penilaian-kewangan-kerja-borang8', 'newModule.penilaian.borang8')->name('borang8');
+Route::view('/penilaian-kewangan-kerja-borang9', 'newModule.penilaian.borang9')->name('borang9');
+Route::view('/penilaian-kewangan-kerja-borang9-serupa', 'newModule.penilaian.borang9_serupa')->name('kerjaSerupa');
+Route::view('/penilaian-kewangan-kerja-borang9-sebanding', 'newModule.penilaian.borang9_sebanding')->name('kerjaSebanding');
+Route::view('/penilaian-kewangan-kerja-borang10', 'newModule.penilaian.borang10')->name('borang10');
+Route::view('/penilaian-kewangan-kerja-borang11', 'newModule.penilaian.borang11')->name('borang11');
+Route::view('/penilaian-kewangan-kerja-borang12', 'newModule.penilaian.borang12')->name('borang12');
+Route::view('/penilaian-kewangan-kerja-borang13', 'newModule.penilaian.borang13')->name('borang13');
+Route::view('/penilaian-kewangan-kerja-borang14', 'newModule.penilaian.borang14')->name('borang14');
+Route::view('/penilaian-kewangan-kerja-borang15', 'newModule.penilaian.borang15')->name('borang15');
+
+
+Route::view('/lawatan-tapak', 'newModule.syarikatPembekal.lawatan_tapak')->name('lawatanTapak');
+Route::view('/syarat-tender', 'newModule.syarikatPembekal.syarat_tender')->name('syaratTender');
+Route::view('/kod-bidang', 'newModule.syarikatPembekal.kod_bidang')->name('kodBidang');
+Route::view('/keputusan-mesyuarat', 'newModule.eBidding.keptusan_mesyuarat')->name('keputusanMesyuarat');
+
+// Dummy Controller 
+Route::get('/tender/cipta', [DummyController::class, 'create'])->name('tender.create');
+Route::post('/tender/store', [DummyController::class, 'store'])->name('tender.store');
+Route::get('/tender/bekalan', [DummyController::class, 'bekalan'])->name('tender.bekalan');
+Route::get('/tender/kerja', [DummyController::class, 'kerja'])->name('tender.kerja');
+Route::get('/tender/status/{status}', [DummyController::class, 'viewByStatus'])->name('tender.status');
 
 // Protected routes
 Route::middleware(['auth'])->group(function () {
 	// Route::get('tender/select', [TendersController::class, 'select']);
 	Route::resource('tender', TendersController::class);
+	Route::resource('jawatankuasa', JawatankuasaController::class);
 	// Route::get('tender/{id}/prices', [TendersController::class, 'prices'])->name('tenders.prices');
 	// Route::get('tender/{tender_id}/files/{id}', [TendersController::class, 'file'])->name('tenders.files');
 	// Route::get('tender/{id}/vendors', [TendersController::class, 'vendors'])->name('tenders.vendors');
 	// Route::post('tender/{id}/exception', [TendersController::class, 'exception'])->name('tenders.exception');
+
+	// Version 3.0 tender creation routes
+	Route::get('/cipta-tender', [TendersController::class, 'createNew'])->name('ciptaTender');
+	Route::post('/cipta-tender', [TendersController::class, 'storeNew'])->name('storeCiptaTender');
+	
+	// Get type of perolehan by kategori jenis perolehan
+	Route::get('/ref/type-of-perolehan-by-kategori', [RefKategoriJenisPerolehanController::class, 'getTypeOfPerolehanByKategori'])->name('getTypeOfPerolehanByKategori');
 
 	Route::resource('vendors', VendorsController::class);
 	Route::get('vendors/select', [VendorsController::class, 'select']);
@@ -268,11 +313,15 @@ Route::middleware(['auth'])->group(function () {
 	Route::get('tenders/{id}/publishPrices', [TendersController::class, 'publishPrices'])->name('tenders.publishPrices');
 	Route::get('tenders/{id}/publishWinner', [TendersController::class, 'publishWinner'])->name('tenders.publishWinner');
 	Route::get('tenders/{tender_id}/vendor/{id}', [TendersController::class, 'vendor'])->name('tenders.vendor');
-
 	Route::get('tenders/{id}/vendors/print', [TendersController::class, 'printVendors'])->name('tenders.vendors.print');
 	Route::get('tenders/{id}/vendors/template', [TendersController::class, 'template'])->name('tenders.template');
 	Route::post('tenders/bulkUpdate', [TendersController::class, 'bulkUpdate'])->name('tenders.bulkUpdate');
 	Route::get('tenders/{id}/eligibles', [TendersController::class, 'eligibles'])->name('tenders.eligibles');
+	Route::post('tenders/exception/store', [TendersController::class, 'storeException'])->name('tender.store.exception');
+	Route::get('tenders/{id}/exceptions', [TendersController::class, 'exceptions'])->name('tender.exceptions');
+	Route::get('tenders/{id}/approve', [TendersController::class, 'approve_exception'])->name('tender.approve.exception');
+	Route::post('tenders/{id}/reject/{exception_id}', [TendersController::class, 'reject_exception'])->name('tender.reject.exception');
+	Route::get('tenders/{id}/publishPrice', [TendersController::class, 'publishPrice']);
 
 	Route::get('cart', [CartController::class, 'index'])->name('cart');
 	Route::get('cart/clear', [CartController::class, 'clear'])->name('cart.clear');
@@ -409,11 +458,6 @@ Route::middleware(['auth'])->group(function () {
 		Route::resource('payments', PaymentsController::class);
 		Route::resource('helpcategories', HelpCategoriesController::class);
 
-		// Tender routes - additional
-		Route::get('tenders/{id}/publish', [TendersController::class, 'publish'])->name('tenders.publish');
-		Route::get('tenders/{id}/publishPrice', [TendersController::class, 'publishPrice']);
-		Route::get('tenders/{id}/publishWinner', [TendersController::class, 'publishWinner'])->name('tenders.publishWinner');
-
 		// News
 		Route::get('news/{id}/publish', [NewsController::class, 'publish'])->name('news.publish');
 
@@ -511,30 +555,6 @@ Route::middleware(['auth'])->group(function () {
 		Route::get('reports/user/login', [ReportUserLoginController::class, 'index']);
 		Route::post('reports/user/login', [ReportUserLoginController::class, 'view']);
 		Route::get('reports/user/login/excel', [ReportUserLoginController::class, 'excel']);
-
-		// Exception
-		Route::post('tenders/exception/store', [TendersController::class, 'storeException'])->name('tender.store.exception');
-		Route::get('tenders/{id}/exceptions', [TendersController::class, 'exceptions'])->name('tender.exceptions');
-		Route::get('tenders/{id}/approve', [TendersController::class, 'approve_exception'])->name('tender.approve.exception');
-		Route::post('tenders/{id}/reject/{exception_id}', [TendersController::class, 'reject_exception'])->name('tender.reject.exception');
-
-		// Circular
-		Route::resource('circulars', CircularController::class)->except(['show', 'destroy']);
-		Route::get('circulars/{id}/publish', [CircularController::class, 'publish'])->name('circulars.publish');
-		Route::get('circulars/list', [CircularController::class, 'public'])->name('circulars.public');
-		Route::get('circulars/sort', [CircularController::class, 'sortPosition'])->name('circulars.position');
-		Route::post('circulars/sort', [CircularController::class, 'updatePosition'])->name('circulars.update.position');
-
-		// Version histories (CRUD – admin)
-		Route::resource('version-histories', VersionHistoryController::class)->names([
-			'index' => 'version-histories.index',
-			'create' => 'version-histories.create',
-			'store' => 'version-histories.store',
-			'show' => 'version-histories.show',
-			'edit' => 'version-histories.edit',
-			'update' => 'version-histories.update',
-			'destroy' => 'version-histories.destroy',
-		]);
 
 		// Refunds
 		Route::prefix('refunds')->group(function () {

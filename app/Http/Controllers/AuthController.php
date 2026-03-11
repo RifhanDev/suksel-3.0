@@ -51,8 +51,6 @@ class AuthController extends Controller
          }
       }
 
-
-
       if (is_null(session('attempt_again'))) {
          Log::Debug('is_null attempt_again');
          if (is_null(session('attempt'))) {
@@ -86,19 +84,52 @@ class AuthController extends Controller
 
                session()->forget('attempt');
 
-               // 2FA: UI only, no DB — store user ID in session for verification
-               session()->put('2fa_user_id', $user->id);
+               // === 2FA COMMENTED ===
+               // // Generate 2FA code
+               // $twoFactorCode = str_pad(rand(0, 999999), 6, '0', STR_PAD_LEFT);
+               // $user->two_factor_code = $twoFactorCode;
+               // $user->two_factor_expires_at = now()->addMinutes(10);
+               // $user->save();
 
-               // Logout before 2FA verification
-               auth()->logout();
+               // // Store user ID in session for 2FA verification
+               // session()->put('2fa_user_id', $user->id);
+               // session()->put('2fa_code', $twoFactorCode);
 
-               // Save session before redirect
+               // // Logout before 2FA verification
+               // auth()->logout();
+
+               // // Save session before redirect
+               // session()->save();
+
+               // // Redirect to 2FA verification page
+               // return redirect('/auth/2fa/verify');
+               // =====================
+
                session()->save();
 
                UserHistory::log($user->id, 'sign-in');
 
-               // Redirect to 2FA verification (UI only, dummy code 1234)
-               return redirect()->route('2fa.verify');
+               // Redirect based on user role
+               if ($user->hasRole('Vendor')) {
+                  if (is_null($user->vendor)) {
+                     auth()->logout();
+                     session()->flash('error', 'Akaun anda mempunyai masalah.<br>Sila berhubung dengan Bahagian Teknologi Maklumat di <u>tenderadmin@selangor.gov.my</u> dan nyatakan alamat emel <b>(' . $user->email . '</b>) yang digunakan.');
+                     return redirect('/auth/login');
+                  }
+
+                  if (!$user->vendor->completed)
+                     return redirect('register/company');
+                  elseif (!$user->vendor->registration_paid)
+                     return redirect('register/payment');
+                  else
+                     return redirect('dashboard');
+               } elseif ($user->can('Vendor:list')) {
+                  return redirect('vendors');
+               } else if ($user->hasRole('Admin')) {
+                  return redirect()->route('dashboard.hq');
+               } else {
+                  return redirect()->route('dashboard', ['id' => $user->organization_unit_id]);
+               }
             } else {
                $attempt = session('attempt');
                session()->put('attempt', $attempt += 1);

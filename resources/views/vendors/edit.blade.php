@@ -1,4 +1,4 @@
-@extends('layouts.v3.master')
+@extends(Auth::user()->hasRole('Vendor') ? 'layouts.modernLanding' : 'layouts.v3.master')
 
 @section('styles')
     <link href="{{ asset('css/components/tabs.css') }}" rel="stylesheet">
@@ -98,28 +98,29 @@
 @endsection
 
 @section('content')
-	<!-- HEADER -->
-	<div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center mb-4">
-		<div class="d-flex flex-wrap align-items-center gap-3 mb-3 mb-lg-0">
+    <!-- HEADER -->
+    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center mb-4">
+        <div class="d-flex flex-wrap align-items-center gap-3 mb-3 mb-lg-0">
 
-			<h3 class="fw-bold text-dark m-0" style="letter-spacing: -0.5px;">
-				Kemaskini Syarikat
-			</h3>
+            <h3 class="fw-bold text-dark m-0" style="letter-spacing: -0.5px;">
+                Kemaskini Syarikat
+            </h3>
 
-			<span class="text-muted opacity-25" style="font-size: 1.75rem; font-weight: 300; line-height: 1; margin-top: -4px;">|</span>
+            <span class="text-muted opacity-25"
+                style="font-size: 1.75rem; font-weight: 300; line-height: 1; margin-top: -4px;">|</span>
 
-			<h3 class="fw-bold m-0 text-truncate" style="color: var(--sg-red); letter-spacing: -0.5px; max-width: 500px;">
-				{{ $vendor->name }}
-			</h3>
+            <h3 class="fw-bold m-0 text-truncate" style="color: var(--sg-red); letter-spacing: -0.5px; max-width: 500px;">
+                {{ $vendor->name }}
+            </h3>
 
-		</div>
+        </div>
 
-		@if(isset($vendor) && $vendor->registration)
-		<div class="d-flex align-items-center gap-2 bg-white px-3 py-2 rounded-2 shadow-sm border">
-			<span class="badge bg-light text-dark border" style="font-size: 0.65rem;">NO. PENDAFTARAN</span>
-			<span class="small fw-bold text-dark font-monospace">{{ $vendor->registration }}</span>
-		</div>
-		@endif
+        @if (isset($vendor) && $vendor->registration)
+            <div class="d-flex align-items-center gap-2 bg-white px-3 py-2 rounded-2 shadow-sm border">
+                <span class="badge bg-light text-dark border" style="font-size: 0.65rem;">NO. PENDAFTARAN</span>
+                <span class="small fw-bold text-dark font-monospace">{{ $vendor->registration }}</span>
+            </div>
+        @endif
 
     </div>
 
@@ -134,17 +135,29 @@
         <div class="modern-form-actions">
             @if (!Auth::user()->hasRole('Vendor') && App\Vendor::canList())
                 <a href="{{ asset('vendors') }}" class="modern-btn modern-btn-back">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="19" y1="12" x2="5" y2="12"></line>
+                        <polyline points="12 19 5 12 12 5"></polyline>
+                    </svg>
                     Senarai Syarikat
                 </a>
             @elseif (Auth::user()->hasRole('Vendor'))
                 <a href="{{ asset('vendor') }}" class="modern-btn modern-btn-back">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="19" y1="12" x2="5" y2="12"></line>
+                        <polyline points="12 19 5 12 12 5"></polyline>
+                    </svg>
                     Maklumat Syarikat
                 </a>
             @else
                 <a href="{{ asset('dashboard') }}" class="modern-btn modern-btn-back">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="19" y1="12" x2="5" y2="12"></line>
+                        <polyline points="12 19 5 12 12 5"></polyline>
+                    </svg>
                     Kembali
                 </a>
             @endif
@@ -152,10 +165,17 @@
             <div style="display: flex; gap: 12px;">
                 <button type="button" id="next" class="modern-btn modern-btn-next">
                     Seterusnya
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                        <polyline points="12 5 19 12 12 19"></polyline>
+                    </svg>
                 </button>
                 <button type="submit" id="submit" class="modern-btn modern-btn-submit" style="display: none;">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
                     Kemaskini
                 </button>
             </div>
@@ -167,7 +187,7 @@
 @section('scripts')
     @parent
     <script>
-        (function () {
+        (function() {
             function getTabs() {
                 return document.querySelectorAll('.modern-nav-tabs .nav-item');
             }
@@ -203,7 +223,7 @@
 
                 var isValid = true;
                 var inputs = pane.querySelectorAll('input, select, textarea');
-                inputs.forEach(function (input) {
+                inputs.forEach(function(input) {
                     validator.touched.add(input);
                     if (!validator.validateInput(input)) {
                         isValid = false;
@@ -269,7 +289,7 @@
                 }
             }
 
-            document.addEventListener('DOMContentLoaded', function () {
+            document.addEventListener('DOMContentLoaded', function() {
                 console.log('Vendor edit: Next button handler initializing...');
                 var nextButton = document.getElementById('next');
                 if (!nextButton) {
@@ -280,7 +300,7 @@
                 console.log('Next button found:', nextButton);
                 updateActionButtons();
 
-                nextButton.addEventListener('click', function (e) {
+                nextButton.addEventListener('click', function(e) {
                     console.log('Next button clicked!');
                     console.log('VendorForm:', window.VendorForm);
                     console.log('Active tab index:', getActiveTabIndex());
@@ -297,13 +317,16 @@
                     updateActionButtons();
                 });
 
-                document.addEventListener('shown.bs.tab', function (event) {
+                document.addEventListener('shown.bs.tab', function(event) {
                     if (event.target && event.target.closest('.modern-nav-tabs')) {
                         updateActionButtons();
-                        setTimeout(function () {
+                        setTimeout(function() {
                             var pane = getActivePane();
                             if (pane) {
-                                pane.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                pane.scrollIntoView({
+                                    behavior: 'smooth',
+                                    block: 'start'
+                                });
                             }
                         }, 0);
                     }
@@ -334,7 +357,7 @@
 
                 var pdfModal = document.getElementById('pdfViewerModal');
                 if (pdfModal) {
-                    pdfModal.addEventListener('hidden.bs.modal', function () {
+                    pdfModal.addEventListener('hidden.bs.modal', function() {
                         document.getElementById('pdfIframe').src = '';
                     });
                 }
@@ -345,13 +368,14 @@
 
 <!-- PDF MODAL -->
 @push('modals')
-<div class="modal fade" id="pdfViewerModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content h-100 border-0 shadow-lg rounded-3">
-            <div class="modal-body p-0 bg-light">
-                <iframe id="pdfIframe" src="" width="100%" height="100%" style="border:none; min-height: 85vh;"></iframe>
+    <div class="modal fade" id="pdfViewerModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content h-100 border-0 shadow-lg rounded-3">
+                <div class="modal-body p-0 bg-light">
+                    <iframe id="pdfIframe" src="" width="100%" height="100%"
+                        style="border:none; min-height: 85vh;"></iframe>
+                </div>
             </div>
         </div>
     </div>
-</div>
 @endpush

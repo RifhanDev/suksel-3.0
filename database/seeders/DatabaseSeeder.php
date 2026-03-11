@@ -17,6 +17,7 @@ use Database\Seeders\Ref\YesNo;
 use Database\Seeders\CreateAdminUser;
 use Database\Seeders\UserSeeder;
 use Database\Seeders\CodesSeeder;
+use Database\Seeders\RefLokalitisSeeder;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -35,6 +36,7 @@ class DatabaseSeeder extends Seeder
         // ]);
 
         $this->call([
+            RefLokalitisSeeder::class,
             KaedahPerolehanSeeder::class,
             KategoriJenisPerolehan::class,
             YesNo::class,
@@ -52,6 +54,7 @@ class DatabaseSeeder extends Seeder
             OrganizationUnitsSeeder::class,
             RoleSeeder::class,
             PermissionSeeder::class,
+            PermissionSeeder2027::class,
             PermissionRoleSeeder::class,
             CodesSeeder::class,
         ]);

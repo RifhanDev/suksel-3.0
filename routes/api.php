@@ -20,6 +20,15 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
 Route::get('fpx_queue', 'TransactionsController@queue_fpx_requery')->name('fpx_queue');
 Route::post('api_fpx_requery', 'TransactionsController@api_fpx_requery')->name('api_fpx_requery');
 
+// SEARCH USERS FOR SELECTIZE AUTOCOMPLETE (JAWATANKUASA PELANTIKAN)
+Route::get('search-users', function(Request $request) {
+    $q = $request->input('q', '');
+    $users = App\User::where('name', 'like', '%' . $q . '%')
+                     ->limit(10)
+                     ->get(['id', 'name', 'email']);
+    return response()->json($users);
+});
+
 Route::prefix('v1')->group(function () {
     Route::post('vendor', 'App\Http\Controllers\API\ApiController@vendorApi')->name('vendorApi');
     Route::post('tender', 'App\Http\Controllers\API\ApiController@tenderApi')->name('tenderApi');

@@ -153,6 +153,7 @@
 												<th class="w-10">
 													<i class="ti ti-settings me-1"></i>Tindakan
 												</th>
+												
 											@endif
 										</tr>
 									</thead>
@@ -180,7 +181,6 @@
 @endsection
 
 @section('scripts')
-	<script src="{{ asset('js/datatables.js') }}"></script>
 	<script>
 		var canUpdate = {!! json_encode(Auth::check() && App\Tender::canShowUpdate($organizationunit->id)) !!};
 
@@ -216,6 +216,10 @@
 					{
 						data: 'report',
 						name: 'report'
+					},
+					{
+						data: 'status',
+						name: 'status'
 					},
 				];
 			} else {

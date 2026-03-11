@@ -289,50 +289,19 @@
 				</h2>
 			</div>
 
-			<!-- Main Card -->
-			<div class="card modern-card">
-				<div class="card-header" style="background: white; border-bottom: 1px solid #e9ecef;">
-					<ul class="nav nav-tabs card-header-tabs" data-bs-toggle="tabs">
-						<li class="nav-item">
-							<a href="{{ asset('prices') }}" class="nav-link @if (!Request::get('type')) active @endif">
-								<i class="ti ti-list me-2"></i>Semua
-							</a>
-						</li>
-						<li class="nav-item">
-							<a href="{{ action('HomeController@prices', ['type' => 'tenders']) }}"
-								class="nav-link @if (Request::get('type') == 'tenders') active @endif">
-								<i class="ti ti-file-text me-2"></i>Tender
-							</a>
-						</li>
-						<li class="nav-item">
-							<a href="{{ action('HomeController@prices', ['type' => 'quotations']) }}"
-								class="nav-link @if (Request::get('type') == 'quotations') active @endif">
-								<i class="ti ti-calculator me-2"></i>Sebut Harga
-							</a>
-						</li>
-					</ul>
-				</div>
-				<div class="card-body">
-					<div class="table-responsive">
-						<table data-path="{{ $path }}" class="DT-index table modern-table table-hover">
-							<thead>
-								<tr>
-									@foreach ($columnsConfig as $col)
-										<th class="{{ $col['width'] ?? '' }}">
-											@if (isset($col['icon']))
-												<i class="ti {{ $col['icon'] }} me-1"></i>
-											@endif
-											{{ $col['label'] ?? ucfirst($col['name']) }}
-										</th>
-									@endforeach
-								</tr>
-							</thead>
-							<tbody></tbody>
-						</table>
-					</div>
-				</div>
-			</div>
-		</div>
+            <div class="page-header-modern">
+                <div class="header-content">
+                    <div class="header-pretitle">Sistem Perolehan Selangor</div>
+                    <h2 class="header-title">Senarai Tender</h2>
+                    <p class="header-subtitle">
+                        Senarai perolehan rasmi Kerajaan Negeri Selangor yang aktif, sedang dibuka untuk bidaan, dan dikemaskini secara langsung.
+                    </p>
+                </div>
+                
+                <div class="header-icon-box d-none d-md-flex">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0" /><path d="M12 9h.01" /><path d="M11 12h1v4h1" /></svg>
+                </div>
+            </div>
 
 		<!-- Sidebar -->
 		<div class="col-lg-3">
