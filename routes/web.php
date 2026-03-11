@@ -79,6 +79,7 @@ use App\Http\Controllers\ReportUserActivityController;
 use App\Http\Controllers\ReportUserLoginController;
 use App\Http\Controllers\DummyController;
 use App\Http\Controllers\JawatankuasaController;
+use App\Http\Controllers\CutOffController;
 
 
 // Basic routes to get the application running
@@ -90,6 +91,9 @@ Route::get('privacy', [HomeController::class, 'privacy']);
 // Place 3.0 Modules Routes Temporarily Here
 Route::view('/jawatankuasa-spesifikasi/senarai-teknikal', 'newModule.jawatankuasaSpesifikasi.senarai_teknikal')->name('jawatankuasaSpesifikasi.teknikal');
 Route::view('/jawatankuasa-spesifikasi/senarai-kewangan', 'newModule.jawatankuasaSpesifikasi.senarai_kewangan')->name('jawatankuasaSpesifikasi.kewangan');
+
+Route::get('/cut-off', [CutOffController::class, 'index'])->middleware(['auth'])->name('cutOff.index');
+Route::get('/cut-off/{tender_no}', [CutOffController::class, 'show'])->middleware(['auth'])->name('cutOff.show');
 
 Route::prefix('pembelian-terus')->controller(PembelianTerusController::class)->group(function () {
 	Route::get('/cipta-projek', 'createProject')->name('pembelianTerus.createProject');
