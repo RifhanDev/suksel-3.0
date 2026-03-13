@@ -54,6 +54,7 @@ class DatabaseSeeder extends Seeder
             OrganizationUnitsSeeder::class,
             RoleSeeder::class,
             PermissionSeeder::class,
+            PermissionSeeder2027::class,
             PermissionRoleSeeder::class,
             CodesSeeder::class,
         ]);

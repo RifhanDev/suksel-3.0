@@ -240,19 +240,27 @@ class ItemController {
      * Remove an item
      */
     remove(index) {
-        if (typeof bootbox !== 'undefined') {
+        const confirmAction = () => {
+            this.deletedItems.push({ ...this.items[index] });
+            this.items.splice(index, 1);
+            this.render();
+        };
+
+        if (window.VendorForm && typeof window.VendorForm.confirmDelete === 'function') {
+            window.VendorForm.confirmDelete('Adakah anda pasti mahu memadam item ini?', (result) => {
+                if (result) confirmAction();
+            });
+        } else if (window.VendorForm && typeof window.VendorForm.confirm === 'function') {
+            window.VendorForm.confirm('Adakah anda pasti mahu memadam item ini?', (result) => {
+                if (result) confirmAction();
+            });
+        } else if (typeof bootbox !== 'undefined') {
             bootbox.confirm('Anda pasti?', (result) => {
-                if (result) {
-                    this.deletedItems.push({ ...this.items[index] });
-                    this.items.splice(index, 1);
-                    this.render();
-                }
+                if (result) confirmAction();
             });
         } else {
             if (confirm('Anda pasti?')) {
-                this.deletedItems.push({ ...this.items[index] });
-                this.items.splice(index, 1);
-                this.render();
+                confirmAction();
             }
         }
     }

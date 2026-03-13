@@ -78,11 +78,11 @@ class UsersController extends Controller
 				})
 				->addColumn('actions', function ($data) {
 					$actions = [];
-					$actions[] = $data->canShow() ? link_to_route('users.edit', 'Kemaskini', $data->id, ['class' => 'btn btn-xs btn-primary']) : '';
-					$actions[] = $data->canShow() ? link_to_route('users.histories', 'Aktiviti Pengguna', $data->id, ['class' => 'btn btn-xs btn-success']) : '';
-					$actions[] = $data->canLogin() ? link_to_route('users.login', 'Login Sebagai', $data->id, ['class' => 'btn btn-xs btn-danger']) : '';
+					$actions[] = $data->canShow() ? link_to_route('users.edit', 'Kemaskini', $data->id, ['class' => 'btn btn-sm btn-warning rounded-8 px-3']) : '';
+					$actions[] = $data->canShow() ? link_to_route('users.histories', 'Aktiviti Pengguna', $data->id, ['class' => 'btn btn-sm btn-info text-white rounded-8 px-3']) : '';
+					$actions[] = $data->canLogin() ? link_to_route('users.login', 'Login Sebagai', $data->id, ['class' => 'btn btn-sm btn-danger rounded-8 px-3']) : '';
 
-					return '<div class="btn-group">' . implode(' ', $actions) . '</div>';
+					return '<div class="d-flex flex-wrap justify-content-center gap-2 mx-auto" style="width: 280px;">' . implode('', $actions) . '</div>';
 				})
 				->removeColumn('id')
 				->removeColumn('last_name')
@@ -150,6 +150,24 @@ class UsersController extends Controller
 
 		if (isset($data['organization_unit_id']) && empty($data['organization_unit_id'])) {
 			$data['organization_unit_id'] = null;
+		}
+		if (isset($data['ic_number'])) {
+			$data['ic_number'] = trim($data['ic_number']);
+			if ($data['ic_number'] === '') {
+				$data['ic_number'] = null;
+			}
+		}
+		if (isset($data['gred'])) {
+			$data['gred'] = trim($data['gred']);
+			if ($data['gred'] === '') {
+				$data['gred'] = null;
+			}
+		}
+		if (isset($data['jawatan'])) {
+			$data['jawatan'] = trim($data['jawatan']);
+			if ($data['jawatan'] === '') {
+				$data['jawatan'] = null;
+			}
 		}
 
 		if (!auth()->user()->hasRole('Admin')) {
@@ -260,6 +278,24 @@ class UsersController extends Controller
 			}
 			if (isset($data['organization_unit_id']) && empty($data['organization_unit_id'])) {
 				$data['organization_unit_id'] = null;
+			}
+			if (isset($data['ic_number'])) {
+				$data['ic_number'] = trim($data['ic_number']);
+				if ($data['ic_number'] === '') {
+					$data['ic_number'] = null;
+				}
+			}
+			if (isset($data['gred'])) {
+				$data['gred'] = trim($data['gred']);
+				if ($data['gred'] === '') {
+					$data['gred'] = null;
+				}
+			}
+			if (isset($data['jawatan'])) {
+				$data['jawatan'] = trim($data['jawatan']);
+				if ($data['jawatan'] === '') {
+					$data['jawatan'] = null;
+				}
 			}
 
 			if (!$user->canUpdate()) {
@@ -563,9 +599,9 @@ class UsersController extends Controller
 				})
 				->addColumn('actions', function ($data) {
 					$actions = [];
-					$actions[] = $data->canShow() ? link_to_route('users.approval', 'Sahkan', $data->id, ['class' => 'btn btn-xs btn-primary']) : '';
+					$actions[] = $data->canShow() ? link_to_route('users.approval', 'Sahkan', $data->id, ['class' => 'btn btn-sm btn-primary rounded-8 px-3']) : '';
 
-					return '<div class="btn-group">' . implode(' ', $actions) . '</div>';
+					return '<div class="d-flex gap-2 flex-wrap">' . implode('', $actions) . '</div>';
 				})
 				->removeColumn('id')
 				->removeColumn('last_name')

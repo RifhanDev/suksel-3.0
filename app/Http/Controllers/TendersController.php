@@ -56,6 +56,7 @@ class TendersController extends Controller
 
 			$tenders = $tenders->select([
 				'tenders.id',
+				'tenders.uuid',
 				'tenders.name',
 				'tenders.ref_number',
 				'tenders.organization_unit_id',
@@ -115,6 +116,30 @@ class TendersController extends Controller
 				->editColumn('approver_id', function ($tender) {
 					return $tender->status;
 				})
+				->addColumn('actions', function ($tender) {
+					if (!auth()->check()) {
+						return '';
+					}
+
+					$user = auth()->user();
+					$canCreateCommittee = $user->can('committee:create');
+
+					// Support both legacy Entrust-style and Spatie permission mappings.
+					if (!$canCreateCommittee && method_exists($user, 'hasPermissionTo')) {
+						try {
+							$canCreateCommittee = $user->hasPermissionTo('committee:create');
+						} catch (\Throwable $th) {
+							$canCreateCommittee = false;
+						}
+					}
+
+					if ($canCreateCommittee && $tender->status === 'Tiada Jawatan Kuasa') {
+						$url = route('pelantikanJawatankuasa') . '?tender=' . $tender->uuid;
+						return '<a href="' . $url . '" class="btn btn-sm btn-selangor">Lantik Jawatan Kuasa</a>';
+					}
+
+					return '';
+				})
 				->removeColumn('id')
 				->removeColumn('ref_number')
 				->removeColumn('organization_unit_id')
@@ -128,7 +153,7 @@ class TendersController extends Controller
 			if (!auth()->check() || auth()->user()->hasRole('Vendor')) $datatable = $datatable->removeColumn('approver_id');
 
 			return $datatable
-				->rawColumns(['name', 'document_start_date', 'submission_datetime', 'price', 'approver_id'])
+				->rawColumns(['name', 'document_start_date', 'submission_datetime', 'price', 'approver_id', 'actions'])
 				->make();
 		}
 

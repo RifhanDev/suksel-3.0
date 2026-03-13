@@ -25,15 +25,19 @@
 	<!-- Type Cards -->
 	@include('transactions._snaps')
 
-	<!-- Main Card -->
-	<div class="card modern-card">
-		<div class="card-header" style="background: white; border-bottom: 1px solid #e9ecef;">
-			<h3 class="card-title-modern mb-0">
-				<i class="ti ti-list"></i>
-				Senarai Transaksi
-			</h3>
+	<!-- Main Table Card -->
+	<div class="content-card p-0">
+		<div class="content-card-header p-4 pb-3 border-bottom">
+			<div class="d-flex align-items-center gap-3">
+				<div class="content-card-icon" style="width: 38px; height: 38px;">
+					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+				</div>
+				<h3 class="content-card-title" style="font-size: 1rem;">Senarai Transaksi</h3>
+			</div>
 		</div>
-		<div class="card-body">
+
+		<!-- Table Body -->
+		<div class="content-card-body p-2">
 			<div class="table-responsive">
 				<table
 					data-path="{{ action('TransactionsController@index') }}?state={{ isset($transaction_type) ? $transaction_type : '' }}&status={{ isset($transaction_status) ? $transaction_status : '' }}"

@@ -51,15 +51,14 @@ class RejectTemplateController extends Controller
                 })
                 ->addColumn('actions', function ($template) {
                     $actions   = [];
-                    $actions[] = '<div class="btn-group">';
-                    $actions[] = $template->canUpdate() ? link_to_action('RejectTemplateController@edit', 'Kemaskini', $template->id, ['class' => 'btn btn-xs btn-primary']) : '';
-                    $actions[] = $template->canDelete() ? Former::open(action('RejectTemplateController@destroy', $template->id))->class('form-inline')
-                        . Former::hidden('_method', 'DELETE')
-                        . '<button type="button" class="btn btn-xs btn-danger confirm-delete">Delete</button>'
-                        . Former::close() : '';
-                    $actions[] = $template->canShow() ? link_to_action('RejectTemplateController@show', 'Lihat', $template->id, ['class' => 'btn btn-xs btn-success']) : '';
-                    $actions[] = '</div>';
-                    return implode(' ', $actions);
+                    $actions[] = $template->canUpdate() ? link_to_action('RejectTemplateController@edit', 'Kemaskini', $template->id, ['class' => 'btn btn-sm btn-warning rounded-8 px-3']) : '';
+                    $actions[] = $template->canDelete() ? '<form action="' . action('RejectTemplateController@destroy', $template->id) . '" method="POST" class="form-inline m-0">'
+                        . csrf_field()
+                        . method_field('DELETE')
+                        . '<button type="button" class="btn btn-sm btn-danger rounded-8 px-3 confirm-delete">Padam</button>'
+                        . '</form>' : '';
+                    $actions[] = $template->canShow() ? link_to_action('RejectTemplateController@show', 'Lihat', $template->id, ['class' => 'btn btn-sm btn-info rounded-8 px-3']) : '';
+                    return '<div class="d-flex gap-2 flex-wrap justify-content-center">' . implode('', $actions) . '</div>';
                 })
                 ->removeColumn('id')
                 ->rawColumns(['title', 'content', 'applicable', 'actions'])

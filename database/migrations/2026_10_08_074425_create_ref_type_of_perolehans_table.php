@@ -13,13 +13,10 @@ return new class extends Migration
     {
         Schema::create('ref_type_of_perolehans', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('ref_kategori_jenis_perolehan_id')->nullable();
             $table->string('name', 255)->nullable();
             $table->string('description', 255)->nullable();
             $table->boolean('active')->nullable();
             $table->timestamps();
-            
-            $table->foreign('ref_kategori_jenis_perolehan_id')->references('id')->on('ref_kategori_jenis_perolehans')->onDelete('cascade');
         });
     }
 

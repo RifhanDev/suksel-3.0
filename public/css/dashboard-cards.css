@@ -1,5 +1,5 @@
 :root {
-    --sg-red: #c41e3a; 
+    --sg-red: #c41e3a;
     --sg-red-dark: #8b1428;
     --sg-yellow: #ffcc00;
 }
@@ -82,7 +82,7 @@
     text-transform: uppercase;
     color: #64748b;
     margin: 0;
-	width: 180px;
+    width: 185px;
     white-space: normal;
 }
 
@@ -93,7 +93,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #fff1f2; 
+    background: #fff1f2;
     color: var(--sg-red);
     border: 1px solid #ffe4e6;
     flex-shrink: 0;
@@ -106,6 +106,35 @@
     border-color: var(--sg-red);
     transform: translateY(-3px);
     box-shadow: 0 8px 15px rgba(196, 30, 58, 0.25);
+}
+
+/* --- Stats Icon Color Modifiers --- */
+/* Warning (Yellow) */
+.stats-card-icon.stats-icon-warning {
+    background: #fffbeb;
+    color: #d97706;
+    border-color: #fef3c7;
+}
+
+.stats-card:hover .stats-card-icon.stats-icon-warning {
+    background: #f59e0b;
+    color: white;
+    border-color: #f59e0b;
+    box-shadow: 0 8px 15px rgba(245, 158, 11, 0.25);
+}
+
+/* Success (Green) */
+.stats-card-icon.stats-icon-success {
+    background: #f0fdf4;
+    color: #16a34a;
+    border-color: #dcfce7;
+}
+
+.stats-card:hover .stats-card-icon.stats-icon-success {
+    background: #15803d;
+    color: white;
+    border-color: #15803d;
+    box-shadow: 0 8px 15px rgba(21, 128, 61, 0.25);
 }
 
 .stats-card-icon svg {
@@ -153,7 +182,7 @@
     content: '';
     position: absolute;
     top: 0;
-    left: 25%; 
+    left: 25%;
     right: 25%;
     height: 1px;
     /* Red shine against white background */
@@ -195,10 +224,14 @@
 
 /* Success (Langganan Aktif) */
 .stats-card.status-success .stats-card-icon {
-    background: #f0fdf4; color: #16a34a; border-color: #dcfce7;
+    background: #f0fdf4;
+    color: #16a34a;
+    border-color: #dcfce7;
 }
 .stats-card.status-success:hover .stats-card-icon {
-    background: #16a34a; color: white; border-color: #16a34a;
+    background: #16a34a;
+    color: white;
+    border-color: #16a34a;
     box-shadow: 0 8px 15px rgba(22, 163, 74, 0.25);
 }
 .stats-card.status-success::before { background: #16a34a; } /* Green triangle accent */

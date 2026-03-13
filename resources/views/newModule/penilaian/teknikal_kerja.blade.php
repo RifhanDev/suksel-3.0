@@ -2,17 +2,17 @@
 
 @section('content')
 <style>
-:root{
-    --brand-red:#B11217;
-    --soft-grey:#e9ecef;
-    --line:#d9dde5;
+    :root{
+        --brand-red:#B11217;
+        --soft-grey:#e9ecef;
+        --line:#d9dde5;
 
-    --btn-primary: var(--brand-red);
-    --btn-primary-hover:#991014;
+        --btn-primary: var(--brand-red);
+        --btn-primary-hover:#991014;
 
-    --btn-teal:#19c1a7;
-    --btn-green:#17a34a;
-}
+        --btn-teal:#19c1a7;
+        --btn-green:#17a34a;
+    }
 
 /* ====== PAGE VISIBILITY ====== */
 #pageDetail{ display:none; }
@@ -320,6 +320,19 @@
                         <td>05/03/2024</td>
                         <td><span class="badge-pill badge-green">Aktif</span></td>
                     </tr>
+
+                    <tr>
+                        <td>QT21000000023799</td>
+                        <td>
+                            <a class="tender-link"
+                            href="{{ route('penilaianTeknikal') }}">
+                               TEKNIKAL
+                            </a>
+                        </td>
+                        <td>05/03/2024</td>
+                        <td><span class="badge-pill badge-green">Aktif</span></td>
+                    </tr>
+                    
                     </tbody>
                 </table>
             </div>
@@ -327,7 +340,7 @@
     </div>
 
     {{-- =========================
-        PAGE 2: BORANG TEKNIKAL (keep your flow + modal)
+       BORANG TEKNIKAL 
     ========================== --}}
     <div id="pageDetail">
 
