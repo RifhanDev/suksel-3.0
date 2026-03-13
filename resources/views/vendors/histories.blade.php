@@ -23,21 +23,6 @@
         text-shadow: 0 2px 4px rgba(196, 30, 58, 0.1); 
     }
 
-    /* CARD WRAPPER */
-    .stats-card {
-        background: #ffffff;
-        border-radius: 12px;
-        border: 1px solid #e2e8f0;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
-        overflow: hidden;
-    }
-    .stats-card-header {
-        padding: 20px 24px;
-        background: #fff;
-        border-bottom: 1px solid #f1f5f9;
-        display: flex; align-items: center; gap: 10px;
-    }
-
     .table-clean thead th {
         background-color: #f8fafc;
         color: #475569;
@@ -136,7 +121,7 @@
 	@endif
 </div>
 
-<div class="stats-card mb-4">
+<div class="content-card mb-4">
     
     {{-- <div class="stats-card-header">
         <h5 class="mb-0 fw-bold d-flex align-items-center gap-2 text-dark">

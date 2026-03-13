@@ -1,4 +1,8 @@
-@extends('layouts.modernLanding')
+@extends(Auth::user()->hasRole('Vendor') ? 'layouts.modernLanding' : 'layouts.v3.master')
+    {{-- 
+     PAGE-PAGE AGENCY NI TINGGAL SEKEJAP, SEBAB KENA CHECK BTUL2 DULU (CHALLENGING) 
+     NK BEZAKAN PAGE UTK LANDING DGN USER YG DH LOGGED IN
+    --}}
 
 @section('styles')
     <style>

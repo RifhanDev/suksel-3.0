@@ -23,32 +23,6 @@
         text-shadow: 0 2px 4px rgba(196, 30, 58, 0.1); 
     }
 
-    .stats-card {
-        background: #ffffff;
-        border-radius: 12px;
-        border: 1px solid #e2e8f0;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
-        overflow: hidden;
-        position: relative;
-    }
-
-    /* Geometric Accent */
-    .stats-card::before {
-        content: ''; position: absolute; top: -25px; right: -25px; width: 80px; height: 80px;
-        background: var(--sg-red); opacity: 0.03; border-radius: 20px; transform: rotate(45deg); pointer-events: none;
-    }
-
-    .stats-card-header {
-        padding: 20px 24px;
-        background: #fff;
-        border-bottom: 1px solid #f1f5f9;
-        display: flex; align-items: center; justify-content: space-between;
-    }
-
-    .stats-card-title {
-        margin: 0; font-size: 1.1rem; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 10px;
-    }
-
     .table-modern thead th {
         background-color: #f8fafc;
         color: #64748b;
@@ -111,10 +85,10 @@
         @endif
 	</div>
 
-    <div class="stats-card mb-4">
-        <div class="stats-card-header">
+    <div class="content-card mb-4">
+        <div class="content-card-header">
             <!-- Left -->
-            <h3 class="stats-card-title">
+            <h3 class="content-card-title">
                 <div class="d-flex align-items-center justify-content-center bg-danger bg-opacity-10 text-danger rounded-2" style="width: 36px; height: 36px;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
                 </div>
