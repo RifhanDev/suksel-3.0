@@ -88,7 +88,7 @@
     <div class="content-card mb-4">
         <div class="content-card-header">
             <!-- Left -->
-            <h3 class="content-card-title">
+            <h3 class="content-card-title d-flex align-items-center gap-2 mb-0">
                 <div class="d-flex align-items-center justify-content-center bg-danger bg-opacity-10 text-danger rounded-2" style="width: 36px; height: 36px;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
                 </div>

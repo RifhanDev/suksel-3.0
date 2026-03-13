@@ -41,30 +41,20 @@ class BannersController extends Controller
 				->addColumn('actions', function ($banner) {
 
 					$actions   = [];
-					$actions[] = '<div class="btn-group btn-group-modern" role="group">';
 
-					// Edit button - Blue/Primary
-					$editIcon = '<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-sm" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" /><path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z" /><path d="M16 5l3 3" /></svg>';
-					$actions[] = link_to_route('banners.edit', $editIcon, $banner->id, ['class' => 'btn btn-sm btn-action btn-action-primary', 'title' => 'Kemaskini', 'data-bs-toggle' => 'tooltip']);
+					$actions[] = link_to_route('banners.edit', 'Kemaskini', $banner->id, ['class' => 'btn btn-sm btn-warning rounded-8 px-3']);
 
-					// View button (if file exists) - Teal/Success
 					if ($banner->file) {
-						$viewIcon = '<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-sm" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" /><path d="M21 12c-2.4 4 -5.4 6 -9 6c-3.6 0 -6.6 -2 -9 -6c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6" /></svg>';
-						$actions[] = '<a href="' . $banner->file->url . '/' . $banner->file->name . '" class="btn btn-sm btn-action btn-action-success" target="_blank" title="Lihat Banner" data-bs-toggle="tooltip">' . $viewIcon . '</a>';
+						$actions[] = '<a href="' . $banner->file->url . '/' . $banner->file->name . '" class="btn btn-sm btn-info rounded-8 px-3" target="_blank">Lihat</a>';
 					}
 
-					// Publish/Unpublish button
 					if ($banner->published) {
-						$publishIcon = '<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-sm" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 3l18 18" /><path d="M10.584 10.587a2 2 0 0 0 2.828 2.83" /><path d="M9.363 5.365a9.466 9.466 0 0 1 2.637 -.365c4 0 7.333 2.333 10 7c-.778 1.361 -1.612 2.524 -2.503 3.488m-2.14 1.861c-1.631 1.1 -3.415 1.651 -5.357 1.651c-4 0 -7.333 -2.333 -10 -7c1.369 -2.395 2.913 -4.175 4.632 -5.341" /></svg>';
-						$actions[] = link_to_route('banners.publish', $publishIcon, $banner->id, ['class' => 'btn btn-sm btn-action btn-action-warning', 'title' => 'Batal Siar', 'data-bs-toggle' => 'tooltip']);
+						$actions[] = link_to_route('banners.publish', 'Batal Siar', $banner->id, ['class' => 'btn btn-sm btn-danger rounded-8 px-3']);
 					} else {
-						$publishIcon = '<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-sm" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" /><path d="M21 12c-2.4 4 -5.4 6 -9 6c-3.6 0 -6.6 -2 -9 -6c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6" /></svg>';
-						$actions[] = link_to_route('banners.publish', $publishIcon, $banner->id, ['class' => 'btn btn-sm btn-action btn-action-info', 'title' => 'Siar', 'data-bs-toggle' => 'tooltip']);
+						$actions[] = link_to_route('banners.publish', 'Siar', $banner->id, ['class' => 'btn btn-sm btn-success rounded-8 px-3']);
 					}
 
-					$actions[] = '</div>';
-
-					return implode(' ', $actions);
+					return '<div class="d-flex gap-2 flex-wrap justify-content-center">' . implode('', $actions) . '</div>';
 				})
 				->removeColumn('id')
 				->rawColumns(['title', 'start', 'end', 'published', 'created_at', 'actions'])

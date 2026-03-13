@@ -43,16 +43,14 @@ class CertificationCodesController extends Controller
 								->editColumn('type', function($code){
 									return Code::$type[$code->type];
 								})
-								->addColumn('actions', function($certificationcode){
+								->addColumn('actions', function($certificationcode) {
 									$actions   = [];
-									$actions[] = '<div class="btn-group">';
-									$actions[] = $certificationcode->canUpdate() ? link_to_action('CertificationCodesController@edit', 'Kemaskini', $certificationcode->id, ['class' => 'btn btn-xs btn-primary'] ) : '';
-									$actions[] = $certificationcode->canDelete() ? Former::open(action('CertificationCodesController@destroy', $certificationcode->id))->class('form-inline') 
+									$actions[] = $certificationcode->canUpdate() ? link_to_action('CertificationCodesController@edit', 'Kemaskini', $certificationcode->id, ['class' => 'btn btn-sm btn-warning rounded-8 px-3']) : '';
+									$actions[] = $certificationcode->canDelete() ? Former::open(action('CertificationCodesController@destroy', $certificationcode->id))->class('form-inline m-0')
 									. Former::hidden('_method', 'DELETE')
-									. '<button type="button" class="btn btn-xs btn-danger confirm-delete">Delete</button>'
+									. '<button type="button" class="btn btn-sm btn-danger rounded-8 px-3 confirm-delete">Padam</button>'
 									. Former::close() : '';
-									$actions[] = '</div>';
-									return implode(' ', $actions);
+									return '<div class="d-flex gap-2 flex-wrap justify-content-center">' . implode('', $actions) . '</div>';
                 			});
 
       if($request->type && Code::typeExists($request->type))

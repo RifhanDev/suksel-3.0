@@ -27,6 +27,7 @@
     <link href="{{ asset('css/components/form-components.css') }}" rel="stylesheet">
     <link href="{{ asset('css/components/button-components.css') }}" rel="stylesheet">
     <link href="{{ asset('css/components/content-card.css') }}" rel="stylesheet">
+    <link href="{{ asset('css/components/badges.css') }}" rel="stylesheet">
 
     <!-- Selectize CSS -->
     <link href="{{ asset('packages/selectize/dist/css/selectize.default.css') }}" rel="stylesheet">
