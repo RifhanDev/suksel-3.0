@@ -297,9 +297,15 @@
 
                 <!-- 4. PENGURUSAN AKSES -->
                 @if (Auth::user()->hasRole('Admin'))
+                    @php
+                        $isAccessMenuActive =
+                            request()->is('roles*') ||
+                            request()->is('permissions*');
+                    @endphp
                     <li class="nav-item">
-                        <a class="sidebar-link collapsed" data-bs-toggle="collapse" data-bs-target="#menuAccess"
-                            aria-expanded="false" style="cursor: pointer;">
+                        <a class="sidebar-link {{ $isAccessMenuActive ? 'active' : 'collapsed' }}"
+                            data-bs-toggle="collapse" data-bs-target="#menuAccess"
+                            aria-expanded="{{ $isAccessMenuActive ? 'true' : 'false' }}" style="cursor: pointer;">
                             <svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24"
                                 fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
                                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
@@ -311,16 +317,22 @@
                                 <polyline points="9 18 15 12 9 6"></polyline>
                             </svg>
                         </a>
-                        <div class="collapse" id="menuAccess">
+                        <div class="collapse {{ $isAccessMenuActive ? 'show' : '' }}" id="menuAccess">
                             <ul class="sidebar-submenu">
                                 @if (App\Role::canList())
                                     <li><a class="submenu-item" href="{{ asset('roles') }}">
-                                            <div class="submenu-icon"></div><span>Tetapan Peranan</span>
+                                            <div class="submenu-icon"
+                                                style="{{ request()->is('roles*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}">
+                                            </div><span
+                                                class="{{ request()->is('roles*') ? 'text-white' : '' }}">Tetapan Peranan</span>
                                         </a></li>
                                 @endif
                                 @if (App\Permission::canList())
                                     <li><a class="submenu-item" href="{{ asset('permissions') }}">
-                                            <div class="submenu-icon"></div><span>Tetapan Kebenaran</span>
+                                            <div class="submenu-icon"
+                                                style="{{ request()->is('permissions*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}">
+                                            </div><span
+                                                class="{{ request()->is('permissions*') ? 'text-white' : '' }}">Tetapan Kebenaran</span>
                                         </a></li>
                                 @endif
                             </ul>
@@ -330,9 +342,13 @@
 
                 <!-- 5. PEMULANGAN SEMULA -->
                 @if (Auth::user()->ability(['Admin', 'Refund Admin'], ['Refund:list']))
+                    @php
+                        $isRefundMenuActive = request()->is('refunds*');
+                    @endphp
                     <li class="nav-item">
-                        <a class="sidebar-link collapsed" data-bs-toggle="collapse" data-bs-target="#menuRefund"
-                            aria-expanded="false" style="cursor: pointer;">
+                        <a class="sidebar-link {{ $isRefundMenuActive ? 'active' : 'collapsed' }}"
+                            data-bs-toggle="collapse" data-bs-target="#menuRefund"
+                            aria-expanded="{{ $isRefundMenuActive ? 'true' : 'false' }}" style="cursor: pointer;">
                             <svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24"
                                 fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
                                 <polyline points="23 4 23 10 17 10" />
@@ -344,16 +360,22 @@
                                 <polyline points="9 18 15 12 9 6"></polyline>
                             </svg>
                         </a>
-                        <div class="collapse" id="menuRefund">
+                        <div class="collapse {{ $isRefundMenuActive ? 'show' : '' }}" id="menuRefund">
                             <ul class="sidebar-submenu">
                                 @if (App\Models\Refund::canList())
                                     <li><a class="submenu-item" href="{{ route('refunds.request.index') }}">
-                                            <div class="submenu-icon"></div><span>Permohonan Pemulangan Semula</span>
+                                            <div class="submenu-icon"
+                                                style="{{ request()->routeIs('refunds.request.*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}">
+                                            </div><span
+                                                class="{{ request()->routeIs('refunds.request.*') ? 'text-white' : '' }}">Permohonan Pemulangan Semula</span>
                                         </a></li>
                                 @endif
                                 @if (App\Models\Refund::isRoleBKP())
                                     <li><a class="submenu-item" href="{{ route('refunds.complaint.index') }}">
-                                            <div class="submenu-icon"></div><span>Aduan Permohonan Semula</span>
+                                            <div class="submenu-icon"
+                                                style="{{ request()->routeIs('refunds.complaint.*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}">
+                                            </div><span
+                                                class="{{ request()->routeIs('refunds.complaint.*') ? 'text-white' : '' }}">Aduan Permohonan Semula</span>
                                         </a>
                                     </li>
                                 @endif
@@ -525,11 +547,11 @@
                                     </li>
                                 @else
                                     {{-- <li>
-								<a class="submenu-item" href="{{ route('dashboard', ['id' => Auth::user()->organization_unit_id]) }}">
-						<div class="submenu-icon"></div>
-						<span>Dashboard</span>
-						</a>
-			</li> --}}
+								        <a class="submenu-item" href="{{ route('dashboard', ['id' => Auth::user()->organization_unit_id]) }}">
+                                            <div class="submenu-icon"></div>
+                                            <span>Dashboard</span>
+                                        </a>
+                                    </li> --}}
                                 @endif
                             </ul>
                         </div>
