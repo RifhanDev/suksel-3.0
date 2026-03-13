@@ -80,7 +80,7 @@ use App\Http\Controllers\ReportUserLoginController;
 use App\Http\Controllers\DummyController;
 use App\Http\Controllers\JawatankuasaController;
 use App\Http\Controllers\CutOffController;
-
+use App\Http\Controllers\PenilaianTeknikalController;
 
 // Basic routes to get the application running
 Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -202,9 +202,15 @@ Route::post('/pelantikan-jawatankuasa/hantar-pemakluman', [JawatankuasaControlle
 Route::view('/senarai-teknikal', 'newModule.jawatankuasaSpesifikasi.senarai_teknikal')->name('senaraiTeknikal');
 Route::view('/senarai-kewangan', 'newModule.jawatankuasaSpesifikasi.senarai_kewangan')->name('senaraiKewangan');
 Route::view('/jawatankuasa-pembuka', 'newModule.jawatankuasa_pembuka')->name('jawatankuasaPembuka');
-Route::view('/penilaian-teknikal', 'newModule.penilaian.teknikal')->name('penilaianTeknikal');
+
+// old
+// Route::view('/penilaian-teknikal', 'newModule.penilaian.teknikal')->name('penilaianTeknikal');
 Route::view('/penilaian-teknikal-kerja', 'newModule.penilaian.teknikal_kerja')->name('penilaianTeknikalKerja');
 Route::view('/penilaian-kewangan', 'newModule.penilaian.kewangan')->name('penilaianKewangan');
+
+// new 
+Route::get('/penilaian-teknikal', [PenilaianTeknikalController::class, 'index'])->name('penilaianTeknikal');
+Route::get('/penilaian-teknikal/{tender_no}', [PenilaianTeknikalController::class, 'show'])->name('penilaianTeknikal.show');
 
 Route::view('/penilaian-kewangan-kerja', 'newModule.penilaian.borang1')->name('borang1');
 Route::view('/penilaian-kewangan-kerja-borang2', 'newModule.penilaian.borang2')->name('borang2');

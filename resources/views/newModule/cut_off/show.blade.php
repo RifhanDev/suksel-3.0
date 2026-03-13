@@ -409,7 +409,7 @@
     </div>
 </div>
 
-{{-- Success modal (same UI as penilaian success dialogs) --}}
+{{-- Success modal --}}
 <div class="modal fade" id="cutoffSuccessModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" style="max-width: 520px;">
         <div class="modal-content cutoff-modal-card">
