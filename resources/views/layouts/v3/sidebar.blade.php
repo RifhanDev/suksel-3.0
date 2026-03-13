@@ -790,12 +790,17 @@
                     </a>
                     <div class="collapse" id="menuJawatankusaSpesifikasi">
                         <ul class="sidebar-submenu">
-                            <li><a class="submenu-item" href="{{ route('senaraiTeknikal') }}">
+                            <li>
+                                <a class="submenu-item" href="{{ route('senaraiSemak') }}">
+                                    <div class="submenu-icon"></div><span>Senarai Semak</span>
+                                </a>
+                            </li>
+                            <!-- <li><a class="submenu-item" href="{{ route('senaraiTeknikal') }}">
                                     <div class="submenu-icon"></div><span>Senarai Semak Teknikal</span>
-                                </a></li>
-                            <li><a class="submenu-item" href="{{ route('senaraiKewangan') }}">
+                                </a></li> -->
+                            <!-- <li><a class="submenu-item" href="{{ route('senaraiKewangan') }}">
                                     <div class="submenu-icon"></div><span>Senarai Semak Kewangan</span>
-                                </a></li>
+                                </a></li> -->
                         </ul>
                     </div>
                 </li>
