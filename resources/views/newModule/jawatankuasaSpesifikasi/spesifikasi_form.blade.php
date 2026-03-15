@@ -273,7 +273,7 @@
                                         <input type="text" class="form-control form-control-sm">
                                     </td>
                                     <td></td>
-                                   <td class="text-center">
+                                    <td class="text-center">
                                         <input type="number" class="form-control form-control-sm text-center" value="0" min="0">
                                     </td>
                                     <td>
@@ -291,6 +291,7 @@
                                     </td>
                                 </tr>
                                 <tr class="add_row_spec d-none">
+                                    <td></td>
                                     <td></td>
                                     <td></td>
                                     <td></td>
@@ -353,52 +354,38 @@
 
 <script type="text/javascript">
 
-document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('DOMContentLoaded', function () {
 
-    var table = document.querySelector('#dt_tmpltSpec');
-    if (!table) return;
+        var table = document.querySelector('#dt_tmpltSpec');
+        if (!table) return;
+        var tbody = table.querySelector('tbody');
+        var addItemBtn = document.querySelector('.add_btn_item');
 
-    var tbody = table.querySelector('tbody');
+        if (addItemBtn) {
+            addItemBtn.addEventListener('click', function () {
 
-    document.querySelector('.add_btn_item')
-        .addEventListener('click', function () {
+                var template = tbody.querySelector('.add_row_item');
+                var clone = template.cloneNode(true);
 
-            var template = tbody.querySelector('.add_row_item');
-            var clone = template.cloneNode(true);
+                clone.classList.remove('d-none', 'add_row_item');
+                tbody.appendChild(clone);
 
-            clone.classList.remove('d-none', 'add_row_item');
-            tbody.appendChild(clone);
-        });
-
-    document.querySelector('.add_btn_spec')
-        .addEventListener('click', function () {
-
-            var template2 = tbody.querySelector('.add_row_spec');
-            var clone2 = template2.cloneNode(true);
-
-            clone2.classList.remove('d-none', 'add_row_spec');
-            tbody.appendChild(clone2);
-        });
-
-    document.querySelector('.btn-hapus-teknikal')
-        .addEventListener('click', function () {
-
-            var checkedRows = tbody.querySelectorAll('.row-check-teknikal:checked');
-
-            if (checkedRows.length === 0) {
-                alert('Sila pilih sekurang-kurangnya satu rekod untuk dihapus.');
-                return;
-            }
-
-            checkedRows.forEach(cb => {
-                cb.closest('tr').remove();
             });
+        }
 
-            var checkAll = table.querySelector('.check-all-teknikal');
-            if (checkAll) checkAll.checked = false;
+        tbody.addEventListener('click', function (e) {
+            if (e.target.closest('.add_btn_spec')) {
+
+                var template2 = tbody.querySelector('.add_row_spec');
+                var clone2 = template2.cloneNode(true);
+
+                clone2.classList.remove('d-none', 'add_row_spec');
+                var currentRow = e.target.closest('tr');
+                currentRow.after(clone2);
+
+            }
         });
-
-});
+    });
 
 </script>
 
