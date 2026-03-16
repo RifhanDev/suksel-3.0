@@ -211,6 +211,44 @@
                                     <td class="text-center">
                                         <input type="checkbox" class="form-check-input row-check-teknikal">
                                     </td>
+                                    <td>Senarai Pengalaman Kerja</td>
+                                    <td class="text-center">Borang Atas Talian</td>
+                                    <td class="text-center">Kunci Masuk</td>
+                                    <td class="text-center">40</td>
+                                    <td class="text-center">
+                                        <span class="badge bg-success">Lengkap</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-outline-primary">Lihat</button>
+                                    </td>
+                                    <td class="text-center">
+                                        <a href="{{ route('pgmnKerjaForm') }}" type="button" class="btn btn-sm btn-warning text-white">Kemaskini</a>
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td class="text-center">
+                                        <input type="checkbox" class="form-check-input row-check-teknikal">
+                                    </td>
+                                    <td>Kerja Dalam Tangan</td>
+                                    <td class="text-center">Borang Atas Talian</td>
+                                    <td class="text-center">Kunci Masuk</td>
+                                    <td class="text-center">10</td>
+                                    <td class="text-center">
+                                        <span class="badge bg-success">Lengkap</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-outline-primary">Lihat</button>
+                                    </td>
+                                    <td class="text-center">
+                                        <a href="{{ route('kjDlmTanganForm') }}" type="button" class="btn btn-sm btn-warning text-white">Kemaskini</a>
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td class="text-center">
+                                        <input type="checkbox" class="form-check-input row-check-teknikal">
+                                    </td>
                                     <td>Skop Bekalan dan Perkhidmatan</td>
                                     <td class="text-center">Wajib</td>
                                     <td class="text-center">Isi Borang</td>
@@ -312,17 +350,73 @@
                         </a>
                     </div>
                 </div>
-                <div class="row mx-2">
-                    <div class="col-12 d-flex justify-content-end gap-2">
-                        <button type="button" class="btn-md-sm btn btn-success btn-simpan">
-                            Simpan
-                        </button>
-                        <button type="button" class="btn-md-sm btn btn-primary btn-hantar">
-                            Hantar
-                        </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="stats-card mb-4">
+        <div class="stats-card-header">
+            <h3 class="stats-card-title">
+                <div class="d-flex align-items-center justify-content-center bg-danger bg-opacity-10 text-danger rounded-2" style="width: 36px; height: 36px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path><line x1="8" y1="6" x2="16" y2="6"></line><line x1="8" y1="10" x2="16" y2="10"></line></svg>
+                </div>
+                Penetepan Penanda Aras Tahap Lulus (%)
+            </h3>
+        </div>
+        <div class="card-body p-2">
+            <div class="p-4">
+                <div class="row mb-3 mx-3">
+                    <div class="col-sm-6 form-group my-2">
+                        <div class="row">
+                            <label class="col-sm-4 control-label">Penilaian Teknikal :</label>
+                            <div class="col-sm-6">
+                                <input type="text" class="form-control form-control-sm" id="" name="" value="">
+                            </div> 
+                            <div class="col-sm-2">
+                                <span style="font-size:15px">/ 121</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mb-3 mx-3">
+                    <div class="col-sm-6 form-group my-2">
+                        <div class="row">
+                            <label class="col-sm-4 control-label">Tahap Lulus : </label>
+                            <div class="col-sm-8 text-primary">
+                                <span id="">70</span> Peratus
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <div class="stats-card mb-4">
+        <div class="stats-card-header">
+            <h3 class="stats-card-title">
+                <div class="d-flex align-items-center justify-content-center bg-danger bg-opacity-10 text-danger rounded-2" style="width: 36px; height: 36px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path><line x1="8" y1="6" x2="16" y2="6"></line><line x1="8" y1="10" x2="16" y2="10"></line></svg>
+                </div>
+                Dokumen Sokongan / Rujukan 
+            </h3>
+        </div>
+        <div class="card-body p-2">
+            <div class="p-4">
+                <div class="row mb-3 mx-3">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4 mx-2">
+        <div class="col-12 d-flex justify-content-end gap-2">
+            <button type="button" class="btn-md-sm btn btn-success btn-simpan">
+                Simpan
+            </button>
+            <button type="button" class="btn-md-sm btn btn-primary btn-hantar">
+                Hantar
+            </button>
         </div>
     </div>
 
