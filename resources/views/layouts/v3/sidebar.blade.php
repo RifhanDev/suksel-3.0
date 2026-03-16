@@ -386,9 +386,10 @@
 
                 <!-- 6. API -->
                 @if (Auth::user()->ability(['Admin'], ['Api:canList']))
+                    @php $isApiMenuActive = request()->routeIs('apitoken.*'); @endphp
                     <li class="nav-item">
-                        <a class="sidebar-link collapsed" data-bs-toggle="collapse" data-bs-target="#menuApi"
-                            aria-expanded="false" style="cursor: pointer;">
+                        <a class="sidebar-link {{ $isApiMenuActive ? 'active' : 'collapsed' }}" data-bs-toggle="collapse" data-bs-target="#menuApi"
+                            aria-expanded="{{ $isApiMenuActive ? 'true' : 'false' }}" style="cursor: pointer;">
                             <svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24"
                                 fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
                                 <polyline points="16 18 22 12 16 6" />
@@ -400,11 +401,14 @@
                                 <polyline points="9 18 15 12 9 6"></polyline>
                             </svg>
                         </a>
-                        <div class="collapse" id="menuApi">
+                        <div class="collapse {{ $isApiMenuActive ? 'show' : '' }}" id="menuApi">
                             <ul class="sidebar-submenu">
                                 @if (App\Models\ApiToken::canList())
                                     <li><a class="submenu-item" href="{{ route('apitoken.index') }}">
-                                            <div class="submenu-icon"></div><span>Senarai API Token</span>
+                                            <div class="submenu-icon"
+                                                style="{{ request()->routeIs('apitoken.*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}">
+                                            </div><span
+                                                class="{{ request()->routeIs('apitoken.*') ? 'text-white' : '' }}">Senarai API Token</span>
                                         </a></li>
                                 @endif
                             </ul>
@@ -414,9 +418,10 @@
 
                 <!-- 7. PENGURUSAN CHATBOT -->
                 @if (Auth::user()->ability(['Admin'], ['chatbot-manager:canList']))
+                    @php $isChatbotMenuActive = request()->routeIs('chatbot-manager.*'); @endphp
                     <li class="nav-item">
-                        <a class="sidebar-link collapsed" data-bs-toggle="collapse" data-bs-target="#menuChatbot"
-                            aria-expanded="false" style="cursor: pointer;">
+                        <a class="sidebar-link {{ $isChatbotMenuActive ? 'active' : 'collapsed' }}" data-bs-toggle="collapse" data-bs-target="#menuChatbot"
+                            aria-expanded="{{ $isChatbotMenuActive ? 'true' : 'false' }}" style="cursor: pointer;">
                             <svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24"
                                 fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
@@ -427,21 +432,33 @@
                                 <polyline points="9 18 15 12 9 6"></polyline>
                             </svg>
                         </a>
-                        <div class="collapse" id="menuChatbot">
+                        <div class="collapse {{ $isChatbotMenuActive ? 'show' : '' }}" id="menuChatbot">
                             <ul class="sidebar-submenu">
                                 @if (App\Models\FaqCategory::canList())
                                     <li><a class="submenu-item" href="{{ route('chatbot-manager.category.index') }}">
-                                            <div class="submenu-icon"></div><span>Senarai Kategori</span>
+                                            <div class="submenu-icon"
+                                                style="{{ request()->routeIs('chatbot-manager.category.*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}">
+                                            </div><span
+                                                class="{{ request()->routeIs('chatbot-manager.category.*') ? 'text-white' : '' }}">Senarai Kategori</span>
                                         </a></li>
                                     <li><a class="submenu-item" href="{{ route('chatbot-manager.question.index') }}">
-                                            <div class="submenu-icon"></div><span>Senarai Soalan</span>
+                                            <div class="submenu-icon"
+                                                style="{{ request()->routeIs('chatbot-manager.question.*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}">
+                                            </div><span
+                                                class="{{ request()->routeIs('chatbot-manager.question.*') ? 'text-white' : '' }}">Senarai Soalan</span>
                                         </a></li>
                                     <li><a class="submenu-item" href="{{ route('chatbot-manager.chatlog.index') }}">
-                                            <div class="submenu-icon"></div><span>Senarai Rekod Chat</span>
+                                            <div class="submenu-icon"
+                                                style="{{ request()->routeIs('chatbot-manager.chatlog.*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}">
+                                            </div><span
+                                                class="{{ request()->routeIs('chatbot-manager.chatlog.*') ? 'text-white' : '' }}">Senarai Rekod Chat</span>
                                         </a></li>
                                     <li><a class="submenu-item"
                                             href="{{ route('chatbot-manager.newquestion.index') }}">
-                                            <div class="submenu-icon"></div><span>Pertanyaan Baru</span>
+                                            <div class="submenu-icon"
+                                                style="{{ request()->routeIs('chatbot-manager.newquestion.*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}">
+                                            </div><span
+                                                class="{{ request()->routeIs('chatbot-manager.newquestion.*') ? 'text-white' : '' }}">Pertanyaan Baru</span>
                                         </a></li>
                                 @endif
                             </ul>
@@ -480,7 +497,10 @@
                                                 Email SMTP</span>
                                         </a></li>
                                     <li><a class="submenu-item" href="{{ route('mail-manager.mail-queue.index') }}">
-                                            <div class="submenu-icon"></div><span>Rekod Email</span>
+                                            <div class="submenu-icon"
+                                                style="{{ request()->routeIs('mail-manager.mail-queue.*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}">
+                                            </div><span
+                                                class="{{ request()->routeIs('mail-manager.mail-queue.*') ? 'text-white' : '' }}">Rekod Email</span>
                                         </a></li>
                                 @endif
                             </ul>
@@ -490,9 +510,10 @@
 
                 <!-- 9. ADUAN -->
                 @if (Auth::user()->ability(['Admin'], []))
+                    @php $isAduanMenuActive = request()->is('aduan*'); @endphp
                     <li class="nav-item">
-                        <a class="sidebar-link collapsed" data-bs-toggle="collapse" data-bs-target="#menuAduan"
-                            aria-expanded="false" style="cursor: pointer;">
+                        <a class="sidebar-link {{ $isAduanMenuActive ? 'active' : 'collapsed' }}" data-bs-toggle="collapse" data-bs-target="#menuAduan"
+                            aria-expanded="{{ $isAduanMenuActive ? 'true' : 'false' }}" style="cursor: pointer;">
                             <svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24"
                                 fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
                                 <circle cx="12" cy="12" r="10" />
@@ -505,11 +526,14 @@
                                 <polyline points="9 18 15 12 9 6"></polyline>
                             </svg>
                         </a>
-                        <div class="collapse" id="menuAduan">
+                        <div class="collapse {{ $isAduanMenuActive ? 'show' : '' }}" id="menuAduan">
                             <ul class="sidebar-submenu">
                                 @if (App\Models\FaqCategory::canList())
                                     <li><a class="submenu-item" href="{{ asset('aduan/list') }}">
-                                            <div class="submenu-icon"></div><span>Senarai Aduan</span>
+                                            <div class="submenu-icon"
+                                                style="{{ request()->is('aduan*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}">
+                                            </div><span
+                                                class="{{ request()->is('aduan*') ? 'text-white' : '' }}">Senarai Aduan</span>
                                         </a></li>
                                 @endif
                             </ul>

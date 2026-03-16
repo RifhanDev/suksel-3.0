@@ -28,10 +28,12 @@ class ApiTokenController extends Controller
                     return Carbon::parse($apitoken->created_at)->format('j M Y');
                 })
                 ->editColumn('status', function ($apitoken) {
-                    return $apitoken->status == 1 ? 'AKTIF' : 'TIDAK AKTIF';
+                    return $apitoken->status == 1
+                        ? '<span class="badge-bool-yes d-inline-flex align-items-center gap-1"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"><path fill="currentColor" d="M17 3.34a10 10 0 1 1-14.995 8.984L2 12l.005-.324A10 10 0 0 1 17 3.34m-1.293 5.953a1 1 0 0 0-1.32-.083l-.094.083L11 12.585l-1.293-1.292l-.094-.083a1 1 0 0 0-1.403 1.403l.083.094l2 2l.094.083a1 1 0 0 0 1.226 0l.094-.083l4-4l.083-.094a1 1 0 0 0-.083-1.32"/></svg> Aktif</span>'
+                        : '<span class="badge-bool-no d-inline-flex align-items-center gap-1"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg> Tidak Aktif</span>';
                 })
                 ->removeColumn('id')
-                ->rawColumns(['organization_unit_id', 'created_at', 'created_at'])
+                ->rawColumns(['organization_unit_id', 'created_at', 'status'])
                 ->make();
         }
 

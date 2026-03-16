@@ -70,7 +70,7 @@ class RefundController extends Controller
                 })
                 ->addColumn('actions', function ($refund) {
                     $actions   = [];
-                    $actions[] = $refund->canShow() ? link_to_action('RefundController@show_request', 'Papar', $refund->id, ['class' => 'btn btn-xs btn-primary']) : '';
+                    $actions[] = $refund->canShow() ? '<a href="' . action('RefundController@show_request', $refund->id) . '" class="btn btn-sm btn-primary rounded-8 px-3">Papar</a>' : '';
                     return implode(' ', $actions);
                 })
                 ->rawColumns(['number', 'created_at', 'status', 'actions'])
@@ -125,7 +125,7 @@ class RefundController extends Controller
                 })
                 ->addColumn('actions', function ($refund) {
                     $actions   = [];
-                    $actions[] = $refund->canShow() ? link_to_action('RefundController@show_complaint', 'Papar', $refund->id, ['class' => 'btn btn-xs btn-primary']) : '';
+                    $actions[] = $refund->canShow() ? '<a href="' . action('RefundController@show_complaint', $refund->id) . '" class="btn btn-sm btn-primary rounded-8 px-3">Papar</a>' : '';
                     return implode(' ', $actions);
                 })
                 ->rawColumns(['number', 'created_at', 'status', 'actions'])

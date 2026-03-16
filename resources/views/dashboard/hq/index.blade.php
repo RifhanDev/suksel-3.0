@@ -1,690 +1,576 @@
 @extends('layouts.v3.master')
 
 @section('styles')
+	<link href="{{ asset('css/dashboard-cards.css') }}" rel="stylesheet">
 	<style>
-		@keyframes fadeInUp {
-			from {
-				opacity: 0;
-				transform: translateY(30px);
-			}
-			to {
-				opacity: 1;
-				transform: translateY(0);
-			}
+		/* Tab switcher */
+		.dashboard-tabs {
+			display: inline-flex;
+			background: #fff;
+			border: 1px solid #e2e8f0;
+			border-radius: 12px;
+			padding: 5px;
+			gap: 4px;
+			box-shadow: 0 2px 6px rgba(0,0,0,0.04);
 		}
 
-		@keyframes countUp {
-			from {
-				opacity: 0;
-				transform: scale(0.8);
-			}
-			to {
-				opacity: 1;
-				transform: scale(1);
-			}
+		.dashboard-tabs li.nav-item {
+			list-style: none;
+			margin-bottom: 0;
 		}
 
-		.stat-card {
-			background: linear-gradient(145deg, #ffffff 0%, #fafbff 100%);
-			border-radius: 20px !important;
-			box-shadow: 0 20px 60px rgba(15, 23, 42, 0.08), 0 8px 16px rgba(15, 23, 42, 0.04);
-			overflow: hidden;
-			transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-			animation: fadeInUp 0.6s ease-out backwards;
-			margin-bottom: 28px;
-			border: 1px solid rgba(148, 163, 184, 0.12) !important;
-			position: relative;
+		.dashboard-tabs .nav-link {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			padding: 9px 20px;
+			border-radius: 9px;
+			font-weight: 600;
+			font-size: 0.875rem;
+			color: #64748b;
+			text-decoration: none;
+			transition: all 0.2s ease;
+			border: none;
+			white-space: nowrap;
 		}
 
-		/* Modern curved organic blob accent */
-		.stat-card::before {
-			content: '';
-			position: absolute;
-			top: -15%;
-			right: -8%;
-			width: 140px;
-			height: 140px;
-			background: radial-gradient(circle, rgba(99, 102, 241, 0.08) 0%, rgba(139, 92, 246, 0.05) 50%, transparent 70%);
-			border-radius: 63% 37% 54% 46% / 55% 48% 52% 45% !important;
-			filter: blur(20px);
-			pointer-events: none;
-			z-index: 0;
-			animation: float 6s ease-in-out infinite;
+		.dashboard-tabs .nav-link:hover {
+			background: #f8fafc;
+			color: #1e293b;
 		}
 
-		/* Secondary curved accent */
-		.stat-card::after {
-			content: '';
-			position: absolute;
-			bottom: -10%;
-			left: -5%;
-			width: 100px;
-			height: 100px;
-			background: radial-gradient(circle, rgba(236, 72, 153, 0.06) 0%, transparent 65%);
-			border-radius: 47% 53% 42% 58% / 63% 44% 56% 37% !important;
-			filter: blur(18px);
-			pointer-events: none;
-			z-index: 0;
-			animation: float 8s ease-in-out infinite reverse;
+		/* JS adds .active to the <li> */
+		.dashboard-tabs li.active .nav-link {
+			background: var(--sg-red);
+			color: #fff !important;
+			box-shadow: 0 4px 12px rgba(196, 30, 58, 0.25);
 		}
 
-		@keyframes float {
-			0%, 100% { transform: translate(0, 0) rotate(0deg); }
-			33% { transform: translate(10px, -15px) rotate(5deg); }
-			66% { transform: translate(-8px, 10px) rotate(-5deg); }
+		/* Section header banner */
+		.section-header {
+			display: flex;
+			align-items: center;
+			gap: 14px;
+			padding: 14px 18px;
+			background: linear-gradient(135deg, #fff1f2 0%, #fff8f8 60%, #ffffff 100%);
+			border: 1px solid #ffe4e6;
+			border-radius: 12px;
+			margin-bottom: 1.25rem;
 		}
 
-		.stat-card > * {
-			position: relative;
-			z-index: 1;
-		}
-
-		.stat-card:hover {
-			transform: translateY(-8px) scale(1.02);
-			box-shadow: 0 28px 80px rgba(15, 23, 42, 0.14), 0 12px 28px rgba(99, 102, 241, 0.12);
-		}
-
-		.stat-card .card-body {
-			padding: 36px 28px 32px;
-			background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%);
-			position: relative;
-			overflow: hidden;
-			border-radius: 20px 20px 0 0 !important;
-		}
-
-		/* Animated gradient overlay */
-		.stat-card .card-body::before {
-			content: '';
-			position: absolute;
-			top: -50%;
-			right: -50%;
-			width: 200%;
-			height: 200%;
-			background: radial-gradient(circle, rgba(255, 255, 255, 0.2) 0%, transparent 60%);
-			border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
-			transition: transform 0.6s ease;
-			animation: morphing 10s ease-in-out infinite;
-		}
-
-		@keyframes morphing {
-			0%, 100% { border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%; }
-			25% { border-radius: 60% 40% 50% 50% / 50% 60% 40% 60%; }
-			50% { border-radius: 50% 50% 30% 70% / 60% 40% 60% 40%; }
-			75% { border-radius: 70% 30% 60% 40% / 50% 50% 50% 50%; }
-		}
-
-		.stat-card:hover .card-body::before {
-			transform: translate(-15%, -15%) scale(1.1);
-		}
-
-		.stat-card .card-body h2 {
-			color: #ffffff;
-			font-size: 3.2rem;
-			font-weight: 900;
-			margin: 0 0 8px;
-			letter-spacing: -0.02em;
-			animation: countUp 0.6s ease-out;
-			position: relative;
-			z-index: 1;
-			text-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-		}
-
-		.stat-card .card-footer {
-			padding: 20px 28px 22px;
-			background: linear-gradient(to bottom, #0f172a 0%, #1e293b 100%);
-			border-top: 1px solid rgba(148, 163, 184, 0.2);
-			position: relative;
-			border-radius: 0 0 20px 20px !important;
-		}
-
-		/* Subtle shine effect on footer */
-		.stat-card .card-footer::before {
-			content: '';
-			position: absolute;
-			top: 0;
-			left: 0;
-			right: 0;
-			height: 1px;
-			background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.1) 50%, transparent 100%);
-		}
-
-		.stat-card .card-footer span {
-			color: #f1f5f9;
-			font-weight: 700;
-			font-size: 1.15rem;
-			letter-spacing: 0.08em;
-			text-transform: uppercase;
+		.section-header-icon {
+			width: 42px;
+			height: 42px;
+			background: var(--sg-red);
+			border-radius: 10px;
 			display: flex;
 			align-items: center;
 			justify-content: center;
+			flex-shrink: 0;
+			box-shadow: 0 4px 10px rgba(196, 30, 58, 0.25);
 		}
 
-		.stat-card .card-footer i {
-			font-size: 1.4rem;
-			margin-right: 10px;
-			opacity: 0.95;
-		}
-		.section-title {
-			font-size: 1.75rem;
+		.section-header h5 {
 			font-weight: 700;
-			color: #2d3748;
-			margin-bottom: 25px;
-			padding-bottom: 12px;
-			border-bottom: 3px solid #667eea;
-			display: inline-block;
-			animation: fadeInUp 0.5s ease-out;
+			color: #1e293b;
+			margin: 0 0 2px;
+			font-size: 1rem;
+			letter-spacing: -0.3px;
 		}
 
-		.nav-tabs-modern {
-			border: none;
-			background: white;
-			border-radius: 12px;
-			padding: 8px;
-			box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-			margin-bottom: 30px;
-		}
-
-		.nav-tabs-modern > li {
-			flex: 1;
-		}
-
-		.nav-tabs-modern > li > a {
-			border: none;
-			color: #64748b;
-			font-weight: 600;
-			padding: 12px 24px;
-			border-radius: 8px;
-			transition: all 0.3s ease;
-			text-align: center;
-		}
-
-		.nav-tabs-modern > li > a:hover {
-			background: #f1f5f9;
-			color: #667eea;
-		}
-
-		.nav-tabs-modern > li.active > a {
-			background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-			color: white !important;
-			box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-		}
-
-		.print-btn {
-			background: white;
-			color: #667eea;
-			border: 2px solid #667eea;
-			padding: 10px 24px;
-			border-radius: 8px;
-			font-weight: 600;
-			transition: all 0.3s ease;
-			cursor: pointer;
-			display: inline-block;
-		}
-
-		.print-btn:hover {
-			background: #667eea;
-			color: white;
-			transform: translateY(-2px);
-			box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-		}
-
-		.form-card {
-			background: white;
-			border-radius: 12px;
-			padding: 20px;
-			box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-			margin-bottom: 25px;
-			animation: fadeInUp 0.6s ease-out;
-		}
-
-		.form-card .form-control,
-		.form-card select {
-			border-radius: 8px;
-			border: 2px solid #e2e8f0;
-			transition: all 0.3s ease;
-			padding: 10px 16px;
-		}
-
-		.form-card .form-control:focus,
-		.form-card select:focus {
-			border-color: #667eea;
-			box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-		}
-
-		.btn-generate {
-			background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-			border: none;
-			color: white;
-			padding: 10px 24px;
-			border-radius: 8px;
-			font-weight: 600;
-			transition: all 0.3s ease;
-		}
-
-		.btn-generate:hover {
-			transform: translateY(-2px);
-			box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-		}
-
-		.chart-container {
-			background: white;
-			border-radius: 12px;
-			padding: 25px;
-			box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-			animation: fadeInUp 0.6s ease-out;
-		}
-
-		/* Stagger animation delays */
-		.stat-card:nth-child(1) { animation-delay: 0.1s; }
-		.stat-card:nth-child(2) { animation-delay: 0.2s; }
-		.stat-card:nth-child(3) { animation-delay: 0.3s; }
-		.stat-card:nth-child(4) { animation-delay: 0.4s; }
-		.stat-card:nth-child(5) { animation-delay: 0.5s; }
-		.stat-card:nth-child(6) { animation-delay: 0.6s; }
-
-		/* Responsive adjustments */
-		@media (max-width: 768px) {
-			.stat-card .card-body h2 {
-				font-size: 2rem;
-			}
-
-			.section-title {
-				font-size: 1.5rem;
-			}
-
-			.nav-tabs-modern > li > a {
-				padding: 10px 16px;
-				font-size: 0.9rem;
-			}
+		.section-header p {
+			font-size: 0.75rem;
+			color: #94a3b8;
+			margin: 0;
 		}
 
 		@media print {
-			.default-dashboard {
-				page-break-after: always;
-			}
-
-			.chart-dashboard {
-				page-break-after: always;
-			}
-
-			.panel, .stat-card {
-				page-break-inside: avoid;
-			}
-
-			.stat-card {
-				box-shadow: none;
-				border: 1px solid #ddd;
-			}
+			.default-dashboard { page-break-after: always; }
+			.chart-dashboard { page-break-after: always; }
+			.stats-card { page-break-inside: avoid; box-shadow: none; border: 1px solid #ddd; }
 		}
 	</style>
 @endsection
 
 @section('content')
-	<div class="row mb-3 align-items-center">
-		<div class="col-sm-6">
-			<h2 class="section-title mb-0"><i class="fa fa-dashboard"></i> Dashboard HQ</h2>
+	<!-- Page Header -->
+	<div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center mb-4">
+		<div class="mb-3 mb-lg-0">
+			<h3 class="fw-bold text-dark m-0" style="letter-spacing: -0.5px;">Dashboard HQ</h3>
+			<p class="text-muted small m-0">Ringkasan statistik dan carta analisis sistem.</p>
 		</div>
-		<div class="col-sm-6 text-right">
-			<a onclick="window.print()" class="print-btn hidden-print" target="_new" aria-label="Cetak dashboard">
-				<i class="fa fa-print"></i> Cetak
+		<div>
+			<a onclick="window.print()" class="btn-form btn-form-secondary d-print-none" style="cursor: pointer;" aria-label="Cetak dashboard">
+				<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+					<polyline points="6 9 6 2 18 2 18 9"></polyline>
+					<path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+					<rect x="6" y="14" width="12" height="8"></rect>
+				</svg>
+				Cetak
 			</a>
 		</div>
 	</div>
 
-	<ul class="nav nav-tabs nav-tabs-modern nav-justified hidden-print d-flex mb-4">
-		<li id="li_default" class="active">
-			<a href="{{ asset('dashboard/hq') }}">
-				<i class="fa fa-dashboard"></i> Dashboard Ringkasan
-			</a>
-		</li>
-		<li id="li_chart">
-			<a href="{{ asset('dashboard/hq?view=chart') }}">
-				<i class="fa fa-bar-chart"></i> Dashboard Carta
-			</a>
-		</li>
-	</ul>
+	<!-- Tabs Nav -->
+	<div class="d-print-none mb-4">
+		<ul class="dashboard-tabs">
+			<li id="li_default" class="nav-item">
+				<a class="nav-link" href="{{ asset('dashboard/hq') }}">
+					<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect>
+						<rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect>
+					</svg>
+					Dashboard Ringkasan
+				</a>
+			</li>
+			<li id="li_chart" class="nav-item">
+				<a class="nav-link" href="{{ asset('dashboard/hq?view=chart') }}">
+					<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<line x1="18" y1="20" x2="18" y2="10"></line>
+						<line x1="12" y1="20" x2="12" y2="4"></line>
+						<line x1="6" y1="20" x2="6" y2="14"></line>
+					</svg>
+					Dashboard Carta
+				</a>
+			</li>
+		</ul>
+	</div>
 
 	<div class="row">
+		<!-- Pengguna -->
 		<div class="col-sm-12 col-lg-6 mb-4">
-			<h3 class="section-title"><i class="fa fa-users"></i> Pengguna</h3>
-			<div class="default-dashboard mt-2">
-				<div class="row">
-					<div class="col-sm-6 col-md-6">
-						<div class="stat-card text-center">
-							<div class="card-body">
-								<h2>{{ number_format(App\User::active()->count(), 0) }}</h2>
+			<div class="section-header">
+				<div class="section-header-icon">
+					<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+						<circle cx="9" cy="7" r="4"></circle>
+						<path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+						<path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+					</svg>
+				</div>
+				<div>
+					<h5>Pengguna</h5>
+					<p>Statistik akaun pengguna sistem</p>
+				</div>
+			</div>
+			<div class="default-dashboard">
+				<div class="row g-3 mb-0">
+					<div class="col-sm-6">
+						<div class="stats-card status-success">
+							<div class="stats-card-header">
+								<h6 class="stats-card-title">Aktif</h6>
+								<div class="stats-card-icon">
+									<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+								</div>
 							</div>
-							<div class="card-footer">
-								<span><i class="fa fa-check-circle"></i> Aktif</span>
+							<div class="stats-card-body">
+								<h2 class="stats-card-value">{{ number_format(App\User::active()->count(), 0) }}</h2>
 							</div>
 						</div>
 					</div>
-					<div class="col-sm-6 col-md-6">
-						<div class="stat-card text-center">
-							<div class="card-body">
-								<h2>{{ number_format(App\User::notActive()->count(), 0) }}</h2>
+					<div class="col-sm-6">
+						<div class="stats-card status-danger">
+							<div class="stats-card-header">
+								<h6 class="stats-card-title">Tidak Aktif</h6>
+								<div class="stats-card-icon">
+									<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+								</div>
 							</div>
-							<div class="card-footer">
-								<span><i class="fa fa-times-circle"></i> Tidak Aktif</span>
+							<div class="stats-card-body">
+								<h2 class="stats-card-value">{{ number_format(App\User::notActive()->count(), 0) }}</h2>
 							</div>
 						</div>
 					</div>
-					<div class="col-sm-12">
-						<div class="stat-card text-center">
-							<div class="card-body">
-								<h2>{{ number_format(App\User::count(), 0) }}</h2>
+					<div class="col-12">
+						<div class="stats-card">
+							<div class="stats-card-header">
+								<h6 class="stats-card-title">Jumlah Pengguna</h6>
+								<div class="stats-card-icon">
+									<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="9" x2="20" y2="9"></line><line x1="4" y1="15" x2="20" y2="15"></line><line x1="10" y1="3" x2="8" y2="21"></line><line x1="16" y1="3" x2="14" y2="21"></line></svg>
+								</div>
 							</div>
-							<div class="card-footer">
-								<span><i class="fa fa-calculator"></i> Jumlah</span>
+							<div class="stats-card-body">
+								<h2 class="stats-card-value">{{ number_format(App\User::count(), 0) }}</h2>
 							</div>
 						</div>
 					</div>
 				</div>
 			</div>
-			<div class="chart-dashboard">
-				<div class="chart-container">
+			<div class="chart-dashboard mt-3">
+				<div class="content-card p-4">
 					<div id="chart_users" style="width: 100%; height: 350px;"></div>
 				</div>
 			</div>
 		</div>
 
+		<!-- Syarikat -->
 		<div class="col-sm-12 col-lg-6 mb-4">
-			<h3 class="section-title"><i class="fa fa-building"></i> Syarikat</h3>
-			<div class="default-dashboard mt-2">
-				<div class="row">
-					<div class="col-sm-6 col-md-6">
-						<div class="stat-card text-center">
-							<div class="card-body">
-								<h2>{{ number_format(App\Vendor::activeSubscriptionCount(), 0) }}</h2>
+			<div class="section-header">
+				<div class="section-header-icon">
+					<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+						<polyline points="9 22 9 12 15 12 15 22"></polyline>
+					</svg>
+				</div>
+				<div>
+					<h5>Syarikat</h5>
+					<p>Statistik langganan dan pendaftaran syarikat</p>
+				</div>
+			</div>
+			<div class="default-dashboard">
+				<div class="row g-3 mb-0">
+					<div class="col-sm-6">
+						<div class="stats-card status-success">
+							<div class="stats-card-header">
+								<h6 class="stats-card-title">Aktif</h6>
+								<div class="stats-card-icon">
+									<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+								</div>
 							</div>
-							<div class="card-footer">
-								<span><i class="fa fa-check-circle"></i> Aktif</span>
-							</div>
-						</div>
-					</div>
-					<div class="col-sm-6 col-md-6">
-						<div class="stat-card text-center">
-							<div class="card-body">
-								<h2>{{ number_format(App\Vendor::nonActiveSubscriptionCount(), 0) }}</h2>
-							</div>
-							<div class="card-footer">
-								<span><i class="fa fa-times-circle"></i> Tidak Aktif</span>
-							</div>
-						</div>
-					</div>
-					<div class="col-sm-6 col-md-6">
-						<div class="stat-card text-center">
-							<div class="card-body">
-								<h2>{{ number_format(App\Vendor::pendingRegistrationCount(), 0) }}</h2>
-							</div>
-							<div class="card-footer">
-								<span><i class="fa fa-clock-o"></i> Belum Daftar</span>
+							<div class="stats-card-body">
+								<h2 class="stats-card-value">{{ number_format(App\Vendor::activeSubscriptionCount(), 0) }}</h2>
 							</div>
 						</div>
 					</div>
-					<div class="col-sm-6 col-md-6">
-						<div class="stat-card text-center">
-							<div class="card-body">
-								<h2>{{ number_format(App\Vendor::count(), 0) }}</h2>
+					<div class="col-sm-6">
+						<div class="stats-card status-danger">
+							<div class="stats-card-header">
+								<h6 class="stats-card-title">Tidak Aktif</h6>
+								<div class="stats-card-icon">
+									<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+								</div>
 							</div>
-							<div class="card-footer">
-								<span><i class="fa fa-calculator"></i> Jumlah</span>
+							<div class="stats-card-body">
+								<h2 class="stats-card-value">{{ number_format(App\Vendor::nonActiveSubscriptionCount(), 0) }}</h2>
+							</div>
+						</div>
+					</div>
+					<div class="col-sm-6">
+						<div class="stats-card">
+							<div class="stats-card-header">
+								<h6 class="stats-card-title">Belum Daftar</h6>
+								<div class="stats-card-icon">
+									<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+								</div>
+							</div>
+							<div class="stats-card-body">
+								<h2 class="stats-card-value">{{ number_format(App\Vendor::pendingRegistrationCount(), 0) }}</h2>
+							</div>
+						</div>
+					</div>
+					<div class="col-sm-6">
+						<div class="stats-card">
+							<div class="stats-card-header">
+								<h6 class="stats-card-title">Jumlah Syarikat</h6>
+								<div class="stats-card-icon">
+									<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="9" x2="20" y2="9"></line><line x1="4" y1="15" x2="20" y2="15"></line><line x1="10" y1="3" x2="8" y2="21"></line><line x1="16" y1="3" x2="14" y2="21"></line></svg>
+								</div>
+							</div>
+							<div class="stats-card-body">
+								<h2 class="stats-card-value">{{ number_format(App\Vendor::count(), 0) }}</h2>
 							</div>
 						</div>
 					</div>
 				</div>
 			</div>
-			<div class="chart-dashboard">
-				<div class="chart-container">
+			<div class="chart-dashboard mt-3">
+				<div class="content-card p-4">
 					<div id="chart_vendors" style="width: 100%; height: 350px;"></div>
 				</div>
 			</div>
 		</div>
 	</div>
-	<div class="row mt-4">
-		<div class="col-sm-12">
-			<h3 class="section-title"><i class="fa fa-file-text"></i> Tender & Sebutharga</h3>
+
+	<!-- Tender & Sebutharga -->
+	<div class="row mb-4">
+		<div class="col-12">
+			<div class="section-header">
+				<div class="section-header-icon">
+					<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+						<polyline points="14 2 14 8 20 8"></polyline>
+						<line x1="16" y1="13" x2="8" y2="13"></line>
+						<line x1="16" y1="17" x2="8" y2="17"></line>
+					</svg>
+				</div>
+				<div>
+					<h5>Tender & Sebutharga</h5>
+					<p>Jumlah tender dan sebutharga mengikut tahun</p>
+				</div>
+			</div>
 			<div class="default-dashboard">
-				<div class="form-card hidden-print">
-					<form id="tender_summary" class="form-inline align-items-end flex-wrap">
-						<div class="form-group mb-2 mr-sm-3">
-							<label class="mr-2 mb-0"><strong>Tahun :</strong></label>
-							<input class="form-control mr-2" id="year_summary" type="text" name="year_summary" placeholder="Masukkan tahun">
+				<div class="content-card p-4 mb-3 d-print-none">
+					<form id="tender_summary" class="d-flex flex-wrap align-items-end gap-3">
+						<div>
+							<label class="form-label fw-medium small mb-1"><strong>Tahun :</strong></label>
+							<input class="form-control" id="year_summary" type="text" name="year_summary" placeholder="Masukkan tahun">
 						</div>
-						<button type="submit" class="btn-generate mb-2">
-							<i class="fa fa-refresh"></i> Jana
+						<button type="submit" class="btn-form btn-form-primary">
+							<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+								<polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline>
+								<path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+							</svg>
+							Jana
 						</button>
 					</form>
 				</div>
-				<div class="row">
+				<div class="row g-3">
 					<div class="col-sm-12 col-md-4">
-						<div class="stat-card text-center">
-							<div class="card-body">
-								<div id="tenderCount">
-									<h2></h2>
+						<div class="stats-card">
+							<div class="stats-card-header">
+								<h6 class="stats-card-title">Tender</h6>
+								<div class="stats-card-icon">
+									<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
 								</div>
 							</div>
-							<div class="card-footer">
-								<span><i class="fa fa-folder-open"></i> Tender</span>
+							<div class="stats-card-body">
+								<div id="tenderCount"><h2 class="stats-card-value"></h2></div>
 							</div>
 						</div>
 					</div>
 					<div class="col-sm-12 col-md-4">
-						<div class="stat-card text-center">
-							<div class="card-body">
-								<div id="quotationCount">
-									<h2></h2>
+						<div class="stats-card">
+							<div class="stats-card-header">
+								<h6 class="stats-card-title">Sebutharga</h6>
+								<div class="stats-card-icon">
+									<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
 								</div>
 							</div>
-							<div class="card-footer">
-								<span><i class="fa fa-file-text-o"></i> Sebutharga</span>
+							<div class="stats-card-body">
+								<div id="quotationCount"><h2 class="stats-card-value"></h2></div>
 							</div>
 						</div>
 					</div>
 					<div class="col-sm-12 col-md-4">
-						<div class="stat-card text-center">
-							<div class="card-body">
-								<div id="tenderTotalCount">
-									<h2></h2>
+						<div class="stats-card">
+							<div class="stats-card-header">
+								<h6 class="stats-card-title">Jumlah</h6>
+								<div class="stats-card-icon">
+									<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="9" x2="20" y2="9"></line><line x1="4" y1="15" x2="20" y2="15"></line><line x1="10" y1="3" x2="8" y2="21"></line><line x1="16" y1="3" x2="14" y2="21"></line></svg>
 								</div>
 							</div>
-							<div class="card-footer">
-								<span><i class="fa fa-calculator"></i> Jumlah</span>
+							<div class="stats-card-body">
+								<div id="tenderTotalCount"><h2 class="stats-card-value"></h2></div>
 							</div>
 						</div>
 					</div>
 				</div>
 			</div>
-			<div class="chart-dashboard">
-				<div class="form-card">
-					<form id="tender_form" class="form-inline align-items-end flex-wrap">
-						<div class="form-group mb-2 mr-sm-3">
-							<label class="mr-2 mb-0"><strong>Lihat :</strong></label>
-							<select class="form-control" name="tender_view_type" id="tender_view_type">
+			<div class="chart-dashboard mt-3">
+				<div class="content-card p-4 mb-3">
+					<form id="tender_form" class="d-flex flex-wrap align-items-end gap-3">
+						<div>
+							<label class="form-label fw-medium small mb-1"><strong>Lihat :</strong></label>
+							<select class="form-select pe-4" name="tender_view_type" id="tender_view_type">
 								<option value="tender_yearly" selected>Tahunan</option>
 								<option value="tender_monthly">Bulanan</option>
 								<option value="tender_weekly">Mingguan</option>
 							</select>
 						</div>
-						<div class="form-group mr-3">
+						<div>
 							<div id="tender_yearly">
+								<label class="form-label fw-medium small mb-1">Tahun</label>
 								<div class="input-group">
-									<div class="input-group-addon">
-										<span class="input-group-text">Tahun</span>
-									</div>
+									<span class="input-group-text">Tahun</span>
 									<input class="form-control" id="year_start" type="text" name="year_start">
 								</div>
 							</div>
-							<div id="tender_weekly" class="hide">
+							<div id="tender_weekly" class="d-none">
+								<label class="form-label fw-medium small mb-1">Suku / Tahun</label>
 								<div class="input-group">
-									<div class="input-group-addon">
-										<span class="input-group-text">Suku</span>
-									</div>
-									<input class="form-control x-uppercase" id="quarter_start" type="number" name="quarter_start"
-										min="1" max="4" value="1">
-									<div class="input-group-addon">Tahun</div>
+									<span class="input-group-text">Suku</span>
+									<input class="form-control x-uppercase" id="quarter_start" type="number" name="quarter_start" min="1" max="4" value="1">
+									<span class="input-group-text">Tahun</span>
 									<input class="form-control" id="year_quarter" type="text" name="year_quarter">
 								</div>
 							</div>
-							<div id="tender_monthly" class="hide">
+							<div id="tender_monthly" class="d-none">
+								<label class="form-label fw-medium small mb-1">Tarikh</label>
 								<div class="input-group">
-									<div class="input-group-addon">
-										<span class="input-group-text">Tarikh</span>
-									</div>
+									<span class="input-group-text">Tarikh</span>
 									<input class="form-control x-uppercase" id="monthly_start" type="text" name="monthly_start">
 								</div>
 							</div>
 						</div>
-						<button type="submit" class="btn-generate">
-							<i class="fa fa-refresh"></i> Jana
+						<button type="submit" class="btn-form btn-form-primary">
+							<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+								<polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline>
+								<path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+							</svg>
+							Jana
 						</button>
 					</form>
 				</div>
-				<div class="chart-container">
+				<div class="content-card p-4">
 					<div id="chart_tenders" style="width: 100%; height: 350px;"></div>
 				</div>
 			</div>
 		</div>
 	</div>
-	<div class="row mt-4">
-		<div class="col-sm-12">
-			<h3 class="section-title"><i class="fa fa-exchange"></i> Transaksi</h3>
+
+	<!-- Transaksi -->
+	<div class="row mb-4">
+		<div class="col-12">
+			<div class="section-header">
+				<div class="section-header-icon">
+					<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<polyline points="17 1 21 5 17 9"></polyline>
+						<path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+						<polyline points="7 23 3 19 7 15"></polyline>
+						<path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+					</svg>
+				</div>
+				<div>
+					<h5>Transaksi</h5>
+					<p>Nilai dan bilangan transaksi langganan & pembelian</p>
+				</div>
+			</div>
 			<div class="default-dashboard">
-				<div class="form-card hidden-print">
-					<form id="transaction_summary" class="form-inline align-items-end flex-wrap">
-						<div class="form-group mb-2 mr-sm-3">
-							<label class="mr-2 mb-0"><strong>Tahun :</strong></label>
-							<input class="form-control mr-2" id="year_summary" type="text" name="year_summary" placeholder="Masukkan tahun">
+				<div class="content-card p-4 mb-3 d-print-none">
+					<form id="transaction_summary" class="d-flex flex-wrap align-items-end gap-3">
+						<div>
+							<label class="form-label fw-medium small mb-1"><strong>Tahun :</strong></label>
+							<input class="form-control" id="year_summary" type="text" name="year_summary" placeholder="Masukkan tahun">
 						</div>
-						<button type="submit" class="btn-generate mb-2">
-							<i class="fa fa-refresh"></i> Jana
+						<button type="submit" class="btn-form btn-form-primary">
+							<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+								<polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline>
+								<path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+							</svg>
+							Jana
 						</button>
 					</form>
 				</div>
-				<div class="row">
+				<div class="row g-3">
 					<div class="col-sm-12 col-md-6 col-lg-4">
-						<div class="stat-card text-center">
-							<div class="card-body">
-								<div id="subscriptionCount">
-									<h2></h2>
+						<div class="stats-card">
+							<div class="stats-card-header">
+								<h6 class="stats-card-title"># Langganan</h6>
+								<div class="stats-card-icon">
+									<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
 								</div>
 							</div>
-							<div class="card-footer">
-								<span><i class="fa fa-tag"></i> # Langganan</span>
+							<div class="stats-card-body">
+								<div id="subscriptionCount"><h2 class="stats-card-value"></h2></div>
 							</div>
 						</div>
 					</div>
 					<div class="col-sm-12 col-md-6 col-lg-4">
-						<div class="stat-card text-center">
-							<div class="card-body">
-								<div id="purchaseCount">
-									<h2></h2>
+						<div class="stats-card">
+							<div class="stats-card-header">
+								<h6 class="stats-card-title"># Pembelian Dokumen</h6>
+								<div class="stats-card-icon">
+									<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
 								</div>
 							</div>
-							<div class="card-footer">
-								<span><i class="fa fa-shopping-cart"></i> # Pembelian Dokumen</span>
+							<div class="stats-card-body">
+								<div id="purchaseCount"><h2 class="stats-card-value"></h2></div>
 							</div>
 						</div>
 					</div>
 					<div class="col-sm-12 col-md-6 col-lg-4">
-						<div class="stat-card text-center">
-							<div class="card-body">
-								<div id="transactionTotal">
-									<h2></h2>
+						<div class="stats-card">
+							<div class="stats-card-header">
+								<h6 class="stats-card-title">Jumlah Transaksi</h6>
+								<div class="stats-card-icon">
+									<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="9" x2="20" y2="9"></line><line x1="4" y1="15" x2="20" y2="15"></line><line x1="10" y1="3" x2="8" y2="21"></line><line x1="16" y1="3" x2="14" y2="21"></line></svg>
 								</div>
 							</div>
-							<div class="card-footer">
-								<span><i class="fa fa-calculator"></i> Jumlah Transaksi</span>
+							<div class="stats-card-body">
+								<div id="transactionTotal"><h2 class="stats-card-value"></h2></div>
 							</div>
 						</div>
 					</div>
 					<div class="col-sm-12 col-md-6 col-lg-4">
-						<div class="stat-card text-center">
-							<div class="card-body">
-								<div id="subscriptionValueSum">
-									<h2></h2>
+						<div class="stats-card">
+							<div class="stats-card-header">
+								<h6 class="stats-card-title">Nilai Langganan</h6>
+								<div class="stats-card-icon">
+									<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
 								</div>
 							</div>
-							<div class="card-footer">
-								<span><i class="fa fa-money"></i> Nilai Langganan</span>
+							<div class="stats-card-body">
+								<div id="subscriptionValueSum"><h2 class="stats-card-value"></h2></div>
 							</div>
 						</div>
 					</div>
 					<div class="col-sm-12 col-md-6 col-lg-4">
-						<div class="stat-card text-center">
-							<div class="card-body">
-								<div id="purchaseValueSum">
-									<h2></h2>
+						<div class="stats-card">
+							<div class="stats-card-header">
+								<h6 class="stats-card-title">Nilai Pembelian</h6>
+								<div class="stats-card-icon">
+									<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
 								</div>
 							</div>
-							<div class="card-footer">
-								<span><i class="fa fa-credit-card"></i> Nilai Pembelian</span>
+							<div class="stats-card-body">
+								<div id="purchaseValueSum"><h2 class="stats-card-value"></h2></div>
 							</div>
 						</div>
 					</div>
 					<div class="col-sm-12 col-md-6 col-lg-4">
-						<div class="stat-card text-center">
-							<div class="card-body">
-								<div id="transactionValueTotal">
-									<h2></h2>
+						<div class="stats-card">
+							<div class="stats-card-header">
+								<h6 class="stats-card-title">Jumlah Nilai</h6>
+								<div class="stats-card-icon">
+									<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="9" x2="20" y2="9"></line><line x1="4" y1="15" x2="20" y2="15"></line><line x1="10" y1="3" x2="8" y2="21"></line><line x1="16" y1="3" x2="14" y2="21"></line></svg>
 								</div>
 							</div>
-							<div class="card-footer">
-								<span><i class="fa fa-calculator"></i> Jumlah Nilai</span>
+							<div class="stats-card-body">
+								<div id="transactionValueTotal"><h2 class="stats-card-value"></h2></div>
 							</div>
 						</div>
 					</div>
 				</div>
 			</div>
-			<div class="chart-dashboard">
-				<div class="form-card">
-					<form id="transaction_form" class="form-inline align-items-end flex-wrap">
-						<div class="form-group mb-2 mr-sm-3">
-							<label class="mr-2 mb-0"><strong>Lihat :</strong></label>
-							<select class="form-control" name="transaction_view_type" id="transaction_view_type">
+			<div class="chart-dashboard mt-3">
+				<div class="content-card p-4 mb-3">
+					<form id="transaction_form" class="d-flex flex-wrap align-items-end gap-3">
+						<div>
+							<label class="form-label fw-medium small mb-1"><strong>Lihat :</strong></label>
+							<select class="form-select pe-4" name="transaction_view_type" id="transaction_view_type">
 								<option value="transaction_yearly" selected>Tahunan</option>
 								<option value="transaction_monthly">Bulanan</option>
 								<option value="transaction_weekly">Mingguan</option>
 							</select>
 						</div>
-						<div class="form-group mr-3">
+						<div>
 							<div id="transaction_yearly">
+								<label class="form-label fw-medium small mb-1">Tahun</label>
 								<div class="input-group">
-									<div class="input-group-addon">
-										<span class="input-group-text">Tahun</span>
-									</div>
+									<span class="input-group-text">Tahun</span>
 									<input class="form-control" id="year_start" type="text" name="year_start">
 								</div>
 							</div>
-							<div id="transaction_weekly" class="hide">
+							<div id="transaction_weekly" class="d-none">
+								<label class="form-label fw-medium small mb-1">Suku / Tahun</label>
 								<div class="input-group">
-									<div class="input-group-addon">
-										<span class="input-group-text">Suku</span>
-									</div>
-									<input class="form-control x-uppercase" id="quarter_start" type="number" name="quarter_start"
-										min="1" max="4" value="1">
-									<div class="input-group-addon">Tahun</div>
+									<span class="input-group-text">Suku</span>
+									<input class="form-control x-uppercase" id="quarter_start" type="number" name="quarter_start" min="1" max="4" value="1">
+									<span class="input-group-text">Tahun</span>
 									<input class="form-control" id="year_quarter" type="text" name="year_quarter">
 								</div>
 							</div>
-							<div id="transaction_monthly" class="hide">
+							<div id="transaction_monthly" class="d-none">
+								<label class="form-label fw-medium small mb-1">Tarikh</label>
 								<div class="input-group">
-									<div class="input-group-addon">
-										<span class="input-group-text">Tarikh</span>
-									</div>
+									<span class="input-group-text">Tarikh</span>
 									<input class="form-control x-uppercase" id="monthly_start" type="text" name="monthly_start">
 								</div>
 							</div>
 						</div>
-						<button type="submit" class="btn-generate">
-							<i class="fa fa-refresh"></i> Jana
+						<button type="submit" class="btn-form btn-form-primary">
+							<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+								<polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline>
+								<path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+							</svg>
+							Jana
 						</button>
 					</form>
 				</div>
-				<div class="chart-container mb-4">
+				<div class="content-card p-4 mb-3">
 					<div id="chart_transactions" style="width: 100%; height: 350px;"></div>
 				</div>
-				<div class="chart-container">
+				<div class="content-card p-4">
 					<div id="chart_transactions_value" style="width: 100%; height: 350px;"></div>
 				</div>
 			</div>
@@ -719,9 +605,9 @@
 					const ids = ['tender_yearly', 'tender_weekly', 'tender_monthly'];
 					ids.forEach(function(item, index) {
 						if (ids[index] == view) {
-							$('#' + ids[index]).removeClass('hide');
+							$('#' + ids[index]).removeClass('d-none');
 						} else {
-							$('#' + ids[index]).addClass('hide');
+							$('#' + ids[index]).addClass('d-none');
 						}
 					});
 				});
@@ -731,9 +617,9 @@
 					const ids = ['transaction_yearly', 'transaction_weekly', 'transaction_monthly'];
 					ids.forEach(function(item, index) {
 						if (ids[index] == view) {
-							$('#' + ids[index]).removeClass('hide');
+							$('#' + ids[index]).removeClass('d-none');
 						} else {
-							$('#' + ids[index]).addClass('hide');
+							$('#' + ids[index]).addClass('d-none');
 						}
 					});
 				});

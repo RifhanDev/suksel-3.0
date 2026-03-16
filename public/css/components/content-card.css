@@ -2,10 +2,7 @@
  * content-card.css
  * Card component for tables and content sections.
  *
- * Visually matches stats-card (same border, radius, shadow)
- * but WITHOUT the KPI flex tricks (no height:100%, no justify-content:flex-end).
- *
- * Use stats-card  → for KPI metric cards (numbers, counts, _snaps partials)
+ * Use dashboard-card.css  → for KPI metric cards (numbers, counts, _snaps partials)
  * Use content-card → for table wrappers and content sections
  */
 
