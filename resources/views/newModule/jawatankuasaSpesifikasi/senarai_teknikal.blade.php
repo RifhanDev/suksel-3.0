@@ -100,7 +100,6 @@
                 <div class="col-4 col-lg-4">
                     <label class="form-label small fw-bold text-secondary text-uppercase mb-1">No. Tender</label>
                     <h6 class="text-primary">SUKSEL/PERT/2026/001</h6>
-                    <!-- <input type="text" id="" class="form-control form-control-sm" placeholder="" readonly> -->
                 </div>
                 <div class="col-4 col-lg-4">
                     <label for="filter_tajuk" class="form-label small fw-bold text-secondary text-uppercase mb-1">PTJ</label>
@@ -111,7 +110,6 @@
                     <span class="badge rounded-pill bg-warning-subtle text-warning border border-warning-subtle px-3 py-2 fw-bold text-uppercase heartbeat" style="font-size: 0.8rem;">
                         Dalam Proses
                     </span>
-                    <!-- <h6 class="text-warning fw-bold heartbeat">DALAM PROSES</h6> -->
                 </div>
             </div>
         </div>

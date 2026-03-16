@@ -85,6 +85,33 @@
                 transform: scale(1);
             }
         }
+
+        .btn-circle {
+            width: 25px;
+            height: 25px;
+            padding: 0;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        @keyframes btnPop {
+            0% {
+                transform: scale(1);
+            }
+            40% {
+                transform: scale(1.25);
+            }
+            100% {
+                transform: scale(1.1);
+            }
+        }
+
+        .btn-circle:hover {
+            animation: btnPop 0.25s ease forwards;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
     </style>
 
     <div class="card border shadow-sm mb-2 rounded-3">
@@ -101,7 +128,9 @@
                 </div>
                 <div class="col-4 col-lg-4">
                     <label for="filter_status" class="form-label small fw-bold text-secondary text-uppercase mb-1">Status</label>
-                    <h6 class="text-warning fw-bold heartbeat">DALAM PROSES</h6>
+                    <span class="badge rounded-pill bg-warning-subtle text-warning border border-warning-subtle px-3 py-2 fw-bold text-uppercase heartbeat" style="font-size: 0.8rem;">
+                        Dalam Proses
+                    </span>
                 </div>
             </div>
         </div>
@@ -256,19 +285,19 @@
                 </div>
                 <div class="row mx-2">
                     <div class="table-responsive">
-                        <table id="dt_tmpltSpec" data-path="" class=" table table-modern w-100 mb-0">
+                        <table id="dt_tmpltSpec" class="table table-modern w-100 mb-0">
                             <thead>
                                 <tr>
-                                    <th colspan="1" class="text-center">Item</th>
-                                    <th colspan="1" class="text-center">Spesifikasi</th>
-                                    <th rowspan="2" class="text-center">Kekerapan/Kuantiti</th>
-                                    <th rowspan="2" class="text-center">Unit Ukuran</th>
-                                    <th rowspan="2" class="text-center">Penetapan Skema</th>
-                                    <th rowspan="2" class="text-center">Tindakan</th>
+                                    <th class="text-center">Item</th>
+                                    <th class="text-center">Spesifikasi</th>
+                                    <th class="text-center">Kekerapan/Kuantiti</th>
+                                    <th class="text-center">Unit Ukuran</th>
+                                    <th class="text-center">Penetapan Skema</th>
+                                    <th class="text-center">Tindakan</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr class="add_row_item d-none">
+                                <tr class="add_row_item item-row d-none">
                                     <td>
                                         <input type="text" class="form-control form-control-sm">
                                     </td>
@@ -281,30 +310,14 @@
                                     </td>
                                     <td></td>
                                     <td class="text-center">
-                                        <button type="button" class="btn btn-sm btn-warning text-white add_btn_spec">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-                                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <button type="button" class="btn btn-warning btn-circle text-white add_btn_spec">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                                                fill="none" stroke="currentColor" stroke-width="2">
                                                 <line x1="12" y1="5" x2="12" y2="19"></line>
                                                 <line x1="5" y1="12" x2="19" y2="12"></line>
                                             </svg>
                                         </button>
-                                    </td>
-                                </tr>
-                                <tr class="add_row_spec d-none">
-                                    <td></td>
-                                    <td></td>
-                                    <td></td>
-                                    <td></td>
-                                    <td class="text-center">
-                                        <select class="form-select form-select-sm">
-                                            <option></option>
-                                            <option>Text</option>
-                                            <option>Nombor</option>
-                                            <option>Ya/Tidak</option>
-                                        </select>
-                                    </td>
-                                    <td class="text-center">
-                                        <button type="button" class="btn btn-sm btn-danger">
+                                        <button type="button" class="btn btn-danger btn-circle delete_item">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
                                                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                                 <polyline points="3 6 5 6 21 6"></polyline>
@@ -316,76 +329,194 @@
                                         </button>
                                     </td>
                                 </tr>
+                                <tr class="add_row_spec spec-row d-none">
+                                    <td></td>
+                                    <td>
+                                        <input type="text" class="form-control form-control-sm">
+                                    </td>
+                                    <td></td>
+                                    <td></td>
+                                    <td class="text-center">
+                                        <select class="form-select form-select-sm">
+                                            <option></option>
+                                            <option>Text</option>
+                                            <option>Nombor</option>
+                                            <option>Ya/Tidak</option>
+                                        </select>
+                                    </td>
+                                    <td class="text-center">
+                                        <button type="button" class="btn btn-danger btn-circle delete_spec">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <polyline points="3 6 5 6 21 6"></polyline>
+                                                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+                                                <path d="M10 11v6"></path>
+                                                <path d="M14 11v6"></path>
+                                                <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>
+                                            </svg>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr class="no-data-row">
+                                    <td colspan="6" class="text-center text-muted">
+                                    Tiada rekod
+                                    </td>
+                                </tr>
                             </tbody>
                         </table>
-                    </div>
-                </div>
-                <div class="row mx-2">
-                    <div class="col-12 d-flex justify-content-between">
-                        <div>
-                            <a href="{{ route('senaraiTeknikal') }}" type="button" class="btn btn-sm btn-outline-secondary">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <line x1="19" y1="12" x2="5" y2="12"></line>
-                                    <polyline points="12 19 5 12 12 5"></polyline>
-                                </svg>
-                                Kembali
-                        </a>
-                        </div>
-                        <div class="d-flex gap-2">
-                            <button type="button" class="btn btn-sm btn-primary">
-                                Simpan
-                            </button>
-                            <button type="button" class="btn btn-sm btn-success">
-                                Selesai
-                            </button>
-                            <button type="button" class="btn btn-sm btn-danger">
-                                Batal
-                            </button>
-                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-
-
- 
-
+    <div class="row mb-4 mx-2">
+        <div class="col-12 d-flex justify-content-between">
+            <div>
+                <a href="{{ route('senaraiTeknikal') }}" type="button" class="btn btn-sm btn-outline-secondary">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="19" y1="12" x2="5" y2="12"></line>
+                        <polyline points="12 19 5 12 12 5"></polyline>
+                    </svg>
+                    Kembali
+            </a>
+            </div>
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-sm btn-primary">
+                    Simpan
+                </button>
+                <button type="button" class="btn btn-sm btn-success">
+                    Selesai
+                </button>
+                <button type="button" class="btn btn-sm btn-danger">
+                    Batal
+                </button>
+            </div>
+        </div>
+    </div>
 
 <script type="text/javascript">
 
-    document.addEventListener('DOMContentLoaded', function () {
+  document.addEventListener('DOMContentLoaded', function () {
 
-        var table = document.querySelector('#dt_tmpltSpec');
-        if (!table) return;
-        var tbody = table.querySelector('tbody');
-        var addItemBtn = document.querySelector('.add_btn_item');
+var table = document.querySelector('#dt_tmpltSpec');
+if (!table) return;
 
-        if (addItemBtn) {
-            addItemBtn.addEventListener('click', function () {
+var tbody = table.querySelector('tbody');
+var addItemBtn = document.querySelector('.add_btn_item');
 
-                var template = tbody.querySelector('.add_row_item');
-                var clone = template.cloneNode(true);
 
-                clone.classList.remove('d-none', 'add_row_item');
-                tbody.appendChild(clone);
+function removeNoDataRow(){
 
-            });
-        }
+var noData = tbody.querySelector('.no-data-row');
+if(noData) noData.remove();
 
-        tbody.addEventListener('click', function (e) {
-            if (e.target.closest('.add_btn_spec')) {
+}
 
-                var template2 = tbody.querySelector('.add_row_spec');
-                var clone2 = template2.cloneNode(true);
 
-                clone2.classList.remove('d-none', 'add_row_spec');
-                var currentRow = e.target.closest('tr');
-                currentRow.after(clone2);
+function checkNoData(){
 
-            }
-        });
-    });
+var rows = tbody.querySelectorAll('tr.item-row:not(.d-none)');
+
+if(rows.length === 0){
+
+var row = document.createElement('tr');
+
+row.className="no-data-row";
+
+row.innerHTML = `
+<td colspan="6" class="text-center text-muted">
+No data
+</td>
+`;
+
+tbody.appendChild(row);
+
+}
+
+}
+
+
+
+/* ADD ITEM */
+
+addItemBtn.addEventListener('click', function(){
+
+removeNoDataRow();
+
+var template = tbody.querySelector('.add_row_item');
+
+var clone = template.cloneNode(true);
+
+clone.classList.remove('d-none','add_row_item');
+
+tbody.appendChild(clone);
+
+});
+
+
+
+/* TABLE ACTIONS */
+
+tbody.addEventListener('click', function(e){
+
+
+/* ADD SPEC */
+
+if(e.target.closest('.add_btn_spec')){
+
+var template = tbody.querySelector('.add_row_spec');
+
+var clone = template.cloneNode(true);
+
+clone.classList.remove('d-none','add_row_spec');
+
+var itemRow = e.target.closest('tr');
+
+itemRow.after(clone);
+
+}
+
+
+
+/* DELETE SPEC */
+
+if(e.target.closest('.delete_spec')){
+
+var row = e.target.closest('tr');
+
+row.remove();
+
+}
+
+
+
+/* DELETE ITEM + ALL ITS SPECS */
+
+if(e.target.closest('.delete_item')){
+
+var row = e.target.closest('tr');
+
+var next = row.nextElementSibling;
+
+while(next && next.classList.contains('spec-row')){
+
+var temp = next.nextElementSibling;
+
+next.remove();
+
+next = temp;
+
+}
+
+row.remove();
+
+checkNoData();
+
+}
+
+});
+
+});
 
 </script>
 

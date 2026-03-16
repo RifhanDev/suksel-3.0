@@ -85,6 +85,32 @@
                 transform: scale(1);
             }
         }
+        .btn-circle {
+            width: 25px;
+            height: 25px;
+            padding: 0;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        @keyframes btnPop {
+            0% {
+                transform: scale(1);
+            }
+            40% {
+                transform: scale(1.25);
+            }
+            100% {
+                transform: scale(1.1);
+            }
+        }
+
+        .btn-circle:hover {
+            animation: btnPop 0.25s ease forwards;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
     </style>
 
     <div class="card border shadow-sm mb-2 rounded-3">
@@ -101,7 +127,9 @@
                 </div>
                 <div class="col-4 col-lg-4">
                     <label for="filter_status" class="form-label small fw-bold text-secondary text-uppercase mb-1">Status</label>
-                    <h6 class="text-warning fw-bold heartbeat">DALAM PROSES</h6>
+                    <span class="badge rounded-pill bg-warning-subtle text-warning border border-warning-subtle px-3 py-2 fw-bold text-uppercase heartbeat" style="font-size: 0.8rem;">
+                        Dalam Proses
+                    </span>
                 </div>
             </div>
         </div>
@@ -166,10 +194,10 @@
                                         <input type="text" class="form-control form-control-sm">
                                     </td>
                                     <td>
-                                        <input type="text" class="form-control form-control-sm">
+                                        <input type="text" class="form-control form-control-sm nilai-kerja text-end">
                                     </td>
                                     <td class="text-center">
-                                        <button type="button" class="btn btn-sm btn-danger text-white">
+                                        <button type="button" class="btn btn-sm btn-danger btn-circle text-white">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
                                                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                                 <polyline points="3 6 5 6 21 6"></polyline>
@@ -193,10 +221,10 @@
                                         <input type="text" class="form-control form-control-sm">
                                     </td>
                                     <td>
-                                        <input type="text" class="form-control form-control-sm">
+                                        <input type="text" class="form-control form-control-sm nilai-kerja">
                                     </td>
                                     <td class="text-center">
-                                        <button type="button" class="btn btn-sm btn-danger text-white">
+                                        <button type="button" class="btn btn-sm btn-danger btn-circle text-white">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
                                                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                                 <polyline points="3 6 5 6 21 6"></polyline>
@@ -212,7 +240,7 @@
                             <tfoot>
                                 <tr>
                                     <th colspan="4" class="text-end">Jumlah</th>
-                                    <th></th>
+                                    <th class="total-nilai text-end">0.00</th>
                                     <th></th>
                                 </tr>
                             </tfoot>
@@ -274,88 +302,90 @@
 
 <script type="text/javascript">
 
-  document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('DOMContentLoaded', function () {
 
-    const table = document.querySelector('#dt_tmpltSpec');
-    if (!table) return;
+        const table = document.querySelector('#dt_tmpltSpec');
+        if (!table) return;
 
-    const tbody = table.querySelector('tbody');
-    const addItemBtn = document.querySelector('.add_btn_item');
-    const totalCell = table.querySelector('.total-nilai');
+        const tbody = table.querySelector('tbody');
+        const addItemBtn = document.querySelector('.add_btn_item');
+        const totalCell = table.querySelector('.total-nilai');
 
-    function updateRowNumbers() {
-        const rows = tbody.querySelectorAll('tr:not(.add_row_item)');
-        rows.forEach((row, index) => {
-            row.children[0].textContent = index + 1;
-        });
-    }
-
-    function updateTotal() {
-
-        let total = 0;
-
-        const inputs = tbody.querySelectorAll('.nilai-kerja');
-
-        inputs.forEach(input => {
-            const value = parseFloat(input.value) || 0;
-            total += value;
-        });
-
-        totalCell.textContent = total.toLocaleString('en-MY', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-        });
-    }
-
-    // ADD ROW
-    if (addItemBtn) {
-        addItemBtn.addEventListener('click', function () {
-
-            const template = tbody.querySelector('.add_row_item');
-            const clone = template.cloneNode(true);
-
-            clone.classList.remove('d-none', 'add_row_item');
-
-            // clear input values
-            clone.querySelectorAll('input').forEach(input => input.value = '');
-
-            tbody.appendChild(clone);
-
-            updateRowNumbers();
-        });
-    }
-
-    // DELETE ROW
-    tbody.addEventListener('click', function (e) {
-
-        const deleteBtn = e.target.closest('.btn-danger');
-
-        if (deleteBtn) {
-
-            const row = deleteBtn.closest('tr');
-
-            // prevent deleting last row
+        // Update row numbers (Bil)
+        function updateRowNumbers() {
             const rows = tbody.querySelectorAll('tr:not(.add_row_item)');
-            if (rows.length <= 1) return;
-
-            row.remove();
-
-            updateRowNumbers();
-            updateTotal();
+            rows.forEach((row, index) => {
+                row.children[0].textContent = index + 1;
+            });
         }
 
-    });
-
-    // AUTO UPDATE TOTAL WHEN VALUE CHANGES
-    tbody.addEventListener('input', function (e) {
-
-        if (e.target.classList.contains('nilai-kerja')) {
-            updateTotal();
+        // Update total in Jumlah row
+        function updateTotal() {
+            let total = 0;
+            const inputs = tbody.querySelectorAll('.nilai-kerja');
+            inputs.forEach(input => {
+                const value = parseFloat(input.value.replace(/,/g, '')) || 0;
+                total += value;
+            });
+            totalCell.textContent = total.toLocaleString('en-MY', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
         }
 
-    });
+        // Force numeric only
+        tbody.addEventListener('keypress', function(e){
+            if(e.target.classList.contains('nilai-kerja')) {
+                const char = String.fromCharCode(e.which);
+                if(!/[0-9.]|\./.test(char)) {
+                    e.preventDefault();
+                }
+            }
+        });
 
-});
+        // Optional: format on blur
+        tbody.addEventListener('blur', function(e){
+            if(e.target.classList.contains('nilai-kerja')) {
+                let value = parseFloat(e.target.value.replace(/,/g, '')) || 0;
+                e.target.value = value.toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                updateTotal();
+            }
+        }, true);
+
+        // ADD ROW
+        if (addItemBtn) {
+            addItemBtn.addEventListener('click', function () {
+                const template = tbody.querySelector('.add_row_item');
+                const clone = template.cloneNode(true);
+                clone.classList.remove('d-none', 'add_row_item');
+                clone.querySelectorAll('input').forEach(input => input.value = '');
+                tbody.appendChild(clone);
+                updateRowNumbers();
+                updateTotal();
+            });
+        }
+
+        // DELETE ROW
+        tbody.addEventListener('click', function (e) {
+            const deleteBtn = e.target.closest('.btn-danger');
+            if (deleteBtn) {
+                const row = deleteBtn.closest('tr');
+                const rows = tbody.querySelectorAll('tr:not(.add_row_item)');
+                if (rows.length <= 1) return;
+                row.remove();
+                updateRowNumbers();
+                updateTotal();
+            }
+        });
+
+        // AUTO UPDATE TOTAL WHEN VALUE CHANGES
+        tbody.addEventListener('input', function (e) {
+            if (e.target.classList.contains('nilai-kerja')) {
+                e.target.value = e.target.value.replace(/[^\d.]/g,'');
+                updateTotal();
+            }
+        });
+    });
 
 </script>
 
