@@ -392,21 +392,41 @@ class HomeController extends Controller
 	public function dashboard(Request $request, $id = null)
 	{
 		$user   = auth()->user();
-		
+
 		// if (!$user || !$user->vendor)
-		if (!$user)
-		{
+		if (!$user) {
 			return $this->_access_denied();
 		}
 
-		if($user->vendor)
-		{
-			$invites   = TenderInvite::has('tender')->where('vendor_id', auth()->user()->vendor_id)->get();
+		if ($user->vendor || $user->hasRole('Admin')) {
+			// Vendor: guna vendor_id sendiri.
+			// Admin: paparkan semua dokumen dibeli dalam sistem supaya mudah uji paparan.
 
-			$purchases  = TenderVendor::whereNotNull('ref_number')->where('vendor_id', auth()->user()->vendor_id)->orderBy('created_at', 'desc')->get();
+			if ($user->vendor) {
+				$vendorId = $user->vendor_id;
 
-			$eligibles_ids = TenderEligible::where('vendor_id', auth()->user()->vendor_id)->groupBy('tender_id')->pluck('tender_id');
-			$exception_ids = TenderVendor::where('vendor_id', auth()->user()->vendor_id)->whereException(1)->pluck('tender_id');
+				$invites   = TenderInvite::has('tender')->where('vendor_id', $vendorId)->get();
+
+				$purchases  = TenderVendor::whereNotNull('ref_number')
+					->where('vendor_id', $vendorId)
+					->orderBy('created_at', 'desc')
+					->get();
+
+				$eligibles_ids = TenderEligible::where('vendor_id', $vendorId)->groupBy('tender_id')->pluck('tender_id');
+				$exception_ids = TenderVendor::where('vendor_id', $vendorId)->whereException(1)->pluck('tender_id');
+			} else {
+				// Admin view: dokumen dibeli global (semua vendor) + tiada invites / refund spesifik
+				$invites   = collect([]);
+
+				$purchases = TenderVendor::whereNotNull('ref_number')
+					->with(['tender.tenderer'])
+					->orderBy('created_at', 'desc')
+					->take(100)
+					->get();
+
+				$eligibles_ids = collect([]);
+				$exception_ids = collect([]);
+			}
 
 			// Temporarily commented out to fix column issue
 			// $eligibles = Tender::forPublic()->published()->where('submission_datetime', '>', date('Y-m-d H:i:s'))->has('codes', '=', '0')->get();
@@ -421,7 +441,9 @@ class HomeController extends Controller
 					return in_array($eligible->id, (array) $purchases->pluck('tender_id'));
 				});
 
-			$refunds = Refund::where('vendor_id', auth()->user()->vendor_id)->get();
+			$refunds = $user->vendor
+				? Refund::where('vendor_id', $user->vendor_id)->get()
+				: collect([]);
 
 			foreach ($refunds as $refund) {
 				$refund->ref_num = $this->refundNumGenerator($refund->number);
@@ -430,32 +452,25 @@ class HomeController extends Controller
 			}
 
 			return view('home.dashboard', compact('purchases', 'eligibles', 'invites', 'refunds'));
-		}
-		else
-		{
-			if (!$user->organization_unit_id)
-			{
+		} else {
+			if (!$user->organization_unit_id) {
 				return $this->_access_denied();
 			}
 
-			if ($user->organization_unit_id != $id)
-			{
+			if ($user->organization_unit_id != $id) {
 				return $this->_access_denied();
 			}
 
 			$organizationunit = OrganizationUnit::findOrFail($id);
 			$tenders          = Tender::where('organization_unit_id', $organizationunit->id)->orderBy('created_at', 'desc')->orderBy('name', 'asc');
 
-			if (!auth()->check() || auth()->user()->hasRole('Vendor') || !Tender::canShowUpdate($organizationunit->id))
-			{
-				$tenders = $tenders->where(function ($query)
-				{
+			if (!auth()->check() || auth()->user()->hasRole('Vendor') || !Tender::canShowUpdate($organizationunit->id)) {
+				$tenders = $tenders->where(function ($query) {
 					$query->advertised()->forPublic()->published();
 				});
 			}
 
-			switch ($request->type) 
-			{
+			switch ($request->type) {
 				case 'tenders':
 					$tenders = $tenders->whereType('tender');
 					$path    = url('agency', $organizationunit->id) . '?type=tenders';
@@ -470,8 +485,7 @@ class HomeController extends Controller
 					break;
 			}
 
-			switch ($request->state)
-			{
+			switch ($request->state) {
 				case 1:
 					$tenders = $tenders->whereNull('approver_id');
 					$path    = url('agency', $organizationunit->id) . '?state=1';
@@ -490,155 +504,139 @@ class HomeController extends Controller
 					break;
 			}
 
-			if ($request->ajax())
-			{
+			if ($request->ajax()) {
 				$tenders = $tenders->select(
-				[
-					'id',
-					'name',
-					'document_start_date',
-					'submission_datetime',
-					'price',
-					'organization_unit_id',
-					'publish_prices',
-					'approver_id',
-					'publish_winner',
-					'briefing_required',
-					'briefing_address',
-					'briefing_datetime',
-					'ref_number',
-					'created_at'
-				]);
+					[
+						'id',
+						'name',
+						'document_start_date',
+						'submission_datetime',
+						'price',
+						'organization_unit_id',
+						'publish_prices',
+						'approver_id',
+						'publish_winner',
+						'briefing_required',
+						'briefing_address',
+						'briefing_datetime',
+						'ref_number',
+						'created_at'
+					]
+				);
 
-				$datatable = Datatables::of($tenders)->editColumn('name', function ($tender)
-				{
-						$string   = [];
-						$string[] = '<small><strong>' . $tender->ref_number . '</strong></small>';
-						if(!auth()->check())
-						{
-							$string[] = link_to_route('tenders.show', $tender->name, $tender->id, ['class' => 'table-tender-title']);
-						}
-						else
-						{
-							$string[] = link_to_route('tender.show', $tender->name, $tender->id, ['class' => 'table-tender-title']);
-						}
-						// $string[] = link_to_route('tender.show', $tender->name, $tender->id, ['class' => 'table-tender-title']);
+				$datatable = Datatables::of($tenders)->editColumn('name', function ($tender) {
+					$string   = [];
+					$string[] = '<small><strong>' . $tender->ref_number . '</strong></small>';
+					if (!auth()->check()) {
+						$string[] = link_to_route('tenders.show', $tender->name, $tender->id, ['class' => 'table-tender-title']);
+					} else {
+						$string[] = link_to_route('tender.show', $tender->name, $tender->id, ['class' => 'table-tender-title']);
+					}
+					// $string[] = link_to_route('tender.show', $tender->name, $tender->id, ['class' => 'table-tender-title']);
 
-						if ($tender->briefing_required)
-						{
+					if ($tender->briefing_required) {
+						$string[] = '';
+						$string[] = '<span class="glyphicon glyphicon-bullhorn"></span> <b><u><small>Kehadiran Taklimat Diwajibkan</small></u></b>';
+						$string[] = Carbon::parse($tender->briefing_datetime)->format('j M Y H:i');
+						$string[] = nl2br($tender->briefing_address);
+					}
+
+					if (count($tender->siteVisits) > 0) {
+						$string[] = '';
+						$string[] = '<span class="glyphicon glyphicon-road"></span> <b><u><small>Lawatan Tapak</small></u></b>';
+
+						foreach ($tender->siteVisits->sortBy('id') as $visit) {
 							$string[] = '';
-							$string[] = '<span class="glyphicon glyphicon-bullhorn"></span> <b><u><small>Kehadiran Taklimat Diwajibkan</small></u></b>';
-							$string[] = Carbon::parse($tender->briefing_datetime)->format('j M Y H:i');
-							$string[] = nl2br($tender->briefing_address);
+							$string[] = Carbon::parse($visit->datetime)->format('j M Y H:i');
+							$string[] = nl2br($visit->address);
+
+							if ($visit->required) {
+								$string[] = '<small><span class="glyphicon glyphicon-ok"></span> Wajib Hadir</small>';
+							}
 						}
+					}
 
-						if (count($tender->siteVisits) > 0)
-						{
-							$string[] = '';
-							$string[] = '<span class="glyphicon glyphicon-road"></span> <b><u><small>Lawatan Tapak</small></u></b>';
+					return implode('<br>', $string);
+				})
+					->editColumn('document_start_date', function ($tender) {
+						return Carbon::parse($tender->document_start_date)->format('j M Y');
+					})
+					->editColumn('submission_datetime', function ($tender) {
+						return Carbon::parse($tender->submission_datetime)->format('j M Y');
+					})
+					->editColumn('price', function ($tender) {
+						return sprintf('RM %.2f', $tender->price);
+					})
+					->addColumn('status', function ($tender) {
+						return $tender->status;
+					})
+					->addColumn('codes', function ($tender) {
+						$string = '';
 
-							foreach ($tender->siteVisits->sortBy('id') as $visit) {
-								$string[] = '';
-								$string[] = Carbon::parse($visit->datetime)->format('j M Y H:i');
-								$string[] = nl2br($visit->address);
+						if (count($tender->mof_codes) > 0) {
+							$max_count = count($tender->mof_code_groups);
+							$string    .= '<strong><u>MOF</u></strong><br>';
 
-								if ($visit->required) {
-									$string[] = '<small><span class="glyphicon glyphicon-ok"></span> Wajib Hadir</small>';
+							foreach ($tender->mof_code_groups_by_code as $order => $data) {
+								$code_count = count($data['codes']);
+								$i          = 1;
+								$string     .= '<small>';
+
+								foreach ($data['codes'] as $id => $code) {
+									$string .= $code;
+									if ($i   != $code_count)
+										$string .= VendorCode::$rule[$data['inner_rule']];
+									$i++;
 								}
-							}
-						}
 
-						return implode('<br>', $string);
-				})
-				->editColumn('document_start_date', function ($tender)
-				{
-					return Carbon::parse($tender->document_start_date)->format('j M Y');
-				})
-				->editColumn('submission_datetime', function ($tender)
-				{
-					return Carbon::parse($tender->submission_datetime)->format('j M Y');
-				})
-				->editColumn('price', function ($tender)
-				{
-					return sprintf('RM %.2f', $tender->price);
-				})
-				->addColumn('status', function ($tender)
-				{
-					return $tender->status;
-				})
-				->addColumn('codes', function ($tender)
-				{
-					$string = '';
+								$string .= '</small>';
 
-					if (count($tender->mof_codes) > 0)
-					{
-						$max_count = count($tender->mof_code_groups);
-						$string    .= '<strong><u>MOF</u></strong><br>';
-
-						foreach ($tender->mof_code_groups_by_code as $order => $data) {
-							$code_count = count($data['codes']);
-							$i          = 1;
-							$string     .= '<small>';
-
-							foreach ($data['codes'] as $id => $code) {
-								$string .= $code;
-								if ($i   != $code_count)
-									$string .= VendorCode::$rule[$data['inner_rule']];
-								$i++;
+								if ($order !=  $max_count)
+									$string .= '<br>' . VendorCode::$rule[$data['join_rule']] . '<br>';
 							}
 
-							$string .= '</small>';
-
-							if ($order !=  $max_count)
-								$string .= '<br>' . VendorCode::$rule[$data['join_rule']] . '<br>';
+							$string .= '<br><br>';
 						}
 
-						$string .= '<br><br>';
-					}
+						if (count($tender->cidb_grades) > 0) {
+							$string .= '<strong><u>Gred CIDB</u></strong><br><small>';
 
-					if (count($tender->cidb_grades) > 0)
-					{
-						$string .= '<strong><u>Gred CIDB</u></strong><br><small>';
+							foreach ($tender->cidb_grades as $code)
+								$string .= $code->code->code . '&nbsp;&nbsp;';
 
-						foreach ($tender->cidb_grades as $code)
-							$string .= $code->code->code . '&nbsp;&nbsp;';
+							$string .= '</small><br><br>';
+						}
 
-						$string .= '</small><br><br>';
-					}
+						if (count($tender->cidb_codes) > 0) {
+							$max_count = count($tender->cidb_code_groups);
+							$string    .= '<strong><u>CIDB</u></strong><br>';
 
-					if (count($tender->cidb_codes) > 0)
-					{
-						$max_count = count($tender->cidb_code_groups);
-						$string    .= '<strong><u>CIDB</u></strong><br>';
+							foreach ($tender->cidb_code_groups_by_code as $order => $data) {
+								$code_count = count($data['codes']);
+								$i          = 1;
+								$string     .= '<small>';
 
-						foreach ($tender->cidb_code_groups_by_code as $order => $data) {
-							$code_count = count($data['codes']);
-							$i          = 1;
-							$string     .= '<small>';
+								foreach ($data['codes'] as $id => $code) {
+									$string .= $code;
+									if ($i   != $code_count)
+										$string .= VendorCode::$rule[$data['inner_rule']];
+									$i++;
+								}
 
-							foreach ($data['codes'] as $id => $code) {
-								$string .= $code;
-								if ($i   != $code_count)
-									$string .= VendorCode::$rule[$data['inner_rule']];
-								$i++;
+								$string .= '</small>';
+
+								if ($order !=  $max_count)
+									$string .= '<br>' . VendorCode::$rule[$data['join_rule']] . '<br>';
 							}
 
-							$string .= '</small>';
-
-							if ($order !=  $max_count)
-								$string .= '<br>' . VendorCode::$rule[$data['join_rule']] . '<br>';
+							$string .= '<br><br>';
 						}
 
-						$string .= '<br><br>';
-					}
+						return $string;
+					});
 
-					return $string;
-				});
-
-				if (Tender::canShowUpdate($organizationunit->id))
-				{
-					$datatable = $datatable->addColumn('actions', function ($tender)
-					{
+				if (Tender::canShowUpdate($organizationunit->id)) {
+					$datatable = $datatable->addColumn('actions', function ($tender) {
 						$str   = [];
 						$str[] = '<div class="btn-group btn-group-vertical">';
 						if (empty($tender->approver_id)) $str[] = link_to_route('tenders.edit', 'Kemaskini', $tender->id, ['class' => 'btn btn-xs btn-primary']);
@@ -649,8 +647,7 @@ class HomeController extends Controller
 						return implode('', $str);
 					});
 
-					$datatable = $datatable->addColumn('report', function ($tender) use ($id)
-					{
+					$datatable = $datatable->addColumn('report', function ($tender) use ($id) {
 						$str   = [];
 						$str[] = '<div class="btn-group btn-group-vertical">';
 						if ($tender->canCancel() && $tender->approver_id > 0)
@@ -658,15 +655,12 @@ class HomeController extends Controller
 
 						return implode('', $str);
 					});
-				}
-				else
-				{
+				} else {
 					$datatable = $datatable->removeColumn('actions');
 				}
 
 				return $datatable
-					->filterColumn('name', function ($query, $keyword)
-					{
+					->filterColumn('name', function ($query, $keyword) {
 						$sql = "CONCAT(name,'-',ref_number)  like ?";
 						$query->whereRaw($sql, ["%{$keyword}%"]);
 					})
