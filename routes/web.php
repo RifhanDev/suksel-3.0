@@ -241,6 +241,13 @@ Route::view('/penilaian-kewangan-kerja-borang15', 'newModule.penilaian.borang15'
 
 
 Route::view('/lawatan-tapak', 'newModule.syarikatPembekal.lawatan_tapak')->name('lawatanTapak');
+
+Route::middleware('auth')->group(function () {
+    Route::get('/visits/{visit}/representatives', 'TenderVisitRepresentativeController@index')
+        ->name('visits.representatives.index');
+    Route::post('/visits/{visit}/representatives', 'TenderVisitRepresentativeController@store')
+        ->name('visits.representatives.store');
+});
 Route::view('/syarat-tender', 'newModule.syarikatPembekal.syarat_tender')->name('syaratTender');
 Route::view('/kod-bidang', 'newModule.syarikatPembekal.kod_bidang')->name('kodBidang');
 Route::view('/keputusan-mesyuarat', 'newModule.eBidding.keptusan_mesyuarat')->name('keputusanMesyuarat');
