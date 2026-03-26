@@ -110,10 +110,10 @@
 
     @include('users._review_snaps')
 
-    <div class="stats-card p-0">
-        <div class="stats-card-header p-4 pb-3 border-bottom d-flex justify-content-between align-items-center">
+    <div class="content-card">
+        <div class="content-card-header">
             <div class="d-flex align-items-center gap-3">
-                <div class="stats-card-icon" style="width: 38px; height: 38px;">
+                <div class="content-card-icon">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
@@ -122,7 +122,7 @@
                         <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                     </svg>
                 </div>
-                <h3 class="m-0 fw-bold text-uppercase" style="font-size: 1rem; color: #64748b;">Senarai Pengguna</h3>
+                <h3 class="content-card-title">Senarai Pengguna</h3>
             </div>
             <a href="{{ asset('users/create') }}" class="btn-form btn-form-create">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
@@ -135,7 +135,7 @@
             </a>
         </div>
 
-        <div class="stats-card-body p-2">
+        <div class="content-card-body p-2">
             <div class="table-responsive">
                 <table data-path="{{ route('users.index') }}" class="DT-users table table-hover align-middle mb-0 w-100">
                     <thead class="bg-light">
@@ -156,6 +156,7 @@
         </div>
     </div>
 @endsection
+
 
 @section('scripts')
     <script>

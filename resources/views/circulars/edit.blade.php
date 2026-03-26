@@ -1,27 +1,64 @@
 @extends('layouts.v3.master')
-@section('styles')
-	<link href="{{ asset('css/form.css') }}" rel="stylesheet">
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfobject/2.2.8/pdfobject.min.js"></script>
-	<style>
-		.pdfobject-container {
-			height: 60rem;
-		}
-	</style>
-@endsection
 @section('content')
-	<h2 class="tender-title">Kemaskini Pekeliling</h2>
-
-	{!! Former::open_for_files(url('circulars/' . $circular->id)) !!}
-	{!! Former::hidden('_method', 'PUT') !!}
-	@include('circulars.form')
-
-	<div class="well">
-		{!! Former::submit('Kemaskini')->class('btn btn-primary') !!}
-		@if ($circular->file)
-			<a href=" {{ $circular->file->url . '/' . $circular->file->name }}" class="btn btn-success btn-show-circular"
-				target="_blank">Lihat Pekeliling</a>
-		@endif
-		<a href="{{ asset('circulars') }}" class="btn btn-default pull-right">Senarai Pekeliling</a>
+	<!-- HEADER -->
+	<div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center mb-4">
+		<div class="mb-3 mb-lg-0">
+			<h3 class="fw-bold text-dark m-0" style="letter-spacing: -0.5px;">Kemaskini Pekeliling</h3>
+			<p class="text-muted small m-0">Kemaskini maklumat pekeliling di bawah.</p>
+		</div>
 	</div>
-	{!! Former::close() !!}
+
+	<form action="{{ url('circulars/' . $circular->id) }}" method="POST" enctype="multipart/form-data">
+		@csrf
+		@method('PUT')
+
+		<div class="content-card">
+			<div class="bg-light px-4 py-3 border-bottom d-flex align-items-center gap-2">
+				<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+					stroke="var(--sg-red)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+					<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+					<path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+				</svg>
+				<span class="fw-bold text-dark text-uppercase small">Maklumat Pekeliling</span>
+			</div>
+
+			<div class="p-4">
+				@include('circulars.form')
+			</div>
+
+			<div class="d-flex justify-content-between align-items-center p-4 border-top bg-light">
+				<div class="d-flex gap-2">
+					<a href="{{ asset('circulars') }}" class="btn-form btn-form-secondary">
+						<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+							stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+							<line x1="19" y1="12" x2="5" y2="12"></line>
+							<polyline points="12 19 5 12 12 5"></polyline>
+						</svg>
+						Senarai Pekeliling
+					</a>
+					@if ($circular->file)
+						<a href="{{ $circular->file->url . '/' . $circular->file->name }}" target="_blank"
+							class="btn-form btn-form-secondary">
+							<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+								stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+								<path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0-4 0" />
+								<path d="M21 12c-2.4 4-5.4 6-9 6c-3.6 0-6.6-2-9-6c2.4-4 5.4-6 9-6c3.6 0 6.6 2 9 6" />
+							</svg>
+							Lihat Pekeliling
+						</a>
+					@endif
+				</div>
+
+				<button type="submit" class="btn-form btn-form-primary">
+					<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+						stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+						<polyline points="17 21 17 13 7 13 7 21"></polyline>
+						<polyline points="7 3 7 8 15 8"></polyline>
+					</svg>
+					Kemaskini
+				</button>
+			</div>
+		</div>
+	</form>
 @endsection

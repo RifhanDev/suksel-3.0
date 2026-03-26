@@ -1,8 +1,6 @@
 @extends('layouts.v3.master')
 
 @section('content')
-    <link href="{{ asset('css/dashboard-cards.css') }}" rel="stylesheet">
-
     <!-- HEADER -->
     <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center mb-4">
         <!-- Title -->
@@ -12,10 +10,10 @@
         </div>
     </div>
 
-    <div class="stats-card p-0">
-        <div class="stats-card-header p-4 pb-3 border-bottom d-flex justify-content-between align-items-center">
+    <div class="content-card p-0">
+        <div class="content-card-header p-4 pb-3 border-bottom d-flex justify-content-between align-items-center">
             <div class="d-flex align-items-center gap-3">
-                <div class="stats-card-icon" style="width: 38px; height: 38px;">
+                <div class="content-card-icon" style="width: 38px; height: 38px;">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
@@ -36,7 +34,7 @@
             </a>
         </div>
 
-        <div class="stats-card-body p-2">
+        <div class="content-card-body p-2">
             <div class="table-responsive">
                 <table data-path="{{ route('users.pending-approval') }}"
                     class="DT-index table table-hover align-middle mb-0 w-100">

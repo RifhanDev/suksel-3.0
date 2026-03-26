@@ -26,6 +26,7 @@
     transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
     text-decoration: none;
     letter-spacing: 0.15px;
+    white-space: nowrap;
 }
 
 /* Save / Submit — solid blue */

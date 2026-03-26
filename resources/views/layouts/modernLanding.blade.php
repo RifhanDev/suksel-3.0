@@ -1785,7 +1785,7 @@
                 });
             });
 
-            // Close menu when clicking on a link (not dropdown)
+            // Close menu when clicking on a link
             const mobileNavLinks = document.querySelectorAll('.mobile-nav-link, .mobile-dropdown-item');
             mobileNavLinks.forEach(link => {
                 link.addEventListener('click', function() {

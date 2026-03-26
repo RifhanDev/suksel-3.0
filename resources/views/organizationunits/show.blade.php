@@ -153,6 +153,7 @@
 												<th class="w-10">
 													<i class="ti ti-settings me-1"></i>Tindakan
 												</th>
+												
 											@endif
 										</tr>
 									</thead>
@@ -180,65 +181,68 @@
 @endsection
 
 @section('scripts')
-	<script src="{{ asset('js/datatables.js') }}"></script>
 	<script>
 		var canUpdate = {!! json_encode(Auth::check() && App\Tender::canShowUpdate($organizationunit->id)) !!};
 
-		$('.DT-show').each(function() {
+		$('.DT-show').each(function () {
 			var target = $(this);
 			var path = target.data('path');
 
 			if (canUpdate) {
 				var columns = [{
-						data: 'name',
-						name: 'name'
-					},
-					{
-						data: 'codes',
-						name: 'codes'
-					},
-					{
-						data: 'document_start_date',
-						name: 'document_start_date'
-					},
-					{
-						data: 'submission_datetime',
-						name: 'submission_datetime'
-					},
-					{
-						data: 'price',
-						name: 'price'
-					},
-					{
-						data: 'actions',
-						name: 'actions'
-					},
-					{
-						data: 'report',
-						name: 'report'
-					},
+					data: 'name',
+					name: 'name'
+				},
+				{
+					data: 'codes',
+					name: 'codes'
+				},
+				{
+					data: 'document_start_date',
+					name: 'document_start_date'
+				},
+				{
+					data: 'submission_datetime',
+					name: 'submission_datetime'
+				},
+				{
+					data: 'price',
+					name: 'price'
+				},
+				{
+					data: 'actions',
+					name: 'actions'
+				},
+				{
+					data: 'report',
+					name: 'report'
+				},
+				{
+					data: 'status',
+					name: 'status'
+				},
 				];
 			} else {
 				var columns = [{
-						data: 'name',
-						name: 'name'
-					},
-					{
-						data: 'codes',
-						name: 'codes'
-					},
-					{
-						data: 'document_start_date',
-						name: 'document_start_date'
-					},
-					{
-						data: 'submission_datetime',
-						name: 'submission_datetime'
-					},
-					{
-						data: 'price',
-						name: 'price'
-					},
+					data: 'name',
+					name: 'name'
+				},
+				{
+					data: 'codes',
+					name: 'codes'
+				},
+				{
+					data: 'document_start_date',
+					name: 'document_start_date'
+				},
+				{
+					data: 'submission_datetime',
+					name: 'submission_datetime'
+				},
+				{
+					data: 'price',
+					name: 'price'
+				},
 				];
 			}
 
@@ -246,7 +250,7 @@
 				ajax: path,
 				columns: columns,
 				serverSide: true,
-				stateSave: true,
+				stateSave: false,
 				language: {
 					sEmptyTable: "Tiada data",
 					sInfo: "Paparan dari _START_ hingga _END_ dari _TOTAL_ rekod",

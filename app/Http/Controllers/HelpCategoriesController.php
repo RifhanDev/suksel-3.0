@@ -25,14 +25,14 @@ class HelpCategoriesController extends Controller
 				->addColumn('count', function($cat){
 					return $cat->helps->count();
 				})
-				->addColumn('actions', function($cat){
+				->addColumn('actions', function($cat) {
                     $actions   = [];
-                    $actions[] = link_to_route('helpcategories.edit', 'Kemaskini', $cat->id, ['class' => 'btn btn-xs btn-primary']);
-                    $actions[] = Former::open(url('helpcategories/'.$cat->id))->class('form-inline') 
+                    $actions[] = link_to_route('helpcategories.edit', 'Kemaskini', $cat->id, ['class' => 'btn btn-sm btn-warning rounded-8 px-3']);
+                    $actions[] = Former::open(url('helpcategories/' . $cat->id))->class('form-inline m-0')
                         . Former::hidden('_method', 'DELETE')
-                        . '<button type="button" class="btn btn-xs btn-danger confirm-delete">Padam</button>'
+                        . '<button type="button" class="btn btn-sm btn-danger rounded-8 px-3 confirm-delete">Padam</button>'
                         . Former::close();
-                    return implode(' ', $actions);
+                    return '<div class="d-flex gap-2 flex-wrap justify-content-center">' . implode('', $actions) . '</div>';
                 })
 				->removeColumn('id')
 				->removeColumn('description')

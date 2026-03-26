@@ -1,5 +1,7 @@
 <?php
 
+namespace App\Libraries;
+
 class EmailEligible
 {
     public function fire($job, $data)

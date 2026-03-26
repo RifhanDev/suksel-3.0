@@ -1,77 +1,51 @@
 @extends('layouts.v3.master')
 
-@section('styles')
-	<link href="{{ asset('css/components/form-components.css') }}" rel="stylesheet">
-@endsection
-
 @section('content')
-<div class="row">
-    <div class="col-lg-9">
-        <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center mb-4">
-            <div class="mb-3 mb-lg-0">
-                <h3 class="fw-bold text-dark m-0" style="letter-spacing: -0.5px;">Kemaskini Kategori Soalan Lazim</h3>
-                <p class="text-muted small m-0">Sistem Tender Online Selangor</p>
-            </div>
-            <div class="d-flex flex-wrap align-items-center gap-3">
-                @if (Auth::user() && Auth::user()->hasRole('Admin'))
-                    <a href="{{ asset('helps') }}" class="btn btn-outline-warning d-flex align-items-center gap-2">Soalan Lazim</a>
-                    <a href="{{ route('helpcategories.index') }}" class="btn btn-outline-secondary d-flex align-items-center gap-2">Senarai Kategori</a>
-                @endif
-                <div class="bg-white px-3 py-2 rounded-2 shadow-sm border d-flex align-items-center gap-2">
-                    <span class="badge bg-light text-dark border">TARIKH</span>
-                    <span class="small text-muted fw-bold">{{ date('d/m/Y') }}</span>
-                </div>
-            </div>
-        </div>
+	<!-- HEADER -->
+	<div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center mb-4">
+		<div class="mb-3 mb-lg-0">
+			<h3 class="fw-bold text-dark m-0" style="letter-spacing: -0.5px;">Kemaskini Kategori Soalan Lazim</h3>
+			<p class="text-muted small m-0">Kemaskini maklumat kategori soalan lazim di bawah.</p>
+		</div>
+	</div>
 
-        {!! Former::open(url('helpcategories/' . $category->id)) !!}
-        {!! Former::populate($category) !!}
-        {!! Former::hidden('_method', 'PUT') !!}
-        <div class="stats-card mb-4">
-            <div class="stats-card-header p-4 border-bottom">
-                <div class="d-flex align-items-center gap-3">
-                    <div class="d-flex align-items-center justify-content-center bg-danger bg-opacity-10 text-danger rounded-2" style="width: 38px; height: 38px;">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
-                    </div>
-                    <h3 class="m-0 fw-bold" style="font-size: 1.1rem; color: #1e293b;">Maklumat Kategori</h3>
-                </div>
-            </div>
-            <div class="card-body p-4">
-                <div class="row">
-                    <div class="col-md-12 mb-3">
-                        <label class="form-label fw-semibold">Nama <span class="text-danger">*</span></label>
-                        {!! Former::text('name')->label(false)->placeholder('Masukkan nama kategori')->required()->class('form-control') !!}
-                    </div>
-                    <div class="col-md-12 mb-3">
-                        <label class="form-label fw-semibold">Keterangan <span class="text-danger">*</span></label>
-                        {!! Former::text('description')->label(false)->placeholder('Masukkan keterangan kategori')->required()->class('form-control') !!}
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="stats-card">
-            <div class="card-body p-4">
-                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-                    <a href="{{ route('helpcategories.index') }}" class="btn btn-secondary d-flex align-items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-                        Kembali ke Senarai
-                    </a>
-                    <button type="submit" class="btn btn-selangor d-flex align-items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
-                        Simpan
-                    </button>
-                </div>
-            </div>
-        </div>
-        {!! Former::close() !!}
-    </div>
-    <div class="col-lg-3">
-        @include('layouts._register')
-        @include('layouts._news')
-    </div>
-</div>
-@endsection
+	<form action="{{ url('helpcategories/' . $category->id) }}" method="POST">
+		@csrf
+		@method('PUT')
 
-@section('scripts')
-<script src="{{ asset('js/news.js') }}"></script>
+		<div class="content-card">
+			<div class="bg-light px-4 py-3 border-bottom d-flex align-items-center gap-2">
+				<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+					stroke="var(--sg-red)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+					<path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+					<line x1="7" y1="7" x2="7.01" y2="7" />
+				</svg>
+				<span class="fw-bold text-dark text-uppercase small">Maklumat Kategori</span>
+			</div>
+
+			<div class="p-4">
+				@include('helpcategories.form')
+			</div>
+
+			<div class="d-flex justify-content-between align-items-center p-4 border-top bg-light">
+				<a href="{{ asset('helpcategories') }}" class="btn-form btn-form-secondary">
+					<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+						stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<line x1="19" y1="12" x2="5" y2="12"></line>
+						<polyline points="12 19 5 12 12 5"></polyline>
+					</svg>
+					Batal
+				</a>
+				<button type="submit" class="btn-form btn-form-primary">
+					<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+						stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+						<polyline points="17 21 17 13 7 13 7 21"></polyline>
+						<polyline points="7 3 7 8 15 8"></polyline>
+					</svg>
+					Simpan
+				</button>
+			</div>
+		</div>
+	</form>
 @endsection

@@ -34,22 +34,22 @@
 	@include('transactions._snaps')
 
 	<!-- Main Table Card -->
-	<div class="stats-card p-0">
-		<div class="stats-card-header p-4 pb-3 border-bottom">
+	<div class="content-card p-0">
+		<div class="content-card-header p-4 pb-3 border-bottom">
 			<div class="d-flex align-items-center gap-3">
-				<div class="stats-card-icon" style="width: 38px; height: 38px;">
+				<div class="content-card-icon" style="width: 38px; height: 38px;">
 					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
 						stroke-linecap="round" stroke-linejoin="round">
 						<rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
 						<line x1="1" y1="10" x2="23" y2="10"></line>
 					</svg>
 				</div>
-				<h3 class="stats-card-title" style="font-size: 1rem;">Senarai Transaksi</h3>
+				<h3 class="content-card-title" style="font-size: 1rem;">Senarai Transaksi</h3>
 			</div>
 		</div>
 
 		<!-- Table Body -->
-		<div class="stats-card-body p-2">
+		<div class="content-card-body p-2">
 			<div class="table-responsive">
 				<table
 					data-path="{{ action('TransactionsController@index') }}?state={{ isset($transaction_type) ? $transaction_type : '' }}&status={{ isset($transaction_status) ? $transaction_status : '' }}"

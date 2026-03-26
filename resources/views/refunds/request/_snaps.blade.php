@@ -1,8 +1,11 @@
 @if (App\Models\Refund::canList())
+
 	<link href="{{ asset('css/dashboard-cards.css') }}" rel="stylesheet">
 
-	<div class="row stats-row">
-		<div class="col-sm-6 col-md-3 mb-3">
+	<div class="row g-4 mb-4">
+
+		<!-- Card 1: Permohonan Baru -->
+		<div class="col-sm-6 col-xl-3">
 			<div class="stats-card">
 				<div class="stats-card-header">
 					<h6 class="stats-card-title">Permohonan Baru</h6>
@@ -24,14 +27,15 @@
 						Lihat Semua
 						<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
 							stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-							<polyline points="9 18 15 12 9 6"></polyline>
+							<line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline>
 						</svg>
 					</a>
 				</div>
 			</div>
 		</div>
 
-		<div class="col-sm-6 col-md-3 mb-3">
+		<!-- Card 2: Dalam Proses -->
+		<div class="col-sm-6 col-xl-3">
 			<div class="stats-card info">
 				<div class="stats-card-header">
 					<h6 class="stats-card-title">Permohonan Dalam Proses</h6>
@@ -51,14 +55,15 @@
 						Lihat Semua
 						<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
 							stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-							<polyline points="9 18 15 12 9 6"></polyline>
+							<line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline>
 						</svg>
 					</a>
 				</div>
 			</div>
 		</div>
 
-		<div class="col-sm-6 col-md-3 mb-3">
+		<!-- Card 3: Ditolak -->
+		<div class="col-sm-6 col-xl-3">
 			<div class="stats-card warning">
 				<div class="stats-card-header">
 					<h6 class="stats-card-title">Permohonan Ditolak</h6>
@@ -79,14 +84,15 @@
 						Lihat Semua
 						<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
 							stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-							<polyline points="9 18 15 12 9 6"></polyline>
+							<line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline>
 						</svg>
 					</a>
 				</div>
 			</div>
 		</div>
 
-		<div class="col-sm-6 col-md-3 mb-3">
+		<!-- Card 4: Selesai -->
+		<div class="col-sm-6 col-xl-3">
 			<div class="stats-card success">
 				<div class="stats-card-header">
 					<h6 class="stats-card-title">Selesai Pemulangan Semula</h6>
@@ -106,11 +112,12 @@
 						Lihat Semua
 						<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
 							stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-							<polyline points="9 18 15 12 9 6"></polyline>
+							<line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline>
 						</svg>
 					</a>
 				</div>
 			</div>
 		</div>
+
 	</div>
 @endif
