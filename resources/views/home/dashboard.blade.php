@@ -267,10 +267,10 @@
 			</div>
 		</div>
 
-		<div class="col-lg-3 col-xs-12">
-			@include('layouts._news')
-		</div>
-	</div>
+        <div class="col-lg-3 col-xs-12">
+            @include('layouts._news')
+        </div>
+    </div>
 
 @endsection
 

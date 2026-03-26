@@ -16,18 +16,18 @@
 	@include('vendors._snaps')
 
 	<!-- Table -->
-	<div class="stats-card p-0">
-		<div class="stats-card-header p-4 pb-3 border-bottom">
+	<div class="content-card p-0">
+		<div class="content-card-header p-4 pb-3 border-bottom">
 			<div class="d-flex align-items-center gap-3">
-                <div class="stats-card-icon" style="width: 38px; height: 38px;">
+                <div class="content-card-icon" style="width: 38px; height: 38px;">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
                 </div>
-				<h3 class="stats-card-title" style="font-size: 1rem;">Senarai Syarikat</h3>
+				<h3 class="content-card-title" style="font-size: 1rem;">Senarai Syarikat</h3>
 			</div>
 		</div>
-		
+
         <!-- Table Body -->
-		<div class="stats-card-body p-2">
+		<div class="content-card-body p-2">
 			<div class="table-responsive">
 				<table
 					data-path="{{ action('VendorsController@index') }}{{ isset($approval_status) ? '?state=' . $approval_status : '' }}"

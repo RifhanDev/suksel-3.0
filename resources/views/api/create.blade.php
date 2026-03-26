@@ -16,75 +16,78 @@
 				<span class="badge bg-light text-dark border">TARIKH</span>
 				<span class="small text-muted fw-bold">{{ date('d/m/Y') }}</span>
 			</div>
+			<p class="text-muted small m-0">Jana dan daftarkan token API baharu untuk agensi.</p>
 		</div>
 	</div>
 
 	<form action="{{ route('apitoken.store') }}" method="POST">
 		@csrf
 
-		<!-- Form Card -->
-		<div class="stats-card mb-4">
-			<div class="stats-card-header p-4 border-bottom">
-				<div class="d-flex align-items-center gap-3">
-					<div class="d-flex align-items-center justify-content-center bg-danger bg-opacity-10 text-danger rounded-2" style="width: 38px; height: 38px;">
-						<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2z"></path></svg>
-					</div>
-					<h3 class="m-0 fw-bold" style="font-size: 1.1rem; color: #1e293b;">Maklumat API Token</h3>
-				</div>
+		<div class="content-card">
+			<div class="bg-light px-4 py-3 border-bottom d-flex align-items-center gap-2">
+				<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+					stroke="var(--sg-red)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+					<rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+					<path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+				</svg>
+				<span class="fw-bold text-dark text-uppercase small">Maklumat Token</span>
 			</div>
-			<div class="card-body p-4">
-				<div class="row">
-					<!-- Agensi Field -->
-					<div class="col-md-12 mb-3">
-						<label for="organization_unit_id" class="form-label fw-semibold">
+
+			<div class="p-4">
+				<div class="row g-3">
+					<!-- Agensi -->
+					<div class="col-12">
+						<label for="organization_unit_id" class="form-label fw-medium small">
 							Agensi <span class="text-danger">*</span>
 						</label>
-						<select name="organization_unit_id" id="organization_unit_id" class="form-control form-select @error('organization_unit_id') is-invalid @enderror" required>
-							<option value="">-- Pilih Agensi --</option>
+						<select name="organization_unit_id" id="organization_unit_id" class="form-select" required>
 							@foreach ($agencies as $agency)
-								<option value="{{ $agency->id }}" {{ old('organization_unit_id') == $agency->id ? 'selected' : '' }}>{{ $agency->name }}</option>
+								<option value="{{ $agency->id }}">{{ $agency->name }}</option>
 							@endforeach
 						</select>
-						@error('organization_unit_id')
-							<div class="invalid-feedback">{{ $message }}</div>
-						@enderror
 					</div>
 
-					<!-- Token Field -->
-					<div class="col-md-12 mb-3">
-						<label for="token" class="form-label fw-semibold">
+					<!-- Token -->
+					<div class="col-12">
+						<label for="token" class="form-label fw-medium small">
 							Token <span class="text-danger">*</span>
 						</label>
-						<div class="input-group">
-							<input type="text" name="token" id="token" class="form-control @error('token') is-invalid @enderror" readonly placeholder="Klik Jana untuk menjana token" required>
-							<button type="button" class="btn btn-selangor generate d-flex align-items-center gap-2">
-								<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"></path><path d="M3 12a9 9 0 0 1 15-6.7L21 8"></path><path d="M3 22v-6h6"></path><path d="M21 12a9 9 0 0 1-15 6.7L3 16"></path></svg>
-								Jana
+						<div class="d-flex gap-2">
+							<input type="text" name="token" id="token" class="form-control" readonly>
+							<button type="button" class="btn btn-sm px-3 flex-shrink-0 generate d-flex align-items-center gap-1"
+								style="background:#1d6f42;color:#fff;border-color:#1d6f42;">
+								<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24">
+									<path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+										d="m16.555 3.843l3.602 3.602a2.877 2.877 0 0 1 0 4.069l-2.643 2.643a2.877 2.877 0 0 1-4.069 0l-.301-.301l-6.558 6.558a2 2 0 0 1-1.239.578L5.172 21H4a1 1 0 0 1-.993-.883L3 20v-1.172a2 2 0 0 1 .467-1.284l.119-.13L4 17h2v-2h2v-2l2.144-2.144l-.301-.301a2.877 2.877 0 0 1 0-4.069l2.643-2.643a2.877 2.877 0 0 1 4.069 0M15 9h.01" />
+								</svg>
+								Jana Token
 							</button>
 						</div>
-						@error('token')
-							<div class="invalid-feedback d-block">{{ $message }}</div>
-						@enderror
 					</div>
 				</div>
 			</div>
-		</div>
 
-		<!-- Action Buttons -->
-		<div class="stats-card">
-			<div class="card-body p-4">
-				<div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-					<a href="{{ asset('apitoken') }}" class="btn btn-secondary d-flex align-items-center gap-2">
-						<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-						Kembali ke Senarai
-					</a>
-					<button type="submit" class="btn btn-success d-flex align-items-center gap-2">
-						<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
-						Tambah Token
-					</button>
-				</div>
+			<div class="d-flex justify-content-between align-items-center p-4 border-top bg-light">
+				<a href="{{ asset('apitoken') }}" class="btn-form btn-form-secondary">
+					<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+						stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<line x1="19" y1="12" x2="5" y2="12"></line>
+						<polyline points="12 19 5 12 12 5"></polyline>
+					</svg>
+					Batal
+				</a>
+				<button type="submit" class="btn-form btn-form-primary">
+					<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+						stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+						<polyline points="17 21 17 13 7 13 7 21"></polyline>
+						<polyline points="7 3 7 8 15 8"></polyline>
+					</svg>
+					Tambah Token
+				</button>
 			</div>
 		</div>
+
 	</form>
 @endsection
 

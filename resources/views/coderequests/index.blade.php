@@ -1,7 +1,6 @@
 @extends(Auth::user()->hasRole('Vendor') ? 'layouts.modernLanding' : 'layouts.v3.master')
 
 @section('styles')
-    <link href="{{ asset('css/dashboard-cards.css') }}" rel="stylesheet">
     <style>
         .page-title-text {
             font-size: 1.5rem;
@@ -296,11 +295,11 @@
     @endif
 
     <!-- MAIN TABLE CARD -->
-    <div class="stats-card p-0 mb-3">
+    <div class="content-card p-0 mb-3">
 
-        <div class="stats-card-header p-4 pb-3 border-bottom d-flex justify-content-between align-items-center">
+        <div class="content-card-header p-4 pb-3 border-bottom d-flex justify-content-between align-items-center">
             <div class="d-flex align-items-center gap-3">
-                <div class="stats-card-icon" style="width: 38px; height: 38px;">
+                <div class="content-card-icon" style="width: 38px; height: 38px;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                         stroke-linejoin="round">
@@ -318,7 +317,7 @@
             </div>
         </div>
 
-        <div class="stats-card-body p-2">
+        <div class="content-card-body p-2">
             <div class="table-responsive">
                 <table
                     data-path="{{ $ajax_url }}@if (Request::get('state')) ?state={{ Request::get('state') }} @endif"
