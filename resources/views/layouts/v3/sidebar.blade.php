@@ -297,9 +297,15 @@
 
                 <!-- 4. PENGURUSAN AKSES -->
                 @if (Auth::user()->hasRole('Admin'))
+                    @php
+                        $isAccessMenuActive =
+                            request()->is('roles*') ||
+                            request()->is('permissions*');
+                    @endphp
                     <li class="nav-item">
-                        <a class="sidebar-link collapsed" data-bs-toggle="collapse" data-bs-target="#menuAccess"
-                            aria-expanded="false" style="cursor: pointer;">
+                        <a class="sidebar-link {{ $isAccessMenuActive ? 'active' : 'collapsed' }}"
+                            data-bs-toggle="collapse" data-bs-target="#menuAccess"
+                            aria-expanded="{{ $isAccessMenuActive ? 'true' : 'false' }}" style="cursor: pointer;">
                             <svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24"
                                 fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
                                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
@@ -311,16 +317,22 @@
                                 <polyline points="9 18 15 12 9 6"></polyline>
                             </svg>
                         </a>
-                        <div class="collapse" id="menuAccess">
+                        <div class="collapse {{ $isAccessMenuActive ? 'show' : '' }}" id="menuAccess">
                             <ul class="sidebar-submenu">
                                 @if (App\Role::canList())
                                     <li><a class="submenu-item" href="{{ asset('roles') }}">
-                                            <div class="submenu-icon"></div><span>Tetapan Peranan</span>
+                                            <div class="submenu-icon"
+                                                style="{{ request()->is('roles*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}">
+                                            </div><span
+                                                class="{{ request()->is('roles*') ? 'text-white' : '' }}">Tetapan Peranan</span>
                                         </a></li>
                                 @endif
                                 @if (App\Permission::canList())
                                     <li><a class="submenu-item" href="{{ asset('permissions') }}">
-                                            <div class="submenu-icon"></div><span>Tetapan Kebenaran</span>
+                                            <div class="submenu-icon"
+                                                style="{{ request()->is('permissions*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}">
+                                            </div><span
+                                                class="{{ request()->is('permissions*') ? 'text-white' : '' }}">Tetapan Kebenaran</span>
                                         </a></li>
                                 @endif
                             </ul>
@@ -330,9 +342,13 @@
 
                 <!-- 5. PEMULANGAN SEMULA -->
                 @if (Auth::user()->ability(['Admin', 'Refund Admin'], ['Refund:list']))
+                    @php
+                        $isRefundMenuActive = request()->is('refunds*');
+                    @endphp
                     <li class="nav-item">
-                        <a class="sidebar-link collapsed" data-bs-toggle="collapse" data-bs-target="#menuRefund"
-                            aria-expanded="false" style="cursor: pointer;">
+                        <a class="sidebar-link {{ $isRefundMenuActive ? 'active' : 'collapsed' }}"
+                            data-bs-toggle="collapse" data-bs-target="#menuRefund"
+                            aria-expanded="{{ $isRefundMenuActive ? 'true' : 'false' }}" style="cursor: pointer;">
                             <svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24"
                                 fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
                                 <polyline points="23 4 23 10 17 10" />
@@ -344,16 +360,22 @@
                                 <polyline points="9 18 15 12 9 6"></polyline>
                             </svg>
                         </a>
-                        <div class="collapse" id="menuRefund">
+                        <div class="collapse {{ $isRefundMenuActive ? 'show' : '' }}" id="menuRefund">
                             <ul class="sidebar-submenu">
                                 @if (App\Models\Refund::canList())
                                     <li><a class="submenu-item" href="{{ route('refunds.request.index') }}">
-                                            <div class="submenu-icon"></div><span>Permohonan Pemulangan Semula</span>
+                                            <div class="submenu-icon"
+                                                style="{{ request()->routeIs('refunds.request.*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}">
+                                            </div><span
+                                                class="{{ request()->routeIs('refunds.request.*') ? 'text-white' : '' }}">Permohonan Pemulangan Semula</span>
                                         </a></li>
                                 @endif
                                 @if (App\Models\Refund::isRoleBKP())
                                     <li><a class="submenu-item" href="{{ route('refunds.complaint.index') }}">
-                                            <div class="submenu-icon"></div><span>Aduan Permohonan Semula</span>
+                                            <div class="submenu-icon"
+                                                style="{{ request()->routeIs('refunds.complaint.*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}">
+                                            </div><span
+                                                class="{{ request()->routeIs('refunds.complaint.*') ? 'text-white' : '' }}">Aduan Permohonan Semula</span>
                                         </a>
                                     </li>
                                 @endif
@@ -364,9 +386,10 @@
 
                 <!-- 6. API -->
                 @if (Auth::user()->ability(['Admin'], ['Api:canList']))
+                    @php $isApiMenuActive = request()->routeIs('apitoken.*'); @endphp
                     <li class="nav-item">
-                        <a class="sidebar-link collapsed" data-bs-toggle="collapse" data-bs-target="#menuApi"
-                            aria-expanded="false" style="cursor: pointer;">
+                        <a class="sidebar-link {{ $isApiMenuActive ? 'active' : 'collapsed' }}" data-bs-toggle="collapse" data-bs-target="#menuApi"
+                            aria-expanded="{{ $isApiMenuActive ? 'true' : 'false' }}" style="cursor: pointer;">
                             <svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24"
                                 fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
                                 <polyline points="16 18 22 12 16 6" />
@@ -378,11 +401,14 @@
                                 <polyline points="9 18 15 12 9 6"></polyline>
                             </svg>
                         </a>
-                        <div class="collapse" id="menuApi">
+                        <div class="collapse {{ $isApiMenuActive ? 'show' : '' }}" id="menuApi">
                             <ul class="sidebar-submenu">
                                 @if (App\Models\ApiToken::canList())
                                     <li><a class="submenu-item" href="{{ route('apitoken.index') }}">
-                                            <div class="submenu-icon"></div><span>Senarai API Token</span>
+                                            <div class="submenu-icon"
+                                                style="{{ request()->routeIs('apitoken.*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}">
+                                            </div><span
+                                                class="{{ request()->routeIs('apitoken.*') ? 'text-white' : '' }}">Senarai API Token</span>
                                         </a></li>
                                 @endif
                             </ul>
@@ -392,9 +418,10 @@
 
                 <!-- 7. PENGURUSAN CHATBOT -->
                 @if (Auth::user()->ability(['Admin'], ['chatbot-manager:canList']))
+                    @php $isChatbotMenuActive = request()->routeIs('chatbot-manager.*'); @endphp
                     <li class="nav-item">
-                        <a class="sidebar-link collapsed" data-bs-toggle="collapse" data-bs-target="#menuChatbot"
-                            aria-expanded="false" style="cursor: pointer;">
+                        <a class="sidebar-link {{ $isChatbotMenuActive ? 'active' : 'collapsed' }}" data-bs-toggle="collapse" data-bs-target="#menuChatbot"
+                            aria-expanded="{{ $isChatbotMenuActive ? 'true' : 'false' }}" style="cursor: pointer;">
                             <svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24"
                                 fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
@@ -405,21 +432,33 @@
                                 <polyline points="9 18 15 12 9 6"></polyline>
                             </svg>
                         </a>
-                        <div class="collapse" id="menuChatbot">
+                        <div class="collapse {{ $isChatbotMenuActive ? 'show' : '' }}" id="menuChatbot">
                             <ul class="sidebar-submenu">
                                 @if (App\Models\FaqCategory::canList())
                                     <li><a class="submenu-item" href="{{ route('chatbot-manager.category.index') }}">
-                                            <div class="submenu-icon"></div><span>Senarai Kategori</span>
+                                            <div class="submenu-icon"
+                                                style="{{ request()->routeIs('chatbot-manager.category.*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}">
+                                            </div><span
+                                                class="{{ request()->routeIs('chatbot-manager.category.*') ? 'text-white' : '' }}">Senarai Kategori</span>
                                         </a></li>
                                     <li><a class="submenu-item" href="{{ route('chatbot-manager.question.index') }}">
-                                            <div class="submenu-icon"></div><span>Senarai Soalan</span>
+                                            <div class="submenu-icon"
+                                                style="{{ request()->routeIs('chatbot-manager.question.*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}">
+                                            </div><span
+                                                class="{{ request()->routeIs('chatbot-manager.question.*') ? 'text-white' : '' }}">Senarai Soalan</span>
                                         </a></li>
                                     <li><a class="submenu-item" href="{{ route('chatbot-manager.chatlog.index') }}">
-                                            <div class="submenu-icon"></div><span>Senarai Rekod Chat</span>
+                                            <div class="submenu-icon"
+                                                style="{{ request()->routeIs('chatbot-manager.chatlog.*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}">
+                                            </div><span
+                                                class="{{ request()->routeIs('chatbot-manager.chatlog.*') ? 'text-white' : '' }}">Senarai Rekod Chat</span>
                                         </a></li>
                                     <li><a class="submenu-item"
                                             href="{{ route('chatbot-manager.newquestion.index') }}">
-                                            <div class="submenu-icon"></div><span>Pertanyaan Baru</span>
+                                            <div class="submenu-icon"
+                                                style="{{ request()->routeIs('chatbot-manager.newquestion.*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}">
+                                            </div><span
+                                                class="{{ request()->routeIs('chatbot-manager.newquestion.*') ? 'text-white' : '' }}">Pertanyaan Baru</span>
                                         </a></li>
                                 @endif
                             </ul>
@@ -458,7 +497,10 @@
                                                 Email SMTP</span>
                                         </a></li>
                                     <li><a class="submenu-item" href="{{ route('mail-manager.mail-queue.index') }}">
-                                            <div class="submenu-icon"></div><span>Rekod Email</span>
+                                            <div class="submenu-icon"
+                                                style="{{ request()->routeIs('mail-manager.mail-queue.*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}">
+                                            </div><span
+                                                class="{{ request()->routeIs('mail-manager.mail-queue.*') ? 'text-white' : '' }}">Rekod Email</span>
                                         </a></li>
                                 @endif
                             </ul>
@@ -468,9 +510,10 @@
 
                 <!-- 9. ADUAN -->
                 @if (Auth::user()->ability(['Admin'], []))
+                    @php $isAduanMenuActive = request()->is('aduan*'); @endphp
                     <li class="nav-item">
-                        <a class="sidebar-link collapsed" data-bs-toggle="collapse" data-bs-target="#menuAduan"
-                            aria-expanded="false" style="cursor: pointer;">
+                        <a class="sidebar-link {{ $isAduanMenuActive ? 'active' : 'collapsed' }}" data-bs-toggle="collapse" data-bs-target="#menuAduan"
+                            aria-expanded="{{ $isAduanMenuActive ? 'true' : 'false' }}" style="cursor: pointer;">
                             <svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24"
                                 fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
                                 <circle cx="12" cy="12" r="10" />
@@ -483,11 +526,14 @@
                                 <polyline points="9 18 15 12 9 6"></polyline>
                             </svg>
                         </a>
-                        <div class="collapse" id="menuAduan">
+                        <div class="collapse {{ $isAduanMenuActive ? 'show' : '' }}" id="menuAduan">
                             <ul class="sidebar-submenu">
                                 @if (App\Models\FaqCategory::canList())
                                     <li><a class="submenu-item" href="{{ asset('aduan/list') }}">
-                                            <div class="submenu-icon"></div><span>Senarai Aduan</span>
+                                            <div class="submenu-icon"
+                                                style="{{ request()->is('aduan*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}">
+                                            </div><span
+                                                class="{{ request()->is('aduan*') ? 'text-white' : '' }}">Senarai Aduan</span>
                                         </a></li>
                                 @endif
                             </ul>
@@ -525,11 +571,11 @@
                                     </li>
                                 @else
                                     {{-- <li>
-								<a class="submenu-item" href="{{ route('dashboard', ['id' => Auth::user()->organization_unit_id]) }}">
-						<div class="submenu-icon"></div>
-						<span>Dashboard</span>
-						</a>
-			</li> --}}
+								        <a class="submenu-item" href="{{ route('dashboard', ['id' => Auth::user()->organization_unit_id]) }}">
+                                            <div class="submenu-icon"></div>
+                                            <span>Dashboard</span>
+                                        </a>
+                                    </li> --}}
                                 @endif
                             </ul>
                         </div>
@@ -679,7 +725,7 @@
                 @endif
 
                 <!-- ============================================= -->
-                <!-- NEW SECTION: MODUL 3.0 -->
+                <!-- NEW SECTION: MODUL 3.0 (ADMIN) -->
                 <!-- ============================================= -->
 
                 <li class="nav-section-header my-3">Modul 3.0</li>
@@ -698,6 +744,233 @@
                         <span class="nav-text">Pelantikan Jawatankuasa</span>
                     </a>
                 </li>
+
+                <!-- Menu : Jawatankuasa Spesifikasi /  Pengurusan -->
+                <li class="nav-item">
+                    <a class="sidebar-link collapsed" data-bs-toggle="collapse"
+                        data-bs-target="#menuJawatankusaSpesifikasi" aria-expanded="false" style="cursor: pointer;">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                        </svg>
+                        <span class="nav-text">Jawatankuasa Spesifikasi / Pengurusan </span>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="nav-arrow" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                    </a>
+                    <div class="collapse" id="menuJawatankusaSpesifikasi">
+                        <ul class="sidebar-submenu">
+                            <li>
+                                <a class="submenu-item" href="{{ route('senaraiSemak') }}">
+                                    <div class="submenu-icon"></div><span>Senarai Semak</span>
+                                </a>
+                            </li>
+                            <!-- <li><a class="submenu-item" href="{{ route('senaraiTeknikal') }}">
+                                    <div class="submenu-icon"></div><span>Senarai Semak Teknikal</span>
+                                </a></li> -->
+                            <!-- <li><a class="submenu-item" href="{{ route('senaraiKewangan') }}">
+                                    <div class="submenu-icon"></div><span>Senarai Semak Kewangan</span>
+                                </a></li> -->
+                        </ul>
+                    </div>
+                </li>
+
+                <!-- Menu : Syarikat / Pembekal -->
+                <li class="nav-item">
+                    <a class="sidebar-link collapsed" data-bs-toggle="collapse"
+                        data-bs-target="#menuSyarikatPembekal" aria-expanded="false" style="cursor: pointer;">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                        </svg>
+                        <span class="nav-text">Syarikat / Pembekal</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="nav-arrow" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                    </a>
+                    <div class="collapse" id="menuSyarikatPembekal">
+                        <ul class="sidebar-submenu">
+                            <li><a class="submenu-item" href="{{ route('lawatanTapak') }}">
+                                    <div class="submenu-icon"></div><span>Lawatan Tapak</span>
+                                </a></li>
+                            <li><a class="submenu-item" href="">
+                                    <div class="submenu-icon"></div><span>Coming soon</span>
+                                </a></li>
+                        </ul>
+                    </div>
+                </li>
+
+                <!-- Menu : Jawatankuasa Pembuka -->
+                <li class="nav-item">
+                    <a class="sidebar-link {{ request()->is('jawatankuasa-pembuka*') ? 'active' : '' }}"
+                        href="{{ route('jawatankuasaPembuka') }}" style="cursor: pointer;">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                        </svg>
+                        <span class="nav-text">Jawatankuasa Pembuka</span>
+                    </a>
+                </li>
+
+                <!-- Menu : Penilaian Teknikal & Kewangan -->
+                @php
+                    $isPenilaianMenuActive =
+                        request()->is('penilaian-teknikal*') ||
+                        request()->is('penilaian-kewangan*');
+                @endphp
+                <li class="nav-item">
+                    <a class="sidebar-link {{ $isPenilaianMenuActive ? 'active' : 'collapsed' }}" data-bs-toggle="collapse"
+                        data-bs-target="#menuPenilaianTeknikalKewangan"
+                        aria-expanded="{{ $isPenilaianMenuActive ? 'true' : 'false' }}"
+                        style="cursor: pointer;">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                        </svg>
+                        <span class="nav-text">Penilaian Teknikal & Kewangan</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="nav-arrow" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                    </a>
+                    <div class="collapse {{ $isPenilaianMenuActive ? 'show' : '' }}" id="menuPenilaianTeknikalKewangan">
+                        <ul class="sidebar-submenu">
+                            <li>
+                                <a class="submenu-item" href="{{ route('penilaianTeknikalKerja') }}">
+                                    <div class="submenu-icon" style="{{ request()->is('penilaian-teknikal*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}"></div>
+                                    <span class="{{ request()->is('penilaian-teknikal*') ? 'text-white' : '' }}">Penilaian Teknikal</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a class="submenu-item" href="{{ route('penilaianKewangan') }}">
+                                    <div class="submenu-icon" style="{{ request()->routeIs('penilaianKewangan') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}"></div>
+                                    <span class="{{ request()->routeIs('penilaianKewangan') ? 'text-white' : '' }}">Penilaian Kewangan (Bekalan)</span>
+                                </a>
+                            </li>
+                            <li>
+                                {{-- MAIN SUBMENU --}}
+                                <a class="submenu-item d-flex justify-content-between align-items-center"
+                                    data-bs-toggle="collapse" href="#menuKewanganKerja" role="button"
+                                    aria-expanded="false" aria-controls="menuKewanganKerja">
+                                    <span class="d-flex align-items-center">
+                                        <span class="submenu-icon" style="{{ request()->is('penilaian-kewangan-kerja*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}"></span>
+                                        <span class="{{ request()->is('penilaian-kewangan-kerja*') ? 'text-white' : '' }}">Penilaian Kewangan (Kerja)</span>
+                                    </span>
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="submenu-arrow" viewBox="0 0 24 24" fill="none"
+                                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="9 18 15 12 9 6"></polyline>
+                                    </svg>
+                                </a>
+
+                                <div class="collapse" id="menuKewanganKerja">
+                                    <ul class="sidebar-submenu sub-submenu">
+
+                                        <li><a class="submenu-item" href="{{ route('borang1') }}">Borang 1</a></li>
+                                        <li><a class="submenu-item" href="{{ route('borang2') }}">Borang 2</a></li>
+
+                                        {{-- BORANG 3 WITH CHILD --}}
+                                        <li>
+                                            <a class="submenu-item d-flex justify-content-between align-items-center"
+                                                data-bs-toggle="collapse" href="#menuBorang3" role="button"
+                                                aria-expanded="false">
+                                                <span>Borang 3</span>
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="submenu-arrow" viewBox="0 0 24 24" fill="none"
+                                                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <polyline points="9 18 15 12 9 6"></polyline>
+                                                </svg>
+                                            </a>
+
+                                            <div class="collapse" id="menuBorang3">
+                                                <ul class="sidebar-submenu sub-submenu-level-2">
+                                                    <li><a class="submenu-item" href="{{ route('borang3') }}">Borang
+                                                            3</a></li>
+                                                    <li><a class="submenu-item"
+                                                            href="{{ route('lembaran') }}">Lembaran Imbangan</a></li>
+                                                    <li><a class="submenu-item"
+                                                            href="{{ route('akaunBank') }}">Akaun Bank</a></li>
+                                                    <li><a class="submenu-item" href="{{ route('bonSaham') }}">Bon
+                                                            atau Saham</a></li>
+                                                </ul>
+                                            </div>
+                                        </li>
+
+                                        <li><a class="submenu-item" href="{{ route('borang4') }}">Borang 4</a></li>
+                                        <li><a class="submenu-item" href="{{ route('borang5') }}">Borang 5</a></li>
+                                        <li><a class="submenu-item" href="{{ route('borang6') }}">Borang 6</a></li>
+
+                                        <li>
+                                            <a class="submenu-item d-flex justify-content-between align-items-center"
+                                                data-bs-toggle="collapse" href="#menuBorang7" role="button"
+                                                aria-expanded="false">
+                                                <span>Borang 7</span>
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="submenu-arrow" viewBox="0 0 24 24" fill="none"
+                                                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <polyline points="9 18 15 12 9 6"></polyline>
+                                                </svg>
+                                            </a>
+                                            <div class="collapse" id="menuBorang7">
+                                                <ul class="sidebar-submenu sub-submenu-level-2">
+                                                    <li><a class="submenu-item"
+                                                            href="{{ route('serupa') }}">Serupa</a></li>
+                                                    <li><a class="submenu-item"
+                                                            href="{{ route('sebanding') }}">Sebanding</a></li>
+                                                </ul>
+                                            </div>
+                                        </li>
+
+                                        <li><a class="submenu-item" href="{{ route('borang8') }}">Borang 8</a></li>
+
+                                        <li>
+                                            <a class="submenu-item d-flex justify-content-between align-items-center"
+                                                data-bs-toggle="collapse" href="#menuBorang9" role="button"
+                                                aria-expanded="false">
+                                                <span>Borang 9</span>
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="submenu-arrow" viewBox="0 0 24 24" fill="none"
+                                                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <polyline points="9 18 15 12 9 6"></polyline>
+                                                </svg>
+                                            </a>
+                                            <div class="collapse" id="menuBorang9">
+                                                <ul class="sidebar-submenu sub-submenu-level-2">
+                                                    <li><a class="submenu-item" href="{{ route('borang9') }}">Borang
+                                                            9</a></li>
+                                                    <li><a class="submenu-item"
+                                                            href="{{ route('kerjaSerupa') }}">Kerja Serupa</a></li>
+                                                    <li><a class="submenu-item"
+                                                            href="{{ route('kerjaSebanding') }}">Kerja Sebanding</a>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </li>
+
+                                        <li><a class="submenu-item" href="{{ route('borang10') }}">Borang 10</a>
+                                        </li>
+                                        <li><a class="submenu-item" href="{{ route('borang11') }}">Borang 11</a>
+                                        </li>
+                                        <li><a class="submenu-item" href="{{ route('borang12') }}">Borang 12</a>
+                                        </li>
+                                        <li><a class="submenu-item" href="{{ route('borang13') }}">Borang 13</a>
+                                        </li>
+                                        <li><a class="submenu-item" href="{{ route('borang14') }}">Borang 14</a>
+                                        </li>
+                                        <li><a class="submenu-item" href="{{ route('borang15') }}">Borang 15</a>
+                                        </li>
+
+                                    </ul>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </li>
+
                 <!-- Menu: Cut Off -->
                 <li class="nav-item">
                     <a class="sidebar-link {{ request()->is('cut-off*') ? 'active' : '' }}"
@@ -710,6 +983,35 @@
                         <span class="nav-text">Cut Off</span>
                     </a>
                 </li>
+
+                <!-- Menu : E-Bidding -->
+                <li class="nav-item">
+                    <a class="sidebar-link collapsed" data-bs-toggle="collapse" data-bs-target="#menuEBidding"
+                        aria-expanded="false" style="cursor: pointer;">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                        </svg>
+                        <span class="nav-text">E-Bidding</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="nav-arrow" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                    </a>
+                    <div class="collapse" id="menuEBidding">
+                        <ul class="sidebar-submenu">
+                            <li><a class="submenu-item" href="{{ route('keputusanMesyuarat') }}">
+                                    <div class="submenu-icon"></div><span>Keputusan Mesyuarat</span>
+                                </a></li>
+                            <li><a class="submenu-item" href="#">
+                                    <div class="submenu-icon"></div><span>Comming Soon</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </li>
+
                 <!-- Menu: Pembelian Terus -->
                 <li class="nav-item">
                     <a class="sidebar-link {{ request()->is('pembelian-terus*') ? '' : 'collapsed' }}"
@@ -784,104 +1086,6 @@
                         </ul>
                     </div>
                 </li>
-
-                <!-- Menu : Jawatankuasa Spesifikasi /  Pengurusan -->
-                <li class="nav-item">
-                    <a class="sidebar-link collapsed" data-bs-toggle="collapse"
-                        data-bs-target="#menuJawatankusaSpesifikasi" aria-expanded="false" style="cursor: pointer;">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                        </svg>
-                        <span class="nav-text">Jawatankuasa Spesifikasi / Pengurusan </span>
-                        <svg xmlns="http://www.w3.org/2000/svg" class="nav-arrow" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="9 18 15 12 9 6"></polyline>
-                        </svg>
-                    </a>
-                    <div class="collapse" id="menuJawatankusaSpesifikasi">
-                        <ul class="sidebar-submenu">
-                            <li><a class="submenu-item" href="{{ route('senaraiTeknikal') }}">
-                                    <div class="submenu-icon"></div><span>Senarai Semak Teknikal</span>
-                                </a></li>
-                            <li><a class="submenu-item" href="{{ route('senaraiKewangan') }}">
-                                    <div class="submenu-icon"></div><span>Senarai Semak Kewangan</span>
-                                </a></li>
-                        </ul>
-                    </div>
-                </li>
-
-                <!-- Menu : Jawatankuasa Pembuka -->
-                <li class="nav-item">
-                    <a class="sidebar-link {{ request()->is('jawatankuasa-pembuka*') ? 'active' : '' }}"
-                        href="{{ route('jawatankuasaPembuka') }}" style="cursor: pointer;">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                            <circle cx="9" cy="7" r="4"></circle>
-                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                        </svg>
-                        <span class="nav-text">Jawatankuasa Pembuka</span>
-                    </a>
-                </li>
-
-                <!-- Menu : Penilaian Teknikal & Kewangan -->
-                <li class="nav-item">
-                    <a class="sidebar-link collapsed" data-bs-toggle="collapse"
-                        data-bs-target="#menuPenilaianTeknikalKewangan" aria-expanded="false"
-                        style="cursor: pointer;">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                        </svg>
-                        <span class="nav-text">Penilaian Teknikal & Kewangan</span>
-                        <svg xmlns="http://www.w3.org/2000/svg" class="nav-arrow" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="9 18 15 12 9 6"></polyline>
-                        </svg>
-                    </a>
-                    <div class="collapse" id="menuPenilaianTeknikalKewangan">
-                        <ul class="sidebar-submenu">
-                            <li><a class="submenu-item" href="{{ route('penilaianTeknikal') }}">
-                                    <div class="submenu-icon"></div><span>Penilaian Teknikal</span>
-                                </a></li>
-                            <li><a class="submenu-item" href="{{ route('penilaianKewangan') }}">
-                                    <div class="submenu-icon"></div><span>Penilaian Kewangan</span>
-                                </a></li>
-                        </ul>
-                    </div>
-                </li>
-
-                <!-- Menu : Syarikat / Pembekal -->
-                <li class="nav-item">
-                    <a class="sidebar-link collapsed" data-bs-toggle="collapse"
-                        data-bs-target="#menuSyarikatPembekal" aria-expanded="false" style="cursor: pointer;">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                        </svg>
-                        <span class="nav-text">Syarikat / Pembekal</span>
-                        <svg xmlns="http://www.w3.org/2000/svg" class="nav-arrow" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="9 18 15 12 9 6"></polyline>
-                        </svg>
-                    </a>
-                    <div class="collapse" id="menuSyarikatPembekal">
-                        <ul class="sidebar-submenu">
-                            <li><a class="submenu-item" href="{{ route('lawatanTapak') }}">
-                                    <div class="submenu-icon"></div><span>Lawatan Tapak</span>
-                                </a></li>
-                            <li><a class="submenu-item" href="">
-                                    <div class="submenu-icon"></div><span>Coming soon</span>
-                                </a></li>
-                        </ul>
-                    </div>
-                </li>
-
             </ul>
         </div>
     </aside>
@@ -908,7 +1112,7 @@
             <ul class="sidebar-nav">
 
                 <!-- ============================================= -->
-                <!-- NEW SECTION: MODUL 3.0 -->
+                <!-- NEW SECTION: MODUL 3.0 (VENDOR) -->
                 <!-- ============================================= -->
 
                 <!-- Menu: Pelantikan Jawatankuasa -->
@@ -956,156 +1160,17 @@
                     </a>
                     <div class="collapse" id="menuJawatankusaSpesifikasi">
                         <ul class="sidebar-submenu">
-                            <li><a class="submenu-item" href="{{ route('senaraiTeknikal') }}">
+                            <li>
+                                <a class="submenu-item" href="{{ route('senaraiSemak') }}">
+                                    <div class="submenu-icon"></div><span>Senarai Semak</span>
+                                </a>
+                            </li>
+                            <!-- <li><a class="submenu-item" href="{{ route('senaraiTeknikal') }}">
                                     <div class="submenu-icon"></div><span>Senarai Semak Teknikal</span>
-                                </a></li>
-                            <li><a class="submenu-item" href="{{ route('senaraiKewangan') }}">
+                                </a></li> -->
+                            <!-- <li><a class="submenu-item" href="{{ route('senaraiKewangan') }}">
                                     <div class="submenu-icon"></div><span>Senarai Semak Kewangan</span>
-                                </a></li>
-                        </ul>
-                    </div>
-                </li>
-
-                <!-- Menu : Jawatankuasa Pembuka -->
-                <li class="nav-item">
-                    <a class="sidebar-link {{ request()->is('jawatankuasa-pembuka*') ? 'active' : '' }}"
-                        href="{{ route('jawatankuasaPembuka') }}" style="cursor: pointer;">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                            <circle cx="9" cy="7" r="4"></circle>
-                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                        </svg>
-                        <span class="nav-text">Jawatankuasa Pembuka</span>
-                    </a>
-                </li>
-
-                <!-- Menu : Penilaian Teknikal & Kewangan -->
-                <li class="nav-item">
-                    <a class="sidebar-link collapsed" data-bs-toggle="collapse"
-                        data-bs-target="#menuPenilaianTeknikalKewangan" aria-expanded="false"
-                        style="cursor: pointer;">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                        </svg>
-                        <span class="nav-text">Penilaian Teknikal & Kewangan</span>
-                        <svg xmlns="http://www.w3.org/2000/svg" class="nav-arrow" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="9 18 15 12 9 6"></polyline>
-                        </svg>
-                    </a>
-                    <div class="collapse" id="menuPenilaianTeknikalKewangan">
-                        <ul class="sidebar-submenu">
-                            <li>
-                                <a class="submenu-item" href="{{ route('penilaianTeknikalKerja') }}">
-                                    <div class="submenu-icon"></div><span>Penilaian Teknikal</span>
-                                </a>
-                            </li>
-                            <li>
-                                <a class="submenu-item" href="{{ route('penilaianKewangan') }}">
-                                    <div class="submenu-icon"></div><span>Penilaian Kewangan</span>
-                                </a>
-                            </li>
-                            <li>
-                                {{-- MAIN SUBMENU --}}
-                                <a class="submenu-item d-flex justify-content-between align-items-center"
-                                    data-bs-toggle="collapse" href="#menuKewanganKerja" role="button"
-                                    aria-expanded="false" aria-controls="menuKewanganKerja">
-                                    <span>
-                                        <div class="submenu-icon"></div>
-                                        Penilaian Kewangan Kerja
-                                    </span>
-                                    <span>▾</span>
-                                </a>
-
-                                <div class="collapse" id="menuKewanganKerja">
-                                    <ul class="sidebar-submenu sub-submenu">
-
-                                        <li><a class="submenu-item" href="{{ route('borang1') }}">Borang 1</a></li>
-                                        <li><a class="submenu-item" href="{{ route('borang2') }}">Borang 2</a></li>
-
-                                        {{-- BORANG 3 WITH CHILD --}}
-                                        <li>
-                                            <a class="submenu-item d-flex justify-content-between align-items-center"
-                                                data-bs-toggle="collapse" href="#menuBorang3" role="button">
-                                                <span>Borang 3</span>
-                                                <span>▸</span>
-                                            </a>
-
-                                            <div class="collapse" id="menuBorang3">
-                                                <ul class="sidebar-submenu sub-submenu-level-2">
-                                                    <li><a class="submenu-item" href="{{ route('borang3') }}">Borang
-                                                            3</a></li>
-                                                    <li><a class="submenu-item"
-                                                            href="{{ route('lembaran') }}">Lembaran Imbangan</a></li>
-                                                    <li><a class="submenu-item"
-                                                            href="{{ route('akaunBank') }}">Akaun Bank</a></li>
-                                                    <li><a class="submenu-item" href="{{ route('bonSaham') }}">Bon
-                                                            atau Saham</a></li>
-                                                </ul>
-                                            </div>
-                                        </li>
-
-                                        <li><a class="submenu-item" href="{{ route('borang4') }}">Borang 4</a></li>
-                                        <li><a class="submenu-item" href="{{ route('borang5') }}">Borang 5</a></li>
-                                        <li><a class="submenu-item" href="{{ route('borang6') }}">Borang 6</a></li>
-
-                                        <li>
-                                            <a class="submenu-item d-flex justify-content-between align-items-center"
-                                                data-bs-toggle="collapse" href="#menuBorang7" role="button">
-                                                <span>Borang 7</span>
-                                                <span>▸</span>
-                                            </a>
-                                            <div class="collapse" id="menuBorang7">
-                                                <ul class="sidebar-submenu sub-submenu-level-2">
-                                                    <li><a class="submenu-item"
-                                                            href="{{ route('serupa') }}">Serupa</a></li>
-                                                    <li><a class="submenu-item"
-                                                            href="{{ route('sebanding') }}">Sebanding</a></li>
-                                                </ul>
-                                            </div>
-                                        </li>
-
-                                        <li><a class="submenu-item" href="{{ route('borang8') }}">Borang 8</a></li>
-
-                                        <li>
-                                            <a class="submenu-item d-flex justify-content-between align-items-center"
-                                                data-bs-toggle="collapse" href="#menuBorang9" role="button">
-                                                <span>Borang 9</span>
-                                                <span>▸</span>
-                                            </a>
-                                            <div class="collapse" id="menuBorang9">
-                                                <ul class="sidebar-submenu sub-submenu-level-2">
-                                                    <li><a class="submenu-item" href="{{ route('borang9') }}">Borang
-                                                            9</a></li>
-                                                    <li><a class="submenu-item"
-                                                            href="{{ route('kerjaSerupa') }}">Kerja Serupa</a></li>
-                                                    <li><a class="submenu-item"
-                                                            href="{{ route('kerjaSebanding') }}">Kerja Sebanding</a>
-                                                    </li>
-                                                </ul>
-                                            </div>
-                                        </li>
-
-                                        <li><a class="submenu-item" href="{{ route('borang10') }}">Borang 10</a>
-                                        </li>
-                                        <li><a class="submenu-item" href="{{ route('borang11') }}">Borang 11</a>
-                                        </li>
-                                        <li><a class="submenu-item" href="{{ route('borang12') }}">Borang 12</a>
-                                        </li>
-                                        <li><a class="submenu-item" href="{{ route('borang13') }}">Borang 13</a>
-                                        </li>
-                                        <li><a class="submenu-item" href="{{ route('borang14') }}">Borang 14</a>
-                                        </li>
-                                        <li><a class="submenu-item" href="{{ route('borang15') }}">Borang 15</a>
-                                        </li>
-
-                                    </ul>
-                                </div>
-                            </li>
+                                </a></li> -->
                         </ul>
                     </div>
                 </li>
@@ -1143,6 +1208,186 @@
                     </div>
                 </li>
 
+                <!-- Menu : Jawatankuasa Pembuka -->
+                <li class="nav-item">
+                    <a class="sidebar-link {{ request()->is('jawatankuasa-pembuka*') ? 'active' : '' }}"
+                        href="{{ route('jawatankuasaPembuka') }}" style="cursor: pointer;">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                        </svg>
+                        <span class="nav-text">Jawatankuasa Pembuka</span>
+                    </a>
+                </li>
+
+                <!-- Menu : Penilaian Teknikal & Kewangan -->
+                @php
+                    $isPenilaianMenuActive =
+                        request()->is('penilaian-teknikal*') ||
+                        request()->is('penilaian-kewangan*');
+                @endphp
+                <li class="nav-item">
+                    <a class="sidebar-link {{ $isPenilaianMenuActive ? 'active' : 'collapsed' }}" data-bs-toggle="collapse"
+                        data-bs-target="#menuPenilaianTeknikalKewangan"
+                        aria-expanded="{{ $isPenilaianMenuActive ? 'true' : 'false' }}"
+                        style="cursor: pointer;">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                        </svg>
+                        <span class="nav-text">Penilaian Teknikal & Kewangan</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="nav-arrow" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                    </a>
+                    <div class="collapse {{ $isPenilaianMenuActive ? 'show' : '' }}" id="menuPenilaianTeknikalKewangan">
+                        <ul class="sidebar-submenu">
+                            <li>
+                                <a class="submenu-item" href="{{ route('penilaianTeknikalKerja') }}">
+                                    <div class="submenu-icon" style="{{ request()->is('penilaian-teknikal*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}"></div>
+                                    <span class="{{ request()->is('penilaian-teknikal*') ? 'text-white' : '' }}">Penilaian Teknikal</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a class="submenu-item" href="{{ route('penilaianKewangan') }}">
+                                    <div class="submenu-icon" style="{{ request()->routeIs('penilaianKewangan') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}"></div>
+                                    <span class="{{ request()->routeIs('penilaianKewangan') ? 'text-white' : '' }}">Penilaian Kewangan (Pembekal)</span>
+                                </a>
+                            </li>
+                            <li>
+                                {{-- MAIN SUBMENU --}}
+                                <a class="submenu-item d-flex justify-content-between align-items-center"
+                                    data-bs-toggle="collapse" href="#menuKewanganKerja" role="button"
+                                    aria-expanded="false" aria-controls="menuKewanganKerja">
+                                    <span class="d-flex align-items-center">
+                                        <span class="submenu-icon" style="{{ request()->is('penilaian-kewangan-kerja*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}"></span>
+                                        <span class="{{ request()->is('penilaian-kewangan-kerja*') ? 'text-white' : '' }}">Penilaian Kewangan (Kerja)</span>
+                                    </span>
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="submenu-arrow" viewBox="0 0 24 24" fill="none"
+                                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="9 18 15 12 9 6"></polyline>
+                                    </svg>
+                                </a>
+
+                                <div class="collapse" id="menuKewanganKerja">
+                                    <ul class="sidebar-submenu sub-submenu">
+
+                                        <li><a class="submenu-item" href="{{ route('borang1') }}">Borang 1</a></li>
+                                        <li><a class="submenu-item" href="{{ route('borang2') }}">Borang 2</a></li>
+
+                                        {{-- BORANG 3 WITH CHILD --}}
+                                        <li>
+                                            <a class="submenu-item d-flex justify-content-between align-items-center"
+                                                data-bs-toggle="collapse" href="#menuBorang3" role="button"
+                                                aria-expanded="false">
+                                                <span>Borang 3</span>
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="submenu-arrow" viewBox="0 0 24 24" fill="none"
+                                                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <polyline points="9 18 15 12 9 6"></polyline>
+                                                </svg>
+                                            </a>
+
+                                            <div class="collapse" id="menuBorang3">
+                                                <ul class="sidebar-submenu sub-submenu-level-2">
+                                                    <li><a class="submenu-item" href="{{ route('borang3') }}">Borang
+                                                            3</a></li>
+                                                    <li><a class="submenu-item"
+                                                            href="{{ route('lembaran') }}">Lembaran Imbangan</a></li>
+                                                    <li><a class="submenu-item"
+                                                            href="{{ route('akaunBank') }}">Akaun Bank</a></li>
+                                                    <li><a class="submenu-item" href="{{ route('bonSaham') }}">Bon
+                                                            atau Saham</a></li>
+                                                </ul>
+                                            </div>
+                                        </li>
+
+                                        <li><a class="submenu-item" href="{{ route('borang4') }}">Borang 4</a></li>
+                                        <li><a class="submenu-item" href="{{ route('borang5') }}">Borang 5</a></li>
+                                        <li><a class="submenu-item" href="{{ route('borang6') }}">Borang 6</a></li>
+
+                                        <li>
+                                            <a class="submenu-item d-flex justify-content-between align-items-center"
+                                                data-bs-toggle="collapse" href="#menuBorang7" role="button"
+                                                aria-expanded="false">
+                                                <span>Borang 7</span>
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="submenu-arrow" viewBox="0 0 24 24" fill="none"
+                                                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <polyline points="9 18 15 12 9 6"></polyline>
+                                                </svg>
+                                            </a>
+                                            <div class="collapse" id="menuBorang7">
+                                                <ul class="sidebar-submenu sub-submenu-level-2">
+                                                    <li><a class="submenu-item"
+                                                            href="{{ route('serupa') }}">Serupa</a></li>
+                                                    <li><a class="submenu-item"
+                                                            href="{{ route('sebanding') }}">Sebanding</a></li>
+                                                </ul>
+                                            </div>
+                                        </li>
+
+                                        <li><a class="submenu-item" href="{{ route('borang8') }}">Borang 8</a></li>
+
+                                        <li>
+                                            <a class="submenu-item d-flex justify-content-between align-items-center"
+                                                data-bs-toggle="collapse" href="#menuBorang9" role="button"
+                                                aria-expanded="false">
+                                                <span>Borang 9</span>
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="submenu-arrow" viewBox="0 0 24 24" fill="none"
+                                                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <polyline points="9 18 15 12 9 6"></polyline>
+                                                </svg>
+                                            </a>
+                                            <div class="collapse" id="menuBorang9">
+                                                <ul class="sidebar-submenu sub-submenu-level-2">
+                                                    <li><a class="submenu-item" href="{{ route('borang9') }}">Borang
+                                                            9</a></li>
+                                                    <li><a class="submenu-item"
+                                                            href="{{ route('kerjaSerupa') }}">Kerja Serupa</a></li>
+                                                    <li><a class="submenu-item"
+                                                            href="{{ route('kerjaSebanding') }}">Kerja Sebanding</a>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </li>
+
+                                        <li><a class="submenu-item" href="{{ route('borang10') }}">Borang 10</a>
+                                        </li>
+                                        <li><a class="submenu-item" href="{{ route('borang11') }}">Borang 11</a>
+                                        </li>
+                                        <li><a class="submenu-item" href="{{ route('borang12') }}">Borang 12</a>
+                                        </li>
+                                        <li><a class="submenu-item" href="{{ route('borang13') }}">Borang 13</a>
+                                        </li>
+                                        <li><a class="submenu-item" href="{{ route('borang14') }}">Borang 14</a>
+                                        </li>
+                                        <li><a class="submenu-item" href="{{ route('borang15') }}">Borang 15</a>
+                                        </li>
+
+                                    </ul>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </li>
+
+                <!-- Menu: Cut Off -->
+                <li class="nav-item">
+                    <a class="sidebar-link {{ request()->is('cut-off*') ? 'active' : '' }}"
+                        href="{{ route('cutOff.index') }}" style="cursor: pointer;">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polyline points="12 6 12 12 16 14"></polyline>
+                        </svg>
+                        <span class="nav-text">Cut Off</span>
+                    </a>
+                </li>
+
                 <!-- Menu : E-Bidding -->
                 <li class="nav-item">
                     <a class="sidebar-link collapsed" data-bs-toggle="collapse" data-bs-target="#menuEBidding"
@@ -1165,6 +1410,81 @@
                                 </a></li>
                             <li><a class="submenu-item" href="#">
                                     <div class="submenu-icon"></div><span>Comming Soon</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </li>
+
+                <!-- Menu: Pembelian Terus -->
+                <li class="nav-item">
+                    <a class="sidebar-link {{ request()->is('pembelian-terus*') ? '' : 'collapsed' }}"
+                        data-bs-toggle="collapse" data-bs-target="#menuPembelianTerus"
+                        aria-expanded="{{ request()->is('pembelian-terus*') ? 'true' : 'false' }}"
+                        style="cursor: pointer;">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                        </svg>
+                        <span class="nav-text">Pembelian Terus</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="nav-arrow" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                    </a>
+                    <div class="collapse {{ request()->is('pembelian-terus*') ? 'show' : '' }}"
+                        id="menuPembelianTerus">
+                        <ul class="sidebar-submenu">
+                            <li>
+                                <a class="submenu-item {{ request()->routeIs('pembelianTerus.createProject') || request()->is('pembelian-terus/cipta-projek*') ? 'active' : '' }}"
+                                    href="{{ route('pembelianTerus.createProject') }}" style="cursor: pointer;">
+                                    <div class="submenu-icon"
+                                        style="{{ request()->routeIs('pembelianTerus.createProject') || request()->is('pembelian-terus/cipta-projek*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}">
+                                    </div><span
+                                        class="{{ request()->routeIs('pembelianTerus.createProject') || request()->is('pembelian-terus/cipta-projek*') ? 'text-white' : '' }}">Cipta
+                                        Projek</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a class="submenu-item {{ request()->routeIs('pembelianTerus.quoteProject') || request()->is('pembelian-terus/sebut-harga*') ? 'active' : '' }}"
+                                    href="{{ route('pembelianTerus.quoteProject') }}" style="cursor: pointer;">
+                                    <div class="submenu-icon"
+                                        style="{{ request()->routeIs('pembelianTerus.quoteProject') || request()->is('pembelian-terus/sebut-harga*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}">
+                                    </div><span
+                                        class="{{ request()->routeIs('pembelianTerus.quoteProject') || request()->is('pembelian-terus/sebut-harga*') ? 'text-white' : '' }}">Sebut
+                                        Harga</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a class="submenu-item {{ request()->routeIs('pembelianTerus.cutOffProject') || request()->routeIs('pembelianTerus.cutOffDetails') || request()->is('pembelian-terus/cut-off-projek*') || request()->is('pembelian-terus/cut-off-details*') ? 'active' : '' }}"
+                                    href="{{ route('pembelianTerus.cutOffProject') }}" style="cursor: pointer;">
+                                    <div class="submenu-icon"
+                                        style="{{ request()->routeIs('pembelianTerus.cutOffProject') || request()->routeIs('pembelianTerus.cutOffDetails') || request()->is('pembelian-terus/cut-off-projek*') || request()->is('pembelian-terus/cut-off-details*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}">
+                                    </div><span
+                                        class="{{ request()->routeIs('pembelianTerus.cutOffProject') || request()->routeIs('pembelianTerus.cutOffDetails') || request()->is('pembelian-terus/cut-off-projek*') || request()->is('pembelian-terus/cut-off-details*') ? 'text-white' : '' }}">
+                                        Cut Off Projek
+                                    </span>
+                                </a>
+                            </li>
+                            <li>
+                                <a class="submenu-item {{ request()->routeIs('pembelianTerus.pemilihanSyarikat') || request()->routeIs('pembelianTerus.pemilihanSyarikatDetails') || request()->is('pembelian-terus/pemilihan-syarikat*') ? 'active' : '' }}"
+                                    href="{{ route('pembelianTerus.pemilihanSyarikat') }}" style="cursor: pointer;">
+                                    <div class="submenu-icon"
+                                        style="{{ request()->routeIs('pembelianTerus.pemilihanSyarikat') || request()->routeIs('pembelianTerus.pemilihanSyarikatDetails') || request()->is('pembelian-terus/pemilihan-syarikat*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}">
+                                    </div><span
+                                        class="{{ request()->routeIs('pembelianTerus.pemilihanSyarikat') || request()->routeIs('pembelianTerus.pemilihanSyarikatDetails') || request()->is('pembelian-terus/pemilihan-syarikat*') ? 'text-white' : '' }}">Pemilihan
+                                        Syarikat</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a class="submenu-item {{ request()->routeIs('pembelianTerus.keputusanSyarikat') || request()->routeIs('pembelianTerus.keputusanSyarikatDetails') || request()->is('pembelian-terus/keputusan-syarikat*') ? 'active' : '' }}"
+                                    href="{{ route('pembelianTerus.keputusanSyarikat') }}" style="cursor: pointer;">
+                                    <div class="submenu-icon"
+                                        style="{{ request()->routeIs('pembelianTerus.keputusanSyarikat') || request()->routeIs('pembelianTerus.keputusanSyarikatDetails') || request()->is('pembelian-terus/keputusan-syarikat*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}">
+                                    </div><span
+                                        class="{{ request()->routeIs('pembelianTerus.keputusanSyarikat') || request()->routeIs('pembelianTerus.keputusanSyarikatDetails') || request()->is('pembelian-terus/keputusan-syarikat*') ? 'text-white' : '' }}">Keputusan
+                                        Syarikat</span>
                                 </a>
                             </li>
                         </ul>

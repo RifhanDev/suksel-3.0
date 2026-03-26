@@ -46,7 +46,15 @@ class SmtpMailController extends Controller
 
 			foreach ($results as $rows) {
 
-				// Untuk elakkan ralat parameter laluan, buat paparan ringkas tanpa pautan aksi
+                $enc_id = $this->encryptString($rows->id);
+
+				$actions    = [];
+                $actions[] = SmtpMails::canShow() ? "<a class='btn btn-sm btn-primary rounded-8 px-3' href='".route('mail-manager.smtp-setting.show', ['smtp_setting' => $enc_id])."'>Papar</a>" : '';
+                $actions[] = SmtpMails::canUpdate() ? "<a class='btn btn-sm btn-warning rounded-8 px-3' href='".route('mail-manager.smtp-setting.edit', ['smtp_setting' => $enc_id])."'>Kemaskini</a>" : '';
+                // $actions[] = SmtpMails::canDelete() ? "<button class='btn btn-sm btn-danger rounded-8 px-3' onclick='deleteSmtpMail(".'"'.$enc_id.'"'.")'>Padam</button>" : '';
+
+				$action_column = '<div class="d-flex gap-2 justify-content-center">' . implode('', $actions) . '</div>';
+
 				$datatable_data[] = array(
 					"created_at"            => $rows->created_at->format('d-m-Y'),
 					"mail_server"           => $rows->mail_server,

@@ -1,106 +1,97 @@
-@extends('layouts.modern')
+@extends('layouts.v3.master')
 @section('content')
-	<!-- Page Header -->
-	<div class="page-header-modern">
-		<div class="page-pretitle">
-			<i class="ti ti-building-community me-2"></i>Sistem Tender Online
-		</div>
-		<h2>
-			<i class="ti ti-building-community me-2"></i>Kategori Agensi
-		</h2>
-	</div>
+    <!-- HEADER -->
+    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center mb-4">
+        <div class="mb-3 mb-lg-0">
+            <h3 class="fw-bold text-dark m-0" style="letter-spacing: -0.5px;">Kategori Agensi</h3>
+            <p class="text-muted small m-0">Pengurusan dan tetapan susunan senarai kategori agensi.</p>
+        </div>
+    </div>
 
-	<!-- Main Card -->
-	<div class="card modern-card">
-		<div class="card-header" style="background: white; border-bottom: 1px solid #e9ecef; padding: 1.5rem;">
-			<div class="d-flex justify-content-between align-items-center w-100">
-				<h3 class="card-title-modern mb-0">
-					<i class="ti ti-list me-2"></i>Senarai Kategori Agensi
-				</h3>
-				@if (App\OrganizationType::canCreate())
-					<a href="{{ route('organizationtypes.create') }}" class="btn btn-primary btn-modern ms-auto">
-						<i class="ti ti-plus me-1"></i>Kategori Baru
-					</a>
-				@endif
-			</div>
-		</div>
-		<div class="card-body">
-			<div class="table-responsive">
-				<table data-path="/organizationtypes" class="DT-index table modern-table table-hover">
-					<thead>
-						<tr>
-							<th>
-								<i class="ti ti-tag me-1"></i>Nama
-							</th>
-							<th>
-								<i class="ti ti-sort-ascending me-1"></i>Susunan
-							</th>
-							<th width="200px">
-								<i class="ti ti-settings me-1"></i>Tindakan
-							</th>
-						</tr>
-					</thead>
-					<tbody></tbody>
-				</table>
-			</div>
-		</div>
-	</div>
+    <div class="content-card p-0">
+        <div class="content-card-header p-4 pb-3 border-bottom d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center gap-3">
+                <div class="content-card-icon" style="width: 38px; height: 38px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                        <polyline points="2 17 12 22 22 17"></polyline>
+                        <polyline points="2 12 12 17 22 12"></polyline>
+                    </svg>
+                </div>
+                <h3 class="m-0 fw-bold text-uppercase" style="font-size: 1rem; color: #64748b;">Senarai Kategori Agensi</h3>
+            </div>
+
+            @include('organizationtypes.actions-footer', ['is_list' => true]) {{-- not footer, top actually --}}
+        </div>
+
+        <div class="content-card-body p-2">
+            <div class="table-responsive">
+                <table data-path="/organizationtypes"
+                    class="DT-index table table-modern table-hover align-middle mb-0 w-100">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="text-uppercase text-muted small fw-bold py-3 ps-4">Nama</th>
+                            <th class="text-uppercase text-muted small fw-bold py-3">Susunan</th>
+                            <th class="text-uppercase text-center text-muted small fw-bold py-3 pe-4"
+                                style="width: 250px; min-width: 250px;">Tindakan</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+
+        </div>
+    </div>
 @endsection
 
 @section('scripts')
-	<script src="{{ asset('js/datatables.js') }}"></script>
-	<script type="text/javascript">
-		$('.DT-index').each(function() {
-			var target = $(this);
-			var path = target.data('path');
-			var DT = target.DataTable({
-				ajax: path,
-				columns: [{
-						data: 'name',
-						name: 'name'
-					},
-					{
-						data: 'sort_no',
-						name: 'sort_no'
-					},
-					{
-						data: 'actions',
-						name: 'actions'
-					},
-				],
-				serverSide: true,
-				stateSave: true,
-				language: {
-					sEmptyTable: "Tiada data",
-					sInfo: "Paparan dari _START_ hingga _END_ dari _TOTAL_ rekod",
-					sInfoEmpty: "Paparan 0 hingga 0 dari 0 rekod",
-					sInfoFiltered: "(Ditapis dari jumlah _MAX_ rekod)",
-					sInfoPostFix: "",
-					sInfoThousands: ",",
-					sLengthMenu: "Papar _MENU_ rekod",
-					sLoadingRecords: "Diproses...",
-					sProcessing: "Sedang diproses...",
-					sSearch: "Carian:",
-					sZeroRecords: "Tiada padanan rekod yang dijumpai.",
-					oPaginate: {
-						sFirst: "Pertama",
-						sPrevious: "Sebelum",
-						sNext: "Kemudian",
-						sLast: "Akhir"
-					},
-					oAria: {
-						sSortAscending: ": diaktifkan kepada susunan lajur menaik",
-						sSortDescending: ": diaktifkan kepada susunan lajur menurun"
-					}
-				},
-				aaSorting: [],
-				dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rtip',
-				pageLength: 25,
-				responsive: true,
-				order: [
-					[1, 'asc']
-				]
-			});
-		});
-	</script>
+    <script type="text/javascript">
+        $('.DT-index').each(function() {
+            var target = $(this);
+            var path = target.data('path');
+            var DT = target.DataTable({
+                ajax: path,
+                columns: [{
+                        data: 'name',
+                        name: 'name'
+                    },
+                    {
+                        data: 'sort_no',
+                        name: 'sort_no'
+                    },
+                    {
+                        data: 'actions',
+                        name: 'actions'
+                    },
+                ],
+                serverSide: true,
+                stateSave: true,
+                language: {
+                    sEmptyTable: "Tiada data",
+                    sInfo: "Paparan dari _START_ hingga _END_ dari _TOTAL_ rekod",
+                    sInfoEmpty: "Paparan 0 hingga 0 dari 0 rekod",
+                    sInfoFiltered: "(Ditapis dari jumlah _MAX_ rekod)",
+                    sInfoPostFix: "",
+                    sInfoThousands: ",",
+                    sLengthMenu: "Papar _MENU_ rekod",
+                    sLoadingRecords: "Diproses...",
+                    sProcessing: "Sedang diproses...",
+                    sSearch: "Carian:",
+                    sZeroRecords: "Tiada padanan rekod yang dijumpai.",
+                    oPaginate: {
+                        sFirst: "Pertama",
+                        sPrevious: "Sebelum",
+                        sNext: "Kemudian",
+                        sLast: "Akhir"
+                    },
+                    oAria: {
+                        sSortAscending: ": diaktifkan kepada susunan lajur menaik",
+                        sSortDescending: ": diaktifkan kepada susunan lajur menurun"
+                    }
+                },
+                aaSorting: []
+            });
+        });
+    </script>
 @endsection

@@ -26,12 +26,12 @@ class OrganizationTypesController extends Controller
 			return Datatables::of($types)
                 	->addColumn('actions', function($certificationcode){
                     	$actions   = [];
-                    	$actions[] = $certificationcode->canUpdate() ? link_to_route('organizationtypes.edit', 'Kemaskini', $certificationcode->id, ['class' => 'btn btn-xs btn-default'] ) : '';
-                    	$actions[] = $certificationcode->canDelete() ? Former::open(url('organizationtypes/'.$certificationcode->id))->class('form-inline') 
+                    	$actions[] = $certificationcode->canUpdate() ? link_to_route('organizationtypes.edit', 'Kemaskini', $certificationcode->id, ['class' => 'btn btn-sm btn-warning rounded-8 px-3'] ) : '';
+                    	$actions[] = $certificationcode->canDelete() ? Former::open(url('organizationtypes/'.$certificationcode->id))->class('form-inline m-0') 
                         . Former::hidden('_method', 'DELETE')
-                        . '<button type="button" class="btn btn-xs btn-danger confirm-delete">Padam</button>'
+                        . '<button type="button" class="btn btn-sm btn-danger rounded-8 px-3 confirm-delete">Padam</button>'
                         . Former::close() : '';
-                    	return implode(' ', $actions);
+                    	return '<div class="d-flex gap-2 flex-wrap justify-content-center">' . implode('', $actions) . '</div>';
                 	})
 				->removeColumn('id')
 				->rawColumns(['name', 'actions'])

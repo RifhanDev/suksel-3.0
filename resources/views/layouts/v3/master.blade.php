@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ms">
+
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="Content-type" content="text/html; charset=utf-8">
@@ -17,12 +18,16 @@
     <meta name="theme-color" content="#ffffff">
 
     <!-- Fonts -->
-	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
 
     <!-- Custom Styles -->
     <link href="{{ asset('css/modern.css') }}" rel="stylesheet">
     <link href="{{ asset('css/components/form-components.css') }}" rel="stylesheet">
     <link href="{{ asset('css/components/button-components.css') }}" rel="stylesheet">
+    <link href="{{ asset('css/components/content-card.css') }}" rel="stylesheet">
+    <link href="{{ asset('css/components/badges.css') }}" rel="stylesheet">
 
     <!-- Selectize CSS -->
     <link href="{{ asset('packages/selectize/dist/css/selectize.default.css') }}" rel="stylesheet">
@@ -83,9 +88,12 @@
             --text-dark: #334155;
         }
 
-		* { box-sizing: border-box; }
+        * {
+            box-sizing: border-box;
+        }
 
-		html, body {
+        html,
+        body {
             margin: 0;
             padding: 0;
             height: 100%;
@@ -114,7 +122,7 @@
             transition: transform var(--transition-speed) ease-in-out;
             display: flex;
             flex-direction: column;
-            box-shadow: 4px 0 24px rgba(0,0,0,0.1);
+            box-shadow: 4px 0 24px rgba(0, 0, 0, 0.1);
         }
 
         /* Scrollbar */
@@ -124,12 +132,26 @@
             scrollbar-width: thin;
             scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
             padding-bottom: 2rem;
-            position: relative; /* Context for z-index */
+            position: relative;
+            /* Context for z-index */
         }
-        .sidebar-scroll-area::-webkit-scrollbar { width: 5px; }
-        .sidebar-scroll-area::-webkit-scrollbar-track { background: transparent; }
-        .sidebar-scroll-area::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 10px; }
-        .sidebar-scroll-area::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.4); }
+
+        .sidebar-scroll-area::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        .sidebar-scroll-area::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .sidebar-scroll-area::-webkit-scrollbar-thumb {
+            background: var(--scrollbar-thumb);
+            border-radius: 10px;
+        }
+
+        .sidebar-scroll-area::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.4);
+        }
 
         /* --- SIDEBAR HEADER (With Floating Box) --- */
         .sidebar-header {
@@ -139,7 +161,7 @@
             justify-content: center;
             padding: 0 1.5rem;
             position: relative;
-            background: rgba(0,0,0,0.05);
+            background: rgba(0, 0, 0, 0.05);
         }
 
         /* --- GRADIENT LINE --- */
@@ -150,8 +172,8 @@
             left: 10%;
             right: 10%;
             height: 1px;
-            background: linear-gradient(to right, transparent 0%, rgba(255,255,255,0.5) 50%, transparent 100%);
-            box-shadow: 0 1px 3px rgba(255,255,255,0.2);
+            background: linear-gradient(to right, transparent 0%, rgba(255, 255, 255, 0.5) 50%, transparent 100%);
+            box-shadow: 0 1px 3px rgba(255, 255, 255, 0.2);
             z-index: 2;
         }
 
@@ -171,13 +193,19 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
             flex-shrink: 0;
         }
 
-		.sidebar-logo { width: 57px; height: 70px; }
+        .sidebar-logo {
+            width: 57px;
+            height: 70px;
+        }
 
-        .sidebar-brand-text { display: flex; flex-direction: column; }
+        .sidebar-brand-text {
+            display: flex;
+            flex-direction: column;
+        }
 
         .brand-title {
             font-family: 'Poppins', sans-serif;
@@ -219,7 +247,9 @@
             margin: 0;
         }
 
-		.nav-item { margin-bottom: 6px; }
+        .nav-item {
+            margin-bottom: 6px;
+        }
 
         /* Section Header */
         .nav-section-header {
@@ -240,7 +270,7 @@
             content: '';
             flex: 1;
             height: 1px;
-            background: rgba(255,255,255,0.2);
+            background: rgba(255, 255, 255, 0.2);
             margin-left: 10px;
             margin-right: 10px;
         }
@@ -276,7 +306,9 @@
         }
 
         .sidebar-link[aria-expanded="true"]::before,
-        .sidebar-link.active::before { content: none; }
+        .sidebar-link.active::before {
+            content: none;
+        }
 
         .nav-icon {
             width: 20px;
@@ -295,7 +327,9 @@
             transform: scale(1.1);
         }
 
-		.nav-text { flex: 1; }
+        .nav-text {
+            flex: 1;
+        }
 
         .nav-arrow {
             width: 16px;
@@ -319,7 +353,9 @@
             border-radius: 12px;
         }
 
-        .sidebar-submenu li { margin: 0; }
+        .sidebar-submenu li {
+            margin: 0;
+        }
 
         /* Submenu Item */
         .sidebar-submenu .submenu-item {
@@ -353,7 +389,7 @@
             width: 6px;
             height: 6px;
             border-radius: 50%;
-            background-color: rgba(255,255,255,0.3);
+            background-color: rgba(255, 255, 255, 0.3);
             margin-top: 7px;
             margin-right: 10px;
             flex-shrink: 0;
@@ -362,7 +398,7 @@
 
         .sidebar-submenu .submenu-item:hover {
             color: white;
-            background-color: rgba(255,255,255,0.08);
+            background-color: rgba(255, 255, 255, 0.08);
         }
 
         .sidebar-submenu .submenu-item:hover .submenu-icon {
@@ -370,6 +406,43 @@
             box-shadow: 0 0 5px var(--sg-yellow);
             transform: scale(1.2);
         }
+
+        /* BEGIN: this css code below maybe temporary only, this is for penilaian kewangan (kerja), later will be remove cause we wont show it on sidebar anyways */
+
+        /* Submenu expand chevron */
+        .submenu-arrow {
+            width: 14px;
+            height: 14px;
+            flex-shrink: 0;
+            opacity: 0.45;
+            transition: transform 0.3s ease, opacity 0.2s ease;
+        }
+
+        [aria-expanded="true"] > .submenu-arrow,
+        .submenu-item[aria-expanded="true"] .submenu-arrow {
+            transform: rotate(90deg);
+            opacity: 0.9;
+        }
+
+        /* Level 2 submenu — Penilaian Kewangan (Kerja) list */
+        .sub-submenu {
+            margin: 2px 0.5rem 4px 0.5rem;
+            padding: 4px 0;
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.18);
+            border-left: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Level 3 submenu — Borang children */
+        .sub-submenu-level-2 {
+            margin: 2px 0.5rem 4px 0.5rem;
+            padding: 2px 0;
+            border-radius: 6px;
+            background: rgba(0, 0, 0, 0.15);
+            border-left: 2px solid rgba(255, 204, 0, 0.2);
+        }
+
+        /* ENDED: above are temporary css for submenu inside submenu (later will be remove) */
 
         /* ===== MAIN WRAPPER ===== */
         .main-wrapper {
@@ -393,7 +466,7 @@
             position: sticky;
             top: 0;
             z-index: 1030;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.03); 
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
         }
 
         /* Left Area */
@@ -508,13 +581,13 @@
             justify-content: center;
             font-weight: 700;
             font-size: 0.9rem;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
 
         /* Dropdown */
         .custom-dropdown-menu {
             border: 1px solid #f3f4f6;
-            box-shadow: 0 10px 30px -5px rgba(0,0,0,0.1);
+            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.1);
             border-radius: 12px;
             padding: 0.5rem;
             min-width: 240px;
@@ -555,9 +628,14 @@
             transition: color 0.2s;
         }
 
-        .dropdown-item:hover svg { color: var(--sg-red); }
+        .dropdown-item:hover svg {
+            color: var(--sg-red);
+        }
 
-        .dropdown-divider { margin: 0.5rem 0; border-color: #f3f4f6; }
+        .dropdown-divider {
+            margin: 0.5rem 0;
+            border-color: #f3f4f6;
+        }
 
         /* Guest Buttons */
         .btn-guest {
@@ -570,26 +648,84 @@
             display: inline-flex;
             align-items: center;
         }
-        .btn-guest-outline { border: 1px solid #d1d5db; color: #374151; background: white; }
-        .btn-guest-outline:hover { border-color: var(--sg-red); color: var(--sg-red); background: #fff; }
-        .btn-guest-solid { background: var(--sg-red); color: white; border: 1px solid var(--sg-red); margin-left: 10px; }
-        .btn-guest-solid:hover { background: #a01830; border-color: #a01830; }
+
+        .btn-guest-outline {
+            border: 1px solid #d1d5db;
+            color: #374151;
+            background: white;
+        }
+
+        .btn-guest-outline:hover {
+            border-color: var(--sg-red);
+            color: var(--sg-red);
+            background: #fff;
+        }
+
+        .btn-guest-solid {
+            background: var(--sg-red);
+            color: white;
+            border: 1px solid var(--sg-red);
+            margin-left: 10px;
+        }
+
+        .btn-guest-solid:hover {
+            background: #a01830;
+            border-color: #a01830;
+        }
 
         /* Content */
-        .content-wrapper { padding: 2rem; }
+        .content-wrapper {
+            padding: 2rem;
+        }
 
         /* Responsive */
         @media (max-width: 991px) {
-			.sidebar { transform: translateX(-100%); width: 260px; }
-			.sidebar.show { transform: translateX(0); }
-			.main-wrapper { margin-left: 0; width: 100%; }
-            .mobile-toggle { display: flex; align-items: center; justify-content: center; }
-            .user-info { display: none; } 
-            .user-menu-btn { padding: 0; border: none; background: transparent; }
-            .topbar { padding: 0 1rem; height: 64px; }
-            .page-title { font-size: 1rem; }
-            .current-date { display: none; }
-            .content-wrapper { padding: 1rem; }
+            .sidebar {
+                transform: translateX(-100%);
+                width: 260px;
+            }
+
+            .sidebar.show {
+                transform: translateX(0);
+            }
+
+            .main-wrapper {
+                margin-left: 0;
+                width: 100%;
+            }
+
+            .mobile-toggle {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .user-info {
+                display: none;
+            }
+
+            .user-menu-btn {
+                padding: 0;
+                border: none;
+                background: transparent;
+            }
+
+            .topbar {
+                padding: 0 1rem;
+                height: 64px;
+            }
+
+            .page-title {
+                font-size: 1rem;
+            }
+
+            .current-date {
+                display: none;
+            }
+
+            .content-wrapper {
+                padding: 1rem;
+            }
         }
 
         /* CUSTOM: Bawah ni nanti asingkan masuk dlm separate css file.  */
@@ -684,8 +820,10 @@
     <!-- Bootstrap Datepicker -->
     <script src="{{ asset('packages/bootstrap-datepicker/js/bootstrap-datepicker.js') }}"></script>
     {{-- <script src="https://cdn.jsdelivr.net/npm/@tabler/core@1.4.0/dist/js/tabler.min.js"></script> --}}
+
+    <script src="https://cdn.datatables.net/v/dt/dt-2.3.5/datatables.min.js" integrity="sha384-qH0inyYSCOpaLgM/WSarLVnq0ULwworkGFzUI+E6bpx0DUCIsJePT0TRDnLnkcU1" crossorigin="anonymous"></script>
     <!-- DataTables JS (local 1.10.2 with Bootstrap extension) -->
-    <script src="{{ asset('js/datatables.js') }}"></script>
+    {{-- <script src="{{ asset('js/datatables.js') }}"></script> --}}
 
     <script>
         $(document).ready(function() {
@@ -694,17 +832,22 @@
                 $('.sidebar').toggleClass('show');
             });
             $(document).on('click', function(e) {
-				if ($(window).width() <= 991 && !$(e.target).closest('.sidebar, .mobile-menu-toggle').length) {
+                if ($(window).width() <= 991 && !$(e.target).closest('.sidebar, .mobile-menu-toggle')
+                    .length) {
                     $('.sidebar').removeClass('show');
                 }
             });
-			$.ajaxSetup({ headers: { 'X-CSRF-Token': $('meta[name=_token]').attr('content') } });
+            $.ajaxSetup({
+                headers: {
+                    'X-CSRF-Token': $('meta[name=_token]').attr('content')
+                }
+            });
         });
     </script>
     <script>
         // Sidebar Auto Scroll When Opening Long Submenu
         $(document).ready(function() {
-            $('.sidebar .collapse').on('show.bs.collapse', function () {
+            $('.sidebar .collapse').on('show.bs.collapse', function() {
                 var $container = $('.sidebar-scroll-area');
                 var $collapse = $(this);
                 var $parentLi = $collapse.closest('.nav-item');
@@ -758,7 +901,7 @@
             desktopWidth: 400,
             bubbleAvatarUrl: '{{ asset('images/chatbot.png') }}',
             placeholderText: 'Hantar Pesanan..',
-			frameEndpoint: "{{ route('chat_widget',['chat_id' => $chat_id]) }}",
+            frameEndpoint: "{{ route('chat_widget', ['chat_id' => $chat_id]) }}",
             userId: "{{ $chat_id }}"
         };
 
@@ -775,7 +918,8 @@
 
                             if (sender_response_detail.sender == "user_chat") {
                                 if (sender_response_detail.type == "image_only") {
-									botmanChatWidget.say('<img src="' + sender_response_detail.response + '" alt="attach" width="120" height="120">');
+                                    botmanChatWidget.say('<img src="' + sender_response_detail.response +
+                                        '" alt="attach" width="120" height="120">');
                                 }
 
                                 if (sender_response_detail.type == "text_only") {
@@ -785,7 +929,8 @@
 
                             if (sender_response_detail.sender == "bot") {
                                 if (sender_response_detail.type == "image_only") {
-									botmanChatWidget.sayAsBot('<img src="' + sender_response_detail.response + '" alt="attach" width="120" height="120">');
+                                    botmanChatWidget.sayAsBot('<img src="' + sender_response_detail
+                                        .response + '" alt="attach" width="120" height="120">');
                                 }
 
                                 if (sender_response_detail.type == "text_only") {
@@ -803,4 +948,5 @@
     @yield('scripts')
     @stack('scripts')
 </body>
+
 </html>
