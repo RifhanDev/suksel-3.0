@@ -121,6 +121,7 @@ hr{
     position:relative;
     z-index:2;                /* ABOVE line */
     cursor:pointer;
+    margin-top: 5px;
 }
 
 /* Active & done circle */
@@ -193,7 +194,7 @@ hr{
    TABLE
 ========================== */
 .table{
-    border-radius:10px;
+    border-radius:0px;
     overflow:hidden;
 }
 

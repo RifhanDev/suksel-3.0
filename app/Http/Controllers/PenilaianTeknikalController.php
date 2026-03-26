@@ -11,7 +11,25 @@ class PenilaianTeknikalController extends Controller
      */
     public function index()
     {
-        return view('newModule.penilaian.teknikal_index');
+        $tender = [
+            // 'QT210000000023741',
+            // 'QT210000000023740',
+            // 'QT210000000023799',
+            [
+                'no' => 'QT210000000023741',
+                'ptj' => 'BAHAGIAN PENTADBIRAN - CAWANGAN KEWANGAN - KEMENTERIAN KEWANGAN',
+                'tajuk' => 'TENDER PERKHIDMATAN DIGITAL FORENSIK KE ATAS ALIRAN PROSES SISTEM XXXX',
+                'tamat' => '17/01/2022',
+            ],
+            [
+                'no' => 'QT210000000023740',
+                'ptj' => 'BAHAGIAN PENTADBIRAN - CAWANGAN KEWANGAN - KEMENTERIAN KEWANGAN',
+                'tajuk' => 'TAJUK PEROLEHAN 1',
+                'tamat' => '17/01/2022',
+            ],
+        ];
+
+        return view('newModule.penilaian.teknikal_index', compact('tender'));
     }
 
     /**

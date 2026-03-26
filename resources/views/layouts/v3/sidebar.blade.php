@@ -844,7 +844,7 @@
                     <div class="collapse {{ $isPenilaianMenuActive ? 'show' : '' }}" id="menuPenilaianTeknikalKewangan">
                         <ul class="sidebar-submenu">
                             <li>
-                                <a class="submenu-item" href="{{ route('penilaianTeknikalKerja') }}">
+                                <a class="submenu-item" href="{{ route('penilaianTeknikal') }}">
                                     <div class="submenu-icon" style="{{ request()->is('penilaian-teknikal*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}"></div>
                                     <span class="{{ request()->is('penilaian-teknikal*') ? 'text-white' : '' }}">Penilaian Teknikal</span>
                                 </a>
