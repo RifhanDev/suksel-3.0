@@ -157,7 +157,7 @@
                                         <path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-3 3-3-3 3-3z"></path>
                                     </svg>
                                 </a>
-                                <a href="{{ route('senaraiTeknikal') }}" class="btn btn-sm btn-success" title="Senarai Semak Kewangan">
+                                <a href="{{ route('senaraiKewangan') }}" class="btn btn-sm btn-success" title="Senarai Semak Kewangan">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
                                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                         <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>

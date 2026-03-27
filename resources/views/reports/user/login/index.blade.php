@@ -1,32 +1,40 @@
 @extends('layouts.v3.master')
+
 @section('content')
-	<h4 class="tender-title">Laporan Sistem Tender Online: Laporan Sebagai</h4>
 
-	{!! Former::open(action('ReportUserLoginController@view'))->target('_blank') !!}
-	<div class="form-group required">
-		<label for="users[]" class="control-label col-lg-3 col-sm-3">Pengguna <sup>*</sup></label>
-		<div class="col-lg-9 col-sm-9">
-			<select class="form-control selectize" required="true" id="users" name="user_id" style="display: none;">
-				<option value="" selected="selected"></option>
-				@foreach ($select_users as $s_user)
-					<option value="{{ $s_user->id }}">{{ $s_user->name }} &lt;{{ $s_user->email }}&gt;</option>
-				@endforeach
-			</select>
-		</div>
-	</div>
+    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center mb-4">
+        <div>
+            <h3 class="fw-bold text-dark m-0" style="letter-spacing: -0.5px;">Laporan Sebagai</h3>
+            <p class="text-muted small m-0">Jana laporan log masuk pengguna sistem tender online.</p>
+        </div>
+    </div>
 
-	<div class="form-group">
-		<div class="col-lg-9 col-lg-offset-3">
-			{!! Former::submit('Hantar')->class('btn bg-blue-selangor') !!}
-		</div>
-	</div>
-	{!! Former::close() !!}
+    <div class="content-card p-4" style="overflow: visible;">
+        <form action="{{ action('ReportUserLoginController@view') }}" method="POST" target="_blank">
+            @csrf
+
+            <div class="mb-4">
+                <label for="users" class="form-label fw-semibold">Pengguna <span class="text-danger">*</span></label>
+                <select class="selectize" required id="users" name="user_id">
+                    <option value=""></option>
+                    @foreach ($select_users as $s_user)
+                        <option value="{{ $s_user->id }}">{{ $s_user->name }} &lt;{{ $s_user->email }}&gt;</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div>
+                <button type="submit" class="btn-form btn-form-primary">Jana Laporan</button>
+            </div>
+        </form>
+    </div>
+
 @endsection
 
 @section('scripts')
-	<script type="text/javascript">
-		$('.selectize').each(function() {
-			$(this).selectize();
-		});
-	</script>
+    <script type="text/javascript">
+        $('.selectize').each(function() {
+            $(this).selectize();
+        });
+    </script>
 @endsection
