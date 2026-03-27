@@ -984,10 +984,28 @@
                     </a>
                 </li>
 
+                <!-- Menu: Jawatankuasa Perolehan -->
+				<li class="nav-item">
+                    <a class="sidebar-link {{ request()->is('jawatankuasa-perolehan*') ? 'active' : '' }}"
+                        href="{{ route('jawatankuasaPerolehan.index') }}" style="cursor: pointer;">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                        </svg>
+                        <span class="nav-text">Jawatankuasa Perolehan</span>
+                    </a>
+                </li>
+
+                @php
+                    $isEBiddingMenuActive = request()->is('eBidding*') || request()->is('keputusan-mesyuarat*');
+                @endphp
                 <!-- Menu : E-Bidding -->
                 <li class="nav-item">
-                    <a class="sidebar-link collapsed" data-bs-toggle="collapse" data-bs-target="#menuEBidding"
-                        aria-expanded="false" style="cursor: pointer;">
+                    <a class="sidebar-link {{ $isEBiddingMenuActive ? 'active' : 'collapsed' }}" data-bs-toggle="collapse" data-bs-target="#menuEBidding"
+                        aria-expanded="{{ $isEBiddingMenuActive ? 'true' : 'false' }}" style="cursor: pointer;">
                         <svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none"
                             stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
@@ -999,13 +1017,12 @@
                             <polyline points="9 18 15 12 9 6"></polyline>
                         </svg>
                     </a>
-                    <div class="collapse" id="menuEBidding">
+                    <div class="collapse {{ $isEBiddingMenuActive ? 'show' : '' }}" id="menuEBidding">
                         <ul class="sidebar-submenu">
-                            <li><a class="submenu-item" href="{{ route('keputusanMesyuarat') }}">
-                                    <div class="submenu-icon"></div><span>Keputusan Mesyuarat</span>
-                                </a></li>
-                            <li><a class="submenu-item" href="#">
-                                    <div class="submenu-icon"></div><span>Comming Soon</span>
+                            <li>
+                                <a class="submenu-item" href="{{ route('eBidding.index') }}">
+                                    <span class="submenu-icon" style="{{ $isEBiddingMenuActive ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}"></span>
+                                    <span class="{{ $isEBiddingMenuActive ? 'text-white' : '' }}">Keputusan Mesyuarat</span>
                                 </a>
                             </li>
                         </ul>
@@ -1375,10 +1392,28 @@
                     </a>
                 </li>
 
+				<!-- Menu: Jawatankuasa Perolehan -->
+				<li class="nav-item">
+                    <a class="sidebar-link {{ request()->is('jawatankuasa-perolehan*') ? 'active' : '' }}"
+                        href="{{ route('jawatankuasaPerolehan.index') }}" style="cursor: pointer;">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                        </svg>
+                        <span class="nav-text">Jawatankuasa Perolehan</span>
+                    </a>
+                </li>
+
+                @php
+                    $isEBiddingMenuActive = request()->is('eBidding*') || request()->is('keputusan-mesyuarat*');
+                @endphp
                 <!-- Menu : E-Bidding -->
                 <li class="nav-item">
-                    <a class="sidebar-link collapsed" data-bs-toggle="collapse" data-bs-target="#menuEBidding"
-                        aria-expanded="false" style="cursor: pointer;">
+                    <a class="sidebar-link {{ $isEBiddingMenuActive ? 'active' : 'collapsed' }}" data-bs-toggle="collapse" data-bs-target="#menuEBidding"
+                        aria-expanded="{{ $isEBiddingMenuActive ? 'true' : 'false' }}" style="cursor: pointer;">
                         <svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none"
                             stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
@@ -1390,13 +1425,12 @@
                             <polyline points="9 18 15 12 9 6"></polyline>
                         </svg>
                     </a>
-                    <div class="collapse" id="menuEBidding">
+                    <div class="collapse {{ $isEBiddingMenuActive ? 'show' : '' }}" id="menuEBidding">
                         <ul class="sidebar-submenu">
-                            <li><a class="submenu-item" href="{{ route('keputusanMesyuarat') }}">
-                                    <div class="submenu-icon"></div><span>Keputusan Mesyuarat</span>
-                                </a></li>
-                            <li><a class="submenu-item" href="#">
-                                    <div class="submenu-icon"></div><span>Comming Soon</span>
+                            <li>
+                                <a class="submenu-item" href="{{ route('eBidding.index') }}">
+                                    <span class="submenu-icon" style="{{ $isEBiddingMenuActive ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}"></span>
+                                    <span class="{{ $isEBiddingMenuActive ? 'text-white' : '' }}">Keputusan Mesyuarat</span>
                                 </a>
                             </li>
                         </ul>
