@@ -96,6 +96,12 @@ Route::view('/jawatankuasa-spesifikasi/senarai-kewangan', 'newModule.jawatankuas
 Route::get('/cut-off', [CutOffController::class, 'index'])->middleware(['auth'])->name('cutOff.index');
 Route::get('/cut-off/{tender_no}', [CutOffController::class, 'show'])->middleware(['auth'])->name('cutOff.show');
 
+Route::view('/jawatankuasa-perolehan/index', 'newModule.jawatankuasaPerolehan.index')->name('jawatankuasaPerolehan.index');
+Route::view('/jawatankuasa-perolehan/form', 'newModule.jawatankuasaPerolehan.form')->name('jawatankuasaPerolehan.form');
+
+Route::view('/eBidding/index', 'newModule.eBidding.index')->name('eBidding.index');
+Route::view('/keputusan-mesyuarat', 'newModule.eBidding.keptusan_mesyuarat')->name('keputusanMesyuarat');
+
 Route::prefix('pembelian-terus')->controller(PembelianTerusController::class)->group(function () {
 	Route::get('/cipta-projek', 'createProject')->name('pembelianTerus.createProject');
 	Route::get('/sebut-harga', 'quoteProject')->name('pembelianTerus.quoteProject');
@@ -250,7 +256,6 @@ Route::middleware('auth')->group(function () {
 });
 Route::view('/syarat-tender', 'newModule.syarikatPembekal.syarat_tender')->name('syaratTender');
 Route::view('/kod-bidang', 'newModule.syarikatPembekal.kod_bidang')->name('kodBidang');
-Route::view('/keputusan-mesyuarat', 'newModule.eBidding.keptusan_mesyuarat')->name('keputusanMesyuarat');
 
 // Dummy Controller 
 Route::get('/tender/cipta', [DummyController::class, 'create'])->name('tender.create');

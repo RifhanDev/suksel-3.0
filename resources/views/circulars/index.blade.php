@@ -102,15 +102,18 @@
                     },
                     {
                         data: 'published',
-                        name: 'published'
+                        name: 'published',
+                        class: 'text-center'
                     },
                     {
                         data: 'position',
-                        name: 'position'
+                        name: 'position',
+                        class: 'text-center'
                     },
                     {
                         data: 'created_at',
-                        name: 'created_at'
+                        name: 'created_at',
+                        class: 'text-center'
                     },
                     {
                         data: 'actions',
