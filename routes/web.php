@@ -212,6 +212,7 @@ Route::view('/senarai-kewangan', 'newModule.jawatankuasaSpesifikasi.senarai_kewa
 Route::view('/templat-spesifikasi', 'newModule.jawatankuasaSpesifikasi.form_spesifikasi')->name('spesifikasiForm');
 Route::view('/pengalaman-kerja', 'newModule.jawatankuasaSpesifikasi.form_pengalaman_kerja')->name('pgmnKerjaForm');
 Route::view('/kerja-dalam-tangan', 'newModule.jawatankuasaSpesifikasi.form_kerja_dalam_tangan')->name('kjDlmTanganForm');
+Route::view('/profil-petender', 'newModule.jawatankuasaSpesifikasi.form_profil_petender')->name('prflPetender');
 Route::view('/jawatankuasa-pembuka', 'newModule.jawatankuasa_pembuka')->name('jawatankuasaPembuka');
 
 // old

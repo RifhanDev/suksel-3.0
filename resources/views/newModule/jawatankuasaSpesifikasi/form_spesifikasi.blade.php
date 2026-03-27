@@ -337,12 +337,20 @@
                                     <td></td>
                                     <td></td>
                                     <td class="text-center">
-                                        <select class="form-select form-select-sm">
-                                            <option></option>
-                                            <option>Text</option>
-                                            <option>Nombor</option>
-                                            <option>Ya/Tidak</option>
-                                        </select>
+                                        <div class="d-flex align-items-center justify-content-center gap-2">
+                                            <select class="form-select form-select-sm w-auto typeSelect">
+                                                <option></option>
+                                                <option value="1">Text</option>
+                                                <option value="2">Nombor</option>
+                                                <option value="3">Ya/Tidak</option>
+                                            </select>
+                                            <svg id="" class="text-warning edit-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                                style="cursor: pointer;">
+                                                <path d="M12 20h9"></path>
+                                                <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"></path>
+                                            </svg>
+                                        </div>
                                     </td>
                                     <td class="text-center">
                                         <button type="button" class="btn btn-danger btn-circle delete_spec">
@@ -394,132 +402,371 @@
         </div>
     </div>
 
+    <!-- Modal for Text -->
+
+
+    <div class="modal fade" id="modalText" tabindex="-1" aria-labelledby="modalTextLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalTextLabel">Penetapan Skor - Text</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="p-2">
+                        <div class="row">
+                            <div class="col-sm-12 form-group my-2">
+                                <div class="row">
+                                    <label class="col-sm-2 control-label">Spesifikasi</label>
+                                    <div class="col-sm-10">
+                                        <textarea class="form-control form-control-sm" id="" name="" row="3"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-6 form-group my-2">
+                                <div class="row">
+                                    <label class="col-sm-4 control-label">Jenis Skema Maklumbalas</label>
+                                    <div class="col-sm-8">
+                                        <input type="text" class="form-control form-control-sm" id="" name="" value="Text" readonly>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-sm-6 form-group my-2">
+                                <div class="row">
+                                    <label class="col-sm-4 control-label">Jenis Skor</label>
+                                    <div class="col-sm-8">
+                                        <input type="text" class="form-control form-control-sm" id="" name="" value="">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-sm-6 form-group my-2">
+                                <div class="row">
+                                    <label class="col-sm-4 control-label">Skema Maksima</label>
+                                    <div class="col-sm-8">
+                                        <input type="text" class="form-control form-control-sm" id="" name="" value="">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-12 d-flex justify-content-end">
+                                <div class="d-flex gap-2">
+                                    <button type="button" class="btn btn-sm btn-success">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M4 4h12l4 4v12H4z"/>
+                                            <rect x="7" y="4" width="8" height="5"/>
+                                            <rect x="7" y="14" width="10" height="6"/>
+                                        </svg>
+                                        Simpan
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-danger">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <polyline points="3 6 5 6 21 6"></polyline>
+                                            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+                                            <path d="M10 11v6"></path>
+                                            <path d="M14 11v6"></path>
+                                            <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>
+                                        </svg>
+                                        Batal
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Nombor -->
+    <div class="modal fade" id="modalNumber" tabindex="-1" aria-labelledby="modalNumberLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalNumberLabel">Penetapan Skor - Nombor</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="p-2">
+                        <div class="row">
+                            <div class="col-sm-12 form-group my-2">
+                                <div class="row">
+                                    <label class="col-sm-2 control-label">Spesifikasi</label>
+                                    <div class="col-sm-10">
+                                        <textarea class="form-control form-control-sm" id="" name="" row="3"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-6 form-group my-2">
+                                <div class="row">
+                                    <label class="col-sm-4 control-label">Jenis Skema Maklumbalas</label>
+                                    <div class="col-sm-8">
+                                        <input type="text" class="form-control form-control-sm" id="" name="" value="Nombor" readonly>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-sm-6 form-group my-2">
+                                <div class="row">
+                                    <label class="col-sm-4 control-label">Jenis Skema</label>
+                                    <div class="col-sm-8">
+                                        <input type="text" class="form-control form-control-sm" id="" name="" value="Automatik" readonly>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-12 d-flex justify-content-end">
+                                <div class="d-flex gap-2">
+                                    <button type="button" class="btn btn-sm btn-success">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M4 4h12l4 4v12H4z"/>
+                                            <rect x="7" y="4" width="8" height="5"/>
+                                            <rect x="7" y="14" width="10" height="6"/>
+                                        </svg>
+                                        Simpan
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-danger">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <polyline points="3 6 5 6 21 6"></polyline>
+                                            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+                                            <path d="M10 11v6"></path>
+                                            <path d="M14 11v6"></path>
+                                            <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>
+                                        </svg>
+                                        Batal
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Ya/Tidak -->
+    <div class="modal fade" id="modalYesNo" tabindex="-1" aria-labelledby="modalYesNoLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalYesNoLabel">Penetapan Skor - Ya/Tidak</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="p-2">
+                        <div class="row">
+                            <div class="col-sm-12 form-group my-2">
+                                <div class="row">
+                                    <label class="col-sm-2 control-label">Spesifikasi</label>
+                                    <div class="col-sm-10">
+                                        <textarea class="form-control form-control-sm" id="" name="" row="3"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-6 form-group my-2">
+                                <div class="row">
+                                    <label class="col-sm-4 control-label">Jenis Skema Maklumbalas</label>
+                                    <div class="col-sm-8">
+                                        <input type="text" class="form-control form-control-sm" id="" name="" value="Ya/Tidak" readonly>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-sm-6 form-group my-2">
+                                <div class="row">
+                                    <label class="col-sm-4 control-label">Jenis Skor</label>
+                                    <div class="col-sm-8">
+                                        <select name="yt_fg" id="yt_fg" class="form-control selectize" placeholder="Sila  Pilih">
+                                            <option value="">Sila pilih..</option>
+                                            <option value="1">Automatik</option>
+                                            <option value="2">Manual</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-sm-6 form-group my-2" id="yt_1">
+                                <div class="row">
+                                    <label class="col-sm-4 control-label">Skema Skor</label>
+                                    <div class="col-sm-8">
+                                        <div class="row mb-2">
+                                            <label class="col-sm-4 control-label">Ya</label>
+                                            <div class="col-sm-8">
+                                                <input type="text" class="form-control form-control-sm" id="" name="" value="">
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <label class="col-sm-4 control-label">Tidak</label>
+                                            <div class="col-sm-8">
+                                                <input type="text" class="form-control form-control-sm" id="" name="" value="">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-sm-6 form-group my-2" id="yt_2">
+                                <div class="row">
+                                    <label class="col-sm-4 control-label">Skor Maksima</label>
+                                    <div class="col-sm-8">
+                                        <input type="text" class="form-control form-control-sm" id="" name="" value="">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-12 d-flex justify-content-end">
+                                <div class="d-flex gap-2">
+                                    <button type="button" class="btn btn-sm btn-success">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M4 4h12l4 4v12H4z"/>
+                                            <rect x="7" y="4" width="8" height="5"/>
+                                            <rect x="7" y="14" width="10" height="6"/>
+                                        </svg>
+                                        Simpan
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-danger">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <polyline points="3 6 5 6 21 6"></polyline>
+                                            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+                                            <path d="M10 11v6"></path>
+                                            <path d="M14 11v6"></path>
+                                            <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>
+                                        </svg>
+                                        Batal
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
 <script type="text/javascript">
 
-  document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('DOMContentLoaded', function () {
+        var table = document.querySelector('#dt_tmpltSpec');
+        if (!table) return;
+        var tbody = table.querySelector('tbody');
+        var addItemBtn = document.querySelector('.add_btn_item');
 
-var table = document.querySelector('#dt_tmpltSpec');
-if (!table) return;
+        function removeNoDataRow(){
+            var noData = tbody.querySelector('.no-data-row');
+            if(noData) noData.remove();
+        }
 
-var tbody = table.querySelector('tbody');
-var addItemBtn = document.querySelector('.add_btn_item');
+        function checkNoData(){
+            var rows = tbody.querySelectorAll('tr.item-row:not(.d-none)');
+            if(rows.length === 0){
+                var row = document.createElement('tr');
+                row.className="no-data-row";
+                row.innerHTML = `
+                    <td colspan="6" class="text-center text-muted">
+                    No data
+                    </td>
+                `;
+                tbody.appendChild(row);
+            }
+        }
 
+        /* ADD ITEM */
+        addItemBtn.addEventListener('click', function(){
+            removeNoDataRow();
+            var template = tbody.querySelector('.add_row_item');
+            var clone = template.cloneNode(true);
+            clone.classList.remove('d-none','add_row_item');
+            tbody.appendChild(clone);
+        });
 
-function removeNoDataRow(){
+        /* TABLE ACTIONS */
+        tbody.addEventListener('click', function(e){
+            /* ADD SPEC */
+            if(e.target.closest('.add_btn_spec')){
+                var template = tbody.querySelector('.add_row_spec');
+                var clone = template.cloneNode(true);
+                clone.classList.remove('d-none','add_row_spec');
+                var itemRow = e.target.closest('tr');
+                itemRow.after(clone);
+            }
+            /* DELETE SPEC */
+            if(e.target.closest('.delete_spec')){
+                var row = e.target.closest('tr');
+                row.remove();
+            }
+            /* DELETE ITEM + ALL ITS SPECS */
+            if(e.target.closest('.delete_item')){
+                var row = e.target.closest('tr');
+                var next = row.nextElementSibling;
+                while(next && next.classList.contains('spec-row')){
+                    var temp = next.nextElementSibling;
+                    next.remove();
+                    next = temp;
+                }
+                row.remove();
+                checkNoData();
+            }
+        });
 
-var noData = tbody.querySelector('.no-data-row');
-if(noData) noData.remove();
+        tbody.addEventListener('click', function(e){
 
-}
+            if(e.target.closest('.edit-icon')){
+                let row = e.target.closest('tr');
+                let select = row.querySelector('.typeSelect');
+                let value = select.value;
 
+                if(value == "1"){
+                    new bootstrap.Modal(document.getElementById('modalText')).show();
+                }
+                else if(value == "2"){
+                    new bootstrap.Modal(document.getElementById('modalNumber')).show();
+                }
+                else if(value == "3"){
+                    new bootstrap.Modal(document.getElementById('modalYesNo')).show();
+                }
+                else {
+                    alert('Please select a type first');
+                }
+            }
+        });
 
-function checkNoData(){
+        // ---------- YT SELECT SHOW/HIDE LOGIC ----------
+        const ytSelect = document.getElementById('yt_fg');
+        const yt1 = document.getElementById('yt_1');
+        const yt2 = document.getElementById('yt_2');
 
-var rows = tbody.querySelectorAll('tr.item-row:not(.d-none)');
+        if(ytSelect){
+            // Hide both sections initially
+            yt1.style.display = 'none';
+            yt2.style.display = 'none';
 
-if(rows.length === 0){
+            ytSelect.addEventListener('change', function() {
+                const value = this.value;
 
-var row = document.createElement('tr');
-
-row.className="no-data-row";
-
-row.innerHTML = `
-<td colspan="6" class="text-center text-muted">
-No data
-</td>
-`;
-
-tbody.appendChild(row);
-
-}
-
-}
-
-
-
-/* ADD ITEM */
-
-addItemBtn.addEventListener('click', function(){
-
-removeNoDataRow();
-
-var template = tbody.querySelector('.add_row_item');
-
-var clone = template.cloneNode(true);
-
-clone.classList.remove('d-none','add_row_item');
-
-tbody.appendChild(clone);
-
-});
-
-
-
-/* TABLE ACTIONS */
-
-tbody.addEventListener('click', function(e){
-
-
-/* ADD SPEC */
-
-if(e.target.closest('.add_btn_spec')){
-
-var template = tbody.querySelector('.add_row_spec');
-
-var clone = template.cloneNode(true);
-
-clone.classList.remove('d-none','add_row_spec');
-
-var itemRow = e.target.closest('tr');
-
-itemRow.after(clone);
-
-}
-
-
-
-/* DELETE SPEC */
-
-if(e.target.closest('.delete_spec')){
-
-var row = e.target.closest('tr');
-
-row.remove();
-
-}
-
-
-
-/* DELETE ITEM + ALL ITS SPECS */
-
-if(e.target.closest('.delete_item')){
-
-var row = e.target.closest('tr');
-
-var next = row.nextElementSibling;
-
-while(next && next.classList.contains('spec-row')){
-
-var temp = next.nextElementSibling;
-
-next.remove();
-
-next = temp;
-
-}
-
-row.remove();
-
-checkNoData();
-
-}
-
-});
-
-});
+                if(value === "1") {
+                    yt1.style.display = 'block';
+                    yt2.style.display = 'none';
+                }
+                else if(value === "2") {
+                    yt1.style.display = 'none';
+                    yt2.style.display = 'block';
+                }
+                else {
+                    // No selection
+                    yt1.style.display = 'none';
+                    yt2.style.display = 'none';
+                }
+            });
+        }
+    });
 
 </script>
-
-  
 @endsection
 
