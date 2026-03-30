@@ -82,6 +82,7 @@ use App\Http\Controllers\DummyController;
 use App\Http\Controllers\JawatankuasaController;
 use App\Http\Controllers\CutOffController;
 use App\Http\Controllers\PenilaianTeknikalController;
+use App\Http\Controllers\PerakuanJabatanController;
 
 // Basic routes to get the application running
 Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -95,6 +96,12 @@ Route::view('/jawatankuasa-spesifikasi/senarai-kewangan', 'newModule.jawatankuas
 
 Route::get('/cut-off', [CutOffController::class, 'index'])->middleware(['auth'])->name('cutOff.index');
 Route::get('/cut-off/{tender_no}', [CutOffController::class, 'show'])->middleware(['auth'])->name('cutOff.show');
+
+Route::get('/perakuan-jabatan', [PerakuanJabatanController::class, 'index'])->middleware(['auth'])->name('perakuanjabatan.index');
+Route::get('/perakuan-jabatan/{tender_no}', [PerakuanJabatanController::class, 'show'])->middleware(['auth'])->name('perakuanjabatan.show');
+Route::view('/perakuan-jabatan/form', 'newModule.perakuanJabatan.form')->name('perakuanJabatan.form');
+Route::view('/perakuan-jabatan/kertas-taklimat', 'newModule.perakuanJabatan.kertas_taklimat')->name('perakuanJabatan.kertasTaklimat');
+Route::view('/perakuan-jabatan/pengesyoran-pembekal', 'newModule.perakuanJabatan.pengesyoran_pembekal')->name('perakuanJabatan.pengesyoranPembekal');
 
 Route::view('/jawatankuasa-perolehan/index', 'newModule.jawatankuasaPerolehan.index')->name('jawatankuasaPerolehan.index');
 Route::view('/jawatankuasa-perolehan/form', 'newModule.jawatankuasaPerolehan.form')->name('jawatankuasaPerolehan.form');
@@ -250,10 +257,10 @@ Route::view('/penilaian-kewangan-kerja-borang15', 'newModule.penilaian.borang15'
 Route::view('/lawatan-tapak', 'newModule.syarikatPembekal.lawatan_tapak')->name('lawatanTapak');
 
 Route::middleware('auth')->group(function () {
-    Route::get('/visits/{visit}/representatives', 'TenderVisitRepresentativeController@index')
-        ->name('visits.representatives.index');
-    Route::post('/visits/{visit}/representatives', 'TenderVisitRepresentativeController@store')
-        ->name('visits.representatives.store');
+	Route::get('/visits/{visit}/representatives', 'TenderVisitRepresentativeController@index')
+		->name('visits.representatives.index');
+	Route::post('/visits/{visit}/representatives', 'TenderVisitRepresentativeController@store')
+		->name('visits.representatives.store');
 });
 Route::view('/syarat-tender', 'newModule.syarikatPembekal.syarat_tender')->name('syaratTender');
 Route::view('/kod-bidang', 'newModule.syarikatPembekal.kod_bidang')->name('kodBidang');
