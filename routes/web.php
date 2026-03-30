@@ -80,6 +80,7 @@ use App\Http\Controllers\ReportUserLoginController;
 use App\Http\Controllers\DummyController;
 use App\Http\Controllers\JawatankuasaController;
 use App\Http\Controllers\CutOffController;
+use App\Http\Controllers\PenilaianKewanganController;
 use App\Http\Controllers\PenilaianTeknikalController;
 
 // Basic routes to get the application running
@@ -112,7 +113,6 @@ Route::prefix('pembelian-terus')->controller(PembelianTerusController::class)->g
 	Route::get('/keputusan-syarikat', 'keputusanSyarikat')->name('pembelianTerus.keputusanSyarikat');
 	Route::get('/keputusan-syarikat-details/{tender_no}', 'keputusanSyarikatDetails')->name('pembelianTerus.keputusanSyarikatDetails');
 	Route::get('/surat-setuju-terima/{tender_no}', 'downloadSuratSetujuTerima')->name('pembelianTerus.downloadSuratSetujuTerima');
-
 });
 
 
@@ -218,18 +218,23 @@ Route::view('/jawatankuasa-pembuka', 'newModule.jawatankuasa_pembuka')->name('ja
 // old
 // Route::view('/penilaian-teknikal', 'newModule.penilaian.teknikal')->name('penilaianTeknikal');
 // Route::view('/penilaian-teknikal-kerja', 'newModule.penilaian.teknikal_kerja')->name('penilaianTeknikalKerja');
-Route::view('/penilaian-kewangan', 'newModule.penilaian.kewangan')->name('penilaianKewangan');
+// Route::view('/penilaian-kewangan', 'newModule.penilaian.kewangan')->name('penilaianKewangan');
 
-// new 
+// new penilaian teknikal
 Route::get('/penilaian-teknikal', [PenilaianTeknikalController::class, 'index'])->name('penilaianTeknikal');
 Route::get('/penilaian-teknikal/{tender_no}', [PenilaianTeknikalController::class, 'show'])->name('penilaianTeknikal.show');
+
+// new penilaian kewangan
+Route::get('/penilaian-kewangan', [PenilaianKewanganController::class, 'index'])->name('penilaianKewangan');
+Route::get('/penilaian-kewangan/{tender_no}', [PenilaianKewanganController::class, 'show'])->name('penilaianKewangan.show');
+
 
 Route::view('/penilaian-kewangan-kerja', 'newModule.penilaian.borang1')->name('borang1');
 Route::view('/penilaian-kewangan-kerja-borang2', 'newModule.penilaian.borang2')->name('borang2');
 Route::view('/penilaian-kewangan-kerja-borang3', 'newModule.penilaian.borang3')->name('borang3');
 Route::view('/penilaian-kewangan-kerja-lembaran', 'newModule.penilaian.lembaran')->name('lembaran');
 Route::view('/penilaian-kewangan-kerja-akaun-bank', 'newModule.penilaian.akaun_bank')->name('akaunBank');
-Route::view('/penilaian-kewangan-kerja-bon-saham', 'newModule.penilaian.bon_saham')->name('bonSaham');	
+Route::view('/penilaian-kewangan-kerja-bon-saham', 'newModule.penilaian.bon_saham')->name('bonSaham');
 Route::view('/penilaian-kewangan-kerja-borang4', 'newModule.penilaian.borang4')->name('borang4');
 Route::view('/penilaian-kewangan-kerja-borang5', 'newModule.penilaian.borang5')->name('borang5');
 Route::view('/penilaian-kewangan-kerja-borang6', 'newModule.penilaian.borang6')->name('borang6');
@@ -250,10 +255,10 @@ Route::view('/penilaian-kewangan-kerja-borang15', 'newModule.penilaian.borang15'
 Route::view('/lawatan-tapak', 'newModule.syarikatPembekal.lawatan_tapak')->name('lawatanTapak');
 
 Route::middleware('auth')->group(function () {
-    Route::get('/visits/{visit}/representatives', 'TenderVisitRepresentativeController@index')
-        ->name('visits.representatives.index');
-    Route::post('/visits/{visit}/representatives', 'TenderVisitRepresentativeController@store')
-        ->name('visits.representatives.store');
+	Route::get('/visits/{visit}/representatives', 'TenderVisitRepresentativeController@index')
+		->name('visits.representatives.index');
+	Route::post('/visits/{visit}/representatives', 'TenderVisitRepresentativeController@store')
+		->name('visits.representatives.store');
 });
 Route::view('/syarat-tender', 'newModule.syarikatPembekal.syarat_tender')->name('syaratTender');
 Route::view('/kod-bidang', 'newModule.syarikatPembekal.kod_bidang')->name('kodBidang');
@@ -278,7 +283,7 @@ Route::middleware(['auth'])->group(function () {
 	// Version 3.0 tender creation routes
 	Route::get('/cipta-tender', [TendersController::class, 'createNew'])->name('ciptaTender');
 	Route::post('/cipta-tender', [TendersController::class, 'storeNew'])->name('storeCiptaTender');
-	
+
 	// Get type of perolehan by kategori jenis perolehan
 	Route::get('/ref/type-of-perolehan-by-kategori', [RefKategoriJenisPerolehanController::class, 'getTypeOfPerolehanByKategori'])->name('getTypeOfPerolehanByKategori');
 
@@ -422,7 +427,7 @@ Route::middleware(['auth'])->group(function () {
 		Route::post('user/byagency', [UsersController::class, 'getUserByAgencies'])->name('user.by.agency');
 		Route::post('user/byid', [UsersController::class, 'getUserById'])->name('user.by.id');
 
-		
+
 
 		Route::get('requests/show/{request_id}', [CodeRequestsController::class, 'showAll'])->name('requests.showAll');
 		Route::put('requests/{requests}/approve', [CodeRequestsController::class, 'approve'])->name('requests.approve');
