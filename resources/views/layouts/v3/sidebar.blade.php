@@ -759,9 +759,10 @@
                 </li>
 
                 <!-- Menu : Jawatankuasa Spesifikasi /  Pengurusan -->
+                @php $isJawatankuasaSpesifikasiMenuActive = request()->is('senarai-semak*'); @endphp
                 <li class="nav-item">
-                    <a class="sidebar-link collapsed" data-bs-toggle="collapse"
-                        data-bs-target="#menuJawatankusaSpesifikasi" aria-expanded="false" style="cursor: pointer;">
+                    <a class="sidebar-link {{ $isJawatankuasaSpesifikasiMenuActive ? 'active' : 'collapsed' }}" data-bs-toggle="collapse"
+                        data-bs-target="#menuJawatankusaSpesifikasi" aria-expanded="{{ $isJawatankuasaSpesifikasiMenuActive ? 'true' : 'false' }}" style="cursor: pointer;">
                         <svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none"
                             stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
@@ -773,11 +774,12 @@
                             <polyline points="9 18 15 12 9 6"></polyline>
                         </svg>
                     </a>
-                    <div class="collapse" id="menuJawatankusaSpesifikasi">
+                    <div class="collapse {{ $isJawatankuasaSpesifikasiMenuActive ? 'show' : '' }}" id="menuJawatankusaSpesifikasi">
                         <ul class="sidebar-submenu">
                             <li>
                                 <a class="submenu-item" href="{{ route('senaraiSemak') }}">
-                                    <div class="submenu-icon"></div><span>Senarai Semak</span>
+                                    <div class="submenu-icon" style="{{ request()->is('senarai-semak*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}"></div>
+                                    <span class="{{ request()->is('senarai-semak*') ? 'text-white' : '' }}">Senarai Semak</span>
                                 </a>
                             </li>
                             <!-- <li><a class="submenu-item" href="{{ route('senaraiTeknikal') }}">
