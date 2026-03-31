@@ -175,7 +175,7 @@
                             <th class="text-center" style="width: 140px;">Tindakan Pembekal</th>
                             <th class="text-center" style="width: 110px;">Skema</th>
                             <th class="text-center" style="width: 110px;">Status</th>
-                            <th class="text-center" style="width: 110px;">Rujukan</th>
+                            <th class="text-center" style="width: 110px;">Dokumen</th>
                             <th class="text-center" style="width: 110px;">Tindakan</th>
                         </tr>
                     </thead>
