@@ -1,4 +1,4 @@
-{{-- Step 4: Penyediaan Laporan (PENILAIAN PERINGKAT PERTAMA & KEDUA) — IDs disuffix 4 elak konflik dengan step3 --}}
+{{-- Step 4: Penyediaan Laporan --}}
 
 <div id="step4-main">
 <!-- Penilaian Peringkat Pertama -->
@@ -48,7 +48,50 @@
 <h5 class="fw-bold mt-4">PENILAIAN PERINGKAT KEDUA:</h5>
 
 <div class="mb-3 mt-2">
-    <div class="card-title card-title-grey">SENARAI PEMBEKAL MELEPASI PENILAIAN SPESIFIKASI TEKNIKAL</div>
+    <div class="card-title card-title-grey">SENARAI PEMBEKAL YANG MELEPASI PENILAIAN PENYATA BULANAN BANK</div>
+    <table class="table table-bordered text-center align-middle mt-2">
+        <thead class="table-primary text-white">
+            <tr>
+                <th>BIL</th>
+                <th>ULASAN</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>1/2</td>
+                <td>XXX</td>
+            </tr>
+            <tr>
+                <td>2/2</td>
+                <td>XXX</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<div class="mb-3">
+    <div class="card-title card-title-grey">SENARAI PEMBEKAL TIDAK MELEPASI PENILAIAN PENYATA BULANAN BANK</div>
+    <table class="table table-bordered text-center align-middle mt-2">
+        <thead class="table-primary text-white">
+            <tr>
+                <th>BIL</th>
+                <th>ULASAN</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td colspan="2">Tiada rekod dijumpai</td>
+            </tr>
+        </tbody>
+    </table>
+    <textarea class="form-control mt-2" rows="2">Sehubungan dengan itu, JPT bersetuju untuk mengambil xx penyebut harga iaitu XX untuk ke Penilaian Peringkat Ketiga.</textarea>
+</div>
+
+<!-- Penilaian Peringkat Ketiga -->
+<h5 class="fw-bold mt-4">PENILAIAN PERINGKAT KETIGA:</h5>
+
+<div class="mb-3 mt-2">
+    <div class="card-title card-title-grey">SENARAI PEMBEKAL MELEPASI PENILAIAN KEWANGAN</div>
     <table class="table table-bordered text-center align-middle mt-2">
         <thead class="table-primary text-white">
             <tr>
@@ -60,31 +103,31 @@
         <tbody>
             <tr>
                 <td>1</td>
-                <td>2/2</td>
-                <td>96.87</td>
+                <td>1/2</td>
+                <td>100</td>
             </tr>
             <tr>
                 <td>2</td>
-                <td>1/2</td>
-                <td>91.74</td>
+                <td>2/2</td>
+                <td>100</td>
             </tr>
         </tbody>
     </table>
 
-    <div class="row mt-2">
-        <div class="col-md-4 d-flex align-items-center fw-bold">Penetapan Pemanda Aras Tahap Lulus (%)</div>
-        <div class="col-md-2">
-            <input type="number" class="form-control text-center" value="70">
+    <div class="row mt-2 align-items-center g-2">
+        <div class="col-auto pe-0">Penetapan Penanda Aras Tahap Lulus (%)</div>
+        <div class="col-sm-2 col-md-1">
+            <input type="text" class="form-control form-control-sm text-center" value="51" readonly>
         </div>
     </div>
 </div>
 
 <div class="mb-3">
-    <div class="card-title card-title-grey">SENARAI PEMBEKAL TIDAK MELEPASI PENILAIAN SPESIFIKASI TEKNIKAL</div>
+    <div class="card-title card-title-grey">SENARAI PEMBEKAL TIDAK MELEPASI PENILAIAN KEWANGAN</div>
     <table class="table table-bordered text-center align-middle mt-2">
         <thead class="table-primary text-white">
             <tr>
-                <th>BIL</th>
+                <th>KOD PEMBEKAL</th>
                 <th>JUMLAH SKOR</th>
             </tr>
         </thead>
@@ -116,30 +159,31 @@ Dengan ini, JPT mengesyorkan XX (bil) untuk melaksanakan (NAMA PROJEK) untuk dib
 </div>
 
 <!-- Action Buttons -->
-<div class="d-flex justify-content-end gap-2">
-    <button class="btn btn-outline-secondary">Laporan</button>
-    <button id="btnStep4Hantar" class="btn btn-primary">Hantar</button>
+<div class="d-flex justify-content-between align-items-center gap-2 mt-4">
+    <button type="button" id="btnStep4Sebelumnya" class="btn btn-primary btn-sebelumnya">Sebelumnya</button>
+    <div class="d-flex gap-2">
+        <button type="button" class="btn btn-success">Laporan</button>
+        <button type="button" id="btnStep4Hantar" class="btn btn-primary">Hantar</button>
+    </div>
 </div>
 
 </div> {{-- /#step4-main --}}
 
 {{-- Success state after Hantar --}}
 <div id="step4-success" class="d-none" style="min-height:400px;display:flex;align-items:center;justify-content:center;">
-    <div class="card shadow-sm text-center" style="max-width:480px;">
-        <div class="card-body py-5">
-            <div class="mb-3">
-                {{-- Simple celebratory icon substitute --}}
-                <span style="font-size:40px;">🎉</span>
-            </div>
-            <p class="mb-4 fw-semibold">Maklumat telah berjaya dihantar</p>
-            <button type="button" id="btnStep4CloseSuccess" class="btn btn-primary">Tutup</button>
+    <div class="text-center py-5">
+        <div class="mb-4">
+            <img src="{{ asset('success.png') }}" alt="Berjaya dihantar" style="width:90px;max-width:100%;height:auto;">
         </div>
+        <p class="mb-4 fw-semibold" style="font-size:42px;">Maklumat telah berjaya dihantar</p>
+        <button type="button" id="btnStep4CloseSuccess" class="btn btn-primary px-5 py-2">Tutup</button>
     </div>
 </div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const btnHantar = document.getElementById('btnStep4Hantar');
+    const btnSebelumnya = document.getElementById('btnStep4Sebelumnya');
     const mainWrap = document.getElementById('step4-main');
     const successWrap = document.getElementById('step4-success');
     const btnClose = document.getElementById('btnStep4CloseSuccess');
@@ -156,8 +200,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (btnClose) {
         btnClose.addEventListener('click', function () {
-            // Simple behaviour: reload current page
-            window.location.reload();
+            window.location.href = "{{ route('penilaianKewangan') }}";
+        });
+    }
+
+    if (btnSebelumnya) {
+        btnSebelumnya.addEventListener('click', function () {
+            const tab = document.querySelector('#penilaian-tab');
+            if (tab) tab.click();
         });
     }
 
