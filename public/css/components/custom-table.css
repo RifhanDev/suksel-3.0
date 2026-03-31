@@ -1,0 +1,33 @@
+/**
+ * custom-table.css
+ * Reusable custom table component — use .table-modern on any <table>.
+ * Pair with Bootstrap's .table and .table-responsive as needed.
+ */
+
+.table-modern thead th {
+    background-color: #f8fafc;
+    color: #64748b;
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 0.7rem;
+    letter-spacing: 0.5px;
+    padding: 14px 16px;
+    border-bottom: 2px solid #e2e8f0;
+    white-space: nowrap;
+}
+
+.table-modern tbody td {
+    padding: 13px 16px;
+    vertical-align: middle;
+    color: #334155;
+    font-size: 0.875rem;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.table-modern tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.table-modern tbody tr:hover {
+    background-color: #fafbfc;
+}
