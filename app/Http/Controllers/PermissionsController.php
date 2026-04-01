@@ -24,12 +24,13 @@ class PermissionsController extends Controller
 			return Datatables::of($permissions)
 				->addColumn('actions', function ($data) {
 					$actions   = [];
-					$actions[] = $data->canUpdate() ? link_to_route('permissions.edit', 'Kemaskini', $data->id, ['class' => 'btn btn-sm btn-default']) : '';
-					$actions[] = $data->canDelete() ? Former::open(url('permissions/' . $data->id))->class('form-inline')
-						. Former::hidden('_method', 'DELETE')
-						. '<button type="button" class="btn btn-sm btn-danger confirm-delete">Padam</button>'
-						. Former::close() : '';
-					return implode(' ', $actions);
+					$actions[] = $data->canUpdate() ? link_to_route('permissions.edit', 'Kemaskini', $data->id, ['class' => 'btn btn-sm btn-warning rounded-8 px-3']) : '';
+					$actions[] = $data->canDelete() ? '<form action="' . url('permissions/' . $data->id) . '" method="POST" class="d-inline m-0">'
+						. csrf_field()
+						. method_field('DELETE')
+						. '<button type="button" class="btn btn-sm btn-danger rounded-8 px-3 confirm-delete">Padam</button>'
+						. '</form>' : '';
+					return '<div class="d-flex gap-2 flex-wrap justify-content-center">' . implode('', $actions) . '</div>';
 				})
 				->removeColumn('id')
 				->rawColumns(['group_name', 'name', 'display_name', 'actions'])

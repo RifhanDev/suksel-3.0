@@ -1,4 +1,4 @@
-@extends('layouts.modern')
+@extends('layouts.v3.master')
 
 @section('styles')
 	<style>
@@ -113,7 +113,7 @@
 	<script>
 		$("#year_summary").change(function() {
 			var url =
-			"{{ route('report.vendor.summary', ['year' => ':year', 'vendor_id' => ':vendor_id']) }}"; // get selected value
+				"{{ route('report.vendor.summary', ['year' => ':year', 'vendor_id' => ':vendor_id']) }}"; // get selected value
 			url = url.replace(':year', $(this).val());
 			url = url.replace(':vendor_id', vendor_id);
 			if (url) { // require a URL

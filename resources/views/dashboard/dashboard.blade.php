@@ -1,4 +1,4 @@
-@extends('layouts.modern')
+@extends('layouts.v3.master')
 
 @section('content')
 	<div class="row">
@@ -321,7 +321,7 @@
 						@endforeach
 					</div>
 					<!-- <div class="list-group">
-																	</div> -->
+																		</div> -->
 				</div>
 				<a class="btn btn-block btn-lg blue">Lihat Semua</a>
 			</div>

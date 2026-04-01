@@ -12,9 +12,11 @@ use App\UserHistory;
 use App\Mail\ConfirmRegistration;
 use Carbon\Carbon;
 use Crypt;
+use App\Traits\Helper;
 
 class UsersController extends Controller
 {
+	use Helper;
 	public $set_password_message            = 'Kata Laluan disimpan.';
 	public $set_confirmation_message        = 'Pengguna diaktifkan.';
 	public $change_password_invalid_message = 'Kata Lalauan lama tidak sah.';
@@ -78,11 +80,11 @@ class UsersController extends Controller
 				})
 				->addColumn('actions', function ($data) {
 					$actions = [];
-					$actions[] = $data->canShow() ? link_to_route('users.edit', 'Kemaskini', $data->id, ['class' => 'btn btn-xs btn-primary']) : '';
-					$actions[] = $data->canShow() ? link_to_route('users.histories', 'Aktiviti Pengguna', $data->id, ['class' => 'btn btn-xs btn-success']) : '';
-					$actions[] = $data->canLogin() ? link_to_route('users.login', 'Login Sebagai', $data->id, ['class' => 'btn btn-xs btn-danger']) : '';
+					$actions[] = $data->canShow() ? link_to_route('users.edit', 'Kemaskini', $data->id, ['class' => 'btn btn-sm btn-warning rounded-8 px-3']) : '';
+					$actions[] = $data->canShow() ? link_to_route('users.histories', 'Aktiviti Pengguna', $data->id, ['class' => 'btn btn-sm btn-info text-white rounded-8 px-3']) : '';
+					$actions[] = $data->canLogin() ? link_to_route('users.login', 'Login Sebagai', $data->id, ['class' => 'btn btn-sm btn-danger rounded-8 px-3']) : '';
 
-					return '<div class="btn-group">' . implode(' ', $actions) . '</div>';
+					return '<div class="d-flex flex-wrap justify-content-center gap-2 mx-auto" style="width: 280px;">' . implode('', $actions) . '</div>';
 				})
 				->removeColumn('id')
 				->removeColumn('last_name')
@@ -118,19 +120,56 @@ class UsersController extends Controller
 	public function store(Request $request)
 	{
 
-		User::setRules('store');
 		$data = $request->all();
 		if (!User::canCreate()) {
 			return $this->_access_denied();
 		}
 
+		$passwordOption = $request->input('password_option', 'assign');
+
+		// If password_option is 'reset', make password optional
+		if ($passwordOption === 'reset') {
+			$rules = User::$_rules['storeUser'];
+			unset($rules['password']);
+			unset($rules['password_confirmation']);
+			User::setRules('storeUser');
+			User::$rules = $rules;
+		} else {
+			User::setRules('store');
+		}
+
+		// Validate the request
+		$validator = Validator::make($data, User::$rules);
+		if ($validator->fails()) {
+			return redirect()->back()->withErrors($validator)->withInput();
+		}
+
 		$data['name']      = $data['name'];
 		$data['username']  = $data['email'];
-		$data['confirmed'] = 1;
+		// Pengguna baharu perlu sahkan emel sebelum akaun diaktifkan
+		$data['confirmed'] = 0;
 		$data['roles']     = isset($data['roles']) ? $data['roles'] : [];
 
 		if (isset($data['organization_unit_id']) && empty($data['organization_unit_id'])) {
 			$data['organization_unit_id'] = null;
+		}
+		if (isset($data['ic_number'])) {
+			$data['ic_number'] = trim($data['ic_number']);
+			if ($data['ic_number'] === '') {
+				$data['ic_number'] = null;
+			}
+		}
+		if (isset($data['gred'])) {
+			$data['gred'] = trim($data['gred']);
+			if ($data['gred'] === '') {
+				$data['gred'] = null;
+			}
+		}
+		if (isset($data['jawatan'])) {
+			$data['jawatan'] = trim($data['jawatan']);
+			if ($data['jawatan'] === '') {
+				$data['jawatan'] = null;
+			}
 		}
 
 		if (!auth()->user()->hasRole('Admin')) {
@@ -139,14 +178,43 @@ class UsersController extends Controller
 
 		$user = new User;
 		$user->fill($data);
-		$user->password = Hash::make($request->password);
+		// Jana kod pengesahan untuk emel pengesahan
+		$user->confirmation_code = md5(uniqid(mt_rand(), true));
+
+		if ($passwordOption === 'reset') {
+			// Generate a random temporary password that user will never use
+			$user->password = Hash::make(\Illuminate\Support\Str::random(32));
+			$user->password_changed_at = null; // User hasn't set password yet
+		} else {
+			$user->password = Hash::make($request->password);
+			$user->password_changed_at = now();
+		}
+
 		if (!$user->save()) {
 			return $this->_validation_error($user);
 		}
 		$user->roles()->sync($data['roles']);
+
+		// fix bug: send ARR email immediately after user created without waiting queue
+		if ($user->organization_unit_id) {
+			// Refresh user to ensure we have the latest data from database
+			$user->refresh();
+
+			$to = trim($user->email);
+			$subject = 'Permintaan Semakan Akaun Pengguna Oleh Sistem Tender ' . $user->name;
+			$send_status = $this->sendMail("html", $to, $subject, "", "users.emails.account-review-request", ['emailUser' => $user]);
+
+			$user->arr_sent_at = Carbon::now();
+			$user->arr = 0;
+			$user->save();
+		}
+		////////////////////////////////////////////////////////////////////////////////
+
 		if ($request->ajax()) {
 			return response()->json($user, 201);
 		}
+
+		// dd($user);
 
 		return redirect('users')->with('success', $this->created_message);
 	}
@@ -212,6 +280,24 @@ class UsersController extends Controller
 			}
 			if (isset($data['organization_unit_id']) && empty($data['organization_unit_id'])) {
 				$data['organization_unit_id'] = null;
+			}
+			if (isset($data['ic_number'])) {
+				$data['ic_number'] = trim($data['ic_number']);
+				if ($data['ic_number'] === '') {
+					$data['ic_number'] = null;
+				}
+			}
+			if (isset($data['gred'])) {
+				$data['gred'] = trim($data['gred']);
+				if ($data['gred'] === '') {
+					$data['gred'] = null;
+				}
+			}
+			if (isset($data['jawatan'])) {
+				$data['jawatan'] = trim($data['jawatan']);
+				if ($data['jawatan'] === '') {
+					$data['jawatan'] = null;
+				}
 			}
 
 			if (!$user->canUpdate()) {
@@ -283,6 +369,7 @@ class UsersController extends Controller
 		} else {
 
 			$user->password = Hash::make($request->password);
+			$user->password_changed_at = now();
 			$user->save();
 
 			if ($user->hasRole('Vendor')) {
@@ -294,6 +381,42 @@ class UsersController extends Controller
 			UserHistory::log($user->id, 'password-update', auth()->user()->id);
 
 			return $redirect->with('success', $this->set_password_message);
+		}
+	}
+
+	/**
+	 * Send reset password email to user (for Admin/Agency Admin)
+	 */
+	public function sendResetPasswordEmail($id)
+	{
+		$user = User::findOrFail($id);
+
+		// Check if current user has permission (Admin or Agency Admin)
+		if (!auth()->user()->hasRole('Admin') && !auth()->user()->hasRole('Agency Admin')) {
+			return $this->_access_denied();
+		}
+
+		// Agency Admin can only send to users in their organization
+		if (auth()->user()->hasRole('Agency Admin') && !auth()->user()->hasRole('Admin')) {
+			if ($user->organization_unit_id != auth()->user()->organization_unit_id) {
+				return $this->_access_denied();
+			}
+		}
+
+		try {
+			Mail::to($user)->send(new \App\Mail\ForgotPassword($user));
+			UserHistory::log($user->id, 'password-reset-sent', auth()->user()->id);
+
+			if ($user->hasRole('Vendor')) {
+				$redirect = redirect('vendors/' . $user->vendor_id);
+			} else {
+				$redirect = redirect('users/' . $user->id . '/edit');
+			}
+
+			return $redirect->with('success', 'Emel reset kata laluan telah dihantar kepada pengguna.');
+		} catch (\Exception $e) {
+			\Log::error('Failed to send password reset email: ' . $e->getMessage());
+			return redirect()->back()->with('error', 'Gagal menghantar emel reset kata laluan. Sila cuba lagi.');
 		}
 	}
 
@@ -367,7 +490,7 @@ class UsersController extends Controller
 		} elseif ($user->ability(['Admin', 'Registration Assessor', 'Admin UPEN'], [])) {
 			$redirect = redirect('vendors');
 		} else {
-			$redirect = redirect('agencies/' . $user->organization_unit_id);
+			$redirect = redirect('agency/' . $user->organization_unit_id);
 		}
 
 		UserHistory::log($user->id, 'sign-in', $third_party_id);
@@ -402,7 +525,7 @@ class UsersController extends Controller
 					return UserHistory::$types[$history->action];
 				})
 				->editColumn('created_at', function ($history) {
-					return $history->created_at->format('d/m/Y H:i:s');
+					return \Carbon\Carbon::parse($history->created_at)->format('d/m/Y H:i:s');
 				})
 				->editColumn('3p_id', function ($history) {
 					return $history->third_party ? $history->third_party->name : '<span class ="glyphicon glyphicon-remove"></span>';
@@ -478,9 +601,9 @@ class UsersController extends Controller
 				})
 				->addColumn('actions', function ($data) {
 					$actions = [];
-					$actions[] = $data->canShow() ? link_to_route('users.approval', 'Sahkan', $data->id, ['class' => 'btn btn-xs btn-primary']) : '';
+					$actions[] = $data->canShow() ? link_to_route('users.approval', 'Sahkan', $data->id, ['class' => 'btn btn-sm btn-primary rounded-8 px-3']) : '';
 
-					return '<div class="btn-group">' . implode(' ', $actions) . '</div>';
+					return '<div class="d-flex gap-2 flex-wrap">' . implode('', $actions) . '</div>';
 				})
 				->removeColumn('id')
 				->removeColumn('last_name')
@@ -622,14 +745,14 @@ class UsersController extends Controller
 			->get();
 
 		foreach ($users as $user) {
-			// Mail::send('users.emails.account-review-request', ['user' => $user], function ($message) use ($user) {
+			// Mail::send('users.emails.account-review-request', ['emailUser' => $user], function ($message) use ($user) {
 			//     $message->to($user->email);
 			//     $message->subject('Permintaan Semakan Akaun Oleh Sistem Tender');
 			// });
 
 			$to			= trim($user->email);
 			$subject 	= 'Permintaan Semakan Akaun Oleh Sistem Tender';
-			$send_status = $this->sendMail("html", $to, $subject, "", "users.emails.account-review-request", ['user' => $user]);
+			$send_status = $this->sendMail("html", $to, $subject, "", "users.emails.account-review-request", ['emailUser' => $user]);
 
 			$user->arr_sent_at = Carbon::now();
 			$user->arr = 0; // Jika user lebih dari 3 bulan akan bertukar tidak disemak

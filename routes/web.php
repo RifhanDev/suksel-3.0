@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\BotManController;
 use App\Http\Controllers\PetenderPerformanceController;
 use App\Http\Controllers\HomeController;
@@ -12,6 +13,7 @@ use App\Http\Controllers\BannersController;
 use App\Http\Controllers\TendersController;
 use App\Http\Controllers\FpxController;
 use App\Http\Controllers\EbpgController;
+use App\Http\Controllers\DuitNowController;
 use App\Http\Controllers\TransactionsController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\ProfileController;
@@ -20,101 +22,14 @@ use App\Http\Controllers\VendorsController;
 use App\Http\Controllers\SubscriptionsController;
 use App\Http\Controllers\VendorBlacklistsController;
 use App\Http\Controllers\CodeRequestsController;
-// Controllers that don't exist - commented out
-// use App\Http\Controllers\SettingsController;
-// use App\Http\Controllers\ReportsController;
 use App\Http\Controllers\SmtpMailController; // Note: SmtpMailController (not SmtpMailsController)
-// Controllers that don't exist - commented out
-// use App\Http\Controllers\TenderCategoriesController;
-// use App\Http\Controllers\TenderTypesController;
-// use App\Http\Controllers\OrganizationUnitTypesController;
 use App\Http\Controllers\StatesController;
 use App\Http\Controllers\CountriesController;
-// Controllers that don't exist - commented out
-// use App\Http\Controllers\TenderStatusesController;
-// use App\Http\Controllers\TenderSubmissionsController;
-// use App\Http\Controllers\TenderVendorsController;
-// use App\Http\Controllers\TenderInvitesController;
-// use App\Http\Controllers\TenderFilesController;
-// use App\Http\Controllers\TenderCodesController;
-// use App\Http\Controllers\TenderExceptionsController;
-// use App\Http\Controllers\TenderPricesController;
-// use App\Http\Controllers\TenderWinnersController;
-// use App\Http\Controllers\TenderCommentsController;
-// use App\Http\Controllers\TenderReportsController;
-// use App\Http\Controllers\TenderAnalyticsController;
-// use App\Http\Controllers\TenderNotificationsController;
-// use App\Http\Controllers\TenderAuditController;
-// use App\Http\Controllers\TenderExportController;
-// use App\Http\Controllers\TenderImportController;
-// use App\Http\Controllers\TenderBackupController;
-// use App\Http\Controllers\TenderRestoreController;
-// use App\Http\Controllers\TenderArchiveController;
-// use App\Http\Controllers\TenderUnarchiveController;
-// use App\Http\Controllers\TenderCloneController;
-// use App\Http\Controllers\TenderTemplateController;
-// use App\Http\Controllers\TenderWorkflowController;
-// use App\Http\Controllers\TenderApprovalController;
-// use App\Http\Controllers\TenderRejectionController;
-// use App\Http\Controllers\TenderRevisionController;
-// use App\Http\Controllers\TenderVersionController;
-// use App\Http\Controllers\TenderHistoryController;
-// use App\Http\Controllers\TenderLogController;
-// use App\Http\Controllers\TenderActivityController;
-// use App\Http\Controllers\TenderEventController;
-// use App\Http\Controllers\TenderReminderController;
-// use App\Http\Controllers\TenderAlertController;
-// use App\Http\Controllers\TenderNotificationController;
-// use App\Http\Controllers\TenderEmailController;
-// use App\Http\Controllers\TenderSmsController;
-// use App\Http\Controllers\TenderPushController;
-// use App\Http\Controllers\TenderWebhookController;
-// use App\Http\Controllers\TenderApiController;
-// use App\Http\Controllers\TenderIntegrationController;
-// use App\Http\Controllers\TenderSyncController;
-// use App\Http\Controllers\TenderMigrationController;
-// use App\Http\Controllers\TenderUpgradeController;
-// use App\Http\Controllers\TenderMaintenanceController;
-// use App\Http\Controllers\TenderHealthController;
-// use App\Http\Controllers\TenderStatusController;
-// use App\Http\Controllers\TenderMonitorController;
-// use App\Http\Controllers\TenderDashboardController;
-// use App\Http\Controllers\TenderReportController;
-// use App\Http\Controllers\TenderChartController;
-// use App\Http\Controllers\TenderGraphController;
-// use App\Http\Controllers\TenderMetricController;
-// use App\Http\Controllers\TenderKpiController;
-// use App\Http\Controllers\TenderPerformanceController;
-// use App\Http\Controllers\TenderBenchmarkController;
-// use App\Http\Controllers\TenderComparisonController;
-// use App\Http\Controllers\TenderTrendController;
-// use App\Http\Controllers\TenderForecastController;
-// use App\Http\Controllers\TenderPredictionController;
-// use App\Http\Controllers\TenderRecommendationController;
-// use App\Http\Controllers\TenderSuggestionController;
-// use App\Http\Controllers\TenderAdviceController;
-// use App\Http\Controllers\TenderTipController;
-// use App\Http\Controllers\TenderGuideController;
-// use App\Http\Controllers\TenderTutorialController;
-// use App\Http\Controllers\TenderHelpController;
-// use App\Http\Controllers\TenderFaqController;
-// use App\Http\Controllers\TenderSupportController;
-// use App\Http\Controllers\TenderContactController;
-// use App\Http\Controllers\TenderFeedbackController;
-// use App\Http\Controllers\TenderReviewController;
-// use App\Http\Controllers\TenderRatingController;
-// use App\Http\Controllers\TenderCommentController;
-// use App\Http\Controllers\TenderLikeController;
-// use App\Http\Controllers\TenderShareController;
-// use App\Http\Controllers\TenderBookmarkController;
-// use App\Http\Controllers\TenderFavoriteController;
-// use App\Http\Controllers\TenderWatchController;
-// use App\Http\Controllers\TenderSubscribeController;
-// use App\Http\Controllers\TenderFollowController;
-// use App\Http\Controllers\TenderTrackController;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\ManualsController;
 use App\Http\Controllers\CircularController;
+use App\Http\Controllers\VersionHistoryController;
+use App\Http\Controllers\RefKategoriJenisPerolehanController;
 use App\Http\Controllers\ComplaintController;
 use App\Http\Controllers\RefundController;
 use App\Http\Controllers\RejectTemplateController;
@@ -140,6 +55,7 @@ use App\Http\Controllers\CertificationCodesController;
 use App\Http\Controllers\GatewaysController;
 use App\Http\Controllers\PaymentsController;
 use App\Http\Controllers\HelpCategoriesController;
+use App\Http\Controllers\PembelianTerusController;
 use App\Http\Controllers\ReportRevenueController;
 use App\Http\Controllers\ReportAgencyActiveController;
 use App\Http\Controllers\ReportAgencyAllController;
@@ -162,13 +78,50 @@ use App\Http\Controllers\ReportUserActiveController;
 use App\Http\Controllers\ReportVendorDistrictController;
 use App\Http\Controllers\ReportUserActivityController;
 use App\Http\Controllers\ReportUserLoginController;
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\DummyController;
+use App\Http\Controllers\JawatankuasaController;
+use App\Http\Controllers\CutOffController;
+use App\Http\Controllers\PenilaianTeknikalController;
+use App\Http\Controllers\PerakuanJabatanController;
 
 // Basic routes to get the application running
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('prices', [HomeController::class, 'prices']);
 Route::get('results', [HomeController::class, 'results']);
 Route::get('privacy', [HomeController::class, 'privacy']);
+
+// Place 3.0 Modules Routes Temporarily Here
+Route::view('/jawatankuasa-spesifikasi/senarai-teknikal', 'newModule.jawatankuasaSpesifikasi.senarai_teknikal')->name('jawatankuasaSpesifikasi.teknikal');
+Route::view('/jawatankuasa-spesifikasi/senarai-kewangan', 'newModule.jawatankuasaSpesifikasi.senarai_kewangan')->name('jawatankuasaSpesifikasi.kewangan');
+
+Route::get('/cut-off', [CutOffController::class, 'index'])->middleware(['auth'])->name('cutOff.index');
+Route::get('/cut-off/{tender_no}', [CutOffController::class, 'show'])->middleware(['auth'])->name('cutOff.show');
+
+Route::get('/perakuan-jabatan', [PerakuanJabatanController::class, 'index'])->middleware(['auth'])->name('perakuanjabatan.index');
+Route::get('/perakuan-jabatan/{tender_no}', [PerakuanJabatanController::class, 'show'])->middleware(['auth'])->name('perakuanjabatan.show');
+Route::view('/perakuan-jabatan/form', 'newModule.perakuanJabatan.form')->name('perakuanJabatan.form');
+Route::view('/perakuan-jabatan/kertas-taklimat', 'newModule.perakuanJabatan.kertas_taklimat')->name('perakuanJabatan.kertasTaklimat');
+Route::view('/perakuan-jabatan/pengesyoran-pembekal', 'newModule.perakuanJabatan.pengesyoran_pembekal')->name('perakuanJabatan.pengesyoranPembekal');
+
+Route::view('/jawatankuasa-perolehan/index', 'newModule.jawatankuasaPerolehan.index')->name('jawatankuasaPerolehan.index');
+Route::view('/jawatankuasa-perolehan/form', 'newModule.jawatankuasaPerolehan.form')->name('jawatankuasaPerolehan.form');
+
+Route::view('/eBidding/index', 'newModule.eBidding.index')->name('eBidding.index');
+Route::view('/keputusan-mesyuarat', 'newModule.eBidding.keptusan_mesyuarat')->name('keputusanMesyuarat');
+
+Route::prefix('pembelian-terus')->controller(PembelianTerusController::class)->group(function () {
+	Route::get('/cipta-projek', 'createProject')->name('pembelianTerus.createProject');
+	Route::get('/sebut-harga', 'quoteProject')->name('pembelianTerus.quoteProject');
+	Route::get('/maklumat-projek/{tender_no}', 'detailProject')->name('pembelianTerus.detailProject');
+	Route::get('/cut-off-projek', 'cutOffProject')->name('pembelianTerus.cutOffProject');
+	Route::get('/cut-off-details/{tender_no}', 'cutOffDetails')->name('pembelianTerus.cutOffDetails');
+	Route::get('/pemilihan-syarikat', 'pemilihanSyarikat')->name('pembelianTerus.pemilihanSyarikat');
+	Route::get('/pemilihan-syarikat-details/{tender_no}', 'pemilihanSyarikatDetails')->name('pembelianTerus.pemilihanSyarikatDetails');
+	Route::get('/keputusan-syarikat', 'keputusanSyarikat')->name('pembelianTerus.keputusanSyarikat');
+	Route::get('/keputusan-syarikat-details/{tender_no}', 'keputusanSyarikatDetails')->name('pembelianTerus.keputusanSyarikatDetails');
+	Route::get('/surat-setuju-terima/{tender_no}', 'downloadSuratSetujuTerima')->name('pembelianTerus.downloadSuratSetujuTerima');
+});
+
 
 // Public resources
 Route::resource('comments', CommentsController::class);
@@ -179,9 +132,7 @@ Route::get('/agencies/{id}/report/{tender}', [OrganizationUnitsController::class
 Route::resource('agencies', OrganizationUnitsController::class);
 Route::get('helps/search', [HelpsController::class, 'search']);
 Route::resource('helps', HelpsController::class);
-Route::get('manuals/{manual}', [HomeController::class, 'manualShow'])->name('manuals.show');
-// ManualsController exists but route handled by HomeController
-// Route::resource('manuals', ManualsController::class);
+Route::resource('manuals', ManualsController::class);
 
 // Company search
 Route::get('company_search', [HomeController::class, 'companySearch']);
@@ -192,6 +143,9 @@ Route::get('change_email', [HomeController::class, 'changeEmail']);
 Route::post('change_email', [HomeController::class, 'doChangeEmail']);
 Route::get('change_email/{token}', [HomeController::class, 'verifyChangeEmail'])->name('verify_change_email');
 
+// Account review (public - accessible from email link)
+Route::get('users/{user}/account-review', [UsersController::class, 'accountReview'])->name('users.account-review');
+
 // Registration routes
 Route::get('register', [RegistrationController::class, 'register'])->name('registration');
 Route::post('register', [RegistrationController::class, 'storeRegister']);
@@ -201,6 +155,8 @@ Route::post('register-user', [RegistrationController::class, 'storeRegisterUser'
 // Auth routes
 Route::get('auth/login', [AuthController::class, 'login'])->name('login');
 Route::post('auth/login', [AuthController::class, 'doLogin']);
+Route::get('auth/2fa/verify', [AuthController::class, 'show2FA'])->name('2fa.verify');
+Route::post('auth/2fa/verify', [AuthController::class, 'verify2FA']);
 Route::get('auth/logout', [AuthController::class, 'logout'])->name('logout');
 Route::get('auth/confirm/{registration_code}', [AuthController::class, 'confirm']);
 Route::get('auth/forgot_password', [AuthController::class, 'forgotPassword']);
@@ -209,12 +165,12 @@ Route::get('auth/reset/{token}', [AuthController::class, 'resetPassword']);
 Route::post('auth/reset', [AuthController::class, 'doResetPassword']);
 
 // Tenders
-Route::get('tenders/select', [TendersController::class, 'select']);
-Route::resource('tenders', TendersController::class);
-Route::get('tenders/{id}/prices', [TendersController::class, 'prices'])->name('tenders.prices');
-Route::get('tenders/{tender_id}/files/{id}', [TendersController::class, 'file'])->name('tenders.files');
-Route::get('tenders/{id}/vendors', [TendersController::class, 'vendors'])->name('tenders.vendors');
-Route::post('tenders/{id}/exception', [TendersController::class, 'exception'])->name('tenders.exception');
+// Route::get('tenders/select', [TendersController::class, 'select']);
+// Route::resource('tenders', TendersController::class);
+// Route::get('tenders/{id}/prices', [TendersController::class, 'prices'])->name('tenders.prices');
+// Route::get('tenders/{tender_id}/files/{id}', [TendersController::class, 'file'])->name('tenders.files');
+// Route::get('tenders/{id}/vendors', [TendersController::class, 'vendors'])->name('tenders.vendors');
+// Route::post('tenders/{id}/exception', [TendersController::class, 'exception'])->name('tenders.exception');
 
 // Petender Performance
 Route::prefix('petenders')->controller(PetenderPerformanceController::class)->group(function () {
@@ -228,23 +184,143 @@ Route::resource('news', NewsController::class);
 // Contact
 Route::get('contact', [HomeController::class, 'contact']);
 
-// Circulars
-Route::get('circulars', [HomeController::class, 'circulars'])->name('circulars.public');
-
-// Aduan (Complaints) - Public
-Route::get('aduan/create', [HomeController::class, 'aduanCreate'])->name('aduan.create');
-
-// Chat Widget
-Route::get('chat_widget', [HomeController::class, 'chatWidget'])->name('chat_widget');
-
 // Payment
 Route::post('payment/fpx/listen', [FpxController::class, 'listen'])->name('fpx.listen');
 
 // Transactions
 Route::post('transactions/{id}/ebpg_requery', [TransactionsController::class, 'ebpg_requery'])->name('transactions.ebpg_requery');
 
+// Circular
+Route::resource('circulars', CircularController::class)->except(['show', 'destroy']);
+Route::get('circulars/{id}/publish', [CircularController::class, 'publish'])->name('circulars.publish');
+Route::get('circulars/list', [CircularController::class, 'public'])->name('circulars.public');
+Route::get('circulars/sort', [CircularController::class, 'sortPosition'])->name('circulars.position');
+Route::post('circulars/sort', [CircularController::class, 'updatePosition'])->name('circulars.update.position');
+
+// Complaint/Aduan
+Route::get('aduan', [ComplaintController::class, 'create'])->name('aduan.create');
+Route::post('aduan', [ComplaintController::class, 'store'])->name('aduan.store');
+Route::get('aduan/list', [ComplaintController::class, 'index'])->name('aduan.index');
+Route::get('aduan/{id}', [ComplaintController::class, 'show'])->name('aduan.show');
+Route::get('aduan/{id}/{status}', [ComplaintController::class, 'updateStatus'])->name('aduan.update.status');
+
+// BotMan
+Route::match(['get', 'post'], 'botman', [BotManController::class, 'handle'])->name('botman');
+Route::get('chat-widget/{chat_id}', [BotManController::class, 'chatWidget'])->withoutMiddleware(['auth'])->name('chat_widget');
+
+// Place 3.0 Modules Routes Temporarily Here
+
+Route::get('/pelantikan-jawatankuasa', [JawatankuasaController::class, 'create'])->middleware(['auth'])->name('pelantikanJawatankuasa');
+Route::get('/pelantikan-jawatankuasa/laporan', [JawatankuasaController::class, 'laporan'])->middleware(['auth'])->name('jawatankuasa.laporan');
+Route::post('/pelantikan-jawatankuasa/hantar-pemakluman', [JawatankuasaController::class, 'hantarPemakluman'])->middleware(['auth'])->name('jawatankuasa.hantarPemakluman');
+Route::view('/senarai-semak', 'newModule.jawatankuasaSpesifikasi.index')->name('senaraiSemak');
+Route::view('/senarai-teknikal', 'newModule.jawatankuasaSpesifikasi.senarai_teknikal')->name('senaraiTeknikal');
+Route::view('/senarai-kewangan', 'newModule.jawatankuasaSpesifikasi.senarai_kewangan')->name('senaraiKewangan');
+Route::view('/templat-spesifikasi', 'newModule.jawatankuasaSpesifikasi.form_spesifikasi')->name('spesifikasiForm');
+Route::view('/pengalaman-kerja', 'newModule.jawatankuasaSpesifikasi.form_pengalaman_kerja')->name('pgmnKerjaForm');
+Route::view('/kerja-dalam-tangan', 'newModule.jawatankuasaSpesifikasi.form_kerja_dalam_tangan')->name('kjDlmTanganForm');
+Route::view('/profil-petender', 'newModule.jawatankuasaSpesifikasi.form_profil_petender')->name('prflPetender');
+Route::view('/jawatankuasa-pembuka', 'newModule.jawatankuasa_pembuka')->name('jawatankuasaPembuka');
+
+// old
+// Route::view('/penilaian-teknikal', 'newModule.penilaian.teknikal')->name('penilaianTeknikal');
+Route::view('/penilaian-teknikal-kerja', 'newModule.penilaian.teknikal_kerja')->name('penilaianTeknikalKerja');
+Route::view('/penilaian-kewangan', 'newModule.penilaian.kewangan')->name('penilaianKewangan');
+
+// new 
+Route::get('/penilaian-teknikal', [PenilaianTeknikalController::class, 'index'])->name('penilaianTeknikal');
+Route::get('/penilaian-teknikal/{tender_no}', [PenilaianTeknikalController::class, 'show'])->name('penilaianTeknikal.show');
+
+Route::view('/penilaian-kewangan-kerja', 'newModule.penilaian.borang1')->name('borang1');
+Route::view('/penilaian-kewangan-kerja-borang2', 'newModule.penilaian.borang2')->name('borang2');
+Route::view('/penilaian-kewangan-kerja-borang3', 'newModule.penilaian.borang3')->name('borang3');
+Route::view('/penilaian-kewangan-kerja-lembaran', 'newModule.penilaian.lembaran')->name('lembaran');
+Route::view('/penilaian-kewangan-kerja-akaun-bank', 'newModule.penilaian.akaun_bank')->name('akaunBank');
+Route::view('/penilaian-kewangan-kerja-bon-saham', 'newModule.penilaian.bon_saham')->name('bonSaham');
+Route::view('/penilaian-kewangan-kerja-borang4', 'newModule.penilaian.borang4')->name('borang4');
+Route::view('/penilaian-kewangan-kerja-borang5', 'newModule.penilaian.borang5')->name('borang5');
+Route::view('/penilaian-kewangan-kerja-borang6', 'newModule.penilaian.borang6')->name('borang6');
+Route::view('/penilaian-kewangan-kerja-borang7-serupa', 'newModule.penilaian.borang7_serupa')->name('serupa');
+Route::view('/penilaian-kewangan-kerja-borang7-sebanding', 'newModule.penilaian.borang7_sebanding')->name('sebanding');
+Route::view('/penilaian-kewangan-kerja-borang8', 'newModule.penilaian.borang8')->name('borang8');
+Route::view('/penilaian-kewangan-kerja-borang9', 'newModule.penilaian.borang9')->name('borang9');
+Route::view('/penilaian-kewangan-kerja-borang9-serupa', 'newModule.penilaian.borang9_serupa')->name('kerjaSerupa');
+Route::view('/penilaian-kewangan-kerja-borang9-sebanding', 'newModule.penilaian.borang9_sebanding')->name('kerjaSebanding');
+Route::view('/penilaian-kewangan-kerja-borang10', 'newModule.penilaian.borang10')->name('borang10');
+Route::view('/penilaian-kewangan-kerja-borang11', 'newModule.penilaian.borang11')->name('borang11');
+Route::view('/penilaian-kewangan-kerja-borang12', 'newModule.penilaian.borang12')->name('borang12');
+Route::view('/penilaian-kewangan-kerja-borang13', 'newModule.penilaian.borang13')->name('borang13');
+Route::view('/penilaian-kewangan-kerja-borang14', 'newModule.penilaian.borang14')->name('borang14');
+Route::view('/penilaian-kewangan-kerja-borang15', 'newModule.penilaian.borang15')->name('borang15');
+
+
+Route::view('/lawatan-tapak', 'newModule.syarikatPembekal.lawatan_tapak')->name('lawatanTapak');
+
+Route::middleware('auth')->group(function () {
+	Route::get('/visits/{visit}/representatives', 'TenderVisitRepresentativeController@index')
+		->name('visits.representatives.index');
+	Route::post('/visits/{visit}/representatives', 'TenderVisitRepresentativeController@store')
+		->name('visits.representatives.store');
+});
+Route::view('/syarat-tender', 'newModule.syarikatPembekal.syarat_tender')->name('syaratTender');
+Route::view('/kod-bidang', 'newModule.syarikatPembekal.kod_bidang')->name('kodBidang');
+
+// Dummy Controller 
+Route::get('/tender/cipta', [DummyController::class, 'create'])->name('tender.create');
+Route::post('/tender/store', [DummyController::class, 'store'])->name('tender.store');
+Route::get('/tender/bekalan', [DummyController::class, 'bekalan'])->name('tender.bekalan');
+Route::get('/tender/kerja', [DummyController::class, 'kerja'])->name('tender.kerja');
+Route::get('/tender/status/{status}', [DummyController::class, 'viewByStatus'])->name('tender.status');
+
 // Protected routes
 Route::middleware(['auth'])->group(function () {
+	// Route::get('tender/select', [TendersController::class, 'select']);
+	Route::resource('tender', TendersController::class);
+	Route::resource('jawatankuasa', JawatankuasaController::class);
+	// Route::get('tender/{id}/prices', [TendersController::class, 'prices'])->name('tenders.prices');
+	// Route::get('tender/{tender_id}/files/{id}', [TendersController::class, 'file'])->name('tenders.files');
+	// Route::get('tender/{id}/vendors', [TendersController::class, 'vendors'])->name('tenders.vendors');
+	// Route::post('tender/{id}/exception', [TendersController::class, 'exception'])->name('tenders.exception');
+
+	// Version 3.0 tender creation routes
+	Route::get('/cipta-tender', [TendersController::class, 'createNew'])->name('ciptaTender');
+	Route::post('/cipta-tender', [TendersController::class, 'storeNew'])->name('storeCiptaTender');
+
+	// Get type of perolehan by kategori jenis perolehan
+	Route::get('/ref/type-of-perolehan-by-kategori', [RefKategoriJenisPerolehanController::class, 'getTypeOfPerolehanByKategori'])->name('getTypeOfPerolehanByKategori');
+
+	Route::resource('vendors', VendorsController::class);
+	Route::get('vendors/select', [VendorsController::class, 'select']);
+	Route::get('vendors/new', [VendorsController::class, 'pendingRegistrationIndex']);
+	Route::get('vendors/approval', [VendorsController::class, 'approvalNew1Index']);
+	Route::get('vendors/changes', [VendorsController::class, 'approvalEdit1Index']);
+	Route::get('vendors/emails', [VendorsController::class, 'emails']);
+	Route::get('vendor/{vendor_id}/approve', [VendorsController::class, 'approve']);
+	Route::post('vendor/{vendor_id}/reject', [VendorsController::class, 'reject']);
+	Route::get('vendors/{vendor}/subscriptions/{id}/receipt', [SubscriptionsController::class, 'receipt'])->name('vendors.subscriptions.receipt');
+	Route::get('vendors/{user}/edit_email', [VendorsController::class, 'editEmail']);
+	Route::put('vendors/{user}/edit_email', [VendorsController::class, 'updateEmail']);
+	Route::get('vendors/{user}/histories', [VendorsController::class, 'histories']);
+	Route::get('vendors/{user}/certificate', [VendorsController::class, 'certificate']);
+	Route::resource('vendor.blacklists', VendorBlacklistsController::class);
+	Route::get('vendor/{vendor}/blacklists/{blacklists}/file', [VendorBlacklistsController::class, 'file'])->name('vendor.blacklists.file');
+	Route::put('vendor/{vendor}/blacklists/{blacklists}/cancel', [VendorBlacklistsController::class, 'cancel'])->name('vendor.blacklists.cancel');
+	Route::get('requests', [CodeRequestsController::class, 'index'])->name('requests.index');
+	Route::get('vendor/{vendor}/requests/{requests}/edit', [CodeRequestsController::class, 'edit'])->name('vendor.requests.edit');
+	Route::put('vendor/{vendor}/requests/{requests}', [CodeRequestsController::class, 'update'])->name('vendor.requests.update');
+	Route::put('vendor/{vendor}/requests/{requests}/approve', [CodeRequestsController::class, 'approve_vendor'])->name('vendor.requests.approve');
+	Route::post('vendor/{vendor}/requests/{requests}/reject', [CodeRequestsController::class, 'reject_vendor'])->name('vendor.requests.reject');
+	Route::get('vendor/{vendor_id}/blacklist', [VendorsController::class, 'blacklist']);
+	Route::put('vendor/{vendor_id}/blacklist', [VendorsController::class, 'doBlacklist']);
+	Route::get('vendor/{vendor_id}/cancelBlacklist', [VendorsController::class, 'cancelBlacklist']);
+
+	Route::get('/agency/{id}', [OrganizationUnitsController::class, 'agency']);
+	Route::get('/agency/{id}/prices', [OrganizationUnitsController::class, 'agencyPrices']);
+	Route::get('/agency/{id}/results', [OrganizationUnitsController::class, 'agencyResults']);
+	Route::get('/agency/{id}/news', [OrganizationUnitsController::class, 'agencyNews']);
+	Route::get('/agency/{id}/report/{tender}', [OrganizationUnitsController::class, 'agencyReport']);
+	Route::resource('agency', OrganizationUnitsController::class);
+
 	Route::get('txn_status/{id}', [HomeController::class, 'txnStatus'])->name('txn_status');
 	Route::get('register/company', [RegistrationController::class, 'company'])->name('company_registration');
 	Route::put('register/company', [RegistrationController::class, 'storeCompany']);
@@ -252,7 +328,10 @@ Route::middleware(['auth'])->group(function () {
 	Route::post('register/payment', [RegistrationController::class, 'storePayment']);
 	Route::get('register/payment_callback/{transaction_id}', [RegistrationController::class, 'callbackPayment']);
 
-	Route::get('dashboard', [HomeController::class, 'dashboard'])->name('dashboard');
+	// Admin dashboard must come before general dashboard route to avoid route conflict
+	Route::get('dashboard/hq', [HomeController::class, 'managementDashboard'])->name('dashboard.hq')->middleware(['role:Admin']);
+
+	Route::get('dashboard/{id?}', [HomeController::class, 'dashboard'])->name('dashboard'); //for vendor
 	Route::get('vendor', [HomeController::class, 'vendor'])->name('vendor');
 	Route::get('renewal', [HomeController::class, 'renewal'])->name('renewal');
 	Route::post('renewal', [HomeController::class, 'storeRenewal']);
@@ -269,11 +348,15 @@ Route::middleware(['auth'])->group(function () {
 	Route::get('tenders/{id}/publishPrices', [TendersController::class, 'publishPrices'])->name('tenders.publishPrices');
 	Route::get('tenders/{id}/publishWinner', [TendersController::class, 'publishWinner'])->name('tenders.publishWinner');
 	Route::get('tenders/{tender_id}/vendor/{id}', [TendersController::class, 'vendor'])->name('tenders.vendor');
-
 	Route::get('tenders/{id}/vendors/print', [TendersController::class, 'printVendors'])->name('tenders.vendors.print');
 	Route::get('tenders/{id}/vendors/template', [TendersController::class, 'template'])->name('tenders.template');
 	Route::post('tenders/bulkUpdate', [TendersController::class, 'bulkUpdate'])->name('tenders.bulkUpdate');
 	Route::get('tenders/{id}/eligibles', [TendersController::class, 'eligibles'])->name('tenders.eligibles');
+	Route::post('tenders/exception/store', [TendersController::class, 'storeException'])->name('tender.store.exception');
+	Route::get('tenders/{id}/exceptions', [TendersController::class, 'exceptions'])->name('tender.exceptions');
+	Route::get('tenders/{id}/approve', [TendersController::class, 'approve_exception'])->name('tender.approve.exception');
+	Route::post('tenders/{id}/reject/{exception_id}', [TendersController::class, 'reject_exception'])->name('tender.reject.exception');
+	Route::get('tenders/{id}/publishPrice', [TendersController::class, 'publishPrice']);
 
 	Route::get('cart', [CartController::class, 'index'])->name('cart');
 	Route::get('cart/clear', [CartController::class, 'clear'])->name('cart.clear');
@@ -288,6 +371,10 @@ Route::middleware(['auth'])->group(function () {
 	Route::put('profile/change_password', [ProfileController::class, 'doChangePassword']);
 	Route::get('profile/release', [ProfileController::class, 'releaseUser'])->name('release_user');
 
+	// User's own complaints (Aduan)
+	Route::get('my-aduan', [ComplaintController::class, 'myComplaints'])->name('my.aduan.index');
+	Route::get('my-aduan/{id}', [ComplaintController::class, 'myComplaintShow'])->name('my.aduan.show');
+
 	// Dashboard fetch routes
 	Route::post('dashboard/fetch/tender', [HomeController::class, 'tender_dashboard'])->name('dashboard.tender');
 	Route::post('dashboard/fetch/tender-summary', [HomeController::class, 'tender_summary_dashboard'])->name('dashboard.tender.summary');
@@ -297,7 +384,7 @@ Route::middleware(['auth'])->group(function () {
 	Route::post('dashboard/fetch/transaction-value-summary', [HomeController::class, 'transaction_value_summary_dashboard'])->name('dashboard.transaction-value.summary');
 
 	// Version histories
-	Route::get('version-histories', [HomeController::class, 'versionHistories'])->name('version-histories');
+	// Route::get('version-histories', [HomeController::class, 'versionHistories'])->name('version-histories');
 
 	// Test routes (keep for now)
 	// Route::get('tenders/send-eligible', [TendersController::class, 'sendEligible']);
@@ -305,17 +392,36 @@ Route::middleware(['auth'])->group(function () {
 	// Iskandar Hantar e-mail Account Review Request kepada User Sistem 
 	Route::get('iskandar', [UsersController::class, 'sendArr']);
 
+	// Vendor resource routes
+	Route::resource('vendor.shareholders', ShareholdersController::class);
+	Route::resource('vendor.directors', DirectorsController::class);
+	Route::resource('vendor.contacts', ContactsController::class);
+	Route::resource('vendor.awards', AwardsController::class);
+	Route::resource('vendor.projects', ProjectsController::class);
+	Route::resource('vendor.products', ProductsController::class);
+	Route::resource('vendor.assets', AssetsController::class);
+	Route::resource('vendor.remarks', RemarksController::class);
+	Route::resource('vendor.subscriptions', SubscriptionsController::class);
+
+	Route::get('vendor/{vendor}/requests', [CodeRequestsController::class, 'index'])->name('vendor.requests.index');
+	Route::get('vendor/{vendor}/requests/create', [CodeRequestsController::class, 'create'])->name('vendor.requests.create');
+	Route::post('vendor/{vendor}/requests', [CodeRequestsController::class, 'store'])->name('vendor.requests.store');
+	Route::get('vendor/{vendor}/requests/{requests}', [CodeRequestsController::class, 'show'])->name('vendor.requests.show');
+	Route::delete('vendor/{vendor}/requests/{requests}', [CodeRequestsController::class, 'destroy'])->name('vendor.requests.destroy');
+
 	// Admin routes
 	Route::middleware(['role:Admin'])->group(function () {
+		Route::get('dashboard/hq', [HomeController::class, 'managementDashboard'])->name('dashboard.hq');
+
 		Route::get('users/pending-approval', [UsersController::class, 'pendingApproval'])->name('users.pending-approval');
 		Route::get('users/{user}/approval', [UsersController::class, 'approval'])->name('users.approval');
 		Route::put('users/{user}/approval', [UsersController::class, 'storeApproval'])->name('users.store-approval');
-		Route::get('users/{user}/account-review', [UsersController::class, 'accountReview'])->name('users.account-review');
 		Route::get('users/{user}/histories', [UsersController::class, 'histories'])->name('users.histories');
 		Route::get('users/{user}/login', [UsersController::class, 'doLogin'])->name('users.login');
 		Route::put('users/{user}/confirm', [UsersController::class, 'confirm']);
 		Route::get('users/{user}/reset_password', [UsersController::class, 'getSetPassword'])->name('user.reset-password');
 		Route::put('users/{user}/reset_password', [UsersController::class, 'putSetPassword']);
+		Route::get('users/{user}/send_reset_password', [UsersController::class, 'sendResetPasswordEmail'])->name('user.send-reset-password');
 		Route::put('users/{user}/confirm', [UsersController::class, 'putSetConfirmation']);
 		Route::get('users/{user}/resend_confirmation', [UsersController::class, 'resendConfirmation']);
 		Route::resource('users', UsersController::class);
@@ -323,62 +429,13 @@ Route::middleware(['auth'])->group(function () {
 		Route::post('user/byagency', [UsersController::class, 'getUserByAgencies'])->name('user.by.agency');
 		Route::post('user/byid', [UsersController::class, 'getUserById'])->name('user.by.id');
 
-		Route::get('vendors/select', [VendorsController::class, 'select']);
-		Route::get('vendors', [VendorsController::class, 'index'])->name('vendors.index');
-		Route::get('vendors/new', [VendorsController::class, 'pendingRegistrationIndex']);
-		Route::get('vendors/create', [VendorsController::class, 'create']);
-		Route::get('vendors/approval', [VendorsController::class, 'approvalNew1Index']);
-		Route::get('vendors/changes', [VendorsController::class, 'approvalEdit1Index']);
-		Route::get('vendors/emails', [VendorsController::class, 'emails']);
 
-		Route::get('vendor/{vendor_id}/approve', [VendorsController::class, 'approve']);
-		Route::post('vendor/{vendor_id}/reject', [VendorsController::class, 'reject']);
-		Route::get('vendor/{vendor_id}/blacklist', [VendorsController::class, 'blacklist']);
-		Route::put('vendor/{vendor_id}/blacklist', [VendorsController::class, 'doBlacklist']);
-		Route::get('vendor/{vendor_id}/cancelBlacklist', [VendorsController::class, 'cancelBlacklist']);
-
-		Route::get('vendors/{vendor}/subscriptions/{id}/receipt', [SubscriptionsController::class, 'receipt'])->name('vendors.subscriptions.receipt');
-		Route::get('vendors/{user}/edit_email', [VendorsController::class, 'editEmail']);
-		Route::put('vendors/{user}/edit_email', [VendorsController::class, 'updateEmail']);
-		Route::get('vendors/{user}/histories', [VendorsController::class, 'histories']);
-		Route::get('vendors/{user}/certificate', [VendorsController::class, 'certificate']);
-
-		Route::get('vendor/{vendor}/blacklists', [VendorBlacklistsController::class, 'index'])->name('vendor.blacklists');
-		Route::get('vendor/{vendor}/blacklists/create', [VendorBlacklistsController::class, 'create'])->name('vendor.blacklists.create');
-		Route::post('vendor/{vendor}/blacklists', [VendorBlacklistsController::class, 'store'])->name('vendor.blacklists.store');
-		Route::get('vendor/{vendor}/blacklists/{blacklists}', [VendorBlacklistsController::class, 'show'])->name('vendor.blacklists.show');
-		Route::get('vendor/{vendor}/blacklists/{blacklists}/edit', [VendorBlacklistsController::class, 'edit'])->name('vendor.blacklists.edit');
-		Route::put('vendor/{vendor}/blacklists/{blacklists}', [VendorBlacklistsController::class, 'update'])->name('vendor.blacklists.update');
-		Route::delete('vendor/{vendor}/blacklists/{blacklists}', [VendorBlacklistsController::class, 'destroy'])->name('vendor.blacklists.destroy');
-		Route::get('vendor/{vendor}/blacklists/{blacklists}/file', [VendorBlacklistsController::class, 'file'])->name('vendor.blacklists.file');
-		Route::put('vendor/{vendor}/blacklists/{blacklists}/cancel', [VendorBlacklistsController::class, 'cancel'])->name('vendor.blacklists.cancel');
-		Route::get('vendor/{vendor}/blacklists/{blacklists}/unblacklist', [VendorBlacklistsController::class, 'unblacklist'])->name('vendor.blacklists.unblacklist');
-
-		Route::get('requests', [CodeRequestsController::class, 'index'])->name('requests.index');
-		Route::get('vendor/{vendor}/requests', [CodeRequestsController::class, 'index'])->name('vendor.requests.index');
-		Route::get('vendor/{vendor}/requests/create', [CodeRequestsController::class, 'create'])->name('vendor.requests.create');
-		Route::post('vendor/{vendor}/requests', [CodeRequestsController::class, 'store'])->name('vendor.requests.store');
-		Route::get('vendor/{vendor}/requests/{requests}', [CodeRequestsController::class, 'show'])->name('vendor.requests.show');
-		Route::get('vendor/{vendor}/requests/{requests}/edit', [CodeRequestsController::class, 'edit'])->name('vendor.requests.edit');
-		Route::put('vendor/{vendor}/requests/{requests}', [CodeRequestsController::class, 'update'])->name('vendor.requests.update');
-		Route::delete('vendor/{vendor}/requests/{requests}', [CodeRequestsController::class, 'destroy'])->name('vendor.requests.destroy');
-		Route::put('vendor/{vendor}/requests/{requests}/approve', [CodeRequestsController::class, 'approve_vendor'])->name('vendor.requests.approve');
-		Route::post('vendor/{vendor}/requests/{requests}/reject', [CodeRequestsController::class, 'reject_vendor'])->name('vendor.requests.reject');
 
 		Route::get('requests/show/{request_id}', [CodeRequestsController::class, 'showAll'])->name('requests.showAll');
 		Route::put('requests/{requests}/approve', [CodeRequestsController::class, 'approve'])->name('requests.approve');
 		Route::post('requests/{requests}/reject', [CodeRequestsController::class, 'reject'])->name('requests.reject');
 
-		// Vendor resource routes
-		Route::resource('vendor.shareholders', ShareholdersController::class);
-		Route::resource('vendor.directors', DirectorsController::class);
-		Route::resource('vendor.contacts', ContactsController::class);
-		Route::resource('vendor.awards', AwardsController::class);
-		Route::resource('vendor.projects', ProjectsController::class);
-		Route::resource('vendor.products', ProductsController::class);
-		Route::resource('vendor.assets', AssetsController::class);
-		Route::resource('vendor.remarks', RemarksController::class);
-		Route::resource('vendor.subscriptions', SubscriptionsController::class);
+
 
 		Route::post('transactions/ajax', [TransactionsController::class, 'updateFpxCount'])->name('updateFpxCount');
 		Route::get('transactions/subscription', [TransactionsController::class, 'subscriptionIndex']);
@@ -396,6 +453,10 @@ Route::middleware(['auth'])->group(function () {
 		Route::get('transactions/{id}/temp_receipt', [TransactionsController::class, 'temp_receipt'])->name('transactions.temp_receipt');
 
 		Route::resource('blacklists', VendorBlacklistsController::class);
+		Route::prefix('vendor/{vendor}/blacklists/{blacklists}')->name('vendor.blacklists.')->controller(VendorBlacklistsController::class)->group(function () {
+			Route::put('cancel', 'cancel')->name('cancel');
+			Route::get('unblacklist', 'unblacklist')->name('unblacklist');
+		});
 
 		// Settings - Controller doesn't exist, commented out
 		// Route::get('settings', [SettingsController::class, 'index'])->name('settings');
@@ -416,7 +477,7 @@ Route::middleware(['auth'])->group(function () {
 
 		Route::resource('banners', BannersController::class);
 		Route::get('banners/{id}/publish', [BannersController::class, 'publish'])->name('banners.publish');
-		Route::resource('vendors', VendorsController::class);
+		// Route::resource('vendors', VendorsController::class);
 
 		// Organization Types
 		Route::resource('organizationtypes', OrganizationTypesController::class);
@@ -432,11 +493,6 @@ Route::middleware(['auth'])->group(function () {
 		Route::resource('payments', PaymentsController::class);
 		Route::resource('helpcategories', HelpCategoriesController::class);
 
-		// Tender routes - additional
-		Route::get('tenders/{id}/publish', [TendersController::class, 'publish'])->name('tenders.publish');
-		Route::get('tenders/{id}/publishPrice', [TendersController::class, 'publishPrice']);
-		Route::get('tenders/{id}/publishWinner', [TendersController::class, 'publishWinner'])->name('tenders.publishWinner');
-
 		// News
 		Route::get('news/{id}/publish', [NewsController::class, 'publish'])->name('news.publish');
 
@@ -446,8 +502,9 @@ Route::middleware(['auth'])->group(function () {
 		Route::get('payment/fpx/bank-list', [FpxController::class, 'bankList'])->name('fpx.bank-list');
 		Route::get('payment/ebpg/connect', [EbpgController::class, 'connect'])->name('ebpg.connect');
 		Route::post('payment/ebpg/respond', [EbpgController::class, 'respond'])->name('ebpg.respond');
-
-		Route::get('dashboard/hq', [HomeController::class, 'managementDashboard']);
+		Route::get('payment/duitnow/connect', [DuitNowController::class, 'connect'])->name('duitnow.connect');
+		Route::post('payment/duitnow/respond', [DuitNowController::class, 'respond'])->name('duitnow.respond');
+		Route::post('payment/duitnow/callback', [DuitNowController::class, 'callback'])->name('duitnow.callback');
 
 		// Reports - Individual Report Controllers
 		Route::get('reports/revenue', [ReportRevenueController::class, 'index']);
@@ -547,6 +604,17 @@ Route::middleware(['auth'])->group(function () {
 		Route::get('circulars/sort', [CircularController::class, 'sortPosition'])->name('circulars.position');
 		Route::post('circulars/sort', [CircularController::class, 'updatePosition'])->name('circulars.update.position');
 
+		// Version histories (CRUD – admin)
+		Route::resource('version-histories', VersionHistoryController::class)->names([
+			'index' => 'version-histories.index',
+			'create' => 'version-histories.create',
+			'store' => 'version-histories.store',
+			'show' => 'version-histories.show',
+			'edit' => 'version-histories.edit',
+			'update' => 'version-histories.update',
+			'destroy' => 'version-histories.destroy',
+		]);
+
 		// Refunds
 		Route::prefix('refunds')->group(function () {
 			Route::post('get-transaction', [RefundController::class, 'fetch_transactions'])->name('get_transaction');
@@ -582,10 +650,11 @@ Route::middleware(['auth'])->group(function () {
 		Route::post('aduan', [ComplaintController::class, 'store'])->name('aduan.store');
 		Route::get('aduan/list', [ComplaintController::class, 'index'])->name('aduan.index');
 		Route::get('aduan/{id}', [ComplaintController::class, 'show'])->name('aduan.show');
+		Route::post('aduan/{id}/reply', [ComplaintController::class, 'reply'])->name('aduan.reply');
 		Route::get('aduan/{id}/{status}', [ComplaintController::class, 'updateStatus'])->name('aduan.update.status');
 
 		// BotMan
-		Route::match(['get', 'post'], 'botman', [BotManController::class, 'handle'])->name('botman');
+		Route::match(['get', 'post'], 'botman', [BotManController::class, 'handle'])->withoutMiddleware(['auth'])->name('botman');
 		Route::get('chat-widget/{chat_id}', [BotManController::class, 'chatWidget'])->withoutMiddleware(['auth'])->name('chat_widget');
 
 		// API Token
@@ -610,91 +679,5 @@ Route::middleware(['auth'])->group(function () {
 
 		// Reject Template
 		Route::resource('reject-template', RejectTemplateController::class);
-
-		// Tender resource routes - Controllers don't exist, commented out
-		// Route::resource('tender_categories', TenderCategoriesController::class);
-		// Route::resource('tender_types', TenderTypesController::class);
-		// Route::resource('organization_unit_types', OrganizationUnitTypesController::class);
-		// Route::resource('tender_statuses', TenderStatusesController::class);
-		// Route::resource('tender_submissions', TenderSubmissionsController::class);
-		// Route::resource('tender_vendors', TenderVendorsController::class);
-		// Route::resource('tender_invites', TenderInvitesController::class);
-		// Route::resource('tender_files', TenderFilesController::class);
-		// Route::resource('tender_codes', TenderCodesController::class);
-		// Route::resource('tender_exceptions', TenderExceptionsController::class);
-		// Route::resource('tender_prices', TenderPricesController::class);
-		// Route::resource('tender_winners', TenderWinnersController::class);
-		// Route::resource('tender_comments', TenderCommentsController::class);
-		// Route::resource('tender_reports', TenderReportsController::class);
-		// Route::resource('tender_analytics', TenderAnalyticsController::class);
-		// Route::resource('tender_notifications', TenderNotificationsController::class);
-		// Route::resource('tender_audit', TenderAuditController::class);
-		// Route::resource('tender_export', TenderExportController::class);
-		// Route::resource('tender_import', TenderImportController::class);
-		// Route::resource('tender_backup', TenderBackupController::class);
-		// Route::resource('tender_restore', TenderRestoreController::class);
-		// Route::resource('tender_archive', TenderArchiveController::class);
-		// Route::resource('tender_unarchive', TenderUnarchiveController::class);
-		// Route::resource('tender_clone', TenderCloneController::class);
-		// Route::resource('tender_template', TenderTemplateController::class);
-		// Route::resource('tender_workflow', TenderWorkflowController::class);
-		// Route::resource('tender_approval', TenderApprovalController::class);
-		// Route::resource('tender_rejection', TenderRejectionController::class);
-		// Route::resource('tender_revision', TenderRevisionController::class);
-		// Route::resource('tender_version', TenderVersionController::class);
-		// Route::resource('tender_history', TenderHistoryController::class);
-		// Route::resource('tender_log', TenderLogController::class);
-		// Route::resource('tender_activity', TenderActivityController::class);
-		// Route::resource('tender_event', TenderEventController::class);
-		// Route::resource('tender_reminder', TenderReminderController::class);
-		// Route::resource('tender_alert', TenderAlertController::class);
-		// Route::resource('tender_notification', TenderNotificationController::class);
-		// Route::resource('tender_email', TenderEmailController::class);
-		// Route::resource('tender_sms', TenderSmsController::class);
-		// Route::resource('tender_push', TenderPushController::class);
-		// Route::resource('tender_webhook', TenderWebhookController::class);
-		// Route::resource('tender_api', TenderApiController::class);
-		// Route::resource('tender_integration', TenderIntegrationController::class);
-		// Route::resource('tender_sync', TenderSyncController::class);
-		// Route::resource('tender_migration', TenderMigrationController::class);
-		// Route::resource('tender_upgrade', TenderUpgradeController::class);
-		// Route::resource('tender_maintenance', TenderMaintenanceController::class);
-		// Route::resource('tender_health', TenderHealthController::class);
-		// Route::resource('tender_status', TenderStatusController::class);
-		// Route::resource('tender_monitor', TenderMonitorController::class);
-		// Route::resource('tender_dashboard', TenderDashboardController::class);
-		// Route::resource('tender_report', TenderReportController::class);
-		// Route::resource('tender_chart', TenderChartController::class);
-		// Route::resource('tender_graph', TenderGraphController::class);
-		// Route::resource('tender_metric', TenderMetricController::class);
-		// Route::resource('tender_kpi', TenderKpiController::class);
-		// Route::resource('tender_performance', TenderPerformanceController::class);
-		// Route::resource('tender_benchmark', TenderBenchmarkController::class);
-		// Route::resource('tender_comparison', TenderComparisonController::class);
-		// Route::resource('tender_trend', TenderTrendController::class);
-		// Route::resource('tender_forecast', TenderForecastController::class);
-		// Route::resource('tender_prediction', TenderPredictionController::class);
-		// Route::resource('tender_recommendation', TenderRecommendationController::class);
-		// Route::resource('tender_suggestion', TenderSuggestionController::class);
-		// Route::resource('tender_advice', TenderAdviceController::class);
-		// Route::resource('tender_tip', TenderTipController::class);
-		// Route::resource('tender_guide', TenderGuideController::class);
-		// Route::resource('tender_tutorial', TenderTutorialController::class);
-		// Route::resource('tender_help', TenderHelpController::class);
-		// Route::resource('tender_faq', TenderFaqController::class);
-		// Route::resource('tender_support', TenderSupportController::class);
-		// Route::resource('tender_contact', TenderContactController::class);
-		// Route::resource('tender_feedback', TenderFeedbackController::class);
-		// Route::resource('tender_review', TenderReviewController::class);
-		// Route::resource('tender_rating', TenderRatingController::class);
-		// Route::resource('tender_comment', TenderCommentController::class);
-		// Route::resource('tender_like', TenderLikeController::class);
-		// Route::resource('tender_share', TenderShareController::class);
-		// Route::resource('tender_bookmark', TenderBookmarkController::class);
-		// Route::resource('tender_favorite', TenderFavoriteController::class);
-		// Route::resource('tender_watch', TenderWatchController::class);
-		// Route::resource('tender_subscribe', TenderSubscribeController::class);
-		// Route::resource('tender_follow', TenderFollowController::class);
-		// Route::resource('tender_track', TenderTrackController::class);
 	});
 });

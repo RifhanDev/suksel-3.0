@@ -35,12 +35,10 @@ class CircularController extends Controller
                     $link = ($circular->pdf_link) ? $circular->pdf_link : $circular->file->url . '/' . $circular->file->name;
 
                     $actions   = [];
-                    $actions[] = '<div class="btn-group">';
-                    $actions[] = link_to_route('circulars.edit', 'Kemaskini', $circular->id, ['class' => 'btn btn-xs btn-primary']);
-                    $actions[] = link_to_route('circulars.publish', $circular->published ? 'Batal Siar' : 'Siar', $circular->id, ['class' => 'btn btn-xs btn-danger']);
-                    $actions[] = '<a href="'  . $link . '" class="btn btn-xs btn-success btn-show-circular" target="_blank">Lihat Pekeliling</a>';
-                    $actions[] = '</div>';
-                    return implode(' ', $actions);
+                    $actions[] = link_to_route('circulars.edit', 'Kemaskini', $circular->id, ['class' => 'btn btn-sm btn-warning rounded-8 px-3']);
+                    $actions[] = link_to_route('circulars.publish', $circular->published ? 'Batal Siar' : 'Siar', $circular->id, ['class' => 'btn btn-sm ' . ($circular->published ? 'btn-danger' : 'btn-success') . ' rounded-8 px-3']);
+                    $actions[] = '<a href="javascript:void(0);" data-url="' . $link . '" class="btn btn-sm btn-info rounded-8 px-3 view-pdf-btn">Lihat Pekeliling</a>';
+                    return '<div class="d-flex gap-2 flex-wrap justify-content-center">' . implode('', $actions) . '</div>';
                 })
                 ->removeColumn('id')
                 ->rawColumns(['title', 'published', 'created_at', 'actions'])

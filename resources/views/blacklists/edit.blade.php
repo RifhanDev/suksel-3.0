@@ -1,4 +1,4 @@
-@extends('layouts.modern')
+@extends('layouts.v3.master')
 @section('content')
 	<h2 class="tender-title">{{ $vendor->name }} : Kemaskini Senarai Hitam</h2>
 

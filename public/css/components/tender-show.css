@@ -1,0 +1,614 @@
+/* =========================================
+   TENDER SHOW PAGE — Custom Styles
+   Modern BS5-compatible styling for the
+   tender detail view page.
+   ========================================= */
+
+/* --- Unified Header Card --- */
+.tender-header-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+    padding-top: 1.5rem;
+    overflow: hidden; /* Ensures child elements, like tabs, respect border-radius */
+}
+
+/* --- Page Header (Inside Header Card) --- */
+.tender-page-header {
+    padding: 0 1.5rem;
+    margin-bottom: 0;
+}
+
+.tender-ref-label {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-bottom: 0.35rem;
+}
+
+.tender-type-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: var(--sg-red, #c41e3a);
+    background: rgba(196, 30, 58, 0.07);
+    padding: 0.15em 0.55em;
+    border-radius: 4px;
+}
+
+.tender-ref-sep {
+    color: #cbd5e1;
+    font-size: 0.75rem;
+}
+
+.tender-ref-no {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #64748b;
+    letter-spacing: 0.2px;
+}
+
+.tender-title-main {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.4px;
+    line-height: 1.3;
+    margin: 0;
+}
+
+/* --- Top Navigation Tabs (Flush to Header Card) --- */
+.tender-top-tabs {
+    /* Background and shadow inherited from tender-header-card */
+    padding: 0;
+    margin: 0;
+}
+
+.tender-top-tabs .nav-tabs {
+    border-bottom: none;
+    gap: 0.25rem;
+    padding: 0 1rem;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.tender-top-tabs .nav-tabs::-webkit-scrollbar {
+    height: 3px;
+}
+
+.tender-top-tabs .nav-tabs::-webkit-scrollbar-thumb {
+    background-color: #cbd5e1;
+    border-radius: 4px;
+}
+
+.tender-top-tabs .nav-tabs .nav-link {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #64748b;
+    border: none;
+    padding: 0.85rem 1rem;
+    border-bottom: 2px solid transparent;
+    border-radius: 0;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.tender-top-tabs .nav-tabs .nav-link:hover {
+    color: var(--sg-red, #c41e3a);
+    border-bottom-color: rgba(196, 30, 58, 0.25);
+    background: transparent;
+}
+
+.tender-top-tabs .nav-tabs .nav-link.active {
+    color: var(--sg-red, #c41e3a);
+    border-bottom-color: var(--sg-red, #c41e3a);
+    background: transparent;
+    font-weight: 700;
+}
+
+.tender-top-tabs .nav-tabs .nav-link .badge {
+    font-size: 0.6rem;
+}
+
+/* --- Side Navigation Card Wrapper --- */
+.tender-side-nav-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.03);
+    padding: 0.5rem;
+    margin-bottom: 1rem;
+    position: sticky;
+    top: 1rem;
+}
+
+/* --- Side Navigation Pills (vertical) --- */
+.tender-side-nav .nav-link {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: #64748b;
+    padding: 0.65rem 1rem;
+    border-radius: 8px;
+    margin-bottom: 2px;
+    transition: all 0.2s;
+    border: 1px solid transparent;
+}
+
+.tender-side-nav .nav-link:hover {
+    background: #fef2f2;
+    color: var(--sg-red, #c41e3a);
+}
+
+.tender-side-nav .nav-link.active {
+    background: linear-gradient(135deg, var(--sg-red, #c41e3a), #8b1428);
+    color: #fff;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(196, 30, 58, 0.2);
+}
+
+.tender-side-nav .nav-link.active .badge {
+    background: rgba(255, 255, 255, 0.25) !important;
+    color: #fff !important;
+}
+
+.tender-side-nav .nav-link .badge {
+    font-size: 0.6rem;
+    padding: 0.25em 0.5em;
+}
+
+.tender-side-nav .nav-link.text-danger {
+    color: #ef4444 !important;
+}
+
+.tender-side-nav .nav-link.text-danger.active {
+    color: #fff !important;
+}
+
+/* --- Tab Content Cards --- */
+.tender-tab-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.03);
+    overflow: hidden;
+}
+
+.tender-tab-card .card-header {
+    background: #f8fafc;
+    border-bottom: 1px solid #f1f5f9;
+    padding: 1rem 1.25rem;
+}
+
+.tender-tab-card .card-header .card-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.tender-tab-card .card-body {
+    padding: 1.25rem;
+}
+
+/* --- Info Table --- */
+.tender-info-table {
+    margin-bottom: 0;
+}
+
+.tender-info-table th {
+    background: #f8fafc;
+    color: #64748b;
+    font-weight: 600;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    padding: 0.75rem 1rem;
+    white-space: nowrap;
+    border-color: #f1f5f9;
+    width: 30%;
+}
+
+.tender-info-table td {
+    padding: 0.75rem 1rem;
+    color: #334155;
+    font-size: 0.85rem;
+    border-color: #f1f5f9;
+}
+
+.tender-info-table tr:last-child th,
+.tender-info-table tr:last-child td {
+    border-bottom: none;
+}
+
+/* --- Document Table --- */
+.tender-doc-table {
+    margin-bottom: 0;
+}
+
+.tender-doc-table thead th {
+    background: #f8fafc;
+    color: #64748b;
+    font-weight: 700;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 0.85rem 1rem;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.tender-doc-table tbody td {
+    padding: 0.85rem 1rem;
+    color: #334155;
+    font-size: 0.85rem;
+    vertical-align: middle;
+    border-color: #f1f5f9;
+}
+
+.tender-doc-table tbody tr:hover {
+    background: #fff9f9;
+}
+
+/* --- Action Menu Bar (_menu.blade) --- */
+.tender-menu-bar {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+    margin-bottom: 1rem;
+}
+
+.tender-menu-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.65rem 1rem;
+    border-bottom: 1px solid #f1f5f9;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.tender-menu-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem 1rem;
+    background: #f8fafc;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.tender-agency-link {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: #1e40af;
+    text-decoration: none;
+    gap: 0.4rem;
+    transition: all 0.2s;
+    line-height: 1.3;
+    padding: 0.45rem 0.85rem;
+    border-radius: 8px;
+    background: #eff6ff;
+    border: 1px solid #dbeafe;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.tender-agency-link:hover {
+    background: #fff;
+    border-color: var(--sg-red, #c41e3a);
+    color: var(--sg-red, #c41e3a);
+    box-shadow: 0 4px 12px rgba(196, 30, 58, 0.12);
+    transform: translateY(-1px);
+}
+
+.tender-agency-link strong {
+    color: #1e3a8a; /* darker blue */
+    font-weight: 700;
+}
+
+.tender-agency-link:hover strong {
+    color: var(--sg-red, #c41e3a);
+}
+
+.tender-agency-link svg.ms-1 {
+    transition: transform 0.2s;
+    color: #93c5fd; /* light blue chevron */
+}
+
+.tender-agency-link:hover svg.text-primary,
+.tender-agency-link:hover svg.ms-1 {
+    transform: translateX(3px);
+    color: var(--sg-red, #c41e3a) !important;
+}
+
+/* --- Menu Buttons --- */
+.tender-menu-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 0.4rem 0.85rem;
+    border-radius: 7px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s;
+    line-height: 1.4;
+    white-space: nowrap;
+}
+
+.tender-menu-btn-primary {
+    background: var(--sg-red, #c41e3a);
+    color: #fff;
+    border-color: var(--sg-red, #c41e3a);
+}
+
+.tender-menu-btn-primary:hover {
+    background: #a31830;
+    border-color: #a31830;
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(196, 30, 58, 0.25);
+}
+
+.tender-menu-btn-ghost {
+    background: transparent;
+    color: #64748b;
+    border-color: #e2e8f0;
+}
+
+.tender-menu-btn-ghost:hover {
+    background: #f8fafc;
+    color: #334155;
+    border-color: #cbd5e1;
+}
+
+.tender-menu-btn-ghost.dropdown-toggle::after {
+    display: none;
+}
+
+.tender-status-badges {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.tender-status-badges .badge {
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.4em 0.8em;
+    border-radius: 6px;
+}
+
+/* --- Notification Alerts --- */
+.tender-alerts .alert {
+    font-size: 0.8rem;
+    font-weight: 500;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.5rem;
+    border: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.tender-alerts .alert-danger {
+    background: #fef2f2;
+    color: #991b1b;
+    border-left: 3px solid #ef4444;
+}
+
+.tender-alerts .alert-warning {
+    background: #fffbeb;
+    color: #92400e;
+    border-left: 3px solid #f59e0b;
+}
+
+.tender-alerts .alert-info {
+    background: #eff6ff;
+    color: #1e40af;
+    border-left: 3px solid #3b82f6;
+}
+
+/* --- Performance Evaluation Form --- */
+.eval-form-card {
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+}
+
+.eval-form-card .eval-header {
+    background: #f8fafc;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid #f1f5f9;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.eval-form-card .eval-header:hover {
+    background: #f1f5f9;
+}
+
+.eval-form-card .eval-header h4 {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+
+.eval-form-card .eval-body {
+    padding: 0;
+}
+
+.eval-form-card .table th,
+.eval-form-card .table td {
+    font-size: 0.82rem;
+    padding: 0.65rem 0.75rem;
+    vertical-align: middle;
+    border-color: #f1f5f9;
+}
+
+.eval-form-card .form-check-input {
+    width: 1.1em;
+    height: 1.1em;
+    cursor: pointer;
+}
+
+.eval-form-card .form-check-input:checked {
+    background-color: var(--sg-red, #c41e3a);
+    border-color: var(--sg-red, #c41e3a);
+}
+
+.eval-suggestion-box {
+    border-top: 1px solid #e2e8f0;
+    padding: 1rem 1.25rem;
+    background: #fafbfc;
+}
+
+.eval-suggestion-box h5 {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 0.75rem;
+}
+
+.eval-suggestion-box .form-check {
+    margin-bottom: 0.4rem;
+}
+
+.eval-suggestion-box .form-check-label {
+    font-size: 0.82rem;
+    color: #475569;
+}
+
+/* --- Score Display --- */
+.eval-score-row {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    padding: 1rem 1.25rem;
+    background: #f8fafc;
+    border-top: 1px solid #f1f5f9;
+    font-size: 0.85rem;
+}
+
+.eval-score-row strong {
+    color: #1e293b;
+}
+
+.eval-score-row #sum,
+.eval-score-row #calc {
+    font-weight: 700;
+    color: var(--sg-red, #c41e3a);
+    font-size: 1rem;
+    border: none;
+    background: transparent;
+    width: auto;
+    text-align: center;
+    max-width: 80px;
+}
+
+/* --- Performance Table --- */
+.perf-table thead {
+    background: linear-gradient(135deg, var(--sg-red, #c41e3a), #8b1428);
+}
+
+.perf-table thead th {
+    color: #fff !important;
+    font-weight: 700;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 0.85rem 1rem;
+    border: none;
+}
+
+.perf-table tbody td {
+    padding: 0.85rem 1rem;
+    vertical-align: middle;
+    font-size: 0.85rem;
+    color: #334155;
+    border-color: #f1f5f9;
+}
+
+.perf-table tbody tr:hover {
+    background: #fff9f9;
+}
+
+/* --- Modal --- */
+.modal-tender .modal-content {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+}
+
+.modal-tender .modal-header {
+    background: #f8fafc;
+    border-bottom: 1px solid #f1f5f9;
+    padding: 1rem 1.25rem;
+    border-radius: 12px 12px 0 0;
+}
+
+.modal-tender .modal-header .modal-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.modal-tender .modal-body {
+    padding: 1.25rem;
+}
+
+/* --- Helper: bg-gray for readonly inputs --- */
+.bg-gray {
+    background-color: #f8fafc !important;
+}
+
+.v-table * {
+    vertical-align: middle !important;
+}
+
+/* --- Helper: visibility toggle --- */
+.hidden {
+    margin-top: 0.5rem;
+    display: none;
+}
+
+.display {
+    margin-top: 0.5rem;
+    display: inline-block;
+}
+
+/* --- Responsive --- */
+@media (max-width: 991px) {
+    .tender-side-nav {
+        flex-direction: row !important;
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        gap: 0.25rem;
+        padding-bottom: 0.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .tender-side-nav .nav-link {
+        white-space: nowrap;
+        font-size: 0.75rem;
+        padding: 0.5rem 0.75rem;
+    }
+}

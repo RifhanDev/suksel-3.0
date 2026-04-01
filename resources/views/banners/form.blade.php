@@ -1,232 +1,213 @@
-{!! Former::populate($banner) !!}
+<div class="row g-3">
+    <!-- Title -->
+    <div class="col-12">
+        <label for="title" class="form-label fw-medium small">Tajuk <span class="text-danger">*</span></label>
+        <input type="text" class="form-control" id="title" name="title"
+            value="{{ old('title', $banner->title ?? '') }}" placeholder="Masukkan tajuk banner" required>
+        {!! $errors->first('title', '<div class="text-danger small mt-1">:message</div>') !!}
+    </div>
 
-<div class="card modern-form-card">
-	<div class="card-header">
-		<h3 class="card-title">
-			<i class="ti ti-photo"></i>
-			Maklumat Banner
-		</h3>
-	</div>
-	<div class="card-body">
-		<div class="row">
-			<!-- Title Field -->
-			<div class="col-md-12 mb-3">
-				<label class="form-label required">
-					<i class="ti ti-file-text"></i>
-					Tajuk
-				</label>
-				{!! Former::text('title')->label(false)->placeholder('Masukkan tajuk banner')->required()->class('form-control') !!}
-			</div>
+    <!-- File Upload -->
+    <div class="col-12">
+        <label for="file" class="form-label fw-medium small">
+            Fail Banner
+            @if (!$banner->exists())
+                <span class="text-danger">*</span>
+            @endif
+        </label>
+        <input type="file" class="form-control" id="file" name="file"
+            accept="image/png,image/jpg,image/jpeg" {{ !$banner->exists() ? 'required' : '' }}>
+        <small class="text-muted mt-1 d-block">Format yang diterima: PNG, JPG, JPEG (Maksimum 5MB)</small>
+        {!! $errors->first('file', '<div class="text-danger small mt-1">:message</div>') !!}
+    </div>
 
-			<!-- File Upload Field -->
-			<div class="col-md-12 mb-3">
-				<label class="form-label {{ !$banner->exists() ? 'required' : '' }}">
-					<i class="ti ti-upload"></i>
-					Fail Banner
-				</label>
-				<div class="file-upload-wrapper">
-					<?php
-					$file = Former::file('file')->label(false)->accept('image/png,image/jpg,image/jpeg')->class('form-control');
-					if (!$banner->exists()) {
-					    $file = $file->required();
-					}
-					?>
-					{!! $file !!}
-					<small class="form-hint">Format yang diterima: PNG, JPG, JPEG (Maksimum 5MB)</small>
-				</div>
+    @if ($banner->exists() && $banner->file)
+        <div class="col-12">
+            <label class="form-label fw-medium small">Preview Banner Semasa:</label>
+            <div>
+                <img src="{{ $banner->file->url }}/{{ $banner->file->name }}" alt="{{ $banner->title }}"
+                    class="img-fluid rounded shadow-sm" style="max-height: 200px;">
+            </div>
+        </div>
+    @endif
 
-				@if ($banner->exists() && $banner->file)
-					<div class="mt-3">
-						<div class="preview-banner">
-							<label class="form-label">Preview Banner Semasa:</label>
-							<img src="{{ $banner->file->url }}/{{ $banner->file->name }}" alt="{{ $banner->title }}"
-								class="img-fluid rounded shadow-sm">
-						</div>
-					</div>
-				@endif
-			</div>
+    <!-- Link -->
+    <div class="col-12">
+        <label for="link" class="form-label fw-medium small">Pautan (URL)</label>
+        <input type="text" class="form-control" id="link" name="link"
+            value="{{ old('link', $banner->link ?? '') }}" placeholder="https://contoh.com">
+        <small class="text-muted mt-1 d-block">URL yang akan dibuka apabila banner diklik</small>
+        {!! $errors->first('link', '<div class="text-danger small mt-1">:message</div>') !!}
+    </div>
 
-			<!-- Link Field -->
-			<div class="col-md-12 mb-3">
-				<label class="form-label">
-					<i class="ti ti-link"></i>
-					Pautan (URL)
-				</label>
-				{!! Former::text('link')->label(false)->placeholder('https://contoh.com')->class('form-control') !!}
-				<small class="form-hint">URL yang akan dibuka apabila banner diklik</small>
-			</div>
+    <!-- Date Range -->
+    <div class="col-md-6">
+        <label for="start" class="form-label fw-medium small">Tarikh Mula Paparan</label>
+        <input type="text" class="form-control datepicker" id="start" name="start"
+            value="{{ old('start', $banner->start ? \Carbon\Carbon::parse($banner->start)->format('j M Y') : '') }}"
+            placeholder="Pilih tarikh mula">
+        {!! $errors->first('start', '<div class="text-danger small mt-1">:message</div>') !!}
+    </div>
 
-			<!-- Date Range Fields -->
-			<div class="col-md-6 mb-3">
-				<label class="form-label">
-					<i class="ti ti-calendar"></i>
-					Tarikh Mula Paparan
-				</label>
-				{!! Former::text('start')->label(false)->placeholder('Pilih tarikh mula')->class('form-control datepicker') !!}
-			</div>
+    <div class="col-md-6">
+        <label for="end" class="form-label fw-medium small">Tarikh Tamat Paparan</label>
+        <input type="text" class="form-control datepicker" id="end" name="end"
+            value="{{ old('end', $banner->end ? \Carbon\Carbon::parse($banner->end)->format('j M Y') : '') }}"
+            placeholder="Pilih tarikh tamat">
+        {!! $errors->first('end', '<div class="text-danger small mt-1">:message</div>') !!}
+    </div>
 
-			<div class="col-md-6 mb-3">
-				<label class="form-label">
-					<i class="ti ti-calendar"></i>
-					Tarikh Tamat Paparan
-				</label>
-				{!! Former::text('end')->label(false)->placeholder('Pilih tarikh tamat')->class('form-control datepicker') !!}
-			</div>
-
-			<!-- Published Checkbox -->
-			<div class="col-md-12 mb-3">
-				<div class="form-check form-switch d-flex align-items-start">
-					{!! Former::checkbox('published')->label(false)->class('form-check-input') !!}
-					<div class="ms-3">
-						<label class="form-check-label mb-0">
-							<i class="ti ti-eye me-1"></i>
-							Siar banner ini
-						</label>
-						<small class="form-hint d-block mt-1">Aktifkan untuk memaparkan banner di laman utama</small>
-					</div>
-				</div>
-			</div>
-		</div>
-	</div>
+    <!-- Published Toggle -->
+    <div class="col-12">
+        <div class="form-check form-switch d-flex align-items-start gap-3">
+            <input class="form-check-input mt-1" type="checkbox" id="published" name="published" value="1"
+                {{ old('published', $banner->published ?? false) ? 'checked' : '' }}
+                style="width: 2.5em; height: 1.25em; flex-shrink: 0;">
+            <div>
+                <label class="form-check-label fw-medium small mb-0" for="published">Siar banner ini</label>
+                <small class="text-muted d-block mt-1">Aktifkan untuk memaparkan banner di laman utama</small>
+            </div>
+        </div>
+    </div>
 </div>
 
 <style>
-	/* Datepicker Custom Styling - Light Theme */
-	.datepicker {
-		background: white !important;
-		border: 1px solid #dee2e6 !important;
-		border-radius: 8px !important;
-		padding: 10px !important;
-		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
-	}
+    /* Datepicker Custom Styling - Light Theme */
+    .datepicker {
+        background: white !important;
+        border: 1px solid #dee2e6 !important;
+        border-radius: 8px !important;
+        padding: 10px !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+    }
 
-	.datepicker table {
-		background: white !important;
-	}
+    .datepicker table {
+        background: white !important;
+    }
 
-	.datepicker table tr th,
-	.datepicker table tr td {
-		background: white !important;
-		color: #495057 !important;
-		border-radius: 4px !important;
-	}
+    .datepicker table tr th,
+    .datepicker table tr td {
+        background: white !important;
+        color: #495057 !important;
+        border-radius: 4px !important;
+    }
 
-	.datepicker table tr th {
-		font-weight: 600 !important;
-		color: #667eea !important;
-		background: #f8f9fa !important;
-	}
+    .datepicker table tr th {
+        font-weight: 600 !important;
+        color: #667eea !important;
+        background: #f8f9fa !important;
+    }
 
-	.datepicker thead tr:first-child th {
-		background: #667eea !important;
-		color: white !important;
-		font-weight: 500 !important;
-	}
+    .datepicker thead tr:first-child th {
+        background: #667eea !important;
+        color: white !important;
+        font-weight: 500 !important;
+    }
 
-	.datepicker thead tr:first-child th:hover {
-		background: #5568d3 !important;
-	}
+    .datepicker thead tr:first-child th:hover {
+        background: #5568d3 !important;
+    }
 
-	.datepicker table tr td.day:hover,
-	.datepicker table tr td.focused {
-		background: #e9ecef !important;
-		color: #495057 !important;
-		cursor: pointer !important;
-	}
+    .datepicker table tr td.day:hover,
+    .datepicker table tr td.focused {
+        background: #e9ecef !important;
+        color: #495057 !important;
+        cursor: pointer !important;
+    }
 
-	.datepicker table tr td.active,
-	.datepicker table tr td.active:hover,
-	.datepicker table tr td.active.highlighted {
-		background: #667eea !important;
-		color: white !important;
-		font-weight: 600 !important;
-	}
+    .datepicker table tr td.active,
+    .datepicker table tr td.active:hover,
+    .datepicker table tr td.active.highlighted {
+        background: #667eea !important;
+        color: white !important;
+        font-weight: 600 !important;
+    }
 
-	.datepicker table tr td.today,
-	.datepicker table tr td.today:hover {
-		background: #ffc107 !important;
-		color: white !important;
-		font-weight: 600 !important;
-	}
+    .datepicker table tr td.today,
+    .datepicker table tr td.today:hover {
+        background: #ffc107 !important;
+        color: white !important;
+        font-weight: 600 !important;
+    }
 
-	.datepicker table tr td.today.active {
-		background: #667eea !important;
-		color: white !important;
-	}
+    .datepicker table tr td.today.active {
+        background: #667eea !important;
+        color: white !important;
+    }
 
-	.datepicker table tr td.old,
-	.datepicker table tr td.new {
-		color: #adb5bd !important;
-		background: white !important;
-	}
+    .datepicker table tr td.old,
+    .datepicker table tr td.new {
+        color: #adb5bd !important;
+        background: white !important;
+    }
 
-	.datepicker table tr td.disabled,
-	.datepicker table tr td.disabled:hover {
-		color: #dee2e6 !important;
-		background: white !important;
-		cursor: not-allowed !important;
-	}
+    .datepicker table tr td.disabled,
+    .datepicker table tr td.disabled:hover {
+        color: #dee2e6 !important;
+        background: white !important;
+        cursor: not-allowed !important;
+    }
 
-	.datepicker table tr td span {
-		background: white !important;
-		color: #495057 !important;
-	}
+    .datepicker table tr td span {
+        background: white !important;
+        color: #495057 !important;
+    }
 
-	.datepicker table tr td span:hover,
-	.datepicker table tr td span.focused {
-		background: #e9ecef !important;
-	}
+    .datepicker table tr td span:hover,
+    .datepicker table tr td span.focused {
+        background: #e9ecef !important;
+    }
 
-	.datepicker table tr td span.active,
-	.datepicker table tr td span.active:hover {
-		background: #667eea !important;
-		color: white !important;
-	}
+    .datepicker table tr td span.active,
+    .datepicker table tr td span.active:hover {
+        background: #667eea !important;
+        color: white !important;
+    }
 
-	.datepicker .datepicker-switch,
-	.datepicker .prev,
-	.datepicker .next,
-	.datepicker tfoot tr th {
-		color: #495057 !important;
-		background: white !important;
-	}
+    .datepicker .datepicker-switch,
+    .datepicker .prev,
+    .datepicker .next,
+    .datepicker tfoot tr th {
+        color: #495057 !important;
+        background: white !important;
+    }
 
-	.datepicker .datepicker-switch:hover,
-	.datepicker .prev:hover,
-	.datepicker .next:hover,
-	.datepicker tfoot tr th:hover {
-		background: #e9ecef !important;
-	}
+    .datepicker .datepicker-switch:hover,
+    .datepicker .prev:hover,
+    .datepicker .next:hover,
+    .datepicker tfoot tr th:hover {
+        background: #e9ecef !important;
+    }
 </style>
 
 @section('scripts')
-	@parent
-	<script type="text/javascript">
-		$(document).ready(function() {
-			// File input enhancement
-			$('input[type="file"]').on('change', function() {
-				var fileName = $(this).val().split('\\').pop();
-				if (fileName) {
-					var $hint = $(this).siblings('.form-hint');
-					if ($hint.length) {
-						$hint.text('File dipilih: ' + fileName);
-					}
-				}
-			});
+    @parent
+    <script type="text/javascript">
+        $(document).ready(function() {
+            // File input enhancement
+            $('input[type="file"]').on('change', function() {
+                var fileName = $(this).val().split('\\').pop();
+                if (fileName) {
+                    var $hint = $(this).siblings('.text-muted');
+                    if ($hint.length) {
+                        $hint.first().text('File dipilih: ' + fileName);
+                    }
+                }
+            });
 
-			// Initialize datepicker for date fields
-			$('.datepicker').datepicker({
-				format: 'd M yyyy',
-				autoclose: true,
-				todayHighlight: true,
-				orientation: 'bottom auto'
-			});
+            // Initialize datepicker for date fields
+            $('.datepicker').datepicker({
+                format: 'd M yyyy',
+                autoclose: true,
+                todayHighlight: true,
+                orientation: 'bottom auto'
+            });
 
-			// Set minimum end date based on start date
-			$('input[name="start"]').on('change', function() {
-				var startDate = $(this).datepicker('getDate');
-				$('input[name="end"]').datepicker('setStartDate', startDate);
-			});
-		});
-	</script>
+            // Set minimum end date based on start date
+            $('input[name="start"]').on('change', function() {
+                var startDate = $(this).datepicker('getDate');
+                $('input[name="end"]').datepicker('setStartDate', startDate);
+            });
+        });
+    </script>
 @endsection

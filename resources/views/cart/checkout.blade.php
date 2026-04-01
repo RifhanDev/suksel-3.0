@@ -1,4 +1,4 @@
-@extends('layouts.modern')
+@extends('layouts.v3.master')
 
 @section('content')
 	<h4>Senarai Tempahan</h4>
@@ -95,6 +95,11 @@
 									<a href="#" class="btn bg-blue-steel method-ob" data-value="ebpg">Kad Kredit</a>
 								</div>
 							@endif
+							@if ($duitnow)
+								<div class="btn-group">
+									<a href="#" class="btn btn-success method-ob" data-value="duitnow">DuitNow</a>
+								</div>
+							@endif
 						@else
 							<div class="btn-group">
 								<a href="#" class="btn btn-block bg-primary method-ob" data-value="direct">Teruskan</a>
@@ -109,30 +114,30 @@
 
 			<!-- @if ($fpx)
 	<b>Perbankan Korporat</b>
-				<br><br>
-				<img src="/assets/images/banks/fpx/b2b/abb.png">
-				<img src="/assets/images/banks/fpx/b2b/allianz.png">
-				<img src="/assets/images/banks/fpx/b2b/ambank.png">
-				<img src="/assets/images/banks/fpx/b2b/cimb.png">
-				<img src="/assets/images/banks/fpx/b2b/cimb2.png">
-				<img src="/assets/images/banks/fpx/b2b/hlb.png">
-				<img src="/assets/images/banks/fpx/b2b/kfh.png">
-				<img src="/assets/images/banks/fpx/b2b/m2e.png">
-				<img src="/assets/images/banks/fpx/b2b/pbe.png">
-				<img src="/assets/images/banks/fpx/b2b/rhb.png">
-				<img src="/assets/images/banks/fpx/b2b/uob.png">
-				<br><br><br>
-				<b>Perbankan Peribadi</b>
-				<br><br>
-				<img src="/assets/images/banks/fpx/b2c/ambank.png">
-				<img src="/assets/images/banks/fpx/b2c/bimb.png">
-				<img src="/assets/images/banks/fpx/b2c/cimb.png">
-				<img src="/assets/images/banks/fpx/b2c/hlb.png">
-				<img src="/assets/images/banks/fpx/b2c/m2e.png">
-				<img src="/assets/images/banks/fpx/b2c/m2u.png">
-				<img src="/assets/images/banks/fpx/b2c/pbe.png">
-				<img src="/assets/images/banks/fpx/b2c/rhb.png">
-				<img src="/assets/images/banks/fpx/b2c/uob.png">
+							<br><br>
+							<img src="/assets/images/banks/fpx/b2b/abb.png">
+							<img src="/assets/images/banks/fpx/b2b/allianz.png">
+							<img src="/assets/images/banks/fpx/b2b/ambank.png">
+							<img src="/assets/images/banks/fpx/b2b/cimb.png">
+							<img src="/assets/images/banks/fpx/b2b/cimb2.png">
+							<img src="/assets/images/banks/fpx/b2b/hlb.png">
+							<img src="/assets/images/banks/fpx/b2b/kfh.png">
+							<img src="/assets/images/banks/fpx/b2b/m2e.png">
+							<img src="/assets/images/banks/fpx/b2b/pbe.png">
+							<img src="/assets/images/banks/fpx/b2b/rhb.png">
+							<img src="/assets/images/banks/fpx/b2b/uob.png">
+							<br><br><br>
+							<b>Perbankan Peribadi</b>
+							<br><br>
+							<img src="/assets/images/banks/fpx/b2c/ambank.png">
+							<img src="/assets/images/banks/fpx/b2c/bimb.png">
+							<img src="/assets/images/banks/fpx/b2c/cimb.png">
+							<img src="/assets/images/banks/fpx/b2c/hlb.png">
+							<img src="/assets/images/banks/fpx/b2c/m2e.png">
+							<img src="/assets/images/banks/fpx/b2c/m2u.png">
+							<img src="/assets/images/banks/fpx/b2c/pbe.png">
+							<img src="/assets/images/banks/fpx/b2c/rhb.png">
+							<img src="/assets/images/banks/fpx/b2c/uob.png">
 	@endif -->
 
 		@endif

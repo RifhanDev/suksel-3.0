@@ -116,16 +116,16 @@ class CodeRequestsController extends Controller
 			return $datatable
 				->addColumn('actions', function ($change) use ($vendor) {
 					$actions    = [];
-					$actions[]  = '<div class="btn-group">';
+					$actions[]  = '<div class="d-flex gap-2 flex-wrap">';
 
 					if ($vendor) {
-						$actions[] = $change->canShow() ? link_to_route('vendor.requests.show', 'Papar', [$change->vendor, $change->id], ['class' => 'btn btn-xs btn-primary']) : '';
+						$actions[] = $change->canShow() ? link_to_route('vendor.requests.show', 'Papar', [$change->vendor, $change->id], ['class' => 'btn btn-sm rounded-8 px-3 btn-primary']) : '';
 					} else {
-						$actions[] = $change->canShow() ? link_to_route('requests.showAll', 'Papar', $change->id, ['class' => 'btn btn-xs btn-primary']) : '';
+						$actions[] = $change->canShow() ? link_to_route('requests.showAll', 'Papar', $change->id, ['class' => 'btn btn-sm rounded-8 px-3 btn-primary']) : '';
 					}
 
 					if (!$vendor && !auth()->user()->hasRole('Vendor'))
-						$actions[]  = link_to_route('vendors.show', 'Maklumat Syarikat', $change->vendor, ['class' => 'btn btn-xs btn-warning']);
+						$actions[]  = link_to_route('vendors.show', 'Maklumat Syarikat', $change->vendor, ['class' => 'btn btn-sm rounded-8 px-3 btn-warning']);
 
 					$actions[] = '</div>';
 					return implode(' ', $actions);

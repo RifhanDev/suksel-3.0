@@ -25,20 +25,35 @@ class RolesController extends Controller
 			return Datatables::of($roles)
 				->addColumn('actions', function ($role) {
 					$actions   = [];
-					$actions[] = $role->canUpdate() ? link_to_route('roles.edit', 'Kemaskini', $role->id, ['class' => 'btn btn-sm btn-default']) : '';
-					$actions[] = $role->canDelete() ? Former::open(url('roles/' . $role->id))->class('form-inline')
-						. Former::hidden('_method', 'DELETE')
-						. '<button type="button" class="btn btn-sm btn-danger confirm-delete">Padam</button>'
-						. Former::close() : '';
-					return implode(' ', $actions);
+					$actions[] = $role->canUpdate() ? link_to_route('roles.edit', 'Kemaskini', $role->id, ['class' => 'btn btn-sm btn-warning rounded-8 px-3']) : '';
+					$actions[] = $role->canDelete() ? '<form action="' . url('roles/' . $role->id) . '" method="POST" class="d-inline m-0">'
+						. csrf_field()
+						. method_field('DELETE')
+						. '<button type="button" class="btn btn-sm btn-danger rounded-8 px-3 confirm-delete">Padam</button>'
+						. '</form>' : '';
+					return '<div class="d-flex gap-2 flex-wrap justify-content-center">' . implode('', $actions) . '</div>';
 				})
 				->addColumn('user_count', function ($role) {
 					return $role->users()->count();
 				})
 				->addColumn('permissions', function ($role) {
-					return '<ul>' . implode('', array_map(function ($name) {
-						return '<li>' . $name . '</li>';
-					}, $role->perms->pluck('name')->toArray())) . '</ul>';
+					$perms = $role->perms->sortBy('group_name');
+					if ($perms->isEmpty()) {
+						return '<span class="text-muted small">Tiada kebenaran</span>';
+					}
+					$grouped = $perms->groupBy('group_name');
+					$html = '<div class="d-flex flex-column gap-2">';
+					foreach ($grouped as $groupName => $groupPerms) {
+						$items = $groupPerms->map(function ($p) {
+							return '<span style="font-size:0.75rem;">&#8226; ' . e($p->display_name) . '</span>';
+						})->implode('');
+						$html .= '<div>';
+						$html .= '<div style="font-size:0.65rem;font-weight:700;text-transform:uppercase;color:var(--sg-red);letter-spacing:0.05em;margin-bottom:3px;">' . e($groupName) . '</div>';
+						$html .= '<div style="display:grid; grid-template-columns: repeat(4, 1fr); gap: 1px 8px;">' . $items . '</div>';
+						$html .= '</div>';
+					}
+					$html .= '</div>';
+					return $html;
 				})
 				->removeColumn('id')
 				->rawColumns(['name', 'permissions', 'user_count', 'actions'])

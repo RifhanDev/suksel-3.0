@@ -49,9 +49,13 @@ class User extends Authenticatable
 	protected $fillable = [
 		'username', // used in usercontroller@create
 		'email',
+		'ic_number',
+		'jawatan',
+		'gred',
 		'tel',
 		'department',
 		'password',
+		'password_changed_at',
 		'confirmation_code',
 		'confirmed',
 		'vendor_id',
@@ -60,7 +64,9 @@ class User extends Authenticatable
 		'approved',
 		'role_applied',
 		'approver_id',
-		'remark'
+		'remark',
+		'two_factor_code',
+		'two_factor_expires_at'
 	];
 
 	/**
@@ -145,6 +151,21 @@ class User extends Authenticatable
 	 * @var array
 	 */
 	protected $hidden = array('password', 'remember_token');
+
+	protected $dates = ['password_changed_at'];
+	/**
+	 * Override Spatie's roles relationship to use legacy role_user table
+	 * instead of model_has_roles table
+	 */
+	public function roles()
+	{
+		return $this->belongsToMany(
+			\App\Role::class,
+			'role_user',
+			'user_id',
+			'role_id'
+		);
+	}
 
 	public function organizationunit()
 	{

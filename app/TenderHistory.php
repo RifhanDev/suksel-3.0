@@ -2,6 +2,7 @@
 
 namespace App;
 
+use Exception;
 use Illuminate\Database\Eloquent\Model;
 
 class TenderHistory extends Model
@@ -15,51 +16,54 @@ class TenderHistory extends Model
 		'tender_id',
 		'created_at'
 	];
-	
-	public function user() {
+
+	public function user()
+	{
 		return $this->belongsTo('App\User');
 	}
-	
+
 	public function tender()
 	{
-	return $this->belongsTo('App\Tender');
+		return $this->belongsTo('App\Tender');
 	}
-	
-	public static function log($tender_id, $action, $user_id=null) {
-		if(array_key_exists($action, self::$types)) {
-				if(empty($user_id) && auth()->check()) {
-					$user_id = auth()->user()->id;
+
+	public static function log($tender_id, $action, $user_id = null)
+	{
+		if (array_key_exists($action, self::$types)) {
+			if (empty($user_id) && auth()->check()) {
+				$user_id = auth()->user()->id;
 			}
-		
+
 			$history = new self([
 				'action'    => $action,
 				'tender_id' => $tender_id,
 				'user_id'   => $user_id,
 				'created_at' => now()
 			]);
-		
+
 			try {
-				return $history->save();   
+				return $history->save();
 			} catch (Exception $e) {
 				return false;
 			}
 		}
 	}
-	
+
 	// public static function boot() {
 	// 	static::creating( function ($model) {
 	// 		$model->setCreatedAt($model->freshTimestamp());
 	// 	});
 	// }
-	
-	public function getLabelAttribute() {
-		if(array_key_exists($this->action, self::$types)) {
+
+	public function getLabelAttribute()
+	{
+		if (array_key_exists($this->action, self::$types)) {
 			return self::$types[$this->action];
 		} else {
 			boolean_icon(null);
 		}
 	}
-	
+
 	static $types = [
 		'create'             => 'Masukkan Tender Baru',
 		'edit'               => 'Kemaskini Tender',
@@ -76,7 +80,7 @@ class TenderHistory extends Model
 		'exception'     	 => 'Kebenaran Khas',
 
 		'rate-vendor-tender' => 'Penilaian Syarikat Vendor',
-		
+
 		'add-pkk'            => 'Tambah Kod PKK',
 		'edit-pkk'           => 'Kemaskini Kod PKK',
 		'delete-pkk'         => 'Hapus Kod PKK',

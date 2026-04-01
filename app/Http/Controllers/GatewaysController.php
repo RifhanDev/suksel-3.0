@@ -42,15 +42,15 @@ class GatewaysController extends Controller
 				->editColumn('default', function($g){
 					return boolean_icon($g->default);
 				})
-				->addColumn('actions', function($gateway){
-	                    	$actions   = [];
-	                    	$actions[] = $gateway->canUpdate() ? link_to_route('gateways.edit', 'Kemaskini', $gateway->id, ['class' => 'btn btn-xs btn-primary'] ) : '';
-	                    	$actions[] = $gateway->canDelete() ? Former::open(url('gateways/'.$gateway->id))->class('form-inline') 
+				->addColumn('actions', function($gateway) {
+	                    $actions   = [];
+	                    $actions[] = $gateway->canUpdate() ? link_to_route('gateways.edit', 'Kemaskini', $gateway->id, ['class' => 'btn btn-sm btn-warning rounded-8 px-3']) : '';
+	                    $actions[] = $gateway->canDelete() ? Former::open(url('gateways/' . $gateway->id))->class('form-inline m-0')
 	                        . Former::hidden('_method', 'DELETE')
-	                        . '<button type="button" class="btn btn-xs btn-danger confirm-delete">Padam</button>'
+	                        . '<button type="button" class="btn btn-sm btn-danger rounded-8 px-3 confirm-delete">Padam</button>'
 	                        . Former::close() : '';
-	                    	return implode(' ', $actions);
-	                	})
+	                    return '<div class="d-flex gap-2 flex-wrap justify-content-center">' . implode('', $actions) . '</div>';
+	                })
 				->removeColumn('id')
 				->rawColumns(['organization_unit_id', 'type', 'merchant_code', 'version', 'active', 'default', 'actions'])
 				->make();

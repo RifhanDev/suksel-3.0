@@ -70,15 +70,27 @@ class Permission extends ModelsPermission
         parent::boot();
 
         self::created(function () {
-            cache()->tags('Permission')->flush();
+            try {
+                cache()->tags('Permission')->flush();
+            } catch (\Exception $e) {
+                cache()->flush();
+            }
         });
 
         self::updated(function () {
-            cache()->tags('Permission')->flush();
+            try {
+                cache()->tags('Permission')->flush();
+            } catch (\Exception $e) {
+                cache()->flush();
+            }
         });
 
         self::deleted(function () {
-            cache()->tags('Permission')->flush();
+            try {
+                cache()->tags('Permission')->flush();
+            } catch (\Exception $e) {
+                cache()->flush();
+            }
         });
     }
 

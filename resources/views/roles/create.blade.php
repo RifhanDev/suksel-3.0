@@ -1,17 +1,41 @@
-@extends('layouts.modern')
+@extends('layouts.v3.master')
 
 @section('content')
-	{!! Former::open(url('roles')) !!}
-	@component('components.modern-form', [
-		'title' => 'Tambah Peranan Baru',
-		'pretitle' => 'Sistem Tender Online',
-		'icon' => 'ti-user',
-		'backUrl' => route('roles.index'),
-		'backLabel' => 'Kembali ke Senarai',
-		'submitLabel' => 'Hantar Peranan',
-		'showViewButton' => false,
-	])
-	@include('roles.form')
-	@endcomponent
-	{!! Former::close() !!}
+    <!-- HEADER -->
+    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center mb-4">
+        <div class="mb-3 mb-lg-0">
+            <h3 class="fw-bold text-dark m-0" style="letter-spacing: -0.5px;">Tambah Peranan Baru</h3>
+            <p class="text-muted small m-0">Sila lengkapkan maklumat peranan dan tetapkan kebenaran di bawah.</p>
+        </div>
+    </div>
+
+    <form action="{{ url('roles') }}" method="POST">
+        @csrf
+
+        @include('roles.form')
+
+        <div class="content-card mt-3">
+            <div class="d-flex justify-content-between align-items-center p-4 bg-light">
+                <a href="{{ route('roles.index') }}" class="btn-form btn-form-secondary">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <line x1="19" y1="12" x2="5" y2="12"></line>
+                        <polyline points="12 19 5 12 12 5"></polyline>
+                    </svg>
+                    Senarai Peranan
+                </a>
+                <button type="submit" class="btn-form btn-form-primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                        <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                        <polyline points="7 3 7 8 15 8"></polyline>
+                    </svg>
+                    Hantar Peranan
+                </button>
+            </div>
+        </div>
+    </form>
 @endsection

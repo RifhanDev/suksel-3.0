@@ -1,19 +1,20 @@
-@extends('layouts.modern')
+@extends('layouts.v3.master')
 
 @section('content')
-	{!! Former::open(url('permissions/' . $permission->id)) !!}
-	{!! Former::populate($permission) !!}
-	{!! Former::hidden('_method', 'PUT') !!}
-	@component('components.modern-form', [
-		'title' => 'Kemaskini Kebenaran',
-		'pretitle' => 'Sistem Tender Online',
-		'icon' => 'ti-pencil',
-		'backUrl' => route('permissions.index'),
-		'backLabel' => 'Kembali ke Senarai',
-		'submitLabel' => 'Kemaskini Kebenaran',
-		'showViewButton' => false,
-	])
-	@include('permissions.form')
-	@endcomponent
-	{!! Former::close() !!}
+    <!-- HEADER -->
+    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center mb-4">
+        <div class="mb-3 mb-lg-0">
+            <h3 class="fw-bold text-dark m-0" style="letter-spacing: -0.5px;">Kemaskini Kebenaran</h3>
+            <p class="text-muted small m-0">Kemaskini maklumat kebenaran sistem.</p>
+        </div>
+    </div>
+
+    <form action="{{ url('permissions/' . $permission->id) }}" method="POST">
+        @csrf
+        @method('PUT')
+        @include('permissions.form')
+        <div class="content-card mt-3">
+            @include('permissions.actions-footer', ['has_submit' => true])
+        </div>
+    </form>
 @endsection

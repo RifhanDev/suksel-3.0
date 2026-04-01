@@ -11,5 +11,12 @@ const mix = require('laravel-mix');
  |
  */
 
+// Original app (Bootstrap 3/4)
 mix.js('resources/js/app.js', 'public/js')
+    .vue()
     .sass('resources/sass/app.scss', 'public/css');
+
+// Modern layout (Bootstrap 5)
+mix.js('resources/js/modern.js', 'public/js')
+    .vue()
+    .sass('resources/sass/modern.scss', 'public/css');
