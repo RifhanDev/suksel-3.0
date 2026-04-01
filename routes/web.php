@@ -203,6 +203,7 @@ Route::view('/templat-spesifikasi', 'newModule.jawatankuasaSpesifikasi.form_spes
 Route::view('/pengalaman-kerja', 'newModule.jawatankuasaSpesifikasi.form_pengalaman_kerja')->name('pgmnKerjaForm');
 Route::view('/kerja-dalam-tangan', 'newModule.jawatankuasaSpesifikasi.form_kerja_dalam_tangan')->name('kjDlmTanganForm');
 Route::view('/profil-petender', 'newModule.jawatankuasaSpesifikasi.form_profil_petender')->name('prflPetender');
+Route::view('/penyata-bank', 'newModule.jawatankuasaSpesifikasi.form_penyata_bank')->name('pnytBank');
 Route::view('/jawatankuasa-pembuka', 'newModule.jawatankuasa_pembuka')->name('jawatankuasaPembuka');
 Route::view('/penilaian-teknikal', 'newModule.penilaian.teknikal')->name('penilaianTeknikal');
 Route::view('/penilaian-teknikal-kerja', 'newModule.penilaian.teknikal_kerja')->name('penilaianTeknikalKerja');

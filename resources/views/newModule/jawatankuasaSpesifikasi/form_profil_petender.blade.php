@@ -435,9 +435,23 @@
                         </table>
                     </div>
                 </div>
-                <div class="row mb-2 mx-2">
+            </div>
+        </div>
+    </div>
+    <div class="stats-card mb-4">
+        <div class="stats-card-header">
+            <h3 class="stats-card-title">
+                <div class="d-flex align-items-center justify-content-center bg-danger bg-opacity-10 text-danger rounded-2" style="width: 36px; height: 36px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path><line x1="8" y1="6" x2="16" y2="6"></line><line x1="8" y1="10" x2="16" y2="10"></line></svg>
+                </div>
+                Analisa Kecukupan Modal Berbayar
+            </h3>
+        </div>
+        <div class="card-body p-2">
+            <div class="p-4">
+            <div class="row mb-2 mx-2">
                     <div class="col-12 d-flex justify-content-end gap-2">
-                        <button type="button" class="btn btn-sm btn-success add_btn_item">
+                        <button type="button" class="btn btn-sm btn-success add_modal_berbayar_btn">
                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
                                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -449,18 +463,14 @@
                 </div>
                 <div class="row mx-2">
                     <div class="table-responsive">
-                        <table id="dt_tmpltSpec" data-path="" class=" table table-modern w-100 mb-0">
+                        <table id="dt_modal_berbayar" data-path="" class=" table table-modern w-100 mb-0">
                             <thead>
                                 <tr>
-                                    <th colspan="6">No. Rujukan Petender</th>
-                                </tr>
-                                <tr>
                                     <th class="text-center">Bil</th>
-                                    <th class="text-center">Senarai Kerja Yang Disiapkan</th>
-                                    <th class="text-center">PIC</th>
-                                    <th class="text-center">No. Telefon PIC</th>
-                                    <th class="text-center">Nilai Kerja (RM)</th>
-                                    <th class="text-center">Tindakan</th>
+                                    <th class="text-center">Dari</th>
+                                    <th class="text-center">Hingga</th>
+                                    <th class="text-center">Skema</th>
+                                    <th></th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -475,9 +485,6 @@
                                     <td>
                                         <input type="text" class="form-control form-control-sm">
                                     </td>
-                                    <td>
-                                        <input type="text" class="form-control form-control-sm nilai-kerja text-end">
-                                    </td>
                                     <td class="text-center">
                                         <button type="button" class="btn btn-sm btn-danger btn-circle text-white">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
@@ -491,7 +498,7 @@
                                         </button>
                                     </td>
                                 </tr>
-                                <tr class="add_row_item d-none">
+                                <tr class="add_modal_berbayar_row d-none">
                                     <td class="text-center"></td>
                                     <td>
                                         <input type="text" class="form-control form-control-sm">
@@ -501,9 +508,6 @@
                                     </td>
                                     <td>
                                         <input type="text" class="form-control form-control-sm">
-                                    </td>
-                                    <td>
-                                        <input type="text" class="form-control form-control-sm nilai-kerja">
                                     </td>
                                     <td class="text-center">
                                         <button type="button" class="btn btn-sm btn-danger btn-circle text-white">
@@ -519,13 +523,6 @@
                                     </td>
                                 </tr>
                             </tbody>
-                            <tfoot>
-                                <tr>
-                                    <th colspan="4" class="text-end">Jumlah</th>
-                                    <th class="total-nilai text-end">0.00</th>
-                                    <th></th>
-                                </tr>
-                            </tfoot>
                         </table>
                     </div>
                 </div>
@@ -538,12 +535,87 @@
                 <div class="d-flex align-items-center justify-content-center bg-danger bg-opacity-10 text-danger rounded-2" style="width: 36px; height: 36px;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path><line x1="8" y1="6" x2="16" y2="6"></line><line x1="8" y1="10" x2="16" y2="10"></line></svg>
                 </div>
-                Dokumen Sokongan / Rujukan 
+                Analisa Kecukupan Modal Dibenarkan
             </h3>
         </div>
         <div class="card-body p-2">
             <div class="p-4">
-                <div class="row mb-3 mx-3">
+            <div class="row mb-2 mx-2">
+                    <div class="col-12 d-flex justify-content-end gap-2">
+                        <button type="button" class="btn btn-sm btn-success add_modal_dibenarkan_btn">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            Tambah Item
+                        </button>
+                    </div>
+                </div>
+                <div class="row mx-2">
+                    <div class="table-responsive">
+                        <table id="dt_modal_dibenarkan" data-path="" class=" table table-modern w-100 mb-0">
+                            <thead>
+                                <tr>
+                                    <th class="text-center">Bil</th>
+                                    <th class="text-center">Dari</th>
+                                    <th class="text-center">Hingga</th>
+                                    <th class="text-center">Skema</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="text-center">1</td>
+                                    <td>
+                                        <input type="text" class="form-control form-control-sm">
+                                    </td>
+                                    <td>
+                                        <input type="text" class="form-control form-control-sm">
+                                    </td>
+                                    <td>
+                                        <input type="text" class="form-control form-control-sm">
+                                    </td>
+                                    <td class="text-center">
+                                        <button type="button" class="btn btn-sm btn-danger btn-circle text-white">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <polyline points="3 6 5 6 21 6"></polyline>
+                                                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+                                                <path d="M10 11v6"></path>
+                                                <path d="M14 11v6"></path>
+                                                <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>
+                                            </svg>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr class="add_modal_dibenarkan_row d-none">
+                                    <td class="text-center"></td>
+                                    <td>
+                                        <input type="text" class="form-control form-control-sm">
+                                    </td>
+                                    <td>
+                                        <input type="text" class="form-control form-control-sm">
+                                    </td>
+                                    <td>
+                                        <input type="text" class="form-control form-control-sm">
+                                    </td>
+                                    <td class="text-center">
+                                        <button type="button" class="btn btn-sm btn-danger btn-circle text-white">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <polyline points="3 6 5 6 21 6"></polyline>
+                                                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+                                                <path d="M10 11v6"></path>
+                                                <path d="M14 11v6"></path>
+                                                <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>
+                                            </svg>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -551,7 +623,7 @@
     <div class="row mb-4 mx-2">
         <div class="col-12 d-flex justify-content-between">
             <div>
-                <a href="{{ route('senaraiTeknikal') }}" type="button" class="btn btn-sm btn-outline-secondary">
+                <a href="{{ route('senaraiKewangan') }}" type="button" class="btn btn-sm btn-outline-secondary">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <line x1="19" y1="12" x2="5" y2="12"></line>
                         <polyline points="12 19 5 12 12 5"></polyline>
@@ -560,12 +632,16 @@
                 </a>
             </div>
             <div class="d-flex gap-2">
-                <button type="button" class="btn btn-sm btn-primary">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                        <polyline points="14 2 14 8 20 8"/>
+                <button type="button" class="btn btn-sm btn-danger">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+                        <path d="M10 11v6"></path>
+                        <path d="M14 11v6"></path>
+                        <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>
                     </svg>
-                    Laporan
+                    Batal
                 </button>
                 <button type="button" class="btn btn-sm btn-success">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -586,87 +662,46 @@
 
     document.addEventListener('DOMContentLoaded', function () {
 
-        const table = document.querySelector('#dt_tmpltSpec');
-        if (!table) return;
+        function initTables(param1, param2, param3) {
+            const table = document.querySelector(param1);
+            if (!table) return;
 
-        const tbody = table.querySelector('tbody');
-        const addItemBtn = document.querySelector('.add_btn_item');
-        const totalCell = table.querySelector('.total-nilai');
+            const tbody = table.querySelector('tbody');
+            const addItemBtn = document.querySelector(param2);
+            const templateSelector = 'tr.' + param3;
 
-        // Update row numbers (Bil)
-        function updateRowNumbers() {
-            const rows = tbody.querySelectorAll('tr:not(.add_row_item)');
-            rows.forEach((row, index) => {
-                row.children[0].textContent = index + 1;
-            });
-        }
-
-        // Update total in Jumlah row
-        function updateTotal() {
-            let total = 0;
-            const inputs = tbody.querySelectorAll('.nilai-kerja');
-            inputs.forEach(input => {
-                const value = parseFloat(input.value.replace(/,/g, '')) || 0;
-                total += value;
-            });
-            totalCell.textContent = total.toLocaleString('en-MY', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-            });
-        }
-
-        // Force numeric only
-        tbody.addEventListener('keypress', function(e){
-            if(e.target.classList.contains('nilai-kerja')) {
-                const char = String.fromCharCode(e.which);
-                if(!/[0-9.]|\./.test(char)) {
-                    e.preventDefault();
-                }
+            function updateRowNumbers() {
+                const rows = tbody.querySelectorAll('tr:not(.' + param3 + ')');
+                rows.forEach((row, index) => {
+                    row.children[0].textContent = index + 1;
+                });
             }
-        });
 
-        // Optional: format on blur
-        tbody.addEventListener('blur', function(e){
-            if(e.target.classList.contains('nilai-kerja')) {
-                let value = parseFloat(e.target.value.replace(/,/g, '')) || 0;
-                e.target.value = value.toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                updateTotal();
+            if (addItemBtn) {
+                addItemBtn.addEventListener('click', function () {
+                    const template = tbody.querySelector(templateSelector);
+                    if (!template) return;
+                    const clone = template.cloneNode(true);
+                    clone.classList.remove('d-none', param3);
+                    clone.querySelectorAll('input').forEach(function (input) { input.value = ''; });
+                    tbody.appendChild(clone);
+                    updateRowNumbers();
+                });
             }
-        }, true);
 
-        // ADD ROW
-        if (addItemBtn) {
-            addItemBtn.addEventListener('click', function () {
-                const template = tbody.querySelector('.add_row_item');
-                const clone = template.cloneNode(true);
-                clone.classList.remove('d-none', 'add_row_item');
-                clone.querySelectorAll('input').forEach(input => input.value = '');
-                tbody.appendChild(clone);
-                updateRowNumbers();
-                updateTotal();
-            });
-        }
-
-        // DELETE ROW
-        tbody.addEventListener('click', function (e) {
-            const deleteBtn = e.target.closest('.btn-danger');
-            if (deleteBtn) {
+            tbody.addEventListener('click', function (e) {
+                const deleteBtn = e.target.closest('.btn-danger');
+                if (!deleteBtn) return;
                 const row = deleteBtn.closest('tr');
-                const rows = tbody.querySelectorAll('tr:not(.add_row_item)');
+                const rows = tbody.querySelectorAll('tr:not(.' + param3 + ')');
                 if (rows.length <= 1) return;
                 row.remove();
                 updateRowNumbers();
-                updateTotal();
-            }
-        });
+            });
+        }
 
-        // AUTO UPDATE TOTAL WHEN VALUE CHANGES
-        tbody.addEventListener('input', function (e) {
-            if (e.target.classList.contains('nilai-kerja')) {
-                e.target.value = e.target.value.replace(/[^\d.]/g,'');
-                updateTotal();
-            }
-        });
+        initTables('#dt_modal_berbayar', '.add_modal_berbayar_btn', 'add_modal_berbayar_row');
+        initTables('#dt_modal_dibenarkan', '.add_modal_dibenarkan_btn', 'add_modal_dibenarkan_row');
     });
 
 </script>
