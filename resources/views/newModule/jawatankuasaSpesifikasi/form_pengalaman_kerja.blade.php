@@ -4,6 +4,7 @@
     <link href="{{ asset('css/components/custom-table.css') }}" rel="stylesheet">
     <link href="{{ asset('css/components/badges.css') }}" rel="stylesheet">
     <link href="{{ asset('css/components/button-components.css') }}" rel="stylesheet">
+    <link href="{{ asset('css/components/file-upload.css') }}" rel="stylesheet">
     <style>
         /* ── Table grid borders ─────────────────────────────────────── */
         #tbl-pengalaman {
@@ -16,128 +17,6 @@
         #tbl-pengalaman th:last-child,
         #tbl-pengalaman td:last-child {
             border-right: none !important;
-        }
-
-        /* ── Upload zone ────────────────────────────────────────────── */
-        .upload-zone {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            padding: 28px 20px;
-            border: 2px dashed #cbd5e1;
-            border-radius: 10px;
-            background: #f8fafc;
-            cursor: pointer;
-            transition: border-color 0.2s, background 0.2s;
-            text-align: center;
-        }
-        .upload-zone:hover,
-        .upload-zone.dragover {
-            border-color: var(--sg-red);
-            background: #fff5f5;
-        }
-        .upload-zone-icon {
-            color: #94a3b8;
-        }
-        .upload-zone:hover .upload-zone-icon,
-        .upload-zone.dragover .upload-zone-icon {
-            color: var(--sg-red);
-        }
-        .upload-zone-label {
-            font-size: 0.82rem;
-            font-weight: 600;
-            color: #475569;
-        }
-        .upload-zone-sub {
-            font-size: 0.72rem;
-            color: #94a3b8;
-        }
-
-        /* ── File chip ──────────────────────────────────────────────── */
-        .file-chip-list {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-top: 12px;
-        }
-        .file-chip {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 6px 10px 6px 8px;
-            background: #fff;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-            max-width: 260px;
-            transition: box-shadow 0.15s;
-        }
-        .file-chip:hover {
-            box-shadow: 0 2px 8px rgba(0,0,0,0.09);
-        }
-        .file-chip-ext {
-            flex-shrink: 0;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 30px;
-            height: 30px;
-            border-radius: 6px;
-            font-size: 0.58rem;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
-            color: #fff;
-            background: #64748b;
-        }
-        .file-chip-ext.ext-pdf  { background: #ef4444; }
-        .file-chip-ext.ext-doc,
-        .file-chip-ext.ext-docx { background: #3b82f6; }
-        .file-chip-ext.ext-xls,
-        .file-chip-ext.ext-xlsx { background: #22c55e; }
-        .file-chip-ext.ext-png,
-        .file-chip-ext.ext-jpg,
-        .file-chip-ext.ext-jpeg { background: #a855f7; }
-        .file-chip-ext.ext-zip,
-        .file-chip-ext.ext-rar  { background: #f97316; }
-        .file-chip-body {
-            display: flex;
-            flex-direction: column;
-            min-width: 0;
-        }
-        .file-chip-name {
-            font-size: 0.78rem;
-            font-weight: 600;
-            color: #334155;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 160px;
-        }
-        .file-chip-size {
-            font-size: 0.68rem;
-            color: #94a3b8;
-        }
-        .file-chip-remove {
-            flex-shrink: 0;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            border: none;
-            background: #fee2e2;
-            color: #ef4444;
-            cursor: pointer;
-            padding: 0;
-            transition: background 0.15s, color 0.15s;
-        }
-        .file-chip-remove:hover {
-            background: var(--sg-red);
-            color: #fff;
         }
     </style>
 @endsection
@@ -329,6 +208,7 @@
 @endsection
 
 @section('scripts')
+<script src="{{ asset('js/components/file-upload.js') }}"></script>
 <script>
 $(document).ready(function () {
 
@@ -394,71 +274,11 @@ $(document).ready(function () {
         updateTotal();
     });
 
-    // ── Helpers: file size format ────────────────────────────────────
-    function formatBytes(bytes) {
-        if (bytes < 1024) return bytes + ' B';
-        if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
-        return (bytes / 1048576).toFixed(1) + ' MB';
-    }
-
-    function extClass(filename) {
-        var ext = filename.split('.').pop().toLowerCase();
-        return 'ext-' + ext;
-    }
-
-    // ── Build file chip ──────────────────────────────────────────────
-    function buildFileChip(file, url) {
-        var ext = file.name.split('.').pop().toLowerCase();
-        var $chip = $(
-            '<div class="file-chip">' +
-                '<span class="file-chip-ext ' + extClass(file.name) + '">' + ext + '</span>' +
-                '<div class="file-chip-body">' +
-                    '<a href="' + url + '" target="_blank" class="file-chip-name" title="' + $('<span>').text(file.name).html() + '">' +
-                        $('<span>').text(file.name).html() +
-                    '</a>' +
-                    '<span class="file-chip-size">' + formatBytes(file.size) + '</span>' +
-                '</div>' +
-                '<button type="button" class="file-chip-remove" title="Buang fail">' +
-                    '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>' +
-                '</button>' +
-            '</div>'
-        );
-        $chip.find('.file-chip-remove').on('click', function () {
-            URL.revokeObjectURL(url);
-            $chip.remove();
-        });
-        return $chip;
-    }
-
-    // ── File input change ────────────────────────────────────────────
-    $('#input-dokumen').on('change', function () {
-        var files = this.files;
-        if (!files || files.length === 0) return;
-        $.each(files, function (i, file) {
-            var url = URL.createObjectURL(file);
-            $('#file-chip-list').append(buildFileChip(file, url));
-        });
-        $('#input-dokumen').val('');
-    });
-
-    // ── Drag-and-drop on upload zone ─────────────────────────────────
-    var $zone = $('#upload-zone');
-    $zone[0].addEventListener('dragover', function (e) {
-        e.preventDefault();
-        $zone.addClass('dragover');
-    });
-    $zone[0].addEventListener('dragleave', function () {
-        $zone.removeClass('dragover');
-    });
-    $zone[0].addEventListener('drop', function (e) {
-        e.preventDefault();
-        $zone.removeClass('dragover');
-        var files = e.dataTransfer.files;
-        if (!files || files.length === 0) return;
-        $.each(files, function (i, file) {
-            var url = URL.createObjectURL(file);
-            $('#file-chip-list').append(buildFileChip(file, url));
-        });
+    // ── File Upload Zone ─────────────────────────────────────────────
+    FileUpload.init({
+        zoneId     : 'upload-zone',
+        inputId    : 'input-dokumen',
+        chipListId : 'file-chip-list'
     });
 
 });

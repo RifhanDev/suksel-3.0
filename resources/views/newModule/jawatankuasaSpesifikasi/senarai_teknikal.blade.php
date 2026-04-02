@@ -3,6 +3,9 @@
 @section('styles')
     <link href="{{ asset('css/components/custom-table.css') }}" rel="stylesheet">
     <link href="{{ asset('css/components/badges.css') }}" rel="stylesheet">
+    <link href="{{ asset('css/components/guideline-card.css') }}" rel="stylesheet">
+    <link href="{{ asset('css/components/file-upload.css') }}" rel="stylesheet">
+    <link href="{{ asset('css/components/button-components.css') }}" rel="stylesheet">
 @endsection
 
 @section('content')
@@ -14,7 +17,7 @@
         </div>
     </div>
 
-    <!-- TENDER INFO CARD -->
+    <!-- TENDER INFO -->
     <div class="content-card mb-4 p-0">
         <div class="content-card-body p-4">
 
@@ -74,102 +77,58 @@
         </div>
         <div class="content-card-body p-4">
 
-            <!-- Guidelines: numbered grid -->
-            <div class="rounded-2 p-3 mb-4" style="background: #fafbfc; border: 1px solid #f1f5f9;">
-                <div class="d-flex align-items-center gap-2 mb-3">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                        class="text-muted flex-shrink-0" style="margin-bottom: 1px;">
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <line x1="12" y1="16" x2="12" y2="12"></line>
-                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                    </svg>
-                    <span class="fw-semibold text-muted text-uppercase"
-                        style="font-size: 0.68rem; letter-spacing: 0.5px; line-height: 1; padding-top: 1px;">Panduan
-                        Pengisian</span>
+            <!-- Guidelines -->
+            <div class="guideline-card mb-4">
+                <div class="guideline-card-header">
+                    <div class="guideline-card-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                        </svg>
+                    </div>
+                    <span class="guideline-card-title">Panduan Pengisian</span>
                 </div>
-                <div class="row g-2">
-                    <div class="col-12 col-lg-6">
-                        <div class="d-flex gap-2 align-items-start">
-                            <span
-                                class="d-flex align-items-center justify-content-center flex-shrink-0 fw-bold text-white rounded-circle"
-                                style="width:18px;height:18px;min-width:18px;font-size:0.6rem;background:var(--sg-red);margin-top:2px;">1</span>
-                            <span class="small text-muted" style="line-height:1.5;">Senarai semak dijana berdasarkan <strong
-                                    class="text-dark">Kategori Perolehan</strong>.</span>
-                        </div>
+                <div class="guideline-list">
+                    <div class="guideline-item">
+                        <span class="guideline-num">1</span>
+                        <span class="guideline-item-text">Senarai semak dijana berdasarkan <span class="highlight">Kategori Perolehan</span>.</span>
                     </div>
-                    <div class="col-12 col-lg-6">
-                        <div class="d-flex gap-2 align-items-start">
-                            <span
-                                class="d-flex align-items-center justify-content-center flex-shrink-0 fw-bold text-white rounded-circle"
-                                style="width:18px;height:18px;min-width:18px;font-size:0.6rem;background:var(--sg-red);margin-top:2px;">2</span>
-                            <span class="small text-muted" style="line-height:1.5;">Pilih kotak semak dalam lajur <strong
-                                    class="text-dark">Skor</strong> untuk memilih senarai semak yang ingin dinilai.</span>
-                        </div>
+                    <div class="guideline-item">
+                        <span class="guideline-num">2</span>
+                        <span class="guideline-item-text">Pilih kotak semak dalam lajur <span class="highlight">Skor</span> untuk memilih senarai semak yang ingin dinilai.</span>
                     </div>
-                    <div class="col-12 col-lg-6">
-                        <div class="d-flex gap-2 align-items-start">
-                            <span
-                                class="d-flex align-items-center justify-content-center flex-shrink-0 fw-bold text-white rounded-circle"
-                                style="width:18px;height:18px;min-width:18px;font-size:0.6rem;background:var(--sg-red);margin-top:2px;">3</span>
-                            <span class="small text-muted" style="line-height:1.5;">Klik <strong
-                                    class="text-dark">Kemaskini</strong> untuk kunci masuk skema skor penilaian atau pinda
-                                spesifikasi.</span>
-                        </div>
+                    <div class="guideline-item">
+                        <span class="guideline-num">3</span>
+                        <span class="guideline-item-text">Klik <span class="highlight">Kemaskini</span> untuk kunci masuk skema skor penilaian atau pinda spesifikasi.</span>
                     </div>
-                    <div class="col-12 col-lg-6">
-                        <div class="d-flex gap-2 align-items-start">
-                            <span
-                                class="d-flex align-items-center justify-content-center flex-shrink-0 fw-bold text-white rounded-circle"
-                                style="width:18px;height:18px;min-width:18px;font-size:0.6rem;background:var(--sg-red);margin-top:2px;">4</span>
-                            <span class="small text-muted" style="line-height:1.5;">Klik <strong class="text-dark">Cipta
-                                    Spesifikasi</strong> untuk cipta templat dan spesifikasi baru.</span>
-                        </div>
+                    <div class="guideline-item">
+                        <span class="guideline-num">4</span>
+                        <span class="guideline-item-text">Klik <span class="highlight">Cipta Spesifikasi</span> untuk cipta templat dan spesifikasi baru.</span>
                     </div>
-                    <div class="col-12 col-lg-6">
-                        <div class="d-flex gap-2 align-items-start">
-                            <span
-                                class="d-flex align-items-center justify-content-center flex-shrink-0 fw-bold text-white rounded-circle"
-                                style="width:18px;height:18px;min-width:18px;font-size:0.6rem;background:var(--sg-red);margin-top:2px;">5</span>
-                            <span class="small text-muted" style="line-height:1.5;">Klik <strong
-                                    class="text-dark">Tambah</strong> untuk kunci masuk senarai semak baru.</span>
-                        </div>
+                    <div class="guideline-item">
+                        <span class="guideline-num">5</span>
+                        <span class="guideline-item-text">Klik <span class="highlight">Tambah</span> untuk kunci masuk senarai semak baru.</span>
                     </div>
-                    <div class="col-12 col-lg-6">
-                        <div class="d-flex gap-2 align-items-start">
-                            <span
-                                class="d-flex align-items-center justify-content-center flex-shrink-0 fw-bold text-white rounded-circle"
-                                style="width:18px;height:18px;min-width:18px;font-size:0.6rem;background:var(--sg-red);margin-top:2px;">6</span>
-                            <span class="small text-muted" style="line-height:1.5;">Senarai semak dengan tindakan <strong
-                                    class="text-dark">Muat Naik</strong> oleh pembekal akan menjadi dokumen pematuhan
-                                secara automatik.</span>
-                        </div>
+                    <div class="guideline-item">
+                        <span class="guideline-num">6</span>
+                        <span class="guideline-item-text">Senarai semak dengan tindakan <span class="highlight">Muat Naik</span> oleh pembekal akan menjadi dokumen pematuhan secara automatik.</span>
                     </div>
-                    <div class="col-12 col-lg-6">
-                        <div class="d-flex gap-2 align-items-start">
-                            <span
-                                class="d-flex align-items-center justify-content-center flex-shrink-0 fw-bold text-white rounded-circle"
-                                style="width:18px;height:18px;min-width:18px;font-size:0.6rem;background:var(--sg-red);margin-top:2px;">7</span>
-                            <span class="small text-muted" style="line-height:1.5;">Klik <strong
-                                    class="text-dark">Senarai Semak Standard</strong> dan pilih senarai semak yang
-                                diperlukan.</span>
-                        </div>
+                    <div class="guideline-item">
+                        <span class="guideline-num">7</span>
+                        <span class="guideline-item-text">Klik <span class="highlight">Senarai Semak Standard</span> dan pilih senarai semak yang diperlukan.</span>
                     </div>
-                    <div class="col-12 col-lg-6">
-                        <div class="d-flex gap-2 align-items-start">
-                            <span
-                                class="d-flex align-items-center justify-content-center flex-shrink-0 fw-bold text-white rounded-circle"
-                                style="width:18px;height:18px;min-width:18px;font-size:0.6rem;background:var(--sg-red);margin-top:2px;">8</span>
-                            <span class="small text-muted" style="line-height:1.5;">Untuk perkhidmatan bayaran progresif,
-                                sila pilih <strong class="text-dark">tempat perkhidmatan</strong> yang berkenaan.</span>
-                        </div>
+                    <div class="guideline-item">
+                        <span class="guideline-num">8</span>
+                        <span class="guideline-item-text">Untuk perkhidmatan bayaran progresif, sila pilih <span class="highlight">tempat perkhidmatan</span> yang berkenaan.</span>
                     </div>
                 </div>
             </div>
 
             <!-- Table Action Buttons -->
             <div class="d-flex align-items-center justify-content-between mb-3">
-                <!-- Left: Template actions -->
+                <!-- Left: Actions -->
                 <div class="d-flex align-items-center gap-2">
                     <a href="#" class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1"
                         data-bs-toggle="modal" data-bs-target="#senaraiSemakStandard">
@@ -232,7 +191,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <!-- ROW 1: Spesifikasi — hardcoded, fixed -->
+                        <!-- ROW 1: Spesifikasi -->
                         <tr>
                             <td class="text-center"><input type="checkbox" name="row_check_teknikal[]" class="form-check-input row-check-teknikal">
                             </td>
@@ -309,9 +268,7 @@
                         <span class="d-block text-muted fw-semibold text-uppercase mb-2"
                             style="font-size: 0.67rem; letter-spacing: 0.5px;">Penilaian Teknikal</span>
                         <div class="d-flex align-items-center gap-2">
-                            <input type="number" id="input-penilaian"
-                                class="form-control form-control-sm text-center fw-semibold"
-                                style="max-width: 80px; font-size: 1rem;" placeholder="0" min="0" max="121">
+                            <input type="number" id="input-penilaian" name="input_penilaian" class="form-control form-control-sm text-center fw-semibold" style="max-width: 80px; font-size: 1rem;" placeholder="0" min="0" max="121">
                             <span class="text-muted small">daripada</span>
                             <span class="fw-bold text-dark" id="penilaian-teknikal-total"
                                 style="font-size: 1rem;">40</span>
@@ -357,32 +314,24 @@
         </div>
         <div class="content-card-body p-4">
 
-            <!-- Empty state -->
-            <div id="dokumen-empty" class="text-center py-3 mb-3">
-                <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24"
-                    fill="none" stroke="#cbd5e1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                    <polyline points="14 2 14 8 20 8"></polyline>
-                </svg>
-                <p class="text-muted small mb-0 mt-2">Tiada dokumen sokongan. Klik <strong>Tambah Dokumen</strong> untuk
-                    menambah.</p>
-            </div>
+            <!-- Upload Zone -->
+            <label class="upload-zone w-100" id="upload-zone-sokongan" for="input-dokumen-sokongan">
+                <div class="upload-zone-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="16 16 12 12 8 16"></polyline>
+                        <line x1="12" y1="12" x2="12" y2="21"></line>
+                        <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"></path>
+                    </svg>
+                </div>
+                <span class="upload-zone-label">Klik atau seret fail ke sini untuk muat naik</span>
+                <span class="upload-zone-sub">PDF, Word, Excel, Imej, ZIP — saiz maksimum 10 MB setiap fail</span>
+                <input type="file" id="input-dokumen-sokongan" name="dokumen_sokongan[]" multiple hidden
+                    accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.zip,.rar">
+            </label>
 
-            <!-- Document rows (injected via jQuery) -->
-            <div id="dokumen-list" class="mb-3"></div>
-
-            <!-- Add button — dashed full-width, always at the bottom -->
-            <button type="button" id="btn-tambah-dokumen"
-                class="d-flex align-items-center justify-content-center gap-2 w-100 py-2 rounded-2 fw-semibold small"
-                style="background: #f8fafc; border: 1.5px dashed #cbd5e1; color: #64748b; cursor: pointer;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24"
-                    fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
-                    stroke-linejoin="round">
-                    <line x1="12" y1="5" x2="12" y2="19"></line>
-                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                </svg>
-                Tambah Dokumen
-            </button>
+            <!-- Uploaded file chips -->
+            <div class="file-chip-list" id="file-chip-list-sokongan"></div>
 
         </div>
     </div>
@@ -436,7 +385,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                {{-- ── Borang Atas Talian items (fixed mekanisma, edit icon redirect) ── --}}
+                                {{-- ── Borang Atas Talian items ── --}}
                                 <tr data-type="borang_atas_talian" data-route="{{ route('pgmnKerjaForm') }}" data-tajuk="Senarai Pengalaman Kerja">
                                     <td class="text-center"><input type="checkbox" class="form-check-input row-check-standard"></td>
                                     <td>
@@ -599,6 +548,7 @@
 @endpush
 
 @section('scripts')
+    <script src="{{ asset('js/components/file-upload.js') }}"></script>
     <script type="text/javascript">
         $(document).ready(function() {
 
@@ -849,47 +799,11 @@
             });
 
 
-            // ─── DOKUMEN SOKONGAN: Tambah / Hapus / Auto-fill filename ───────────────
-            function syncDokumenEmpty() {
-                if ($('#dokumen-list .dokumen-row').length === 0) {
-                    $('#dokumen-empty').show();
-                } else {
-                    $('#dokumen-empty').hide();
-                }
-            }
-
-            function buildDokumenRow() {
-                return $(
-                    '<div class="dokumen-row d-flex align-items-center gap-2 mb-2">' +
-                    '<input type="text" class="form-control form-control-sm dokumen-nama" placeholder="Nama dokumen akan diisi setelah fail dipilih..." disabled>' +
-                    '<label class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1 flex-shrink-0 mb-0" style="cursor:pointer; white-space:nowrap;">' +
-                    '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2m-5-10v6"/><path d="M9.5 13.5L12 11l2.5 2.5"/></g></svg>' +
-                    'Pilih Fail' +
-                    '<input type="file" class="dokumen-file" hidden>' +
-                    '</label>' +
-                    '<button type="button" class="btn btn-sm btn-outline-danger d-inline-flex align-items-center justify-content-center flex-shrink-0 btn-hapus-dokumen" style="width:30px;height:30px;padding:0;" title="Hapus">' +
-                    '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"><path fill="currentColor" d="M20 6a1 1 0 0 1 .117 1.993L20 8h-.081L19 19a3 3 0 0 1-2.824 2.995L16 22H8c-1.598 0-2.904-1.249-2.992-2.75l-.005-.167L4.08 8H4a1 1 0 0 1-.117-1.993L4 6zm-9.489 5.14a1 1 0 0 0-1.218 1.567L10.585 14l-1.292 1.293l-.083.094a1 1 0 0 0 1.497 1.32L12 15.415l1.293 1.292l.094.083a1 1 0 0 0 1.32-1.497L13.415 14l1.292-1.293l.083-.094a1 1 0 0 0-1.497-1.32L12 12.585l-1.293-1.292l-.094-.083zM14 2a2 2 0 0 1 2 2a1 1 0 0 1-1.993.117L14 4h-4l-.007.117A1 1 0 0 1 8 4a2 2 0 0 1 1.85-1.995L10 2z"/></svg>' +
-                    '</button>' +
-                    '</div>'
-                );
-            }
-
-            $('#btn-tambah-dokumen').on('click', function() {
-                $('#dokumen-list').append(buildDokumenRow());
-                syncDokumenEmpty();
-            });
-
-            // File selected → auto-fill name input
-            $('#dokumen-list').on('change', '.dokumen-file', function() {
-                if (this.files && this.files[0]) {
-                    $(this).closest('.dokumen-row').find('.dokumen-nama').val(this.files[0].name);
-                }
-            });
-
-            // Remove row
-            $('#dokumen-list').on('click', '.btn-hapus-dokumen', function() {
-                $(this).closest('.dokumen-row').remove();
-                syncDokumenEmpty();
+            // ─── DOKUMEN SOKONGAN: Upload zone + file chips ──────────────────────────
+            FileUpload.init({
+                zoneId     : 'upload-zone-sokongan',
+                inputId    : 'input-dokumen-sokongan',
+                chipListId : 'file-chip-list-sokongan'
             });
 
             // ─── SUCCESS MODAL: Simpan & Hantar ──────────────────────────────────────

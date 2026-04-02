@@ -164,31 +164,27 @@
 
             <!-- Guidelines -->
             <div class="guideline-card mb-4">
-                <div class="guideline-card-icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <line x1="12" y1="16" x2="12" y2="12"></line>
-                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                    </svg>
-                </div>
-                <div class="guideline-card-body">
+                <div class="guideline-card-header">
+                    <div class="guideline-card-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                        </svg>
+                    </div>
                     <span class="guideline-card-title">Panduan Pengisian</span>
-                    <div class="row g-2">
-                        <div class="col-12 col-md-6">
-                            <div class="guideline-item">
-                                <span class="guideline-num">1</span>
-                                <span class="guideline-item-text">Sila klik ikon <span class="highlight">Pensil</span> untuk
-                                    penetapan skor bagi setiap item spesifikasi.</span>
-                            </div>
-                        </div>
-                        <div class="col-12 col-md-6">
-                            <div class="guideline-item">
-                                <span class="guideline-num">2</span>
-                                <span class="guideline-item-text">Sila klik pautan <span class="highlight">UOM</span> untuk
-                                    carian nama unit ukuran dan kunci masuk di ruang medan yang disediakan.</span>
-                            </div>
-                        </div>
+                </div>
+                <div class="guideline-list">
+                    <div class="guideline-item">
+                        <span class="guideline-num">1</span>
+                        <span class="guideline-item-text">Sila klik ikon <span class="highlight">Pensil</span> untuk
+                            penetapan skor bagi setiap item spesifikasi.</span>
+                    </div>
+                    <div class="guideline-item">
+                        <span class="guideline-num">2</span>
+                        <span class="guideline-item-text">Sila klik pautan <span class="highlight">UOM</span> untuk
+                            carian nama unit ukuran dan kunci masuk di ruang medan yang disediakan.</span>
                     </div>
                 </div>
             </div>

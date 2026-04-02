@@ -1,13 +1,10 @@
 /**
  * guideline-card.css
  * Self-contained guideline/info card component with yellow background and red accent.
- * Usage: .guideline-card > .guideline-card-icon + .guideline-card-body
  */
 
 .guideline-card {
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
+    display: block;
     padding: 14px 16px;
     background: rgba(255, 204, 0, 0.08);
     border: 1px solid rgba(255, 204, 0, 0.4);
@@ -15,16 +12,19 @@
     border-radius: 8px;
 }
 
+.guideline-card-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
 .guideline-card-icon {
     flex-shrink: 0;
     color: var(--sg-red);
-    line-height: 0; /* remove extra vertical space below SVG */
-    padding-top: 2px; /* visually align icon with the title text cap-height */
-}
-
-.guideline-card-body {
-    flex: 1;
-    min-width: 0;
+    line-height: 0;
+    display: inline-flex;
+    align-items: center;
 }
 
 .guideline-card-title {
@@ -34,14 +34,28 @@
     text-transform: uppercase;
     letter-spacing: 0.5px;
     color: var(--sg-red);
-    margin-bottom: 10px;
-    margin-top: 4px;
+    margin: 0;
+    padding-top: 1px;
+}
+
+.guideline-list {
+    column-count: 2;
+    column-gap: 20px;
+}
+
+@media (max-width: 768px) {
+    .guideline-list {
+        column-count: 1;
+    }
 }
 
 .guideline-item {
     display: flex;
     align-items: flex-start;
     gap: 8px;
+    break-inside: avoid;
+    page-break-inside: avoid;
+    margin-bottom: 10px;
 }
 
 .guideline-num {
@@ -58,6 +72,7 @@
     background: var(--sg-red);
     border-radius: 50%;
     line-height: 1; /* ensure number is vertically centered inside circle */
+    margin-top: 2px;
 }
 
 .guideline-item-text {
