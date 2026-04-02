@@ -1,394 +1,466 @@
 @extends('layouts.v3.master')
 
-
-@section('content')
+@section('styles')
+    <link href="{{ asset('css/components/custom-table.css') }}" rel="stylesheet">
+    <link href="{{ asset('css/components/badges.css') }}" rel="stylesheet">
+    <link href="{{ asset('css/components/button-components.css') }}" rel="stylesheet">
     <style>
-        .stats-card {
-            background: #ffffff;
-            border-radius: 12px;
+        /* ── Table grid borders ─────────────────────────────────────── */
+        #tbl-pengalaman {
             border: 1px solid #e2e8f0;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
-            overflow: hidden;
-            position: relative;
         }
-        .stats-card::before {
-            content: ''; position: absolute; top: -25px; right: -25px; width: 80px; height: 80px;
-            background: var(--sg-red); opacity: 0.03; border-radius: 20px; transform: rotate(45deg); pointer-events: none;
+        #tbl-pengalaman th,
+        #tbl-pengalaman td {
+            border-right: 1px solid #e2e8f0 !important;
         }
-        .stats-card-header {
-            padding: 20px 16px;
+        #tbl-pengalaman th:last-child,
+        #tbl-pengalaman td:last-child {
+            border-right: none !important;
+        }
+
+        /* ── Upload zone ────────────────────────────────────────────── */
+        .upload-zone {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 28px 20px;
+            border: 2px dashed #cbd5e1;
+            border-radius: 10px;
+            background: #f8fafc;
+            cursor: pointer;
+            transition: border-color 0.2s, background 0.2s;
+            text-align: center;
+        }
+        .upload-zone:hover,
+        .upload-zone.dragover {
+            border-color: var(--sg-red);
+            background: #fff5f5;
+        }
+        .upload-zone-icon {
+            color: #94a3b8;
+        }
+        .upload-zone:hover .upload-zone-icon,
+        .upload-zone.dragover .upload-zone-icon {
+            color: var(--sg-red);
+        }
+        .upload-zone-label {
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: #475569;
+        }
+        .upload-zone-sub {
+            font-size: 0.72rem;
+            color: #94a3b8;
+        }
+
+        /* ── File chip ──────────────────────────────────────────────── */
+        .file-chip-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        .file-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 10px 6px 8px;
             background: #fff;
-            border-bottom: 1px solid #f1f5f9;
-            display: flex; align-items: center; justify-content: space-between;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+            max-width: 260px;
+            transition: box-shadow 0.15s;
         }
-        .stats-card-title {
-            margin: 0; font-size: 1.1rem; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 10px;
+        .file-chip:hover {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.09);
         }
-       .table-modern thead th, .table-modern tfoot th {
-            background-color: #f8fafc;
-            color: #64748b;
-            font-weight: 700;
-            text-transform: uppercase;
-            font-size: 0.7rem;
-            letter-spacing: 0.5px;
-            padding: 14px 20px;
-            border-bottom: 2px solid #e2e8f0;
-            white-space: nowrap;
-            vertical-align: middle;
-        }
-
-        .table-modern tbody td {
-            padding: 16px 20px;
-            vertical-align: middle;
-            color: #334155;
-            font-size: 0.9rem;
-            border-bottom: 1px solid #f1f5f9;
-        }
-
-        .table-modern tbody tr:hover {
-            background-color: #fff9f9;
-        }
-        .btn-primary {
-            background: #405189;
-        }
-        .card-title-grey {
-            background: #D9D9D9;
-            padding: 5px 15px;
-        }
-        hr {
-            border:1px solid #E9EBEC;
-        }
-        .btn-sm-cust {
-            font-size: 10px !important;
-            padding: 3px 3px 3px 3px;
-            height: max-content;
-        }
-        .heartbeat {
-            display: inline-block;
-            animation: heartbeat 1.2s infinite;
-        }
-
-        @keyframes heartbeat {
-            0% {
-                transform: scale(1);
-            }
-            25% {
-                transform: scale(1.05);
-            }
-            40% {
-                transform: scale(1);
-            }
-            60% {
-                transform: scale(1.05);
-            }
-            100% {
-                transform: scale(1);
-            }
-        }
-        .btn-circle {
-            width: 25px;
-            height: 25px;
-            padding: 0;
-            border-radius: 50%;
+        .file-chip-ext {
+            flex-shrink: 0;
             display: inline-flex;
             align-items: center;
             justify-content: center;
+            width: 30px;
+            height: 30px;
+            border-radius: 6px;
+            font-size: 0.58rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            color: #fff;
+            background: #64748b;
         }
-
-        @keyframes btnPop {
-            0% {
-                transform: scale(1);
-            }
-            40% {
-                transform: scale(1.25);
-            }
-            100% {
-                transform: scale(1.1);
-            }
+        .file-chip-ext.ext-pdf  { background: #ef4444; }
+        .file-chip-ext.ext-doc,
+        .file-chip-ext.ext-docx { background: #3b82f6; }
+        .file-chip-ext.ext-xls,
+        .file-chip-ext.ext-xlsx { background: #22c55e; }
+        .file-chip-ext.ext-png,
+        .file-chip-ext.ext-jpg,
+        .file-chip-ext.ext-jpeg { background: #a855f7; }
+        .file-chip-ext.ext-zip,
+        .file-chip-ext.ext-rar  { background: #f97316; }
+        .file-chip-body {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
         }
-
-        .btn-circle:hover {
-            animation: btnPop 0.25s ease forwards;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        .file-chip-name {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: #334155;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 160px;
+        }
+        .file-chip-size {
+            font-size: 0.68rem;
+            color: #94a3b8;
+        }
+        .file-chip-remove {
+            flex-shrink: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: none;
+            background: #fee2e2;
+            color: #ef4444;
+            cursor: pointer;
+            padding: 0;
+            transition: background 0.15s, color 0.15s;
+        }
+        .file-chip-remove:hover {
+            background: var(--sg-red);
+            color: #fff;
         }
     </style>
+@endsection
 
-    <div class="card border shadow-sm mb-2 rounded-3">
-        <div class="card-body p-3">
-            <div class="row g-2 align-items-end">
-                <div class="col-4 col-lg-4">
-                    <label class="form-label small fw-bold text-secondary text-uppercase mb-1">No. Tender</label>
-                    <h6 class="text-primary">SUKSEL/PERT/2026/001</h6>
-                    <!-- <input type="text" id="" class="form-control form-control-sm" placeholder="" readonly> -->
+@section('content')
+
+    <!-- HEADER -->
+    <div class="d-flex flex-column flex-lg-row justify-content-start align-items-start align-items-lg-center mb-4">
+        <div>
+            <h3 class="fw-bold text-dark m-0" style="letter-spacing: -0.5px;">Senarai Pengalaman Kerja</h3>
+            <p class="text-muted small m-0">Isi maklumat pengalaman kerja yang telah disiapkan oleh petender.</p>
+        </div>
+    </div>
+
+    <!-- TENDER INFO CARD -->
+    <div class="content-card mb-4 p-0">
+        <div class="content-card-body p-4">
+
+            <!-- Tajuk Tender -->
+            <div class="mb-3 pb-3 border-bottom">
+                <span class="text-muted fw-semibold text-uppercase d-block mb-1"
+                    style="font-size: 0.67rem; letter-spacing: 0.5px;">Tajuk Tender</span>
+                <h5 class="fw-bold text-dark mb-0" style="line-height: 1.45; font-size: 1rem;">
+                    MEMBEKAL RANGSUM PUKAL (AIR MINERAL) UNTUK BANGUNAN KERAJAAN
+                    <span class="fw-normal text-muted fst-italic" style="font-size: 0.85rem;">(Bekalan Perkhidmatan)</span>
+                </h5>
+            </div>
+
+            <!-- Metadata: No. Tender · PTJ · Status -->
+            <div class="row g-3">
+                <div class="col-6 col-md-3">
+                    <span class="text-muted fw-semibold text-uppercase d-block mb-1"
+                        style="font-size: 0.67rem; letter-spacing: 0.5px;">No. Tender</span>
+                    <span class="fw-semibold text-dark" style="font-size: 0.875rem;">SUKSEL/PERT/2026/001</span>
                 </div>
-                <div class="col-4 col-lg-4">
-                    <label for="filter_tajuk" class="form-label small fw-bold text-secondary text-uppercase mb-1">PTJ</label>
-                    <h6 class="text-primary">100-007</h6>
+                <div class="col-6 col-md-3">
+                    <span class="text-muted fw-semibold text-uppercase d-block mb-1"
+                        style="font-size: 0.67rem; letter-spacing: 0.5px;">PTJ</span>
+                    <span class="fw-semibold text-dark" style="font-size: 0.875rem;">100-007</span>
                 </div>
-                <div class="col-4 col-lg-4">
-                    <label for="filter_status" class="form-label small fw-bold text-secondary text-uppercase mb-1">Status</label>
-                    <span class="badge rounded-pill bg-warning-subtle text-warning border border-warning-subtle px-3 py-2 fw-bold text-uppercase heartbeat" style="font-size: 0.8rem;">
+                <div class="col-12 col-md-6 d-md-flex justify-content-md-end align-items-md-center">
+                    <span class="d-inline-flex align-items-center gap-2 px-3 py-2 rounded-2 fw-semibold"
+                        style="background: #fef9c3; color: #854d0e; font-size: 0.8rem; border: 1px solid #fde68a;">
+                        <span class="d-inline-block rounded-circle"
+                            style="width:7px;height:7px;background:#ca8a04;flex-shrink:0;"></span>
                         Dalam Proses
                     </span>
                 </div>
             </div>
+
         </div>
     </div>
 
-    <div class="stats-card mb-4">
-        <div class="stats-card-header">
-            <h3 class="stats-card-title">
-                <div class="d-flex align-items-center justify-content-center bg-danger bg-opacity-10 text-danger rounded-2" style="width: 36px; height: 36px;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path><line x1="8" y1="6" x2="16" y2="6"></line><line x1="8" y1="10" x2="16" y2="10"></line></svg>
+    <!-- ===================== SECTION: PENGALAMAN KERJA ===================== -->
+    <div class="content-card mb-4 p-0">
+        <div class="content-card-header p-4 pb-3 border-bottom">
+            <div class="d-flex align-items-center gap-3">
+                <div class="content-card-icon" style="width: 38px; height: 38px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                        <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                    </svg>
                 </div>
-                Pengalaman Kerja
-            </h3>
-        </div>
-        <div class="card-body p-2">
-            <div class="p-4">
-                <div class="row mx-2">
-                    <div class="small lh-sm mt-2">
-                        <p class="card-title-desc text-danger fst-italic">
-                            Perlu diisi oleh Petender
-                        </p>
-                    </div>
-                </div>
-                <div class="row mb-2 mx-2">
-                    <div class="col-12 d-flex justify-content-end gap-2">
-                        <button type="button" class="btn btn-sm btn-success add_btn_item">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <line x1="12" y1="5" x2="12" y2="19"></line>
-                                <line x1="5" y1="12" x2="19" y2="12"></line>
-                            </svg>
-                            Tambah Item
-                        </button>
-                    </div>
-                </div>
-                <div class="row mx-2">
-                    <div class="table-responsive">
-                        <table id="dt_tmpltSpec" data-path="" class=" table table-modern w-100 mb-0">
-                            <thead>
-                                <tr>
-                                    <th colspan="6">No. Rujukan Petender</th>
-                                </tr>
-                                <tr>
-                                    <th class="text-center">Bil</th>
-                                    <th class="text-center">Senarai Kerja Yang Disiapkan</th>
-                                    <th class="text-center">PIC</th>
-                                    <th class="text-center">No. Telefon PIC</th>
-                                    <th class="text-center">Nilai Kerja (RM)</th>
-                                    <th class="text-center">Tindakan</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td class="text-center">1</td>
-                                    <td>
-                                        <input type="text" class="form-control form-control-sm">
-                                    </td>
-                                    <td>
-                                        <input type="text" class="form-control form-control-sm">
-                                    </td>
-                                    <td>
-                                        <input type="text" class="form-control form-control-sm">
-                                    </td>
-                                    <td>
-                                        <input type="text" class="form-control form-control-sm nilai-kerja text-end">
-                                    </td>
-                                    <td class="text-center">
-                                        <button type="button" class="btn btn-sm btn-danger btn-circle text-white">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-                                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                <polyline points="3 6 5 6 21 6"></polyline>
-                                                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
-                                                <path d="M10 11v6"></path>
-                                                <path d="M14 11v6"></path>
-                                                <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>
-                                            </svg>
-                                        </button>
-                                    </td>
-                                </tr>
-                                <tr class="add_row_item d-none">
-                                    <td class="text-center"></td>
-                                    <td>
-                                        <input type="text" class="form-control form-control-sm">
-                                    </td>
-                                    <td>
-                                        <input type="text" class="form-control form-control-sm">
-                                    </td>
-                                    <td>
-                                        <input type="text" class="form-control form-control-sm">
-                                    </td>
-                                    <td>
-                                        <input type="text" class="form-control form-control-sm nilai-kerja">
-                                    </td>
-                                    <td class="text-center">
-                                        <button type="button" class="btn btn-sm btn-danger btn-circle text-white">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-                                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                <polyline points="3 6 5 6 21 6"></polyline>
-                                                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
-                                                <path d="M10 11v6"></path>
-                                                <path d="M14 11v6"></path>
-                                                <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>
-                                            </svg>
-                                        </button>
-                                    </td>
-                                </tr>
-                            </tbody>
-                            <tfoot>
-                                <tr>
-                                    <th colspan="4" class="text-end">Jumlah</th>
-                                    <th class="total-nilai text-end">0.00</th>
-                                    <th></th>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
+                <div>
+                    <h3 class="content-card-title mb-0" style="font-size: 1rem;">Pengalaman Kerja Dalam (5) Tahun Lepas</h3>
+                    <p class="text-muted mb-0" style="font-size: 0.78rem;">Diisi oleh Petender</p>
                 </div>
             </div>
         </div>
-    </div>
-    <div class="stats-card mb-4">
-        <div class="stats-card-header">
-            <h3 class="stats-card-title">
-                <div class="d-flex align-items-center justify-content-center bg-danger bg-opacity-10 text-danger rounded-2" style="width: 36px; height: 36px;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path><line x1="8" y1="6" x2="16" y2="6"></line><line x1="8" y1="10" x2="16" y2="10"></line></svg>
-                </div>
-                Dokumen Sokongan / Rujukan 
-            </h3>
-        </div>
-        <div class="card-body p-2">
-            <div class="p-4">
-                <div class="row mb-3 mx-3">
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="row mb-4 mx-2">
-        <div class="col-12 d-flex justify-content-between">
-            <div>
-                <a href="{{ route('senaraiTeknikal') }}" type="button" class="btn btn-sm btn-outline-secondary">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="19" y1="12" x2="5" y2="12"></line>
-                        <polyline points="12 19 5 12 12 5"></polyline>
+
+        <div class="content-card-body p-4">
+
+            <!-- Table toolbar -->
+            <div class="d-flex justify-content-end mb-3">
+                <button type="button" id="btn-tambah-row"
+                    class="btn btn-sm btn-success d-inline-flex align-items-center gap-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
                     </svg>
-                    Kembali
-                </a>
-            </div>
-            <div class="d-flex gap-2">
-                <button type="button" class="btn btn-sm btn-primary">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                        <polyline points="14 2 14 8 20 8"/>
-                    </svg>
-                    Laporan
-                </button>
-                <button type="button" class="btn btn-sm btn-success">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M4 4h12l4 4v12H4z"/>
-                        <rect x="7" y="4" width="8" height="5"/>
-                        <rect x="7" y="14" width="10" height="6"/>
-                    </svg>
-                    Simpan
+                    Tambah
                 </button>
             </div>
+
+            <!-- Table -->
+            <div class="table-responsive">
+                <table id="tbl-pengalaman" class="table table-modern align-middle mb-0 w-100">
+                    <thead>
+                        <tr>
+                            <th class="text-center py-3" style="width:50px;">Bil</th>
+                            <th class="py-3" style="min-width:220px;">Senarai Kerja Yang Disiapkan</th>
+                            <th class="py-3" style="min-width:160px;">PIC</th>
+                            <th class="py-3" style="width:150px;">No. Telefon PIC</th>
+                            <th class="text-end py-3" style="width:160px;">Nilai Kerja (RM)</th>
+                            <th class="text-center py-3" style="width:60px;">Tindakan</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbl-pengalaman-body">
+                        <!-- initial row rendered by JS below -->
+                    </tbody>
+                    <tfoot>
+                        <tr style="border-top: 2px solid #e2e8f0;">
+                            <th colspan="4" class="text-end text-muted" style="font-size:0.75rem;">JUMLAH NILAI KERJA</th>
+                            <th class="text-end" id="total-nilai" style="font-size:0.875rem; color:#1e293b;">0.00</th>
+                            <th></th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+
         </div>
     </div>
 
- 
+    <!-- ===================== SECTION: DOKUMEN SOKONGAN ===================== -->
+    <div class="content-card mb-4 p-0">
+        <div class="content-card-header p-4 pb-3 border-bottom">
+            <div class="d-flex align-items-center gap-3">
+                <div class="content-card-icon" style="width: 38px; height: 38px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="12" y1="18" x2="12" y2="12"></line>
+                        <line x1="9" y1="15" x2="15" y2="15"></line>
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="content-card-title mb-0" style="font-size: 1rem;">Dokumen Sokongan / Rujukan</h3>
+                    <p class="text-muted mb-0" style="font-size: 0.78rem;">Muat naik sijil, kontrak atau surat berkaitan pengalaman kerja</p>
+                </div>
+            </div>
+        </div>
+        <div class="content-card-body p-4">
 
+            <!-- Upload Zone -->
+            <label class="upload-zone w-100" id="upload-zone" for="input-dokumen">
+                <div class="upload-zone-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="16 16 12 12 8 16"></polyline>
+                        <line x1="12" y1="12" x2="12" y2="21"></line>
+                        <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"></path>
+                    </svg>
+                </div>
+                <span class="upload-zone-label">Klik atau seret fail ke sini untuk muat naik</span>
+                <span class="upload-zone-sub">PDF, Word, Excel, Imej, ZIP — saiz maksimum 10 MB setiap fail</span>
+                <input type="file" id="input-dokumen" name="dokumen_pengalaman[]" multiple hidden accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.zip,.rar">
+            </label>
 
-<script type="text/javascript">
+            <!-- Uploaded file chips -->
+            <div class="file-chip-list" id="file-chip-list"></div>
 
-    document.addEventListener('DOMContentLoaded', function () {
+        </div>
+    </div>
 
-        const table = document.querySelector('#dt_tmpltSpec');
-        if (!table) return;
+    <!-- ACTION BUTTONS -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <a href="{{ route('senaraiTeknikal') }}" class="btn-form btn-form-secondary">
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+            Kembali
+        </a>
+        <div class="d-flex gap-2">
+            <button type="button" class="btn-form btn-form-primary">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                </svg>
+                Laporan
+            </button>
+            <button type="button" class="btn-form btn-form-success">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                    <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                    <polyline points="7 3 7 8 15 8"></polyline>
+                </svg>
+                Simpan
+            </button>
+        </div>
+    </div>
 
-        const tbody = table.querySelector('tbody');
-        const addItemBtn = document.querySelector('.add_btn_item');
-        const totalCell = table.querySelector('.total-nilai');
+@endsection
 
-        // Update row numbers (Bil)
-        function updateRowNumbers() {
-            const rows = tbody.querySelectorAll('tr:not(.add_row_item)');
-            rows.forEach((row, index) => {
-                row.children[0].textContent = index + 1;
-            });
-        }
+@section('scripts')
+<script>
+$(document).ready(function () {
 
-        // Update total in Jumlah row
-        function updateTotal() {
-            let total = 0;
-            const inputs = tbody.querySelectorAll('.nilai-kerja');
-            inputs.forEach(input => {
-                const value = parseFloat(input.value.replace(/,/g, '')) || 0;
-                total += value;
-            });
-            totalCell.textContent = total.toLocaleString('en-MY', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-            });
-        }
+    // ── Row template ─────────────────────────────────────────────────
+    function buildRow(bil) {
+        return $('<tr class="pengalaman-row">' +
+            '<td class="text-center row-bil fw-semibold text-muted" style="font-size:0.8rem;">' + bil + '</td>' +
+            '<td><input type="text" name="pengalaman_tajuk[]" class="form-control form-control-sm" placeholder="Nama / tajuk projek..."></td>' +
+            '<td><input type="text" name="pengalaman_pic[]" class="form-control form-control-sm" placeholder="Nama PIC..."></td>' +
+            '<td><input type="text" name="pengalaman_telefon[]" class="form-control form-control-sm" placeholder="Cth: 012-3456789"></td>' +
+            '<td><input type="text" name="pengalaman_nilai[]" class="form-control form-control-sm text-end nilai-kerja" placeholder="0.00"></td>' +
+            '<td class="text-center">' +
+                '<button type="button" class="btn btn-sm btn-hapus-row d-inline-flex align-items-center justify-content-center p-0" ' +
+                    'style="width:28px;height:28px;border-radius:6px;background:#fee2e2;color:#ef4444;border:none;" ' +
+                    'title="Buang baris">' +
+                    '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></svg>' +
+                '</button>' +
+            '</td>' +
+        '</tr>');
+    }
 
-        // Force numeric only
-        tbody.addEventListener('keypress', function(e){
-            if(e.target.classList.contains('nilai-kerja')) {
-                const char = String.fromCharCode(e.which);
-                if(!/[0-9.]|\./.test(char)) {
-                    e.preventDefault();
-                }
-            }
+    // Seed first row
+    $('#tbl-pengalaman-body').append(buildRow(1));
+
+    // ── Re-number rows ───────────────────────────────────────────────
+    function reNumber() {
+        $('#tbl-pengalaman-body .pengalaman-row').each(function (i) {
+            $(this).find('.row-bil').text(i + 1);
         });
+    }
 
-        // Optional: format on blur
-        tbody.addEventListener('blur', function(e){
-            if(e.target.classList.contains('nilai-kerja')) {
-                let value = parseFloat(e.target.value.replace(/,/g, '')) || 0;
-                e.target.value = value.toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                updateTotal();
-            }
-        }, true);
-
-        // ADD ROW
-        if (addItemBtn) {
-            addItemBtn.addEventListener('click', function () {
-                const template = tbody.querySelector('.add_row_item');
-                const clone = template.cloneNode(true);
-                clone.classList.remove('d-none', 'add_row_item');
-                clone.querySelectorAll('input').forEach(input => input.value = '');
-                tbody.appendChild(clone);
-                updateRowNumbers();
-                updateTotal();
-            });
-        }
-
-        // DELETE ROW
-        tbody.addEventListener('click', function (e) {
-            const deleteBtn = e.target.closest('.btn-danger');
-            if (deleteBtn) {
-                const row = deleteBtn.closest('tr');
-                const rows = tbody.querySelectorAll('tr:not(.add_row_item)');
-                if (rows.length <= 1) return;
-                row.remove();
-                updateRowNumbers();
-                updateTotal();
-            }
+    // ── Update total ─────────────────────────────────────────────────
+    function updateTotal() {
+        var total = 0;
+        $('#tbl-pengalaman-body .nilai-kerja').each(function () {
+            total += parseFloat($(this).val().replace(/,/g, '')) || 0;
         });
+        $('#total-nilai').text(total.toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+    }
 
-        // AUTO UPDATE TOTAL WHEN VALUE CHANGES
-        tbody.addEventListener('input', function (e) {
-            if (e.target.classList.contains('nilai-kerja')) {
-                e.target.value = e.target.value.replace(/[^\d.]/g,'');
-                updateTotal();
-            }
+    // ── Add row ──────────────────────────────────────────────────────
+    $('#btn-tambah-row').on('click', function () {
+        var bil = $('#tbl-pengalaman-body .pengalaman-row').length + 1;
+        $('#tbl-pengalaman-body').append(buildRow(bil));
+    });
+
+    // ── Delete row ───────────────────────────────────────────────────
+    $('#tbl-pengalaman-body').on('click', '.btn-hapus-row', function () {
+        if ($('#tbl-pengalaman-body .pengalaman-row').length <= 1) return;
+        $(this).closest('tr').remove();
+        reNumber();
+        updateTotal();
+    });
+
+    // ── Nilai kerja: numeric only + format on blur ───────────────────
+    $('#tbl-pengalaman-body').on('input', '.nilai-kerja', function () {
+        $(this).val($(this).val().replace(/[^\d.]/g, ''));
+        updateTotal();
+    });
+    $('#tbl-pengalaman-body').on('blur', '.nilai-kerja', function () {
+        var v = parseFloat($(this).val().replace(/,/g, '')) || 0;
+        $(this).val(v.toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+        updateTotal();
+    });
+
+    // ── Helpers: file size format ────────────────────────────────────
+    function formatBytes(bytes) {
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+        return (bytes / 1048576).toFixed(1) + ' MB';
+    }
+
+    function extClass(filename) {
+        var ext = filename.split('.').pop().toLowerCase();
+        return 'ext-' + ext;
+    }
+
+    // ── Build file chip ──────────────────────────────────────────────
+    function buildFileChip(file, url) {
+        var ext = file.name.split('.').pop().toLowerCase();
+        var $chip = $(
+            '<div class="file-chip">' +
+                '<span class="file-chip-ext ' + extClass(file.name) + '">' + ext + '</span>' +
+                '<div class="file-chip-body">' +
+                    '<a href="' + url + '" target="_blank" class="file-chip-name" title="' + $('<span>').text(file.name).html() + '">' +
+                        $('<span>').text(file.name).html() +
+                    '</a>' +
+                    '<span class="file-chip-size">' + formatBytes(file.size) + '</span>' +
+                '</div>' +
+                '<button type="button" class="file-chip-remove" title="Buang fail">' +
+                    '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>' +
+                '</button>' +
+            '</div>'
+        );
+        $chip.find('.file-chip-remove').on('click', function () {
+            URL.revokeObjectURL(url);
+            $chip.remove();
+        });
+        return $chip;
+    }
+
+    // ── File input change ────────────────────────────────────────────
+    $('#input-dokumen').on('change', function () {
+        var files = this.files;
+        if (!files || files.length === 0) return;
+        $.each(files, function (i, file) {
+            var url = URL.createObjectURL(file);
+            $('#file-chip-list').append(buildFileChip(file, url));
+        });
+        $('#input-dokumen').val('');
+    });
+
+    // ── Drag-and-drop on upload zone ─────────────────────────────────
+    var $zone = $('#upload-zone');
+    $zone[0].addEventListener('dragover', function (e) {
+        e.preventDefault();
+        $zone.addClass('dragover');
+    });
+    $zone[0].addEventListener('dragleave', function () {
+        $zone.removeClass('dragover');
+    });
+    $zone[0].addEventListener('drop', function (e) {
+        e.preventDefault();
+        $zone.removeClass('dragover');
+        var files = e.dataTransfer.files;
+        if (!files || files.length === 0) return;
+        $.each(files, function (i, file) {
+            var url = URL.createObjectURL(file);
+            $('#file-chip-list').append(buildFileChip(file, url));
         });
     });
 
+});
 </script>
-
-  
 @endsection
-
