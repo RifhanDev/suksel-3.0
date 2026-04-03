@@ -193,15 +193,14 @@
                     <tbody>
                         <!-- ROW 1: Spesifikasi -->
                         <tr>
-                            <td class="text-center"><input type="checkbox" name="row_check_teknikal[]" class="form-check-input row-check-teknikal">
+                            <td class="text-center">
+                                <input type="checkbox" name="row_check_teknikal[]" class="form-check-input row-check-teknikal">
                             </td>
                             <td>Perkhidmatan Penilaian Forensik Keatas Sistem XXXX</td>
                             <td class="text-center"><span class="small fw-semibold text-muted">Spesifikasi</span></td>
                             <td class="text-center small">Kunci Masuk</td>
                             <td class="text-center">
-                                <input type="number" name="skema[]"
-                                    class="form-control form-control-sm text-center skema-input fw-semibold"
-                                    value="40" min="0" style="max-width:90px;margin:0 auto;">
+                                <input type="number" name="skema[]" class="form-control form-control-sm text-center skema-input fw-semibold" value="40" min="0" style="max-width:90px;margin:0 auto;">
                             </td>
                             <td class="text-center"><span class="badge-status badge-status-success">Selesai</span></td>
                             <td class="text-center text-muted small rujukan-cell">—</td>
@@ -270,8 +269,7 @@
                         <div class="d-flex align-items-center gap-2">
                             <input type="number" id="input-penilaian" name="input_penilaian" class="form-control form-control-sm text-center fw-semibold" style="max-width: 80px; font-size: 1rem;" placeholder="0" min="0" max="121">
                             <span class="text-muted small">daripada</span>
-                            <span class="fw-bold text-dark" id="penilaian-teknikal-total"
-                                style="font-size: 1rem;">40</span>
+                            <span class="fw-bold text-dark" id="penilaian-teknikal-total" style="font-size: 1rem;">40</span>
                             <span class="text-muted small">markah</span>
                         </div>
                     </div>

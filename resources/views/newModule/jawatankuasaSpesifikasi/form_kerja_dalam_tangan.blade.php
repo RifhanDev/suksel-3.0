@@ -31,7 +31,7 @@
         </div>
     </div>
 
-    <!-- TENDER INFO CARD -->
+    <!-- TENDER INFO -->
     <div class="content-card mb-4 p-0">
         <div class="content-card-body p-4">
 

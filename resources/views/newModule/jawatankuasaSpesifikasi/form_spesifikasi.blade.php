@@ -45,7 +45,6 @@
             left: 10px;
             top: 50%;
             width: 7px;
-            /* reaches the td's 16px left-padding — touches the input */
             height: 1.5px;
             background: #cbd5e1;
             transform: translateY(-50%);
@@ -83,7 +82,6 @@
             left: 10px;
             top: 50%;
             width: 18px;
-            /* reaches padding-left: 28px on spec td — touches the spec input */
             height: 1.5px;
             background: #cbd5e1;
             transform: translateY(-50%);
@@ -344,9 +342,9 @@
                         <tr>
                             <th>
                                 Item
-                                <div
-                                    style="font-size: 0.68rem; font-weight: 600; text-transform: none; letter-spacing: 0; color: #94a3b8; margin-top: 2px;">
-                                    Spesifikasi</div>
+                                <div style="font-size: 0.68rem; font-weight: 600; text-transform: none; letter-spacing: 0; color: #94a3b8; margin-top: 2px;">
+                                    Spesifikasi
+                                </div>
                             </th>
                             <th class="text-center" style="width: 130px;">Kekerapan / Kuantiti</th>
                             <th class="text-center" style="width: 130px;">Unit Ukuran</th>
@@ -385,7 +383,9 @@
             </button>
         </div>
     </div>
+@endsection
 
+@push('modals')
     <!-- ===================== MODAL: Confirm Hapus ===================== -->
     <div class="modal fade" id="modalHapusConfirm" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-sm modal-dialog-centered">
@@ -592,7 +592,7 @@
             </div>
         </div>
     </div>
-@endsection
+@endpush
 
 @section('scripts')
     <script src="https://cdn.jsdelivr.net/npm/exceljs@4.3.0/dist/exceljs.min.js"></script>
