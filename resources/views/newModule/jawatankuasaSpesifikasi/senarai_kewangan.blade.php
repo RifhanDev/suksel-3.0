@@ -223,7 +223,7 @@
                                     <td class="text-center"><span class="badge bg-warning">Belum Lengkap</span></td>
                                     <td></td>
                                     <td class="text-center">
-                                        <button type="button" class="btn btn-sm btn-warning text-white">Kemaskini</button>
+                                    <a href="{{ route('pnytBank') }}" type="button" class="btn btn-sm btn-warning text-white">Kemaskini</a>
                                     </td>
                                 </tr>
                                 <tr>
