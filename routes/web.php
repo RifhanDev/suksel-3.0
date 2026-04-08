@@ -82,6 +82,7 @@ use App\Http\Controllers\DummyController;
 use App\Http\Controllers\JawatankuasaController;
 use App\Http\Controllers\CutOffController;
 use App\Http\Controllers\JawatankuasaPerolehanController;
+use App\Http\Controllers\PenilaianKewanganController;
 use App\Http\Controllers\PenilaianTeknikalController;
 use App\Http\Controllers\PerakuanJabatanController;
 
@@ -213,21 +214,29 @@ Route::get('/pelantikan-jawatankuasa/laporan', [JawatankuasaController::class, '
 Route::post('/pelantikan-jawatankuasa/hantar-pemakluman', [JawatankuasaController::class, 'hantarPemakluman'])->middleware(['auth'])->name('jawatankuasa.hantarPemakluman');
 Route::view('/senarai-semak', 'newModule.jawatankuasaSpesifikasi.index')->name('senaraiSemak');
 Route::view('/senarai-teknikal', 'newModule.jawatankuasaSpesifikasi.senarai_teknikal')->name('senaraiTeknikal');
-Route::view('/senarai-kewangan', 'newModule.jawatankuasaSpesifikasi.senarai_kewangan')->name('senaraiKewangan');
+Route::view('/senarai-kewangan', 'newModule.jawatankuasaSpesifikasi.senarai_kewangan-dan')->name('senaraiKewangan');
 Route::view('/templat-spesifikasi', 'newModule.jawatankuasaSpesifikasi.form_spesifikasi')->name('spesifikasiForm');
 Route::view('/pengalaman-kerja', 'newModule.jawatankuasaSpesifikasi.form_pengalaman_kerja')->name('pgmnKerjaForm');
 Route::view('/kerja-dalam-tangan', 'newModule.jawatankuasaSpesifikasi.form_kerja_dalam_tangan')->name('kjDlmTanganForm');
 Route::view('/profil-petender', 'newModule.jawatankuasaSpesifikasi.form_profil_petender')->name('prflPetender');
+Route::post('/profile-petender/submit', [JawatankuasaController::class, 'storeProfilPetender'])->middleware(['auth'])->name('jawatankuasa.hantarProfilPetender');
+Route::view('/penyata-bank', 'newModule.jawatankuasaSpesifikasi.form_penyata_bank')->name('pnytBank');
+Route::post('/penyata-bank/submit', [JawatankuasaController::class, 'storePenyataKewangan'])->middleware(['auth'])->name('jawatankuasa.hantarPenyataKewangan');
 Route::view('/jawatankuasa-pembuka', 'newModule.jawatankuasa_pembuka')->name('jawatankuasaPembuka');
 
 // old
 // Route::view('/penilaian-teknikal', 'newModule.penilaian.teknikal')->name('penilaianTeknikal');
-Route::view('/penilaian-teknikal-kerja', 'newModule.penilaian.teknikal_kerja')->name('penilaianTeknikalKerja');
-Route::view('/penilaian-kewangan', 'newModule.penilaian.kewangan')->name('penilaianKewangan');
+// Route::view('/penilaian-teknikal-kerja', 'newModule.penilaian.teknikal_kerja')->name('penilaianTeknikalKerja');
+// Route::view('/penilaian-kewangan', 'newModule.penilaian.kewangan')->name('penilaianKewangan');
 
-// new 
+// new penilaian teknikal
 Route::get('/penilaian-teknikal', [PenilaianTeknikalController::class, 'index'])->name('penilaianTeknikal');
 Route::get('/penilaian-teknikal/{tender_no}', [PenilaianTeknikalController::class, 'show'])->name('penilaianTeknikal.show');
+
+// new penilaian kewangan
+Route::get('/penilaian-kewangan', [PenilaianKewanganController::class, 'index'])->name('penilaianKewangan');
+Route::get('/penilaian-kewangan/{tender_no}', [PenilaianKewanganController::class, 'show'])->name('penilaianKewangan.show');
+
 
 Route::view('/penilaian-kewangan-kerja', 'newModule.penilaian.borang1')->name('borang1');
 Route::view('/penilaian-kewangan-kerja-borang2', 'newModule.penilaian.borang2')->name('borang2');

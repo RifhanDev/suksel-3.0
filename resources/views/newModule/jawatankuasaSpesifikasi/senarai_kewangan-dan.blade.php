@@ -12,8 +12,8 @@
     <!-- HEADER -->
     <div class="d-flex flex-column flex-lg-row justify-content-start align-items-start align-items-lg-center mb-4">
         <div>
-            <h3 class="fw-bold text-dark m-0" style="letter-spacing: -0.5px;">Senarai Semak Teknikal</h3>
-            <p class="text-muted small m-0">Paparan senarai semak bahagian teknikal bagi tender / sebutharga.</p>
+            <h3 class="fw-bold text-dark m-0" style="letter-spacing: -0.5px;">Senarai Semak Kewangan</h3>
+            <p class="text-muted small m-0">Paparan senarai semak bahagian kewangan bagi tender / sebutharga.</p>
         </div>
     </div>
 
@@ -56,7 +56,7 @@
         </div>
     </div>
 
-    <!-- ===================== SECTION 1: PENYEDIAAN SPESIFIKASI & SKOR ===================== -->
+    <!-- ===================== SECTION 1: SENARAI SEMAK KEWANGAN & SKOR ===================== -->
     <div class="content-card mb-4 p-0">
         <div class="content-card-header p-4 pb-3 border-bottom">
             <div class="d-flex align-items-center gap-3">
@@ -71,7 +71,7 @@
                 </div>
                 <div>
                     <h3 class="content-card-title mb-0" style="font-size: 1rem;">Penyediaan Spesifikasi &amp; Skor</h3>
-                    <p class="text-muted mb-0" style="font-size: 0.78rem;">Senarai Semak Teknikal</p>
+                    <p class="text-muted mb-0" style="font-size: 0.78rem;">Senarai Semak Kewangan</p>
                 </div>
             </div>
         </div>
@@ -140,23 +140,13 @@
                         </svg>
                         Senarai Semak Standard
                     </a>
-                    <a href="#" class="btn btn-sm btn-primary d-inline-flex align-items-center gap-1"
-                        data-bs-toggle="modal" data-bs-target="#ciptaSpesifikasi">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24"
-                            fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
-                            stroke-linejoin="round">
-                            <line x1="12" y1="5" x2="12" y2="19"></line>
-                            <line x1="5" y1="12" x2="19" y2="12"></line>
-                        </svg>
-                        Cipta Spesifikasi
-                    </a>
                 </div>
                 <!-- Divider -->
                 <div style="width: 1px; height: 24px; background: #e2e8f0;"></div>
                 <!-- Right: Row actions -->
                 <div class="d-flex align-items-center gap-2">
                     <button type="button"
-                        class="btn btn-sm btn-success d-inline-flex align-items-center gap-1 btn-tambah-teknikal">
+                        class="btn btn-sm btn-success d-inline-flex align-items-center gap-1 btn-tambah-kewangan">
                         <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24"
                             fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
                             stroke-linejoin="round">
@@ -166,7 +156,7 @@
                         Tambah
                     </button>
                     <button type="button"
-                        class="btn btn-sm btn-danger d-inline-flex align-items-center gap-1 btn-hapus-teknikal">
+                        class="btn btn-sm btn-danger d-inline-flex align-items-center gap-1 btn-hapus-kewangan">
                         <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24"><path fill="currentColor" d="M20 6a1 1 0 0 1 .117 1.993L20 8h-.081L19 19a3 3 0 0 1-2.824 2.995L16 22H8c-1.598 0-2.904-1.249-2.992-2.75l-.005-.167L4.08 8H4a1 1 0 0 1-.117-1.993L4 6zm-9.489 5.14a1 1 0 0 0-1.218 1.567L10.585 14l-1.292 1.293l-.083.094a1 1 0 0 0 1.497 1.32L12 15.415l1.293 1.292l.094.083a1 1 0 0 0 1.32-1.497L13.415 14l1.292-1.293l.083-.094a1 1 0 0 0-1.497-1.32L12 12.585l-1.293-1.292l-.094-.083zM14 2a2 2 0 0 1 2 2a1 1 0 0 1-1.993.117L14 4h-4l-.007.117A1 1 0 0 1 8 4a2 2 0 0 1 1.85-1.995L10 2z"/></svg>
                         Hapus
                     </button>
@@ -175,11 +165,11 @@
 
             <!-- Main Table -->
             <div class="table-responsive">
-                <table id="tbl-teknikal" class="table table-modern w-100 mb-0">
+                <table id="tbl-kewangan" class="table table-modern w-100 mb-0">
                     <thead>
                         <tr>
                             <th class="text-center" style="width: 44px;">
-                                <input type="checkbox" name="check_all_teknikal" class="form-check-input px-0 check-all-teknikal">
+                                <input type="checkbox" name="check_all_kewangan" class="form-check-input px-0 check-all-kewangan">
                             </th>
                             <th style="min-width: 180px;">Tajuk / Dokumen</th>
                             <th class="text-center" style="width: 185px;">Mekanisma</th>
@@ -190,33 +180,8 @@
                             <th class="text-center" style="width: 110px;">Tindakan</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <!-- ROW 1: Spesifikasi -->
-                        <tr>
-                            <td class="text-center">
-                                <input type="checkbox" name="row_check_teknikal[]" class="form-check-input row-check-teknikal">
-                            </td>
-                            <td>Perkhidmatan Penilaian Forensik Keatas Sistem XXXX</td>
-                            <td class="text-center"><span class="small fw-semibold text-muted">Spesifikasi</span></td>
-                            <td class="text-center small">Kunci Masuk</td>
-                            <td class="text-center">
-                                <input type="number" name="skema[]" class="form-control form-control-sm text-center skema-input fw-semibold" value="40" min="0" style="max-width:90px;margin:0 auto;">
-                            </td>
-                            <td class="text-center"><span class="badge-status badge-status-success">Selesai</span></td>
-                            <td class="text-center text-muted small rujukan-cell">—</td>
-                            <td class="text-center">
-                                <a href="{{ route('spesifikasiForm') }}"
-                                    class="btn btn-sm btn-warning d-inline-flex align-items-center justify-content-center p-1"
-                                    style="width:30px;height:30px;" title="Kemaskini Spesifikasi">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13"
-                                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                        stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                                    </svg>
-                                </a>
-                            </td>
-                        </tr>
+                    <tbody id="tbl-kewangan-body">
+                        <!-- Rows populated via JS initialRows -->
                         <!-- EMPTY STATE ROW (shown when all rows deleted) -->
                         <tr id="tbl-empty-row" class="d-none">
                             <td colspan="8" class="text-center text-muted py-4 small">Tiada Data</td>
@@ -243,7 +208,31 @@
         </div>
     </div>
 
-    <!-- ===================== SECTION 2: PENETAPAN PENANDA ARAS ===================== -->
+    <!-- ===================== SECTION 2: HARGA INDIKATIF ===================== -->
+    <div class="content-card mb-4 p-0">
+        <div class="content-card-header p-4 pb-3 border-bottom">
+            <div class="d-flex align-items-center gap-3">
+                <div class="content-card-icon" style="width: 38px; height: 38px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2c5.523 0 10 4.477 10 10a10 10 0 0 1-19.995.324L2 12l.004-.28C2.152 6.327 6.57 2 12 2m0 9h-1l-.117.007a1 1 0 0 0 0 1.986L11 13v3l.007.117a1 1 0 0 0 .876.876L12 17h1l.117-.007a1 1 0 0 0 .876-.876L14 16l-.007-.117a1 1 0 0 0-.764-.857l-.112-.02L13 15v-3l-.007-.117a1 1 0 0 0-.876-.876zm.01-3l-.127.007a1 1 0 0 0 0 1.986L12 10l.127-.007a1 1 0 0 0 0-1.986z"/></svg>
+                </div>
+                <div>
+                    <h3 class="content-card-title mb-0" style="font-size: 1rem;">Harga Indikatif</h3>
+                    <p class="text-muted mb-0" style="font-size: 0.78rem;">Masukkan anggaran harga indikatif bagi perolehan ini</p>
+                </div>
+            </div>
+        </div>
+        <div class="content-card-body p-4">
+            <div class="d-flex align-items-center gap-3">
+                <label class="fw-semibold text-dark mb-0 flex-shrink-0" style="font-size: 0.875rem;">Harga Indikatif (RM)</label>
+                <input type="text" id="input-harga-indikatif" name="harga_indikatif"
+                    class="form-control form-control-sm fw-semibold text-end"
+                    style="max-width: 200px; font-size: 1rem;"
+                    value="29,000.00" placeholder="0.00">
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================== SECTION 3: PENETAPAN PENANDA ARAS KEWANGAN ===================== -->
     <div class="content-card mb-4 p-0">
         <div class="content-card-header p-4 pb-3 border-bottom">
             <div class="d-flex align-items-center gap-3">
@@ -261,15 +250,15 @@
         <div class="content-card-body p-4">
             <div class="row g-3">
 
-                <!-- Penilaian Teknikal input -->
+                <!-- Penilaian Kewangan input -->
                 <div class="col-12 col-md-6">
                     <div class="p-3 rounded-2 h-100" style="background: #fafbfc; border: 1px solid #f1f5f9;">
                         <span class="d-block text-muted fw-semibold text-uppercase mb-2"
-                            style="font-size: 0.67rem; letter-spacing: 0.5px;">Penilaian Teknikal</span>
+                            style="font-size: 0.67rem; letter-spacing: 0.5px;">Penilaian Kewangan</span>
                         <div class="d-flex align-items-center gap-2">
                             <input type="number" id="input-penilaian" name="input_penilaian" class="form-control form-control-sm text-center fw-semibold" style="max-width: 80px; font-size: 1rem;" placeholder="0" min="0" max="121">
                             <span class="text-muted small">daripada</span>
-                            <span class="fw-bold text-dark" id="penilaian-teknikal-total" style="font-size: 1rem;">40</span>
+                            <span class="fw-bold text-dark" id="penilaian-kewangan-total" style="font-size: 1rem;">40</span>
                             <span class="text-muted small">markah</span>
                         </div>
                     </div>
@@ -294,7 +283,7 @@
         </div>
     </div>
 
-    <!-- ===================== SECTION 3: DOKUMEN SOKONGAN ===================== -->
+    <!-- ===================== SECTION 4: DOKUMEN SOKONGAN ===================== -->
     <div class="content-card mb-4 p-0">
         <div class="content-card-header p-4 pb-3 border-bottom">
             <div class="d-flex align-items-center gap-3">
@@ -383,61 +372,22 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                {{-- ── Borang Atas Talian items ── --}}
-                                <tr data-type="borang_atas_talian" data-route="{{ route('pgmnKerjaForm') }}" data-tajuk="Senarai Pengalaman Kerja">
-                                    <td class="text-center"><input type="checkbox" class="form-check-input row-check-standard"></td>
-                                    <td>
-                                        Senarai Pengalaman Kerja
-                                        <span class="ms-1 d-inline-flex align-items-center" style="font-size:0.6rem;background:#fef9c3;color:#854d0e;border-radius:3px;padding:1px 5px;vertical-align:middle;border:1px solid #fde68a;">Borang Atas Talian</span>
-                                    </td>
-                                </tr>
-                                <tr data-type="borang_atas_talian" data-route="{{ route('kjDlmTanganForm') }}" data-tajuk="Kerja Dalam Tangan">
-                                    <td class="text-center"><input type="checkbox" class="form-check-input row-check-standard"></td>
-                                    <td>
-                                        Kerja Dalam Tangan
-                                        <span class="ms-1 d-inline-flex align-items-center" style="font-size:0.6rem;background:#fef9c3;color:#854d0e;border-radius:3px;padding:1px 5px;vertical-align:middle;border:1px solid #fde68a;">Borang Atas Talian</span>
-                                    </td>
-                                </tr>
                                 {{-- ── Standard items (Petender / PTJ Muat Naik) ── --}}
-                                <tr data-tajuk="Pengalaman Syarikat Dengan Kerajaan Persekutuan (Bilangan Kontrak yang pernah diikat)">
+                                <tr data-tajuk="Modal Berbayar">
                                     <td class="text-center"><input type="checkbox" class="form-check-input row-check-standard"></td>
-                                    <td>Pengalaman Syarikat Dengan Kerajaan Persekutuan (Bilangan Kontrak yang pernah diikat)</td>
+                                    <td>Modal Berbayar</td>
                                 </tr>
-                                <tr data-tajuk="Pengalaman Syarikat Dengan Bukan Kerajaan Persekutuan (Bilangan Kontrak yang pernah diikat)">
+                                <tr data-tajuk="Kemudahan Kredit (Overdraf, Pinjaman Bank)">
                                     <td class="text-center"><input type="checkbox" class="form-check-input row-check-standard"></td>
-                                    <td>Pengalaman Syarikat Dengan Bukan Kerajaan Persekutuan (Bilangan Kontrak yang pernah diikat)</td>
+                                    <td>Kemudahan Kredit (Overdraf, Pinjaman Bank)</td>
                                 </tr>
-                                <tr data-tajuk="Skop Bekalan Dan Perkhidmatan">
+                                <tr data-tajuk="Pengesahan dari Institusi Kewangan ke atas jumlah yang telah dibayar">
                                     <td class="text-center"><input type="checkbox" class="form-check-input row-check-standard"></td>
-                                    <td>Skop Bekalan Dan Perkhidmatan</td>
+                                    <td>Pengesahan dari Institusi Kewangan ke atas jumlah yang telah dibayar</td>
                                 </tr>
-                                <tr data-tajuk="Salinan Borang KWSP A setiap pekerja bagi bulan caruman terakhir">
+                                <tr data-tajuk="Pengalaman Syarikat Dengan Bukan Kerajaan Persekutuan (Jumlah (RM) Kontrak yang pernah diikat)">
                                     <td class="text-center"><input type="checkbox" class="form-check-input row-check-standard"></td>
-                                    <td>Salinan Borang KWSP A setiap pekerja bagi bulan caruman terakhir</td>
-                                </tr>
-                                <tr data-tajuk="Bilangan Kakitangan">
-                                    <td class="text-center"><input type="checkbox" class="form-check-input row-check-standard"></td>
-                                    <td>Bilangan Kakitangan</td>
-                                </tr>
-                                <tr data-tajuk="Brosur / Risalah">
-                                    <td class="text-center"><input type="checkbox" class="form-check-input row-check-standard"></td>
-                                    <td>Brosur / Risalah</td>
-                                </tr>
-                                <tr data-tajuk="Surat pengesahan pendaftaran dengan Pertubuhan Keselamatan Sosial (Perkeso)">
-                                    <td class="text-center"><input type="checkbox" class="form-check-input row-check-standard"></td>
-                                    <td>Surat pengesahan pendaftaran dengan Pertubuhan Keselamatan Sosial (Perkeso) yang telah dikeluarkan mengikut Akta Keselamatan Sosial Pekerja 1969. Jadual Caruman Bulanan (Borang 8A) dan Resit Bayaran Caruman yang terbaru</td>
-                                </tr>
-                                <tr data-tajuk="Cadangan Bertulis">
-                                    <td class="text-center"><input type="checkbox" class="form-check-input row-check-standard"></td>
-                                    <td>Cadangan Bertulis</td>
-                                </tr>
-                                <tr data-tajuk="Lesen Premis oleh PBT">
-                                    <td class="text-center"><input type="checkbox" class="form-check-input row-check-standard"></td>
-                                    <td>Lesen Premis oleh PBT</td>
-                                </tr>
-                                <tr data-tajuk="Jadual Pelaksanaan">
-                                    <td class="text-center"><input type="checkbox" class="form-check-input row-check-standard"></td>
-                                    <td>Jadual Pelaksanaan</td>
+                                    <td>Pengalaman Syarikat Dengan Bukan Kerajaan Persekutuan (Jumlah (RM) Kontrak yang pernah diikat)</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -450,99 +400,6 @@
             </div>
         </div>
     </div>
-
-    <!-- ===================== MODAL: CIPTA SPESIFIKASI ===================== -->
-    <div class="modal fade" id="ciptaSpesifikasi" tabindex="-1" aria-labelledby="ciptaSpesifikasiLabel"
-        aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title fw-bold" id="ciptaSpesifikasiLabel">Cipta Spesifikasi</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-
-                    <!-- Search / Filter -->
-                    <div class="content-card mb-3 p-0">
-                        <div class="content-card-header px-4 py-3 border-bottom">
-                            <span class="fw-bold text-dark text-uppercase small" style="letter-spacing: 0.5px;">Cari
-                                Templat</span>
-                        </div>
-                        <div class="content-card-body p-4">
-                            <div class="row g-3">
-                                <div class="col-12">
-                                    <label class="form-label fw-semibold small">Klon Spesifikasi Daripada <span
-                                            class="text-danger">*</span></label>
-                                    <div class="d-flex flex-column gap-2 mt-1">
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="radio" name="klonSpesifikasi"
-                                                id="klonSpesifikasi1" checked>
-                                            <label class="form-check-label" for="klonSpesifikasi1">Templat Standard /
-                                                Kosong</label>
-                                        </div>
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="radio" name="klonSpesifikasi"
-                                                id="klonSpesifikasi2">
-                                            <label class="form-check-label" for="klonSpesifikasi2">Sebut Harga / Tender
-                                                Yang Lepas</label>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-12">
-                                    <label class="form-label fw-semibold small">Jenis Item</label>
-                                    <select class="form-select form-select-sm">
-                                        <option value="">Sila pilih...</option>
-                                        <option value="bekalan">Bekalan</option>
-                                        <option value="perkhidmatan">Perkhidmatan</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="d-flex justify-content-end gap-2 mt-3">
-                                <button type="button" class="btn-form btn-form-secondary" data-bs-dismiss="modal">Batal</button>
-                                <button type="button" class="btn-form btn-form-primary">Cari</button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Template Results Table -->
-                    <div class="content-card p-0">
-                        <div class="content-card-header px-4 py-3 border-bottom">
-                            <span class="fw-bold text-dark text-uppercase small"
-                                style="letter-spacing: 0.5px;">Templat</span>
-                        </div>
-                        <div class="content-card-body">
-                            <div class="table-responsive">
-                                <table id="templateTable" class="table table-modern w-100 mb-0">
-                                    <thead>
-                                        <tr>
-                                            <th>Tajuk / Dokumen</th>
-                                            <th class="text-center" style="width: 110px;">Skor Maksima</th>
-                                            <th class="text-center" style="width: 120px;">Jenis Item</th>
-                                            <th class="text-center" style="width: 130px;">Dicipta Oleh</th>
-                                            <th class="text-center" style="width: 90px;">Tindakan</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr class="template-row">
-                                            <td>Templat Standard / Kosong</td>
-                                            <td class="text-center">-</td>
-                                            <td class="text-center">-</td>
-                                            <td class="text-center">-</td>
-                                            <td class="text-center">
-                                                <a href="{{ route('spesifikasiForm') }}"
-                                                    class="btn btn-sm btn-primary text-white">Cipta</a>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-
-                </div>
-            </div>
-        </div>
-    </div>
 @endpush
 
 @section('scripts')
@@ -550,15 +407,78 @@
     <script type="text/javascript">
         $(document).ready(function() {
 
-            // ─── CHECKBOX: Senarai Semak Teknikal ────────────────────────────────────
-            $('#tbl-teknikal').on('change', '.check-all-teknikal', function() {
-                $('#tbl-teknikal .row-check-teknikal').prop('checked', $(this).prop('checked'));
+            // ─── INITIAL ROWS (simulates data from backend) ─────────────────────────
+            var EDIT_ICON = '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>';
+
+            var initialRows = [
+                {
+                    tajuk:      'Perkhidmatan Penilaian Forensik Keatas Sistem XXXX',
+                    mekanisma:  'Spesifikasi',
+                    tindakanPembekal: 'Kunci Masuk',
+                    skema:      40,
+                    status:     'Selesai',
+                    statusClass:'badge-status-success',
+                    dokumen:    '—',
+                    tindakanUrl:'#borangSpeksKewangan'
+                },
+                {
+                    tajuk:      'Maklumat Profil Petender',
+                    mekanisma:  'Borang Atas Talian',
+                    tindakanPembekal: 'Kunci Masuk',
+                    skema:      0,
+                    status:     'Draf',
+                    statusClass:'badge-status-warning',
+                    dokumen:    '—',
+                    tindakanUrl:'{{ route('prflPetender') }}'
+                },
+                {
+                    tajuk:      'Penyata Bank Terkini (3 Bulan Terakhir) Syarikat',
+                    mekanisma:  'Borang Atas Talian',
+                    tindakanPembekal: 'Kunci Masuk',
+                    skema:      0,
+                    status:     'Draf',
+                    statusClass:'badge-status-warning',
+                    dokumen:    '—',
+                    tindakanUrl:'{{ route('pnytBank') }}'
+                }
+            ];
+
+            // Build a table row from an initial row object
+            function buildInitialRow(data) {
+                return $(
+                    '<tr>' +
+                    '<td class="text-center"><input type="checkbox" name="row_check_kewangan[]" class="form-check-input row-check-kewangan"></td>' +
+                    '<td><span class="small fw-semibold">' + $('<span>').text(data.tajuk).html() + '</span></td>' +
+                    '<td class="text-center"><span class="small fw-semibold text-muted">' + data.mekanisma + '</span></td>' +
+                    '<td class="text-center small">' + data.tindakanPembekal + '</td>' +
+                    '<td class="text-center">' +
+                        '<input type="number" name="skema[]" class="form-control form-control-sm text-center skema-input fw-semibold" value="' + data.skema + '" min="0" style="max-width:90px;margin:0 auto;">' +
+                    '</td>' +
+                    '<td class="text-center"><span class="badge-status ' + data.statusClass + '">' + data.status + '</span></td>' +
+                    '<td class="text-center text-muted small rujukan-cell">' + data.dokumen + '</td>' +
+                    '<td class="text-center">' +
+                        '<a href="' + data.tindakanUrl + '" class="btn btn-sm btn-warning d-inline-flex align-items-center justify-content-center p-1" style="width:30px;height:30px;" title="Kemaskini">' +
+                        EDIT_ICON +
+                        '</a>' +
+                    '</td>' +
+                    '</tr>'
+                );
+            }
+
+            // Render initial rows on page load
+            $.each(initialRows, function(i, row) {
+                $('#tbl-kewangan-body').append(buildInitialRow(row));
             });
 
-            $('#tbl-teknikal').on('change', '.row-check-teknikal', function() {
-                var total = $('#tbl-teknikal .row-check-teknikal').length;
-                var checked = $('#tbl-teknikal .row-check-teknikal:checked').length;
-                $('#tbl-teknikal .check-all-teknikal').prop('checked', total === checked);
+            // ─── CHECKBOX: Senarai Semak Kewangan ────────────────────────────────────
+            $('#tbl-kewangan').on('change', '.check-all-kewangan', function() {
+                $('#tbl-kewangan .row-check-kewangan').prop('checked', $(this).prop('checked'));
+            });
+
+            $('#tbl-kewangan').on('change', '.row-check-kewangan', function() {
+                var total = $('#tbl-kewangan .row-check-kewangan').length;
+                var checked = $('#tbl-kewangan .row-check-kewangan:checked').length;
+                $('#tbl-kewangan .check-all-kewangan').prop('checked', total === checked);
             });
 
             // ─── HELPERS ──────────────────────────────────────────────────────────────
@@ -603,8 +523,8 @@
             function buildNewRow() {
                 var defaultMekanisma = 'petender_muat_naik';
                 return $(
-                    '<tr class="row-teknikal-tambah">' +
-                    '<td class="text-center"><input type="checkbox" name="row_check_teknikal[]" class="form-check-input row-check-teknikal"></td>' +
+                    '<tr class="row-kewangan-tambah">' +
+                    '<td class="text-center"><input type="checkbox" name="row_check_kewangan[]" class="form-check-input row-check-kewangan"></td>' +
                     '<td><input type="text" name="tajuk_dokumen[]" class="form-control form-control-sm" placeholder="Tajuk / Dokumen..."></td>' +
                     '<td class="text-center">' +
                     '<select name="mekanisma[]" class="form-select form-select-sm mekanisma-select" style="font-size:0.78rem;">' +
@@ -625,15 +545,15 @@
 
             function updateSkemaMaksima() {
                 var total = 0;
-                $('#tbl-teknikal .skema-input').each(function() {
+                $('#tbl-kewangan .skema-input').each(function() {
                     total += parseInt($(this).val()) || 0;
                 });
                 $('#skema-maksima-display').val(total);
-                $('#penilaian-teknikal-total').text(total);
+                $('#penilaian-kewangan-total').text(total);
             }
 
             function syncTableEmpty() {
-                var realRows = $('#tbl-teknikal tbody tr:not(#tbl-empty-row)').length;
+                var realRows = $('#tbl-kewangan tbody tr:not(#tbl-empty-row)').length;
                 if (realRows === 0) {
                     $('#tbl-empty-row').removeClass('d-none');
                 } else {
@@ -642,27 +562,27 @@
             }
 
             // ─── TAMBAH ROW ───────────────────────────────────────────────────────────
-            $('.btn-tambah-teknikal').on('click', function() {
-                $('#tbl-teknikal tbody').append(buildNewRow());
+            $('.btn-tambah-kewangan').on('click', function() {
+                $('#tbl-kewangan tbody').append(buildNewRow());
                 syncTableEmpty();
                 updateSkemaMaksima();
             });
 
             // ─── HAPUS ROW (CHECKED ONLY) ─────────────────────────────────────────────
-            $('.btn-hapus-teknikal').on('click', function() {
-                var checked = $('#tbl-teknikal .row-check-teknikal:checked');
+            $('.btn-hapus-kewangan').on('click', function() {
+                var checked = $('#tbl-kewangan .row-check-kewangan:checked');
                 if (checked.length === 0) {
                     alert('Sila pilih sekurang-kurangnya satu rekod untuk dihapus.');
                     return;
                 }
                 checked.closest('tr').remove();
-                $('#tbl-teknikal .check-all-teknikal').prop('checked', false);
+                $('#tbl-kewangan .check-all-kewangan').prop('checked', false);
                 syncTableEmpty();
                 updateSkemaMaksima();
             });
 
             // ─── MEKANISMA CHANGE ─────────────────────────────────────────────────────
-            $('#tbl-teknikal').on('change', '.mekanisma-select', function() {
+            $('#tbl-kewangan').on('change', '.mekanisma-select', function() {
                 var val  = $(this).val();
                 var $row = $(this).closest('tr');
                 $row.find('.tindakan-pembekal').html(buildTindakanPembekalCell(val));
@@ -672,17 +592,17 @@
 
             // ─── TINDAKAN PEMBEKAL DROPDOWN CHANGE (PTJ only) ────────────────────────
             // Both options allow uploading — always keep the upload button visible.
-            $('#tbl-teknikal').on('change', '.tindakan-pembekal-select', function() {
+            $('#tbl-kewangan').on('change', '.tindakan-pembekal-select', function() {
                 $(this).closest('tr').find('.tindakan-cell').html(PTJ_UPLOAD_BTN);
             });
 
             // ─── SKEMA INPUT CHANGE ───────────────────────────────────────────────────
-            $('#tbl-teknikal').on('input change', '.skema-input', function() {
+            $('#tbl-kewangan').on('input change', '.skema-input', function() {
                 updateSkemaMaksima();
             });
 
             // ─── PTJ MUAT NAIK: File upload → append to Dokumen column, hide upload btn ─
-            $('#tbl-teknikal').on('change', '.tindakan-cell input[type="file"]', function() {
+            $('#tbl-kewangan').on('change', '.tindakan-cell input[type="file"]', function() {
                 if (!this.files || !this.files[0]) return;
                 var file  = this.files[0];
                 var url   = URL.createObjectURL(file);
@@ -704,40 +624,16 @@
             });
 
             // ─── PTJ MUAT NAIK: Remove an uploaded file entry ────────────────────────
-            $('#tbl-teknikal').on('click', '.btn-hapus-ptj-file', function() {
+            $('#tbl-kewangan').on('click', '.btn-hapus-ptj-file', function() {
                 $(this).closest('.dokumen-ptj-ours').remove();
             });
 
-            // ─── ROW BUILDERS for Senarai Semak Standard ─────────────────────────────
-
-            // Borang Atas Talian row: fixed mekanisma text, fixed tindakan pembekal, edit icon
-            function buildBorangAtasTalianRow(tajuk, routeUrl) {
-                return $(
-                    '<tr>' +
-                    '<td class="text-center"><input type="checkbox" name="row_check_teknikal[]" class="form-check-input row-check-teknikal"></td>' +
-                    '<td><span class="small fw-semibold">' + $('<span>').text(tajuk).html() + '</span></td>' +
-                    '<td class="text-center"><span class="small fw-semibold text-muted">Borang Atas Talian</span></td>' +
-                    '<td class="text-center small">Kunci Masuk</td>' +
-                    '<td class="text-center">' +
-                        '<input type="number" name="skema[]" class="form-control form-control-sm text-center skema-input fw-semibold" value="0" min="0" style="max-width:90px;margin:0 auto;">' +
-                    '</td>' +
-                    '<td class="text-center"><span class="badge-status badge-status-warning">Draf</span></td>' +
-                    '<td class="text-center text-muted small">—</td>' +
-                    '<td class="text-center">' +
-                        '<a href="' + routeUrl + '" class="btn btn-sm btn-warning d-inline-flex align-items-center justify-content-center p-1" style="width:30px;height:30px;" title="Kemaskini">' +
-                        '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>' +
-                        '</a>' +
-                    '</td>' +
-                    '</tr>'
-                );
-            }
-
-            // Standard row: fixed tajuk text, Petender/PTJ mekanisma dropdown (same logic as buildNewRow)
+            // ─── ROW BUILDER for Senarai Semak Standard ─────────────────────────────
             function buildStandardRow(tajuk) {
                 var defaultMekanisma = 'petender_muat_naik';
                 return $(
-                    '<tr class="row-teknikal-tambah">' +
-                    '<td class="text-center"><input type="checkbox" name="row_check_teknikal[]" class="form-check-input row-check-teknikal"></td>' +
+                    '<tr class="row-kewangan-tambah">' +
+                    '<td class="text-center"><input type="checkbox" name="row_check_kewangan[]" class="form-check-input row-check-kewangan"></td>' +
                     '<td><span class="small fw-semibold">' + $('<span>').text(tajuk).html() + '</span></td>' +
                     '<td class="text-center">' +
                         '<select name="mekanisma[]" class="form-select form-select-sm mekanisma-select" style="font-size:0.78rem;">' +
@@ -776,15 +672,10 @@
                 }
 
                 $checked.each(function() {
-                    var $tr    = $(this).closest('tr');
-                    var type   = $tr.data('type');
-                    var tajuk  = $tr.data('tajuk') || $tr.find('td:last-child').text().trim();
+                    var $tr   = $(this).closest('tr');
+                    var tajuk = $tr.data('tajuk') || $tr.find('td:last-child').text().trim();
 
-                    if (type === 'borang_atas_talian') {
-                        $('#tbl-teknikal tbody').append(buildBorangAtasTalianRow(tajuk, $tr.data('route')));
-                    } else {
-                        $('#tbl-teknikal tbody').append(buildStandardRow(tajuk));
-                    }
+                    $('#tbl-kewangan tbody').append(buildStandardRow(tajuk));
                     $tr.hide(); // hide from list once added — prevents duplicate selection
                 });
 
@@ -796,6 +687,32 @@
                 bootstrap.Modal.getInstance($('#senaraiSemakStandard')[0]).hide();
             });
 
+
+            // Initial skema calculation after rows are loaded
+            updateSkemaMaksima();
+            syncTableEmpty();
+
+            // ─── HARGA INDIKATIF: Format with commas ─────────────────────────────────
+            var $hargaInput = $('#input-harga-indikatif');
+
+            function formatHarga(value) {
+                var num = parseFloat(value.replace(/,/g, '')) || 0;
+                return num.toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            }
+
+            $hargaInput.on('focus', function() {
+                var raw = $(this).val().replace(/,/g, '');
+                if (parseFloat(raw) === 0) raw = '';
+                $(this).val(raw);
+            });
+
+            $hargaInput.on('blur', function() {
+                $(this).val(formatHarga($(this).val()));
+            });
+
+            $hargaInput.on('input', function() {
+                $(this).val($(this).val().replace(/[^\d.]/g, ''));
+            });
 
             // ─── DOKUMEN SOKONGAN: Upload zone + file chips ──────────────────────────
             FileUpload.init({
