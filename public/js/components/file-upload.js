@@ -9,8 +9,8 @@
  *     chipListId : 'file-chip-list-kdt',     // id of the <div class="file-chip-list">
  *   });
  *
- * The <input type="file" name="..."> is kept in HTML so each page owns its own
- * field name — the JS never touches it.
+ * Files are accumulated in a DataTransfer object and synced back to the
+ * <input type="file"> so they are submitted with the form.
  */
 
 var FileUpload = (function ($) {
@@ -30,7 +30,7 @@ var FileUpload = (function ($) {
 
     // ── Build a single file chip DOM element ─────────────────────────────────
 
-    function buildFileChip(file, url) {
+    function buildFileChip(file, url, onRemove) {
         var ext      = file.name.split('.').pop().toLowerCase();
         var safeName = $('<span>').text(file.name).html();
 
@@ -53,6 +53,7 @@ var FileUpload = (function ($) {
         $chip.find('.file-chip-remove').on('click', function () {
             URL.revokeObjectURL(url);
             $chip.remove();
+            if (typeof onRemove === 'function') onRemove(file);
         });
 
         return $chip;
@@ -60,12 +61,6 @@ var FileUpload = (function ($) {
 
     // ── Public: init ─────────────────────────────────────────────────────────
 
-    /**
-     * @param {object} opts
-     * @param {string} opts.zoneId     - ID of the upload zone <label>
-     * @param {string} opts.inputId    - ID of the hidden <input type="file">
-     * @param {string} opts.chipListId - ID of the chip list container <div>
-     */
     function init(opts) {
         var $zone     = $('#' + opts.zoneId);
         var $input    = $('#' + opts.inputId);
@@ -76,15 +71,42 @@ var FileUpload = (function ($) {
             return;
         }
 
+        // Accumulated files — keeps the input in sync for form submission
+        var dt = new DataTransfer();
+
+        function syncInput() {
+            $input[0].files = dt.files;
+        }
+
+        function addFiles(files) {
+            $.each(files, function (i, file) {
+                dt.items.add(file);
+                var url = URL.createObjectURL(file);
+                $chipList.append(buildFileChip(file, url, function (removedFile) {
+                    // Rebuild DataTransfer without the removed file
+                    var newDt = new DataTransfer();
+                    for (var j = 0; j < dt.files.length; j++) {
+                        if (dt.files[j] !== removedFile) {
+                            newDt.items.add(dt.files[j]);
+                        }
+                    }
+                    dt = newDt;
+                    syncInput();
+                }));
+            });
+            syncInput();
+        }
+
         // File input change (click-to-upload path)
         $input.on('change', function () {
             var files = this.files;
             if (!files || files.length === 0) return;
-            $.each(files, function (i, file) {
-                var url = URL.createObjectURL(file);
-                $chipList.append(buildFileChip(file, url));
-            });
-            $input.val(''); // reset so the same file can be re-uploaded if needed
+            // Copy files before resetting — FileList becomes empty after reset
+            var fileArr = [];
+            for (var i = 0; i < files.length; i++) fileArr.push(files[i]);
+            // Reset input so the same file can be re-selected
+            $input.val('');
+            addFiles(fileArr);
         });
 
         // Drag-and-drop
@@ -104,10 +126,9 @@ var FileUpload = (function ($) {
             $zone.removeClass('dragover');
             var files = e.dataTransfer.files;
             if (!files || files.length === 0) return;
-            $.each(files, function (i, file) {
-                var url = URL.createObjectURL(file);
-                $chipList.append(buildFileChip(file, url));
-            });
+            var fileArr = [];
+            for (var i = 0; i < files.length; i++) fileArr.push(files[i]);
+            addFiles(fileArr);
         });
     }
 
