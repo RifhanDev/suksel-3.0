@@ -216,12 +216,7 @@ Route::view('/profil-petender', 'newModule.jawatankuasaSpesifikasi.form_profil_p
 Route::view('/penyata-bank', 'newModule.jawatankuasaSpesifikasi.form_penyata_bank')->name('pnytBank');
 Route::view('/jawatankuasa-pembuka', 'newModule.jawatankuasa_pembuka')->name('jawatankuasaPembuka');
 
-// old
-// Route::view('/penilaian-teknikal', 'newModule.penilaian.teknikal')->name('penilaianTeknikal');
-// Route::view('/penilaian-teknikal-kerja', 'newModule.penilaian.teknikal_kerja')->name('penilaianTeknikalKerja');
-// Route::view('/penilaian-kewangan', 'newModule.penilaian.kewangan')->name('penilaianKewangan');
-
-// new penilaian teknikal
+// penilaian teknikal
 Route::get('/penilaian-teknikal', [PenilaianTeknikalController::class, 'index'])->name('penilaianTeknikal');
 Route::get('/penilaian-teknikal/{tender_no}', [PenilaianTeknikalController::class, 'show'])->name('penilaianTeknikal.show');
 
