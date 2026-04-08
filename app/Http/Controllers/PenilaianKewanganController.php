@@ -4,11 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 
-class PenilaianTeknikalController extends Controller
+class PenilaianKewanganController extends Controller
 {
-    /**
-     * Display SENARAI TENDER (first page - Peringkat Penilaian Teknikal).
-     */
     public function index()
     {
         $tender = [
@@ -26,23 +23,15 @@ class PenilaianTeknikalController extends Controller
             ],
         ];
 
-        return view('newModule.penilaian_teknikal.teknikal_index', compact('tender'));
+        return view('newModule.penilaian_kewangan.index', compact('tender'));
     }
 
     /**
-     * Display penilaian teknikal form for a tender (second page).
+     * Display penilaian kewangan form for a tender (second page).
      */
     public function show(string $tender_no)
     {
-        return view('newModule.penilaian_teknikal.teknikal', compact('tender_no'));
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
+        return view('newModule.penilaian_kewangan.show', compact('tender_no'));
     }
 
     /**
