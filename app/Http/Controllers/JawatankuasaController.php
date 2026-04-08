@@ -404,6 +404,20 @@ class JawatankuasaController extends Controller
         ]);
     }
 
+    public function storeProfilPetender(Request $request)
+    {
+        $data = $request->all();
+
+        dd($data);
+    }
+
+    public function storePenyataKewangan(Request $request)
+    {
+        $data = $request->all();
+
+        dd($data);
+    }
+
     /**
      * Display the specified resource.
      */
