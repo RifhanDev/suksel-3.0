@@ -81,6 +81,7 @@ use App\Http\Controllers\ReportUserLoginController;
 use App\Http\Controllers\DummyController;
 use App\Http\Controllers\JawatankuasaController;
 use App\Http\Controllers\CutOffController;
+use App\Http\Controllers\JawatankuasaPerolehanController;
 use App\Http\Controllers\PenilaianTeknikalController;
 use App\Http\Controllers\PerakuanJabatanController;
 
@@ -102,9 +103,6 @@ Route::get('/perakuan-jabatan/{tender_no}', [PerakuanJabatanController::class, '
 Route::view('/perakuan-jabatan/form', 'newModule.perakuanJabatan.form')->name('perakuanJabatan.form');
 Route::view('/perakuan-jabatan/kertas-taklimat', 'newModule.perakuanJabatan.kertas_taklimat')->name('perakuanJabatan.kertasTaklimat');
 Route::view('/perakuan-jabatan/pengesyoran-pembekal', 'newModule.perakuanJabatan.pengesyoran_pembekal')->name('perakuanJabatan.pengesyoranPembekal');
-
-Route::view('/jawatankuasa-perolehan/index', 'newModule.jawatankuasaPerolehan.index')->name('jawatankuasaPerolehan.index');
-Route::view('/jawatankuasa-perolehan/form', 'newModule.jawatankuasaPerolehan.form')->name('jawatankuasaPerolehan.form');
 
 Route::view('/eBidding/index', 'newModule.eBidding.index')->name('eBidding.index');
 Route::view('/keputusan-mesyuarat', 'newModule.eBidding.keptusan_mesyuarat')->name('keputusanMesyuarat');
@@ -281,6 +279,28 @@ Route::middleware(['auth'])->group(function () {
 	// Route::get('tender/{tender_id}/files/{id}', [TendersController::class, 'file'])->name('tenders.files');
 	// Route::get('tender/{id}/vendors', [TendersController::class, 'vendors'])->name('tenders.vendors');
 	// Route::post('tender/{id}/exception', [TendersController::class, 'exception'])->name('tenders.exception');
+
+	// Perakuan Jabatan
+	Route::get('/perakuan-jabatan', [PerakuanJabatanController::class, 'index'])->middleware(['auth'])->name('perakuanjabatan.index');
+	Route::post('/perakuan-jabatan/{tender}/kertas-taklimat/simpan', [PerakuanJabatanController::class, 'kertasTaklimatSimpan'])->name('perakuanjabatan.kertasTaklimat.simpan');
+	Route::post('/perakuan-jabatan/{tender}/kertas-taklimat/hantar', [PerakuanJabatanController::class, 'kertasTaklimatHantar'])->name('perakuanjabatan.kertasTaklimat.hantar');
+	Route::get('/perakuan-jabatan/kertas-taklimat/file/{file}', [PerakuanJabatanController::class, 'kertasTaklimatDownload'])->name('perakuanjabatan.kertasTaklimat.download');
+	Route::post('/perakuan-jabatan/{tender}/pengesyoran-pembekal/simpan', [PerakuanJabatanController::class, 'pengesyoranPembekalSimpan'])->name('perakuanjabatan.pengesyoranPembekal.simpan');
+	Route::post('/perakuan-jabatan/{tender}/pengesyoran-pembekal/hantar', [PerakuanJabatanController::class, 'pengesyoranPembekalHantar'])->name('perakuanjabatan.pengesyoranPembekal.hantar');
+	Route::get('/perakuan-jabatan/{id}', [PerakuanJabatanController::class, 'show'])->middleware(['auth'])->name('perakuanjabatan.show');
+	Route::get('/perakuan-jabatan/form', [PerakuanJabatanController::class, 'form'])->middleware(['auth'])->name('perakuanJabatan.form');
+	Route::get('/perakuan-jabatan/kertas-taklimat', [PerakuanJabatanController::class, 'kertasTaklimat'])->middleware(['auth'])->name('perakuanJabatan.kertasTaklimat');
+	Route::get('/perakuan-jabatan/pengesyoran-pembekal', [PerakuanJabatanController::class, 'pengesyoranPembekal'])->middleware(['auth'])->name('perakuanJabatan.pengesyoranPembekal');
+
+	// Jawatankuasa Perolehan
+	Route::get('jawatankuasa-perolehan', [JawatankuasaPerolehanController::class, 'index'])->name('jawatankuasa.perolehan.index');
+	Route::get('jawatankuasa-perolehan/form', [JawatankuasaPerolehanController::class, 'form'])->name('jawatankuasa.perolehan.form');
+	Route::post('jawatankuasa-perolehan/mesyuarat/simpan', [JawatankuasaPerolehanController::class, 'store'])->name('jawatankuasa.perolehan.mesyuarat.simpan');
+	Route::post('jawatankuasa-perolehan/mesyuarat/hantar', [JawatankuasaPerolehanController::class, 'hantar'])->name('jawatankuasa.perolehan.mesyuarat.hantar');
+	Route::post('jawatankuasa-perolehan/kertas-keputusan/simpan', [JawatankuasaPerolehanController::class, 'simpanKertasKeputusan'])->name('jawatankuasa.perolehan.kertas_keputusan.simpan');
+	Route::post('jawatankuasa-perolehan/kertas-keputusan/hantar', [JawatankuasaPerolehanController::class, 'hantarKertasKeputusan'])->name('jawatankuasa.perolehan.kertas_keputusan.hantar');
+	// Route::get('/jawatankuasa-perolehan/index', 'newModule.jawatankuasaPerolehan.index')->name('jawatankuasaPerolehan.index');
+	// Route::view('/jawatankuasa-perolehan/form', 'newModule.jawatankuasaPerolehan.form')->name('jawatankuasaPerolehan.form');
 
 	// Version 3.0 tender creation routes
 	Route::get('/cipta-tender', [TendersController::class, 'createNew'])->name('ciptaTender');
