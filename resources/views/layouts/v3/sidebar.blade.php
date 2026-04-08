@@ -853,8 +853,7 @@
                     <div class="collapse {{ $isPenilaianMenuActive ? 'show' : '' }}" id="menuPenilaianTeknikalKewangan">
                         <ul class="sidebar-submenu">
                             <li>
-                                {{-- <a class="submenu-item" href="{{ route('penilaianTeknikalKerja') }}"> <!-- Note: Abg amran tlg tengok route ni error : Route [penilaianTeknikalKerja] not defined. --> --}}
-                                <a class="submenu-item" href="{{ route('penilaianTeknikal') }}"> <!-- Note: Line ni saya tambah temporary utk avoid error -->
+                                <a class="submenu-item" href="{{ route('penilaianTeknikal') }}">
                                     <div class="submenu-icon" style="{{ request()->is('penilaian-teknikal*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}"></div>
                                     <span class="{{ request()->is('penilaian-teknikal*') ? 'text-white' : '' }}">Penilaian Teknikal</span>
                                 </a>
