@@ -16,7 +16,7 @@
 
                 <div class="col-12 col-lg-2">
                     <label class="form-label small fw-bold text-secondary text-uppercase mb-1">No. Tender</label>
-                    <input type="text" id="filter_no_tender" class="form-control form-control-sm" placeholder="Cth: JPS/01">
+                    <input type="text" id="filter_no_tender" class="form-control form-control-sm" placeholder="Cth: QT210000000023741">
                 </div>
 
                 <div class="col-12 col-lg-4">
@@ -28,7 +28,8 @@
                     <label class="form-label small fw-bold text-secondary text-uppercase mb-1">Status</label>
                     <select id="filter_status" class="form-select form-select-sm">
                         <option value="">Semua</option>
-                        <option value="belum_disiarkan">Belum Disiarkan</option>
+                        <option value="Belum Disiarkan">Belum Disiarkan</option>
+                        <option value="Dalam Proses">Dalam Proses</option>
                     </select>
                 </div>
 
@@ -69,10 +70,11 @@
                 <table id="tbl-spesifikasi" class="table table-hover align-middle mb-0 w-100">
                     <thead class="bg-light">
                         <tr>
-                            <th class="text-uppercase text-muted small fw-bold py-3 ps-4">Maklumat Tender</th>
-                            <th class="text-uppercase text-muted small fw-bold py-3" width="140px">Tarikh Jual</th>
-                            <th class="text-uppercase text-muted small fw-bold py-3" width="140px">Tarikh Tutup</th>
-                            <th class="text-uppercase text-muted small fw-bold py-3" width="140px">Harga (RM)</th>
+                            <th class="text-uppercase text-muted small fw-bold py-3 ps-4" width="180px">No. Tender / Sebut Harga</th>
+                            <th class="text-uppercase text-muted small fw-bold py-3">Tajuk Perolehan</th>
+                            <th class="text-uppercase text-muted small fw-bold py-3" width="130px">Tarikh Jual</th>
+                            <th class="text-uppercase text-muted small fw-bold py-3" width="130px">Tarikh Tutup</th>
+                            <th class="text-uppercase text-center text-muted small fw-bold py-3" width="140px">Status</th>
                             <th class="text-uppercase text-center text-muted small fw-bold py-3 pe-4" width="120px">Tindakan</th>
                         </tr>
                     </thead>
@@ -89,29 +91,31 @@
         $(document).ready(function () {
 
             // ── DUMMY DATA (replace with API/controller data later) ──────────────
-            const urlTeknikal  = "{{ route('senaraiTeknikal') }}";
-            const urlKewangan  = "{{ route('senaraiKewangan') }}";
+            const urlTeknikal = "{{ route('senaraiTeknikal') }}";
+            const urlKewangan = "{{ route('senaraiKewangan') }}";
 
             const dummyData = [
                 {
-                    tajuk:         'MEMBEKAL RANGSUM PUKAL (AIR MINERAL) UNTUK BANGUNAN KERAJAAN <i>(Bekalan Perkhidmatan)</i>',
-                    tarikh_jual:   '03/01/2026',
-                    tarikh_tutup:  '01/05/2026',
-                    harga:         '193,000.00',
-                    tindakan:      `<div class="d-flex gap-1 justify-content-center">
-                                        <a href="${urlTeknikal}" class="btn btn-sm btn-warning text-white">Teknikal</a>
-                                        <a href="${urlKewangan}" class="btn btn-sm btn-success">Kewangan</a>
-                                    </div>`
+                    no_tender:    'QT210000000023741',
+                    tajuk:        'MEMBEKAL RANGSUM PUKAL (AIR MINERAL) UNTUK BANGUNAN KERAJAAN <i>(Bekalan Perkhidmatan)</i>',
+                    tarikh_jual:  '03/01/2026',
+                    tarikh_tutup: '01/05/2026',
+                    status:       '<span class="d-inline-flex align-items-center gap-1 px-2 py-1 rounded-2 fw-semibold" style="background:#fef9c3;color:#854d0e;font-size:0.72rem;border:1px solid #fde68a;"><span class="rounded-circle" style="width:6px;height:6px;background:#ca8a04;flex-shrink:0;display:inline-block;"></span>Dalam Proses</span>',
+                    tindakan:     `<div class="d-flex gap-1 justify-content-center">
+                                       <a href="${urlTeknikal}" class="btn btn-sm btn-warning text-white">Teknikal</a>
+                                       <a href="${urlKewangan}" class="btn btn-sm btn-success">Kewangan</a>
+                                   </div>`
                 },
                 {
-                    tajuk:         'PROJEK MENAIKTARAF JALAN PELABUHAN UTARA DARI KLANG CONTAINER TERMINAL <i>(Kerja)</i>',
-                    tarikh_jual:   '27/02/2026',
-                    tarikh_tutup:  '31/07/2026',
-                    harga:         '5,800,000.00',
-                    tindakan:      `<div class="d-flex gap-1 justify-content-center">
-                                        <button type="button" class="btn btn-sm btn-info text-white" disabled>Tender</button>
-                                        <a href="${urlTeknikal}" class="btn btn-sm btn-success">Kewangan</a>
-                                    </div>`
+                    no_tender:    'QT210000000031582',
+                    tajuk:        'PROJEK MENAIKTARAF JALAN PELABUHAN UTARA DARI KLANG CONTAINER TERMINAL <i>(Kerja)</i>',
+                    tarikh_jual:  '27/02/2026',
+                    tarikh_tutup: '31/07/2026',
+                    status:       '<span class="d-inline-flex align-items-center gap-1 px-2 py-1 rounded-2 fw-semibold" style="background:#f0fdf4;color:#166534;font-size:0.72rem;border:1px solid #bbf7d0;"><span class="rounded-circle" style="width:6px;height:6px;background:#16a34a;flex-shrink:0;display:inline-block;"></span>Telah Dihantar</span>',
+                    tindakan:     `<div class="d-flex gap-1 justify-content-center">
+                                       <a href="#penyediaanspesifikasi" class="btn btn-sm btn-info text-white">Spesifikasi</a>
+                                       <a href="${urlKewangan}" class="btn btn-sm btn-success">Kewangan</a>
+                                   </div>`
                 }
             ];
             // ─────────────────────────────────────────────────────────────────────
@@ -119,22 +123,23 @@
             var DT = $('#tbl-spesifikasi').DataTable({
                 data: dummyData,
                 columns: [
-                    { data: 'tajuk',        className: 'ps-4' },
+                    { data: 'no_tender',    className: 'ps-4 fw-semibold' },
+                    { data: 'tajuk' },
                     { data: 'tarikh_jual',  className: 'text-center' },
                     { data: 'tarikh_tutup', className: 'text-center' },
-                    { data: 'harga',        className: 'text-center' },
+                    { data: 'status',       orderable: false, searchable: false, className: 'text-center' },
                     { data: 'tindakan',     orderable: false, searchable: false, className: 'text-center pe-4' }
                 ],
                 language: {
-                    sEmptyTable:    "Tiada data",
-                    sInfo:          "Paparan dari _START_ hingga _END_ dari _TOTAL_ rekod",
-                    sInfoEmpty:     "Paparan 0 hingga 0 dari 0 rekod",
-                    sInfoFiltered:  "(Ditapis dari jumlah _MAX_ rekod)",
-                    sLengthMenu:    "Papar _MENU_ rekod",
-                    sLoadingRecords:"Diproses...",
-                    sProcessing:    "Sedang diproses...",
-                    sSearch:        "Carian:",
-                    sZeroRecords:   "Tiada padanan rekod yang dijumpai.",
+                    sEmptyTable:     "Tiada data",
+                    sInfo:           "Paparan dari _START_ hingga _END_ dari _TOTAL_ rekod",
+                    sInfoEmpty:      "Paparan 0 hingga 0 dari 0 rekod",
+                    sInfoFiltered:   "(Ditapis dari jumlah _MAX_ rekod)",
+                    sLengthMenu:     "Papar _MENU_ rekod",
+                    sLoadingRecords: "Diproses...",
+                    sProcessing:     "Sedang diproses...",
+                    sSearch:         "Carian:",
+                    sZeroRecords:    "Tiada padanan rekod yang dijumpai.",
                     oPaginate: {
                         sFirst:    "Pertama",
                         sPrevious: "Sebelum",
@@ -152,7 +157,6 @@
                 var noTender = $('#filter_no_tender').val();
                 var tajuk    = $('#filter_tajuk').val();
                 var status   = $('#filter_status').val();
-
                 DT.search(noTender || tajuk || status).draw();
             });
 
@@ -167,19 +171,4 @@
 
         });
     </script>
-       </tbody>
-				</table>
-			</div>
-		</div>
-	</div>
-
-@endsection
-
-@section('scripts')
-	<script type="text/javascript">
-		$(document).ready(function() {
-
-            
-        });
-	</script>
 @endsection
