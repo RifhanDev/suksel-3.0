@@ -149,7 +149,16 @@
 
             <!-- Separator -->
             <div class="border-top pt-4 mb-3">
-                <span class="fw-semibold text-muted text-uppercase" style="font-size:0.7rem; letter-spacing:0.5px;">Perlu diisi oleh petender</span>
+                <div class="rounded-2 px-3 py-2 d-inline-flex align-items-center gap-2"
+                    style="background:#eff6ff; border:1px solid #bfdbfe; font-size:0.78rem; color:#1e40af;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                    </svg>
+                    Perlu diisi oleh petender
+                </div>
             </div>
 
             <!-- Monthly inputs + Upload side by side -->
@@ -157,7 +166,7 @@
                 <!-- LEFT: Dynamic monthly input rows -->
                 <div class="col-12 col-md-6">
 
-                    <label class="form-label fw-semibold small mb-2">Dokumen Sokongan <span class="fw-normal text-muted">(Untuk rujukan pemilik projek)</span></label>
+                    <label class="form-label fw-semibold small mb-2">Penyata Bank<span class="fw-normal text-muted"> (Untuk 3 bulan terakhir)</span></label>
                     
                     <div id="penyata_bank_bulan_rows_wrapper">
                         @php
@@ -454,13 +463,58 @@ $(document).ready(function () {
 
     $('.btn-tambah-purata').on('click', function () {
         var bil = $('#tbl-purata-body .purata-row').length + 1;
-        $('#tbl-purata-body').append(buildPurataRow(bil));
+        var $newRow = buildPurataRow(bil);
+
+        // Auto-fill Dari = previous row's Hingga + 1
+        var $lastRow = $('#tbl-purata-body tr.purata-row').last();
+        if ($lastRow.length) {
+            var lastHingga = parseRm($lastRow.find('td:eq(2) input').val());
+            if (lastHingga > 0) {
+                $newRow.find('td:eq(1) input').val(formatRm(lastHingga + 1));
+            }
+        }
+
+        $('#tbl-purata-body').append($newRow);
     });
 
     $('#tbl-purata-body').on('click', '.btn-hapus-row', function () {
         if ($('#tbl-purata-body .purata-row').length <= 1) return;
         $(this).closest('tr').remove();
         reNumberPurata();
+    });
+
+    // Real-time range validation:
+    // - Dari must be > previous row's Hingga
+    // - Hingga change re-validates next row's Dari
+    $('#tbl-purata-body').on('blur', 'tr.purata-row .amount-input', function () {
+        var $input = $(this);
+        var $td = $input.closest('td');
+        var $row = $td.closest('tr');
+        var colIdx = $td.index(); // 1=Dari, 2=Hingga
+
+        if (colIdx === 1) {
+            // Dari changed — must be > previous row's Hingga
+            var $prevRow = $row.prev('tr.purata-row');
+            if ($prevRow.length) {
+                var prevHingga = parseRm($prevRow.find('td:eq(2) input').val());
+                var dari = parseRm($input.val());
+                $input.toggleClass('is-invalid', prevHingga > 0 && dari > 0 && dari <= prevHingga);
+            }
+        } else if (colIdx === 2) {
+            // Hingga changed — re-validate next row's Dari
+            var $nextRow = $row.next('tr.purata-row');
+            if ($nextRow.length) {
+                var hingga = parseRm($input.val());
+                var $nextDari = $nextRow.find('td:eq(1) input');
+                var nextDari = parseRm($nextDari.val());
+                $nextDari.toggleClass('is-invalid', hingga > 0 && nextDari > 0 && nextDari <= hingga);
+            }
+
+            // Also validate Hingga >= Dari on same row
+            var dariSame = parseRm($row.find('td:eq(1) input').val());
+            var hinggaSame = parseRm($input.val());
+            $input.toggleClass('is-invalid', dariSame > 0 && hinggaSame > 0 && hinggaSame < dariSame);
+        }
     });
 
     // ══════════════════════════════════════════════════════════════════════════

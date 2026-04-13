@@ -93,6 +93,8 @@
             // ── DUMMY DATA (replace with API/controller data later) ──────────────
             const urlTeknikal = "{{ route('senaraiTeknikal') }}";
             const urlKewangan = "{{ route('senaraiKewangan') }}";
+            const urlKewanganKerja = "{{ route('senaraiKewanganKerja') }}";
+            const urlPenyediaanTender = "{{ route('penyediaanSpekTender') }}";
 
             const dummyData = [
                 {
@@ -113,8 +115,8 @@
                     tarikh_tutup: '31/07/2026',
                     status:       '<span class="d-inline-flex align-items-center gap-1 px-2 py-1 rounded-2 fw-semibold" style="background:#f0fdf4;color:#166534;font-size:0.72rem;border:1px solid #bbf7d0;"><span class="rounded-circle" style="width:6px;height:6px;background:#16a34a;flex-shrink:0;display:inline-block;"></span>Telah Dihantar</span>',
                     tindakan:     `<div class="d-flex gap-1 justify-content-center">
-                                       <a href="#penyediaanspesifikasi" class="btn btn-sm btn-info text-white">Spesifikasi</a>
-                                       <a href="${urlKewangan}" class="btn btn-sm btn-success">Kewangan</a>
+                                       <a href="${urlPenyediaanTender}" class="btn btn-sm btn-info text-white">Spesifikasi</a>
+                                       <a href="${urlKewanganKerja}" class="btn btn-sm btn-success">Kewangan</a>
                                    </div>`
                 }
             ];

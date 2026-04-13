@@ -26,8 +26,8 @@
                 <span class="text-muted fw-semibold text-uppercase d-block mb-1"
                     style="font-size: 0.67rem; letter-spacing: 0.5px;">Tajuk Tender</span>
                 <h5 class="fw-bold text-dark mb-0" style="line-height: 1.45; font-size: 1rem;">
-                    MEMBEKAL RANGSUM PUKAL (AIR MINERAL) UNTUK BANGUNAN KERAJAAN
-                    <span class="fw-normal text-muted fst-italic" style="font-size: 0.85rem;">(Bekalan Perkhidmatan)</span>
+                    PROJEK MENAIKTARAF JALAN PELABUHAN UTARA DARI KLANG CONTAINER TERMINAL
+                    <span class="fw-normal text-muted fst-italic" style="font-size: 0.85rem;">(Kerja)</span>
                 </h5>
             </div>
 
@@ -373,21 +373,13 @@
                             </thead>
                             <tbody>
                                 {{-- ── Standard items (Petender / PTJ Muat Naik) ── --}}
-                                <tr data-tajuk="Modal Berbayar">
+                                <tr data-tajuk="Laporan Bank atau Borang CA">
                                     <td class="text-center"><input type="checkbox" class="form-check-input row-check-standard"></td>
-                                    <td>Modal Berbayar</td>
+                                    <td>Laporan Bank atau Borang CA</td>
                                 </tr>
-                                <tr data-tajuk="Kemudahan Kredit (Overdraf, Pinjaman Bank)">
+                                <tr data-tajuk="Laporan Penyelia Projek Bagi Kerja Semasa">
                                     <td class="text-center"><input type="checkbox" class="form-check-input row-check-standard"></td>
-                                    <td>Kemudahan Kredit (Overdraf, Pinjaman Bank)</td>
-                                </tr>
-                                <tr data-tajuk="Pengesahan dari Institusi Kewangan ke atas jumlah yang telah dibayar">
-                                    <td class="text-center"><input type="checkbox" class="form-check-input row-check-standard"></td>
-                                    <td>Pengesahan dari Institusi Kewangan ke atas jumlah yang telah dibayar</td>
-                                </tr>
-                                <tr data-tajuk="Pengalaman Syarikat Dengan Bukan Kerajaan Persekutuan (Jumlah (RM) Kontrak yang pernah diikat)">
-                                    <td class="text-center"><input type="checkbox" class="form-check-input row-check-standard"></td>
-                                    <td>Pengalaman Syarikat Dengan Bukan Kerajaan Persekutuan (Jumlah (RM) Kontrak yang pernah diikat)</td>
+                                    <td>Laporan Penyelia Projek Bagi Kerja Semasa</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -412,27 +404,17 @@
 
             var initialRows = [
                 {
-                    tajuk:      'Perkhidmatan Penilaian Forensik Keatas Sistem XXXX',
-                    mekanisma:  'Spesifikasi',
-                    tindakanPembekal: 'Kunci Masuk',
-                    skema:      40,
-                    status:     'Selesai',
-                    statusClass:'badge-status-success',
-                    dokumen:    '—',
-                    tindakanUrl:'{{ route('spesifikasiFormKewanganBekalan') }}'
-                },
-                {
-                    tajuk:      'Maklumat Profil Petender',
+                    tajuk:      'Lembaran Imbangan',
                     mekanisma:  'Borang Atas Talian',
                     tindakanPembekal: 'Kunci Masuk',
                     skema:      0,
                     status:     'Draf',
                     statusClass:'badge-status-warning',
                     dokumen:    '—',
-                    tindakanUrl:'{{ route('prflPetender') }}'
+                    tindakanUrl:'{{ route('lembaranImbangan') }}'
                 },
                 {
-                    tajuk:      'Penyata Bank Terkini (3 Bulan Terakhir) Syarikat',
+                    tajuk:      'Penyata Bulanan / Akaun Bank',
                     mekanisma:  'Borang Atas Talian',
                     tindakanPembekal: 'Kunci Masuk',
                     skema:      0,
@@ -440,6 +422,26 @@
                     statusClass:'badge-status-warning',
                     dokumen:    '—',
                     tindakanUrl:'{{ route('pnytBank') }}'
+                },
+                {
+                    tajuk:      'Bon Atau Saham',
+                    mekanisma:  'Borang Atas Talian',
+                    tindakanPembekal: 'Kunci Masuk',
+                    skema:      0,
+                    status:     'Draf',
+                    statusClass:'badge-status-warning',
+                    dokumen:    '—',
+                    tindakanUrl:'{{ route('bonAtauSaham') }}'
+                },
+                {
+                    tajuk:      'Prestasi Kerja Semasa Petender',
+                    mekanisma:  'Borang Atas Talian',
+                    tindakanPembekal: 'Kunci Masuk',
+                    skema:      0,
+                    status:     'Draf',
+                    statusClass:'badge-status-warning',
+                    dokumen:    '—',
+                    tindakanUrl:'{{ route('prestasiKerjaSemasa') }}'
                 }
             ];
 

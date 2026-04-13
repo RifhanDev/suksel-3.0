@@ -418,6 +418,57 @@ class JawatankuasaController extends Controller
         dd($data);
     }
 
+    public function storeBonSaham(Request $request)
+    {
+        $data = $request->all();
+
+        dd($data);
+    }
+
+    public function storePrestasiKerjaSemasa(Request $request)
+    {
+        $data = $request->all();
+
+        dd($data);
+    }
+
+    public function spesifikasiKewanganBekalan()
+    {
+        // Dummy data — will be replaced with real DB queries later
+        $anggaranJabatan = 150000.00;
+
+        $items = [
+            [
+                'nama'      => 'Air Mineral 500ml',
+                'kuantiti'  => 1000,
+                'uom'       => 'Lot',
+                'specs'     => [
+                    'Jenama tempatan yang diiktiraf KKM',
+                    'Pembungkusan shrink wrap 24 botol per karton',
+                ],
+            ],
+            [
+                'nama'      => 'Air Mineral 1.5L',
+                'kuantiti'  => 500,
+                'uom'       => 'Unit',
+                'specs'     => [
+                    'Jenama tempatan yang diiktiraf KKM',
+                    'Tarikh luput minima 6 bulan dari tarikh penghantaran',
+                ],
+            ],
+            [
+                'nama'      => 'Air Mineral 5 Gallon',
+                'kuantiti'  => 100,
+                'uom'       => 'Hari',
+                'specs'     => [
+                    'Dispenser compatible standard fitting',
+                ],
+            ],
+        ];
+
+        return view('newModule.jawatankuasaSpesifikasi.form_spesifikasi_kewangan_bekalan', compact('items', 'anggaranJabatan'));
+    }
+
     /**
      * Display the specified resource.
      */
