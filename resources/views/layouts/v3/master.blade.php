@@ -407,6 +407,43 @@
             transform: scale(1.2);
         }
 
+        /* BEGIN: this css code below maybe temporary only, this is for penilaian kewangan (kerja), later will be remove cause we wont show it on sidebar anyways */
+
+        /* Submenu expand chevron */
+        .submenu-arrow {
+            width: 14px;
+            height: 14px;
+            flex-shrink: 0;
+            opacity: 0.45;
+            transition: transform 0.3s ease, opacity 0.2s ease;
+        }
+
+        [aria-expanded="true"] > .submenu-arrow,
+        .submenu-item[aria-expanded="true"] .submenu-arrow {
+            transform: rotate(90deg);
+            opacity: 0.9;
+        }
+
+        /* Level 2 submenu — Penilaian Kewangan (Kerja) list */
+        .sub-submenu {
+            margin: 2px 0.5rem 4px 0.5rem;
+            padding: 4px 0;
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.18);
+            border-left: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Level 3 submenu — Borang children */
+        .sub-submenu-level-2 {
+            margin: 2px 0.5rem 4px 0.5rem;
+            padding: 2px 0;
+            border-radius: 6px;
+            background: rgba(0, 0, 0, 0.15);
+            border-left: 2px solid rgba(255, 204, 0, 0.2);
+        }
+
+        /* ENDED: above are temporary css for submenu inside submenu (later will be remove) */
+
         /* ===== MAIN WRAPPER ===== */
         .main-wrapper {
             margin-left: var(--sidebar-width);

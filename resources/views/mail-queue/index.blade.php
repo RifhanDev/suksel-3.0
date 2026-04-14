@@ -1,30 +1,56 @@
-@extends('layouts.modern')
-@section('content')
-	<h2 class="pull-left">
-		Rekod Penghantaran Email
-	</h2>
+@extends('layouts.v3.master')
 
-	<div class="clearfix"></div>
-	<hr>
-	<table class="DT-index table table-striped table-hover table-bordered">
-		<thead class="bg-blue-selangor">
-			<tr>
-				<th>Tajuk</th>
-				<th>Tetapan</th>
-				<th>Dijana Pada</th>
-				<th>Dihantar pada</th>
-				<th>Status</th>
-			</tr>
-		</thead>
-		<tbody></tbody>
-	</table>
-	<div class="well">
-		{{-- <a href="{{ route('mail-manager.create') }}" class="btn btn-default">Tambah Email SMTP</a> --}}
+@section('content')
+	<!-- Page Header -->
+	<div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center mb-4">
+		<div class="mb-3 mb-lg-0">
+			<h3 class="fw-bold text-dark m-0" style="letter-spacing: -0.5px;">Rekod Penghantaran Email</h3>
+			<p class="text-muted small m-0">Paparan rekod dan status penghantaran email sistem.</p>
+		</div>
+	</div>
+
+	<!-- Table -->
+	<div class="content-card p-0">
+		<div class="content-card-header p-4 pb-3 border-bottom">
+			<div class="d-flex align-items-center gap-3">
+				<div class="content-card-icon" style="width: 38px; height: 38px;">
+					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+						stroke-linecap="round" stroke-linejoin="round">
+						<line x1="8" y1="6" x2="21" y2="6"></line>
+						<line x1="8" y1="12" x2="21" y2="12"></line>
+						<line x1="8" y1="18" x2="21" y2="18"></line>
+						<line x1="3" y1="6" x2="3.01" y2="6"></line>
+						<line x1="3" y1="12" x2="3.01" y2="12"></line>
+						<line x1="3" y1="18" x2="3.01" y2="18"></line>
+					</svg>
+				</div>
+				<h3 class="content-card-title" style="font-size: 1rem;">Senarai Rekod</h3>
+			</div>
+		</div>
+
+		<div class="content-card-body p-2">
+			<div class="table-responsive">
+				<table class="DT-index table table-hover align-middle mb-0 w-100" data-path="{{ route('mail-manager.mail-queue.index') }}">
+					<thead class="bg-light">
+						<tr>
+							<th class="text-uppercase text-muted small fw-bold py-3 ps-4" style="width: 50px;">No.</th>
+							<th class="text-uppercase text-muted small fw-bold py-3">Tajuk</th>
+							<th class="text-uppercase text-muted small fw-bold py-3">Tetapan</th>
+							<th class="text-uppercase text-muted small fw-bold py-3">Dijana Pada</th>
+							<th class="text-uppercase text-muted small fw-bold py-3">Dihantar Pada</th>
+							<th class="text-uppercase text-muted small fw-bold py-3">Status</th>
+						</tr>
+					</thead>
+					<tbody></tbody>
+				</table>
+			</div>
+		</div>
 	</div>
 @endsection
+
 @section('scripts')
-	<link href="{{ asset('custom_library/dataTables/jquery.dataTables.css') }}" rel="stylesheet">
-	<script src="{{ asset('custom_library/dataTables/jquery.dataTables.js') }}"></script>
+	{{-- <link href="{{ asset('custom_library/dataTables/jquery.dataTables.css') }}" rel="stylesheet"> --}}
+	{{-- <script src="{{ asset('custom_library/dataTables/jquery.dataTables.js') }}"></script> --}}
 	<script type="text/javascript">
 		var target = $('.DT-index');
 		var path = target.data('path');
@@ -33,11 +59,11 @@
 			processing: true,
 			serverSide: true,
 			ajax: path,
-			columnDefs: [{
-				"targets": [1],
-				"orderable": false
-			}],
 			columns: [{
+					data: 'id',
+					name: 'id'
+				},
+				{
 					data: 'subject',
 					name: 'subject'
 				},
@@ -58,11 +84,57 @@
 					name: 'status'
 				},
 			],
-			serverSide: true,
 			stateSave: true,
 			language: {
-				"url": "{{ asset('custom_library/dataTables/lang/ms.json') }}"
-			}
+				// "url": "{{ asset('custom_library/dataTables/lang/ms.json') }}"
+				sEmptyTable: "Tiada data",
+				sInfo: "Paparan dari _START_ hingga _END_ dari _TOTAL_ rekod",
+				sInfoEmpty: "Paparan 0 hingga 0 dari 0 rekod",
+				sInfoFiltered: "(Ditapis dari jumlah _MAX_ rekod)",
+				sInfoPostFix: "",
+				sInfoThousands: ",",
+				sLengthMenu: "Papar _MENU_ rekod",
+				sLoadingRecords: "Diproses...",
+				sProcessing: "Sedang diproses...",
+				sSearch: "Carian:",
+				sZeroRecords: "Tiada padanan rekod yang dijumpai.",
+				oPaginate: {
+					sFirst: "Pertama",
+					sPrevious: "Sebelum",
+					sNext: "Kemudian",
+					sLast: "Akhir"
+				},
+				oAria: {
+					sSortAscending: ": diaktifkan kepada susunan lajur menaik",
+					sSortDescending: ": diaktifkan kepada susunan lajur menurun"
+				}
+			},
+			autoWidth: false,
+			columnDefs: [
+				{
+					searchable: false,
+					orderable: false,
+					targets: 0,
+					width: '50px',
+				},
+				{
+					orderable: false,
+					targets: 2,
+				},
+			],
+			order: [
+				[1, 'asc']
+			],
 		});
+
+		table.on('order.dt search.dt', function() {
+			let i = 1;
+			table.cells(null, 0, {
+				search: 'applied',
+				order: 'applied'
+			}).every(function(cell) {
+				this.data(i++);
+			});
+		}).draw();
 	</script>
 @endsection

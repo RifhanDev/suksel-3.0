@@ -1,5 +1,7 @@
 <?php
 
+namespace App\Libraries;
+
 use PhpAmqpLib\Connection\AMQPConnection;
 use PhpAmqpLib\Message\AMQPMessage;
 use Illuminate\Support\Str;

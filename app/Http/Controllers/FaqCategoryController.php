@@ -62,11 +62,11 @@ class FaqCategoryController extends Controller
                 $enc_id = $this->encryptString($rows->id);
 
 				$actions    = [];
-                $actions[] = FaqCategory::canShow() ? "<a class='btn btn-xs btn-primary' href='".route('chatbot-manager.category.show', ['category' => $enc_id])."'>Papar</a>" : '';
-                $actions[] = FaqCategory::canUpdate() ? "<a class='btn btn-xs btn-warning' href='".route('chatbot-manager.category.edit', ['category' => $enc_id])."'>Kemaskini</a>" : '';
-                $actions[] = FaqCategory::canDelete() ? "<button class='btn btn-xs btn-danger' onclick='popupDelete(".'"'.$enc_id.'"'.")'>Padam</button>" : '';
-				
-				$action_column = '<div class ="btn-group">' . implode(' ', $actions) . '</div>';
+                $actions[] = FaqCategory::canShow() ? "<a class='btn btn-sm btn-primary rounded-8 px-3' href='".route('chatbot-manager.category.show', ['category' => $enc_id])."'>Papar</a>" : '';
+                $actions[] = FaqCategory::canUpdate() ? "<a class='btn btn-sm btn-warning rounded-8 px-3' href='".route('chatbot-manager.category.edit', ['category' => $enc_id])."'>Kemaskini</a>" : '';
+                $actions[] = FaqCategory::canDelete() ? "<button class='btn btn-sm btn-danger rounded-8 px-3' onclick='popupDelete(".'"'.$enc_id.'"'.")'>Padam</button>" : '';
+
+				$action_column = '<div class="d-flex gap-2 justify-content-center">' . implode('', $actions) . '</div>';
 
 				$datatable_data[] = array(
 					"created_at" => $rows->created_at->format('d-m-Y'),
