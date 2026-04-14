@@ -208,6 +208,8 @@ Route::view('/jawatankuasa-pembuka', 'newModule.jawatankuasa_pembuka')->name('ja
 Route::view('/penilaian-teknikal', 'newModule.penilaian.teknikal')->name('penilaianTeknikal');
 Route::view('/penilaian-teknikal-kerja', 'newModule.penilaian.teknikal_kerja')->name('penilaianTeknikalKerja');
 Route::view('/penilaian-kewangan', 'newModule.penilaian.kewangan')->name('penilaianKewangan');
+Route::view('/index-perincian', 'newModule.penyediaanMesyuarat.index_perincian')->name('perincianMesyuarat');
+Route::view('/perincian-page', 'newModule.penyediaanMesyuarat.perincian_mesyuarat')->name('perincianPage');
 
 Route::view('/penilaian-kewangan-kerja', 'newModule.penilaian.borang1')->name('borang1');
 Route::view('/penilaian-kewangan-kerja-borang2', 'newModule.penilaian.borang2')->name('borang2');
