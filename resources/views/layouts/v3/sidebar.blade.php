@@ -782,12 +782,6 @@
                                     <span class="{{ request()->is('senarai-semak*') ? 'text-white' : '' }}">Senarai Semak</span>
                                 </a>
                             </li>
-                            <!-- <li><a class="submenu-item" href="{{ route('senaraiTeknikal') }}">
-                                    <div class="submenu-icon"></div><span>Senarai Semak Teknikal</span>
-                                </a></li> -->
-                            <!-- <li><a class="submenu-item" href="{{ route('senaraiKewangan') }}">
-                                    <div class="submenu-icon"></div><span>Senarai Semak Kewangan</span>
-                                </a></li> -->
                         </ul>
                     </div>
                 </li>

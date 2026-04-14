@@ -200,12 +200,14 @@
                 <div class="col-12 col-md-6">
                     <label class="form-label fw-semibold">Jenis Item</label>
                     <input type="text" class="form-control form-control-sm" value="Bekalan Perkhidmatan" disabled>
+                    <input type="hidden" name="jenis_item" value="Bekalan Perkhidmatan">
                 </div>
 
                 <!-- Jenis Spesifikasi -->
                 <div class="col-12 col-md-6">
                     <label class="form-label fw-semibold">Jenis Spesifikasi</label>
                     <input type="text" class="form-control form-control-sm" value="Spesifikasi Teknikal" disabled>
+                    <input type="hidden" name="jenis_spesifikasi" value="Spesifikasi Teknikal">
                 </div>
 
                 <!-- Jenis Barang -->

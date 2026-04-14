@@ -267,7 +267,7 @@
                         <span class="d-block text-muted fw-semibold text-uppercase mb-2"
                             style="font-size: 0.67rem; letter-spacing: 0.5px;">Penilaian Teknikal</span>
                         <div class="d-flex align-items-center gap-2">
-                            <input type="number" id="input-penilaian" name="input_penilaian" class="form-control form-control-sm text-center fw-semibold" style="max-width: 80px; font-size: 1rem;" placeholder="0" min="0" max="121">
+                            <input type="number" id="input-penilaian" name="input_penilaian" class="form-control form-control-sm text-center fw-semibold" style="max-width: 100px; font-size: 1rem;" placeholder="0" min="0">
                             <span class="text-muted small">daripada</span>
                             <span class="fw-bold text-dark" id="penilaian-teknikal-total" style="font-size: 1rem;">40</span>
                             <span class="text-muted small">markah</span>
@@ -283,9 +283,9 @@
                             style="font-size: 0.67rem; letter-spacing: 0.5px;">Tahap Lulus</span>
                         <div class="d-flex align-items-baseline gap-1">
                             <span class="fw-bold text-primary" id="tahap-lulus"
-                                style="font-size: 1.75rem; line-height: 1;">70</span>
+                                style="font-size: 1.75rem; line-height: 1;">0</span>
                             <span class="fw-semibold text-primary" style="font-size: 1rem;">%</span>
-                            <span class="text-muted small ms-1">peratus</span>
+                            {{-- <span class="text-muted small ms-1">peratus</span> --}}
                         </div>
                     </div>
                 </div>
@@ -335,13 +335,19 @@
     </div>
 
     <!-- ===================== BOTTOM ACTION BUTTONS ===================== -->
-    <div class="d-flex justify-content-end gap-2 mb-4">
-        <button type="button" class="btn-form btn-form-primary btn-simpan">Simpan</button>
-        <button type="button" class="btn-form btn-form-success btn-hantar">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"></path></svg>
-            Hantar
-        </button>
-    </div>
+    <form id="form-senarai-teknikal" action="{{ route('jawatankuasa.simpanSenaraiTeknikal') }}" method="POST">
+    @csrf
+        <!-- Hidden: tahap lulus value for submission -->
+        <input type="hidden" name="tahap_lulus" id="tahap-lulus-hidden" value="0">
+
+        <div class="d-flex justify-content-end gap-2 mb-4">
+            <button type="button" class="btn-form btn-form-primary btn-simpan">Simpan</button>
+            <button type="submit" class="btn-form btn-form-success btn-hantar">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"></path></svg>
+                Hantar
+            </button>
+        </div>
+    </form>
 @endsection
 
 @push('modals')
@@ -630,7 +636,32 @@
                 });
                 $('#skema-maksima-display').val(total);
                 $('#penilaian-teknikal-total').text(total);
+
+                // max attribute for input-penilaian number
+                $('#input-penilaian').attr('max', total);
+                var currentVal = parseInt($('#input-penilaian').val()) || 0;
+                $('#input-penilaian').toggleClass('is-invalid', total > 0 && currentVal > total);
+                updateTahapLulus();
             }
+
+            function updateTahapLulus() {
+                var skemaMaksima = parseInt($('#skema-maksima-display').val()) || 0;
+                var penilaian    = parseInt($('#input-penilaian').val()) || 0;
+                var pct = skemaMaksima > 0
+                    ? Math.round((penilaian / skemaMaksima) * 100 * 100) / 100
+                    : 0;
+                var display = (pct % 1 === 0) ? pct : pct.toFixed(2);
+                $('#tahap-lulus').text(display);
+                $('#tahap-lulus-hidden').val(pct);
+            }
+
+            // ─── PENILAIAN INPUT: validate + recalculate ─────────────────────────────
+            $('#input-penilaian').on('input change', function() {
+                var skemaMaksima = parseInt($('#skema-maksima-display').val()) || 0;
+                var val = parseInt($(this).val()) || 0;
+                $(this).toggleClass('is-invalid', skemaMaksima > 0 && val > skemaMaksima);
+                updateTahapLulus();
+            });
 
             function syncTableEmpty() {
                 var realRows = $('#tbl-teknikal tbody tr:not(#tbl-empty-row)').length;
@@ -804,15 +835,21 @@
                 chipListId : 'file-chip-list-sokongan'
             });
 
-            // ─── SUCCESS MODAL: Simpan & Hantar ──────────────────────────────────────
+            // ─── SIMPAN (success modal) ──────────────────────
             var successModal = new bootstrap.Modal(document.getElementById('successModal'));
 
             $('.btn-simpan').on('click', function() {
                 successModal.show();
             });
 
-            $('.btn-hantar').on('click', function() {
-                successModal.show();
+            // ─── FORM SUBMIT: block if penilaian exceeds skema maksima ───────────────
+            $('#form-senarai-teknikal').on('submit', function (e) {
+                var skemaMaksima = parseInt($('#skema-maksima-display').val()) || 0;
+                var penilaian    = parseInt($('#input-penilaian').val()) || 0;
+                if (skemaMaksima > 0 && penilaian > skemaMaksima) {
+                    e.preventDefault();
+                    $('#input-penilaian').addClass('is-invalid').focus();
+                }
             });
 
         });
