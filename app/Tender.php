@@ -102,7 +102,9 @@ class Tender extends Model
 		'zon_lokasi',
 		'jawatankuasa',
 		'lawatan_tapak',
-		'penilaian_fizikal'
+		'penilaian_fizikal',
+		'status_process_id',
+		'is_ebidding',
 	];
 
 	/**

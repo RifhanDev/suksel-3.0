@@ -24,6 +24,23 @@
 			border-color: #0d9488;
 			color: #fff;
 		}
+
+		.mp-hint {
+			background: #eff6ff;
+			border: 1px solid #bae6fd;
+			color: #0369a1;
+			border-radius: 8px;
+			padding: 8px 12px;
+			font-size: 0.85rem;
+		}
+
+		.mp-item-row {
+			cursor: pointer;
+		}
+
+		.mp-item-row.mp-item-active {
+			background-color: #e7f1ff !important;
+		}
 	</style>
 @endsection
 
@@ -32,7 +49,9 @@
 		$refNo = optional($tender)->no_tender ?: optional($tender)->ref_number ?: '-';
 		$tajukTender = optional($tender)->name ?: '-';
 		$ptj = optional(optional($tender)->tenderer)->name ?: '-';
-		$tarikhSerahan = !empty(optional($tender)->submission_datetime) ? \Carbon\Carbon::parse($tender->submission_datetime) : null;
+		$tarikhSerahan = !empty(optional($tender)->submission_datetime)
+		    ? \Carbon\Carbon::parse($tender->submission_datetime)
+		    : null;
 		$tempohSahLaku = $tarikhSerahan ? '90 Hari' : '-';
 		$sahLakuTamat = $tarikhSerahan ? $tarikhSerahan->copy()->addDays(90)->format('d/m/Y') : '-';
 	@endphp
@@ -219,7 +238,8 @@
 		<div class="tab-pane" id="tab-kertas-taklimat" role="tabpanel">
 			<div class="content-card p-4">
 				<h6 class="fw-bold text-dark mb-1">Paparan Kertas Taklimat</h6>
-				<p class="text-muted small mb-3">Senarai lampiran yang dihantar dari modul Perakuan Jabatan (muat turun sahaja).</p>
+				<p class="text-muted small mb-3">Senarai lampiran yang dimuat naik dalam modul Perakuan Jabatan. Di sini anda hanya
+					boleh <strong>papar</strong> (tiada muat naik / padam).</p>
 
 				@if (($taklimatAttachments ?? collect())->isEmpty())
 					<div class="alert d-flex align-items-center gap-2 mb-0"
@@ -239,7 +259,7 @@
 								<tr>
 									<th>Kandungan</th>
 									<th>Nama Fail</th>
-									<th width="160">Tindakan</th>
+									<th width="140">Tindakan</th>
 								</tr>
 							</thead>
 							<tbody>
@@ -248,9 +268,12 @@
 										<td>{{ $attachment['kandungan'] }}</td>
 										<td>{{ $attachment['file_name'] }}</td>
 										<td class="text-center">
-											<a href="{{ $attachment['download_url'] }}" class="btn btn-sm btn-outline-primary">
-												Muat Turun
-											</a>
+											@if (!empty($attachment['papar_url']) && $attachment['papar_url'] !== '#')
+												<a href="{{ $attachment['papar_url'] }}" class="btn btn-sm btn-outline-primary" target="_blank"
+													rel="noopener noreferrer">Papar</a>
+											@else
+												<span class="text-muted small">—</span>
+											@endif
 										</td>
 									</tr>
 								@endforeach
@@ -264,18 +287,127 @@
 		<!-- Tab 3: Memuktamadkan Pemilihan Pembekal -->
 		<div class="tab-pane" id="tab-muktamad-pembekal" role="tabpanel">
 			<div class="content-card p-4">
-				<h6 class="fw-bold text-dark mb-1">Memuktamadkan Pemilihan Pembekal</h6>
-				<p class="text-muted small mb-3">Muktamadkan senarai pembekal yang dipilih untuk perolehan ini.</p>
-				<div class="alert d-flex align-items-center gap-2 mb-0"
-					style="background:#eff6ff; border:1px solid #bae6fd; color:#0369a1; border-radius:10px;">
-					<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-						stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-						<circle cx="12" cy="12" r="10"></circle>
-						<line x1="12" y1="8" x2="12" y2="12"></line>
-						<line x1="12" y1="16" x2="12.01" y2="16"></line>
-					</svg>
-					Bahagian ini belum tersedia. Sila hubungi pentadbir sistem untuk maklumat lanjut.
-				</div>
+				<div id="mp-alert" class="alert d-none py-2 px-3 mb-3"></div>
+
+				@if (!$tender)
+					<div class="alert alert-warning mb-0">Sila pilih tender untuk mengisi borang ini.</div>
+				@elseif (($pemilihanItems ?? collect())->isEmpty())
+					<div class="alert alert-info mb-0">Tiada item untuk dipaparkan. Sila muat semula halaman.</div>
+				@else
+					<h6 class="fw-bold text-dark mb-3">Memuktamadkan Pemilihan Pembekal</h6>
+
+					<div class="section-title-bar mb-2">KEPUTUSAN PIHAK BERKUASA MELULUS</div>
+					<div class="row g-3 mb-4">
+						<div class="col-md-6">
+							<label class="form-label small fw-semibold">Keputusan Mesyuarat <span class="text-danger">*</span></label>
+							<select id="mp_keputusan_mesyuarat" class="form-select form-select-sm">
+								<option value="">-- Sila Pilih --</option>
+								@foreach ($pemilihanOpts['keputusan_mesyuarat'] as $opt)
+									<option value="{{ $opt }}" @selected(($pemilihanHeader['keputusan_mesyuarat'] ?? '') === $opt)>{{ $opt }}</option>
+								@endforeach
+							</select>
+						</div>
+						<div class="col-md-6">
+							<label class="form-label small fw-semibold">Kaedah Memuktamadkan Pembekal <span class="text-danger">*</span></label>
+							<select id="mp_kaedah_memuktamadkan" class="form-select form-select-sm">
+								<option value="">-- Sila Pilih --</option>
+								@foreach ($pemilihanOpts['kaedah_memuktamadkan_pembekal'] as $opt)
+									<option value="{{ $opt }}" @selected(($pemilihanHeader['kaedah_memuktamadkan_pembekal'] ?? '') === $opt)>{{ $opt }}</option>
+								@endforeach
+							</select>
+						</div>
+						<div class="col-md-6">
+							<label class="form-label small fw-semibold">Pemilihan Berdasarkan <span class="text-danger">*</span></label>
+							<select id="mp_pemilihan_berdasarkan" class="form-select form-select-sm">
+								<option value="">-- Sila Pilih --</option>
+								@foreach ($pemilihanOpts['pemilihan_berdasarkan'] as $opt)
+									<option value="{{ $opt }}" @selected(($pemilihanHeader['pemilihan_berdasarkan'] ?? '') === $opt)>{{ $opt }}</option>
+								@endforeach
+							</select>
+						</div>
+						<div class="col-md-6">
+							<label class="form-label small fw-semibold">LOI/LOA Disediakan Oleh <span class="text-danger">*</span></label>
+							<select id="mp_loi_loa_oleh" class="form-select form-select-sm">
+								<option value="">-- Sila Pilih --</option>
+								@foreach ($pemilihanOpts['loi_loa_disediakan_oleh'] as $opt)
+									<option value="{{ $opt }}" @selected(($pemilihanHeader['loi_loa_disediakan_oleh'] ?? '') === $opt)>{{ $opt }}</option>
+								@endforeach
+							</select>
+						</div>
+						<div class="col-md-6">
+							<label class="form-label small fw-semibold">Bil. Mesyuarat <span class="text-danger">*</span></label>
+							<input type="text" id="mp_bil_mesyuarat" class="form-control form-control-sm"
+								value="{{ $pemilihanHeader['bil_mesyuarat'] ?? '' }}">
+						</div>
+						<div class="col-md-6">
+							<label class="form-label small fw-semibold">No. Kod <span class="text-danger">*</span></label>
+							<input type="text" id="mp_no_kod" class="form-control form-control-sm" value="{{ $pemilihanHeader['no_kod'] ?? '' }}">
+						</div>
+					</div>
+
+					<div class="section-title-bar mb-2">SENARAI ITEM</div>
+					<div class="mp-hint mb-2">Sila klik pada item untuk melihat senarai pembekal.</div>
+					<div class="table-responsive mb-2">
+						<table class="table table-bordered table-sm align-middle mb-0">
+							<thead class="text-white text-center" style="background-color:#2d3e84;">
+								<tr>
+									<th style="width:36px;"></th>
+									<th>Item</th>
+									<th style="min-width:110px;">Jenis Item</th>
+									<th style="min-width:110px;">Unit Ukuran</th>
+									<th style="min-width:110px;">Jenis Harga</th>
+									<th style="min-width:100px;">Dibatalkan</th>
+									<th style="min-width:110px;">Pembekal Dipilih</th>
+									<th style="min-width:90px;">Kuantiti</th>
+								</tr>
+							</thead>
+							<tbody id="mp-items-body"></tbody>
+						</table>
+					</div>
+					<div class="d-flex justify-content-end mb-4">
+						<button type="button" class="btn btn-kt-teal btn-sm" id="mp_btn_terpakai_semua">Terpakai untuk semua</button>
+					</div>
+
+					<div class="section-title-bar mb-2">SENARAI PEMBEKAL</div>
+					<div class="mp-hint mb-2">Semua pembekal yang melepasi Markah Lulus Keseluruhan (teknikal dan kewangan) akan dijemput
+						untuk menyertai bidaan.</div>
+					<div class="table-responsive mb-3">
+						<table class="table table-bordered table-sm align-middle mb-0">
+							<thead class="text-white text-center" style="background-color:#2d3e84;">
+								<tr>
+									<th>Bil</th>
+									<th>Status Bumiputra</th>
+									<th>Harga Tawaran (RM)</th>
+									<th>Jumlah Skor</th>
+									<th>Kedudukan Penilaian Teknikal Kewangan</th>
+									<th>Status Pendaftaran MOF</th>
+									<th colspan="2">Maklumat Tambahan</th>
+									<th>Keputusan oleh Urusetia</th>
+									<th style="min-width:180px;">Catatan Urusetia</th>
+								</tr>
+								<tr>
+									<th colspan="6"></th>
+									<th class="small">Tindakan Disiplin Diambil</th>
+									<th class="small">Lembaga Pengarah</th>
+									<th colspan="2"></th>
+								</tr>
+							</thead>
+							<tbody id="mp-pembekal-body"></tbody>
+						</table>
+					</div>
+
+					<div class="form-check mb-4">
+						<input class="form-check-input" type="checkbox" id="mp_sahkan_layak" value="1"
+							{{ !empty($pemilihanHeader['sahkan_layak_bidaan']) ? 'checked' : '' }}>
+						<label class="form-check-label small" for="mp_sahkan_layak">Saya mengesahkan petender diatas layak untuk menyertai
+							Bidaan.</label>
+					</div>
+
+					<div class="d-flex justify-content-end gap-2">
+						<button type="button" class="btn btn-kt-teal" id="mp_btn_simpan">Simpan</button>
+						<button type="button" class="btn btn-selangor" id="mp_btn_hantar">Hantar</button>
+					</div>
+				@endif
 			</div>
 		</div>
 
@@ -300,16 +432,14 @@
 						</div>
 					</div>
 					<label class="form-label mb-1">Jika Ya, sila nyatakan</label>
-					<textarea id="kk_syarat_nyatakan" class="form-control" rows="2"
-						style="max-width:420px;">{{ old('syarat_nyatakan', optional($kertasKeputusan)->syarat_nyatakan) }}</textarea>
+					<textarea id="kk_syarat_nyatakan" class="form-control" rows="2" style="max-width:420px;">{{ old('syarat_nyatakan', optional($kertasKeputusan)->syarat_nyatakan) }}</textarea>
 				</div>
 
 				<div class="section-title-bar mb-2">PENGESYORAN</div>
 				<div class="mb-3">
 					<label class="form-label mb-1">Catatan</label>
-					<textarea id="kk_pengesyoran_catatan" class="form-control" rows="2"
-						style="max-width:420px;"
-						placeholder="Pengesyoran Urusetia Perolehan adalah berdasarkan keputusan Jawatankuasa Penilaian...">{{ old('pengesyoran_catatan', optional($kertasKeputusan)->pengesyoran_catatan) }}</textarea>
+					<textarea id="kk_pengesyoran_catatan" class="form-control" rows="2" style="max-width:420px;"
+					 placeholder="Pengesyoran Urusetia Perolehan adalah berdasarkan keputusan Jawatankuasa Penilaian...">{{ old('pengesyoran_catatan', optional($kertasKeputusan)->pengesyoran_catatan) }}</textarea>
 				</div>
 
 				<div class="section-title-bar mb-2">JUSTIFIKASI</div>
@@ -318,7 +448,10 @@
 					<select id="kk_justifikasi" class="form-select">
 						<option value="">-- Sila Pilih --</option>
 						@php
-							$kkJustifikasi = old('justifikasi_pemilihan_pembekal', optional($kertasKeputusan)->justifikasi_pemilihan_pembekal);
+							$kkJustifikasi = old(
+							    'justifikasi_pemilihan_pembekal',
+							    optional($kertasKeputusan)->justifikasi_pemilihan_pembekal,
+							);
 							$kkJustifikasiOptions = [
 							    'Harga dalam lingkungan harga indikatif jabatan',
 							    'Spesifikasi teknikal memenuhi keperluan',
@@ -327,7 +460,8 @@
 							];
 						@endphp
 						@foreach ($kkJustifikasiOptions as $option)
-							<option value="{{ $option }}" {{ $kkJustifikasi === $option ? 'selected' : '' }}>{{ $option }}</option>
+							<option value="{{ $option }}" {{ $kkJustifikasi === $option ? 'selected' : '' }}>{{ $option }}
+							</option>
 						@endforeach
 					</select>
 				</div>
@@ -346,8 +480,8 @@
 						</button>
 						<input type="file" id="kk_lampiran" class="d-none">
 						@if (!empty(optional($kertasKeputusan)->lampiran_file_path))
-							<a id="kk_existing_download" href="{{ asset(optional($kertasKeputusan)->lampiran_file_path) }}" class="small text-primary"
-								target="_blank">
+							<a id="kk_existing_download" href="{{ asset(optional($kertasKeputusan)->lampiran_file_path) }}"
+								class="small text-primary" target="_blank">
 								(Memuat naik kertas keputusan yang telah ditandatangani oleh Ketua Unit PBM)
 							</a>
 							<div class="form-check ms-2 mb-0">
@@ -376,8 +510,7 @@
 				<div class="section-title-bar mb-2">CATATAN</div>
 				<div class="mb-3">
 					<label class="form-label mb-1">Catatan</label>
-					<textarea id="kk_catatan" class="form-control" rows="2"
-						style="max-width:420px;">{{ old('catatan', optional($kertasKeputusan)->catatan) }}</textarea>
+					<textarea id="kk_catatan" class="form-control" rows="2" style="max-width:420px;">{{ old('catatan', optional($kertasKeputusan)->catatan) }}</textarea>
 				</div>
 
 				<div class="d-flex justify-content-end gap-2 mt-4">
@@ -399,12 +532,15 @@
 			const submitUrl = "{{ route('jawatankuasa.perolehan.mesyuarat.hantar') }}";
 			const kertasKeputusanSaveUrl = "{{ route('jawatankuasa.perolehan.kertas_keputusan.simpan') }}";
 			const kertasKeputusanSubmitUrl = "{{ route('jawatankuasa.perolehan.kertas_keputusan.hantar') }}";
+			const pemilihanSimpanUrl = "{{ route('jawatankuasa.perolehan.pemilihan_pembekal.simpan') }}";
+			const pemilihanHantarUrl = "{{ route('jawatankuasa.perolehan.pemilihan_pembekal.hantar') }}";
 			const csrfToken = $('meta[name="csrf-token"]').attr('content') || $('meta[name="_token"]').attr('content');
 			const $tbody = $('#mesyuarat-body');
 			const $alert = $('#mesyuarat-alert');
 
 			function showAlert(message, type) {
-				$alert.removeClass('d-none alert-success alert-danger').addClass(type === 'success' ? 'alert-success' : 'alert-danger').text(message);
+				$alert.removeClass('d-none alert-success alert-danger').addClass(type === 'success' ? 'alert-success' :
+					'alert-danger').text(message);
 			}
 
 			function escapeHtml(text) {
@@ -423,13 +559,21 @@
 				const status = row.status === 'Selesai' ? 'Selesai' : 'Belum Selesai';
 				return '<tr>' +
 					'<td class="text-center"><input type="checkbox" class="form-check-input row-check"></td>' +
-					'<td><input type="text" class="form-control form-control-sm bil_mesyuarat" value="' + escapeHtml(row.bil_mesyuarat || '') + '"></td>' +
-					'<td><input type="date" class="form-control form-control-sm tarikh_mesyuarat" value="' + escapeHtml(row.tarikh_mesyuarat || '') + '"></td>' +
-					'<td><input type="text" class="form-control form-control-sm tajuk_agenda" value="' + escapeHtml(row.tajuk_agenda || '') + '"></td>' +
-					'<td><input type="text" class="form-control form-control-sm tempat" value="' + escapeHtml(row.tempat || '') + '"></td>' +
-					'<td><input type="text" class="form-control form-control-sm no_kod_kertas" value="' + escapeHtml(row.no_kod_kertas || '') + '"></td>' +
-					'<td><select class="form-select form-select-sm status"><option value="Belum Selesai"' + (status === 'Belum Selesai' ? ' selected' : '') + '>Belum Selesai</option><option value="Selesai"' + (status === 'Selesai' ? ' selected' : '') + '>Selesai</option></select></td>' +
-					'<td><input type="text" class="form-control form-control-sm catatan" value="' + escapeHtml(row.catatan || '') + '"></td>' +
+					'<td><input type="text" class="form-control form-control-sm bil_mesyuarat" value="' + escapeHtml(
+						row.bil_mesyuarat || '') + '"></td>' +
+					'<td><input type="date" class="form-control form-control-sm tarikh_mesyuarat" value="' +
+					escapeHtml(row.tarikh_mesyuarat || '') + '"></td>' +
+					'<td><input type="text" class="form-control form-control-sm tajuk_agenda" value="' + escapeHtml(row
+						.tajuk_agenda || '') + '"></td>' +
+					'<td><input type="text" class="form-control form-control-sm tempat" value="' + escapeHtml(row
+						.tempat || '') + '"></td>' +
+					'<td><input type="text" class="form-control form-control-sm no_kod_kertas" value="' + escapeHtml(
+						row.no_kod_kertas || '') + '"></td>' +
+					'<td><select class="form-select form-select-sm status"><option value="Belum Selesai"' + (status ===
+						'Belum Selesai' ? ' selected' : '') + '>Belum Selesai</option><option value="Selesai"' + (
+						status === 'Selesai' ? ' selected' : '') + '>Selesai</option></select></td>' +
+					'<td><input type="text" class="form-control form-control-sm catatan" value="' + escapeHtml(row
+						.catatan || '') + '"></td>' +
 					'</tr>';
 			}
 
@@ -467,7 +611,8 @@
 
 				for (let i = 0; i < rows.length; i++) {
 					const row = rows[i];
-					if (!row.bil_mesyuarat || !row.tarikh_mesyuarat || !row.tajuk_agenda || !row.tempat || !row.no_kod_kertas || !row.status) {
+					if (!row.bil_mesyuarat || !row.tarikh_mesyuarat || !row.tajuk_agenda || !row.tempat || !row
+						.no_kod_kertas || !row.status) {
 						return 'Sila lengkapkan medan wajib pada baris ' + (i + 1) + '.';
 					}
 				}
@@ -599,6 +744,219 @@
 			$('#kk_btn_hantar').on('click', function() {
 				submitKertasKeputusan(kertasKeputusanSubmitUrl, 'Kertas keputusan berjaya dihantar.');
 			});
+
+			@if ($tender && ($pemilihanItems ?? collect())->isNotEmpty())
+				const pemilihanKeputusanOpts = @json($pemilihanOpts['keputusan_urusetia'] ?? []);
+				let pemilihanState = {
+					header: @json($pemilihanHeader ?? []),
+					items: @json($pemilihanItems ?? [])
+				};
+				let mpSelectedItemIndex = 0;
+				const $mpAlert = $('#mp-alert');
+
+				function mpShowAlert(message, type) {
+					if (!$mpAlert.length) {
+						return;
+					}
+					$mpAlert.removeClass('d-none alert-success alert-danger')
+						.addClass(type === 'success' ? 'alert-success' : 'alert-danger')
+						.text(message || '');
+				}
+
+				function mpFlushSuppliersToState() {
+					const item = pemilihanState.items[mpSelectedItemIndex];
+					if (!item || !item.petenders) {
+						return;
+					}
+					$('#mp-pembekal-body tr').each(function() {
+						const i = parseInt($(this).data('pet-idx'), 10);
+						const p = item.petenders[i];
+						if (!p) {
+							return;
+						}
+						p.keputusan_urusetia = ($(this).find('.mp-pet-keputusan').val() || '').toString();
+						p.catatan_urusetia = ($(this).find('.mp-pet-catatan').val() || '').toString();
+						p.tindakan_disiplin = ($(this).find('.mp-pet-disiplin').val() || '').toString();
+					});
+				}
+
+				function mpFlushItemsToState() {
+					$('#mp-items-body tr.mp-item-row').each(function() {
+						const idx = parseInt($(this).data('idx'), 10);
+						const it = pemilihanState.items[idx];
+						if (!it) {
+							return;
+						}
+						it.dibatalkan = ($(this).find('.mp-item-dib').val() || 'Tidak').toString();
+						it.pembekal_dipilih = parseInt($(this).find('.mp-item-pembekal').val(), 10) || 0;
+						it.kuantiti = ($(this).find('.mp-item-kuantiti').val() || '0').toString();
+					});
+				}
+
+				function mpReadHeader() {
+					return {
+						keputusan_mesyuarat: ($('#mp_keputusan_mesyuarat').val() || '').toString(),
+						kaedah_memuktamadkan_pembekal: ($('#mp_kaedah_memuktamadkan').val() || '').toString(),
+						pemilihan_berdasarkan: ($('#mp_pemilihan_berdasarkan').val() || '').toString(),
+						loi_loa_disediakan_oleh: ($('#mp_loi_loa_oleh').val() || '').toString(),
+						bil_mesyuarat: ($('#mp_bil_mesyuarat').val() || '').toString(),
+						no_kod: ($('#mp_no_kod').val() || '').toString(),
+						sahkan_layak_bidaan: $('#mp_sahkan_layak').is(':checked'),
+					};
+				}
+
+				function mpBuildPayload() {
+					mpFlushSuppliersToState();
+					mpFlushItemsToState();
+					pemilihanState.header = mpReadHeader();
+					return {
+						tender: tenderParam,
+						header: pemilihanState.header,
+						items: pemilihanState.items
+					};
+				}
+
+				function mpFormatMoney(n) {
+					const x = Number(n);
+					if (Number.isNaN(x)) {
+						return '0.00';
+					}
+					return x.toLocaleString('en-MY', {
+						minimumFractionDigits: 2,
+						maximumFractionDigits: 2
+					});
+				}
+
+				function mpRenderItems() {
+					const $b = $('#mp-items-body');
+					$b.empty();
+					pemilihanState.items.forEach(function(it, idx) {
+						const dib = it.dibatalkan === 'Ya' ? 'Ya' : 'Tidak';
+						const $tr = $('<tr class="mp-item-row"></tr>').attr('data-idx', idx);
+						if (idx === mpSelectedItemIndex) {
+							$tr.addClass('mp-item-active');
+						}
+						$tr.append('<td class="text-center"><input type="checkbox" class="form-check-input mp-item-check"></td>');
+						$tr.append('<td><span class="small">' + escapeHtml(it.perihal_item || '') + '</span></td>');
+						$tr.append('<td class="small">' + escapeHtml(it.jenis_item || '') + '</td>');
+						$tr.append('<td class="small">' + escapeHtml(it.unit_ukuran || '') + '</td>');
+						$tr.append('<td class="small">' + escapeHtml(it.jenis_harga || '') + '</td>');
+						const dibSel = '<select class="form-select form-select-sm mp-item-dib">' +
+							'<option value="Tidak"' + (dib === 'Tidak' ? ' selected' : '') + '>Tidak</option>' +
+							'<option value="Ya"' + (dib === 'Ya' ? ' selected' : '') + '>Ya</option></select>';
+						$tr.append('<td>' + dibSel + '</td>');
+						$tr.append('<td><input type="number" min="0" class="form-control form-control-sm mp-item-pembekal" value="' +
+							escapeHtml(String(it.pembekal_dipilih ?? 0)) + '"></td>');
+						$tr.append('<td><input type="number" min="0" step="0.0001" class="form-control form-control-sm mp-item-kuantiti" value="' +
+							escapeHtml(String(it.kuantiti ?? '')) + '"></td>');
+						$b.append($tr);
+					});
+				}
+
+				function mpRenderSuppliers() {
+					const item = pemilihanState.items[mpSelectedItemIndex];
+					const $b = $('#mp-pembekal-body');
+					$b.empty();
+					if (!item || !item.petenders) {
+						return;
+					}
+					item.petenders.forEach(function(p, i) {
+						let opts = '';
+						pemilihanKeputusanOpts.forEach(function(o) {
+							const sel = (p.keputusan_urusetia === o) ? ' selected' : '';
+							opts += '<option value="' + escapeHtml(o) + '"' + sel + '>' + escapeHtml(o) + '</option>';
+						});
+						const lp = p.lembaga_pengarah_papar_url ?
+							'<a href="' + escapeHtml(p.lembaga_pengarah_papar_url) +
+							'" class="btn btn-sm btn-outline-primary py-0 px-2" target="_blank" rel="noopener noreferrer" title="Papar">' +
+							'<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg></a>' :
+							'<span class="text-muted small">—</span>';
+						const row = '<tr data-pet-idx="' + i + '">' +
+							'<td class="text-center">' + escapeHtml(p.bil_label || '') + '</td>' +
+							'<td class="text-center">' + escapeHtml(p.status_bumiputra || '') + '</td>' +
+							'<td class="text-end">' + escapeHtml(mpFormatMoney(p.harga_tawaran)) + '</td>' +
+							'<td class="text-end">' + escapeHtml(String(p.jumlah_skor ?? '')) + '</td>' +
+							'<td class="text-center">' + escapeHtml(String(p.kedudukan_penilaian ?? '')) + '</td>' +
+							'<td class="text-center small">' + escapeHtml(p.status_mof || '') + '</td>' +
+							'<td><textarea class="form-control form-control-sm mp-pet-disiplin" rows="2">' + escapeHtml(p
+								.tindakan_disiplin || '') + '</textarea></td>' +
+							'<td class="text-center">' + lp + '</td>' +
+							'<td><select class="form-select form-select-sm mp-pet-keputusan">' + opts + '</select></td>' +
+							'<td><textarea class="form-control form-control-sm mp-pet-catatan" rows="2">' + escapeHtml(p
+								.catatan_urusetia || '') + '</textarea></td>' +
+							'</tr>';
+						$b.append(row);
+					});
+				}
+
+				$('#mp-items-body').on('click', '.mp-item-row', function(e) {
+					if ($(e.target).closest('input,select,textarea,button,a,label').length) {
+						return;
+					}
+					mpFlushSuppliersToState();
+					mpSelectedItemIndex = parseInt($(this).data('idx'), 10);
+					$('#mp-items-body tr.mp-item-row').removeClass('mp-item-active');
+					$(this).addClass('mp-item-active');
+					mpRenderSuppliers();
+				});
+
+				$('#mp_btn_terpakai_semua').on('click', function() {
+					mpFlushItemsToState();
+					let src = 0;
+					$('#mp-items-body tr.mp-item-row').each(function(i) {
+						if ($(this).find('.mp-item-check').is(':checked')) {
+							src = i;
+							return false;
+						}
+					});
+					const base = pemilihanState.items[src];
+					if (!base) {
+						return;
+					}
+					pemilihanState.items.forEach(function(it) {
+						it.dibatalkan = base.dibatalkan;
+						it.pembekal_dipilih = base.pembekal_dipilih;
+						it.kuantiti = base.kuantiti;
+					});
+					mpRenderItems();
+					mpRenderSuppliers();
+					mpShowAlert('Nilai daripada baris sumber telah diterapkan kepada semua item.', 'success');
+				});
+
+				function mpPostJson(url, successMessage) {
+					const body = mpBuildPayload();
+					$.ajax({
+						url: url,
+						method: 'POST',
+						headers: {
+							'X-CSRF-TOKEN': csrfToken || '',
+							'Accept': 'application/json',
+							'Content-Type': 'application/json'
+						},
+						data: JSON.stringify(body),
+						success: function(resp) {
+							mpShowAlert(resp.message || successMessage, 'success');
+						},
+						error: function(xhr) {
+							let message = xhr?.responseJSON?.message || 'Operasi gagal. Sila cuba semula.';
+							if (xhr?.responseJSON?.errors) {
+								message = Object.values(xhr.responseJSON.errors).flat().join(' ');
+							}
+							mpShowAlert(message, 'error');
+						}
+					});
+				}
+
+				$('#mp_btn_simpan').on('click', function() {
+					mpPostJson(pemilihanSimpanUrl, 'Data berjaya disimpan.');
+				});
+				$('#mp_btn_hantar').on('click', function() {
+					mpPostJson(pemilihanHantarUrl, 'Data berjaya dihantar.');
+				});
+
+				mpRenderItems();
+				mpRenderSuppliers();
+			@endif
 		});
 	</script>
 @endsection

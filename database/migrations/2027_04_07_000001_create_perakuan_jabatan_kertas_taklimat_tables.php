@@ -45,11 +45,6 @@ return new class extends Migration
                 $table->string('file_path');
                 $table->string('file_original_name', 255);
                 $table->timestamps();
-
-                $table->foreign('item_id', 'pjk_tif_item_fk')
-                    ->references('id')
-                    ->on('perakuan_jabatan_kertas_taklimat_items')
-                    ->onDelete('cascade');
             });
         }
     }

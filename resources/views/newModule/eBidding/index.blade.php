@@ -85,31 +85,33 @@
     <script type="text/javascript">
         $(document).ready(function () {
 
-            const svgClock = '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>';
-            const svgCheck = '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+            const allRows = @json($rows ?? []);
 
-            const dummyData = [
-                {
-                    no_tender: 'QT21000000023741',
-                    tajuk:     '<a href="{{ route('keputusanMesyuarat') }}" class="fw-semibold text-primary text-decoration-none">TENDER PERKHIDMATAN DIGITAL FORENSIK KE ATAS ALIRAN PROSES SISTEM XXXX</a>',
-                    tarikh:    '03/03/2024',
-                    status:    '<span class="d-inline-flex align-items-center gap-1 px-2 py-1 rounded-pill small fw-semibold" style="background:#fef3c7;color:#b45309;">' + svgClock + ' Dalam Proses</span>'
-                },
-                {
-                    no_tender: 'QT21000000023799',
-                    tajuk:     '<a href="{{ route('keputusanMesyuarat') }}" class="fw-semibold text-primary text-decoration-none">TENDER KERJA-KERJA NAIK TARAF INFRASTRUKTUR RANGKAIAN ICT</a>',
-                    tarikh:    '05/03/2024',
-                    status:    '<span class="d-inline-flex align-items-center gap-1 px-2 py-1 rounded-pill small fw-semibold" style="background:#dcfce7;color:#166534;">' + svgCheck + ' Aktif</span>'
-                }
-            ];
+            function filterEbiddingRows(rows) {
+                var noTender = ($('#filter_no_tender').val() || '').toLowerCase().trim();
+                var tajuk = ($('#filter_tajuk').val() || '').toLowerCase().trim();
+                var status = ($('#filter_status').val() || '').trim();
+                return rows.filter(function (r) {
+                    if (noTender && String(r.no_tender || '').toLowerCase().indexOf(noTender) === -1) {
+                        return false;
+                    }
+                    if (tajuk && String(r.tajuk_plain || '').toLowerCase().indexOf(tajuk) === -1) {
+                        return false;
+                    }
+                    if (status && String(r.status_key || '') !== status) {
+                        return false;
+                    }
+                    return true;
+                });
+            }
 
             var DT = $('#tbl-ebidding').DataTable({
-                data: dummyData,
+                data: filterEbiddingRows(allRows),
                 columns: [
                     { data: 'no_tender' },
-                    { data: 'tajuk',  orderable: false },
+                    { data: 'tajuk_html', orderable: false },
                     { data: 'tarikh' },
-                    { data: 'status', orderable: false, searchable: false }
+                    { data: 'status_html', orderable: false, searchable: false }
                 ],
                 columnDefs: [
                     { targets: 1, render: function (data) { return data; } },
@@ -137,20 +139,19 @@
                 order: []
             });
 
-            // Apply Filter
             $('#btn_apply_filter').on('click', function () {
-                var noTender = $('#filter_no_tender').val();
-                var tajuk    = $('#filter_tajuk').val();
-                var status   = $('#filter_status').val();
-                DT.search(noTender || tajuk || status).draw();
+                DT.clear();
+                DT.rows.add(filterEbiddingRows(allRows));
+                DT.draw();
             });
 
-            // Reset Filter
             $('#btn_reset_filter').on('click', function () {
                 $('#filter_no_tender').val('');
                 $('#filter_tajuk').val('');
                 $('#filter_status').val('');
-                DT.search('').draw();
+                DT.clear();
+                DT.rows.add(allRows);
+                DT.draw();
             });
         });
     </script>
