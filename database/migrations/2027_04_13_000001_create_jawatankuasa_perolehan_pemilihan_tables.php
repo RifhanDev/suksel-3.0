@@ -21,8 +21,6 @@ return new class extends Migration
                 $table->boolean('sahkan_layak_bidaan')->default(false);
                 $table->timestamp('submitted_at')->nullable();
                 $table->timestamps();
-
-                $table->foreign('tender_id')->references('id')->on('tenders')->onDelete('cascade');
             });
         }
 
@@ -39,8 +37,6 @@ return new class extends Migration
                 $table->unsignedInteger('pembekal_dipilih')->default(0);
                 $table->decimal('kuantiti', 15, 4)->default(1);
                 $table->timestamps();
-
-                $table->foreign('tender_id')->references('id')->on('tenders')->onDelete('cascade');
             });
         }
 
@@ -60,11 +56,6 @@ return new class extends Migration
                 $table->string('keputusan_urusetia', 100)->nullable();
                 $table->text('catatan_urusetia')->nullable();
                 $table->timestamps();
-
-                $table->foreign('pemilihan_item_id', 'jk_pp_pet_item_fk')
-                    ->references('id')
-                    ->on('jawatankuasa_perolehan_pemilihan_items')
-                    ->cascadeOnDelete();
             });
         }
     }
