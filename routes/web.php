@@ -207,24 +207,29 @@ Route::get('aduan/{id}/{status}', [ComplaintController::class, 'updateStatus'])-
 Route::match(['get', 'post'], 'botman', [BotManController::class, 'handle'])->name('botman');
 Route::get('chat-widget/{chat_id}', [BotManController::class, 'chatWidget'])->withoutMiddleware(['auth'])->name('chat_widget');
 
-// Place 3.0 Modules Routes Temporarily Here
 
+// Place 3.0 Modules Routes Temporarily Here
 Route::get('/pelantikan-jawatankuasa', [JawatankuasaController::class, 'create'])->middleware(['auth'])->name('pelantikanJawatankuasa');
 Route::get('/pelantikan-jawatankuasa/laporan', [JawatankuasaController::class, 'laporan'])->middleware(['auth'])->name('jawatankuasa.laporan');
 Route::post('/pelantikan-jawatankuasa/hantar-pemakluman', [JawatankuasaController::class, 'hantarPemakluman'])->middleware(['auth'])->name('jawatankuasa.hantarPemakluman');
 Route::view('/senarai-semak', 'newModule.jawatankuasaSpesifikasi.index')->name('senaraiSemak');
 Route::view('/senarai-teknikal', 'newModule.jawatankuasaSpesifikasi.senarai_teknikal')->name('senaraiTeknikal');
-Route::view('/senarai-kewangan', 'newModule.jawatankuasaSpesifikasi.senarai_kewangan-dan')->name('senaraiKewangan');
+Route::post('/senarai-teknikal/hantar', [JawatankuasaController::class, 'simpanSenaraiTeknikal'])->name('jawatankuasa.simpanSenaraiTeknikal');
+Route::view('/senarai-kewangan-bekalan', 'newModule.jawatankuasaSpesifikasi.senarai_kewangan_bekalan')->name('senaraiKewanganBekalan');
+Route::post('/senarai-kewangan-bekalan/hantar', [JawatankuasaController::class, 'simpanSenaraiKewanganBekalan'])->name('jawatankuasa.simpanSenaraiKewanganBekalan');
 Route::view('/senarai-kewangan-kerja', 'newModule.jawatankuasaSpesifikasi.senarai_kewangan_kerja')->name('senaraiKewanganKerja');
+Route::post('/senarai-kewangan-kerja/hantar', [JawatankuasaController::class, 'simpanSenaraiKewanganKerja'])->name('jawatankuasa.simpanSenaraiKewanganKerja');
 Route::view('/penyediaan-spesifikasi-tender', 'newModule.jawatankuasaSpesifikasi.form_penyediaan_spesifikasi_tender')->name('penyediaanSpekTender');
 Route::view('/lembaran-imbangan', 'newModule.jawatankuasaSpesifikasi.form_lembaran_imbangan')->name('lembaranImbangan');
 Route::view('/bon-atau-saham', 'newModule.jawatankuasaSpesifikasi.form_bon_saham')->name('bonAtauSaham');
 Route::post('/bon-atau-saham/submit', [JawatankuasaController::class, 'storeBonSaham'])->middleware(['auth'])->name('jawatankuasa.hantarBonSaham');
 Route::view('/prestasi-kerja-semasa-petender', 'newModule.jawatankuasaSpesifikasi.form_prestasi_kerja_semasa_petender')->name('prestasiKerjaSemasa');
 Route::post('/prestasi-kerja-semasa-petender/submit', [JawatankuasaController::class, 'storePrestasiKerjaSemasa'])->middleware(['auth'])->name('jawatankuasa.hantarPrestasiKerjaSemasa');
-Route::view('/templat-spesifikasi', 'newModule.jawatankuasaSpesifikasi.form_spesifikasi')->name('spesifikasiForm');
+Route::view('/templat-spesifikasi', 'newModule.jawatankuasaSpesifikasi.form_cipta_spesifikasi')->name('spesifikasiForm');
 Route::view('/pengalaman-kerja', 'newModule.jawatankuasaSpesifikasi.form_pengalaman_kerja')->name('pgmnKerjaForm');
+Route::post('/pengalaman-kerja/simpan', [JawatankuasaController::class, 'simpanPengalamanKerja'])->name('jawatankuasa.simpanPengalamanKerja');
 Route::view('/kerja-dalam-tangan', 'newModule.jawatankuasaSpesifikasi.form_kerja_dalam_tangan')->name('kjDlmTanganForm');
+Route::post('/kerja-dalam-tangan/simpan', [JawatankuasaController::class, 'simpanKerjaDalamTangan'])->name('jawatankuasa.simpanKerjaDalamTangan');
 Route::get('/spesifikasi-kewangan', [JawatankuasaController::class, 'spesifikasiKewanganBekalan'])->name('spesifikasiFormKewanganBekalan');
 Route::view('/profil-petender', 'newModule.jawatankuasaSpesifikasi.form_profil_petender')->name('prflPetender');
 Route::post('/profile-petender/submit', [JawatankuasaController::class, 'storeProfilPetender'])->middleware(['auth'])->name('jawatankuasa.hantarProfilPetender');

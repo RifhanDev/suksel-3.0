@@ -70,140 +70,145 @@
         </div>
     </div>
 
-    <!-- ===================== SECTION: PENGALAMAN KERJA ===================== -->
-    <div class="content-card mb-4 p-0">
-        <div class="content-card-header p-4 pb-3 border-bottom">
-            <div class="d-flex align-items-center gap-3">
-                <div class="content-card-icon" style="width: 38px; height: 38px;">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
-                        <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
-                    </svg>
+    <form id="form-pengalaman-kerja" action="{{ route('jawatankuasa.simpanPengalamanKerja') }}" method="POST" enctype="multipart/form-data">
+    @csrf
+
+        <!-- ===================== SECTION: PENGALAMAN KERJA ===================== -->
+        <div class="content-card mb-4 p-0">
+            <div class="content-card-header p-4 pb-3 border-bottom">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="content-card-icon" style="width: 38px; height: 38px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="content-card-title mb-0" style="font-size: 1rem;">Pengalaman Kerja Dalam (5) Tahun Lepas</h3>
+                        <p class="text-muted mb-0" style="font-size: 0.78rem;">Diisi oleh Petender</p>
+                    </div>
                 </div>
-                <div>
-                    <h3 class="content-card-title mb-0" style="font-size: 1rem;">Pengalaman Kerja Dalam (5) Tahun Lepas</h3>
-                    <p class="text-muted mb-0" style="font-size: 0.78rem;">Diisi oleh Petender</p>
+            </div>
+
+            <div class="content-card-body p-4">
+
+                <!-- Table toolbar -->
+                <div class="d-flex justify-content-end mb-3">
+                    <button type="button" id="btn-tambah-row"
+                        class="btn btn-sm btn-success d-inline-flex align-items-center gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        Tambah
+                    </button>
                 </div>
+
+                <!-- Table -->
+                <div class="table-responsive">
+                    <table id="tbl-pengalaman" class="table table-modern align-middle mb-0 w-100">
+                        <thead>
+                            <tr>
+                                <th class="text-center py-3" style="width:50px;">Bil</th>
+                                <th class="py-3" style="min-width:220px;">Senarai Kerja Yang Disiapkan</th>
+                                <th class="py-3" style="min-width:160px;">PIC</th>
+                                <th class="py-3" style="width:150px;">No. Telefon PIC</th>
+                                <th class="text-end py-3" style="width:160px;">Nilai Kerja (RM)</th>
+                                <th class="text-center py-3" style="width:60px;">Tindakan</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbl-pengalaman-body">
+                            <!-- initial row rendered by JS below -->
+                        </tbody>
+                        <tfoot>
+                            <tr style="border-top: 2px solid #e2e8f0;">
+                                <th colspan="4" class="text-end text-muted" style="font-size:0.75rem;">JUMLAH NILAI KERJA</th>
+                                <th class="text-end" id="total-nilai" style="font-size:0.875rem; color:#1e293b;">0.00</th>
+                                <th></th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+
             </div>
         </div>
 
-        <div class="content-card-body p-4">
+        <!-- ===================== SECTION: DOKUMEN SOKONGAN ===================== -->
+        <div class="content-card mb-4 p-0">
+            <div class="content-card-header p-4 pb-3 border-bottom">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="content-card-icon" style="width: 38px; height: 38px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="12" y1="18" x2="12" y2="12"></line>
+                            <line x1="9" y1="15" x2="15" y2="15"></line>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="content-card-title mb-0" style="font-size: 1rem;">Dokumen Sokongan / Rujukan</h3>
+                        <p class="text-muted mb-0" style="font-size: 0.78rem;">Muat naik sijil, kontrak atau surat berkaitan pengalaman kerja</p>
+                    </div>
+                </div>
+            </div>
+            <div class="content-card-body p-4">
 
-            <!-- Table toolbar -->
-            <div class="d-flex justify-content-end mb-3">
-                <button type="button" id="btn-tambah-row"
-                    class="btn btn-sm btn-success d-inline-flex align-items-center gap-1">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="12" y1="5" x2="12" y2="19"></line>
-                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                <!-- Upload Zone -->
+                <label class="upload-zone w-100" id="upload-zone" for="input-dokumen">
+                    <div class="upload-zone-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="16 16 12 12 8 16"></polyline>
+                            <line x1="12" y1="12" x2="12" y2="21"></line>
+                            <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"></path>
+                        </svg>
+                    </div>
+                    <span class="upload-zone-label">Klik atau seret fail ke sini untuk muat naik</span>
+                    <span class="upload-zone-sub">PDF, Word, Excel, Imej, ZIP — saiz maksimum 10 MB setiap fail</span>
+                    <input type="file" id="input-dokumen" name="dokumen_pengalaman[]" multiple hidden accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.zip,.rar">
+                </label>
+
+                <!-- Uploaded file chips -->
+                <div class="file-chip-list" id="file-chip-list"></div>
+
+            </div>
+        </div>
+
+        <!-- ACTION BUTTONS -->
+        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+            <a href="{{ route('senaraiTeknikal') }}" class="btn-form btn-form-secondary">
+                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+                Kembali
+            </a>
+            <div class="d-flex gap-2">
+                <button type="button" class="btn-form btn-form-primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
                     </svg>
-                    Tambah
+                    Laporan
+                </button>
+                <button type="submit" class="btn-form btn-form-success">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                        <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                        <polyline points="7 3 7 8 15 8"></polyline>
+                    </svg>
+                    Simpan
                 </button>
             </div>
-
-            <!-- Table -->
-            <div class="table-responsive">
-                <table id="tbl-pengalaman" class="table table-modern align-middle mb-0 w-100">
-                    <thead>
-                        <tr>
-                            <th class="text-center py-3" style="width:50px;">Bil</th>
-                            <th class="py-3" style="min-width:220px;">Senarai Kerja Yang Disiapkan</th>
-                            <th class="py-3" style="min-width:160px;">PIC</th>
-                            <th class="py-3" style="width:150px;">No. Telefon PIC</th>
-                            <th class="text-end py-3" style="width:160px;">Nilai Kerja (RM)</th>
-                            <th class="text-center py-3" style="width:60px;">Tindakan</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tbl-pengalaman-body">
-                        <!-- initial row rendered by JS below -->
-                    </tbody>
-                    <tfoot>
-                        <tr style="border-top: 2px solid #e2e8f0;">
-                            <th colspan="4" class="text-end text-muted" style="font-size:0.75rem;">JUMLAH NILAI KERJA</th>
-                            <th class="text-end" id="total-nilai" style="font-size:0.875rem; color:#1e293b;">0.00</th>
-                            <th></th>
-                        </tr>
-                    </tfoot>
-                </table>
-            </div>
-
         </div>
-    </div>
 
-    <!-- ===================== SECTION: DOKUMEN SOKONGAN ===================== -->
-    <div class="content-card mb-4 p-0">
-        <div class="content-card-header p-4 pb-3 border-bottom">
-            <div class="d-flex align-items-center gap-3">
-                <div class="content-card-icon" style="width: 38px; height: 38px;">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                        <polyline points="14 2 14 8 20 8"></polyline>
-                        <line x1="12" y1="18" x2="12" y2="12"></line>
-                        <line x1="9" y1="15" x2="15" y2="15"></line>
-                    </svg>
-                </div>
-                <div>
-                    <h3 class="content-card-title mb-0" style="font-size: 1rem;">Dokumen Sokongan / Rujukan</h3>
-                    <p class="text-muted mb-0" style="font-size: 0.78rem;">Muat naik sijil, kontrak atau surat berkaitan pengalaman kerja</p>
-                </div>
-            </div>
-        </div>
-        <div class="content-card-body p-4">
-
-            <!-- Upload Zone -->
-            <label class="upload-zone w-100" id="upload-zone" for="input-dokumen">
-                <div class="upload-zone-icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="16 16 12 12 8 16"></polyline>
-                        <line x1="12" y1="12" x2="12" y2="21"></line>
-                        <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"></path>
-                    </svg>
-                </div>
-                <span class="upload-zone-label">Klik atau seret fail ke sini untuk muat naik</span>
-                <span class="upload-zone-sub">PDF, Word, Excel, Imej, ZIP — saiz maksimum 10 MB setiap fail</span>
-                <input type="file" id="input-dokumen" name="dokumen_pengalaman[]" multiple hidden accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.zip,.rar">
-            </label>
-
-            <!-- Uploaded file chips -->
-            <div class="file-chip-list" id="file-chip-list"></div>
-
-        </div>
-    </div>
-
-    <!-- ACTION BUTTONS -->
-    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-        <a href="{{ route('senaraiTeknikal') }}" class="btn-form btn-form-secondary">
-            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="19" y1="12" x2="5" y2="12"></line>
-                <polyline points="12 19 5 12 12 5"></polyline>
-            </svg>
-            Kembali
-        </a>
-        <div class="d-flex gap-2">
-            <button type="button" class="btn-form btn-form-primary">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                    <polyline points="14 2 14 8 20 8"/>
-                </svg>
-                Laporan
-            </button>
-            <button type="button" class="btn-form btn-form-success">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
-                    <polyline points="17 21 17 13 7 13 7 21"></polyline>
-                    <polyline points="7 3 7 8 15 8"></polyline>
-                </svg>
-                Simpan
-            </button>
-        </div>
-    </div>
+    </form>
 
 @endsection
 

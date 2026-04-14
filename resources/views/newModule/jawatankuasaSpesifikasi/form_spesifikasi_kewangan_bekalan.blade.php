@@ -254,95 +254,95 @@
     <form id="form-spek-kewangan" action="#" method="POST">
     @csrf
 
-    <!-- ===================== SECTION: ITEM SPESIFIKASI & PENETAPAN HARGA ===================== -->
-    <div class="content-card mb-4 p-0">
-        <div class="content-card-header p-4 pb-3 border-bottom">
-            <div class="d-flex align-items-center gap-3">
-                <div class="content-card-icon" style="width: 38px; height: 38px;">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
-                        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
-                        <line x1="8" y1="6" x2="16" y2="6"></line>
-                        <line x1="8" y1="10" x2="16" y2="10"></line>
-                    </svg>
-                </div>
-                <div>
-                    <h3 class="content-card-title mb-0" style="font-size: 1rem;">Item Spesifikasi & Penetapan Harga</h3>
-                    <p class="text-muted mb-0" style="font-size: 0.78rem;">Masukkan harga bagi setiap item</p>
-                </div>
-            </div>
-        </div>
-        <div class="content-card-body p-3">
-
-            <div class="table-responsive">
-                <table id="tbl-spek-kewangan" class="table table-modern w-100 mb-0">
-                    <thead>
-                        <tr>
-                            <th>
-                                Item
-                                <div style="font-size: 0.68rem; font-weight: 600; text-transform: none; letter-spacing: 0; color: #94a3b8; margin-top: 2px;">
-                                    Spesifikasi
-                                </div>
-                            </th>
-                            <th class="text-center" style="width: 130px;">Kekerapan / Kuantiti</th>
-                            <th class="text-center" style="width: 130px;">Unit Ukuran</th>
-                            <th class="text-center" style="width: 180px;">Penetapan Harga (RM)</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tbl-spek-body">
-                        {{-- Rendered via JS from controller data --}}
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- Totals area — aligned right under Penetapan Harga column -->
-            <div class="d-flex justify-content-end mt-3">
-                <div style="width: 360px;">
-                    <!-- Jumlah Harga -->
-                    <div class="d-flex align-items-center justify-content-between py-2 px-3 rounded-2 mb-2" style="background:#f8fafc; border:1px solid #e2e8f0;">
-                        <span class="fw-semibold text-dark" style="font-size:0.85rem;">Jumlah Harga (RM)</span>
-                        <span class="fw-bold text-dark" id="jumlah-harga" style="font-size:1rem;">0.00</span>
-                    </div>
-                    <!-- Anggaran Jabatan -->
-                    <div class="d-flex align-items-center justify-content-between py-2 px-3 rounded-2 mb-2" style="background:#eff6ff; border:1px solid #bfdbfe;">
-                        <span class="fw-semibold" style="font-size:0.85rem; color:#1e40af;">Anggaran Jabatan (RM)</span>
-                        <span class="fw-bold" id="anggaran-jabatan" style="font-size:1rem; color:#1e40af;">{{ number_format($anggaranJabatan, 2) }}</span>
-                    </div>
-                    <!-- Nota -->
-                    <div class="d-flex align-items-start gap-2 px-1">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none"
-                            stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0" style="margin-top:2px;">
-                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-                            <line x1="12" y1="9" x2="12" y2="13"></line>
-                            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+        <!-- ===================== SECTION: ITEM SPESIFIKASI & PENETAPAN HARGA ===================== -->
+        <div class="content-card mb-4 p-0">
+            <div class="content-card-header p-4 pb-3 border-bottom">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="content-card-icon" style="width: 38px; height: 38px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                            <line x1="8" y1="6" x2="16" y2="6"></line>
+                            <line x1="8" y1="10" x2="16" y2="10"></line>
                         </svg>
-                        <span class="text-muted fst-italic" style="font-size:0.75rem; line-height:1.4;">Nota: Pastikan Jumlah Harga adalah sama dengan Anggaran Jabatan</span>
+                    </div>
+                    <div>
+                        <h3 class="content-card-title mb-0" style="font-size: 1rem;">Item Spesifikasi & Penetapan Harga</h3>
+                        <p class="text-muted mb-0" style="font-size: 0.78rem;">Masukkan harga bagi setiap item</p>
                     </div>
                 </div>
             </div>
+            <div class="content-card-body p-3">
 
-        </div>
-    </div>
+                <div class="table-responsive">
+                    <table id="tbl-spek-kewangan" class="table table-modern w-100 mb-0">
+                        <thead>
+                            <tr>
+                                <th>
+                                    Item
+                                    <div style="font-size: 0.68rem; font-weight: 600; text-transform: none; letter-spacing: 0; color: #94a3b8; margin-top: 2px;">
+                                        Spesifikasi
+                                    </div>
+                                </th>
+                                <th class="text-center" style="width: 130px;">Kekerapan / Kuantiti</th>
+                                <th class="text-center" style="width: 130px;">Unit Ukuran</th>
+                                <th class="text-center" style="width: 180px;">Penetapan Harga (RM)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbl-spek-body">
+                            {{-- Rendered via JS from controller data --}}
+                        </tbody>
+                    </table>
+                </div>
 
-    <!-- ===================== ACTION BUTTONS ===================== -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <a href="{{ route('senaraiKewangan') }}" class="btn-form btn-form-secondary">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="19" y1="12" x2="5" y2="12"></line>
-                <polyline points="12 19 5 12 12 5"></polyline>
-            </svg>
-            Kembali
-        </a>
-        <div class="d-flex gap-2">
-            <button type="button" class="btn-form btn-form-primary">Simpan</button>
-            <button type="submit" class="btn-form btn-form-success">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"></path></svg>
-                Selesai
-            </button>
+                <!-- Totals area — aligned right under Penetapan Harga column -->
+                <div class="d-flex justify-content-end mt-3">
+                    <div style="width: 360px;">
+                        <!-- Jumlah Harga -->
+                        <div class="d-flex align-items-center justify-content-between py-2 px-3 rounded-2 mb-2" style="background:#f8fafc; border:1px solid #e2e8f0;">
+                            <span class="fw-semibold text-dark" style="font-size:0.85rem;">Jumlah Harga (RM)</span>
+                            <span class="fw-bold text-dark" id="jumlah-harga" style="font-size:1rem;">0.00</span>
+                        </div>
+                        <!-- Anggaran Jabatan -->
+                        <div class="d-flex align-items-center justify-content-between py-2 px-3 rounded-2 mb-2" style="background:#eff6ff; border:1px solid #bfdbfe;">
+                            <span class="fw-semibold" style="font-size:0.85rem; color:#1e40af;">Anggaran Jabatan (RM)</span>
+                            <span class="fw-bold" id="anggaran-jabatan" style="font-size:1rem; color:#1e40af;">{{ number_format($anggaranJabatan, 2) }}</span>
+                        </div>
+                        <!-- Nota -->
+                        <div class="d-flex align-items-start gap-2 px-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none"
+                                stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0" style="margin-top:2px;">
+                                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                                <line x1="12" y1="9" x2="12" y2="13"></line>
+                                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                            </svg>
+                            <span class="text-muted fst-italic" style="font-size:0.75rem; line-height:1.4;">Nota: Pastikan Jumlah Harga adalah sama dengan Anggaran Jabatan</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
         </div>
-    </div>
+
+        <!-- ===================== ACTION BUTTONS ===================== -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <a href="{{ route('senaraiKewanganBekalan') }}" class="btn-form btn-form-secondary">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+                Kembali
+            </a>
+            <div class="d-flex gap-2">
+                <button type="button" class="btn-form btn-form-primary">Simpan</button>
+                <button type="submit" class="btn-form btn-form-success">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"></path></svg>
+                    Selesai
+                </button>
+            </div>
+        </div>
 
     </form>
 @endsection

@@ -468,15 +468,34 @@
                 <div class="row mb-3">
                     <div class="col-12 col-md-4">
                         <label class="form-label fw-semibold small">Jenis Skor <span class="text-danger">*</span></label>
-                        <select name="jenis_skor_berbayar" class="form-select form-select-sm jenis-skor-select" data-target="#panel-berbayar">
+                        <select name="jenis_skor_berbayar" class="form-select form-select-sm jenis-skor-select-berbayar">
                             <option value="">— Sila pilih —</option>
+                            <option value="manual">Manual</option>
                             <option value="automatik">Automatik</option>
-                            <option value="manual" disabled>Manual</option>
                         </select>
                     </div>
                 </div>
 
-                <!-- Automatik panel (table) — hidden until jenis skor = automatik -->
+                <!-- Automatik panel — calculated read-only rows -->
+                <div id="panel-berbayar-automatik" class="d-none">
+                    <div class="table-responsive">
+                        <table class="table table-modern align-middle mb-0 w-100" style="border:1px solid #e2e8f0;">
+                            <thead>
+                                <tr>
+                                    <th class="text-center py-3" style="width:55px;">Bil</th>
+                                    <th class="py-3">Dari (RM)</th>
+                                    <th class="py-3">Hingga (RM)</th>
+                                    <th class="py-3 text-center" style="width:120px;">Skema</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbl-berbayar-auto-body">
+                                <!-- rendered by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Manual panel (table) — user-editable rows -->
                 <div id="panel-berbayar" class="d-none">
                     <div class="d-flex justify-content-end mb-3">
                         <button type="button" class="btn btn-sm btn-success d-inline-flex align-items-center gap-1 btn-tambah-berbayar">
@@ -528,15 +547,34 @@
                 <div class="row mb-3">
                     <div class="col-12 col-md-4">
                         <label class="form-label fw-semibold small">Jenis Skor <span class="text-danger">*</span></label>
-                        <select name="jenis_skor_dibenarkan" class="form-select form-select-sm jenis-skor-select" data-target="#panel-dibenarkan">
+                        <select name="jenis_skor_dibenarkan" class="form-select form-select-sm jenis-skor-select-dibenarkan">
                             <option value="">— Sila pilih —</option>
+                            <option value="manual">Manual</option>
                             <option value="automatik">Automatik</option>
-                            <option value="manual" disabled>Manual</option>
                         </select>
                     </div>
                 </div>
 
-                <!-- Automatik panel (table) — hidden until jenis skor = automatik -->
+                <!-- Automatik panel — calculated read-only rows -->
+                <div id="panel-dibenarkan-automatik" class="d-none">
+                    <div class="table-responsive">
+                        <table class="table table-modern align-middle mb-0 w-100" style="border:1px solid #e2e8f0;">
+                            <thead>
+                                <tr>
+                                    <th class="text-center py-3" style="width:55px;">Bil</th>
+                                    <th class="py-3">Dari (RM)</th>
+                                    <th class="py-3">Hingga (RM)</th>
+                                    <th class="py-3 text-center" style="width:120px;">Skema</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbl-dibenarkan-auto-body">
+                                <!-- rendered by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Manual panel (table) — user-editable rows -->
                 <div id="panel-dibenarkan" class="d-none">
                     <div class="d-flex justify-content-end mb-3">
                         <button type="button" class="btn btn-sm btn-success d-inline-flex align-items-center gap-1 btn-tambah-dibenarkan">
@@ -571,7 +609,7 @@
 
         <!-- ===================== ACTION BUTTONS ===================== -->
         <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-            <a href="{{ route('senaraiKewangan') }}" class="btn-form btn-form-secondary">
+            <a href="{{ route('senaraiKewanganBekalan') }}" class="btn-form btn-form-secondary">
                 <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <line x1="19" y1="12" x2="5" y2="12"></line>
@@ -683,21 +721,158 @@ $(document).ready(function () {
             $(this).closest('tr').remove();
             reNumber();
         });
+
+        // Range validation: Dari < Hingga, each row Dari > previous row Hingga
+        $body.on('blur', '.amount-input', function () {
+            var $input  = $(this);
+            var $td     = $input.closest('td');
+            var $row    = $td.closest('tr');
+            var colIdx  = $td.index(); // 1=Dari, 2=Hingga
+
+            if (colIdx === 1) {
+                var $prevRow = $row.prev('tr.analisa-row');
+                if ($prevRow.length) {
+                    var prevHingga = parseAmt($prevRow.find('td:eq(2) input').val());
+                    var dari = parseAmt($input.val());
+                    $input.toggleClass('is-invalid', prevHingga > 0 && dari > 0 && dari <= prevHingga);
+                }
+            } else if (colIdx === 2) {
+                var $nextRow = $row.next('tr.analisa-row');
+                if ($nextRow.length) {
+                    var hingga = parseAmt($input.val());
+                    var $nextDari = $nextRow.find('td:eq(1) input');
+                    var nextDari = parseAmt($nextDari.val());
+                    $nextDari.toggleClass('is-invalid', hingga > 0 && nextDari > 0 && nextDari <= hingga);
+                }
+                // Also: Hingga must be >= Dari on same row
+                var dariSame = parseAmt($row.find('td:eq(1) input').val());
+                var hinggaSame = parseAmt($input.val());
+                $input.toggleClass('is-invalid', dariSame > 0 && hinggaSame > 0 && hinggaSame < dariSame);
+            }
+        });
+
+        // Auto-fill next row Dari on Tambah
+        $(btnSelector).off('click');
+        $(btnSelector).on('click', function () {
+            var bil = $body.find('.analisa-row').length + 1;
+            var $newRow = buildRow(bil);
+            var $lastRow = $body.find('tr.analisa-row').last();
+            if ($lastRow.length) {
+                var lastHingga = parseAmt($lastRow.find('td:eq(2) input').val());
+                if (lastHingga > 0) {
+                    $newRow.find('td:eq(1) input').val(fmtAmt(lastHingga + 1));
+                }
+            }
+            $body.append($newRow);
+        });
     }
+
+    function parseAmt(s) { return parseFloat(String(s).replace(/,/g, '')) || 0; }
+    function fmtAmt(n) { return n.toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
 
     initAnalisa('#tbl-berbayar-body', '.btn-tambah-berbayar', 'berbayar');
     initAnalisa('#tbl-dibenarkan-body', '.btn-tambah-dibenarkan', 'dibenarkan');
 
     // ══════════════════════════════════════════════════════════════════════════
-    // JENIS SKOR — toggle automatik table panel
+    // ANGGARAN JABATAN — hardcoded dummy; abg wan will replace with real value from backend later
+    // e.g. var anggaranJabatan = { $anggaranJabatan };
     // ══════════════════════════════════════════════════════════════════════════
-    $('.jenis-skor-select').on('change', function () {
-        var $panel = $($(this).data('target'));
-        if ($(this).val() === 'automatik') {
-            $panel.removeClass('d-none');
-        } else {
-            $panel.addClass('d-none');
+    var anggaranJabatan = 200000.00;
+
+    // Calculate Hingga for row 1 based on AJ
+    function calculateHingga1(aj) {
+        if (aj > 50 && aj <= 500000) {
+            return (0.015 * aj) - 0.01;
+        } else if (aj > 500000) {
+            return (0.030 * aj) - 0.01;
         }
+        return 0;
+    }
+
+    // Render the 2 automatik rows into a given tbody
+    // Includes hidden inputs so values are submitted with the form.
+    // Row 2 Hingga is submitted as "" (empty) — backend treats null/empty = ke atas / no upper limit.
+    function renderAutomatikRows(tbodyId, namePrefix) {
+        var $tbody  = $('#' + tbodyId);
+        var hingga1 = calculateHingga1(anggaranJabatan);
+        var dari2   = hingga1 + 0.01;
+
+        var keAtasBadge =
+            '<span class="d-inline-flex align-items-center gap-1 px-2 py-1 rounded-2 fw-semibold" ' +
+            'style="background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;font-size:0.78rem;">' +
+                '<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'11\' height=\'11\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2.5\' stroke-linecap=\'round\' stroke-linejoin=\'round\'>' +
+                    '<line x1=\'12\' y1=\'19\' x2=\'12\' y2=\'5\'></line>' +
+                    '<polyline points=\'5 12 12 5 19 12\'></polyline>' +
+                '</svg>' +
+                'Ke Atas' +
+            '</span>';
+
+        $tbody.html(
+            // Row 1
+            '<tr>' +
+                '<td class="text-center fw-semibold text-muted" style="font-size:0.8rem;">1</td>' +
+                '<td class="fw-semibold" style="font-size:0.85rem;">' +
+                    fmtAmt(0) +
+                    '<input type="hidden" name="' + namePrefix + '_dari[]" value="0">' +
+                '</td>' +
+                '<td class="fw-semibold" style="font-size:0.85rem;">' +
+                    fmtAmt(hingga1) +
+                    '<input type="hidden" name="' + namePrefix + '_hingga[]" value="' + hingga1.toFixed(2) + '">' +
+                '</td>' +
+                '<td class="text-center fw-semibold" style="font-size:0.85rem;">' +
+                    '0<input type="hidden" name="' + namePrefix + '_skema[]" value="0">' +
+                '</td>' +
+            '</tr>' +
+            // Row 2 — hingga submitted as "" (ke atas / no upper limit)
+            '<tr>' +
+                '<td class="text-center fw-semibold text-muted" style="font-size:0.8rem;">2</td>' +
+                '<td class="fw-semibold" style="font-size:0.85rem;">' +
+                    fmtAmt(dari2) +
+                    '<input type="hidden" name="' + namePrefix + '_dari[]" value="' + dari2.toFixed(2) + '">' +
+                '</td>' +
+                '<td>' +
+                    keAtasBadge +
+                    '<input type="hidden" name="' + namePrefix + '_hingga[]" value="">' +
+                '</td>' +
+                '<td class="text-center fw-semibold" style="font-size:0.85rem;">' +
+                    '10<input type="hidden" name="' + namePrefix + '_skema[]" value="10">' +
+                '</td>' +
+            '</tr>'
+        );
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // JENIS SKOR — toggle panels, disable hidden panel inputs to prevent
+    //              null submissions from the panel that's not active
+    // ══════════════════════════════════════════════════════════════════════════
+    function handleJenisSkor(val, manualPanelId, autoPanelId, autoTbodyId, namePrefix) {
+        var $manual = $('#' + manualPanelId);
+        var $auto   = $('#' + autoPanelId);
+
+        // Hide both first
+        $manual.addClass('d-none');
+        $auto.addClass('d-none');
+
+        // Disable all inputs in both panels (prevent stale submissions)
+        $manual.find('input, select').prop('disabled', true);
+        $auto.find('input').prop('disabled', true);
+
+        if (val === 'manual') {
+            $manual.removeClass('d-none');
+            $manual.find('input, select').prop('disabled', false);
+        } else if (val === 'automatik') {
+            renderAutomatikRows(autoTbodyId, namePrefix);
+            $auto.removeClass('d-none');
+            $auto.find('input').prop('disabled', false);
+        }
+    }
+
+    $('.jenis-skor-select-berbayar').on('change', function () {
+        handleJenisSkor($(this).val(), 'panel-berbayar', 'panel-berbayar-automatik', 'tbl-berbayar-auto-body', 'berbayar');
+    });
+
+    $('.jenis-skor-select-dibenarkan').on('change', function () {
+        handleJenisSkor($(this).val(), 'panel-dibenarkan', 'panel-dibenarkan-automatik', 'tbl-dibenarkan-auto-body', 'dibenarkan');
     });
 
     // ══════════════════════════════════════════════════════════════════════════

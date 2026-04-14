@@ -56,6 +56,10 @@
         </div>
     </div>
 
+    <form id="form-senarai-kewangan-bekalan" action="{{ route('jawatankuasa.simpanSenaraiKewanganBekalan') }}" method="POST" enctype="multipart/form-data">
+    @csrf
+    <input type="hidden" name="tahap_lulus" id="tahap-lulus-hidden" value="0">
+
     <!-- ===================== SECTION 1: SENARAI SEMAK KEWANGAN & SKOR ===================== -->
     <div class="content-card mb-4 p-0">
         <div class="content-card-header p-4 pb-3 border-bottom">
@@ -256,7 +260,7 @@
                         <span class="d-block text-muted fw-semibold text-uppercase mb-2"
                             style="font-size: 0.67rem; letter-spacing: 0.5px;">Penilaian Kewangan</span>
                         <div class="d-flex align-items-center gap-2">
-                            <input type="number" id="input-penilaian" name="input_penilaian" class="form-control form-control-sm text-center fw-semibold" style="max-width: 80px; font-size: 1rem;" placeholder="0" min="0" max="121">
+                            <input type="number" id="input-penilaian" name="input_penilaian" class="form-control form-control-sm text-center fw-semibold" style="max-width: 100px; font-size: 1rem;" placeholder="0" min="0">
                             <span class="text-muted small">daripada</span>
                             <span class="fw-bold text-dark" id="penilaian-kewangan-total" style="font-size: 1rem;">40</span>
                             <span class="text-muted small">markah</span>
@@ -326,11 +330,13 @@
     <!-- ===================== BOTTOM ACTION BUTTONS ===================== -->
     <div class="d-flex justify-content-end gap-2 mb-4">
         <button type="button" class="btn-form btn-form-primary btn-simpan">Simpan</button>
-        <button type="button" class="btn-form btn-form-success btn-hantar">
+        <button type="submit" class="btn-form btn-form-success btn-hantar">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"></path></svg>
             Hantar
         </button>
     </div>
+
+    </form>
 @endsection
 
 @push('modals')
@@ -443,11 +449,11 @@
                 }
             ];
 
-            // Build a table row from an initial row object
+            // Build a table row from an initial row object (locked — no checkbox, no delete)
             function buildInitialRow(data) {
                 return $(
-                    '<tr>' +
-                    '<td class="text-center"><input type="checkbox" name="row_check_kewangan[]" class="form-check-input row-check-kewangan"></td>' +
+                    '<tr class="initial-row">' +
+                    '<td class="text-center"><span class="text-muted" style="font-size:0.75rem;" title="Data daripada sistem">—</span></td>' +
                     '<td><span class="small fw-semibold">' + $('<span>').text(data.tajuk).html() + '</span></td>' +
                     '<td class="text-center"><span class="small fw-semibold text-muted">' + data.mekanisma + '</span></td>' +
                     '<td class="text-center small">' + data.tindakanPembekal + '</td>' +
@@ -550,7 +556,31 @@
                 });
                 $('#skema-maksima-display').val(total);
                 $('#penilaian-kewangan-total').text(total);
+
+                // Update max and re-validate without clamping
+                $('#input-penilaian').attr('max', total);
+                var currentVal = parseInt($('#input-penilaian').val()) || 0;
+                $('#input-penilaian').toggleClass('is-invalid', total > 0 && currentVal > total);
+                updateTahapLulus();
             }
+
+            function updateTahapLulus() {
+                var skemaMaksima = parseInt($('#skema-maksima-display').val()) || 0;
+                var penilaian    = parseInt($('#input-penilaian').val()) || 0;
+                var pct = skemaMaksima > 0
+                    ? Math.round((penilaian / skemaMaksima) * 100 * 100) / 100
+                    : 0;
+                $('#tahap-lulus').text((pct % 1 === 0) ? pct : pct.toFixed(2));
+                $('#tahap-lulus-hidden').val(pct);
+            }
+
+            // ─── PENILAIAN INPUT: validate + recalculate ─────────────────────────────
+            $('#input-penilaian').on('input change', function() {
+                var skemaMaksima = parseInt($('#skema-maksima-display').val()) || 0;
+                var val = parseInt($(this).val()) || 0;
+                $(this).toggleClass('is-invalid', skemaMaksima > 0 && val > skemaMaksima);
+                updateTahapLulus();
+            });
 
             function syncTableEmpty() {
                 var realRows = $('#tbl-kewangan tbody tr:not(#tbl-empty-row)').length;
@@ -721,15 +751,24 @@
                 chipListId : 'file-chip-list-sokongan'
             });
 
-            // ─── SUCCESS MODAL: Simpan & Hantar ──────────────────────────────────────
+            // ─── SIMPAN (no submit, success modal only) ──────────────────────────────
             var successModal = new bootstrap.Modal(document.getElementById('successModal'));
 
             $('.btn-simpan').on('click', function() {
                 successModal.show();
             });
 
-            $('.btn-hantar').on('click', function() {
-                successModal.show();
+            // ─── FORM SUBMIT: block if penilaian exceeds skema maksima ───────────────
+            $('#form-senarai-kewangan-bekalan').on('submit', function(e) {
+                // Strip commas from harga_indikatif before submit
+                $('#input-harga-indikatif').val($('#input-harga-indikatif').val().replace(/,/g, ''));
+
+                var skemaMaksima = parseInt($('#skema-maksima-display').val()) || 0;
+                var penilaian    = parseInt($('#input-penilaian').val()) || 0;
+                if (skemaMaksima > 0 && penilaian > skemaMaksima) {
+                    e.preventDefault();
+                    $('#input-penilaian').addClass('is-invalid').focus();
+                }
             });
 
         });

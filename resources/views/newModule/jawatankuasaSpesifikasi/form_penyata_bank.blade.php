@@ -265,8 +265,8 @@
                     <label class="form-label fw-semibold small">Jenis Skor <span class="text-danger">*</span></label>
                     <select name="jenis_skor_purata" class="form-select form-select-sm jenis-skor-select" data-target="#panel-purata-penyata">
                         <option value="">— Sila pilih —</option>
-                        <option value="automatik">Automatik</option>
-                        <option value="manual" disabled>Manual</option>
+                        <option value="manual">Manual</option>
+                        <option value="automatik" disabled>Automatik</option>
                     </select>
                 </div>
             </div>
@@ -306,7 +306,7 @@
 
     <!-- ===================== ACTION BUTTONS ===================== -->
     <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-        <a href="{{ route('senaraiKewangan') }}" class="btn-form btn-form-secondary">
+        <a href="{{ url()->previous() }}" class="btn-form btn-form-secondary">
             <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="19" y1="12" x2="5" y2="12"></line>
@@ -518,11 +518,11 @@ $(document).ready(function () {
     });
 
     // ══════════════════════════════════════════════════════════════════════════
-    // JENIS SKOR — toggle automatik table panel
+    // JENIS SKOR — toggle manual table panel
     // ══════════════════════════════════════════════════════════════════════════
     $('.jenis-skor-select').on('change', function () {
         var $panel = $($(this).data('target'));
-        if ($(this).val() === 'automatik') {
+        if ($(this).val() === 'manual') {
             $panel.removeClass('d-none');
         } else {
             $panel.addClass('d-none');
