@@ -85,6 +85,7 @@ use App\Http\Controllers\JawatankuasaPerolehanController;
 use App\Http\Controllers\PenilaianKewanganController;
 use App\Http\Controllers\PenilaianTeknikalController;
 use App\Http\Controllers\PerakuanJabatanController;
+use App\Http\Controllers\EbiddingController;
 
 // Basic routes to get the application running
 Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -105,7 +106,7 @@ Route::view('/perakuan-jabatan/form', 'newModule.perakuanJabatan.form')->name('p
 Route::view('/perakuan-jabatan/kertas-taklimat', 'newModule.perakuanJabatan.kertas_taklimat')->name('perakuanJabatan.kertasTaklimat');
 Route::view('/perakuan-jabatan/pengesyoran-pembekal', 'newModule.perakuanJabatan.pengesyoran_pembekal')->name('perakuanJabatan.pengesyoranPembekal');
 
-Route::view('/eBidding/index', 'newModule.eBidding.index')->name('eBidding.index');
+Route::get('/eBidding/index', [EbiddingController::class, 'index'])->middleware(['auth'])->name('eBidding.index');
 Route::view('/keputusan-mesyuarat', 'newModule.eBidding.keptusan_mesyuarat')->name('keputusanMesyuarat');
 
 Route::prefix('pembelian-terus')->controller(PembelianTerusController::class)->group(function () {
@@ -308,6 +309,8 @@ Route::middleware(['auth'])->group(function () {
 	Route::post('jawatankuasa-perolehan/mesyuarat/hantar', [JawatankuasaPerolehanController::class, 'hantar'])->name('jawatankuasa.perolehan.mesyuarat.hantar');
 	Route::post('jawatankuasa-perolehan/kertas-keputusan/simpan', [JawatankuasaPerolehanController::class, 'simpanKertasKeputusan'])->name('jawatankuasa.perolehan.kertas_keputusan.simpan');
 	Route::post('jawatankuasa-perolehan/kertas-keputusan/hantar', [JawatankuasaPerolehanController::class, 'hantarKertasKeputusan'])->name('jawatankuasa.perolehan.kertas_keputusan.hantar');
+	Route::post('jawatankuasa-perolehan/pemilihan-pembekal/simpan', [JawatankuasaPerolehanController::class, 'simpanPemilihanPembekal'])->name('jawatankuasa.perolehan.pemilihan_pembekal.simpan');
+	Route::post('jawatankuasa-perolehan/pemilihan-pembekal/hantar', [JawatankuasaPerolehanController::class, 'hantarPemilihanPembekal'])->name('jawatankuasa.perolehan.pemilihan_pembekal.hantar');
 	// Route::get('/jawatankuasa-perolehan/index', 'newModule.jawatankuasaPerolehan.index')->name('jawatankuasaPerolehan.index');
 	// Route::view('/jawatankuasa-perolehan/form', 'newModule.jawatankuasaPerolehan.form')->name('jawatankuasaPerolehan.form');
 
