@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 use Carbon\Carbon;
 use DB;
 
@@ -1333,6 +1334,12 @@ class Tender extends Model
 	public static function boot()
 	{
 		parent::boot();
+
+		static::creating(function ($tender) {
+			if (empty($tender->uuid)) {
+				$tender->uuid = (string) Str::uuid();
+			}
+		});
 
 		self::created(function ($tender) {
 			TenderHistory::log($tender->id, 'create');
