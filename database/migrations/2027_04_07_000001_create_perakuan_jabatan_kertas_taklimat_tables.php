@@ -31,10 +31,10 @@ return new class extends Migration
                 $table->unsignedSmallInteger('sort_order')->default(0);
                 $table->timestamps();
 
-                $table->foreign('kertas_taklimat_id', 'pjk_ti_kt_fk')
-                    ->references('id')
-                    ->on('perakuan_jabatan_kertas_taklimats')
-                    ->onDelete('cascade');
+                // $table->foreign('kertas_taklimat_id', 'pjk_ti_kt_fk')
+                //     ->references('id')
+                //     ->on('perakuan_jabatan_kertas_taklimats')
+                //     ->onDelete('cascade');
             });
         }
 
