@@ -1,4 +1,4 @@
-@extends('layouts.modern')
+@extends('layouts.v3.master')
 @section('content')
 	<h2 class="tender-title">{{ $vendor->name }} : Batal Senarai Hitam </h2>
 	{!! Former::open(route('vendor.blacklists.cancel', [$vendor->id, $blacklist->id]))->method('PUT') !!}

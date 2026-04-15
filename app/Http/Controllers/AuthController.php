@@ -12,6 +12,7 @@ use Hash;
 use Auth;
 use Mail;
 use Log;
+use Carbon\Carbon;
 
 class AuthController extends Controller
 {
@@ -107,6 +108,21 @@ class AuthController extends Controller
 
                UserHistory::log($user->id, 'sign-in');
 
+               // Check if password needs to be changed (6 months expiration)
+               if ($user->password_changed_at) {
+                  $passwordChangedAt = Carbon::parse($user->password_changed_at);
+                  $passwordAge = $passwordChangedAt->diffInMonths(Carbon::now());
+                  if ($passwordAge >= 6) {
+                     // Password expired, redirect to change password
+                     session()->flash('warning', 'Kata laluan anda telah tamat tempoh (6 bulan). Sila tukar kata laluan anda.');
+                     return redirect('users/' . $user->id . '/reset_password');
+                  }
+               } else {
+                  // Password never changed, force change
+                  session()->flash('warning', 'Sila tetapkan kata laluan anda.');
+                  return redirect('users/' . $user->id . '/reset_password');
+               }
+
                // Redirect based on user role
                if ($user->hasRole('Vendor')) {
                   if (is_null($user->vendor)) {
@@ -199,7 +215,9 @@ class AuthController extends Controller
       $user = User::where('confirmation_code', $code)->first();
 
       if ($user) {
+         // Sahkan akaun pengguna apabila pautan pengesahan diklik
          $user->confirmed = 1;
+         $user->confirmation_code = null;
          $user->save();
          $notice_msg = trans('auth.alerts.confirmation');
          return redirect('/')->with('notice', $notice_msg);
@@ -280,6 +298,7 @@ class AuthController extends Controller
       if ($email) {
          $user = User::where('email', $email->email)->first();
          $user->password = Hash::make($request->password);
+         $user->password_changed_at = now();
 
          if ($user->save()) {
             PasswordReminder::where('email', $email->email)->where('token', $request->token)->delete();
@@ -305,7 +324,9 @@ class AuthController extends Controller
    public function logout()
    {
 
-      UserHistory::log(Auth::user()->id, 'sign-out');
+      if (auth()->check()) {
+         UserHistory::log(auth()->user()->id, 'sign-out');
+      }
       auth()->logout();
       session()->flush();
 
@@ -322,7 +343,9 @@ class AuthController extends Controller
     */
    public function mobileLogout()
    {
-      UserHistory::log(Auth::user()->id, 'sign-out');
+      if (auth()->check()) {
+         UserHistory::log(auth()->user()->id, 'sign-out');
+      }
       Confide::logout();
       return 'ok';
    }

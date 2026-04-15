@@ -24,9 +24,10 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        //$schedule->command('send:eligible-email')->everyTwoMinutes();
+        $schedule->command('send:eligible-email')->everyTwoMinutes();
         $schedule->command('requery:fpx')->everyMinute();
-        //$schedule->command('send:account-review-request')->monthly();
+        $schedule->command('send:account-review-request')
+            ->cron('0 0 1 3,9 *');
     }
 
     /**
@@ -36,7 +37,7 @@ class Kernel extends ConsoleKernel
      */
     protected function commands()
     {
-        $this->load(__DIR__.'/Commands');
+        $this->load(__DIR__ . '/Commands');
 
         require base_path('routes/console.php');
     }

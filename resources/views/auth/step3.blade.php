@@ -1,4 +1,4 @@
-@extends('layouts.modern')
+@extends('layouts.v3.master')
 @section('content')
 	<h2>Step 3: Details Verification</h2>
 	<hr>

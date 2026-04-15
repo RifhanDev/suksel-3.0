@@ -267,6 +267,9 @@ class TendersController extends Controller
 
 		$tender->updateTender(false);
 
+		// Log tender creation (model event should handle this, but adding explicit log as backup)
+		TenderHistory::log($tender->id, 'create');
+
 		if ($request->ajax()) {
 			return response()->json($tender, 201);
 		}
@@ -601,6 +604,10 @@ class TendersController extends Controller
 		}
 
 		$tender->updateTender();
+
+		// Log tender update (updateTender should handle this with audit=true, but adding explicit log as backup)
+		TenderHistory::log($tender->id, 'edit');
+
 		if ($request->ajax()) {
 			return $tender;
 		}

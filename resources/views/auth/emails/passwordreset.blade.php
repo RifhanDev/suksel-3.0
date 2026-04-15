@@ -107,7 +107,7 @@
 								        		<div style="line-height: 30px;">
 								          		<font face="Arial, Helvetica, sans-serif" size="5" color="#4db3a4" style="font-size: 17px;">
 								          			<span style="font-family: Arial, Helvetica, sans-serif; font-size: 17px; color: #4db3a4;">
-								            			Hi, {{ $user->name }}!
+								            			Hi, {{ $user ? $user->name : 'Pengguna' }}!
 								          			</span>
 								          		</font>
 								        		</div>

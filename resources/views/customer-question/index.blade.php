@@ -92,14 +92,12 @@
 				}
 			},
 			autoWidth: false,
-			columnDefs: [
-				{
-					searchable: false,
-					orderable: false,
-					targets: 0,
-					width: '50px',
-				},
-			],
+			columnDefs: [{
+				searchable: false,
+				orderable: false,
+				targets: 0,
+				width: '50px',
+			}, ],
 			order: [
 				[1, 'asc']
 			],

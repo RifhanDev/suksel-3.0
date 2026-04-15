@@ -30,7 +30,8 @@
 
 		<div class="content-card-body p-2">
 			<div class="table-responsive">
-				<table class="DT-index table table-hover align-middle mb-0 w-100" data-path="{{ route('mail-manager.mail-queue.index') }}">
+				<table class="DT-index table table-hover align-middle mb-0 w-100"
+					data-path="{{ route('mail-manager.mail-queue.index') }}">
 					<thead class="bg-light">
 						<tr>
 							<th class="text-uppercase text-muted small fw-bold py-3 ps-4" style="width: 50px;">No.</th>
@@ -58,6 +59,11 @@
 		let table = $('.DT-index').DataTable({
 			processing: true,
 			serverSide: true,
+			pageLength: 100, // papar 100 rekod setiap halaman
+			lengthMenu: [
+				[10, 25, 50, 100],
+				[10, 25, 50, 100]
+			],
 			ajax: path,
 			columns: [{
 					data: 'id',
@@ -110,8 +116,7 @@
 				}
 			},
 			autoWidth: false,
-			columnDefs: [
-				{
+			columnDefs: [{
 					searchable: false,
 					orderable: false,
 					targets: 0,

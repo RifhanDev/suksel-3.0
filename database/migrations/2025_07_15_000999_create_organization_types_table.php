@@ -8,6 +8,9 @@ class CreateOrganizationTypesTable extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('organization_types')) {
+            return;
+        }
         Schema::create('organization_types', function (Blueprint $table) {
             $table->increments('id');
 

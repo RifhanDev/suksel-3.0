@@ -21,59 +21,59 @@ class SmtpMailController extends Controller
 
         if ($request->ajax()) {
 
-			$smtp_mail_list = SmtpMails::select("*");
+            $smtp_mail_list = SmtpMails::select("*");
 
-			$start 		= $request->start ?? 0;  						// Get starting point for data to be retrieved
-			$length 	= $request->length ?? 10;						// Get how much data to be retrieved
-			$draw 		= $request->draw ?? 1;							// Get original draw request
-			$keyword 	= $request->get('search')["value"] ?? "";
-			$keyword 	= Str::lower($keyword);
+            $start         = $request->start ?? 0;                          // Get starting point for data to be retrieved
+            $length     = $request->length ?? 10;                        // Get how much data to be retrieved
+            $draw         = $request->draw ?? 1;                            // Get original draw request
+            $keyword     = $request->get('search')["value"] ?? "";
+            $keyword     = Str::lower($keyword);
 
-			$recordsTotal = (clone $smtp_mail_list)->count() ?? 0;
+            $recordsTotal = (clone $smtp_mail_list)->count() ?? 0;
 
 
-			$smtp_mail_list->where( function($q) use($keyword){
-				$q->whereRaw("lower(mail_server) like ?", '%'.$keyword.'%')
-				->orWhereRaw("mail_port like ?", '%'.$keyword.'%')
-				->orWhereRaw("lower(mail_username) like ?", '%'.$keyword.'%');
-			});            
-			
-			$recordsFiltered = (clone $smtp_mail_list)->count() ?? 0;
+            $smtp_mail_list->where(function ($q) use ($keyword) {
+                $q->whereRaw("lower(mail_server) like ?", '%' . $keyword . '%')
+                    ->orWhereRaw("mail_port like ?", '%' . $keyword . '%')
+                    ->orWhereRaw("lower(mail_username) like ?", '%' . $keyword . '%');
+            });
 
-			$results = $smtp_mail_list->offset($start)->limit($length)->get();
+            $recordsFiltered = (clone $smtp_mail_list)->count() ?? 0;
 
-			$datatable_data = [];
+            $results = $smtp_mail_list->offset($start)->limit($length)->get();
 
-			foreach ($results as $rows) {
+            $datatable_data = [];
+
+            foreach ($results as $rows) {
 
                 $enc_id = $this->encryptString($rows->id);
 
-				$actions    = [];
-                $actions[] = SmtpMails::canShow() ? "<a class='btn btn-sm btn-primary rounded-8 px-3' href='".route('mail-manager.smtp-setting.show', ['smtp_setting' => $enc_id])."'>Papar</a>" : '';
-                $actions[] = SmtpMails::canUpdate() ? "<a class='btn btn-sm btn-warning rounded-8 px-3' href='".route('mail-manager.smtp-setting.edit', ['smtp_setting' => $enc_id])."'>Kemaskini</a>" : '';
+                $actions    = [];
+                $actions[] = SmtpMails::canShow() ? "<a class='btn btn-sm btn-primary rounded-8 px-3' href='" . route('mail-manager.smtp-setting.show', ['smtp_setting' => $enc_id]) . "'>Papar</a>" : '';
+                $actions[] = SmtpMails::canUpdate() ? "<a class='btn btn-sm btn-warning rounded-8 px-3' href='" . route('mail-manager.smtp-setting.edit', ['smtp_setting' => $enc_id]) . "'>Kemaskini</a>" : '';
                 // $actions[] = SmtpMails::canDelete() ? "<button class='btn btn-sm btn-danger rounded-8 px-3' onclick='deleteSmtpMail(".'"'.$enc_id.'"'.")'>Padam</button>" : '';
 
-				$action_column = '<div class="d-flex gap-2 justify-content-center">' . implode('', $actions) . '</div>';
+                $action_column = '<div class="d-flex gap-2 justify-content-center">' . implode('', $actions) . '</div>';
 
-				$datatable_data[] = array(
-					"created_at" => $rows->created_at->format('d-m-Y'),
-					"mail_server" => $rows->mail_server,
-					"mail_port" => $rows->mail_port,
-					"mail_username" => $rows->mail_username,
-					"mail_message_ratelimit" => $rows->mail_message_ratelimit,
-					"actions" => $action_column,
-				);
-			}
+                $datatable_data[] = array(
+                    "created_at"            => $rows->created_at->format('d-m-Y'),
+                    "mail_server"           => $rows->mail_server,
+                    "mail_port"             => $rows->mail_port,
+                    "mail_username"         => $rows->mail_username,
+                    "mail_message_ratelimit" => $rows->mail_message_ratelimit,
+                    "actions"               => '', // boleh ditambah semula kemudian dengan pengendalian parameter yang lebih selamat
+                );
+            }
 
-			$datatable_response = array(
-				"draw" => $draw,
-				"recordsTotal" => $recordsTotal,
-  				"recordsFiltered" => $recordsFiltered,
-				"data" => $datatable_data
-			);
+            $datatable_response = array(
+                "draw" => $draw,
+                "recordsTotal" => $recordsTotal,
+                "recordsFiltered" => $recordsFiltered,
+                "data" => $datatable_data
+            );
 
-			return response()->json($datatable_response);
-		}
+            return response()->json($datatable_response);
+        }
 
         return view('smtp-mail.index');
     }
@@ -132,7 +132,7 @@ class SmtpMailController extends Controller
 
         $smtpMailRepo = new SmtpMailsRepository();
         $smtpMailRepo->createSmtpMails($new_smtp_mail);
-        
+
         return redirect()->route('mail-manager.smtp-setting.index')->with('success', $this->created_message);
     }
 
@@ -142,13 +142,13 @@ class SmtpMailController extends Controller
 
         $smtpMailRepo = new SmtpMailsRepository();
         $data = $smtpMailRepo->readSmtpMails($true_id);
-        
+
         $data["enc_id"] = $id;
 
         if (!SmtpMails::canUpdate()) {
             return $this->_access_denied();
         }
-        
+
         return view('smtp-mail.edit', compact('data'));
     }
 
@@ -159,7 +159,7 @@ class SmtpMailController extends Controller
         $smtpMailRepo = new SmtpMailsRepository();
         $data = $smtpMailRepo->readSmtpMails($true_id);
 
-        if (!$true_id || !SmtpMails::canUpdate())  {
+        if (!$true_id || !SmtpMails::canUpdate()) {
             return $this->_access_denied();
         }
 
@@ -170,15 +170,13 @@ class SmtpMailController extends Controller
             'mail_message_ratelimit' => 'required|integer|min:1',
         );
 
-        if ($data->mail_server != $request->mail_server)
-        {
+        if ($data->mail_server != $request->mail_server) {
             $rules["mail_server"] = 'required|unique:smtp_mails|max:255';
         }
 
         $decrypted_passwd = $this->decryptString($data->mail_password);
 
-        if ($decrypted_passwd != $request->mail_password && $request->mail_password != '********' )
-        {
+        if ($decrypted_passwd != $request->mail_password && $request->mail_password != '********') {
             // $rules["mail_password"] = 'required';
         }
 
@@ -193,13 +191,12 @@ class SmtpMailController extends Controller
             "updated_by" => Auth::id()
         );
 
-        if ($decrypted_passwd != $request->mail_password && $request->mail_password != '********' )
-        {
+        if ($decrypted_passwd != $request->mail_password && $request->mail_password != '********') {
             $update_smtp_mail["mail_password"] = $this->encryptString($request->mail_password ?? "");
         }
 
         $smtpMailRepo->updateSmtpMails($true_id, $update_smtp_mail);
-        
+
         return redirect()->route('mail-manager.smtp-setting.edit', ["smtp_setting" => $id])->with('success', $this->updated_message);
     }
 
@@ -212,9 +209,9 @@ class SmtpMailController extends Controller
         if (!$true_id || !SmtpMails::canDelete()) {
             return $this->_access_denied();
         }
-        
+
         $update_del_smtp_mail["deleted_by"] = Auth::id();
-        
+
         $smtpMailRepo->updateSmtpMails($true_id, $update_del_smtp_mail);
 
         $smtpMailRepo->deleteSmtpMails($true_id);

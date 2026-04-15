@@ -1,10 +1,21 @@
 @extends('layouts.v3.master')
 
+@section('styles')
+	<link href="{{ asset('css/components/form-components.css') }}" rel="stylesheet">
+@endsection
+
 @section('content')
 	<!-- Page Header -->
 	<div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center mb-4">
 		<div class="mb-3 mb-lg-0">
 			<h3 class="fw-bold text-dark m-0" style="letter-spacing: -0.5px;">Masukkan Token Agensi Baru</h3>
+			<p class="text-muted small m-0">Sistem Tender Online Selangor</p>
+		</div>
+		<div class="d-flex flex-wrap align-items-center gap-3 bg-white px-3 py-2 rounded-2 shadow-sm border">
+			<div class="d-flex align-items-center gap-2">
+				<span class="badge bg-light text-dark border">TARIKH</span>
+				<span class="small text-muted fw-bold">{{ date('d/m/Y') }}</span>
+			</div>
 			<p class="text-muted small m-0">Jana dan daftarkan token API baharu untuk agensi.</p>
 		</div>
 	</div>
@@ -43,8 +54,12 @@
 						</label>
 						<div class="d-flex gap-2">
 							<input type="text" name="token" id="token" class="form-control" readonly>
-							<button type="button" class="btn btn-sm px-3 flex-shrink-0 generate d-flex align-items-center gap-1" style="background:#1d6f42;color:#fff;border-color:#1d6f42;">
-								<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m16.555 3.843l3.602 3.602a2.877 2.877 0 0 1 0 4.069l-2.643 2.643a2.877 2.877 0 0 1-4.069 0l-.301-.301l-6.558 6.558a2 2 0 0 1-1.239.578L5.172 21H4a1 1 0 0 1-.993-.883L3 20v-1.172a2 2 0 0 1 .467-1.284l.119-.13L4 17h2v-2h2v-2l2.144-2.144l-.301-.301a2.877 2.877 0 0 1 0-4.069l2.643-2.643a2.877 2.877 0 0 1 4.069 0M15 9h.01"/></svg>
+							<button type="button" class="btn btn-sm px-3 flex-shrink-0 generate d-flex align-items-center gap-1"
+								style="background:#1d6f42;color:#fff;border-color:#1d6f42;">
+								<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24">
+									<path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+										d="m16.555 3.843l3.602 3.602a2.877 2.877 0 0 1 0 4.069l-2.643 2.643a2.877 2.877 0 0 1-4.069 0l-.301-.301l-6.558 6.558a2 2 0 0 1-1.239.578L5.172 21H4a1 1 0 0 1-.993-.883L3 20v-1.172a2 2 0 0 1 .467-1.284l.119-.13L4 17h2v-2h2v-2l2.144-2.144l-.301-.301a2.877 2.877 0 0 1 0-4.069l2.643-2.643a2.877 2.877 0 0 1 4.069 0M15 9h.01" />
+								</svg>
 								Jana Token
 							</button>
 						</div>
@@ -54,18 +69,16 @@
 
 			<div class="d-flex justify-content-between align-items-center p-4 border-top bg-light">
 				<a href="{{ asset('apitoken') }}" class="btn-form btn-form-secondary">
-					<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
-						fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-						stroke-linejoin="round">
+					<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+						stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 						<line x1="19" y1="12" x2="5" y2="12"></line>
 						<polyline points="12 19 5 12 12 5"></polyline>
 					</svg>
 					Batal
 				</a>
 				<button type="submit" class="btn-form btn-form-primary">
-					<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
-						fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-						stroke-linejoin="round">
+					<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+						stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 						<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
 						<polyline points="17 21 17 13 7 13 7 21"></polyline>
 						<polyline points="7 3 7 8 15 8"></polyline>
@@ -80,18 +93,29 @@
 
 @section('scripts')
 	<script type="text/javascript">
-		$('.generate').click(function(e) {
-			e.preventDefault();
-			$.ajax({
-				type: "POST",
-				url: "{{ route('apitoken.generate') }}",
-				data: {
-					'id': $('#organization_unit_id').val()
-				},
-				dataType: "json",
-				success: function(response) {
-					$('#token').val(response);
+		$(document).ready(function() {
+			$('.generate').on('click', function(e) {
+				e.preventDefault();
+				var orgId = $('#organization_unit_id').val();
+				if (!orgId) {
+					alert('Sila pilih agensi terlebih dahulu.');
+					return;
 				}
+				$.ajax({
+					type: "POST",
+					url: "{{ route('apitoken.generate') }}",
+					data: {
+						'_token': '{{ csrf_token() }}',
+						'id': orgId
+					},
+					dataType: "json",
+					success: function(response) {
+						$('#token').val(response);
+					},
+					error: function() {
+						alert('Ralat semasa menjana token. Sila cuba lagi.');
+					}
+				});
 			});
 		});
 	</script>
