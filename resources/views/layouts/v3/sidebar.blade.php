@@ -829,6 +829,19 @@
 					</a>
 				</li>
 
+				<!-- Menu: Cut Off -->
+				<li class="nav-item">
+					<a class="sidebar-link {{ request()->is('cut-off*') ? 'active' : '' }}" href="{{ route('cutOff.index') }}"
+						style="cursor: pointer;">
+						<svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none"
+							stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+							<circle cx="12" cy="12" r="10"></circle>
+							<polyline points="12 6 12 12 16 14"></polyline>
+						</svg>
+						<span class="nav-text">Cut Off</span>
+					</a>
+				</li>
+
                 <!-- Menu : Penilaian Teknikal & Kewangan -->
                 @php
                     $isPenilaianMenuActive =
@@ -979,19 +992,6 @@
 							</li>
 						</ul>
 					</div>
-				</li>
-
-				<!-- Menu: Cut Off -->
-				<li class="nav-item">
-					<a class="sidebar-link {{ request()->is('cut-off*') ? 'active' : '' }}" href="{{ route('cutOff.index') }}"
-						style="cursor: pointer;">
-						<svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none"
-							stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-							<circle cx="12" cy="12" r="10"></circle>
-							<polyline points="12 6 12 12 16 14"></polyline>
-						</svg>
-						<span class="nav-text">Cut Off</span>
-					</a>
 				</li>
 
 				<!-- Menu: Perakuan Jabatan -->
@@ -1248,6 +1248,19 @@
 					</a>
 				</li>
 
+				<!-- Menu: Cut Off -->
+				<li class="nav-item">
+					<a class="sidebar-link {{ request()->is('cut-off*') ? 'active' : '' }}" href="{{ route('cutOff.index') }}"
+						style="cursor: pointer;">
+						<svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none"
+							stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+							<circle cx="12" cy="12" r="10"></circle>
+							<polyline points="12 6 12 12 16 14"></polyline>
+						</svg>
+						<span class="nav-text">Cut Off</span>
+					</a>
+				</li>
+
                 <!-- Menu : Penilaian Teknikal & Kewangan -->
                 @php
                     $isPenilaianMenuActive =
@@ -1390,19 +1403,6 @@
 							</li>
 						</ul>
 					</div>
-				</li>
-
-				<!-- Menu: Cut Off -->
-				<li class="nav-item">
-					<a class="sidebar-link {{ request()->is('cut-off*') ? 'active' : '' }}" href="{{ route('cutOff.index') }}"
-						style="cursor: pointer;">
-						<svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none"
-							stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-							<circle cx="12" cy="12" r="10"></circle>
-							<polyline points="12 6 12 12 16 14"></polyline>
-						</svg>
-						<span class="nav-text">Cut Off</span>
-					</a>
 				</li>
 
 				<!-- Menu: Jawatankuasa Perolehan -->
