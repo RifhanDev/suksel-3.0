@@ -698,18 +698,18 @@
                             <label class="form-label">Harga Indikatif Jabatan</label>
                             <div class="input-group">
                                 <span class="input-group-text">RM</span>
-                                <input type="number" class="form-control text-end" name="harga_indikatif"
-                                    value="{{ old('harga_indikatif') }}" min="0" step="0.01"
-                                    placeholder="0.00">
+                                <input type="text" class="form-control text-end amount-input" name="harga_indikatif"
+                                    value="{{ old('harga_indikatif') ? number_format(old('harga_indikatif'), 2) : '' }}"
+                                    placeholder="0.00" inputmode="decimal" autocomplete="off">
                             </div>
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">Anggaran Jabatan <span class="text-danger">*</span></label>
                             <div class="input-group">
                                 <span class="input-group-text text-dark">RM</span>
-                                <input type="number" class="form-control text-end fw-bold" name="anggaran_jabatan"
-                                    value="{{ old('anggaran_jabatan') }}" min="0" step="0.01"
-                                    placeholder="0.00" required>
+                                <input type="text" class="form-control text-end fw-bold amount-input" name="anggaran_jabatan"
+                                    value="{{ old('anggaran_jabatan') ? number_format(old('anggaran_jabatan'), 2) : '' }}"
+                                    placeholder="0.00" inputmode="decimal" autocomplete="off" required>
                             </div>
                         </div>
                     </div>
@@ -1561,6 +1561,46 @@
                 $('#cidb-logic-' + index).remove();
                 updateCidbRowNumbers();
             };
+        });
+
+        // ── Amount input — comma formatting ──────────────────────────────────────
+        function parseAmount(val) {
+            return parseFloat(String(val).replace(/,/g, '')) || 0;
+        }
+
+        function formatAmount(n) {
+            return n.toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        // On focus: strip commas so user can type freely
+        $(document).on('focus', '.amount-input', function () {
+            var raw = $(this).val().replace(/,/g, '');
+            $(this).val(raw === '0.00' || raw === '0' ? '' : raw);
+        });
+
+        // On blur: format with commas
+        $(document).on('blur', '.amount-input', function () {
+            var val = $(this).val().trim();
+            if (val === '') return;
+            $(this).val(formatAmount(parseAmount(val)));
+        });
+
+        // While typing: only allow digits and a single decimal point
+        $(document).on('input', '.amount-input', function () {
+            var val = $(this).val();
+            // Remove anything that's not a digit or dot
+            val = val.replace(/[^\d.]/g, '');
+            // Only keep the first decimal point
+            var parts = val.split('.');
+            if (parts.length > 2) val = parts[0] + '.' + parts.slice(1).join('');
+            $(this).val(val);
+        });
+
+        // On submit: strip commas so the backend receives a plain number
+        $('#createTenderForm').on('submit', function () {
+            $(this).find('.amount-input').each(function () {
+                $(this).val($(this).val().replace(/,/g, ''));
+            });
         });
     </script>
 @endsection
