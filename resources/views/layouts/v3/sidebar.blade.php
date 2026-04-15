@@ -744,7 +744,7 @@
                 <li class="nav-section-header my-3">Modul 3.0</li>
 
                 <!-- Menu: Pelantikan Jawatankuasa -->
-                <li class="nav-item">
+                {{-- <li class="nav-item">
                     <a class="sidebar-link {{ request()->is('pelantikan-jawatankuasa*') ? 'active' : '' }}"
                         href="{{ route('pelantikanJawatankuasa') }}" style="cursor: pointer;">
                         <svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none"
@@ -756,7 +756,7 @@
                         </svg>
                         <span class="nav-text">Pelantikan Jawatankuasa</span>
                     </a>
-                </li>
+                </li> --}}
 
                 <!-- Menu : Jawatankuasa Spesifikasi /  Pengurusan -->
                 @php $isJawatankuasaSpesifikasiMenuActive = request()->is('senarai-semak*'); @endphp
@@ -787,7 +787,7 @@
                 </li>
 
                 <!-- Menu : Syarikat / Pembekal -->
-                <li class="nav-item">
+                {{-- <li class="nav-item">
                     <a class="sidebar-link collapsed" data-bs-toggle="collapse"
                         data-bs-target="#menuSyarikatPembekal" aria-expanded="false" style="cursor: pointer;">
                         <svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none"
@@ -811,7 +811,7 @@
                                 </a></li>
                         </ul>
                     </div>
-                </li>
+                </li> --}}
 
                 <!-- Menu : Jawatankuasa Pembuka -->
                 <li class="nav-item">
@@ -1151,7 +1151,7 @@
                 <!-- ============================================= -->
 
                 <!-- Menu: Pelantikan Jawatankuasa -->
-                <li class="nav-item">
+                {{-- <li class="nav-item">
                     <a class="sidebar-link {{ request()->is('pelantikan-jawatankuasa*') ? 'active' : '' }}"
                         href="{{ route('pelantikanJawatankuasa') }}" style="cursor: pointer;">
                         <svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none"
@@ -1163,7 +1163,7 @@
                         </svg>
                         <span class="nav-text">Pelantikan Jawatankuasa</span>
                     </a>
-                </li>
+                </li> --}}
 
                 <!-- Menu : Jawatankuasa Spesifikasi /  Pengurusan-->
                 <li class="nav-item">
@@ -1187,18 +1187,12 @@
                                     <div class="submenu-icon"></div><span>Senarai Semak</span>
                                 </a>
                             </li>
-                            <!-- <li><a class="submenu-item" href="{{ route('senaraiTeknikal') }}">
-                                    <div class="submenu-icon"></div><span>Senarai Semak Teknikal</span>
-                                </a></li> -->
-                            <!-- <li><a class="submenu-item" href="{{ route('senaraiKewangan') }}">
-                                    <div class="submenu-icon"></div><span>Senarai Semak Kewangan</span>
-                                </a></li> -->
                         </ul>
                     </div>
                 </li>
 
                 <!-- Menu : Syarikat / Pembekal -->
-                <li class="nav-item">
+                {{-- <li class="nav-item">
                     <a class="sidebar-link collapsed" data-bs-toggle="collapse"
                         data-bs-target="#menuSyarikatPembekal" aria-expanded="false" style="cursor: pointer;">
                         <svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none"
@@ -1228,7 +1222,7 @@
                                 </a></li>
                         </ul>
                     </div>
-                </li>
+                </li> --}}
 
                 <!-- Menu : Jawatankuasa Pembuka -->
                 <li class="nav-item">

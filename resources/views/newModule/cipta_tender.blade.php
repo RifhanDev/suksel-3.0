@@ -1108,7 +1108,7 @@
                                         </svg>
                                     </div>
                                     <div>
-                                        <h6>Kod Bidang</h6>
+                                        <h6>Kod Bidang CIDB</h6>
                                         <small>Lembaga Pembangunan Industri Pembinaan</small>
                                     </div>
                                 </div>
