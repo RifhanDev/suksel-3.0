@@ -11,7 +11,7 @@ return new class extends Migration
         if (!Schema::hasTable('jawatankuasa_perolehan_pemilihan_headers')) {
             Schema::create('jawatankuasa_perolehan_pemilihan_headers', function (Blueprint $table) {
                 $table->id();
-                $table->unsignedInteger('tender_id')->unique();
+                $table->unsignedBigInteger('tender_id')->unique();
                 $table->string('keputusan_mesyuarat', 255)->nullable();
                 $table->string('kaedah_memuktamadkan_pembekal', 255)->nullable();
                 $table->string('pemilihan_berdasarkan', 255)->nullable();
