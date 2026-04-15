@@ -470,33 +470,15 @@ class JawatankuasaController extends Controller
     public function spesifikasiKewanganBekalan()
     {
         // Dummy data — will be replaced with real DB queries later
-        $anggaranJabatan = 150000.00;
+        $anggaranJabatan = 300000.00;
 
         $items = [
             [
-                'nama'      => 'Air Mineral 500ml',
-                'kuantiti'  => 1000,
+                'nama'      => 'TENDER PERKHIDMATAN DIGITAL FORENSIK',
+                'kuantiti'  => 1,
                 'uom'       => 'Lot',
                 'specs'     => [
-                    'Jenama tempatan yang diiktiraf KKM',
-                    'Pembungkusan shrink wrap 24 botol per karton',
-                ],
-            ],
-            [
-                'nama'      => 'Air Mineral 1.5L',
-                'kuantiti'  => 500,
-                'uom'       => 'Unit',
-                'specs'     => [
-                    'Jenama tempatan yang diiktiraf KKM',
-                    'Tarikh luput minima 6 bulan dari tarikh penghantaran',
-                ],
-            ],
-            [
-                'nama'      => 'Air Mineral 5 Gallon',
-                'kuantiti'  => 100,
-                'uom'       => 'Hari',
-                'specs'     => [
-                    'Dispenser compatible standard fitting',
+                    "Melaksanakan Perkhidmatan Kajian\n1.1 Pengumpulan Maklumat Dan Mengenalpasti Proses.\n\na. Kaedah pengumpulan maklumat yang bersesuaian yang ingin digunakan bagi setiap proses terlibat. Sebagai contoh melalui temuduga, bengkel, kajian dokumen, kajian sistem dan sebagainya. Sila nyatakan dengan jelas kaedah pengumpulan maklumat.",
                 ],
             ],
         ];

@@ -97,15 +97,14 @@
                 <span class="text-muted fw-semibold text-uppercase d-block mb-1"
                     style="font-size: 0.67rem; letter-spacing: 0.5px;">Tajuk Tender</span>
                 <h5 class="fw-bold text-dark mb-0" style="line-height: 1.45; font-size: 1rem;">
-                    MEMBEKAL RANGSUM PUKAL (AIR MINERAL) UNTUK BANGUNAN KERAJAAN
-                    <span class="fw-normal text-muted fst-italic" style="font-size: 0.85rem;">(Bekalan Perkhidmatan)</span>
+                    TENDER PERKHIDMATAN DIGITAL FORENSIK
                 </h5>
             </div>
             <div class="row g-3">
                 <div class="col-6 col-md-3">
                     <span class="text-muted fw-semibold text-uppercase d-block mb-1"
                         style="font-size: 0.67rem; letter-spacing: 0.5px;">No. Tender</span>
-                    <span class="fw-semibold text-dark" style="font-size: 0.875rem;">SUKSEL/PERT/2026/001</span>
+                    <span class="fw-semibold text-dark" style="font-size: 0.875rem;">T/2026/014</span>
                 </div>
                 <div class="col-6 col-md-3">
                     <span class="text-muted fw-semibold text-uppercase d-block mb-1"
@@ -174,14 +173,14 @@
 
                 <!-- Tajuk Dokumen -->
                 <div class="col-12">
-                    <label class="form-label fw-semibold">Tajuk Dokumen <span class="text-danger">*</span></label>
-                    <textarea name="tajuk_dokumen" class="form-control form-control-sm" rows="3" readonly disabled></textarea>
+                    <label class="form-label fw-semibold">Tajuk Dokumen</label>
+                    <textarea name="tajuk_dokumen" class="form-control form-control-sm" rows="3" readonly disabled>TENDER PERKHIDMATAN DIGITAL FORENSIK</textarea>
                 </div>
 
                 <!-- Jenis Item -->
                 <div class="col-12 col-md-6">
                     <label class="form-label fw-semibold">Jenis Item</label>
-                    <input type="text" class="form-control form-control-sm" value="Bekalan Perkhidmatan" disabled>
+                    <input type="text" class="form-control form-control-sm" value="Bekalan" disabled>
                 </div>
 
                 <!-- Jenis Spesifikasi -->
@@ -336,8 +335,8 @@
                 Kembali
             </a>
             <div class="d-flex gap-2">
-                <button type="button" class="btn-form btn-form-primary">Simpan</button>
-                <button type="submit" class="btn-form btn-form-success">
+                <button type="button" id="btn-simpan-spek" class="btn-form btn-form-primary">Simpan</button>
+                <button type="button" id="btn-selesai-spek" class="btn-form btn-form-success">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"></path></svg>
                     Selesai
                 </button>
@@ -346,6 +345,25 @@
 
     </form>
 @endsection
+
+@push('modals')
+    <!-- ===================== MODAL: SUCCESS ===================== -->
+    <div class="modal fade" id="successModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content text-center p-4">
+                <div class="mb-3">
+                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="10" fill="#E6F7F3" />
+                        <path d="M10 14.2L7.8 12l-1.4 1.4L10 17l8-8-1.4-1.4L10 14.2z" fill="#19c1a7" />
+                    </svg>
+                </div>
+                <h5 class="fw-bold mb-2">Berjaya</h5>
+                <p class="text-muted mb-4">Maklumat telah berjaya disimpan.</p>
+                <button type="button" class="btn-form btn-form-primary mx-auto" data-bs-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+@endpush
 
 @section('scripts')
 <script>
@@ -390,7 +408,7 @@ $(document).ready(function () {
             var $specRow = $(
                 '<tr class="' + specRowClass + '">' +
                     '<td style="padding-left:40px;">' +
-                        '<span class="text-muted" style="font-size:0.8rem;">' + $('<span>').text(specText).html() + '</span>' +
+                        '<span class="text-muted" style="font-size:0.8rem;white-space:pre-line;display:block;">' + $('<span>').text(specText).html() + '</span>' +
                     '</td>' +
                     '<td></td>' +
                     '<td></td>' +
@@ -438,10 +456,17 @@ $(document).ready(function () {
     });
 
     // ── Form submit — strip commas ───────────────────────────────────────────
-    $('#form-spek-kewangan').on('submit', function () {
-        $(this).find('.amount-input').each(function () {
-            $(this).val($(this).val().replace(/,/g, ''));
-        });
+    // TODO: restore real submit after demo — currently intercepted for demo purposes
+    // $('#form-spek-kewangan').on('submit', function () {
+    //     $(this).find('.amount-input').each(function () {
+    //         $(this).val($(this).val().replace(/,/g, ''));
+    //     });
+    // });
+
+    // DEMO: Simpan & Selesai buttons show success modal instead of submitting
+    var successModal = new bootstrap.Modal(document.getElementById('successModal'));
+    $('#btn-simpan-spek, #btn-selesai-spek').on('click', function () {
+        successModal.show();
     });
 
 });

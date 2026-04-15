@@ -1193,26 +1193,33 @@
 
             <!-- FOOTER -->
             <div class="bg-light p-4 border-top d-flex justify-content-between align-items-center">
-                <button type="button" class="btn btn-outline-secondary fw-bold px-4 d-none rounded-3" id="btn-back">
+                <button type="button" class="btn-form btn-form-secondary d-none" id="btn-back">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="19" y1="12" x2="5" y2="12"></line>
+                        <polyline points="12 19 5 12 12 5"></polyline>
+                    </svg>
                     Kembali
                 </button>
 
-
                 <div class="ms-auto">
-                    <button type="button" class="btn btn-selangor fw-bold px-4 rounded-3 d-flex align-items-center gap-2"
-                        id="btn-next">
+                    <button type="button" class="btn-form btn-form-primary" id="btn-next">
                         Seterusnya
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
-                            fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
+                            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                             stroke-linejoin="round">
                             <line x1="5" y1="12" x2="19" y2="12"></line>
                             <polyline points="12 5 19 12 12 19"></polyline>
                         </svg>
                     </button>
 
-                    <button type="submit"
-                        class="btn btn-success fw-bold px-4 d-none rounded-3 d-flex align-items-center gap-2"
-                        id="btn-submit">
+                    <button type="submit" class="btn-form btn-form-success d-none" id="btn-submit">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                            <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                            <polyline points="7 3 7 8 15 8"></polyline>
+                        </svg>
                         Hantar Tender
                     </button>
                 </div>

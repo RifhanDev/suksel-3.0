@@ -162,10 +162,10 @@
 						<tbody>
 							{{-- perkhidmatan bekalan --}}
 							<tr style="cursor:pointer">
-								<td>QT21000000023741</td>
+								<td>T/2026/014</td>
 								<td class="text-primary text-decoration-underline">
 									<span data-kategori="perkhidmatan_bekalan" onclick="openTender(this)">
-										TENDER PERKHIDMATAN DIGITAL FORENSIK KE ATAS ALIRAN PROSES SISTEM XXXX
+										TENDER PERKHIDMATAN DIGITAL FORENSIK
 									</span>
 								</td>
 								<td>03/03/2024</td>
@@ -174,10 +174,10 @@
 
 							{{-- kerja --}}
 							<tr style="cursor:pointer">
-								<td>QT21000000023799</td>
+								<td>T/2026/015</td>
 								<td class="text-primary text-decoration-underline">
 									<span data-kategori="kerja" onclick="openTender(this)">
-										TENDER KERJA-KERJA NAIK TARAF INFRASTRUKTUR RANGKAIAN ICT
+										KERJA-KERJA MENAIK TARAF SUNGAI BATU DAN KAWASAN SEKITAR, SELANGOR DARUL EHSAN
 									</span>
 								</td>
 								<td>05/03/2024</td>
@@ -262,7 +262,7 @@
 						</thead>
 						<tbody>
 							<tr>
-								<td>Penilaian Forensik Sistem XXXX</td>
+							<td>Penilaian Forensik Sistem</td>
 								<td>Spesifikasi</td>
 								<td>Menunggu Penyerahan</td>
 								<td><button class="btn btn-success btn-sm">Semak</button></td>

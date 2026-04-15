@@ -32,15 +32,14 @@
                 <span class="text-muted fw-semibold text-uppercase d-block mb-1"
                     style="font-size:0.67rem;letter-spacing:0.5px;">Tajuk Tender</span>
                 <h5 class="fw-bold text-dark mb-0" style="line-height:1.45;font-size:1rem;">
-                    PROJEK MENAIKTARAF JALAN PELABUHAN UTARA DARI KLANG CONTAINER TERMINAL
-                    <span class="fw-normal text-muted fst-italic" style="font-size:0.85rem;">(Kerja)</span>
+                    KERJA-KERJA MENAIK TARAF SUNGAI BATU DAN KAWASAN SEKITAR, SELANGOR DARUL EHSAN
                 </h5>
             </div>
             <div class="row g-3">
                 <div class="col-6 col-md-3">
                     <span class="text-muted fw-semibold text-uppercase d-block mb-1"
                         style="font-size:0.67rem;letter-spacing:0.5px;">No. Tender</span>
-                    <span class="fw-semibold text-dark" style="font-size:0.875rem;">SUKSEL/PERT/2026/001</span>
+                    <span class="fw-semibold text-dark" style="font-size:0.875rem;">T/2026/015</span>
                 </div>
                 <div class="col-6 col-md-3">
                     <span class="text-muted fw-semibold text-uppercase d-block mb-1"
@@ -149,7 +148,7 @@
             Kembali
         </a>
         <div class="d-flex gap-2">
-            <button type="button" class="btn-form btn-form-primary">
+            <button type="button" id="btn-simpan-penyediaan" class="btn-form btn-form-primary">
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
@@ -158,7 +157,7 @@
                 </svg>
                 Simpan
             </button>
-            <button type="submit" class="btn-form btn-form-success">
+            <button type="button" id="btn-hantar-penyediaan" class="btn-form btn-form-success">
                 Hantar
             </button>
         </div>
@@ -300,6 +299,32 @@ $(document).ready(function () {
         }
     });
 
+    // DEMO: Simpan & Hantar buttons show success modal instead of submitting
+    // TODO: restore real submit after demo — currently intercepted for demo purposes
+    var successModal = new bootstrap.Modal(document.getElementById('successModal'));
+    $('#btn-simpan-penyediaan, #btn-hantar-penyediaan').on('click', function () {
+        successModal.show();
+    });
+
 });
 </script>
 @endsection
+
+@push('modals')
+    <!-- ===================== MODAL: SUCCESS ===================== -->
+    <div class="modal fade" id="successModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content text-center p-4">
+                <div class="mb-3">
+                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="10" fill="#E6F7F3" />
+                        <path d="M10 14.2L7.8 12l-1.4 1.4L10 17l8-8-1.4-1.4L10 14.2z" fill="#19c1a7" />
+                    </svg>
+                </div>
+                <h5 class="fw-bold mb-2">Berjaya</h5>
+                <p class="text-muted mb-4">Maklumat telah berjaya disimpan.</p>
+                <button type="button" class="btn-form btn-form-primary mx-auto" data-bs-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+@endpush

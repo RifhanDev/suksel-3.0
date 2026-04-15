@@ -98,8 +98,8 @@
 
             const dummyData = [
                 {
-                    no_tender:    'QT210000000023741',
-                    tajuk:        'MEMBEKAL RANGSUM PUKAL (AIR MINERAL) UNTUK BANGUNAN KERAJAAN <i>(Bekalan Perkhidmatan)</i>',
+                    no_tender:    'T/2026/014',
+                    tajuk:        'TENDER PERKHIDMATAN DIGITAL FORENSIK',
                     tarikh_jual:  '03/01/2026',
                     tarikh_tutup: '01/05/2026',
                     status:       '<span class="d-inline-flex align-items-center gap-1 px-2 py-1 rounded-2 fw-semibold" style="background:#fef9c3;color:#854d0e;font-size:0.72rem;border:1px solid #fde68a;"><span class="rounded-circle" style="width:6px;height:6px;background:#ca8a04;flex-shrink:0;display:inline-block;"></span>Dalam Proses</span>',
@@ -109,8 +109,8 @@
                                    </div>`
                 },
                 {
-                    no_tender:    'QT210000000031582',
-                    tajuk:        'PROJEK MENAIKTARAF JALAN PELABUHAN UTARA DARI KLANG CONTAINER TERMINAL <i>(Kerja)</i>',
+                    no_tender:    'T/2026/015',
+                    tajuk:        'KERJA-KERJA MENAIK TARAF SUNGAI BATU DAN KAWASAN SEKITAR, SELANGOR DARUL EHSAN',
                     tarikh_jual:  '27/02/2026',
                     tarikh_tutup: '31/07/2026',
                     status:       '<span class="d-inline-flex align-items-center gap-1 px-2 py-1 rounded-2 fw-semibold" style="background:#f0fdf4;color:#166534;font-size:0.72rem;border:1px solid #bbf7d0;"><span class="rounded-circle" style="width:6px;height:6px;background:#16a34a;flex-shrink:0;display:inline-block;"></span>Telah Dihantar</span>',
