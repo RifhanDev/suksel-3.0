@@ -210,6 +210,8 @@ Route::get('chat-widget/{chat_id}', [BotManController::class, 'chatWidget'])->wi
 
 
 // Place 3.0 Modules Routes Temporarily Here
+Route::view('/semak-tender', 'newModule.semak_tender')->name('semakPenciptaanTender');
+
 Route::get('/pelantikan-jawatankuasa', [JawatankuasaController::class, 'create'])->middleware(['auth'])->name('pelantikanJawatankuasa');
 Route::get('/pelantikan-jawatankuasa/laporan', [JawatankuasaController::class, 'laporan'])->middleware(['auth'])->name('jawatankuasa.laporan');
 Route::post('/pelantikan-jawatankuasa/hantar-pemakluman', [JawatankuasaController::class, 'hantarPemakluman'])->middleware(['auth'])->name('jawatankuasa.hantarPemakluman');
