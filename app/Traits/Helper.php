@@ -11,6 +11,7 @@ use App\Repositories\MailQueueRepository;
 use App\Repositories\SmtpMailsRepository;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use setasign\Fpdi\Fpdi;
@@ -305,38 +306,49 @@ trait Helper
     {
         if($to == "")
         {
-            return "Missing parameter to. to can't be empty"; 
+            Log::error('[sendMail] Missing recipient address. to cannot be empty.');
+            return "Missing parameter to. to can't be empty";
         }
-
 
         if($subject == "")
         {
-            return "Missing parameter subject. subject can't be empty"; 
+            Log::error('[sendMail] Missing email subject. subject cannot be empty.', ['to' => $to]);
+            return "Missing parameter subject. subject can't be empty";
         }
-        
 
         if ($type == "html")
         {
             if($view_name == "")
             {
+                Log::error('[sendMail] Missing view_name for html type email.', ['to' => $to, 'subject' => $subject]);
                 return "Missing parameter view_name. view_name can't be empty";
             }
 
             $content = view($view_name, $view_params)->render();
 
-            return $this->createEmailQueue($content, $to, $subject);
+            $result = $this->createEmailQueue($content, $to, $subject);
+            if ($result !== "Email send to queue") {
+                Log::error('[sendMail] Failed to queue email.', ['to' => $to, 'subject' => $subject, 'reason' => $result]);
+            }
+            return $result;
         }
         else if ($type == "raw_text")
         {
             if($raw_text == "")
             {
+                Log::error('[sendMail] Missing raw_text for raw_text type email.', ['to' => $to, 'subject' => $subject]);
                 return "Missing parameter raw_text. raw_text can't be empty";
             }
 
-            return $this->createEmailQueue($raw_text, $to, $subject);
+            $result = $this->createEmailQueue($raw_text, $to, $subject);
+            if ($result !== "Email send to queue") {
+                Log::error('[sendMail] Failed to queue email.', ['to' => $to, 'subject' => $subject, 'reason' => $result]);
+            }
+            return $result;
         }
         else
         {
+            Log::error('[sendMail] Invalid type given.', ['type' => $type, 'to' => $to]);
             return "Invalid type given";
         }
     }
@@ -351,10 +363,15 @@ trait Helper
 
         $count_available_mail_config = count($list_available_mail_config);
 
+        if ($count_available_mail_config === 0) {
+            Log::error('[getAvailableEmailConfig] No SMTP mail configurations found in the database (smtp_mails table is empty).');
+            return $available_config;
+        }
+
         $mail_available_limit   = 0;
 
-        for ($i=0; $i < $count_available_mail_config; $i++) { 
-            
+        for ($i=0; $i < $count_available_mail_config; $i++) {
+
             if ($list_available_mail_config[$i]->today_mail_queue < $list_available_mail_config[$i]->mail_message_ratelimit)
             {
                 // $available_config = $list_available_mail_config[$i];
@@ -369,6 +386,12 @@ trait Helper
             $available_config = $smtp_mail_detail->toArray();
             $available_config["mail_available_limit"] = $mail_available_limit;
             $available_config["mail_crypto"] = $smtp_mail_detail->getMailCryptoDesc();
+        }
+        else
+        {
+            Log::error('[getAvailableEmailConfig] All SMTP configs have reached their daily rate limit.', [
+                'configs_checked' => $count_available_mail_config,
+            ]);
         }
 
         return $available_config;
@@ -399,9 +422,9 @@ trait Helper
 
         if (count($available_config) == 0)
         {
+            Log::error('[createEmailQueue] Aborted — no available SMTP config.', ['to' => $to, 'subject' => $subject]);
             return "No Available Email Config";
         }
-
 
         $config = $this->setEmailConfig($available_config);
 
@@ -423,23 +446,54 @@ trait Helper
         );
 
         $new_queue = $mailQueueRepo->createMailQueue($new_mail_queue);
-        
+
         $unique_id = $this->encryptString($new_queue->id);
 
+        Log::info('[createEmailQueue] Email queued successfully.', [
+            'mail_queue_id' => $new_queue->id,
+            'to' => $to,
+            'subject' => $subject,
+            'smtp_mail_id' => $available_config["id"],
+        ]);
+
         dispatch(new SendEmailJob($unique_id))->delay(5);
-        
+
         return "Email send to queue";
     }
 
     public function trigger_mail_server($unique_id)
     {
-        $response = Http::withoutVerifying()->get(env('MAIL_SERVER')."/".$unique_id);
+        $mail_server_url = env('MAIL_SERVER') . "/" . $unique_id;
 
-        $status = "Failed to connect with mail server";
+        try {
+            $response = Http::withoutVerifying()->get($mail_server_url);
 
-        if( $response->ok() )
-        {
-            $status = $response->body();
+            if ($response->ok()) {
+                $status = $response->body();
+                Log::info('[trigger_mail_server] Mail server responded successfully.', [
+                    'url' => $mail_server_url,
+                    'response' => $status,
+                ]);
+            } else {
+                $status = "Mail server returned error status: " . $response->status();
+                Log::error('[trigger_mail_server] Mail server returned non-200 response.', [
+                    'url' => $mail_server_url,
+                    'http_status' => $response->status(),
+                    'response_body' => $response->body(),
+                ]);
+            }
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            $status = "Failed to connect with mail server";
+            Log::error('[trigger_mail_server] Could not connect to mail server.', [
+                'url' => $mail_server_url,
+                'error' => $e->getMessage(),
+            ]);
+        } catch (\Exception $e) {
+            $status = "Unexpected error contacting mail server";
+            Log::error('[trigger_mail_server] Unexpected exception.', [
+                'url' => $mail_server_url,
+                'error' => $e->getMessage(),
+            ]);
         }
 
         echo $status;
