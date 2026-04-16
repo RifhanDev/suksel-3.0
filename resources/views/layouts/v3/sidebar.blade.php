@@ -744,7 +744,23 @@
                 </li> --}}
 
                 <!-- Menu : Jawatankuasa Spesifikasi /  Pengurusan -->
-                @php $isJawatankuasaSpesifikasiMenuActive = request()->is('senarai-semak*'); @endphp
+                @php
+                    $isJawatankuasaSpesifikasiMenuActive =
+                        request()->is('senarai-semak*') ||
+                        request()->is('senarai-teknikal*') ||
+                        request()->is('senarai-kewangan-bekalan*') ||
+                        request()->is('senarai-kewangan-kerja*') ||
+                        request()->is('penyediaan-spesifikasi-tender*') ||
+                        request()->is('lembaran-imbangan*') ||
+                        request()->is('bon-atau-saham*') ||
+                        request()->is('prestasi-kerja-semasa-petender*') ||
+                        request()->is('templat-spesifikasi*') ||
+                        request()->is('pengalaman-kerja*') ||
+                        request()->is('kerja-dalam-tangan*') ||
+                        request()->is('spesifikasi-kewangan*') ||
+                        request()->is('profil-petender*') ||
+                        request()->is('penyata-bank*');
+                @endphp
                 <li class="nav-item">
                     <a class="sidebar-link {{ $isJawatankuasaSpesifikasiMenuActive ? 'active' : 'collapsed' }}" data-bs-toggle="collapse"
                         data-bs-target="#menuJawatankusaSpesifikasi" aria-expanded="{{ $isJawatankuasaSpesifikasiMenuActive ? 'true' : 'false' }}" style="cursor: pointer;">
@@ -762,9 +778,9 @@
                     <div class="collapse {{ $isJawatankuasaSpesifikasiMenuActive ? 'show' : '' }}" id="menuJawatankusaSpesifikasi">
                         <ul class="sidebar-submenu">
                             <li>
-                                <a class="submenu-item" href="{{ route('senaraiSemak') }}">
-                                    <div class="submenu-icon" style="{{ request()->is('senarai-semak*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}"></div>
-                                    <span class="{{ request()->is('senarai-semak*') ? 'text-white' : '' }}">Senarai Semak</span>
+                                <a class="submenu-item {{ $isJawatankuasaSpesifikasiMenuActive ? 'active' : '' }}" href="{{ route('senaraiSemak') }}">
+                                    <div class="submenu-icon" style="{{ $isJawatankuasaSpesifikasiMenuActive ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}"></div>
+                                    <span class="{{ $isJawatankuasaSpesifikasiMenuActive ? 'text-white' : '' }}">Senarai Semak</span>
                                 </a>
                             </li>
                         </ul>
@@ -810,6 +826,19 @@
 							<path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
 						</svg>
 						<span class="nav-text">Jawatankuasa Pembuka</span>
+					</a>
+				</li>
+
+				<!-- Menu: Cut Off -->
+				<li class="nav-item">
+					<a class="sidebar-link {{ request()->is('cut-off*') ? 'active' : '' }}" href="{{ route('cutOff.index') }}"
+						style="cursor: pointer;">
+						<svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none"
+							stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+							<circle cx="12" cy="12" r="10"></circle>
+							<polyline points="12 6 12 12 16 14"></polyline>
+						</svg>
+						<span class="nav-text">Cut Off</span>
 					</a>
 				</li>
 
@@ -965,19 +994,6 @@
 					</div>
 				</li>
 
-				<!-- Menu: Cut Off -->
-				<li class="nav-item">
-					<a class="sidebar-link {{ request()->is('cut-off*') ? 'active' : '' }}" href="{{ route('cutOff.index') }}"
-						style="cursor: pointer;">
-						<svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none"
-							stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-							<circle cx="12" cy="12" r="10"></circle>
-							<polyline points="12 6 12 12 16 14"></polyline>
-						</svg>
-						<span class="nav-text">Cut Off</span>
-					</a>
-				</li>
-
 				<!-- Menu: Perakuan Jabatan -->
 				<li class="nav-item">
 					<a class="sidebar-link {{ request()->is('perakuan-jabatan*') ? 'active' : '' }}"
@@ -1019,7 +1035,7 @@
 							<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
 							<path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
 						</svg>
-						<span class="nav-text">E-Bidding</span>
+						<span class="nav-text">e-Bidding</span>
 						<svg xmlns="http://www.w3.org/2000/svg" class="nav-arrow" viewBox="0 0 24 24" fill="none"
 							stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
 							<polyline points="9 18 15 12 9 6"></polyline>
@@ -1232,6 +1248,19 @@
 					</a>
 				</li>
 
+				<!-- Menu: Cut Off -->
+				<li class="nav-item">
+					<a class="sidebar-link {{ request()->is('cut-off*') ? 'active' : '' }}" href="{{ route('cutOff.index') }}"
+						style="cursor: pointer;">
+						<svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none"
+							stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+							<circle cx="12" cy="12" r="10"></circle>
+							<polyline points="12 6 12 12 16 14"></polyline>
+						</svg>
+						<span class="nav-text">Cut Off</span>
+					</a>
+				</li>
+
                 <!-- Menu : Penilaian Teknikal & Kewangan -->
                 @php
                     $isPenilaianMenuActive =
@@ -1374,19 +1403,6 @@
 							</li>
 						</ul>
 					</div>
-				</li>
-
-				<!-- Menu: Cut Off -->
-				<li class="nav-item">
-					<a class="sidebar-link {{ request()->is('cut-off*') ? 'active' : '' }}" href="{{ route('cutOff.index') }}"
-						style="cursor: pointer;">
-						<svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none"
-							stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-							<circle cx="12" cy="12" r="10"></circle>
-							<polyline points="12 6 12 12 16 14"></polyline>
-						</svg>
-						<span class="nav-text">Cut Off</span>
-					</a>
 				</li>
 
 				<!-- Menu: Jawatankuasa Perolehan -->

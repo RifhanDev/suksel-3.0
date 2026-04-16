@@ -26,8 +26,7 @@
                 <span class="text-muted fw-semibold text-uppercase d-block mb-1"
                     style="font-size: 0.67rem; letter-spacing: 0.5px;">Tajuk Tender</span>
                 <h5 class="fw-bold text-dark mb-0" style="line-height: 1.45; font-size: 1rem;">
-                    MEMBEKAL RANGSUM PUKAL (AIR MINERAL) UNTUK BANGUNAN KERAJAAN
-                    <span class="fw-normal text-muted fst-italic" style="font-size: 0.85rem;">(Bekalan Perkhidmatan)</span>
+                    TENDER PERKHIDMATAN DIGITAL FORENSIK
                 </h5>
             </div>
 
@@ -36,7 +35,7 @@
                 <div class="col-6 col-md-3">
                     <span class="text-muted fw-semibold text-uppercase d-block mb-1"
                         style="font-size: 0.67rem; letter-spacing: 0.5px;">No. Tender</span>
-                    <span class="fw-semibold text-dark" style="font-size: 0.875rem;">SUKSEL/PERT/2026/001</span>
+                    <span class="fw-semibold text-dark" style="font-size: 0.875rem;">T/2026/014</span>
                 </div>
                 <div class="col-6 col-md-3">
                     <span class="text-muted fw-semibold text-uppercase d-block mb-1"
@@ -196,13 +195,13 @@
                             <td class="text-center">
                                 <input type="checkbox" name="row_check_teknikal[]" class="form-check-input row-check-teknikal">
                             </td>
-                            <td>Perkhidmatan Penilaian Forensik Keatas Sistem XXXX</td>
+                            <td>TENDER PERKHIDMATAN DIGITAL FORENSIK</td>
                             <td class="text-center"><span class="small fw-semibold text-muted">Spesifikasi</span></td>
                             <td class="text-center small">Kunci Masuk</td>
                             <td class="text-center">
                                 <input type="number" name="skema[]" class="form-control form-control-sm text-center skema-input fw-semibold" value="40" min="0" style="max-width:90px;margin:0 auto;">
                             </td>
-                            <td class="text-center"><span class="badge-status badge-status-success">Selesai</span></td>
+                            <td class="text-center"><span class="badge-status badge-status-warning">Dalam Proses</span></td>
                             <td class="text-center text-muted small rujukan-cell">—</td>
                             <td class="text-center">
                                 <a href="{{ route('spesifikasiForm') }}"
@@ -843,13 +842,20 @@
             });
 
             // ─── FORM SUBMIT: block if penilaian exceeds skema maksima ───────────────
-            $('#form-senarai-teknikal').on('submit', function (e) {
-                var skemaMaksima = parseInt($('#skema-maksima-display').val()) || 0;
-                var penilaian    = parseInt($('#input-penilaian').val()) || 0;
-                if (skemaMaksima > 0 && penilaian > skemaMaksima) {
-                    e.preventDefault();
-                    $('#input-penilaian').addClass('is-invalid').focus();
-                }
+            // TODO: restore real submit after demo — currently intercepted for demo purposes
+            // $('#form-senarai-teknikal').on('submit', function (e) {
+            //     var skemaMaksima = parseInt($('#skema-maksima-display').val()) || 0;
+            //     var penilaian    = parseInt($('#input-penilaian').val()) || 0;
+            //     if (skemaMaksima > 0 && penilaian > skemaMaksima) {
+            //         e.preventDefault();
+            //         $('#input-penilaian').addClass('is-invalid').focus();
+            //     }
+            // });
+
+            // DEMO: btn-hantar shows success modal instead of submitting
+            $('.btn-hantar').on('click', function (e) {
+                e.preventDefault();
+                successModal.show();
             });
 
         });

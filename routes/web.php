@@ -169,7 +169,7 @@ Route::post('auth/reset', [AuthController::class, 'doResetPassword']);
 // Route::resource('tenders', TendersController::class);
 // Route::get('tenders/{id}/prices', [TendersController::class, 'prices'])->name('tenders.prices');
 // Route::get('tenders/{tender_id}/files/{id}', [TendersController::class, 'file'])->name('tenders.files');
-// Route::get('tenders/{id}/vendors', [TendersController::class, 'vendors'])->name('tenders.vendors');
+Route::get('tenders/{id}/vendors', [TendersController::class, 'vendors'])->name('tenders.vendors'); // Dan temporary disable comment to avoid error while demo (danger)
 // Route::post('tenders/{id}/exception', [TendersController::class, 'exception'])->name('tenders.exception');
 
 // Petender Performance

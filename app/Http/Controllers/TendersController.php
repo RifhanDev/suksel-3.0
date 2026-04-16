@@ -429,7 +429,9 @@ class TendersController extends Controller
 					return response()->json($data, 201);
 				}
 
-				return redirect('tenders/' . $data['tender_id'])->with('success', 'Tender berjaya dicipta');
+				// return redirect('tenders/' . $data['tender_id'])->with('success', 'Tender berjaya dicipta'); // BUG: 'tenders/' is plural but route is singular (tender.show)
+				// return redirect(route('tender.show', $data['tender_id']))->with('success', 'Tender berjaya dicipta');
+				return redirect('/tender')->with('success', 'Tender berjaya dicipta');
 			} else {
 				Log::error(
 					'Backend API error',
