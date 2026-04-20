@@ -5,8 +5,8 @@
 
 	<style>
 		/* =====================
-											SECTION BAR
-											===================== */
+														SECTION BAR
+														===================== */
 		.section-title-bar {
 			background: #f3f5f8;
 			border: 1px solid #e9edf3;
@@ -20,8 +20,8 @@
 
 
 		/* =====================
-											TABLE STYLE
-											===================== */
+														TABLE STYLE
+														===================== */
 		.table thead th {
 			text-align: center;
 			vertical-align: middle;
@@ -37,8 +37,8 @@
 		}
 
 		/* =====================
-											RED TABLE HEADER
-											===================== */
+														RED TABLE HEADER
+														===================== */
 		.table thead th {
 			background-color: #B11217 !important;
 			color: #ffffff !important;
@@ -398,7 +398,7 @@
 										<td>96.43</td>
 										<td>1</td>
 										<td>Aktif</td>
-										<td>Tindakan Disiplin Diambil</td>
+										<td>Prestasi Pembekal</td>
 										<td><button class="btn btn-light"><i class="bi bi-file-earmark"></i></button></td>
 										<td>Disyorkan</td>
 										<td></td>
@@ -487,7 +487,7 @@
 									</tr>
 									<tr>
 										<th colspan="6"></th>
-										<th>Tindakan Disiplin Diambil</th>
+										<th>Prestasi Pembekal</th>
 										<th>Lembaga Pengarah</th>
 										<th colspan="2"></th>
 									</tr>

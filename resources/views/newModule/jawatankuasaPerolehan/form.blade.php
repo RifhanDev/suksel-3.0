@@ -319,21 +319,39 @@
 						</div>
 						<div class="col-md-6">
 							<label class="form-label small fw-semibold">Pemilihan Berdasarkan <span class="text-danger">*</span></label>
-							<select id="mp_pemilihan_berdasarkan" class="form-select form-select-sm">
-								<option value="">-- Sila Pilih --</option>
-								@foreach ($pemilihanOpts['pemilihan_berdasarkan'] as $opt)
-									<option value="{{ $opt }}" @selected(($pemilihanHeader['pemilihan_berdasarkan'] ?? '') === $opt)>{{ $opt }}</option>
-								@endforeach
-							</select>
+							@php $mpPemilihanBerdasarkan = ($pemilihanHeader['pemilihan_berdasarkan'] ?? ''); @endphp
+							<div class="d-flex align-items-center flex-wrap gap-3 pt-1">
+								<div class="form-check mb-0">
+									<input class="form-check-input" type="radio" name="mp_pemilihan_berdasarkan"
+										id="mp_pemilihan_berdasarkan_item" value="1 item"
+										{{ $mpPemilihanBerdasarkan === '1 item' ? 'checked' : '' }}>
+									<label class="form-check-label small" for="mp_pemilihan_berdasarkan_item">1 item</label>
+								</div>
+								<div class="form-check mb-0">
+									<input class="form-check-input" type="radio" name="mp_pemilihan_berdasarkan"
+										id="mp_pemilihan_berdasarkan_pakej" value="Pakej"
+										{{ $mpPemilihanBerdasarkan === 'Pakej' ? 'checked' : '' }}>
+									<label class="form-check-label small" for="mp_pemilihan_berdasarkan_pakej">Pakej</label>
+								</div>
+							</div>
 						</div>
 						<div class="col-md-6">
 							<label class="form-label small fw-semibold">LOI/LOA Disediakan Oleh <span class="text-danger">*</span></label>
-							<select id="mp_loi_loa_oleh" class="form-select form-select-sm">
-								<option value="">-- Sila Pilih --</option>
-								@foreach ($pemilihanOpts['loi_loa_disediakan_oleh'] as $opt)
-									<option value="{{ $opt }}" @selected(($pemilihanHeader['loi_loa_disediakan_oleh'] ?? '') === $opt)>{{ $opt }}</option>
-								@endforeach
-							</select>
+							@php $mpLoiLoaOleh = ($pemilihanHeader['loi_loa_disediakan_oleh'] ?? ''); @endphp
+							<div class="d-flex flex-column gap-2 pt-1">
+								<div class="form-check mb-0">
+									<input class="form-check-input" type="radio" name="mp_loi_loa_oleh" id="mp_loi_loa_urusetia"
+										value="Urusetia atau Setiausaha Sebut Harga"
+										{{ $mpLoiLoaOleh === 'Urusetia atau Setiausaha Sebut Harga' ? 'checked' : '' }}>
+									<label class="form-check-label small" for="mp_loi_loa_urusetia">Urusetia atau Setiausaha Sebut Harga</label>
+								</div>
+								<div class="form-check mb-0">
+									<input class="form-check-input" type="radio" name="mp_loi_loa_oleh" id="mp_loi_loa_lembaga"
+										value="Lembaga Perolehan"
+										{{ $mpLoiLoaOleh === 'Lembaga Perolehan' ? 'checked' : '' }}>
+									<label class="form-check-label small" for="mp_loi_loa_lembaga">Lembaga Perolehan</label>
+								</div>
+							</div>
 						</div>
 						<div class="col-md-6">
 							<label class="form-label small fw-semibold">Bil. Mesyuarat <span class="text-danger">*</span></label>
@@ -385,14 +403,16 @@
 									<th>Kedudukan Penilaian Teknikal Kewangan</th>
 									<th>Status Pendaftaran MOF</th>
 									<th colspan="2">Maklumat Tambahan</th>
+									<th id="mp-th-selection" class="d-none">Selection</th>
 									<th>Keputusan oleh Urusetia</th>
+									<th id="mp-th-catatan-zon" class="d-none" style="min-width:180px;">Catatan Mengikut Zon</th>
 									<th style="min-width:180px;">Catatan Urusetia</th>
 								</tr>
 								<tr>
 									<th colspan="6"></th>
-									<th class="small">Tindakan Disiplin Diambil</th>
+									<th class="small">Prestasi Pembekal</th>
 									<th class="small">Lembaga Pengarah</th>
-									<th colspan="2"></th>
+									<th id="mp-th-empty-right" colspan="2"></th>
 								</tr>
 							</thead>
 							<tbody id="mp-pembekal-body"></tbody>
@@ -750,7 +770,6 @@
 			});
 
 			@if ($tender && ($pemilihanItems ?? collect())->isNotEmpty())
-				const pemilihanKeputusanOpts = @json($pemilihanOpts['keputusan_urusetia'] ?? []);
 				let pemilihanState = {
 					header: @json($pemilihanHeader ?? []),
 					items: @json($pemilihanItems ?? [])
@@ -778,9 +797,9 @@
 						if (!p) {
 							return;
 						}
-						p.keputusan_urusetia = ($(this).find('.mp-pet-keputusan').val() || '').toString();
-						p.catatan_urusetia = ($(this).find('.mp-pet-catatan').val() || '').toString();
 						p.tindakan_disiplin = ($(this).find('.mp-pet-disiplin').val() || '').toString();
+						p.selected_for_selection = $(this).find('.mp-pet-selection').is(':checked');
+						p.catatan_mengikut_zon = ($(this).find('.mp-pet-catatan-zon').val() || '').toString();
 					});
 				}
 
@@ -801,8 +820,8 @@
 					return {
 						keputusan_mesyuarat: ($('#mp_keputusan_mesyuarat').val() || '').toString(),
 						kaedah_memuktamadkan_pembekal: ($('#mp_kaedah_memuktamadkan').val() || '').toString(),
-						pemilihan_berdasarkan: ($('#mp_pemilihan_berdasarkan').val() || '').toString(),
-						loi_loa_disediakan_oleh: ($('#mp_loi_loa_oleh').val() || '').toString(),
+						pemilihan_berdasarkan: ($('input[name="mp_pemilihan_berdasarkan"]:checked').val() || '').toString(),
+						loi_loa_disediakan_oleh: ($('input[name="mp_loi_loa_oleh"]:checked').val() || '').toString(),
 						bil_mesyuarat: ($('#mp_bil_mesyuarat').val() || '').toString(),
 						no_kod: ($('#mp_no_kod').val() || '').toString(),
 						sahkan_layak_bidaan: $('#mp_sahkan_layak').is(':checked'),
@@ -870,18 +889,22 @@
 					if (!item || !item.petenders) {
 						return;
 					}
+					const kaedah = ($('#mp_kaedah_memuktamadkan').val() || '').toString();
+					const showSelection = kaedah === 'Pemilihan Terus' || kaedah ===
+						'Pemilihan Lebih Daripada Satu Syarikat';
+					const showCatatanZon = kaedah === 'Pemilihan Lebih Daripada Satu Syarikat';
 					item.petenders.forEach(function(p, i) {
-						let opts = '';
-						pemilihanKeputusanOpts.forEach(function(o) {
-							const sel = (p.keputusan_urusetia === o) ? ' selected' : '';
-							opts += '<option value="' + escapeHtml(o) + '"' + sel + '>' + escapeHtml(
-								o) + '</option>';
-						});
 						const lp = p.lembaga_pengarah_papar_url ?
 							'<a href="' + escapeHtml(p.lembaga_pengarah_papar_url) +
 							'" class="btn btn-sm btn-outline-primary py-0 px-2" target="_blank" rel="noopener noreferrer" title="Papar">' +
 							'<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg></a>' :
 							'<span class="text-muted small">—</span>';
+						const selectionCell = showSelection ?
+							'<td class="text-center"><input type="checkbox" class="form-check-input mp-pet-selection"' + (p
+								.selected_for_selection ? ' checked' : '') + '></td>' : '';
+						const catatanZonCell = showCatatanZon ?
+							'<td><textarea class="form-control form-control-sm mp-pet-catatan-zon" rows="2">' +
+							escapeHtml(p.catatan_mengikut_zon || '') + '</textarea></td>' : '';
 						const row = '<tr data-pet-idx="' + i + '">' +
 							'<td class="text-center">' + escapeHtml(p.bil_label || '') + '</td>' +
 							'<td class="text-center">' + escapeHtml(p.status_bumiputra || '') + '</td>' +
@@ -894,14 +917,24 @@
 							escapeHtml(p
 								.tindakan_disiplin || '') + '</textarea></td>' +
 							'<td class="text-center">' + lp + '</td>' +
-							'<td><select class="form-select form-select-sm mp-pet-keputusan">' + opts +
-							'</select></td>' +
-							'<td><textarea class="form-control form-control-sm mp-pet-catatan" rows="2">' +
-							escapeHtml(p
-								.catatan_urusetia || '') + '</textarea></td>' +
+							selectionCell +
+							'<td class="small">' + escapeHtml(p.keputusan_urusetia || '') + '</td>' +
+							catatanZonCell +
+							'<td class="small">' + escapeHtml(p.catatan_urusetia || '') + '</td>' +
 							'</tr>';
 						$b.append(row);
 					});
+				}
+
+				function mpSyncSupplierTableColumns() {
+					const kaedah = ($('#mp_kaedah_memuktamadkan').val() || '').toString();
+					const showSelection = kaedah === 'Pemilihan Terus' || kaedah ===
+						'Pemilihan Lebih Daripada Satu Syarikat';
+					const showCatatanZon = kaedah === 'Pemilihan Lebih Daripada Satu Syarikat';
+					$('#mp-th-selection').toggleClass('d-none', !showSelection);
+					$('#mp-th-catatan-zon').toggleClass('d-none', !showCatatanZon);
+					const rightColspan = 2 + (showSelection ? 1 : 0) + (showCatatanZon ? 1 : 0);
+					$('#mp-th-empty-right').attr('colspan', rightColspan);
 				}
 
 				$('#mp-items-body').on('click', '.mp-item-row', function(e) {
@@ -969,6 +1002,13 @@
 					mpPostJson(pemilihanHantarUrl, 'Data berjaya dihantar.');
 				});
 
+				$('#mp_kaedah_memuktamadkan').on('change', function() {
+					mpFlushSuppliersToState();
+					mpSyncSupplierTableColumns();
+					mpRenderSuppliers();
+				});
+
+				mpSyncSupplierTableColumns();
 				mpRenderItems();
 				mpRenderSuppliers();
 			@endif
