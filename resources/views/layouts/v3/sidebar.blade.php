@@ -1251,7 +1251,7 @@
                             <li><a class="submenu-item" href="{{ route('perincianMesyuarat') }}">
                                     <div class="submenu-icon"></div><span>Perincian Mesyuarat</span>
                                 </a></li>
-                            <li><a class="submenu-item" href="">
+                            <li><a class="submenu-item" href="{{ route('jawatankuasaMesyuarat') }}">
                                     <div class="submenu-icon"></div><span>Jawatankuasa</span>
                                 </a></li>
                         </ul>

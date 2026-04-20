@@ -111,6 +111,27 @@
             animation: btnPop 0.25s ease forwards;
             box-shadow: 0 4px 10px rgba(0,0,0,0.2);
         }
+        
+        .nested-tabs {
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 10px;
+        }
+
+        .nested-tab-btn {
+            border: none;
+            background: transparent;
+            padding: 6px 20px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-right: 3px;
+        }
+
+        /* Active nested tab */
+        .nested-tab-btn.active {
+            background: #c0392b;
+            color: #fff;
+            border-radius: 4px 4px 0 0;
+        }
     </style>
 
     <div class="card border shadow-sm mb-2 rounded-3">
@@ -135,275 +156,427 @@
         </div>
     </div>
 
-    <div class="stats-card mb-4">
-        <div class="stats-card-header">
-            <h3 class="stats-card-title">
-                <div class="d-flex align-items-center justify-content-center bg-danger bg-opacity-10 text-danger rounded-2" style="width: 36px; height: 36px;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path><line x1="8" y1="6" x2="16" y2="6"></line><line x1="8" y1="10" x2="16" y2="10"></line></svg>
-                </div>
-                Maklumat Penyata Bank
-            </h3>
-        </div>
-        <div class="card-body p-2">
-            <div class="p-4">
-                <div class="row mx-2">
-                    <div class="small lh-sm mt-2">
-                        <p class="card-title-desc text-info fst-italic">
-                            <i>Sila pilih bulan pertama penyata bank yang perlu dikemukakan oleh petender</i>
-                        </p>
-                    </div>
-                </div>
-                <div class="row mb-3 mx-3">
-                    @php
-                        $penyataBankDari = now()->subMonths(2);
-                        $penyataBankHingga = $penyataBankDari->copy()->addMonths(2);
-                    @endphp
-                    <div class="col-sm-6 form-group my-2">
-                        <div class="row">
-                            <label class="col-sm-4 control-label">Dari (Bulan)</label>
-                            <div class="col-sm-8 text-primary">
-                                <div class="row">
-                                    <div class="col-sm-6">
-                                        <select name="" id="penyata_dari_bulan" class="form-control">
-                                            <option value="">Pilih Bulan</option>
-                                            @for ($mf = 1; $mf <= 12; $mf++)
-                                                <option value="{{ $mf }}" @selected((int) $mf === (int) $penyataBankDari->month)>{{ $mf }}</option>
-                                            @endfor
-                                        </select>
-                                    </div>
-                                    <div class="col-sm-6">
-                                        <select name="" id="penyata_dari_tahun" class="form-control">
-                                            <option value="">Pilih Tahun</option>
-                                            @foreach (range(now()->year - 10, now()->year) as $yf)
-                                                <option value="{{ $yf }}" @selected((int) $yf === (int) $penyataBankDari->year)>{{ $yf }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-sm-6 form-group my-2">
-                        <div class="row">
-                            <label class="col-sm-4 control-label">Hingga (Bulan)</label>
-                            <div class="col-sm-8 text-primary">
-                                <div class="row">
-                                    <div class="col-sm-6">
-                                        <input type="text" class="form-control form-control-sm bg-light" id="penyata_hingga_bulan_display" name="" value="{{ $penyataBankHingga->month }}" readonly tabindex="-1" title="Auto: 2 bulan selepas Dari">
-                                    </div>
-                                    <div class="col-sm-6">
-                                        <input type="text" class="form-control form-control-sm bg-light" id="penyata_hingga_tahun_display" name="" value="{{ $penyataBankHingga->year }}" readonly tabindex="-1" title="Auto: 2 bulan selepas Dari">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="row mx-2">
-                    <div class="small lh-sm mt-2">
-                        <p class="card-title-desc text-info fst-italic">
-                            <i>Perlu diisi oleh petender</i>
-                        </p>
-                    </div>
-                </div>
-                <div class="row mb-3 mx-3" id="penyata_bank_bulan_rows_wrapper">
-                    @php
-                        $penyataBankBulanList = [];
-                        $curBulan = $penyataBankDari->copy()->startOfMonth();
-                        $akhirBulan = $penyataBankHingga->copy()->startOfMonth();
-                        while ($curBulan->lte($akhirBulan)) {
-                            $penyataBankBulanList[] = $curBulan->copy();
-                            $curBulan->addMonth();
-                        }
-                    @endphp
-                    @foreach ($penyataBankBulanList as $pbRow)
-                    <div class="row">
-                        <div class="col-sm-6 form-group my-2 penyata-bank-bulan-item" data-ym="{{ $pbRow->format('Y-m') }}">
-                            <div class="row">
-                                <label class="col-sm-4 control-label">Penyata Bank Bulan {{ $pbRow->month }} - {{ $pbRow->year }} (RM)</label>
-                                <div class="col-sm-8 text-primary">
-                                    <input type="text" class="form-control form-control-sm penyata-bank-bulan-input" name="" value=""
-                                    data-bulan="{{ $pbRow->month }}" data-tahun="{{ $pbRow->year }}">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    @endforeach
-                </div>
-                <hr>
-                <div class="row mx-2">
-                    <div class="col-sm-6 form-group my-2">
-                        <div class="row">
-                            <label class="col-sm-4 control-label">Jumlah Keseluruhan Penyata Bank (RM)</label>
-                            <div class="col-sm-8 text-primary">
-                                <input type="text" class="form-control form-control-sm bg-light" id="penyata_bank_jumlah_keseluruhan" name="" value="" readonly tabindex="-1">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="row mx-2">
-                    <div class="col-sm-6 form-group my-2">
-                        <div class="row">
-                            <label class="col-sm-4 control-label">Purata Penyata Bank (RM)</label>
-                            <div class="col-sm-8 text-primary">
-                                <input type="text" class="form-control form-control-sm bg-light" id="penyata_bank_purata" name="" value="" readonly tabindex="-1">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <div class="nested-tabs">
+        <button class="nested-tab-btn active" data-tab="pembuka">
+            Jawatankuasa Pembuka
+        </button>
+
+        <button class="nested-tab-btn" data-tab="teknikal">
+            Jawatankuasa Penilaian Teknikal
+        </button>
+
+        <button class="nested-tab-btn" data-tab="kewangan">
+            Jawatankuasa Penilaian Kewangan
+        </button>
     </div>
-    <div class="stats-card mb-4">
-        <div class="stats-card-header">
-            <h3 class="stats-card-title">
-                <div class="d-flex align-items-center justify-content-center bg-danger bg-opacity-10 text-danger rounded-2" style="width: 36px; height: 36px;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path><line x1="8" y1="6" x2="16" y2="6"></line><line x1="8" y1="10" x2="16" y2="10"></line></svg>
+
+    <div class="nested-content">
+        <div class="tab-content" data-tab="pembuka">
+            <div class="content-card mb-4 p-0">
+                <div class="content-card-header p-4 pb-3 border-bottom">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="content-card-icon" style="width: 38px; height: 38px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                        </svg>
+                        </div>
+                        <div>
+                            <h3 class="content-card-title mb-0" style="font-size: 1rem;">Perincian Mesuarat</h3>
+                            <p class="text-muted mb-0" style="font-size: 0.78rem;">Diisi oleh Petender</p>
+                        </div>
+                    </div>
                 </div>
-                Purata Penyata Bank
-            </h3>
-        </div>
-        <div class="card-body p-2">
-            <div class="p-4">
-            <div class="row mb-2 mx-2">
-                    <div class="col-12 d-flex justify-content-end gap-2">
-                        <button type="button" class="btn btn-sm btn-success add_avg_penyata_bank_btn">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+                <div class="content-card-body p-4">
+
+                    <!-- Table toolbar -->
+                    <div class="d-flex justify-content-end mb-3">
+                        <button type="button" id="btn-tambah-row-mesyuarat-pembuka"
+                            class="btn btn-sm btn-success d-inline-flex align-items-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                                 <line x1="12" y1="5" x2="12" y2="19"></line>
                                 <line x1="5" y1="12" x2="19" y2="12"></line>
                             </svg>
-                            Tambah Item
+                            Tambah
                         </button>
                     </div>
-                </div>
-                <div class="row mx-2">
+
+                    <!-- Table -->
                     <div class="table-responsive">
-                        <table id="dt_avg_penyata_bank" data-path="" class=" table table-modern w-100 mb-0">
+                        <table id="tbl-mesyuarat-pembuka" class="table table-modern align-middle mb-0 w-100">
                             <thead>
                                 <tr>
-                                    <th class="text-center">Bil</th>
-                                    <th class="text-center">Dari</th>
-                                    <th class="text-center">Hingga</th>
-                                    <th class="text-center">Skema</th>
-                                    <th></th>
+                                    <th class="text-center py-3" style="width:50px;">Bil</th>
+                                    <th class="text-center py-3">Tarikh Mesyuarat</th>
+                                    <th class="text-center py-3">Masa</th>
+                                    <th class="text-center py-3">Tempat</th>
+                                    <th class="text-center py-3" style="width:60px;">Tindakan</th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                <tr>
-                                    <td class="text-center">1</td>
-                                    <td>
-                                        <input type="text" class="form-control form-control-sm">
-                                    </td>
-                                    <td>
-                                        <input type="text" class="form-control form-control-sm">
-                                    </td>
-                                    <td>
-                                        <input type="text" class="form-control form-control-sm">
-                                    </td>
-                                    <td class="text-center">
-                                        <button type="button" class="btn btn-sm btn-danger btn-circle text-white">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-                                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                <polyline points="3 6 5 6 21 6"></polyline>
-                                                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
-                                                <path d="M10 11v6"></path>
-                                                <path d="M14 11v6"></path>
-                                                <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>
-                                            </svg>
-                                        </button>
-                                    </td>
-                                </tr>
-                                <tr class="add_avg_penyata_bank_row d-none">
-                                    <td class="text-center"></td>
-                                    <td>
-                                        <input type="text" class="form-control form-control-sm">
-                                    </td>
-                                    <td>
-                                        <input type="text" class="form-control form-control-sm">
-                                    </td>
-                                    <td>
-                                        <input type="text" class="form-control form-control-sm">
-                                    </td>
-                                    <td class="text-center">
-                                        <button type="button" class="btn btn-sm btn-danger btn-circle text-white">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-                                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                <polyline points="3 6 5 6 21 6"></polyline>
-                                                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
-                                                <path d="M10 11v6"></path>
-                                                <path d="M14 11v6"></path>
-                                                <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>
-                                            </svg>
-                                        </button>
-                                    </td>
-                                </tr>
+                            <tbody id="tbl-mesyuarat-pembuka-body">
+                                <!-- initial row rendered by JS below -->
                             </tbody>
                         </table>
                     </div>
+
+                </div>
+            </div>
+            <div class="content-card mb-4 p-0">
+                <div class="content-card-header p-4 pb-3 border-bottom">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="content-card-icon" style="width: 38px; height: 38px;">
+                            <svg viewBox="0 0 25 25" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M12.6 5c.6 0 1.2.2 1.6.7.4.4.7 1 .7 1.6 0 1.3-1 2.3-2.3 2.3s-2.3-1-2.3-2.3S11.3 5 12.6 5z"/>
+                                <path d="M10.3 12.9h4.7c1.6.1 2.9 1.4 2.9 3s-1.3 2.9-2.9 3h-4.7c-1.6-.1-2.9-1.4-2.9-3s1.3-2.9 2.9-3z"/>
+                                <path d="M19 7.3c.5 0 .9.2 1.2.5.3.3.5.7.5 1.2 0 1-0.8 1.8-1.7 1.8-1 0-1.8-.8-1.8-1.8 0-1 .8-1.7 1.8-1.7z"/>
+                                <path d="M6.1 7.3c1 0 1.8.8 1.8 1.7 0 1-.8 1.8-1.8 1.8S4.3 10 4.3 9s.8-1.7 1.8-1.7z"/>
+                                <path d="M19.4 12.8h1.3c1.7 0 3 1.4 3 3.1s-1.3 3-3 3h-1.3M5.6 12.8H4.3c-1.7 0-3 1.4-3 3.1s1.3 3 3 3h1.3"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="content-card-title mb-0" style="font-size: 1rem;">Senarai Ahli Jawatankuasa Pembuka</h3>
+                            <p class="text-muted mb-0" style="font-size: 0.78rem;">Diisi oleh Petender</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="content-card-body p-4">
+                    <div class="row mb-2">
+                        <div class="col-sm-6">
+                            <label for="status_dummy" class="form-label small fw-bold text-secondary text-uppercase mb-1">Status</label>
+                            <select id="status_dummy" name="status_dummy" class="form-select form-select-sm">
+                                <option value="">Sila Pilih</option>
+                                <option value="">Menunggu Penyerahan Pembentukan Jawatankuasa</option>
+                            </select>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="untuk_kelulusan_pembuka" name="untuk_kelulusan_pembuka">
+                                <label class="form-check-label small fw-bold text-secondary" for="untuk_kelulusan_pembuka">
+                                    Untuk Kelulusan
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Table -->
+                    <div class="table-responsive">
+                        <table id="tbl-jkpembuka" class="table table-modern align-middle mb-0 w-100">
+                            <thead>
+                                <tr>
+                                    <th class="text-center py-3">No. Kad Pengenalan</th>
+                                    <th class="text-center py-3">Nama</th>
+                                    <th class="text-center py-3">Jawatan</th>
+                                    <th class="text-center py-3">E-mel</th>
+                                    <th class="text-center py-3">Gred</th>
+                                    <th class="text-center py-3">P&P</th>
+                                    <th class="text-center py-3">Peranan</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbl-jkpembuka-body">
+                                <!-- initial row rendered by JS below -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                </div>
+            </div>
+            <!-- ACTION BUTTONS -->
+            <div class="d-flex justify-content-end align-items-center mb-4 flex-wrap gap-2">
+        
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn-form btn-form-success">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                            <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                            <polyline points="7 3 7 8 15 8"></polyline>
+                        </svg>
+                        Simpan
+                    </button>
+                    <button type="button" class="btn-form btn-form-primary">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="22" y1="2" x2="11" y2="13"></line>
+                            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                        </svg>
+                        Hantar
+                    </button>
                 </div>
             </div>
         </div>
-    </div>
-    <div class="stats-card mb-4">
-        <div class="stats-card-header">
-            <h3 class="stats-card-title">
-                <div class="d-flex align-items-center justify-content-center bg-danger bg-opacity-10 text-danger rounded-2" style="width: 36px; height: 36px;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path><line x1="8" y1="6" x2="16" y2="6"></line><line x1="8" y1="10" x2="16" y2="10"></line></svg>
+        <div class="tab-content" data-tab="teknikal" style="display:none;">
+            <div class="content-card mb-4 p-0">
+                <div class="content-card-header p-4 pb-3 border-bottom">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="content-card-icon" style="width: 38px; height: 38px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                        </svg>
+                        </div>
+                        <div>
+                            <h3 class="content-card-title mb-0" style="font-size: 1rem;">Perincian Mesuarat</h3>
+                            <p class="text-muted mb-0" style="font-size: 0.78rem;">Diisi oleh Petender</p>
+                        </div>
+                    </div>
                 </div>
-                Modal Cair / Laporan Audit
-            </h3>
-        </div>
-        <div class="card-body p-2">
-            <div class="p-4">
-            </div>
-        </div>
-    </div>
-    <div class="stats-card mb-4">
-        <div class="stats-card-header">
-            <h3 class="stats-card-title">
-                <div class="d-flex align-items-center justify-content-center bg-danger bg-opacity-10 text-danger rounded-2" style="width: 36px; height: 36px;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path><line x1="8" y1="6" x2="16" y2="6"></line><line x1="8" y1="10" x2="16" y2="10"></line></svg>
+
+                <div class="content-card-body p-4">
+
+                    <!-- Table toolbar -->
+                    <div class="d-flex justify-content-end mb-3">
+                        <button type="button" id="btn-tambah-row-mesyuarat-teknikal"
+                            class="btn btn-sm btn-success d-inline-flex align-items-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            Tambah
+                        </button>
+                    </div>
+
+                    <!-- Table -->
+                    <div class="table-responsive">
+                        <table id="tbl-mesyuarat-teknikal" class="table table-modern align-middle mb-0 w-100">
+                            <thead>
+                                <tr>
+                                    <th class="text-center py-3" style="width:50px;">Bil</th>
+                                    <th class="text-center py-3">Tarikh Mesyuarat</th>
+                                    <th class="text-center py-3">Masa</th>
+                                    <th class="text-center py-3">Tempat</th>
+                                    <th class="text-center py-3" style="width:60px;">Tindakan</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbl-mesyuarat-teknikal-body">
+                                <!-- initial row rendered by JS below -->
+                            </tbody>
+                        </table>
+                    </div>
+
                 </div>
-                Kemudahan Kredit
-            </h3>
-        </div>
-        <div class="card-body p-2">
-            <div class="p-4">
+            </div>
+            <div class="content-card mb-4 p-0">
+                <div class="content-card-header p-4 pb-3 border-bottom">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="content-card-icon" style="width: 38px; height: 38px;">
+                            <svg viewBox="0 0 25 25" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M12.6 5c.6 0 1.2.2 1.6.7.4.4.7 1 .7 1.6 0 1.3-1 2.3-2.3 2.3s-2.3-1-2.3-2.3S11.3 5 12.6 5z"/>
+                                <path d="M10.3 12.9h4.7c1.6.1 2.9 1.4 2.9 3s-1.3 2.9-2.9 3h-4.7c-1.6-.1-2.9-1.4-2.9-3s1.3-2.9 2.9-3z"/>
+                                <path d="M19 7.3c.5 0 .9.2 1.2.5.3.3.5.7.5 1.2 0 1-0.8 1.8-1.7 1.8-1 0-1.8-.8-1.8-1.8 0-1 .8-1.7 1.8-1.7z"/>
+                                <path d="M6.1 7.3c1 0 1.8.8 1.8 1.7 0 1-.8 1.8-1.8 1.8S4.3 10 4.3 9s.8-1.7 1.8-1.7z"/>
+                                <path d="M19.4 12.8h1.3c1.7 0 3 1.4 3 3.1s-1.3 3-3 3h-1.3M5.6 12.8H4.3c-1.7 0-3 1.4-3 3.1s1.3 3 3 3h1.3"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="content-card-title mb-0" style="font-size: 1rem;">Senarai Ahli Jawatankuasa Teknikal</h3>
+                            <p class="text-muted mb-0" style="font-size: 0.78rem;">Diisi oleh Petender</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="content-card-body p-4">
+                    <div class="row mb-2">
+                        <div class="col-sm-6">
+                            <label for="status_dummy" class="form-label small fw-bold text-secondary text-uppercase mb-1">Status</label>
+                            <select id="status_dummy" name="status_dummy" class="form-select form-select-sm">
+                                <option value="">Sila Pilih</option>
+                                <option value="">Menunggu Penyerahan Pembentukan Jawatankuasa</option>
+                            </select>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="untuk_kelulusan_teknikal" name="untuk_kelulusan_teknikal">
+                                <label class="form-check-label small fw-bold text-secondary" for="untuk_kelulusan_teknikal">
+                                    Untuk Kelulusan
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Table -->
+                    <div class="table-responsive">
+                        <table id="tbl-jkteknikal" class="table table-modern align-middle mb-0 w-100">
+                            <thead>
+                                <tr>
+                                    <th class="text-center py-3">No. Kad Pengenalan</th>
+                                    <th class="text-center py-3">Nama</th>
+                                    <th class="text-center py-3">Jawatan</th>
+                                    <th class="text-center py-3">E-mel</th>
+                                    <th class="text-center py-3">Gred</th>
+                                    <th class="text-center py-3">P&P</th>
+                                    <th class="text-center py-3">Peranan</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbl-jkteknikal-body">
+                                <!-- initial row rendered by JS below -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                </div>
+            </div>
+            <!-- ACTION BUTTONS -->
+            <div class="d-flex justify-content-end align-items-center mb-4 flex-wrap gap-2">
+        
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn-form btn-form-success">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                            <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                            <polyline points="7 3 7 8 15 8"></polyline>
+                        </svg>
+                        Simpan
+                    </button>
+                    <button type="button" class="btn-form btn-form-primary">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="22" y1="2" x2="11" y2="13"></line>
+                            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                        </svg>
+                        Hantar
+                    </button>
+                </div>
             </div>
         </div>
-    </div>
-    <div class="row mb-4 mx-2">
-        <div class="col-12 d-flex justify-content-between">
-            <div>
-                <a href="{{ route('senaraiKewangan') }}" type="button" class="btn btn-sm btn-outline-secondary">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="19" y1="12" x2="5" y2="12"></line>
-                        <polyline points="12 19 5 12 12 5"></polyline>
-                    </svg>
-                    Kembali
-                </a>
+        <div class="tab-content" data-tab="kewangan" style="display:none;">
+            <div class="content-card mb-4 p-0">
+                <div class="content-card-header p-4 pb-3 border-bottom">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="content-card-icon" style="width: 38px; height: 38px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                        </svg>
+                        </div>
+                        <div>
+                            <h3 class="content-card-title mb-0" style="font-size: 1rem;">Perincian Mesuarat</h3>
+                            <p class="text-muted mb-0" style="font-size: 0.78rem;">Diisi oleh Petender</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="content-card-body p-4">
+
+                    <!-- Table toolbar -->
+                    <div class="d-flex justify-content-end mb-3">
+                        <button type="button" id="btn-tambah-row-mesyuarat-kewangan"
+                            class="btn btn-sm btn-success d-inline-flex align-items-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            Tambah
+                        </button>
+                    </div>
+
+                    <!-- Table -->
+                    <div class="table-responsive">
+                        <table id="tbl-mesyuarat-kewangan" class="table table-modern align-middle mb-0 w-100">
+                            <thead>
+                                <tr>
+                                    <th class="text-center py-3" style="width:50px;">Bil</th>
+                                    <th class="text-center py-3">Tarikh Mesyuarat</th>
+                                    <th class="text-center py-3">Masa</th>
+                                    <th class="text-center py-3">Tempat</th>
+                                    <th class="text-center py-3" style="width:60px;">Tindakan</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbl-mesyuarat-kewangan-body">
+                                <!-- initial row rendered by JS below -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                </div>
             </div>
-            <div class="d-flex gap-2">
-                <button type="button" class="btn btn-sm btn-danger">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="3 6 5 6 21 6"></polyline>
-                        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
-                        <path d="M10 11v6"></path>
-                        <path d="M14 11v6"></path>
-                        <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>
-                    </svg>
-                    Batal
-                </button>
-                <button type="button" class="btn btn-sm btn-success">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M4 4h12l4 4v12H4z"/>
-                        <rect x="7" y="4" width="8" height="5"/>
-                        <rect x="7" y="14" width="10" height="6"/>
-                    </svg>
-                    Simpan
-                </button>
+            <div class="content-card mb-4 p-0">
+                <div class="content-card-header p-4 pb-3 border-bottom">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="content-card-icon" style="width: 38px; height: 38px;">
+                            <svg viewBox="0 0 25 25" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M12.6 5c.6 0 1.2.2 1.6.7.4.4.7 1 .7 1.6 0 1.3-1 2.3-2.3 2.3s-2.3-1-2.3-2.3S11.3 5 12.6 5z"/>
+                                <path d="M10.3 12.9h4.7c1.6.1 2.9 1.4 2.9 3s-1.3 2.9-2.9 3h-4.7c-1.6-.1-2.9-1.4-2.9-3s1.3-2.9 2.9-3z"/>
+                                <path d="M19 7.3c.5 0 .9.2 1.2.5.3.3.5.7.5 1.2 0 1-0.8 1.8-1.7 1.8-1 0-1.8-.8-1.8-1.8 0-1 .8-1.7 1.8-1.7z"/>
+                                <path d="M6.1 7.3c1 0 1.8.8 1.8 1.7 0 1-.8 1.8-1.8 1.8S4.3 10 4.3 9s.8-1.7 1.8-1.7z"/>
+                                <path d="M19.4 12.8h1.3c1.7 0 3 1.4 3 3.1s-1.3 3-3 3h-1.3M5.6 12.8H4.3c-1.7 0-3 1.4-3 3.1s1.3 3 3 3h1.3"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="content-card-title mb-0" style="font-size: 1rem;">Senarai Ahli Jawatankuasa kewangan</h3>
+                            <p class="text-muted mb-0" style="font-size: 0.78rem;">Diisi oleh Petender</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="content-card-body p-4">
+                    <div class="row mb-2">
+                        <div class="col-sm-6">
+                            <label for="status_dummy" class="form-label small fw-bold text-secondary text-uppercase mb-1">Status</label>
+                            <select id="status_dummy" name="status_dummy" class="form-select form-select-sm">
+                                <option value="">Sila Pilih</option>
+                                <option value="">Menunggu Penyerahan Pembentukan Jawatankuasa</option>
+                            </select>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="untuk_kelulusan_kewangan" name="untuk_kelulusan_kewangan">
+                                <label class="form-check-label small fw-bold text-secondary" for="untuk_kelulusan_kewangan">
+                                    Untuk Kelulusan
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Table -->
+                    <div class="table-responsive">
+                        <table id="tbl-jkkewangan" class="table table-modern align-middle mb-0 w-100">
+                            <thead>
+                                <tr>
+                                    <th class="text-center py-3">No. Kad Pengenalan</th>
+                                    <th class="text-center py-3">Nama</th>
+                                    <th class="text-center py-3">Jawatan</th>
+                                    <th class="text-center py-3">E-mel</th>
+                                    <th class="text-center py-3">Gred</th>
+                                    <th class="text-center py-3">P&P</th>
+                                    <th class="text-center py-3">Peranan</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbl-jkkewangan-body">
+                                <!-- initial row rendered by JS below -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                </div>
+            </div>
+            <!-- ACTION BUTTONS -->
+            <div class="d-flex justify-content-end align-items-center mb-4 flex-wrap gap-2">
+        
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn-form btn-form-success">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                            <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                            <polyline points="7 3 7 8 15 8"></polyline>
+                        </svg>
+                        Simpan
+                    </button>
+                    <button type="button" class="btn-form btn-form-primary">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="22" y1="2" x2="11" y2="13"></line>
+                            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                        </svg>
+                        Hantar
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -413,168 +586,153 @@
 
 <script type="text/javascript">
 
-    function penyataBankParseRm(raw) {
-        if (raw == null || String(raw).trim() === '') return 0;
-        var s = String(raw).replace(/,/g, '').replace(/^\s*RM\s*/i, '').replace(/\s+/g, '').trim();
-        var n = parseFloat(s);
-        return isNaN(n) ? 0 : n;
-    }
-
-    function penyataBankFormatRm2(n) {
-        if (isNaN(n) || !isFinite(n)) return '';
-        return n.toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    }
-
-    function updatePenyataBankTotals() {
-        var wrap = document.getElementById('penyata_bank_bulan_rows_wrapper');
-        var totalEl = document.getElementById('penyata_bank_jumlah_keseluruhan');
-        var avgEl = document.getElementById('penyata_bank_purata');
-        if (!wrap || !totalEl || !avgEl) return;
-        var inputs = wrap.querySelectorAll('.penyata-bank-bulan-input');
-        var sum = 0;
-        var n = inputs.length;
-        inputs.forEach(function (inp) {
-            sum += penyataBankParseRm(inp.value);
-        });
-        var avg = n > 0 ? sum / n : 0;
-        totalEl.value = penyataBankFormatRm2(sum);
-        avgEl.value = penyataBankFormatRm2(avg);
-    }
-
     document.addEventListener('DOMContentLoaded', function () {
 
-        (function syncHinggaDuaBulanSelepasDari() {
-            var db = document.getElementById('penyata_dari_bulan');
-            var dt = document.getElementById('penyata_dari_tahun');
-            var hb = document.getElementById('penyata_hingga_bulan_display');
-            var hyEl = document.getElementById('penyata_hingga_tahun_display');
-            var wrap = document.getElementById('penyata_bank_bulan_rows_wrapper');
-            if (!db || !dt || !hb || !hyEl) return;
-
-            function bulanSelepas(dy, dm, n) {
-                var d = new Date(dy, dm - 1 + n, 1);
-                return { y: d.getFullYear(), m: d.getMonth() + 1 };
-            }
-
-            function rebuildPenyataBankBulanRows() {
-                var dm = parseInt(db.value, 10);
-                var dy = parseInt(dt.value, 10);
-                var hm = parseInt(hb.value, 10);
-                var hy = parseInt(hyEl.value, 10);
-                if (!wrap) return;
-                while (wrap.firstChild) wrap.removeChild(wrap.firstChild);
-                if (!dm || !dy || !hm || !hy || dm < 1 || dm > 12 || hm < 1 || hm > 12) {
-                    updatePenyataBankTotals();
-                    return;
-                }
-                var start = new Date(dy, dm - 1, 1);
-                var end = new Date(hy, hm - 1, 1);
-                if (start > end) {
-                    updatePenyataBankTotals();
-                    return;
-                }
-                var cur = new Date(start.getTime());
-                while (cur <= end) {
-                    var m = cur.getMonth() + 1;
-                    var y = cur.getFullYear();
-                    var ym = y + '-' + String(m).padStart(2, '0');
-                    var outerRow = document.createElement('div');
-                    outerRow.className = 'row';
-                    var col = document.createElement('div');
-                    col.className = 'col-sm-6 form-group my-2 penyata-bank-bulan-item';
-                    col.setAttribute('data-ym', ym);
-                    var innerRow = document.createElement('div');
-                    innerRow.className = 'row';
-                    var label = document.createElement('label');
-                    label.className = 'col-sm-4 control-label';
-                    label.textContent = 'Penyata Bank Bulan ' + m + ' - ' + y + ' (RM)';
-                    var col8 = document.createElement('div');
-                    col8.className = 'col-sm-8 text-primary';
-                    var input = document.createElement('input');
-                    input.type = 'text';
-                    input.className = 'form-control form-control-sm penyata-bank-bulan-input';
-                    input.setAttribute('name', '');
-                    input.setAttribute('value', '');
-                    input.setAttribute('data-bulan', String(m));
-                    input.setAttribute('data-tahun', String(y));
-                    col8.appendChild(input);
-                    innerRow.appendChild(label);
-                    innerRow.appendChild(col8);
-                    col.appendChild(innerRow);
-                    outerRow.appendChild(col);
-                    wrap.appendChild(outerRow);
-                    cur.setMonth(cur.getMonth() + 1);
-                }
-                updatePenyataBankTotals();
-            }
-
-            function update() {
-                var dm = parseInt(db.value, 10);
-                var dy = parseInt(dt.value, 10);
-                if (!dm || !dy || dm < 1 || dm > 12) {
-                    hb.value = '';
-                    hyEl.value = '';
-                    rebuildPenyataBankBulanRows();
-                    return;
-                }
-                var h = bulanSelepas(dy, dm, 2);
-                hb.value = String(h.m);
-                hyEl.value = String(h.y);
-                rebuildPenyataBankBulanRows();
-            }
-
-            db.addEventListener('change', update);
-            dt.addEventListener('change', update);
-            update();
-        })();
-
-        var wrapPenyataBulan = document.getElementById('penyata_bank_bulan_rows_wrapper');
-        if (wrapPenyataBulan) {
-            wrapPenyataBulan.addEventListener('input', updatePenyataBankTotals);
-            wrapPenyataBulan.addEventListener('change', updatePenyataBankTotals);
+        function buildRow(bil) {
+            return $('<tr class="mesyuarat-pembuka">' +
+                '<td class="text-center row-bil fw-semibold text-muted" style="font-size:0.8rem;">' + bil + '</td>' +
+                '<td><input type="date" name="pengalaman_tarikh_mesyuarat[]" class="form-control form-control-sm"></td>' +
+                '<td><input type="time" name="pengalaman_masa[]" class="form-control form-control-sm"></td>' +
+                '<td><input type="text" name="pengalaman_tempat[]" class="form-control form-control-sm" placeholder="Tempat mesyuarat..."></td>' +
+                '<td class="text-center">' +
+                    '<button type="button" class="btn btn-sm btn-hapus-row d-inline-flex align-items-center justify-content-center p-0" ' +
+                        'style="width:28px;height:28px;border-radius:6px;background:#fee2e2;color:#ef4444;border:none;" ' +
+                        'title="Buang baris">' +
+                        '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></svg>' +
+                    '</button>' +
+                '</td>' +
+            '</tr>');
         }
-        updatePenyataBankTotals();
 
-        function initTables(param1, param2, param3) {
-            const table = document.querySelector(param1);
-            if (!table) return;
+        const $mesyuaratPembukaBody = $('#tbl-mesyuarat-pembuka-body');
 
-            const tbody = table.querySelector('tbody');
-            const addItemBtn = document.querySelector(param2);
-            const templateSelector = 'tr.' + param3;
-
-            function updateRowNumbers() {
-                const rows = tbody.querySelectorAll('tr:not(.' + param3 + ')');
-                rows.forEach((row, index) => {
-                    row.children[0].textContent = index + 1;
-                });
-            }
-
-            if (addItemBtn) {
-                addItemBtn.addEventListener('click', function () {
-                    const template = tbody.querySelector(templateSelector);
-                    if (!template) return;
-                    const clone = template.cloneNode(true);
-                    clone.classList.remove('d-none', param3);
-                    clone.querySelectorAll('input').forEach(function (input) { input.value = ''; });
-                    tbody.appendChild(clone);
-                    updateRowNumbers();
-                });
-            }
-
-            tbody.addEventListener('click', function (e) {
-                const deleteBtn = e.target.closest('.btn-danger');
-                if (!deleteBtn) return;
-                const row = deleteBtn.closest('tr');
-                const rows = tbody.querySelectorAll('tr:not(.' + param3 + ')');
-                if (rows.length <= 1) return;
-                row.remove();
-                updateRowNumbers();
+        function renumberRows() {
+            $mesyuaratPembukaBody.find('.row-bil').each(function (index) {
+                $(this).text(index + 1);
             });
         }
 
-        initTables('#dt_avg_penyata_bank', '.add_avg_penyata_bank_btn', 'add_avg_penyata_bank_row');
+        // Seed first row
+        $mesyuaratPembukaBody.append(buildRow(1));
+
+        // Add one row per click
+        $('#btn-tambah-row-mesyuarat-pembuka').on('click', function () {
+            const nextBil = $mesyuaratPembukaBody.find('.mesyuarat-pembuka').length + 1;
+            $mesyuaratPembukaBody.append(buildRow(nextBil));
+        });
+
+        // Remove row and keep numbering consistent
+        $mesyuaratPembukaBody.on('click', '.btn-hapus-row', function () {
+            $(this).closest('.mesyuarat-pembuka').remove();
+            renumberRows();
+        });
+
+        function buildRowTeknikal(bil) {
+            return $('<tr class="mesyuarat-teknikal">' +
+                '<td class="text-center row-bil fw-semibold text-muted" style="font-size:0.8rem;">' + bil + '</td>' +
+                '<td><input type="date" name="pengalaman_tarikh_mesyuarat_teknikal[]" class="form-control form-control-sm"></td>' +
+                '<td><input type="time" name="pengalaman_masa_teknikal[]" class="form-control form-control-sm"></td>' +
+                '<td><input type="text" name="pengalaman_tempat_teknikal[]" class="form-control form-control-sm" placeholder="Tempat mesyuarat..."></td>' +
+                '<td class="text-center">' +
+                    '<button type="button" class="btn btn-sm btn-hapus-row-teknikal d-inline-flex align-items-center justify-content-center p-0" ' +
+                        'style="width:28px;height:28px;border-radius:6px;background:#fee2e2;color:#ef4444;border:none;" ' +
+                        'title="Buang baris">' +
+                        '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></svg>' +
+                    '</button>' +
+                '</td>' +
+            '</tr>');
+        }
+
+        const $mesyuaratTeknikalBody = $('#tbl-mesyuarat-teknikal-body');
+
+        function renumberRowsTeknikal() {
+            $mesyuaratTeknikalBody.find('.row-bil').each(function (index) {
+                $(this).text(index + 1);
+            });
+        }
+
+        // Seed first row
+        $mesyuaratTeknikalBody.append(buildRowTeknikal(1));
+
+        // Add one row per click
+        $('#btn-tambah-row-mesyuarat-teknikal').on('click', function () {
+            const nextBil = $mesyuaratTeknikalBody.find('.mesyuarat-teknikal').length + 1;
+            $mesyuaratTeknikalBody.append(buildRowTeknikal(nextBil));
+        });
+
+        // Remove row and keep numbering consistent
+        $mesyuaratTeknikalBody.on('click', '.btn-hapus-row-teknikal', function () {
+            $(this).closest('.mesyuarat-teknikal').remove();
+            renumberRowsTeknikal();
+        });
+
+        function buildRowKewangan(bil) {
+            return $('<tr class="mesyuarat-kewangan">' +
+                '<td class="text-center row-bil fw-semibold text-muted" style="font-size:0.8rem;">' + bil + '</td>' +
+                '<td><input type="date" name="pengalaman_tarikh_mesyuarat_kewangan[]" class="form-control form-control-sm"></td>' +
+                '<td><input type="time" name="pengalaman_masa_kewangan[]" class="form-control form-control-sm"></td>' +
+                '<td><input type="text" name="pengalaman_tempat_kewangan[]" class="form-control form-control-sm" placeholder="Tempat mesyuarat..."></td>' +
+                '<td class="text-center">' +
+                    '<button type="button" class="btn btn-sm btn-hapus-row-kewangan d-inline-flex align-items-center justify-content-center p-0" ' +
+                        'style="width:28px;height:28px;border-radius:6px;background:#fee2e2;color:#ef4444;border:none;" ' +
+                        'title="Buang baris">' +
+                        '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></svg>' +
+                    '</button>' +
+                '</td>' +
+            '</tr>');
+        }
+
+        const $mesyuaratKewanganBody = $('#tbl-mesyuarat-kewangan-body');
+
+        function renumberRowsKewangan() {
+            $mesyuaratKewanganBody.find('.row-bil').each(function (index) {
+                $(this).text(index + 1);
+            });
+        }
+
+        // Seed first row
+        $mesyuaratKewanganBody.append(buildRowKewangan(1));
+
+        // Add one row per click
+        $('#btn-tambah-row-mesyuarat-kewangan').on('click', function () {
+            const nextBil = $mesyuaratKewanganBody.find('.mesyuarat-kewangan').length + 1;
+            $mesyuaratKewanganBody.append(buildRowKewangan(nextBil));
+        });
+
+        // Remove row and keep numbering consistent
+        $mesyuaratKewanganBody.on('click', '.btn-hapus-row-kewangan', function () {
+            $(this).closest('.mesyuarat-kewangan').remove();
+            renumberRowsKewangan();
+        });
+
+        document.querySelectorAll('.nested-tabs').forEach(wrapper => {
+
+            wrapper.addEventListener('click', function (e) {
+
+                const btn = e.target.closest('.nested-tab-btn');
+                if (!btn) return;
+
+                const tab = btn.dataset.tab;
+                const contentWrapper = wrapper.nextElementSibling;
+
+                // remove active
+                wrapper.querySelectorAll('.nested-tab-btn')
+                    .forEach(b => b.classList.remove('active'));
+
+                btn.classList.add('active');
+
+                // toggle content
+                contentWrapper.querySelectorAll('.tab-content')
+                    .forEach(div => {
+                        div.style.display =
+                            (div.dataset.tab === tab) ? 'block' : 'none';
+                    });
+            });
+        });
+
     });
+
+    
 
 </script>
 
