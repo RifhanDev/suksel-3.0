@@ -161,7 +161,7 @@
 							<line x1="16" y1="13" x2="8" y2="13"></line>
 							<line x1="16" y1="17" x2="8" y2="17"></line>
 						</svg>
-						Paparan Kertas Taklimat
+						Penyediaan Kertas Taklimat
 					</a>
 				</li>
 
@@ -234,10 +234,10 @@
 			</div>
 		</div>
 
-		<!-- Tab 2: Paparan Kertas Taklimat -->
+		<!-- Tab 2: Penyediaan Kertas Taklimat -->
 		<div class="tab-pane" id="tab-kertas-taklimat" role="tabpanel">
 			<div class="content-card p-4">
-				<h6 class="fw-bold text-dark mb-1">Paparan Kertas Taklimat</h6>
+				<h6 class="fw-bold text-dark mb-1">Seksyen Laporan</h6>
 				<p class="text-muted small mb-3">Senarai lampiran yang dimuat naik dalam modul Perakuan Jabatan. Di sini anda hanya
 					boleh <strong>papar</strong> (tiada muat naik / padam).</p>
 
@@ -250,7 +250,7 @@
 							<line x1="12" y1="8" x2="12" y2="12"></line>
 							<line x1="12" y1="16" x2="12.01" y2="16"></line>
 						</svg>
-						Tiada lampiran ditemui daripada Paparan Kertas Taklimat.
+						Tiada lampiran ditemui daripada Penyediaan Kertas Taklimat.
 					</div>
 				@else
 					<div class="table-responsive">
@@ -308,7 +308,8 @@
 							</select>
 						</div>
 						<div class="col-md-6">
-							<label class="form-label small fw-semibold">Kaedah Memuktamadkan Pembekal <span class="text-danger">*</span></label>
+							<label class="form-label small fw-semibold">Kaedah Memuktamadkan Pembekal <span
+									class="text-danger">*</span></label>
 							<select id="mp_kaedah_memuktamadkan" class="form-select form-select-sm">
 								<option value="">-- Sila Pilih --</option>
 								@foreach ($pemilihanOpts['kaedah_memuktamadkan_pembekal'] as $opt)
@@ -341,7 +342,8 @@
 						</div>
 						<div class="col-md-6">
 							<label class="form-label small fw-semibold">No. Kod <span class="text-danger">*</span></label>
-							<input type="text" id="mp_no_kod" class="form-control form-control-sm" value="{{ $pemilihanHeader['no_kod'] ?? '' }}">
+							<input type="text" id="mp_no_kod" class="form-control form-control-sm"
+								value="{{ $pemilihanHeader['no_kod'] ?? '' }}">
 						</div>
 					</div>
 
@@ -369,7 +371,8 @@
 					</div>
 
 					<div class="section-title-bar mb-2">SENARAI PEMBEKAL</div>
-					<div class="mp-hint mb-2">Semua pembekal yang melepasi Markah Lulus Keseluruhan (teknikal dan kewangan) akan dijemput
+					<div class="mp-hint mb-2">Semua pembekal yang melepasi Markah Lulus Keseluruhan (teknikal dan kewangan) akan
+						dijemput
 						untuk menyertai bidaan.</div>
 					<div class="table-responsive mb-3">
 						<table class="table table-bordered table-sm align-middle mb-0">
@@ -399,7 +402,8 @@
 					<div class="form-check mb-4">
 						<input class="form-check-input" type="checkbox" id="mp_sahkan_layak" value="1"
 							{{ !empty($pemilihanHeader['sahkan_layak_bidaan']) ? 'checked' : '' }}>
-						<label class="form-check-label small" for="mp_sahkan_layak">Saya mengesahkan petender diatas layak untuk menyertai
+						<label class="form-check-label small" for="mp_sahkan_layak">Saya mengesahkan petender diatas layak untuk
+							menyertai
 							Bidaan.</label>
 					</div>
 
@@ -836,18 +840,24 @@
 						if (idx === mpSelectedItemIndex) {
 							$tr.addClass('mp-item-active');
 						}
-						$tr.append('<td class="text-center"><input type="checkbox" class="form-check-input mp-item-check"></td>');
-						$tr.append('<td><span class="small">' + escapeHtml(it.perihal_item || '') + '</span></td>');
+						$tr.append(
+							'<td class="text-center"><input type="checkbox" class="form-check-input mp-item-check"></td>'
+						);
+						$tr.append('<td><span class="small">' + escapeHtml(it.perihal_item || '') +
+							'</span></td>');
 						$tr.append('<td class="small">' + escapeHtml(it.jenis_item || '') + '</td>');
 						$tr.append('<td class="small">' + escapeHtml(it.unit_ukuran || '') + '</td>');
 						$tr.append('<td class="small">' + escapeHtml(it.jenis_harga || '') + '</td>');
 						const dibSel = '<select class="form-select form-select-sm mp-item-dib">' +
-							'<option value="Tidak"' + (dib === 'Tidak' ? ' selected' : '') + '>Tidak</option>' +
+							'<option value="Tidak"' + (dib === 'Tidak' ? ' selected' : '') +
+							'>Tidak</option>' +
 							'<option value="Ya"' + (dib === 'Ya' ? ' selected' : '') + '>Ya</option></select>';
 						$tr.append('<td>' + dibSel + '</td>');
-						$tr.append('<td><input type="number" min="0" class="form-control form-control-sm mp-item-pembekal" value="' +
+						$tr.append(
+							'<td><input type="number" min="0" class="form-control form-control-sm mp-item-pembekal" value="' +
 							escapeHtml(String(it.pembekal_dipilih ?? 0)) + '"></td>');
-						$tr.append('<td><input type="number" min="0" step="0.0001" class="form-control form-control-sm mp-item-kuantiti" value="' +
+						$tr.append(
+							'<td><input type="number" min="0" step="0.0001" class="form-control form-control-sm mp-item-kuantiti" value="' +
 							escapeHtml(String(it.kuantiti ?? '')) + '"></td>');
 						$b.append($tr);
 					});
@@ -864,7 +874,8 @@
 						let opts = '';
 						pemilihanKeputusanOpts.forEach(function(o) {
 							const sel = (p.keputusan_urusetia === o) ? ' selected' : '';
-							opts += '<option value="' + escapeHtml(o) + '"' + sel + '>' + escapeHtml(o) + '</option>';
+							opts += '<option value="' + escapeHtml(o) + '"' + sel + '>' + escapeHtml(
+								o) + '</option>';
 						});
 						const lp = p.lembaga_pengarah_papar_url ?
 							'<a href="' + escapeHtml(p.lembaga_pengarah_papar_url) +
@@ -876,13 +887,17 @@
 							'<td class="text-center">' + escapeHtml(p.status_bumiputra || '') + '</td>' +
 							'<td class="text-end">' + escapeHtml(mpFormatMoney(p.harga_tawaran)) + '</td>' +
 							'<td class="text-end">' + escapeHtml(String(p.jumlah_skor ?? '')) + '</td>' +
-							'<td class="text-center">' + escapeHtml(String(p.kedudukan_penilaian ?? '')) + '</td>' +
+							'<td class="text-center">' + escapeHtml(String(p.kedudukan_penilaian ?? '')) +
+							'</td>' +
 							'<td class="text-center small">' + escapeHtml(p.status_mof || '') + '</td>' +
-							'<td><textarea class="form-control form-control-sm mp-pet-disiplin" rows="2">' + escapeHtml(p
+							'<td><textarea class="form-control form-control-sm mp-pet-disiplin" rows="2">' +
+							escapeHtml(p
 								.tindakan_disiplin || '') + '</textarea></td>' +
 							'<td class="text-center">' + lp + '</td>' +
-							'<td><select class="form-select form-select-sm mp-pet-keputusan">' + opts + '</select></td>' +
-							'<td><textarea class="form-control form-control-sm mp-pet-catatan" rows="2">' + escapeHtml(p
+							'<td><select class="form-select form-select-sm mp-pet-keputusan">' + opts +
+							'</select></td>' +
+							'<td><textarea class="form-control form-control-sm mp-pet-catatan" rows="2">' +
+							escapeHtml(p
 								.catatan_urusetia || '') + '</textarea></td>' +
 							'</tr>';
 						$b.append(row);
