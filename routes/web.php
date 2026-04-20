@@ -411,6 +411,8 @@ Route::middleware(['auth'])->group(function () {
 	Route::get('profile', [ProfileController::class, 'show'])->name('profile');
 	Route::get('profile/change_password', [ProfileController::class, 'changePassword'])->name('change_password');
 	Route::put('profile/change_password', [ProfileController::class, 'doChangePassword']);
+	Route::get('profile/force_password_change', [ProfileController::class, 'forceChangePassword'])->name('profile.force-password-change');
+	Route::put('profile/force_password_change', [ProfileController::class, 'doForceChangePassword']);
 	Route::get('profile/release', [ProfileController::class, 'releaseUser'])->name('release_user');
 
 	// User's own complaints (Aduan)
