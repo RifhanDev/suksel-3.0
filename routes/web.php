@@ -92,7 +92,7 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('prices', [HomeController::class, 'prices']);
 Route::get('results', [HomeController::class, 'results']);
 Route::get('privacy', [HomeController::class, 'privacy']);
-
+/////////////////by edry///////////////////////////////////
 // Place 3.0 Modules Routes Temporarily Here
 Route::view('/jawatankuasa-spesifikasi/senarai-teknikal', 'newModule.jawatankuasaSpesifikasi.senarai_teknikal')->name('jawatankuasaSpesifikasi.teknikal');
 Route::view('/jawatankuasa-spesifikasi/senarai-kewangan', 'newModule.jawatankuasaSpesifikasi.senarai_kewangan')->name('jawatankuasaSpesifikasi.kewangan');
@@ -121,7 +121,7 @@ Route::prefix('pembelian-terus')->controller(PembelianTerusController::class)->g
 	Route::get('/keputusan-syarikat-details/{tender_no}', 'keputusanSyarikatDetails')->name('pembelianTerus.keputusanSyarikatDetails');
 	Route::get('/surat-setuju-terima/{tender_no}', 'downloadSuratSetujuTerima')->name('pembelianTerus.downloadSuratSetujuTerima');
 });
-
+/////////////////////////////////////////////////////////////
 
 // Public resources
 Route::resource('comments', CommentsController::class);
@@ -165,12 +165,12 @@ Route::get('auth/reset/{token}', [AuthController::class, 'resetPassword']);
 Route::post('auth/reset', [AuthController::class, 'doResetPassword']);
 
 // Tenders
-// Route::get('tenders/select', [TendersController::class, 'select']);
-// Route::resource('tenders', TendersController::class);
-// Route::get('tenders/{id}/prices', [TendersController::class, 'prices'])->name('tenders.prices');
-// Route::get('tenders/{tender_id}/files/{id}', [TendersController::class, 'file'])->name('tenders.files');
-// Route::get('tenders/{id}/vendors', [TendersController::class, 'vendors'])->name('tenders.vendors');
-// Route::post('tenders/{id}/exception', [TendersController::class, 'exception'])->name('tenders.exception');
+Route::get('tenders/select', [TendersController::class, 'select']);
+Route::resource('tenders', TendersController::class);
+Route::get('tenders/{id}/prices', [TendersController::class, 'prices'])->name('tenders.prices');
+Route::get('tenders/{tender_id}/files/{id}', [TendersController::class, 'file'])->name('tenders.files');
+Route::get('tenders/{id}/vendors', [TendersController::class, 'vendors'])->name('tenders.vendors');
+Route::post('tenders/{id}/exception', [TendersController::class, 'exception'])->name('tenders.exception');
 
 // Petender Performance
 Route::prefix('petenders')->controller(PetenderPerformanceController::class)->group(function () {
