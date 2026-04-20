@@ -322,6 +322,18 @@ Route::middleware(['auth'])->group(function () {
 	// Route::get('/jawatankuasa-perolehan/index', 'newModule.jawatankuasaPerolehan.index')->name('jawatankuasaPerolehan.index');
 	// Route::view('/jawatankuasa-perolehan/form', 'newModule.jawatankuasaPerolehan.form')->name('jawatankuasaPerolehan.form');
 
+	// ebidding
+	Route::get('/eBidding/index', [EbiddingController::class, 'index'])->middleware(['auth'])->name('eBidding.index');
+	Route::get('/eBidding/{id}', [EbiddingController::class, 'show'])->middleware(['auth'])->name('eBidding.show');
+	Route::post('/eBidding/{id}/kertas-taklimat/simpan', [EbiddingController::class, 'simpanKertasTaklimat'])->middleware(['auth'])->name('eBidding.kertasTaklimat.simpan');
+	Route::post('/eBidding/{id}/kertas-taklimat/hantar', [EbiddingController::class, 'hantarKertasTaklimat'])->middleware(['auth'])->name('eBidding.kertasTaklimat.hantar');
+	Route::post('/eBidding/{id}/pengesyoran/simpan', [EbiddingController::class, 'simpanPengesyoranPembekal'])->middleware(['auth'])->name('eBidding.pengesyoran.simpan');
+	Route::post('/eBidding/{id}/pengesyoran/hantar', [EbiddingController::class, 'hantarPengesyoranPembekal'])->middleware(['auth'])->name('eBidding.pengesyoran.hantar');
+	Route::post('/eBidding/{id}/jadual-bidaan/simpan', [EbiddingController::class, 'simpanJadualBidaan'])->middleware(['auth'])->name('eBidding.jadualBidaan.simpan');
+	Route::post('/eBidding/{id}/jadual-bidaan/mula', [EbiddingController::class, 'mulaBidaan'])->middleware(['auth'])->name('eBidding.jadualBidaan.mula');
+	Route::post('/eBidding/{id}/vendor-bidaan/hantar', [EbiddingController::class, 'hantarVendorBidaan'])->middleware(['auth'])->name('eBidding.vendorBidaan.hantar');
+	Route::post('/eBidding/{id}/advance-stage', [EbiddingController::class, 'advanceStage'])->middleware(['auth'])->name('eBidding.advanceStage');
+
 	// Version 3.0 tender creation routes
 	Route::get('/cipta-tender', [TendersController::class, 'createNew'])->name('ciptaTender');
 	Route::post('/cipta-tender', [TendersController::class, 'storeNew'])->name('storeCiptaTender');
