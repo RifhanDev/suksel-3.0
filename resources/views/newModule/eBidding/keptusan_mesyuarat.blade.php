@@ -5,8 +5,8 @@
 
 	<style>
 		/* =====================
-										SECTION BAR
-										===================== */
+														SECTION BAR
+														===================== */
 		.section-title-bar {
 			background: #f3f5f8;
 			border: 1px solid #e9edf3;
@@ -20,8 +20,8 @@
 
 
 		/* =====================
-										TABLE STYLE
-										===================== */
+														TABLE STYLE
+														===================== */
 		.table thead th {
 			text-align: center;
 			vertical-align: middle;
@@ -37,8 +37,8 @@
 		}
 
 		/* =====================
-										RED TABLE HEADER
-										===================== */
+														RED TABLE HEADER
+														===================== */
 		.table thead th {
 			background-color: #B11217 !important;
 			color: #ffffff !important;
@@ -172,7 +172,7 @@
 						<li class="nav-item" role="presentation">
 							<button class="nav-link {{ $activeTab === 'taklimat' ? 'active' : '' }}" id="tab-taklimat-btn"
 								data-bs-toggle="tab" data-bs-target="#tab-taklimat" type="button" role="tab">
-								{{ !empty($isRestrictedEbidding) ? 'Penyediaan Kertas Taklimat' : 'Paparan Kertas Taklimat' }}
+								{{ !empty($isRestrictedEbidding) ? 'Penyediaan Kertas Taklimat' : 'Penyediaan Kertas Taklimat' }}
 							</button>
 						</li>
 					@endif
@@ -269,7 +269,7 @@
 				</div>
 			@endif
 
-			{{-- ============ TAB 2: Paparan Kertas Taklimat ============ --}}
+			{{-- ============ TAB 2: Penyediaan Kertas Taklimat ============ --}}
 			@if (in_array('taklimat', $visibleTabs, true))
 				<div class="tab-pane fade {{ $activeTab === 'taklimat' ? 'show active' : '' }}" id="tab-taklimat"
 					role="tabpanel">
@@ -398,7 +398,7 @@
 										<td>96.43</td>
 										<td>1</td>
 										<td>Aktif</td>
-										<td>Tindakan Disiplin Diambil</td>
+										<td>Prestasi Pembekal</td>
 										<td><button class="btn btn-light"><i class="bi bi-file-earmark"></i></button></td>
 										<td>Disyorkan</td>
 										<td></td>
@@ -457,7 +457,7 @@
 									</tr>
 								</thead>
 								<tbody>
-									@foreach (($agencyPemilihanItems ?? collect()) as $idx => $it)
+									@foreach ($agencyPemilihanItems ?? collect() as $idx => $it)
 										<tr class="{{ $idx === 0 ? 'table-active' : '' }}">
 											<td class="text-center"><input type="checkbox" {{ $idx === 0 ? 'checked' : '' }} disabled></td>
 											<td>{{ $it['item'] }}</td>
@@ -487,7 +487,7 @@
 									</tr>
 									<tr>
 										<th colspan="6"></th>
-										<th>Tindakan Disiplin Diambil</th>
+										<th>Prestasi Pembekal</th>
 										<th>Lembaga Pengarah</th>
 										<th colspan="2"></th>
 									</tr>
@@ -769,9 +769,12 @@
 					let fileLinks = '';
 					(row.files || []).forEach(function(file) {
 						if (file && file.url) {
-							fileLinks += '<div><a href="' + esc(file.url) + '" class="text-primary eb-file-link" target="_blank" rel="noopener noreferrer">Muat Turun</a>';
+							fileLinks += '<div><a href="' + esc(file.url) +
+								'" class="text-primary eb-file-link" target="_blank" rel="noopener noreferrer">Muat Turun</a>';
 							if (file.can_delete && file.source === 'ebidding') {
-								fileLinks += ' <a href="#" class="text-danger small eb-file-delete" data-row-idx="' + idx + '" data-file-id="' + file.id + '">Padam</a>';
+								fileLinks +=
+									' <a href="#" class="text-danger small eb-file-delete" data-row-idx="' +
+									idx + '" data-file-id="' + file.id + '">Padam</a>';
 							}
 							fileLinks += '</div>';
 						}
@@ -781,11 +784,17 @@
 					}
 
 					const uploadHtml = row.can_upload ?
-						('<div class="mt-1"><label class="btn btn-sm btn-outline-primary mb-0">Muat Naik<input type="file" class="d-none eb-upload-input" data-row-idx="' + idx + '" multiple></label><span class="small text-muted ms-2 eb-upload-name" id="eb_upload_name_' + idx + '"></span></div>') :
+						('<div class="mt-1"><label class="btn btn-sm btn-outline-primary mb-0">Muat Naik<input type="file" class="d-none eb-upload-input" data-row-idx="' +
+							idx +
+							'" multiple></label><span class="small text-muted ms-2 eb-upload-name" id="eb_upload_name_' +
+							idx + '"></span></div>') :
 						'';
-					const deleteCheck = row.can_delete ? '<input type="checkbox" class="form-check-input eb-row-check" data-row-idx="' + idx + '">' : '';
+					const deleteCheck = row.can_delete ?
+						'<input type="checkbox" class="form-check-input eb-row-check" data-row-idx="' + idx +
+						'">' : '';
 					const kandunganHtml = row.can_delete ?
-						('<input type="text" class="form-control form-control-sm eb-kandungan-input" data-row-idx="' + idx + '" value="' + esc(row.kandungan || '') + '" placeholder="Nama lampiran">') :
+						('<input type="text" class="form-control form-control-sm eb-kandungan-input" data-row-idx="' +
+							idx + '" value="' + esc(row.kandungan || '') + '" placeholder="Nama lampiran">') :
 						esc(row.kandungan || '');
 
 					const line = '<tr>' +
