@@ -17,7 +17,7 @@ return new class extends Migration
 
         Schema::create('jawatankuasa_perolehan_kertas_keputusans', function (Blueprint $table) {
             $table->id();
-            $table->unsignedInteger('tender_id')->unique();
+            $table->unsignedBigInteger('tender_id')->unique();
             $table->boolean('dengan_syarat')->nullable();
             $table->text('syarat_nyatakan')->nullable();
             $table->text('pengesyoran_catatan')->nullable();

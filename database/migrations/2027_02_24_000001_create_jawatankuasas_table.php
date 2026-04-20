@@ -16,7 +16,7 @@ return new class extends Migration
         }
         Schema::create('jawatankuasas', function (Blueprint $table) {
             $table->id();
-            $table->unsignedInteger('tender_id')->nullable();
+            $table->unsignedBigInteger('tender_id')->nullable();
             $table->enum('jenis_jawatankuasa', ['spec', 'open', 'tech', 'fin'])->index();
             $table->enum('p_p', ['1', '0'])->index();
             $table->enum('peranan', ['1', '2', '3'])->index();

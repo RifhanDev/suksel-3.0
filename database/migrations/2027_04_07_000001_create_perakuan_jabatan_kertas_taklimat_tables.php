@@ -14,7 +14,7 @@ return new class extends Migration
         if (!Schema::hasTable('perakuan_jabatan_kertas_taklimats')) {
             Schema::create('perakuan_jabatan_kertas_taklimats', function (Blueprint $table) {
                 $table->id();
-                $table->unsignedInteger('tender_id')->unique();
+                $table->unsignedBigInteger('tender_id')->unique();
                 $table->text('catatan')->nullable();
                 $table->timestamp('submitted_at')->nullable();
                 $table->timestamps();
