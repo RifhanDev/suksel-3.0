@@ -38,7 +38,11 @@
 		<div class="content-card-header p-4 pb-3 border-bottom">
 			<div class="d-flex align-items-center gap-3">
 				<div class="content-card-icon" style="width: 38px; height: 38px;">
-					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+						stroke-linecap="round" stroke-linejoin="round">
+						<rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+						<line x1="1" y1="10" x2="23" y2="10"></line>
+					</svg>
 				</div>
 				<h3 class="content-card-title" style="font-size: 1rem;">Senarai Transaksi</h3>
 			</div>
@@ -291,7 +295,13 @@
 			stateSave: true,
 			language: {
 				"url": "{{ asset('custom_library/dataTables/lang/ms.json') }}"
-			}
+			},
+			dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rtip',
+			pageLength: 25,
+			responsive: true,
+			order: [
+				[0, 'desc']
+			]
 		});
 	</script>
 @endsection

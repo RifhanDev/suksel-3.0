@@ -10,71 +10,79 @@ use App\UserHistory;
 
 class ProfileController extends Controller
 {
-   public $change_password_invalid_message = 'Kata Laluan yang salah.';
-   public $change_password_message         = 'Kata Laluan berjaya diubah.';
+	public $change_password_invalid_message = 'Kata Laluan yang salah.';
+	public $change_password_message         = 'Kata Laluan berjaya diubah.';
 
-   public function show() {
+	public function show()
+	{
 
-      return view('profile.show');
-   }
+		return view('profile.show');
+	}
 
-   public function changePassword() {
-      	return view('profile.change_password');
-   }
+	public function changePassword()
+	{
+		return view('profile.change_password');
+	}
 
-   public function doChangePassword(Request $request) {
-        	$user = auth()->user();
-        	$data = $request->all();
+	public function doChangePassword(Request $request)
+	{
+		$user = auth()->user();
+		$data = $request->all();
 
-        	if (!Hash::check($data['old_password'], $user->password)) {
+		if (!Hash::check($data['old_password'], $user->password)) {
 
-        		if (!$data['old_password'] !== md5($user->password)) {
+			if (!$data['old_password'] !== md5($user->password)) {
 
-	            if ($request->ajax()) {
-	               return response()->json($this->change_password_invalid_message, 400);
-	            }
-	            return redirect()->back()
-	                	->withErrors($user->validationErrors)
-	                	->withInput()
-	                	->with('danger', $this->change_password_invalid_message);
+				if ($request->ajax()) {
+					return response()->json($this->change_password_invalid_message, 400);
+				}
+				return redirect()->back()
+					->withErrors($user->validationErrors)
+					->withInput()
+					->with('danger', $this->change_password_invalid_message);
+			}
+		}
+		$validator = Validator::make($data, User::$_rules['changePassword']);
+		if ($validator->fails()) {
+			return $this->_validation_error($validator);
+		}
 
-	         }
+		$user->password = Hash::make($data['password']);
+		$user->password_changed_at = now();
+		$user->save();
 
-        	}
-        	$validator = Validator::make($data, User::$_rules['changePassword']);
-        	if ($validator->fails()) {
-            return $this->_validation_error($validator);
-        	}
+		if ($request->ajax()) {
+			return response()->json($this->change_password_message);
+		}
+		UserHistory::log($user->id, 'password-update');
+		return redirect('profile')->with('success', $this->change_password_message);
+	}
 
-        	$user->password = Hash::make($data['password']);
-        	$user->save();
+	public function releaseUser()
+	{
 
-        	if ($request->ajax()) {
-            return response()->json($this->change_password_message);
-        	}
-        	UserHistory::log($user->id, 'password-update');
-        	return redirect('profile')->with('success', $this->change_password_message);
-   }
+		$currentUserId = auth()->user()->id;
+		$originalUserId = session()->pull('original_user_id');
 
-   public function releaseUser() {
+		$user = User::find($originalUserId);
 
-        	$currentUserId = auth()->user()->id;
-        	$originalUserId = session()->pull('original_user_id');
+		if (!$user || !$user->hasRole('Admin')) {
+			return redirect()->back()->with('error', 'Not authorized.');
+		}
 
-        	$user = User::find($originalUserId);
+		auth()->login($user);
 
-        	if(!$user || !$user->hasRole('Admin')) {
-            return redirect()->back()->with('error', 'Not authorized.');
-        	}
+		if (!$user || !$user->hasRole('Admin')) {
+			return redirect()->back()->with('error', 'Not authorized.');
+		}
 
-        	auth()->login($user);
+		auth()->login($user);
 
-          if($user->can('Vendor:list'))
-            return redirect('vendors');
-          else
-            return redirect('agency/'.$user->organization_unit_id);
-        	// return redirect('users/'.$currentUserId.'/edit');
+		if ($user->can('Vendor:list'))
+			return redirect('vendors');
+		else
+			return redirect('agency/' . $user->organization_unit_id);
+		// return redirect('users/'.$currentUserId.'/edit');
 
-   }
-
+	}
 }

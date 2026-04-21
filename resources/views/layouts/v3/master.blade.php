@@ -886,23 +886,52 @@
             });
         });
     </script>
-    <!-- Botman Chatbot Widget -->
+
+    {{-- ╔══════════════════════════════════════════════════════════════════════╗
+         ║  CHATBOT LELA — BotMan Widget                                        ║
+         ║                                                                      ║
+         ║  Load order (must stay in this sequence):                            ║
+         ║    1. Pre-hide CSS   — suppresses flash on page load                 ║
+         ║    2. Pre-hide JS    — reads localStorage, applies CSS class early   ║
+         ║    3. Widget config  — botmanWidget settings + message handler       ║
+         ║    4. widget.js      — BotMan script (renders into #botmanWidgetRoot)║
+         ║    5. Toggle script  — hide/show button & ribbon tab                 ║
+         ╚══════════════════════════════════════════════════════════════════════╝ --}}
+
+    {{-- 1. Pre-hide CSS: keeps widget off-screen until JS takes over --}}
+    <style>
+        html.chatbot-pre-hidden #botmanWidgetRoot > * {
+            transform: translateX(200%) !important;
+            transition: none !important;
+        }
+    </style>
+
+    {{-- 2. Pre-hide JS: runs synchronously before widget renders --}}
+    <script>
+        try {
+            if (localStorage.getItem('chatbotHidden') === '1') {
+                document.documentElement.classList.add('chatbot-pre-hidden');
+            }
+        } catch (e) {}
+    </script>
+
+    {{-- 3. Widget config + BotMan message handler --}}
     <script>
         @php $chat_id = Str::random(8); @endphp
 
         var botmanWidget = {
-            title: 'Lela (Bot)',
-            introMessage: 'Hi, saya Lela. Saya di sini untuk membantu anda dan menjawab persoalan anda.',
-            mainColor: '#c41e3a',
-            aboutText: '',
+            title           : 'Lela (Bot)',
+            introMessage    : 'Hi, saya Lela. Saya di sini untuk membantu anda dan menjawab persoalan anda.',
+            mainColor       : '#c41e3a',
+            aboutText       : '',
             bubbleBackground: '#c41e3a',
-            headerTextColor: '#fff',
-            desktopHeight: 500,
-            desktopWidth: 400,
-            bubbleAvatarUrl: '{{ asset('images/chatbot.png') }}',
-            placeholderText: 'Hantar Pesanan..',
-            frameEndpoint: "{{ route('chat_widget', ['chat_id' => $chat_id]) }}",
-            userId: "{{ $chat_id }}"
+            headerTextColor : '#fff',
+            desktopHeight   : 500,
+            desktopWidth    : 400,
+            bubbleAvatarUrl : '{{ asset('images/chatbot.png') }}',
+            placeholderText : 'Hantar Pesanan..',
+            frameEndpoint   : "{{ route('chat_widget', ['chat_id' => $chat_id]) }}",
+            userId          : "{{ $chat_id }}"
         };
 
         window.addEventListener("message", (event) => {
@@ -943,7 +972,11 @@
             }
         });
     </script>
+
+    {{-- 4. BotMan widget script --}}
     <script src='{{ asset('packages/botman/build/js/widget.js') }}'></script>
+    {{-- 5. Toggle script: hide button + ribbon tab --}}
+    <script src="{{ asset('js/chatbot-widget.js') }}"></script>
 
     @yield('scripts')
     @stack('scripts')

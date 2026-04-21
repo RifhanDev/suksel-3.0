@@ -47,6 +47,13 @@
 						<div class="d-none d-xl-block ps-2">
 							<div>{{ $user->vendor ? $user->vendor->name : $user->name }}</div>
 							<div class="mt-1 small text-muted">{{ $user->email }}</div>
+							@if ($user->roles->count() > 0)
+								<div class="mt-1">
+									@foreach ($user->roles as $role)
+										<span class="badge bg-primary badge-sm me-1" style="font-size: 0.65rem;">{{ $role->name }}</span>
+									@endforeach
+								</div>
+							@endif
 						</div>
 					</a>
 					<div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
@@ -65,6 +72,9 @@
 						@endif
 						<a href="{{ asset('profile') }}" class="dropdown-item">
 							<i class="ti ti-user me-2"></i> Profil Saya
+						</a>
+						<a href="{{ route('my.aduan.index') }}" class="dropdown-item">
+							<i class="ti ti-message-circle me-2"></i> Aduan Saya
 						</a>
 						@if ($user && $user->hasRole('Vendor') && Auth::user()->vendor->registration_paid)
 							<a href="{{ asset('vendor/' . Auth::user()->vendor_id . '/requests') }}" class="dropdown-item">
@@ -188,13 +198,13 @@
 					<h5 class="modal-title" id="loginModalLabel">Daftar Masuk</h5>
 					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 				</div>
-				<form method="POST" action="{{ action('AuthController@doLogin') }}">
+				<form method="POST" action="{{ action('AuthController@doLogin') }}" autocomplete="off">
 					@csrf
 					<div class="modal-body">
 						<div class="mb-3">
 							<label class="form-label">Alamat Emel</label>
 							<input type="email" class="form-control" name="email" placeholder="Alamat Emel"
-								value="{{ old('email') }}" required autocomplete="email">
+								value="{{ old('email') }}" required autocomplete="off">
 							@error('email')
 								<div class="text-danger small">{{ $message }}</div>
 							@enderror
@@ -202,7 +212,7 @@
 						<div class="mb-3">
 							<label class="form-label">Kata Laluan</label>
 							<input type="password" class="form-control" name="password" placeholder="Kata Laluan" required
-								autocomplete="current-password">
+								autocomplete="new-password">
 							@error('password')
 								<div class="text-danger small">{{ $message }}</div>
 							@enderror

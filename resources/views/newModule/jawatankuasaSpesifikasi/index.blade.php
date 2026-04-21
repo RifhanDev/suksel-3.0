@@ -92,7 +92,7 @@
 
             // ── DUMMY DATA (replace with API/controller data later) ──────────────
             const urlTeknikal = "{{ route('senaraiTeknikal') }}";
-            const urlKewangan = "{{ route('senaraiKewangan') }}";
+            const urlKewanganBekalan = "{{ route('senaraiKewanganBekalan') }}";
             const urlKewanganKerja = "{{ route('senaraiKewanganKerja') }}";
             const urlPenyediaanTender = "{{ route('penyediaanSpekTender') }}";
 
@@ -105,7 +105,7 @@
                     status:       '<span class="d-inline-flex align-items-center gap-1 px-2 py-1 rounded-2 fw-semibold" style="background:#fef9c3;color:#854d0e;font-size:0.72rem;border:1px solid #fde68a;"><span class="rounded-circle" style="width:6px;height:6px;background:#ca8a04;flex-shrink:0;display:inline-block;"></span>Dalam Proses</span>',
                     tindakan:     `<div class="d-flex gap-1 justify-content-center">
                                        <a href="${urlTeknikal}" class="btn btn-sm btn-warning text-white">Teknikal</a>
-                                       <a href="${urlKewangan}" class="btn btn-sm btn-success">Kewangan</a>
+                                       <a href="${urlKewanganBekalan}" class="btn btn-sm btn-success">Kewangan</a>
                                    </div>`
                 },
                 {

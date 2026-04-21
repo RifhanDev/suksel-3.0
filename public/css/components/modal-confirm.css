@@ -1,0 +1,135 @@
+/* ==========================================================================
+   MODAL CONFIRM
+   Centered icon confirmation modal for irreversible actions:
+   Lulus, Padam, Hantar, Tolak, etc.
+
+   Usage (HTML template):
+   ──────────────────────────────────────────────────────────────────────────
+   <div class="modal fade" id="modalConfirm" tabindex="-1" aria-hidden="true">
+     <div class="modal-dialog modal-dialog-centered modal-confirm">
+       <div class="modal-content">
+         <div class="modal-header border-bottom-0 pt-4 pb-2 px-4">
+           <div class="modal-confirm-center">
+             <div class="modal-confirm-icon modal-confirm-icon--success">
+               ...svg...
+             </div>
+             <h5 class="modal-confirm-title">Sahkan Kelulusan</h5>
+             <p class="modal-confirm-desc">
+               Adakah anda pasti ingin meluluskan tender ini?
+             </p>
+           </div>
+         </div>
+         <div class="modal-footer border-top-0 px-4 pb-4 pt-2 d-flex justify-content-center gap-2">
+           <button class="btn-form btn-form-secondary" data-bs-dismiss="modal">Batal</button>
+           <button class="btn-form btn-form-success" id="btn-confirm-lulus">
+             Ya, Luluskan
+           </button>
+         </div>
+       </div>
+     </div>
+   </div>
+   ──────────────────────────────────────────────────────────────────────────
+   Icon variant modifiers (apply to .modal-confirm-icon):
+     .modal-confirm-icon--success   → green   (#16a34a / #f0fdf4 / #bbf7d0)
+     .modal-confirm-icon--danger    → red     (#dc2626 / #fef2f2 / #fecaca)
+     .modal-confirm-icon--warning   → amber   (#d97706 / #fffbeb / #fde68a)
+     .modal-confirm-icon--info      → blue    (#1d4ed8 / #eff6ff / #bfdbfe)
+
+   Confirm button variants (btn-form-* from button-components.css):
+     Approve / Lulus   → btn-form-success
+     Delete  / Padam   → btn-form-danger
+     Submit  / Hantar  → btn-form-primary
+   ========================================================================== */
+
+
+/* ── Dialog width ──────────────────────────────────────────────────────────── */
+.modal-confirm {
+    max-width: 440px;
+}
+
+
+/* ── Modal shell ───────────────────────────────────────────────────────────── */
+.modal-confirm .modal-content {
+    border: none;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+
+/* ── Centred layout wrapper ────────────────────────────────────────────────── */
+.modal-confirm-center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    text-align: center;
+}
+
+
+/* ── Icon circle — base ────────────────────────────────────────────────────── */
+.modal-confirm-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    border-width: 2px;
+    border-style: solid;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 14px;
+    flex-shrink: 0;
+}
+
+
+/* ── Icon variant colours ──────────────────────────────────────────────────── */
+.modal-confirm-icon--success {
+    background: #f0fdf4;
+    border-color: #bbf7d0;
+}
+
+.modal-confirm-icon--success svg {
+    stroke: #16a34a;
+}
+
+.modal-confirm-icon--danger {
+    background: #fef2f2;
+    border-color: #fecaca;
+}
+
+.modal-confirm-icon--danger svg {
+    stroke: #dc2626;
+}
+
+.modal-confirm-icon--warning {
+    background: #fffbeb;
+    border-color: #fde68a;
+}
+
+.modal-confirm-icon--warning svg {
+    stroke: #d97706;
+}
+
+.modal-confirm-icon--info {
+    background: #eff6ff;
+    border-color: #bfdbfe;
+}
+
+.modal-confirm-icon--info svg {
+    stroke: #1d4ed8;
+}
+
+
+/* ── Title & description ───────────────────────────────────────────────────── */
+.modal-confirm-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 4px;
+}
+
+.modal-confirm-desc {
+    font-size: 0.82rem;
+    color: #64748b;
+    margin-bottom: 0;
+    line-height: 1.5;
+}

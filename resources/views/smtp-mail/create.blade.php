@@ -1,5 +1,4 @@
 @extends('layouts.v3.master')
-
 @section('content')
 	<!-- Page Header -->
 	<div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center mb-4">
@@ -69,7 +68,8 @@
 
 					<!-- Mail Username -->
 					<div class="col-12">
-						<label for="mail_username" class="form-label fw-medium small">Mail Username <span class="text-danger">*</span></label>
+						<label for="mail_username" class="form-label fw-medium small">Mail Username <span
+								class="text-danger">*</span></label>
 						<input class="form-control" required id="mail_username" name="mail_username" type="text"
 							value="{{ old('mail_username') }}">
 						@error('mail_username')
@@ -89,7 +89,8 @@
 
 					<!-- Daily Messages Limit -->
 					<div class="col-12">
-						<label for="mail_message_ratelimit" class="form-label fw-medium small">Daily Messages Limit <span class="text-danger">*</span></label>
+						<label for="mail_message_ratelimit" class="form-label fw-medium small">Daily Messages Limit <span
+								class="text-danger">*</span></label>
 						<input class="form-control" required id="mail_message_ratelimit" name="mail_message_ratelimit" type="number"
 							value="{{ old('mail_message_ratelimit') }}">
 						@error('mail_message_ratelimit')
@@ -99,10 +100,11 @@
 				</div>
 			</div>
 
-			<div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center gap-2 p-4 border-top bg-light">
+			<div
+				class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center gap-2 p-4 border-top bg-light">
 				<a href="{{ route('mail-manager.smtp-setting.index') }}" class="btn-form btn-form-secondary">
-					<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
-						fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+					<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+						stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 						<line x1="19" y1="12" x2="5" y2="12"></line>
 						<polyline points="12 19 5 12 12 5"></polyline>
 					</svg>
@@ -110,15 +112,17 @@
 				</a>
 				<div class="d-flex flex-column flex-sm-row gap-2">
 					<button type="button" class="btn-form btn-form-secondary" onclick="openModalTestMail()">
-						<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
-							fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-							<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.43 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.34 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.38a16 16 0 0 0 5.66 5.66l1.19-1.19a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21.17 15z"></path>
+						<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+							stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+							<path
+								d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.43 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.34 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.38a16 16 0 0 0 5.66 5.66l1.19-1.19a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21.17 15z">
+							</path>
 						</svg>
 						Uji Tetapan SMTP Email
 					</button>
 					<button type="submit" class="btn-form btn-form-primary">
-						<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
-							fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+							stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 							<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
 							<polyline points="17 21 17 13 7 13 7 21"></polyline>
 							<polyline points="7 3 7 8 15 8"></polyline>
@@ -143,7 +147,8 @@
 					</div>
 					<div id="modal_body" class="modal-body p-4"></div>
 					<div class="modal-footer bg-light border-top px-4 py-3 d-flex justify-content-end gap-2">
-						<button id="button_cancel" type="button" class="btn-form btn-form-secondary" data-bs-dismiss="modal">Tutup</button>
+						<button id="button_cancel" type="button" class="btn-form btn-form-secondary"
+							data-bs-dismiss="modal">Tutup</button>
 						<button id="button_confirm" type="button" class="btn-form btn-form-primary">Teruskan</button>
 					</div>
 				</div>
@@ -165,7 +170,7 @@
 			$("#modal_body").empty();
 			$("#modal_body").append(
 				"Sila Masukkan Destinasi Email yang ingin dihantar : <input class='form-control' type='email' id='target_email' name='target_email' value='' />"
-				);
+			);
 			$("#modal_body").append("<input type='hidden' id='mail_host' name='mail_host' value='" + $("#mail_server").val() +
 				"' />");
 			$("#modal_body").append("<input type='hidden' id='mail_port' name='mail_port' value='" + $("#mail_port").val() +

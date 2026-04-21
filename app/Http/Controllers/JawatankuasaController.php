@@ -411,6 +411,41 @@ class JawatankuasaController extends Controller
         dd($data);
     }
 
+    public function simpanSenaraiKewanganKerja(Request $request)
+    {
+        $data = $request->all();
+
+        dd($data);
+    }
+
+    public function simpanSenaraiKewanganBekalan(Request $request)
+    {
+        $data = $request->all();
+
+        dd($data);
+    }
+
+    public function simpanPengalamanKerja(Request $request)
+    {
+        $data = $request->all();
+
+        dd($data);
+    }
+
+    public function simpanKerjaDalamTangan(Request $request)
+    {
+        $data = $request->all();
+
+        dd($data);
+    }
+
+    public function simpanSenaraiTeknikal(Request $request)
+    {
+        $data = $request->all();
+
+        dd($data);
+    }
+
     public function storePenyataKewangan(Request $request)
     {
         $data = $request->all();

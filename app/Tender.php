@@ -102,7 +102,9 @@ class Tender extends Model
 		'zon_lokasi',
 		'jawatankuasa',
 		'lawatan_tapak',
-		'penilaian_fizikal'
+		'penilaian_fizikal',
+		'status_process_id',
+		'is_ebidding',
 	];
 
 	/**
@@ -1442,7 +1444,9 @@ class Tender extends Model
 			cache()->tags('Tender')->flush();
 		});
 
-		self::updated(function () {
+		self::updated(function ($tender) {
+			// Log tender update (backup in case updateTender is not called)
+			// Only log if updateTender wasn't called (we can't easily detect this, so we'll rely on updateTender's audit flag)
 			cache()->tags('Tender')->flush();
 		});
 

@@ -1,0 +1,368 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\PerakuanJabatanKertasTaklimat;
+use App\Models\PerakuanJabatanKertasTaklimatItem;
+use App\Models\PerakuanJabatanKertasTaklimatItemFile;
+use App\Models\PerakuanJabatanPengesyoranPembekal;
+use App\Tender;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
+
+class PerakuanJabatanController extends Controller
+{
+    /**
+     * Display a listing of the resource.
+     */
+    public function index()
+    {
+        $tenders = Tender::query()
+            ->where('status_process_id', 2)
+            ->orderByDesc('id')
+            ->get([
+                'id',
+                'uuid',
+                'no_tender',
+                'ref_number',
+                'name',
+                'submission_datetime',
+                'status_process_id',
+            ])
+            ->map(function ($tender) {
+                $submissionDate = null;
+                if (!empty($tender->submission_datetime)) {
+                    $submissionDate = Carbon::parse($tender->submission_datetime);
+                }
+
+                $noTender = $tender->no_tender ?: $tender->ref_number ?: (string) $tender->id;
+
+                return [
+                    'id' => $tender->id,
+                    'uuid' => $tender->uuid,
+                    'no_tender' => $noTender,
+                    'tajuk' => $tender->name ?: '-',
+                    'tarikh' => $submissionDate ? $submissionDate->format('d/m/Y') : '-',
+                    'status_label' => ((int) $tender->status_process_id === 2) ? 'Dalam Proses' : 'Selesai',
+                    'show_url' => route('perakuanjabatan.show', ['id' => $tender->id]),
+                ];
+            })
+            ->values();
+
+        return view('newModule.perakuanJabatan.index', compact('tenders'));
+    }
+
+    /**
+     * Show perakuan jabatan workspace for a tender.
+     */
+    public function show($id)
+    {
+        $tender = Tender::with('tenderer')->findOrFail($id);
+
+        $header = PerakuanJabatanKertasTaklimat::firstOrCreate(
+            ['tender_id' => $tender->id],
+            ['catatan' => null, 'submitted_at' => null]
+        );
+
+        $this->seedDefaultKertasTaklimatItems($header);
+
+        $kertasItems = $header->items()->with('files')->orderBy('sort_order')->get();
+
+        $pengesyoranPembekal = PerakuanJabatanPengesyoranPembekal::firstOrCreate(
+            ['tender_id' => $tender->id],
+            [
+                'catatan' => null,
+                'sahkan_petender_layak' => false,
+                'submitted_at' => null,
+            ]
+        );
+
+        return view('newModule.perakuanJabatan.show', compact('tender', 'header', 'kertasItems', 'pengesyoranPembekal'));
+    }
+
+    public function kertasTaklimatSimpan(Request $request, Tender $tender)
+    {
+        $this->persistKertasTaklimat($request, $tender, false);
+
+        return response()->json(['message' => 'Kertas taklimat berjaya disimpan.']);
+    }
+
+    public function kertasTaklimatHantar(Request $request, Tender $tender)
+    {
+        $this->persistKertasTaklimat($request, $tender, true);
+
+        return response()->json(['message' => 'Kertas taklimat berjaya dihantar.']);
+    }
+
+    public function pengesyoranPembekalSimpan(Request $request, Tender $tender)
+    {
+        $validated = $request->validate([
+            'catatan' => ['nullable', 'string', 'max:65535'],
+            'sahkan_petender_layak' => ['nullable', 'boolean'],
+        ]);
+
+        $record = PerakuanJabatanPengesyoranPembekal::firstOrCreate(
+            ['tender_id' => $tender->id],
+            [
+                'catatan' => null,
+                'sahkan_petender_layak' => false,
+                'submitted_at' => null,
+            ]
+        );
+
+        $record->catatan = $validated['catatan'] ?? null;
+        $record->sahkan_petender_layak = $request->boolean('sahkan_petender_layak');
+        $record->save();
+
+        return response()->json(['message' => 'Catatan pengesyoran pembekal berjaya disimpan.']);
+    }
+
+    public function pengesyoranPembekalHantar(Request $request, Tender $tender)
+    {
+        $validated = $request->validate([
+            'catatan' => ['nullable', 'string', 'max:65535'],
+            'sahkan_petender_layak' => ['required', 'accepted'],
+        ], [
+            'sahkan_petender_layak.accepted' => 'Sila tandakan pengesahan bahawa petender layak untuk menyertai bidaan.',
+        ]);
+
+        DB::transaction(function () use ($tender, $validated) {
+            $record = PerakuanJabatanPengesyoranPembekal::firstOrCreate(
+                ['tender_id' => $tender->id],
+                [
+                    'catatan' => null,
+                    'sahkan_petender_layak' => false,
+                    'submitted_at' => null,
+                ]
+            );
+
+            $record->catatan = $validated['catatan'] ?? null;
+            $record->sahkan_petender_layak = true;
+            $record->submitted_at = now();
+            $record->save();
+
+            // Use direct query update to avoid Tender model events that call cache tags
+            // (some cache drivers do not support tagging).
+            Tender::query()
+                ->where('id', $tender->id)
+                ->update(['status_process_id' => 3]);
+        });
+
+        return response()->json(['message' => 'Pengesyoran pembekal berjaya dihantar. Status proses tender dikemas kini.']);
+    }
+
+    public function kertasTaklimatDownload(PerakuanJabatanKertasTaklimatItemFile $file)
+    {
+        $file->loadMissing('item.header');
+        $item = $file->item;
+        abort_unless($item && $item->header, 404);
+
+        $path = public_path($file->file_path);
+        abort_unless(is_file($path), 404);
+
+        return response()->download($path, $file->file_original_name);
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     */
+    public function store(Request $request)
+    {
+        //
+    }
+
+    /**
+     * Show the form for creating a new resource.
+     */
+    public function create()
+    {
+        //
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     */
+    public function edit(string $id)
+    {
+        //
+    }
+
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(Request $request, string $id)
+    {
+        //
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy(string $id)
+    {
+        //
+    }
+
+    public function form()
+    {
+        return view('newModule.perakuanJabatan.form');
+    }
+
+    public function pengesyoranPembekal()
+    {
+        return redirect()->route('perakuanjabatan.index');
+    }
+
+    public function kertasTaklimat()
+    {
+        return view('newModule.perakuanJabatan.kertas_taklimat');
+    }
+
+    private function seedDefaultKertasTaklimatItems(PerakuanJabatanKertasTaklimat $header): void
+    {
+        if ($header->items()->exists()) {
+            return;
+        }
+
+        $defaults = [
+            ['slot_key' => 'pembuka', 'kandungan' => 'Laporan Jawatankuasa Pembuka', 'sort_order' => 1],
+            ['slot_key' => 'teknikal', 'kandungan' => 'Laporan Jawatankuasa Teknikal', 'sort_order' => 2],
+            ['slot_key' => 'kewangan', 'kandungan' => 'Laporan Jawatankuasa Kewangan', 'sort_order' => 3],
+            ['slot_key' => 'kertas_perakuan', 'kandungan' => 'Kertas Taklimat (Perakuan Jabatan)', 'sort_order' => 4],
+            ['slot_key' => 'ringkasan', 'kandungan' => 'Ringkasan Kertas Taklimat (wajib untuk tender)', 'sort_order' => 5],
+        ];
+
+        foreach ($defaults as $row) {
+            $header->items()->create($row);
+        }
+    }
+
+    private function persistKertasTaklimat(Request $request, Tender $tender, bool $submit): void
+    {
+        $header = PerakuanJabatanKertasTaklimat::firstOrCreate(
+            ['tender_id' => $tender->id],
+            ['catatan' => null, 'submitted_at' => null]
+        );
+        $this->seedDefaultKertasTaklimatItems($header);
+
+        $validated = $request->validate([
+            'catatan' => ['nullable', 'string', 'max:65535'],
+            'rows' => ['nullable', 'array'],
+            'rows.*.id' => ['nullable', 'integer'],
+            'rows.*.kandungan' => ['required_with:rows', 'string', 'max:500'],
+            'rows.*.files' => ['nullable', 'array'],
+            'rows.*.files.*' => ['file', 'max:10240'],
+            'deleted_item_ids' => ['nullable', 'array'],
+            'deleted_item_ids.*' => ['integer'],
+            'deleted_file_ids' => ['nullable', 'array'],
+            'deleted_file_ids.*' => ['integer'],
+        ]);
+
+        $rows = $validated['rows'] ?? [];
+
+        DB::transaction(function () use ($header, $tender, $validated, $request, $submit, $rows) {
+            foreach ($validated['deleted_file_ids'] ?? [] as $fileId) {
+                $file = PerakuanJabatanKertasTaklimatItemFile::find($fileId);
+                if (!$file) {
+                    continue;
+                }
+                $item = $file->item;
+                if (!$item || (int) $item->header->tender_id !== (int) $tender->id) {
+                    continue;
+                }
+                $this->deleteStoredFile($file->file_path);
+                $file->delete();
+            }
+
+            foreach ($validated['deleted_item_ids'] ?? [] as $itemId) {
+                $item = PerakuanJabatanKertasTaklimatItem::find($itemId);
+                if (!$item || (int) $item->kertas_taklimat_id !== (int) $header->id) {
+                    continue;
+                }
+                if ($item->slot_key !== null) {
+                    continue;
+                }
+                foreach ($item->files as $f) {
+                    $this->deleteStoredFile($f->file_path);
+                    $f->delete();
+                }
+                $item->delete();
+            }
+
+            $header->catatan = $validated['catatan'] ?? null;
+            if ($submit) {
+                $header->submitted_at = now();
+            }
+            $header->save();
+
+            $maxSort = (int) $header->items()->max('sort_order');
+            $itemByIndex = [];
+
+            foreach ($rows as $idx => $row) {
+                $id = $row['id'] ?? null;
+                if ($id) {
+                    $item = PerakuanJabatanKertasTaklimatItem::query()
+                        ->where('id', $id)
+                        ->where('kertas_taklimat_id', $header->id)
+                        ->first();
+                    if (!$item) {
+                        continue;
+                    }
+                    if ($item->slot_key === null) {
+                        $item->kandungan = $row['kandungan'];
+                        $item->save();
+                    }
+                    $itemByIndex[$idx] = $item;
+                } else {
+                    $maxSort++;
+                    $itemByIndex[$idx] = $header->items()->create([
+                        'slot_key' => null,
+                        'kandungan' => $row['kandungan'],
+                        'sort_order' => $maxSort,
+                    ]);
+                }
+            }
+
+            foreach ($rows as $idx => $row) {
+                if (!isset($itemByIndex[$idx])) {
+                    continue;
+                }
+                $item = $itemByIndex[$idx];
+                $uploads = $request->file("rows.$idx.files") ?? [];
+                foreach ((array) $uploads as $upload) {
+                    if ($upload instanceof UploadedFile && $upload->isValid()) {
+                        $this->storeItemFile($item, $upload, (int) $tender->id);
+                    }
+                }
+            }
+        });
+    }
+
+    private function storeItemFile(PerakuanJabatanKertasTaklimatItem $item, UploadedFile $file, int $tenderId): void
+    {
+        $relativeDir = 'uploads/perakuan_jabatan/' . $tenderId . '/kertas_taklimat';
+        $absoluteDir = public_path($relativeDir);
+        if (!is_dir($absoluteDir)) {
+            mkdir($absoluteDir, 0755, true);
+        }
+        $safeOriginal = preg_replace('/[^A-Za-z0-9._-]/', '_', $file->getClientOriginalName());
+        $fileName = date('YmdHis') . '_' . $safeOriginal;
+        $file->move($absoluteDir, $fileName);
+        $relative = $relativeDir . '/' . $fileName;
+
+        $item->files()->create([
+            'file_path' => $relative,
+            'file_original_name' => $file->getClientOriginalName(),
+        ]);
+    }
+
+    private function deleteStoredFile(string $relativePath): void
+    {
+        $full = public_path($relativePath);
+        if (is_file($full)) {
+            @unlink($full);
+        }
+    }
+}
