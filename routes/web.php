@@ -239,6 +239,13 @@ Route::post('/profile-petender/submit', [JawatankuasaController::class, 'storePr
 Route::view('/penyata-bank', 'newModule.jawatankuasaSpesifikasi.form_penyata_bank')->name('pnytBank');
 Route::post('/penyata-bank/submit', [JawatankuasaController::class, 'storePenyataKewangan'])->middleware(['auth'])->name('jawatankuasa.hantarPenyataKewangan');
 Route::view('/jawatankuasa-pembuka', 'newModule.jawatankuasa_pembuka')->name('jawatankuasaPembuka');
+Route::view('/penilaian-teknikal', 'newModule.penilaian.teknikal')->name('penilaianTeknikal');
+Route::view('/penilaian-teknikal-kerja', 'newModule.penilaian.teknikal_kerja')->name('penilaianTeknikalKerja');
+Route::view('/penilaian-kewangan', 'newModule.penilaian.kewangan')->name('penilaianKewangan');
+Route::view('/index-perincian', 'newModule.penyediaanMesyuarat.index_perincian')->name('perincianMesyuarat');
+Route::view('/perincian-page', 'newModule.penyediaanMesyuarat.perincian_mesyuarat')->name('perincianPage');
+Route::view('/index-jawatankuasa', 'newModule.penyediaanMesyuarat.index_jawatankuasa')->name('jawatankuasaMesyuarat');
+Route::view('/jawatankuasa-page', 'newModule.penyediaanMesyuarat.jawatankuasa')->name('jawatankuasaPage');
 
 // penilaian teknikal
 Route::get('/penilaian-teknikal', [PenilaianTeknikalController::class, 'index'])->name('penilaianTeknikal');
