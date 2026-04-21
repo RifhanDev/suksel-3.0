@@ -361,6 +361,7 @@ class JawatankuasaPerolehanController extends Controller
                 ->update([
                     'status_process_id' => 4,
                     'is_ebidding' => $isEbidding,
+                    'ebidding_process_stage_id' => $isEbidding ? 1 : null,
                 ]);
         });
 

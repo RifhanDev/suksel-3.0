@@ -103,7 +103,7 @@
 							<line x1="16" y1="13" x2="8" y2="13"></line>
 							<line x1="16" y1="17" x2="8" y2="17"></line>
 						</svg>
-						Paparan Kertas Taklimat
+						Penyediaan Kertas Taklimat
 					</a>
 				</li>
 
@@ -127,7 +127,7 @@
 	<!-- TAB CONTENT -->
 	<div class="tab-content">
 
-		<!-- Tab 1: Paparan Kertas Taklimat -->
+		<!-- Tab 1: Seksyen Laporan -->
 		@include('newModule.perakuanJabatan.kertas_taklimat')
 
 		<!-- Tab 2: Pengesyoran Pembekal -->
