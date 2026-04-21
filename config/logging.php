@@ -36,9 +36,15 @@ return [
     'channels' => [
         'stack' => [
             'driver' => 'stack',
-            'channels' => ['single'],
+            'channels' => ['weekly'],
             'ignore_exceptions' => false,
             'permissions' => 0777,
+        ],
+
+        'weekly' => [
+            'driver' => 'custom',
+            'via' => \App\Logging\WeeklyLogger::class,
+            'level' => env('LOG_LEVEL', 'debug'),
         ],
 
         'single' => [

@@ -17,7 +17,7 @@ return new class extends Migration
 
         Schema::create('perakuan_jabatan_pengesyoran_pembekals', function (Blueprint $table) {
             $table->id();
-            $table->unsignedInteger('tender_id')->unique();
+            $table->unsignedBigInteger('tender_id')->unique();
             $table->text('catatan')->nullable();
             $table->boolean('sahkan_petender_layak')->default(false);
             $table->timestamp('submitted_at')->nullable();

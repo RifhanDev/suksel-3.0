@@ -11,7 +11,7 @@ return new class extends Migration
         if (!Schema::hasTable('jawatankuasa_perolehan_pemilihan_headers')) {
             Schema::create('jawatankuasa_perolehan_pemilihan_headers', function (Blueprint $table) {
                 $table->id();
-                $table->unsignedInteger('tender_id')->unique();
+                $table->unsignedBigInteger('tender_id')->unique();
                 $table->string('keputusan_mesyuarat', 255)->nullable();
                 $table->string('kaedah_memuktamadkan_pembekal', 255)->nullable();
                 $table->string('pemilihan_berdasarkan', 255)->nullable();
@@ -27,7 +27,7 @@ return new class extends Migration
         if (!Schema::hasTable('jawatankuasa_perolehan_pemilihan_items')) {
             Schema::create('jawatankuasa_perolehan_pemilihan_items', function (Blueprint $table) {
                 $table->id();
-                $table->unsignedInteger('tender_id')->index();
+                $table->unsignedBigInteger('tender_id')->index();
                 $table->unsignedInteger('sort_order')->default(1);
                 $table->text('perihal_item');
                 $table->string('jenis_item', 255)->nullable();
