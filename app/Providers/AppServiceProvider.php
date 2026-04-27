@@ -28,9 +28,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        // Share user variable with all views
+        // Share user variable with all views (skip when view already has 'user', e.g. mailables)
         View::composer('*', function ($view) {
-            $view->with('user', Auth::user());
+            if (! array_key_exists('user', $view->getData())) {
+                $view->with('user', Auth::user());
+            }
         });
 
         Validator::extend('recaptcha', function ($attribute, $value, $parameters, $validator) {

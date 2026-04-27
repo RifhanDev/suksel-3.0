@@ -9,6 +9,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
 class SendEmailJob implements ShouldQueue
@@ -33,8 +34,20 @@ class SendEmailJob implements ShouldQueue
      */
     public function handle()
     {
-        ob_start();
-        $this->trigger_mail_server($this->unique_id);
-        ob_end_clean();
+        Log::info('[SendEmailJob] Dispatching email to mail server.', ['unique_id' => $this->unique_id]);
+
+        try {
+            ob_start();
+            $this->trigger_mail_server($this->unique_id);
+            ob_end_clean();
+        } catch (\Exception $e) {
+            ob_end_clean();
+            Log::error('[SendEmailJob] Job threw an exception.', [
+                'unique_id' => $this->unique_id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            throw $e;
+        }
     }
 }

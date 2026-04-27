@@ -1,5 +1,4 @@
 @extends('layouts.v3.master')
-
 @section('content')
 	<!-- Page Header -->
 	<div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center mb-4">

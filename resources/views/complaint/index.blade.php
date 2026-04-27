@@ -56,13 +56,18 @@
 			var path = target.data('path');
 
 			var DT = target.DataTable({
-				order: [
-					[4, 'desc']
-				],
 				ajax: path,
 				columns: [{
 						data: 'subject',
 						name: 'subject'
+					},
+					{
+						data: 'module',
+						name: 'module'
+					},
+					{
+						data: 'tender_id',
+						name: 'tender_id'
 					},
 					{
 						data: 'content',
@@ -82,7 +87,9 @@
 					},
 					{
 						data: 'actions',
-						name: 'actions'
+						name: 'actions',
+						orderable: false,
+						searchable: false
 					}
 				],
 				serverSide: true,
@@ -111,14 +118,12 @@
 					}
 				},
 				autoWidth: false,
-				columnDefs: [
-					{
-						searchable: false,
-						orderable: false,
-						targets: 5,
-						width: '220px',
-					},
-				],
+				columnDefs: [{
+					searchable: false,
+					orderable: false,
+					targets: 5,
+					width: '220px',
+				}, ],
 				aaSorting: []
 			});
 		});

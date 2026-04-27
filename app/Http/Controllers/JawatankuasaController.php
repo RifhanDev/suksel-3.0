@@ -328,7 +328,7 @@ class JawatankuasaController extends Controller
             foreach ($requiredPeranan as $peranan) {
                 if (!in_array($peranan, $existingPeranan)) {
                     return response()->json([
-                        'message' => 'Jawatan Kuasa tidak Mencukupi',
+                        'message' => 'Jawatan Kuasa Tidak Mencukupi',
                     ], 422);
                 }
             }

@@ -7,6 +7,7 @@ use App\CodeRequest;
 use App\Comment;
 use App\Gateway;
 use App\Models\Refund;
+use App\Models\VersionHistory;
 use App\News;
 use App\Tender;
 use App\TenderEligible;
@@ -523,19 +524,15 @@ class HomeController extends Controller
 					]
 				);
 
-				$datatable = Datatables::of($tenders)->editColumn('name', function ($tender)
-				{
-						$string   = [];
-						$string[] = '<small><strong>' . $tender->ref_number . '</strong></small>';
-						if(!auth()->check())
-						{
-							$string[] = link_to_route('tender.show', $tender->name, $tender->id, ['class' => 'table-tender-title']);
-						}
-						else
-						{
-							$string[] = link_to_route('tender.show', $tender->name, $tender->id, ['class' => 'table-tender-title']);
-						}
-						// $string[] = link_to_route('tender.show', $tender->name, $tender->id, ['class' => 'table-tender-title']);
+				$datatable = Datatables::of($tenders)->editColumn('name', function ($tender) {
+					$string   = [];
+					$string[] = '<small><strong>' . $tender->ref_number . '</strong></small>';
+					if (!auth()->check()) {
+						$string[] = link_to_route('tenders.show', $tender->name, $tender->id, ['class' => 'table-tender-title']);
+					} else {
+						$string[] = link_to_route('tender.show', $tender->name, $tender->id, ['class' => 'table-tender-title']);
+					}
+					// $string[] = link_to_route('tender.show', $tender->name, $tender->id, ['class' => 'table-tender-title']);
 
 					if ($tender->briefing_required) {
 						$string[] = '';
@@ -1038,7 +1035,8 @@ class HomeController extends Controller
 			return $this->_access_denied();
 		}
 
-		return view('home.version-histories');
+		$versionHistories = VersionHistory::orderBy('released_at', 'desc')->get();
+		return view('home.version-histories', compact('versionHistories'));
 	}
 
 	public function privacy()

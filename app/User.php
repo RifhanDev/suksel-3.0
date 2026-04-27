@@ -55,6 +55,7 @@ class User extends Authenticatable
 		'tel',
 		'department',
 		'password',
+		'password_changed_at',
 		'confirmation_code',
 		'confirmed',
 		'vendor_id',
@@ -151,6 +152,7 @@ class User extends Authenticatable
 	 */
 	protected $hidden = array('password', 'remember_token');
 
+	protected $dates = ['password_changed_at'];
 	/**
 	 * Override Spatie's roles relationship to use legacy role_user table
 	 * instead of model_has_roles table

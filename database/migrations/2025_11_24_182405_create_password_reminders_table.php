@@ -11,6 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (Schema::hasTable('password_reminders')) {
+            return;
+        }
         Schema::create('password_reminders', function (Blueprint $table) {
             $table->string('email', 128);
             $table->string('token', 128);
