@@ -166,7 +166,8 @@ Route::post('auth/reset', [AuthController::class, 'doResetPassword']);
 
 // Tenders
 Route::get('tenders/select', [TendersController::class, 'select']);
-Route::resource('tenders', TendersController::class);
+// Route::resource('tenders', TendersController::class);
+Route::get('tenders', [TendersController::class, 'index'])->name('tenders.index');
 Route::get('tenders/{id}/prices', [TendersController::class, 'prices'])->name('tenders.prices');
 Route::get('tenders/{tender_id}/files/{id}', [TendersController::class, 'file'])->name('tenders.files');
 Route::get('tenders/{id}/vendors', [TendersController::class, 'vendors'])->name('tenders.vendors');
@@ -299,6 +300,8 @@ Route::middleware(['auth'])->group(function () {
 	// Route::get('tender/{tender_id}/files/{id}', [TendersController::class, 'file'])->name('tenders.files');
 	// Route::get('tender/{id}/vendors', [TendersController::class, 'vendors'])->name('tenders.vendors');
 	// Route::post('tender/{id}/exception', [TendersController::class, 'exception'])->name('tenders.exception');
+
+	Route::get('/pengurusan-spesifikasi', [TendersController::class, 'manageSpecification'])->name('pengurusanSpesifikasi');
 
 	// Perakuan Jabatan
 	Route::get('/perakuan-jabatan', [PerakuanJabatanController::class, 'index'])->middleware(['auth'])->name('perakuanjabatan.index');
