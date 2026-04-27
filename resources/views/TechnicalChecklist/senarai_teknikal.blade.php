@@ -26,8 +26,10 @@
                 <span class="text-muted fw-semibold text-uppercase d-block mb-1"
                     style="font-size: 0.67rem; letter-spacing: 0.5px;">Tajuk Tender</span>
                 <h5 class="fw-bold text-dark mb-0" style="line-height: 1.45; font-size: 1rem;">
-                    MEMBEKAL RANGSUM PUKAL (AIR MINERAL) UNTUK BANGUNAN KERAJAAN
-                    <span class="fw-normal text-muted fst-italic" style="font-size: 0.85rem;">(Bekalan Perkhidmatan)</span>
+                    {{ $tender->name ?? '-' }}
+                    @if (!empty($tender->kategori_perolehan_name))
+                        <span class="fw-normal text-muted fst-italic" style="font-size: 0.85rem;">({{ $tender->kategori_perolehan_name }})</span>
+                    @endif
                 </h5>
             </div>
 
@@ -36,12 +38,12 @@
                 <div class="col-6 col-md-3">
                     <span class="text-muted fw-semibold text-uppercase d-block mb-1"
                         style="font-size: 0.67rem; letter-spacing: 0.5px;">No. Tender</span>
-                    <span class="fw-semibold text-dark" style="font-size: 0.875rem;">SUKSEL/PERT/2026/001</span>
+                    <span class="fw-semibold text-dark" style="font-size: 0.875rem;">{{ $tender->no_tender ?: ($tender->ref_number ?? '-') }}</span>
                 </div>
                 <div class="col-6 col-md-3">
                     <span class="text-muted fw-semibold text-uppercase d-block mb-1"
                         style="font-size: 0.67rem; letter-spacing: 0.5px;">PTJ</span>
-                    <span class="fw-semibold text-dark" style="font-size: 0.875rem;">100-007</span>
+                    <span class="fw-semibold text-dark" style="font-size: 0.875rem;">{{ optional($tender->tenderer)->name ?? '-' }}</span>
                 </div>
                 <div class="col-12 col-md-6 d-md-flex justify-content-md-end align-items-md-center">
                     <span class="d-inline-flex align-items-center gap-2 px-3 py-2 rounded-2 fw-semibold"
@@ -335,7 +337,7 @@
     </div>
 
     <!-- ===================== BOTTOM ACTION BUTTONS ===================== -->
-    <form id="form-senarai-teknikal" action="{{ route('jawatankuasa.simpanSenaraiTeknikal') }}" method="POST">
+    <form id="form-senarai-teknikal" action="{{ route('senaraiTeknikal.store', $tender->uuid) }}" method="POST">
     @csrf
         <!-- Hidden: tahap lulus value for submission -->
         <input type="hidden" name="tahap_lulus" id="tahap-lulus-hidden" value="0">
@@ -389,62 +391,21 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                {{-- ── Borang Atas Talian items ── --}}
-                                <tr data-type="borang_atas_talian" data-route="{{ route('pgmnKerjaForm') }}" data-tajuk="Senarai Pengalaman Kerja">
+                                @forelse ($standardItems as $item)
+                                <tr data-uuid="{{ $item['uuid'] }}" data-type="{{ $item['type'] }}" data-tajuk="{{ $item['title'] }}" data-online-form-key="{{ $item['online_form_key'] ?? '' }}" data-online-form-route="{{ $item['online_form_route'] ?? '' }}">
                                     <td class="text-center"><input type="checkbox" class="form-check-input row-check-standard"></td>
                                     <td>
-                                        Senarai Pengalaman Kerja
-                                        <span class="ms-1 d-inline-flex align-items-center" style="font-size:0.6rem;background:#fef9c3;color:#854d0e;border-radius:3px;padding:1px 5px;vertical-align:middle;border:1px solid #fde68a;">Borang Atas Talian</span>
+                                        {{ $item['title'] }}
+                                        @if ($item['type'] === 'borang_atas_talian')
+                                            <span class="ms-1 d-inline-flex align-items-center" style="font-size:0.6rem;background:#fef9c3;color:#854d0e;border-radius:3px;padding:1px 5px;vertical-align:middle;border:1px solid #fde68a;">Borang Atas Talian</span>
+                                        @endif
                                     </td>
                                 </tr>
-                                <tr data-type="borang_atas_talian" data-route="{{ route('kjDlmTanganForm') }}" data-tajuk="Kerja Dalam Tangan">
-                                    <td class="text-center"><input type="checkbox" class="form-check-input row-check-standard"></td>
-                                    <td>
-                                        Kerja Dalam Tangan
-                                        <span class="ms-1 d-inline-flex align-items-center" style="font-size:0.6rem;background:#fef9c3;color:#854d0e;border-radius:3px;padding:1px 5px;vertical-align:middle;border:1px solid #fde68a;">Borang Atas Talian</span>
-                                    </td>
+                                @empty
+                                <tr>
+                                    <td colspan="2" class="text-center text-muted py-3">Tiada senarai semak standard dijumpai.</td>
                                 </tr>
-                                {{-- ── Standard items (Petender / PTJ Muat Naik) ── --}}
-                                <tr data-tajuk="Pengalaman Syarikat Dengan Kerajaan Persekutuan (Bilangan Kontrak yang pernah diikat)">
-                                    <td class="text-center"><input type="checkbox" class="form-check-input row-check-standard"></td>
-                                    <td>Pengalaman Syarikat Dengan Kerajaan Persekutuan (Bilangan Kontrak yang pernah diikat)</td>
-                                </tr>
-                                <tr data-tajuk="Pengalaman Syarikat Dengan Bukan Kerajaan Persekutuan (Bilangan Kontrak yang pernah diikat)">
-                                    <td class="text-center"><input type="checkbox" class="form-check-input row-check-standard"></td>
-                                    <td>Pengalaman Syarikat Dengan Bukan Kerajaan Persekutuan (Bilangan Kontrak yang pernah diikat)</td>
-                                </tr>
-                                <tr data-tajuk="Skop Bekalan Dan Perkhidmatan">
-                                    <td class="text-center"><input type="checkbox" class="form-check-input row-check-standard"></td>
-                                    <td>Skop Bekalan Dan Perkhidmatan</td>
-                                </tr>
-                                <tr data-tajuk="Salinan Borang KWSP A setiap pekerja bagi bulan caruman terakhir">
-                                    <td class="text-center"><input type="checkbox" class="form-check-input row-check-standard"></td>
-                                    <td>Salinan Borang KWSP A setiap pekerja bagi bulan caruman terakhir</td>
-                                </tr>
-                                <tr data-tajuk="Bilangan Kakitangan">
-                                    <td class="text-center"><input type="checkbox" class="form-check-input row-check-standard"></td>
-                                    <td>Bilangan Kakitangan</td>
-                                </tr>
-                                <tr data-tajuk="Brosur / Risalah">
-                                    <td class="text-center"><input type="checkbox" class="form-check-input row-check-standard"></td>
-                                    <td>Brosur / Risalah</td>
-                                </tr>
-                                <tr data-tajuk="Surat pengesahan pendaftaran dengan Pertubuhan Keselamatan Sosial (Perkeso)">
-                                    <td class="text-center"><input type="checkbox" class="form-check-input row-check-standard"></td>
-                                    <td>Surat pengesahan pendaftaran dengan Pertubuhan Keselamatan Sosial (Perkeso) yang telah dikeluarkan mengikut Akta Keselamatan Sosial Pekerja 1969. Jadual Caruman Bulanan (Borang 8A) dan Resit Bayaran Caruman yang terbaru</td>
-                                </tr>
-                                <tr data-tajuk="Cadangan Bertulis">
-                                    <td class="text-center"><input type="checkbox" class="form-check-input row-check-standard"></td>
-                                    <td>Cadangan Bertulis</td>
-                                </tr>
-                                <tr data-tajuk="Lesen Premis oleh PBT">
-                                    <td class="text-center"><input type="checkbox" class="form-check-input row-check-standard"></td>
-                                    <td>Lesen Premis oleh PBT</td>
-                                </tr>
-                                <tr data-tajuk="Jadual Pelaksanaan">
-                                    <td class="text-center"><input type="checkbox" class="form-check-input row-check-standard"></td>
-                                    <td>Jadual Pelaksanaan</td>
-                                </tr>
+                                @endforelse
                             </tbody>
                         </table>
                     </div>

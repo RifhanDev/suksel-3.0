@@ -80,6 +80,9 @@ use App\Http\Controllers\ReportUserActivityController;
 use App\Http\Controllers\ReportUserLoginController;
 use App\Http\Controllers\DummyController;
 use App\Http\Controllers\JawatankuasaController;
+use App\Http\Controllers\TechnicalChecklistController;
+use App\Http\Controllers\StandardChecklistItemController;
+use App\Http\Controllers\TechnicalSpecificationController;
 use App\Http\Controllers\CutOffController;
 use App\Http\Controllers\JawatankuasaPerolehanController;
 use App\Http\Controllers\PenilaianKewanganController;
@@ -217,8 +220,13 @@ Route::get('/pelantikan-jawatankuasa', [JawatankuasaController::class, 'create']
 Route::get('/pelantikan-jawatankuasa/laporan', [JawatankuasaController::class, 'laporan'])->middleware(['auth'])->name('jawatankuasa.laporan');
 Route::post('/pelantikan-jawatankuasa/hantar-pemakluman', [JawatankuasaController::class, 'hantarPemakluman'])->middleware(['auth'])->name('jawatankuasa.hantarPemakluman');
 Route::view('/senarai-semak', 'newModule.jawatankuasaSpesifikasi.index')->name('senaraiSemak');
-Route::view('/senarai-teknikal', 'newModule.jawatankuasaSpesifikasi.senarai_teknikal')->name('senaraiTeknikal');
-Route::post('/senarai-teknikal/hantar', [JawatankuasaController::class, 'simpanSenaraiTeknikal'])->name('jawatankuasa.simpanSenaraiTeknikal');
+
+Route::get('/standard-checklist-items', [StandardChecklistItemController::class, 'index'])->middleware(['auth'])->name('standardChecklistItems.index');
+Route::post('/spesifikasi-teknikal', [TechnicalSpecificationController::class, 'store'])->middleware(['auth'])->name('spesifikasiTeknikal.store');
+Route::get('/spesifikasi-teknikal/{uuid}', [TechnicalSpecificationController::class, 'show'])->middleware(['auth'])->name('spesifikasiTeknikal.show');
+Route::put('/spesifikasi-teknikal/{uuid}', [TechnicalSpecificationController::class, 'update'])->middleware(['auth'])->name('spesifikasiTeknikal.update');
+Route::post('/spesifikasi-teknikal/{uuid}/lengkap', [TechnicalSpecificationController::class, 'complete'])->middleware(['auth'])->name('spesifikasiTeknikal.complete');
+Route::delete('/spesifikasi-teknikal/{uuid}', [TechnicalSpecificationController::class, 'destroy'])->middleware(['auth'])->name('spesifikasiTeknikal.destroy');
 Route::view('/senarai-kewangan-bekalan', 'newModule.jawatankuasaSpesifikasi.senarai_kewangan_bekalan')->name('senaraiKewanganBekalan');
 Route::post('/senarai-kewangan-bekalan/hantar', [JawatankuasaController::class, 'simpanSenaraiKewanganBekalan'])->name('jawatankuasa.simpanSenaraiKewanganBekalan');
 Route::view('/senarai-kewangan-kerja', 'newModule.jawatankuasaSpesifikasi.senarai_kewangan_kerja')->name('senaraiKewanganKerja');
@@ -293,6 +301,13 @@ Route::get('/tender/status/{status}', [DummyController::class, 'viewByStatus'])-
 
 // Protected routes
 Route::middleware(['auth'])->group(function () {
+
+	Route::get('/senarai-teknikal/{tenderUuid}', [TechnicalChecklistController::class, 'index'])->name('senaraiTeknikal');
+	Route::post('/senarai-teknikal/{tenderUuid}', [TechnicalChecklistController::class, 'store'])->name('senaraiTeknikal.store');
+	Route::post('/senarai-teknikal/{tenderUuid}/hantar', [TechnicalChecklistController::class, 'submit'])->name('senaraiTeknikal.submit');
+	Route::post('/senarai-teknikal/{tenderUuid}/fail', [TechnicalChecklistController::class, 'uploadFile'])->name('senaraiTeknikal.uploadFile');
+	Route::delete('/senarai-teknikal/fail/{fileUuid}', [TechnicalChecklistController::class, 'deleteFile'])->name('senaraiTeknikal.deleteFile');
+
 	// Route::get('tender/select', [TendersController::class, 'select']);
 	Route::resource('tender', TendersController::class);
 	Route::resource('jawatankuasa', JawatankuasaController::class);
@@ -304,7 +319,7 @@ Route::middleware(['auth'])->group(function () {
 	Route::get('/pengurusan-spesifikasi', [TendersController::class, 'manageSpecification'])->name('pengurusanSpesifikasi');
 
 	// Perakuan Jabatan
-	Route::get('/perakuan-jabatan', [PerakuanJabatanController::class, 'index'])->middleware(['auth'])->name('perakuanjabatan.index');
+	Route::get('/perakuan-jabatan', [PerakuanJabatanController::class, 'index'])->name('perakuanjabatan.index');
 	Route::post('/perakuan-jabatan/{tender}/kertas-taklimat/simpan', [PerakuanJabatanController::class, 'kertasTaklimatSimpan'])->name('perakuanjabatan.kertasTaklimat.simpan');
 	Route::post('/perakuan-jabatan/{tender}/kertas-taklimat/hantar', [PerakuanJabatanController::class, 'kertasTaklimatHantar'])->name('perakuanjabatan.kertasTaklimat.hantar');
 	Route::get('/perakuan-jabatan/kertas-taklimat/file/{file}', [PerakuanJabatanController::class, 'kertasTaklimatDownload'])->name('perakuanjabatan.kertasTaklimat.download');

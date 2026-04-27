@@ -631,7 +631,7 @@ class TendersController extends Controller
 		$tenderQuery = !empty($tender->uuid) ? '?tender=' . urlencode($tender->uuid) : '';
 
 		if (in_array($categoryName, ['bekalan', 'perkhidmatan'], true)) {
-			$technicalUrl = route('senaraiTeknikal') . $tenderQuery;
+			$technicalUrl = !empty($tender->uuid) ? route('senaraiTeknikal', $tender->uuid) : '#';
 			$financialUrl = route('senaraiKewanganBekalan') . $tenderQuery;
 
 			return '<div class="d-flex gap-1 justify-content-center">'

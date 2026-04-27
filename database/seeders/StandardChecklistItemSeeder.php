@@ -1,0 +1,162 @@
+<?php
+
+namespace Database\Seeders;
+
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+
+class StandardChecklistItemSeeder extends Seeder
+{
+    public function run(): void
+    {
+        $items = [
+            // ── Borang Atas Talian ──────────────────────────────────────────
+            [
+                'category'           => 'technical',
+                'type'               => 'borang_atas_talian',
+                'title'              => 'Senarai Pengalaman Kerja',
+                'mechanism_default'  => null,
+                'vendor_action_default' => null,
+                'online_form_key'    => 'pgmnKerja',
+                'online_form_route'  => 'pgmnKerjaForm',
+                'is_active'          => true,
+                'sort_order'         => 1,
+            ],
+            [
+                'category'           => 'technical',
+                'type'               => 'borang_atas_talian',
+                'title'              => 'Kerja Dalam Tangan',
+                'mechanism_default'  => null,
+                'vendor_action_default' => null,
+                'online_form_key'    => 'kjDlmTangan',
+                'online_form_route'  => 'kjDlmTanganForm',
+                'is_active'          => true,
+                'sort_order'         => 2,
+            ],
+
+            // ── Standard ────────────────────────────────────────────────────
+            [
+                'category'           => 'technical',
+                'type'               => 'standard',
+                'title'              => 'Pengalaman Syarikat Dengan Kerajaan Persekutuan (Bilangan Kontrak yang pernah diikat)',
+                'mechanism_default'  => null,
+                'vendor_action_default' => null,
+                'online_form_key'    => null,
+                'online_form_route'  => null,
+                'is_active'          => true,
+                'sort_order'         => 3,
+            ],
+            [
+                'category'           => 'technical',
+                'type'               => 'standard',
+                'title'              => 'Pengalaman Syarikat Dengan Bukan Kerajaan Persekutuan (Bilangan Kontrak yang pernah diikat)',
+                'mechanism_default'  => null,
+                'vendor_action_default' => null,
+                'online_form_key'    => null,
+                'online_form_route'  => null,
+                'is_active'          => true,
+                'sort_order'         => 4,
+            ],
+            [
+                'category'           => 'technical',
+                'type'               => 'standard',
+                'title'              => 'Skop Bekalan Dan Perkhidmatan',
+                'mechanism_default'  => null,
+                'vendor_action_default' => null,
+                'online_form_key'    => null,
+                'online_form_route'  => null,
+                'is_active'          => true,
+                'sort_order'         => 5,
+            ],
+            [
+                'category'           => 'technical',
+                'type'               => 'standard',
+                'title'              => 'Salinan Borang KWSP A setiap pekerja bagi bulan caruman terakhir',
+                'mechanism_default'  => null,
+                'vendor_action_default' => null,
+                'online_form_key'    => null,
+                'online_form_route'  => null,
+                'is_active'          => true,
+                'sort_order'         => 6,
+            ],
+            [
+                'category'           => 'technical',
+                'type'               => 'standard',
+                'title'              => 'Bilangan Kakitangan',
+                'mechanism_default'  => null,
+                'vendor_action_default' => null,
+                'online_form_key'    => null,
+                'online_form_route'  => null,
+                'is_active'          => true,
+                'sort_order'         => 7,
+            ],
+            [
+                'category'           => 'technical',
+                'type'               => 'standard',
+                'title'              => 'Brosur / Risalah',
+                'mechanism_default'  => null,
+                'vendor_action_default' => null,
+                'online_form_key'    => null,
+                'online_form_route'  => null,
+                'is_active'          => true,
+                'sort_order'         => 8,
+            ],
+            [
+                'category'           => 'technical',
+                'type'               => 'standard',
+                'title'              => 'Surat pengesahan pendaftaran dengan Pertubuhan Keselamatan Sosial (Perkeso) yang telah dikeluarkan mengikut Akta Keselamatan Sosial Pekerja 1969. Jadual Caruman Bulanan (Borang 8A) dan Resit Bayaran Caruman yang terbaru',
+                'mechanism_default'  => null,
+                'vendor_action_default' => null,
+                'online_form_key'    => null,
+                'online_form_route'  => null,
+                'is_active'          => true,
+                'sort_order'         => 9,
+            ],
+            [
+                'category'           => 'technical',
+                'type'               => 'standard',
+                'title'              => 'Cadangan Bertulis',
+                'mechanism_default'  => null,
+                'vendor_action_default' => null,
+                'online_form_key'    => null,
+                'online_form_route'  => null,
+                'is_active'          => true,
+                'sort_order'         => 10,
+            ],
+            [
+                'category'           => 'technical',
+                'type'               => 'standard',
+                'title'              => 'Lesen Premis oleh PBT',
+                'mechanism_default'  => null,
+                'vendor_action_default' => null,
+                'online_form_key'    => null,
+                'online_form_route'  => null,
+                'is_active'          => true,
+                'sort_order'         => 11,
+            ],
+            [
+                'category'           => 'technical',
+                'type'               => 'standard',
+                'title'              => 'Jadual Pelaksanaan',
+                'mechanism_default'  => null,
+                'vendor_action_default' => null,
+                'online_form_key'    => null,
+                'online_form_route'  => null,
+                'is_active'          => true,
+                'sort_order'         => 12,
+            ],
+        ];
+
+        foreach ($items as $item) {
+            DB::table('standard_checklist_items')->updateOrInsert(
+                ['title' => $item['title'], 'category' => $item['category'], 'type' => $item['type']],
+                array_merge($item, [
+                    'uuid'       => (string) Str::uuid(),
+                    'updated_at' => now(),
+                    'created_at' => now(),
+                ])
+            );
+        }
+    }
+}
