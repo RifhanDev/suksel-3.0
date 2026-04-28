@@ -19,8 +19,7 @@ return new class extends Migration
             $table->text('title');
             $table->string('mechanism_default', 50)->nullable();
             $table->string('vendor_action_default', 50)->nullable();
-            $table->string('online_form_key', 100)->nullable()->index();
-            $table->string('online_form_route', 255)->nullable();
+            $table->string('action_url', 500)->nullable()->comment('URL for tindakan button shown in Penyediaan Spesifikasi & Skor table');
             $table->boolean('is_active')->default(true)->index();
             $table->unsignedSmallInteger('sort_order')->default(0);
             $table->unsignedBigInteger('created_by')->nullable();

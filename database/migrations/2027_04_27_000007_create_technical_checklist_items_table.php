@@ -24,8 +24,6 @@ return new class extends Migration
             $table->unsignedSmallInteger('sort_order')->default(0);
             $table->unsignedBigInteger('standard_item_id')->nullable()->index();
             $table->unsignedBigInteger('specification_document_id')->nullable()->index();
-            $table->string('online_form_key', 100)->nullable()->index();
-            $table->string('online_form_route', 255)->nullable();
             $table->timestamps();
 
             $table->foreign('technical_checklist_header_id', 'tci_header_fk')

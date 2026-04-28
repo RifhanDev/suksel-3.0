@@ -11,6 +11,8 @@ class TechnicalChecklistController extends Controller
 {
     public function index(string $tenderUuid)
     {
+        $this->ensureSpecificationAccess();
+        
         $tender = Tender::with('tenderer')
             ->leftJoin('ref_kategori_jenis_perolehans as k', 'k.id', '=', 'tenders.kategori_perolehan_id')
             ->select('tenders.*', 'k.name as kategori_perolehan_name')
@@ -54,6 +56,8 @@ class TechnicalChecklistController extends Controller
 
     public function store(Request $request, string $tenderUuid)
     {
+        $this->ensureSpecificationAccess();
+
         $response = $this->api()->post($this->url('technical-checklists/' . $tenderUuid), $request->except('_token'));
 
         return response()->json($response->json(), $response->status());
@@ -61,6 +65,8 @@ class TechnicalChecklistController extends Controller
 
     public function submit(Request $request, string $tenderUuid)
     {
+        $this->ensureSpecificationAccess();
+
         $response = $this->api()->post($this->url('technical-checklists/' . $tenderUuid . '/submit'), $request->except('_token'));
 
         return response()->json($response->json(), $response->status());
@@ -68,6 +74,8 @@ class TechnicalChecklistController extends Controller
 
     public function uploadFile(Request $request, string $tenderUuid)
     {
+        $this->ensureSpecificationAccess();
+
         $response = $this->api()->attach(
             'file',
             $request->file('file')->get(),
@@ -79,9 +87,20 @@ class TechnicalChecklistController extends Controller
 
     public function deleteFile(string $fileUuid)
     {
+        $this->ensureSpecificationAccess();
+
         $response = $this->api()->delete($this->url('technical-checklist-files/' . $fileUuid));
 
         return response()->json($response->json(), $response->status());
+    }
+
+    private function ensureSpecificationAccess(): void
+    {
+        $user = auth()->user();
+
+        if (!$user->hasRole('Admin') && !$user->can('tender:specification-management')) {
+            abort(403);
+        }
     }
 
     private function api()

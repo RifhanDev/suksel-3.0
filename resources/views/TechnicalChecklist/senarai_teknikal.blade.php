@@ -392,7 +392,7 @@
                             </thead>
                             <tbody>
                                 @forelse ($standardItems as $item)
-                                <tr data-uuid="{{ $item['uuid'] }}" data-type="{{ $item['type'] }}" data-tajuk="{{ $item['title'] }}" data-online-form-key="{{ $item['online_form_key'] ?? '' }}" data-online-form-route="{{ $item['online_form_route'] ?? '' }}">
+                                <tr data-uuid="{{ $item['uuid'] }}" data-type="{{ $item['type'] }}" data-tajuk="{{ $item['title'] }}" data-action-url="{{ $item['action_url'] ?? '' }}">
                                     <td class="text-center"><input type="checkbox" class="form-check-input row-check-standard"></td>
                                     <td>
                                         {{ $item['title'] }}
@@ -443,19 +443,19 @@
                                     <div class="d-flex flex-column gap-2 mt-1">
                                         <div class="form-check">
                                             <input class="form-check-input" type="radio" name="klonSpesifikasi"
-                                                id="klonSpesifikasi1" checked>
+                                                id="klonSpesifikasi1" value="standard" checked>
                                             <label class="form-check-label" for="klonSpesifikasi1">Templat Standard /
                                                 Kosong</label>
                                         </div>
                                         <div class="form-check">
                                             <input class="form-check-input" type="radio" name="klonSpesifikasi"
-                                                id="klonSpesifikasi2">
+                                                id="klonSpesifikasi2" value="previous">
                                             <label class="form-check-label" for="klonSpesifikasi2">Sebut Harga / Tender
                                                 Yang Lepas</label>
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-12">
+                                <div class="col-12 d-none" id="cipta-spesifikasi-jenis-item-wrapper">
                                     <label class="form-label fw-semibold small">Jenis Item</label>
                                     <select class="form-select form-select-sm">
                                         <option value="">Sila pilih...</option>
@@ -464,7 +464,7 @@
                                     </select>
                                 </div>
                             </div>
-                            <div class="d-flex justify-content-end gap-2 mt-3">
+                            <div class="d-flex justify-content-end gap-2 mt-3 d-none" id="cipta-spesifikasi-search-actions">
                                 <button type="button" class="btn-form btn-form-secondary" data-bs-dismiss="modal">Batal</button>
                                 <button type="button" class="btn-form btn-form-primary">Cari</button>
                             </div>
@@ -516,6 +516,18 @@
     <script src="{{ asset('js/components/file-upload.js') }}"></script>
     <script type="text/javascript">
         $(document).ready(function() {
+            function toggleCiptaSpesifikasiSearchControls() {
+                var selectedSource = $('input[name="klonSpesifikasi"]:checked').val();
+                var shouldShowSearchControls = selectedSource === 'previous';
+
+                $('#cipta-spesifikasi-jenis-item-wrapper').toggleClass('d-none', !shouldShowSearchControls);
+                $('#cipta-spesifikasi-search-actions').toggleClass('d-none', !shouldShowSearchControls);
+                $('#ciptaSpesifikasi .template-row').toggleClass('d-none', shouldShowSearchControls);
+            }
+
+            $('input[name="klonSpesifikasi"]').on('change', toggleCiptaSpesifikasiSearchControls);
+            $('#ciptaSpesifikasi').on('shown.bs.modal', toggleCiptaSpesifikasiSearchControls);
+            toggleCiptaSpesifikasiSearchControls();
 
             // ─── CHECKBOX: Senarai Semak Teknikal ────────────────────────────────────
             $('#tbl-teknikal').on('change', '.check-all-teknikal', function() {
@@ -773,7 +785,7 @@
                     var tajuk  = $tr.data('tajuk') || $tr.find('td:last-child').text().trim();
 
                     if (type === 'borang_atas_talian') {
-                        $('#tbl-teknikal tbody').append(buildBorangAtasTalianRow(tajuk, $tr.data('route')));
+                        $('#tbl-teknikal tbody').append(buildBorangAtasTalianRow(tajuk, $tr.data('actionUrl')));
                     } else {
                         $('#tbl-teknikal tbody').append(buildStandardRow(tajuk));
                     }
