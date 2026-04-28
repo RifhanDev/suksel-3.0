@@ -1,181 +1,262 @@
 @extends('layouts.v3.master')
 
 @section('content')
-	<!-- HEADER -->
+	<style>
+		.form-control:focus,
+		.form-select:focus {
+			border-color: var(--sg-red);
+			box-shadow: 0 0 0 0.2rem rgba(196, 30, 58, 0.25);
+		}
+
+		.project-table thead {
+			background: #1F3A8A !important;
+			color: white !important;
+		}
+
+		.project-table thead th {
+			background: transparent !important;
+			border: 1px solid rgba(255, 255, 255, 0.2) !important;
+			color: white !important;
+			font-weight: bold;
+			text-align: center;
+			padding: 12px;
+		}
+
+		.project-table td {
+			padding: 12px;
+			text-align: left;
+			border: 1px solid var(--topbar-border, #e5e7eb);
+			color: var(--sg-black);
+			vertical-align: top;
+		}
+
+		.project-table tbody tr {
+			background: white;
+		}
+
+		.project-table tbody tr:hover {
+			background: var(--sg-bg);
+		}
+
+		.version-number {
+			font-weight: 700;
+			color: var(--sg-red-dark);
+			font-family: 'Courier New', monospace;
+		}
+
+		.version-notes-list {
+			margin: 0;
+			padding-left: 1rem;
+		}
+
+		.version-notes-list li {
+			margin-bottom: 0.25rem;
+			color: #6b7280;
+			font-size: 0.85rem;
+		}
+
+		@media (max-width: 768px) {
+			.project-table {
+				font-size: 12px;
+			}
+
+			.project-table th,
+			.project-table td {
+				padding: 10px;
+			}
+		}
+	</style>
+
 	<div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center mb-4">
-		<div class="mb-3 mb-lg-0">
+		<div>
 			<h3 class="fw-bold text-dark m-0" style="letter-spacing: -0.5px;">Sejarah Versi Sistem</h3>
 			<p class="text-muted small m-0">Rekod penambahbaikan dan perubahan Sistem Tender Selangor dari semasa ke semasa.</p>
 		</div>
 	</div>
 
-	<div class="content-card">
-		<div class="bg-light px-4 py-3 border-bottom d-flex align-items-center gap-2">
-			<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-				stroke="var(--sg-red)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-				<polyline points="12 8 12 12 14 14"></polyline>
-				<circle cx="12" cy="12" r="10"></circle>
-			</svg>
-			<span class="fw-bold text-dark text-uppercase small">Log Perubahan</span>
-		</div>
-
-		<div class="p-4">
-			<div class="version-timeline">
-
-				<!-- v1.3 -->
-				<div class="version-entry">
-					<div class="d-flex align-items-center gap-3 mb-3">
-						<span class="version-badge">v1.3</span>
-						<div>
-							<div class="fw-semibold text-dark small">4 September 2017</div>
-							<div class="text-muted" style="font-size: 0.75rem;">Penambahbaikan Modul UPEN</div>
-						</div>
-						<span class="ms-auto badge rounded-pill text-bg-secondary" style="font-size: 0.7rem;">6 perubahan</span>
-					</div>
-					<div class="version-notes ps-2">
-						<p class="fw-medium small text-dark mb-2">Penambahbaikan Modul UPEN</p>
-						<ol class="ps-3 mb-0">
-							<li class="small text-muted mb-1">Menolak pendaftaran kontraktor</li>
-							<li class="small text-muted mb-1">Menerima pendaftaran kontraktor</li>
-							<li class="small text-muted mb-1">Menolak permintaan perubahan kontraktor</li>
-							<li class="small text-muted mb-1">Menerima permintaan perubahan kontraktor</li>
-							<li class="small text-muted mb-1">Menyenarai hitam kontraktor</li>
-							<li class="small text-muted mb-1">Tetapan peranan</li>
-						</ol>
-					</div>
+	<div class="card border shadow-sm mb-3 rounded-3">
+		<div class="card-body p-3">
+			<div class="row g-2 align-items-end">
+				<div class="col-12 col-lg-3">
+					<label class="form-label small fw-bold text-secondary text-uppercase mb-1">Versi</label>
+					<input type="text" id="filter_version" class="form-control form-control-sm" placeholder="Cth: v1.3">
 				</div>
 
-				<!-- v1.2 -->
-				<div class="version-entry">
-					<div class="d-flex align-items-center gap-3 mb-3">
-						<span class="version-badge">v1.2</span>
-						<div>
-							<div class="fw-semibold text-dark small">14 Oktober 2016</div>
-							<div class="text-muted" style="font-size: 0.75rem;">Penambahbaikan pelbagai modul</div>
-						</div>
-						<span class="ms-auto badge rounded-pill text-bg-secondary" style="font-size: 0.7rem;">14 perubahan</span>
-					</div>
-					<div class="version-notes ps-2">
-						<ol class="ps-3 mb-0">
-							<li class="small text-muted mb-1">Halang Transaksi Pembayaran Agensi</li>
-							<li class="small text-muted mb-1">Mengemaskini semula data-data maklumat hubungan kontraktor</li>
-							<li class="small text-muted mb-1">Semakan pendaftaran syarikat</li>
-							<li class="small text-muted mb-1">Buang agensi pengesahan</li>
-							<li class="small text-muted mb-1">Paparan kod bidang CIDB</li>
-							<li class="small text-muted mb-1">Maklumat ralat</li>
-							<li class="small text-muted mb-1">Muat turun laporan dalam format Excel</li>
-							<li class="small text-muted mb-1">Laporan syarikat berdasarkan kod bidang</li>
-							<li class="small text-muted mb-1">Laporan produktiviti Staff</li>
-							<li class="small text-muted mb-1">Paparan notifikasi kod bidang tidak layak</li>
-							<li class="small text-muted mb-1">Penukaran alamat emel oleh pegawai syarikat</li>
-							<li class="small text-muted mb-1">Paparan status pembayaran sewaktu transaksi</li>
-							<li class="small text-muted mb-1">Medan "Daerah" dalam data syarikat</li>
-							<li class="small text-muted mb-1">Muat naik kehadiran syarikat ke taklimat &amp; lawatan tapak</li>
-						</ol>
-					</div>
+				<div class="col-12 col-lg-3">
+					<label class="form-label small fw-bold text-secondary text-uppercase mb-1">Tarikh</label>
+					<input type="text" id="filter_tarikh" class="form-control form-control-sm" placeholder="Cari tarikh...">
 				</div>
 
-				<!-- v1.1 -->
-				<div class="version-entry">
-					<div class="d-flex align-items-center gap-3 mb-3">
-						<span class="version-badge">v1.1</span>
-						<div>
-							<div class="fw-semibold text-dark small">1 November 2015</div>
-							<div class="text-muted" style="font-size: 0.75rem;">Penambahbaikan ciri-ciri sistem</div>
-						</div>
-						<span class="ms-auto badge rounded-pill text-bg-secondary" style="font-size: 0.7rem;">2 perubahan</span>
-					</div>
-					<div class="version-notes ps-2">
-						<ol class="ps-3 mb-0">
-							<li class="small text-muted mb-1">Masukkan Syarikat Tidak Layak Tender / Sebut Harga Menggunakan Fungsi Kebenaran
-								Khas</li>
-							<li class="small text-muted mb-1">Cetak Resit Pembayaran Untuk Tender / Sebut Harga Secara Pukal</li>
-						</ol>
-					</div>
+				<div class="col-12 col-lg-4">
+					<label class="form-label small fw-bold text-secondary text-uppercase mb-1">Nota</label>
+					<input type="text" id="filter_nota" class="form-control form-control-sm" placeholder="Cari nota perubahan...">
 				</div>
 
-				<!-- v1.0 -->
-				<div class="version-entry version-entry--last">
-					<div class="d-flex align-items-center gap-3">
-						<span class="version-badge version-badge--launch">v1.0</span>
-						<div>
-							<div class="fw-semibold text-dark small">8 Jun 2015</div>
-							<div class="text-muted" style="font-size: 0.75rem;">Pelancaran sistem</div>
-						</div>
-						<span class="ms-auto badge rounded-pill text-bg-success" style="font-size: 0.7rem;">Live</span>
+				<div class="col-12 col-lg-2">
+					<div class="d-flex gap-2">
+						<button type="button" id="btn_reset_filter" class="btn btn-md btn-light border w-100">Reset</button>
+						<button type="button" id="btn_apply_filter" class="btn btn-md btn-selangor fw-medium w-100">Tapis</button>
 					</div>
 				</div>
-
 			</div>
 		</div>
 	</div>
 
-	<style>
-		.version-timeline {
-			position: relative;
-		}
+	<div class="bg-white rounded overflow-hidden mb-4">
+		<div class="table-responsive">
+			<table id="tbl-version-histories" class="table project-table mb-0 w-100">
+				<thead>
+					<tr>
+						<th style="width: 15%;">Versi</th>
+						<th style="width: 20%;">Tarikh</th>
+						<th style="width: 65%;">Nota Perubahan</th>
+					</tr>
+				</thead>
+				<tbody></tbody>
+			</table>
+		</div>
+	</div>
+@endsection
 
-		.version-timeline::before {
-			content: '';
-			position: absolute;
-			left: 17px;
-			top: 28px;
-			bottom: 28px;
-			width: 2px;
-			background: linear-gradient(to bottom, var(--sg-red, #c0392b), #dee2e6);
-		}
+@section('scripts')
+	<script type="text/javascript">
+		$(document).ready(function() {
+			const backendData = @json(
+				($versionHistories ?? collect())->map(function ($item) {
+					return [
+						'version' => $item->version,
+						'released_at' => optional($item->released_at)->format('j M Y'),
+						'notes' => $item->notes,
+					];
+				}));
 
-		.version-entry {
-			position: relative;
-			padding-left: 52px;
-			padding-bottom: 2rem;
-		}
+			function escapeHtml(text) {
+				return String(text ?? '').replace(/[&<>"']/g, function(m) {
+					return ({
+						'&': '&amp;',
+						'<': '&lt;',
+						'>': '&gt;',
+						'"': '&quot;',
+						"'": '&#039;'
+					})[m];
+				});
+			}
 
-		.version-entry--last {
-			padding-bottom: 0;
-		}
+			function formatNotes(notes) {
+				const text = (notes || '').toString().trim();
+				if (!text) {
+					return '<span class="text-muted">-</span>';
+				}
 
-		.version-entry::before {
-			content: '';
-			position: absolute;
-			left: 10px;
-			top: 7px;
-			width: 16px;
-			height: 16px;
-			border-radius: 50%;
-			background: var(--sg-red, #c0392b);
-			border: 3px solid #fff;
-			box-shadow: 0 0 0 2px var(--sg-red, #c0392b);
-		}
+				const lines = text.split(/\r?\n/).map(function(line) {
+					return line.trim();
+				}).filter(Boolean);
 
-		.version-entry--last::before {
-			background: #6c757d;
-			box-shadow: 0 0 0 2px #6c757d;
-		}
+				if (!lines.length) {
+					return '<span class="text-muted">-</span>';
+				}
 
-		.version-badge {
-			display: inline-flex;
-			align-items: center;
-			justify-content: center;
-			background: var(--sg-red, #c0392b);
-			color: #fff;
-			font-size: 0.7rem;
-			font-weight: 700;
-			letter-spacing: 0.05em;
-			padding: 3px 10px;
-			border-radius: 20px;
-			white-space: nowrap;
-			flex-shrink: 0;
-		}
+				return '<ul class="version-notes-list">' + lines.map(function(line) {
+					return '<li>' + escapeHtml(line) + '</li>';
+				}).join('') + '</ul>';
+			}
 
-		.version-badge--launch {
-			background: #6c757d;
-		}
+			const tableData = backendData.map(function(row) {
+				return {
+					version: row.version || '-',
+					released_at: row.released_at || '-',
+					notes: row.notes || '',
+				};
+			});
 
-		.version-notes {
-			border-left: 3px solid #f1f3f4;
-			padding-left: 1rem !important;
-			margin-top: 0.25rem;
-		}
-	</style>
+			const DT = $('#tbl-version-histories').DataTable({
+				data: tableData,
+				columns: [{
+						data: 'version',
+						render: function(data, type) {
+							if (type === 'display') {
+								return '<span class="version-number">' + escapeHtml(data) + '</span>';
+							}
+							return data;
+						}
+					},
+					{
+						data: 'released_at',
+						render: function(data, type) {
+							if (type === 'display') {
+								return '<span class="text-muted small">' + escapeHtml(data) +
+								'</span>';
+							}
+							return data;
+						}
+					},
+					{
+						data: 'notes',
+						render: function(data, type) {
+							if (type === 'display') {
+								return formatNotes(data);
+							}
+							return (data || '').replace(/\r?\n/g, ' ');
+						}
+					}
+				],
+				language: {
+					sEmptyTable: "Tiada data",
+					sInfo: "Paparan dari _START_ hingga _END_ dari _TOTAL_ rekod",
+					sInfoEmpty: "Paparan 0 hingga 0 dari 0 rekod",
+					sInfoFiltered: "(Ditapis dari jumlah _MAX_ rekod)",
+					sLengthMenu: "Papar _MENU_ rekod",
+					sLoadingRecords: "Diproses...",
+					sProcessing: "Sedang diproses...",
+					sSearch: "Carian:",
+					sZeroRecords: "Tiada padanan rekod yang dijumpai.",
+					oPaginate: {
+						sFirst: "Pertama",
+						sPrevious: "Sebelum",
+						sNext: "Kemudian",
+						sLast: "Akhir"
+					}
+				},
+				pageLength: 25,
+				responsive: true,
+				order: [
+					[1, 'desc']
+				],
+				dom: 'lrtip'
+			});
+
+			function applyFilters() {
+				const filterVersion = ($('#filter_version').val() || '').toString().trim();
+				const filterTarikh = ($('#filter_tarikh').val() || '').toString().trim();
+				const filterNota = ($('#filter_nota').val() || '').toString().trim();
+
+				DT.column(0).search(filterVersion, false, true);
+				DT.column(1).search(filterTarikh, false, true);
+				DT.column(2).search(filterNota, false, true);
+				DT.draw();
+			}
+
+			$('#btn_apply_filter').on('click', function() {
+				applyFilters();
+			});
+
+			$('#filter_version, #filter_tarikh, #filter_nota').on('keydown', function(e) {
+				if (e.key === 'Enter') {
+					e.preventDefault();
+					applyFilters();
+				}
+			});
+
+			$('#btn_reset_filter').on('click', function() {
+				$('#filter_version').val('');
+				$('#filter_tarikh').val('');
+				$('#filter_nota').val('');
+
+				DT.column(0).search('');
+				DT.column(1).search('');
+				DT.column(2).search('');
+				DT.draw();
+			});
+		});
+	</script>
 @endsection
