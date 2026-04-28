@@ -1,5 +1,10 @@
 @extends('layouts.v3.master')
 
+@push('styles')
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.1/css/all.min.css">
+@endpush
+
+
 @section('content')
 {{-- Breadcrumb: back to SENARAI TENDER (first page) --}}
 <nav aria-label="breadcrumb" class="py-2 mb-3">
@@ -541,7 +546,7 @@
                     <div class="tab-content">
                         <div class="tab-pane fade show active" id="kewangan-1" role="tabpanel">
                             <h4 class="card-title card-title-grey">PEMATUHAN CADANGAN KEWANGAN</h4>
-                            <p class="card-title-desc text-primary fst-italic">Klik butang Papar untuk melihat dokumen.</p>
+                            <p class="card-title-desc text-primary fst-italic">Klik butang Menilai untuk meneruskan penilaian.</p>
                             <table class="table table-bordered dt-responsive nowrap w-100">
                                 <thead>
                                     <tr>
@@ -553,53 +558,78 @@
                                 </thead>
                                 <tbody>
                                     <tr>
-                                        <td>Perkhidmatan Penilaian Forensik Ke atas Sistem XXXX</td>
+                                        <td>
+                                            <a href="https://ontheline.trincoll.edu/images/bookdown/sample-local-pdf.pdf" target="_blank" class="me-2">
+                                                <i class="bi bi-file-earmark-pdf-fill text-primary" aria-hidden="true"></i>
+                                            </a>
+                                            Perkhidmatan Penilaian Forensik Ke atas Sistem XXXX
+                                        </td>
                                         <td>Spesifikasi</td>
-                                        <td>Selesai</td>
+                                        <td class="status-penilaian">Menunggu Penyerahan</td>
                                         <td class="text-center">
                                             <button type="button" class="btn btn-success btn-papar-semakan-kewangan"
                                                 data-bs-toggle="modal" data-bs-target="#modalSemakanKetepatanDokumenKewangan"
-                                                data-dokumen="Perkhidmatan Penilaian Forensik Ke atas Sistem XXXX">Papar</button>
+                                                data-dokumen="Perkhidmatan Penilaian Forensik Ke atas Sistem XXXX">Menilai</button>
                                         </td>
                                     </tr>
                                     <tr>
-                                        <td>Maklumat Profil Petender</td>
+                                        <td>
+                                            <a href="https://ontheline.trincoll.edu/images/bookdown/sample-local-pdf.pdf" target="_blank" class="me-2">
+                                                <i class="bi bi-file-earmark-pdf-fill text-primary" aria-hidden="true"></i>
+                                            </a>
+                                            Maklumat Profil Petender
+                                        </td>
                                         <td>Borang Atas Talian</td>
-                                        <td>Selesai</td>
+                                        <td class="status-penilaian">Menunggu Penyerahan</td>
                                         <td class="text-center">
                                             <button type="button" class="btn btn-success btn-papar-semakan-kewangan"
                                                 data-bs-toggle="modal" data-bs-target="#modalSemakanKetepatanDokumenKewangan"
-                                                data-dokumen="Maklumat Profil Petender">Papar</button>
+                                                data-dokumen="Maklumat Profil Petender">Menilai</button>
                                         </td>
                                     </tr>
                                     <tr>
-                                        <td>Penyata Bank Terkini (3 Bulan Terakhir) Syarikat</td>
+                                        <td>
+                                            <a href="https://ontheline.trincoll.edu/images/bookdown/sample-local-pdf.pdf" target="_blank" class="me-2">
+                                                <i class="bi bi-file-earmark-pdf-fill text-primary" aria-hidden="true"></i>
+                                            </a>
+                                            Penyata Bank Terkini (3 Bulan Terakhir) Syarikat
+                                        </td>
                                         <td>Borang Atas Talian</td>
-                                        <td>Selesai</td>
+                                        <td class="status-penilaian">Menunggu Penyerahan</td>
                                         <td class="text-center">
                                             <button type="button" class="btn btn-success btn-papar-semakan-kewangan"
                                                 data-bs-toggle="modal" data-bs-target="#modalSemakanKetepatanDokumenKewangan"
-                                                data-dokumen="Penyata Bank Terkini (3 Bulan Terakhir) Syarikat">Papar</button>
+                                                data-dokumen="Penyata Bank Terkini (3 Bulan Terakhir) Syarikat">Menilai</button>
                                         </td>
                                     </tr>
                                     <tr>
-                                        <td>Salinan Sijil Pendaftaran dengan Kementerian Kewangan</td>
+                                        <td>
+                                            <a href="https://ontheline.trincoll.edu/images/bookdown/sample-local-pdf.pdf" target="_blank" class="me-2">
+                                                <i class="bi bi-file-earmark-pdf-fill text-primary" aria-hidden="true"></i>
+                                            </a>
+                                            Salinan Sijil Pendaftaran dengan Kementerian Kewangan
+                                        </td>
                                         <td>Petender Muat Naik</td>
-                                        <td>Selesai</td>
+                                        <td class="status-penilaian">Menunggu Penyerahan</td>
                                         <td class="text-center">
                                             <button type="button" class="btn btn-success btn-papar-semakan-kewangan"
                                                 data-bs-toggle="modal" data-bs-target="#modalSemakanKetepatanDokumenKewangan"
-                                                data-dokumen="Salinan Sijil Pendaftaran dengan Kementerian Kewangan">Papar</button>
+                                                data-dokumen="Salinan Sijil Pendaftaran dengan Kementerian Kewangan">Menilai</button>
                                         </td>
                                     </tr>
                                     <tr>
-                                        <td>Surat Akuan Pembida</td>
+                                        <td>
+                                            <a href="https://ontheline.trincoll.edu/images/bookdown/sample-local-pdf.pdf" target="_blank" class="me-2">
+                                                <i class="bi bi-file-earmark-pdf-fill text-primary" aria-hidden="true"></i>
+                                            </a>
+                                            Surat Akuan Pembida
+                                        </td>
                                         <td>PTJ Muat Naik</td>
-                                        <td>Selesai</td>
+                                        <td class="status-penilaian">Menunggu Penyerahan</td>
                                         <td class="text-center">
                                             <button type="button" class="btn btn-success btn-papar-semakan-kewangan"
                                                 data-bs-toggle="modal" data-bs-target="#modalSemakanKetepatanDokumenKewangan"
-                                                data-dokumen="Surat Akuan Pembida">Papar</button>
+                                                data-dokumen="Surat Akuan Pembida">Menilai</button>
                                         </td>
                                     </tr>
                                 </tbody>
@@ -756,7 +786,9 @@
                                 <tr>
                                     <td class="text-center">1/2</td>
                                     <td>
-                                        <i class="bi bi-file-earmark-pdf-fill text-primary me-2" aria-hidden="true"></i>
+                                        <a href="https://ontheline.trincoll.edu/images/bookdown/sample-local-pdf.pdf" target="_blank">
+                                            <i class="fa-solid fa-file-pdf fa-lg" aria-hidden="true"></i>
+                                        </a>
                                         Perkhidmatan Penilaian Forensik Ke atas Sistem XXXX.pdf
                                     </td>
                                     <td class="align-middle">
@@ -773,7 +805,9 @@
                                 <tr>
                                     <td class="text-center">2/2</td>
                                     <td>
-                                        <i class="bi bi-file-earmark-pdf-fill text-primary me-2" aria-hidden="true"></i>
+                                        <a href="https://ontheline.trincoll.edu/images/bookdown/sample-local-pdf.pdf" target="_blank">
+                                            <i class="fa-solid fa-file-pdf fa-lg" aria-hidden="true"></i>
+                                        </a>
                                         Perkhidmatan Penilaian Forensik Ke atas Sistem XXXXn.pdf
                                     </td>
                                     <td class="align-middle">
@@ -825,15 +859,34 @@
         // Init
         updateStepper(0);
 
+        let activeSemakanButton = null;
+        const btnSimpanDokKewangan = document.getElementById('btnStep1SimpanDokKewangan');
+
         document.querySelectorAll('.btn-papar-semakan-kewangan').forEach((btn) => {
             btn.addEventListener('click', () => {
                 const t = btn.getAttribute('data-dokumen')?.trim() || '';
                 const el = document.getElementById('modalSemakanKewanganTajuk');
+                activeSemakanButton = btn;
                 if (el && t) {
                     el.textContent = t;
                 }
             });
         });
+
+        if (btnSimpanDokKewangan) {
+            btnSimpanDokKewangan.addEventListener('click', () => {
+                if (!activeSemakanButton) return;
+
+                const currentRow = activeSemakanButton.closest('tr');
+                const statusCell = currentRow?.querySelector('.status-penilaian');
+                if (statusCell) {
+                    statusCell.textContent = 'Selesai';
+                }
+
+                activeSemakanButton.textContent = 'Papar';
+                activeSemakanButton = null;
+            });
+        }
 
     });
 

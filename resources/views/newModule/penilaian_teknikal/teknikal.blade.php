@@ -1,5 +1,9 @@
 @extends('layouts.v3.master')
 
+@push('styles')
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.1/css/all.min.css">
+@endpush
+
 @section('content')
 {{-- Breadcrumb: back to SENARAI TENDER (first page) --}}
 <nav aria-label="breadcrumb" class="py-2 mb-3">
@@ -300,6 +304,10 @@
 
     #modalSemakanKetepatanDokumenTeknikal td:nth-child(3) {
         min-width: 200px;
+    }
+
+    #modalViewDokumenTeknikal .modal-body iframe {
+        background: #fff;
     }
 
     /* ==========================
@@ -687,15 +695,20 @@
                                 </tr>
                             </thead>
                             <tbody>
+                                {{-- data-doc-url: ganti dengan URL storage sebenar selepas backend menyediakan fail --}}
                                 <tr>
                                     <td class="text-center">1</td>
                                     <td>
-                                        <i class="bi bi-file-earmark-pdf-fill text-primary me-2"></i>
-                                        Salinan Sijil Pendaftaran dengan Kementerian Kewangan.pdf
+                                        <div class="d-flex align-items-start gap-2">
+                                            <a href="https://ontheline.trincoll.edu/images/bookdown/sample-local-pdf.pdf" target="_blank">
+                                                <i class="fa-solid fa-file-pdf fa-lg" aria-hidden="true"></i>
+                                            </a>
+                                            <span class="small text-break">Salinan Sijil Pendaftaran dengan Kementerian Kewangan.pdf</span>
+                                        </div>
                                     </td>
                                     <td class="align-middle">
-                                        <select class="form-select" aria-label="Status Pematuhan">
-                                            <option selected>Mematuhi / Tidak Mematuhi</option>
+                                        <select class="form-select" name="status_pematuhan_1" aria-label="Status Pematuhan">
+                                            <option value="" selected disabled>Sila Pilih</option>
                                             <option value="mematuhi">Mematuhi</option>
                                             <option value="tidak_mematuhi">Tidak Mematuhi</option>
                                         </select>
@@ -707,12 +720,16 @@
                                 <tr>
                                     <td class="text-center">2</td>
                                     <td>
-                                        <i class="bi bi-file-earmark-pdf-fill text-primary me-2"></i>
-                                        Salinan Sijil Pendaftaran dengan Kementerian Kewangan.pdf
+                                        <div class="d-flex align-items-start gap-2">
+                                            <a href="https://ontheline.trincoll.edu/images/bookdown/sample-local-pdf.pdf" target="_blank">
+                                                <i class="fa-solid fa-file-pdf fa-lg" aria-hidden="true"></i>
+                                            </a>
+                                            <span class="small text-break">Salinan Sijil Pendaftaran dengan Kementerian Kewangan.pdf</span>
+                                        </div>
                                     </td>
                                     <td class="align-middle">
-                                        <select class="form-select" aria-label="Status Pematuhan">
-                                            <option selected>Mematuhi / Tidak Mematuhi</option>
+                                        <select class="form-select" name="status_pematuhan_2" aria-label="Status Pematuhan">
+                                            <option value="" selected disabled>Sila Pilih</option>
                                             <option value="mematuhi">Mematuhi</option>
                                             <option value="tidak_mematuhi">Tidak Mematuhi</option>
                                         </select>
@@ -727,6 +744,23 @@
                     <div class="modal-footer justify-content-center">
                         <button type="button" id="btnStep1SimpanDokTeknikal" class="btn btn-success" data-bs-dismiss="modal">Simpan</button>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Modal paparan dokumen (PDF / dipaparkan dalam iframe) --}}
+    <div class="modal fade" id="modalViewDokumenTeknikal" tabindex="-1" aria-labelledby="modalViewDokumenTeknikalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-fullscreen-lg-down">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title text-truncate pe-3 mb-0" id="modalViewDokumenTeknikalLabel">Paparan dokumen</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Tutup"></button>
+                </div>
+                <div class="modal-body p-0 bg-light">
+                    <iframe id="iframeViewDokumenTeknikal" title="Paparan dokumen" class="w-100 border-0 d-block"
+                        style="min-height: 70vh; height: min(78vh, 820px);"></iframe>
                 </div>
             </div>
         </div>
@@ -765,6 +799,24 @@
         if (btnStep1Simpan && btnStep1Menilai) {
             btnStep1Simpan.addEventListener('click', () => {
                 btnStep1Menilai.textContent = 'Papar';
+            });
+        }
+
+        // Paparan dokumen: set iframe URL & tajuk daripada butang view
+        const modalViewDoc = document.getElementById('modalViewDokumenTeknikal');
+        const iframeViewDoc = document.getElementById('iframeViewDokumenTeknikal');
+        const titleViewDoc = document.getElementById('modalViewDokumenTeknikalLabel');
+        if (modalViewDoc && iframeViewDoc && titleViewDoc) {
+            modalViewDoc.addEventListener('show.bs.modal', function(event) {
+                const trigger = event.relatedTarget;
+                if (!trigger || !trigger.matches('.btn-view-doc-teknikal')) return;
+                const url = trigger.getAttribute('data-doc-url');
+                const docTitle = trigger.getAttribute('data-doc-title') || 'Dokumen';
+                titleViewDoc.textContent = docTitle;
+                iframeViewDoc.src = url ? url.trim() : 'about:blank';
+            });
+            modalViewDoc.addEventListener('hidden.bs.modal', function() {
+                iframeViewDoc.src = 'about:blank';
             });
         }
     });

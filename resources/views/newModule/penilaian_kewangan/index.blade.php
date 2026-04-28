@@ -83,7 +83,7 @@
         <nav aria-label="breadcrumb" class="py-2 mb-3">
             <ol class="breadcrumb mb-0">
                 <li class="breadcrumb-item"><a href="#" class="text-secondary text-decoration-none">STOS</a></li>
-                <li class="breadcrumb-item active" aria-current="page">Peringkat Penilaian Teknikal</li>
+                <li class="breadcrumb-item active" aria-current="page">Peringkat Penilaian Kewangan</li>
             </ol>
         </nav>
 

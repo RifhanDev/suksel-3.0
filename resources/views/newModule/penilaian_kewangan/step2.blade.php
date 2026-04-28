@@ -328,7 +328,7 @@
                     <div class="col-md-2 fw-semibold">Status Kelayakan</div>
                     <div class="col-md-3">
                         <select class="form-select" aria-label="Status Kelayakan">
-                            <option selected>Layak / Tidak Layak</option>
+                            <option selected>Sila Pilih</option>
                             <option value="layak">Layak</option>
                             <option value="tidak-layak">Tidak Layak</option>
                         </select>
