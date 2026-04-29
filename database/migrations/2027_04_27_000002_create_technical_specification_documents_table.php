@@ -14,7 +14,6 @@ return new class extends Migration
         Schema::create('technical_specification_documents', function (Blueprint $table) {
             $table->id();
             $table->uuid('uuid')->unique();
-            $table->unsignedBigInteger('tender_id')->index();
             $table->text('title')->nullable();
             $table->string('item_type', 100)->nullable();
             $table->string('specification_type', 50)->default('technical')->index();
@@ -27,11 +26,6 @@ return new class extends Migration
             $table->unsignedBigInteger('created_by')->nullable();
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->timestamps();
-
-            $table->foreign('tender_id', 'tsd_tender_fk')
-                ->references('id')
-                ->on('tenders')
-                ->cascadeOnDelete();
 
             $table->foreign('created_by', 'tsd_created_by_fk')
                 ->references('id')

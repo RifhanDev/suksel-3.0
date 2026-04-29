@@ -193,21 +193,20 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <!-- ROW 1: Spesifikasi -->
-                        <tr>
+                        <tr id="tbl-legacy-demo-row" class="d-none" aria-hidden="true">
                             <td class="text-center">
                                 <input type="checkbox" name="row_check_teknikal[]" class="form-check-input row-check-teknikal">
                             </td>
-                            <td>Perkhidmatan Penilaian Forensik Keatas Sistem XXXX</td>
+                            <td></td>
                             <td class="text-center"><span class="small fw-semibold text-muted">Spesifikasi</span></td>
                             <td class="text-center small">Kunci Masuk</td>
                             <td class="text-center">
-                                <input type="number" name="skema[]" class="form-control form-control-sm text-center skema-input fw-semibold" value="40" min="0" style="max-width:90px;margin:0 auto;">
+                                <input type="number" name="skema[]" class="form-control form-control-sm text-center skema-input fw-semibold" value="0" min="0" style="max-width:90px;margin:0 auto;">
                             </td>
                             <td class="text-center"><span class="badge-status badge-status-success">Selesai</span></td>
                             <td class="text-center text-muted small rujukan-cell">—</td>
                             <td class="text-center">
-                                <a href="{{ route('spesifikasiForm') }}"
+                                <a href="{{ route('spesifikasiForm', ['tenderUuid' => $tender->uuid]) }}"
                                     class="btn btn-sm btn-warning d-inline-flex align-items-center justify-content-center p-1"
                                     style="width:30px;height:30px;" title="Kemaskini Spesifikasi">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13"
@@ -220,7 +219,7 @@
                             </td>
                         </tr>
                         <!-- EMPTY STATE ROW (shown when all rows deleted) -->
-                        <tr id="tbl-empty-row" class="d-none">
+                        <tr id="tbl-empty-row">
                             <td colspan="8" class="text-center text-muted py-4 small">Tiada Data</td>
                         </tr>
                     </tbody>
@@ -232,7 +231,7 @@
                             </td>
                             <td class="text-center py-3">
                                 <input type="text" id="skema-maksima-display" name="skema_maksima"
-                                    class="form-control form-control-sm text-center fw-bold" value="40" readonly
+                                    class="form-control form-control-sm text-center fw-bold" value="0" readonly
                                     style="max-width: 68px; margin: 0 auto; background: #fff; border-color: #e2e8f0;">
                             </td>
                             <td colspan="3"></td>
@@ -271,7 +270,7 @@
                         <div class="d-flex align-items-center gap-2">
                             <input type="number" id="input-penilaian" name="input_penilaian" class="form-control form-control-sm text-center fw-semibold" style="max-width: 100px; font-size: 1rem;" placeholder="0" min="0">
                             <span class="text-muted small">daripada</span>
-                            <span class="fw-bold text-dark" id="penilaian-teknikal-total" style="font-size: 1rem;">40</span>
+                            <span class="fw-bold text-dark" id="penilaian-teknikal-total" style="font-size: 1rem;">0</span>
                             <span class="text-muted small">markah</span>
                         </div>
                     </div>
@@ -457,16 +456,17 @@
                                 </div>
                                 <div class="col-12 d-none" id="cipta-spesifikasi-jenis-item-wrapper">
                                     <label class="form-label fw-semibold small">Jenis Item</label>
-                                    <select class="form-select form-select-sm">
+                                    <select id="cipta-spesifikasi-jenis-item" class="form-select form-select-sm">
                                         <option value="">Sila pilih...</option>
                                         <option value="bekalan">Bekalan</option>
                                         <option value="perkhidmatan">Perkhidmatan</option>
+                                        <option value="kerja">Kerja</option>
                                     </select>
                                 </div>
                             </div>
                             <div class="d-flex justify-content-end gap-2 mt-3 d-none" id="cipta-spesifikasi-search-actions">
                                 <button type="button" class="btn-form btn-form-secondary" data-bs-dismiss="modal">Batal</button>
-                                <button type="button" class="btn-form btn-form-primary">Cari</button>
+                                <button type="button" id="btn-cari-spesifikasi" class="btn-form btn-form-primary">Cari</button>
                             </div>
                         </div>
                     </div>
@@ -496,9 +496,18 @@
                                             <td class="text-center">-</td>
                                             <td class="text-center">-</td>
                                             <td class="text-center">
-                                                <a href="{{ route('spesifikasiForm') }}"
+                                                <a href="{{ route('spesifikasiForm', ['tenderUuid' => $tender->uuid]) }}"
                                                     class="btn btn-sm btn-primary text-white">Cipta</a>
                                             </td>
+                                        </tr>
+                                        <tr id="template-loading-row" class="d-none">
+                                            <td colspan="5" class="text-center py-3 text-muted small">
+                                                <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                                                Mencari templat...
+                                            </td>
+                                        </tr>
+                                        <tr id="template-empty-row" class="d-none">
+                                            <td colspan="5" class="text-center text-muted py-3 small">Tiada templat dijumpai untuk jenis item yang dipilih.</td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -506,6 +515,9 @@
                         </div>
                     </div>
 
+                </div>
+                <div class="modal-footer border-0 px-4 pb-4 pt-0 justify-content-end">
+                    <button type="button" class="btn-form btn-form-secondary" data-bs-dismiss="modal">Tutup</button>
                 </div>
             </div>
         </div>
@@ -516,6 +528,10 @@
     <script src="{{ asset('js/components/file-upload.js') }}"></script>
     <script type="text/javascript">
         $(document).ready(function() {
+            var SPEC_INDEX_URL   = @json(route('spesifikasiTeknikal.index'));
+            var SPEC_FORM_BASE   = @json(route('spesifikasiForm', ['tenderUuid' => $tender->uuid]));
+            var CURRENT_TENDER_UUID = @json($tender->uuid);
+
             function toggleCiptaSpesifikasiSearchControls() {
                 var selectedSource = $('input[name="klonSpesifikasi"]:checked').val();
                 var shouldShowSearchControls = selectedSource === 'previous';
@@ -523,20 +539,105 @@
                 $('#cipta-spesifikasi-jenis-item-wrapper').toggleClass('d-none', !shouldShowSearchControls);
                 $('#cipta-spesifikasi-search-actions').toggleClass('d-none', !shouldShowSearchControls);
                 $('#ciptaSpesifikasi .template-row').toggleClass('d-none', shouldShowSearchControls);
+
+                if (!shouldShowSearchControls) {
+                    // Clear search results when switching back to standard
+                    $('#templateTable tbody .template-result-row').remove();
+                    $('#template-loading-row, #template-empty-row').addClass('d-none');
+                    $('#cipta-spesifikasi-jenis-item').val('');
+                }
             }
 
             $('input[name="klonSpesifikasi"]').on('change', toggleCiptaSpesifikasiSearchControls);
             $('#ciptaSpesifikasi').on('shown.bs.modal', toggleCiptaSpesifikasiSearchControls);
+
+            // Reset state when modal is closed
+            $('#ciptaSpesifikasi').on('hidden.bs.modal', function() {
+                $('#klonSpesifikasi1').prop('checked', true);
+                toggleCiptaSpesifikasiSearchControls();
+            });
+
             toggleCiptaSpesifikasiSearchControls();
+
+            // ─── CARI: Search past specifications ─────────────────────────────────────
+
+            $('#btn-cari-spesifikasi').on('click', function() {
+                var jenisItem = $('#cipta-spesifikasi-jenis-item').val();
+                if (!jenisItem) {
+                    $('#cipta-spesifikasi-jenis-item').addClass('is-invalid').focus();
+                    return;
+                }
+                $('#cipta-spesifikasi-jenis-item').removeClass('is-invalid');
+
+                // Show loading state
+                $('#templateTable tbody .template-result-row').remove();
+                $('#template-empty-row').addClass('d-none');
+                $('#template-loading-row').removeClass('d-none');
+
+                $.ajax({
+                    url: SPEC_INDEX_URL,
+                    method: 'GET',
+                    data: {
+                        item_type: jenisItem,
+                        tender_uuid: CURRENT_TENDER_UUID
+                    },
+                    success: function(response) {
+                        $('#template-loading-row').addClass('d-none');
+                        var specs = response.data || [];
+
+                        if (!specs.length) {
+                            $('#template-empty-row').removeClass('d-none');
+                            return;
+                        }
+
+                        specs.forEach(function(spec) {
+                            var title   = $('<span>').text(spec.title || '-').html();
+                            var itype   = $('<span>').text(spec.item_type || '-').html();
+                            var score   = spec.total_score !== null && spec.total_score !== undefined ? spec.total_score : '-';
+                            var creator = $('<span>').text(spec.created_by || '-').html();
+                            var documentUrl = SPEC_FORM_BASE + '/' + encodeURIComponent(spec.uuid);
+
+                            var $row = $(
+                                '<tr class="template-result-row">' +
+                                '<td>' + title + '</td>' +
+                                '<td class="text-center">' + score + '</td>' +
+                                '<td class="text-center">' + itype + '</td>' +
+                                '<td class="text-center">' + creator + '</td>' +
+                                '<td class="text-center">' +
+                                '<button type="button" class="btn btn-sm btn-outline-primary btn-tambah-spesifikasi-templat" style="font-size:0.78rem;">Tambah</button>' +
+                                '</td>' +
+                                '</tr>'
+                            );
+                            $row.data('spec', {
+                                uuid: spec.uuid,
+                                title: spec.title || '',
+                                total_score: spec.total_score,
+                                status: spec.status || 'draft',
+                                item_type: spec.item_type || '',
+                                document_url: documentUrl
+                            });
+                            $('#templateTable tbody').append($row);
+                        });
+                    },
+                    error: function(xhr) {
+                        $('#template-loading-row').addClass('d-none');
+                        var msg = 'Ralat semasa mencari. Sila cuba semula.';
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            msg = xhr.responseJSON.message;
+                        }
+                        $('#template-empty-row').removeClass('d-none').find('td').text(msg);
+                    }
+                });
+            });
 
             // ─── CHECKBOX: Senarai Semak Teknikal ────────────────────────────────────
             $('#tbl-teknikal').on('change', '.check-all-teknikal', function() {
-                $('#tbl-teknikal .row-check-teknikal').prop('checked', $(this).prop('checked'));
+                $('#tbl-teknikal tbody tr:visible .row-check-teknikal').prop('checked', $(this).prop('checked'));
             });
 
             $('#tbl-teknikal').on('change', '.row-check-teknikal', function() {
-                var total = $('#tbl-teknikal .row-check-teknikal').length;
-                var checked = $('#tbl-teknikal .row-check-teknikal:checked').length;
+                var total = $('#tbl-teknikal tbody tr:visible .row-check-teknikal').length;
+                var checked = $('#tbl-teknikal tbody tr:visible .row-check-teknikal:checked').length;
                 $('#tbl-teknikal .check-all-teknikal').prop('checked', total === checked);
             });
 
@@ -602,6 +703,53 @@
                 );
             }
 
+            function buildChecklistStatusBadge(status) {
+                var normalizedStatus = (status || 'draft').toString().toLowerCase();
+                var label = normalizedStatus === 'completed'
+                    ? 'Selesai'
+                    : (normalizedStatus === 'submitted' ? 'Dihantar' : 'Draf');
+                var badgeClass = normalizedStatus === 'completed'
+                    ? 'badge-status-success'
+                    : 'badge-status-warning';
+
+                return '<span class="badge-status ' + badgeClass + '">' + label + '</span>';
+            }
+
+            function buildSpecificationDocumentRow(spec) {
+                var title = $('<span>').text(spec.title || '-').html();
+                var score = parseFloat(spec.total_score);
+                var resolvedScore = isNaN(score) ? 0 : score;
+                var documentUrl = spec.document_url || (SPEC_FORM_BASE + '/' + encodeURIComponent(spec.uuid));
+
+                return $(
+                    '<tr class="row-teknikal-spesifikasi" data-specification-uuid="' + $('<span>').text(spec.uuid || '').html() + '">' +
+                    '<td class="text-center"><input type="checkbox" name="row_check_teknikal[]" class="form-check-input row-check-teknikal" form="form-senarai-teknikal"></td>' +
+                    '<td>' +
+                        '<span class="small fw-semibold">' + title + '</span>' +
+                        '<input type="hidden" name="source_type[]" value="specification_document" form="form-senarai-teknikal">' +
+                        '<input type="hidden" name="specification_document_uuid[]" value="' + $('<span>').text(spec.uuid || '').html() + '" form="form-senarai-teknikal">' +
+                        '<input type="hidden" name="tajuk_dokumen[]" value="' + $('<span>').text(spec.title || '').html() + '" form="form-senarai-teknikal">' +
+                        '<input type="hidden" name="mekanisma[]" value="spesifikasi" form="form-senarai-teknikal">' +
+                    '</td>' +
+                    '<td class="text-center"><span class="small fw-semibold text-muted">Spesifikasi</span></td>' +
+                    '<td class="text-center small">Kunci Masuk</td>' +
+                    '<td class="text-center">' +
+                        '<input type="number" name="skema[]" class="form-control form-control-sm text-center skema-input fw-semibold" value="' + resolvedScore + '" min="0" style="max-width:90px;margin:0 auto;" form="form-senarai-teknikal">' +
+                    '</td>' +
+                    '<td class="text-center">' + buildChecklistStatusBadge(spec.status) + '</td>' +
+                    '<td class="text-center text-muted small rujukan-cell">—</td>' +
+                    '<td class="text-center">' +
+                        '<a href="' + documentUrl + '" class="btn btn-sm btn-warning d-inline-flex align-items-center justify-content-center p-1" style="width:30px;height:30px;" title="Kemaskini Spesifikasi">' +
+                        '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+                        '<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>' +
+                        '<path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>' +
+                        '</svg>' +
+                        '</a>' +
+                    '</td>' +
+                    '</tr>'
+                );
+            }
+
             function updateSkemaMaksima() {
                 var total = 0;
                 $('#tbl-teknikal .skema-input').each(function() {
@@ -637,7 +785,7 @@
             });
 
             function syncTableEmpty() {
-                var realRows = $('#tbl-teknikal tbody tr:not(#tbl-empty-row)').length;
+                var realRows = $('#tbl-teknikal tbody tr:not(#tbl-empty-row):visible').length;
                 if (realRows === 0) {
                     $('#tbl-empty-row').removeClass('d-none');
                 } else {
@@ -798,6 +946,27 @@
                 // Reset checkboxes and close modal
                 $('#tbl-standard .row-check-standard, #tbl-standard .check-all-standard').prop('checked', false);
                 bootstrap.Modal.getInstance($('#senaraiSemakStandard')[0]).hide();
+            });
+
+            $('#templateTable').on('click', '.btn-tambah-spesifikasi-templat', function() {
+                var $row = $(this).closest('tr');
+                var spec = $row.data('spec') || {};
+
+                if (!spec.uuid) {
+                    alert('Ralat: maklumat spesifikasi tidak lengkap.');
+                    return;
+                }
+
+                if ($('#tbl-teknikal tbody tr[data-specification-uuid="' + spec.uuid + '"]').length > 0) {
+                    alert('Spesifikasi ini telah ditambah ke dalam senarai.');
+                    return;
+                }
+
+                $('#tbl-teknikal tbody').append(buildSpecificationDocumentRow(spec));
+                syncTableEmpty();
+                updateSkemaMaksima();
+
+                $row.hide();
             });
 
 

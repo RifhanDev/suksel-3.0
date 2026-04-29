@@ -112,8 +112,8 @@
                 <span class="text-muted fw-semibold text-uppercase d-block mb-1"
                     style="font-size: 0.67rem; letter-spacing: 0.5px;">Tajuk Tender</span>
                 <h5 class="fw-bold text-dark mb-0" style="line-height: 1.45; font-size: 1rem;">
-                    MEMBEKAL RANGSUM PUKAL (AIR MINERAL) UNTUK BANGUNAN KERAJAAN
-                    <span class="fw-normal text-muted fst-italic" style="font-size: 0.85rem;">(Bekalan Perkhidmatan)</span>
+                    {{ $tender->tajuk_tender ?? $tender->name ?? '-' }}
+                    <span class="fw-normal text-muted fst-italic" style="font-size: 0.85rem;">({{ $tender->kategori_perolehan_name ?? '-' }})</span>
                 </h5>
             </div>
 
@@ -122,19 +122,19 @@
                 <div class="col-6 col-md-3">
                     <span class="text-muted fw-semibold text-uppercase d-block mb-1"
                         style="font-size: 0.67rem; letter-spacing: 0.5px;">No. Tender</span>
-                    <span class="fw-semibold text-dark" style="font-size: 0.875rem;">SUKSEL/PERT/2026/001</span>
+                    <span class="fw-semibold text-dark" style="font-size: 0.875rem;">{{ $tender->no_tender ?? '-' }}</span>
                 </div>
                 <div class="col-6 col-md-3">
                     <span class="text-muted fw-semibold text-uppercase d-block mb-1"
                         style="font-size: 0.67rem; letter-spacing: 0.5px;">PTJ</span>
-                    <span class="fw-semibold text-dark" style="font-size: 0.875rem;">100-007</span>
+                    <span class="fw-semibold text-dark" style="font-size: 0.875rem;">{{ $tender->tenderer->kod_ptj ?? '-' }}</span>
                 </div>
                 <div class="col-12 col-md-6 d-md-flex justify-content-md-end align-items-md-center">
                     <span class="d-inline-flex align-items-center gap-2 px-3 py-2 rounded-2 fw-semibold"
                         style="background: #fef9c3; color: #854d0e; font-size: 0.8rem; border: 1px solid #fde68a;">
                         <span class="d-inline-block rounded-circle"
                             style="width:7px;height:7px;background:#ca8a04;flex-shrink:0;"></span>
-                        Dalam Proses
+                        {{ $specificationData ? ucfirst($specificationData['status'] ?? 'Draf') : 'Draf' }}
                     </span>
                 </div>
             </div>
@@ -199,8 +199,8 @@
                 <!-- Jenis Item -->
                 <div class="col-12 col-md-6">
                     <label class="form-label fw-semibold">Jenis Item</label>
-                    <input type="text" class="form-control form-control-sm" value="Bekalan Perkhidmatan" disabled>
-                    <input type="hidden" name="jenis_item" value="Bekalan Perkhidmatan">
+                    <input type="text" class="form-control form-control-sm" value="{{ $tender->kategori_perolehan_name ?? 'Bekalan Perkhidmatan' }}" disabled>
+                    <input type="hidden" name="jenis_item" value="{{ $tender->kategori_perolehan_name ?? 'Bekalan Perkhidmatan' }}">
                 </div>
 
                 <!-- Jenis Spesifikasi -->
@@ -366,7 +366,7 @@
 
     <!-- BOTTOM ACTION BUTTONS -->
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <a href="{{ route('senaraiTeknikal') }}"
+        <a href="{{ route('senaraiTeknikal', $tender->uuid) }}"
             class="btn-form btn-form-secondary">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -376,10 +376,7 @@
             Kembali
         </a>
         <div class="d-flex gap-2">
-            <button type="button" class="btn-form btn-form-primary">
-                Simpan
-            </button>
-            <button type="button" class="btn-form btn-form-success">
+            <button type="button" id="btn-selesai" class="btn-form btn-form-success">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"></path></svg>
                 Selesai
             </button>
@@ -599,6 +596,17 @@
 @section('scripts')
     <script src="https://cdn.jsdelivr.net/npm/exceljs@4.3.0/dist/exceljs.min.js"></script>
     <script type="text/javascript">
+        var SPEC_CONFIG = {
+            tenderUuid: @json($tender->uuid),
+            storeUrl: @json(route('spesifikasiTeknikal.store')),
+            showUrl: @json(route('spesifikasiTeknikal.show', ['uuid' => '__UUID__'])),
+            updateUrl: @json(route('spesifikasiTeknikal.update', ['uuid' => '__UUID__'])),
+            completeUrl: @json(route('spesifikasiTeknikal.complete', ['uuid' => '__UUID__'])),
+            backUrl: @json(route('senaraiTeknikal', ['tenderUuid' => $tender->uuid])),
+            existingData: @json($specificationData),
+            csrfToken: @json(csrf_token())
+        };
+
         $(document).ready(function() {
 
             // ── Build item row (5 tds) ────────────────────────────────────────────────
@@ -1328,6 +1336,333 @@
 
                 $activeSpecRow = null;
                 bootstrap.Modal.getInstance($('#modalYesNo')[0]).hide();
+            });
+
+            // ── collectFormData — build nested JSON payload from DOM ────────────────
+
+            function collectFormData() {
+                var data = {
+                    tender_uuid: SPEC_CONFIG.tenderUuid,
+                    title: $('textarea[name="tajuk_dokumen"]').val().trim(),
+                    item_type: $('input[name="jenis_item"]').val(),
+                    specification_type: $('input[name="jenis_spesifikasi"]').val(),
+                    goods_type: $('input[name="jenisBarang"]:checked').closest('.form-check').find('label').text().trim().toLowerCase(),
+                    weighting_type: $('input[name="wajaranSpesifikasi"]:checked').closest('.form-check').find('label').text().trim().toLowerCase() === 'secara terus' ? 'direct' : 'priority',
+                    physical_submission: $('input[name="penghantaranFizikal"]:checked').closest('.form-check').find('label').text().trim().toLowerCase() === 'ya',
+                    items: []
+                };
+
+                var itemSortOrder = 0;
+                $('#dt_tmpltSpec tbody tr.item-row').each(function() {
+                    itemSortOrder++;
+                    var $item = $(this);
+                    var $specs = getItemSpecs($item);
+
+                    var item = {
+                        title: $item.find('td:first-child textarea').val().trim(),
+                        quantity: parseInt($item.find('input[type="number"]').val()) || 0,
+                        unit: $item.find('select').val() || null,
+                        sort_order: itemSortOrder,
+                        details: []
+                    };
+
+                    var specSortOrder = 0;
+                    $specs.each(function() {
+                        specSortOrder++;
+                        var $spec = $(this);
+                        var typeVal = $spec.find('.typeSelect').val();
+
+                        var responseTypeMap = { '1': 'text', '2': 'number', '3': 'yes_no' };
+                        var detail = {
+                            description: $spec.find('td:first-child textarea').val().trim(),
+                            response_type: responseTypeMap[typeVal] || null,
+                            score_mode: 'manual',
+                            max_score: 0,
+                            sort_order: specSortOrder,
+                            score_rules: []
+                        };
+
+                        if (typeVal === '1') {
+                            // Text — skema-maksima
+                            var maksima = $spec.data('skema-maksima');
+                            if (maksima) {
+                                detail.score_mode = 'manual';
+                                detail.max_score = parseFloat(maksima);
+                            }
+                        } else if (typeVal === '2') {
+                            // Nombor — skema-nombor (array of {dari, hingga, skema})
+                            detail.score_mode = 'auto';
+                            var skemaNombor = $spec.data('skema-nombor');
+                            if (skemaNombor && skemaNombor.length) {
+                                var maxScore = 0;
+                                skemaNombor.forEach(function(r) {
+                                    var score = parseFloat(r.skema) || 0;
+                                    if (score > maxScore) maxScore = score;
+                                    detail.score_rules.push({
+                                        range_from: parseFloat(r.dari) || 0,
+                                        range_to: parseFloat(r.hingga) || 0,
+                                        score: score
+                                    });
+                                });
+                                detail.max_score = maxScore;
+                            }
+                        } else if (typeVal === '3') {
+                            // Ya/Tidak — skema-yatidak
+                            var ytData = $spec.data('skema-yatidak');
+                            if (ytData) {
+                                if (ytData.jenis === 'manual') {
+                                    detail.score_mode = 'manual';
+                                    detail.max_score = parseFloat(ytData.skorMaksimum) || 0;
+                                } else {
+                                    detail.score_mode = 'auto';
+                                    var skorYa = parseFloat(ytData.skorYa) || 0;
+                                    var skorTidak = parseFloat(ytData.skorTidak) || 0;
+                                    detail.max_score = Math.max(skorYa, skorTidak);
+                                    detail.score_rules.push(
+                                        { answer: 'yes', score: skorYa },
+                                        { answer: 'no', score: skorTidak }
+                                    );
+                                }
+                            }
+                        }
+
+                        item.details.push(detail);
+                    });
+
+                    data.items.push(item);
+                });
+
+                return data;
+            }
+
+            // ── populateFormData — restore form from existing API data ──────────────
+
+            function populateFormData(specData) {
+                // Header fields
+                $('textarea[name="tajuk_dokumen"]').val(specData.title || '');
+
+                // Goods type radio
+                if (specData.goods_type === 'import') {
+                    $('#jenisBarang2').prop('checked', true);
+                } else {
+                    $('#jenisBarang1').prop('checked', true);
+                }
+
+                // Weighting type radio
+                if (specData.weighting_type === 'direct') {
+                    $('#wajaranSpesifikasi2').prop('checked', true);
+                } else {
+                    $('#wajaranSpesifikasi1').prop('checked', true);
+                }
+
+                // Physical submission radio
+                if (specData.physical_submission === false || specData.physical_submission === 0) {
+                    $('#penghantaranFizikal2').prop('checked', true);
+                } else {
+                    $('#penghantaranFizikal1').prop('checked', true);
+                }
+
+                // Build items + specs
+                var items = specData.items || [];
+                if (!items.length) return;
+
+                $('#tbl-no-data').remove();
+
+                items.forEach(function(item) {
+                    var $itemRow = buildItemRow();
+                    $itemRow.find('td:first-child textarea').val(item.title || '');
+                    $itemRow.find('input[type="number"]').val(item.quantity || 0);
+                    $itemRow.find('select').val(item.unit || '');
+                    $('#dt_tmpltSpec tbody').append($itemRow);
+                    // Trigger auto-resize
+                    $itemRow.find('td:first-child textarea').trigger('input');
+
+                    var details = item.details || [];
+                    details.forEach(function(detail) {
+                        var $specRow = buildSpecRow();
+                        $specRow.find('td:first-child textarea').val(detail.description || '');
+
+                        // Map response_type to typeSelect value
+                        var typeMap = { 'text': '1', 'number': '2', 'yes_no': '3' };
+                        $specRow.find('.typeSelect').val(typeMap[detail.response_type] || '');
+
+                        // Restore scoring data
+                        if (detail.response_type === 'text') {
+                            $specRow.data('skema-maksima', detail.max_score);
+                        } else if (detail.response_type === 'number') {
+                            var rules = detail.score_rules || [];
+                            var skemaRows = rules.map(function(r) {
+                                return { dari: r.range_from, hingga: r.range_to, skema: r.score };
+                            });
+                            $specRow.data('skema-nombor', skemaRows);
+                        } else if (detail.response_type === 'yes_no') {
+                            var rules = detail.score_rules || [];
+                            if (detail.score_mode === 'manual') {
+                                $specRow.data('skema-yatidak', { jenis: 'manual', skorMaksimum: detail.max_score });
+                            } else {
+                                var skorYa = 0, skorTidak = 0;
+                                rules.forEach(function(r) {
+                                    if (r.answer === 'yes') skorYa = r.score;
+                                    if (r.answer === 'no') skorTidak = r.score;
+                                });
+                                $specRow.data('skema-yatidak', { jenis: 'automatik', skorYa: skorYa, skorTidak: skorTidak });
+                            }
+                        }
+
+                        // Insert after last spec of this item
+                        var $existing = getItemSpecs($itemRow);
+                        var $insertAfter = $existing.length > 0 ? $existing.last() : $itemRow;
+                        $insertAfter.after($specRow);
+                        $specRow.find('td:first-child textarea').trigger('input');
+                    });
+                });
+
+                syncNoData();
+                reindexGroups();
+            }
+
+            // ── Restore data on page load if editing ────────────────────────────────
+
+            if (SPEC_CONFIG.existingData) {
+                populateFormData(SPEC_CONFIG.existingData);
+            }
+
+            // ── Edit-icon: restore saved data when reopening modals ─────────────────
+
+            $('#dt_tmpltSpec').on('click', '.edit-icon', function() {
+                var $specRow = $(this).closest('tr.spec-row');
+                var val = $(this).closest('td').find('.typeSelect').val();
+
+                if (val === '1') {
+                    var savedMaksima = $specRow.data('skema-maksima');
+                    if (savedMaksima) {
+                        setTimeout(function() { $('#modalText-skema-maksima').val(savedMaksima); }, 100);
+                    }
+                } else if (val === '2') {
+                    var savedNombor = $specRow.data('skema-nombor');
+                    if (savedNombor && savedNombor.length) {
+                        setTimeout(function() {
+                            $('#tbl-nombor-skema-body').empty();
+                            savedNombor.forEach(function(r) {
+                                var $row = buildNomborRow();
+                                $row.find('td:eq(1) input').val(r.dari);
+                                $row.find('td:eq(2) input').val(r.hingga);
+                                $row.find('td:eq(3) input').val(r.skema);
+                                $('#tbl-nombor-skema-body').append($row);
+                            });
+                        }, 100);
+                    }
+                } else if (val === '3') {
+                    var savedYt = $specRow.data('skema-yatidak');
+                    if (savedYt) {
+                        setTimeout(function() {
+                            $('#yt_fg').val(savedYt.jenis).trigger('change');
+                            if (savedYt.jenis === 'manual') {
+                                $('#yt-skor-maksimum').val(savedYt.skorMaksimum);
+                            } else {
+                                $('#yt-skor-ya').val(savedYt.skorYa);
+                                $('#yt-skor-tidak').val(savedYt.skorTidak);
+                            }
+                        }, 100);
+                    }
+                }
+            });
+
+            // ── Selesai button handler ──────────────────────────────────────────────
+
+            $('#btn-selesai').on('click', function() {
+                var $btn = $(this);
+                var formData = collectFormData();
+
+                // Basic validation
+                if (!formData.title) {
+                    alert('Sila masukkan tajuk dokumen.');
+                    $('textarea[name="tajuk_dokumen"]').focus();
+                    return;
+                }
+                if (!formData.items.length) {
+                    alert('Sila tambah sekurang-kurangnya satu item.');
+                    return;
+                }
+
+                // Check all items have at least one detail
+                for (var i = 0; i < formData.items.length; i++) {
+                    if (!formData.items[i].details.length) {
+                        alert('Item "' + (formData.items[i].title || '#' + (i + 1)) + '" tiada spesifikasi. Sila tambah sekurang-kurangnya satu spesifikasi bagi setiap item.');
+                        return;
+                    }
+                }
+
+                if (!confirm('Adakah anda pasti untuk menyimpan dan menyelesaikan spesifikasi ini? Tindakan ini tidak boleh dibatalkan.')) {
+                    return;
+                }
+
+                $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span> Menyimpan...');
+
+                var isEdit = SPEC_CONFIG.existingData && SPEC_CONFIG.existingData.uuid;
+                var saveUrl, saveMethod;
+
+                if (isEdit) {
+                    saveUrl = SPEC_CONFIG.updateUrl.replace('__UUID__', SPEC_CONFIG.existingData.uuid);
+                    saveMethod = 'PUT';
+                } else {
+                    saveUrl = SPEC_CONFIG.storeUrl;
+                    saveMethod = 'POST';
+                }
+
+                $.ajax({
+                    url: saveUrl,
+                    method: saveMethod,
+                    data: JSON.stringify(formData),
+                    contentType: 'application/json',
+                    headers: { 'X-CSRF-TOKEN': SPEC_CONFIG.csrfToken },
+                    success: function(response) {
+                        var specUuid = response.data ? response.data.uuid : (isEdit ? SPEC_CONFIG.existingData.uuid : null);
+
+                        if (!specUuid) {
+                            alert('Ralat: UUID spesifikasi tidak ditemui.');
+                            $btn.prop('disabled', false).html('<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"></path></svg> Selesai');
+                            return;
+                        }
+
+                        $btn.html('<span class="spinner-border spinner-border-sm me-1"></span> Menyelesaikan...');
+
+                        // Complete
+                        var completeUrl = SPEC_CONFIG.completeUrl.replace('__UUID__', specUuid);
+                        $.ajax({
+                            url: completeUrl,
+                            method: 'POST',
+                            headers: { 'X-CSRF-TOKEN': SPEC_CONFIG.csrfToken },
+                            success: function() {
+                                window.location.href = SPEC_CONFIG.backUrl;
+                            },
+                            error: function(xhr) {
+                                var msg = 'Gagal menyelesaikan spesifikasi.';
+                                if (xhr.responseJSON && xhr.responseJSON.message) {
+                                    msg += ' ' + xhr.responseJSON.message;
+                                }
+                                alert(msg);
+                                $btn.prop('disabled', false).html('<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"></path></svg> Selesai');
+                            }
+                        });
+                    },
+                    error: function(xhr) {
+                        var msg = 'Gagal menyimpan spesifikasi.';
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            msg += ' ' + xhr.responseJSON.message;
+                        }
+                        if (xhr.responseJSON && xhr.responseJSON.errors) {
+                            var errors = xhr.responseJSON.errors;
+                            var errorList = [];
+                            for (var key in errors) {
+                                errorList.push(errors[key].join(', '));
+                            }
+                            if (errorList.length) msg += '\n\n' + errorList.join('\n');
+                        }
+                        alert(msg);
+                        $btn.prop('disabled', false).html('<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"></path></svg> Selesai');
+                    }
+                });
             });
 
         });

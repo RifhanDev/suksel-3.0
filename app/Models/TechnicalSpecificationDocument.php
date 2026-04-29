@@ -8,7 +8,6 @@ class TechnicalSpecificationDocument extends Model
 {
     protected $fillable = [
         'uuid',
-        'tender_id',
         'title',
         'item_type',
         'specification_type',
