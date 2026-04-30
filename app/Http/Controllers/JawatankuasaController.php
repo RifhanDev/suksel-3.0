@@ -425,20 +425,6 @@ class JawatankuasaController extends Controller
         dd($data);
     }
 
-    public function simpanPengalamanKerja(Request $request)
-    {
-        $data = $request->all();
-
-        dd($data);
-    }
-
-    public function simpanKerjaDalamTangan(Request $request)
-    {
-        $data = $request->all();
-
-        dd($data);
-    }
-
     public function simpanSenaraiTeknikal(Request $request)
     {
         $data = $request->all();

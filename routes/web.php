@@ -83,6 +83,7 @@ use App\Http\Controllers\JawatankuasaController;
 use App\Http\Controllers\TechnicalChecklistController;
 use App\Http\Controllers\StandardChecklistItemController;
 use App\Http\Controllers\TechnicalSpecificationController;
+use App\Http\Controllers\KerjaDalamTanganController;
 use App\Http\Controllers\PengalamanKerjaController;
 use App\Http\Controllers\CutOffController;
 use App\Http\Controllers\JawatankuasaPerolehanController;
@@ -232,9 +233,6 @@ Route::view('/bon-atau-saham', 'newModule.jawatankuasaSpesifikasi.form_bon_saham
 Route::post('/bon-atau-saham/submit', [JawatankuasaController::class, 'storeBonSaham'])->middleware(['auth'])->name('jawatankuasa.hantarBonSaham');
 Route::view('/prestasi-kerja-semasa-petender', 'newModule.jawatankuasaSpesifikasi.form_prestasi_kerja_semasa_petender')->name('prestasiKerjaSemasa');
 Route::post('/prestasi-kerja-semasa-petender/submit', [JawatankuasaController::class, 'storePrestasiKerjaSemasa'])->middleware(['auth'])->name('jawatankuasa.hantarPrestasiKerjaSemasa');
-Route::post('/pengalaman-kerja/simpan', [JawatankuasaController::class, 'simpanPengalamanKerja'])->name('jawatankuasa.simpanPengalamanKerja');
-Route::view('/kerja-dalam-tangan', 'newModule.jawatankuasaSpesifikasi.form_kerja_dalam_tangan')->name('kjDlmTanganForm');
-Route::post('/kerja-dalam-tangan/simpan', [JawatankuasaController::class, 'simpanKerjaDalamTangan'])->name('jawatankuasa.simpanKerjaDalamTangan');
 Route::get('/spesifikasi-kewangan', [JawatankuasaController::class, 'spesifikasiKewanganBekalan'])->name('spesifikasiFormKewanganBekalan');
 Route::view('/profil-petender', 'newModule.jawatankuasaSpesifikasi.form_profil_petender')->name('prflPetender');
 Route::post('/profile-petender/submit', [JawatankuasaController::class, 'storeProfilPetender'])->middleware(['auth'])->name('jawatankuasa.hantarProfilPetender');
@@ -299,8 +297,6 @@ Route::middleware(['auth'])->group(function ()
 	Route::post('/senarai-teknikal/{tenderUuid}/hantar', [TechnicalChecklistController::class, 'submit'])->name('senaraiTeknikal.submit');
 	Route::post('/senarai-teknikal/{tenderUuid}/fail', [TechnicalChecklistController::class, 'uploadFile'])->name('senaraiTeknikal.uploadFile');
 	Route::delete('/senarai-teknikal/fail/{fileUuid}', [TechnicalChecklistController::class, 'deleteFile'])->name('senaraiTeknikal.deleteFile');
-	Route::post('/senarai-teknikal/{tenderUuid}/pengalaman-kerja', [PengalamanKerjaController::class, 'store'])->name('senaraiTeknikal.pengalamanKerja.store');
-	Route::delete('/pengalaman-kerja-files/{fileUuid}', [PengalamanKerjaController::class, 'deleteFile'])->name('pengalamanKerja.deleteFile');
 	Route::get('/senarai-teknikal/templat-spesifikasi/{tenderUuid}/{documentUuid?}', [TechnicalSpecificationController::class, 'create'])->name('spesifikasiForm');
 	Route::get('/standard-checklist-items', [StandardChecklistItemController::class, 'index'])->name('standardChecklistItems.index');
 	Route::get('/spesifikasi-teknikal', [TechnicalSpecificationController::class, 'index'])->name('spesifikasiTeknikal.index');
@@ -310,7 +306,11 @@ Route::middleware(['auth'])->group(function ()
 	Route::post('/spesifikasi-teknikal/{uuid}/lengkap', [TechnicalSpecificationController::class, 'complete'])->name('spesifikasiTeknikal.complete');
 	Route::delete('/spesifikasi-teknikal/{uuid}', [TechnicalSpecificationController::class, 'destroy'])->name('spesifikasiTeknikal.destroy');
 	Route::get('/senarai-teknikal/{tenderUuid}/pengalaman-kerja', [PengalamanKerjaController::class, 'create'])->name('senaraiTeknikal.pengalamanKerja.tender');
-	Route::view('/senarai-teknikal/kerja-dalam-tangan', 'newModule.jawatankuasaSpesifikasi.form_kerja_dalam_tangan')->name('senaraiTeknikal.kerjaDalamTangan');
+	Route::post('/senarai-teknikal/{tenderUuid}/pengalaman-kerja', [PengalamanKerjaController::class, 'store'])->name('senaraiTeknikal.pengalamanKerja.store');
+	Route::delete('/pengalaman-kerja-files/{fileUuid}', [PengalamanKerjaController::class, 'deleteFile'])->name('pengalamanKerja.deleteFile');
+	Route::get('/senarai-teknikal/{tenderUuid}/kerja-dalam-tangan', [KerjaDalamTanganController::class, 'create'])->name('senaraiTeknikal.kerjaDalamTangan');
+	Route::post('/senarai-teknikal/{tenderUuid}/kerja-dalam-tangan', [KerjaDalamTanganController::class, 'store'])->name('senaraiTeknikal.kerjaDalamTangan.store');
+	Route::delete('/kerja-dalam-tangan-files/{fileUuid}', [KerjaDalamTanganController::class, 'deleteFile'])->name('kerjaDalamTangan.deleteFile');
 
 	// Route::get('tender/select', [TendersController::class, 'select']);
 	Route::resource('tender', TendersController::class);

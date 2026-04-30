@@ -533,6 +533,12 @@
             var SPEC_FORM_BASE   = @json(route('spesifikasiForm', ['tenderUuid' => $tender->uuid]));
             var CURRENT_TENDER_UUID = @json($tender->uuid);
             var PENDING_SPEC_STORAGE_KEY = 'technical-checklist:pending-spec:' + CURRENT_TENDER_UUID;
+            var STORE_URL       = @json(route('senaraiTeknikal.store', $tender->uuid));
+            var SUBMIT_URL      = @json(route('senaraiTeknikal.submit', $tender->uuid));
+            var UPLOAD_FILE_URL = @json(route('senaraiTeknikal.uploadFile', $tender->uuid));
+            var DELETE_FILE_URL = @json(route('senaraiTeknikal.deleteFile', ':uuid'));
+            var CSRF_TOKEN      = @json(csrf_token());
+            var EXISTING_CHECKLIST = @json($checklistData);
 
             function toggleCiptaSpesifikasiSearchControls() {
                 var selectedSource = $('input[name="klonSpesifikasi"]:checked').val();
@@ -746,7 +752,7 @@
             function buildNewRow() {
                 var defaultMekanisma = 'petender_muat_naik';
                 return $(
-                    '<tr class="row-teknikal-tambah">' +
+                    '<tr class="row-teknikal-tambah" data-source-type="manual">' +
                     '<td class="text-center"><input type="checkbox" name="row_check_teknikal[]" class="form-check-input row-check-teknikal"></td>' +
                     '<td><input type="text" name="tajuk_dokumen[]" class="form-control form-control-sm" placeholder="Tajuk / Dokumen..."></td>' +
                     '<td class="text-center">' +
@@ -785,7 +791,7 @@
                 var documentUrl = spec.document_url || (SPEC_FORM_BASE + '/' + encodeURIComponent(spec.uuid));
 
                 return $(
-                    '<tr class="row-teknikal-spesifikasi" data-specification-uuid="' + $('<span>').text(spec.uuid || '').html() + '">' +
+                    '<tr class="row-teknikal-spesifikasi" data-source-type="specification_document" data-specification-uuid="' + $('<span>').text(spec.uuid || '').html() + '">' +
                     '<td class="text-center"><input type="checkbox" name="row_check_teknikal[]" class="form-check-input row-check-teknikal" form="form-senarai-teknikal"></td>' +
                     '<td>' +
                         '<span class="small fw-semibold">' + title + '</span>' +
@@ -874,6 +880,180 @@
                 updateSkemaMaksima();
             }
 
+            // ─── AUTO-SAVE: collect items, save to DB, populate on load ──────────────
+
+            var autoSaveTimer = null;
+
+            function collectItems() {
+                var items = [];
+                var idx   = 0;
+                $('#tbl-teknikal tbody tr').each(function() {
+                    var $tr = $(this);
+                    if ($tr.attr('id') === 'tbl-empty-row' || $tr.attr('id') === 'tbl-legacy-demo-row') return;
+
+                    var sourceType = $tr.data('source-type') || $tr.find('input[name="source_type[]"]').val() || 'manual';
+
+                    var title;
+                    var $tajukText = $tr.find('input[name="tajuk_dokumen[]"]:not([type="hidden"])');
+                    if ($tajukText.length) {
+                        title = $.trim($tajukText.val());
+                    } else {
+                        var $tajukHidden = $tr.find('input[name="tajuk_dokumen[]"][type="hidden"]');
+                        title = $tajukHidden.length
+                            ? $.trim($tajukHidden.val())
+                            : $.trim($tr.find('td:nth-child(2) .fw-semibold').text());
+                    }
+                    if (!title) return;
+
+                    var mechanism;
+                    var $mekSelect = $tr.find('select.mekanisma-select');
+                    if ($mekSelect.length) {
+                        mechanism = $mekSelect.val();
+                    } else if ($tr.find('input[name="mekanisma[]"]').length) {
+                        mechanism = $tr.find('input[name="mekanisma[]"]').val();
+                    } else {
+                        mechanism = sourceType === 'borang_atas_talian' ? 'borang_atas_talian' : 'petender_muat_naik';
+                    }
+
+                    var vendorAction;
+                    if (sourceType === 'borang_atas_talian') {
+                        vendorAction = $tr.data('action-url-slug') || null;
+                    } else if (mechanism === 'ptj_muat_naik') {
+                        vendorAction = $tr.find('.tindakan-pembekal select').val() || 'muat_turun';
+                    } else {
+                        vendorAction = 'muat_naik';
+                    }
+
+                    items.push({
+                        uuid:                        $tr.data('row-uuid') || null,
+                        source_type:                 sourceType,
+                        title:                       title,
+                        mechanism:                   mechanism,
+                        vendor_action:               vendorAction,
+                        score:                       parseFloat($tr.find('.skema-input').val()) || 0,
+                        sort_order:                  idx,
+                        standard_item_uuid:          $tr.data('standard-item-uuid') || null,
+                        specification_document_uuid: $tr.find('input[name="specification_document_uuid[]"]').val() || null,
+                    });
+                    idx++;
+                });
+                return items;
+            }
+
+            function updateRowUuids(savedItems) {
+                var $rows = $('#tbl-teknikal tbody tr').filter(function() {
+                    var id = $(this).attr('id');
+                    return id !== 'tbl-empty-row' && id !== 'tbl-legacy-demo-row';
+                });
+                (savedItems || []).forEach(function(item, index) {
+                    if (!item.uuid) return;
+                    var $row = $rows.eq(index);
+                    if ($row.length) {
+                        $row.data('row-uuid', item.uuid).attr('data-row-uuid', item.uuid);
+                    }
+                });
+            }
+
+            function doSave(onSuccess, onError) {
+                var items     = collectItems();
+                var maxScore  = parseFloat($('#skema-maksima-display').val()) || 0;
+                var penilaian = parseFloat($('#input-penilaian').val()) || 0;
+                var pct       = maxScore > 0 ? Math.round((penilaian / maxScore) * 100 * 100) / 100 : 0;
+
+                $.ajax({
+                    url:         STORE_URL,
+                    method:      'POST',
+                    headers:     { 'X-CSRF-TOKEN': CSRF_TOKEN },
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        items:              items,
+                        max_score:          maxScore,
+                        passing_score:      penilaian,
+                        passing_percentage: pct,
+                    }),
+                    success: function(response) {
+                        if (response.data && response.data.items) {
+                            updateRowUuids(response.data.items);
+                        }
+                        if (typeof onSuccess === 'function') onSuccess(response);
+                    },
+                    error: function(xhr) {
+                        console.warn('Checklist auto-save failed', xhr.status, xhr.responseJSON);
+                        if (typeof onError === 'function') onError(xhr);
+                    }
+                });
+            }
+
+            function autoSave(immediate) {
+                if (autoSaveTimer) clearTimeout(autoSaveTimer);
+                autoSaveTimer = setTimeout(function() { doSave(); }, immediate ? 0 : 1000);
+            }
+
+            function populateTable(data) {
+                if (!data || !data.items || !data.items.length) return;
+
+                data.items.slice().sort(function(a, b) {
+                    return (a.sort_order || 0) - (b.sort_order || 0);
+                }).forEach(function(item) {
+                    var $row;
+                    var mech = item.mechanism || 'petender_muat_naik';
+
+                    if (item.source_type === 'specification_document') {
+                        $row = buildSpecificationDocumentRow({
+                            uuid:        item.specification_document_uuid || '',
+                            title:       item.title || '',
+                            total_score: item.score,
+                            status:      item.status || 'draft',
+                        });
+                    } else if (item.source_type === 'borang_atas_talian') {
+                        $row = buildBorangAtasTalianRow(item.title || '', item.vendor_action || '', item.standard_item_uuid || null);
+                        $row.find('.skema-input').val(item.score || 0);
+                    } else {
+                        if (item.source_type === 'standard') {
+                            $row = buildStandardRow(item.title || '', item.standard_item_uuid || null);
+                        } else {
+                            $row = buildNewRow();
+                            $row.find('input[name="tajuk_dokumen[]"]').val(item.title || '');
+                        }
+                        if (mech !== 'petender_muat_naik') {
+                            $row.find('.mekanisma-select').val(mech);
+                            $row.find('.tindakan-pembekal').html(buildTindakanPembekalCell(mech));
+                            $row.find('.rujukan-cell').html(buildDokumenCell(mech));
+                            $row.find('.tindakan-cell').html(buildTindakanCell(mech));
+                            if (mech === 'ptj_muat_naik' && item.vendor_action) {
+                                $row.find('.tindakan-pembekal select').val(item.vendor_action);
+                            }
+                        }
+                        if (mech === 'ptj_muat_naik' && item.files && item.files.length) {
+                            var $list = $row.find('.rujukan-cell .dokumen-ptj-list');
+                            item.files.forEach(function(f) {
+                                $list.append(buildPtjFileEntry(f.uuid, f.original_name, f.url));
+                            });
+                        }
+                        $row.find('.skema-input').val(item.score || 0);
+                    }
+
+                    $row.data('row-uuid', item.uuid).attr('data-row-uuid', item.uuid);
+                    $('#tbl-teknikal tbody').append($row);
+                });
+
+                if (data.passing_score) {
+                    $('#input-penilaian').val(data.passing_score);
+                }
+
+                syncTableEmpty();
+                updateSkemaMaksima();
+
+                // Hide modal items that are already in the checklist
+                $('#tbl-standard tbody tr[data-uuid]').each(function() {
+                    var $stdTr = $(this);
+                    var uuid   = $stdTr.data('uuid');
+                    if (uuid && $('#tbl-teknikal tbody tr[data-standard-item-uuid="' + uuid + '"]').length) {
+                        $stdTr.hide();
+                    }
+                });
+            }
+
             function consumePendingChecklistSpecification() {
                 if (!window.sessionStorage) {
                     return;
@@ -893,6 +1073,7 @@
                 }
             }
 
+            populateTable(EXISTING_CHECKLIST);
             consumePendingChecklistSpecification();
 
             // ─── TAMBAH ROW ───────────────────────────────────────────────────────────
@@ -913,6 +1094,7 @@
                 $('#tbl-teknikal .check-all-teknikal').prop('checked', false);
                 syncTableEmpty();
                 updateSkemaMaksima();
+                autoSave(true);
             });
 
             // ─── MEKANISMA CHANGE ─────────────────────────────────────────────────────
@@ -922,57 +1104,121 @@
                 $row.find('.tindakan-pembekal').html(buildTindakanPembekalCell(val));
                 $row.find('.rujukan-cell').html(buildDokumenCell(val));
                 $row.find('.tindakan-cell').html(buildTindakanCell(val));
+                autoSave();
             });
 
             // ─── TINDAKAN PEMBEKAL DROPDOWN CHANGE (PTJ only) ────────────────────────
             // Both options allow uploading — always keep the upload button visible.
             $('#tbl-teknikal').on('change', '.tindakan-pembekal-select', function() {
                 $(this).closest('tr').find('.tindakan-cell').html(PTJ_UPLOAD_BTN);
+                autoSave();
             });
 
             // ─── SKEMA INPUT CHANGE ───────────────────────────────────────────────────
             $('#tbl-teknikal').on('input change', '.skema-input', function() {
                 updateSkemaMaksima();
+                autoSave();
             });
 
-            // ─── PTJ MUAT NAIK: File upload → append to Dokumen column, hide upload btn ─
-            $('#tbl-teknikal').on('change', '.tindakan-cell input[type="file"]', function() {
-                if (!this.files || !this.files[0]) return;
-                var file  = this.files[0];
-                var url   = URL.createObjectURL(file);
-                var $row  = $(this).closest('tr');
+            // ─── TAJUK INPUT: debounced auto-save ─────────────────────────────────────
+            $('#tbl-teknikal').on('input', 'input[name="tajuk_dokumen[]"]', function() {
+                autoSave();
+            });
 
-                // Append our uploaded file entry (with delete) to the dokumen list
-                var $entry = $(
-                    '<div class="d-flex align-items-center gap-1 dokumen-ptj-ours">' +
+            // ─── PTJ MUAT NAIK: File chip builder ────────────────────────────────────
+            function buildPtjFileEntry(fileUuid, fileName, fileUrl) {
+                var safeName = $('<span>').text(fileName).html();
+                return $(
+                    '<div class="d-flex align-items-center gap-1 dokumen-ptj-ours" data-file-uuid="' + fileUuid + '">' +
                     '<svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>' +
-                    '<a href="' + url + '" target="_blank" class="small fw-semibold text-truncate d-inline-block" style="max-width:85px;" title="' + file.name + '">' + file.name + '</a>' +
+                    '<a href="' + fileUrl + '" target="_blank" class="small fw-semibold text-truncate d-inline-block" style="max-width:85px;" title="' + safeName + '">' + safeName + '</a>' +
                     '<button type="button" class="btn-hapus-ptj-file d-inline-flex align-items-center justify-content-center flex-shrink-0" style="width:16px;height:16px;background:#fee2e2;border:none;border-radius:3px;padding:0;cursor:pointer;" title="Buang">' +
                     '<svg xmlns="http://www.w3.org/2000/svg" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
                     '</button>' +
                     '</div>'
                 );
-                $row.find('.rujukan-cell .dokumen-ptj-list').append($entry);
-                // Reset file input so same file can be re-selected if needed
-                $(this).val('');
+            }
+
+            // ─── PTJ MUAT NAIK: File upload → upload to server, append chip ──────────
+            $('#tbl-teknikal').on('change', '.tindakan-cell input[type="file"]', function() {
+                if (!this.files || !this.files[0]) return;
+                var file   = this.files[0];
+                var $input = $(this);
+                var $row   = $input.closest('tr');
+                $input.val('');
+
+                function doUpload(rowUuid) {
+                    var fd = new FormData();
+                    fd.append('file', file);
+                    fd.append('checklist_item_uuid', rowUuid);
+                    fd.append('file_type', 'support');
+                    fd.append('_token', CSRF_TOKEN);
+
+                    $.ajax({
+                        url: UPLOAD_FILE_URL,
+                        method: 'POST',
+                        data: fd,
+                        processData: false,
+                        contentType: false,
+                        success: function(res) {
+                            var f = res && res.data ? res.data : null;
+                            if (!f) return;
+                            $row.find('.rujukan-cell .dokumen-ptj-list').append(
+                                buildPtjFileEntry(f.uuid, f.original_name, f.url)
+                            );
+                        },
+                        error: function() {
+                            alert('Gagal memuat naik fail. Sila cuba lagi.');
+                        },
+                    });
+                }
+
+                var rowUuid = $row.data('row-uuid');
+                if (rowUuid) {
+                    doUpload(rowUuid);
+                } else {
+                    // Row not yet saved — auto-save first to get a UUID, then upload
+                    doSave(function() {
+                        var newUuid = $row.data('row-uuid');
+                        if (newUuid) {
+                            doUpload(newUuid);
+                        } else {
+                            alert('Gagal mendapatkan ID baris. Sila simpan semula dan cuba lagi.');
+                        }
+                    });
+                }
             });
 
             // ─── PTJ MUAT NAIK: Remove an uploaded file entry ────────────────────────
             $('#tbl-teknikal').on('click', '.btn-hapus-ptj-file', function() {
-                $(this).closest('.dokumen-ptj-ours').remove();
+                var $entry   = $(this).closest('.dokumen-ptj-ours');
+                var fileUuid = $entry.data('file-uuid');
+
+                if (!fileUuid) {
+                    $entry.remove();
+                    return;
+                }
+
+                var url = DELETE_FILE_URL.replace(':uuid', encodeURIComponent(fileUuid));
+                $.ajax({
+                    url: url,
+                    method: 'DELETE',
+                    headers: { 'X-CSRF-TOKEN': CSRF_TOKEN },
+                    success: function() { $entry.remove(); },
+                    error: function() { alert('Gagal memadam fail. Sila cuba lagi.'); },
+                });
             });
 
             // ─── ROW BUILDERS for Senarai Semak Standard ─────────────────────────────
 
             // Borang Atas Talian row: fixed mekanisma text, fixed tindakan pembekal, edit icon
-            function buildBorangAtasTalianRow(tajuk, routeUrl) {
-                // action_url is stored as a bare slug e.g. "pengalaman-kerja"
+            function buildBorangAtasTalianRow(tajuk, slug, standardItemUuid) {
+                // slug is a bare slug e.g. "pengalaman-kerja"
                 // Build full path: /senarai-teknikal/{tenderUuid}/{slug}
-                if (routeUrl) {
-                    routeUrl = '/senarai-teknikal/' + CURRENT_TENDER_UUID + '/' + routeUrl;
-                }
+                var routeUrl = slug ? '/senarai-teknikal/' + CURRENT_TENDER_UUID + '/' + slug : '';
+                var stdAttr  = standardItemUuid ? ' data-standard-item-uuid="' + $('<span>').text(standardItemUuid).html() + '"' : '';
                 return $(
-                    '<tr>' +
+                    '<tr data-source-type="borang_atas_talian" data-action-url-slug="' + $('<span>').text(slug || '').html() + '"' + stdAttr + '>' +
                     '<td class="text-center"><input type="checkbox" name="row_check_teknikal[]" class="form-check-input row-check-teknikal"></td>' +
                     '<td><span class="small fw-semibold">' + $('<span>').text(tajuk).html() + '</span></td>' +
                     '<td class="text-center"><span class="small fw-semibold text-muted">Borang Atas Talian</span></td>' +
@@ -992,10 +1238,11 @@
             }
 
             // Standard row: fixed tajuk text, Petender/PTJ mekanisma dropdown (same logic as buildNewRow)
-            function buildStandardRow(tajuk) {
+            function buildStandardRow(tajuk, standardItemUuid) {
                 var defaultMekanisma = 'petender_muat_naik';
+                var stdAttr = standardItemUuid ? ' data-standard-item-uuid="' + $('<span>').text(standardItemUuid).html() + '"' : '';
                 return $(
-                    '<tr class="row-teknikal-tambah">' +
+                    '<tr class="row-teknikal-tambah" data-source-type="standard"' + stdAttr + '>' +
                     '<td class="text-center"><input type="checkbox" name="row_check_teknikal[]" class="form-check-input row-check-teknikal"></td>' +
                     '<td><span class="small fw-semibold">' + $('<span>').text(tajuk).html() + '</span></td>' +
                     '<td class="text-center">' +
@@ -1038,17 +1285,19 @@
                     var $tr    = $(this).closest('tr');
                     var type   = $tr.data('type');
                     var tajuk  = $tr.data('tajuk') || $tr.find('td:last-child').text().trim();
+                    var uuid   = $tr.data('uuid');
 
                     if (type === 'borang_atas_talian') {
-                        $('#tbl-teknikal tbody').append(buildBorangAtasTalianRow(tajuk, $tr.data('actionUrl')));
+                        $('#tbl-teknikal tbody').append(buildBorangAtasTalianRow(tajuk, $tr.data('actionUrl'), uuid));
                     } else {
-                        $('#tbl-teknikal tbody').append(buildStandardRow(tajuk));
+                        $('#tbl-teknikal tbody').append(buildStandardRow(tajuk, uuid));
                     }
                     $tr.hide(); // hide from list once added — prevents duplicate selection
                 });
 
                 updateSkemaMaksima();
                 syncTableEmpty();
+                autoSave(true);
 
                 // Reset checkboxes and close modal
                 $('#tbl-standard .row-check-standard, #tbl-standard .check-all-standard').prop('checked', false);
@@ -1070,6 +1319,7 @@
                 }
 
                 upsertSpecificationDocumentRow(spec);
+                autoSave(true);
 
                 $row.hide();
             });
@@ -1082,21 +1332,52 @@
                 chipListId : 'file-chip-list-sokongan'
             });
 
-            // ─── SIMPAN (success modal) ──────────────────────
+            // ─── SIMPAN (save + success modal) ───────────────
             var successModal = new bootstrap.Modal(document.getElementById('successModal'));
 
             $('.btn-simpan').on('click', function() {
-                successModal.show();
+                var $btn = $(this).prop('disabled', true);
+                doSave(function() {
+                    $btn.prop('disabled', false);
+                    successModal.show();
+                }, function() {
+                    $btn.prop('disabled', false);
+                    alert('Ralat semasa menyimpan. Sila cuba lagi.');
+                });
             });
 
-            // ─── FORM SUBMIT: block if penilaian exceeds skema maksima ───────────────
+            // ─── FORM SUBMIT (HANTAR): save items then submit ─────────────────────────
             $('#form-senarai-teknikal').on('submit', function (e) {
+                e.preventDefault();
                 var skemaMaksima = parseInt($('#skema-maksima-display').val()) || 0;
                 var penilaian    = parseInt($('#input-penilaian').val()) || 0;
                 if (skemaMaksima > 0 && penilaian > skemaMaksima) {
-                    e.preventDefault();
                     $('#input-penilaian').addClass('is-invalid').focus();
+                    return;
                 }
+                var $btn = $('.btn-hantar').prop('disabled', true);
+                doSave(function() {
+                    $.ajax({
+                        url:         SUBMIT_URL,
+                        method:      'POST',
+                        headers:     { 'X-CSRF-TOKEN': CSRF_TOKEN },
+                        contentType: 'application/json',
+                        data: JSON.stringify({ passing_score: penilaian }),
+                        success: function() {
+                            $btn.prop('disabled', false);
+                            successModal.show();
+                        },
+                        error: function(xhr) {
+                            $btn.prop('disabled', false);
+                            var msg = 'Ralat semasa menghantar.';
+                            if (xhr.responseJSON && xhr.responseJSON.message) msg = xhr.responseJSON.message;
+                            alert(msg);
+                        }
+                    });
+                }, function() {
+                    $btn.prop('disabled', false);
+                    alert('Ralat semasa menyimpan sebelum hantar. Sila cuba lagi.');
+                });
             });
 
         });
