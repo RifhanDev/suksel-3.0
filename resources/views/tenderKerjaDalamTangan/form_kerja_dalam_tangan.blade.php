@@ -6,7 +6,6 @@
     <link href="{{ asset('css/components/button-components.css') }}" rel="stylesheet">
     <link href="{{ asset('css/components/file-upload.css') }}" rel="stylesheet">
     <style>
-        /* ── Table grid borders ─────────────────────────────────────── */
         #tbl-kdt {
             border: 1px solid #e2e8f0;
         }
@@ -19,7 +18,6 @@
             border-right: none !important;
         }
 
-        /* ── Saved file chips ───────────────────────────────────────── */
         .saved-file-chip {
             display: inline-flex;
             align-items: center;
@@ -48,7 +46,6 @@
         }
         .saved-file-chip .chip-del:hover { background: #fecaca; }
 
-        /* ── Toast ──────────────────────────────────────────────────── */
         #kdt-toast-container {
             position: fixed;
             top: 24px;
@@ -317,7 +314,6 @@
 @section('scripts')
 <script src="{{ asset('js/components/file-upload.js') }}"></script>
 <script>
-// ── Toast helper ──────────────────────────────────────────────────────────────
 function showKdtToast(type, message) {
     var icons = {
         success: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>',
@@ -331,10 +327,8 @@ function showKdtToast(type, message) {
 
 $(document).ready(function () {
 
-    // ── Existing data from PHP ────────────────────────────────────────
     var existingData = @json($existingData);
 
-    // ── Row template ─────────────────────────────────────────────────
     function buildRow(bil, data) {
         data = data || {};
         var nilaiFormatted = data.nilai_kerja
@@ -356,7 +350,6 @@ $(document).ready(function () {
         '</tr>');
     }
 
-    // ── Populate from existing data or seed one blank row ────────────
     if (existingData && existingData.items && existingData.items.length > 0) {
         $.each(existingData.items, function (i, item) {
             $('#tbl-kdt-body').append(buildRow(i + 1, item));
@@ -367,14 +360,12 @@ $(document).ready(function () {
 
     updateTotal();
 
-    // ── Re-number rows ───────────────────────────────────────────────
     function reNumber() {
         $('#tbl-kdt-body .kdt-row').each(function (i) {
             $(this).find('.row-bil').text(i + 1);
         });
     }
 
-    // ── Update total ─────────────────────────────────────────────────
     function updateTotal() {
         var total = 0;
         $('#tbl-kdt-body .nilai-kerja').each(function () {
@@ -383,13 +374,11 @@ $(document).ready(function () {
         $('#total-nilai-kdt').text(total.toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
     }
 
-    // ── Add row ──────────────────────────────────────────────────────
     $('#btn-tambah-row').on('click', function () {
         var bil = $('#tbl-kdt-body .kdt-row').length + 1;
         $('#tbl-kdt-body').append(buildRow(bil));
     });
 
-    // ── Delete row ───────────────────────────────────────────────────
     $('#tbl-kdt-body').on('click', '.btn-hapus-row', function () {
         if ($('#tbl-kdt-body .kdt-row').length <= 1) return;
         $(this).closest('tr').remove();
@@ -397,7 +386,6 @@ $(document).ready(function () {
         updateTotal();
     });
 
-    // ── Nilai kerja: numeric only + format on blur ───────────────────
     $('#tbl-kdt-body').on('input', '.nilai-kerja', function () {
         $(this).val($(this).val().replace(/[^\d.]/g, ''));
         updateTotal();
@@ -408,7 +396,6 @@ $(document).ready(function () {
         updateTotal();
     });
 
-    // ── Delete saved file (AJAX) ─────────────────────────────────────
     $(document).on('click', '.btn-del-saved-file', function () {
         var btn  = $(this);
         var uuid = btn.data('uuid');
@@ -434,7 +421,6 @@ $(document).ready(function () {
         });
     });
 
-    // ── Disable Simpan if no rows with content ───────────────────────
     $('#form-kerja-dalam-tangan').on('submit', function (e) {
         var hasContent = false;
         $('#tbl-kdt-body .kdt-row').each(function () {
@@ -449,7 +435,6 @@ $(document).ready(function () {
         }
     });
 
-    // ── File Upload Zone ─────────────────────────────────────────────
     FileUpload.init({
         zoneId     : 'upload-zone-kdt',
         inputId    : 'input-dokumen-kdt',

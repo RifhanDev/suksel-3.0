@@ -104,7 +104,6 @@ class KerjaDalamTanganController extends Controller
             return redirect()->back()->with('error', $message);
         }
 
-        // ── Handle file uploads (after rows are saved) ─────────────────────
         $fileErrors = [];
 
         if ($request->hasFile('dokumen_kdt')) {

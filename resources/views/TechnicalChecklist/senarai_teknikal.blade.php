@@ -880,8 +880,6 @@
                 updateSkemaMaksima();
             }
 
-            // ─── AUTO-SAVE: collect items, save to DB, populate on load ──────────────
-
             var autoSaveTimer = null;
 
             function collectItems() {
@@ -1076,14 +1074,12 @@
             populateTable(EXISTING_CHECKLIST);
             consumePendingChecklistSpecification();
 
-            // ─── TAMBAH ROW ───────────────────────────────────────────────────────────
             $('.btn-tambah-teknikal').on('click', function() {
                 $('#tbl-teknikal tbody').append(buildNewRow());
                 syncTableEmpty();
                 updateSkemaMaksima();
             });
 
-            // ─── HAPUS ROW (CHECKED ONLY) ─────────────────────────────────────────────
             $('.btn-hapus-teknikal').on('click', function() {
                 var checked = $('#tbl-teknikal .row-check-teknikal:checked');
                 if (checked.length === 0) {
@@ -1097,7 +1093,6 @@
                 autoSave(true);
             });
 
-            // ─── MEKANISMA CHANGE ─────────────────────────────────────────────────────
             $('#tbl-teknikal').on('change', '.mekanisma-select', function() {
                 var val  = $(this).val();
                 var $row = $(this).closest('tr');
@@ -1107,25 +1102,20 @@
                 autoSave();
             });
 
-            // ─── TINDAKAN PEMBEKAL DROPDOWN CHANGE (PTJ only) ────────────────────────
-            // Both options allow uploading — always keep the upload button visible.
             $('#tbl-teknikal').on('change', '.tindakan-pembekal-select', function() {
                 $(this).closest('tr').find('.tindakan-cell').html(PTJ_UPLOAD_BTN);
                 autoSave();
             });
 
-            // ─── SKEMA INPUT CHANGE ───────────────────────────────────────────────────
             $('#tbl-teknikal').on('input change', '.skema-input', function() {
                 updateSkemaMaksima();
                 autoSave();
             });
 
-            // ─── TAJUK INPUT: debounced auto-save ─────────────────────────────────────
             $('#tbl-teknikal').on('input', 'input[name="tajuk_dokumen[]"]', function() {
                 autoSave();
             });
 
-            // ─── PTJ MUAT NAIK: File chip builder ────────────────────────────────────
             function buildPtjFileEntry(fileUuid, fileName, fileUrl) {
                 var safeName = $('<span>').text(fileName).html();
                 return $(
@@ -1139,7 +1129,6 @@
                 );
             }
 
-            // ─── PTJ MUAT NAIK: File upload → upload to server, append chip ──────────
             $('#tbl-teknikal').on('change', '.tindakan-cell input[type="file"]', function() {
                 if (!this.files || !this.files[0]) return;
                 var file   = this.files[0];
@@ -1177,7 +1166,6 @@
                 if (rowUuid) {
                     doUpload(rowUuid);
                 } else {
-                    // Row not yet saved — auto-save first to get a UUID, then upload
                     doSave(function() {
                         var newUuid = $row.data('row-uuid');
                         if (newUuid) {
@@ -1189,7 +1177,6 @@
                 }
             });
 
-            // ─── PTJ MUAT NAIK: Remove an uploaded file entry ────────────────────────
             $('#tbl-teknikal').on('click', '.btn-hapus-ptj-file', function() {
                 var $entry   = $(this).closest('.dokumen-ptj-ours');
                 var fileUuid = $entry.data('file-uuid');
@@ -1209,12 +1196,7 @@
                 });
             });
 
-            // ─── ROW BUILDERS for Senarai Semak Standard ─────────────────────────────
-
-            // Borang Atas Talian row: fixed mekanisma text, fixed tindakan pembekal, edit icon
             function buildBorangAtasTalianRow(tajuk, slug, standardItemUuid) {
-                // slug is a bare slug e.g. "pengalaman-kerja"
-                // Build full path: /senarai-teknikal/{tenderUuid}/{slug}
                 var routeUrl = slug ? '/senarai-teknikal/' + CURRENT_TENDER_UUID + '/' + slug : '';
                 var stdAttr  = standardItemUuid ? ' data-standard-item-uuid="' + $('<span>').text(standardItemUuid).html() + '"' : '';
                 return $(
@@ -1237,7 +1219,6 @@
                 );
             }
 
-            // Standard row: fixed tajuk text, Petender/PTJ mekanisma dropdown (same logic as buildNewRow)
             function buildStandardRow(tajuk, standardItemUuid) {
                 var defaultMekanisma = 'petender_muat_naik';
                 var stdAttr = standardItemUuid ? ' data-standard-item-uuid="' + $('<span>').text(standardItemUuid).html() + '"' : '';
@@ -1262,7 +1243,6 @@
                 );
             }
 
-            // ─── CHECKBOX: Modal Senarai Semak Standard ───────────────────────────────
             $('#senaraiSemakStandard').on('change', '.check-all-standard', function() {
                 $('#tbl-standard .row-check-standard').prop('checked', $(this).prop('checked'));
             });
@@ -1273,7 +1253,6 @@
                 $('#tbl-standard .check-all-standard').prop('checked', total === checked);
             });
 
-            // ─── PILIH: Add selected standard items to main table ─────────────────────
             $('#senaraiSemakStandard').on('click', '.btn-pilih-standard', function() {
                 var $checked = $('#tbl-standard .row-check-standard:checked');
                 if ($checked.length === 0) {
@@ -1292,14 +1271,13 @@
                     } else {
                         $('#tbl-teknikal tbody').append(buildStandardRow(tajuk, uuid));
                     }
-                    $tr.hide(); // hide from list once added — prevents duplicate selection
+                    $tr.hide();
                 });
 
                 updateSkemaMaksima();
                 syncTableEmpty();
                 autoSave(true);
 
-                // Reset checkboxes and close modal
                 $('#tbl-standard .row-check-standard, #tbl-standard .check-all-standard').prop('checked', false);
                 bootstrap.Modal.getInstance($('#senaraiSemakStandard')[0]).hide();
             });
@@ -1325,14 +1303,12 @@
             });
 
 
-            // ─── DOKUMEN SOKONGAN: Upload zone + file chips ──────────────────────────
             FileUpload.init({
                 zoneId     : 'upload-zone-sokongan',
                 inputId    : 'input-dokumen-sokongan',
                 chipListId : 'file-chip-list-sokongan'
             });
 
-            // ─── SIMPAN (save + success modal) ───────────────
             var successModal = new bootstrap.Modal(document.getElementById('successModal'));
 
             $('.btn-simpan').on('click', function() {
@@ -1346,7 +1322,6 @@
                 });
             });
 
-            // ─── FORM SUBMIT (HANTAR): save items then submit ─────────────────────────
             $('#form-senarai-teknikal').on('submit', function (e) {
                 e.preventDefault();
                 var skemaMaksima = parseInt($('#skema-maksima-display').val()) || 0;
