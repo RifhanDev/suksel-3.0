@@ -6,6 +6,36 @@
     <link href="{{ asset('css/components/guideline-card.css') }}" rel="stylesheet">
     <link href="{{ asset('css/components/file-upload.css') }}" rel="stylesheet">
     <link href="{{ asset('css/components/button-components.css') }}" rel="stylesheet">
+    <style>
+        #page-loading-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: rgba(15, 23, 42, 0.55);
+            backdrop-filter: blur(2px);
+            -webkit-backdrop-filter: blur(2px);
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 16px;
+        }
+        #page-loading-overlay.active { display: flex; }
+        #page-loading-overlay .overlay-spinner {
+            width: 48px; height: 48px;
+            border: 4px solid rgba(255,255,255,0.25);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: overlay-spin 0.75s linear infinite;
+        }
+        #page-loading-overlay .overlay-label {
+            color: #fff;
+            font-size: 0.9rem;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+        }
+        @keyframes overlay-spin { to { transform: rotate(360deg); } }
+    </style>
 @endsection
 
 @section('content')
@@ -335,6 +365,12 @@
         </div>
     </div>
 
+    <!-- ===================== FULL-PAGE LOADING OVERLAY ===================== -->
+    <div id="page-loading-overlay" role="status" aria-live="polite">
+        <div class="overlay-spinner"></div>
+        <span class="overlay-label" id="overlay-label-text">Menyimpan...</span>
+    </div>
+
     <!-- ===================== BOTTOM ACTION BUTTONS ===================== -->
     <form id="form-senarai-teknikal" action="{{ route('senaraiTeknikal.store', $tender->uuid) }}" method="POST">
     @csrf
@@ -353,7 +389,7 @@
 
 @push('modals')
     <!-- ===================== MODAL: SUCCESS ===================== -->
-    <div class="modal fade" id="successModal" tabindex="-1" aria-hidden="true">
+    <div class="modal fade" id="successModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content text-center p-4">
                 <div class="mb-3">
@@ -362,9 +398,9 @@
                         <path d="M10 14.2L7.8 12l-1.4 1.4L10 17l8-8-1.4-1.4L10 14.2z" fill="#19c1a7" />
                     </svg>
                 </div>
-                <h5 class="fw-bold mb-2">Berjaya</h5>
-                <p class="text-muted mb-4">Maklumat telah berjaya disimpan.</p>
-                <button type="button" class="btn-form btn-form-primary mx-auto" data-bs-dismiss="modal">Tutup</button>
+                <h5 class="fw-bold mb-2" id="success-modal-title">Berjaya</h5>
+                <p class="text-muted mb-4" id="success-modal-message">Maklumat telah berjaya disimpan.</p>
+                <button type="button" class="btn-form btn-form-primary mx-auto" id="success-modal-close" data-bs-dismiss="modal">Tutup</button>
             </div>
         </div>
     </div>
@@ -845,12 +881,13 @@
                 $('#tahap-lulus-hidden').val(pct);
             }
 
-            // ─── PENILAIAN INPUT: validate + recalculate ─────────────────────────────
+            // ─── PENILAIAN INPUT: validate + recalculate + auto-save ─────────────────
             $('#input-penilaian').on('input change', function() {
                 var skemaMaksima = parseInt($('#skema-maksima-display').val()) || 0;
                 var val = parseInt($(this).val()) || 0;
                 $(this).toggleClass('is-invalid', skemaMaksima > 0 && val > skemaMaksima);
                 updateTahapLulus();
+                autoSave();
             });
 
             function syncTableEmpty() {
@@ -1072,6 +1109,14 @@
             }
 
             populateTable(EXISTING_CHECKLIST);
+
+            // Restore Dokumen Sokongan chips from saved header files
+            if (EXISTING_CHECKLIST && EXISTING_CHECKLIST.files && EXISTING_CHECKLIST.files.length) {
+                EXISTING_CHECKLIST.files.forEach(function(f) {
+                    $('#file-chip-list-sokongan').append(buildSokonganChip(f.uuid, f.original_name, f.url, f.size));
+                });
+            }
+
             consumePendingChecklistSpecification();
 
             $('.btn-tambah-teknikal').on('click', function() {
@@ -1303,21 +1348,127 @@
             });
 
 
-            FileUpload.init({
-                zoneId     : 'upload-zone-sokongan',
-                inputId    : 'input-dokumen-sokongan',
-                chipListId : 'file-chip-list-sokongan'
+            // ─── DOKUMEN SOKONGAN: chip builder ──────────────────────────────────────
+            function buildSokonganChip(fileUuid, fileName, fileUrl, fileSize) {
+                var ext      = fileName.split('.').pop().toLowerCase();
+                var safeName = $('<span>').text(fileName).html();
+                var sz       = fileSize < 1024 ? fileSize + ' B'
+                             : fileSize < 1048576 ? (fileSize / 1024).toFixed(1) + ' KB'
+                             : (fileSize / 1048576).toFixed(1) + ' MB';
+                var $chip = $(
+                    '<div class="file-chip" data-file-uuid="' + fileUuid + '">' +
+                    '<span class="file-chip-ext ext-' + ext + '">' + ext + '</span>' +
+                    '<div class="file-chip-body">' +
+                    '<a href="' + fileUrl + '" target="_blank" class="file-chip-name" title="' + safeName + '">' + safeName + '</a>' +
+                    '<span class="file-chip-size">' + sz + '</span>' +
+                    '</div>' +
+                    '<button type="button" class="file-chip-remove" title="Buang fail">' +
+                    '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>' +
+                    '</button>' +
+                    '</div>'
+                );
+                $chip.find('.file-chip-remove').on('click', function() {
+                    var uuid = $chip.data('file-uuid');
+                    if (!uuid) { $chip.remove(); return; }
+                    var url = DELETE_FILE_URL.replace(':uuid', encodeURIComponent(uuid));
+                    $.ajax({
+                        url: url,
+                        method: 'DELETE',
+                        headers: { 'X-CSRF-TOKEN': CSRF_TOKEN },
+                        success: function() { $chip.remove(); },
+                        error: function() { alert('Gagal memadam fail. Sila cuba lagi.'); },
+                    });
+                });
+                return $chip;
+            }
+
+            // ─── DOKUMEN SOKONGAN: AJAX upload ────────────────────────────────────────
+            function uploadSokonganFile(file) {
+                var fd = new FormData();
+                fd.append('file', file);
+                fd.append('file_type', 'sokongan');
+                fd.append('_token', CSRF_TOKEN);
+                $.ajax({
+                    url: UPLOAD_FILE_URL,
+                    method: 'POST',
+                    data: fd,
+                    processData: false,
+                    contentType: false,
+                    success: function(res) {
+                        var f = res && res.data ? res.data : null;
+                        if (!f) return;
+                        $('#file-chip-list-sokongan').append(buildSokonganChip(f.uuid, f.original_name, f.url, f.size));
+                    },
+                    error: function() {
+                        alert('Gagal memuat naik fail. Sila cuba lagi.');
+                    },
+                });
+            }
+
+            $('#input-dokumen-sokongan').on('change', function() {
+                if (!this.files || !this.files.length) return;
+                var fileArr = [];
+                for (var i = 0; i < this.files.length; i++) fileArr.push(this.files[i]);
+                $(this).val('');
+                fileArr.forEach(uploadSokonganFile);
             });
 
+            var sokonganZoneEl = document.getElementById('upload-zone-sokongan');
+            sokonganZoneEl.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                $('#upload-zone-sokongan').addClass('dragover');
+            });
+            sokonganZoneEl.addEventListener('dragleave', function() {
+                $('#upload-zone-sokongan').removeClass('dragover');
+            });
+            sokonganZoneEl.addEventListener('drop', function(e) {
+                e.preventDefault();
+                $('#upload-zone-sokongan').removeClass('dragover');
+                var files = e.dataTransfer.files;
+                if (!files || !files.length) return;
+                var fileArr = [];
+                for (var i = 0; i < files.length; i++) fileArr.push(files[i]);
+                fileArr.forEach(uploadSokonganFile);
+            });
+
+            var PENGURUSAN_URL = @json(route('pengurusanSpesifikasi'));
+
+            var $overlay     = $('#page-loading-overlay');
+            var $overlayText = $('#overlay-label-text');
             var successModal = new bootstrap.Modal(document.getElementById('successModal'));
+            var redirectAfterModal = false;
+
+            function showOverlay(label) {
+                $overlayText.text(label || 'Menyimpan...');
+                $overlay.addClass('active');
+            }
+
+            function hideOverlay() {
+                $overlay.removeClass('active');
+            }
+
+            function showSuccessModal(title, message, redirectOnClose) {
+                redirectAfterModal = !!redirectOnClose;
+                $('#success-modal-title').text(title);
+                $('#success-modal-message').text(message);
+                hideOverlay();
+                successModal.show();
+            }
+
+            $('#successModal').on('hidden.bs.modal', function() {
+                if (redirectAfterModal) {
+                    redirectAfterModal = false;
+                    showOverlay('Mengalih hala...');
+                    window.location.href = PENGURUSAN_URL;
+                }
+            });
 
             $('.btn-simpan').on('click', function() {
-                var $btn = $(this).prop('disabled', true);
+                showOverlay('Menyimpan...');
                 doSave(function() {
-                    $btn.prop('disabled', false);
-                    successModal.show();
+                    showSuccessModal('Berjaya Disimpan', 'Maklumat telah berjaya disimpan sebagai draf.');
                 }, function() {
-                    $btn.prop('disabled', false);
+                    hideOverlay();
                     alert('Ralat semasa menyimpan. Sila cuba lagi.');
                 });
             });
@@ -1330,8 +1481,9 @@
                     $('#input-penilaian').addClass('is-invalid').focus();
                     return;
                 }
-                var $btn = $('.btn-hantar').prop('disabled', true);
+                showOverlay('Menghantar...');
                 doSave(function() {
+                    $overlayText.text('Melengkapkan...');
                     $.ajax({
                         url:         SUBMIT_URL,
                         method:      'POST',
@@ -1339,18 +1491,17 @@
                         contentType: 'application/json',
                         data: JSON.stringify({ passing_score: penilaian }),
                         success: function() {
-                            $btn.prop('disabled', false);
-                            successModal.show();
+                            showSuccessModal('Berjaya Dihantar', 'Senarai teknikal telah berjaya dihantar dan dilengkapkan.', true);
                         },
                         error: function(xhr) {
-                            $btn.prop('disabled', false);
+                            hideOverlay();
                             var msg = 'Ralat semasa menghantar.';
                             if (xhr.responseJSON && xhr.responseJSON.message) msg = xhr.responseJSON.message;
                             alert(msg);
                         }
                     });
                 }, function() {
-                    $btn.prop('disabled', false);
+                    hideOverlay();
                     alert('Ralat semasa menyimpan sebelum hantar. Sila cuba lagi.');
                 });
             });

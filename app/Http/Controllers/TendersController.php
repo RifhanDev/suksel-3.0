@@ -610,6 +610,12 @@ class TendersController extends Controller
 				'=',
 				'tenders.kategori_perolehan_id'
 			)
+			->leftJoin(
+				'technical_checklist_headers as tcheader',
+				'tcheader.tender_id',
+				'=',
+				'tenders.id'
+			)
 			->select([
 				'tenders.id',
 				'tenders.uuid',
@@ -620,6 +626,7 @@ class TendersController extends Controller
 				'tenders.submission_datetime',
 				'kategori_perolehan.name as kategori_perolehan_name',
 				DB::raw("COALESCE(NULLIF(tenders.no_tender, ''), tenders.ref_number) as tender_number"),
+				'tcheader.status as checklist_status',
 			])
 			->orderBy('tenders.document_stop_date', 'desc')
 			->orderBy('tenders.id', 'desc');
@@ -627,26 +634,35 @@ class TendersController extends Controller
 
 	private function manageSpecificationActionButtons($tender): string
 	{
-		$categoryName = mb_strtolower(trim((string) ($tender->kategori_perolehan_name ?? '')));
-		$tenderQuery = !empty($tender->uuid) ? '?tender=' . urlencode($tender->uuid) : '';
+		$categoryName     = mb_strtolower(trim((string) ($tender->kategori_perolehan_name ?? '')));
+		$tenderQuery      = !empty($tender->uuid) ? '?tender=' . urlencode($tender->uuid) : '';
+		$checklistDone    = ($tender->checklist_status === 'submitted');
 
 		if (in_array($categoryName, ['bekalan', 'perkhidmatan'], true)) {
 			$technicalUrl = !empty($tender->uuid) ? route('senaraiTeknikal', $tender->uuid) : '#';
 			$financialUrl = route('senaraiKewanganBekalan') . $tenderQuery;
 
+			$kewangan = $checklistDone
+				? '<a href="' . e($financialUrl) . '" class="btn btn-sm btn-success">Kewangan</a>'
+				: '';
+
 			return '<div class="d-flex gap-1 justify-content-center">'
 				. '<a href="' . e($technicalUrl) . '" class="btn btn-sm btn-warning text-white">Teknikal</a>'
-				. '<a href="' . e($financialUrl) . '" class="btn btn-sm btn-success">Kewangan</a>'
+				. $kewangan
 				. '</div>';
 		}
 
 		if ($categoryName === 'kerja') {
 			$specificationUrl = route('penyediaanSpekTender') . $tenderQuery;
-			$financialUrl = route('senaraiKewanganKerja') . $tenderQuery;
+			$financialUrl     = route('senaraiKewanganKerja') . $tenderQuery;
+
+			$kewangan = $checklistDone
+				? '<a href="' . e($financialUrl) . '" class="btn btn-sm btn-success">Kewangan</a>'
+				: '';
 
 			return '<div class="d-flex gap-1 justify-content-center">'
 				. '<a href="' . e($specificationUrl) . '" class="btn btn-sm btn-info text-white">Spesifikasi</a>'
-				. '<a href="' . e($financialUrl) . '" class="btn btn-sm btn-success">Kewangan</a>'
+				. $kewangan
 				. '</div>';
 		}
 
