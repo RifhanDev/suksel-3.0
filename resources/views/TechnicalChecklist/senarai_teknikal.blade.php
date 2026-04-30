@@ -512,6 +512,7 @@
                                     </tbody>
                                 </table>
                             </div>
+                            <div id="template-pagination" class="px-2 pt-2 pb-1"></div>
                         </div>
                     </div>
 
@@ -531,6 +532,7 @@
             var SPEC_INDEX_URL   = @json(route('spesifikasiTeknikal.index'));
             var SPEC_FORM_BASE   = @json(route('spesifikasiForm', ['tenderUuid' => $tender->uuid]));
             var CURRENT_TENDER_UUID = @json($tender->uuid);
+            var PENDING_SPEC_STORAGE_KEY = 'technical-checklist:pending-spec:' + CURRENT_TENDER_UUID;
 
             function toggleCiptaSpesifikasiSearchControls() {
                 var selectedSource = $('input[name="klonSpesifikasi"]:checked').val();
@@ -542,8 +544,7 @@
 
                 if (!shouldShowSearchControls) {
                     // Clear search results when switching back to standard
-                    $('#templateTable tbody .template-result-row').remove();
-                    $('#template-loading-row, #template-empty-row').addClass('d-none');
+                    resetTemplateResults();
                     $('#cipta-spesifikasi-jenis-item').val('');
                 }
             }
@@ -559,7 +560,101 @@
 
             toggleCiptaSpesifikasiSearchControls();
 
-            // ─── CARI: Search past specifications ─────────────────────────────────────
+            // ─── CARI: Search past specifications — with pagination ───────────────────
+
+            var templateAllSpecs   = [];
+            var templateCurrentPage = 1;
+            var TEMPLATE_PAGE_SIZE  = 10;
+
+            function buildTemplateRow(spec) {
+                var title   = $('<span>').text(spec.title || '-').html();
+                var itype   = $('<span>').text(spec.item_type || '-').html();
+                var score   = (spec.total_score !== null && spec.total_score !== undefined) ? spec.total_score : '-';
+                var creator = $('<span>').text(spec.created_by || '-').html();
+                var documentUrl = SPEC_FORM_BASE + '/' + encodeURIComponent(spec.uuid);
+                var $row = $(
+                    '<tr class="template-result-row">' +
+                    '<td>' + title + '</td>' +
+                    '<td class="text-center">' + score + '</td>' +
+                    '<td class="text-center">' + itype + '</td>' +
+                    '<td class="text-center">' + creator + '</td>' +
+                    '<td class="text-center">' +
+                    '<button type="button" class="btn btn-sm btn-outline-primary btn-tambah-spesifikasi-templat" style="font-size:0.78rem;">Tambah</button>' +
+                    '</td>' +
+                    '</tr>'
+                );
+                $row.data('spec', {
+                    uuid: spec.uuid,
+                    title: spec.title || '',
+                    total_score: spec.total_score,
+                    status: spec.status || 'draft',
+                    item_type: spec.item_type || '',
+                    document_url: documentUrl
+                });
+                return $row;
+            }
+
+            function renderTemplatePage(page) {
+                templateCurrentPage = page;
+                $('#templateTable tbody .template-result-row').remove();
+
+                var start    = (page - 1) * TEMPLATE_PAGE_SIZE;
+                var pageData = templateAllSpecs.slice(start, start + TEMPLATE_PAGE_SIZE);
+                pageData.forEach(function(spec) {
+                    $('#templateTable tbody').append(buildTemplateRow(spec));
+                });
+
+                renderTemplatePagination(templateAllSpecs.length, page);
+            }
+
+            function renderTemplatePagination(total, page) {
+                var totalPages = Math.ceil(total / TEMPLATE_PAGE_SIZE);
+                var $container = $('#template-pagination').empty();
+                if (totalPages <= 1) return;
+
+                var $ul = $('<ul class="pagination pagination-sm justify-content-center mb-0">');
+
+                var $prev = $('<li class="page-item">').toggleClass('disabled', page === 1);
+                $prev.append($('<a class="page-link" href="#">&laquo;</a>').data('tpl-page', page - 1));
+                $ul.append($prev);
+
+                var from = Math.max(1, page - 2);
+                var to   = Math.min(totalPages, from + 4);
+                from = Math.max(1, to - 4);
+
+                if (from > 1) $ul.append('<li class="page-item disabled"><span class="page-link">…</span></li>');
+
+                for (var i = from; i <= to; i++) {
+                    var $li = $('<li class="page-item">').toggleClass('active', i === page);
+                    $li.append($('<a class="page-link" href="#">' + i + '</a>').data('tpl-page', i));
+                    $ul.append($li);
+                }
+
+                if (to < totalPages) $ul.append('<li class="page-item disabled"><span class="page-link">…</span></li>');
+
+                var $next = $('<li class="page-item">').toggleClass('disabled', page === totalPages);
+                $next.append($('<a class="page-link" href="#">&raquo;</a>').data('tpl-page', page + 1));
+                $ul.append($next);
+
+                $container.append($('<nav aria-label="Navigasi templat">').append($ul));
+            }
+
+            function resetTemplateResults() {
+                templateAllSpecs = [];
+                templateCurrentPage = 1;
+                $('#templateTable tbody .template-result-row').remove();
+                $('#template-loading-row, #template-empty-row').addClass('d-none');
+                $('#template-pagination').empty();
+            }
+
+            $('#template-pagination').on('click', 'a.page-link', function(e) {
+                e.preventDefault();
+                var page = $(this).data('tpl-page');
+                var maxPage = Math.ceil(templateAllSpecs.length / TEMPLATE_PAGE_SIZE);
+                if (!page || page < 1 || page > maxPage) return;
+                renderTemplatePage(page);
+                $('#templateTable').closest('.table-responsive')[0].scrollTop = 0;
+            });
 
             $('#btn-cari-spesifikasi').on('click', function() {
                 var jenisItem = $('#cipta-spesifikasi-jenis-item').val();
@@ -569,62 +664,30 @@
                 }
                 $('#cipta-spesifikasi-jenis-item').removeClass('is-invalid');
 
-                // Show loading state
-                $('#templateTable tbody .template-result-row').remove();
-                $('#template-empty-row').addClass('d-none');
+                resetTemplateResults();
                 $('#template-loading-row').removeClass('d-none');
 
                 $.ajax({
                     url: SPEC_INDEX_URL,
                     method: 'GET',
-                    data: {
-                        item_type: jenisItem,
-                        tender_uuid: CURRENT_TENDER_UUID
-                    },
+                    data: { item_type: jenisItem, tender_uuid: CURRENT_TENDER_UUID },
                     success: function(response) {
                         $('#template-loading-row').addClass('d-none');
                         var specs = response.data || [];
-
                         if (!specs.length) {
                             $('#template-empty-row').removeClass('d-none');
                             return;
                         }
-
-                        specs.forEach(function(spec) {
-                            var title   = $('<span>').text(spec.title || '-').html();
-                            var itype   = $('<span>').text(spec.item_type || '-').html();
-                            var score   = spec.total_score !== null && spec.total_score !== undefined ? spec.total_score : '-';
-                            var creator = $('<span>').text(spec.created_by || '-').html();
-                            var documentUrl = SPEC_FORM_BASE + '/' + encodeURIComponent(spec.uuid);
-
-                            var $row = $(
-                                '<tr class="template-result-row">' +
-                                '<td>' + title + '</td>' +
-                                '<td class="text-center">' + score + '</td>' +
-                                '<td class="text-center">' + itype + '</td>' +
-                                '<td class="text-center">' + creator + '</td>' +
-                                '<td class="text-center">' +
-                                '<button type="button" class="btn btn-sm btn-outline-primary btn-tambah-spesifikasi-templat" style="font-size:0.78rem;">Tambah</button>' +
-                                '</td>' +
-                                '</tr>'
-                            );
-                            $row.data('spec', {
-                                uuid: spec.uuid,
-                                title: spec.title || '',
-                                total_score: spec.total_score,
-                                status: spec.status || 'draft',
-                                item_type: spec.item_type || '',
-                                document_url: documentUrl
-                            });
-                            $('#templateTable tbody').append($row);
+                        specs.sort(function(a, b) {
+                            return (a.title || '').localeCompare(b.title || '', 'ms', { sensitivity: 'base', numeric: true });
                         });
+                        templateAllSpecs = specs;
+                        renderTemplatePage(1);
                     },
                     error: function(xhr) {
                         $('#template-loading-row').addClass('d-none');
                         var msg = 'Ralat semasa mencari. Sila cuba semula.';
-                        if (xhr.responseJSON && xhr.responseJSON.message) {
-                            msg = xhr.responseJSON.message;
-                        }
+                        if (xhr.responseJSON && xhr.responseJSON.message) msg = xhr.responseJSON.message;
                         $('#template-empty-row').removeClass('d-none').find('td').text(msg);
                     }
                 });
@@ -793,6 +856,45 @@
                 }
             }
 
+            function upsertSpecificationDocumentRow(spec) {
+                if (!spec || !spec.uuid) {
+                    return;
+                }
+
+                var $newRow = buildSpecificationDocumentRow(spec);
+                var $existingRow = $('#tbl-teknikal tbody tr[data-specification-uuid="' + spec.uuid + '"]');
+
+                if ($existingRow.length) {
+                    $existingRow.first().replaceWith($newRow);
+                } else {
+                    $('#tbl-teknikal tbody').append($newRow);
+                }
+
+                syncTableEmpty();
+                updateSkemaMaksima();
+            }
+
+            function consumePendingChecklistSpecification() {
+                if (!window.sessionStorage) {
+                    return;
+                }
+
+                var raw = window.sessionStorage.getItem(PENDING_SPEC_STORAGE_KEY);
+                if (!raw) {
+                    return;
+                }
+
+                window.sessionStorage.removeItem(PENDING_SPEC_STORAGE_KEY);
+
+                try {
+                    upsertSpecificationDocumentRow(JSON.parse(raw));
+                } catch (error) {
+                    console.warn('Failed to consume pending checklist specification.', error);
+                }
+            }
+
+            consumePendingChecklistSpecification();
+
             // ─── TAMBAH ROW ───────────────────────────────────────────────────────────
             $('.btn-tambah-teknikal').on('click', function() {
                 $('#tbl-teknikal tbody').append(buildNewRow());
@@ -864,6 +966,11 @@
 
             // Borang Atas Talian row: fixed mekanisma text, fixed tindakan pembekal, edit icon
             function buildBorangAtasTalianRow(tajuk, routeUrl) {
+                // action_url is stored as a bare slug e.g. "pengalaman-kerja"
+                // Build full path: /senarai-teknikal/{tenderUuid}/{slug}
+                if (routeUrl) {
+                    routeUrl = '/senarai-teknikal/' + CURRENT_TENDER_UUID + '/' + routeUrl;
+                }
                 return $(
                     '<tr>' +
                     '<td class="text-center"><input type="checkbox" name="row_check_teknikal[]" class="form-check-input row-check-teknikal"></td>' +
@@ -962,9 +1069,7 @@
                     return;
                 }
 
-                $('#tbl-teknikal tbody').append(buildSpecificationDocumentRow(spec));
-                syncTableEmpty();
-                updateSkemaMaksima();
+                upsertSpecificationDocumentRow(spec);
 
                 $row.hide();
             });

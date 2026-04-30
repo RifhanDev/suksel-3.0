@@ -127,7 +127,7 @@
                 <div class="col-6 col-md-3">
                     <span class="text-muted fw-semibold text-uppercase d-block mb-1"
                         style="font-size: 0.67rem; letter-spacing: 0.5px;">PTJ</span>
-                    <span class="fw-semibold text-dark" style="font-size: 0.875rem;">{{ $tender->tenderer->kod_ptj ?? '-' }}</span>
+                    <span class="fw-semibold text-dark" style="font-size: 0.875rem;">{{ optional($tender->tenderer)->name ?? '-' }}</span>
                 </div>
                 <div class="col-12 col-md-6 d-md-flex justify-content-md-end align-items-md-center">
                     <span class="d-inline-flex align-items-center gap-2 px-3 py-2 rounded-2 fw-semibold"
@@ -606,6 +606,88 @@
             existingData: @json($specificationData),
             csrfToken: @json(csrf_token())
         };
+        var PENDING_CHECKLIST_SPEC_KEY = 'technical-checklist:pending-spec:' + SPEC_CONFIG.tenderUuid;
+
+        function calculateChecklistSpecificationTotalScore(formData) {
+            var total = 0;
+
+            (formData.items || []).forEach(function(item) {
+                (item.details || []).forEach(function(detail) {
+                    total += parseFloat(detail.max_score) || 0;
+                });
+            });
+
+            return total;
+        }
+
+        function queueChecklistSpecification(specification) {
+            if (!window.sessionStorage) {
+                return;
+            }
+
+            try {
+                window.sessionStorage.setItem(PENDING_CHECKLIST_SPEC_KEY, JSON.stringify(specification));
+            } catch (error) {
+                console.warn('Failed to queue pending checklist specification.', error);
+            }
+        }
+
+        // ── Shared button label ──────────────────────────────────────────────────────
+        var BTN_SELESAI_LABEL =
+            '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"></path></svg> Selesai';
+
+        // ── Toast notification helper ─────────────────────────────────────────────────
+
+        function showToast(message, type) {
+            type = type || 'error';
+            var cfgMap = {
+                error:   { bg: '#fef2f2', border: '#fecaca', color: '#dc2626', icon: '<circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line>' },
+                warning: { bg: '#fffbeb', border: '#fde68a', color: '#d97706', icon: '<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line>' },
+                success: { bg: '#f0fdf4', border: '#bbf7d0', color: '#16a34a', icon: '<polyline points="20 6 9 17 4 12"></polyline>' }
+            };
+            var cfg = cfgMap[type] || cfgMap.error;
+
+            if (!$('#app-toast-container').length) {
+                $('body').append(
+                    '<div id="app-toast-container" style="position:fixed;top:1.5rem;right:1.5rem;z-index:99999;display:flex;flex-direction:column;gap:0.75rem;width:520px;pointer-events:none;"></div>'
+                );
+            }
+
+            var safeMsg = $('<span>').text(message).html().replace(/\n/g, '<br>');
+            var $toast = $('<div>').css({
+                background: cfg.bg,
+                border: '2px solid ' + cfg.border,
+                borderRadius: '14px',
+                padding: '1.25rem 1.5rem',
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '1rem',
+                boxShadow: '0 8px 28px rgba(0,0,0,0.14)',
+                opacity: 0,
+                transition: 'opacity 0.2s ease',
+                pointerEvents: 'auto'
+            }).html(
+                '<svg style="flex-shrink:0;margin-top:2px;" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="' + cfg.color + '" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">' + cfg.icon + '</svg>' +
+                '<span style="flex:1;font-size:1rem;line-height:1.65;color:#1e293b;">' + safeMsg + '</span>' +
+                '<button type="button" style="flex-shrink:0;background:none;border:none;padding:0;cursor:pointer;color:#94a3b8;margin-top:3px;" class="toast-dismiss-btn">' +
+                '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
+                '</button>'
+            );
+
+            $('#app-toast-container').append($toast);
+
+            var tid = setTimeout(function() { dismissToast($toast); }, 5500);
+            $toast.data('tid', tid);
+            $toast.find('.toast-dismiss-btn').on('click', function() { dismissToast($toast); });
+
+            requestAnimationFrame(function() { $toast.css('opacity', 1); });
+        }
+
+        function dismissToast($toast) {
+            clearTimeout($toast.data('tid'));
+            $toast.css('opacity', 0);
+            setTimeout(function() { $toast.remove(); }, 250);
+        }
 
         $(document).ready(function() {
 
@@ -1043,8 +1125,7 @@
                         $('#input-muat-naik').val('');
                     }).catch(function(err) {
                         console.error('ExcelJS import error:', err);
-                        alert(
-                            'Gagal membaca fail Excel. Sila pastikan fail adalah format .xlsx yang sah.');
+                        showToast('Gagal membaca fail Excel. Sila pastikan fail adalah format .xlsx yang sah.');
                         $('#input-muat-naik').val('');
                     });
                 };
@@ -1140,7 +1221,7 @@
                     $('#yt-skor-tidak').val(0);
                     new bootstrap.Modal($('#modalYesNo')[0]).show();
                 } else {
-                    alert('Sila pilih jenis terlebih dahulu.');
+                    showToast('Sila pilih jenis skema terlebih dahulu.', 'warning');
                 }
             });
 
@@ -1270,7 +1351,7 @@
                 });
 
                 if (!valid) {
-                    alert('Nilai "Dari" mesti lebih besar daripada nilai "Hingga" baris sebelumnya.');
+                    showToast('Nilai "Dari" mesti lebih besar daripada nilai "Hingga" baris sebelumnya.', 'warning');
                     return;
                 }
 
@@ -1399,8 +1480,9 @@
                                     var score = parseFloat(r.skema) || 0;
                                     if (score > maxScore) maxScore = score;
                                     detail.score_rules.push({
-                                        range_from: parseFloat(r.dari) || 0,
-                                        range_to: parseFloat(r.hingga) || 0,
+                                        rule_type: 'range',
+                                        from_value: parseFloat(r.dari) || 0,
+                                        to_value: parseFloat(r.hingga) || 0,
                                         score: score
                                     });
                                 });
@@ -1419,8 +1501,8 @@
                                     var skorTidak = parseFloat(ytData.skorTidak) || 0;
                                     detail.max_score = Math.max(skorYa, skorTidak);
                                     detail.score_rules.push(
-                                        { answer: 'yes', score: skorYa },
-                                        { answer: 'no', score: skorTidak }
+                                        { rule_type: 'boolean', answer_value: 'yes', score: skorYa },
+                                        { rule_type: 'boolean', answer_value: 'no', score: skorTidak }
                                     );
                                 }
                             }
@@ -1492,7 +1574,7 @@
                         } else if (detail.response_type === 'number') {
                             var rules = detail.score_rules || [];
                             var skemaRows = rules.map(function(r) {
-                                return { dari: r.range_from, hingga: r.range_to, skema: r.score };
+                                return { dari: r.from_value, hingga: r.to_value, skema: r.score };
                             });
                             $specRow.data('skema-nombor', skemaRows);
                         } else if (detail.response_type === 'yes_no') {
@@ -1502,8 +1584,8 @@
                             } else {
                                 var skorYa = 0, skorTidak = 0;
                                 rules.forEach(function(r) {
-                                    if (r.answer === 'yes') skorYa = r.score;
-                                    if (r.answer === 'no') skorTidak = r.score;
+                                    if (r.answer_value === 'yes') skorYa = r.score;
+                                    if (r.answer_value === 'no') skorTidak = r.score;
                                 });
                                 $specRow.data('skema-yatidak', { jenis: 'automatik', skorYa: skorYa, skorTidak: skorTidak });
                             }
@@ -1574,93 +1656,100 @@
                 var $btn = $(this);
                 var formData = collectFormData();
 
-                // Basic validation
+                // Validation
                 if (!formData.title) {
-                    alert('Sila masukkan tajuk dokumen.');
+                    showToast('Sila masukkan tajuk dokumen.', 'warning');
                     $('textarea[name="tajuk_dokumen"]').focus();
                     return;
                 }
                 if (!formData.items.length) {
-                    alert('Sila tambah sekurang-kurangnya satu item.');
+                    showToast('Sila tambah sekurang-kurangnya satu item spesifikasi.', 'warning');
                     return;
                 }
-
-                // Check all items have at least one detail
                 for (var i = 0; i < formData.items.length; i++) {
                     if (!formData.items[i].details.length) {
-                        alert('Item "' + (formData.items[i].title || '#' + (i + 1)) + '" tiada spesifikasi. Sila tambah sekurang-kurangnya satu spesifikasi bagi setiap item.');
+                        showToast('Item "' + (formData.items[i].title || '#' + (i + 1)) + '" tiada spesifikasi. Sila tambah sekurang-kurangnya satu spesifikasi bagi setiap item.', 'warning');
                         return;
                     }
                 }
 
-                if (!confirm('Adakah anda pasti untuk menyimpan dan menyelesaikan spesifikasi ini? Tindakan ini tidak boleh dibatalkan.')) {
-                    return;
-                }
+                bootbox.confirm({
+                    title: 'Sahkan Penyelesaian',
+                    message: 'Adakah anda pasti untuk menyimpan dan menyelesaikan spesifikasi ini? Tindakan ini tidak boleh dibatalkan.',
+                    buttons: {
+                        confirm: { label: 'Ya, Selesai', className: 'btn btn-success' },
+                        cancel:  { label: 'Batal',       className: 'btn btn-secondary' }
+                    },
+                    callback: function(confirmed) {
+                        if (!confirmed) return;
 
-                $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span> Menyimpan...');
+                        $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span> Menyimpan...');
 
-                var isEdit = SPEC_CONFIG.existingData && SPEC_CONFIG.existingData.uuid;
-                var saveUrl, saveMethod;
+                        var isEdit  = SPEC_CONFIG.existingData && SPEC_CONFIG.existingData.uuid;
+                        var saveUrl = isEdit
+                            ? SPEC_CONFIG.updateUrl.replace('__UUID__', SPEC_CONFIG.existingData.uuid)
+                            : SPEC_CONFIG.storeUrl;
+                        var saveMethod = isEdit ? 'PUT' : 'POST';
 
-                if (isEdit) {
-                    saveUrl = SPEC_CONFIG.updateUrl.replace('__UUID__', SPEC_CONFIG.existingData.uuid);
-                    saveMethod = 'PUT';
-                } else {
-                    saveUrl = SPEC_CONFIG.storeUrl;
-                    saveMethod = 'POST';
-                }
-
-                $.ajax({
-                    url: saveUrl,
-                    method: saveMethod,
-                    data: JSON.stringify(formData),
-                    contentType: 'application/json',
-                    headers: { 'X-CSRF-TOKEN': SPEC_CONFIG.csrfToken },
-                    success: function(response) {
-                        var specUuid = response.data ? response.data.uuid : (isEdit ? SPEC_CONFIG.existingData.uuid : null);
-
-                        if (!specUuid) {
-                            alert('Ralat: UUID spesifikasi tidak ditemui.');
-                            $btn.prop('disabled', false).html('<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"></path></svg> Selesai');
-                            return;
-                        }
-
-                        $btn.html('<span class="spinner-border spinner-border-sm me-1"></span> Menyelesaikan...');
-
-                        // Complete
-                        var completeUrl = SPEC_CONFIG.completeUrl.replace('__UUID__', specUuid);
                         $.ajax({
-                            url: completeUrl,
-                            method: 'POST',
+                            url: saveUrl,
+                            method: saveMethod,
+                            data: JSON.stringify(formData),
+                            contentType: 'application/json',
                             headers: { 'X-CSRF-TOKEN': SPEC_CONFIG.csrfToken },
-                            success: function() {
-                                window.location.href = SPEC_CONFIG.backUrl;
+                            success: function(response) {
+                                var specUuid = response.data ? response.data.uuid : (isEdit ? SPEC_CONFIG.existingData.uuid : null);
+
+                                if (!specUuid) {
+                                    showToast('Ralat: UUID spesifikasi tidak ditemui selepas simpan.');
+                                    $btn.prop('disabled', false).html(BTN_SELESAI_LABEL);
+                                    return;
+                                }
+
+                                $btn.html('<span class="spinner-border spinner-border-sm me-1"></span> Menyelesaikan...');
+
+                                var completeUrl = SPEC_CONFIG.completeUrl.replace('__UUID__', specUuid);
+                                $.ajax({
+                                    url: completeUrl,
+                                    method: 'POST',
+                                    headers: { 'X-CSRF-TOKEN': SPEC_CONFIG.csrfToken },
+                                    success: function() {
+                                        var saved = response.data || {};
+                                        queueChecklistSpecification({
+                                            uuid: specUuid,
+                                            title: saved.title || formData.title,
+                                            total_score: saved.total_score !== null && saved.total_score !== undefined
+                                                ? saved.total_score
+                                                : calculateChecklistSpecificationTotalScore(formData),
+                                            status: saved.status || 'completed',
+                                            item_type: saved.item_type || formData.item_type
+                                        });
+                                        window.location.href = SPEC_CONFIG.backUrl;
+                                    },
+                                    error: function(xhr) {
+                                        var msg = 'Gagal menyelesaikan spesifikasi.';
+                                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                                            msg += '\n' + xhr.responseJSON.message;
+                                        }
+                                        showToast(msg);
+                                        $btn.prop('disabled', false).html(BTN_SELESAI_LABEL);
+                                    }
+                                });
                             },
                             error: function(xhr) {
-                                var msg = 'Gagal menyelesaikan spesifikasi.';
+                                var lines = ['Gagal menyimpan spesifikasi.'];
                                 if (xhr.responseJSON && xhr.responseJSON.message) {
-                                    msg += ' ' + xhr.responseJSON.message;
+                                    lines.push(xhr.responseJSON.message);
                                 }
-                                alert(msg);
-                                $btn.prop('disabled', false).html('<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"></path></svg> Selesai');
+                                if (xhr.responseJSON && xhr.responseJSON.errors) {
+                                    $.each(xhr.responseJSON.errors, function(field, messages) {
+                                        lines.push('• ' + (Array.isArray(messages) ? messages[0] : messages));
+                                    });
+                                }
+                                showToast(lines.join('\n'));
+                                $btn.prop('disabled', false).html(BTN_SELESAI_LABEL);
                             }
                         });
-                    },
-                    error: function(xhr) {
-                        var msg = 'Gagal menyimpan spesifikasi.';
-                        if (xhr.responseJSON && xhr.responseJSON.message) {
-                            msg += ' ' + xhr.responseJSON.message;
-                        }
-                        if (xhr.responseJSON && xhr.responseJSON.errors) {
-                            var errors = xhr.responseJSON.errors;
-                            var errorList = [];
-                            for (var key in errors) {
-                                errorList.push(errors[key].join(', '));
-                            }
-                            if (errorList.length) msg += '\n\n' + errorList.join('\n');
-                        }
-                        alert(msg);
-                        $btn.prop('disabled', false).html('<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"></path></svg> Selesai');
                     }
                 });
             });
