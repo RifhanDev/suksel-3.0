@@ -793,7 +793,7 @@
                                     </td>
                                     <td class="align-middle">
                                         <select class="form-select" aria-label="Status Pematuhan baris 1">
-                                            <option selected value="">Mematuhi / Tidak Mematuhi</option>
+                                            <option selected value="">Sila Pilih</option>
                                             <option value="mematuhi">Mematuhi</option>
                                             <option value="tidak_mematuhi">Tidak Mematuhi</option>
                                         </select>
@@ -812,7 +812,7 @@
                                     </td>
                                     <td class="align-middle">
                                         <select class="form-select" aria-label="Status Pematuhan baris 2">
-                                            <option selected value="">Mematuhi / Tidak Mematuhi</option>
+                                            <option selected value="">Sila Pilih</option>
                                             <option value="mematuhi">Mematuhi</option>
                                             <option value="tidak_mematuhi">Tidak Mematuhi</option>
                                         </select>

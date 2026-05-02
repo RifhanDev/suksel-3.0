@@ -533,21 +533,41 @@
                                                 data-bs-target="#modalSemakanKetepatanDokumenTeknikal">Menilai</button>
                                         </td>
                                     </tr>
-                                    <tr>
+                                    <tr data-mekanisma="Petender Muat Naik">
                                         <td class="">Surat Pengesahan Prinsipal yang lengkap ditandatangani</td>
                                         <td class="">Petender Muat Naik</td>
                                         <td class="">Selesai</td>
                                         <td class="text-center">
-                                            <button class="btn btn-success">Papar</button>
+                                            <button type="button"
+                                                class="btn btn-success btn-petender-muat-naik"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#modalPenilaianMuatNaikTeknikal"
+                                                data-tajuk="Surat Pengesahan Prinsipal yang lengkap ditandatangani"
+                                                data-skema="Skema Pemarkahan Senarai Semakan Teknikal Digital Forensik.docx"
+                                                data-doc-pembekal-1="Surat Pengesahan Prinsipal — Pembekal 1.pdf"
+                                                data-doc-pembekal-2="Surat Pengesahan Prinsipal — Pembekal 2.pdf"
+                                                data-doc-url="https://ontheline.trincoll.edu/images/bookdown/sample-local-pdf.pdf">
+                                                Menilai
+                                            </button>
                                         </td>
                                     </tr>
-                                    <tr>
+                                    <tr data-mekanisma="Petender Muat Naik">
                                         <td class="">Senarai Kakitangan Teknikal dan Carta Organisasi Pasukan Projek
                                         </td>
                                         <td class="">Petender Muat Naik</td>
                                         <td class="">Selesai</td>
                                         <td class="text-center">
-                                            <button class="btn btn-success">Papar</button>
+                                            <button type="button"
+                                                class="btn btn-success btn-petender-muat-naik"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#modalPenilaianMuatNaikTeknikal"
+                                                data-tajuk="Senarai Kakitangan Teknikal dan Carta Organisasi Pasukan Projek"
+                                                data-skema="Skema Pemarkahan Senarai Semakan Teknikal Digital Forensik.docx"
+                                                data-doc-pembekal-1="Senarai Kakitangan dan Carta Organisasi — Pembekal 1.pdf"
+                                                data-doc-pembekal-2="Senarai Kakitangan dan Carta Organisasi — Pembekal 2.pdf"
+                                                data-doc-url="https://ontheline.trincoll.edu/images/bookdown/sample-local-pdf.pdf">
+                                                Menilai
+                                            </button>
                                         </td>
                                     </tr>
                                 </tbody>
@@ -765,7 +785,113 @@
             </div>
         </div>
     </div>
-</div>
+
+    {{-- Petender Muat Naik: modal MUST live outside tab-panes (Bootstrap breaks modals inside display:none tabs → black screen) --}}
+    <div class="modal fade" id="modalPenilaianMuatNaikTeknikal" tabindex="-1" aria-labelledby="modalPenilaianMuatNaikTeknikalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalPenilaianMuatNaikTeknikalLabel">PENILAIAN SPESIFIKASI TEKNIKAL</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="rounded border bg-light px-3 py-2 mb-3">
+                        <div class="fw-bold text-uppercase small">PENILAIAN SPESIFIKASI TEKNIKAL</div>
+                        <p class="mb-0 mt-2 small"><strong>Tajuk / Dokumen :</strong> <span id="muatNaikModalTajuk">Perkhidmatan Penilaian Forensik Keatas Sistem XXXX</span></p>
+                    </div>
+                    <div class="rounded border bg-light px-3 py-2 mb-3">
+                        <div class="fw-bold text-uppercase small">SKEMA PEMARKAHAN PENGGUNA BAGI TEKNIKAL</div>
+                        <p class="mb-0 mt-2 small"><strong>Dokumen Sokongan :</strong> <span id="muatNaikModalSkema">Skema Pemarkahan Senarai Semakan Teknikal Digital Forensik.docx</span></p>
+                    </div>
+                    <div class="rounded border bg-light px-3 py-2 mb-2">
+                        <div class="fw-bold text-uppercase small">SENARAI PEMBEKAL</div>
+                    </div>
+                    <p class="card-title-desc text-primary fst-italic small mb-3">Pastikan semua senarai semak lengkap dinilai dan butang Menilai bertukar kepada Papar</p>
+
+                    <div class="table-responsive">
+                        <table class="table table-bordered align-middle mb-0">
+                            <thead class="table-primary text-center text-white">
+                                <tr>
+                                    <th style="width: 10%;">Kod Pembekal</th>
+                                    <th style="width: 26%;">Dokumen</th>
+                                    <th style="width: 12%;">Status Penyerahan</th>
+                                    <th style="width: 12%;">Skor Pematuhan</th>
+                                    <th style="width: 14%;">Skor Manual <span class="text-danger">*</span></th>
+                                    <th style="width: 26%;">Catatan</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="text-center">1</td>
+                                    <td>
+                                        <div class="d-flex align-items-start gap-2">
+                                            <a href="https://ontheline.trincoll.edu/images/bookdown/sample-local-pdf.pdf"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                class="muat-naik-doc-link text-primary text-decoration-none d-inline-flex align-items-center flex-shrink-0"
+                                                aria-label="Buka dokumen pembekal 1 dalam tab baharu">
+                                                <i class="fa-solid fa-file-pdf fa-lg" aria-hidden="true"></i>
+                                            </a>
+                                            <span class="small text-break muat-naik-supplier-doc" data-slot="1">Perkhidmatan Penilaian Forensik Keatas Sistem XXXX.pdf</span>
+                                        </div>
+                                    </td>
+                                    <td class="text-center">Hantar</td>
+                                    <td class="text-center">Mematuhi</td>
+                                    <td class="text-center">
+                                        <div class="d-flex align-items-center justify-content-center gap-1 flex-wrap">
+                                            <input type="number" min="0" max="10" step="0.01"
+                                                class="form-control form-control-sm text-center muat-naik-skor-manual"
+                                                style="width: 4.25rem; max-width: 100%;"
+                                                name="skor_manual_muat_naik_1"
+                                                aria-label="Skor manual pembekal 1">
+                                            <span class="small text-nowrap">/ 10</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <textarea class="form-control form-control-sm muat-naik-catatan" rows="2" name="catatan_muat_naik_1" placeholder="Catatan"></textarea>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="text-center">2</td>
+                                    <td>
+                                        <div class="d-flex align-items-start gap-2">
+                                            <a href="https://ontheline.trincoll.edu/images/bookdown/sample-local-pdf.pdf"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                class="muat-naik-doc-link text-primary text-decoration-none d-inline-flex align-items-center flex-shrink-0"
+                                                aria-label="Buka dokumen pembekal 2 dalam tab baharu">
+                                                <i class="fa-solid fa-file-pdf fa-lg" aria-hidden="true"></i>
+                                            </a>
+                                            <span class="small text-break muat-naik-supplier-doc" data-slot="2">Perkhidmatan Penilaian Forensik Keatas Sistem XXXX.pdf</span>
+                                        </div>
+                                    </td>
+                                    <td class="text-center">Hantar</td>
+                                    <td class="text-center">Mematuhi</td>
+                                    <td class="text-center">
+                                        <div class="d-flex align-items-center justify-content-center gap-1 flex-wrap">
+                                            <input type="number" min="0" max="10" step="0.01"
+                                                class="form-control form-control-sm text-center muat-naik-skor-manual"
+                                                style="width: 4.25rem; max-width: 100%;"
+                                                name="skor_manual_muat_naik_2"
+                                                aria-label="Skor manual pembekal 2">
+                                            <span class="small text-nowrap">/ 10</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <textarea class="form-control form-control-sm muat-naik-catatan" rows="2" name="catatan_muat_naik_2" placeholder="Catatan"></textarea>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer justify-content-center gap-2">
+                    <button type="button" class="btn btn-success" data-bs-dismiss="modal">Kembali</button>
+                    <button type="button" class="btn btn-success" id="btnSimpanPenilaianMuatNaikTeknikal" data-bs-dismiss="modal">Simpan</button>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
