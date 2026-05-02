@@ -11,7 +11,6 @@ class StandardChecklistItemSeeder extends Seeder
     public function run(): void
     {
         $items = [
-            // ── Borang Atas Talian ──────────────────────────────────────────
             [
                 'category'              => 'technical',
                 'type'                  => 'borang_atas_talian',
@@ -33,7 +32,67 @@ class StandardChecklistItemSeeder extends Seeder
                 'sort_order'            => 2,
             ],
 
-            // ── Standard ────────────────────────────────────────────────────
+            [
+                'category'              => 'financial',
+                'type'                  => 'borang_atas_talian',
+                'title'                 => 'Maklumat Profil Petender',
+                'mechanism_default'     => null,
+                'vendor_action_default' => null,
+                'action_url'            => null,
+                'is_active'             => true,
+                'sort_order'            => 1,
+            ],
+            [
+                'category'              => 'financial',
+                'type'                  => 'borang_atas_talian',
+                'title'                 => 'Penyata Bank Terkini (3 Bulan Terakhir) Syarikat',
+                'mechanism_default'     => null,
+                'vendor_action_default' => null,
+                'action_url'            => null,
+                'is_active'             => true,
+                'sort_order'            => 2,
+            ],
+            [
+                'category'              => 'financial',
+                'type'                  => 'standard',
+                'title'                 => 'Modal Berbayar',
+                'mechanism_default'     => null,
+                'vendor_action_default' => null,
+                'action_url'            => null,
+                'is_active'             => true,
+                'sort_order'            => 3,
+            ],
+            [
+                'category'              => 'financial',
+                'type'                  => 'standard',
+                'title'                 => 'Kemudahan Kredit (Overdraf, Pinjaman Bank)',
+                'mechanism_default'     => null,
+                'vendor_action_default' => null,
+                'action_url'            => null,
+                'is_active'             => true,
+                'sort_order'            => 4,
+            ],
+            [
+                'category'              => 'financial',
+                'type'                  => 'standard',
+                'title'                 => 'Pengesahan dari Institusi Kewangan ke atas jumlah yang telah dibayar',
+                'mechanism_default'     => null,
+                'vendor_action_default' => null,
+                'action_url'            => null,
+                'is_active'             => true,
+                'sort_order'            => 5,
+            ],
+            [
+                'category'              => 'financial',
+                'type'                  => 'standard',
+                'title'                 => 'Pengalaman Syarikat Dengan Bukan Kerajaan Persekutuan (Jumlah (RM) Kontrak yang pernah diikat)',
+                'mechanism_default'     => null,
+                'vendor_action_default' => null,
+                'action_url'            => null,
+                'is_active'             => true,
+                'sort_order'            => 6,
+            ],
+
             [
                 'category'           => 'technical',
                 'type'               => 'standard',

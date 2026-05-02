@@ -3,7 +3,8 @@
     "allow": [
       "Bash(php artisan:*)",
       "Bash(php.exe artisan:*)",
-      "Bash(/c/Users/ACER/.config/herd/bin/php.bat artisan:*)"
+      "Bash(/c/Users/ACER/.config/herd/bin/php.bat artisan:*)",
+      "Bash(php.bat artisan:*)"
     ]
   }
 }

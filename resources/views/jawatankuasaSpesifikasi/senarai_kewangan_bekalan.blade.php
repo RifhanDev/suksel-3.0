@@ -56,7 +56,7 @@
         </div>
     </div>
 
-    <form id="form-senarai-kewangan-bekalan" action="{{ route('jawatankuasa.simpanSenaraiKewanganBekalan') }}" method="POST" enctype="multipart/form-data">
+    <form id="form-senarai-kewangan-bekalan" action="{{ route('senaraiKewanganBekalan.store', $tender->uuid) }}" method="POST" enctype="multipart/form-data">
     @csrf
     <input type="hidden" name="tahap_lulus" id="tahap-lulus-hidden" value="0">
 
@@ -199,7 +199,7 @@
                             </td>
                             <td class="text-center py-3">
                                 <input type="text" id="skema-maksima-display" name="skema_maksima"
-                                    class="form-control form-control-sm text-center fw-bold" value="40" readonly
+                                    class="form-control form-control-sm text-center fw-bold" value="{{ $checklistData['max_score'] ?? 0 }}" readonly
                                     style="max-width: 68px; margin: 0 auto; background: #fff; border-color: #e2e8f0;">
                             </td>
                             <td colspan="3"></td>
@@ -378,23 +378,18 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                {{-- ── Standard items (Petender / PTJ Muat Naik) ── --}}
-                                <tr data-tajuk="Modal Berbayar">
-                                    <td class="text-center"><input type="checkbox" class="form-check-input row-check-standard"></td>
-                                    <td>Modal Berbayar</td>
+                                @forelse ($standardItems as $item)
+                                    @if ($item['type'] === 'standard')
+                                    <tr data-uuid="{{ $item['uuid'] }}" data-type="{{ $item['type'] }}" data-tajuk="{{ $item['title'] }}" data-action-url="{{ $item['action_url'] ?? '' }}">
+                                        <td class="text-center"><input type="checkbox" class="form-check-input row-check-standard"></td>
+                                        <td>{{ $item['title'] }}</td>
+                                    </tr>
+                                    @endif
+                                @empty
+                                <tr>
+                                    <td colspan="2" class="text-center text-muted py-3">Tiada senarai semak standard dijumpai.</td>
                                 </tr>
-                                <tr data-tajuk="Kemudahan Kredit (Overdraf, Pinjaman Bank)">
-                                    <td class="text-center"><input type="checkbox" class="form-check-input row-check-standard"></td>
-                                    <td>Kemudahan Kredit (Overdraf, Pinjaman Bank)</td>
-                                </tr>
-                                <tr data-tajuk="Pengesahan dari Institusi Kewangan ke atas jumlah yang telah dibayar">
-                                    <td class="text-center"><input type="checkbox" class="form-check-input row-check-standard"></td>
-                                    <td>Pengesahan dari Institusi Kewangan ke atas jumlah yang telah dibayar</td>
-                                </tr>
-                                <tr data-tajuk="Pengalaman Syarikat Dengan Bukan Kerajaan Persekutuan (Jumlah (RM) Kontrak yang pernah diikat)">
-                                    <td class="text-center"><input type="checkbox" class="form-check-input row-check-standard"></td>
-                                    <td>Pengalaman Syarikat Dengan Bukan Kerajaan Persekutuan (Jumlah (RM) Kontrak yang pernah diikat)</td>
-                                </tr>
+                                @endforelse
                             </tbody>
                         </table>
                     </div>
@@ -413,49 +408,33 @@
     <script type="text/javascript">
         $(document).ready(function() {
 
-            // ─── INITIAL ROWS (simulates data from backend) ─────────────────────────
+            // ─── INITIAL ROWS (from backend) ────────────────────────────────────────
             var EDIT_ICON = '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>';
 
-            var initialRows = [
-                {
-                    tajuk:      'Perkhidmatan Penilaian Forensik Keatas Sistem XXXX',
-                    mekanisma:  'Spesifikasi',
-                    tindakanPembekal: 'Kunci Masuk',
-                    skema:      40,
-                    status:     'Selesai',
-                    statusClass:'badge-status-success',
-                    dokumen:    '—',
-                    tindakanUrl:'{{ route('spesifikasiFormKewanganBekalan') }}'
-                },
-                {
-                    tajuk:      'Maklumat Profil Petender',
-                    mekanisma:  'Borang Atas Talian',
-                    tindakanPembekal: 'Kunci Masuk',
-                    skema:      0,
-                    status:     'Draf',
-                    statusClass:'badge-status-warning',
-                    dokumen:    '—',
-                    tindakanUrl:'{{ route('prflPetender') }}'
-                },
-                {
-                    tajuk:      'Penyata Bank Terkini (3 Bulan Terakhir) Syarikat',
-                    mekanisma:  'Borang Atas Talian',
-                    tindakanPembekal: 'Kunci Masuk',
-                    skema:      0,
-                    status:     'Draf',
-                    statusClass:'badge-status-warning',
-                    dokumen:    '—',
-                    tindakanUrl:'{{ route('pnytBank') }}'
-                }
-            ];
+            var SPEC_FORM_URL   = @json(route('spesifikasiFormKewanganBekalan', ['tenderUuid' => $tender->uuid]));
+            var STORE_URL       = '{{ route('senaraiKewanganBekalan.store', $tender->uuid) }}';
+            var CSRF_TOKEN      = '{{ csrf_token() }}';
+            var checklistItems  = @json($checklistData['items'] ?? []);
+
+            var statusLabelMap = {
+                'submitted': { label: 'Selesai', cls: 'badge-status-success' },
+                'draft':     { label: 'Draf',    cls: 'badge-status-warning' },
+            };
+
 
             // Build a table row from an initial row object (locked — no checkbox, no delete)
             function buildInitialRow(data) {
                 return $(
-                    '<tr class="initial-row">' +
+                    '<tr class="initial-row"' +
+                    ' data-row-uuid="' + (data.uuid || '') + '"' +
+                    ' data-source-type="' + (data.source_type || '') + '"' +
+                    ' data-mechanism="' + (data.mechanism || '') + '"' +
+                    ' data-standard-item-uuid="' + (data.standard_item_uuid || '') + '"' +
+                    ' data-technical-item-uuid="' + (data.technical_item_uuid || '') + '"' +
+                    '>' +
                     '<td class="text-center"><span class="text-muted" style="font-size:0.75rem;" title="Data daripada sistem">—</span></td>' +
                     '<td><span class="small fw-semibold">' + $('<span>').text(data.tajuk).html() + '</span></td>' +
-                    '<td class="text-center"><span class="small fw-semibold text-muted">' + data.mekanisma + '</span></td>' +
+                    '<td class="text-center"><span class="small fw-semibold text-muted">' + data.mekanismaLabel + '</span></td>' +
                     '<td class="text-center small">' + data.tindakanPembekal + '</td>' +
                     '<td class="text-center">' +
                         '<input type="number" name="skema[]" class="form-control form-control-sm text-center skema-input fw-semibold" value="' + data.skema + '" min="0" style="max-width:90px;margin:0 auto;">' +
@@ -471,9 +450,64 @@
                 );
             }
 
-            // Render initial rows on page load
-            $.each(initialRows, function(i, row) {
-                $('#tbl-kewangan-body').append(buildInitialRow(row));
+            // Build an editable row for manual/standard_item rows returning from the API
+            function buildEditableRow(item) {
+                var mek     = item.mechanism || 'petender_muat_naik';
+                var isManual = item.source_type === 'manual';
+                var titleCell = isManual
+                    ? '<input type="text" name="tajuk_dokumen[]" class="form-control form-control-sm" value="' + $('<span>').text(item.title).html() + '">'
+                    : '<span class="small fw-semibold">' + $('<span>').text(item.title).html() + '</span>';
+                var mekOptions =
+                    '<option value="petender_muat_naik"' + (mek === 'petender_muat_naik' ? ' selected' : '') + '>Petender Muat Naik</option>' +
+                    '<option value="ptj_muat_naik"'      + (mek === 'ptj_muat_naik'      ? ' selected' : '') + '>PTJ Muat Naik</option>';
+                return $(
+                    '<tr class="row-kewangan-tambah"' +
+                    ' data-row-uuid="'          + (item.uuid               || '') + '"' +
+                    ' data-source-type="'       + (item.source_type        || '') + '"' +
+                    ' data-standard-item-uuid="'+ (item.standard_item_uuid || '') + '"' +
+                    ' data-technical-item-uuid="'+(item.technical_item_uuid|| '') + '"' +
+                    '>' +
+                    '<td class="text-center"><input type="checkbox" name="row_check_kewangan[]" class="form-check-input row-check-kewangan"></td>' +
+                    '<td>' + titleCell + '</td>' +
+                    '<td class="text-center">' +
+                        '<select name="mekanisma[]" class="form-select form-select-sm mekanisma-select" style="font-size:0.78rem;">' + mekOptions + '</select>' +
+                    '</td>' +
+                    '<td class="text-center tindakan-pembekal">' + buildTindakanPembekalCell(mek) + '</td>' +
+                    '<td class="text-center">' +
+                        '<input type="number" name="skema[]" class="form-control form-control-sm text-center skema-input fw-semibold" value="' + (item.score || 0) + '" min="0" style="max-width:90px;margin:0 auto;">' +
+                    '</td>' +
+                    '<td class="text-center"><span class="badge-status badge-status-warning">Draf</span></td>' +
+                    '<td class="text-center rujukan-cell">'  + buildDokumenCell(mek) + '</td>' +
+                    '<td class="text-center tindakan-cell">' + buildTindakanCell(mek) + '</td>' +
+                    '</tr>'
+                );
+            }
+
+            // Render rows on page load — locked for spec/borang items, editable for manual/standard
+            checklistItems.forEach(function(item) {
+                var locked = item.source_type === 'specification_document' || item.source_type === 'borang_atas_talian';
+                if (locked) {
+                    var s = statusLabelMap[item.status] || { label: item.status, cls: 'badge-status-warning' };
+                    var mekanismaLabel = item.source_type === 'specification_document' ? 'Spesifikasi' : 'Borang Atas Talian';
+                    var tindakanUrl    = item.source_type === 'specification_document' ? SPEC_FORM_URL : (item.action_url || '#');
+                    $('#tbl-kewangan-body').append(buildInitialRow({
+                        uuid:                item.uuid,
+                        source_type:         item.source_type,
+                        mechanism:           item.mechanism,
+                        standard_item_uuid:  item.standard_item_uuid  || '',
+                        technical_item_uuid: item.technical_item_uuid || '',
+                        tajuk:               item.title,
+                        mekanismaLabel:      mekanismaLabel,
+                        tindakanPembekal:    'Kunci Masuk',
+                        skema:               item.score,
+                        status:              s.label,
+                        statusClass:         s.cls,
+                        dokumen:             '—',
+                        tindakanUrl:         tindakanUrl,
+                    }));
+                } else {
+                    $('#tbl-kewangan-body').append(buildEditableRow(item));
+                }
             });
 
             // ─── CHECKBOX: Senarai Semak Kewangan ────────────────────────────────────
@@ -529,7 +563,7 @@
             function buildNewRow() {
                 var defaultMekanisma = 'petender_muat_naik';
                 return $(
-                    '<tr class="row-kewangan-tambah">' +
+                    '<tr class="row-kewangan-tambah" data-source-type="manual">' +
                     '<td class="text-center"><input type="checkbox" name="row_check_kewangan[]" class="form-check-input row-check-kewangan"></td>' +
                     '<td><input type="text" name="tajuk_dokumen[]" class="form-control form-control-sm" placeholder="Tajuk / Dokumen..."></td>' +
                     '<td class="text-center">' +
@@ -574,12 +608,113 @@
                 $('#tahap-lulus-hidden').val(pct);
             }
 
-            // ─── PENILAIAN INPUT: validate + recalculate ─────────────────────────────
+            // ─── AUTO-SAVE ENGINE ────────────────────────────────────────────────────
+            var autoSaveTimer = null;
+
+            function collectItems() {
+                var items = [];
+                var idx   = 0;
+                $('#tbl-kewangan tbody tr').each(function() {
+                    var $tr = $(this);
+                    if ($tr.attr('id') === 'tbl-empty-row') return;
+
+                    var sourceType = $tr.data('source-type') || 'manual';
+
+                    var title;
+                    var $tajukInput = $tr.find('input[name="tajuk_dokumen[]"]');
+                    if ($tajukInput.length) {
+                        title = $.trim($tajukInput.val());
+                    } else {
+                        title = $.trim($tr.find('td:nth-child(2) .fw-semibold').text());
+                    }
+                    if (!title) return;
+
+                    var mechanism;
+                    var $mekSelect = $tr.find('select.mekanisma-select');
+                    if ($mekSelect.length) {
+                        mechanism = $mekSelect.val();
+                    } else {
+                        mechanism = $tr.data('mechanism') || null;
+                    }
+
+                    var vendorAction = null;
+                    if (mechanism === 'ptj_muat_naik') {
+                        vendorAction = $tr.find('.tindakan-pembekal-select').val() || 'muat_turun';
+                    } else if (mechanism === 'petender_muat_naik') {
+                        vendorAction = 'muat_naik';
+                    }
+
+                    items.push({
+                        uuid:                $tr.data('row-uuid') || null,
+                        source_type:         sourceType,
+                        title:               title,
+                        mechanism:           mechanism,
+                        vendor_action:       vendorAction,
+                        score:               parseFloat($tr.find('.skema-input').val()) || 0,
+                        sort_order:          idx,
+                        standard_item_uuid:  $tr.data('standard-item-uuid') || null,
+                        technical_item_uuid: $tr.data('technical-item-uuid') || null,
+                    });
+                    idx++;
+                });
+                return items;
+            }
+
+            function updateRowUuids(savedItems) {
+                var $rows = $('#tbl-kewangan tbody tr').filter(function() {
+                    return $(this).attr('id') !== 'tbl-empty-row';
+                });
+                (savedItems || []).forEach(function(item, index) {
+                    if (!item.uuid) return;
+                    var $row = $rows.eq(index);
+                    if ($row.length) {
+                        $row.data('row-uuid', item.uuid).attr('data-row-uuid', item.uuid);
+                    }
+                });
+            }
+
+            function doSave(onSuccess, onError) {
+                var items     = collectItems();
+                var maxScore  = parseFloat($('#skema-maksima-display').val()) || 0;
+                var penilaian = parseFloat($('#input-penilaian').val()) || 0;
+                var pct       = maxScore > 0 ? Math.round((penilaian / maxScore) * 100 * 100) / 100 : 0;
+
+                $.ajax({
+                    url:         STORE_URL,
+                    method:      'POST',
+                    headers:     { 'X-CSRF-TOKEN': CSRF_TOKEN },
+                    contentType: 'application/json',
+                    data:        JSON.stringify({
+                        items:              items,
+                        max_score:          maxScore,
+                        passing_score:      penilaian,
+                        passing_percentage: pct,
+                    }),
+                    success: function(response) {
+                        if (response.data && response.data.items) {
+                            updateRowUuids(response.data.items);
+                        }
+                        if (typeof onSuccess === 'function') onSuccess(response);
+                    },
+                    error: function(xhr) {
+                        console.warn('Checklist auto-save failed', xhr.status, xhr.responseJSON);
+                        if (typeof onError === 'function') onError(xhr);
+                    }
+                });
+            }
+
+            function autoSave(immediate) {
+                if (autoSaveTimer) clearTimeout(autoSaveTimer);
+                autoSaveTimer = setTimeout(function() { doSave(); }, immediate ? 0 : 1000);
+            }
+
+            // ─── PENILAIAN INPUT: validate + recalculate + auto-save ─────────────────
             $('#input-penilaian').on('input change', function() {
                 var skemaMaksima = parseInt($('#skema-maksima-display').val()) || 0;
                 var val = parseInt($(this).val()) || 0;
                 $(this).toggleClass('is-invalid', skemaMaksima > 0 && val > skemaMaksima);
                 updateTahapLulus();
+                autoSave();
             });
 
             function syncTableEmpty() {
@@ -596,6 +731,7 @@
                 $('#tbl-kewangan tbody').append(buildNewRow());
                 syncTableEmpty();
                 updateSkemaMaksima();
+                autoSave(true);
             });
 
             // ─── HAPUS ROW (CHECKED ONLY) ─────────────────────────────────────────────
@@ -609,6 +745,7 @@
                 $('#tbl-kewangan .check-all-kewangan').prop('checked', false);
                 syncTableEmpty();
                 updateSkemaMaksima();
+                autoSave(true);
             });
 
             // ─── MEKANISMA CHANGE ─────────────────────────────────────────────────────
@@ -618,17 +755,24 @@
                 $row.find('.tindakan-pembekal').html(buildTindakanPembekalCell(val));
                 $row.find('.rujukan-cell').html(buildDokumenCell(val));
                 $row.find('.tindakan-cell').html(buildTindakanCell(val));
+                autoSave();
             });
 
             // ─── TINDAKAN PEMBEKAL DROPDOWN CHANGE (PTJ only) ────────────────────────
-            // Both options allow uploading — always keep the upload button visible.
             $('#tbl-kewangan').on('change', '.tindakan-pembekal-select', function() {
                 $(this).closest('tr').find('.tindakan-cell').html(PTJ_UPLOAD_BTN);
+                autoSave();
             });
 
             // ─── SKEMA INPUT CHANGE ───────────────────────────────────────────────────
             $('#tbl-kewangan').on('input change', '.skema-input', function() {
                 updateSkemaMaksima();
+                autoSave();
+            });
+
+            // ─── TAJUK INPUT ─────────────────────────────────────────────────────────
+            $('#tbl-kewangan').on('input', 'input[name="tajuk_dokumen[]"]', function() {
+                autoSave();
             });
 
             // ─── PTJ MUAT NAIK: File upload → append to Dokumen column, hide upload btn ─
@@ -659,10 +803,10 @@
             });
 
             // ─── ROW BUILDER for Senarai Semak Standard ─────────────────────────────
-            function buildStandardRow(tajuk) {
+            function buildStandardRow(tajuk, standardItemUuid) {
                 var defaultMekanisma = 'petender_muat_naik';
                 return $(
-                    '<tr class="row-kewangan-tambah">' +
+                    '<tr class="row-kewangan-tambah" data-source-type="standard_item" data-standard-item-uuid="' + (standardItemUuid || '') + '">' +
                     '<td class="text-center"><input type="checkbox" name="row_check_kewangan[]" class="form-check-input row-check-kewangan"></td>' +
                     '<td><span class="small fw-semibold">' + $('<span>').text(tajuk).html() + '</span></td>' +
                     '<td class="text-center">' +
@@ -702,15 +846,17 @@
                 }
 
                 $checked.each(function() {
-                    var $tr   = $(this).closest('tr');
-                    var tajuk = $tr.data('tajuk') || $tr.find('td:last-child').text().trim();
+                    var $tr              = $(this).closest('tr');
+                    var tajuk            = $tr.data('tajuk') || $tr.find('td:last-child').text().trim();
+                    var standardItemUuid = $tr.data('uuid') || '';
 
-                    $('#tbl-kewangan tbody').append(buildStandardRow(tajuk));
+                    $('#tbl-kewangan tbody').append(buildStandardRow(tajuk, standardItemUuid));
                     $tr.hide(); // hide from list once added — prevents duplicate selection
                 });
 
                 updateSkemaMaksima();
                 syncTableEmpty();
+                autoSave(true);
 
                 // Reset checkboxes and close modal
                 $('#tbl-standard .row-check-standard, #tbl-standard .check-all-standard').prop('checked', false);
