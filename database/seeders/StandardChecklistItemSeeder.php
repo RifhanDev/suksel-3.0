@@ -9,7 +9,7 @@ use Illuminate\Support\Str;
 class StandardChecklistItemSeeder extends Seeder
 {
     public function run(): void
-    {
+    {bit.ly tinyurl.com linktr.ee bl.inik clic.ke
         $items = [
             [
                 'category'              => 'technical',

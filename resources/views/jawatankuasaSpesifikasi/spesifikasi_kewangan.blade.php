@@ -365,15 +365,15 @@ $(document).ready(function () {
     // ── Render table rows ────────────────────────────────────────────────────
     var $tbody = $('#tbl-spek-body');
 
-    var detailIndex = 0; // global index across all items for UUID lookup
-
     $.each(items, function (itemIdx, item) {
         var groupClass  = itemIdx % 2 === 1 ? ' group-alt' : '';
         var details     = item.details || [];
         var detailCount = details.length;
         var hasDetails  = detailCount > 0;
+        var totalRows   = 1 + detailCount;
+        var savedHarga  = item.harga > 0 ? parseFloat(item.harga).toFixed(2) : '';
 
-        // ── Parent item row ──────────────────────────────────────────
+        // ── Parent item row — harga spans all rows ───────────────────
         var $itemRow = $(
             '<tr class="item-row' + groupClass + (hasDetails ? ' item-has-specs' : '') + '">' +
                 '<td style="padding-left:20px;">' +
@@ -385,28 +385,25 @@ $(document).ready(function () {
                 '<td class="text-center">' +
                     '<span class="small text-muted">' + $('<span>').text(item.uom || '-').html() + '</span>' +
                 '</td>' +
-                '<td></td>' +
+                '<td class="text-center" rowspan="' + totalRows + '" style="vertical-align:middle;">' +
+                    '<input type="text" name="harga_item[]" class="form-control form-control-sm text-end amount-input harga-input" placeholder="0.00" data-item-idx="' + itemIdx + '" value="' + savedHarga + '">' +
+                '</td>' +
             '</tr>'
         );
         $tbody.append($itemRow);
 
-        // ── Child detail rows (one harga input each) ─────────────────
-        $.each(details, function (dIdx, detail) {
+        // ── Child detail rows (display only, no harga cell) ──────────
+        $.each(details, function (dIdx, description) {
             var isLast   = dIdx === detailCount - 1;
             var rowClass = 'spec-row' + groupClass + (isLast ? ' spec-last' : '');
-            var savedHarga = detail.harga > 0 ? parseFloat(detail.harga).toFixed(2) : '';
-            var myIdx    = detailIndex++;
 
             var $detailRow = $(
                 '<tr class="' + rowClass + '">' +
                     '<td style="padding-left:44px;">' +
-                        '<span class="text-muted" style="font-size:0.82rem;">' + $('<span>').text(detail.title).html() + '</span>' +
+                        '<span class="text-muted" style="font-size:0.82rem;">' + $('<span>').text(description).html() + '</span>' +
                     '</td>' +
                     '<td></td>' +
                     '<td></td>' +
-                    '<td class="text-center" style="vertical-align:middle;">' +
-                        '<input type="text" name="harga_detail[]" class="form-control form-control-sm text-end amount-input harga-input" placeholder="0.00" data-detail-idx="' + myIdx + '" value="' + savedHarga + '">' +
-                    '</td>' +
                 '</tr>'
             );
             $tbody.append($detailRow);
@@ -437,16 +434,12 @@ $(document).ready(function () {
         doSave();
     });
 
-    // Flatten all details into a single ordered array for UUID lookup
-    var allDetails = [];
-    $.each(items, function(i, item) { $.each(item.details || [], function(j, d) { allDetails.push(d); }); });
-
     function doSave() {
         if (!STORE_URL || !pricingData) return;
         var payload = { items: [] };
-        $('#tbl-spek-body tr.spec-row').each(function() {
-            var idx   = $(this).find('.harga-input').data('detail-idx');
-            var uuid  = allDetails[idx] ? allDetails[idx].uuid : null;
+        $('#tbl-spek-body tr.item-row').each(function() {
+            var idx   = $(this).find('.harga-input').data('item-idx');
+            var uuid  = items[idx] ? items[idx].uuid : null;
             var harga = $(this).find('.harga-input').val().replace(/,/g, '');
             if (uuid) { payload.items.push({ uuid: uuid, harga: parseFloat(harga) || 0 }); }
         });
