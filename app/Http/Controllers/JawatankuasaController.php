@@ -453,18 +453,9 @@ class JawatankuasaController extends Controller
         dd($data);
     }
 
-    public function spesifikasiKewanganBekalan(Request $request, ?string $tenderUuid = null)
+    public function spesifikasiKewanganBekalan(Request $request, ?string $spesifikasiUuid = null)
     {
-        $tenderUuid = $tenderUuid ?: $request->query('tenderUuid', $request->query('tender'));
         $tender = null;
-
-        if ($tenderUuid) {
-            $tender = Tender::with('tenderer')
-                ->leftJoin('ref_kategori_jenis_perolehans as k', 'k.id', '=', 'tenders.kategori_perolehan_id')
-                ->select('tenders.*', 'k.name as kategori_perolehan_name')
-                ->where('tenders.uuid', $tenderUuid)
-                ->firstOrFail();
-        }
 
         // Dummy data — will be replaced with real DB queries later
         $anggaranJabatan = 150000.00;

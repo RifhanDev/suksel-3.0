@@ -411,7 +411,8 @@
             // ─── INITIAL ROWS (from backend) ────────────────────────────────────────
             var EDIT_ICON = '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>';
 
-            var SPEC_FORM_URL   = @json(route('spesifikasiFormKewanganBekalan', ['tenderUuid' => $tender->uuid]));
+            var SPEC_FORM_BASE   = @json(rtrim(route('spesifikasiFormKewanganBekalan', ['spesifikasiUuid' => '__uuid__']), '/'));
+            var TENDER_UUID      = @json($tender->uuid);
             var STORE_URL       = '{{ route('senaraiKewanganBekalan.store', $tender->uuid) }}';
             var CSRF_TOKEN      = '{{ csrf_token() }}';
             var checklistItems  = @json($checklistData['items'] ?? []);
@@ -489,7 +490,9 @@
                 if (locked) {
                     var s = statusLabelMap[item.status] || { label: item.status, cls: 'badge-status-warning' };
                     var mekanismaLabel = item.source_type === 'specification_document' ? 'Spesifikasi' : 'Borang Atas Talian';
-                    var tindakanUrl    = item.source_type === 'specification_document' ? SPEC_FORM_URL : (item.action_url || '#');
+                    var tindakanUrl    = item.source_type === 'specification_document'
+                        ? SPEC_FORM_BASE.replace('__uuid__', item.technical_item_uuid || '')
+                        : (item.action_url ? item.action_url + '/' + TENDER_UUID : '#');
                     $('#tbl-kewangan-body').append(buildInitialRow({
                         uuid:                item.uuid,
                         source_type:         item.source_type,
