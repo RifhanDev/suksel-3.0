@@ -445,6 +445,67 @@
     .progress-bar {
         background: #C0392B !important;
     }
+
+    .profil-readonly-form {
+        display: grid;
+        gap: 1rem;
+    }
+
+    .profil-readonly-section {
+        border: 1px solid #E5E7EB;
+        border-radius: 10px;
+        background: #F9FAFB;
+        padding: 14px;
+    }
+
+    .profil-readonly-title {
+        font-size: 0.92rem;
+        font-weight: 700;
+        color: #111827;
+        margin-bottom: 10px;
+    }
+
+    .profil-readonly-form .form-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #6B7280;
+        margin-bottom: 4px;
+        text-transform: uppercase;
+        letter-spacing: .2px;
+    }
+
+    .profil-readonly-form .form-control,
+    .profil-readonly-form .form-select,
+    .profil-readonly-form textarea {
+        background: #fff;
+        color: #111827;
+        border: 1px solid #D1D5DB;
+        font-size: 0.85rem;
+    }
+
+    .profil-readonly-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+        font-size: .72rem;
+        font-weight: 700;
+        color: #065F46;
+        background: #D1FAE5;
+        border: 1px solid #A7F3D0;
+        border-radius: 999px;
+        padding: 2px 10px;
+    }
+
+    .profil-readonly-chip {
+        display: inline-flex;
+        padding: 4px 10px;
+        border-radius: 999px;
+        background: #EEF2FF;
+        color: #3730A3;
+        border: 1px solid #C7D2FE;
+        font-size: .75rem;
+        font-weight: 600;
+    }
 </style>
 
 <div class="col-12">
@@ -582,9 +643,8 @@
                                         <td>Borang Atas Talian</td>
                                         <td class="status-penilaian">Menunggu Penyerahan</td>
                                         <td class="text-center">
-                                            <button type="button" class="btn btn-success btn-papar-semakan-kewangan"
-                                                data-bs-toggle="modal" data-bs-target="#modalSemakanKetepatanDokumenKewangan"
-                                                data-dokumen="Maklumat Profil Petender">Menilai</button>
+                                            <button type="button" class="btn btn-success btn-open-profil-petender-readonly"
+                                                data-bs-toggle="modal" data-bs-target="#modalProfilPetenderReadonly">Menilai</button>
                                         </td>
                                     </tr>
                                     <tr>
@@ -793,7 +853,7 @@
                                     </td>
                                     <td class="align-middle">
                                         <select class="form-select" aria-label="Status Pematuhan baris 1">
-                                            <option selected value="">Mematuhi / Tidak Mematuhi</option>
+                                            <option selected value="">Sila Pilih</option>
                                             <option value="mematuhi">Mematuhi</option>
                                             <option value="tidak_mematuhi">Tidak Mematuhi</option>
                                         </select>
@@ -812,7 +872,7 @@
                                     </td>
                                     <td class="align-middle">
                                         <select class="form-select" aria-label="Status Pematuhan baris 2">
-                                            <option selected value="">Mematuhi / Tidak Mematuhi</option>
+                                            <option selected value="">Sila Pilih</option>
                                             <option value="mematuhi">Mematuhi</option>
                                             <option value="tidak_mematuhi">Tidak Mematuhi</option>
                                         </select>
@@ -832,11 +892,202 @@
         </div>
     </div>
 
+    <div class="modal fade" id="modalProfilPetenderReadonly" tabindex="-1" aria-labelledby="modalProfilPetenderReadonlyLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable modal-fullscreen-lg-down">
+            <div class="modal-content modal-semakan-kewangan">
+                <div class="modal-header">
+                    <h5 class="modal-title text-uppercase" id="modalProfilPetenderReadonlyLabel">Maklumat Profil Petender</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="card-title-desc text-primary fst-italic mb-3">Paparan ringkas borang profil petender (contoh data).</p>
+
+                    <div class="profil-readonly-form">
+                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                            <div class="profil-readonly-chip">No. Tender: SUKSEL/PERT/2026/001</div>
+                            <div class="profil-readonly-badge">Profil Lengkap</div>
+                        </div>
+
+                        <div class="profil-readonly-section">
+                            <div class="profil-readonly-title">Maklumat Syarikat</div>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Nama Syarikat</label>
+                                    <input type="text" class="form-control" value="Inovasi Digital Nusantara Sdn. Bhd." readonly>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Jenis Syarikat</label>
+                                    <input type="text" class="form-control" value="Sdn. Bhd." readonly>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Taraf Petender</label>
+                                    <input type="text" class="form-control" value="Bumiputera" readonly>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">Alamat Syarikat</label>
+                                    <textarea class="form-control" rows="2" readonly>No. 18, Persiaran Teknologi 2, Taman Sains Selangor, 47810 Petaling Jaya, Selangor.</textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="profil-readonly-section">
+                            <div class="profil-readonly-title">Pegawai Untuk Dihubungi</div>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label">Nama</label>
+                                    <input type="text" class="form-control" value="Nur Aisyah Binti Rahman" readonly>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">No. Telefon</label>
+                                    <input type="text" class="form-control" value="012-888 7766" readonly>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">E-mel</label>
+                                    <input type="text" class="form-control" value="aisyah.rahman@idn.com.my" readonly>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="profil-readonly-section">
+                            <div class="profil-readonly-title">Maklumat Pendaftaran & Kewangan</div>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label">No. SSM</label>
+                                    <input type="text" class="form-control" value="201901045678 (1345000-X)" readonly>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">No. MOF</label>
+                                    <input type="text" class="form-control" value="357-021-000987" readonly>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Tempoh Sah MOF</label>
+                                    <input type="text" class="form-control" value="31/12/2027" readonly>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Bil. Pekerja Semasa</label>
+                                    <input type="text" class="form-control" value="42 orang" readonly>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Bil. Pekerja Teknikal</label>
+                                    <input type="text" class="form-control" value="15 orang" readonly>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Modal Berbayar (RM)</label>
+                                    <input type="text" class="form-control" value="750,000.00" readonly>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Modal Dibenarkan (RM)</label>
+                                    <input type="text" class="form-control" value="1,500,000.00" readonly>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="profil-readonly-section">
+                            <div class="profil-readonly-title">Ringkasan Projek Terdahulu (2 Tahun)</div>
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label class="form-label">Projek 1</label>
+                                    <input type="text" class="form-control" value="Naik taraf infrastruktur rangkaian data - Jabatan Kastam Malaysia (RM 420,000.00)" readonly>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">Projek 2</label>
+                                    <input type="text" class="form-control" value="Penyenggaraan sistem keselamatan siber - Kementerian Kewangan (RM 380,000.00)" readonly>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">Projek 3</label>
+                                    <input type="text" class="form-control" value="Perkhidmatan sokongan aplikasi dalaman - MAMPU (RM 290,000.00)" readonly>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="profil-readonly-section">
+                            <div class="profil-readonly-title">Kedudukan Kewangan Semasa</div>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Aset Utama (5 Terbesar)</label>
+                                    <textarea class="form-control" rows="5" readonly>1. Bangunan pejabat 3 tingkat - RM 1,200,000.00
+2. Pelayan data (server cluster) - RM 350,000.00
+3. 15 unit workstation teknikal - RM 180,000.00
+4. Perisian lesen enterprise - RM 120,000.00
+5. Kenderaan operasi - RM 95,000.00</textarea>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Peralatan Berkaitan Tender (5 Item)</label>
+                                    <textarea class="form-control" rows="5" readonly>1. Network analyzer set - RM 80,000.00
+2. Security appliance - RM 65,000.00
+3. Portable forensic workstation - RM 58,000.00
+4. Backup storage system - RM 45,000.00
+5. Audit toolkit license - RM 30,000.00</textarea>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Tanggungan / Liabilities (RM)</label>
+                                    <input type="text" class="form-control" value="210,000.00" readonly>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Baki Wang Dalam Bank (RM)</label>
+                                    <input type="text" class="form-control" value="980,000.00" readonly>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="profil-readonly-section">
+                            <div class="profil-readonly-title">Analisa Kecukupan Modal</div>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Jenis Skor Modal Berbayar</label>
+                                    <input type="text" class="form-control" value="Automatik" readonly>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Skor Modal Berbayar</label>
+                                    <input type="text" class="form-control" value="10/10" readonly>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Jenis Skor Modal Dibenarkan</label>
+                                    <input type="text" class="form-control" value="Automatik" readonly>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Skor Modal Dibenarkan</label>
+                                    <input type="text" class="form-control" value="10/10" readonly>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer justify-content-center">
+                    <button type="button" class="btn btn-success" data-bs-dismiss="modal">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div>
 
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {
+
+        const BORANG_ATAS_TALIAN_LABEL = 'Borang Atas Talian';
+
+        function bindReadonlyProfilPetenderButtons() {
+            document.querySelectorAll('#application-content table tbody tr').forEach((row) => {
+                const cells = row.querySelectorAll('td');
+                if (cells.length < 2) return;
+
+                const mekanisma = (cells[1].textContent || '').replace(/\s+/g, ' ').trim();
+                if (mekanisma !== BORANG_ATAS_TALIAN_LABEL) return;
+
+                const actionBtn = row.querySelector('button');
+                if (!actionBtn) return;
+
+                actionBtn.classList.add('btn-open-profil-petender-readonly');
+                actionBtn.classList.remove('btn-papar-cadangan-kewangan-step2');
+                actionBtn.setAttribute('data-bs-toggle', 'modal');
+                actionBtn.setAttribute('data-bs-target', '#modalProfilPetenderReadonly');
+            });
+        }
+
+        bindReadonlyProfilPetenderButtons();
 
         const steps = document.querySelectorAll('.progress-step');
         const tabs = document.querySelectorAll('.step-number');
@@ -862,7 +1113,7 @@
         let activeSemakanButton = null;
         const btnSimpanDokKewangan = document.getElementById('btnStep1SimpanDokKewangan');
 
-        document.querySelectorAll('.btn-papar-semakan-kewangan').forEach((btn) => {
+        document.querySelectorAll('.btn-papar-semakan-kewangan:not(.btn-open-profil-petender-readonly)').forEach((btn) => {
             btn.addEventListener('click', () => {
                 const t = btn.getAttribute('data-dokumen')?.trim() || '';
                 const el = document.getElementById('modalSemakanKewanganTajuk');

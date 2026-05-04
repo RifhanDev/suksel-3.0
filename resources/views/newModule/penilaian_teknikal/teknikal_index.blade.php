@@ -147,9 +147,9 @@
                             <td><span class="text-muted small">3/3/2024</span></td>
                             <td></td>
                         </tr>
-                        <tr class="teknikal-row-link" data-href="{{ route('penilaianTeknikal.show', 'QT210000000023740') }}">
-                            <td><a href="{{ route('penilaianTeknikal.show', 'QT210000000023740') }}" class="text-decoration-none"><span class="tender-number">QT210000000023740</span></a></td>
-                            <td><span class="fw-medium">TAJUK PEROLEHAN 1</span></td>
+                        <tr class="teknikal-row-link" data-href="{{ route('penilaianTeknikalKerja.show', 'QT210000000023740') }}">
+                            <td><a href="{{ route('penilaianTeknikalKerja.show', 'QT210000000023740') }}" class="text-decoration-none"><span class="tender-number">QT210000000023740</span></a></td>
+                            <td><span class="fw-medium">PROJEK MENAIKTARAF JALAN PELABUHAN UTARA DARI KLANG CONTAINER TERMINAL (Kerja)</span></td>
                             <td><span class="text-muted small">2/2/2024</span></td>
                             <td></td>
                         </tr>

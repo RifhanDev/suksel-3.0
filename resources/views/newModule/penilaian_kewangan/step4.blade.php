@@ -149,7 +149,7 @@
 Dengan ini, JPT mengesyorkan XX (bil) untuk melaksanakan (NAMA PROJEK) untuk dibawa ke mesyuarat Jawatankuasa Sebut Harga PSU(K) berdasarkan justifikasi seperti berikut:
             </textarea>
             <div class="text-end mt-2">
-                <button type="button" class="btn btn-sm btn-outline-danger btn-remove-pengesyoran d-none">Buang</button>
+                <button type="button" class="btn btn-sm btn-outline-danger btn-remove-pengesyoran d-none">Hapus</button>
             </div>
         </div>
     </div>
