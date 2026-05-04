@@ -247,6 +247,9 @@ Route::view('/index-perincian', 'newModule.penyediaanMesyuarat.index_perincian')
 Route::view('/perincian-page', 'newModule.penyediaanMesyuarat.perincian_mesyuarat')->name('perincianPage');
 Route::view('/index-jawatankuasa', 'newModule.penyediaanMesyuarat.index_jawatankuasa')->name('jawatankuasaMesyuarat');
 Route::view('/jawatankuasa-page', 'newModule.penyediaanMesyuarat.jawatankuasa')->name('jawatankuasaPage');
+Route::view('/lawatan-tapak-urusetia', 'newModule.lawatanTapak.index')->name('lawatanTapakUrusetia');
+Route::view('/pengesahan-lawatan-tapak-urusetia', 'newModule.lawatanTapak.pengesahanLawatanTapak')->name('pengesahanLawatanTapak');
+Route::view('/kelulusan-lawatan-tapak-urusetia', 'newModule.lawatanTapak.kelulusanLawatanTapak')->name('kelulusanLawatanTapak');
 
 // penilaian teknikal
 Route::get('/penilaian-teknikal', [PenilaianTeknikalController::class, 'index'])->name('penilaianTeknikal');
