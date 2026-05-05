@@ -576,7 +576,17 @@ class TendersController extends Controller
 						? Carbon::parse($tender->submission_datetime)->format('d/m/Y')
 						: '-';
 				})
-				->addColumn('status', function () {
+				->addColumn('status', function ($tender) {
+					$categoryName = mb_strtolower(trim((string) ($tender->kategori_perolehan_name ?? '')));
+					$isBekalan = in_array($categoryName, ['bekalan', 'perkhidmatan'], true);
+					$telahDihantar = $isBekalan
+						&& $tender->checklist_status === 'submitted'
+						&& $tender->financial_status === 'submitted';
+
+					if ($telahDihantar) {
+						return '<span class="d-inline-flex align-items-center gap-1 px-2 py-1 rounded-2 fw-semibold" style="background:#dcfce7;color:#166534;font-size:0.72rem;border:1px solid #bbf7d0;"><span class="rounded-circle" style="width:6px;height:6px;background:#16a34a;flex-shrink:0;display:inline-block;"></span>Telah Dihantar</span>';
+					}
+
 					return '<span class="d-inline-flex align-items-center gap-1 px-2 py-1 rounded-2 fw-semibold" style="background:#fef9c3;color:#854d0e;font-size:0.72rem;border:1px solid #fde68a;"><span class="rounded-circle" style="width:6px;height:6px;background:#ca8a04;flex-shrink:0;display:inline-block;"></span>Dalam Process</span>';
 				})
 				->addColumn('tindakan', function ($tender) {
@@ -616,6 +626,12 @@ class TendersController extends Controller
 				'=',
 				'tenders.id'
 			)
+			->leftJoin(
+				'financial_checklist_headers as fcheader',
+				'fcheader.tender_id',
+				'=',
+				'tenders.id'
+			)
 			->select([
 				'tenders.id',
 				'tenders.uuid',
@@ -627,6 +643,7 @@ class TendersController extends Controller
 				'kategori_perolehan.name as kategori_perolehan_name',
 				DB::raw("COALESCE(NULLIF(tenders.no_tender, ''), tenders.ref_number) as tender_number"),
 				'tcheader.status as checklist_status',
+				'fcheader.status as financial_status',
 			])
 			->orderBy('tenders.document_stop_date', 'desc')
 			->orderBy('tenders.id', 'desc');

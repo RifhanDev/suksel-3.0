@@ -867,6 +867,7 @@
                         max_score:          maxScore,
                         passing_score:      penilaian,
                         passing_percentage: pct,
+                        status:             'draft',
                     }),
                     success: function(response) {
                         if (response.data && response.data.items) {
