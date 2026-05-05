@@ -29,6 +29,9 @@
     <link href="{{ asset('css/components/content-card.css') }}" rel="stylesheet">
     <link href="{{ asset('css/components/badges.css') }}" rel="stylesheet">
 
+    <!-- Bootstrap Icons (bi-*); used by penilaian & other v3 screens -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" crossorigin="anonymous">
+
     <!-- Selectize CSS -->
     <link href="{{ asset('packages/selectize/dist/css/selectize.default.css') }}" rel="stylesheet">
 
