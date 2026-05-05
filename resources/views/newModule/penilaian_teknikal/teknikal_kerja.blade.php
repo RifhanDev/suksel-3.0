@@ -1,9 +1,5 @@
 @extends('layouts.v3.master')
 
-@push('styles')
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.1/css/all.min.css">
-@endpush
-
 @section('content')
 {{-- Breadcrumb: back to SENARAI TENDER (first page) --}}
 <nav aria-label="breadcrumb" class="py-2 mb-3">
@@ -437,8 +433,8 @@
                                     <td class="text-center">1</td>
                                     <td>
                                         <div class="d-flex align-items-start gap-2">
-                                            <a href="https://ontheline.trincoll.edu/images/bookdown/sample-local-pdf.pdf" target="_blank">
-                                                <i class="fa-solid fa-file-pdf fa-lg" aria-hidden="true"></i>
+                                            <a href="https://ontheline.trincoll.edu/images/bookdown/sample-local-pdf.pdf" target="_blank" class="text-primary text-decoration-none">
+                                                <i class="bi bi-file-earmark-pdf-fill" aria-hidden="true"></i>
                                             </a>
                                             <span class="small text-break">Salinan Sijil Pendaftaran dengan Kementerian Kewangan.pdf</span>
                                         </div>
@@ -458,8 +454,8 @@
                                     <td class="text-center">2</td>
                                     <td>
                                         <div class="d-flex align-items-start gap-2">
-                                            <a href="https://ontheline.trincoll.edu/images/bookdown/sample-local-pdf.pdf" target="_blank">
-                                                <i class="fa-solid fa-file-pdf fa-lg" aria-hidden="true"></i>
+                                            <a href="https://ontheline.trincoll.edu/images/bookdown/sample-local-pdf.pdf" target="_blank" class="text-primary text-decoration-none">
+                                                <i class="bi bi-file-earmark-pdf-fill" aria-hidden="true"></i>
                                             </a>
                                             <span class="small text-break">Salinan Sijil Pendaftaran dengan Kementerian Kewangan.pdf</span>
                                         </div>

@@ -56,11 +56,11 @@
         font-family: 'Courier New', monospace;
     }
 
-    .teknikal-row-link {
+    .kewangan-tender-row {
         cursor: pointer;
     }
 
-    .teknikal-row-link:hover td {
+    .kewangan-tender-row:hover td {
         background: var(--sg-bg);
     }
 
@@ -142,7 +142,7 @@
                     </thead>
                     <tbody>
                         @forelse($tender as $t)
-                        <tr class="teknikal-row-link" data-href="{{ route('penilaianKewangan.show', $t['no']) }}">
+                        <tr class="kewangan-tender-row" data-href="{{ route('penilaianKewangan.show', $t['no']) }}">
                             <td><a href="{{ route('penilaianKewangan.show', $t['no']) }}" class="text-decoration-none"><span class="tender-number">{{ $t['no'] }}</span></a></td>
                             <td><span class="fw-medium">{{ $t['tajuk'] }}</span></td>
                             <td><span class="text-muted small">{{ $t['tamat'] }}</span></td>
@@ -162,7 +162,7 @@
 </div>
 
 <script>
-    document.querySelectorAll('.teknikal-row-link').forEach(function(row) {
+    document.querySelectorAll('.kewangan-tender-row').forEach(function(row) {
         row.addEventListener('click', function(e) {
             if (e.target.closest('a')) return;
             var href = this.getAttribute('data-href');
