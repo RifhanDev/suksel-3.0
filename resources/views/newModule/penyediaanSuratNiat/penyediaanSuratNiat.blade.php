@@ -173,75 +173,68 @@
         <div class="content-card-header p-4 pb-3 border-bottom">
             <div class="d-flex align-items-center gap-3">
                 <div class="content-card-icon" style="width: 38px; height: 38px;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M12 22l-4-2-4-4 2-4-2-4 4-4 4-2 4 2 4 4-2 4 2 4-4 4-4 2z"></path>
-                        <polyline points="9 12 11 14 15 10"></polyline>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+                        <line x1="7" y1="8" x2="17" y2="8"></line>
+                        <line x1="7" y1="12" x2="17" y2="12"></line>
+                        <line x1="7" y1="16" x2="17" y2="16"></line>
                     </svg>
                 </div>
                 <div>
-                    <h3 class="content-card-title mb-0" style="font-size: 1rem;">Pengesahan Kehadiran Lawatan Tapak</h3>
-                    <p class="text-muted mb-0" style="font-size: 0.78rem;">Diisi oleh pengguna untuk mengesahkan lawatan tapak</p>
+                    <h3 class="content-card-title mb-0" style="font-size: 1rem;">Senarai Cadangan Pembekal</h3>
+                    <p class="text-muted mb-0" style="font-size: 0.78rem;">Kemaskini maklumat cadangan pembekal</p>
                 </div>
             </div>
         </div>
 
         <div class="content-card-body p-4">
-            <div class="row g-2 align-items-end mb-4">
-                <div class="col-12 col-lg-4">
-                    <label for="tarikh" class="form-label small fw-bold text-secondary text-uppercase mb-1">Tarikh</label>
-                    <input type="date" id="tarikh" class="form-control form-control-sm">
-                </div>
-                <div class="col-12 col-lg-6">
-                    <label for="tajuk_perolehan" class="form-label small fw-bold text-secondary text-uppercase mb-1">Tajuk Perolehan</label>
-                    <input type="text" id="tajuk_perolehan" class="form-control form-control-sm" placeholder="Cari tajuk projek...">
-                </div>
-                <div class="col-12 col-lg-2">
-                    <div class="d-flex gap-2">
-                        <button type="button" id="" class="btn btn-md btn-light border w-100">
-                            Reset
-                        </button>
-                        <button type="button" id="" class="btn btn-md btn-selangor fw-medium w-100">
-                            Tapis
-                        </button>
-                    </div>
-                </div>
-            </div>
 
-            <div class="d-flex align-items-center justify-content-end mb-3">
-                <button type="button" class="btn btn-sm btn-primary d-inline-flex align-items-center gap-1" data-bs-toggle="modal" data-bs-target="#tambahKehadiranModal">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24"
-                        fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
-                        stroke-linejoin="round">
-                        <line x1="12" y1="5" x2="12" y2="19"></line>
-                        <line x1="5" y1="12" x2="19" y2="12"></line>
-                    </svg>
-                    Tambah Kehadiran
-                </button>
+            <div class="row g-2 align-items-end mb-4">
+                <div class="col-6 col-lg-6">
+                    <label for="pemilihan_berdasarkan" class="form-label small fw-bold text-secondary text-uppercase mb-1">Pemilihan Berdasarkan</label>
+                    <input type="text" id="pemilihan_berdasarkan" class="form-control form-control-sm">
+                </div>
+                <div class="col-6 col-lg-6">
+                    <label for="kaedah_memuktamadkan_pembekal" class="form-label small fw-bold text-secondary text-uppercase mb-1">Kaedah Memuktamadkan Pembekal</label>
+                    <input type="text" id="kaedah_memuktamadkan_pembekal" class="form-control form-control-sm">
+                </div>
             </div>
 
             <!-- Table -->
             <div class="table-responsive">
-                <table id="dt_tmpltSpec" class="table table-modern w-100 mb-0">
+                <table id="dt_pembekal" class="table table-modern w-100 mb-0">
                     <thead>
                         <tr>
-                            <th class="text-center">Bil</th>
-                            <th class="text-center">
-                                ROC Syarikat
-                                <div style="font-size: 0.68rem; font-weight: 600; text-transform: none; letter-spacing: 0; color: #94a3b8; margin-top: 2px;">
-                                    (Hanya Syarikat Yang Berdaftar Sahaja)
-                                </div>
-                            </th>
-                            <th class="text-center">Lokasi</th>
-                            <th class="text-center">No. IC</th>
-                            <th class="text-center">Nama Individu</th>
-                            <th class="text-center">Hadir</th>
+                            <th class="text-center">Pembekal</th>
+                            <th class="text-center">Surat Niat Diperlukan</th>
                             <th class="text-center">Tindakan</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr id="tbl-no-data">
-                            <td colspan="7" class="text-center text-muted py-4 small">Tiada Data</td>
+                        <tr id="dt-pembekal-no-data">
+                            <td colspan="3" class="text-center text-muted py-4 small">Tiada Data</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Table -->
+            <div class="table-responsive">
+                <table id="dt_loa" class="table table-modern w-100 mb-0">
+                    <thead>
+                        <tr>
+                            <th class="text-center">No. LOI/LOA</th>
+                            <th class="text-center">Jenis</th>
+                            <th class="text-center">Item</th>
+                            <th class="text-center">Status</th>
+                            <th class="text-center">Tindakan</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr id="dt-loa-no-data">
+                            <td colspan="5" class="text-center text-muted py-4 small">Tiada Data</td>
                         </tr>
                     </tbody>
                 </table>
@@ -249,10 +242,56 @@
 
         </div>
     </div>
+
+    <div class="content-card mb-4 p-0">
+        <div class="content-card-header p-4 pb-3 border-bottom">
+            <div class="d-flex align-items-center gap-3">
+                <div class="content-card-icon" style="width: 38px; height: 38px;">
+                    <svg xmlns="http://w3.org" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M1 2.828c.885-.37 2.154-.769 3.388-.893 1.33-.134 2.458.063 3.112.752v9.746c-.935-.53-2.12-.603-3.213-.493-1.18.12-2.37.461-3.287.811V2.828zm7.5-.141c.654-.689 1.782-.886 3.112-.752 1.234.124 2.503.523 3.388.893v9.923c-.918-.35-2.107-.692-3.287-.81-1.094-.111-2.278-.039-3.213.492V2.687zM8 1.783C7.015.936 5.587.81 4.287.94c-1.514.153-3.042.672-3.994 1.105A.5.5 0 0 0 0 2.5v11a.5.5 0 0 0 .707.455c.882-.4 2.303-.881 3.68-1.02 1.409-.142 2.59.087 3.223.877a.5.5 0 0 0 .78 0c.633-.79 1.814-1.019 3.222-.877 1.378.139 2.8.62 3.681 1.02A.5.5 0 0 0 16 13.5v-11a.5.5 0 0 0-.293-.455c-.952-.433-2.48-.952-3.994-1.105C10.413.809 8.985.936 8 1.783z"/>
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="content-card-title mb-0" style="font-size: 1rem;">Rundingan (Negotiation)</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="content-card-body p-4">
+
+            <div class="row g-2 align-items-end mb-4">
+                <div class="col-5 col-lg-5">
+                    <label for="faktor_rundingan" class="form-label small fw-bold text-secondary text-uppercase mb-1">Pemilihan Berdasarkan</label>
+                    <input type="text" id="faktor_rundingan" class="form-control form-control-sm">
+                </div>
+                <div class="col-5 col-lg-5">
+                    <label for="catatan" class="form-label small fw-bold text-secondary text-uppercase mb-1">Kaedah Memuktamadkan Pembekal</label>
+                    <input type="text" id="catatan" class="form-control form-control-sm">
+                </div>
+                <div class="col-2 col-lg-2">
+                    <div class="d-flex gap-2">
+                        <button type="button" id="" class="btn btn-md btn-selangor fw-medium w-100">
+                            Hantar
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            
+        </div>
+    </div>
+
     <!-- ACTION BUTTONS -->
     <div class="d-flex justify-content-end align-items-center mb-4 flex-wrap gap-2">
 
         <div class="d-flex gap-2">
+            <button type="button" class="btn-form btn-form-primary">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                </svg>
+                Laporan
+            </button>
             <button type="button" class="btn-form btn-form-success" id="btn-simpan">
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -262,43 +301,6 @@
                 </svg>
                 Simpan
             </button>
-        </div>
-    </div>
-
-    <!-- ===================== MODAL: TAMBAH KEHADIRAN ===================== -->
-    <div class="modal fade" id="tambahKehadiranModal" tabindex="-1" aria-labelledby="tambahKehadiranModalLabel"
-        aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title fw-bold" id="tambahKehadiranModalLabel">Tambah Kehadiran</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="table-responsive mb-4">
-                        <table id="dt_tambah_kehadiran" class="table table-modern w-100 mb-0">
-                            <thead>
-                                <tr>
-                                    <th class="text-center">
-                                        ROC Syarikat
-                                        <div style="font-size: 0.68rem; font-weight: 600; text-transform: none; letter-spacing: 0; color: #94a3b8; margin-top: 2px;">
-                                            (Hanya Syarikat Yang Berdaftar Sahaja)
-                                        </div>
-                                    </th>
-                                    <th class="text-center">No. IC</th>
-                                    <th class="text-center">Nama Individu</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tambahKehadiranBody"></tbody>
-                        </table>
-                    </div>
-                    <small class="text-danger"><i><strong>Nota:</strong> Nama ejen dan penama hendaklah dinyatakan di sijil CIDB dan MOF.</i></small>
-                </div>
-                <div class="modal-footer border-0 px-4 pb-4">
-                    <button type="button" class="btn-form btn-form-secondary" data-bs-dismiss="modal">Batal</button>
-                    <button type="button" class="btn-form btn-form-primary btn-pilih-standard">Simpan</button>
-                </div>
-            </div>
         </div>
     </div>
 
@@ -341,272 +343,9 @@
 
     document.addEventListener("DOMContentLoaded", function () {
 
-        let editingGroupIndex = null;
-
-        document.addEventListener("input", function (e) {
-            if (e.target.classList.contains("ic-only")) {
-                e.target.value = e.target.value.replace(/\D/g, '');
-            }
-        });
-
-        const modalEl = document.getElementById('tambahKehadiranModal');
-        const modalBody = document.getElementById('tambahKehadiranBody');
-        const mainTableBody = document.querySelector('#dt_tmpltSpec tbody');
-
-        // Reset edit mode when opening modal via "Tambah Kehadiran" button
-        const btnTambahKehadiran = document.querySelector('[data-bs-toggle="modal"][data-bs-target="#tambahKehadiranModal"]');
-        if (btnTambahKehadiran) {
-            btnTambahKehadiran.addEventListener('click', function() {
-                editingGroupIndex = null;
-                document.getElementById('tambahKehadiranModalLabel').innerText = "Tambah Kehadiran";
-                document.querySelector('.btn-pilih-standard').innerText = "Simpan";
-            });
-        }
-
-        function renumberItems() {
-            const firstRows = mainTableBody.querySelectorAll('tr.group-first');
-            firstRows.forEach((row, idx) => {
-                const newIdx = idx + 1;
-                const oldGroup = row.getAttribute('data-item-group');
-                row.cells[0].innerText = newIdx;
-                
-                const groupRows = mainTableBody.querySelectorAll(`tr[data-item-group="${oldGroup}"]`);
-                groupRows.forEach(r => r.setAttribute('data-item-group', newIdx));
-            });
-        }
-
-        // =========================
-        // BUILD MODAL ROWS (3 ROWS + ROC ROWSPAN)
-        // =========================
-        function buildRow(isFirst, rowspan = 3, values = {roc: '', ic: '', nama: ''}) {
-
-            if (isFirst) {
-                return `
-                    <tr class="item-row">
-                        <td rowspan="${rowspan}" class="align-top">
-                            <input type="text" name="roc_syarikat[]" class="form-control form-control-sm" placeholder="ROC Syarikat" value="${values.roc || ''}">
-                        </td>
-                        <td>
-                            <input type="text"
-                            name="no_ic[]"
-                            class="form-control form-control-sm ic-only"
-                            placeholder="No. IC"
-                            inputmode="numeric"
-                            pattern="[0-9]*"
-                            maxlength="12"
-                            value="${values.ic || ''}">
-                        </td>
-                        <td>
-                            <input type="text" name="nama_individu[]" class="form-control form-control-sm" placeholder="Nama Individu" value="${values.nama || ''}">
-                        </td>
-                    </tr>
-                `;
-            }
-
-            return `
-                <tr class="item-row">
-                    <td>
-                        <input type="text"
-                        name="no_ic[]"
-                        class="form-control form-control-sm ic-only"
-                        placeholder="No. IC"
-                        inputmode="numeric"
-                        pattern="[0-9]*"
-                        maxlength="12"
-                        value="${values.ic || ''}">
-                    </td>
-                    <td>
-                        <input type="text" name="nama_individu[]" class="form-control form-control-sm" placeholder="Nama Individu" value="${values.nama || ''}">
-                    </td>
-                </tr>
-            `;
-        }
-
-        function generateGroupHtml(itemIndex, data) {
-            let rowspan = data.length;
-            let first = data[0];
-            let html = `
-                <tr data-item-group="${itemIndex}" class="group-first">
-                    <td rowspan="${rowspan}" class="text-center align-top">${itemIndex}</td>
-                    <td rowspan="${rowspan}" class="text-center align-top">${first.roc}</td>
-                    <td class="text-center">-</td>
-                    <td class="text-center">${first.ic}</td>
-                    <td class="text-center">${first.nama}</td>
-                    <td class="text-center"><input type="checkbox"></td>
-                    <td rowspan="${rowspan}" class="text-center align-top">
-                        <div class="d-flex gap-1 justify-content-center">
-                            <button type="button" class="btn btn-sm btn-outline-primary btn-edit-row">Kemaskini</button>
-                            <button type="button" class="btn btn-sm btn-outline-danger btn-delete-row">Hapus</button>
-                        </div>
-                    </td>
-                </tr>
-            `;
-
-            for (let i = 1; i < data.length; i++) {
-                let item = data[i];
-                html += `
-                    <tr data-item-group="${itemIndex}">
-                        <td class="text-center">-</td>
-                        <td class="text-center">${item.ic}</td>
-                        <td class="text-center">${item.nama}</td>
-                        <td class="text-center"><input type="checkbox"></td>
-                    </tr>
-                `;
-            }
-            return html;
-        }
-
-
-        // =========================
-        // OPEN MODAL → RESET + GENERATE ROWS
-        // =========================
-        modalEl.addEventListener('shown.bs.modal', function () {
-            if (editingGroupIndex) return; 
-            
-            modalBody.innerHTML = "";
-            const totalRows = 3;
-            for (let i = 0; i < totalRows; i++) {
-                modalBody.insertAdjacentHTML("beforeend", buildRow(i === 0, totalRows));
-            }
-        });
-        
-        // Handle Edit and Delete Button Click
-        mainTableBody.addEventListener('click', function(e) {
-            const btnEdit = e.target.closest('.btn-edit-row');
-            const btnDelete = e.target.closest('.btn-delete-row');
-            
-            if (btnEdit) {
-                const row = btnEdit.closest('tr');
-                editingGroupIndex = row.getAttribute('data-item-group');
-                
-                document.getElementById('tambahKehadiranModalLabel').innerText = "Kemaskini Kehadiran";
-                document.querySelector('.btn-pilih-standard').innerText = "Kemaskini";
-                
-                // Populate Modal
-                const groupRows = mainTableBody.querySelectorAll(`tr[data-item-group="${editingGroupIndex}"]`);
-                const firstRow = groupRows[0];
-                const roc = firstRow.cells[1].innerText.trim();
-                
-                modalBody.innerHTML = "";
-                const modalRowsCount = Math.max(groupRows.length, 3);
-                groupRows.forEach((r, i) => {
-                    let ic, nama;
-                    if (i === 0) {
-                        ic = r.cells[3].innerText.trim();
-                        nama = r.cells[4].innerText.trim();
-                    } else {
-                        ic = r.cells[1].innerText.trim();
-                        nama = r.cells[2].innerText.trim();
-                    }
-                    modalBody.insertAdjacentHTML("beforeend", buildRow(i === 0, modalRowsCount, {roc, ic, nama}));
-                });
-                
-                // Ensure at least 3 rows in modal for consistency
-                if (groupRows.length < 3) {
-                    for (let i = groupRows.length; i < 3; i++) {
-                        modalBody.insertAdjacentHTML("beforeend", buildRow(false, modalRowsCount));
-                    }
-                }
-                
-                const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
-                modal.show();
-            }
-            
-            if (btnDelete) {
-                const row = btnDelete.closest('tr');
-                const groupIndex = row.getAttribute('data-item-group');
-                const groupRows = mainTableBody.querySelectorAll(`tr[data-item-group="${groupIndex}"]`);
-                groupRows.forEach(r => r.remove());
-                
-                if (mainTableBody.querySelectorAll('tr.group-first').length === 0) {
-                    mainTableBody.innerHTML = `
-                        <tr id="tbl-no-data">
-                            <td colspan="7" class="text-center text-muted py-4 small">Tiada Data</td>
-                        </tr>
-                    `;
-                } else {
-                    renumberItems();
-                }
-            }
-        });
-
-        // =========================
-        // SAVE → INSERT OR UPDATE
-        // =========================
-        document.querySelector('.btn-pilih-standard').addEventListener('click', function () {
-
-            const rows = modalBody.querySelectorAll('tr.item-row');
-            let data = [];
-
-            rows.forEach(row => {
-                let roc = row.querySelector('input[name="roc_syarikat[]"]')?.value.trim() || '';
-                let ic = row.querySelector('input[name="no_ic[]"]')?.value.trim() || '';
-                let nama = row.querySelector('input[name="nama_individu[]"]')?.value.trim() || '';
-
-                if (!roc && !ic && !nama) return;
-                data.push({ roc, ic, nama });
-            });
-
-            if (data.length === 0) return;
-
-            // remove empty state
-            document.getElementById('tbl-no-data')?.remove();
-
-            if (editingGroupIndex) {
-                const itemIndex = editingGroupIndex;
-                const existingRows = mainTableBody.querySelectorAll(`tr[data-item-group="${editingGroupIndex}"]`);
-                const firstRow = existingRows[0];
-                
-                const groupHtml = generateGroupHtml(itemIndex, data);
-                firstRow.insertAdjacentHTML('beforebegin', groupHtml);
-                existingRows.forEach(r => r.remove());
-                
-                editingGroupIndex = null;
-            } else {
-                const itemIndex = mainTableBody.querySelectorAll('tr.group-first').length + 1;
-                const groupHtml = generateGroupHtml(itemIndex, data);
-                mainTableBody.insertAdjacentHTML('beforeend', groupHtml);
-            }
-
-            bootstrap.Modal.getInstance(modalEl).hide();
-        });
+       
 
     });
-
-
-    function showSuccessModal() {
-        const modalEl = document.getElementById('successModal');
-        if (!modalEl) return;
-
-        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
-        modal.show();
-    }
-
-    // init events safely
-    (function () {
-
-        const btnSimpan = document.querySelector('.btn-form-success'); 
-        const modalEl = document.getElementById('successModal');
-
-        if (btnSimpan) {
-            btnSimpan.addEventListener('click', showSuccessModal);
-        }
-
-        // redirect when user clicks "Tutup"
-        const btnClose = modalEl?.querySelector('.btn-modal');
-
-        if (btnClose) {
-            btnClose.addEventListener('click', function () {
-                const modal = bootstrap.Modal.getInstance(modalEl);
-                modal.hide();
-
-                setTimeout(() => {
-                    window.location.href = "{{ route('kelulusanLawatanTapak') }}";
-                }, 300);
-            });
-        }
-
-    })();
 
 </script>
 
