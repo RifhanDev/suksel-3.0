@@ -93,6 +93,53 @@
         #tbl-modal-dibenarkan th:last-child, #tbl-modal-dibenarkan td:last-child {
             border-right: none !important;
         }
+
+        /* Loading overlay */
+        #loading-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: rgba(15, 23, 42, 0.45);
+            backdrop-filter: blur(2px);
+            align-items: center;
+            justify-content: center;
+        }
+        #loading-overlay.active { display: flex; }
+        .loading-box {
+            background: #fff;
+            border-radius: 12px;
+            padding: 28px 36px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+        }
+        .loading-spinner {
+            width: 28px;
+            height: 28px;
+            border: 3px solid #e2e8f0;
+            border-top-color: #3b82f6;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            flex-shrink: 0;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading-text {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #1e293b;
+        }
+        .loading-check {
+            display: none;
+            width: 28px;
+            height: 28px;
+            flex-shrink: 0;
+            color: #22c55e;
+        }
+        #loading-overlay.success .loading-spinner { display: none; }
+        #loading-overlay.success .loading-check { display: block; }
+        #loading-overlay.success .loading-text { color: #16a34a; }
     </style>
 @endsection
 
@@ -135,7 +182,7 @@
                     <div class="col-6 col-md-3">
                         <span class="text-muted fw-semibold text-uppercase d-block mb-1"
                             style="font-size: 0.67rem; letter-spacing: 0.5px;">PTJ</span>
-                        <span class="fw-semibold text-dark" style="font-size: 0.875rem;">{{ $tender->ptj ?? '-' }}</span>
+                        <span class="fw-semibold text-dark" style="font-size: 0.875rem;">{{ optional($tender->tenderer)->name ?? '-' }}</span>
                     </div>
                     <div class="col-12 col-md-6 d-md-flex justify-content-md-end align-items-md-center">
                         <span class="d-inline-flex align-items-center gap-2 px-3 py-2 rounded-2 fw-semibold"
@@ -343,23 +390,23 @@
                                     <p class="text-muted fst-italic mb-2" style="font-size:0.72rem;">Contoh: 1. Rumah Kedai - 1 unit</p>
                                     <div class="numbered-input-row">
                                         <span class="numbered-input-num">1</span>
-                                        <input type="text" name="aset_1" class="form-control form-control-sm" placeholder="Aset 1...">
+                                        <input type="text" name="aset[]" class="form-control form-control-sm" placeholder="Aset 1...">
                                     </div>
                                     <div class="numbered-input-row">
                                         <span class="numbered-input-num">2</span>
-                                        <input type="text" name="aset_2" class="form-control form-control-sm" placeholder="Aset 2...">
+                                        <input type="text" name="aset[]" class="form-control form-control-sm" placeholder="Aset 2...">
                                     </div>
                                     <div class="numbered-input-row">
                                         <span class="numbered-input-num">3</span>
-                                        <input type="text" name="aset_3" class="form-control form-control-sm" placeholder="Aset 3...">
+                                        <input type="text" name="aset[]" class="form-control form-control-sm" placeholder="Aset 3...">
                                     </div>
                                     <div class="numbered-input-row">
                                         <span class="numbered-input-num">4</span>
-                                        <input type="text" name="aset_4" class="form-control form-control-sm" placeholder="Aset 4...">
+                                        <input type="text" name="aset[]" class="form-control form-control-sm" placeholder="Aset 4...">
                                     </div>
                                     <div class="numbered-input-row">
                                         <span class="numbered-input-num">5</span>
-                                        <input type="text" name="aset_5" class="form-control form-control-sm" placeholder="Aset 5...">
+                                        <input type="text" name="aset[]" class="form-control form-control-sm" placeholder="Aset 5...">
                                     </div>
                                 </td>
                             </tr>
@@ -373,23 +420,23 @@
                                     <p class="text-muted fst-italic mb-2" style="font-size:0.72rem;">Contoh: 1. Kereta Perdana V6 (2002) - RM40,000.00</p>
                                     <div class="numbered-input-row">
                                         <span class="numbered-input-num">1</span>
-                                        <input type="text" name="peralatan_1" class="form-control form-control-sm" placeholder="Peralatan 1...">
+                                        <input type="text" name="peralatan[]" class="form-control form-control-sm" placeholder="Peralatan 1...">
                                     </div>
                                     <div class="numbered-input-row">
                                         <span class="numbered-input-num">2</span>
-                                        <input type="text" name="peralatan_2" class="form-control form-control-sm" placeholder="Peralatan 2...">
+                                        <input type="text" name="peralatan[]" class="form-control form-control-sm" placeholder="Peralatan 2...">
                                     </div>
                                     <div class="numbered-input-row">
                                         <span class="numbered-input-num">3</span>
-                                        <input type="text" name="peralatan_3" class="form-control form-control-sm" placeholder="Peralatan 3...">
+                                        <input type="text" name="peralatan[]" class="form-control form-control-sm" placeholder="Peralatan 3...">
                                     </div>
                                     <div class="numbered-input-row">
                                         <span class="numbered-input-num">4</span>
-                                        <input type="text" name="peralatan_4" class="form-control form-control-sm" placeholder="Peralatan 4...">
+                                        <input type="text" name="peralatan[]" class="form-control form-control-sm" placeholder="Peralatan 4...">
                                     </div>
                                     <div class="numbered-input-row">
                                         <span class="numbered-input-num">5</span>
-                                        <input type="text" name="peralatan_5" class="form-control form-control-sm" placeholder="Peralatan 5...">
+                                        <input type="text" name="peralatan[]" class="form-control form-control-sm" placeholder="Peralatan 5...">
                                     </div>
                                 </td>
                             </tr>
@@ -632,7 +679,7 @@
                     </svg>
                     Laporan
                 </button>
-                <button type="submit" class="btn-form btn-form-success">
+                <button type="button" id="btn-simpan" class="btn-form btn-form-success">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
@@ -645,6 +692,19 @@
         </div>
 
     </form>
+
+    <!-- Loading overlay -->
+    <div id="loading-overlay">
+        <div class="loading-box">
+            <div class="loading-spinner"></div>
+            <svg class="loading-check" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <path d="M8 12l3 3 5-5"></path>
+            </svg>
+            <span class="loading-text" id="loading-text">Menyimpan...</span>
+        </div>
+    </div>
 
 @endsection
 
@@ -693,10 +753,10 @@ $(document).ready(function () {
         $('#form-profil-petender [name="modal_berbayar"]').val(profilData.modal_berbayar > 0 ? profilData.modal_berbayar.toLocaleString('en-MY', {minimumFractionDigits:2, maximumFractionDigits:2}) : '');
         $('#form-profil-petender [name="modal_dibenarkan"]').val(profilData.modal_dibenarkan > 0 ? profilData.modal_dibenarkan.toLocaleString('en-MY', {minimumFractionDigits:2, maximumFractionDigits:2}) : '');
         if (profilData.aset && profilData.aset.length) {
-            profilData.aset.forEach(function(v, i) { $('#form-profil-petender [name="aset_' + (i + 1) + '"]').val(v || ''); });
+            profilData.aset.forEach(function(v, i) { $('#form-profil-petender [name="aset[]"]').eq(i).val(v || ''); });
         }
         if (profilData.peralatan && profilData.peralatan.length) {
-            profilData.peralatan.forEach(function(v, i) { $('#form-profil-petender [name="peralatan_' + (i + 1) + '"]').val(v || ''); });
+            profilData.peralatan.forEach(function(v, i) { $('#form-profil-petender [name="peralatan[]"]').eq(i).val(v || ''); });
         }
         $('#form-profil-petender [name="tanggungan"]').val(profilData.tanggungan > 0 ? profilData.tanggungan.toLocaleString('en-MY', {minimumFractionDigits:2, maximumFractionDigits:2}) : '');
         $('#form-profil-petender [name="baki_wang_bank"]').val(profilData.baki_wang_bank > 0 ? profilData.baki_wang_bank.toLocaleString('en-MY', {minimumFractionDigits:2, maximumFractionDigits:2}) : '');
@@ -819,86 +879,48 @@ $(document).ready(function () {
     initAnalisa('#tbl-dibenarkan-body', '.btn-tambah-dibenarkan', 'dibenarkan');
 
     // ══════════════════════════════════════════════════════════════════════════
-    // ANGGARAN JABATAN — hardcoded dummy; abg wan will replace with real value from backend later
-    // e.g. var anggaranJabatan = { $anggaranJabatan };
+    // AUTOMATIK ROWS — calculated in PHP from tender.anggaran_jabatan
     // ══════════════════════════════════════════════════════════════════════════
-    var anggaranJabatan = 200000.00;
+    var AUTOMATIK_ROWS_BERBAYAR   = @json($automatikRowsBerbayar);
+    var AUTOMATIK_ROWS_DIBENARKAN = @json($automatikRowsDibenarkan);
 
-    // Calculate Hingga for row 1 based on AJ
-    function calculateHingga1(aj) {
-        if (aj > 50 && aj <= 500000) {
-            return (0.015 * aj) - 0.01;
-        } else if (aj > 500000) {
-            return (0.030 * aj) - 0.01;
-        }
-        return 0;
-    }
+    var keAtasBadge =
+        '<span class="d-inline-flex align-items-center gap-1 px-2 py-1 rounded-2 fw-semibold" ' +
+        'style="background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;font-size:0.78rem;">' +
+            '<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'11\' height=\'11\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2.5\' stroke-linecap=\'round\' stroke-linejoin=\'round\'>' +
+                '<line x1=\'12\' y1=\'19\' x2=\'12\' y2=\'5\'></line>' +
+                '<polyline points=\'5 12 12 5 19 12\'></polyline>' +
+            '</svg>' +
+            'Ke Atas' +
+        '</span>';
 
-    // Render the 2 automatik rows into a given tbody
-    // Includes hidden inputs so values are submitted with the form.
-    // Row 2 Hingga is submitted as "" (empty) — backend treats null/empty = ke atas / no upper limit.
-    function renderAutomatikRows(tbodyId, namePrefix) {
-        var $tbody  = $('#' + tbodyId);
-        var hingga1 = calculateHingga1(anggaranJabatan);
-        var dari2   = hingga1 + 0.01;
-
-        var keAtasBadge =
-            '<span class="d-inline-flex align-items-center gap-1 px-2 py-1 rounded-2 fw-semibold" ' +
-            'style="background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;font-size:0.78rem;">' +
-                '<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'11\' height=\'11\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2.5\' stroke-linecap=\'round\' stroke-linejoin=\'round\'>' +
-                    '<line x1=\'12\' y1=\'19\' x2=\'12\' y2=\'5\'></line>' +
-                    '<polyline points=\'5 12 12 5 19 12\'></polyline>' +
-                '</svg>' +
-                'Ke Atas' +
-            '</span>';
-
-        $tbody.html(
-            // Row 1
-            '<tr>' +
-                '<td class="text-center fw-semibold text-muted" style="font-size:0.8rem;">1</td>' +
-                '<td class="fw-semibold" style="font-size:0.85rem;">' +
-                    fmtAmt(0) +
-                    '<input type="hidden" name="' + namePrefix + '_dari[]" value="0">' +
-                '</td>' +
-                '<td class="fw-semibold" style="font-size:0.85rem;">' +
-                    fmtAmt(hingga1) +
-                    '<input type="hidden" name="' + namePrefix + '_hingga[]" value="' + hingga1.toFixed(2) + '">' +
-                '</td>' +
-                '<td class="text-center fw-semibold" style="font-size:0.85rem;">' +
-                    '0<input type="hidden" name="' + namePrefix + '_skema[]" value="0">' +
-                '</td>' +
-            '</tr>' +
-            // Row 2 — hingga submitted as "" (ke atas / no upper limit)
-            '<tr>' +
-                '<td class="text-center fw-semibold text-muted" style="font-size:0.8rem;">2</td>' +
-                '<td class="fw-semibold" style="font-size:0.85rem;">' +
-                    fmtAmt(dari2) +
-                    '<input type="hidden" name="' + namePrefix + '_dari[]" value="' + dari2.toFixed(2) + '">' +
-                '</td>' +
-                '<td>' +
-                    keAtasBadge +
-                    '<input type="hidden" name="' + namePrefix + '_hingga[]" value="">' +
-                '</td>' +
-                '<td class="text-center fw-semibold" style="font-size:0.85rem;">' +
-                    '10<input type="hidden" name="' + namePrefix + '_skema[]" value="10">' +
-                '</td>' +
-            '</tr>'
-        );
+    function renderAutomatikRows(tbodyId, namePrefix, rows) {
+        var $tbody = $('#' + tbodyId);
+        var html   = '';
+        $.each(rows, function (i, row) {
+            var hinggaDisplay = row.hingga !== null ? '<span class="fw-semibold" style="font-size:0.85rem;">' + fmtAmt(row.hingga) + '</span>' : keAtasBadge;
+            var hinggaValue   = row.hingga !== null ? parseFloat(row.hingga).toFixed(2) : '';
+            html +=
+                '<tr>' +
+                '<td class="text-center fw-semibold text-muted" style="font-size:0.8rem;">' + (i + 1) + '</td>' +
+                '<td class="fw-semibold" style="font-size:0.85rem;">' + fmtAmt(row.dari) + '<input type="hidden" name="' + namePrefix + '_dari[]" value="' + parseFloat(row.dari).toFixed(2) + '"></td>' +
+                '<td>' + hinggaDisplay + '<input type="hidden" name="' + namePrefix + '_hingga[]" value="' + hinggaValue + '"></td>' +
+                '<td class="text-center fw-semibold" style="font-size:0.85rem;">' + row.skema + '<input type="hidden" name="' + namePrefix + '_skema[]" value="' + row.skema + '"></td>' +
+                '</tr>';
+        });
+        $tbody.html(html);
     }
 
     // ══════════════════════════════════════════════════════════════════════════
     // JENIS SKOR — toggle panels, disable hidden panel inputs to prevent
     //              null submissions from the panel that's not active
     // ══════════════════════════════════════════════════════════════════════════
-    function handleJenisSkor(val, manualPanelId, autoPanelId, autoTbodyId, namePrefix) {
+    function handleJenisSkor(val, manualPanelId, autoPanelId, autoTbodyId, namePrefix, automatikRows) {
         var $manual = $('#' + manualPanelId);
         var $auto   = $('#' + autoPanelId);
 
-        // Hide both first
         $manual.addClass('d-none');
         $auto.addClass('d-none');
-
-        // Disable all inputs in both panels (prevent stale submissions)
         $manual.find('input, select').prop('disabled', true);
         $auto.find('input').prop('disabled', true);
 
@@ -906,19 +928,67 @@ $(document).ready(function () {
             $manual.removeClass('d-none');
             $manual.find('input, select').prop('disabled', false);
         } else if (val === 'automatik') {
-            renderAutomatikRows(autoTbodyId, namePrefix);
+            renderAutomatikRows(autoTbodyId, namePrefix, automatikRows);
             $auto.removeClass('d-none');
             $auto.find('input').prop('disabled', false);
         }
     }
 
     $('.jenis-skor-select-berbayar').on('change', function () {
-        handleJenisSkor($(this).val(), 'panel-berbayar', 'panel-berbayar-automatik', 'tbl-berbayar-auto-body', 'berbayar');
+        handleJenisSkor($(this).val(), 'panel-berbayar', 'panel-berbayar-automatik', 'tbl-berbayar-auto-body', 'berbayar', AUTOMATIK_ROWS_BERBAYAR);
     });
 
     $('.jenis-skor-select-dibenarkan').on('change', function () {
-        handleJenisSkor($(this).val(), 'panel-dibenarkan', 'panel-dibenarkan-automatik', 'tbl-dibenarkan-auto-body', 'dibenarkan');
+        handleJenisSkor($(this).val(), 'panel-dibenarkan', 'panel-dibenarkan-automatik', 'tbl-dibenarkan-auto-body', 'dibenarkan', AUTOMATIK_ROWS_DIBENARKAN);
     });
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // PRE-FILL SCORING ITEMS
+    // ══════════════════════════════════════════════════════════════════════════
+    if (profilData) {
+        var berbayarItems    = (profilData.scoring_items || []).filter(function (s) { return s.jenis_skor === 'modal_berbayar'; });
+        var dibenarkanItems  = (profilData.scoring_items || []).filter(function (s) { return s.jenis_skor === 'modal_dibenarkan'; });
+
+        if (profilData.jenis_skor_modal_berbayar) {
+            $('[name="jenis_skor_berbayar"]').val(profilData.jenis_skor_modal_berbayar);
+            handleJenisSkor(profilData.jenis_skor_modal_berbayar, 'panel-berbayar', 'panel-berbayar-automatik', 'tbl-berbayar-auto-body', 'berbayar', AUTOMATIK_ROWS_BERBAYAR);
+            if (profilData.jenis_skor_modal_berbayar === 'manual' && berbayarItems.length) {
+                var $bb = $('#tbl-berbayar-body');
+                $bb.empty();
+                $.each(berbayarItems, function (i, s) {
+                    $bb.append(
+                        '<tr class="analisa-row">' +
+                        '<td class="text-center row-bil fw-semibold text-muted" style="font-size:0.8rem;">' + (i + 1) + '</td>' +
+                        '<td><input type="text" name="berbayar_dari[]" class="form-control form-control-sm amount-input" value="' + fmtAmt(s.dari || 0) + '"></td>' +
+                        '<td><input type="text" name="berbayar_hingga[]" class="form-control form-control-sm amount-input" value="' + (s.hingga !== null && s.hingga !== undefined ? fmtAmt(s.hingga) : '') + '"></td>' +
+                        '<td><input type="text" name="berbayar_skema[]" class="form-control form-control-sm" value="' + (s.skema || '') + '"></td>' +
+                        '<td class="text-center">' + DELETE_BTN + '</td>' +
+                        '</tr>'
+                    );
+                });
+            }
+        }
+
+        if (profilData.jenis_skor_modal_dibenarkan) {
+            $('[name="jenis_skor_dibenarkan"]').val(profilData.jenis_skor_modal_dibenarkan);
+            handleJenisSkor(profilData.jenis_skor_modal_dibenarkan, 'panel-dibenarkan', 'panel-dibenarkan-automatik', 'tbl-dibenarkan-auto-body', 'dibenarkan', AUTOMATIK_ROWS_DIBENARKAN);
+            if (profilData.jenis_skor_modal_dibenarkan === 'manual' && dibenarkanItems.length) {
+                var $db = $('#tbl-dibenarkan-body');
+                $db.empty();
+                $.each(dibenarkanItems, function (i, s) {
+                    $db.append(
+                        '<tr class="analisa-row">' +
+                        '<td class="text-center row-bil fw-semibold text-muted" style="font-size:0.8rem;">' + (i + 1) + '</td>' +
+                        '<td><input type="text" name="dibenarkan_dari[]" class="form-control form-control-sm amount-input" value="' + fmtAmt(s.dari || 0) + '"></td>' +
+                        '<td><input type="text" name="dibenarkan_hingga[]" class="form-control form-control-sm amount-input" value="' + (s.hingga !== null && s.hingga !== undefined ? fmtAmt(s.hingga) : '') + '"></td>' +
+                        '<td><input type="text" name="dibenarkan_skema[]" class="form-control form-control-sm" value="' + (s.skema || '') + '"></td>' +
+                        '<td class="text-center">' + DELETE_BTN + '</td>' +
+                        '</tr>'
+                    );
+                });
+            }
+        }
+    }
 
     // ══════════════════════════════════════════════════════════════════════════
     // AMOUNT INPUT — auto comma formatting (delegated for dynamic rows too)
@@ -945,11 +1015,141 @@ $(document).ready(function () {
     });
 
     // ══════════════════════════════════════════════════════════════════════════
-    // FORM SUBMIT — strip commas from amount fields so backend gets clean nums
+    // AJAX SAVE
     // ══════════════════════════════════════════════════════════════════════════
-    $('#form-profil-petender').on('submit', function () {
-        $(this).find('.amount-input').each(function () {
-            $(this).val($(this).val().replace(/,/g, ''));
+    var STORE_URL  = '{{ route("profilPetender.store", $tender->uuid) }}';
+    var CSRF_TOKEN = '{{ csrf_token() }}';
+
+    function buildPayload() {
+        var $form = $('#form-profil-petender');
+        var payload = {
+            nama_syarikat:               $form.find('[name="nama_syarikat"]').val() || '',
+            jenis_syarikat:              $form.find('[name="jenis_syarikat"]').val() || '',
+            taraf_petender:              $form.find('[name="taraf_petender"]').val() || '',
+            alamat:                      $form.find('[name="alamat_syarikat"]').val() || '',
+            pegawai_nama:                $form.find('[name="pegawai_nama"]').val() || '',
+            pegawai_telefon:             $form.find('[name="pegawai_telefon"]').val() || '',
+            pegawai_emel:                $form.find('[name="pegawai_emel"]').val() || '',
+            no_ssm:                      $form.find('[name="no_ssm"]').val() || '',
+            no_mof:                      $form.find('[name="no_mof"]').val() || '',
+            tempoh_sah_mof:              $form.find('[name="tempoh_sah_mof"]').val() || '',
+            bil_pekerja:                 parseInt($form.find('[name="bil_pekerja_sekarang"]').val()) || 0,
+            bil_pekerja_teknikal:        parseInt($form.find('[name="bil_pekerja_teknikal"]').val()) || 0,
+            modal_berbayar:              parseFloat($form.find('[name="modal_berbayar"]').val().replace(/,/g, '')) || 0,
+            modal_dibenarkan:            parseFloat($form.find('[name="modal_dibenarkan"]').val().replace(/,/g, '')) || 0,
+            tanggungan:                  parseFloat($form.find('[name="tanggungan"]').val().replace(/,/g, '')) || 0,
+            baki_wang_bank:              parseFloat($form.find('[name="baki_wang_bank"]').val().replace(/,/g, '')) || 0,
+            jenis_skor_modal_berbayar:   $form.find('[name="jenis_skor_berbayar"]').val() || '',
+            jenis_skor_modal_dibenarkan: $form.find('[name="jenis_skor_dibenarkan"]').val() || '',
+        };
+
+        payload.aset = [];
+        $form.find('[name="aset[]"]').each(function () { payload.aset.push($(this).val() || ''); });
+
+        payload.peralatan = [];
+        $form.find('[name="peralatan[]"]').each(function () { payload.peralatan.push($(this).val() || ''); });
+
+        payload.projects = [];
+        $('#tbl-projek-body tr.projek-row').each(function () {
+            payload.projects.push({
+                nama:         $(this).find('[name="projek_nama[]"]').val() || '',
+                agensi:       $(this).find('[name="projek_agensi[]"]').val() || '',
+                nilai_projek: parseFloat($(this).find('[name="projek_nilai[]"]').val().replace(/,/g, '')) || 0,
+            });
+        });
+
+        payload.scoring_items = [];
+
+        var jenisBerbayar = $form.find('[name="jenis_skor_berbayar"]').val();
+        if (jenisBerbayar === 'manual') {
+            $('#tbl-berbayar-body tr.analisa-row').each(function () {
+                var h = $(this).find('[name="berbayar_hingga[]"]').val().replace(/,/g, '');
+                payload.scoring_items.push({
+                    jenis_skor: 'modal_berbayar',
+                    dari:   parseFloat($(this).find('[name="berbayar_dari[]"]').val().replace(/,/g, '')) || 0,
+                    hingga: h !== '' ? parseFloat(h) : null,
+                    skema:  $(this).find('[name="berbayar_skema[]"]').val() || '',
+                });
+            });
+        } else if (jenisBerbayar === 'automatik') {
+            $('#tbl-berbayar-auto-body tr').each(function () {
+                var h = $(this).find('[name="berbayar_hingga[]"]').val();
+                payload.scoring_items.push({
+                    jenis_skor: 'modal_berbayar',
+                    dari:   parseFloat($(this).find('[name="berbayar_dari[]"]').val()) || 0,
+                    hingga: h !== '' ? parseFloat(h) : null,
+                    skema:  $(this).find('[name="berbayar_skema[]"]').val() || '',
+                });
+            });
+        }
+
+        var jenisDibenarkan = $form.find('[name="jenis_skor_dibenarkan"]').val();
+        if (jenisDibenarkan === 'manual') {
+            $('#tbl-dibenarkan-body tr.analisa-row').each(function () {
+                var h = $(this).find('[name="dibenarkan_hingga[]"]').val().replace(/,/g, '');
+                payload.scoring_items.push({
+                    jenis_skor: 'modal_dibenarkan',
+                    dari:   parseFloat($(this).find('[name="dibenarkan_dari[]"]').val().replace(/,/g, '')) || 0,
+                    hingga: h !== '' ? parseFloat(h) : null,
+                    skema:  $(this).find('[name="dibenarkan_skema[]"]').val() || '',
+                });
+            });
+        } else if (jenisDibenarkan === 'automatik') {
+            $('#tbl-dibenarkan-auto-body tr').each(function () {
+                var h = $(this).find('[name="dibenarkan_hingga[]"]').val();
+                payload.scoring_items.push({
+                    jenis_skor: 'modal_dibenarkan',
+                    dari:   parseFloat($(this).find('[name="dibenarkan_dari[]"]').val()) || 0,
+                    hingga: h !== '' ? parseFloat(h) : null,
+                    skema:  $(this).find('[name="dibenarkan_skema[]"]').val() || '',
+                });
+            });
+        }
+
+        return payload;
+    }
+
+    function blockUI(message) {
+        $('#loading-overlay').removeClass('success');
+        $('#loading-text').text(message || 'Menyimpan...');
+        $('#loading-overlay').addClass('active');
+    }
+
+    function unblockUI() {
+        $('#loading-overlay').removeClass('active success');
+    }
+
+    function showSuccess(message, callback) {
+        $('#loading-text').text(message || 'Berjaya!');
+        $('#loading-overlay').addClass('success');
+        setTimeout(function () {
+            unblockUI();
+            if (callback) callback();
+        }, 1200);
+    }
+
+    $('#btn-simpan').on('click', function () {
+        blockUI('Menyimpan...');
+        $.ajax({
+            url:         STORE_URL,
+            method:      'POST',
+            contentType: 'application/json',
+            data:        JSON.stringify(buildPayload()),
+            headers:     { 'X-CSRF-TOKEN': CSRF_TOKEN },
+        })
+        .done(function (res) {
+            if (res && res.success) {
+                $('#loading-text').text('Berjaya disimpan! Mengalih...');
+                $('#loading-overlay').addClass('success');
+                window.location.href = '{{ url("/senarai-kewangan-bekalan/" . $tender->uuid) }}';
+            } else {
+                unblockUI();
+                alert(res.message || 'Ralat semasa menyimpan.');
+            }
+        })
+        .fail(function () {
+            unblockUI();
+            alert('Ralat semasa menyimpan. Sila cuba lagi.');
         });
     });
 

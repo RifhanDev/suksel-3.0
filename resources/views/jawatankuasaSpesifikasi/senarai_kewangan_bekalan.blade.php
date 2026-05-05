@@ -6,9 +6,40 @@
     <link href="{{ asset('css/components/guideline-card.css') }}" rel="stylesheet">
     <link href="{{ asset('css/components/file-upload.css') }}" rel="stylesheet">
     <link href="{{ asset('css/components/button-components.css') }}" rel="stylesheet">
+    <style>
+        #loading-overlay { display:none; position:fixed; inset:0; z-index:9999; background:rgba(15,23,42,0.45); backdrop-filter:blur(2px); align-items:center; justify-content:center; }
+        #loading-overlay.active { display:flex; }
+        .loading-box { background:#fff; border-radius:12px; padding:28px 36px; display:flex; align-items:center; gap:16px; box-shadow:0 8px 32px rgba(0,0,0,0.18); }
+        .loading-spinner { width:28px; height:28px; border:3px solid #e2e8f0; border-top-color:#3b82f6; border-radius:50%; animation:spin 0.7s linear infinite; flex-shrink:0; }
+        @keyframes spin { to { transform:rotate(360deg); } }
+        .loading-text { font-size:0.9rem; font-weight:600; color:#1e293b; }
+        .loading-check { display:none; width:28px; height:28px; flex-shrink:0; color:#22c55e; }
+        #loading-overlay.success .loading-spinner { display:none; }
+        #loading-overlay.success .loading-check  { display:block; }
+        #loading-overlay.success .loading-text   { color:#16a34a; }
+    </style>
 @endsection
 
 @section('content')
+    <div id="loading-overlay">
+        <div class="loading-box">
+            <div class="loading-spinner"></div>
+            <svg class="loading-check" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            <span class="loading-text" id="loading-text">Menyimpan...</span>
+        </div>
+    </div>
+
+    @php
+        $tajukTender = $tender->tajuk_tender ?? $tender->name ?? 'Tiada Tajuk';
+        $kategoriPerolehan = $tender->kategori_perolehan_name ?? null;
+        $noTender = $tender->no_tender ?? $tender->ref_number ?? '-';
+        $ptj = optional($tender->tenderer)->name ?? '-';
+        $hargaIndikatif = old('harga_indikatif', $tender->harga_indikatif);
+        $hargaIndikatifDisplay = is_numeric($hargaIndikatif)
+            ? number_format((float) $hargaIndikatif, 2, '.', ',')
+            : '';
+    @endphp
+
     <!-- HEADER -->
     <div class="d-flex flex-column flex-lg-row justify-content-start align-items-start align-items-lg-center mb-4">
         <div>
@@ -26,8 +57,10 @@
                 <span class="text-muted fw-semibold text-uppercase d-block mb-1"
                     style="font-size: 0.67rem; letter-spacing: 0.5px;">Tajuk Tender</span>
                 <h5 class="fw-bold text-dark mb-0" style="line-height: 1.45; font-size: 1rem;">
-                    MEMBEKAL RANGSUM PUKAL (AIR MINERAL) UNTUK BANGUNAN KERAJAAN
-                    <span class="fw-normal text-muted fst-italic" style="font-size: 0.85rem;">(Bekalan Perkhidmatan)</span>
+                    {{ $tajukTender }}
+                    @if($kategoriPerolehan)
+                        <span class="fw-normal text-muted fst-italic" style="font-size: 0.85rem;">({{ $kategoriPerolehan }})</span>
+                    @endif
                 </h5>
             </div>
 
@@ -36,12 +69,12 @@
                 <div class="col-6 col-md-3">
                     <span class="text-muted fw-semibold text-uppercase d-block mb-1"
                         style="font-size: 0.67rem; letter-spacing: 0.5px;">No. Tender</span>
-                    <span class="fw-semibold text-dark" style="font-size: 0.875rem;">SUKSEL/PERT/2026/001</span>
+                    <span class="fw-semibold text-dark" style="font-size: 0.875rem;">{{ $noTender }}</span>
                 </div>
                 <div class="col-6 col-md-3">
                     <span class="text-muted fw-semibold text-uppercase d-block mb-1"
                         style="font-size: 0.67rem; letter-spacing: 0.5px;">PTJ</span>
-                    <span class="fw-semibold text-dark" style="font-size: 0.875rem;">100-007</span>
+                    <span class="fw-semibold text-dark" style="font-size: 0.875rem;">{{ $ptj }}</span>
                 </div>
                 <div class="col-12 col-md-6 d-md-flex justify-content-md-end align-items-md-center">
                     <span class="d-inline-flex align-items-center gap-2 px-3 py-2 rounded-2 fw-semibold"
@@ -221,17 +254,14 @@
                 </div>
                 <div>
                     <h3 class="content-card-title mb-0" style="font-size: 1rem;">Harga Indikatif</h3>
-                    <p class="text-muted mb-0" style="font-size: 0.78rem;">Masukkan anggaran harga indikatif bagi perolehan ini</p>
+                    {{-- <p class="text-muted mb-0" style="font-size: 0.78rem;">Masukkan anggaran harga indikatif bagi perolehan ini</p> --}}
                 </div>
             </div>
         </div>
         <div class="content-card-body p-4">
             <div class="d-flex align-items-center gap-3">
                 <label class="fw-semibold text-dark mb-0 flex-shrink-0" style="font-size: 0.875rem;">Harga Indikatif (RM)</label>
-                <input type="text" id="input-harga-indikatif" name="harga_indikatif"
-                    class="form-control form-control-sm fw-semibold text-end"
-                    style="max-width: 200px; font-size: 1rem;"
-                    value="29,000.00" placeholder="0.00">
+                <span id="input-harga-indikatif" class="fw-bold text-dark" style="font-size: 1rem;">{{ $hargaIndikatifDisplay }}</span>
             </div>
         </div>
     </div>
@@ -260,7 +290,7 @@
                         <span class="d-block text-muted fw-semibold text-uppercase mb-2"
                             style="font-size: 0.67rem; letter-spacing: 0.5px;">Penilaian Kewangan</span>
                         <div class="d-flex align-items-center gap-2">
-                            <input type="number" id="input-penilaian" name="input_penilaian" class="form-control form-control-sm text-center fw-semibold" style="max-width: 100px; font-size: 1rem;" placeholder="0" min="0">
+                            <input type="number" id="input-penilaian" name="input_penilaian" class="form-control form-control-sm text-center fw-semibold" style="max-width: 100px; font-size: 1rem;" placeholder="0" min="0" value="{{ $checklistData['passing_score'] ?? 0 }}">
                             <span class="text-muted small">daripada</span>
                             <span class="fw-bold text-dark" id="penilaian-kewangan-total" style="font-size: 1rem;">40</span>
                             <span class="text-muted small">markah</span>
@@ -330,7 +360,7 @@
     <!-- ===================== BOTTOM ACTION BUTTONS ===================== -->
     <div class="d-flex justify-content-end gap-2 mb-4">
         <button type="button" class="btn-form btn-form-primary btn-simpan">Simpan</button>
-        <button type="submit" class="btn-form btn-form-success btn-hantar">
+        <button type="button" class="btn-form btn-form-success btn-hantar">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"></path></svg>
             Hantar
         </button>
@@ -353,6 +383,34 @@
                 <h5 class="fw-bold mb-2">Berjaya</h5>
                 <p class="text-muted mb-4">Maklumat telah berjaya disimpan.</p>
                 <button type="button" class="btn-form btn-form-primary mx-auto" data-bs-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================== MODAL: VALIDASI HANTAR ===================== -->
+    <div class="modal fade" id="validasiHantarModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content p-4">
+                <div class="d-flex align-items-start gap-3 mb-3">
+                    <div class="flex-shrink-0 d-flex align-items-center justify-content-center rounded-circle"
+                        style="width:44px;height:44px;background:#fef3c7;flex-shrink:0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"
+                            stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                            <line x1="12" y1="9" x2="12" y2="13"></line>
+                            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                        </svg>
+                    </div>
+                    <div>
+                        <h6 class="fw-bold mb-1" style="color:#92400e;">Tidak Boleh Dihantar</h6>
+                        <p class="text-muted mb-0" style="font-size:0.82rem;">
+                            Semua baris dalam jadual perlu berstatus <strong>Selesai</strong> sebelum boleh dihantar.
+                        </p>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-end">
+                    <button type="button" class="btn-form btn-form-primary" data-bs-dismiss="modal">Faham</button>
+                </div>
             </div>
         </div>
     </div>
@@ -414,36 +472,136 @@
             var SPEC_FORM_BASE   = @json(rtrim(route('spesifikasiFormKewanganBekalan', ['spesifikasiUuid' => '__uuid__']), '/'));
             var TENDER_UUID      = @json($tender->uuid);
             var STORE_URL       = '{{ route('senaraiKewanganBekalan.store', $tender->uuid) }}';
+            var SUBMIT_URL      = '{{ route('senaraiKewanganBekalan.submit', $tender->uuid) }}';
+            var UPLOAD_FILE_URL = @json(route('senaraiKewanganBekalan.uploadFile', $tender->uuid));
+            var DELETE_FILE_URL = @json(route('senaraiKewanganBekalan.deleteFile', ':uuid'));
             var CSRF_TOKEN      = '{{ csrf_token() }}';
-            var checklistItems  = @json($checklistData['items'] ?? []);
+            var checklistItems   = @json($checklistData['items'] ?? []);
+            var sokonganFiles   = @json($checklistData['files'] ?? []);
 
             var statusLabelMap = {
                 'submitted': { label: 'Selesai', cls: 'badge-status-success' },
+                'completed': { label: 'Selesai', cls: 'badge-status-success' },
+                'complete':  { label: 'Selesai', cls: 'badge-status-success' },
                 'draft':     { label: 'Draf',    cls: 'badge-status-warning' },
             };
 
+            // Upload button HTML — used while initial rows are rendered.
+            var PTJ_UPLOAD_BTN =
+                '<label class="btn btn-sm btn-primary d-inline-flex align-items-center justify-content-center p-1 mb-0 btn-ptj-upload" style="width:30px;height:30px;cursor:pointer;" title="Muat Naik">' +
+                '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>' +
+                '<input type="file" name="dokumen_ptj[]" hidden>' +
+                '</label>';
+
+            function isBlankValue(value) {
+                return value === null
+                    || value === undefined
+                    || value === ''
+                    || value === 'undefined'
+                    || value === 'null';
+            }
+
+            function valueOr(value, fallback) {
+                return isBlankValue(value) ? fallback : value;
+            }
+
+            function normalizeMechanism(mechanism) {
+                mechanism = valueOr(mechanism, 'petender_muat_naik');
+                return ['petender_muat_naik', 'ptj_muat_naik'].indexOf(mechanism) !== -1
+                    ? mechanism
+                    : 'petender_muat_naik';
+            }
+
+            function normalizeSourceType(sourceType, item) {
+                sourceType = valueOr(sourceType, item && item.standard_item_uuid ? 'standard_item' : 'manual');
+                return sourceType === 'standard' ? 'standard_item' : sourceType;
+            }
+
+            function statusMeta(status) {
+                status = valueOr(status, 'draft');
+                return statusLabelMap[status] || { label: valueOr(status, 'Draf'), cls: 'badge-status-warning' };
+            }
+
+            function setRowStatus($row, status) {
+                var s = statusMeta(status);
+                $row.attr('data-status', status);
+                $row.find('td:nth-child(6)').html(
+                    '<span class="badge-status ' + s.cls + '">' + s.label + '</span>'
+                );
+            }
+
+            function hasSkemaValue($row) {
+                var value = $row.find('.skema-input').val();
+                var parsedValue = parseFloat(value);
+
+                return value !== null
+                    && value !== undefined
+                    && String(value).trim() !== ''
+                    && !isNaN(parsedValue)
+                    && parsedValue > 0;
+            }
+
+            function isStandardChecklistRow($row) {
+                var sourceType = normalizeSourceType($row.data('source-type'), {
+                    standard_item_uuid: $row.data('standard-item-uuid') || null
+                });
+
+                return sourceType === 'standard_item';
+            }
+
+            function hasTajukValue($row) {
+                var val = $row.find('input[name="tajuk_dokumen[]"]').val();
+                return val !== null && val !== undefined && String(val).trim() !== '';
+            }
+
+            function updateRowCompletionStatus($row) {
+                var sourceType = normalizeSourceType($row.data('source-type'), {
+                    standard_item_uuid: $row.data('standard-item-uuid') || null
+                });
+                var mechanism       = normalizeMechanism($row.find('.mekanisma-select').val() || $row.data('mechanism'));
+                var hasUploadedFile = $row.find('.dokumen-ptj-ours').length > 0;
+
+                if (sourceType === 'standard_item') {
+                    var isComplete = mechanism === 'ptj_muat_naik' && hasUploadedFile && hasSkemaValue($row);
+                    setRowStatus($row, isComplete ? 'submitted' : 'draft');
+                } else if (sourceType === 'manual') {
+                    var hasTajuk  = hasTajukValue($row);
+                    var hasSkema  = hasSkemaValue($row);
+                    var needsFile = mechanism === 'ptj_muat_naik';
+                    var isComplete = hasTajuk && hasSkema && (!needsFile || hasUploadedFile);
+                    setRowStatus($row, isComplete ? 'submitted' : 'draft');
+                }
+            }
+
+            function updateAllCompletionStatuses() {
+                $('#tbl-kewangan tbody tr').each(function() {
+                    updateRowCompletionStatus($(this));
+                });
+            }
 
             // Build a table row from an initial row object (locked — no checkbox, no delete)
             function buildInitialRow(data) {
+                var tindakanUrl = valueOr(data.tindakanUrl, '#');
                 return $(
                     '<tr class="initial-row"' +
                     ' data-row-uuid="' + (data.uuid || '') + '"' +
+                    ' data-status="' + valueOr(data.statusKey, 'draft') + '"' +
                     ' data-source-type="' + (data.source_type || '') + '"' +
                     ' data-mechanism="' + (data.mechanism || '') + '"' +
                     ' data-standard-item-uuid="' + (data.standard_item_uuid || '') + '"' +
                     ' data-technical-item-uuid="' + (data.technical_item_uuid || '') + '"' +
                     '>' +
                     '<td class="text-center"><span class="text-muted" style="font-size:0.75rem;" title="Data daripada sistem">—</span></td>' +
-                    '<td><span class="small fw-semibold">' + $('<span>').text(data.tajuk).html() + '</span></td>' +
-                    '<td class="text-center"><span class="small fw-semibold text-muted">' + data.mekanismaLabel + '</span></td>' +
-                    '<td class="text-center small">' + data.tindakanPembekal + '</td>' +
+                    '<td><span class="small fw-semibold">' + $('<span>').text(valueOr(data.tajuk, '')).html() + '</span></td>' +
+                    '<td class="text-center"><span class="small fw-semibold text-muted">' + valueOr(data.mekanismaLabel, '—') + '</span></td>' +
+                    '<td class="text-center small">' + valueOr(data.tindakanPembekal, 'Kunci Masuk') + '</td>' +
                     '<td class="text-center">' +
-                        '<input type="number" name="skema[]" class="form-control form-control-sm text-center skema-input fw-semibold" value="' + data.skema + '" min="0" style="max-width:90px;margin:0 auto;">' +
+                        '<input type="number" name="skema[]" class="form-control form-control-sm text-center skema-input fw-semibold" value="' + valueOr(data.skema, 0) + '" min="0" style="max-width:90px;margin:0 auto;">' +
                     '</td>' +
-                    '<td class="text-center"><span class="badge-status ' + data.statusClass + '">' + data.status + '</span></td>' +
-                    '<td class="text-center text-muted small rujukan-cell">' + data.dokumen + '</td>' +
+                    '<td class="text-center"><span class="badge-status ' + valueOr(data.statusClass, 'badge-status-warning') + '">' + valueOr(data.status, 'Draf') + '</span></td>' +
+                    '<td class="text-center text-muted small rujukan-cell">' + valueOr(data.dokumen, '—') + '</td>' +
                     '<td class="text-center">' +
-                        '<a href="' + data.tindakanUrl + '" class="btn btn-sm btn-warning d-inline-flex align-items-center justify-content-center p-1" style="width:30px;height:30px;" title="Kemaskini">' +
+                        '<a href="' + tindakanUrl + '" class="btn btn-sm btn-warning d-inline-flex align-items-center justify-content-center p-1" style="width:30px;height:30px;" title="Kemaskini">' +
                         EDIT_ICON +
                         '</a>' +
                     '</td>' +
@@ -453,18 +611,20 @@
 
             // Build an editable row for manual/standard_item rows returning from the API
             function buildEditableRow(item) {
-                var mek     = item.mechanism || 'petender_muat_naik';
-                var isManual = item.source_type === 'manual';
+                var sourceType = normalizeSourceType(item.source_type, item);
+                var mek        = normalizeMechanism(item.mechanism);
+                var isManual   = sourceType === 'manual';
                 var titleCell = isManual
-                    ? '<input type="text" name="tajuk_dokumen[]" class="form-control form-control-sm" value="' + $('<span>').text(item.title).html() + '">'
-                    : '<span class="small fw-semibold">' + $('<span>').text(item.title).html() + '</span>';
+                    ? '<input type="text" name="tajuk_dokumen[]" class="form-control form-control-sm" value="' + $('<span>').text(valueOr(item.title, '')).html() + '">'
+                    : '<span class="small fw-semibold">' + $('<span>').text(valueOr(item.title, '')).html() + '</span>';
                 var mekOptions =
                     '<option value="petender_muat_naik"' + (mek === 'petender_muat_naik' ? ' selected' : '') + '>Petender Muat Naik</option>' +
                     '<option value="ptj_muat_naik"'      + (mek === 'ptj_muat_naik'      ? ' selected' : '') + '>PTJ Muat Naik</option>';
                 return $(
                     '<tr class="row-kewangan-tambah"' +
                     ' data-row-uuid="'          + (item.uuid               || '') + '"' +
-                    ' data-source-type="'       + (item.source_type        || '') + '"' +
+                    ' data-status="'            + valueOr(item.status, 'draft') + '"' +
+                    ' data-source-type="'       + sourceType + '"' +
                     ' data-standard-item-uuid="'+ (item.standard_item_uuid || '') + '"' +
                     ' data-technical-item-uuid="'+(item.technical_item_uuid|| '') + '"' +
                     '>' +
@@ -473,11 +633,11 @@
                     '<td class="text-center">' +
                         '<select name="mekanisma[]" class="form-select form-select-sm mekanisma-select" style="font-size:0.78rem;">' + mekOptions + '</select>' +
                     '</td>' +
-                    '<td class="text-center tindakan-pembekal">' + buildTindakanPembekalCell(mek) + '</td>' +
+                    '<td class="text-center tindakan-pembekal">' + buildTindakanPembekalCell(mek, item.vendor_action) + '</td>' +
                     '<td class="text-center">' +
                         '<input type="number" name="skema[]" class="form-control form-control-sm text-center skema-input fw-semibold" value="' + (item.score || 0) + '" min="0" style="max-width:90px;margin:0 auto;">' +
                     '</td>' +
-                    '<td class="text-center"><span class="badge-status badge-status-warning">Draf</span></td>' +
+                    '<td class="text-center"><span class="badge-status ' + statusMeta(item.status).cls + '">' + statusMeta(item.status).label + '</span></td>' +
                     '<td class="text-center rujukan-cell">'  + buildDokumenCell(mek) + '</td>' +
                     '<td class="text-center tindakan-cell">' + buildTindakanCell(mek) + '</td>' +
                     '</tr>'
@@ -486,13 +646,16 @@
 
             // Render rows on page load — locked for spec/borang items, editable for manual/standard
             checklistItems.forEach(function(item) {
+                item.source_type = normalizeSourceType(item.source_type, item);
+                item.mechanism = normalizeMechanism(item.mechanism);
+
                 var locked = item.source_type === 'specification_document' || item.source_type === 'borang_atas_talian';
                 if (locked) {
-                    var s = statusLabelMap[item.status] || { label: item.status, cls: 'badge-status-warning' };
+                    var s = statusMeta(item.status);
                     var mekanismaLabel = item.source_type === 'specification_document' ? 'Spesifikasi' : 'Borang Atas Talian';
                     var tindakanUrl    = item.source_type === 'specification_document'
-                        ? SPEC_FORM_BASE.replace('__uuid__', item.technical_item_uuid || '')
-                        : (item.action_url ? item.action_url + '/' + TENDER_UUID : '#');
+                        ? (item.technical_item_uuid ? SPEC_FORM_BASE.replace('__uuid__', item.technical_item_uuid) : '#')
+                        : (valueOr(item.action_url, '') ? item.action_url + '/' + TENDER_UUID : '#');
                     $('#tbl-kewangan-body').append(buildInitialRow({
                         uuid:                item.uuid,
                         source_type:         item.source_type,
@@ -503,13 +666,24 @@
                         mekanismaLabel:      mekanismaLabel,
                         tindakanPembekal:    'Kunci Masuk',
                         skema:               item.score,
+                        statusKey:           item.status,
                         status:              s.label,
                         statusClass:         s.cls,
                         dokumen:             '—',
                         tindakanUrl:         tindakanUrl,
                     }));
                 } else {
-                    $('#tbl-kewangan-body').append(buildEditableRow(item));
+                    var $row = buildEditableRow(item);
+
+                    if (item.mechanism === 'ptj_muat_naik' && item.files && item.files.length) {
+                        var $list = $row.find('.rujukan-cell .dokumen-ptj-list');
+                        item.files.forEach(function(f) {
+                            $list.append(buildPtjFileEntry(f.uuid, f.original_name, f.url));
+                        });
+                    }
+
+                    updateRowCompletionStatus($row);
+                    $('#tbl-kewangan-body').append($row);
                 }
             });
 
@@ -527,27 +701,25 @@
             // ─── HELPERS ──────────────────────────────────────────────────────────────
 
             // Returns HTML for the Tindakan Pembekal cell based on mekanisma
-            function buildTindakanPembekalCell(mekanisma) {
+            function buildTindakanPembekalCell(mekanisma, vendorAction) {
+                mekanisma = normalizeMechanism(mekanisma);
+                vendorAction = valueOr(vendorAction, 'muat_turun');
+
                 if (mekanisma === 'ptj_muat_naik') {
                     return '<select name="tindakan_pembekal[]" class="form-select form-select-sm tindakan-pembekal-select" style="font-size:0.78rem;">' +
-                        '<option value="muat_turun">Muat Turun</option>' +
-                        '<option value="muat_turun_naik">Muat Turun &amp; Muat Naik</option>' +
+                        '<option value="muat_turun"' + (vendorAction === 'muat_turun' ? ' selected' : '') + '>Muat Turun</option>' +
+                        '<option value="muat_turun_naik"' + (vendorAction === 'muat_turun_naik' ? ' selected' : '') + '>Muat Turun &amp; Muat Naik</option>' +
                         '</select>';
                 }
                 // petender_muat_naik
                 return '<span class="small">Muat Naik</span>';
             }
 
-            // Upload button HTML — reused when showing/hiding for PTJ Muat Turun & Muat Naik
-            var PTJ_UPLOAD_BTN =
-                '<label class="btn btn-sm btn-primary d-inline-flex align-items-center justify-content-center p-1 mb-0 btn-ptj-upload" style="width:30px;height:30px;cursor:pointer;" title="Muat Naik">' +
-                '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>' +
-                '<input type="file" name="dokumen_ptj[]" hidden>' +
-                '</label>';
-
             // Returns HTML for the Tindakan (action) cell based on mekanisma.
             // PTJ Muat Naik always starts with an upload button regardless of tindakan pembekal selection.
             function buildTindakanCell(mekanisma) {
+                mekanisma = normalizeMechanism(mekanisma);
+
                 if (mekanisma === 'ptj_muat_naik') {
                     return PTJ_UPLOAD_BTN;
                 }
@@ -557,6 +729,8 @@
             // Returns HTML for the Dokumen cell based on mekanisma.
             // PTJ Muat Naik starts empty — uploaded files are appended dynamically via the upload handler.
             function buildDokumenCell(mekanisma) {
+                mekanisma = normalizeMechanism(mekanisma);
+
                 if (mekanisma === 'ptj_muat_naik') {
                     return '<div class="dokumen-ptj-list d-flex flex-column gap-1 align-items-start" style="min-width:130px;max-height:72px;overflow-y:auto;"></div>';
                 }
@@ -566,7 +740,7 @@
             function buildNewRow() {
                 var defaultMekanisma = 'petender_muat_naik';
                 return $(
-                    '<tr class="row-kewangan-tambah" data-source-type="manual">' +
+                    '<tr class="row-kewangan-tambah" data-source-type="manual" data-status="draft">' +
                     '<td class="text-center"><input type="checkbox" name="row_check_kewangan[]" class="form-check-input row-check-kewangan"></td>' +
                     '<td><input type="text" name="tajuk_dokumen[]" class="form-control form-control-sm" placeholder="Tajuk / Dokumen..."></td>' +
                     '<td class="text-center">' +
@@ -654,6 +828,7 @@
                         mechanism:           mechanism,
                         vendor_action:       vendorAction,
                         score:               parseFloat($tr.find('.skema-input').val()) || 0,
+                        status:              $tr.data('status') || 'draft',
                         sort_order:          idx,
                         standard_item_uuid:  $tr.data('standard-item-uuid') || null,
                         technical_item_uuid: $tr.data('technical-item-uuid') || null,
@@ -758,58 +933,128 @@
                 $row.find('.tindakan-pembekal').html(buildTindakanPembekalCell(val));
                 $row.find('.rujukan-cell').html(buildDokumenCell(val));
                 $row.find('.tindakan-cell').html(buildTindakanCell(val));
+                updateRowCompletionStatus($row);
                 autoSave();
             });
 
             // ─── TINDAKAN PEMBEKAL DROPDOWN CHANGE (PTJ only) ────────────────────────
             $('#tbl-kewangan').on('change', '.tindakan-pembekal-select', function() {
-                $(this).closest('tr').find('.tindakan-cell').html(PTJ_UPLOAD_BTN);
+                var $row = $(this).closest('tr');
+                $row.find('.tindakan-cell').html(PTJ_UPLOAD_BTN);
+                updateRowCompletionStatus($row);
                 autoSave();
             });
 
             // ─── SKEMA INPUT CHANGE ───────────────────────────────────────────────────
             $('#tbl-kewangan').on('input change', '.skema-input', function() {
                 updateSkemaMaksima();
+                updateRowCompletionStatus($(this).closest('tr'));
                 autoSave();
             });
 
             // ─── TAJUK INPUT ─────────────────────────────────────────────────────────
             $('#tbl-kewangan').on('input', 'input[name="tajuk_dokumen[]"]', function() {
+                updateRowCompletionStatus($(this).closest('tr'));
                 autoSave();
             });
 
-            // ─── PTJ MUAT NAIK: File upload → append to Dokumen column, hide upload btn ─
-            $('#tbl-kewangan').on('change', '.tindakan-cell input[type="file"]', function() {
-                if (!this.files || !this.files[0]) return;
-                var file  = this.files[0];
-                var url   = URL.createObjectURL(file);
-                var $row  = $(this).closest('tr');
-
-                // Append our uploaded file entry (with delete) to the dokumen list
-                var $entry = $(
-                    '<div class="d-flex align-items-center gap-1 dokumen-ptj-ours">' +
+            function buildPtjFileEntry(fileUuid, fileName, fileUrl) {
+                var safeName = $('<span>').text(fileName || 'Dokumen').html();
+                return $(
+                    '<div class="d-flex align-items-center gap-1 dokumen-ptj-ours" data-file-uuid="' + (fileUuid || '') + '">' +
                     '<svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>' +
-                    '<a href="' + url + '" target="_blank" class="small fw-semibold text-truncate d-inline-block" style="max-width:85px;" title="' + file.name + '">' + file.name + '</a>' +
+                    '<a href="' + (fileUrl || '#') + '" target="_blank" class="small fw-semibold text-truncate d-inline-block" style="max-width:85px;" title="' + safeName + '">' + safeName + '</a>' +
                     '<button type="button" class="btn-hapus-ptj-file d-inline-flex align-items-center justify-content-center flex-shrink-0" style="width:16px;height:16px;background:#fee2e2;border:none;border-radius:3px;padding:0;cursor:pointer;" title="Buang">' +
                     '<svg xmlns="http://www.w3.org/2000/svg" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
                     '</button>' +
                     '</div>'
                 );
-                $row.find('.rujukan-cell .dokumen-ptj-list').append($entry);
-                // Reset file input so same file can be re-selected if needed
-                $(this).val('');
+            }
+
+            // ─── PTJ MUAT NAIK: File upload → save row first, then upload file ───────
+            $('#tbl-kewangan').on('change', '.tindakan-cell input[type="file"]', function() {
+                if (!this.files || !this.files[0]) return;
+                var file   = this.files[0];
+                var $input = $(this);
+                var $row   = $input.closest('tr');
+                $input.val('');
+
+                function doUpload(rowUuid) {
+                    var fd = new FormData();
+                    fd.append('file', file);
+                    fd.append('checklist_item_uuid', rowUuid);
+                    fd.append('file_type', 'support');
+                    fd.append('_token', CSRF_TOKEN);
+
+                    $.ajax({
+                        url: UPLOAD_FILE_URL,
+                        method: 'POST',
+                        data: fd,
+                        processData: false,
+                        contentType: false,
+                        success: function(res) {
+                            var f = res && res.data ? res.data : null;
+                            if (!f) return;
+                            $row.find('.rujukan-cell .dokumen-ptj-list').append(
+                                buildPtjFileEntry(f.uuid, f.original_name, f.url)
+                            );
+                            updateRowCompletionStatus($row);
+                            autoSave(true);
+                        },
+                        error: function() {
+                            alert('Gagal memuat naik fail. Sila cuba lagi.');
+                        },
+                    });
+                }
+
+                var rowUuid = $row.data('row-uuid');
+                if (rowUuid) {
+                    doUpload(rowUuid);
+                } else {
+                    doSave(function() {
+                        var newUuid = $row.data('row-uuid');
+                        if (newUuid) {
+                            doUpload(newUuid);
+                        } else {
+                            alert('Gagal mendapatkan ID baris. Sila simpan semula dan cuba lagi.');
+                        }
+                    });
+                }
             });
 
             // ─── PTJ MUAT NAIK: Remove an uploaded file entry ────────────────────────
             $('#tbl-kewangan').on('click', '.btn-hapus-ptj-file', function() {
-                $(this).closest('.dokumen-ptj-ours').remove();
+                var $entry   = $(this).closest('.dokumen-ptj-ours');
+                var fileUuid = $entry.data('file-uuid');
+
+                if (!fileUuid) {
+                    var $row = $entry.closest('tr');
+                    $entry.remove();
+                    updateRowCompletionStatus($row);
+                    autoSave(true);
+                    return;
+                }
+
+                var url = DELETE_FILE_URL.replace(':uuid', encodeURIComponent(fileUuid));
+                $.ajax({
+                    url: url,
+                    method: 'DELETE',
+                    headers: { 'X-CSRF-TOKEN': CSRF_TOKEN },
+                    success: function() {
+                        var $row = $entry.closest('tr');
+                        $entry.remove();
+                        updateRowCompletionStatus($row);
+                        autoSave(true);
+                    },
+                    error: function() { alert('Gagal memadam fail. Sila cuba lagi.'); },
+                });
             });
 
             // ─── ROW BUILDER for Senarai Semak Standard ─────────────────────────────
             function buildStandardRow(tajuk, standardItemUuid) {
                 var defaultMekanisma = 'petender_muat_naik';
                 return $(
-                    '<tr class="row-kewangan-tambah" data-source-type="standard_item" data-standard-item-uuid="' + (standardItemUuid || '') + '">' +
+                    '<tr class="row-kewangan-tambah" data-source-type="standard_item" data-status="draft" data-standard-item-uuid="' + (standardItemUuid || '') + '">' +
                     '<td class="text-center"><input type="checkbox" name="row_check_kewangan[]" class="form-check-input row-check-kewangan"></td>' +
                     '<td><span class="small fw-semibold">' + $('<span>').text(tajuk).html() + '</span></td>' +
                     '<td class="text-center">' +
@@ -872,52 +1117,176 @@
             syncTableEmpty();
 
             // ─── HARGA INDIKATIF: Format with commas ─────────────────────────────────
-            var $hargaInput = $('#input-harga-indikatif');
 
-            function formatHarga(value) {
-                var num = parseFloat(value.replace(/,/g, '')) || 0;
-                return num.toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            // ─── DOKUMEN SOKONGAN: Immediate AJAX upload ─────────────────────────────
+            function formatSokonganBytes(bytes) {
+                if (!bytes) return '—';
+                if (bytes < 1024) return bytes + ' B';
+                if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+                return (bytes / 1048576).toFixed(1) + ' MB';
             }
 
-            $hargaInput.on('focus', function() {
-                var raw = $(this).val().replace(/,/g, '');
-                if (parseFloat(raw) === 0) raw = '';
-                $(this).val(raw);
+            function buildSokonganChip(fileUuid, fileName, fileSize) {
+                var ext      = (fileName || '').split('.').pop().toLowerCase();
+                var safeName = $('<span>').text(fileName || '').html();
+                var $chip = $(
+                    '<div class="file-chip" data-file-uuid="' + (fileUuid || '') + '">' +
+                        '<span class="file-chip-ext ext-' + ext + '">' + ext + '</span>' +
+                        '<div class="file-chip-body">' +
+                            '<span class="file-chip-name" title="' + safeName + '">' + safeName + '</span>' +
+                            '<span class="file-chip-size">' + formatSokonganBytes(fileSize) + '</span>' +
+                        '</div>' +
+                        '<button type="button" class="file-chip-remove" title="Buang fail">' +
+                            '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">' +
+                            '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
+                        '</button>' +
+                    '</div>'
+                );
+                $chip.find('.file-chip-remove').on('click', function() {
+                    var uuid = $chip.data('file-uuid');
+                    if (uuid) {
+                        var url = DELETE_FILE_URL.replace(':uuid', encodeURIComponent(uuid));
+                        $.ajax({ url: url, method: 'DELETE', headers: { 'X-CSRF-TOKEN': CSRF_TOKEN } })
+                         .always(function() { $chip.remove(); });
+                    } else {
+                        $chip.remove();
+                    }
+                });
+                return $chip;
+            }
+
+            function uploadSokongan(file) {
+                var $chip = buildSokonganChip(null, file.name, file.size);
+                $chip.find('.file-chip-size').text('Memuat naik...');
+                $('#file-chip-list-sokongan').append($chip);
+
+                var fd = new FormData();
+                fd.append('file', file);
+                fd.append('file_type', 'support');
+                fd.append('_token', CSRF_TOKEN);
+
+                $.ajax({
+                    url: UPLOAD_FILE_URL, method: 'POST', data: fd,
+                    processData: false, contentType: false,
+                    headers: { 'X-CSRF-TOKEN': CSRF_TOKEN },
+                }).done(function(res) {
+                    var f = res && res.data ? res.data : null;
+                    if (f) {
+                        $chip.attr('data-file-uuid', f.uuid).data('file-uuid', f.uuid);
+                        $chip.find('.file-chip-size').text(formatSokonganBytes(f.size || file.size));
+                    } else {
+                        $chip.remove();
+                        alert('Fail tidak berjaya dimuat naik.');
+                    }
+                }).fail(function() {
+                    $chip.remove();
+                    alert('Ralat semasa muat naik fail. Sila cuba lagi.');
+                });
+            }
+
+            var $sokonganInput = $('#input-dokumen-sokongan');
+            var $sokonganZone  = $('#upload-zone-sokongan');
+
+            $sokonganInput.on('change', function() {
+                if (!this.files || !this.files.length) return;
+                var arr = []; for (var i = 0; i < this.files.length; i++) arr.push(this.files[i]);
+                $sokonganInput.val('');
+                arr.forEach(uploadSokongan);
             });
 
-            $hargaInput.on('blur', function() {
-                $(this).val(formatHarga($(this).val()));
+            $sokonganZone[0].addEventListener('dragover',  function(e) { e.preventDefault(); $sokonganZone.addClass('dragover'); });
+            $sokonganZone[0].addEventListener('dragleave', function()  { $sokonganZone.removeClass('dragover'); });
+            $sokonganZone[0].addEventListener('drop',      function(e) {
+                e.preventDefault(); $sokonganZone.removeClass('dragover');
+                var files = e.dataTransfer.files;
+                if (!files || !files.length) return;
+                var arr = []; for (var i = 0; i < files.length; i++) arr.push(files[i]);
+                arr.forEach(uploadSokongan);
             });
 
-            $hargaInput.on('input', function() {
-                $(this).val($(this).val().replace(/[^\d.]/g, ''));
-            });
+            // Pre-fill existing sokongan files
+            if (sokonganFiles && sokonganFiles.length) {
+                sokonganFiles.forEach(function(f) {
+                    $('#file-chip-list-sokongan').append(buildSokonganChip(f.uuid, f.original_name, f.size));
+                });
+            }
 
-            // ─── DOKUMEN SOKONGAN: Upload zone + file chips ──────────────────────────
-            FileUpload.init({
-                zoneId     : 'upload-zone-sokongan',
-                inputId    : 'input-dokumen-sokongan',
-                chipListId : 'file-chip-list-sokongan'
-            });
+            // ─── LOADING OVERLAY ─────────────────────────────────────────────────────
+            function blockUI(msg) {
+                $('#loading-overlay').removeClass('success');
+                $('#loading-text').text(msg || 'Menyimpan...');
+                $('#loading-overlay').addClass('active');
+            }
+            function unblockUI() {
+                $('#loading-overlay').removeClass('active success');
+            }
 
-            // ─── SIMPAN (no submit, success modal only) ──────────────────────────────
+            // ─── SIMPAN ───────────────────────────────────────────────────────────────
             var successModal = new bootstrap.Modal(document.getElementById('successModal'));
 
             $('.btn-simpan').on('click', function() {
-                successModal.show();
+                blockUI('Menyimpan...');
+                doSave(function() {
+                    unblockUI();
+                    successModal.show();
+                }, function() {
+                    unblockUI();
+                    alert('Ralat semasa menyimpan. Sila cuba lagi.');
+                });
             });
 
-            // ─── FORM SUBMIT: block if penilaian exceeds skema maksima ───────────────
-            $('#form-senarai-kewangan-bekalan').on('submit', function(e) {
-                // Strip commas from harga_indikatif before submit
-                $('#input-harga-indikatif').val($('#input-harga-indikatif').val().replace(/,/g, ''));
+            var validasiHantarModal = new bootstrap.Modal(document.getElementById('validasiHantarModal'));
+
+            // ─── HANTAR ───────────────────────────────────────────────────────────────
+            $('.btn-hantar').on('click', function() {
+                // Check all rows are selesai
+                var $rows      = $('#tbl-kewangan tbody tr:not(#tbl-empty-row)');
+                var notSelesai = [];
+                $rows.each(function() {
+                    var status = $(this).attr('data-status');
+                    if (status !== 'submitted' && status !== 'completed' && status !== 'complete') {
+                        notSelesai.push(true);
+                    }
+                });
+                if (notSelesai.length > 0) {
+                    validasiHantarModal.show();
+                    return;
+                }
 
                 var skemaMaksima = parseInt($('#skema-maksima-display').val()) || 0;
                 var penilaian    = parseInt($('#input-penilaian').val()) || 0;
                 if (skemaMaksima > 0 && penilaian > skemaMaksima) {
-                    e.preventDefault();
                     $('#input-penilaian').addClass('is-invalid').focus();
+                    return;
                 }
+
+                blockUI('Menghantar...');
+                doSave(function() {
+                    $.ajax({
+                        url:         SUBMIT_URL,
+                        method:      'POST',
+                        headers:     { 'X-CSRF-TOKEN': CSRF_TOKEN },
+                        contentType: 'application/json',
+                        data:        JSON.stringify({ passing_score: penilaian }),
+                    })
+                    .done(function(res) {
+                        if (res && res.success) {
+                            $('#loading-text').text('Berjaya dihantar! Mengalih...');
+                            $('#loading-overlay').addClass('success');
+                            window.location.href = '{{ route('pengurusanSpesifikasi') }}';
+                        } else {
+                            unblockUI();
+                            alert(res.message || 'Ralat semasa menghantar.');
+                        }
+                    })
+                    .fail(function() {
+                        unblockUI();
+                        alert('Ralat semasa menghantar. Sila cuba lagi.');
+                    });
+                }, function() {
+                    unblockUI();
+                    alert('Ralat semasa menyimpan. Sila cuba lagi.');
+                });
             });
 
         });

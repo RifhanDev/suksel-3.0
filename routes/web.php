@@ -236,19 +236,11 @@ Route::view('/bon-atau-saham', 'newModule.jawatankuasaSpesifikasi.form_bon_saham
 Route::post('/bon-atau-saham/submit', [JawatankuasaController::class, 'storeBonSaham'])->middleware(['auth'])->name('jawatankuasa.hantarBonSaham');
 Route::view('/prestasi-kerja-semasa-petender', 'newModule.jawatankuasaSpesifikasi.form_prestasi_kerja_semasa_petender')->name('prestasiKerjaSemasa');
 Route::post('/prestasi-kerja-semasa-petender/submit', [JawatankuasaController::class, 'storePrestasiKerjaSemasa'])->middleware(['auth'])->name('jawatankuasa.hantarPrestasiKerjaSemasa');
-Route::get('/spesifikasi-kewangan/{spesifikasiUuid}', [SpecificationPricingController::class, 'index'])->name('spesifikasiFormKewanganBekalan')->middleware(['auth']);
-Route::post('/spesifikasi-kewangan/{spesifikasiUuid}', [SpecificationPricingController::class, 'store'])->name('spesifikasiKewangan.store')->middleware(['auth']);
-Route::post('/spesifikasi-kewangan/{spesifikasiUuid}/selesai', [SpecificationPricingController::class, 'submit'])->name('spesifikasiKewangan.submit')->middleware(['auth']);
 
-Route::get('/profil-petender/{tenderUuid}', [ProfilPetenderController::class, 'index'])->name('profilPetender')->middleware(['auth']);
-Route::post('/profil-petender/{tenderUuid}', [ProfilPetenderController::class, 'store'])->name('profilPetender.store')->middleware(['auth']);
-Route::post('/profil-petender/{tenderUuid}/selesai', [ProfilPetenderController::class, 'submit'])->name('profilPetender.submit')->middleware(['auth']);
 
-Route::get('/penyata-bank/{tenderUuid}', [PenyataBankController::class, 'index'])->name('penyataBank')->middleware(['auth']);
-Route::post('/penyata-bank/{tenderUuid}', [PenyataBankController::class, 'store'])->name('penyataBank.store')->middleware(['auth']);
-Route::post('/penyata-bank/{tenderUuid}/selesai', [PenyataBankController::class, 'submit'])->name('penyataBank.submit')->middleware(['auth']);
-Route::post('/penyata-bank/{tenderUuid}/fail', [PenyataBankController::class, 'uploadFile'])->name('penyataBank.uploadFile')->middleware(['auth']);
-Route::delete('/penyata-bank-fail/{fileUuid}', [PenyataBankController::class, 'deleteFile'])->name('penyataBank.deleteFile')->middleware(['auth']);
+
+
+
 Route::view('/jawatankuasa-pembuka', 'newModule.jawatankuasa_pembuka')->name('jawatankuasaPembuka');
 
 // penilaian teknikal
@@ -318,6 +310,8 @@ Route::middleware(['auth'])->group(function ()
 	Route::delete('/spesifikasi-teknikal/{uuid}', [TechnicalSpecificationController::class, 'destroy'])->name('spesifikasiTeknikal.destroy');
 	Route::get('/senarai-teknikal/{tenderUuid}/pengalaman-kerja', [PengalamanKerjaController::class, 'create'])->name('senaraiTeknikal.pengalamanKerja.tender');
 	Route::post('/senarai-teknikal/{tenderUuid}/pengalaman-kerja', [PengalamanKerjaController::class, 'store'])->name('senaraiTeknikal.pengalamanKerja.store');
+	
+	//check blade location///
 	Route::delete('/pengalaman-kerja-files/{fileUuid}', [PengalamanKerjaController::class, 'deleteFile'])->name('pengalamanKerja.deleteFile');
 	Route::get('/senarai-teknikal/{tenderUuid}/kerja-dalam-tangan', [KerjaDalamTanganController::class, 'create'])->name('senaraiTeknikal.kerjaDalamTangan');
 	Route::post('/senarai-teknikal/{tenderUuid}/kerja-dalam-tangan', [KerjaDalamTanganController::class, 'store'])->name('senaraiTeknikal.kerjaDalamTangan.store');
@@ -327,6 +321,18 @@ Route::middleware(['auth'])->group(function ()
 	Route::post('/senarai-kewangan-bekalan/{tenderUuid}/hantar', [FinancialChecklistController::class, 'submit'])->name('senaraiKewanganBekalan.submit');
 	Route::post('/senarai-kewangan-bekalan/{tenderUuid}/fail', [FinancialChecklistController::class, 'uploadFile'])->name('senaraiKewanganBekalan.uploadFile');
 	Route::delete('/senarai-kewangan-bekalan/fail/{fileUuid}', [FinancialChecklistController::class, 'deleteFile'])->name('senaraiKewanganBekalan.deleteFile');
+	Route::get('/profil-petender/{tenderUuid}', [ProfilPetenderController::class, 'index'])->name('profilPetender');
+	Route::post('/profil-petender/{tenderUuid}', [ProfilPetenderController::class, 'store'])->name('profilPetender.store');
+	Route::post('/profil-petender/{tenderUuid}/selesai', [ProfilPetenderController::class, 'submit'])->name('profilPetender.submit');
+	Route::get('/spesifikasi-kewangan/{spesifikasiUuid}', [SpecificationPricingController::class, 'index'])->name('spesifikasiFormKewanganBekalan');
+	Route::post('/spesifikasi-kewangan/{spesifikasiUuid}', [SpecificationPricingController::class, 'store'])->name('spesifikasiKewangan.store');
+	Route::post('/spesifikasi-kewangan/{spesifikasiUuid}/selesai', [SpecificationPricingController::class, 'submit'])->name('spesifikasiKewangan.submit');
+	Route::get('/penyata-bank/{tenderUuid}', [PenyataBankController::class, 'index'])->name('penyataBank')->middleware(['auth']);
+	Route::post('/penyata-bank/{tenderUuid}', [PenyataBankController::class, 'store'])->name('penyataBank.store')->middleware(['auth']);
+	Route::post('/penyata-bank/{tenderUuid}/selesai', [PenyataBankController::class, 'submit'])->name('penyataBank.submit')->middleware(['auth']);
+	Route::post('/penyata-bank/{tenderUuid}/fail', [PenyataBankController::class, 'uploadFile'])->name('penyataBank.uploadFile')->middleware(['auth']);
+	Route::delete('/penyata-bank-fail/{fileUuid}', [PenyataBankController::class, 'deleteFile'])->name('penyataBank.deleteFile')->middleware(['auth']);
+	//////////////////////////
 
 	// Route::get('tender/select', [TendersController::class, 'select']);
 	Route::resource('tender', TendersController::class);

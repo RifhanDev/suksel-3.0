@@ -18,6 +18,42 @@
         #tbl-purata-penyata td:last-child {
             border-right: none !important;
         }
+
+        /* Loading overlay */
+        #loading-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: rgba(15, 23, 42, 0.45);
+            backdrop-filter: blur(2px);
+            align-items: center;
+            justify-content: center;
+        }
+        #loading-overlay.active { display: flex; }
+        .loading-box {
+            background: #fff;
+            border-radius: 12px;
+            padding: 28px 36px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+        }
+        .loading-spinner {
+            width: 28px; height: 28px;
+            border: 3px solid #e2e8f0;
+            border-top-color: #3b82f6;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            flex-shrink: 0;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading-text { font-size: 0.9rem; font-weight: 600; color: #1e293b; }
+        .loading-check { display: none; width: 28px; height: 28px; flex-shrink: 0; color: #22c55e; }
+        #loading-overlay.success .loading-spinner { display: none; }
+        #loading-overlay.success .loading-check  { display: block; }
+        #loading-overlay.success .loading-text   { color: #16a34a; }
     </style>
 @endsection
 
@@ -54,7 +90,7 @@
                 <div class="col-6 col-md-3">
                     <span class="text-muted fw-semibold text-uppercase d-block mb-1"
                         style="font-size: 0.67rem; letter-spacing: 0.5px;">PTJ</span>
-                    <span class="fw-semibold text-dark" style="font-size: 0.875rem;">{{ $tender->ptj ?? '-' }}</span>
+                    <span class="fw-semibold text-dark" style="font-size: 0.875rem;">{{ optional($tender->tenderer)->name ?? '-' }}</span>
                 </div>
                 <div class="col-12 col-md-6 d-md-flex justify-content-md-end align-items-md-center">
                     <span class="d-inline-flex align-items-center gap-2 px-3 py-2 rounded-2 fw-semibold"
@@ -66,6 +102,15 @@
                 </div>
             </div>
 
+        </div>
+    </div>
+
+    <!-- Loading overlay -->
+    <div id="loading-overlay">
+        <div class="loading-box">
+            <div class="loading-spinner"></div>
+            <svg class="loading-check" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            <span class="loading-text" id="loading-text">Menyimpan...</span>
         </div>
     </div>
 
@@ -322,7 +367,7 @@
                 </svg>
                 Laporan
             </button>
-            <button type="submit" class="btn-form btn-form-success">
+            <button type="button" id="btn-simpan" class="btn-form btn-form-success">
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
@@ -339,13 +384,16 @@
 @endsection
 
 @section('scripts')
-<script src="{{ asset('js/components/file-upload.js') }}"></script>
 <script>
 $(document).ready(function () {
 
-    // ══════════════════════════════════════════════════════════════════════════
-    // PENYATA BANK — helpers
-    // ══════════════════════════════════════════════════════════════════════════
+    var STORE_URL        = '{{ route("penyataBank.store", $tender->uuid) }}';
+    var UPLOAD_URL       = '{{ route("penyataBank.uploadFile", $tender->uuid) }}';
+    var DELETE_FILE_BASE = '{{ url("/penyata-bank-fail") }}';
+    var CSRF_TOKEN       = '{{ csrf_token() }}';
+    var penyataData      = @json($penyataData ?? null);
+
+    // ── Helpers ──────────────────────────────────────────────────────────────
     function parseRm(raw) {
         if (raw == null || String(raw).trim() === '') return 0;
         var s = String(raw).replace(/,/g, '').replace(/^\s*RM\s*/i, '').trim();
@@ -358,9 +406,9 @@ $(document).ready(function () {
         return n.toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
+    // ── Totals ───────────────────────────────────────────────────────────────
     function updatePenyataBankTotals() {
-        var $wrap = $('#penyata_bank_bulan_rows_wrapper');
-        var $inputs = $wrap.find('.penyata-bank-bulan-input');
+        var $inputs = $('#penyata_bank_bulan_rows_wrapper').find('.penyata-bank-bulan-input');
         var sum = 0;
         $inputs.each(function () { sum += parseRm($(this).val()); });
         var avg = $inputs.length > 0 ? sum / $inputs.length : 0;
@@ -368,9 +416,7 @@ $(document).ready(function () {
         $('#penyata_bank_purata').val(formatRm(avg));
     }
 
-    // ══════════════════════════════════════════════════════════════════════════
-    // DARI / HINGGA — auto-sync Hingga = Dari + 2 months, rebuild month rows
-    // ══════════════════════════════════════════════════════════════════════════
+    // ── Dari / Hingga ─────────────────────────────────────────────────────────
     function bulanSelepas(dy, dm, n) {
         var d = new Date(dy, dm - 1 + n, 1);
         return { y: d.getFullYear(), m: d.getMonth() + 1 };
@@ -390,20 +436,20 @@ $(document).ready(function () {
         }
 
         var start = new Date(dy, dm - 1, 1);
-        var end = new Date(hy, hm - 1, 1);
+        var end   = new Date(hy, hm - 1, 1);
         if (start > end) { updatePenyataBankTotals(); return; }
 
         var cur = new Date(start.getTime());
         while (cur <= end) {
-            var m = cur.getMonth() + 1;
-            var y = cur.getFullYear();
+            var m  = cur.getMonth() + 1;
+            var y  = cur.getFullYear();
             var ym = y + '_' + String(m).padStart(2, '0');
-            var html =
+            $wrap.append(
                 '<div class="d-flex align-items-center gap-3 mb-2 penyata-bank-bulan-item" data-ym="' + y + '-' + String(m).padStart(2, '0') + '">' +
                     '<label class="fw-semibold text-dark mb-0 flex-shrink-0" style="font-size:0.82rem; min-width:220px;">Penyata Bank Bulan ' + m + ' - ' + y + ' (RM)</label>' +
                     '<input type="text" class="form-control form-control-sm text-end amount-input penyata-bank-bulan-input" name="penyata_bulan_' + ym + '" value="" data-bulan="' + m + '" data-tahun="' + y + '" placeholder="0.00">' +
-                '</div>';
-            $wrap.append(html);
+                '</div>'
+            );
             cur.setMonth(cur.getMonth() + 1);
         }
         updatePenyataBankTotals();
@@ -425,36 +471,10 @@ $(document).ready(function () {
     }
 
     $('#penyata_dari_bulan, #penyata_dari_tahun').on('change', updateHingga);
-
-    // Listen for input on dynamic bulan rows
     $('#penyata_bank_bulan_rows_wrapper').on('input change', '.penyata-bank-bulan-input', updatePenyataBankTotals);
 
-    // Initial calc
-    updatePenyataBankTotals();
-
-    var penyataData = @json($penyataData ?? null);
-
-    // Pre-fill date range (triggers month row rebuild)
-    if (penyataData && penyataData.dari_bulan && penyataData.dari_tahun) {
-        $('#penyata_dari_bulan').val(penyataData.dari_bulan).trigger('change');
-        $('#penyata_dari_tahun').val(penyataData.dari_tahun).trigger('change');
-        if (penyataData.bulans && penyataData.bulans.length) {
-            setTimeout(function() {
-                penyataData.bulans.forEach(function(b) {
-                    var $input = $('#penyata_bank_bulan_rows_wrapper').find('[data-bulan="' + b.bulan + '"][data-tahun="' + b.tahun + '"]');
-                    if ($input.length && b.jumlah > 0) {
-                        $input.val(b.jumlah.toLocaleString('en-MY', {minimumFractionDigits:2, maximumFractionDigits:2}));
-                    }
-                });
-                updatePenyataBankTotals();
-            }, 100);
-        }
-    }
-
-    // ══════════════════════════════════════════════════════════════════════════
-    // PURATA PENYATA BANK — Dari/Hingga/Skema table
-    // ══════════════════════════════════════════════════════════════════════════
-    var DELETE_BTN =
+    // ── Purata scoring table ──────────────────────────────────────────────────
+    var DELETE_ROW_BTN =
         '<button type="button" class="btn btn-sm btn-hapus-row d-inline-flex align-items-center justify-content-center p-0" ' +
         'style="width:28px;height:28px;border-radius:6px;background:#fee2e2;color:#ef4444;border:none;" title="Buang baris">' +
         '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></svg>' +
@@ -466,45 +486,22 @@ $(document).ready(function () {
             '<td><input type="text" name="purata_dari[]" class="form-control form-control-sm amount-input" placeholder="0.00"></td>' +
             '<td><input type="text" name="purata_hingga[]" class="form-control form-control-sm amount-input" placeholder="0.00"></td>' +
             '<td><input type="text" name="purata_skema[]" class="form-control form-control-sm" placeholder="0"></td>' +
-            '<td class="text-center">' + DELETE_BTN + '</td>' +
+            '<td class="text-center">' + DELETE_ROW_BTN + '</td>' +
         '</tr>');
     }
 
-    // Seed first row or restore saved scoring rows
-    if (penyataData && penyataData.scoring_items && penyataData.scoring_items.length) {
-        if (penyataData.jenis_skor_purata) {
-            $('[name="jenis_skor_purata"]').val(penyataData.jenis_skor_purata).trigger('change');
-        }
-        penyataData.scoring_items.forEach(function(s, i) {
-            var $row = buildPurataRow(i + 1);
-            $row.find('[name="purata_dari[]"]').val(s.dari > 0 ? s.dari.toLocaleString('en-MY', {minimumFractionDigits:2, maximumFractionDigits:2}) : '');
-            $row.find('[name="purata_hingga[]"]').val(s.hingga != null ? s.hingga.toLocaleString('en-MY', {minimumFractionDigits:2, maximumFractionDigits:2}) : '');
-            $row.find('[name="purata_skema[]"]').val(s.skema || '');
-            $('#tbl-purata-body').append($row);
-        });
-    } else {
-        $('#tbl-purata-body').append(buildPurataRow(1));
-    }
-
     function reNumberPurata() {
-        $('#tbl-purata-body .purata-row').each(function (i) {
-            $(this).find('.row-bil').text(i + 1);
-        });
+        $('#tbl-purata-body .purata-row').each(function (i) { $(this).find('.row-bil').text(i + 1); });
     }
 
     $('.btn-tambah-purata').on('click', function () {
-        var bil = $('#tbl-purata-body .purata-row').length + 1;
+        var bil     = $('#tbl-purata-body .purata-row').length + 1;
         var $newRow = buildPurataRow(bil);
-
-        // Auto-fill Dari = previous row's Hingga + 1
-        var $lastRow = $('#tbl-purata-body tr.purata-row').last();
-        if ($lastRow.length) {
-            var lastHingga = parseRm($lastRow.find('td:eq(2) input').val());
-            if (lastHingga > 0) {
-                $newRow.find('td:eq(1) input').val(formatRm(lastHingga + 1));
-            }
+        var $last   = $('#tbl-purata-body tr.purata-row').last();
+        if ($last.length) {
+            var lastH = parseRm($last.find('td:eq(2) input').val());
+            if (lastH > 0) $newRow.find('td:eq(1) input').val(formatRm(lastH + 1));
         }
-
         $('#tbl-purata-body').append($newRow);
     });
 
@@ -514,86 +511,238 @@ $(document).ready(function () {
         reNumberPurata();
     });
 
-    // Real-time range validation:
-    // - Dari must be > previous row's Hingga
-    // - Hingga change re-validates next row's Dari
     $('#tbl-purata-body').on('blur', 'tr.purata-row .amount-input', function () {
-        var $input = $(this);
-        var $td = $input.closest('td');
-        var $row = $td.closest('tr');
-        var colIdx = $td.index(); // 1=Dari, 2=Hingga
-
-        if (colIdx === 1) {
-            // Dari changed — must be > previous row's Hingga
-            var $prevRow = $row.prev('tr.purata-row');
-            if ($prevRow.length) {
-                var prevHingga = parseRm($prevRow.find('td:eq(2) input').val());
-                var dari = parseRm($input.val());
-                $input.toggleClass('is-invalid', prevHingga > 0 && dari > 0 && dari <= prevHingga);
+        var $input = $(this), $td = $input.closest('td'), $row = $td.closest('tr'), col = $td.index();
+        if (col === 1) {
+            var $prev = $row.prev('tr.purata-row');
+            if ($prev.length) {
+                var prevH = parseRm($prev.find('td:eq(2) input').val());
+                var dari  = parseRm($input.val());
+                $input.toggleClass('is-invalid', prevH > 0 && dari > 0 && dari <= prevH);
             }
-        } else if (colIdx === 2) {
-            // Hingga changed — re-validate next row's Dari
-            var $nextRow = $row.next('tr.purata-row');
-            if ($nextRow.length) {
-                var hingga = parseRm($input.val());
-                var $nextDari = $nextRow.find('td:eq(1) input');
-                var nextDari = parseRm($nextDari.val());
-                $nextDari.toggleClass('is-invalid', hingga > 0 && nextDari > 0 && nextDari <= hingga);
+        } else if (col === 2) {
+            var $next = $row.next('tr.purata-row');
+            if ($next.length) {
+                var h = parseRm($input.val()), $nd = $next.find('td:eq(1) input'), nd = parseRm($nd.val());
+                $nd.toggleClass('is-invalid', h > 0 && nd > 0 && nd <= h);
             }
-
-            // Also validate Hingga >= Dari on same row
-            var dariSame = parseRm($row.find('td:eq(1) input').val());
-            var hinggaSame = parseRm($input.val());
-            $input.toggleClass('is-invalid', dariSame > 0 && hinggaSame > 0 && hinggaSame < dariSame);
+            var d = parseRm($row.find('td:eq(1) input').val()), hi = parseRm($input.val());
+            $input.toggleClass('is-invalid', d > 0 && hi > 0 && hi < d);
         }
     });
 
-    // ══════════════════════════════════════════════════════════════════════════
-    // JENIS SKOR — toggle manual table panel
-    // ══════════════════════════════════════════════════════════════════════════
+    // ── Jenis Skor toggle ────────────────────────────────────────────────────
     $('.jenis-skor-select').on('change', function () {
         var $panel = $($(this).data('target'));
-        if ($(this).val() === 'manual') {
-            $panel.removeClass('d-none');
-        } else {
-            $panel.addClass('d-none');
-        }
+        $(this).val() === 'manual' ? $panel.removeClass('d-none') : $panel.addClass('d-none');
     });
 
-    // ══════════════════════════════════════════════════════════════════════════
-    // AMOUNT INPUT — auto comma formatting
-    // ══════════════════════════════════════════════════════════════════════════
-    $(document).on('focus', '.amount-input', function () {
+    // ── Amount input formatting ───────────────────────────────────────────────
+    $(document).on('focus',  '.amount-input', function () {
         var raw = $(this).val().replace(/,/g, '');
-        if (parseFloat(raw) === 0) raw = '';
-        $(this).val(raw);
+        $(this).val(parseFloat(raw) === 0 ? '' : raw);
     });
-
-    $(document).on('blur', '.amount-input', function () {
+    $(document).on('blur',   '.amount-input', function () {
         var val = $(this).val();
-        if (val === '') return;
-        $(this).val(formatRm(parseRm(val)));
+        if (val !== '') $(this).val(formatRm(parseRm(val)));
     });
-
-    $(document).on('input', '.amount-input', function () {
+    $(document).on('input',  '.amount-input', function () {
         $(this).val($(this).val().replace(/[^\d.]/g, ''));
     });
 
-    // ══════════════════════════════════════════════════════════════════════════
-    // DOKUMEN SOKONGAN — use file-upload.js
-    // ══════════════════════════════════════════════════════════════════════════
-    FileUpload.init({
-        zoneId     : 'upload-zone-penyata',
-        inputId    : 'input-dokumen-penyata',
-        chipListId : 'file-chip-list-penyata'
+    // ── File upload ───────────────────────────────────────────────────────────
+    function formatBytes(bytes) {
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+        return (bytes / 1048576).toFixed(1) + ' MB';
+    }
+
+    function buildFileChip(fileUuid, fileName, fileSize) {
+        var ext      = fileName.split('.').pop().toLowerCase();
+        var safeName = $('<span>').text(fileName).html();
+        var $chip    = $(
+            '<div class="file-chip" data-file-uuid="' + (fileUuid || '') + '">' +
+                '<span class="file-chip-ext ext-' + ext + '">' + ext + '</span>' +
+                '<div class="file-chip-body">' +
+                    '<span class="file-chip-name" title="' + safeName + '">' + safeName + '</span>' +
+                    '<span class="file-chip-size">' + (fileSize ? formatBytes(fileSize) : '—') + '</span>' +
+                '</div>' +
+                '<button type="button" class="file-chip-remove" title="Buang fail">' +
+                    '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">' +
+                    '<line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>' +
+                '</button>' +
+            '</div>'
+        );
+        $chip.find('.file-chip-remove').on('click', function () {
+            var uuid = $chip.data('file-uuid');
+            if (uuid) {
+                $.ajax({ url: DELETE_FILE_BASE + '/' + uuid, method: 'DELETE', headers: { 'X-CSRF-TOKEN': CSRF_TOKEN } })
+                 .always(function () { $chip.remove(); });
+            } else {
+                $chip.remove();
+            }
+        });
+        return $chip;
+    }
+
+    function uploadFile(file) {
+        var $chip = buildFileChip(null, file.name, file.size);
+        $chip.find('.file-chip-size').text('Memuat naik...');
+        $('#file-chip-list-penyata').append($chip);
+
+        var fd = new FormData();
+        fd.append('file', file);
+        $.ajax({
+            url: UPLOAD_URL, method: 'POST', data: fd,
+            processData: false, contentType: false,
+            headers: { 'X-CSRF-TOKEN': CSRF_TOKEN },
+        }).done(function (res) {
+            if (res && res.success) {
+                $chip.attr('data-file-uuid', res.file.uuid).data('file-uuid', res.file.uuid);
+                $chip.find('.file-chip-size').text(formatBytes(res.file.size || file.size));
+            } else {
+                $chip.remove();
+                alert('Fail tidak berjaya dimuat naik.');
+            }
+        }).fail(function () {
+            $chip.remove();
+            alert('Ralat semasa muat naik fail. Sila cuba lagi.');
+        });
+    }
+
+    var $fileInput = $('#input-dokumen-penyata');
+    var $zone      = $('#upload-zone-penyata');
+
+    $fileInput.on('change', function () {
+        if (!this.files || !this.files.length) return;
+        var arr = []; for (var i = 0; i < this.files.length; i++) arr.push(this.files[i]);
+        $fileInput.val('');
+        arr.forEach(uploadFile);
     });
 
-    // ══════════════════════════════════════════════════════════════════════════
-    // FORM SUBMIT — strip commas from amount fields
-    // ══════════════════════════════════════════════════════════════════════════
-    $('#form-penyata-bank').on('submit', function () {
-        $(this).find('.amount-input').each(function () {
-            $(this).val($(this).val().replace(/,/g, ''));
+    $zone[0].addEventListener('dragover',  function (e) { e.preventDefault(); $zone.addClass('dragover'); });
+    $zone[0].addEventListener('dragleave', function ()  { $zone.removeClass('dragover'); });
+    $zone[0].addEventListener('drop',      function (e) {
+        e.preventDefault(); $zone.removeClass('dragover');
+        var files = e.dataTransfer.files;
+        if (!files || !files.length) return;
+        var arr = []; for (var i = 0; i < files.length; i++) arr.push(files[i]);
+        arr.forEach(uploadFile);
+    });
+
+    // ── Pre-fill ──────────────────────────────────────────────────────────────
+    if (penyataData) {
+        if (penyataData.dari_bulan && penyataData.dari_tahun) {
+            $('#penyata_dari_bulan').val(penyataData.dari_bulan).trigger('change');
+            $('#penyata_dari_tahun').val(penyataData.dari_tahun).trigger('change');
+            if (penyataData.bulans && penyataData.bulans.length) {
+                setTimeout(function () {
+                    penyataData.bulans.forEach(function (b) {
+                        var $inp = $('#penyata_bank_bulan_rows_wrapper').find('[data-bulan="' + b.bulan + '"][data-tahun="' + b.tahun + '"]');
+                        if ($inp.length && b.jumlah > 0) $inp.val(formatRm(b.jumlah));
+                    });
+                    updatePenyataBankTotals();
+                }, 100);
+            }
+        }
+
+        if (penyataData.jenis_skor_purata) {
+            $('[name="jenis_skor_purata"]').val(penyataData.jenis_skor_purata).trigger('change');
+            if (penyataData.jenis_skor_purata === 'manual' && penyataData.scoring_items && penyataData.scoring_items.length) {
+                $('#tbl-purata-body').empty();
+                penyataData.scoring_items.forEach(function (s, i) {
+                    var $row = buildPurataRow(i + 1);
+                    $row.find('[name="purata_dari[]"]').val(s.dari > 0 ? formatRm(s.dari) : '');
+                    $row.find('[name="purata_hingga[]"]').val(s.hingga != null ? formatRm(s.hingga) : '');
+                    $row.find('[name="purata_skema[]"]').val(s.skema || '');
+                    $('#tbl-purata-body').append($row);
+                });
+            }
+        }
+
+        if (penyataData.files && penyataData.files.length) {
+            penyataData.files.forEach(function (f) {
+                $('#file-chip-list-penyata').append(buildFileChip(f.uuid, f.original_name, f.size));
+            });
+        }
+    }
+
+    if (!$('#tbl-purata-body .purata-row').length) {
+        $('#tbl-purata-body').append(buildPurataRow(1));
+    }
+
+    updatePenyataBankTotals();
+
+    // ── Loading overlay ───────────────────────────────────────────────────────
+    function blockUI(msg) {
+        $('#loading-overlay').removeClass('success');
+        $('#loading-text').text(msg || 'Menyimpan...');
+        $('#loading-overlay').addClass('active');
+    }
+    function unblockUI() {
+        $('#loading-overlay').removeClass('active success');
+    }
+
+    // ── Build payload ─────────────────────────────────────────────────────────
+    function buildPayload() {
+        var bulans = [];
+        $('#penyata_bank_bulan_rows_wrapper .penyata-bank-bulan-input').each(function () {
+            bulans.push({
+                bulan:  parseInt($(this).data('bulan'), 10),
+                tahun:  parseInt($(this).data('tahun'), 10),
+                jumlah: parseRm($(this).val()),
+            });
+        });
+
+        var jenisSkor    = $('[name="jenis_skor_purata"]').val() || null;
+        var scoringItems = [];
+        if (jenisSkor === 'manual') {
+            $('#tbl-purata-body .purata-row').each(function () {
+                var hinggaVal = $(this).find('[name="purata_hingga[]"]').val();
+                scoringItems.push({
+                    dari:   parseRm($(this).find('[name="purata_dari[]"]').val()),
+                    hingga: hinggaVal !== '' ? parseRm(hinggaVal) : null,
+                    skema:  $(this).find('[name="purata_skema[]"]').val() || null,
+                });
+            });
+        }
+
+        return {
+            dari_bulan:         parseInt($('#penyata_dari_bulan').val(), 10) || null,
+            dari_tahun:         parseInt($('#penyata_dari_tahun').val(), 10) || null,
+            hingga_bulan:       parseInt($('#penyata_hingga_bulan_display').val(), 10) || null,
+            hingga_tahun:       parseInt($('#penyata_hingga_tahun_display').val(), 10) || null,
+            jumlah_keseluruhan: parseRm($('#penyata_bank_jumlah_keseluruhan').val()),
+            purata:             parseRm($('#penyata_bank_purata').val()),
+            jenis_skor_purata:  jenisSkor,
+            bulans:             bulans,
+            scoring_items:      scoringItems,
+        };
+    }
+
+    // ── Save ─────────────────────────────────────────────────────────────────
+    $('#btn-simpan').on('click', function () {
+        blockUI('Menyimpan...');
+        $.ajax({
+            url:         STORE_URL,
+            method:      'POST',
+            contentType: 'application/json',
+            data:        JSON.stringify(buildPayload()),
+            headers:     { 'X-CSRF-TOKEN': CSRF_TOKEN },
+        })
+        .done(function (res) {
+            if (res && res.success) {
+                $('#loading-text').text('Berjaya disimpan! Mengalih...');
+                $('#loading-overlay').addClass('success');
+                window.location.href = '{{ url("/senarai-kewangan-bekalan/" . $tender->uuid) }}';
+            } else {
+                unblockUI();
+                alert(res.message || 'Ralat semasa menyimpan.');
+            }
+        })
+        .fail(function () {
+            unblockUI();
+            alert('Ralat semasa menyimpan. Sila cuba lagi.');
         });
     });
 

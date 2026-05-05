@@ -6,6 +6,53 @@
     <link href="{{ asset('css/components/button-components.css') }}" rel="stylesheet">
     <link href="{{ asset('css/components/guideline-card.css') }}" rel="stylesheet">
     <style>
+        /* Loading overlay */
+        #loading-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: rgba(15, 23, 42, 0.45);
+            backdrop-filter: blur(2px);
+            align-items: center;
+            justify-content: center;
+        }
+        #loading-overlay.active { display: flex; }
+        .loading-box {
+            background: #fff;
+            border-radius: 12px;
+            padding: 28px 36px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+        }
+        .loading-spinner {
+            width: 28px;
+            height: 28px;
+            border: 3px solid #e2e8f0;
+            border-top-color: #3b82f6;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            flex-shrink: 0;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading-text {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #1e293b;
+        }
+        .loading-check {
+            display: none;
+            width: 28px;
+            height: 28px;
+            flex-shrink: 0;
+            color: #22c55e;
+        }
+        #loading-overlay.success .loading-spinner { display: none; }
+        #loading-overlay.success .loading-check { display: block; }
+        #loading-overlay.success .loading-text { color: #16a34a; }
+
         /* Full grid borders */
         #tbl-spek-kewangan {
             border: 1px solid #e2e8f0;
@@ -86,6 +133,62 @@
         $kembaliUrl = isset($tender) && !empty($tender->uuid)
             ? route('senaraiKewanganBekalan', ['tenderUuid' => $tender->uuid])
             : (url()->previous() !== url()->current() ? url()->previous() : route('pengurusanSpesifikasi'));
+        $tajukTender = optional($tender)->tajuk_tender
+            ?: optional($tender)->name
+            ?: data_get($pricingData, 'tender.tajuk_tender')
+            ?: data_get($pricingData, 'tender.name')
+            ?: data_get($pricingData, 'spec_document.title')
+            ?: 'Tiada Tajuk';
+        $kategoriPerolehan = optional($tender)->kategori_perolehan_name
+            ?: data_get($pricingData, 'tender.kategori_perolehan_name');
+        $noTender = optional($tender)->no_tender
+            ?: optional($tender)->ref_number
+            ?: data_get($pricingData, 'tender.no_tender')
+            ?: data_get($pricingData, 'tender.ref_number')
+            ?: '-';
+        $ptj = optional(optional($tender)->tenderer)->name
+            ?: data_get($pricingData, 'tender.ptj')
+            ?: data_get($pricingData, 'tender.tenderer.name')
+            ?: '-';
+        $templateTitle = data_get($templateData, 'document_title')
+            ?: data_get($templateData, 'checklist_title')
+            ?: data_get($pricingData, 'spec_document.title')
+            ?: 'Tiada Tajuk';
+        $templateItemType = data_get($templateData, 'item_type')
+            ?: data_get($pricingData, 'spec_document.item_type')
+            ?: $kategoriPerolehan
+            ?: '-';
+        $templateSpecificationType = data_get($templateData, 'specification_type')
+            ?: data_get($pricingData, 'spec_document.specification_type')
+            ?: 'Spesifikasi Teknikal';
+        $templateGoodsType = strtolower((string) (data_get($templateData, 'goods_type')
+            ?: data_get($pricingData, 'spec_document.goods_type')
+            ?: 'tempatan'));
+        $templateWeightingType = strtolower((string) (data_get($templateData, 'weighting_type')
+            ?: data_get($pricingData, 'spec_document.weighting_type')
+            ?: 'priority'));
+        $physicalSubmissionRaw = data_get($templateData, 'physical_submission');
+        if ($physicalSubmissionRaw === null) {
+            $physicalSubmissionRaw = data_get($pricingData, 'spec_document.physical_submission', true);
+        }
+        $hasPhysicalSubmission = filter_var($physicalSubmissionRaw, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+        $hasPhysicalSubmission = $hasPhysicalSubmission ?? (bool) $physicalSubmissionRaw;
+        $templateStatus = data_get($templateData, 'document_status')
+            ?: data_get($templateData, 'checklist_status')
+            ?: data_get($pricingData, 'spec_document.status')
+            ?: 'draft';
+        $templateStatusKey = strtolower((string) $templateStatus);
+        $templateStatusLabel = [
+            'draft' => 'Draf',
+            'submitted' => 'Selesai',
+            'complete' => 'Selesai',
+            'completed' => 'Selesai',
+        ][$templateStatusKey] ?? ucfirst((string) $templateStatus);
+        $templateStatusClass = in_array($templateStatusKey, ['submitted', 'complete', 'completed'], true)
+            ? 'badge-status-success'
+            : 'badge-status-warning';
+        $isImportGoods = in_array($templateGoodsType, ['import', 'imported'], true);
+        $isDirectWeighting = in_array($templateWeightingType, ['direct', 'secara terus'], true);
     @endphp
 
     <!-- HEADER -->
@@ -103,19 +206,22 @@
                 <span class="text-muted fw-semibold text-uppercase d-block mb-1"
                     style="font-size: 0.67rem; letter-spacing: 0.5px;">Tajuk Tender</span>
                 <h5 class="fw-bold text-dark mb-0" style="line-height: 1.45; font-size: 1rem;">
-                    {{ $pricingData['spec_document']['title'] ?? 'Tiada Tajuk' }}
+                    {{ $tajukTender }}
+                    @if($kategoriPerolehan)
+                        <span class="fw-normal text-muted fst-italic" style="font-size: 0.85rem;">({{ $kategoriPerolehan }})</span>
+                    @endif
                 </h5>
             </div>
             <div class="row g-3">
                 <div class="col-6 col-md-3">
                     <span class="text-muted fw-semibold text-uppercase d-block mb-1"
                         style="font-size: 0.67rem; letter-spacing: 0.5px;">No. Tender</span>
-                    <span class="fw-semibold text-dark" style="font-size: 0.875rem;">SUKSEL/PERT/2026/001</span>
+                    <span class="fw-semibold text-dark" style="font-size: 0.875rem;">{{ $noTender }}</span>
                 </div>
                 <div class="col-6 col-md-3">
                     <span class="text-muted fw-semibold text-uppercase d-block mb-1"
                         style="font-size: 0.67rem; letter-spacing: 0.5px;">PTJ</span>
-                    <span class="fw-semibold text-dark" style="font-size: 0.875rem;">100-007</span>
+                    <span class="fw-semibold text-dark" style="font-size: 0.875rem;">{{ $ptj }}</span>
                 </div>
                 <div class="col-12 col-md-6 d-md-flex justify-content-md-end align-items-md-center">
                     <span class="d-inline-flex align-items-center gap-2 px-3 py-2 rounded-2 fw-semibold"
@@ -180,19 +286,19 @@
                 <!-- Tajuk Dokumen -->
                 <div class="col-12">
                     <label class="form-label fw-semibold">Tajuk Dokumen <span class="text-danger">*</span></label>
-                    <textarea name="tajuk_dokumen" class="form-control form-control-sm" rows="3" readonly disabled></textarea>
+                    <textarea name="tajuk_dokumen" class="form-control form-control-sm" rows="3" readonly disabled>{{ $templateTitle }}</textarea>
                 </div>
 
                 <!-- Jenis Item -->
                 <div class="col-12 col-md-6">
                     <label class="form-label fw-semibold">Jenis Item</label>
-                    <input type="text" class="form-control form-control-sm" value="Bekalan Perkhidmatan" disabled>
+                    <input type="text" class="form-control form-control-sm" value="{{ $templateItemType }}" disabled>
                 </div>
 
                 <!-- Jenis Spesifikasi -->
                 <div class="col-12 col-md-6">
                     <label class="form-label fw-semibold">Jenis Spesifikasi</label>
-                    <input type="text" class="form-control form-control-sm" value="Spesifikasi Teknikal" disabled>
+                    <input type="text" class="form-control form-control-sm" value="{{ $templateSpecificationType }}" disabled>
                 </div>
 
                 <!-- Jenis Barang -->
@@ -200,11 +306,11 @@
                     <label class="form-label fw-semibold d-block">Jenis Barang <span class="text-danger">*</span></label>
                     <div class="d-flex gap-3 mt-1">
                         <div class="form-check">
-                            <input class="form-check-input" type="radio" name="jenisBarang" id="jenisBarang1" checked>
+                            <input class="form-check-input" type="radio" name="jenisBarang" id="jenisBarang1" disabled @checked(!$isImportGoods)>
                             <label class="form-check-label" for="jenisBarang1">Tempatan</label>
                         </div>
                         <div class="form-check">
-                            <input class="form-check-input" type="radio" name="jenisBarang" id="jenisBarang2">
+                            <input class="form-check-input" type="radio" name="jenisBarang" id="jenisBarang2" disabled @checked($isImportGoods)>
                             <label class="form-check-label" for="jenisBarang2">Import</label>
                         </div>
                     </div>
@@ -217,12 +323,12 @@
                     <div class="d-flex gap-3 mt-1">
                         <div class="form-check">
                             <input class="form-check-input" type="radio" name="wajaranSpesifikasi"
-                                id="wajaranSpesifikasi1" checked>
+                                id="wajaranSpesifikasi1" disabled @checked(!$isDirectWeighting)>
                             <label class="form-check-label" for="wajaranSpesifikasi1">Mengikut Keutamaan</label>
                         </div>
                         <div class="form-check">
                             <input class="form-check-input" type="radio" name="wajaranSpesifikasi"
-                                id="wajaranSpesifikasi2">
+                                id="wajaranSpesifikasi2" disabled @checked($isDirectWeighting)>
                             <label class="form-check-label" for="wajaranSpesifikasi2">Secara Terus</label>
                         </div>
                     </div>
@@ -231,7 +337,7 @@
                 <!-- Status -->
                 <div class="col-12 col-md-6">
                     <label class="form-label fw-semibold d-block">Status</label>
-                    <span class="badge-status badge-status-warning">Draf</span>
+                    <span class="badge-status {{ $templateStatusClass }}">{{ $templateStatusLabel }}</span>
                 </div>
 
                 <!-- Penghantaran Fizikal -->
@@ -241,12 +347,12 @@
                     <div class="d-flex gap-3 mt-1">
                         <div class="form-check">
                             <input class="form-check-input" type="radio" name="penghantaranFizikal"
-                                id="penghantaranFizikal1" checked>
+                                id="penghantaranFizikal1" disabled @checked($hasPhysicalSubmission)>
                             <label class="form-check-label" for="penghantaranFizikal1">Ya</label>
                         </div>
                         <div class="form-check">
                             <input class="form-check-input" type="radio" name="penghantaranFizikal"
-                                id="penghantaranFizikal2">
+                                id="penghantaranFizikal2" disabled @checked(!$hasPhysicalSubmission)>
                             <label class="form-check-label" for="penghantaranFizikal2">Tidak</label>
                         </div>
                     </div>
@@ -312,7 +418,7 @@
                         <!-- Anggaran Jabatan -->
                         <div class="d-flex align-items-center justify-content-between py-2 px-3 rounded-2 mb-2" style="background:#eff6ff; border:1px solid #bfdbfe;">
                             <span class="fw-semibold" style="font-size:0.85rem; color:#1e40af;">Anggaran Jabatan (RM)</span>
-                            <span class="fw-bold" id="anggaran-jabatan" style="font-size:1rem; color:#1e40af;">{{ number_format($pricingData['anggaran_jabatan'] ?? 0, 2) }}</span>
+                            <span class="fw-bold" id="anggaran-jabatan" style="font-size:1rem; color:#1e40af;">{{ number_format($tender->anggaran_jabatan ?? $pricingData['anggaran_jabatan'] ?? 0, 2) }}</span>
                         </div>
                         <!-- Nota -->
                         <div class="d-flex align-items-start gap-2 px-1">
@@ -342,7 +448,7 @@
             </a>
             <div class="d-flex gap-2">
                 <button type="button" id="btn-simpan" class="btn-form btn-form-primary">Simpan</button>
-                <button type="submit" class="btn-form btn-form-success">
+                <button type="button" id="btn-selesai" class="btn-form btn-form-success">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"></path></svg>
                     Selesai
                 </button>
@@ -350,6 +456,19 @@
         </div>
 
     </form>
+
+    <!-- Loading overlay -->
+    <div id="loading-overlay">
+        <div class="loading-box">
+            <div class="loading-spinner"></div>
+            <svg class="loading-check" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <path d="M8 12l3 3 5-5"></path>
+            </svg>
+            <span class="loading-text" id="loading-text">Menyimpan...</span>
+        </div>
+    </div>
 @endsection
 
 @section('scripts')
@@ -360,6 +479,8 @@ $(document).ready(function () {
     var pricingData  = @json($pricingData ?? null);
     var items        = pricingData ? pricingData.items : [];
     var STORE_URL    = '{{ route('spesifikasiKewangan.store', $spesifikasiUuid) }}';
+    var SUBMIT_URL   = '{{ route('spesifikasiKewangan.submit', $spesifikasiUuid) }}';
+    var KEMBALI_URL  = '{{ $kembaliUrl }}';
     var CSRF_TOKEN   = '{{ csrf_token() }}';
 
     // ── Render table rows ────────────────────────────────────────────────────
@@ -431,11 +552,9 @@ $(document).ready(function () {
 
     $tbody.on('input change', '.harga-input', function() {
         updateJumlahHarga();
-        doSave();
     });
 
-    function doSave() {
-        if (!STORE_URL || !pricingData) return;
+    function buildPayload() {
         var payload = { items: [] };
         $('#tbl-spek-body tr.item-row').each(function() {
             var idx   = $(this).find('.harga-input').data('item-idx');
@@ -445,10 +564,67 @@ $(document).ready(function () {
         });
         payload.jumlah_harga = parseFloat($('#jumlah-harga').text().replace(/,/g, '')) || 0;
         payload._token = CSRF_TOKEN;
-        $.post(STORE_URL, payload);
+        return payload;
     }
 
-    $('#btn-simpan').on('click', doSave);
+    function blockUI(message) {
+        $('#loading-overlay').removeClass('success');
+        $('#loading-text').text(message || 'Menyimpan...');
+        $('#loading-overlay').addClass('active');
+    }
+
+    function unblockUI() {
+        $('#loading-overlay').removeClass('active success');
+    }
+
+    function showSuccess(message, callback) {
+        $('#loading-text').text(message || 'Berjaya!');
+        $('#loading-overlay').addClass('success');
+        setTimeout(function() {
+            unblockUI();
+            if (callback) callback();
+        }, 1200);
+    }
+
+    function doSave(callback) {
+        if (!STORE_URL || !pricingData) return;
+        $.post(STORE_URL, buildPayload())
+            .done(function(res) {
+                if (callback) { callback(res); }
+            })
+            .fail(function() {
+                unblockUI();
+                alert('Ralat semasa menyimpan. Sila cuba lagi.');
+            });
+    }
+
+    $('#btn-simpan').on('click', function() {
+        blockUI('Menyimpan...');
+        doSave(function() {
+            showSuccess('Berjaya disimpan!');
+        });
+    });
+
+    $('#btn-selesai').on('click', function() {
+        blockUI('Menghantar...');
+        doSave(function() {
+            $.post(SUBMIT_URL, { _token: CSRF_TOKEN })
+                .done(function(res) {
+                    if (res && res.success) {
+                        showSuccess('Berjaya dihantar!', function() {
+                            window.location.href = KEMBALI_URL;
+                        });
+                    } else {
+                        unblockUI();
+                        alert(res.message || 'Ralat semasa menghantar.');
+                    }
+                })
+                .fail(function() {
+                    unblockUI();
+                    alert('Ralat semasa menghantar. Sila cuba lagi.');
+                });
+        });
+    });
 
     // ── Amount input formatting ──────────────────────────────────────────────
     $(document).on('focus', '.amount-input', function () {
@@ -466,13 +642,6 @@ $(document).ready(function () {
 
     $(document).on('input', '.amount-input', function () {
         $(this).val($(this).val().replace(/[^\d.]/g, ''));
-    });
-
-    // ── Form submit — strip commas ───────────────────────────────────────────
-    $('#form-spek-kewangan').on('submit', function () {
-        $(this).find('.amount-input').each(function () {
-            $(this).val($(this).val().replace(/,/g, ''));
-        });
     });
 
 });
