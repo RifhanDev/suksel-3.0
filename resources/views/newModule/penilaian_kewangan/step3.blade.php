@@ -378,7 +378,8 @@
         min-width: 110px;
     }
 
-    .step3-kewangan-pane .btn-papar-semakan-kewangan {
+    .step3-kewangan-pane .btn-papar-semakan-kewangan,
+    .step3-papar-modal .btn-papar-semakan-kewangan {
         background-color: #16A34A;
         border-color: #16A34A;
         color: #fff;
@@ -391,7 +392,9 @@
     }
 
     .step3-kewangan-pane .btn-papar-semakan-kewangan:hover,
-    .step3-kewangan-pane .btn-papar-semakan-kewangan:focus {
+    .step3-kewangan-pane .btn-papar-semakan-kewangan:focus,
+    .step3-papar-modal .btn-papar-semakan-kewangan:hover,
+    .step3-papar-modal .btn-papar-semakan-kewangan:focus {
         background-color: #15803D;
         border-color: #15803D;
         color: #fff;
@@ -511,25 +514,6 @@
     .step3-modal-table-detail th:nth-child(1),
     .step3-modal-table-detail td:nth-child(1) {
         min-width: 220px;
-    }
-
-    .step3-papar-modal .btn-papar-semakan-kewangan {
-        background-color: #16A34A;
-        border-color: #16A34A;
-        color: #fff;
-        min-width: 110px;
-        font-size: 13px;
-        line-height: 1.25;
-        font-weight: 600;
-        padding: 8px 16px;
-        border-radius: 8px;
-    }
-
-    .step3-papar-modal .btn-papar-semakan-kewangan:hover,
-    .step3-papar-modal .btn-papar-semakan-kewangan:focus {
-        background-color: #15803D;
-        border-color: #15803D;
-        color: #fff;
     }
 </style>
 

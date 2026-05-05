@@ -1,10 +1,5 @@
 @extends('layouts.v3.master')
 
-@push('styles')
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.1/css/all.min.css">
-@endpush
-
-
 @section('content')
 {{-- Breadcrumb: back to SENARAI TENDER (first page) --}}
 <nav aria-label="breadcrumb" class="py-2 mb-3">
@@ -32,18 +27,14 @@
         padding: 24px;
     }
 
-    hr {
-        border: 1px solid #E5E7EB;
-    }
-
     /* ========================
    HEADER SUMMARY
 ======================== */
-    .card-body .row>.col-4 {
+    .card-body .row > .col-md-4 {
         border-right: 1px solid #E5E7EB;
     }
 
-    .card-body .row>.col-4:last-child {
+    .card-body .row > .col-md-4:last-child {
         border-right: none;
     }
 
@@ -205,22 +196,10 @@
         overflow: hidden;
     }
 
-    .table thead th {
-        background: #1E3A8A;
-        color: white;
-        text-align: center;
-        font-size: 13px;
-        padding: 12px;
-    }
-
     .table td {
         font-size: 13px;
         padding: 12px;
         vertical-align: middle;
-    }
-
-    .table tbody tr:hover {
-        background: #F9FAFB;
     }
 
     /* ==========================
@@ -329,13 +308,6 @@
         resize: vertical;
     }
 
-    #modalSemakanKetepatanDokumenKewangan .table-primary thead th,
-    #modalSemakanKetepatanDokumenKewangan .table-primary th {
-        background-color: #3b5998 !important;
-        color: #fff !important;
-        border-color: #2d4373 !important;
-    }
-
     /* ==========================
    TEXT HINTS
 ========================== */
@@ -362,6 +334,8 @@
         background-color: #C0392B !important;
         color: #FFFFFF !important;
         text-align: center;
+        font-size: 13px;
+        padding: 12px;
         border-color: #A93226 !important;
     }
 
@@ -412,38 +386,6 @@
     .table .btn-outline-secondary:hover {
         background: #C0392B;
         color: #fff;
-    }
-
-    /* =========================
-   STEPPER – CHANGE BLUE TO RED
-========================= */
-
-    /* Default step circle (inactive) */
-    .progress-bar-tab .nav-link {
-        background: #C0392B !important;
-        /* red */
-        color: #fff !important;
-    }
-
-    /* Active step (current step) */
-    .progress-bar-tab .nav-link.active {
-        background: #16A34A !important;
-        /* keep green for current (optional) */
-    }
-
-    /* Step label text */
-    .progress-bar-tab .nav-item::after {
-        color: #000;
-        font-weight: 500;
-    }
-
-    /* Horizontal connector line */
-    .progress {
-        height: 2px !important;
-    }
-
-    .progress-bar {
-        background: #C0392B !important;
     }
 
     .profil-readonly-form {
@@ -643,8 +585,9 @@
                                         <td>Borang Atas Talian</td>
                                         <td class="status-penilaian">Menunggu Penyerahan</td>
                                         <td class="text-center">
-                                            <button type="button" class="btn btn-success btn-open-profil-petender-readonly"
-                                                data-bs-toggle="modal" data-bs-target="#modalProfilPetenderReadonly">Menilai</button>
+                                            <button type="button" class="btn btn-success btn-papar-semakan-kewangan"
+                                                data-bs-toggle="modal" data-bs-target="#modalSemakanKetepatanDokumenKewangan"
+                                                data-dokumen="Maklumat Profil Petender">Menilai</button>
                                         </td>
                                     </tr>
                                     <tr>
@@ -811,8 +754,6 @@
 
             </div>
 
-
-
         </div>
     </div>
 
@@ -846,8 +787,8 @@
                                 <tr>
                                     <td class="text-center">1/2</td>
                                     <td>
-                                        <a href="https://ontheline.trincoll.edu/images/bookdown/sample-local-pdf.pdf" target="_blank">
-                                            <i class="fa-solid fa-file-pdf fa-lg" aria-hidden="true"></i>
+                                        <a href="https://ontheline.trincoll.edu/images/bookdown/sample-local-pdf.pdf" target="_blank" class="text-decoration-none">
+                                            <i class="bi bi-file-earmark-pdf-fill text-primary" aria-hidden="true"></i>
                                         </a>
                                         Perkhidmatan Penilaian Forensik Ke atas Sistem XXXX.pdf
                                     </td>
@@ -865,8 +806,8 @@
                                 <tr>
                                     <td class="text-center">2/2</td>
                                     <td>
-                                        <a href="https://ontheline.trincoll.edu/images/bookdown/sample-local-pdf.pdf" target="_blank">
-                                            <i class="fa-solid fa-file-pdf fa-lg" aria-hidden="true"></i>
+                                        <a href="https://ontheline.trincoll.edu/images/bookdown/sample-local-pdf.pdf" target="_blank" class="text-decoration-none">
+                                            <i class="bi bi-file-earmark-pdf-fill text-primary" aria-hidden="true"></i>
                                         </a>
                                         Perkhidmatan Penilaian Forensik Ke atas Sistem XXXXn.pdf
                                     </td>
@@ -1067,28 +1008,6 @@
 <script>
     document.addEventListener('DOMContentLoaded', () => {
 
-        const BORANG_ATAS_TALIAN_LABEL = 'Borang Atas Talian';
-
-        function bindReadonlyProfilPetenderButtons() {
-            document.querySelectorAll('#application-content table tbody tr').forEach((row) => {
-                const cells = row.querySelectorAll('td');
-                if (cells.length < 2) return;
-
-                const mekanisma = (cells[1].textContent || '').replace(/\s+/g, ' ').trim();
-                if (mekanisma !== BORANG_ATAS_TALIAN_LABEL) return;
-
-                const actionBtn = row.querySelector('button');
-                if (!actionBtn) return;
-
-                actionBtn.classList.add('btn-open-profil-petender-readonly');
-                actionBtn.classList.remove('btn-papar-cadangan-kewangan-step2');
-                actionBtn.setAttribute('data-bs-toggle', 'modal');
-                actionBtn.setAttribute('data-bs-target', '#modalProfilPetenderReadonly');
-            });
-        }
-
-        bindReadonlyProfilPetenderButtons();
-
         const steps = document.querySelectorAll('.progress-step');
         const tabs = document.querySelectorAll('.step-number');
 
@@ -1142,38 +1061,22 @@
     });
 
     // Seterusnya Button Functionality with checkbox validation
+    const msgTandakanPengesahan = 'Sila tandakan kotak pengesahan terlebih dahulu sebelum meneruskan.';
     document.querySelectorAll('.btn-seterusnya').forEach(btn => {
         btn.addEventListener('click', () => {
             const current = document.querySelector('.step-number.active');
             if (!current) return;
 
             const currentId = current.id;
-
-            // Step 1: require confirmation checkbox
-            if (currentId === 'pematuhan-tab') {
-                const cb1 = document.getElementById('confirmLayak');
-                if (cb1 && !cb1.checked) {
-                    alert('Sila tandakan kotak pengesahan terlebih dahulu sebelum meneruskan.');
-                    return;
-                }
-            }
-
-            // Step 2 (Penyata Bulanan Bank): require confirmation checkbox on Rumusan
-            if (currentId === 'penyata-bank-tab') {
-                const cb2 = document.getElementById('confirmLayakStep2');
-                if (cb2 && !cb2.checked) {
-                    alert('Sila tandakan kotak pengesahan terlebih dahulu sebelum meneruskan.');
-                    return;
-                }
-            }
-
-            // Step 3 (Pematuhan Spesifikasi Kewangan): require confirmation checkbox on Rumusan
-            if (currentId === 'penilaian-tab') {
-                const cb3 = document.getElementById('confirmLayakStep3');
-                if (cb3 && !cb3.checked) {
-                    alert('Sila tandakan kotak pengesahan terlebih dahulu sebelum meneruskan.');
-                    return;
-                }
+            const checks = [
+                { id: 'pematuhan-tab', el: document.getElementById('confirmLayak') },
+                { id: 'penyata-bank-tab', el: document.getElementById('confirmLayakStep2') },
+                { id: 'penilaian-tab', el: document.getElementById('confirmLayakStep3') },
+            ];
+            const stepCheck = checks.find(c => c.id === currentId);
+            if (stepCheck?.el && !stepCheck.el.checked) {
+                alert(msgTandakanPengesahan);
+                return;
             }
 
             const next = current.closest('.progress-step')?.nextElementSibling?.querySelector('.step-number');

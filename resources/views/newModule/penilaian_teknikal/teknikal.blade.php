@@ -1,9 +1,5 @@
 @extends('layouts.v3.master')
 
-@push('styles')
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.1/css/all.min.css">
-@endpush
-
 @section('content')
 {{-- Breadcrumb: back to SENARAI TENDER (first page) --}}
 <nav aria-label="breadcrumb" class="py-2 mb-3">
@@ -31,18 +27,14 @@
         padding: 24px;
     }
 
-    hr {
-        border: 1px solid #E5E7EB;
-    }
-
     /* ========================
    HEADER SUMMARY
 ======================== */
-    .card-body .row>.col-4 {
+    .card-body .row > .col-md-4 {
         border-right: 1px solid #E5E7EB;
     }
 
-    .card-body .row>.col-4:last-child {
+    .card-body .row > .col-md-4:last-child {
         border-right: none;
     }
 
@@ -203,22 +195,10 @@
         overflow: hidden;
     }
 
-    .table thead th {
-        background: #1E3A8A;
-        color: white;
-        text-align: center;
-        font-size: 13px;
-        padding: 12px;
-    }
-
     .table td {
         font-size: 13px;
         padding: 12px;
         vertical-align: middle;
-    }
-
-    .table tbody tr:hover {
-        background: #F9FAFB;
     }
 
     /* ==========================
@@ -336,6 +316,8 @@
         background-color: #C0392B !important;
         color: #FFFFFF !important;
         text-align: center;
+        font-size: 13px;
+        padding: 12px;
         border-color: #A93226 !important;
     }
 
@@ -386,38 +368,6 @@
     .table .btn-outline-secondary:hover {
         background: #C0392B;
         color: #fff;
-    }
-
-    /* =========================
-   STEPPER – CHANGE BLUE TO RED
-========================= */
-
-    /* Default step circle (inactive) */
-    .progress-bar-tab .nav-link {
-        background: #C0392B !important;
-        /* red */
-        color: #fff !important;
-    }
-
-    /* Active step (current step) */
-    .progress-bar-tab .nav-link.active {
-        background: #16A34A !important;
-        /* keep green for current (optional) */
-    }
-
-    /* Step label text */
-    .progress-bar-tab .nav-item::after {
-        color: #000;
-        font-weight: 500;
-    }
-
-    /* Horizontal connector line */
-    .progress {
-        height: 2px !important;
-    }
-
-    .progress-bar {
-        background: #C0392B !important;
     }
 </style>
 
@@ -525,25 +475,33 @@
                                 </thead>
                                 <tbody>
                                     <tr>
-                                        <td class="">Perkhidmatan Penilaian Forensik Ke atas Sistem XXXX</td>
-                                        <td class="">Spesifikasi</td>
-                                        <td class="">Menunggu Penyerahan</td>
+                                        <td>Perkhidmatan Penilaian Forensik Ke atas Sistem XXXX</td>
+                                        <td>Spesifikasi</td>
+                                        <td>Menunggu Penyerahan</td>
                                         <td class="text-center">
-                                            <button id="btnStep1Menilai" class="btn btn-success" data-bs-toggle="modal"
-                                                data-bs-target="#modalSemakanKetepatanDokumenTeknikal">Menilai</button>
+                                            <button type="button"
+                                                id="btnStep1Menilai"
+                                                class="btn btn-success btn-semakan-dok-teknikal"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#modalSemakanKetepatanDokumenTeknikal"
+                                                data-tajuk="Perkhidmatan Penilaian Forensik Ke atas Sistem XXXX"
+                                                data-doc-pembekal-1="Salinan Sijil Pendaftaran dengan Kementerian Kewangan.pdf"
+                                                data-doc-pembekal-2="Salinan Sijil Pendaftaran dengan Kementerian Kewangan.pdf"
+                                                data-doc-url="https://ontheline.trincoll.edu/images/bookdown/sample-local-pdf.pdf">
+                                                Menilai
+                                            </button>
                                         </td>
                                     </tr>
                                     <tr data-mekanisma="Petender Muat Naik">
-                                        <td class="">Surat Pengesahan Prinsipal yang lengkap ditandatangani</td>
-                                        <td class="">Petender Muat Naik</td>
-                                        <td class="">Selesai</td>
+                                        <td>Surat Pengesahan Prinsipal yang lengkap ditandatangani</td>
+                                        <td>Petender Muat Naik</td>
+                                        <td>Selesai</td>
                                         <td class="text-center">
                                             <button type="button"
-                                                class="btn btn-success btn-petender-muat-naik"
+                                                class="btn btn-success btn-semakan-dok-teknikal"
                                                 data-bs-toggle="modal"
-                                                data-bs-target="#modalPenilaianMuatNaikTeknikal"
+                                                data-bs-target="#modalSemakanKetepatanDokumenTeknikal"
                                                 data-tajuk="Surat Pengesahan Prinsipal yang lengkap ditandatangani"
-                                                data-skema="Skema Pemarkahan Senarai Semakan Teknikal Digital Forensik.docx"
                                                 data-doc-pembekal-1="Surat Pengesahan Prinsipal — Pembekal 1.pdf"
                                                 data-doc-pembekal-2="Surat Pengesahan Prinsipal — Pembekal 2.pdf"
                                                 data-doc-url="https://ontheline.trincoll.edu/images/bookdown/sample-local-pdf.pdf">
@@ -552,17 +510,16 @@
                                         </td>
                                     </tr>
                                     <tr data-mekanisma="Petender Muat Naik">
-                                        <td class="">Senarai Kakitangan Teknikal dan Carta Organisasi Pasukan Projek
+                                        <td>Senarai Kakitangan Teknikal dan Carta Organisasi Pasukan Projek
                                         </td>
-                                        <td class="">Petender Muat Naik</td>
-                                        <td class="">Selesai</td>
+                                        <td>Petender Muat Naik</td>
+                                        <td>Selesai</td>
                                         <td class="text-center">
                                             <button type="button"
-                                                class="btn btn-success btn-petender-muat-naik"
+                                                class="btn btn-success btn-semakan-dok-teknikal"
                                                 data-bs-toggle="modal"
-                                                data-bs-target="#modalPenilaianMuatNaikTeknikal"
+                                                data-bs-target="#modalSemakanKetepatanDokumenTeknikal"
                                                 data-tajuk="Senarai Kakitangan Teknikal dan Carta Organisasi Pasukan Projek"
-                                                data-skema="Skema Pemarkahan Senarai Semakan Teknikal Digital Forensik.docx"
                                                 data-doc-pembekal-1="Senarai Kakitangan dan Carta Organisasi — Pembekal 1.pdf"
                                                 data-doc-pembekal-2="Senarai Kakitangan dan Carta Organisasi — Pembekal 2.pdf"
                                                 data-doc-url="https://ontheline.trincoll.edu/images/bookdown/sample-local-pdf.pdf">
@@ -699,31 +656,34 @@
 
                 <div class="modal-body">
                     <p class="text-muted small mb-2">Klik butang Semak untuk meneruskan penilaian pematuhan</p>
-                    <p><strong>Tajuk / Dokumen:</strong> Salinan Sijil Pendaftaran dengan Kementerian Teknikal</p>
-                    <div class="mb-3">
+                    <p class="mb-0"><strong>Tajuk / Dokumen:</strong> <span id="modalSemakanTajukDokumen">Perkhidmatan Penilaian Forensik Ke atas Sistem XXXX</span></p>
+                    <div class="mb-3 mt-3">
                         <h4 class="card-title card-title-grey">SENARAI PEMBEKAL</h4>
                     </div>
 
                     <div class="table-responsive">
-                        <table class="table table-bordered align-middle">
-                            <thead class="table-primary text-center">
+                        <table class="table table-bordered align-middle w-100 mb-0">
+                            <thead>
                                 <tr>
-                                    <th style="width: 12%;">Kod Pembekal</th>
-                                    <th style="width: 38%;">Dokumen</th>
-                                    <th style="width: 28%;">Status Pematuhan</th>
-                                    <th style="width: 22%;">Catatan</th>
+                                    <th class="text-center" style="width: 12%;">Kod Pembekal</th>
+                                    <th class="text-center" style="width: 38%;">Dokumen</th>
+                                    <th class="text-center" style="width: 28%;">Status Pematuhan</th>
+                                    <th class="text-center" style="width: 22%;">Catatan</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {{-- data-doc-url: ganti dengan URL storage sebenar selepas backend menyediakan fail --}}
+                                {{-- Tajuk / Dokumen & label fail dikemas kini oleh JS daripada butang Menilai --}}
                                 <tr>
                                     <td class="text-center">1</td>
                                     <td>
                                         <div class="d-flex align-items-start gap-2">
-                                            <a href="https://ontheline.trincoll.edu/images/bookdown/sample-local-pdf.pdf" target="_blank">
-                                                <i class="fa-solid fa-file-pdf fa-lg" aria-hidden="true"></i>
+                                            <a href="https://ontheline.trincoll.edu/images/bookdown/sample-local-pdf.pdf"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                class="semakan-pdf-link text-primary text-decoration-none d-inline-flex align-items-center flex-shrink-0">
+                                                <i class="bi bi-file-earmark-pdf-fill" aria-hidden="true"></i>
                                             </a>
-                                            <span class="small text-break">Salinan Sijil Pendaftaran dengan Kementerian Kewangan.pdf</span>
+                                            <span class="small text-break semakan-doc-label">Salinan Sijil Pendaftaran dengan Kementerian Kewangan.pdf</span>
                                         </div>
                                     </td>
                                     <td class="align-middle">
@@ -741,10 +701,13 @@
                                     <td class="text-center">2</td>
                                     <td>
                                         <div class="d-flex align-items-start gap-2">
-                                            <a href="https://ontheline.trincoll.edu/images/bookdown/sample-local-pdf.pdf" target="_blank">
-                                                <i class="fa-solid fa-file-pdf fa-lg" aria-hidden="true"></i>
+                                            <a href="https://ontheline.trincoll.edu/images/bookdown/sample-local-pdf.pdf"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                class="semakan-pdf-link text-primary text-decoration-none d-inline-flex align-items-center flex-shrink-0">
+                                                <i class="bi bi-file-earmark-pdf-fill" aria-hidden="true"></i>
                                             </a>
-                                            <span class="small text-break">Salinan Sijil Pendaftaran dengan Kementerian Kewangan.pdf</span>
+                                            <span class="small text-break semakan-doc-label">Salinan Sijil Pendaftaran dengan Kementerian Kewangan.pdf</span>
                                         </div>
                                     </td>
                                     <td class="align-middle">
@@ -761,9 +724,9 @@
                             </tbody>
                         </table>
                     </div>
-                    <div class="modal-footer justify-content-center">
-                        <button type="button" id="btnStep1SimpanDokTeknikal" class="btn btn-success" data-bs-dismiss="modal">Simpan</button>
-                    </div>
+                </div>
+                <div class="modal-footer justify-content-center">
+                    <button type="button" id="btnStep1SimpanDokTeknikal" class="btn btn-success" data-bs-dismiss="modal">Simpan</button>
                 </div>
             </div>
         </div>
@@ -830,7 +793,7 @@
                                                 rel="noopener noreferrer"
                                                 class="muat-naik-doc-link text-primary text-decoration-none d-inline-flex align-items-center flex-shrink-0"
                                                 aria-label="Buka dokumen pembekal 1 dalam tab baharu">
-                                                <i class="fa-solid fa-file-pdf fa-lg" aria-hidden="true"></i>
+                                                <i class="bi bi-file-earmark-pdf-fill" aria-hidden="true"></i>
                                             </a>
                                             <span class="small text-break muat-naik-supplier-doc" data-slot="1">Perkhidmatan Penilaian Forensik Keatas Sistem XXXX.pdf</span>
                                         </div>
@@ -860,7 +823,7 @@
                                                 rel="noopener noreferrer"
                                                 class="muat-naik-doc-link text-primary text-decoration-none d-inline-flex align-items-center flex-shrink-0"
                                                 aria-label="Buka dokumen pembekal 2 dalam tab baharu">
-                                                <i class="fa-solid fa-file-pdf fa-lg" aria-hidden="true"></i>
+                                                <i class="bi bi-file-earmark-pdf-fill" aria-hidden="true"></i>
                                             </a>
                                             <span class="small text-break muat-naik-supplier-doc" data-slot="2">Perkhidmatan Penilaian Forensik Keatas Sistem XXXX.pdf</span>
                                         </div>
@@ -918,13 +881,36 @@
         // Init
         updateStepper(0);
 
-        // Step 1 simulate: after Simpan in SEMAKAN PEMATUHAN DOKUMEN TEKNIKAL,
-        // change the main table button from Menilai to Papar.
+        // Step 1: satu modal SEMAKAN PEMATUHAN DOKUMEN TEKNIKAL untuk semua baris;
+        // kandungan Tajuk/Dokumen & label fail daripada data-* pada butang Menilai.
+        let semakanStep1Trigger = null;
+        const modalSemakanStep1 = document.getElementById('modalSemakanKetepatanDokumenTeknikal');
+        if (modalSemakanStep1) {
+            modalSemakanStep1.addEventListener('show.bs.modal', function(event) {
+                const trigger = event.relatedTarget;
+                if (!trigger || !trigger.classList.contains('btn-semakan-dok-teknikal')) return;
+                semakanStep1Trigger = trigger;
+                const tajuk = trigger.getAttribute('data-tajuk') || '';
+                const d1 = trigger.getAttribute('data-doc-pembekal-1') || '';
+                const d2 = trigger.getAttribute('data-doc-pembekal-2') || '';
+                const docUrl = (trigger.getAttribute('data-doc-url') || 'https://ontheline.trincoll.edu/images/bookdown/sample-local-pdf.pdf').trim();
+                const elTajuk = document.getElementById('modalSemakanTajukDokumen');
+                if (elTajuk && tajuk) elTajuk.textContent = tajuk;
+                const labels = modalSemakanStep1.querySelectorAll('.semakan-doc-label');
+                if (labels[0] && d1) labels[0].textContent = d1;
+                if (labels[1] && d2) labels[1].textContent = d2;
+                modalSemakanStep1.querySelectorAll('a.semakan-pdf-link').forEach(function(a) {
+                    a.setAttribute('href', docUrl);
+                });
+            });
+        }
         const btnStep1Simpan = document.getElementById('btnStep1SimpanDokTeknikal');
-        const btnStep1Menilai = document.getElementById('btnStep1Menilai');
-        if (btnStep1Simpan && btnStep1Menilai) {
-            btnStep1Simpan.addEventListener('click', () => {
-                btnStep1Menilai.textContent = 'Papar';
+        if (btnStep1Simpan) {
+            btnStep1Simpan.addEventListener('click', function() {
+                if (semakanStep1Trigger) {
+                    semakanStep1Trigger.textContent = 'Papar';
+                    semakanStep1Trigger = null;
+                }
             });
         }
 
@@ -947,30 +933,21 @@
         }
     });
 
-    // Seterusnya Button Functionality with checkbox validation
+    const msgTandakanPengesahan = 'Sila tandakan kotak pengesahan terlebih dahulu sebelum meneruskan.';
     document.querySelectorAll('.btn-seterusnya').forEach(btn => {
         btn.addEventListener('click', () => {
             const current = document.querySelector('.step-number.active');
             if (!current) return;
 
             const currentId = current.id;
-
-            // Step 1: require confirmation checkbox
-            if (currentId === 'pematuhan-tab') {
-                const cb1 = document.getElementById('confirmLayak');
-                if (cb1 && !cb1.checked) {
-                    alert('Sila tandakan kotak pengesahan terlebih dahulu sebelum meneruskan.');
-                    return;
-                }
-            }
-
-            // Step 2: require confirmation checkbox
-            if (currentId === 'penilaian-tab') {
-                const cb2 = document.getElementById('confirmLayakStep2');
-                if (cb2 && !cb2.checked) {
-                    alert('Sila tandakan kotak pengesahan terlebih dahulu sebelum meneruskan.');
-                    return;
-                }
+            const checks = [
+                { id: 'pematuhan-tab', el: document.getElementById('confirmLayak') },
+                { id: 'penilaian-tab', el: document.getElementById('confirmLayakStep2') },
+            ];
+            const stepCheck = checks.find(c => c.id === currentId);
+            if (stepCheck?.el && !stepCheck.el.checked) {
+                alert(msgTandakanPengesahan);
+                return;
             }
 
             const next = current.closest('.progress-step')?.nextElementSibling?.querySelector('.step-number');
