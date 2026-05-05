@@ -919,6 +919,10 @@
 
             var autoSaveTimer = null;
 
+            function normalizeActionSlug(slug) {
+                return (slug || '').toString().trim().replace(/^\/+|\/+$/g, '');
+            }
+
             function collectItems() {
                 var items = [];
                 var idx   = 0;
@@ -952,7 +956,7 @@
 
                     var vendorAction;
                     if (sourceType === 'borang_atas_talian') {
-                        vendorAction = $tr.data('action-url-slug') || null;
+                        vendorAction = normalizeActionSlug($tr.data('action-url-slug')) || null;
                     } else if (mechanism === 'ptj_muat_naik') {
                         vendorAction = $tr.find('.tindakan-pembekal select').val() || 'muat_turun';
                     } else {
@@ -1242,10 +1246,11 @@
             });
 
             function buildBorangAtasTalianRow(tajuk, slug, standardItemUuid) {
-                var routeUrl = slug ? '/senarai-teknikal/' + CURRENT_TENDER_UUID + '/' + slug : '';
+                var normalizedSlug = normalizeActionSlug(slug);
+                var routeUrl = normalizedSlug ? '/senarai-teknikal/' + CURRENT_TENDER_UUID + '/' + normalizedSlug : '';
                 var stdAttr  = standardItemUuid ? ' data-standard-item-uuid="' + $('<span>').text(standardItemUuid).html() + '"' : '';
                 return $(
-                    '<tr data-source-type="borang_atas_talian" data-action-url-slug="' + $('<span>').text(slug || '').html() + '"' + stdAttr + '>' +
+                    '<tr data-source-type="borang_atas_talian" data-action-url-slug="' + $('<span>').text(normalizedSlug).html() + '"' + stdAttr + '>' +
                     '<td class="text-center"><input type="checkbox" name="row_check_teknikal[]" class="form-check-input row-check-teknikal"></td>' +
                     '<td><span class="small fw-semibold">' + $('<span>').text(tajuk).html() + '</span></td>' +
                     '<td class="text-center"><span class="small fw-semibold text-muted">Borang Atas Talian</span></td>' +
