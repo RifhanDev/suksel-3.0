@@ -265,6 +265,39 @@ class RegistrationController extends Controller
         return $redirect;
     }
 
+    public function bypassPayment()
+    {
+        if (app()->isProduction()) {
+            abort(404);
+        }
+
+        $user   = auth()->user();
+        $vendor = $user?->vendor;
+
+        if (!$vendor || is_null($vendor->approval_1_id) || $vendor->registration_paid) {
+            return redirect('dashboard');
+        }
+
+        $cached_data = [
+            'start_date' => date('Y-m-d'),
+            'end_date'   => date('Y-m-d', strtotime('+1 year')),
+        ];
+
+        $transaction = $vendor->transactions()->save(new Transaction([
+            'type'        => 'subscription',
+            'method'      => 'bypass',
+            'status'      => 'success',
+            'user_id'     => $user->id,
+            'amount'      => 100,
+            'ip'          => request()->ip(),
+            'cached_data' => serialize($cached_data),
+        ]));
+
+        $transaction->generateSubscription();
+
+        return redirect('dashboard')->with('success', 'Pembayaran telah dipintas (bypass). Akaun diaktifkan.');
+    }
+
     public function callbackPayment($transaction_id)
     {
 

@@ -413,6 +413,7 @@ Route::middleware(['auth'])->group(function ()
 	Route::get('register/payment', [RegistrationController::class, 'payment'])->name('payment_registration');
 	Route::post('register/payment', [RegistrationController::class, 'storePayment']);
 	Route::get('register/payment_callback/{transaction_id}', [RegistrationController::class, 'callbackPayment']);
+	Route::get('register/payment/bypass', [RegistrationController::class, 'bypassPayment'])->name('payment_bypass');
 
 	// Admin dashboard must come before general dashboard route to avoid route conflict
 	Route::get('dashboard/hq', [HomeController::class, 'managementDashboard'])->name('dashboard.hq')->middleware(['role:Admin']);

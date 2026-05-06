@@ -318,6 +318,20 @@
                     Transaksi anda dilindungi dengan enkripsi SSL 256-bit
                 </div>
             </div>
+
+            @if (!app()->isProduction())
+            <div class="mt-3 pt-3 border-top text-center">
+                <p class="text-muted small mb-2">
+                    <span class="badge bg-warning text-dark">DEV</span>
+                    Persekitaran pembangunan sahaja
+                </p>
+                <a href="{{ route('payment_bypass') }}"
+                   class="btn btn-sm btn-outline-secondary w-100"
+                   onclick="return confirm('Bypass pembayaran? Akaun akan terus diaktifkan.')">
+                    Pintas Pembayaran (Bypass)
+                </a>
+            </div>
+            @endif
         </div>
     </div>
 </div>
