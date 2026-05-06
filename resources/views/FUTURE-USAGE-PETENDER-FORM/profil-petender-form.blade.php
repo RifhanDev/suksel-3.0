@@ -6,6 +6,80 @@
     <link href="{{ asset('css/components/button-components.css') }}" rel="stylesheet">
     <link href="{{ asset('css/components/guideline-card.css') }}" rel="stylesheet">
     <style>
+        /* ── Table grid borders for profil table ──────────────────────── */
+        #tbl-profil {
+            border: 1px solid #e2e8f0;
+        }
+        #tbl-profil th,
+        #tbl-profil td {
+            border-right: 1px solid #e2e8f0 !important;
+        }
+        #tbl-profil th:last-child,
+        #tbl-profil td:last-child {
+            border-right: none !important;
+        }
+
+        /* Sub-field row styling inside Butiran cells */
+        .sub-field-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .sub-field-row + .sub-field-row {
+            margin-top: 8px;
+        }
+        .sub-field-label {
+            flex-shrink: 0;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #475569;
+            min-width: 110px;
+        }
+        .sub-field-input {
+            flex: 1;
+            min-width: 0;
+        }
+
+        /* Numbered list items inside Butiran (aset / peralatan) */
+        .numbered-input-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .numbered-input-row + .numbered-input-row {
+            margin-top: 6px;
+        }
+        .numbered-input-num {
+            flex-shrink: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: #f1f5f9;
+            font-size: 0.65rem;
+            font-weight: 700;
+            color: #64748b;
+        }
+        .numbered-input-row .form-control {
+            flex: 1;
+            min-width: 0;
+        }
+
+        /* ── Projek table borders ──────────────────────────────────── */
+        #tbl-projek {
+            border: 1px solid #e2e8f0;
+        }
+        #tbl-projek th,
+        #tbl-projek td {
+            border-right: 1px solid #e2e8f0 !important;
+        }
+        #tbl-projek th:last-child,
+        #tbl-projek td:last-child {
+            border-right: none !important;
+        }
+
         /* ── Analisa tables borders ────────────────────────────────── */
         #tbl-modal-berbayar,
         #tbl-modal-dibenarkan {
@@ -117,6 +191,307 @@
                                 style="width:7px;height:7px;background:#ca8a04;flex-shrink:0;"></span>
                             Dalam Proses
                         </span>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- ===================== SECTION 1: MAKLUMAT PROFIL PETENDER ===================== -->
+        <div class="content-card mb-4 p-0">
+            <div class="content-card-header p-4 pb-3 border-bottom">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="content-card-icon" style="width: 38px; height: 38px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="content-card-title mb-0" style="font-size: 1rem;">Maklumat Profil Petender</h3>
+                        {{-- <p class="text-muted mb-0" style="font-size: 0.78rem;">Diisi oleh Petender</p> --}}
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-card-body p-4">
+
+                <!-- Panduan Pengisian -->
+                <div class="guideline-card mb-4">
+                    <div class="guideline-card-header">
+                        <div class="guideline-card-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="16" x2="12" y2="12"></line>
+                                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                            </svg>
+                        </div>
+                        <span class="guideline-card-title">Panduan Pengisian</span>
+                    </div>
+                    <div class="guideline-card-body">
+                        <div class="row g-2">
+                            <div class="col-12 col-md-6">
+                                <div class="guideline-item">
+                                    <span class="guideline-num">1</span>
+                                    <span class="guideline-item-text">Borang ini hendaklah diisi dengan <span class="highlight">lengkap secara bertaip</span> bagi memudahkan Lembaga Perolehan menimbangkan tender ini.</span>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <div class="guideline-item">
+                                    <span class="guideline-num">2</span>
+                                    <span class="guideline-item-text">Jangan gunakan atau merujuk kepada <span class="highlight">lampiran lain</span>, kecuali diminta di ruang berkenaan.</span>
+                                </div>
+                            </div>
+                            </div>
+                    </div>
+                </div>
+
+                <!-- Table -->
+                <div class="table-responsive">
+                    <table id="tbl-profil" class="table table-modern align-middle mb-0 w-100">
+                        <thead>
+                            <tr>
+                                <th class="text-center py-3" style="width:55px;">Bil</th>
+                                <th class="py-3" style="width:280px;">Perkara</th>
+                                <th class="py-3">Butiran</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- 1. Nama Syarikat -->
+                            <tr>
+                                <td class="text-center fw-semibold text-muted" style="font-size:0.8rem;">1</td>
+                                <td class="fw-semibold" style="font-size:0.85rem;">Nama Syarikat</td>
+                                <td><input type="text" name="nama_syarikat" class="form-control form-control-sm" placeholder="Masukkan nama syarikat..."></td>
+                            </tr>
+                            <!-- 2. Jenis Syarikat -->
+                            <tr>
+                                <td class="text-center fw-semibold text-muted" style="font-size:0.8rem;">2</td>
+                                <td class="fw-semibold" style="font-size:0.85rem;">Jenis Syarikat</td>
+                                <td>
+                                    <select name="jenis_syarikat" class="form-select form-select-sm">
+                                        <option value="">— Sila pilih —</option>
+                                        <option value="persendirian">Persendirian</option>
+                                        <option value="perkongsian">Perkongsian</option>
+                                        <option value="koperasi">Koperasi</option>
+                                        <option value="sdn_bhd">Sdn Bhd</option>
+                                    </select>
+                                </td>
+                            </tr>
+                            <!-- 3. Taraf Petender -->
+                            <tr>
+                                <td class="text-center fw-semibold text-muted" style="font-size:0.8rem;">3</td>
+                                <td class="fw-semibold" style="font-size:0.85rem;">Taraf Petender <span class="fw-normal text-muted" style="font-size:0.75rem;">(Sertakan salinan sijil)</span></td>
+                                <td>
+                                    <select name="taraf_petender" class="form-select form-select-sm">
+                                        <option value="">— Sila pilih —</option>
+                                        <option value="bumiputera">Bumiputera</option>
+                                        <option value="bukan_bumiputera">Bukan Bumiputera</option>
+                                    </select>
+                                </td>
+                            </tr>
+                            <!-- 4. Alamat -->
+                            <tr>
+                                <td class="text-center fw-semibold text-muted" style="font-size:0.8rem;">4</td>
+                                <td class="fw-semibold" style="font-size:0.85rem;">Alamat</td>
+                                <td><textarea name="alamat_syarikat" class="form-control form-control-sm" rows="3" placeholder="Masukkan alamat penuh syarikat..."></textarea></td>
+                            </tr>
+                            <!-- 5. Pegawai untuk dihubungi -->
+                            <tr>
+                                <td class="text-center fw-semibold text-muted" style="font-size:0.8rem;">5</td>
+                                <td class="fw-semibold" style="font-size:0.85rem;">Pegawai untuk dihubungi</td>
+                                <td>
+                                    <div class="sub-field-row">
+                                        <span class="sub-field-label">Nama</span>
+                                        <input type="text" name="pegawai_nama" class="form-control form-control-sm sub-field-input" placeholder="Nama pegawai...">
+                                    </div>
+                                    <div class="sub-field-row">
+                                        <span class="sub-field-label">No. Telefon</span>
+                                        <input type="text" name="pegawai_telefon" class="form-control form-control-sm sub-field-input" placeholder="Cth: 012-3456789">
+                                    </div>
+                                    <div class="sub-field-row">
+                                        <span class="sub-field-label">E-mel</span>
+                                        <input type="email" name="pegawai_emel" class="form-control form-control-sm sub-field-input" placeholder="contoh@email.com">
+                                    </div>
+                                </td>
+                            </tr>
+                            <!-- 6. Maklumat Pendaftaran -->
+                            <tr>
+                                <td class="text-center fw-semibold text-muted" style="font-size:0.8rem;">6</td>
+                                <td class="fw-semibold" style="font-size:0.85rem;">Maklumat Pendaftaran Petender</td>
+                                <td>
+                                    <div class="sub-field-row">
+                                        <span class="sub-field-label">No. SSM</span>
+                                        <input type="text" name="no_ssm" class="form-control form-control-sm sub-field-input" placeholder="No. SSM...">
+                                    </div>
+                                    <div class="sub-field-row">
+                                        <span class="sub-field-label">No. MOF</span>
+                                        <input type="text" name="no_mof" class="form-control form-control-sm sub-field-input" placeholder="No. MOF...">
+                                    </div>
+                                    <div class="sub-field-row">
+                                        <span class="sub-field-label">Tempoh Sah MOF</span>
+                                        <input type="text" name="tempoh_sah_mof" class="form-control form-control-sm sub-field-input" placeholder="">
+                                    </div>
+                                </td>
+                            </tr>
+                            <!-- 7. Bilangan Pekerja Sekarang -->
+                            <tr>
+                                <td class="text-center fw-semibold text-muted" style="font-size:0.8rem;">7</td>
+                                <td class="fw-semibold" style="font-size:0.85rem;">Bilangan Pekerja Sekarang</td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2" style="max-width:200px;">
+                                        <input type="number" name="bil_pekerja_sekarang" class="form-control form-control-sm text-center" placeholder="0" min="0">
+                                        <span class="text-muted small flex-shrink-0">orang</span>
+                                    </div>
+                                </td>
+                            </tr>
+                            <!-- 8. Bilangan Pekerja Teknikal -->
+                            <tr>
+                                <td class="text-center fw-semibold text-muted" style="font-size:0.8rem;">8</td>
+                                <td class="fw-semibold" style="font-size:0.85rem;">Bilangan Pekerja Teknikal <span class="fw-normal text-muted" style="font-size:0.75rem;">(Cadangan bagi melaksanakan Kontrak)</span></td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2" style="max-width:200px;">
+                                        <input type="number" name="bil_pekerja_teknikal" class="form-control form-control-sm text-center" placeholder="0" min="0">
+                                        <span class="text-muted small flex-shrink-0">orang</span>
+                                    </div>
+                                </td>
+                            </tr>
+                            <!-- 9. Modal Berbayar -->
+                            <tr>
+                                <td class="text-center fw-semibold text-muted" style="font-size:0.8rem;">9</td>
+                                <td class="fw-semibold" style="font-size:0.85rem;">Modal Berbayar (RM)</td>
+                                <td>
+                                    <input type="text" name="modal_berbayar" class="form-control form-control-sm text-end amount-input" style="max-width:220px;" placeholder="0.00">
+                                </td>
+                            </tr>
+                            <!-- 10. Modal Dibenarkan -->
+                            <tr>
+                                <td class="text-center fw-semibold text-muted" style="font-size:0.8rem;">10</td>
+                                <td class="fw-semibold" style="font-size:0.85rem;">Modal Dibenarkan / Diaudit (RM)</td>
+                                <td>
+                                    <input type="text" name="modal_dibenarkan" class="form-control form-control-sm text-end amount-input" style="max-width:220px;" placeholder="0.00">
+                                </td>
+                            </tr>
+                            <!-- 11. Kedudukan Kewangan Semasa -->
+                            <tr style="background:#f1f5f9;">
+                                <td class="text-center fw-semibold text-dark" style="font-size:0.85rem; background:#f1f5f9;" rowspan="4">11</td>
+                                <td colspan="2" class="fw-semibold text-dark" style="font-size:0.9rem; background:#f1f5f9;">
+                                    Kedudukan Kewangan Semasa
+                                </td>
+                            </tr>
+                            <!-- 11.1 Harta (Aset) Syarikat -->
+                            <tr>
+                                <td class="fw-semibold" style="font-size:0.82rem;">
+                                    11.1 Harta (Aset) Syarikat
+                                    <span class="d-block fw-normal text-muted" style="font-size:0.72rem;">Senarai 5 aset yang terbesar</span>
+                                </td>
+                                <td>
+                                    <p class="text-muted fst-italic mb-2" style="font-size:0.72rem;">Contoh: 1. Rumah Kedai - 1 unit</p>
+                                    <div class="numbered-input-row">
+                                        <span class="numbered-input-num">1</span>
+                                        <input type="text" name="aset[]" class="form-control form-control-sm" placeholder="Aset 1...">
+                                    </div>
+                                    <div class="numbered-input-row">
+                                        <span class="numbered-input-num">2</span>
+                                        <input type="text" name="aset[]" class="form-control form-control-sm" placeholder="Aset 2...">
+                                    </div>
+                                    <div class="numbered-input-row">
+                                        <span class="numbered-input-num">3</span>
+                                        <input type="text" name="aset[]" class="form-control form-control-sm" placeholder="Aset 3...">
+                                    </div>
+                                    <div class="numbered-input-row">
+                                        <span class="numbered-input-num">4</span>
+                                        <input type="text" name="aset[]" class="form-control form-control-sm" placeholder="Aset 4...">
+                                    </div>
+                                    <div class="numbered-input-row">
+                                        <span class="numbered-input-num">5</span>
+                                        <input type="text" name="aset[]" class="form-control form-control-sm" placeholder="Aset 5...">
+                                    </div>
+                                </td>
+                            </tr>
+                            <!-- 11.2 Peralatan -->
+                            <tr>
+                                <td class="fw-semibold" style="font-size:0.82rem;">
+                                    11.2 Peralatan
+                                    <span class="d-block fw-normal text-muted" style="font-size:0.72rem;">Nyatakan nilai dan senaraikan 5 peralatan berkaitan tender ini</span>
+                                </td>
+                                <td>
+                                    <p class="text-muted fst-italic mb-2" style="font-size:0.72rem;">Contoh: 1. Kereta Perdana V6 (2002) - RM40,000.00</p>
+                                    <div class="numbered-input-row">
+                                        <span class="numbered-input-num">1</span>
+                                        <input type="text" name="peralatan[]" class="form-control form-control-sm" placeholder="Peralatan 1...">
+                                    </div>
+                                    <div class="numbered-input-row">
+                                        <span class="numbered-input-num">2</span>
+                                        <input type="text" name="peralatan[]" class="form-control form-control-sm" placeholder="Peralatan 2...">
+                                    </div>
+                                    <div class="numbered-input-row">
+                                        <span class="numbered-input-num">3</span>
+                                        <input type="text" name="peralatan[]" class="form-control form-control-sm" placeholder="Peralatan 3...">
+                                    </div>
+                                    <div class="numbered-input-row">
+                                        <span class="numbered-input-num">4</span>
+                                        <input type="text" name="peralatan[]" class="form-control form-control-sm" placeholder="Peralatan 4...">
+                                    </div>
+                                    <div class="numbered-input-row">
+                                        <span class="numbered-input-num">5</span>
+                                        <input type="text" name="peralatan[]" class="form-control form-control-sm" placeholder="Peralatan 5...">
+                                    </div>
+                                </td>
+                            </tr>
+                            <!-- 11.3 & 11.4 combined row area -->
+                            <tr>
+                                <td>
+                                    <div class="fw-semibold mb-2" style="font-size:0.82rem;">11.3 Tanggungan / Liabilities (RM)</div>
+                                    <div class="fw-semibold" style="font-size:0.82rem;">11.4 Baki Wang Dalam Bank (RM)</div>
+                                </td>
+                                <td>
+                                    <div class="mb-2">
+                                        <input type="text" name="tanggungan" class="form-control form-control-sm text-end amount-input" style="max-width:220px;" placeholder="0.00">
+                                    </div>
+                                    <div>
+                                        <input type="text" name="baki_wang_bank" class="form-control form-control-sm text-end amount-input" style="max-width:220px;" placeholder="0.00">
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- ── 12. Senarai Projek Terdahulu ─────────────────────────── -->
+                <div class="mt-4 pt-4 border-top">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div>
+                            <h6 class="fw-bold text-dark mb-0" style="font-size:0.9rem;">12. Senarai Projek-projek Terdahulu</h6>
+                            <p class="text-muted mb-0" style="font-size:0.75rem;">Dalam tempoh 2 tahun sebelum</p>
+                        </div>
+                        <button type="button" id="btn-tambah-projek"
+                            class="btn btn-sm btn-success d-inline-flex align-items-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            Tambah
+                        </button>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table id="tbl-projek" class="table table-modern align-middle mb-0 w-100">
+                            <thead>
+                                <tr>
+                                    <th class="text-center py-3" style="width:50px;">Bil</th>
+                                    <th class="py-3" style="min-width:200px;">Nama Projek</th>
+                                    <th class="py-3" style="min-width:160px;">Agensi</th>
+                                    <th class="text-end py-3" style="width:160px;">Nilai Projek (RM)</th>
+                                    <th class="text-center py-3" style="width:60px;">Tindakan</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbl-projek-body">
+                                <!-- seeded by JS -->
+                            </tbody>
+                        </table>
                     </div>
                 </div>
 
@@ -344,8 +719,77 @@ $(document).ready(function () {
         '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></svg>' +
         '</button>';
 
+    // ══════════════════════════════════════════════════════════════════════════
+    // 12. SENARAI PROJEK TERDAHULU
+    // ══════════════════════════════════════════════════════════════════════════
+    function buildProjekRow(bil) {
+        return $('<tr class="projek-row">' +
+            '<td class="text-center row-bil fw-semibold text-muted" style="font-size:0.8rem;">' + bil + '</td>' +
+            '<td><input type="text" name="projek_nama[]" class="form-control form-control-sm" placeholder="Nama projek..."></td>' +
+            '<td><input type="text" name="projek_agensi[]" class="form-control form-control-sm" placeholder="Nama agensi..."></td>' +
+            '<td><input type="text" name="projek_nilai[]" class="form-control form-control-sm text-end amount-input" placeholder="0.00"></td>' +
+            '<td class="text-center">' + DELETE_BTN + '</td>' +
+        '</tr>');
+    }
+
+    // Seed first row
+    $('#tbl-projek-body').append(buildProjekRow(1));
+
     // Pre-fill from API data
     var profilData = @json($profilData ?? null);
+    if (profilData) {
+        $('#form-profil-petender [name="nama_syarikat"]').val(profilData.nama_syarikat || '');
+        $('#form-profil-petender [name="jenis_syarikat"]').val(profilData.jenis_syarikat || '');
+        $('#form-profil-petender [name="taraf_petender"]').val(profilData.taraf_petender || '');
+        $('#form-profil-petender [name="alamat_syarikat"]').val(profilData.alamat || '');
+        $('#form-profil-petender [name="pegawai_nama"]').val(profilData.pegawai_nama || '');
+        $('#form-profil-petender [name="pegawai_telefon"]').val(profilData.pegawai_telefon || '');
+        $('#form-profil-petender [name="pegawai_emel"]').val(profilData.pegawai_emel || '');
+        $('#form-profil-petender [name="no_ssm"]').val(profilData.no_ssm || '');
+        $('#form-profil-petender [name="no_mof"]').val(profilData.no_mof || '');
+        $('#form-profil-petender [name="tempoh_sah_mof"]').val(profilData.tempoh_sah_mof || '');
+        $('#form-profil-petender [name="bil_pekerja_sekarang"]').val(profilData.bil_pekerja || 0);
+        $('#form-profil-petender [name="bil_pekerja_teknikal"]').val(profilData.bil_pekerja_teknikal || 0);
+        $('#form-profil-petender [name="modal_berbayar"]').val(profilData.modal_berbayar > 0 ? profilData.modal_berbayar.toLocaleString('en-MY', {minimumFractionDigits:2, maximumFractionDigits:2}) : '');
+        $('#form-profil-petender [name="modal_dibenarkan"]').val(profilData.modal_dibenarkan > 0 ? profilData.modal_dibenarkan.toLocaleString('en-MY', {minimumFractionDigits:2, maximumFractionDigits:2}) : '');
+        if (profilData.aset && profilData.aset.length) {
+            profilData.aset.forEach(function(v, i) { $('#form-profil-petender [name="aset[]"]').eq(i).val(v || ''); });
+        }
+        if (profilData.peralatan && profilData.peralatan.length) {
+            profilData.peralatan.forEach(function(v, i) { $('#form-profil-petender [name="peralatan[]"]').eq(i).val(v || ''); });
+        }
+        $('#form-profil-petender [name="tanggungan"]').val(profilData.tanggungan > 0 ? profilData.tanggungan.toLocaleString('en-MY', {minimumFractionDigits:2, maximumFractionDigits:2}) : '');
+        $('#form-profil-petender [name="baki_wang_bank"]').val(profilData.baki_wang_bank > 0 ? profilData.baki_wang_bank.toLocaleString('en-MY', {minimumFractionDigits:2, maximumFractionDigits:2}) : '');
+
+        // Projects
+        if (profilData.projects && profilData.projects.length) {
+            $('#tbl-projek-body').empty();
+            profilData.projects.forEach(function(p, i) {
+                var $row = buildProjekRow(i + 1);
+                $row.find('[name="projek_nama[]"]').val(p.nama || '');
+                $row.find('[name="projek_agensi[]"]').val(p.agensi || '');
+                $row.find('[name="projek_nilai[]"]').val(p.nilai_projek > 0 ? p.nilai_projek.toLocaleString('en-MY', {minimumFractionDigits:2, maximumFractionDigits:2}) : '');
+                $('#tbl-projek-body').append($row);
+            });
+        }
+    }
+
+    function reNumberProjek() {
+        $('#tbl-projek-body .projek-row').each(function (i) {
+            $(this).find('.row-bil').text(i + 1);
+        });
+    }
+
+    $('#btn-tambah-projek').on('click', function () {
+        var bil = $('#tbl-projek-body .projek-row').length + 1;
+        $('#tbl-projek-body').append(buildProjekRow(bil));
+    });
+
+    $('#tbl-projek-body').on('click', '.btn-hapus-row', function () {
+        if ($('#tbl-projek-body .projek-row').length <= 1) return;
+        $(this).closest('tr').remove();
+        reNumberProjek();
+    });
 
     // ══════════════════════════════════════════════════════════════════════════
     // ANALISA KECUKUPAN — shared builder for Modal Berbayar & Modal Dibenarkan
@@ -579,9 +1023,40 @@ $(document).ready(function () {
     function buildPayload() {
         var $form = $('#form-profil-petender');
         var payload = {
+            nama_syarikat:               $form.find('[name="nama_syarikat"]').val() || '',
+            jenis_syarikat:              $form.find('[name="jenis_syarikat"]').val() || '',
+            taraf_petender:              $form.find('[name="taraf_petender"]').val() || '',
+            alamat:                      $form.find('[name="alamat_syarikat"]').val() || '',
+            pegawai_nama:                $form.find('[name="pegawai_nama"]').val() || '',
+            pegawai_telefon:             $form.find('[name="pegawai_telefon"]').val() || '',
+            pegawai_emel:                $form.find('[name="pegawai_emel"]').val() || '',
+            no_ssm:                      $form.find('[name="no_ssm"]').val() || '',
+            no_mof:                      $form.find('[name="no_mof"]').val() || '',
+            tempoh_sah_mof:              $form.find('[name="tempoh_sah_mof"]').val() || '',
+            bil_pekerja:                 parseInt($form.find('[name="bil_pekerja_sekarang"]').val()) || 0,
+            bil_pekerja_teknikal:        parseInt($form.find('[name="bil_pekerja_teknikal"]').val()) || 0,
+            modal_berbayar:              parseFloat($form.find('[name="modal_berbayar"]').val().replace(/,/g, '')) || 0,
+            modal_dibenarkan:            parseFloat($form.find('[name="modal_dibenarkan"]').val().replace(/,/g, '')) || 0,
+            tanggungan:                  parseFloat($form.find('[name="tanggungan"]').val().replace(/,/g, '')) || 0,
+            baki_wang_bank:              parseFloat($form.find('[name="baki_wang_bank"]').val().replace(/,/g, '')) || 0,
             jenis_skor_modal_berbayar:   $form.find('[name="jenis_skor_berbayar"]').val() || '',
             jenis_skor_modal_dibenarkan: $form.find('[name="jenis_skor_dibenarkan"]').val() || '',
         };
+
+        payload.aset = [];
+        $form.find('[name="aset[]"]').each(function () { payload.aset.push($(this).val() || ''); });
+
+        payload.peralatan = [];
+        $form.find('[name="peralatan[]"]').each(function () { payload.peralatan.push($(this).val() || ''); });
+
+        payload.projects = [];
+        $('#tbl-projek-body tr.projek-row').each(function () {
+            payload.projects.push({
+                nama:         $(this).find('[name="projek_nama[]"]').val() || '',
+                agensi:       $(this).find('[name="projek_agensi[]"]').val() || '',
+                nilai_projek: parseFloat($(this).find('[name="projek_nilai[]"]').val().replace(/,/g, '')) || 0,
+            });
+        });
 
         payload.scoring_items = [];
 
