@@ -117,7 +117,7 @@
     @csrf
 
     <!-- ===================== SECTION 1: MAKLUMAT PENYATA BANK ===================== -->
-    {{-- <div class="content-card mb-4 p-0">
+    <div class="content-card mb-4 p-0">
         <div class="content-card-header p-4 pb-3 border-bottom">
             <div class="d-flex align-items-center gap-3">
                 <div class="content-card-icon" style="width: 38px; height: 38px;">
@@ -190,7 +190,7 @@
                 </div>
             </div>
 
-            <!-- Separator -->
+            {{-- <!-- Separator -->
             <div class="border-top pt-4 mb-3">
                 <div class="rounded-2 px-3 py-2 d-inline-flex align-items-center gap-2"
                     style="background:#eff6ff; border:1px solid #bfdbfe; font-size:0.78rem; color:#1e40af;">
@@ -277,10 +277,10 @@
                         </div>
                     </div>
                 </div>
-            </div>
+            </div> --}}
 
         </div>
-    </div> --}}
+    </div>
 
     <!-- ===================== SECTION 2: PURATA PENYATA BANK (SKEMA) ===================== -->
     <div class="content-card mb-4 p-0">
@@ -397,6 +397,55 @@ $(document).ready(function () {
         var n = parseFloat(s);
         return isNaN(n) ? 0 : n;
     }
+
+     // ── Dari / Hingga ─────────────────────────────────────────────────────────
+    function bulanSelepas(dy, dm, n) {
+        var d = new Date(dy, dm - 1 + n, 1);
+        return { y: d.getFullYear(), m: d.getMonth() + 1 };
+    }
+
+    function rebuildBulanRows() {
+        var dm = parseInt($('#penyata_dari_bulan').val(), 10);
+        var dy = parseInt($('#penyata_dari_tahun').val(), 10);
+        var hm = parseInt($('#penyata_hingga_bulan_display').val(), 10);
+        var hy = parseInt($('#penyata_hingga_tahun_display').val(), 10);
+        var $wrap = $('#penyata_bank_bulan_rows_wrapper');
+        $wrap.empty();
+
+        var start = new Date(dy, dm - 1, 1);
+        var end   = new Date(hy, hm - 1, 1);
+
+        var cur = new Date(start.getTime());
+        while (cur <= end) {
+            var m  = cur.getMonth() + 1;
+            var y  = cur.getFullYear();
+            var ym = y + '_' + String(m).padStart(2, '0');
+            $wrap.append(
+                '<div class="d-flex align-items-center gap-3 mb-2 penyata-bank-bulan-item" data-ym="' + y + '-' + String(m).padStart(2, '0') + '">' +
+                    '<label class="fw-semibold text-dark mb-0 flex-shrink-0" style="font-size:0.82rem; min-width:220px;">Penyata Bank Bulan ' + m + ' - ' + y + ' (RM)</label>' +
+                    '<input type="text" class="form-control form-control-sm text-end amount-input penyata-bank-bulan-input" name="penyata_bulan_' + ym + '" value="" data-bulan="' + m + '" data-tahun="' + y + '" placeholder="0.00">' +
+                '</div>'
+            );
+            cur.setMonth(cur.getMonth() + 1);
+        }
+    }
+
+    function updateHingga() {
+        var dm = parseInt($('#penyata_dari_bulan').val(), 10);
+        var dy = parseInt($('#penyata_dari_tahun').val(), 10);
+        if (!dm || !dy || dm < 1 || dm > 12) {
+            $('#penyata_hingga_bulan_display').val('');
+            $('#penyata_hingga_tahun_display').val('');
+            rebuildBulanRows();
+            return;
+        }
+        var h = bulanSelepas(dy, dm, 2);
+        $('#penyata_hingga_bulan_display').val(h.m);
+        $('#penyata_hingga_tahun_display').val(h.y);
+        rebuildBulanRows();
+    }
+
+    $('#penyata_dari_bulan, #penyata_dari_tahun').on('change', updateHingga);
 
     function formatRm(n) {
         if (isNaN(n) || !isFinite(n)) return '';
