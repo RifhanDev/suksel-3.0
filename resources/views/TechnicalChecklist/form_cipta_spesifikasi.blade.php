@@ -112,7 +112,8 @@
                 <span class="text-muted fw-semibold text-uppercase d-block mb-1"
                     style="font-size: 0.67rem; letter-spacing: 0.5px;">Tajuk Tender</span>
                 <h5 class="fw-bold text-dark mb-0" style="line-height: 1.45; font-size: 1rem;">
-                    TENDER PERKHIDMATAN DIGITAL FORENSIK
+                    {{ $tender->tajuk_tender ?? $tender->name ?? '-' }}
+                    <span class="fw-normal text-muted fst-italic" style="font-size: 0.85rem;">({{ $tender->kategori_perolehan_name ?? '-' }})</span>
                 </h5>
             </div>
 
@@ -121,19 +122,19 @@
                 <div class="col-6 col-md-3">
                     <span class="text-muted fw-semibold text-uppercase d-block mb-1"
                         style="font-size: 0.67rem; letter-spacing: 0.5px;">No. Tender</span>
-                    <span class="fw-semibold text-dark" style="font-size: 0.875rem;">T/2026/014</span>
+                    <span class="fw-semibold text-dark" style="font-size: 0.875rem;">{{ $tender->no_tender ?? '-' }}</span>
                 </div>
                 <div class="col-6 col-md-3">
                     <span class="text-muted fw-semibold text-uppercase d-block mb-1"
                         style="font-size: 0.67rem; letter-spacing: 0.5px;">PTJ</span>
-                    <span class="fw-semibold text-dark" style="font-size: 0.875rem;">100-007</span>
+                    <span class="fw-semibold text-dark" style="font-size: 0.875rem;">{{ optional($tender->tenderer)->name ?? '-' }}</span>
                 </div>
                 <div class="col-12 col-md-6 d-md-flex justify-content-md-end align-items-md-center">
                     <span class="d-inline-flex align-items-center gap-2 px-3 py-2 rounded-2 fw-semibold"
                         style="background: #fef9c3; color: #854d0e; font-size: 0.8rem; border: 1px solid #fde68a;">
                         <span class="d-inline-block rounded-circle"
                             style="width:7px;height:7px;background:#ca8a04;flex-shrink:0;"></span>
-                        Dalam Proses
+                        {{ $specificationData ? ucfirst($specificationData['status'] ?? 'Draf') : 'Draf' }}
                     </span>
                 </div>
             </div>
@@ -198,8 +199,8 @@
                 <!-- Jenis Item -->
                 <div class="col-12 col-md-6">
                     <label class="form-label fw-semibold">Jenis Item</label>
-                    <input type="text" class="form-control form-control-sm" value="Bekalan" disabled>
-                    <input type="hidden" name="jenis_item" value="Bekalan">
+                    <input type="text" class="form-control form-control-sm" value="{{ $tender->kategori_perolehan_name ?? 'Bekalan Perkhidmatan' }}" disabled>
+                    <input type="hidden" name="jenis_item" value="{{ $tender->kategori_perolehan_name ?? 'Bekalan Perkhidmatan' }}">
                 </div>
 
                 <!-- Jenis Spesifikasi -->
@@ -365,7 +366,7 @@
 
     <!-- BOTTOM ACTION BUTTONS -->
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <a href="{{ route('senaraiTeknikal') }}"
+        <a href="{{ route('senaraiTeknikal', $tender->uuid) }}"
             class="btn-form btn-form-secondary">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -375,10 +376,7 @@
             Kembali
         </a>
         <div class="d-flex gap-2">
-            <button type="button" id="btn-simpan-spesifikasi" class="btn-form btn-form-primary">
-                Simpan
-            </button>
-            <button type="button" id="btn-selesai-spesifikasi" class="btn-form btn-form-success">
+            <button type="button" id="btn-selesai" class="btn-form btn-form-success">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"></path></svg>
                 Selesai
             </button>
@@ -387,23 +385,6 @@
 @endsection
 
 @push('modals')
-    <!-- ===================== MODAL: SUCCESS ===================== -->
-    <div class="modal fade" id="successModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content text-center p-4">
-                <div class="mb-3">
-                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none">
-                        <circle cx="12" cy="12" r="10" fill="#E6F7F3" />
-                        <path d="M10 14.2L7.8 12l-1.4 1.4L10 17l8-8-1.4-1.4L10 14.2z" fill="#19c1a7" />
-                    </svg>
-                </div>
-                <h5 class="fw-bold mb-2">Berjaya</h5>
-                <p class="text-muted mb-4">Maklumat telah berjaya disimpan.</p>
-                <button type="button" class="btn-form btn-form-primary mx-auto" data-bs-dismiss="modal">Tutup</button>
-            </div>
-        </div>
-    </div>
-
     <!-- ===================== MODAL: Confirm Hapus ===================== -->
     <div class="modal fade" id="modalHapusConfirm" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-sm modal-dialog-centered">
@@ -615,6 +596,99 @@
 @section('scripts')
     <script src="https://cdn.jsdelivr.net/npm/exceljs@4.3.0/dist/exceljs.min.js"></script>
     <script type="text/javascript">
+        var SPEC_CONFIG = {
+            tenderUuid: @json($tender->uuid),
+            storeUrl: @json(route('spesifikasiTeknikal.store')),
+            showUrl: @json(route('spesifikasiTeknikal.show', ['uuid' => '__UUID__'])),
+            updateUrl: @json(route('spesifikasiTeknikal.update', ['uuid' => '__UUID__'])),
+            completeUrl: @json(route('spesifikasiTeknikal.complete', ['uuid' => '__UUID__'])),
+            backUrl: @json(route('senaraiTeknikal', ['tenderUuid' => $tender->uuid])),
+            existingData: @json($specificationData),
+            csrfToken: @json(csrf_token())
+        };
+        var PENDING_CHECKLIST_SPEC_KEY = 'technical-checklist:pending-spec:' + SPEC_CONFIG.tenderUuid;
+
+        function calculateChecklistSpecificationTotalScore(formData) {
+            var total = 0;
+
+            (formData.items || []).forEach(function(item) {
+                (item.details || []).forEach(function(detail) {
+                    total += parseFloat(detail.max_score) || 0;
+                });
+            });
+
+            return total;
+        }
+
+        function queueChecklistSpecification(specification) {
+            if (!window.sessionStorage) {
+                return;
+            }
+
+            try {
+                window.sessionStorage.setItem(PENDING_CHECKLIST_SPEC_KEY, JSON.stringify(specification));
+            } catch (error) {
+                console.warn('Failed to queue pending checklist specification.', error);
+            }
+        }
+
+        // ── Shared button label ──────────────────────────────────────────────────────
+        var BTN_SELESAI_LABEL =
+            '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"></path></svg> Selesai';
+
+        // ── Toast notification helper ─────────────────────────────────────────────────
+
+        function showToast(message, type) {
+            type = type || 'error';
+            var cfgMap = {
+                error:   { bg: '#fef2f2', border: '#fecaca', color: '#dc2626', icon: '<circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line>' },
+                warning: { bg: '#fffbeb', border: '#fde68a', color: '#d97706', icon: '<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line>' },
+                success: { bg: '#f0fdf4', border: '#bbf7d0', color: '#16a34a', icon: '<polyline points="20 6 9 17 4 12"></polyline>' }
+            };
+            var cfg = cfgMap[type] || cfgMap.error;
+
+            if (!$('#app-toast-container').length) {
+                $('body').append(
+                    '<div id="app-toast-container" style="position:fixed;top:1.5rem;right:1.5rem;z-index:99999;display:flex;flex-direction:column;gap:0.75rem;width:520px;pointer-events:none;"></div>'
+                );
+            }
+
+            var safeMsg = $('<span>').text(message).html().replace(/\n/g, '<br>');
+            var $toast = $('<div>').css({
+                background: cfg.bg,
+                border: '2px solid ' + cfg.border,
+                borderRadius: '14px',
+                padding: '1.25rem 1.5rem',
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '1rem',
+                boxShadow: '0 8px 28px rgba(0,0,0,0.14)',
+                opacity: 0,
+                transition: 'opacity 0.2s ease',
+                pointerEvents: 'auto'
+            }).html(
+                '<svg style="flex-shrink:0;margin-top:2px;" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="' + cfg.color + '" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">' + cfg.icon + '</svg>' +
+                '<span style="flex:1;font-size:1rem;line-height:1.65;color:#1e293b;">' + safeMsg + '</span>' +
+                '<button type="button" style="flex-shrink:0;background:none;border:none;padding:0;cursor:pointer;color:#94a3b8;margin-top:3px;" class="toast-dismiss-btn">' +
+                '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
+                '</button>'
+            );
+
+            $('#app-toast-container').append($toast);
+
+            var tid = setTimeout(function() { dismissToast($toast); }, 5500);
+            $toast.data('tid', tid);
+            $toast.find('.toast-dismiss-btn').on('click', function() { dismissToast($toast); });
+
+            requestAnimationFrame(function() { $toast.css('opacity', 1); });
+        }
+
+        function dismissToast($toast) {
+            clearTimeout($toast.data('tid'));
+            $toast.css('opacity', 0);
+            setTimeout(function() { $toast.remove(); }, 250);
+        }
+
         $(document).ready(function() {
 
             // ── Build item row (5 tds) ────────────────────────────────────────────────
@@ -1051,8 +1125,7 @@
                         $('#input-muat-naik').val('');
                     }).catch(function(err) {
                         console.error('ExcelJS import error:', err);
-                        alert(
-                            'Gagal membaca fail Excel. Sila pastikan fail adalah format .xlsx yang sah.');
+                        showToast('Gagal membaca fail Excel. Sila pastikan fail adalah format .xlsx yang sah.');
                         $('#input-muat-naik').val('');
                     });
                 };
@@ -1148,7 +1221,7 @@
                     $('#yt-skor-tidak').val(0);
                     new bootstrap.Modal($('#modalYesNo')[0]).show();
                 } else {
-                    alert('Sila pilih jenis terlebih dahulu.');
+                    showToast('Sila pilih jenis skema terlebih dahulu.', 'warning');
                 }
             });
 
@@ -1278,7 +1351,7 @@
                 });
 
                 if (!valid) {
-                    alert('Nilai "Dari" mesti lebih besar daripada nilai "Hingga" baris sebelumnya.');
+                    showToast('Nilai "Dari" mesti lebih besar daripada nilai "Hingga" baris sebelumnya.', 'warning');
                     return;
                 }
 
@@ -1346,13 +1419,340 @@
                 bootstrap.Modal.getInstance($('#modalYesNo')[0]).hide();
             });
 
-            // DEMO: Simpan & Selesai buttons show success modal instead of submitting
-            var successModal = new bootstrap.Modal(document.getElementById('successModal'));
-            $('#btn-simpan-spesifikasi, #btn-selesai-spesifikasi').on('click', function () {
-                successModal.show();
+            // ── collectFormData — build nested JSON payload from DOM ────────────────
+
+            function collectFormData() {
+                var data = {
+                    tender_uuid: SPEC_CONFIG.tenderUuid,
+                    title: $('textarea[name="tajuk_dokumen"]').val().trim(),
+                    item_type: $('input[name="jenis_item"]').val(),
+                    specification_type: $('input[name="jenis_spesifikasi"]').val(),
+                    goods_type: $('input[name="jenisBarang"]:checked').closest('.form-check').find('label').text().trim().toLowerCase(),
+                    weighting_type: $('input[name="wajaranSpesifikasi"]:checked').closest('.form-check').find('label').text().trim().toLowerCase() === 'secara terus' ? 'direct' : 'priority',
+                    physical_submission: $('input[name="penghantaranFizikal"]:checked').closest('.form-check').find('label').text().trim().toLowerCase() === 'ya',
+                    items: []
+                };
+
+                var itemSortOrder = 0;
+                $('#dt_tmpltSpec tbody tr.item-row').each(function() {
+                    itemSortOrder++;
+                    var $item = $(this);
+                    var $specs = getItemSpecs($item);
+
+                    var item = {
+                        title: $item.find('td:first-child textarea').val().trim(),
+                        quantity: parseInt($item.find('input[type="number"]').val()) || 0,
+                        unit: $item.find('select').val() || null,
+                        sort_order: itemSortOrder,
+                        details: []
+                    };
+
+                    var specSortOrder = 0;
+                    $specs.each(function() {
+                        specSortOrder++;
+                        var $spec = $(this);
+                        var typeVal = $spec.find('.typeSelect').val();
+
+                        var responseTypeMap = { '1': 'text', '2': 'number', '3': 'yes_no' };
+                        var detail = {
+                            description: $spec.find('td:first-child textarea').val().trim(),
+                            response_type: responseTypeMap[typeVal] || null,
+                            score_mode: 'manual',
+                            max_score: 0,
+                            sort_order: specSortOrder,
+                            score_rules: []
+                        };
+
+                        if (typeVal === '1') {
+                            // Text — skema-maksima
+                            var maksima = $spec.data('skema-maksima');
+                            if (maksima) {
+                                detail.score_mode = 'manual';
+                                detail.max_score = parseFloat(maksima);
+                            }
+                        } else if (typeVal === '2') {
+                            // Nombor — skema-nombor (array of {dari, hingga, skema})
+                            detail.score_mode = 'auto';
+                            var skemaNombor = $spec.data('skema-nombor');
+                            if (skemaNombor && skemaNombor.length) {
+                                var maxScore = 0;
+                                skemaNombor.forEach(function(r) {
+                                    var score = parseFloat(r.skema) || 0;
+                                    if (score > maxScore) maxScore = score;
+                                    detail.score_rules.push({
+                                        rule_type: 'range',
+                                        from_value: parseFloat(r.dari) || 0,
+                                        to_value: parseFloat(r.hingga) || 0,
+                                        score: score
+                                    });
+                                });
+                                detail.max_score = maxScore;
+                            }
+                        } else if (typeVal === '3') {
+                            // Ya/Tidak — skema-yatidak
+                            var ytData = $spec.data('skema-yatidak');
+                            if (ytData) {
+                                if (ytData.jenis === 'manual') {
+                                    detail.score_mode = 'manual';
+                                    detail.max_score = parseFloat(ytData.skorMaksimum) || 0;
+                                } else {
+                                    detail.score_mode = 'auto';
+                                    var skorYa = parseFloat(ytData.skorYa) || 0;
+                                    var skorTidak = parseFloat(ytData.skorTidak) || 0;
+                                    detail.max_score = Math.max(skorYa, skorTidak);
+                                    detail.score_rules.push(
+                                        { rule_type: 'boolean', answer_value: 'yes', score: skorYa },
+                                        { rule_type: 'boolean', answer_value: 'no', score: skorTidak }
+                                    );
+                                }
+                            }
+                        }
+
+                        item.details.push(detail);
+                    });
+
+                    data.items.push(item);
+                });
+
+                return data;
+            }
+
+            // ── populateFormData — restore form from existing API data ──────────────
+
+            function populateFormData(specData) {
+                // Header fields
+                $('textarea[name="tajuk_dokumen"]').val(specData.title || '');
+
+                // Goods type radio
+                if (specData.goods_type === 'import') {
+                    $('#jenisBarang2').prop('checked', true);
+                } else {
+                    $('#jenisBarang1').prop('checked', true);
+                }
+
+                // Weighting type radio
+                if (specData.weighting_type === 'direct') {
+                    $('#wajaranSpesifikasi2').prop('checked', true);
+                } else {
+                    $('#wajaranSpesifikasi1').prop('checked', true);
+                }
+
+                // Physical submission radio
+                if (specData.physical_submission === false || specData.physical_submission === 0) {
+                    $('#penghantaranFizikal2').prop('checked', true);
+                } else {
+                    $('#penghantaranFizikal1').prop('checked', true);
+                }
+
+                // Build items + specs
+                var items = specData.items || [];
+                if (!items.length) return;
+
+                $('#tbl-no-data').remove();
+
+                items.forEach(function(item) {
+                    var $itemRow = buildItemRow();
+                    $itemRow.find('td:first-child textarea').val(item.title || '');
+                    $itemRow.find('input[type="number"]').val(item.quantity || 0);
+                    $itemRow.find('select').val(item.unit || '');
+                    $('#dt_tmpltSpec tbody').append($itemRow);
+                    // Trigger auto-resize
+                    $itemRow.find('td:first-child textarea').trigger('input');
+
+                    var details = item.details || [];
+                    details.forEach(function(detail) {
+                        var $specRow = buildSpecRow();
+                        $specRow.find('td:first-child textarea').val(detail.description || '');
+
+                        // Map response_type to typeSelect value
+                        var typeMap = { 'text': '1', 'number': '2', 'yes_no': '3' };
+                        $specRow.find('.typeSelect').val(typeMap[detail.response_type] || '');
+
+                        // Restore scoring data
+                        if (detail.response_type === 'text') {
+                            $specRow.data('skema-maksima', detail.max_score);
+                        } else if (detail.response_type === 'number') {
+                            var rules = detail.score_rules || [];
+                            var skemaRows = rules.map(function(r) {
+                                return { dari: r.from_value, hingga: r.to_value, skema: r.score };
+                            });
+                            $specRow.data('skema-nombor', skemaRows);
+                        } else if (detail.response_type === 'yes_no') {
+                            var rules = detail.score_rules || [];
+                            if (detail.score_mode === 'manual') {
+                                $specRow.data('skema-yatidak', { jenis: 'manual', skorMaksimum: detail.max_score });
+                            } else {
+                                var skorYa = 0, skorTidak = 0;
+                                rules.forEach(function(r) {
+                                    if (r.answer_value === 'yes') skorYa = r.score;
+                                    if (r.answer_value === 'no') skorTidak = r.score;
+                                });
+                                $specRow.data('skema-yatidak', { jenis: 'automatik', skorYa: skorYa, skorTidak: skorTidak });
+                            }
+                        }
+
+                        // Insert after last spec of this item
+                        var $existing = getItemSpecs($itemRow);
+                        var $insertAfter = $existing.length > 0 ? $existing.last() : $itemRow;
+                        $insertAfter.after($specRow);
+                        $specRow.find('td:first-child textarea').trigger('input');
+                    });
+                });
+
+                syncNoData();
+                reindexGroups();
+            }
+
+            // ── Restore data on page load if editing ────────────────────────────────
+
+            if (SPEC_CONFIG.existingData) {
+                populateFormData(SPEC_CONFIG.existingData);
+            }
+
+            // ── Edit-icon: restore saved data when reopening modals ─────────────────
+
+            $('#dt_tmpltSpec').on('click', '.edit-icon', function() {
+                var $specRow = $(this).closest('tr.spec-row');
+                var val = $(this).closest('td').find('.typeSelect').val();
+
+                if (val === '1') {
+                    var savedMaksima = $specRow.data('skema-maksima');
+                    if (savedMaksima) {
+                        setTimeout(function() { $('#modalText-skema-maksima').val(savedMaksima); }, 100);
+                    }
+                } else if (val === '2') {
+                    var savedNombor = $specRow.data('skema-nombor');
+                    if (savedNombor && savedNombor.length) {
+                        setTimeout(function() {
+                            $('#tbl-nombor-skema-body').empty();
+                            savedNombor.forEach(function(r) {
+                                var $row = buildNomborRow();
+                                $row.find('td:eq(1) input').val(r.dari);
+                                $row.find('td:eq(2) input').val(r.hingga);
+                                $row.find('td:eq(3) input').val(r.skema);
+                                $('#tbl-nombor-skema-body').append($row);
+                            });
+                        }, 100);
+                    }
+                } else if (val === '3') {
+                    var savedYt = $specRow.data('skema-yatidak');
+                    if (savedYt) {
+                        setTimeout(function() {
+                            $('#yt_fg').val(savedYt.jenis).trigger('change');
+                            if (savedYt.jenis === 'manual') {
+                                $('#yt-skor-maksimum').val(savedYt.skorMaksimum);
+                            } else {
+                                $('#yt-skor-ya').val(savedYt.skorYa);
+                                $('#yt-skor-tidak').val(savedYt.skorTidak);
+                            }
+                        }, 100);
+                    }
+                }
             });
 
-            // TODO: restore real submit logic after demo
+            // ── Selesai button handler ──────────────────────────────────────────────
+
+            $('#btn-selesai').on('click', function() {
+                var $btn = $(this);
+                var formData = collectFormData();
+
+                // Validation
+                if (!formData.title) {
+                    showToast('Sila masukkan tajuk dokumen.', 'warning');
+                    $('textarea[name="tajuk_dokumen"]').focus();
+                    return;
+                }
+                if (!formData.items.length) {
+                    showToast('Sila tambah sekurang-kurangnya satu item spesifikasi.', 'warning');
+                    return;
+                }
+                for (var i = 0; i < formData.items.length; i++) {
+                    if (!formData.items[i].details.length) {
+                        showToast('Item "' + (formData.items[i].title || '#' + (i + 1)) + '" tiada spesifikasi. Sila tambah sekurang-kurangnya satu spesifikasi bagi setiap item.', 'warning');
+                        return;
+                    }
+                }
+
+                bootbox.confirm({
+                    title: 'Sahkan Penyelesaian',
+                    message: 'Adakah anda pasti untuk menyimpan dan menyelesaikan spesifikasi ini? Tindakan ini tidak boleh dibatalkan.',
+                    buttons: {
+                        confirm: { label: 'Ya, Selesai', className: 'btn btn-success' },
+                        cancel:  { label: 'Batal',       className: 'btn btn-secondary' }
+                    },
+                    callback: function(confirmed) {
+                        if (!confirmed) return;
+
+                        $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span> Menyimpan...');
+
+                        var isEdit  = SPEC_CONFIG.existingData && SPEC_CONFIG.existingData.uuid;
+                        var saveUrl = isEdit
+                            ? SPEC_CONFIG.updateUrl.replace('__UUID__', SPEC_CONFIG.existingData.uuid)
+                            : SPEC_CONFIG.storeUrl;
+                        var saveMethod = isEdit ? 'PUT' : 'POST';
+
+                        $.ajax({
+                            url: saveUrl,
+                            method: saveMethod,
+                            data: JSON.stringify(formData),
+                            contentType: 'application/json',
+                            headers: { 'X-CSRF-TOKEN': SPEC_CONFIG.csrfToken },
+                            success: function(response) {
+                                var specUuid = response.data ? response.data.uuid : (isEdit ? SPEC_CONFIG.existingData.uuid : null);
+
+                                if (!specUuid) {
+                                    showToast('Ralat: UUID spesifikasi tidak ditemui selepas simpan.');
+                                    $btn.prop('disabled', false).html(BTN_SELESAI_LABEL);
+                                    return;
+                                }
+
+                                $btn.html('<span class="spinner-border spinner-border-sm me-1"></span> Menyelesaikan...');
+
+                                var completeUrl = SPEC_CONFIG.completeUrl.replace('__UUID__', specUuid);
+                                $.ajax({
+                                    url: completeUrl,
+                                    method: 'POST',
+                                    headers: { 'X-CSRF-TOKEN': SPEC_CONFIG.csrfToken },
+                                    success: function() {
+                                        var saved = response.data || {};
+                                        queueChecklistSpecification({
+                                            uuid: specUuid,
+                                            title: saved.title || formData.title,
+                                            total_score: saved.total_score !== null && saved.total_score !== undefined
+                                                ? saved.total_score
+                                                : calculateChecklistSpecificationTotalScore(formData),
+                                            status: saved.status || 'completed',
+                                            item_type: saved.item_type || formData.item_type
+                                        });
+                                        window.location.href = SPEC_CONFIG.backUrl;
+                                    },
+                                    error: function(xhr) {
+                                        var msg = 'Gagal menyelesaikan spesifikasi.';
+                                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                                            msg += '\n' + xhr.responseJSON.message;
+                                        }
+                                        showToast(msg);
+                                        $btn.prop('disabled', false).html(BTN_SELESAI_LABEL);
+                                    }
+                                });
+                            },
+                            error: function(xhr) {
+                                var lines = ['Gagal menyimpan spesifikasi.'];
+                                if (xhr.responseJSON && xhr.responseJSON.message) {
+                                    lines.push(xhr.responseJSON.message);
+                                }
+                                if (xhr.responseJSON && xhr.responseJSON.errors) {
+                                    $.each(xhr.responseJSON.errors, function(field, messages) {
+                                        lines.push('• ' + (Array.isArray(messages) ? messages[0] : messages));
+                                    });
+                                }
+                                showToast(lines.join('\n'));
+                                $btn.prop('disabled', false).html(BTN_SELESAI_LABEL);
+                            }
+                        });
+                    }
+                });
+            });
 
         });
     </script>

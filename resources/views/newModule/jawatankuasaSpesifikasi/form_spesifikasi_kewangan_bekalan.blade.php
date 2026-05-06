@@ -82,6 +82,12 @@
 @endsection
 
 @section('content')
+    @php
+        $kembaliUrl = isset($tender) && !empty($tender->uuid)
+            ? route('senaraiKewanganBekalan', ['tenderUuid' => $tender->uuid])
+            : (url()->previous() !== url()->current() ? url()->previous() : route('pengurusanSpesifikasi'));
+    @endphp
+
     <!-- HEADER -->
     <div class="d-flex flex-column flex-lg-row justify-content-start align-items-start align-items-lg-center mb-4">
         <div>
@@ -326,7 +332,7 @@
 
         <!-- ===================== ACTION BUTTONS ===================== -->
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <a href="{{ route('senaraiKewanganBekalan') }}" class="btn-form btn-form-secondary">
+            <a href="{{ $kembaliUrl }}" class="btn-form btn-form-secondary">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <line x1="19" y1="12" x2="5" y2="12"></line>

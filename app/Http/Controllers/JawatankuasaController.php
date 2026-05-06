@@ -425,20 +425,6 @@ class JawatankuasaController extends Controller
         dd($data);
     }
 
-    public function simpanPengalamanKerja(Request $request)
-    {
-        $data = $request->all();
-
-        dd($data);
-    }
-
-    public function simpanKerjaDalamTangan(Request $request)
-    {
-        $data = $request->all();
-
-        dd($data);
-    }
-
     public function simpanSenaraiTeknikal(Request $request)
     {
         $data = $request->all();
@@ -467,8 +453,10 @@ class JawatankuasaController extends Controller
         dd($data);
     }
 
-    public function spesifikasiKewanganBekalan()
+    public function spesifikasiKewanganBekalan(Request $request, ?string $spesifikasiUuid = null)
     {
+        $tender = null;
+
         // Dummy data — will be replaced with real DB queries later
         $anggaranJabatan = 300000.00;
 
@@ -483,7 +471,7 @@ class JawatankuasaController extends Controller
             ],
         ];
 
-        return view('newModule.jawatankuasaSpesifikasi.form_spesifikasi_kewangan_bekalan', compact('items', 'anggaranJabatan'));
+        return view('newModule.jawatankuasaSpesifikasi.form_spesifikasi_kewangan_bekalan', compact('items', 'anggaranJabatan', 'tender'));
     }
 
     /**

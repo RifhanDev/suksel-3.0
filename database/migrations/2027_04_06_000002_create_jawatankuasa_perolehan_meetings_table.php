@@ -17,7 +17,7 @@ return new class extends Migration
 
         Schema::create('jawatankuasa_perolehan_meetings', function (Blueprint $table) {
             $table->id();
-            $table->unsignedInteger('tender_id')->index();
+            $table->unsignedBigInteger('tender_id')->index();
             $table->string('bil_mesyuarat', 100);
             $table->date('tarikh_mesyuarat');
             $table->string('tajuk_agenda');

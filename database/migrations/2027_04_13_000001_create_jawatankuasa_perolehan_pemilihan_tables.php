@@ -27,7 +27,7 @@ return new class extends Migration
         if (!Schema::hasTable('jawatankuasa_perolehan_pemilihan_items')) {
             Schema::create('jawatankuasa_perolehan_pemilihan_items', function (Blueprint $table) {
                 $table->id();
-                $table->unsignedInteger('tender_id')->index();
+                $table->unsignedBigInteger('tender_id')->index();
                 $table->unsignedInteger('sort_order')->default(1);
                 $table->text('perihal_item');
                 $table->string('jenis_item', 255)->nullable();

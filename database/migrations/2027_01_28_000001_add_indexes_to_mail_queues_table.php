@@ -14,7 +14,6 @@ return new class extends Migration
     public function up()
     {
         Schema::table('mail_queues', function (Blueprint $table) {
-            // Indexes to speed up filtering and ordering in MailQueueController
             if (!Schema::hasColumn('mail_queues', 'created_at')) {
                 return;
             }
