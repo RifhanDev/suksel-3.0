@@ -251,6 +251,8 @@ Route::view('/pengesahan-lawatan-tapak-urusetia', 'newModule.lawatanTapak.penges
 Route::view('/kelulusan-lawatan-tapak-urusetia', 'newModule.lawatanTapak.kelulusanLawatanTapak')->name('kelulusanLawatanTapak');
 Route::view('/index-penyediaan-surat-niat', 'newModule.penyediaanSuratNiat.index')->name('indexPenyediaanSuratNiat');
 Route::view('/penyediaan-surat-niat', 'newModule.penyediaanSuratNiat.penyediaanSuratNiat')->name('penyediaanSuratNiat');
+Route::view('/index-penyediaan-sst', 'newModule.penyediaanSST.index')->name('indexPenyediaanSST');
+Route::view('/penyediaan-sst', 'newModule.penyediaanSST.penyediaanSST')->name('penyediaanSST');
 
 // penilaian teknikal
 Route::get('/penilaian-teknikal', [PenilaianTeknikalController::class, 'index'])->name('penilaianTeknikal');
