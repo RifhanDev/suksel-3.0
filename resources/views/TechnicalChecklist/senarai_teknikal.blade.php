@@ -575,6 +575,7 @@
             var DELETE_FILE_URL = @json(route('senaraiTeknikal.deleteFile', ':uuid'));
             var CSRF_TOKEN      = @json(csrf_token());
             var EXISTING_CHECKLIST = @json($checklistData);
+            var STANDARD_ACTION_URLS = @json(collect($standardItems ?? [])->pluck('action_url', 'uuid')->all());
 
             function toggleCiptaSpesifikasiSearchControls() {
                 var selectedSource = $('input[name="klonSpesifikasi"]:checked').val();
@@ -923,6 +924,25 @@
                 return (slug || '').toString().trim().replace(/^\/+|\/+$/g, '');
             }
 
+            function getLatestStandardActionSlug(standardItemUuid, fallbackSlug) {
+                if (standardItemUuid && Object.prototype.hasOwnProperty.call(STANDARD_ACTION_URLS, standardItemUuid)) {
+                    return normalizeActionSlug(STANDARD_ACTION_URLS[standardItemUuid]);
+                }
+
+                return normalizeActionSlug(fallbackSlug);
+            }
+
+            function buildBorangAtasTalianActionCell(routeUrl) {
+                if (!routeUrl) {
+                    return '<span class="text-muted small">—</span>';
+                }
+
+                return '' +
+                    '<a href="' + routeUrl + '" class="btn btn-sm btn-warning d-inline-flex align-items-center justify-content-center p-1" style="width:30px;height:30px;" title="Kemaskini">' +
+                        '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>' +
+                    '</a>';
+            }
+
             function collectItems() {
                 var items = [];
                 var idx   = 0;
@@ -1045,7 +1065,11 @@
                             status:      item.status || 'draft',
                         });
                     } else if (item.source_type === 'borang_atas_talian') {
-                        $row = buildBorangAtasTalianRow(item.title || '', item.vendor_action || '', item.standard_item_uuid || null);
+                        $row = buildBorangAtasTalianRow(
+                            item.title || '',
+                            getLatestStandardActionSlug(item.standard_item_uuid || null, item.vendor_action || ''),
+                            item.standard_item_uuid || null
+                        );
                         $row.find('.skema-input').val(item.score || 0);
                     } else {
                         if (item.source_type === 'standard') {
@@ -1260,11 +1284,7 @@
                     '</td>' +
                     '<td class="text-center"><span class="badge-status badge-status-warning">Draf</span></td>' +
                     '<td class="text-center text-muted small">—</td>' +
-                    '<td class="text-center">' +
-                        '<a href="' + routeUrl + '" class="btn btn-sm btn-warning d-inline-flex align-items-center justify-content-center p-1" style="width:30px;height:30px;" title="Kemaskini">' +
-                        '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>' +
-                        '</a>' +
-                    '</td>' +
+                    '<td class="text-center">' + buildBorangAtasTalianActionCell(routeUrl) + '</td>' +
                     '</tr>'
                 );
             }
