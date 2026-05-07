@@ -283,17 +283,33 @@ class RegistrationController extends Controller
             'end_date'   => date('Y-m-d', strtotime('+1 year')),
         ];
 
-        $transaction = $vendor->transactions()->save(new Transaction([
-            'type'        => 'subscription',
-            'method'      => 'bypass',
-            'status'      => 'success',
-            'user_id'     => $user->id,
-            'amount'      => 100,
-            'ip'          => request()->ip(),
-            'cached_data' => serialize($cached_data),
-        ]));
+        $gateway = Gateway::whereType('fpx')->whereDefault(1)->whereActive(1)->first();
+        $organizationUnitId = $gateway->organization_unit_id ?? config('app.global_cart_ou');
 
-        $transaction->generateSubscription();
+        if (!$organizationUnitId) {
+            return redirect('dashboard')->with('error', 'Gagal memintas pembayaran: unit organisasi tidak sah.');
+        }
+
+        try {
+            $transaction = $vendor->transactions()->save(new Transaction([
+                'type'                 => 'subscription',
+                'method'               => 'bypass',
+                'status'               => 'success',
+                'user_id'              => $user->id,
+                'organization_unit_id' => $organizationUnitId,
+                'amount'               => 100,
+                'ip'                   => request()->ip(),
+                'cached_data'          => serialize($cached_data),
+            ]));
+
+            $transaction->generateSubscription();
+        } catch (\Throwable $e) {
+            $vendor->registration_paid = 1;
+            $vendor->expiry_date = date('Y-m-d', strtotime('+1 year'));
+            $vendor->save();
+
+            return redirect('dashboard')->with('warning', 'Pembayaran dipintas, tetapi rekod langganan tidak dapat dijana sepenuhnya.');
+        }
 
         return redirect('dashboard')->with('success', 'Pembayaran telah dipintas (bypass). Akaun diaktifkan.');
     }
