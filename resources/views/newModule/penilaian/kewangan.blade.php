@@ -788,7 +788,9 @@ Dengan ini, PTJ mengesyorkan XX (YY) untuk melaksanakan projek ini berdasarkan j
                     </td>
                     <td>
                         <select class="form-select">
-                            <option selected>Mematuhi / Tidak Mematuhi</option>
+                            <option selected>Sila Pilih</option>
+                            <option value="mematuhi">Mematuhi</option>
+                            <option value="tidak_mematuhi">Tidak Mematuhi</option>
                         </select>
                     </td>
                     <td>
@@ -806,7 +808,9 @@ Dengan ini, PTJ mengesyorkan XX (YY) untuk melaksanakan projek ini berdasarkan j
                     </td>
                     <td>
                         <select class="form-select">
-                            <option selected>Mematuhi / Tidak Mematuhi</option>
+                            <option selected>Sila Pilih</option>
+                            <option value="mematuhi">Mematuhi</option>
+                            <option value="tidak_mematuhi">Tidak Mematuhi</option>
                         </select>
                     </td>
                     <td>

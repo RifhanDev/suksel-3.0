@@ -96,7 +96,7 @@
 	</style>
 
 	<div class="content-card p-4" id="kt-root" data-tender-id="{{ $tenderId }}">
-		<h6 class="fw-bold text-dark mb-3">Paparan Kertas Taklimat</h6>
+		<h6 class="fw-bold text-dark mb-3">Seksyen Laporan</h6>
 		<div class="alert d-none py-2 px-3 mb-3" id="ktAlert" role="alert"></div>
 
 		<div class="table-responsive kt-table-wrap">
@@ -132,8 +132,8 @@
 							<td class="kt-col-tindakan">
 								@foreach ($item->files as $f)
 									<div class="d-flex flex-wrap align-items-center gap-2 mb-1 kt-file-row" data-file-id="{{ $f->id }}">
-										<a href="{{ route('perakuanjabatan.kertasTaklimat.download', $f) }}"
-											class="kt-action-link kt-muat-turun">Muat Turun</a>
+										<a href="{{ route('perakuanjabatan.kertasTaklimat.download', $f) }}" class="kt-action-link kt-muat-turun">Muat
+											Turun</a>
 										<span class="small text-muted text-break">{{ $f->file_original_name }}</span>
 										<button type="button" class="btn btn-link btn-sm p-0 kt-remove-file text-danger">Buang</button>
 									</div>
@@ -146,8 +146,7 @@
 									@endif
 									@if (in_array($ui, ['upload_only', 'upload_download'], true))
 										<a href="#" class="kt-action-link kt-muat-naik">Muat Naik</a>
-										<input type="file" class="d-none kt-file-input" multiple
-											aria-label="Fail muat naik (boleh berbilang)">
+										<input type="file" class="d-none kt-file-input" multiple aria-label="Fail muat naik (boleh berbilang)">
 									@endif
 								</div>
 								<div class="kt-pending-names small mt-1"></div>
@@ -168,7 +167,7 @@
 			<div class="kt-bar-catatan rounded-top">CATATAN</div>
 			<label class="visually-hidden" for="ktCatatan">Catatan</label>
 			<textarea class="form-control kt-textarea-catatan" id="ktCatatan" name="catatan" rows="4"
-				placeholder="Masukkan catatan…">{{ old('catatan', $header->catatan) }}</textarea>
+			 placeholder="Masukkan catatan…">{{ old('catatan', $header->catatan) }}</textarea>
 		</div>
 
 		<div class="d-flex justify-content-end gap-2 mt-4">
@@ -236,7 +235,8 @@
 				const wrap = tr.querySelector('.kt-pending-names');
 				if (wrap) {
 					wrap.innerHTML = files.length ?
-						'<span class="kt-file-pending">Akan dimuat naik: ' + files.map(f => f.name).join(', ') + '</span>' :
+						'<span class="kt-file-pending">Akan dimuat naik: ' + files.map(f => f.name).join(', ') +
+						'</span>' :
 						'';
 				}
 			});
@@ -288,7 +288,6 @@
 					'<td><input type="text" class="form-control form-control-sm kt-kandungan" value="" placeholder="Kandungan dokumen"></td>' +
 					'<td class="kt-col-tindakan">' +
 					'<div class="d-flex flex-wrap align-items-center gap-2 kt-upload-actions">' +
-					'<a href="#" class="kt-action-link kt-muat-turun me-2">Muat Turun</a>' +
 					'<a href="#" class="kt-action-link kt-muat-naik">Muat Naik</a>' +
 					'<input type="file" class="d-none kt-file-input" multiple aria-label="Fail muat naik (boleh berbilang)">' +
 					'</div>' +

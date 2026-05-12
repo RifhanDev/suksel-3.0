@@ -92,7 +92,7 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('prices', [HomeController::class, 'prices']);
 Route::get('results', [HomeController::class, 'results']);
 Route::get('privacy', [HomeController::class, 'privacy']);
-
+/////////////////by edry///////////////////////////////////
 // Place 3.0 Modules Routes Temporarily Here
 Route::view('/jawatankuasa-spesifikasi/senarai-teknikal', 'newModule.jawatankuasaSpesifikasi.senarai_teknikal')->name('jawatankuasaSpesifikasi.teknikal');
 Route::view('/jawatankuasa-spesifikasi/senarai-kewangan', 'newModule.jawatankuasaSpesifikasi.senarai_kewangan')->name('jawatankuasaSpesifikasi.kewangan');
@@ -121,7 +121,7 @@ Route::prefix('pembelian-terus')->controller(PembelianTerusController::class)->g
 	Route::get('/keputusan-syarikat-details/{tender_no}', 'keputusanSyarikatDetails')->name('pembelianTerus.keputusanSyarikatDetails');
 	Route::get('/surat-setuju-terima/{tender_no}', 'downloadSuratSetujuTerima')->name('pembelianTerus.downloadSuratSetujuTerima');
 });
-
+/////////////////////////////////////////////////////////////
 
 // Public resources
 Route::resource('comments', CommentsController::class);
@@ -165,12 +165,12 @@ Route::get('auth/reset/{token}', [AuthController::class, 'resetPassword']);
 Route::post('auth/reset', [AuthController::class, 'doResetPassword']);
 
 // Tenders
-// Route::get('tenders/select', [TendersController::class, 'select']);
-// Route::resource('tenders', TendersController::class);
-// Route::get('tenders/{id}/prices', [TendersController::class, 'prices'])->name('tenders.prices');
-// Route::get('tenders/{tender_id}/files/{id}', [TendersController::class, 'file'])->name('tenders.files');
-// Route::get('tenders/{id}/vendors', [TendersController::class, 'vendors'])->name('tenders.vendors');
-// Route::post('tenders/{id}/exception', [TendersController::class, 'exception'])->name('tenders.exception');
+Route::get('tenders/select', [TendersController::class, 'select']);
+Route::resource('tenders', TendersController::class);
+Route::get('tenders/{id}/prices', [TendersController::class, 'prices'])->name('tenders.prices');
+Route::get('tenders/{tender_id}/files/{id}', [TendersController::class, 'file'])->name('tenders.files');
+Route::get('tenders/{id}/vendors', [TendersController::class, 'vendors'])->name('tenders.vendors');
+Route::post('tenders/{id}/exception', [TendersController::class, 'exception'])->name('tenders.exception');
 
 // Petender Performance
 Route::prefix('petenders')->controller(PetenderPerformanceController::class)->group(function () {
@@ -213,6 +213,7 @@ Route::get('chat-widget/{chat_id}', [BotManController::class, 'chatWidget'])->wi
 Route::view('/semak-tender', 'newModule.semak_tender')->name('semakPenciptaanTender');
 
 Route::get('/pelantikan-jawatankuasa', [JawatankuasaController::class, 'create'])->middleware(['auth'])->name('pelantikanJawatankuasa');
+Route::view('/pelantikan-jawatankuasa-1-peringkat', 'tenders.pelantikan_jawatankuasa_1_peringkat')->middleware(['auth'])->name('pelantikanJawatankuasaSatuPeringkat');
 Route::get('/pelantikan-jawatankuasa/laporan', [JawatankuasaController::class, 'laporan'])->middleware(['auth'])->name('jawatankuasa.laporan');
 Route::post('/pelantikan-jawatankuasa/hantar-pemakluman', [JawatankuasaController::class, 'hantarPemakluman'])->middleware(['auth'])->name('jawatankuasa.hantarPemakluman');
 Route::view('/senarai-semak', 'newModule.jawatankuasaSpesifikasi.index')->name('senaraiSemak');
@@ -257,6 +258,9 @@ Route::view('/penyediaan-sst', 'newModule.penyediaanSST.penyediaanSST')->name('p
 // penilaian teknikal
 Route::get('/penilaian-teknikal', [PenilaianTeknikalController::class, 'index'])->name('penilaianTeknikal');
 Route::get('/penilaian-teknikal/{tender_no}', [PenilaianTeknikalController::class, 'show'])->name('penilaianTeknikal.show');
+
+// penilaian teknikal kerja
+Route::get('/penilaian-teknikal-kerja/{tender_no}', [PenilaianTeknikalController::class, 'showTeknikalKerja'])->name('penilaianTeknikalKerja.show');
 
 // new penilaian kewangan
 Route::get('/penilaian-kewangan', [PenilaianKewanganController::class, 'index'])->name('penilaianKewangan');
@@ -337,6 +341,18 @@ Route::middleware(['auth'])->group(function () {
 	Route::post('jawatankuasa-perolehan/pemilihan-pembekal/hantar', [JawatankuasaPerolehanController::class, 'hantarPemilihanPembekal'])->name('jawatankuasa.perolehan.pemilihan_pembekal.hantar');
 	// Route::get('/jawatankuasa-perolehan/index', 'newModule.jawatankuasaPerolehan.index')->name('jawatankuasaPerolehan.index');
 	// Route::view('/jawatankuasa-perolehan/form', 'newModule.jawatankuasaPerolehan.form')->name('jawatankuasaPerolehan.form');
+
+	// ebidding
+	Route::get('/eBidding/index', [EbiddingController::class, 'index'])->middleware(['auth'])->name('eBidding.index');
+	Route::get('/eBidding/{id}', [EbiddingController::class, 'show'])->middleware(['auth'])->name('eBidding.show');
+	Route::post('/eBidding/{id}/kertas-taklimat/simpan', [EbiddingController::class, 'simpanKertasTaklimat'])->middleware(['auth'])->name('eBidding.kertasTaklimat.simpan');
+	Route::post('/eBidding/{id}/kertas-taklimat/hantar', [EbiddingController::class, 'hantarKertasTaklimat'])->middleware(['auth'])->name('eBidding.kertasTaklimat.hantar');
+	Route::post('/eBidding/{id}/pengesyoran/simpan', [EbiddingController::class, 'simpanPengesyoranPembekal'])->middleware(['auth'])->name('eBidding.pengesyoran.simpan');
+	Route::post('/eBidding/{id}/pengesyoran/hantar', [EbiddingController::class, 'hantarPengesyoranPembekal'])->middleware(['auth'])->name('eBidding.pengesyoran.hantar');
+	Route::post('/eBidding/{id}/jadual-bidaan/simpan', [EbiddingController::class, 'simpanJadualBidaan'])->middleware(['auth'])->name('eBidding.jadualBidaan.simpan');
+	Route::post('/eBidding/{id}/jadual-bidaan/mula', [EbiddingController::class, 'mulaBidaan'])->middleware(['auth'])->name('eBidding.jadualBidaan.mula');
+	Route::post('/eBidding/{id}/vendor-bidaan/hantar', [EbiddingController::class, 'hantarVendorBidaan'])->middleware(['auth'])->name('eBidding.vendorBidaan.hantar');
+	Route::post('/eBidding/{id}/advance-stage', [EbiddingController::class, 'advanceStage'])->middleware(['auth'])->name('eBidding.advanceStage');
 
 	// Version 3.0 tender creation routes
 	Route::get('/cipta-tender', [TendersController::class, 'createNew'])->name('ciptaTender');
@@ -425,6 +441,8 @@ Route::middleware(['auth'])->group(function () {
 	Route::get('profile', [ProfileController::class, 'show'])->name('profile');
 	Route::get('profile/change_password', [ProfileController::class, 'changePassword'])->name('change_password');
 	Route::put('profile/change_password', [ProfileController::class, 'doChangePassword']);
+	Route::get('profile/force_password_change', [ProfileController::class, 'forceChangePassword'])->name('profile.force-password-change');
+	Route::put('profile/force_password_change', [ProfileController::class, 'doForceChangePassword']);
 	Route::get('profile/release', [ProfileController::class, 'releaseUser'])->name('release_user');
 
 	// User's own complaints (Aduan)

@@ -115,12 +115,12 @@ class AuthController extends Controller
                   if ($passwordAge >= 6) {
                      // Password expired, redirect to change password
                      session()->flash('warning', 'Kata laluan anda telah tamat tempoh (6 bulan). Sila tukar kata laluan anda.');
-                     return redirect('users/' . $user->id . '/reset_password');
+                     return redirect()->route('profile.force-password-change');
                   }
                } else {
                   // Password never changed, force change
                   session()->flash('warning', 'Sila tetapkan kata laluan anda.');
-                  return redirect('users/' . $user->id . '/reset_password');
+                  return redirect()->route('profile.force-password-change');
                }
 
                // Redirect based on user role
