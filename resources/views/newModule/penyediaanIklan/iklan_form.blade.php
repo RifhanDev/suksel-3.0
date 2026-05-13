@@ -609,23 +609,34 @@ $(document).ready(function () {
         /* Init step 2 components once */
         if (step === 2) { initFileUpload(); }
 
-        /* Init CKEditor once when step 2 first shown */
+        /* Init CKEditor once when step 2 first shown.
+           Wrapped in setTimeout so the element is fully painted before CKEditor
+           accesses its computed styles (avoids "setting 'dir'" error on some browsers). */
         if (step === 2 && !ckEditorInitialised && typeof CKEDITOR !== 'undefined') {
-            CKEDITOR.replace('syarat_tender', {
-                toolbarGroups: [
-                    { name: 'basicstyles', groups: ['basicstyles', 'cleanup'] },
-                    { name: 'paragraph',   groups: ['list', 'indent', 'blocks', 'align', 'paragraph'] },
-                    { name: 'links',       groups: ['links'] },
-                    { name: 'insert',      groups: ['insert'] },
-                    '/',
-                    { name: 'styles',  groups: ['styles'] },
-                    { name: 'colors',  groups: ['colors'] },
-                    { name: 'tools',   groups: ['tools'] },
-                ],
-                removeButtons: 'Flash,Iframe,Form,TextField,Checkbox,Radio,Textarea,Select,Button,ImageButton,HiddenField,Subscript,Superscript',
-                height: 250,
-            });
-            ckEditorInitialised = true;
+            ckEditorInitialised = true; /* set early to prevent double-init on rapid clicks */
+            setTimeout(function () {
+                try {
+                    if (CKEDITOR.instances['syarat_tender']) {
+                        CKEDITOR.instances['syarat_tender'].destroy(true);
+                    }
+                    CKEDITOR.replace('syarat_tender', {
+                        toolbarGroups: [
+                            { name: 'basicstyles', groups: ['basicstyles', 'cleanup'] },
+                            { name: 'paragraph',   groups: ['list', 'indent', 'blocks', 'align', 'paragraph'] },
+                            { name: 'links',       groups: ['links'] },
+                            { name: 'insert',      groups: ['insert'] },
+                            '/',
+                            { name: 'styles',  groups: ['styles'] },
+                            { name: 'colors',  groups: ['colors'] },
+                            { name: 'tools',   groups: ['tools'] },
+                        ],
+                        removeButtons: 'Flash,Iframe,Form,TextField,Checkbox,Radio,Textarea,Select,Button,ImageButton,HiddenField,Subscript,Superscript',
+                        height: 250,
+                    });
+                } catch (e) {
+                    console.warn('CKEditor init error:', e);
+                }
+            }, 50);
         }
 
         var offset = $('#iklanStepperWrapper').offset();
