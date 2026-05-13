@@ -240,8 +240,24 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr id="tbl-no-data">
-                            <td colspan="7" class="text-center text-muted py-4 small">Tiada Data</td>
+                        <tr data-item-group="1" class="group-first">
+                            <td rowspan="2" class="text-center align-top">1</td>
+                            <td rowspan="2" class="align-top">201001016789</td>
+                            <td rowspan="2" class="align-top">Bilik Mesyuarat Utama, Aras 5, Blok Pentadbiran</td>
+                            <td>940306089037</td>
+                            <td>SULAIMAN BIN JAMAL</td>
+                            <td class="text-center"><input type="checkbox"></td>
+                            <td rowspan="2" class="text-center align-top">
+                                <div class="d-flex gap-1 justify-content-center">
+                                    <button type="button" class="btn btn-sm btn-outline-primary btn-edit-row">Kemaskini</button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger btn-delete-row">Hapus</button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr data-item-group="1">
+                            <td>920306089037</td>
+                            <td>AHMAD BIN JAMAL</td>
+                            <td class="text-center"><input type="checkbox"></td>
                         </tr>
                     </tbody>
                 </table>
@@ -428,12 +444,12 @@
             let html = `
                 <tr data-item-group="${itemIndex}" class="group-first">
                     <td rowspan="${rowspan}" class="text-center align-top">${itemIndex}</td>
-                    <td rowspan="${rowspan}" class="text-center align-top">${first.roc}</td>
-                    <td class="text-center">-</td>
-                    <td class="text-center">${first.ic}</td>
-                    <td class="text-center">${first.nama}</td>
+                    <td rowspan="${rowspan}" class="align-top">${first.roc}</td>
+                    <td>-</td>
+                    <td>${first.ic}</td>
+                    <td>${first.nama}</td>
                     <td class="text-center"><input type="checkbox"></td>
-                    <td rowspan="${rowspan}" class="text-center align-top">
+                    <td rowspan="${rowspan}" class="align-top">
                         <div class="d-flex gap-1 justify-content-center">
                             <button type="button" class="btn btn-sm btn-outline-primary btn-edit-row">Kemaskini</button>
                             <button type="button" class="btn btn-sm btn-outline-danger btn-delete-row">Hapus</button>
