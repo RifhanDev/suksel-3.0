@@ -232,11 +232,11 @@
             <div class="row g-2 align-items-end mb-4">
                 <div class="col-6 col-lg-6">
                     <label for="pemilihan_berdasarkan" class="form-label small fw-bold text-secondary text-uppercase mb-1">Pemilihan Berdasarkan</label>
-                    <input type="text" id="pemilihan_berdasarkan" class="form-control form-control-sm">
+                    <input type="text" id="pemilihan_berdasarkan" class="form-control form-control-sm bg-light" value="Item" readonly>
                 </div>
                 <div class="col-6 col-lg-6">
                     <label for="kaedah_memuktamadkan_pembekal" class="form-label small fw-bold text-secondary text-uppercase mb-1">Kaedah Memuktamadkan Pembekal</label>
-                    <input type="text" id="kaedah_memuktamadkan_pembekal" class="form-control form-control-sm">
+                    <input type="text" id="kaedah_memuktamadkan_pembekal" class="form-control form-control-sm bg-light" value="Pemilihan Terus" readonly>
                 </div>
             </div>
 

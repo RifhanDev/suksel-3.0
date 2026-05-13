@@ -194,11 +194,11 @@
             <div class="row g-2 align-items-end mb-4">
                 <div class="col-6 col-lg-6">
                     <label for="pemilihan_berdasarkan" class="form-label small fw-bold text-secondary text-uppercase mb-1">Pemilihan Berdasarkan</label>
-                    <input type="text" id="pemilihan_berdasarkan" class="form-control form-control-sm">
+                    <input type="text" id="pemilihan_berdasarkan" class="form-control form-control-sm bg-light" value="Item" readonly>
                 </div>
                 <div class="col-6 col-lg-6">
                     <label for="kaedah_memuktamadkan_pembekal" class="form-label small fw-bold text-secondary text-uppercase mb-1">Kaedah Memuktamadkan Pembekal</label>
-                    <input type="text" id="kaedah_memuktamadkan_pembekal" class="form-control form-control-sm">
+                    <input type="text" id="kaedah_memuktamadkan_pembekal" class="form-control form-control-sm bg-light" value="Pemilihan Terus" readonly>
                 </div>
             </div>
 
@@ -213,8 +213,15 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr id="dt-pembekal-no-data">
-                            <td colspan="3" class="text-center text-muted py-4 small">Tiada Data</td>
+                        <tr>
+                            <td class="text-center fw-medium">OPHL Holding Sdn Bhd</td>
+                            <td class="text-center">
+                                <select class="form-select form-select-sm shadow-none w-auto mx-auto">
+                                    <option value="Ya" selected>Ya</option>
+                                    <option value="Tidak">Tidak</option>
+                                </select>
+                            </td>
+                            <td class="text-center"></td>
                         </tr>
                     </tbody>
                 </table>
@@ -261,11 +268,16 @@
 
             <div class="row g-2 align-items-end mb-4">
                 <div class="col-5 col-lg-5">
-                    <label for="faktor_rundingan" class="form-label small fw-bold text-secondary text-uppercase mb-1">Pemilihan Berdasarkan</label>
-                    <input type="text" id="faktor_rundingan" class="form-control form-control-sm">
+                    <label for="faktor_rundingan" class="form-label small fw-bold text-secondary text-uppercase mb-1">Faktor Rundingan</label>
+                    <select id="faktor_rundingan" class="form-select form-select-sm shadow-none">
+                        <option value="">Pilih Faktor</option>
+                        <option value="Masa">Masa</option>
+                        <option value="Spesifikasi">Spesifikasi</option>
+                        <option value="Harga">Harga</option>
+                    </select>
                 </div>
                 <div class="col-5 col-lg-5">
-                    <label for="catatan" class="form-label small fw-bold text-secondary text-uppercase mb-1">Kaedah Memuktamadkan Pembekal</label>
+                    <label for="catatan" class="form-label small fw-bold text-secondary text-uppercase mb-1">Catatan</label>
                     <input type="text" id="catatan" class="form-control form-control-sm">
                 </div>
                 <div class="col-2 col-lg-2">
