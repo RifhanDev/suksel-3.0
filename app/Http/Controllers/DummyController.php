@@ -51,6 +51,23 @@ class DummyController extends Controller
     }
 
     /**
+     * Show penyediaan iklan page
+     */
+    public function penyediaanIklan()
+    {
+        return view('newModule.penyediaanIklan.penyediaan_iklan');
+    }
+
+    /**
+     * Store penyediaan iklan (3 steps)
+     */
+    public function storePenyediaanIklan(Request $request)
+    {
+        // dd($request->all());
+        return back();
+    }
+
+    /**
      * Example: decide page by STATUS (future-proof)
      */
     public function viewByStatus($status)
