@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\RefState;
 
 class DummyController extends Controller
 {
@@ -55,7 +56,8 @@ class DummyController extends Controller
      */
     public function penyediaanIklan()
     {
-        return view('newModule.penyediaanIklan.penyediaan_iklan');
+        $country_states = RefState::where('display_status', 1)->get();
+        return view('newModule.penyediaanIklan.penyediaan_iklan', compact('country_states'));
     }
 
     /**
