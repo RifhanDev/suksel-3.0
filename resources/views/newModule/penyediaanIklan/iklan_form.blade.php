@@ -118,7 +118,22 @@
     .kebenaran-check-card .kc-label { font-size: 0.85rem; font-weight: 600; color: #1e293b; }
     .kebenaran-check-card .kc-desc  { font-size: 0.75rem; color: #64748b; margin-top: 2px; }
 
-    /* ── Selectize dropdown inside modal z-index fix ── */
+    /* ── Syarat Khas radio cards ── */
+    .sk-radio-card { cursor: pointer; transition: border-color 0.15s, background 0.15s; }
+    .sk-radio-card:has(input:checked) { border-color: var(--sg-red, #c41e3a) !important; background: #fef2f2; }
+    .sk-radio-card input[type=radio] { width: 16px; height: 16px; accent-color: var(--sg-red,#c41e3a); flex-shrink: 0; cursor: pointer; }
+    .sk-radio-card .sk-radio-label { font-size: 0.85rem; font-weight: 500; color: #1e293b; line-height: 1.4; }
+    .sk-section-label { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: #94a3b8; margin-bottom: 10px; }
+    .sk-check-row { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border: 1px solid #e2e8f0; border-radius: 8px; background: #fff; transition: border-color 0.15s; cursor: pointer; }
+    .sk-check-row:has(input:checked) { border-color: var(--sg-red,#c41e3a); background: #fef2f2; }
+    .sk-check-row input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--sg-red,#c41e3a); flex-shrink: 0; margin-top: 2px; cursor: pointer; }
+    .sk-check-row .sk-check-label { font-size: 0.85rem; font-weight: 500; color: #1e293b; }
+    .sk-daerah-label { font-size: 0.75rem; font-weight: 600; color: #475569; margin: 14px 0 8px; }
+    .sk-atau-divider { display: flex; align-items: center; gap: 10px; margin: 8px 0; }
+    .sk-atau-divider::before, .sk-atau-divider::after { content: ''; flex: 1; height: 1px; background: #e2e8f0; }
+    .sk-atau-divider span { font-size: 0.68rem; font-weight: 700; color: #94a3b8; letter-spacing: 0.5px; }
+
+    /* ── Selectize dropdown inside modal z-index ── */
     .selectize-dropdown { z-index: 9999 !important; }
 
     /* ── Clickable perihal cell ── */
@@ -164,7 +179,7 @@
             </div>
             <div class="iklan-step-item" id="iklanStep2Indicator">
                 <div class="iklan-step-counter"><span>2</span></div>
-                <div class="iklan-step-name">Langkah 2</div>
+                <div class="iklan-step-name">Syarat Tender</div>
             </div>
             <div class="iklan-step-item" id="iklanStep3Indicator">
                 <div class="iklan-step-counter"><span>3</span></div>
@@ -307,41 +322,93 @@
             <span>Syarat Khas</span>
         </div>
         <div class="p-4">
-            <div class="row g-3">
-                <div class="col-md-6">
+            <div class="row g-4">
+
+                {{-- Part 1: Skop Syarikat --}}
+                <div class="col-lg-8">
+                    <div class="sk-section-label">Skop Syarikat</div>
+
                     <div class="d-flex flex-column gap-2">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="syarat_khas[]" value="selangor_sahaja" id="sk_selangor">
-                            <label class="form-check-label" for="sk_selangor">Syarikat Selangor Sahaja</label>
+                        <label class="sk-radio-card d-flex align-items-center gap-3 px-3 py-2 border rounded-2">
+                            <input type="radio" name="only_selangor" id="only_selangor1" value="1">
+                            <span class="sk-radio-label">Syarikat Selangor Sahaja</span>
+                        </label>
+                        <label class="sk-radio-card d-flex align-items-center gap-3 px-3 py-2 border rounded-2">
+                            <input type="radio" name="only_selangor" id="only_selangor2" value="2">
+                            <span class="sk-radio-label">Syarikat Selangor Dan Lain-lain Negeri</span>
+                        </label>
+                        <label class="sk-radio-card d-flex align-items-center gap-3 px-3 py-2 border rounded-2">
+                            <input type="radio" name="only_selangor" id="only_selangor3" value="3">
+                            <span class="sk-radio-label">Seluruh Malaysia</span>
+                        </label>
+                    </div>
+
+                    {{-- Daerah / Negeri (hidden when Seluruh Malaysia) --}}
+                    <div id="main_district_div" style="display:none;">
+                        <div class="sk-daerah-label">Syarikat Daerah / Negeri</div>
+
+                        <div id="skDaerahRows">
+                            <div id="custom-label" style="display:none;"></div>
+                            <div class="d-flex align-items-center gap-2">
+                                <div id="district_id_div" class="flex-grow-1">
+                                    <select class="form-select form-select-sm district_select" id="district_id_new" name="district_id_new[]">
+                                        <option value="" disabled selected>— Pilihan Daerah —</option>
+                                        @foreach (App\Vendor::$districts as $districtId => $districtName)
+                                            @if ($districtId != 0)
+                                                <option value="{{ $districtId }}">{{ $districtName }}</option>
+                                            @endif
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div id="state_id_div" style="display:none; min-width:180px;">
+                                    <select class="form-select form-select-sm" id="state_id_new" name="state_id_new[]">
+                                        <option value="">— Pilihan Negeri —</option>
+                                        @foreach ($country_states as $state)
+                                            <option value="{{ $state->id }}">{{ $state->description }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
                         </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="syarat_khas[]" value="bumiputera_sahaja" id="sk_bumi">
-                            <label class="form-check-label" for="sk_bumi">Bumiputera Sahaja</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="syarat_khas[]" value="selangor_lain_negeri" id="sk_sel_lain">
-                            <label class="form-check-label" for="sk_sel_lain">Syarikat Selangor Dan Lain-lain Negeri</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="syarat_khas[]" value="tender_terhad" id="sk_terhad">
-                            <label class="form-check-label" for="sk_terhad">Tender Terhad</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="syarat_khas[]" value="seluruh_malaysia" id="sk_malaysia">
-                            <label class="form-check-label" for="sk_malaysia">Seluruh Malaysia</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="syarat_khas[]" value="iklan_sahaja" id="sk_iklan">
-                            <label class="form-check-label" for="sk_iklan">Iklan Sahaja</label>
-                        </div>
+
+                        <button type="button" class="btn btn-sm btn-success mt-3" id="btnTambahDaerah">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            Tambah
+                        </button>
                     </div>
                 </div>
-                <div class="col-md-6">
-                    <label class="form-label fw-semibold">Syarikat Daerah/Negeri</label>
-                    <select class="form-select" name="syarikat_daerah_negeri">
-                        <option value="">— Pilih —</option>
-                    </select>
+
+                {{-- Part 2: Syarat Tambahan --}}
+                <div class="col-lg-4">
+                    <div class="sk-section-label">Syarat Tambahan</div>
+
+                    <div class="d-flex flex-column gap-2">
+                        <label class="sk-check-row">
+                            <input type="checkbox" name="only_bumiputera" id="sk_bumi" value="1">
+                            <span class="sk-check-label">Bumiputera Sahaja</span>
+                        </label>
+                        <label class="sk-check-row">
+                            <input type="checkbox" name="invitation" id="sk_terhad" value="1">
+                            <span class="sk-check-label">Tender Terhad</span>
+                        </label>
+                        <label class="sk-check-row">
+                            <input type="checkbox" name="only_advertise" id="sk_iklan" value="1">
+                            <span class="sk-check-label">Iklan Sahaja</span>
+                        </label>
+                    </div>
+
+                    <div class="d-flex align-items-start gap-2 mt-3 p-3 rounded-2" style="font-size:0.76rem; color:#0369a1; line-height:1.5; background:#eff6ff; border:1px solid #bae6fd;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0ea5e9" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0; margin-top:1px;">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="8" x2="12" y2="12"></line>
+                            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                        </svg>
+                        <span>Sila tandakan <strong>Iklan Sahaja</strong> sekiranya penjualan dibuat secara manual.</span>
+                    </div>
                 </div>
+
             </div>
         </div>
 
@@ -632,6 +699,7 @@ $(document).ready(function () {
                         ],
                         removeButtons: 'Flash,Iframe,Form,TextField,Checkbox,Radio,Textarea,Select,Button,ImageButton,HiddenField,Subscript,Superscript',
                         height: 250,
+                        contentsCss: [CKEDITOR.getUrl('contents.css'), 'html { overflow-y: hidden; }'],
                     });
                 } catch (e) {
                     console.warn('CKEditor init error:', e);
@@ -855,6 +923,106 @@ $(document).ready(function () {
         });
         $('#chkSelectAllTaklimat').prop('checked', false);
         syncHapusTaklimat();
+    });
+
+    /* ════════════════════════════════════════════
+       STEP 2 — SYARAT KHAS
+    ════════════════════════════════════════════ */
+
+    var skBaseDaerahOpts = '<option value="" disabled selected>— Pilihan Daerah —</option>';
+    @foreach (App\Vendor::$districts as $districtId => $districtName)
+        @if ($districtId != 0)
+        skBaseDaerahOpts += '<option value="{{ $districtId }}">{{ $districtName }}</option>';
+        @endif
+    @endforeach
+
+    var skNegeriOpts = '<option value="">— Pilihan Negeri —</option>';
+    @foreach ($country_states as $state)
+    skNegeriOpts += '<option value="{{ $state->id }}">{{ $state->description }}</option>';
+    @endforeach
+
+    var skRowCounter = 1; /* first row is idx "", new rows get "2", "3", ... */
+
+    /* ── District select change ── */
+    $(document).on('change', '.district_select', function () {
+        var select_id = this.id;
+        var val       = this.value;
+        var unique_idx = select_id.replace('district_id_new', '');
+
+        if (val == '0') {
+            /* Luar Negeri Selangor — show state select */
+            $('#district_id_div' + unique_idx).css('flex', '0 0 auto').css('min-width', '48%');
+            $('#state_id_div'    + unique_idx).show();
+            $('#state_id_new'    + unique_idx).show();
+        } else {
+            /* Any Selangor district — hide state select */
+            $('#district_id_div' + unique_idx).css('flex', '1').css('min-width', '');
+            $('#state_id_div'    + unique_idx).hide();
+            $('#state_id_new'    + unique_idx).hide().val('');
+        }
+    });
+
+    /* ── Radio change ── */
+    $('[name="only_selangor"]').on('change', function () {
+        var val = $(this).val();
+
+        if (val == '2') {
+            /* Syarikat Selangor Dan Lain-lain Negeri */
+            $('#main_district_div').show();
+            $('[name="district_id_new[]"]').find('option[value="0"]').remove();
+            $('[name="district_id_new[]"]').append('<option value="0">Luar Negeri Selangor</option>');
+
+        } else if (val == '1') {
+            /* Syarikat Selangor Sahaja */
+            $('#main_district_div').show();
+            $('[name="district_id_new[]"]').find('option[value="0"]').remove();
+            /* Hide all negeri selects */
+            $('[id^="state_id_div"]').hide();
+            $('[id^="state_id_new"]').hide().val('');
+            /* Reset district divs to full width */
+            $('[id^="district_id_div"]').css('flex', '1').css('min-width', '');
+
+        } else if (val == '3') {
+            /* Seluruh Malaysia */
+            $('#main_district_div').hide();
+        }
+    });
+
+    /* ── Tambah daerah row ── */
+    $('#btnTambahDaerah').on('click', function () {
+        skRowCounter++;
+        var idx = skRowCounter;
+        var isLainNegeri = $('[name="only_selangor"]:checked').val() == '2';
+        var luarOpt = isLainNegeri ? '<option value="0">Luar Negeri Selangor</option>' : '';
+
+        var row = [
+            '<div class="sk-atau-divider my-2"><span>ATAU</span></div>',
+            '<div class="d-flex align-items-center gap-2 mb-2">',
+                '<div id="district_id_div' + idx + '" class="flex-grow-1">',
+                    '<select class="form-select form-select-sm district_select" id="district_id_new' + idx + '" name="district_id_new[]">',
+                        skBaseDaerahOpts + luarOpt,
+                    '</select>',
+                '</div>',
+                '<div id="state_id_div' + idx + '" style="display:none;min-width:180px;">',
+                    '<select class="form-select form-select-sm" id="state_id_new' + idx + '" name="state_id_new[]">',
+                        skNegeriOpts,
+                    '</select>',
+                '</div>',
+                '<button type="button" class="btn btn-sm btn-outline-danger btn-remove-sk flex-shrink-0">',
+                    '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">',
+                        '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
+                    '</svg>',
+                '</button>',
+            '</div>'
+        ].join('');
+        $('#skDaerahRows').append(row);
+    });
+
+    /* ── Remove daerah row ── */
+    $(document).on('click', '.btn-remove-sk', function () {
+        var $row = $(this).closest('.d-flex');
+        $row.prev('.sk-atau-divider').remove();
+        $row.remove();
     });
 
     /* ── Dokumen Sokongan Terawal: FileUpload zone (init when step 2 shown) ── */
