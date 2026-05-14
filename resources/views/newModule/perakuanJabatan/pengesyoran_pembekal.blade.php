@@ -65,7 +65,8 @@
 		<div class="alert d-none py-2 px-3 mb-3" id="ppAlert" role="alert"></div>
 
 		<div class="pp-section-bar rounded-top">SENARAI ITEM</div>
-		<div class="border border-top-0 border-secondary-subtle p-3 rounded-bottom mb-4" style="border-color:#dde2ea!important;">
+		<div class="border border-top-0 border-secondary-subtle p-3 rounded-bottom mb-4"
+			style="border-color:#dde2ea!important;">
 			<p class="pp-hint text-primary mb-2 mb-md-3">Sila klik pada item untuk melihat senarai pembekal</p>
 			<div class="table-responsive pp-table-wrap">
 				<table class="table table-bordered align-middle mb-0 pp-item-table">
@@ -96,7 +97,8 @@
 		</div>
 
 		<div class="pp-section-bar rounded-top">SENARAI PEMBEKAL</div>
-		<div class="border border-top-0 border-secondary-subtle p-3 rounded-bottom mb-4" style="border-color:#dde2ea!important;">
+		<div class="border border-top-0 border-secondary-subtle p-3 rounded-bottom mb-4"
+			style="border-color:#dde2ea!important;">
 			<p class="text-muted small mb-3">Paparan senarai pembekal akan disambungkan dalam kemaskini akan datang.</p>
 			<div class="table-responsive pp-table-wrap">
 				<table class="table table-bordered align-middle mb-0 text-center">
@@ -115,7 +117,7 @@
 						<tr>
 							<th>Teknikal</th>
 							<th>Kewangan</th>
-							<th>Tindakan Disiplin Diambil</th>
+							<th>Prestasi Pembekal</th>
 							<th>Lembaga Pengarah</th>
 						</tr>
 					</thead>
@@ -129,8 +131,7 @@
 		</div>
 
 		<div class="pp-section-bar rounded-top">CATATAN</div>
-		<textarea class="form-control pp-textarea-catatan mb-4" id="ppCatatan" name="catatan" rows="4"
-			placeholder="">{{ old('catatan', $pengesyoranPembekal->catatan) }}</textarea>
+		<textarea class="form-control pp-textarea-catatan mb-4" id="ppCatatan" name="catatan" rows="4" placeholder="">{{ old('catatan', $pengesyoranPembekal->catatan) }}</textarea>
 
 		<div class="form-check mb-3">
 			<input class="form-check-input" type="checkbox" name="sahkan_petender_layak" id="ppPengakuan" value="1"

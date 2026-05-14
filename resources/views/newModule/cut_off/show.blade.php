@@ -203,7 +203,6 @@
                 </div>
             </div>
             <div class="col-lg-4 mt-3 mt-lg-0">
-                <!-- <div class="section-title-cutoff">Frequency Distribution</div> -->
                 <div class="table-responsive mt-5">
                     <table class="table table-bordered table-sm mb-0 cutoff-freq-table cutoff-table">
                         <thead>
@@ -457,15 +456,22 @@
             return parseInt(n, 10);
         });
         new Chart(el.getContext('2d'), {
-            type: 'bar',
+            type: 'line',
             data: {
                 labels: labels,
                 datasets: [{
                     label: 'Frequency',
                     data: freq,
-                    backgroundColor: 'rgba(31, 58, 138, 0.75)',
                     borderColor: 'rgb(31, 58, 138)',
-                    borderWidth: 1
+                    backgroundColor: 'rgba(31, 58, 138, 0.12)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.25,
+                    pointBackgroundColor: 'rgb(31, 58, 138)',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                    pointRadius: 4,
+                    pointHoverRadius: 6
                 }]
             },
             options: {

@@ -32,20 +32,40 @@
                         <button type="button" id="btnMainMenilai" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalPenilaianSpesifikasiTeknikal">Menilai</button>
                     </td>
                 </tr>
-                <tr>
+                <tr data-mekanisma="Petender Muat Naik">
                     <td>Surat Pengesahan Prinsipal yang lengkap ditandatangani</td>
                     <td>Petender Muat Naik</td>
                     <td>Selesai</td>
                     <td class="text-center">
-                        <button type="button" class="btn btn-success">Papar</button>
+                        <button type="button"
+                            class="btn btn-success btn-petender-muat-naik"
+                            data-bs-toggle="modal"
+                            data-bs-target="#modalPenilaianMuatNaikTeknikal"
+                            data-tajuk="Surat Pengesahan Prinsipal yang lengkap ditandatangani"
+                            data-skema="Skema Pemarkahan Senarai Semakan Teknikal Digital Forensik.docx"
+                            data-doc-pembekal-1="Surat Pengesahan Prinsipal — Pembekal 1.pdf"
+                            data-doc-pembekal-2="Surat Pengesahan Prinsipal — Pembekal 2.pdf"
+                            data-doc-url="https://ontheline.trincoll.edu/images/bookdown/sample-local-pdf.pdf">
+                            Menilai
+                        </button>
                     </td>
                 </tr>
-                <tr>
+                <tr data-mekanisma="Petender Muat Naik">
                     <td>Senarai Kakitangan Teknikal dan Carta Organisasi Pasukan Projek</td>
                     <td>Petender Muat Naik</td>
                     <td>Selesai</td>
                     <td class="text-center">
-                        <button type="button" class="btn btn-success">Papar</button>
+                        <button type="button"
+                            class="btn btn-success btn-petender-muat-naik"
+                            data-bs-toggle="modal"
+                            data-bs-target="#modalPenilaianMuatNaikTeknikal"
+                            data-tajuk="Senarai Kakitangan Teknikal dan Carta Organisasi Pasukan Projek"
+                            data-skema="Skema Pemarkahan Senarai Semakan Teknikal Digital Forensik.docx"
+                            data-doc-pembekal-1="Senarai Kakitangan dan Carta Organisasi — Pembekal 1.pdf"
+                            data-doc-pembekal-2="Senarai Kakitangan dan Carta Organisasi — Pembekal 2.pdf"
+                            data-doc-url="https://ontheline.trincoll.edu/images/bookdown/sample-local-pdf.pdf">
+                            Menilai
+                        </button>
                     </td>
                 </tr>
             </tbody>
@@ -302,6 +322,47 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    let muatNaikModalTrigger = null;
+
+    const modalMuatNaik = document.getElementById('modalPenilaianMuatNaikTeknikal');
+    if (modalMuatNaik) {
+        modalMuatNaik.addEventListener('show.bs.modal', function(ev) {
+            const btn = ev.relatedTarget;
+            if (!btn || !btn.classList.contains('btn-petender-muat-naik')) return;
+            muatNaikModalTrigger = btn;
+            const tajuk = btn.getAttribute('data-tajuk') || '';
+            const skema = btn.getAttribute('data-skema') || '';
+            const docUrl = btn.getAttribute('data-doc-url') || 'https://ontheline.trincoll.edu/images/bookdown/sample-local-pdf.pdf';
+            const docUrl1 = btn.getAttribute('data-doc-url-pembekal-1') || docUrl;
+            const docUrl2 = btn.getAttribute('data-doc-url-pembekal-2') || docUrl;
+            const d1 = btn.getAttribute('data-doc-pembekal-1') || '';
+            const d2 = btn.getAttribute('data-doc-pembekal-2') || '';
+
+            const elTajuk = document.getElementById('muatNaikModalTajuk');
+            const elSkema = document.getElementById('muatNaikModalSkema');
+            if (elTajuk) elTajuk.textContent = tajuk;
+            if (elSkema) elSkema.textContent = skema;
+
+            const slots = modalMuatNaik.querySelectorAll('.muat-naik-supplier-doc');
+            if (slots[0]) slots[0].textContent = d1;
+            if (slots[1]) slots[1].textContent = d2;
+
+            const docLinks = modalMuatNaik.querySelectorAll('a.muat-naik-doc-link');
+            if (docLinks[0]) docLinks[0].setAttribute('href', docUrl1);
+            if (docLinks[1]) docLinks[1].setAttribute('href', docUrl2);
+        });
+    }
+
+    const btnSimpanMuatNaik = document.getElementById('btnSimpanPenilaianMuatNaikTeknikal');
+    if (btnSimpanMuatNaik) {
+        btnSimpanMuatNaik.addEventListener('click', function() {
+            if (muatNaikModalTrigger) {
+                muatNaikModalTrigger.textContent = 'Papar';
+                muatNaikModalTrigger = null;
+            }
+        });
+    }
+
     document.querySelectorAll('#penilaian .btn-sebelumnya').forEach(function(btn) {
         btn.addEventListener('click', function() {
             const tab = document.querySelector('#pematuhan-tab');

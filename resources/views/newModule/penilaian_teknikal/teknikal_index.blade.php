@@ -91,68 +91,41 @@
         <h4 class="fw-bold mb-4 pb-2 border-bottom" style="color: var(--sg-red-dark);">SENARAI TENDER</h4>
 
         {{-- Filter/Search Section --}}
-        <div class="d-flex flex-column flex-md-row gap-3 align-items-end mb-4 flex-wrap">
-            <div class="w-100 flex-md-fill" style="min-width: 180px;">
+        <div class="row g-3 align-items-end mb-4">
+
+            <!-- No Tender -->
+            <div class="col-12 col-md">
                 <label class="form-label fw-bold">No. Tender</label>
-                <div class="input-group">
-                    <span class="input-group-text bg-white border-end-0">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="11" cy="11" r="8"></circle>
-                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                        </svg>
-                    </span>
-                    <input type="text" class="form-control border-start-0" id="searchTenderNo" placeholder="Q No. Tender">
-                </div>
+                <input type="text" class="form-control" id="searchTenderNo" placeholder="Cari No. Tender">
             </div>
 
-            <div class="w-100 flex-md-fill" style="min-width: 180px;">
+            <!-- Tajuk -->
+            <div class="col-12 col-md">
                 <label class="form-label fw-bold">Tajuk Perolehan</label>
-                <div class="input-group">
-                    <span class="input-group-text bg-white border-end-0">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="11" cy="11" r="8"></circle>
-                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                        </svg>
-                    </span>
-                    <input type="text" class="form-control border-start-0" id="searchTajuk" placeholder="Q Tajuk Perolehan">
-                </div>
+                <input type="text" class="form-control" id="searchTajuk" placeholder="Cari Tajuk">
             </div>
 
-            <div class="w-100 flex-md-fill" style="min-width: 180px;">
+            <!-- Status -->
+            <div class="col-12 col-md">
                 <label class="form-label fw-bold">Status</label>
-                <div class="input-group">
-                    <span class="input-group-text bg-white border-end-0">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="11" cy="11" r="8"></circle>
-                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                        </svg>
-                    </span>
-                    <select class="form-select border-start-0" id="searchStatus">
-                        <option value="">Q Status</option>
-                        <option value="Dalam Proses">Dalam Proses</option>
-                        <option value="Selesai">Selesai</option>
-                    </select>
-                </div>
+                <select class="form-select" id="searchStatus">
+                    <option value="">Semua Status</option>
+                    <option value="Dalam Proses">Dalam Proses</option>
+                    <option value="Selesai">Selesai</option>
+                </select>
             </div>
 
-            <div class="w-100 flex-md-fill" style="min-width: 180px;">
+            <!-- Tarikh -->
+            <div class="col-12 col-md">
                 <label class="form-label fw-bold">Tarikh</label>
-                <div class="input-group">
-                    <span class="input-group-text bg-white border-end-0" style="background: var(--sg-bg); border-color: var(--topbar-border, #e5e7eb);">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                            <line x1="16" y1="2" x2="16" y2="6"></line>
-                            <line x1="8" y1="2" x2="8" y2="6"></line>
-                            <line x1="3" y1="10" x2="21" y2="10"></line>
-                        </svg>
-                    </span>
-                    <input type="date" class="form-control border-start-0" id="searchTarikh" placeholder="Q Tarikh">
-                </div>
+                <input type="date" class="form-control" id="searchTarikh">
             </div>
 
-            <div class="d-flex align-items-end w-100 w-md-auto">
-                <button type="button" class="btn btn-tapis w-100 w-md-auto px-4">Tapis</button>
+            <!-- Button -->
+            <div class="col-12 col-md-auto">
+                <button type="button" class="btn btn-tapis w-100 px-4">Tapis</button>
             </div>
+
         </div>
 
         {{-- Tender Table --}}
@@ -174,9 +147,9 @@
                             <td><span class="text-muted small">3/3/2024</span></td>
                             <td></td>
                         </tr>
-                        <tr class="teknikal-row-link" data-href="{{ route('penilaianTeknikal.show', 'QT210000000023740') }}">
-                            <td><a href="{{ route('penilaianTeknikal.show', 'QT210000000023740') }}" class="text-decoration-none"><span class="tender-number">QT210000000023740</span></a></td>
-                            <td><span class="fw-medium">TAJUK PEROLEHAN 1</span></td>
+                        <tr class="teknikal-row-link" data-href="{{ route('penilaianTeknikalKerja.show', 'QT210000000023740') }}">
+                            <td><a href="{{ route('penilaianTeknikalKerja.show', 'QT210000000023740') }}" class="text-decoration-none"><span class="tender-number">QT210000000023740</span></a></td>
+                            <td><span class="fw-medium">PROJEK MENAIKTARAF JALAN PELABUHAN UTARA DARI KLANG CONTAINER TERMINAL (Kerja)</span></td>
                             <td><span class="text-muted small">2/2/2024</span></td>
                             <td></td>
                         </tr>
@@ -189,13 +162,13 @@
 </div>
 
 <script>
-document.querySelectorAll('.teknikal-row-link').forEach(function(row) {
-    row.addEventListener('click', function(e) {
-        if (e.target.closest('a')) return;
-        var href = this.getAttribute('data-href');
-        if (href) window.location = href;
+    document.querySelectorAll('.teknikal-row-link').forEach(function(row) {
+        row.addEventListener('click', function(e) {
+            if (e.target.closest('a')) return;
+            var href = this.getAttribute('data-href');
+            if (href) window.location = href;
+        });
     });
-});
 </script>
 
 @endsection

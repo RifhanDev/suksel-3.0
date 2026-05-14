@@ -361,6 +361,7 @@ class JawatankuasaPerolehanController extends Controller
                 ->update([
                     'status_process_id' => 4,
                     'is_ebidding' => $isEbidding,
+                    'ebidding_process_stage_id' => $isEbidding ? 1 : null,
                 ]);
         });
 
@@ -445,15 +446,12 @@ class JawatankuasaPerolehanController extends Controller
                 'Bidaan',
             ],
             'pemilihan_berdasarkan' => [
-                'Harga Tawaran Terendah',
-                'Skor Keseluruhan Tertinggi',
-                'Gabungan Teknikal dan Kewangan',
-                'Penilaian Teknikal Sahaja',
+                '1 item',
+                'Pakej',
             ],
             'loi_loa_disediakan_oleh' => [
-                'Urusetia Perolehan',
-                'PTJ',
-                'Unit Teknikal',
+                'Urusetia atau Setiausaha Sebut Harga',
+                'Lembaga Perolehan',
             ],
             'keputusan_urusetia' => [
                 'Disyorkan',

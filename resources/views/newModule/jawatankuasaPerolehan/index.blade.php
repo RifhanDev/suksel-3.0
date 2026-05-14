@@ -37,14 +37,14 @@
 			margin-top: 2px;
 		}
 
-		.jp-kuiti-wrap {
+		.jp-kuiri-wrap {
 			display: flex;
 			flex-direction: column;
 			align-items: center;
 			gap: 8px;
 		}
 
-		.jp-kuiti-input {
+		.jp-kuiri-input {
 			width: 100%;
 			max-width: 130px;
 			height: 34px;
@@ -53,7 +53,7 @@
 			background: #fff;
 		}
 
-		.jp-kuiti-btn {
+		.jp-kuiri-btn {
 			height: 22px;
 			line-height: 1;
 			padding: 0 14px;
@@ -167,15 +167,15 @@
 				return {
 					id: row.id || '',
 					uuid: row.uuid || '',
-					no_tender: row.no_tender || '-',
+					no_tender: '<a href="' + formUrl + '?tender=' + encodeURIComponent(row.id || '') + '">' + (row.no_tender || '-') + '</a>',
 					tajuk: row.tajuk || '-',
 					tarikh_serahan: row.tarikh_serahan || '-',
 					tempoh_sah_laku: row.tempoh_sah_laku || '-',
 					status: statusText,
-					tindakan: '<div class="jp-kuiti-wrap"><input type="text" class="jp-kuiti-input" /><a href="' +
+					tindakan: '<div class="jp-kuiri-wrap"><input type="text" class="jp-kuiri-input" /><a href="' +
 						formUrl +
 						'?tender=' + encodeURIComponent(row.id || '') +
-						'" class="jp-kuiti-btn d-inline-flex align-items-center justify-content-center">Kuiti</a></div>'
+						'" class="jp-kuiri-btn d-inline-flex align-items-center justify-content-center">Kuiri</a></div>'
 				};
 			});
 

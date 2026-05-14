@@ -136,7 +136,8 @@
 							groups: ['about']
 						}
 					],
-					removeButtons: 'Flash,Iframe,Form,TextField,Checkbox,Radio,Textarea,Select,Button,ImageButton,HiddenField'
+					removeButtons: 'Flash,Iframe,Form,TextField,Checkbox,Radio,Textarea,Select,Button,ImageButton,HiddenField',
+					contentsCss: [CKEDITOR.getUrl('contents.css'), 'html { overflow-y: hidden; }'],
 				});
 			}
 		});
