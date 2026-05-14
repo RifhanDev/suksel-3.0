@@ -225,7 +225,7 @@ Route::get('/penyediaan-iklan', [DummyController::class, 'penyediaanIklan'])->na
 Route::post('/penyediaan-iklan/simpan', [DummyController::class, 'storePenyediaanIklan'])->name('penyediaanIklan.store');
 
 Route::get('/pelantikan-jawatankuasa', [JawatankuasaController::class, 'create'])->middleware(['auth'])->name('pelantikanJawatankuasa');
-Route::view('/pelantikan-jawatankuasa-1-peringkat', 'tenders.pelantikan_jawatankuasa_1_peringkat')->middleware(['auth'])->name('pelantikanJawatankuasaSatuPeringkat');
+Route::get('/pelantikan-jawatankuasa-1-peringkat', [JawatankuasaController::class, 'createSatuPeringkat'])->middleware(['auth'])->name('pelantikanJawatankuasaSatuPeringkat');
 Route::get('/pelantikan-jawatankuasa/laporan', [JawatankuasaController::class, 'laporan'])->middleware(['auth'])->name('jawatankuasa.laporan');
 Route::post('/pelantikan-jawatankuasa/hantar-pemakluman', [JawatankuasaController::class, 'hantarPemakluman'])->middleware(['auth'])->name('jawatankuasa.hantarPemakluman');
 Route::view('/senarai-semak', 'newModule.jawatankuasaSpesifikasi.index')->name('senaraiSemak');

@@ -682,13 +682,9 @@ class TendersController extends Controller
 			$specificationUrl = route('penyediaanSpekTender') . $tenderQuery;
 			$financialUrl     = route('senaraiKewanganKerja') . $tenderQuery;
 
-			$kewangan = $checklistDone
-				? '<a href="' . e($financialUrl) . '" class="btn btn-sm btn-success">Kewangan</a>'
-				: '';
-
 			return '<div class="d-flex gap-1 justify-content-center">'
 				. '<a href="' . e($specificationUrl) . '" class="btn btn-sm btn-info text-white">Spesifikasi</a>'
-				. $kewangan
+				. '<a href="' . e($financialUrl) . '" class="btn btn-sm btn-success">Kewangan</a>'
 				. '</div>';
 		}
 
