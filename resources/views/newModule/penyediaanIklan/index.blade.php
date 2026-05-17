@@ -103,6 +103,17 @@
                         Penyediaan Iklan
                     </a>
 
+                    <a class="nav-link" id="tab-pegawai-btn" data-bs-toggle="pill"
+                        href="#tab-pegawai" role="tab" aria-controls="tab-pegawai" aria-selected="false">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                        </svg>
+                        Pegawai Bertanggungjawab
+                    </a>
+
                     <a class="nav-link" id="tab-dokumen-btn" data-bs-toggle="pill"
                         href="#tab-dokumen" role="tab" aria-controls="tab-dokumen" aria-selected="false">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -122,22 +133,27 @@
 
                 {{-- ══ TAB 1: MAKLUMAT TENDER ══ --}}
                 <div class="tab-pane fade show active" id="tab-maklumat" role="tabpanel" aria-labelledby="tab-maklumat-btn">
-                    @include('newModule.penyediaanIklan.maklumat_tender')
+                    @include('newModule.penyediaanIklan.maklumat_tender_form')
                 </div>
 
                 {{-- ══ TAB 2: KELULUSAN ══ --}}
                 <div class="tab-pane fade" id="tab-kelulusan" role="tabpanel" aria-labelledby="tab-kelulusan-btn">
-                    @include('newModule.penyediaanIklan.kelulusan')
+                    @include('newModule.penyediaanIklan.kelulusan_form')
                 </div>
 
                 {{-- ══ TAB 3: PENYEDIAAN IKLAN ══ --}}
                 <div class="tab-pane fade" id="tab-iklan" role="tabpanel" aria-labelledby="tab-iklan-btn">
-                    @include('newModule.penyediaanIklan.iklan_form')
+                    @include('newModule.penyediaanIklan.penyediaan_iklan_form')
                 </div>
 
-                {{-- ══ TAB 4: DOKUMEN TENDER/TAWARAN ══ --}}
+                {{-- ══ TAB 4: PEGAWAI BERTANGGUNGJAWAB ══ --}}
+                <div class="tab-pane fade" id="tab-pegawai" role="tabpanel" aria-labelledby="tab-pegawai-btn">
+                    @include('newModule.penyediaanIklan.pegawai_bertanggungjawab_form')
+                </div>
+
+                {{-- ══ TAB 5: DOKUMEN TENDER/TAWARAN ══ --}}
                 <div class="tab-pane fade" id="tab-dokumen" role="tabpanel" aria-labelledby="tab-dokumen-btn">
-                    @include('newModule.penyediaanIklan.dokumen_tender')
+                    @include('newModule.penyediaanIklan.dokumen_tender_form')
                 </div>
 
             </div>
@@ -186,7 +202,7 @@
 $(document).ready(function () {
 
     /* ── Tab IDs in order ── */
-    var tabs = ['#tab-maklumat-btn', '#tab-kelulusan-btn', '#tab-iklan-btn', '#tab-dokumen-btn'];
+    var tabs = ['#tab-maklumat-btn', '#tab-kelulusan-btn', '#tab-iklan-btn', '#tab-pegawai-btn', '#tab-dokumen-btn'];
     var currentTab = 0;
 
     function updateNavButtons() {

@@ -57,7 +57,7 @@ class DummyController extends Controller
     public function penyediaanIklan()
     {
         $country_states = RefState::where('display_status', 1)->get();
-        return view('newModule.penyediaanIklan.penyediaan_iklan', compact('country_states'));
+        return view('newModule.penyediaanIklan.index', compact('country_states'));
     }
 
     /**

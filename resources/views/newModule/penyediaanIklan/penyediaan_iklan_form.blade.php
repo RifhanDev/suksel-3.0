@@ -136,10 +136,6 @@
     /* ── Selectize dropdown inside modal z-index ── */
     .selectize-dropdown { z-index: 9999 !important; }
 
-    /* ── Clickable perihal cell ── */
-    .perihal-clickable { color: #1d4ed8; cursor: pointer; text-decoration: underline dotted; font-weight: 500; }
-    .perihal-clickable:hover { color: #1e40af; }
-
     /* ── Step nav footer ── */
     .iklan-step-footer {
         background: #f8fafc;
@@ -488,12 +484,6 @@
             </button>
         </div>
 
-        <!-- Info label -->
-        <div class="px-3 py-2 bg-light border-bottom d-flex align-items-center gap-2" style="font-size:0.75rem; color:#64748b;">
-            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
-            Klik pada <span class="fw-semibold" style="color:#1d4ed8;">nama perihal</span> untuk melihat maklumat Pegawai Untuk Dihubungi.
-        </div>
-
         <!-- Table -->
         <div class="table-responsive">
             <table class="table table-bordered mb-0" id="tblTaklimat" style="font-size:0.82rem;">
@@ -603,26 +593,6 @@
                     <div class="col-12">
                         <label class="form-label fw-semibold">Lokasi / Alamat</label>
                         <textarea class="form-control" id="taklimat_lokasi" name="taklimat_lokasi" rows="2" placeholder="Masukkan lokasi atau alamat penuh..."></textarea>
-                    </div>
-
-                    {{-- Row 4: Pegawai Penyelaras --}}
-                    <div class="col-12">
-                        <label class="form-label fw-semibold">Pegawai Penyelaras</label>
-                        <input type="text" id="taklimat_pegawai_input" placeholder="Taip nama pegawai...">
-                    </div>
-
-                    {{-- Row 5: Auto-filled pegawai details --}}
-                    <div class="col-md-4">
-                        <label class="form-label text-muted" style="font-size:0.75rem;">No. Telefon</label>
-                        <input type="text" class="form-control form-control-sm bg-light" id="taklimat_telefon" readonly placeholder="-">
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label text-muted" style="font-size:0.75rem;">No. Faks</label>
-                        <input type="text" class="form-control form-control-sm bg-light" id="taklimat_faks" readonly placeholder="-">
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label text-muted" style="font-size:0.75rem;">E-mel</label>
-                        <input type="text" class="form-control form-control-sm bg-light" id="taklimat_email" readonly placeholder="-">
                     </div>
 
                 </div>
@@ -750,48 +720,8 @@ $(document).ready(function () {
        STEP 3 — TAKLIMAT TENDER
     ════════════════════════════════════════════ */
 
-    /* Dummy pegawai data (replace with AJAX later) */
-    var pegawaiDummy = [
-        { id: 1, nama: 'Ahmad Hafizuddin bin Roslan',    telefon: '03-5544 1234', faks: '03-5544 1235', email: 'ahmad.hafiz@selangor.gov.my' },
-        { id: 2, nama: 'Siti Nurhaliza binti Kamarudin', telefon: '03-5544 2345', faks: '03-5544 2346', email: 'siti.nurhaliza@selangor.gov.my' },
-        { id: 3, nama: 'Mohd Faizal bin Abdullah',        telefon: '03-5544 3456', faks: '03-5544 3457', email: 'mohd.faizal@selangor.gov.my' },
-        { id: 4, nama: 'Nurul Ain binti Hashim',          telefon: '03-5544 4567', faks: '03-5544 4568', email: 'nurul.ain@selangor.gov.my' },
-        { id: 5, nama: 'Zulkifli bin Mohd Yusoff',        telefon: '03-5544 5678', faks: '03-5544 5679', email: 'zulkifli.yusoff@selangor.gov.my' },
-    ];
     var taklimatRowCount = 0;
-    var selectedPegawai  = null;
     var taklimatRows     = [];   /* stores each row's data for form submission */
-
-    /* Selectize — search by nama */
-    $('#taklimat_pegawai_input').selectize({
-        valueField  : 'id',
-        labelField  : 'nama',
-        searchField : 'nama',
-        options     : pegawaiDummy,
-        maxItems    : 1,
-        create      : false,
-        placeholder : 'Taip nama pegawai...',
-        dropdownParent: 'body',
-        render: {
-            option: function (item, escape) {
-                return '<div><strong>' + escape(item.nama) + '</strong>' +
-                    '<br><small class="text-muted">' + escape(item.email) + '</small></div>';
-            }
-        },
-        onChange: function (value) {
-            if (!value) {
-                selectedPegawai = null;
-                $('#taklimat_telefon, #taklimat_faks, #taklimat_email').val('');
-                return;
-            }
-            selectedPegawai = pegawaiDummy.find(function (p) { return String(p.id) === String(value); });
-            if (selectedPegawai) {
-                $('#taklimat_telefon').val(selectedPegawai.telefon);
-                $('#taklimat_faks').val(selectedPegawai.faks);
-                $('#taklimat_email').val(selectedPegawai.email);
-            }
-        }
-    });
 
     /* Open modal & reset */
     $('#btnTambahTaklimat').on('click', function () {
@@ -800,10 +730,6 @@ $(document).ready(function () {
         $('#taklimat_masa').val('');
         $('#taklimat_lokasi').val('');
         $('#taklimat_kehadiran').prop('checked', false);
-        $('#taklimat_telefon, #taklimat_faks, #taklimat_email').val('');
-        selectedPegawai = null;
-        var sel = document.getElementById('taklimat_pegawai_input');
-        if (sel && sel.selectize) sel.selectize.clear();
         var modal = new bootstrap.Modal(document.getElementById('modalTaklimat'));
         modal.show();
     });
@@ -822,48 +748,22 @@ $(document).ready(function () {
         }
 
         taklimatRowCount++;
-        var rId     = 'tr_' + taklimatRowCount;
+        var rId        = 'tr_' + taklimatRowCount;
         var tarikhMasa = tarikh + (masa ? ' | ' + masa : '');
-        var badge   = wajib
+        var badge      = wajib
             ? '<span class="badge-status badge-status-danger">Wajib</span>'
             : '<span class="badge-status badge-status-neutral">Tidak Wajib</span>';
-
-        var pNama  = selectedPegawai ? selectedPegawai.nama    : '-';
-        var pTel   = selectedPegawai ? selectedPegawai.telefon : '-';
-        var pFaks  = selectedPegawai ? selectedPegawai.faks    : '-';
-        var pEmail = selectedPegawai ? selectedPegawai.email   : '-';
 
         var mainRow = [
             '<tr class="taklimat-main-row" data-rid="' + rId + '">',
             '<td class="text-center"><input type="checkbox" class="chk-taklimat-row form-check-input" style="accent-color:#c41e3a;"></td>',
-            '<td style="white-space:normal;max-width:220px;"><span class="perihal-clickable" data-rid="' + rId + '">' + perihal + '</span></td>',
+            '<td style="white-space:normal;max-width:220px;">' + perihal + '</td>',
             '<td>' + tarikhMasa + '</td>',
             '<td style="white-space:pre-wrap;word-break:break-word;">' + lokasi + '</td>',
             '<td class="text-center">' + badge + '</td>',
             '</tr>'
         ].join('');
 
-        var detailRow = [
-            '<tr class="taklimat-detail-row" id="detail_' + rId + '" style="display:none;">',
-            '<td colspan="5" class="p-0">',
-                '<div class="d-flex align-items-center justify-content-between px-4 pt-3 pb-1">',
-                    '<div class="d-flex align-items-center gap-1">',
-                        '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>',
-                        '<span class="text-secondary fw-bold text-uppercase" style="font-size:0.68rem;letter-spacing:0.5px;">Pegawai Untuk Dihubungi</span>',
-                    '</div>',
-                    '<button type="button" class="btn btn-sm btn-outline-danger btn-close-detail" data-rid="' + rId + '" style="font-size:0.72rem; padding:2px 10px;">Tutup</button>',
-                '</div>',
-                '<div class="row g-0 px-4 pb-3">',
-                    '<div class="col-md-3 pe-3"><span class="text-muted d-block" style="font-size:0.7rem;">Nama</span><span class="fw-semibold" style="font-size:0.82rem;">' + pNama + '</span></div>',
-                    '<div class="col-md-3 pe-3"><span class="text-muted d-block" style="font-size:0.7rem;">No. Telefon</span><span class="fw-semibold" style="font-size:0.82rem;">' + pTel + '</span></div>',
-                    '<div class="col-md-3 pe-3"><span class="text-muted d-block" style="font-size:0.7rem;">No. Faks</span><span class="fw-semibold" style="font-size:0.82rem;">' + pFaks + '</span></div>',
-                    '<div class="col-md-3"><span class="text-muted d-block" style="font-size:0.7rem;">E-mel</span><span class="fw-semibold" style="font-size:0.82rem;">' + pEmail + '</span></div>',
-                '</div>',
-            '</td>',
-            '</tr>'
-        ].join('');
-
-        /* Store row data for submission */
         taklimatRows.push({
             rid      : rId,
             perihal  : perihal,
@@ -871,29 +771,13 @@ $(document).ready(function () {
             masa     : masa,
             lokasi   : lokasi,
             kehadiran: wajib ? 'Wajib' : 'Tidak Wajib',
-            peg_nama : pNama,
-            peg_tel  : pTel,
-            peg_faks : pFaks,
-            peg_email: pEmail,
         });
 
         $('#taklimatEmptyRow').hide();
-        $('#tblTaklimatBody').append(mainRow + detailRow);
+        $('#tblTaklimatBody').append(mainRow);
         syncHapusTaklimat();
 
         bootstrap.Modal.getInstance(document.getElementById('modalTaklimat')).hide();
-    });
-
-    /* Click perihal to expand detail row */
-    $(document).on('click', '.perihal-clickable', function () {
-        var rId = $(this).data('rid');
-        $('#detail_' + rId).toggle();
-    });
-
-    /* Close button inside detail row */
-    $(document).on('click', '.btn-close-detail', function () {
-        var rId = $(this).data('rid');
-        $('#detail_' + rId).hide();
     });
 
     /* Checkbox select-all (taklimat) */
