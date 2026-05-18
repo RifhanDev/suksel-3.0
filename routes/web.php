@@ -257,6 +257,7 @@ Route::view('/index-penyediaan-sst', 'newModule.penyediaanSST.index')->name('ind
 Route::view('/penyediaan-sst', 'newModule.penyediaanSST.penyediaanSST')->name('penyediaanSST');
 Route::view('/index-jawatankuasa-pembuka', 'newModule.jawatankuasaPembuka.index')->name('indexJawatankuasaPembuka');
 Route::view('/jawatankuasa-pembuka', 'newModule.jawatankuasaPembuka.jawatankuasa_pembuka')->name('jawatankuasaPembuka');
+Route::view('/show-soalan-lazim', 'helps.show')->name('showSoalanLazim');
 
 // penilaian teknikal
 Route::get('/penilaian-teknikal', [PenilaianTeknikalController::class, 'index'])->name('penilaianTeknikal');

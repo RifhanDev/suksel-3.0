@@ -22,30 +22,19 @@
 				<h3 class="content-card-title">Senarai Kategori Soalan Lazim</h3>
 			</div>
 
-			@if (Auth::user() && Auth::user()->hasRole('Admin'))
-				<div class="d-flex align-items-center gap-2">
-					<!-- <a href="{{ asset('helps') }}" class="btn-form btn-form-secondary">
-						<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-							stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-							<circle cx="12" cy="12" r="10"></circle>
-							<path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
-							<line x1="12" y1="17" x2="12.01" y2="17"></line>
-						</svg>
-						Soalan Lazim
-					</a> -->
-					<a href="{{ asset('helpcategories/create') }}" class="btn-form btn-form-create">
-						<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-							stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-							<line x1="12" y1="5" x2="12" y2="19"></line>
-							<line x1="5" y1="12" x2="19" y2="12"></line>
-						</svg>
-						Tambah Kategori
-					</a>
-				</div>
-			@endif
+			<div class="d-flex align-items-center gap-2">
+				<a href="{{ asset('helpcategories/create') }}" class="btn-form btn-form-create">
+					<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+						stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<line x1="12" y1="5" x2="12" y2="19"></line>
+						<line x1="5" y1="12" x2="19" y2="12"></line>
+					</svg>
+					Tambah Soalan Lazim
+				</a>
+			</div>
 		</div>
 
-		<div class="content-card-body p-2">
+		<!-- <div class="content-card-body p-2">
 			<div class="table-responsive">
 				<table data-path="/helpcategories" class="DT-index table table-hover align-middle mb-0 w-100">
 					<thead class="bg-light">
@@ -58,7 +47,7 @@
 					<tbody></tbody>
 				</table>
 			</div>
-		</div>
+		</div> -->
 	</div>
 @endsection
 
