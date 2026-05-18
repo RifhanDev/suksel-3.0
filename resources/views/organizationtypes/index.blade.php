@@ -32,14 +32,12 @@
 						<tr>
 							<th class="text-uppercase text-muted small fw-bold py-3 ps-4">Nama</th>
 							<th class="text-uppercase text-muted small fw-bold py-3">Susunan</th>
-							<th class="text-uppercase text-center text-muted small fw-bold py-3 pe-4" style="width: 250px; min-width: 250px;">
-								Tindakan</th>
+							<th class="text-uppercase text-center text-muted small fw-bold py-3 pe-4" style="width: 250px; min-width: 250px;">Tindakan</th>
 						</tr>
 					</thead>
 					<tbody></tbody>
 				</table>
 			</div>
-
 		</div>
 	</div>
 @endsection
@@ -50,94 +48,39 @@
 			var target = $(this);
 			var path = target.data('path');
 			var DT = target.DataTable({
-					ajax: path,
-					<<
-					<< << < HEAD
-					columns: [{
-							data: 'name',
-							name: 'name'
-						},
-						{
-							data: 'sort_no',
-							name: 'sort_no'
-						},
-						{
-							data: 'actions',
-							name: 'actions',
-							orderable: false,
-							searchable: false
-						} ===
-						=== =
-						columns: [{
-								data: 'name',
-								name: 'name'
-							},
-							{
-								data: 'sort_no',
-								name: 'sort_no'
-							},
-							{
-								data: 'actions',
-								name: 'actions'
-							}, >>>
-							>>> > origin / dan - v2
-						],
-						serverSide: true,
-						stateSave: true,
-						language: {
-							sEmptyTable: "Tiada data",
-							sInfo: "Paparan dari _START_ hingga _END_ dari _TOTAL_ rekod",
-							sInfoEmpty: "Paparan 0 hingga 0 dari 0 rekod",
-							sInfoFiltered: "(Ditapis dari jumlah _MAX_ rekod)",
-							<<
-							<< << < HEAD
-							sInfoPostFix: "",
-							sInfoThousands: ",",
-							sLengthMenu: "Papar _MENU_ rekod",
-							sLoadingRecords: "Diproses...",
-							sProcessing: "Sedang diproses...",
-							sSearch: "Carian:",
-							sZeroRecords: "Tiada padanan rekod yang dijumpai.",
-							oPaginate: {
-								sFirst: "Pertama",
-								sPrevious: "Sebelum",
-								sNext: "Kemudian",
-								sLast: "Akhir"
-							},
-							oAria: {
-								sSortAscending: ": diaktifkan kepada susunan lajur menaik",
-								sSortDescending: ": diaktifkan kepada susunan lajur menurun"
-							}
-						},
-						aaSorting: [], pageLength: 25, responsive: true, order: [
-							[1, 'asc']
-						]
-					});
+				ajax: path,
+				columns: [
+					{ data: 'name',    name: 'name' },
+					{ data: 'sort_no', name: 'sort_no' },
+					{ data: 'actions', name: 'actions', orderable: false, searchable: false }
+				],
+				serverSide: true,
+				stateSave: true,
+				language: {
+					sEmptyTable:    "Tiada data",
+					sInfo:          "Paparan dari _START_ hingga _END_ dari _TOTAL_ rekod",
+					sInfoEmpty:     "Paparan 0 hingga 0 dari 0 rekod",
+					sInfoFiltered:  "(Ditapis dari jumlah _MAX_ rekod)",
+					sInfoPostFix:   "",
+					sInfoThousands: ",",
+					sLengthMenu:    "Papar _MENU_ rekod",
+					sLoadingRecords:"Diproses...",
+					sProcessing:    "Sedang diproses...",
+					sSearch:        "Carian:",
+					sZeroRecords:   "Tiada padanan rekod yang dijumpai.",
+					oPaginate: {
+						sFirst: "Pertama", sPrevious: "Sebelum", sNext: "Kemudian", sLast: "Akhir"
+					},
+					oAria: {
+						sSortAscending:  ": diaktifkan kepada susunan lajur menaik",
+						sSortDescending: ": diaktifkan kepada susunan lajur menurun"
+					}
+				},
+				aaSorting: [],
+				pageLength: 25,
+				responsive: true,
+				order: [[1, 'asc']]
 			});
 		});
 	</script>
-	=======
-	sInfoPostFix: "",
-	sInfoThousands: ",",
-	sLengthMenu: "Papar _MENU_ rekod",
-	sLoadingRecords: "Diproses...",
-	sProcessing: "Sedang diproses...",
-	sSearch: "Carian:",
-	sZeroRecords: "Tiada padanan rekod yang dijumpai.",
-	oPaginate: {
-	sFirst: "Pertama",
-	sPrevious: "Sebelum",
-	sNext: "Kemudian",
-	sLast: "Akhir"
-	},
-	oAria: {
-	sSortAscending: ": diaktifkan kepada susunan lajur menaik",
-	sSortDescending: ": diaktifkan kepada susunan lajur menurun"
-	}
-	},
-	aaSorting: []
-	});
-	});
-	</script>
-	>>>>>>> origin/dan-v2
 @endsection

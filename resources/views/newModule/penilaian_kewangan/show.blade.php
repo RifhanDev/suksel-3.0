@@ -27,18 +27,14 @@
         padding: 24px;
     }
 
-    hr {
-        border: 1px solid #E5E7EB;
-    }
-
     /* ========================
    HEADER SUMMARY
 ======================== */
-    .card-body .row>.col-4 {
+    .card-body .row > .col-md-4 {
         border-right: 1px solid #E5E7EB;
     }
 
-    .card-body .row>.col-4:last-child {
+    .card-body .row > .col-md-4:last-child {
         border-right: none;
     }
 
@@ -200,22 +196,10 @@
         overflow: hidden;
     }
 
-    .table thead th {
-        background: #1E3A8A;
-        color: white;
-        text-align: center;
-        font-size: 13px;
-        padding: 12px;
-    }
-
     .table td {
         font-size: 13px;
         padding: 12px;
         vertical-align: middle;
-    }
-
-    .table tbody tr:hover {
-        background: #F9FAFB;
     }
 
     /* ==========================
@@ -324,13 +308,6 @@
         resize: vertical;
     }
 
-    #modalSemakanKetepatanDokumenKewangan .table-primary thead th,
-    #modalSemakanKetepatanDokumenKewangan .table-primary th {
-        background-color: #3b5998 !important;
-        color: #fff !important;
-        border-color: #2d4373 !important;
-    }
-
     /* ==========================
    TEXT HINTS
 ========================== */
@@ -357,6 +334,8 @@
         background-color: #C0392B !important;
         color: #FFFFFF !important;
         text-align: center;
+        font-size: 13px;
+        padding: 12px;
         border-color: #A93226 !important;
     }
 
@@ -409,36 +388,65 @@
         color: #fff;
     }
 
-    /* =========================
-   STEPPER – CHANGE BLUE TO RED
-========================= */
-
-    /* Default step circle (inactive) */
-    .progress-bar-tab .nav-link {
-        background: #C0392B !important;
-        /* red */
-        color: #fff !important;
+    .profil-readonly-form {
+        display: grid;
+        gap: 1rem;
     }
 
-    /* Active step (current step) */
-    .progress-bar-tab .nav-link.active {
-        background: #16A34A !important;
-        /* keep green for current (optional) */
+    .profil-readonly-section {
+        border: 1px solid #E5E7EB;
+        border-radius: 10px;
+        background: #F9FAFB;
+        padding: 14px;
     }
 
-    /* Step label text */
-    .progress-bar-tab .nav-item::after {
-        color: #000;
-        font-weight: 500;
+    .profil-readonly-title {
+        font-size: 0.92rem;
+        font-weight: 700;
+        color: #111827;
+        margin-bottom: 10px;
     }
 
-    /* Horizontal connector line */
-    .progress {
-        height: 2px !important;
+    .profil-readonly-form .form-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #6B7280;
+        margin-bottom: 4px;
+        text-transform: uppercase;
+        letter-spacing: .2px;
     }
 
-    .progress-bar {
-        background: #C0392B !important;
+    .profil-readonly-form .form-control,
+    .profil-readonly-form .form-select,
+    .profil-readonly-form textarea {
+        background: #fff;
+        color: #111827;
+        border: 1px solid #D1D5DB;
+        font-size: 0.85rem;
+    }
+
+    .profil-readonly-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+        font-size: .72rem;
+        font-weight: 700;
+        color: #065F46;
+        background: #D1FAE5;
+        border: 1px solid #A7F3D0;
+        border-radius: 999px;
+        padding: 2px 10px;
+    }
+
+    .profil-readonly-chip {
+        display: inline-flex;
+        padding: 4px 10px;
+        border-radius: 999px;
+        background: #EEF2FF;
+        color: #3730A3;
+        border: 1px solid #C7D2FE;
+        font-size: .75rem;
+        font-weight: 600;
     }
 </style>
 
@@ -541,7 +549,7 @@
                     <div class="tab-content">
                         <div class="tab-pane fade show active" id="kewangan-1" role="tabpanel">
                             <h4 class="card-title card-title-grey">PEMATUHAN CADANGAN KEWANGAN</h4>
-                            <p class="card-title-desc text-primary fst-italic">Klik butang Papar untuk melihat dokumen.</p>
+                            <p class="card-title-desc text-primary fst-italic">Klik butang Menilai untuk meneruskan penilaian.</p>
                             <table class="table table-bordered dt-responsive nowrap w-100">
                                 <thead>
                                     <tr>
@@ -553,53 +561,78 @@
                                 </thead>
                                 <tbody>
                                     <tr>
-                                        <td>Perkhidmatan Penilaian Forensik Ke atas Sistem XXXX</td>
+                                        <td>
+                                            <a href="https://ontheline.trincoll.edu/images/bookdown/sample-local-pdf.pdf" target="_blank" class="me-2">
+                                                <i class="bi bi-file-earmark-pdf-fill text-primary" aria-hidden="true"></i>
+                                            </a>
+                                            Perkhidmatan Penilaian Forensik Ke atas Sistem XXXX
+                                        </td>
                                         <td>Spesifikasi</td>
-                                        <td>Selesai</td>
+                                        <td class="status-penilaian">Menunggu Penyerahan</td>
                                         <td class="text-center">
                                             <button type="button" class="btn btn-success btn-papar-semakan-kewangan"
                                                 data-bs-toggle="modal" data-bs-target="#modalSemakanKetepatanDokumenKewangan"
-                                                data-dokumen="Perkhidmatan Penilaian Forensik Ke atas Sistem XXXX">Papar</button>
+                                                data-dokumen="Perkhidmatan Penilaian Forensik Ke atas Sistem XXXX">Menilai</button>
                                         </td>
                                     </tr>
                                     <tr>
-                                        <td>Maklumat Profil Petender</td>
+                                        <td>
+                                            <a href="https://ontheline.trincoll.edu/images/bookdown/sample-local-pdf.pdf" target="_blank" class="me-2">
+                                                <i class="bi bi-file-earmark-pdf-fill text-primary" aria-hidden="true"></i>
+                                            </a>
+                                            Maklumat Profil Petender
+                                        </td>
                                         <td>Borang Atas Talian</td>
-                                        <td>Selesai</td>
+                                        <td class="status-penilaian">Menunggu Penyerahan</td>
                                         <td class="text-center">
                                             <button type="button" class="btn btn-success btn-papar-semakan-kewangan"
                                                 data-bs-toggle="modal" data-bs-target="#modalSemakanKetepatanDokumenKewangan"
-                                                data-dokumen="Maklumat Profil Petender">Papar</button>
+                                                data-dokumen="Maklumat Profil Petender">Menilai</button>
                                         </td>
                                     </tr>
                                     <tr>
-                                        <td>Penyata Bank Terkini (3 Bulan Terakhir) Syarikat</td>
+                                        <td>
+                                            <a href="https://ontheline.trincoll.edu/images/bookdown/sample-local-pdf.pdf" target="_blank" class="me-2">
+                                                <i class="bi bi-file-earmark-pdf-fill text-primary" aria-hidden="true"></i>
+                                            </a>
+                                            Penyata Bank Terkini (3 Bulan Terakhir) Syarikat
+                                        </td>
                                         <td>Borang Atas Talian</td>
-                                        <td>Selesai</td>
+                                        <td class="status-penilaian">Menunggu Penyerahan</td>
                                         <td class="text-center">
                                             <button type="button" class="btn btn-success btn-papar-semakan-kewangan"
                                                 data-bs-toggle="modal" data-bs-target="#modalSemakanKetepatanDokumenKewangan"
-                                                data-dokumen="Penyata Bank Terkini (3 Bulan Terakhir) Syarikat">Papar</button>
+                                                data-dokumen="Penyata Bank Terkini (3 Bulan Terakhir) Syarikat">Menilai</button>
                                         </td>
                                     </tr>
                                     <tr>
-                                        <td>Salinan Sijil Pendaftaran dengan Kementerian Kewangan</td>
+                                        <td>
+                                            <a href="https://ontheline.trincoll.edu/images/bookdown/sample-local-pdf.pdf" target="_blank" class="me-2">
+                                                <i class="bi bi-file-earmark-pdf-fill text-primary" aria-hidden="true"></i>
+                                            </a>
+                                            Salinan Sijil Pendaftaran dengan Kementerian Kewangan
+                                        </td>
                                         <td>Petender Muat Naik</td>
-                                        <td>Selesai</td>
+                                        <td class="status-penilaian">Menunggu Penyerahan</td>
                                         <td class="text-center">
                                             <button type="button" class="btn btn-success btn-papar-semakan-kewangan"
                                                 data-bs-toggle="modal" data-bs-target="#modalSemakanKetepatanDokumenKewangan"
-                                                data-dokumen="Salinan Sijil Pendaftaran dengan Kementerian Kewangan">Papar</button>
+                                                data-dokumen="Salinan Sijil Pendaftaran dengan Kementerian Kewangan">Menilai</button>
                                         </td>
                                     </tr>
                                     <tr>
-                                        <td>Surat Akuan Pembida</td>
+                                        <td>
+                                            <a href="https://ontheline.trincoll.edu/images/bookdown/sample-local-pdf.pdf" target="_blank" class="me-2">
+                                                <i class="bi bi-file-earmark-pdf-fill text-primary" aria-hidden="true"></i>
+                                            </a>
+                                            Surat Akuan Pembida
+                                        </td>
                                         <td>PTJ Muat Naik</td>
-                                        <td>Selesai</td>
+                                        <td class="status-penilaian">Menunggu Penyerahan</td>
                                         <td class="text-center">
                                             <button type="button" class="btn btn-success btn-papar-semakan-kewangan"
                                                 data-bs-toggle="modal" data-bs-target="#modalSemakanKetepatanDokumenKewangan"
-                                                data-dokumen="Surat Akuan Pembida">Papar</button>
+                                                data-dokumen="Surat Akuan Pembida">Menilai</button>
                                         </td>
                                     </tr>
                                 </tbody>
@@ -721,8 +754,6 @@
 
             </div>
 
-
-
         </div>
     </div>
 
@@ -756,12 +787,14 @@
                                 <tr>
                                     <td class="text-center">1/2</td>
                                     <td>
-                                        <i class="bi bi-file-earmark-pdf-fill text-primary me-2" aria-hidden="true"></i>
+                                        <a href="https://ontheline.trincoll.edu/images/bookdown/sample-local-pdf.pdf" target="_blank" class="text-decoration-none">
+                                            <i class="bi bi-file-earmark-pdf-fill text-primary" aria-hidden="true"></i>
+                                        </a>
                                         Perkhidmatan Penilaian Forensik Ke atas Sistem XXXX.pdf
                                     </td>
                                     <td class="align-middle">
                                         <select class="form-select" aria-label="Status Pematuhan baris 1">
-                                            <option selected value="">Mematuhi / Tidak Mematuhi</option>
+                                            <option selected value="">Sila Pilih</option>
                                             <option value="mematuhi">Mematuhi</option>
                                             <option value="tidak_mematuhi">Tidak Mematuhi</option>
                                         </select>
@@ -773,12 +806,14 @@
                                 <tr>
                                     <td class="text-center">2/2</td>
                                     <td>
-                                        <i class="bi bi-file-earmark-pdf-fill text-primary me-2" aria-hidden="true"></i>
+                                        <a href="https://ontheline.trincoll.edu/images/bookdown/sample-local-pdf.pdf" target="_blank" class="text-decoration-none">
+                                            <i class="bi bi-file-earmark-pdf-fill text-primary" aria-hidden="true"></i>
+                                        </a>
                                         Perkhidmatan Penilaian Forensik Ke atas Sistem XXXXn.pdf
                                     </td>
                                     <td class="align-middle">
                                         <select class="form-select" aria-label="Status Pematuhan baris 2">
-                                            <option selected value="">Mematuhi / Tidak Mematuhi</option>
+                                            <option selected value="">Sila Pilih</option>
                                             <option value="mematuhi">Mematuhi</option>
                                             <option value="tidak_mematuhi">Tidak Mematuhi</option>
                                         </select>
@@ -793,6 +828,175 @@
                 </div>
                 <div class="modal-footer justify-content-center gap-2">
                     <button type="button" id="btnStep1SimpanDokKewangan" class="btn btn-success" data-bs-dismiss="modal">Simpan</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalProfilPetenderReadonly" tabindex="-1" aria-labelledby="modalProfilPetenderReadonlyLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable modal-fullscreen-lg-down">
+            <div class="modal-content modal-semakan-kewangan">
+                <div class="modal-header">
+                    <h5 class="modal-title text-uppercase" id="modalProfilPetenderReadonlyLabel">Maklumat Profil Petender</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="card-title-desc text-primary fst-italic mb-3">Paparan ringkas borang profil petender (contoh data).</p>
+
+                    <div class="profil-readonly-form">
+                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                            <div class="profil-readonly-chip">No. Tender: SUKSEL/PERT/2026/001</div>
+                            <div class="profil-readonly-badge">Profil Lengkap</div>
+                        </div>
+
+                        <div class="profil-readonly-section">
+                            <div class="profil-readonly-title">Maklumat Syarikat</div>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Nama Syarikat</label>
+                                    <input type="text" class="form-control" value="Inovasi Digital Nusantara Sdn. Bhd." readonly>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Jenis Syarikat</label>
+                                    <input type="text" class="form-control" value="Sdn. Bhd." readonly>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Taraf Petender</label>
+                                    <input type="text" class="form-control" value="Bumiputera" readonly>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">Alamat Syarikat</label>
+                                    <textarea class="form-control" rows="2" readonly>No. 18, Persiaran Teknologi 2, Taman Sains Selangor, 47810 Petaling Jaya, Selangor.</textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="profil-readonly-section">
+                            <div class="profil-readonly-title">Pegawai Untuk Dihubungi</div>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label">Nama</label>
+                                    <input type="text" class="form-control" value="Nur Aisyah Binti Rahman" readonly>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">No. Telefon</label>
+                                    <input type="text" class="form-control" value="012-888 7766" readonly>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">E-mel</label>
+                                    <input type="text" class="form-control" value="aisyah.rahman@idn.com.my" readonly>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="profil-readonly-section">
+                            <div class="profil-readonly-title">Maklumat Pendaftaran & Kewangan</div>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label">No. SSM</label>
+                                    <input type="text" class="form-control" value="201901045678 (1345000-X)" readonly>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">No. MOF</label>
+                                    <input type="text" class="form-control" value="357-021-000987" readonly>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Tempoh Sah MOF</label>
+                                    <input type="text" class="form-control" value="31/12/2027" readonly>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Bil. Pekerja Semasa</label>
+                                    <input type="text" class="form-control" value="42 orang" readonly>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Bil. Pekerja Teknikal</label>
+                                    <input type="text" class="form-control" value="15 orang" readonly>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Modal Berbayar (RM)</label>
+                                    <input type="text" class="form-control" value="750,000.00" readonly>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Modal Dibenarkan (RM)</label>
+                                    <input type="text" class="form-control" value="1,500,000.00" readonly>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="profil-readonly-section">
+                            <div class="profil-readonly-title">Ringkasan Projek Terdahulu (2 Tahun)</div>
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label class="form-label">Projek 1</label>
+                                    <input type="text" class="form-control" value="Naik taraf infrastruktur rangkaian data - Jabatan Kastam Malaysia (RM 420,000.00)" readonly>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">Projek 2</label>
+                                    <input type="text" class="form-control" value="Penyenggaraan sistem keselamatan siber - Kementerian Kewangan (RM 380,000.00)" readonly>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">Projek 3</label>
+                                    <input type="text" class="form-control" value="Perkhidmatan sokongan aplikasi dalaman - MAMPU (RM 290,000.00)" readonly>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="profil-readonly-section">
+                            <div class="profil-readonly-title">Kedudukan Kewangan Semasa</div>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Aset Utama (5 Terbesar)</label>
+                                    <textarea class="form-control" rows="5" readonly>1. Bangunan pejabat 3 tingkat - RM 1,200,000.00
+2. Pelayan data (server cluster) - RM 350,000.00
+3. 15 unit workstation teknikal - RM 180,000.00
+4. Perisian lesen enterprise - RM 120,000.00
+5. Kenderaan operasi - RM 95,000.00</textarea>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Peralatan Berkaitan Tender (5 Item)</label>
+                                    <textarea class="form-control" rows="5" readonly>1. Network analyzer set - RM 80,000.00
+2. Security appliance - RM 65,000.00
+3. Portable forensic workstation - RM 58,000.00
+4. Backup storage system - RM 45,000.00
+5. Audit toolkit license - RM 30,000.00</textarea>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Tanggungan / Liabilities (RM)</label>
+                                    <input type="text" class="form-control" value="210,000.00" readonly>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Baki Wang Dalam Bank (RM)</label>
+                                    <input type="text" class="form-control" value="980,000.00" readonly>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="profil-readonly-section">
+                            <div class="profil-readonly-title">Analisa Kecukupan Modal</div>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Jenis Skor Modal Berbayar</label>
+                                    <input type="text" class="form-control" value="Automatik" readonly>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Skor Modal Berbayar</label>
+                                    <input type="text" class="form-control" value="10/10" readonly>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Jenis Skor Modal Dibenarkan</label>
+                                    <input type="text" class="form-control" value="Automatik" readonly>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Skor Modal Dibenarkan</label>
+                                    <input type="text" class="form-control" value="10/10" readonly>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer justify-content-center">
+                    <button type="button" class="btn btn-success" data-bs-dismiss="modal">Tutup</button>
                 </div>
             </div>
         </div>
@@ -825,51 +1029,54 @@
         // Init
         updateStepper(0);
 
-        document.querySelectorAll('.btn-papar-semakan-kewangan').forEach((btn) => {
+        let activeSemakanButton = null;
+        const btnSimpanDokKewangan = document.getElementById('btnStep1SimpanDokKewangan');
+
+        document.querySelectorAll('.btn-papar-semakan-kewangan:not(.btn-open-profil-petender-readonly)').forEach((btn) => {
             btn.addEventListener('click', () => {
                 const t = btn.getAttribute('data-dokumen')?.trim() || '';
                 const el = document.getElementById('modalSemakanKewanganTajuk');
+                activeSemakanButton = btn;
                 if (el && t) {
                     el.textContent = t;
                 }
             });
         });
 
+        if (btnSimpanDokKewangan) {
+            btnSimpanDokKewangan.addEventListener('click', () => {
+                if (!activeSemakanButton) return;
+
+                const currentRow = activeSemakanButton.closest('tr');
+                const statusCell = currentRow?.querySelector('.status-penilaian');
+                if (statusCell) {
+                    statusCell.textContent = 'Selesai';
+                }
+
+                activeSemakanButton.textContent = 'Papar';
+                activeSemakanButton = null;
+            });
+        }
+
     });
 
     // Seterusnya Button Functionality with checkbox validation
+    const msgTandakanPengesahan = 'Sila tandakan kotak pengesahan terlebih dahulu sebelum meneruskan.';
     document.querySelectorAll('.btn-seterusnya').forEach(btn => {
         btn.addEventListener('click', () => {
             const current = document.querySelector('.step-number.active');
             if (!current) return;
 
             const currentId = current.id;
-
-            // Step 1: require confirmation checkbox
-            if (currentId === 'pematuhan-tab') {
-                const cb1 = document.getElementById('confirmLayak');
-                if (cb1 && !cb1.checked) {
-                    alert('Sila tandakan kotak pengesahan terlebih dahulu sebelum meneruskan.');
-                    return;
-                }
-            }
-
-            // Step 2 (Penyata Bulanan Bank): require confirmation checkbox on Rumusan
-            if (currentId === 'penyata-bank-tab') {
-                const cb2 = document.getElementById('confirmLayakStep2');
-                if (cb2 && !cb2.checked) {
-                    alert('Sila tandakan kotak pengesahan terlebih dahulu sebelum meneruskan.');
-                    return;
-                }
-            }
-
-            // Step 3 (Pematuhan Spesifikasi Kewangan): require confirmation checkbox on Rumusan
-            if (currentId === 'penilaian-tab') {
-                const cb3 = document.getElementById('confirmLayakStep3');
-                if (cb3 && !cb3.checked) {
-                    alert('Sila tandakan kotak pengesahan terlebih dahulu sebelum meneruskan.');
-                    return;
-                }
+            const checks = [
+                { id: 'pematuhan-tab', el: document.getElementById('confirmLayak') },
+                { id: 'penyata-bank-tab', el: document.getElementById('confirmLayakStep2') },
+                { id: 'penilaian-tab', el: document.getElementById('confirmLayakStep3') },
+            ];
+            const stepCheck = checks.find(c => c.id === currentId);
+            if (stepCheck?.el && !stepCheck.el.checked) {
+                alert(msgTandakanPengesahan);
+                return;
             }
 
             const next = current.closest('.progress-step')?.nextElementSibling?.querySelector('.step-number');

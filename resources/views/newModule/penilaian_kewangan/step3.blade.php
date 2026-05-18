@@ -39,9 +39,8 @@
                         <td class="text-center">Borang Atas Talian</td>
                         <td class="text-center">Selesai</td>
                         <td class="text-center">
-                            <button type="button" class="btn btn-papar-semakan-kewangan"
-                                data-bs-toggle="modal" data-bs-target="#modalPaparCadanganKewanganStep3"
-                                data-dokumen="Maklumat Profil Petender">Papar</button>
+                            <button type="button" class="btn btn-papar-semakan-kewangan btn-open-profil-petender-readonly"
+                                data-bs-toggle="modal" data-bs-target="#modalProfilPetenderReadonly">Papar</button>
                         </td>
                     </tr>
                     <tr>
@@ -379,21 +378,25 @@
         min-width: 110px;
     }
 
-    .step3-kewangan-pane .btn-papar-semakan-kewangan {
-        background-color: #1cb6ac;
-        border-color: #18a79d;
+    .step3-kewangan-pane .btn-papar-semakan-kewangan,
+    .step3-papar-modal .btn-papar-semakan-kewangan {
+        background-color: #16A34A;
+        border-color: #16A34A;
         color: #fff;
-        min-width: 84px;
-        font-size: 12px;
-        line-height: 1.2;
-        padding: 6px 14px;
-        border-radius: 4px;
+        min-width: 110px;
+        font-size: 13px;
+        line-height: 1.25;
+        font-weight: 600;
+        padding: 8px 16px;
+        border-radius: 8px;
     }
 
     .step3-kewangan-pane .btn-papar-semakan-kewangan:hover,
-    .step3-kewangan-pane .btn-papar-semakan-kewangan:focus {
-        background-color: #179a91;
-        border-color: #148a82;
+    .step3-kewangan-pane .btn-papar-semakan-kewangan:focus,
+    .step3-papar-modal .btn-papar-semakan-kewangan:hover,
+    .step3-papar-modal .btn-papar-semakan-kewangan:focus {
+        background-color: #15803D;
+        border-color: #15803D;
         color: #fff;
     }
 
@@ -512,22 +515,11 @@
     .step3-modal-table-detail td:nth-child(1) {
         min-width: 220px;
     }
-
-    .step3-papar-modal .btn-papar-semakan-kewangan {
-        background-color: #1cb6ac;
-        border-color: #18a79d;
-        color: #fff;
-        min-width: 84px;
-        font-size: 12px;
-        line-height: 1.2;
-        padding: 6px 14px;
-        border-radius: 4px;
-    }
 </style>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('#kewangan-3 .btn-papar-semakan-kewangan').forEach(function(btn) {
+    document.querySelectorAll('#kewangan-3 .btn-papar-semakan-kewangan:not(.btn-open-profil-petender-readonly)').forEach(function(btn) {
         btn.addEventListener('click', function() {
             const dokumen = btn.getAttribute('data-dokumen') || '';
             const titleEl = document.getElementById('step3ModalDokumenTitle');

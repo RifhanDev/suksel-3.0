@@ -37,6 +37,11 @@ class PenilaianTeknikalController extends Controller
         return view('newModule.penilaian_teknikal.teknikal', compact('tender_no'));
     }
 
+    public function showTeknikalKerja(string $tender_no)
+    {
+        return view('newModule.penilaian_teknikal.teknikal_kerja', compact('tender_no'));
+    }
+
     /**
      * Show the form for creating a new resource.
      */

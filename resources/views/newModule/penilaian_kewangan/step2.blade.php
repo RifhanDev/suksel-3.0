@@ -127,95 +127,56 @@
     </div>
 </div>
 
-<style>
-    #modalPenilaianCadanganKewanganStep2 .table-primary thead th,
-    #modalPenilaianCadanganKewanganStep2 .table-primary th,
-    #modalButiranCadanganKewanganStep2 .table-primary thead th,
-    #modalButiranCadanganKewanganStep2 .table-primary th {
-        background-color: #3b5998 !important;
-        color: #fff !important;
-        border-color: #2d4373 !important;
-    }
-
-    #modalPenilaianCadanganKewanganStep2 .modal-header,
-    #modalButiranCadanganKewanganStep2 .modal-header {
-        background: #f3f4f6;
-        color: #111827;
-        border-bottom: 1px solid #e5e7eb;
-    }
-
-    #modalPenilaianCadanganKewanganStep2 .modal-title,
-    #modalButiranCadanganKewanganStep2 .modal-title {
-        color: #111827;
-        font-size: 1rem;
-        font-weight: 700;
-    }
-
-    #modalPenilaianCadanganKewanganStep2 .btn-close,
-    #modalButiranCadanganKewanganStep2 .btn-close {
-        filter: none;
-        opacity: 0.6;
-    }
-
-    #modalButiranCadanganKewanganStep2 .input-amaun {
-        max-width: 160px;
-        margin: 0 auto;
-        text-align: center;
-    }
-
-    #modalButiranCadanganKewanganStep2 .summary-input {
-        max-width: 170px;
-    }
-</style>
-
-{{-- First modal (Step 2): Penilaian Cadangan Kewangan --}}
+{{-- Modal 1 (Step 2): Senarai Pembekal penyata bank — Papar baris membuka modal penilaian penyata --}}
 <div class="modal fade" id="modalPenilaianCadanganKewanganStep2" tabindex="-1"
     aria-labelledby="modalLabelCadanganKewanganStep2" aria-hidden="true">
-    <div class="modal-dialog modal-xl">
-        <div class="modal-content">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content modal-semakan-kewangan">
             <div class="modal-header">
                 <h5 class="modal-title text-uppercase" id="modalLabelCadanganKewanganStep2">PENILAIAN CADANGAN KEWANGAN</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
             </div>
             <div class="modal-body">
-                <p class="mb-2"><strong>Tajuk / Dokumen:</strong> <span id="modalCadanganKewanganTajukStep2">Penyata Bank Terkini (3 Bulan Terakhir) Syarikat</span></p>
+                <p class="mb-3"><strong>Tajuk / Dokumen:</strong> <span id="modalCadanganKewanganTajukStep2">Penyata Bank Terkini (3 Bulan Terakhir) Syarikat</span></p>
 
                 <div class="card-title card-title-grey mb-2">Senarai Pembekal</div>
-                <p class="card-title-desc text-primary fst-italic mb-3">Sila pastikan semua senarai semak telah dinilai dan butang Menilai telah bertukar kepada Lihat.</p>
+                <p class="card-title-desc text-primary fst-italic mb-3">Pastikan semua senarai semak telah dinilai dan butang Menilai telah bertukar kepada Lihat.</p>
 
                 <div class="table-responsive">
-                    <table class="table table-bordered align-middle">
+                    <table class="table table-bordered align-middle mb-0">
                         <thead class="table-primary text-center text-white">
                             <tr>
-                                <th style="width: 12%;">Bil</th>
-                                <th style="width: 24%;">Jumlah Skor</th>
-                                <th style="width: 34%;">Status Penilaian</th>
-                                <th style="width: 30%;">Tindakan</th>
+                                <th style="width: 15%;">Bil</th>
+                                <th style="width: 22%;">Jumlah Skor</th>
+                                <th style="width: 28%;">Status Penilaian</th>
+                                <th style="width: 35%;">Tindakan</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody class="text-center">
                             <tr>
-                                <td class="text-center">1/2</td>
-                                <td class="text-center">10</td>
-                                <td class="text-center">Selesai</td>
-                                <td class="text-center">
-                                    <button type="button" class="btn btn-success btn-papar-butiran-cadangan-step2"
+                                <td>1/2</td>
+                                <td>10</td>
+                                <td>Selesai</td>
+                                <td>
+                                    <button type="button"
+                                        class="btn btn-success btn-sm btn-papar-penyata-bank-detail-step2 px-3"
                                         data-bs-toggle="modal"
                                         data-bs-target="#modalButiranCadanganKewanganStep2"
                                         data-bs-dismiss="modal"
-                                        data-dokumen="Penyata Bank Terkini (3 Bulan Terakhir) Syarikat">Papar</button>
+                                        data-kod-pembekal="1/2">Papar</button>
                                 </td>
                             </tr>
                             <tr>
-                                <td class="text-center">2/2</td>
-                                <td class="text-center">10</td>
-                                <td class="text-center">Selesai</td>
-                                <td class="text-center">
-                                    <button type="button" class="btn btn-success btn-papar-butiran-cadangan-step2"
+                                <td>2/2</td>
+                                <td>10</td>
+                                <td>Selesai</td>
+                                <td>
+                                    <button type="button"
+                                        class="btn btn-success btn-sm btn-papar-penyata-bank-detail-step2 px-3"
                                         data-bs-toggle="modal"
                                         data-bs-target="#modalButiranCadanganKewanganStep2"
                                         data-bs-dismiss="modal"
-                                        data-dokumen="Penyata Bank Terkini (3 Bulan Terakhir) Syarikat">Papar</button>
+                                        data-kod-pembekal="2/2">Papar</button>
                                 </td>
                             </tr>
                         </tbody>
@@ -223,86 +184,96 @@
                 </div>
             </div>
             <div class="modal-footer justify-content-center gap-2">
-                <button type="button" class="btn btn-success" data-bs-dismiss="modal">Simpan</button>
+                <button type="button" class="btn btn-primary px-5" data-bs-dismiss="modal">Kembali</button>
             </div>
         </div>
     </div>
 </div>
 
-{{-- Second modal (from first modal -> Papar): Butiran Cadangan Kewangan --}}
+{{-- Modal 2: Butiran penilaian penyata bulanan bank (selepas Papar pada senarai pembekal) --}}
 <div class="modal fade" id="modalButiranCadanganKewanganStep2" tabindex="-1"
     aria-labelledby="modalLabelButiranCadanganKewanganStep2" aria-hidden="true">
-    <div class="modal-dialog modal-xl">
-        <div class="modal-content">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content modal-semakan-kewangan">
             <div class="modal-header">
                 <h5 class="modal-title text-uppercase" id="modalLabelButiranCadanganKewanganStep2">PENILAIAN CADANGAN KEWANGAN</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
             </div>
             <div class="modal-body">
-                <p class="mb-2"><strong>Tajuk / Dokumen:</strong> <span id="modalButiranCadanganKewanganTajukStep2">Penyata Bank Terkini (3 Bulan Terakhir) Syarikat</span></p>
+                <p class="mb-1"><strong>Kod Pembekal :</strong> <span id="modalStep2KodPembekal">1/2</span></p>
+                <p class="mb-3"><strong>Tajuk / Dokumen :</strong> <span id="modalButiranCadanganKewanganTajukStep2">Penyata Bank Terkini (3 Bulan Terakhir) Syarikat</span></p>
 
-                <div class="card-title card-title-grey mb-2 text-uppercase">DOKUMEN SEMAK SILANG</div>
-                <div class="table-responsive mb-3">
-                    <table class="table table-bordered align-middle">
+                <div class="card-title card-title-grey mb-2">Dokumen Semak Silang</div>
+                <div class="table-responsive mb-4">
+                    <table class="table table-bordered align-middle mb-0">
                         <thead class="table-primary text-center text-white">
                             <tr>
-                                <th>Tajuk / Dokumen</th>
-                                <th style="width: 22%;">Dokumen</th>
+                                <th style="width: 62%;">Tajuk / Dokumen</th>
+                                <th style="width: 38%;">Dokumen</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr>
-                                <td class="text-center">Kunci Kira-kira Tahunan (Nota - Untuk syarikat ROC,n i mestilah salinan yang telah diaudit)</td>
-                                <td class="text-center"><button type="button" class="btn btn-success">Papar</button></td>
+                                <td>Kunci Kira-kira Tahunan (Nota - Untuk syarikat ROC, ini mestilah salinan yang telah diaudit)</td>
+                                <td class="text-center">
+                                    <button type="button" class="btn btn-success btn-sm">Papar</button>
+                                </td>
                             </tr>
                             <tr>
-                                <td class="text-center">Pengesahan dari Institusi Kewangan untuk tiga bulan penyata bank</td>
-                                <td class="text-center"><button type="button" class="btn btn-success">Papar</button></td>
+                                <td>Pengesahan dari Institusi Kewangan untuk tiga bulan penyata bank</td>
+                                <td class="text-center">
+                                    <button type="button" class="btn btn-success btn-sm">Papar</button>
+                                </td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
 
-                <div class="card-title card-title-grey mb-2 text-uppercase">PENYATA BANK</div>
-                <p class="card-title-desc text-primary fst-italic mb-2">Pastikan semua senarai semak lengkap dipilih dan butang Menilai bertukar kepada Lihat.</p>
-                <div class="table-responsive">
-                    <table class="table table-bordered align-middle">
+                <div class="card-title card-title-grey mb-2">Penyata Bank</div>
+                <p class="card-title-desc text-primary fst-italic mb-3">Pastikan semua senarai semak lengkap dinilai dan butang Menilai bertukar kepada Lihat.</p>
+                <div class="table-responsive mb-3">
+                    <table class="table table-bordered align-middle mb-0">
                         <thead class="table-primary text-center text-white">
                             <tr>
-                                <th style="width: 40%;">Bulan</th>
-                                <th>Amaun (RM)</th>
+                                <th style="width: 35%;">Bulan</th>
+                                <th style="width: 65%;">Amaun (RM)</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr>
-                                <td class="text-center">6</td>
-                                <td class="text-center"><input type="text" class="form-control input-amaun" value="500,000.00" readonly></td>
+                                <td class="text-center fw-semibold">6</td>
+                                <td><input type="text" class="form-control text-end step2-bulan-input" id="step2-bulan-6" inputmode="decimal" value="500,000.00" aria-label="Amaun bulan 6"></td>
                             </tr>
                             <tr>
-                                <td class="text-center">7</td>
-                                <td class="text-center"><input type="text" class="form-control input-amaun" value="300,000.00" readonly></td>
+                                <td class="text-center fw-semibold">7</td>
+                                <td><input type="text" class="form-control text-end step2-bulan-input" id="step2-bulan-7" inputmode="decimal" value="300,000.00" aria-label="Amaun bulan 7"></td>
                             </tr>
                             <tr>
-                                <td class="text-center">8</td>
-                                <td class="text-center"><input type="text" class="form-control input-amaun" value="200,000.00" readonly></td>
+                                <td class="text-center fw-semibold">8</td>
+                                <td><input type="text" class="form-control text-end step2-bulan-input" id="step2-bulan-8" inputmode="decimal" value="200,000.00" aria-label="Amaun bulan 8"></td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
-
-                <div class="row g-2 mb-3 align-items-center">
-                    <div class="col-md-3 text-end fw-semibold">Jumlah Amaun (RM)</div>
-                    <div class="col-md-2"><input type="text" class="form-control summary-input text-center" value="1,000,000.00" readonly></div>
-                    <div class="col-md-2 text-end fw-semibold">Purata (RM)</div>
-                    <div class="col-md-2"><input type="text" class="form-control summary-input text-center" value="333,333.33" readonly></div>
-                    <div class="col-md-1 text-end fw-semibold">Skor Automatik</div>
-                    <div class="col-md-2"><input type="text" class="form-control summary-input text-center" value="10" readonly></div>
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold mb-1" for="step2-jumlah-amaun">Jumlah Amaun (RM)</label>
+                        <input type="text" class="form-control text-end" id="step2-jumlah-amaun" readonly value="1,000,000.00" aria-live="polite">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold mb-1" for="step2-purata">Purata (RM)</label>
+                        <input type="text" class="form-control text-end" id="step2-purata" readonly value="333,333.33" aria-live="polite">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold mb-1" for="step2-skor-automatik">Skor Automatik</label>
+                        <input type="text" class="form-control text-center" id="step2-skor-automatik" readonly value="10" aria-live="polite">
+                    </div>
                 </div>
 
-                <div class="card-title card-title-grey mb-2 text-uppercase">SKOR PURATA PENYATA BANK (RM)</div>
-                <div class="table-responsive mb-3">
-                    <table class="table table-bordered align-middle">
-                        <thead class="table-primary text-center text-white">
+                <div class="card-title card-title-grey mb-2">Skor Purata Penyata Bank (RM)</div>
+                <div class="table-responsive mb-4">
+                    <table class="table table-bordered align-middle mb-0 text-center">
+                        <thead class="table-primary text-white">
                             <tr>
                                 <th>Dari</th>
                                 <th>Hingga</th>
@@ -311,36 +282,36 @@
                         </thead>
                         <tbody>
                             <tr>
-                                <td class="text-center">0</td>
-                                <td class="text-center">10064.99</td>
-                                <td class="text-center">0</td>
+                                <td>0</td>
+                                <td>10,064.99</td>
+                                <td>0</td>
                             </tr>
                             <tr>
-                                <td class="text-center">10065</td>
-                                <td class="text-center">10205</td>
-                                <td class="text-center">10</td>
+                                <td>10,065</td>
+                                <td>10,205</td>
+                                <td>10</td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
 
-                <div class="row g-3 mb-2 align-items-center">
-                    <div class="col-md-2 fw-semibold">Status Kelayakan</div>
-                    <div class="col-md-3">
-                        <select class="form-select" aria-label="Status Kelayakan">
-                            <option selected>Layak / Tidak Layak</option>
+                <div class="row g-3">
+                    <div class="col-md-5">
+                        <label class="form-label fw-semibold" for="step2-status-kelayakan">Status Kelayakan</label>
+                        <select class="form-select" id="step2-status-kelayakan" name="status_kelayakan_penyata">
+                            <option value="" selected disabled>Sila Pilih</option>
                             <option value="layak">Layak</option>
-                            <option value="tidak-layak">Tidak Layak</option>
+                            <option value="tidak_layak">Tidak Layak</option>
                         </select>
                     </div>
-                    <div class="col-md-1 fw-semibold">Catatan</div>
-                    <div class="col-md-4">
-                        <textarea class="form-control" rows="2"></textarea>
+                    <div class="col-12">
+                        <label class="form-label fw-semibold" for="step2-catatan-penyata">Catatan</label>
+                        <textarea class="form-control" id="step2-catatan-penyata" name="catatan_penyata" rows="4" placeholder=""></textarea>
                     </div>
                 </div>
             </div>
             <div class="modal-footer justify-content-center gap-2">
-                <button type="button" class="btn btn-success" data-bs-dismiss="modal">Simpan</button>
+                <button type="button" class="btn btn-success px-5" id="btnStep2SimpanPenyataBank">Simpan</button>
             </div>
         </div>
     </div>
@@ -355,22 +326,80 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
+    function parseMoney(str) {
+        return parseFloat(String(str || '').replace(/,/g, '')) || 0;
+    }
+
+    function formatMoney(num) {
+        return num.toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    /** Ikut jadual skor paparan: 0–10,064.99 → 0; ≥10,065 (julat atas contoh 10,065–10,205 → 10); purata lebih besar daripada julat contoh dikira layak skor penuh paparan */
+    function step2SkorFromPurata(purata) {
+        if (purata <= 10064.99) return 0;
+        return 10;
+    }
+
+    function recalcStep2PenyataBank() {
+        const ids = ['step2-bulan-6', 'step2-bulan-7', 'step2-bulan-8'];
+        let sum = 0;
+        ids.forEach(function(id) {
+            const el = document.getElementById(id);
+            if (el) sum += parseMoney(el.value);
+        });
+        const avg = sum / 3;
+        const elJumlah = document.getElementById('step2-jumlah-amaun');
+        const elPurata = document.getElementById('step2-purata');
+        const elSkor = document.getElementById('step2-skor-automatik');
+        if (elJumlah) elJumlah.value = formatMoney(sum);
+        if (elPurata) elPurata.value = formatMoney(avg);
+        if (elSkor) elSkor.value = String(step2SkorFromPurata(avg));
+    }
+
+    document.querySelectorAll('.step2-bulan-input').forEach(function(inp) {
+        inp.addEventListener('change', recalcStep2PenyataBank);
+        inp.addEventListener('blur', recalcStep2PenyataBank);
+    });
+
     document.querySelectorAll('.btn-papar-cadangan-kewangan-step2').forEach(function(btn) {
         btn.addEventListener('click', function() {
-            const tajuk = btn.getAttribute('data-dokumen') || '';
+            const tajuk = (btn.getAttribute('data-dokumen') || '').trim();
             const tajukFirstModal = document.getElementById('modalCadanganKewanganTajukStep2');
-            const tajukSecondModal = document.getElementById('modalButiranCadanganKewanganTajukStep2');
             if (tajukFirstModal && tajuk) tajukFirstModal.textContent = tajuk;
-            if (tajukSecondModal && tajuk) tajukSecondModal.textContent = tajuk;
+            const tajukDetail = document.getElementById('modalButiranCadanganKewanganTajukStep2');
+            if (tajukDetail && tajuk) tajukDetail.textContent = tajuk;
         });
     });
 
-    document.querySelectorAll('.btn-papar-butiran-cadangan-step2').forEach(function(btn) {
+    document.querySelectorAll('.btn-papar-penyata-bank-detail-step2').forEach(function(btn) {
         btn.addEventListener('click', function() {
-            const tajuk = btn.getAttribute('data-dokumen') || '';
-            const tajukSecondModal = document.getElementById('modalButiranCadanganKewanganTajukStep2');
-            if (tajukSecondModal && tajuk) tajukSecondModal.textContent = tajuk;
+            const kod = (btn.getAttribute('data-kod-pembekal') || '').trim();
+            const elKod = document.getElementById('modalStep2KodPembekal');
+            if (elKod && kod) elKod.textContent = kod;
+
+            const tajukSenarai = document.getElementById('modalCadanganKewanganTajukStep2');
+            const tajukDetail = document.getElementById('modalButiranCadanganKewanganTajukStep2');
+            const t = (tajukSenarai && tajukSenarai.textContent) ? tajukSenarai.textContent.trim() : '';
+            if (tajukDetail && t) tajukDetail.textContent = t;
+
+            recalcStep2PenyataBank();
         });
     });
+
+    const btnStep2SimpanPenyata = document.getElementById('btnStep2SimpanPenyataBank');
+    const elModalButiranStep2 = document.getElementById('modalButiranCadanganKewanganStep2');
+    const elModalCadanganStep2 = document.getElementById('modalPenilaianCadanganKewanganStep2');
+    if (btnStep2SimpanPenyata && elModalButiranStep2 && elModalCadanganStep2 && typeof bootstrap !== 'undefined') {
+        btnStep2SimpanPenyata.addEventListener('click', function() {
+            const modalButiran = bootstrap.Modal.getInstance(elModalButiranStep2)
+                || new bootstrap.Modal(elModalButiranStep2);
+            const modalCadangan = bootstrap.Modal.getInstance(elModalCadanganStep2)
+                || new bootstrap.Modal(elModalCadanganStep2);
+            elModalButiranStep2.addEventListener('hidden.bs.modal', function reopenSenarai() {
+                modalCadangan.show();
+            }, { once: true });
+            modalButiran.hide();
+        });
+    }
 });
 </script>

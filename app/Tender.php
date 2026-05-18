@@ -105,6 +105,7 @@ class Tender extends Model
 		'penilaian_fizikal',
 		'status_process_id',
 		'is_ebidding',
+		'ebidding_process_stage_id',
 	];
 
 	/**

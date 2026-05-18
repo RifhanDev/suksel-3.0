@@ -134,7 +134,16 @@ class TendersController extends Controller
 
 					if ($canCreateCommittee && $tender->status === 'Tiada Jawatan Kuasa') {
 						$url = route('pelantikanJawatankuasa') . '?tender=' . $tender->uuid;
-						return '<a href="' . $url . '" class="btn btn-sm btn-selangor">Lantik Jawatan Kuasa</a>';
+						
+						return 
+						'<button type="button"
+							class="btn btn-sm btn-selangor btn-pilih-peringkat"
+							data-bs-toggle="modal"
+							data-bs-target="#modalPilihPeringkat"
+							data-tender-uuid="' . $tender->uuid . '"
+							data-lantik-url="' . $url . '">
+							Lantik Jawatan Kuasa
+						</button>';
 					}
 
 					return '';

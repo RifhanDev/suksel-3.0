@@ -1,4 +1,5 @@
-@extends(Auth::user()->hasRole('Vendor') ? 'layouts.modernLanding' : 'layouts.v3.master')
+{{-- @extends(Auth::user()->hasRole('Vendor') ? 'layouts.modernLanding' : 'layouts.v3.master') --}}
+@extends(!Auth::check() || Auth::user()->hasRole('Vendor') ? 'layouts.modernLanding' : 'layouts.v3.master')
     {{-- 
      PAGE-PAGE AGENCY NI TINGGAL SEKEJAP, SEBAB KENA CHECK BTUL2 DULU (CHALLENGING) 
      NK BEZAKAN PAGE UTK LANDING DGN USER YG DH LOGGED IN
@@ -263,44 +264,40 @@
                     </div>
 
                     <div class="toolbar-actions">
-                        @if (App\OrganizationUnit::canCreate())
-                            <a href="{{ asset('agencies/create') }}"
-                                class="btn btn-primary btn-sm d-inline-flex align-items-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
-                                    fill="none" class="me-1" stroke="currentColor" stroke-width="2"
-                                    stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M12 5l0 14" />
-                                    <path d="M5 12l14 0" />
-                                </svg>
-                                Masukkan Agensi Baru
-                            </a>
-                        @endif
-
                         <div class="dropdown d-inline-block">
                             <button type="button"
-                                class="btn btn-outline-secondary btn-sm dropdown-toggle d-inline-flex align-items-center"
+                                class="btn-auth btn-auth-outline dropdown-toggle"
                                 data-bs-toggle="dropdown" aria-expanded="false">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
-                                    fill="none" class="me-1" stroke="currentColor" stroke-width="2"
+                                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2"
                                     stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M4 6l16 0" />
-                                    <path d="M4 12l16 0" />
-                                    <path d="M4 18l16 0" />
+                                    <path d="M4 6l16 0" /><path d="M4 12l10 0" /><path d="M4 18l6 0" />
                                 </svg>
                                 Pilihan Kategori
                             </button>
                             <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
                                 <li><a class="dropdown-item" href="{{ route('agencies.index') }}">Semua Kategori</a></li>
-                                <li>
-                                    <hr class="dropdown-divider">
-                                </li>
+                                <li><hr class="dropdown-divider"></li>
                                 @foreach (App\OrganizationType::all() as $ou_type)
-                                    <li><a class="dropdown-item"
-                                            href="{{ route('agencies.index', ['type' => $ou_type->id]) }}">{{ $ou_type->name }}</a>
+                                    <li>
+                                        <a class="dropdown-item" href="{{ route('agencies.index', ['type' => $ou_type->id]) }}">
+                                            {{ $ou_type->name }}
+                                        </a>
                                     </li>
                                 @endforeach
                             </ul>
                         </div>
+
+                        @if (App\OrganizationUnit::canCreate())
+                            <a href="{{ asset('agencies/create') }}" class="btn-auth btn-auth-solid">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M12 5l0 14" /><path d="M5 12l14 0" />
+                                </svg>
+                                Masukkan Agensi Baru
+                            </a>
+                        @endif
                     </div>
                 </div>
 

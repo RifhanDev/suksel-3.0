@@ -760,9 +760,10 @@
                     <a class="sidebar-link {{ $isJawatankuasaSpesifikasiMenuActive ? 'active' : 'collapsed' }}" data-bs-toggle="collapse"
                         data-bs-target="#menuJawatankusaSpesifikasi" aria-expanded="{{ $isJawatankuasaSpesifikasiMenuActive ? 'true' : 'false' }}" style="cursor: pointer;">
                         <svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
+                            <rect x="9" y="3" width="6" height="4" rx="1"/>
+                            <path d="m9 12 2 2 4-4"/>
                         </svg>
                         <span class="nav-text">Jawatankuasa Spesifikasi / Pengurusan </span>
                         <svg xmlns="http://www.w3.org/2000/svg" class="nav-arrow" viewBox="0 0 24 24" fill="none"
@@ -778,6 +779,59 @@
                                     <span class="{{ request()->is('senarai-semak*') ? 'text-white' : '' }}">Senarai Semak</span>
                                 </a>
                             </li>
+                        </ul>
+                    </div>
+                </li>
+
+				<!-- Menu: Penyediaan Iklan -->
+                <li class="nav-item">
+                    <a class="sidebar-link {{ request()->routeIs('penyediaanIklan') || request()->routeIs('penyediaanIklan.*') ? 'active' : '' }}"
+                        href="{{ route('penyediaanIklan') }}" style="cursor: pointer;">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="m3 11 18-5v12L3 13v-2z"/>
+                            <path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/>
+                        </svg>
+                        <span class="nav-text">Penyediaan Iklan</span>
+                    </a>
+                </li>
+
+				<!-- Menu : Lawatan Tapak -->
+                <li class="nav-item">
+					<a class="sidebar-link" href="{{ route('lawatanTapakUrusetia') }}" style="cursor: pointer;">
+						<svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                            <circle cx="12" cy="10" r="3"/>
+                        </svg>
+						<span class="nav-text">Lawatan Tapak</span>
+					</a>
+                </li>
+
+				<!-- Menu : Penyediaan Mesyuarat -->
+                <li class="nav-item">
+                    <a class="sidebar-link collapsed" data-bs-toggle="collapse"
+                        data-bs-target="#menuPenyediaanMesyuarat" aria-expanded="false" style="cursor: pointer;">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                            <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
+                            <line x1="3" y1="10" x2="21" y2="10"/>
+                        </svg>
+                        <span class="nav-text">Penyediaan Mesyuarat</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="nav-arrow" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                    </a>
+                    <div class="collapse" id="menuPenyediaanMesyuarat">
+                        <ul class="sidebar-submenu">
+                            <li><a class="submenu-item" href="{{ route('perincianMesyuarat') }}">
+                                    <div class="submenu-icon"></div><span>Perincian Mesyuarat</span>
+                                </a></li>
+                            <li><a class="submenu-item" href="{{ route('jawatankuasaMesyuarat') }}">
+                                    <div class="submenu-icon"></div><span>Jawatankuasa</span>
+                                </a></li>
                         </ul>
                     </div>
                 </li>
@@ -812,15 +866,25 @@
 				<!-- Menu : Jawatankuasa Pembuka -->
 				<li class="nav-item">
 					<a class="sidebar-link {{ request()->is('jawatankuasa-pembuka*') ? 'active' : '' }}"
-						href="{{ route('jawatankuasaPembuka') }}" style="cursor: pointer;">
+						href="{{ route('indexJawatankuasaPembuka') }}" style="cursor: pointer;">
 						<svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none"
-							stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-							<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-							<circle cx="9" cy="7" r="4"></circle>
-							<path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-							<path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+							stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+							<rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+							<path d="M7 11V7a5 5 0 0 1 9.9-1"/>
 						</svg>
 						<span class="nav-text">Jawatankuasa Pembuka</span>
+					</a>
+				</li>
+
+				<!-- Menu: Cut Off -->
+				<li class="nav-item">
+					<a class="sidebar-link {{ request()->is('cut-off*') ? 'active' : '' }}" href="{{ route('cutOff.index') }}"
+						style="cursor: pointer;">
+						<svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none"
+							stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+							<polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+						</svg>
+						<span class="nav-text">Cut Off</span>
 					</a>
 				</li>
 
@@ -836,9 +900,12 @@
                         aria-expanded="{{ $isPenilaianMenuActive ? 'true' : 'false' }}"
                         style="cursor: pointer;">
                         <svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/>
+                            <path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/>
+                            <path d="M7 21h10"/>
+                            <path d="M12 3v18"/>
+                            <path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/>
                         </svg>
                         <span class="nav-text">Penilaian Teknikal & Kewangan</span>
                         <svg xmlns="http://www.w3.org/2000/svg" class="nav-arrow" viewBox="0 0 24 24" fill="none"
@@ -976,27 +1043,14 @@
 					</div>
 				</li>
 
-				<!-- Menu: Cut Off -->
-				<li class="nav-item">
-					<a class="sidebar-link {{ request()->is('cut-off*') ? 'active' : '' }}" href="{{ route('cutOff.index') }}"
-						style="cursor: pointer;">
-						<svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none"
-							stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-							<circle cx="12" cy="12" r="10"></circle>
-							<polyline points="12 6 12 12 16 14"></polyline>
-						</svg>
-						<span class="nav-text">Cut Off</span>
-					</a>
-				</li>
-
 				<!-- Menu: Perakuan Jabatan -->
 				<li class="nav-item">
 					<a class="sidebar-link {{ request()->is('perakuan-jabatan*') ? 'active' : '' }}"
 						href="{{ route('perakuanjabatan.index') }}" style="cursor: pointer;">
 						<svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none"
-							stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-							<circle cx="12" cy="12" r="10"></circle>
-							<polyline points="12 6 12 12 16 14"></polyline>
+							stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+							<circle cx="12" cy="8" r="6"/>
+							<path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/>
 						</svg>
 						<span class="nav-text">Perakuan Jabatan</span>
 					</a>
@@ -1007,15 +1061,38 @@
 					<a class="sidebar-link {{ request()->is('jawatankuasa-perolehan*') ? 'active' : '' }}"
 						href="{{ route('jawatankuasa.perolehan.index') }}" style="cursor: pointer;">
 						<svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none"
-							stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-							<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-							<circle cx="9" cy="7" r="4"></circle>
-							<path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-							<path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+							stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+							<rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+							<path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
 						</svg>
 						<span class="nav-text">Jawatankuasa Perolehan</span>
 					</a>
 				</li>
+
+				<!-- Menu : Penyediaan Surat Niat -->
+                <li class="nav-item">
+					<a class="sidebar-link" href="{{ route('indexPenyediaanSuratNiat') }}" style="cursor: pointer;">
+						<svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="22" y1="2" x2="11" y2="13"/>
+                            <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                        </svg>
+						<span class="nav-text">Penyediaan Surat Niat</span>
+					</a>
+                </li>
+				
+				<!-- Menu : Penyediaan Surat Setuju Terima -->
+                <li class="nav-item">
+					<a class="sidebar-link" href="{{ route('indexPenyediaanSST') }}" style="cursor: pointer;">
+						<svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                            <polyline points="9 15 11 17 15 13"/>
+                        </svg>
+						<span class="nav-text">Penyediaan Surat Setuju Terima</span>
+					</a>
+                </li>
 
 				@php
 					$isEBiddingMenuActive = request()->is('eBidding*') || request()->is('keputusan-mesyuarat*');
@@ -1026,9 +1103,12 @@
 						data-bs-target="#menuEBidding" aria-expanded="{{ $isEBiddingMenuActive ? 'true' : 'false' }}"
 						style="cursor: pointer;">
 						<svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none"
-							stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-							<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-							<path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+							stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+							<path d="m14.5 12.5-8 8a2.119 2.119 0 0 1-3-3l8-8"/>
+							<path d="m16 16 6-6"/>
+							<path d="m8 8 6-6"/>
+							<path d="m9 7 8 8"/>
+							<path d="m21 11-8-8"/>
 						</svg>
 						<span class="nav-text">E-Bidding</span>
 						<svg xmlns="http://www.w3.org/2000/svg" class="nav-arrow" viewBox="0 0 24 24" fill="none"
@@ -1055,9 +1135,9 @@
 						data-bs-target="#menuPembelianTerus"
 						aria-expanded="{{ request()->is('pembelian-terus*') ? 'true' : 'false' }}" style="cursor: pointer;">
 						<svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none"
-							stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-							<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-							<path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+							stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+							<path d="m7.5 4.27 9 5.15M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/>
+							<path d="m3.3 7 8.7 5 8.7-5M12 22V12"/>
 						</svg>
 						<span class="nav-text">Pembelian Terus</span>
 						<svg xmlns="http://www.w3.org/2000/svg" class="nav-arrow" viewBox="0 0 24 24" fill="none"
@@ -1233,11 +1313,9 @@
 					<a class="sidebar-link {{ request()->is('jawatankuasa-pembuka*') ? 'active' : '' }}"
 						href="{{ route('jawatankuasaPembuka') }}" style="cursor: pointer;">
 						<svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none"
-							stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-							<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-							<circle cx="9" cy="7" r="4"></circle>
-							<path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-							<path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+							stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+							<rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+							<path d="M7 11V7a5 5 0 0 1 9.9-1"/>
 						</svg>
 						<span class="nav-text">Jawatankuasa Pembuka</span>
 					</a>
@@ -1255,9 +1333,12 @@
                         aria-expanded="{{ $isPenilaianMenuActive ? 'true' : 'false' }}"
                         style="cursor: pointer;">
                         <svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/>
+                            <path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/>
+                            <path d="M7 21h10"/>
+                            <path d="M12 3v18"/>
+                            <path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/>
                         </svg>
                         <span class="nav-text">Penilaian Teknikal & Kewangan</span>
                         <svg xmlns="http://www.w3.org/2000/svg" class="nav-arrow" viewBox="0 0 24 24" fill="none"
@@ -1392,9 +1473,8 @@
 					<a class="sidebar-link {{ request()->is('cut-off*') ? 'active' : '' }}" href="{{ route('cutOff.index') }}"
 						style="cursor: pointer;">
 						<svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none"
-							stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-							<circle cx="12" cy="12" r="10"></circle>
-							<polyline points="12 6 12 12 16 14"></polyline>
+							stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+							<polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
 						</svg>
 						<span class="nav-text">Cut Off</span>
 					</a>
@@ -1405,11 +1485,9 @@
 					<a class="sidebar-link {{ request()->is('jawatankuasa-perolehan*') ? 'active' : '' }}"
 						href="{{ route('jawatankuasa.perolehan.index') }}" style="cursor: pointer;">
 						<svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none"
-							stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-							<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-							<circle cx="9" cy="7" r="4"></circle>
-							<path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-							<path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+							stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+							<rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+							<path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
 						</svg>
 						<span class="nav-text">Jawatankuasa Perolehan</span>
 					</a>
@@ -1428,7 +1506,7 @@
 							<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
 							<path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
 						</svg>
-						<span class="nav-text">E-Bidding</span>
+						<span class="nav-text">e-Bidding</span>
 						<svg xmlns="http://www.w3.org/2000/svg" class="nav-arrow" viewBox="0 0 24 24" fill="none"
 							stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
 							<polyline points="9 18 15 12 9 6"></polyline>
@@ -1453,9 +1531,9 @@
 						data-bs-target="#menuPembelianTerus"
 						aria-expanded="{{ request()->is('pembelian-terus*') ? 'true' : 'false' }}" style="cursor: pointer;">
 						<svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none"
-							stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-							<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-							<path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+							stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+							<path d="m7.5 4.27 9 5.15M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/>
+							<path d="m3.3 7 8.7 5 8.7-5M12 22V12"/>
 						</svg>
 						<span class="nav-text">Pembelian Terus</span>
 						<svg xmlns="http://www.w3.org/2000/svg" class="nav-arrow" viewBox="0 0 24 24" fill="none"
