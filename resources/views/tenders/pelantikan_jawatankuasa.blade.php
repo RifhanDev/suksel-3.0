@@ -62,10 +62,24 @@
 
                     <div class="row g-3 pb-3">
 
+                        <div class="col-12">
+                            <div class="d-flex flex-column gap-1">
+                                <span class="text-muted fw-semibold text-uppercase"
+                                    style="font-size:0.67rem; letter-spacing:0.5px;">
+                                    {{ optional($tender)->type === 'quotation' ? 'Nama Sebut Harga' : 'Nama Tender' }}
+                                </span>
+                                <span class="fw-semibold text-dark" style="font-size:0.95rem;">
+                                    {{ optional($tender)->name ?? '-' }}
+                                </span>
+                            </div>
+                        </div>
+
                         <div class="col-12 col-sm-6 col-lg-4">
                             <div class="d-flex flex-column gap-1">
                                 <span class="text-muted fw-semibold text-uppercase"
-                                    style="font-size:0.67rem; letter-spacing:0.5px;">No. Tender</span>
+                                    style="font-size:0.67rem; letter-spacing:0.5px;">
+                                    {{ optional($tender)->type === 'quotation' ? 'No. Sebut Harga' : 'No. Tender' }}
+                                </span>
                                 <span class="fw-semibold text-dark" style="font-size:0.88rem;">
                                     {{ $tender->ref_number ?? request('tender_id', '-') }}
                                 </span>

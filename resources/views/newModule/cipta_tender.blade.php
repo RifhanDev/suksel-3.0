@@ -1,6 +1,7 @@
 @extends('layouts.v3.master')
 
 @section('styles')
+    <link href="{{ asset('css/components/button-components.css') }}" rel="stylesheet">
     <style>
         /* --- TIMELINE --- */
         .stepper-wrapper {
@@ -547,15 +548,15 @@
     <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center mb-4">
         <!-- Title -->
         <div class="mb-3 mb-lg-0">
-            <h3 class="fw-bold text-dark m-0" style="letter-spacing: -0.5px;">Cipta Tender Baru</h3>
+            <h3 class="fw-bold text-dark m-0" style="letter-spacing: -0.5px;">Cipta Tender/ Sebut Harga Baharu</h3>
             <p class="text-muted small m-0">Sila lengkapkan maklumat di bawah.</p>
         </div>
 
         <div class="d-flex flex-wrap align-items-center gap-3 bg-white px-3 py-2 rounded-2 shadow-sm border w-lg-auto">
             <!-- Item 1 -->
             <div class="d-flex align-items-center gap-2">
-                <span class="badge bg-light text-dark border">NO. SEBUT HARGA</span>
-                <span class="small text-primary fw-bold text-muted">Belum Dijana</span>
+                <span class="badge bg-light text-dark border" id="kaedah-label">- Pilih Tender -</span>
+                <span class="small text-primary fw-bold text-muted">-</span>
             </div>
             <!-- Divider (Desktop Only) -->
             <div class="vr d-none d-lg-block text-muted opacity-25" style="height: 20px;"></div>
@@ -583,7 +584,7 @@
 
         <div class="stepper-item active" id="step1-indicator">
             <div class="step-counter"><span>1</span></div>
-            <div class="step-name">Maklumat Asas</div>
+            <div class="step-name">Maklumat Umum</div>
         </div>
         <div class="stepper-item" id="step2-indicator">
             <div class="step-counter"><span>2</span></div>
@@ -718,8 +719,8 @@
                     <div class="row mb-4 g-3">
                         <div class="col-md-6">
                             <label class="form-label">Tarikh Dicipta<span class="text-danger">*</span></label>
-                            <input type="text" class="form-control form-control-lg datepicker" name="tarikh_dicipta"
-                                value="{{ old('tarikh_dicipta') }}" placeholder="Pilih tarikh..." required readonly>
+                            <input type="text" class="form-control form-control-lg" name="tarikh_dicipta"
+                                value="{{ old('tarikh_dicipta', \Carbon\Carbon::today()->format('j M Y')) }}" required readonly disabled>
                         </div>
                         <div class="col-md-6">
                             <!-- For Kerja -->
@@ -828,8 +829,20 @@
                                         <input type="text" class="form-control fw-bold" name="no_kontrak"
                                             value="{{ old('no_kontrak') }}">
                                     </div>
+                                    <!-- Zon Toggle -->
+                                    <div class="col-12">
+                                        <label class="form-label">Zon/Lokasi</label>
+                                        <div class="segmented-control">
+                                            <input type="radio" name="zon_lokasi" id="z_y" value="1"
+                                                {{ old('zon_lokasi', '1') == '1' ? 'checked' : '' }}>
+                                            <label for="z_y">Ya</label>
+                                            <input type="radio" name="zon_lokasi" id="z_t" value="0"
+                                                {{ old('zon_lokasi', '1') == '0' ? 'checked' : '' }}>
+                                            <label for="z_t">Tidak</label>
+                                        </div>
+                                    </div>
                                     <!-- Lokaliti -->
-                                    <div class="col-6">
+                                    <div class="col-12 {{ old('zon_lokasi', '1') == '0' ? 'd-none' : '' }}" id="lokaliti-group">
                                         <label class="form-label">Lokaliti Liputan</label>
                                         <select class="form-select form-select-sm" name="lokaliti_id">
                                             <option selected disabled>Pilih...</option>
@@ -839,18 +852,6 @@
                                                     {{ $lokaliti->name }}</option>
                                             @endforeach
                                         </select>
-                                    </div>
-                                    <!-- Zon Toggle -->
-                                    <div class="col-6">
-                                        <label class="form-label">Zon/Lokasi</label>
-                                        <div class="segmented-control">
-                                            <input type="radio" name="zon_lokasi" id="z_y" value="1"
-                                                {{ old('zon_lokasi') == '1' ? 'checked' : '' }}>
-                                            <label for="z_y">Ya</label>
-                                            <input type="radio" name="zon_lokasi" id="z_t" value="0"
-                                                {{ old('zon_lokasi', '0') == '0' ? 'checked' : '' }}>
-                                            <label for="z_t">Tidak</label>
-                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -879,17 +880,16 @@
                                                 class="text-danger">*</span></label>
                                         <div class="segmented-control">
                                             <input type="radio" name="lawatan_tapak" id="lt_y" value="1"
-                                                {{ old('lawatan_tapak') == '1' ? 'checked' : '' }}>
+                                                {{ old('lawatan_tapak', '1') == '1' ? 'checked' : '' }}>
                                             <label for="lt_y">Ada</label>
                                             <input type="radio" name="lawatan_tapak" id="lt_t" value="0"
-                                                {{ old('lawatan_tapak', '0') == '0' ? 'checked' : '' }}>
+                                                {{ old('lawatan_tapak', '1') == '0' ? 'checked' : '' }}>
                                             <label for="lt_t">Tiada</label>
                                         </div>
                                     </div>
                                     <!-- Fizikal Toggle -->
-                                    <div class="col-6">
-                                        <label class="form-label">Penghantaran Fizikal<span
-                                                class="text-danger">*</span></label>
+                                    <div class="col-12">
+                                        <label class="form-label">Penghantaran Fizikal (Dokumen/ Sampel)<span class="text-danger">*</span></label>
                                         <div class="segmented-control">
                                             <input type="radio" name="fizikal" id="pf_y" value="1"
                                                 {{ old('fizikal') == '1' ? 'checked' : '' }}>
@@ -900,7 +900,7 @@
                                         </div>
                                     </div>
                                     <!-- Terbuka Toggle -->
-                                    <div class="col-6">
+                                    <div class="col-12">
                                         <label class="form-label">Terbuka Kepada<span class="text-danger">*</span></label>
                                         <div class="segmented-control">
                                             <input type="radio" name="terbuka_kepada" id="tk_b"
@@ -1193,27 +1193,28 @@
 
             <!-- FOOTER -->
             <div class="bg-light p-4 border-top d-flex justify-content-between align-items-center">
-                <button type="button" class="btn btn-outline-secondary fw-bold px-4 d-none rounded-3" id="btn-back">
+                <button type="button" class="btn-form btn-form-secondary d-none" id="btn-back">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="19" y1="12" x2="5" y2="12"></line>
+                        <polyline points="12 19 5 12 12 5"></polyline>
+                    </svg>
                     Kembali
                 </button>
 
-
-                <div class="ms-auto">
-                    <button type="button" class="btn btn-selangor fw-bold px-4 rounded-3 d-flex align-items-center gap-2"
-                        id="btn-next">
+                <div class="ms-auto d-flex gap-2">
+                    <button type="button" class="btn-form btn-form-primary" id="btn-next">
                         Seterusnya
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
-                            fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
-                            stroke-linejoin="round">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <line x1="5" y1="12" x2="19" y2="12"></line>
                             <polyline points="12 5 19 12 12 19"></polyline>
                         </svg>
                     </button>
 
-                    <button type="submit"
-                        class="btn btn-success fw-bold px-4 d-none rounded-3 d-flex align-items-center gap-2"
-                        id="btn-submit">
-                        Hantar Tender
+                    <button type="submit" class="btn-form btn-form-success d-none" id="btn-submit">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        Hantar
                     </button>
                 </div>
             </div>
@@ -1350,6 +1351,22 @@
                 autoclose: true,
                 todayHighlight: true,
                 todayBtn: 'linked'
+            });
+
+            // --- ZON/LOKASI TOGGLE ---
+            $('input[name="zon_lokasi"]').change(function() {
+                if ($(this).val() === '1') {
+                    $('#lokaliti-group').removeClass('d-none');
+                } else {
+                    $('#lokaliti-group').addClass('d-none').find('select').val('');
+                }
+            });
+
+            // --- KAEDAH PEROLEHAN LABEL LISTENER ---
+            $('select[name="type"]').change(function() {
+                var text = $(this).find('option:selected').text().toLowerCase();
+                var label = text.includes('sebut harga') ? 'NO. SEBUT HARGA' : 'NO. TENDER';
+                $('#kaedah-label').text(label);
             });
 
             // --- PTJ DROPDOWN LISTENER ---
