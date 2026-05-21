@@ -84,6 +84,10 @@ class CartController extends Controller
 		$items  = array_diff($items, TenderVendor::whereVendorId(auth()->user()->vendor_id)->whereParticipate(1)->pluck('tender_id')->toArray());
 		session()->put('cart_items', $items);
 
+		if (auth()->user()->hasRole('Vendor')) {
+			return view('cart.vendor.checkout', compact('tenders', 'amount', 'fpx', 'ebpg', 'duitnow'));
+		}
+
 		return view('cart.checkout', compact('tenders', 'amount', 'fpx', 'ebpg', 'duitnow'));
 	}
 
@@ -119,7 +123,11 @@ class CartController extends Controller
 		}
 
 		if ($amount > 0.00) {
-			if (!in_array($method, ['fpx-1', 'fpx-2', 'ebpg', 'duitnow'])) {
+			// ORIGINAL: if (!in_array($method, ['fpx-1', 'fpx-2', 'ebpg', 'duitnow'])) {
+			// MODIFIED: allow 'direct' bypass in non-production for testing purposes
+			$validMethods = ['fpx-1', 'fpx-2', 'ebpg', 'duitnow'];
+			if (config('app.env') !== 'production') $validMethods[] = 'direct';
+			if (!in_array($method, $validMethods)) {
 				return redirect()->back()->with('error', 'Sila pilih saluran pembayaran yang sah.');
 			}
 
@@ -198,8 +206,10 @@ class CartController extends Controller
 		$items       = unserialize($transaction->cached_data);
 		$tenders     = Tender::whereIn('id', $items)->get();
 
+		// ORIGINAL: $fpx = null; $ebpg = null; — $duitnow was missing, causing undefined variable error on success
 		$fpx = null;
 		$ebpg = null;
+		$duitnow = null;
 
 		if ($transaction->status != 'failed') {
 			session()->forget('cart_items');
@@ -223,6 +233,11 @@ class CartController extends Controller
 			return $this->_access_denied();
 
 		$amount = $transaction->amount;
+
+		if (auth()->user()->hasRole('Vendor')) {
+			return view('cart.vendor.callback', compact('transaction', 'tenders', 'amount', 'fpx', 'ebpg', 'duitnow'));
+		}
+
 		return view('cart.callback', compact('transaction', 'tenders', 'amount', 'fpx', 'ebpg', 'duitnow'));
 	}
 

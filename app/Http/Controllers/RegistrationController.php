@@ -14,6 +14,7 @@ use App\Vendor;
 use Carbon\Carbon;
 use Hash;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Validator;
 use Mail;
 
@@ -225,7 +226,11 @@ class RegistrationController extends Controller
         $user   = auth()->user();
         $vendor = $user->vendor;
 
-        if (!in_array($request->method, ['fpx-1', 'fpx-2', 'ebpg', 'duitnow'])) {
+        // ORIGINAL: if (!in_array($request->method, ['fpx-1', 'fpx-2', 'ebpg', 'duitnow'])) {
+        // MODIFIED: allow 'direct' bypass in non-production for testing purposes
+        $validMethods = ['fpx-1', 'fpx-2', 'ebpg', 'duitnow'];
+        if (config('app.env') !== 'production') $validMethods[] = 'direct';
+        if (!in_array($request->method, $validMethods)) {
             return redirect()->back()->with('error', 'Sila pilih saluran pembayaran yang sah.');
         }
 
@@ -257,6 +262,17 @@ class RegistrationController extends Controller
         if (in_array($request->method, ['fpx-1', 'fpx-2'])) {
             session()->put('fpx_type', $request->method);
         }
+        // ORIGINAL: always redirect to gateway
+        // MODIFIED: if 'direct' (dev bypass), mark success immediately and generate subscription
+        if ($request->method === 'direct' && config('app.env') !== 'production') {
+            $transaction->status            = 'success';
+            $transaction->gateway_reference = str_random(10);
+            $transaction->save();
+            $transaction->generateSubscription();
+            // ORIGINAL: route('register.payment.callback', ...) — no named route exists, using URI directly
+            return redirect('register/payment_callback/' . $transaction->id);
+        }
+
         if ($method == 'fpx' && $gateway->version == '7.0') {
             $redirect = redirect('payment/' . $method . '/bank-list');
         } else {
