@@ -697,11 +697,11 @@ Route::middleware(['auth'])->group(function () {
 		Route::prefix('refunds')->group(function () {
 			Route::post('get-transaction', [RefundController::class, 'fetch_transactions'])->name('get_transaction');
 			Route::post('get-refund', [RefundController::class, 'get_refund_details'])->name('get_refund_details');
-			Route::get('create', [RefundController::class, 'create'])->name('refunds.create');
-			Route::post('store', [RefundController::class, 'store'])->name('refunds.store');
-			Route::get('{refund}/show', [RefundController::class, 'show'])->name('refunds.show');
-			Route::get('{refund}/edit', [RefundController::class, 'edit'])->name('refunds.edit');
-			Route::post('{refund}/update', [RefundController::class, 'update'])->name('refunds.update');
+			// Route::get('create', [RefundController::class, 'create'])->name('refunds.create');
+			// Route::post('store', [RefundController::class, 'store'])->name('refunds.store');
+			// Route::get('{refund}/show', [RefundController::class, 'show'])->name('refunds.show');
+			// Route::get('{refund}/edit', [RefundController::class, 'edit'])->name('refunds.edit');
+			// Route::post('{refund}/update', [RefundController::class, 'update'])->name('refunds.update');
 
 			Route::prefix('request')->group(function () {
 				Route::get('/', [RefundController::class, 'index_request'])->name('refunds.request.index');
@@ -757,5 +757,17 @@ Route::middleware(['auth'])->group(function () {
 
 		// Reject Template
 		Route::resource('reject-template', RejectTemplateController::class);
+	});
+
+	// Laporan Transaksi Syarikat (vendor-accessible — duplicated outside Admin group)
+	Route::get('reports/vendor/summary/{year}/{vendor_id}', [ReportVendorSummaryController::class, 'index'])->name('vendor.report.vendor.summary');
+
+	// Refunds (vendor-accessible — duplicated outside Admin group)
+	Route::prefix('refunds')->group(function () {
+		Route::get('create', [RefundController::class, 'create'])->name('refunds.create');
+		Route::post('store', [RefundController::class, 'store'])->name('refunds.store');
+		Route::get('{refund}/show', [RefundController::class, 'show'])->name('refunds.show');
+		Route::get('{refund}/edit', [RefundController::class, 'edit'])->name('refunds.edit');
+		Route::post('{refund}/update', [RefundController::class, 'update'])->name('refunds.update');
 	});
 });

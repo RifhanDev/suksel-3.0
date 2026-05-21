@@ -506,7 +506,11 @@ class TendersController extends Controller
 		view()->share('global_ou', $tender->tenderer);
 
 		if (!auth()->check()) {
-			return view('tenders.show', compact('tender', 'organizationunit', 'invites', 'histories', 'exception', 'templates', 'tender_winner'));
+			return view('tenders.guest.show', compact('tender', 'organizationunit', 'invites', 'histories', 'exception', 'templates', 'tender_winner'));
+		}
+
+		if (auth()->user()->hasRole('Vendor')) {
+			return view('tenders.vendor.show', compact('tender', 'organizationunit', 'invites', 'histories', 'exception', 'templates', 'tender_winner'));
 		}
 
 		return view('tenders.auth.show', compact('tender', 'organizationunit', 'invites', 'histories', 'exception', 'templates', 'tender_winner'));

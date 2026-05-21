@@ -62,6 +62,11 @@ class NewsController extends Controller
 			//return $datatable;
 		}
 
+		if (!auth()->check() || auth()->user()->hasRole('Vendor')) {
+			$newsList = News::wherePublish(1)->orderBy('created_at', 'desc')->paginate(15);
+			return view('news.vendor.index', compact('newsList'));
+		}
+
 		return view('news.index', compact('news'));
 	}
 
@@ -72,6 +77,10 @@ class NewsController extends Controller
 
 		if (!$news->canShow())
 			return $this->_access_denied();
+
+		if (!auth()->check() || auth()->user()->hasRole('Vendor')) {
+			return view('news.vendor.show', compact('news'));
+		}
 
 		return view('news.show', compact('news'));
 	}
