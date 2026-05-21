@@ -98,7 +98,7 @@ class HomeController extends Controller
 					$string   = [];
 					$string[] = '<strong><u>' . $tender->tenderer->name . '</u></strong>';
 					$string[] = '<small><strong>' . $tender->ref_number . '</strong></small>';
-					$string[] = '<a class="table-tender-title" href="' . route('tender.show', $tender->id) . '">' . $tender->name . '</a>';
+					$string[] = '<a class="table-tender-title" href="' . route('tenders.show', $tender->id) . '">' . $tender->name . '</a>';
 
 					if ($tender->briefing_required) {
 						$string[] = '';
