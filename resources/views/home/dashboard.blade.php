@@ -145,11 +145,11 @@
         </div>
     </div>
 
-    <div class="row g-4">
+    <div class="row g-4" style="align-items:flex-start;">
 
         {{-- LEFT: Tab card --}}
         <div class="col-lg-9">
-            <div class="db-card h-100">
+            <div class="db-card">
 
                 <div class="db-card-header">
                     <ul class="nav nav-tabs flex-wrap" role="tablist">
@@ -430,7 +430,8 @@
                         </div>
                         <p class="db-news-title">Berita Terkini</p>
                     </div>
-                    <div>
+                    <div style="overflow:hidden; max-height:420px;" id="db-news-ticker">
+                        <div>
                         @foreach ($global_news as $news)
                             <a href="{{ asset('news/' . $news->id) }}" class="db-news-item">
                                 <div class="db-news-date">
@@ -439,10 +440,14 @@
                                 </div>
                                 <div>
                                     <div class="db-news-text">{{ $news->title }}</div>
-                                    <div class="db-news-year">{{ \Carbon\Carbon::parse($news->published_at ?: $news->created_at)->format('Y') }}</div>
+                                    <div class="d-flex align-items-center gap-1 mt-1">
+                                        <span class="news-tag">Berita</span>
+                                        <span class="db-news-year">{{ \Carbon\Carbon::parse($news->published_at ?: $news->created_at)->format('Y') }}</span>
+                                    </div>
                                 </div>
                             </a>
                         @endforeach
+                        </div>
                     </div>
                     <div class="p-3 border-top bg-light">
                         <a href="/news" class="btn btn-outline-danger btn-sm w-100 fw-bold" style="font-size: 0.75rem;">LIHAT SEMUA</a>
@@ -464,6 +469,16 @@
             $('.DT2').DataTable({ order: [[1, 'asc']] });
             $('.DT3').DataTable({ order: [[1, 'desc']] });
             $('.DT4').DataTable({ order: [[1, 'desc']] });
+
+            $('#db-news-ticker').easyTicker({
+                direction: 'up',
+                easing: 'swing',
+                speed: 'slow',
+                interval: 3000,
+                height: 'auto',
+                visible: 5,
+                mousePause: 1
+            });
         });
     </script>
 @endsection
