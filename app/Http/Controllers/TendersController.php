@@ -1056,7 +1056,8 @@ class TendersController extends Controller
 		$approval->user_id = auth()->user()->id;
 		$approval->save();
 
-		$tender->approver_id = $approval->id;
+		// $tender->approver_id = $approval->id; // OLD CODE BUG: stores approval record ID, not user ID — FK references users.id
+		$tender->approver_id = auth()->user()->id;
 		$tender->save();
 
 		$tender_ids = [];
