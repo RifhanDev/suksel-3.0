@@ -1247,6 +1247,18 @@
                 /* End at original position */
             }
         }
+
+        .news-tag {
+            font-size: 0.6rem;
+            font-weight: 600;
+            color: #c41e3a;
+            background: rgba(196,30,58,0.08);
+            padding: 1px 6px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            flex-shrink: 0;
+        }
     </style>
 </head>
 
