@@ -28,14 +28,13 @@
                     <label class="form-label small fw-bold text-secondary text-uppercase mb-1">Status</label>
                     <select id="filter_status" class="form-select form-select-sm">
                         <option value="">Semua</option>
-                        <option value="Belum Disiarkan">Belum Disiarkan</option>
-                        <option value="Dalam Proses">Dalam Proses</option>
+                        <option value="Dalam Process">Dalam Process</option>
                     </select>
                 </div>
 
                 <div class="col-6 col-lg-2">
                     <label class="form-label small fw-bold text-secondary text-uppercase mb-1">Tarikh</label>
-                    <input type="text" id="filter_tarikh" class="form-control form-control-sm datepicker" placeholder="dd/mm/yyyy">
+                    <input type="text" id="filter_tarikh" class="form-control form-control-lg datepicker" placeholder="dd/mm/yyyy">
                 </div>
 
                 <div class="col-12 col-lg-2">
@@ -89,46 +88,30 @@
 @section('scripts')
     <script type="text/javascript">
         $(document).ready(function () {
-
-            // ── DUMMY DATA (replace with API/controller data later) ──────────────
-            const urlTeknikal = "{{ route('senaraiTeknikal') }}";
-            const urlKewanganBekalan = "{{ route('senaraiKewanganBekalan') }}";
-            const urlKewanganKerja = "{{ route('senaraiKewanganKerja') }}";
-            const urlPenyediaanTender = "{{ route('penyediaanSpekTender') }}";
-
-            const dummyData = [
-                {
-                    no_tender:    'QT210000000023741',
-                    tajuk:        'MEMBEKAL RANGSUM PUKAL (AIR MINERAL) UNTUK BANGUNAN KERAJAAN <i>(Bekalan Perkhidmatan)</i>',
-                    tarikh_jual:  '03/01/2026',
-                    tarikh_tutup: '01/05/2026',
-                    status:       '<span class="d-inline-flex align-items-center gap-1 px-2 py-1 rounded-2 fw-semibold" style="background:#fef9c3;color:#854d0e;font-size:0.72rem;border:1px solid #fde68a;"><span class="rounded-circle" style="width:6px;height:6px;background:#ca8a04;flex-shrink:0;display:inline-block;"></span>Dalam Proses</span>',
-                    tindakan:     `<div class="d-flex gap-1 justify-content-center">
-                                       <a href="${urlTeknikal}" class="btn btn-sm btn-warning text-white">Teknikal</a>
-                                       <a href="${urlKewanganBekalan}" class="btn btn-sm btn-success">Kewangan</a>
-                                   </div>`
-                },
-                {
-                    no_tender:    'QT210000000031582',
-                    tajuk:        'PROJEK MENAIKTARAF JALAN PELABUHAN UTARA DARI KLANG CONTAINER TERMINAL <i>(Kerja)</i>',
-                    tarikh_jual:  '27/02/2026',
-                    tarikh_tutup: '31/07/2026',
-                    status:       '<span class="d-inline-flex align-items-center gap-1 px-2 py-1 rounded-2 fw-semibold" style="background:#f0fdf4;color:#166534;font-size:0.72rem;border:1px solid #bbf7d0;"><span class="rounded-circle" style="width:6px;height:6px;background:#16a34a;flex-shrink:0;display:inline-block;"></span>Telah Dihantar</span>',
-                    tindakan:     `<div class="d-flex gap-1 justify-content-center">
-                                       <a href="${urlPenyediaanTender}" class="btn btn-sm btn-info text-white">Spesifikasi</a>
-                                       <a href="${urlKewanganKerja}" class="btn btn-sm btn-success">Kewangan</a>
-                                   </div>`
-                }
-            ];
-            // ─────────────────────────────────────────────────────────────────────
+            $('.datepicker').datepicker({
+                format: 'dd/mm/yyyy',
+                autoclose: true,
+                todayHighlight: true
+            });
 
             var DT = $('#tbl-spesifikasi').DataTable({
-                data: dummyData,
+                processing: true,
+                serverSide: true,
+                searching: false,
+                ajax: {
+                    url: "{{ route('pengurusanSpesifikasi') }}",
+                    data: function (d) {
+                        d.filter_no_tender = $('#filter_no_tender').val();
+                        d.filter_tajuk = $('#filter_tajuk').val();
+                        d.filter_status = $('#filter_status').val();
+                        d.filter_tarikh = $('#filter_tarikh').val();
+                    }
+                },
                 columns: [
-                    { data: 'no_tender',    className: 'ps-4 fw-semibold' },
-                    { data: 'tajuk' },
-                    { data: 'tarikh_jual',  className: 'text-center' },
-                    { data: 'tarikh_tutup', className: 'text-center' },
+                    { data: 'tender_number', name: 'tenders.ref_number', className: 'ps-4 fw-semibold' },
+                    { data: 'name', name: 'tenders.name' },
+                    { data: 'document_start_date', name: 'tenders.document_start_date', className: 'text-center' },
+                    { data: 'submission_datetime', name: 'tenders.submission_datetime', className: 'text-center' },
                     { data: 'status',       orderable: false, searchable: false, className: 'text-center' },
                     { data: 'tindakan',     orderable: false, searchable: false, className: 'text-center pe-4' }
                 ],
@@ -151,15 +134,12 @@
                 },
                 pageLength: 25,
                 responsive: true,
-                order: []
+                order: [[3, 'desc']]
             });
 
             // Apply Filter
             $('#btn_apply_filter').on('click', function () {
-                var noTender = $('#filter_no_tender').val();
-                var tajuk    = $('#filter_tajuk').val();
-                var status   = $('#filter_status').val();
-                DT.search(noTender || tajuk || status).draw();
+                DT.ajax.reload();
             });
 
             // Reset Filter
@@ -168,7 +148,7 @@
                 $('#filter_tajuk').val('');
                 $('#filter_status').val('');
                 $('#filter_tarikh').val('');
-                DT.search('').draw();
+                DT.ajax.reload();
             });
 
         });

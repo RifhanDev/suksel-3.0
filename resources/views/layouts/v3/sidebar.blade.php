@@ -59,8 +59,7 @@
 										<div class="submenu-icon"
 											style="{{ request()->routeIs('ciptaTender') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}">
 										</div>
-										<span class="{{ request()->routeIs('ciptaTender') ? 'text-white' : '' }}">Cipta
-											Tender/Sebut Harga</span>
+										<span class="{{ request()->routeIs('ciptaTender') ? 'text-white' : '' }}">Cipta Tender/Sebut Harga</span>
 									</a>
 								</li>
 							@endif
@@ -71,8 +70,7 @@
 											<div class="submenu-icon"
 												style="{{ request()->is('tender*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}">
 											</div>
-											<span class="{{ request()->is('tender*') ? 'text-white' : '' }}">Senarai
-												Tender</span>
+											<span class="{{ request()->is('tender*') ? 'text-white' : '' }}">Senarai Tender</span>
 										</a></li>
 								@else
 									<li>
@@ -85,6 +83,19 @@
 									</li>
 								@endif
 							@endif
+
+							@if ($user->can('tender:specification-management'))
+								<!-- new permission -->
+								<li>
+									<a class="submenu-item" href="{{ route('pengurusanSpesifikasi') }}">
+										<div class="submenu-icon"
+											style="{{ request()->routeIs('pengurusanSpesifikasi') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}">
+										</div>
+										<span class="{{ request()->routeIs('pengurusanSpesifikasi') ? 'text-white' : '' }}">Jawatankuasa Spesifikasi / Pengurusan</span>
+									</a>
+								</li>
+							@endif
+
 							@if (App\Vendor::canList())
 								<li><a class="submenu-item" href="{{ asset('vendors') }}">
 										<div class="submenu-icon"
@@ -744,7 +755,23 @@
                 </li> --}}
 
                 <!-- Menu : Jawatankuasa Spesifikasi /  Pengurusan -->
-                @php $isJawatankuasaSpesifikasiMenuActive = request()->is('senarai-semak*'); @endphp
+                @php
+                    $isJawatankuasaSpesifikasiMenuActive =
+                        request()->is('senarai-semak*') ||
+                        request()->is('senarai-teknikal*') ||
+                        request()->is('senarai-kewangan-bekalan*') ||
+                        request()->is('senarai-kewangan-kerja*') ||
+                        request()->is('penyediaan-spesifikasi-tender*') ||
+                        request()->is('lembaran-imbangan*') ||
+                        request()->is('bon-atau-saham*') ||
+                        request()->is('prestasi-kerja-semasa-petender*') ||
+                        request()->is('templat-spesifikasi*') ||
+                        request()->is('pengalaman-kerja*') ||
+                        request()->is('kerja-dalam-tangan*') ||
+                        request()->is('spesifikasi-kewangan*') ||
+                        request()->is('profil-petender*') ||
+                        request()->is('penyata-bank*');
+                @endphp
                 <li class="nav-item">
                     <a class="sidebar-link {{ $isJawatankuasaSpesifikasiMenuActive ? 'active' : 'collapsed' }}" data-bs-toggle="collapse"
                         data-bs-target="#menuJawatankusaSpesifikasi" aria-expanded="{{ $isJawatankuasaSpesifikasiMenuActive ? 'true' : 'false' }}" style="cursor: pointer;">
@@ -763,9 +790,9 @@
                     <div class="collapse {{ $isJawatankuasaSpesifikasiMenuActive ? 'show' : '' }}" id="menuJawatankusaSpesifikasi">
                         <ul class="sidebar-submenu">
                             <li>
-                                <a class="submenu-item" href="{{ route('senaraiSemak') }}">
-                                    <div class="submenu-icon" style="{{ request()->is('senarai-semak*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}"></div>
-                                    <span class="{{ request()->is('senarai-semak*') ? 'text-white' : '' }}">Senarai Semak</span>
+                                <a class="submenu-item {{ $isJawatankuasaSpesifikasiMenuActive ? 'active' : '' }}" href="{{ route('senaraiSemak') }}">
+                                    <div class="submenu-icon" style="{{ $isJawatankuasaSpesifikasiMenuActive ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}"></div>
+                                    <span class="{{ $isJawatankuasaSpesifikasiMenuActive ? 'text-white' : '' }}">Senarai Semak</span>
                                 </a>
                             </li>
                         </ul>
@@ -1099,7 +1126,7 @@
 							<path d="m9 7 8 8"/>
 							<path d="m21 11-8-8"/>
 						</svg>
-						<span class="nav-text">E-Bidding</span>
+						<span class="nav-text">e-Bidding</span>
 						<svg xmlns="http://www.w3.org/2000/svg" class="nav-arrow" viewBox="0 0 24 24" fill="none"
 							stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
 							<polyline points="9 18 15 12 9 6"></polyline>
@@ -1307,6 +1334,19 @@
 							<path d="M7 11V7a5 5 0 0 1 9.9-1"/>
 						</svg>
 						<span class="nav-text">Jawatankuasa Pembuka</span>
+					</a>
+				</li>
+
+				<!-- Menu: Cut Off -->
+				<li class="nav-item">
+					<a class="sidebar-link {{ request()->is('cut-off*') ? 'active' : '' }}" href="{{ route('cutOff.index') }}"
+						style="cursor: pointer;">
+						<svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none"
+							stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+							<circle cx="12" cy="12" r="10"></circle>
+							<polyline points="12 6 12 12 16 14"></polyline>
+						</svg>
+						<span class="nav-text">Cut Off</span>
 					</a>
 				</li>
 

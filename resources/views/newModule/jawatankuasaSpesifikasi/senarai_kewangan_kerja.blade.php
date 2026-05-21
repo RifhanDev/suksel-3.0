@@ -26,8 +26,7 @@
                 <span class="text-muted fw-semibold text-uppercase d-block mb-1"
                     style="font-size: 0.67rem; letter-spacing: 0.5px;">Tajuk Tender</span>
                 <h5 class="fw-bold text-dark mb-0" style="line-height: 1.45; font-size: 1rem;">
-                    PROJEK MENAIKTARAF JALAN PELABUHAN UTARA DARI KLANG CONTAINER TERMINAL
-                    <span class="fw-normal text-muted fst-italic" style="font-size: 0.85rem;">(Kerja)</span>
+                    KERJA-KERJA MENAIK TARAF SUNGAI BATU DAN KAWASAN SEKITAR, SELANGOR DARUL EHSAN
                 </h5>
             </div>
 
@@ -36,7 +35,7 @@
                 <div class="col-6 col-md-3">
                     <span class="text-muted fw-semibold text-uppercase d-block mb-1"
                         style="font-size: 0.67rem; letter-spacing: 0.5px;">No. Tender</span>
-                    <span class="fw-semibold text-dark" style="font-size: 0.875rem;">SUKSEL/PERT/2026/001</span>
+                    <span class="fw-semibold text-dark" style="font-size: 0.875rem;">T/2026/015</span>
                 </div>
                 <div class="col-6 col-md-3">
                     <span class="text-muted fw-semibold text-uppercase d-block mb-1"
@@ -231,7 +230,7 @@
                 <input type="text" id="input-harga-indikatif" name="harga_indikatif"
                     class="form-control form-control-sm fw-semibold text-end"
                     style="max-width: 200px; font-size: 1rem;"
-                    value="29,000.00" placeholder="0.00">
+                    value="300,000.00" placeholder="0.00">
             </div>
         </div>
     </div>
@@ -761,16 +760,23 @@
             });
 
             // ─── FORM SUBMIT: block if penilaian exceeds skema maksima ───────────────
-            $('#form-senarai-kewangan-kerja').on('submit', function(e) {
-                // Strip commas from harga_indikatif before submit
-                $('#input-harga-indikatif').val($('#input-harga-indikatif').val().replace(/,/g, ''));
+            // TODO: restore real submit after demo — currently intercepted for demo purposes
+            // $('#form-senarai-kewangan-kerja').on('submit', function(e) {
+            //     // Strip commas from harga_indikatif before submit
+            //     $('#input-harga-indikatif').val($('#input-harga-indikatif').val().replace(/,/g, ''));
+            //
+            //     var skemaMaksima = parseInt($('#skema-maksima-display').val()) || 0;
+            //     var penilaian    = parseInt($('#input-penilaian').val()) || 0;
+            //     if (skemaMaksima > 0 && penilaian > skemaMaksima) {
+            //         e.preventDefault();
+            //         $('#input-penilaian').addClass('is-invalid').focus();
+            //     }
+            // });
 
-                var skemaMaksima = parseInt($('#skema-maksima-display').val()) || 0;
-                var penilaian    = parseInt($('#input-penilaian').val()) || 0;
-                if (skemaMaksima > 0 && penilaian > skemaMaksima) {
-                    e.preventDefault();
-                    $('#input-penilaian').addClass('is-invalid').focus();
-                }
+            // DEMO: btn-hantar shows success modal instead of submitting
+            $('.btn-hantar').on('click', function (e) {
+                e.preventDefault();
+                successModal.show();
             });
 
         });

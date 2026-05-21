@@ -46,9 +46,9 @@
         $supportedDraftJenisData = $supportedDraftJenis ?? ['open', 'tech', 'fin'];
         $localIcUsersData = $icUsers ?? [];
         $tabLabels = [
-            'open'  => 'Jawatankuasa Pembuka',
-            'tech'  => 'Jawatankuasa Penilaian Teknikal',
-            'fin'   => 'Jawatankuasa Penilaian Kewangan',
+            'open'  => 'Jawatankuasa Spesifikasi',
+            'tech'  => 'Jawatankuasa Pembuka',
+            'fin'   => 'Jawatankuasa Penilaian Sebut Harga/ Tender',
         ];
     @endphp
 
@@ -66,7 +66,7 @@
                                 <span class="text-muted fw-semibold text-uppercase"
                                     style="font-size:0.67rem; letter-spacing:0.5px;">No. Tender</span>
                                 <span class="fw-semibold text-dark" style="font-size:0.88rem;">
-                                    {{ $tender->ref_number ?? request('tender_id', '-') }}
+                                    {{ $tender->ref_number ?? '-' }}
                                 </span>
                             </div>
                         </div>
@@ -76,7 +76,7 @@
                                 <span class="text-muted fw-semibold text-uppercase"
                                     style="font-size:0.67rem; letter-spacing:0.5px;">PTJ</span>
                                 <span class="fw-semibold text-dark" style="font-size:0.88rem;">
-                                    {{-- {{ optional(optional($tender)->tenderer)->name ?? '-' }} --}}
+                                    {{ optional(optional($tender)->tenderer)->name ?? '-' }}
                                 </span>
                             </div>
                         </div>

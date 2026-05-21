@@ -694,27 +694,47 @@
                     const overlayText = document.getElementById('overlayText');
 
                     overlay.classList.add('active');
-                    overlayText.textContent = 'Menghantar pemakluman...';
+                    overlayText.textContent = 'Menyimpan draf...';
+
+                    const formData = buildDraftFormDataAll();
 
                     $.ajax({
-                        url: hantarPemaklumanUrl,
+                        url: saveDraftUrl,
                         type: 'POST',
-                        timeout: 300000,
-                        data: {
-                            _token: $('meta[name=_token]').attr('content'),
-                            tender_uuid: tenderUuid,
-                        },
-                        dataType: 'json',
-                        success: function(res) {
-                            overlay.classList.remove('active');
-                            alert(res.message || 'Pemakluman berjaya dihantar.');
-                            window.location.href = '/tender';
+                        data: formData,
+                        processData: false,
+                        contentType: false,
+                        success: function() {
+                            overlayText.textContent = 'Menghantar pemakluman...';
+
+                            $.ajax({
+                                url: hantarPemaklumanUrl,
+                                type: 'POST',
+                                timeout: 300000,
+                                data: {
+                                    _token: $('meta[name=_token]').attr('content'),
+                                    tender_uuid: tenderUuid,
+                                },
+                                dataType: 'json',
+                                success: function(res) {
+                                    overlay.classList.remove('active');
+                                    alert(res.message || 'Pemakluman berjaya dihantar.');
+                                    window.location.href = '/tender';
+                                },
+                                error: function(xhr) {
+                                    overlay.classList.remove('active');
+                                    const message = (xhr && xhr.responseJSON && xhr.responseJSON.message)
+                                        ? xhr.responseJSON.message
+                                        : 'Hantar pemakluman gagal. Sila cuba semula.';
+                                    alert(message);
+                                }
+                            });
                         },
                         error: function(xhr) {
                             overlay.classList.remove('active');
                             const message = (xhr && xhr.responseJSON && xhr.responseJSON.message)
                                 ? xhr.responseJSON.message
-                                : 'Hantar pemakluman gagal. Sila cuba semula.';
+                                : 'Simpan draf gagal. Sila cuba semula.';
                             alert(message);
                         }
                     });
