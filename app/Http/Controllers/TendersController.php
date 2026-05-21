@@ -26,7 +26,7 @@ use DB;
 use Datatables;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Http;
+use App\Services\StosBackendClient;
 use Illuminate\Support\Facades\Queue;
 use Mail;
 use PDF;
@@ -417,12 +417,8 @@ class TendersController extends Controller
 
 		$errorCheck = false;
 		try {
-			$response = Http::withoutVerifying()->timeout(30)->withHeaders(
-				[
-					'X-API-Key' => config('services.stos_backend.api_key'),
-					'Accept' => 'application/json'
-				]
-			)->post(config('services.stos_backend.url') . '/api/tenders', $payload);
+			$stosClient = app(StosBackendClient::class);
+			$response = $stosClient->createTender($payload);
 
 			if ($response->successful()) {
 				$data = $response->json();
