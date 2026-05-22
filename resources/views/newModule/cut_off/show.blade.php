@@ -347,8 +347,8 @@
                         <th>TEND. PRICE (RM)</th>
                         <th>BW of Tender (RM)</th>
                         <th>Z-score</th>
-                        <th>%BW-AJ</th>
-                        <th>%BW-Mean</th>
+                        <th>%BWAJ</th>
+                        <th>%BWAM</th>
                         <th class="text-center" style="width:10%;">
                             <div class="d-inline-flex align-items-center gap-1">
                                 Pilih
