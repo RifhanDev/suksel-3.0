@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\RefState;
 
 class DummyController extends Controller
 {
@@ -48,6 +49,24 @@ class DummyController extends Controller
     public function kerja()
     {
         return view('tender.kerja.index');
+    }
+
+    /**
+     * Show penyediaan iklan page
+     */
+    public function penyediaanIklan()
+    {
+        $country_states = RefState::where('display_status', 1)->get();
+        return view('newModule.penyediaanIklan.index', compact('country_states'));
+    }
+
+    /**
+     * Store penyediaan iklan (3 steps)
+     */
+    public function storePenyediaanIklan(Request $request)
+    {
+        // dd($request->all());
+        return back();
     }
 
     /**

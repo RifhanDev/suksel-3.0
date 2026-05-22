@@ -22,8 +22,6 @@ return new class extends Migration
             $table->timestamps();
 
             $table->unique(['tender_id', 'vendor_id', 'pemilihan_item_id'], 'eb_vbid_unique');
-            $table->foreign('tender_id')->references('id')->on('tenders')->onDelete('cascade');
-            $table->foreign('vendor_id')->references('id')->on('vendors')->onDelete('cascade');
             $table->foreign('pemilihan_item_id', 'eb_vbid_item_fk')
                 ->references('id')
                 ->on('jawatankuasa_perolehan_pemilihan_items')

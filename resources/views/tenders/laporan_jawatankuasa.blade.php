@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="Content-type" content="text/html; charset=utf-8">
-    <title>Laporan Jawatankuasa - {{ $tender->ref_number ?? '-' }}</title>
+    <title>Laporan Jawatankuasa - {{ $tender->ref_number ?? '-' }} | {{ $tender->type === 'quotation' ? 'Sebut Harga' : 'Tender' }}</title>
     <style>
         * {
             margin: 0;
@@ -151,9 +151,15 @@
     </div>
 
     <div class="tender-info">
-        <strong>No Tender:</strong> {{ $tender->ref_number ?? '-' }} &nbsp;&nbsp;|&nbsp;&nbsp;
-        <strong>PTJ:</strong> {{ optional(optional($tender)->tenderer)->name ?? '-' }} &nbsp;&nbsp;|&nbsp;&nbsp;
-        <strong>Status:</strong> {{ $tender->status ?? '-' }}
+        <div style="padding-bottom: 6px; margin-bottom: 6px; border-bottom: 1px solid #ddd;">
+            <strong>{{ $tender->type === 'quotation' ? 'Nama Sebut Harga' : 'Nama Tender' }}:</strong>
+            {{ $tender->name ?? '-' }}
+        </div>
+        <div>
+            <strong>{{ $tender->type === 'quotation' ? 'No. Sebut Harga' : 'No. Tender' }}:</strong> {{ $tender->ref_number ?? '-' }} &nbsp;&nbsp;|&nbsp;&nbsp;
+            <strong>PTJ:</strong> {{ optional(optional($tender)->tenderer)->name ?? '-' }} &nbsp;&nbsp;|&nbsp;&nbsp;
+            <strong>Status:</strong> {{ $tender->status ?? '-' }}
+        </div>
     </div>
 
     @php

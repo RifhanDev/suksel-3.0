@@ -211,6 +211,8 @@ Route::get('chat-widget/{chat_id}', [BotManController::class, 'chatWidget'])->wi
 
 // Place 3.0 Modules Routes Temporarily Here
 Route::view('/semak-tender', 'newModule.semak_tender')->name('semakPenciptaanTender');
+Route::get('/penyediaan-iklan', [DummyController::class, 'penyediaanIklan'])->name('penyediaanIklan');
+Route::post('/penyediaan-iklan/simpan', [DummyController::class, 'storePenyediaanIklan'])->name('penyediaanIklan.store');
 
 Route::get('/pelantikan-jawatankuasa', [JawatankuasaController::class, 'create'])->middleware(['auth'])->name('pelantikanJawatankuasa');
 Route::view('/pelantikan-jawatankuasa-1-peringkat', 'tenders.pelantikan_jawatankuasa_1_peringkat')->middleware(['auth'])->name('pelantikanJawatankuasaSatuPeringkat');
@@ -239,7 +241,6 @@ Route::view('/profil-petender', 'newModule.jawatankuasaSpesifikasi.form_profil_p
 Route::post('/profile-petender/submit', [JawatankuasaController::class, 'storeProfilPetender'])->middleware(['auth'])->name('jawatankuasa.hantarProfilPetender');
 Route::view('/penyata-bank', 'newModule.jawatankuasaSpesifikasi.form_penyata_bank')->name('pnytBank');
 Route::post('/penyata-bank/submit', [JawatankuasaController::class, 'storePenyataKewangan'])->middleware(['auth'])->name('jawatankuasa.hantarPenyataKewangan');
-Route::view('/jawatankuasa-pembuka', 'newModule.jawatankuasa_pembuka')->name('jawatankuasaPembuka');
 Route::view('/penilaian-teknikal', 'newModule.penilaian.teknikal')->name('penilaianTeknikal');
 Route::view('/penilaian-teknikal-kerja', 'newModule.penilaian.teknikal_kerja')->name('penilaianTeknikalKerja');
 Route::view('/penilaian-kewangan', 'newModule.penilaian.kewangan')->name('penilaianKewangan');
@@ -247,6 +248,16 @@ Route::view('/index-perincian', 'newModule.penyediaanMesyuarat.index_perincian')
 Route::view('/perincian-page', 'newModule.penyediaanMesyuarat.perincian_mesyuarat')->name('perincianPage');
 Route::view('/index-jawatankuasa', 'newModule.penyediaanMesyuarat.index_jawatankuasa')->name('jawatankuasaMesyuarat');
 Route::view('/jawatankuasa-page', 'newModule.penyediaanMesyuarat.jawatankuasa')->name('jawatankuasaPage');
+Route::view('/lawatan-tapak-urusetia', 'newModule.lawatanTapak.index')->name('lawatanTapakUrusetia');
+Route::view('/pengesahan-lawatan-tapak-urusetia', 'newModule.lawatanTapak.pengesahanLawatanTapak')->name('pengesahanLawatanTapak');
+Route::view('/kelulusan-lawatan-tapak-urusetia', 'newModule.lawatanTapak.kelulusanLawatanTapak')->name('kelulusanLawatanTapak');
+Route::view('/index-penyediaan-surat-niat', 'newModule.penyediaanSuratNiat.index')->name('indexPenyediaanSuratNiat');
+Route::view('/penyediaan-surat-niat', 'newModule.penyediaanSuratNiat.penyediaanSuratNiat')->name('penyediaanSuratNiat');
+Route::view('/index-penyediaan-sst', 'newModule.penyediaanSST.index')->name('indexPenyediaanSST');
+Route::view('/penyediaan-sst', 'newModule.penyediaanSST.penyediaanSST')->name('penyediaanSST');
+Route::view('/index-jawatankuasa-pembuka', 'newModule.jawatankuasaPembuka.index')->name('indexJawatankuasaPembuka');
+Route::view('/jawatankuasa-pembuka', 'newModule.jawatankuasaPembuka.jawatankuasa_pembuka')->name('jawatankuasaPembuka');
+Route::view('/show-soalan-lazim', 'helps.show')->name('showSoalanLazim');
 
 // penilaian teknikal
 Route::get('/penilaian-teknikal', [PenilaianTeknikalController::class, 'index'])->name('penilaianTeknikal');
@@ -686,11 +697,11 @@ Route::middleware(['auth'])->group(function () {
 		Route::prefix('refunds')->group(function () {
 			Route::post('get-transaction', [RefundController::class, 'fetch_transactions'])->name('get_transaction');
 			Route::post('get-refund', [RefundController::class, 'get_refund_details'])->name('get_refund_details');
-			Route::get('create', [RefundController::class, 'create'])->name('refunds.create');
-			Route::post('store', [RefundController::class, 'store'])->name('refunds.store');
-			Route::get('{refund}/show', [RefundController::class, 'show'])->name('refunds.show');
-			Route::get('{refund}/edit', [RefundController::class, 'edit'])->name('refunds.edit');
-			Route::post('{refund}/update', [RefundController::class, 'update'])->name('refunds.update');
+			// Route::get('create', [RefundController::class, 'create'])->name('refunds.create');
+			// Route::post('store', [RefundController::class, 'store'])->name('refunds.store');
+			// Route::get('{refund}/show', [RefundController::class, 'show'])->name('refunds.show');
+			// Route::get('{refund}/edit', [RefundController::class, 'edit'])->name('refunds.edit');
+			// Route::post('{refund}/update', [RefundController::class, 'update'])->name('refunds.update');
 
 			Route::prefix('request')->group(function () {
 				Route::get('/', [RefundController::class, 'index_request'])->name('refunds.request.index');
@@ -746,5 +757,17 @@ Route::middleware(['auth'])->group(function () {
 
 		// Reject Template
 		Route::resource('reject-template', RejectTemplateController::class);
+	});
+
+	// Laporan Transaksi Syarikat (vendor-accessible — duplicated outside Admin group)
+	Route::get('reports/vendor/summary/{year}/{vendor_id}', [ReportVendorSummaryController::class, 'index'])->name('vendor.report.vendor.summary');
+
+	// Refunds (vendor-accessible — duplicated outside Admin group)
+	Route::prefix('refunds')->group(function () {
+		Route::get('create', [RefundController::class, 'create'])->name('refunds.create');
+		Route::post('store', [RefundController::class, 'store'])->name('refunds.store');
+		Route::get('{refund}/show', [RefundController::class, 'show'])->name('refunds.show');
+		Route::get('{refund}/edit', [RefundController::class, 'edit'])->name('refunds.edit');
+		Route::post('{refund}/update', [RefundController::class, 'update'])->name('refunds.update');
 	});
 });

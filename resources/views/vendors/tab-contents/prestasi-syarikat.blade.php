@@ -37,9 +37,9 @@
                                 <td>{{ $loop -> index + 1 }}.</td>
                                 <td>{{ Carbon\Carbon::parse($petenderPerformance -> acquisition_date) -> format('d/m/Y') }}</td>
                                 <td>
-                                    <b>{{ $petenderPerformance -> user -> name }}</b>
+                                    <b>{{ optional($petenderPerformance->user)->name ?? '-' }}</b>
                                     <br>
-                                    {{ $petenderPerformance -> user -> agency -> name }}
+                                    {{ optional(optional($petenderPerformance->user)->agency)->name ?? '-' }}
                                 </td>
                                 <td>
                                     <b>{{ number_format($petenderPerformance -> total_score, 2) }} %</b>

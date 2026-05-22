@@ -24,7 +24,7 @@
 
 			@if (Auth::user() && Auth::user()->hasRole('Admin'))
 				<div class="d-flex align-items-center gap-2">
-					<a href="{{ asset('helps') }}" class="btn-form btn-form-secondary">
+					<!-- <a href="{{ asset('helps') }}" class="btn-form btn-form-secondary">
 						<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
 							stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 							<circle cx="12" cy="12" r="10"></circle>
@@ -32,7 +32,7 @@
 							<line x1="12" y1="17" x2="12.01" y2="17"></line>
 						</svg>
 						Soalan Lazim
-					</a>
+					</a> -->
 					<a href="{{ asset('helpcategories/create') }}" class="btn-form btn-form-create">
 						<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
 							stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -52,8 +52,7 @@
 						<tr>
 							<th class="text-uppercase text-muted small fw-bold py-3 ps-4">Nama</th>
 							<th class="text-uppercase text-muted small fw-bold py-3">Jumlah Soalan</th>
-							<th class="text-uppercase text-center text-muted small fw-bold py-3 pe-4" style="width: 200px; min-width: 200px;">
-								Tindakan</th>
+							<th class="text-uppercase text-center text-muted small fw-bold py-3 pe-4" style="width: 200px; min-width: 200px;">Tindakan</th>
 						</tr>
 					</thead>
 					<tbody></tbody>
@@ -66,83 +65,42 @@
 @section('scripts')
 	<script>
 		$('.DT-index').each(function() {
-		var target = $(this);
-		var path = target.data('path');
-
-		var DT = target.DataTable({
-			ajax: path,
-			columns: [{
-					data: 'name',
-					name: 'name'
+			var target = $(this);
+			var path = target.data('path');
+			var DT = target.DataTable({
+				ajax: path,
+				columns: [
+					{ data: 'name',    name: 'name' },
+					{ data: 'count',   name: 'count' },
+					{ data: 'actions', name: 'actions', orderable: false, searchable: false }
+				],
+				serverSide: true,
+				stateSave: true,
+				language: {
+					sEmptyTable:    "Tiada data",
+					sInfo:          "Paparan dari _START_ hingga _END_ dari _TOTAL_ rekod",
+					sInfoEmpty:     "Paparan 0 hingga 0 dari 0 rekod",
+					sInfoFiltered:  "(Ditapis dari jumlah _MAX_ rekod)",
+					sInfoPostFix:   "",
+					sInfoThousands: ",",
+					sLengthMenu:    "Papar _MENU_ rekod",
+					sLoadingRecords:"Diproses...",
+					sProcessing:    "Sedang diproses...",
+					sSearch:        "Carian:",
+					sZeroRecords:   "Tiada padanan rekod yang dijumpai.",
+					oPaginate: {
+						sFirst: "Pertama", sPrevious: "Sebelum", sNext: "Kemudian", sLast: "Akhir"
+					},
+					oAria: {
+						sSortAscending:  ": diaktifkan kepada susunan lajur menaik",
+						sSortDescending: ": diaktifkan kepada susunan lajur menurun"
+					}
 				},
-				{
-					data: 'count',
-					name: 'count'
-				},
-				{
-					data: 'actions',
-					name: 'actions'
-				}
-			],
-			serverSide: true,
-			stateSave: true,
-			language: {
-				sEmptyTable: "Tiada data",
-				sInfo: "Paparan dari _START_ hingga _END_ dari _TOTAL_ rekod",
-				sInfoEmpty: "Paparan 0 hingga 0 dari 0 rekod",
-				sInfoFiltered: "(Ditapis dari jumlah _MAX_ rekod)",
-				<<
-				<< << < HEAD
-				sInfoPostFix: "",
-				sInfoThousands: ",",
-				sLengthMenu: "Papar _MENU_ rekod",
-				sLoadingRecords: "Diproses...",
-				sProcessing: "Sedang diproses...",
-				sSearch: "Carian:",
-				sZeroRecords: "Tiada padanan rekod yang dijumpai.",
-				oPaginate: {
-					sFirst: "Pertama",
-					sPrevious: "Sebelum",
-					sNext: "Kemudian",
-					sLast: "Akhir"
-				},
-				oAria: {
-					sSortAscending: ": diaktifkan kepada susunan lajur menaik",
-					sSortDescending: ": diaktifkan kepada susunan lajur menurun"
-				}
-			},
-			aaSorting: [],
-			pageLength: 25,
-			responsive: true,
-			order: [
-				[0, 'asc']
-			]
-		});
-		});
+				aaSorting: [],
+				pageLength: 25,
+				responsive: true,
+				order: [[0, 'asc']]
+			});
 		});
 	</script>
-	=======
-	sInfoPostFix: "",
-	sInfoThousands: ",",
-	sLengthMenu: "Papar _MENU_ rekod",
-	sLoadingRecords: "Diproses...",
-	sProcessing: "Sedang diproses...",
-	sSearch: "Carian:",
-	sZeroRecords: "Tiada padanan rekod yang dijumpai.",
-	oPaginate: {
-	sFirst: "Pertama",
-	sPrevious: "Sebelum",
-	sNext: "Kemudian",
-	sLast: "Akhir"
-	},
-	oAria: {
-	sSortAscending: ": diaktifkan kepada susunan lajur menaik",
-	sSortDescending: ": diaktifkan kepada susunan lajur menurun"
-	}
-	},
-	aaSorting: []
-	});
-	});
-	</script>
-	>>>>>>> origin/dan-v2
 @endsection

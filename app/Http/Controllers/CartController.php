@@ -31,6 +31,9 @@ class CartController extends Controller
 			$duitnow = Gateway::whereType('duitnow')->whereDefault(1)->whereActive(1)->first();
 		}
 
+		if (auth()->check() && auth()->user()->hasRole('Vendor')) {
+			return view('cart.vendor.index', compact('tenders', 'amount', 'fpx', 'ebpg', 'duitnow'));
+		}
 		return view('cart.index', compact('tenders', 'amount', 'fpx', 'ebpg', 'duitnow'));
 	}
 

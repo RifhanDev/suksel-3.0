@@ -627,31 +627,31 @@
 					</div>
 				</div>
 				
-				<div class="card-body p-0 flex-grow-1">
-					<div id="announcements-ticker">
-						<div class="list-group list-group-flush">
-							@foreach ($global_news as $news)
-								@php
-									$newsDate = \Carbon\Carbon::parse($news->published_at ?: $news->created_at);
-								@endphp
-								<a href="{{ asset('news/' . $news->id) }}" class="news-item">
-									<div class="news-date-box">
-										<span class="news-day">{{ $newsDate->format('d') }}</span>
-										<span class="news-month">{{ $newsDate->format('M') }}</span>
+				<div class="card-body p-0 flex-grow-1" style="overflow-y:auto; max-height:360px;">
+					<div class="list-group list-group-flush">
+						@forelse ($global_news as $news)
+							@php
+								$newsDate = \Carbon\Carbon::parse($news->published_at ?: $news->created_at);
+							@endphp
+							<a href="{{ asset('news/' . $news->id) }}" class="news-item">
+								<div class="news-date-box">
+									<span class="news-day">{{ $newsDate->format('d') }}</span>
+									<span class="news-month">{{ $newsDate->format('M') }}</span>
+								</div>
+								<div class="news-info">
+									<h6 class="news-item-title">{{ Str::limit($news->title, 55) }}</h6>
+									<div class="news-item-meta">
+										<span class="news-tag">Berita</span>
+										<span class="news-time">
+											<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M12 7v5l3 3" /></svg>
+											{{ $newsDate->format('Y') }}
+										</span>
 									</div>
-									<div class="news-info">
-										<h6 class="news-item-title">{{ Str::limit($news->title, 55) }}</h6>
-										<div class="news-item-meta">
-											<span class="news-tag">Berita</span>
-											<span class="news-time">
-												<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M12 7v5l3 3" /></svg>
-												{{ $newsDate->format('Y') }}
-											</span>
-										</div>
-									</div>
-								</a>
-							@endforeach
-						</div>
+								</div>
+							</a>
+						@empty
+							<div class="p-3 text-center text-muted small">Tiada berita terkini.</div>
+						@endforelse
 					</div>
 				</div>
 
@@ -813,22 +813,6 @@
 			});
 		});
 
-		$('#announcements-ticker').easyTicker({
-			direction: 'up',
-			easing: 'swing',
-			speed: 'slow',
-			interval: 2000,
-			height: 'auto',
-			visible: 4,
-			mousePause: 1,
-			controls: {
-				up: '',
-				down: '',
-				toggle: '',
-				playText: 'Play',
-				stopText: 'Stop'
-			}
-		});
 	</script>
 
     <!-- Botman Chatbot Widget -->

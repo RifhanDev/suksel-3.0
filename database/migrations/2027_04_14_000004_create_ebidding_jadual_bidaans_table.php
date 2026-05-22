@@ -22,8 +22,6 @@ return new class extends Migration
             $table->timestamp('started_at')->nullable();
             $table->timestamp('submitted_at')->nullable();
             $table->timestamps();
-
-            $table->foreign('tender_id')->references('id')->on('tenders')->onDelete('cascade');
         });
     }
 
