@@ -33,7 +33,7 @@ trait Helper
         $app_name = 'STOS';
         $arr = explode('-', $transaction_num);
         $year = substr($arr[0], -2);
-        $running_num = $arr[1];
+        $running_num = $arr[1] ?? 0;
         $new_running_num = $this->receiptAlphabet($running_num);
 
         return $year . $app_name . $new_running_num;
@@ -302,24 +302,20 @@ trait Helper
      * @return string
      * @throws conditon
      **/
-    public function sendMail($type="raw_text", $to = "", $subject = "", $raw_text = "", $view_name = "", $view_params = [])
+    public function sendMail($type = "raw_text", $to = "", $subject = "", $raw_text = "", $view_name = "", $view_params = [])
     {
-        if($to == "")
-        {
+        if ($to == "") {
             Log::error('[sendMail] Missing recipient address. to cannot be empty.');
             return "Missing parameter to. to can't be empty";
         }
 
-        if($subject == "")
-        {
+        if ($subject == "") {
             Log::error('[sendMail] Missing email subject. subject cannot be empty.', ['to' => $to]);
             return "Missing parameter subject. subject can't be empty";
         }
 
-        if ($type == "html")
-        {
-            if($view_name == "")
-            {
+        if ($type == "html") {
+            if ($view_name == "") {
                 Log::error('[sendMail] Missing view_name for html type email.', ['to' => $to, 'subject' => $subject]);
                 return "Missing parameter view_name. view_name can't be empty";
             }
@@ -331,11 +327,8 @@ trait Helper
                 Log::error('[sendMail] Failed to queue email.', ['to' => $to, 'subject' => $subject, 'reason' => $result]);
             }
             return $result;
-        }
-        else if ($type == "raw_text")
-        {
-            if($raw_text == "")
-            {
+        } else if ($type == "raw_text") {
+            if ($raw_text == "") {
                 Log::error('[sendMail] Missing raw_text for raw_text type email.', ['to' => $to, 'subject' => $subject]);
                 return "Missing parameter raw_text. raw_text can't be empty";
             }
@@ -345,9 +338,7 @@ trait Helper
                 Log::error('[sendMail] Failed to queue email.', ['to' => $to, 'subject' => $subject, 'reason' => $result]);
             }
             return $result;
-        }
-        else
-        {
+        } else {
             Log::error('[sendMail] Invalid type given.', ['type' => $type, 'to' => $to]);
             return "Invalid type given";
         }
@@ -370,25 +361,21 @@ trait Helper
 
         $mail_available_limit   = 0;
 
-        for ($i=0; $i < $count_available_mail_config; $i++) {
+        for ($i = 0; $i < $count_available_mail_config; $i++) {
 
-            if ($list_available_mail_config[$i]->today_mail_queue < $list_available_mail_config[$i]->mail_message_ratelimit)
-            {
+            if ($list_available_mail_config[$i]->today_mail_queue < $list_available_mail_config[$i]->mail_message_ratelimit) {
                 // $available_config = $list_available_mail_config[$i];
                 $available_mail_id      = $list_available_mail_config[$i]->id;
                 $mail_available_limit   = (int)$list_available_mail_config[$i]->mail_message_ratelimit - (int)$list_available_mail_config[$i]->today_mail_queue;
             }
         }
 
-        if ($available_mail_id > 0)
-        {
+        if ($available_mail_id > 0) {
             $smtp_mail_detail = $smtpMailRepo->readSmtpMails($available_mail_id);
             $available_config = $smtp_mail_detail->toArray();
             $available_config["mail_available_limit"] = $mail_available_limit;
             $available_config["mail_crypto"] = $smtp_mail_detail->getMailCryptoDesc();
-        }
-        else
-        {
+        } else {
             Log::error('[getAvailableEmailConfig] All SMTP configs have reached their daily rate limit.', [
                 'configs_checked' => $count_available_mail_config,
             ]);
@@ -399,8 +386,7 @@ trait Helper
 
     public function setEmailConfig($smtp_mail)
     {
-        if( empty($smtp_mail) )
-        {
+        if (empty($smtp_mail)) {
             return "Missing smtp_mail config";
         }
 
@@ -420,8 +406,7 @@ trait Helper
         // Retrieve available config based on today date
         $available_config = $this->getAvailableEmailConfig();
 
-        if (count($available_config) == 0)
-        {
+        if (count($available_config) == 0) {
             Log::error('[createEmailQueue] Aborted — no available SMTP config.', ['to' => $to, 'subject' => $subject]);
             return "No Available Email Config";
         }
@@ -507,57 +492,50 @@ trait Helper
 
         $mof_vendor_ids = [];
 
-        if(count($tender->mof_codes) > 0) {
+        if (count($tender->mof_codes) > 0) {
             $mof_vendor_ids = $tender->getCodes('mof');
 
-            if($tender->only_bumiputera) {
+            if ($tender->only_bumiputera) {
                 $mof_vendor_ids = Vendor::whereIn('id', $mof_vendor_ids)->where('mof_bumi', 1)->pluck('id');
             }
         }
 
         // dd($mof_vendor_ids);
-        
+
         $cidb_vendor_ids = [];
-        if(count($tender->cidb_grades) > 0 ) {
+        if (count($tender->cidb_grades) > 0) {
             $code_ids = $tender->codes()->where('code_type', 'cidb-g')->pluck('code_id');
             $ids = VendorCode::whereIn('code_id', $code_ids)->groupBy('vendor_id')->pluck('vendor_id');
 
-            if(count($cidb_vendor_ids) == 0)
-            {
+            if (count($cidb_vendor_ids) == 0) {
                 $cidb_vendor_ids = $ids;
-            }
-            else
-            {
-                if(!is_array($cidb_vendor_ids)){
+            } else {
+                if (!is_array($cidb_vendor_ids)) {
                     $cidb_vendor_ids = $cidb_vendor_ids->toArray();
                 }
-                if(!is_array($ids)){
+                if (!is_array($ids)) {
                     $ids = $ids->toArray();
                 }
 
                 $cidb_vendor_ids = array_intersect($cidb_vendor_ids, $ids);
             }
 
-            if($tender->only_bumiputera) {
+            if ($tender->only_bumiputera) {
                 $cidb_vendor_ids = Vendor::whereIn('id', $cidb_vendor_ids)->where('cidb_bumi', 1)->pluck('id');
             }
         }
 
         // dd($cidb_vendor_ids);
 
-        if(count($tender->cidb_codes) > 0)
-        {
+        if (count($tender->cidb_codes) > 0) {
             $ids_cidb = $tender->getCodes('cidb');
-            if(count($cidb_vendor_ids) == 0)
-            {
+            if (count($cidb_vendor_ids) == 0) {
                 $cidb_vendor_ids = $ids_cidb;
-            }
-            else
-            {
-                if(!is_array($cidb_vendor_ids)){
+            } else {
+                if (!is_array($cidb_vendor_ids)) {
                     $cidb_vendor_ids = $cidb_vendor_ids->toArray();
                 }
-                if(!is_array($ids_cidb)){
+                if (!is_array($ids_cidb)) {
                     $ids_cidb = $ids_cidb->toArray();
                 }
 
@@ -565,77 +543,67 @@ trait Helper
             }
         }
 
-        if($tender->mof_cidb_rule == 'and')
-        {
-            if(count($mof_vendor_ids) > 0 && count($cidb_vendor_ids) == 0 ) {
+        if ($tender->mof_cidb_rule == 'and') {
+            if (count($mof_vendor_ids) > 0 && count($cidb_vendor_ids) == 0) {
                 $vendor_ids = $mof_vendor_ids;
-            }
-            elseif(count($cidb_vendor_ids) > 0 && count($mof_vendor_ids) == 0 ) {
+            } elseif (count($cidb_vendor_ids) > 0 && count($mof_vendor_ids) == 0) {
                 $vendor_ids = $cidb_vendor_ids;
-            }
-            else {
+            } else {
 
-                if(!is_array($mof_vendor_ids)){
+                if (!is_array($mof_vendor_ids)) {
                     $mof_vendor_ids = $mof_vendor_ids->toArray();
                 }
-                if(!is_array($cidb_vendor_ids)){
+                if (!is_array($cidb_vendor_ids)) {
                     $cidb_vendor_ids = $cidb_vendor_ids->toArray();
                 }
 
                 $vendor_ids = array_intersect($mof_vendor_ids, $cidb_vendor_ids);
             }
-        }
-        else
-        {
-            if(!is_array($mof_vendor_ids)){
+        } else {
+            if (!is_array($mof_vendor_ids)) {
                 $mof_vendor_ids = $mof_vendor_ids->toArray();
             }
 
-            if(!is_array($cidb_vendor_ids)){
+            if (!is_array($cidb_vendor_ids)) {
                 $cidb_vendor_ids = $cidb_vendor_ids->toArray();
             }
-                
+
             $vendor_ids = array_merge($mof_vendor_ids, $cidb_vendor_ids);
         }
 
-        if($tender->only_selangor != 3)
-        {
-            if($tender->only_selangor == 1) {
+        if ($tender->only_selangor != 3) {
+            if ($tender->only_selangor == 1) {
                 $vendor_ids = Vendor::whereIn('id', $vendor_ids)->whereNotNull('district_id')->whereNull('state_id')->pluck('id');
             }
-    
-            if(!empty($tender->district_id)) {
+
+            if (!empty($tender->district_id)) {
                 $vendor_ids = Vendor::whereIn('id', $vendor_ids)->where('district_id', $tender->district_id)->pluck('id');
             }
-    
+
             $district_list_rules = json_decode($tender->district_list_rule ?? "[]");
-            
+
             $vendor_ids_tmp = [];
-            if (count($district_list_rules) > 0 )
-            {
+            if (count($district_list_rules) > 0) {
                 $by_district = [];
                 $by_state    = [];
-                
+
                 foreach ($district_list_rules as $rows) {
                     $district_id = $rows->district_id ?? '-999';
                     $state_id = $rows->state_id ?? '-999';
-    
-    
-                    if($district_id > 0 && $district_id != 0)
-                    {
+
+
+                    if ($district_id > 0 && $district_id != 0) {
                         $by_district[] = $district_id;
                     }
-    
-                    if($district_id == 0 && $state_id > 0)
-                    {
+
+                    if ($district_id == 0 && $state_id > 0) {
                         $by_state[] = $state_id;
                     }
-    
                 }
-    
-                $vendor_ids = Vendor::whereIn('id', $vendor_ids)->where( function($q) use ($by_state, $by_district){
+
+                $vendor_ids = Vendor::whereIn('id', $vendor_ids)->where(function ($q) use ($by_state, $by_district) {
                     $q->whereIn('state_id', $by_state)
-                    ->orWhereIn('district_id', $by_district);
+                        ->orWhereIn('district_id', $by_district);
                 })->pluck('id');
             }
         }
@@ -643,17 +611,17 @@ trait Helper
         // dd($vendor_ids);
 
 
-        if(count($vendor_ids) > 0) {
-            foreach($vendor_ids as $id) {
+        if (count($vendor_ids) > 0) {
+            foreach ($vendor_ids as $id) {
                 $vendor = Vendor::find($id);
 
-                if(empty($vendor)) {
+                if (empty($vendor)) {
                     continue;
                 }
 
                 $eligible = TenderEligible::where('vendor_id', $id)->where('tender_id', $tender->id)->first();
-                
-                if(!$eligible) {
+
+                if (!$eligible) {
                     $eligible = new TenderEligible([
                         'tender_id' => $tender->id,
                         'vendor_id' => $id,
@@ -663,6 +631,5 @@ trait Helper
                 }
             }
         }
-
     }
 }
