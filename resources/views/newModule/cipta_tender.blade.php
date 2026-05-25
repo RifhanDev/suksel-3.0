@@ -717,12 +717,21 @@
 
                     <!-- ROW 5 -->
                     <div class="row mb-4 g-3">
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label class="form-label">Tarikh Dicipta<span class="text-danger">*</span></label>
                             <input type="text" class="form-control form-control-lg" name="tarikh_dicipta"
                                 value="{{ old('tarikh_dicipta', \Carbon\Carbon::today()->format('j M Y')) }}" required readonly disabled>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
+                            <label class="form-label">Harga Dokumen</label>
+                            <div class="input-group">
+                                <span class="input-group-text">RM</span>
+                                <input type="text" class="form-control text-end amount-input" name="price"
+                                    value="{{ old('price') ? number_format(old('price'), 2) : '' }}"
+                                    placeholder="0.00" inputmode="decimal" autocomplete="off">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
                             <!-- For Kerja -->
                             <div id="jenis_tender_group" class="d-none">
                                 <label class="form-label">Jenis Tender / Sebut Harga<span
