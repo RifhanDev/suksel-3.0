@@ -1,0 +1,322 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\PenyediaanIklan;
+use App\Models\RefState;
+use App\Services\StosBackendClient;
+use App\Tender;
+use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
+
+class PenyediaanIklanController extends Controller
+{
+    public function __construct(protected StosBackendClient $stos) {}
+
+    public function index()
+    {
+        $tenders = Tender::query()
+            ->where('status_process_id', 4)
+            ->with('tenderer')
+            ->orderByDesc('id')
+            ->get()
+            ->map(function ($tender) {
+                return [
+                    'id' => $tender->id,
+                    'no_tender' => $tender->no_tender ?: $tender->ref_number ?: (string) $tender->id,
+                    'tajuk' => $tender->name ?: '-',
+                    'ptj' => $tender->tenderer?->name ?? '-',
+                    'status_label' => 'Penyediaan Iklan',
+                    'show_url' => route('penyediaanIklan.show', $tender->id),
+                ];
+            });
+
+        return view('newModule.penyediaanIklan.list', compact('tenders'));
+    }
+
+    public function show(Tender $tender)
+    {
+        if ((int) $tender->status_process_id !== 4) {
+            return redirect()
+                ->route('penyediaanIklan.index')
+                ->with('error', 'Tender ini tidak berada dalam peringkat Penyediaan Iklan.');
+        }
+
+        $country_states = RefState::where('display_status', 1)->get();
+        $meta = PenyediaanIklan::defaultKelulusan();
+        $penyediaanIklan = null;
+
+        if ($this->stos->isConfigured()) {
+            try {
+                $response = $this->stos->getPenyediaanIklan($tender->id);
+                if ($response->successful()) {
+                    $body = $response->json();
+                    $meta = $body['data']['meta'] ?? $meta;
+                    $penyediaanIklan = $body['data']['penyediaan_iklan'] ?? null;
+                }
+            } catch (\Throwable $e) {
+                Log::warning('STOS get penyediaan-iklan failed, using local defaults', [
+                    'tender_id' => $tender->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        $tender->load(['tenderer', 'codes', 'creator', 'officer']);
+
+        if (empty($meta['kelulusan'])) {
+            $meta['kelulusan'] = PenyediaanIklan::defaultKelulusan();
+        }
+
+        return view('newModule.penyediaanIklan.index', compact(
+            'tender',
+            'country_states',
+            'meta',
+            'penyediaanIklan'
+        ));
+    }
+
+    public function simpan(Request $request, Tender $tender)
+    {
+        return $this->persist($request, $tender, false);
+    }
+
+    public function hantar(Request $request, Tender $tender)
+    {
+        return $this->persist($request, $tender, true);
+    }
+
+    protected function persist(Request $request, Tender $tender, bool $submit)
+    {
+        if ((int) $tender->status_process_id !== 4) {
+            return $this->respondError($request, 'Tender tidak dalam peringkat Penyediaan Iklan.', 422);
+        }
+
+        if (! $this->stos->isConfigured()) {
+            return $this->respondError($request, 'STOS backend tidak dikonfigurasi.', 503);
+        }
+
+        $payload = $this->buildPayload($request, $tender->id);
+
+        try {
+            $response = $submit
+                ? $this->stos->submitPenyediaanIklan($tender->id, $payload)
+                : $this->stos->savePenyediaanIklan($tender->id, $payload);
+
+            if (! $response->successful()) {
+                $message = $response->json('message') ?? 'Gagal menyimpan penyediaan iklan.';
+
+                return $this->respondError($request, $message, $response->status());
+            }
+
+            $message = $submit
+                ? 'Penyediaan iklan berjaya dihantar.'
+                : 'Penyediaan iklan berjaya disimpan.';
+
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => $message,
+                    'redirect' => $submit ? route('tenders.index') : route('penyediaanIklan.show', $tender->id),
+                ]);
+            }
+
+            return redirect()
+                ->to($submit ? route('tenders.index') : route('penyediaanIklan.show', $tender->id))
+                ->with('success', $message);
+        } catch (\Throwable $e) {
+            Log::error('Penyediaan iklan persist failed', [
+                'tender_id' => $tender->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return $this->respondError($request, 'Ralat sistem: ' . $e->getMessage(), 500);
+        }
+    }
+
+    protected function buildPayload(Request $request, int $tenderId): array
+    {
+        $kelulusan = $this->parseKelulusan($request, $tenderId);
+
+        $taklimat = [];
+        if ($request->filled('taklimat_rows')) {
+            $decoded = json_decode($request->input('taklimat_rows'), true);
+            if (is_array($decoded)) {
+                $taklimat = $decoded;
+            }
+        }
+
+        $districtRules = [];
+        $districtIds = (array) $request->input('district_id_new', []);
+        $stateIds = (array) $request->input('state_id_new', []);
+        foreach ($districtIds as $idx => $districtId) {
+            if ($districtId === '' || $districtId === null) {
+                continue;
+            }
+            $districtRules[] = [
+                'district_id' => $districtId,
+                'state_id' => $stateIds[$idx] ?? '0',
+            ];
+        }
+
+        return [
+            'kelulusan' => $kelulusan,
+            'iklan' => [
+                'tarikh_iklan' => $request->input('tarikh_iklan'),
+                'masa_iklan' => $request->input('masa_iklan'),
+                'tarikh_tutup' => $request->input('tarikh_tutup'),
+                'masa_tutup' => $request->input('masa_tutup'),
+                'tarikh_jual' => $request->input('tarikh_jual'),
+                'tempoh_iklan' => $request->input('tempoh_iklan'),
+                'tempoh_sah_laku' => $request->input('tempoh_sah_laku'),
+                'sah_laku_tamat' => $request->input('sah_laku_tamat'),
+                'kebenaran_khas' => $request->boolean('kebenaran_khas'),
+                'syarat_tender' => $request->input('syarat_tender'),
+                'taklimat' => $taklimat,
+                'syarat' => [
+                    'only_selangor' => $request->input('only_selangor'),
+                    'only_bumiputera' => $request->boolean('only_bumiputera'),
+                    'invitation' => $request->boolean('invitation'),
+                    'only_advertise' => $request->boolean('only_advertise'),
+                    'district_list_rule' => $districtRules,
+                ],
+                'dokumen_sokongan' => $this->storeDokumenSokongan($request, $tenderId),
+            ],
+            'pegawai' => [
+                'pegawai1' => [
+                    'nama' => $request->input('pegawai1_nama'),
+                    'emel' => $request->input('pegawai1_emel'),
+                    'tel' => $request->input('pegawai1_tel'),
+                    'jabatan' => $request->input('pegawai1_jabatan'),
+                ],
+                'pegawai2' => [
+                    'nama' => $request->input('pegawai2_nama'),
+                    'emel' => $request->input('pegawai2_emel'),
+                    'tel' => $request->input('pegawai2_tel'),
+                    'jabatan' => $request->input('pegawai2_jabatan'),
+                ],
+            ],
+        ];
+    }
+
+    protected function parseKelulusan(Request $request, int $tenderId): array
+    {
+        $fixedLabels = ['Kelulusan Berbelanja', 'Kelulusan Projek ICT'];
+        $statuses = (array) $request->input('kelulusan_status', []);
+        $catatans = (array) $request->input('kelulusan_catatan', []);
+        $jenisDynamic = (array) $request->input('kelulusan_jenis', []);
+        $files = (array) $request->file('kelulusan_dokumen', []);
+
+        $rows = [];
+        $fileIndex = 0;
+
+        foreach ($fixedLabels as $i => $label) {
+            $existingPath = $request->input("kelulusan_existing_dokumen.{$i}");
+            $dokumen = $this->resolveKelulusanFile($files[$fileIndex] ?? null, $tenderId, $existingPath);
+            if (isset($files[$fileIndex])) {
+                $fileIndex++;
+            }
+
+            $rows[] = [
+                'jenis' => $label,
+                'is_fixed' => true,
+                'status' => $statuses[$i] ?? null,
+                'catatan' => $catatans[$i] ?? null,
+                'dokumen' => $dokumen,
+            ];
+        }
+
+        $dynamicOffset = count($fixedLabels);
+        foreach ($jenisDynamic as $j => $jenis) {
+            $idx = $dynamicOffset + $j;
+            $existingPath = $request->input("kelulusan_existing_dokumen.{$idx}");
+            $dokumen = $this->resolveKelulusanFile($files[$fileIndex] ?? null, $tenderId, $existingPath);
+            if (isset($files[$fileIndex])) {
+                $fileIndex++;
+            }
+
+            $rows[] = [
+                'jenis' => trim((string) $jenis),
+                'is_fixed' => false,
+                'status' => $statuses[$idx] ?? null,
+                'catatan' => $catatans[$idx] ?? null,
+                'dokumen' => $dokumen,
+            ];
+        }
+
+        return $rows;
+    }
+
+    protected function resolveKelulusanFile(?UploadedFile $file, int $tenderId, ?string $existingPath): ?array
+    {
+        if ($file instanceof UploadedFile) {
+            return $this->storeKelulusanUpload($file, $tenderId);
+        }
+
+        if ($existingPath) {
+            return [
+                'path' => $existingPath,
+                'original_name' => basename($existingPath),
+                'url' => asset($existingPath),
+            ];
+        }
+
+        return null;
+    }
+
+    protected function storeKelulusanUpload(UploadedFile $file, int $tenderId): array
+    {
+        $dir = public_path("uploads/penyediaan-iklan/{$tenderId}/kelulusan");
+        if (! is_dir($dir)) {
+            mkdir($dir, 0755, true);
+        }
+
+        $name = Str::uuid() . '.' . $file->getClientOriginalExtension();
+        $file->move($dir, $name);
+        $relative = "uploads/penyediaan-iklan/{$tenderId}/kelulusan/{$name}";
+
+        return [
+            'path' => $relative,
+            'original_name' => $file->getClientOriginalName(),
+            'url' => asset($relative),
+        ];
+    }
+
+    protected function storeDokumenSokongan(Request $request, int $tenderId): array
+    {
+        $stored = [];
+        $files = (array) $request->file('dokumen_sokongan_terawal', []);
+        $dir = public_path("uploads/penyediaan-iklan/{$tenderId}/sokongan");
+
+        if (! is_dir($dir)) {
+            mkdir($dir, 0755, true);
+        }
+
+        foreach ($files as $file) {
+            if (! $file instanceof UploadedFile) {
+                continue;
+            }
+            $name = Str::uuid() . '.' . $file->getClientOriginalExtension();
+            $file->move($dir, $name);
+            $relative = "uploads/penyediaan-iklan/{$tenderId}/sokongan/{$name}";
+            $stored[] = [
+                'path' => $relative,
+                'original_name' => $file->getClientOriginalName(),
+                'url' => asset($relative),
+            ];
+        }
+
+        return $stored;
+    }
+
+    protected function respondError(Request $request, string $message, int $status)
+    {
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json(['success' => false, 'message' => $message], $status);
+        }
+
+        return back()->withInput()->with('error', $message);
+    }
+}

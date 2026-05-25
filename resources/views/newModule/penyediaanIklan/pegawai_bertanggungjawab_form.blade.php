@@ -59,11 +59,11 @@
                 </div>
                 <div class="col-md-6">
                     <label class="form-label fw-medium small">No. Telefon <span class="text-danger">*</span></label>
-                    <input type="text" class="form-control" name="pegawai1_tel" placeholder="Contoh: 03-5544 1234">
+                    <input type="text" class="form-control" name="pegawai1_tel" value="{{ $meta['pegawai']['pegawai1']['tel'] ?? '' }}" placeholder="Contoh: 03-5544 1234">
                 </div>
                 <div class="col-md-6">
                     <label class="form-label fw-medium small">Jabatan <span class="text-danger">*</span></label>
-                    <input type="text" class="form-control" name="pegawai1_jabatan" placeholder="Contoh: Bahagian Perolehan">
+                    <input type="text" class="form-control" name="pegawai1_jabatan" value="{{ $meta['pegawai']['pegawai1']['jabatan'] ?? '' }}" placeholder="Contoh: Bahagian Perolehan">
                 </div>
             </div>
         </div>

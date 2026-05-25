@@ -22,6 +22,13 @@
 
 @section('content')
 
+    @if (session('success'))
+        <div class="alert alert-success">{{ session('success') }}</div>
+    @endif
+    @if (session('error'))
+        <div class="alert alert-danger">{{ session('error') }}</div>
+    @endif
+
     <!-- ── HEADER ── -->
     <div class="mb-4">
         <h3 class="fw-bold text-dark m-0" style="letter-spacing: -0.5px;">Penyediaan Iklan</h3>
@@ -36,14 +43,14 @@
                 <div class="col-12 col-sm-6 col-lg-3">
                     <div class="d-flex flex-column gap-1">
                         <span class="text-muted fw-semibold text-uppercase" style="font-size:0.67rem; letter-spacing:0.5px;">No. Tender / Sebut Harga</span>
-                        <span class="fw-semibold text-dark" style="font-size:0.88rem;">SUKSEL/PERT/2026/001</span>
+                        <span class="fw-semibold text-dark" style="font-size:0.88rem;">{{ $tender->no_tender ?: $tender->ref_number }}</span>
                     </div>
                 </div>
 
                 <div class="col-12 col-sm-6 col-lg-4">
                     <div class="d-flex flex-column gap-1">
                         <span class="text-muted fw-semibold text-uppercase" style="font-size:0.67rem; letter-spacing:0.5px;">PTJ</span>
-                        <span class="fw-semibold text-dark" style="font-size:0.88rem;">JABATAN KERJA RAYA SELANGOR (100-007)</span>
+                        <span class="fw-semibold text-dark" style="font-size:0.88rem;">{{ $tender->tenderer?->name ?? '-' }}</span>
                     </div>
                 </div>
 
@@ -129,6 +136,11 @@
 
         <!-- RIGHT: Tab content -->
         <div class="col-lg-9">
+            <form id="formPenyediaanIklan"
+                action="{{ route('penyediaanIklan.simpan', $tender) }}"
+                method="POST"
+                enctype="multipart/form-data">
+            @csrf
             <div class="tab-content" id="pageTabContent">
 
                 {{-- ══ TAB 1: MAKLUMAT TENDER ══ --}}
@@ -158,6 +170,7 @@
 
             </div>
             {{-- End tab-content --}}
+            </form>
 
             <!-- ── TAB NAVIGATION BUTTONS ── -->
             <div class="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
@@ -186,7 +199,7 @@
 
     <!-- ── KEMBALI ── -->
     <div class="mt-3 mb-4">
-        <a href="{{ route('ciptaTender') }}" class="btn-form btn-form-secondary">
+        <a href="{{ route('penyediaanIklan.index') }}" class="btn-form btn-form-secondary">
             <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="19" y1="12" x2="5" y2="12"></line>
                 <polyline points="12 19 5 12 12 5"></polyline>
@@ -248,7 +261,19 @@ $(document).ready(function () {
     $('#btnSebelum').on('click', function () { goToTab(currentTab - 1); });
     $('#btnSeterusnya').on('click', function () {
         if (currentTab === tabs.length - 1) {
-            window.location.href = '{{ route("tenders.index") }}';
+            var form = document.getElementById('formPenyediaanIklan');
+            if (form) {
+                form.action = '{{ route("penyediaanIklan.hantar", $tender) }}';
+                if (typeof CKEDITOR !== 'undefined' && CKEDITOR.instances['syarat_tender']) {
+                    CKEDITOR.instances['syarat_tender'].updateElement();
+                }
+                if (typeof taklimatRows !== 'undefined') {
+                    $('#formPenyediaanIklan #taklimat_rows_hidden').remove();
+                    $('<input>').attr({ type: 'hidden', id: 'taklimat_rows_hidden', name: 'taklimat_rows' })
+                        .val(JSON.stringify(taklimatRows)).appendTo('#formPenyediaanIklan');
+                }
+                form.submit();
+            }
         } else {
             goToTab(currentTab + 1);
         }
