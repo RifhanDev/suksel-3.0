@@ -184,8 +184,9 @@
         </div>
     </div>
 
-    <form id="formPenyediaanIklan" action="{{ route('penyediaanIklan.store') }}" method="POST">
-    @csrf
+@php
+    $iklan = $meta['iklan'] ?? [];
+@endphp
 
     <!-- ══ STEP 1: PENYEDIAAN IKLAN ══ -->
     <div id="iklanStep1Content">
@@ -209,11 +210,11 @@
                         <div class="col-7">
                             <label class="form-label fw-semibold">Tarikh Iklan <span class="text-danger">*</span></label>
                             <input type="text" class="form-control form-control-lg datepicker" name="tarikh_iklan"
-                                placeholder="Pilih tarikh..." readonly>
+                                value="{{ $iklan['tarikh_iklan'] ?? '' }}" placeholder="Pilih tarikh..." readonly>
                         </div>
                         <div class="col-5">
                             <label class="form-label fw-semibold">Masa <span class="text-danger">*</span></label>
-                            <input type="time" class="form-control form-control-lg" name="masa_iklan">
+                            <input type="time" class="form-control form-control-lg" name="masa_iklan" value="{{ $iklan['masa_iklan'] ?? '' }}">
                         </div>
                     </div>
                 </div>
@@ -222,11 +223,11 @@
                         <div class="col-7">
                             <label class="form-label fw-semibold">Tarikh Tutup <span class="text-danger">*</span></label>
                             <input type="text" class="form-control form-control-lg datepicker" name="tarikh_tutup"
-                                placeholder="Pilih tarikh..." readonly>
+                                value="{{ $iklan['tarikh_tutup'] ?? '' }}" placeholder="Pilih tarikh..." readonly>
                         </div>
                         <div class="col-5">
                             <label class="form-label fw-semibold">Masa <span class="text-danger">*</span></label>
-                            <input type="time" class="form-control form-control-lg" name="masa_tutup">
+                            <input type="time" class="form-control form-control-lg" name="masa_tutup" value="{{ $iklan['masa_tutup'] ?? '' }}">
                         </div>
                     </div>
                 </div>
@@ -306,7 +307,7 @@
                 </svg>
                 Syarat tender wajib diisi sebelum iklan boleh diterbitkan.
             </div>
-            <textarea id="syarat_tender" name="syarat_tender" rows="8"></textarea>
+            <textarea id="syarat_tender" name="syarat_tender" rows="8">{{ $iklan['syarat_tender'] ?? $tender->tender_rules ?? '' }}</textarea>
         </div>
 
         {{-- ── Section 2: Syarat Khas ── --}}
@@ -527,8 +528,6 @@
 
     </div>
 
-    </form>
-
 </div>
 <!-- End Penyediaan Iklan -->
 
@@ -682,20 +681,18 @@ $(document).ready(function () {
     }
 
     /* ── Sync CKEditor + serialize taklimat, then show success modal ── */
-    $('#formPenyediaanIklan').on('submit', function (e) {
+    $('#iklanBtnSimpan').on('click', function (e) {
         e.preventDefault();
-
+        var form = document.getElementById('formPenyediaanIklan');
+        if (!form) return;
+        form.action = '{{ route("penyediaanIklan.simpan", $tender) }}';
         if (typeof CKEDITOR !== 'undefined' && CKEDITOR.instances['syarat_tender']) {
             CKEDITOR.instances['syarat_tender'].updateElement();
         }
-
         $('#formPenyediaanIklan #taklimat_rows_hidden').remove();
-        $('<input>')
-            .attr({ type: 'hidden', id: 'taklimat_rows_hidden', name: 'taklimat_rows' })
-            .val(JSON.stringify(taklimatRows))
-            .appendTo('#formPenyediaanIklan');
-
-        new bootstrap.Modal(document.getElementById('modalBerjayaIklan')).show();
+        $('<input>').attr({ type: 'hidden', id: 'taklimat_rows_hidden', name: 'taklimat_rows' })
+            .val(JSON.stringify(taklimatRows)).appendTo('#formPenyediaanIklan');
+        form.submit();
     });
 
     /* ── Stepper button wiring ── */
@@ -721,7 +718,30 @@ $(document).ready(function () {
     ════════════════════════════════════════════ */
 
     var taklimatRowCount = 0;
-    var taklimatRows     = [];   /* stores each row's data for form submission */
+    var taklimatRows     = [];
+    var savedTaklimat    = @json($iklan['taklimat'] ?? []);
+
+    function appendTaklimatRow(row) {
+        taklimatRowCount++;
+        var rId = row.rid || ('tr_' + taklimatRowCount);
+        var tarikhMasa = (row.tarikh || '') + (row.masa ? ' | ' + row.masa : '');
+        var badge = (row.kehadiran === 'Wajib')
+            ? '<span class="badge-status badge-status-danger">Wajib</span>'
+            : '<span class="badge-status badge-status-neutral">Tidak Wajib</span>';
+        var mainRow = '<tr class="taklimat-main-row" data-rid="' + rId + '">' +
+            '<td class="text-center"><input type="checkbox" class="chk-taklimat-row form-check-input"></td>' +
+            '<td>' + (row.perihal || '') + '</td>' +
+            '<td>' + tarikhMasa + '</td>' +
+            '<td>' + (row.lokasi || '-') + '</td>' +
+            '<td class="text-center">' + badge + '</td></tr>';
+        row.rid = rId;
+        taklimatRows.push(row);
+        $('#taklimatEmptyRow').hide();
+        $('#tblTaklimatBody').append(mainRow);
+        syncHapusTaklimat();
+    }
+
+    savedTaklimat.forEach(function (row) { appendTaklimatRow(row); });
 
     /* Open modal & reset */
     $('#btnTambahTaklimat').on('click', function () {
@@ -747,35 +767,13 @@ $(document).ready(function () {
             return;
         }
 
-        taklimatRowCount++;
-        var rId        = 'tr_' + taklimatRowCount;
-        var tarikhMasa = tarikh + (masa ? ' | ' + masa : '');
-        var badge      = wajib
-            ? '<span class="badge-status badge-status-danger">Wajib</span>'
-            : '<span class="badge-status badge-status-neutral">Tidak Wajib</span>';
-
-        var mainRow = [
-            '<tr class="taklimat-main-row" data-rid="' + rId + '">',
-            '<td class="text-center"><input type="checkbox" class="chk-taklimat-row form-check-input" style="accent-color:#c41e3a;"></td>',
-            '<td style="white-space:normal;max-width:220px;">' + perihal + '</td>',
-            '<td>' + tarikhMasa + '</td>',
-            '<td style="white-space:pre-wrap;word-break:break-word;">' + lokasi + '</td>',
-            '<td class="text-center">' + badge + '</td>',
-            '</tr>'
-        ].join('');
-
-        taklimatRows.push({
-            rid      : rId,
+        appendTaklimatRow({
             perihal  : perihal,
             tarikh   : tarikh,
             masa     : masa,
             lokasi   : lokasi,
             kehadiran: wajib ? 'Wajib' : 'Tidak Wajib',
         });
-
-        $('#taklimatEmptyRow').hide();
-        $('#tblTaklimatBody').append(mainRow);
-        syncHapusTaklimat();
 
         bootstrap.Modal.getInstance(document.getElementById('modalTaklimat')).hide();
     });

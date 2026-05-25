@@ -211,8 +211,10 @@ Route::get('chat-widget/{chat_id}', [BotManController::class, 'chatWidget'])->wi
 
 // Place 3.0 Modules Routes Temporarily Here
 Route::view('/semak-tender', 'newModule.semak_tender')->name('semakPenciptaanTender');
-Route::get('/penyediaan-iklan', [DummyController::class, 'penyediaanIklan'])->name('penyediaanIklan');
-Route::post('/penyediaan-iklan/simpan', [DummyController::class, 'storePenyediaanIklan'])->name('penyediaanIklan.store');
+Route::get('/penyediaan-iklan', [\App\Http\Controllers\PenyediaanIklanController::class, 'index'])->name('penyediaanIklan.index');
+Route::get('/penyediaan-iklan/{tender}', [\App\Http\Controllers\PenyediaanIklanController::class, 'show'])->name('penyediaanIklan.show');
+Route::post('/penyediaan-iklan/{tender}/simpan', [\App\Http\Controllers\PenyediaanIklanController::class, 'simpan'])->name('penyediaanIklan.simpan');
+Route::post('/penyediaan-iklan/{tender}/hantar', [\App\Http\Controllers\PenyediaanIklanController::class, 'hantar'])->name('penyediaanIklan.hantar');
 
 Route::get('/pelantikan-jawatankuasa', [JawatankuasaController::class, 'create'])->middleware(['auth'])->name('pelantikanJawatankuasa');
 Route::view('/pelantikan-jawatankuasa-1-peringkat', 'tenders.pelantikan_jawatankuasa_1_peringkat')->middleware(['auth'])->name('pelantikanJawatankuasaSatuPeringkat');
