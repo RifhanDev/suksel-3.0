@@ -33,6 +33,7 @@ trait Helper
         $app_name = 'STOS';
         $arr = explode('-', $transaction_num);
 
+        /////////////////////Later, can remove BELOW, DEV ONLY////////////////////////
         // DEV ONLY — bypass transactions (created via [DEV] Bypass Bayaran) may not follow
         // the expected YYYY-XXXXXXXXX format and won't have a '-' delimiter.
         // Remove this guard once real payment gateway is integrated and all transactions
@@ -40,6 +41,7 @@ trait Helper
         if (count($arr) < 2) {
             return $transaction_num;
         }
+        /////////////////////Later, can remove ABOVE, DEV ONLY////////////////////////
 
         $year = substr($arr[0], -2);
         $running_num = $arr[1];
