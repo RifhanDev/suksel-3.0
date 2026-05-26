@@ -268,8 +268,6 @@
                                 </div>
                                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-muted"><polyline points="6 9 12 15 18 9"></polyline></svg>
                             </button>
-                            {{-- ORIGINAL: only fpx-1 and fpx-2 --}}
-                            {{-- MODIFIED: added [DEV] Bypass in non-production --}}
                             <ul class="dropdown-menu dropdown-menu-payment shadow border-0">
                                 <li>
                                     <a class="dropdown-item dropdown-item-payment method-ob" href="#" data-value="fpx-1">
@@ -283,15 +281,6 @@
                                         Perbankan Korporat
                                     </a>
                                 </li>
-                                @if (config('app.env') !== 'production')
-                                    <li><hr class="dropdown-divider"></li>
-                                    <li>
-                                        <a class="dropdown-item dropdown-item-payment method-ob" href="#" data-value="direct" style="color:#166534;">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                                            [DEV] Bypass Bayaran
-                                        </a>
-                                    </li>
-                                @endif
                             </ul>
                         </div>
                     @endif
