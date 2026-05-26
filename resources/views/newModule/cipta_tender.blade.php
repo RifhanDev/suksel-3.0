@@ -720,7 +720,7 @@
                         <div class="col-md-4">
                             <label class="form-label">Tarikh Dicipta<span class="text-danger">*</span></label>
                             <input type="text" class="form-control form-control-lg" name="tarikh_dicipta"
-                                value="{{ old('tarikh_dicipta', \Carbon\Carbon::today()->format('j M Y')) }}" required readonly disabled>
+                                value="{{ old('tarikh_dicipta', \Carbon\Carbon::today()->format('j M Y')) }}" required readonly>
                         </div>
                         <div class="col-md-4">
                             <label class="form-label">Harga Dokumen</label>
