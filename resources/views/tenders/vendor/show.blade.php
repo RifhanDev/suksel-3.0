@@ -278,6 +278,11 @@
                                 <div class="header-icon"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></div>
                                 <h6>Lawatan Tapak</h6>
                             </div>
+                            <div class="px-4 pt-3 pb-0">
+                                <p class="text-muted small mb-0">
+                                    Klik <strong>Wakil Syarikat</strong> pada setiap lawatan untuk masukkan No. IC, nama wakil dan tandakan kehadiran selepas menghadiri lawatan tapak.
+                                </p>
+                            </div>
                             <div class="table-responsive">
                                 <table class="table table-hover align-middle mb-0" style="font-size:0.82rem;">
                                     <thead style="background:#f8fafc;">
@@ -286,27 +291,85 @@
                                             <th class="py-3" style="border-color:#e5e7eb; font-size:0.68rem; color:#6b7280; text-transform:uppercase;">Tempat Berkumpul</th>
                                             <th class="py-3" style="border-color:#e5e7eb; font-size:0.68rem; color:#6b7280; text-transform:uppercase;">Alamat</th>
                                             <th class="py-3" style="border-color:#e5e7eb; font-size:0.68rem; color:#6b7280; text-transform:uppercase;">Tarikh &amp; Waktu</th>
-                                            <th class="py-3 pe-4" style="border-color:#e5e7eb; font-size:0.68rem; color:#6b7280; text-transform:uppercase;">Wajib Hadir</th>
+                                            <th class="py-3" style="border-color:#e5e7eb; font-size:0.68rem; color:#6b7280; text-transform:uppercase;">Wajib Hadir</th>
+                                            <th class="py-3 pe-4 text-center" style="border-color:#e5e7eb; font-size:0.68rem; color:#6b7280; text-transform:uppercase;">Wakil Syarikat</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         @foreach ($tender->siteVisits->sortBy('id') as $i => $visit)
+                                            @php
+                                                $visitAttended = Auth::check() && Auth::user()->vendor_id
+                                                    ? App\TenderVisitor::hasVisit($visit->id, Auth::user()->vendor_id)
+                                                    : false;
+                                            @endphp
                                             <tr style="border-color:#e5e7eb;">
                                                 <td class="ps-4">{{ $i + 1 }}</td>
                                                 <td>{!! nl2br(e($visit->meetpoint)) !!}</td>
                                                 <td>{!! nl2br(e($visit->address)) !!}</td>
                                                 <td>{{ \Carbon\Carbon::parse($visit->datetime)->format('j M Y H:i') }}</td>
-                                                <td class="pe-4">
+                                                <td>
                                                     @if ($visit->required)
                                                         <span class="badge bg-success">Ya</span>
                                                     @else
                                                         <span class="badge bg-danger">Tidak</span>
                                                     @endif
                                                 </td>
+                                                <td class="pe-4 text-center">
+                                                    @if ($visitAttended)
+                                                        <span class="badge bg-success mb-1 d-block">Hadir</span>
+                                                    @endif
+                                                    <button type="button"
+                                                        class="btn btn-sm btn-outline-danger btn-wakil-lawatan"
+                                                        data-visit-id="{{ $visit->id }}"
+                                                        data-visit-label="Lawatan {{ $i + 1 }} — {{ \Carbon\Carbon::parse($visit->datetime)->format('j M Y H:i') }}"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#wakilLawatanModal">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                                        Wakil
+                                                    </button>
+                                                </td>
                                             </tr>
                                         @endforeach
                                     </tbody>
                                 </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Modal: Wakil Syarikat --}}
+                    <div class="modal fade" id="wakilLawatanModal" tabindex="-1" aria-labelledby="wakilLawatanModalLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-lg modal-dialog-centered">
+                            <div class="modal-content">
+                                <div class="modal-header" style="background:#c41e3a; color:#fff;">
+                                    <h6 class="modal-title" id="wakilLawatanModalLabel">Wakil Syarikat</h6>
+                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Tutup"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <p class="text-muted small mb-3" id="wakilLawatanVisitInfo"></p>
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered align-middle mb-0" id="wakilLawatanTable">
+                                            <thead>
+                                                <tr>
+                                                    <th width="28%">No. IC</th>
+                                                    <th>Nama Individu</th>
+                                                    <th width="12%" class="text-center">Hadir</th>
+                                                    <th width="8%"></th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="wakilLawatanRows"></tbody>
+                                        </table>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary mt-2" id="wakilLawatanAddRow">+ Tambah wakil</button>
+                                    <p class="text-muted small mt-3 mb-0">
+                                        Nota: Tandakan <strong>Hadir</strong> untuk sekurang-kurangnya seorang wakil yang hadir ke lawatan tapak. Nama hendaklah selari dengan sijil CIDB / MOF jika berkenaan.
+                                    </p>
+                                    <div class="alert alert-danger d-none mt-3 mb-0" id="wakilLawatanError"></div>
+                                    <div class="alert alert-success d-none mt-3 mb-0" id="wakilLawatanSuccess"></div>
+                                </div>
+                                <div class="modal-footer justify-content-center">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                                    <button type="button" class="btn btn-selangor px-4" id="wakilLawatanSave">Simpan</button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -634,4 +697,99 @@
 
     </div>{{-- /.row --}}
 
+@endsection
+
+@section('scripts')
+@if (count($tender->siteVisits) > 0 && Auth::check() && Auth::user()->vendor_id)
+<script>
+(function () {
+    var currentVisitId = null;
+    var csrfToken = document.querySelector('meta[name="_token"]')?.getAttribute('content') || '';
+
+    function emptyRow() {
+        return '<tr class="wakil-row">' +
+            '<td><input type="text" class="form-control form-control-sm rep-ic" maxlength="32" placeholder="No. IC"></td>' +
+            '<td><input type="text" class="form-control form-control-sm rep-name" maxlength="255" placeholder="Nama"></td>' +
+            '<td class="text-center"><input type="checkbox" class="form-check-input rep-attended"></td>' +
+            '<td class="text-center"><button type="button" class="btn btn-sm btn-link text-danger p-0 btn-remove-rep" title="Buang">&times;</button></td>' +
+            '</tr>';
+    }
+
+    function fillRows(reps) {
+        var $tbody = $('#wakilLawatanRows');
+        $tbody.empty();
+        if (!reps || !reps.length) {
+            $tbody.append(emptyRow());
+            $tbody.append(emptyRow());
+            return;
+        }
+        reps.forEach(function (rep) {
+            var $row = $(emptyRow());
+            $row.find('.rep-ic').val(rep.ic_no || '');
+            $row.find('.rep-name').val(rep.name || '');
+            $row.find('.rep-attended').prop('checked', !!rep.attended);
+            $tbody.append($row);
+        });
+        if (reps.length < 2) {
+            $tbody.append(emptyRow());
+        }
+    }
+
+    $('.btn-wakil-lawatan').on('click', function () {
+        currentVisitId = $(this).data('visit-id');
+        $('#wakilLawatanVisitInfo').text($(this).data('visit-label'));
+        $('#wakilLawatanError, #wakilLawatanSuccess').addClass('d-none').text('');
+
+        $.get('{{ url('/visits') }}/' + currentVisitId + '/representatives', function (reps) {
+            fillRows(reps);
+        }).fail(function () {
+            fillRows([]);
+        });
+    });
+
+    $('#wakilLawatanAddRow').on('click', function () {
+        $('#wakilLawatanRows').append(emptyRow());
+    });
+
+    $(document).on('click', '.btn-remove-rep', function () {
+        if ($('#wakilLawatanRows .wakil-row').length > 1) {
+            $(this).closest('tr').remove();
+        }
+    });
+
+    $('#wakilLawatanSave').on('click', function () {
+        if (!currentVisitId) return;
+
+        var reps = [];
+        $('#wakilLawatanRows .wakil-row').each(function () {
+            var ic = $(this).find('.rep-ic').val().trim();
+            var name = $(this).find('.rep-name').val().trim();
+            var attended = $(this).find('.rep-attended').is(':checked');
+            if (ic || name) {
+                reps.push({ ic_no: ic, name: name, attended: attended ? 1 : 0 });
+            }
+        });
+
+        var $btn = $(this).prop('disabled', true);
+        $('#wakilLawatanError, #wakilLawatanSuccess').addClass('d-none');
+
+        $.ajax({
+            url: '{{ url('/visits') }}/' + currentVisitId + '/representatives',
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': csrfToken },
+            data: { reps: reps, _token: csrfToken },
+            success: function (res) {
+                $('#wakilLawatanSuccess').removeClass('d-none').text(res.message || 'Berjaya disimpan.');
+                setTimeout(function () { window.location.reload(); }, 800);
+            },
+            error: function (xhr) {
+                var msg = xhr.responseJSON?.message || 'Gagal menyimpan. Sila cuba lagi.';
+                $('#wakilLawatanError').removeClass('d-none').text(msg);
+                $btn.prop('disabled', false);
+            }
+        });
+    });
+})();
+</script>
+@endif
 @endsection

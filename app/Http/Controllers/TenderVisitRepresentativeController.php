@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\TenderVisitRepresentative;
 use App\TenderVisit;
+use App\TenderVisitor;
 use Illuminate\Http\Request;
 
 class TenderVisitRepresentativeController extends Controller
@@ -47,10 +48,17 @@ class TenderVisitRepresentativeController extends Controller
             ->where('vendor_id', $user->vendor_id)
             ->delete();
 
+        $hasAttended = false;
+
         if (!empty($data['reps'])) {
             foreach ($data['reps'] as $rep) {
                 if (empty($rep['ic_no']) && empty($rep['name'])) {
                     continue;
+                }
+
+                $attended = !empty($rep['attended']);
+                if ($attended) {
+                    $hasAttended = true;
                 }
 
                 TenderVisitRepresentative::create([
@@ -58,12 +66,25 @@ class TenderVisitRepresentativeController extends Controller
                     'vendor_id' => $user->vendor_id,
                     'ic_no' => $rep['ic_no'] ?? null,
                     'name' => $rep['name'] ?? null,
-                    'attended' => !empty($rep['attended']),
+                    'attended' => $attended,
                 ]);
             }
         }
 
-        return response()->json(['message' => 'Berjaya disimpan.']);
+        if ($hasAttended && !TenderVisitor::hasVisit($visit->id, $user->vendor_id)) {
+            TenderVisitor::create([
+                'visit_id' => $visit->id,
+                'vendor_id' => $user->vendor_id,
+            ]);
+        }
+
+        if (!$hasAttended && TenderVisitor::hasVisit($visit->id, $user->vendor_id)) {
+            TenderVisitor::where('visit_id', $visit->id)
+                ->where('vendor_id', $user->vendor_id)
+                ->delete();
+        }
+
+        return response()->json(['message' => 'Berjaya disimpan.', 'attended' => $hasAttended]);
     }
 }
 
