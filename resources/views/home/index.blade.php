@@ -161,6 +161,33 @@
             overflow: hidden;
         }
 
+        .news-item-sidebar {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #f3f4f6;
+            display: flex;
+            gap: 0.75rem;
+            text-decoration: none;
+            transition: background 0.2s;
+        }
+        .news-item-sidebar:hover { background: #fef2f2; }
+        .news-date-small {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            min-width: 44px; height: 44px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+            flex-shrink: 0;
+        }
+        .news-date-small .day { font-weight: 800; color: var(--sg-red); font-size: 0.9rem; }
+        .news-date-small .month { font-size: 0.55rem; color: #6b7280; text-transform: uppercase; font-weight: 700; margin-top: 2px; }
+        .news-item-sidebar:hover .news-date-small { background: var(--sg-red); border-color: var(--sg-red); }
+        .news-item-sidebar:hover .news-date-small .day,
+        .news-item-sidebar:hover .news-date-small .month { color: white; }
+
         .news-title-group {
             display: flex;
             flex-direction: column;
@@ -294,7 +321,7 @@
             gap: 0.25rem;
         }
 
-        #announcements-ticker {
+        #announcements-ticker, #home-news-ticker {
             height: 100%;
             flex: 1;
             overflow: hidden;
@@ -573,11 +600,11 @@
 
 @section('content')
 
-	<div class="row gy-4 mb-4">
+	<div class="row gy-4 mb-4" style="align-items:stretch;">
 		<!-- LEFT: CAROUSEL -->
 		<div class="col-lg-9">
 			<div class="hero-card">
-				<div id="landing-carousel" class="carousel slide" data-bs-ride="carousel">
+				<div id="landing-carousel" class="carousel slide" data-bs-ride="carousel" data-bs-interval="5000">
 					<div class="carousel-indicators">
 						@foreach (range(0, count($banners) - 1) as $c)
 							<button type="button" data-bs-target="#landing-carousel" data-bs-slide-to="{{ $c }}"
@@ -627,30 +654,31 @@
 					</div>
 				</div>
 				
-				<div class="card-body p-0 flex-grow-1">
-					<div id="announcements-ticker">
-						<div class="list-group list-group-flush">
-							@foreach ($global_news as $news)
+				<div class="card-body p-0 flex-grow-1" style="overflow:hidden;">
+					<div id="home-news-ticker" style="overflow:hidden;">
+						<div class="general-item-list m-0 p-0">
+							@forelse ($global_news as $news)
 								@php
 									$newsDate = \Carbon\Carbon::parse($news->published_at ?: $news->created_at);
 								@endphp
-								<a href="{{ asset('news/' . $news->id) }}" class="news-item">
-									<div class="news-date-box">
-										<span class="news-day">{{ $newsDate->format('d') }}</span>
-										<span class="news-month">{{ $newsDate->format('M') }}</span>
+								<a href="{{ asset('news/' . $news->id) }}" class="news-item-sidebar">
+									<div class="news-date-small flex-shrink-0">
+										<span class="day">{{ $newsDate->format('d') }}</span>
+										<span class="month">{{ $newsDate->format('M') }}</span>
 									</div>
 									<div class="news-info">
-										<h6 class="news-item-title">{{ Str::limit($news->title, 55) }}</h6>
-										<div class="news-item-meta">
+										<div class="text-dark fw-bold small mb-1" style="line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">
+											{{ $news->title }}
+										</div>
+										<div class="d-flex align-items-center gap-1 mt-1">
 											<span class="news-tag">Berita</span>
-											<span class="news-time">
-												<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M12 7v5l3 3" /></svg>
-												{{ $newsDate->format('Y') }}
-											</span>
+											<span class="text-muted" style="font-size:0.65rem;">{{ $newsDate->format('Y') }}</span>
 										</div>
 									</div>
 								</a>
-							@endforeach
+							@empty
+								<div class="p-3 text-center text-muted small">Tiada berita terkini.</div>
+							@endforelse
 						</div>
 					</div>
 				</div>
@@ -759,6 +787,17 @@
 	{{-- <script src="{{ asset('js/datatables.js') }}"></script> --}}
 	<script src="{{ asset('js/easy-ticker.js') }}"></script>
 	<script type="text/javascript">
+
+		$('#home-news-ticker').easyTicker({
+			direction: 'up',
+			easing: 'swing',
+			speed: 'slow',
+			interval: 3000,
+			height: 'auto',
+			visible: 5,
+			mousePause: 1
+		});
+
 		$('.DT2').each(function() {
 			var target = $(this);
 			var path = target.data('path');
@@ -813,22 +852,6 @@
 			});
 		});
 
-		$('#announcements-ticker').easyTicker({
-			direction: 'up',
-			easing: 'swing',
-			speed: 'slow',
-			interval: 2000,
-			height: 'auto',
-			visible: 4,
-			mousePause: 1,
-			controls: {
-				up: '',
-				down: '',
-				toggle: '',
-				playText: 'Play',
-				stopText: 'Stop'
-			}
-		});
 	</script>
 
     <!-- Botman Chatbot Widget -->

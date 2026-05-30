@@ -261,16 +261,19 @@
     }
 </style>
 
+
+
 @php
     $borangTeknikalRows = [
         ['rujukan' => '45/53', 'harga' => '4,438,243.50'],
-        ['rujukan' => '46/2024', 'harga' => '3,125,000.00'],
-        ['rujukan' => 'KPKR/88', 'harga' => '5,890,100.25'],
-        ['rujukan' => 'PTJ/12/2023', 'harga' => '2,450,999.00'],
-        ['rujukan' => 'SW/001', 'harga' => '6,200,000.00'],
-        ['rujukan' => 'JKR/PHT/44', 'harga' => '1,980,500.75'],
-        ['rujukan' => 'TENDER/2024/07', 'harga' => '4,100,250.00'],
-        ['rujukan' => 'PER/P/J11', 'harga' => '3,333,333.33'],
+        ['rujukan' => '27/53', 'harga' => '4,798,852.00'],
+        ['rujukan' => '34/53', 'harga' => '4,830,689.40'],
+        ['rujukan' => '24/53', 'harga' => '4,864,594.40'],
+        ['rujukan' => '37/53', 'harga' => '4,956,328.00'],
+        ['rujukan' => '30/53', 'harga' => '4,980,824.00'],
+        ['rujukan' => '32/53', 'harga' => '5,010,773.00'],
+        ['rujukan' => '2/53', 'harga' => '5,018,400.10'],
+        ['rujukan' => '7/53', 'harga' => '5,050,444.00'],
     ];
 @endphp
 

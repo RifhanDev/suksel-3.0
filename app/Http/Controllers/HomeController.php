@@ -47,8 +47,7 @@ class HomeController extends Controller
 					return redirect('register/company');
 				elseif (!$user->vendor->registration_paid)
 					return redirect('register/payment');
-				else
-					return redirect('dashboard');
+				// Vendors can access the home page — no redirect to dashboard
 			} elseif ($user->hasRole('Admin')) {
 				return redirect()->route('dashboard.hq');
 			} else {
@@ -99,7 +98,7 @@ class HomeController extends Controller
 					$string   = [];
 					$string[] = '<strong><u>' . $tender->tenderer->name . '</u></strong>';
 					$string[] = '<small><strong>' . $tender->ref_number . '</strong></small>';
-					$string[] = '<a class="table-tender-title" href="' . route('tender.show', $tender->id) . '">' . $tender->name . '</a>';
+					$string[] = '<a class="table-tender-title" href="' . route('tenders.show', $tender->id) . '">' . $tender->name . '</a>';
 
 					if ($tender->briefing_required) {
 						$string[] = '';
@@ -251,7 +250,7 @@ class HomeController extends Controller
 			->orderBy('created_at', 'desc')
 			->get();
 		// $global_news = News::where('show_main', '1')->orderBy('published_at', 'desc')->get();
-		$global_news = News::where('published_at', '>=', DB::raw("DATE(DATE_SUB(SYSDATE(), INTERVAL 1 MONTH))"))->orderBy('published_at', 'desc')->get();
+		$global_news = News::wherePublish(1)->orderBy('published_at', 'desc')->take(10)->get();
 		$user = auth()->user();
 		return view('home.index', compact('banners', 'path', 'global_news', 'user'));
 	}

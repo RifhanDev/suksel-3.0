@@ -36,9 +36,12 @@
                                     style="line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
                                     {{ $news->title }}
                                 </div>
-                                <span class="text-muted" style="font-size: 0.65rem;">
-                                    {{ \Carbon\Carbon::parse($news->published_at ?: $news->created_at)->format('Y') }}
-                                </span>
+                                <div class="d-flex align-items-center gap-1 mt-1">
+                                    <span class="news-tag">Berita</span>
+                                    <span class="text-muted" style="font-size: 0.65rem;">
+                                        {{ \Carbon\Carbon::parse($news->published_at ?: $news->created_at)->format('Y') }}
+                                    </span>
+                                </div>
                             </div>
                         </a>
                     @endforeach

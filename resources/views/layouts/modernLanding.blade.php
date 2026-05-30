@@ -1247,6 +1247,18 @@
                 /* End at original position */
             }
         }
+
+        .news-tag {
+            font-size: 0.6rem;
+            font-weight: 600;
+            color: #c41e3a;
+            background: rgba(196,30,58,0.08);
+            padding: 1px 6px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            flex-shrink: 0;
+        }
     </style>
 </head>
 
@@ -1481,41 +1493,81 @@
                             </a>
 
                             <div class="dropdown-menu user-dropdown-menu dropdown-menu-end">
-                                <!-- Header Section -->
+                                <!-- Header -->
                                 <div class="dropdown-user-header">
-                                    <h6>{{ Auth::user()->name }}</h6>
-                                    <span>{{ Auth::user()->email }}</span>
+                                    <h6>{{ Auth::user()->vendor ? Auth::user()->vendor->name : Auth::user()->name }}</h6>
+                                    <span class="text-muted" style="font-size:0.78rem;">{{ Auth::user()->email }}</span>
+                                    @if (Auth::user()->hasRole('Vendor') && Auth::user()->vendor)
+                                        @if (!empty(Auth::user()->vendor->expiry_date) && Auth::user()->vendor->expiry_date != '1970-01-01')
+                                            <span class="text-muted d-block mt-1" style="font-size:0.7rem;">
+                                                Langganan tamat: <strong class="text-dark">{{ \Carbon\Carbon::parse(Auth::user()->vendor->expiry_date)->format('d/m/Y') }}</strong>
+                                                @if (Auth::user()->vendor->require_renewal)
+                                                    &bull; <a href="{{ asset('renewal') }}" class="text-danger">Perbaharui</a>
+                                                @endif
+                                            </span>
+                                        @else
+                                            <span class="text-muted d-block mt-1" style="font-size:0.7rem;">
+                                                <strong class="text-dark">{{ Auth::user()->vendor->status }}</strong>
+                                                @if (Auth::user()->vendor->require_renewal)
+                                                    &bull; <a href="{{ asset('renewal') }}" class="text-danger">Pembaharuan Langganan</a>
+                                                @endif
+                                            </span>
+                                        @endif
+                                    @endif
                                 </div>
 
-                                <!-- Menu Items -->
-                                <a class="dropdown-item" href="#">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
-                                        viewBox="0 0 24 24" fill="currentColor">
-                                        <path d="M12 2a5 5 0 1 1 -5 5l.005 -.217a5 5 0 0 1 4.995 -4.783z" />
-                                        <path
-                                            d="M14 14a5 5 0 0 1 5 5v1a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-1a5 5 0 0 1 5 -5h4z" />
-                                    </svg>
+                                @if (Auth::user()->hasRole('Vendor') && Auth::user()->vendor)
+                                    <!-- Senarai Tempahan -->
+                                    <a class="dropdown-item" href="{{ asset('cart') }}">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M6 2a1 1 0 0 1 .993.883L7 3v1.068l13.071.935a1 1 0 0 1 .929 1.024l-.01.114l-1 7a1 1 0 0 1-.877.853L19 14H8v2h9a3 3 0 1 1-2.83 2h-4.34A3 3 0 1 1 7.172 16H7V4H5a1 1 0 0 1 0-2h1zm1 3.086V12h10.697l.802-5.611z"/></svg>
+                                        Senarai Tempahan
+                                        <span class="badge bg-danger ms-auto">{{ App\Cart::count() }}</span>
+                                    </a>
+                                    <!-- Vendor-specific items -->
+                                    <a class="dropdown-item" href="/dashboard">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a5 5 0 1 1-5 5l.005-.217A5 5 0 0 1 12 2z"/><path d="M14 14a5 5 0 0 1 5 5v1a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-1a5 5 0 0 1 5-5h4z"/></svg>
+                                        Akaun Saya
+                                    </a>
+                                    <a class="dropdown-item" href="{{ action('VendorsController@certificate', Auth::user()->vendor->id) }}" target="_blank">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M19.496 3a1 1 0 0 1 .753.34l.042.052l2 2.5a1 1 0 0 1 0 1.216l-2 2.5a1 1 0 0 1-.753.392H18v8a3 3 0 0 1-2.824 2.995L15 21H7a3 3 0 0 1-2.995-2.824L4 18V6a3 3 0 0 1 2.824-2.995L7 3h12.496zM14 15H8a1 1 0 0 0 0 2h6a1 1 0 0 0 0-2zm0-4H8a1 1 0 0 0 0 2h6a1 1 0 0 0 0-2zm-2-4H8a1 1 0 0 0 0 2h4a1 1 0 0 0 0-2z"/></svg>
+                                        Papar Sijil Pengesahan
+                                    </a>
+                                    <a class="dropdown-item" href="{{ route('vendor.report.vendor.summary', ['year' => date('Y'), 'vendor_id' => Auth::user()->vendor->id]) }}">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M3 12h3v8H3zM9 5h3v15H9zM15 8h3v12h-3z"/></svg>
+                                        Laporan Transaksi Syarikat
+                                    </a>
+                                    @if (Auth::user()->vendor->registration_paid)
+                                        <a class="dropdown-item" href="{{ asset('vendor/' . Auth::user()->vendor_id . '/requests') }}">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M19 4a3 3 0 0 1 3 3v9a3 3 0 0 1-3 3H9l-4 2.5A1 1 0 0 1 3.5 21L3 21v-1.5A3 3 0 0 1 0 16V7a3 3 0 0 1 3-3h16z"/></svg>
+                                            Permintaan Kemaskini
+                                        </a>
+                                    @endif
+                                    <div class="dropdown-divider"></div>
+                                @endif
+
+                                <!-- Common items -->
+                                <a class="dropdown-item" href="{{ asset('profile') }}">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a5 5 0 1 1-5 5l.005-.217A5 5 0 0 1 12 2z"/><path d="M14 14a5 5 0 0 1 5 5v1a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-1a5 5 0 0 1 5-5h4z"/></svg>
                                     Profil Saya
                                 </a>
-                                <a class="dropdown-item" href="#">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
-                                        viewBox="0 0 24 24" fill="currentColor">
-                                        <path
-                                            d="M12 2a5 5 0 0 1 5 5v3a3 3 0 0 1 3 3v6a3 3 0 0 1 -3 3h-10a3 3 0 0 1 -3 -3v-6a3 3 0 0 1 3 -3v-3a5 5 0 0 1 5 -5m0 12a2 2 0 0 0 -1.995 1.85l-.005 .15a2 2 0 1 0 2 -2m0 -10a3 3 0 0 0 -3 3v3h6v-3a3 3 0 0 0 -3 -3" />
-                                    </svg>
-                                    Tukar Kata Laluan
+
+                                @if (Session::has('original_user_id'))
+                                    <a class="dropdown-item" href="{{ route('release_user') }}">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12.088 4.598a4.49 4.49 0 0 1 6.314 6.31l-1.415 1.415a1 1 0 0 1-1.414-1.414l1.415-1.415a2.49 2.49 0 1 0-3.52-3.52C12.19 7.26 12 8.016 12 8.5a1 1 0 1 1-2 0c0-1.086.42-2.116 1.174-2.897l.914-.905z"/><path d="m14.5 16.5-1.414 1.414a4.49 4.49 0 0 1-6.315-6.314L8.186 10.186A1 1 0 0 1 9.6 11.6L8.185 13.014a2.49 2.49 0 1 0 3.52 3.52L13.12 15.12a1 1 0 0 1 1.38 1.38z"/></svg>
+                                        Kembali ke Pengguna Asal
+                                    </a>
+                                @endif
+
+                                <a class="dropdown-item" href="{{ asset('profile/panduan') }}" target="_blank">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a1 1 0 0 1 .993.883L13 3v1h4a2 2 0 0 1 1.995 1.85L19 6v13a2 2 0 0 1-1.85 1.995L17 21H7a2 2 0 0 1-1.995-1.85L5 19V6a2 2 0 0 1 1.85-1.995L7 4h4V3a1 1 0 0 1 1-1zm0 9H8a1 1 0 0 0 0 2h4a1 1 0 0 0 0-2zm3-4H8a1 1 0 0 0 0 2h7a1 1 0 0 0 0-2z"/></svg>
+                                    Panduan Pengguna
                                 </a>
 
                                 <div class="dropdown-divider"></div>
 
-                                <!-- Logout -->
-                                <a class="dropdown-item item-logout" href="{{ route('logout') }}">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
-                                        viewBox="0 0 24 24" fill="currentColor">
-                                        <path
-                                            d="M19 3a1 1 0 0 1 1 1v15a1 1 0 0 1 -1 1h-5v2a1 1 0 0 1 -1.351 .936l-8 -3a1 1 0 0 1 -.649 -.936v-15a1 1 0 0 1 .212 -.616l.068 -.079l.078 -.072l.066 -.05l.092 -.058l.065 -.033l.1 -.04l.099 -.028l.046 -.01l.108 -.013l.066 -.001zm-5.649 3.064a1 1 0 0 1 .649 .936v11h4v-13h-7.486z" />
-                                    </svg>
-                                    Log Keluar
+                                <a class="dropdown-item item-logout" href="{{ asset('auth/logout') }}">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3a1 1 0 0 1 1 1v15a1 1 0 0 1-1 1h-5v2a1 1 0 0 1-1.351.936l-8-3A1 1 0 0 1 4 19V4a1 1 0 0 1 .212-.616l.068-.079.078-.072.066-.05.092-.058.065-.033.1-.04.099-.028.046-.01.108-.013.066-.001zm-5.649 3.064a1 1 0 0 1 .649.936v11h4V7h-7.486z"/></svg>
+                                    Daftar Keluar
                                 </a>
                             </div>
                         </div>

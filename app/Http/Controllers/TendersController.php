@@ -502,7 +502,11 @@ class TendersController extends Controller
 		view()->share('global_ou', $tender->tenderer);
 
 		if (!auth()->check()) {
-			return view('tenders.show', compact('tender', 'organizationunit', 'invites', 'histories', 'exception', 'templates', 'tender_winner'));
+			return view('tenders.guest.show', compact('tender', 'organizationunit', 'invites', 'histories', 'exception', 'templates', 'tender_winner'));
+		}
+
+		if (auth()->user()->hasRole('Vendor')) {
+			return view('tenders.vendor.show', compact('tender', 'organizationunit', 'invites', 'histories', 'exception', 'templates', 'tender_winner'));
 		}
 
 		// dd($tender->validDocumentDate());
@@ -1053,7 +1057,8 @@ class TendersController extends Controller
 		$approval->user_id = auth()->user()->id;
 		$approval->save();
 
-		$tender->approver_id = $approval->id;
+		// $tender->approver_id = $approval->id; // OLD CODE BUG: stores approval record ID, not user ID — FK references users.id
+		$tender->approver_id = auth()->user()->id;
 		$tender->save();
 
 		$tender_ids = [];

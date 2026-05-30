@@ -561,12 +561,7 @@
                                 </thead>
                                 <tbody>
                                     <tr>
-                                        <td>
-                                            <a href="https://ontheline.trincoll.edu/images/bookdown/sample-local-pdf.pdf" target="_blank" class="me-2">
-                                                <i class="bi bi-file-earmark-pdf-fill text-primary" aria-hidden="true"></i>
-                                            </a>
-                                            Perkhidmatan Penilaian Forensik Ke atas Sistem XXXX
-                                        </td>
+                                        <td>Perkhidmatan Penilaian Forensik Ke atas Sistem XXXX</td>
                                         <td>Spesifikasi</td>
                                         <td class="status-penilaian">Menunggu Penyerahan</td>
                                         <td class="text-center">
@@ -576,12 +571,7 @@
                                         </td>
                                     </tr>
                                     <tr>
-                                        <td>
-                                            <a href="https://ontheline.trincoll.edu/images/bookdown/sample-local-pdf.pdf" target="_blank" class="me-2">
-                                                <i class="bi bi-file-earmark-pdf-fill text-primary" aria-hidden="true"></i>
-                                            </a>
-                                            Maklumat Profil Petender
-                                        </td>
+                                        <td>Maklumat Profil Petender</td>
                                         <td>Borang Atas Talian</td>
                                         <td class="status-penilaian">Menunggu Penyerahan</td>
                                         <td class="text-center">
@@ -591,12 +581,7 @@
                                         </td>
                                     </tr>
                                     <tr>
-                                        <td>
-                                            <a href="https://ontheline.trincoll.edu/images/bookdown/sample-local-pdf.pdf" target="_blank" class="me-2">
-                                                <i class="bi bi-file-earmark-pdf-fill text-primary" aria-hidden="true"></i>
-                                            </a>
-                                            Penyata Bank Terkini (3 Bulan Terakhir) Syarikat
-                                        </td>
+                                        <td>Penyata Bank Terkini (3 Bulan Terakhir) Syarikat</td>
                                         <td>Borang Atas Talian</td>
                                         <td class="status-penilaian">Menunggu Penyerahan</td>
                                         <td class="text-center">
@@ -606,12 +591,7 @@
                                         </td>
                                     </tr>
                                     <tr>
-                                        <td>
-                                            <a href="https://ontheline.trincoll.edu/images/bookdown/sample-local-pdf.pdf" target="_blank" class="me-2">
-                                                <i class="bi bi-file-earmark-pdf-fill text-primary" aria-hidden="true"></i>
-                                            </a>
-                                            Salinan Sijil Pendaftaran dengan Kementerian Kewangan
-                                        </td>
+                                        <td>Salinan Sijil Pendaftaran dengan Kementerian Kewangan</td>
                                         <td>Petender Muat Naik</td>
                                         <td class="status-penilaian">Menunggu Penyerahan</td>
                                         <td class="text-center">
@@ -621,12 +601,7 @@
                                         </td>
                                     </tr>
                                     <tr>
-                                        <td>
-                                            <a href="https://ontheline.trincoll.edu/images/bookdown/sample-local-pdf.pdf" target="_blank" class="me-2">
-                                                <i class="bi bi-file-earmark-pdf-fill text-primary" aria-hidden="true"></i>
-                                            </a>
-                                            Surat Akuan Pembida
-                                        </td>
+                                        <td>Surat Akuan Pembida</td>
                                         <td>PTJ Muat Naik</td>
                                         <td class="status-penilaian">Menunggu Penyerahan</td>
                                         <td class="text-center">

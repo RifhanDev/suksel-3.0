@@ -166,7 +166,9 @@ Route::post('auth/reset', [AuthController::class, 'doResetPassword']);
 
 // Tenders
 Route::get('tenders/select', [TendersController::class, 'select']);
-Route::resource('tenders', TendersController::class);
+// Route::resource('tenders', TendersController::class);
+Route::get('tenders', [TendersController::class, 'index'])->name('tenders.index');
+Route::get('tenders/{id}', [TendersController::class, 'show'])->name('tenders.show');
 Route::get('tenders/{id}/prices', [TendersController::class, 'prices'])->name('tenders.prices');
 Route::get('tenders/{tender_id}/files/{id}', [TendersController::class, 'file'])->name('tenders.files');
 Route::get('tenders/{id}/vendors', [TendersController::class, 'vendors'])->name('tenders.vendors');
@@ -699,11 +701,11 @@ Route::middleware(['auth'])->group(function () {
 		Route::prefix('refunds')->group(function () {
 			Route::post('get-transaction', [RefundController::class, 'fetch_transactions'])->name('get_transaction');
 			Route::post('get-refund', [RefundController::class, 'get_refund_details'])->name('get_refund_details');
-			Route::get('create', [RefundController::class, 'create'])->name('refunds.create');
-			Route::post('store', [RefundController::class, 'store'])->name('refunds.store');
-			Route::get('{refund}/show', [RefundController::class, 'show'])->name('refunds.show');
-			Route::get('{refund}/edit', [RefundController::class, 'edit'])->name('refunds.edit');
-			Route::post('{refund}/update', [RefundController::class, 'update'])->name('refunds.update');
+			// Route::get('create', [RefundController::class, 'create'])->name('refunds.create');
+			// Route::post('store', [RefundController::class, 'store'])->name('refunds.store');
+			// Route::get('{refund}/show', [RefundController::class, 'show'])->name('refunds.show');
+			// Route::get('{refund}/edit', [RefundController::class, 'edit'])->name('refunds.edit');
+			// Route::post('{refund}/update', [RefundController::class, 'update'])->name('refunds.update');
 
 			Route::prefix('request')->group(function () {
 				Route::get('/', [RefundController::class, 'index_request'])->name('refunds.request.index');
@@ -759,5 +761,17 @@ Route::middleware(['auth'])->group(function () {
 
 		// Reject Template
 		Route::resource('reject-template', RejectTemplateController::class);
+	});
+
+	// Laporan Transaksi Syarikat (vendor-accessible — duplicated outside Admin group)
+	Route::get('reports/vendor/summary/{year}/{vendor_id}', [ReportVendorSummaryController::class, 'index'])->name('vendor.report.vendor.summary');
+
+	// Refunds (vendor-accessible — duplicated outside Admin group)
+	Route::prefix('refunds')->group(function () {
+		Route::get('create', [RefundController::class, 'create'])->name('refunds.create');
+		Route::post('store', [RefundController::class, 'store'])->name('refunds.store');
+		Route::get('{refund}/show', [RefundController::class, 'show'])->name('refunds.show');
+		Route::get('{refund}/edit', [RefundController::class, 'edit'])->name('refunds.edit');
+		Route::post('{refund}/update', [RefundController::class, 'update'])->name('refunds.update');
 	});
 });

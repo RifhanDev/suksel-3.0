@@ -16,12 +16,17 @@ class ProfileController extends Controller
 
 	public function show()
 	{
-
+		if (auth()->user()->hasRole('Vendor')) {
+			return view('profile.vendor.show');
+		}
 		return view('profile.show');
 	}
 
 	public function changePassword()
 	{
+		if (auth()->user()->hasRole('Vendor')) {
+			return view('profile.vendor.change_password', ['forcePasswordChange' => false]);
+		}
 		return view('profile.change_password', ['forcePasswordChange' => false]);
 	}
 
@@ -29,6 +34,10 @@ class ProfileController extends Controller
 	{
 		if (!$this->requiresForcedPasswordChange(auth()->user())) {
 			return redirect('profile/change_password');
+		}
+
+		if (auth()->user()->hasRole('Vendor')) {
+			return view('profile.vendor.change_password', ['forcePasswordChange' => true]);
 		}
 
 		return view('profile.change_password', ['forcePasswordChange' => true]);
