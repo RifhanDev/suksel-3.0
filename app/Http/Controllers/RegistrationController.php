@@ -221,9 +221,18 @@ class RegistrationController extends Controller
 
     public function storePayment(Request $request)
     {
-
         $user   = auth()->user();
         $vendor = $user->vendor;
+
+        // DEV BYPASS: Skip payment gateway, update vendor directly in DB
+        if (config('app.debug')) {
+            \DB::table('vendors')->where('id', $vendor->id)->update([
+                'registration_paid' => 1,
+                'expiry_date' => date('Y-m-d', strtotime('+1 year')),
+            ]);
+
+            return redirect('dashboard')->with('success', 'Pembayaran berjaya (dev bypass). Akaun anda kini aktif.');
+        }
 
         if (!in_array($request->method, ['fpx-1', 'fpx-2', 'ebpg', 'duitnow'])) {
             return redirect()->back()->with('error', 'Sila pilih saluran pembayaran yang sah.');
