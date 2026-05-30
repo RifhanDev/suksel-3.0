@@ -607,6 +607,17 @@
             letter-spacing: 0.5px;
         }
 
+        .dropdown-header-vendor {
+            padding: 1rem 1rem 0.8rem;
+        }
+
+        .dropdown-header-vendor strong {
+            font-size: 0.95rem;
+            color: #1f2937;
+            display: block;
+            margin-bottom: 2px;
+        }
+
         .dropdown-item {
             padding: 0.7rem 1rem;
             font-size: 0.9rem;

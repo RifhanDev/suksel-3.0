@@ -1166,7 +1166,7 @@
 
 			@if ($tender->canPurchase())
 				<div class="text-end mt-3">
-					{{ link_to_route('tenders.buy', 'Tambah Kepada Senarai Tempahan', [$tender->id], ['class' => 'btn btn-selangor']) }}
+					<a href="{{ route('tenders.buy', [$tender->id]) }}" class="btn btn-selangor">Tambah Kepada Senarai Tempahan</a>
 				</div>
 			@endif
 

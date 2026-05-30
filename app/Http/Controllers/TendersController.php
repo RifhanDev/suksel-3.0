@@ -134,9 +134,9 @@ class TendersController extends Controller
 
 					if ($canCreateCommittee && $tender->status === 'Tiada Jawatan Kuasa') {
 						$url = route('pelantikanJawatankuasa') . '?tender=' . $tender->uuid;
-						
-						return 
-						'<button type="button"
+
+						return
+							'<button type="button"
 							class="btn btn-sm btn-selangor btn-pilih-peringkat"
 							data-bs-toggle="modal"
 							data-bs-target="#modalPilihPeringkat"
@@ -505,6 +505,7 @@ class TendersController extends Controller
 			return view('tenders.show', compact('tender', 'organizationunit', 'invites', 'histories', 'exception', 'templates', 'tender_winner'));
 		}
 
+		// dd($tender->validDocumentDate());
 		return view('tenders.auth.show', compact('tender', 'organizationunit', 'invites', 'histories', 'exception', 'templates', 'tender_winner'));
 	}
 
