@@ -385,6 +385,11 @@ class Tender extends Model
 		return $this->belongsTo('App\OrganizationUnit', 'organization_unit_id');
 	}
 
+	public function jawatankuasas()
+	{
+		return $this->hasMany(\App\Models\Jawatankuasa::class, 'tender_id');
+	}
+
 	public function news()
 	{
 		return $this->hasMany('App\News');
