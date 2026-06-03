@@ -170,6 +170,10 @@
             'fin'  => 'Jawatankuasa Penilaian Kewangan',
         ];
 
+        if (isset($tender) && $tender->tender_peringkat == 1) {
+            unset($tabLabels['spec']);
+        }
+
         $perananLabels = [
             '1' => 'Pengerusi',
             '2' => 'Setiausaha',

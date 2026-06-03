@@ -17,6 +17,7 @@ use Database\Seeders\Ref\YesNo;
 use Database\Seeders\CreateAdminUser;
 use Database\Seeders\UserSeeder;
 use Database\Seeders\CodesSeeder;
+use Database\Seeders\StandardChecklistItemSeeder;
 use Database\Seeders\RefLokalitisSeeder;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -57,6 +58,7 @@ class DatabaseSeeder extends Seeder
             PermissionSeeder2027::class,
             PermissionRoleSeeder::class,
             CodesSeeder::class,
+            StandardChecklistItemSeeder::class,
         ]);
     }
 }

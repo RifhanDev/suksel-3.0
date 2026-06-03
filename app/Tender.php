@@ -106,6 +106,7 @@ class Tender extends Model
 		'status_process_id',
 		'is_ebidding',
 		'ebidding_process_stage_id',
+		'tender_peringkat',
 	];
 
 	/**
@@ -1114,6 +1115,9 @@ class Tender extends Model
 	public function hasCompleteJawatankuasa()
 	{
 		$requiredJenis   = ['spec', 'open', 'tech', 'fin'];
+		if ($this->tender_peringkat == 1) {
+			$requiredJenis = ['open', 'tech', 'fin'];
+		}
 		$requiredPeranan = ['1', '2', '3'];
 		$tableName = DB::getSchemaBuilder()->hasTable('jawatankuasas') ? 'jawatankuasas' : 'jawatankuasa';
 
@@ -1441,17 +1445,29 @@ class Tender extends Model
 
 		self::created(function ($tender) {
 			TenderHistory::log($tender->id, 'create');
-			cache()->tags('Tender')->flush();
+			try {
+				cache()->tags('Tender')->flush();
+			} catch (\BadMethodCallException $e) {
+				cache()->flush();
+			}
 		});
 
 		self::updated(function ($tender) {
 			// Log tender update (backup in case updateTender is not called)
 			// Only log if updateTender wasn't called (we can't easily detect this, so we'll rely on updateTender's audit flag)
-			cache()->tags('Tender')->flush();
+			try {
+				cache()->tags('Tender')->flush();
+			} catch (\BadMethodCallException $e) {
+				cache()->flush();
+			}
 		});
 
 		self::deleted(function () {
-			cache()->tags('Tender')->flush();
+			try {
+				cache()->tags('Tender')->flush();
+			} catch (\BadMethodCallException $e) {
+				cache()->flush();
+			}
 		});
 
 		static::saving(function ($model) {

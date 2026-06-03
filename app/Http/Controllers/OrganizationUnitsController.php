@@ -224,7 +224,8 @@ class OrganizationUnitsController extends Controller
 				'briefing_address',
 				'briefing_datetime',
 				'ref_number',
-				'created_at'
+				'created_at',
+				'tender_peringkat'
 			]);
 
 			$datatable = Datatables::of($tenders)->editColumn('name', function ($tender)
@@ -475,7 +476,8 @@ class OrganizationUnitsController extends Controller
 				'briefing_address',
 				'briefing_datetime',
 				'ref_number',
-				'created_at'
+				'created_at',
+				'tender_peringkat'
 			]);
 
 			$datatable = Datatables::of($tenders)
