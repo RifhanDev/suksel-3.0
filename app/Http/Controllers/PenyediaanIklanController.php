@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\PenyediaanIklan;
 use App\Models\RefState;
+use App\Services\PenyediaanIklanService;
 use App\Services\StosBackendClient;
 use App\Tender;
 use Illuminate\Http\Request;
@@ -13,7 +14,10 @@ use Illuminate\Support\Str;
 
 class PenyediaanIklanController extends Controller
 {
-    public function __construct(protected StosBackendClient $stos) {}
+    public function __construct(
+        protected StosBackendClient $stos,
+        protected PenyediaanIklanService $penyediaanIklanService
+    ) {}
 
     public function index()
     {
@@ -45,8 +49,9 @@ class PenyediaanIklanController extends Controller
         }
 
         $country_states = RefState::where('display_status', 1)->get();
-        $meta = PenyediaanIklan::defaultKelulusan();
-        $penyediaanIklan = null;
+        $stored = $this->penyediaanIklanService->getForTender($tender);
+        $meta = $stored['meta'];
+        $penyediaanIklan = $stored['penyediaan_iklan'];
 
         if ($this->stos->isConfigured()) {
             try {
@@ -54,10 +59,10 @@ class PenyediaanIklanController extends Controller
                 if ($response->successful()) {
                     $body = $response->json();
                     $meta = $body['data']['meta'] ?? $meta;
-                    $penyediaanIklan = $body['data']['penyediaan_iklan'] ?? null;
+                    $penyediaanIklan = $body['data']['penyediaan_iklan'] ?? $penyediaanIklan;
                 }
             } catch (\Throwable $e) {
-                Log::warning('STOS get penyediaan-iklan failed, using local defaults', [
+                Log::warning('STOS get penyediaan-iklan failed, using local data', [
                     'tender_id' => $tender->id,
                     'error' => $e->getMessage(),
                 ]);
@@ -94,21 +99,30 @@ class PenyediaanIklanController extends Controller
             return $this->respondError($request, 'Tender tidak dalam peringkat Penyediaan Iklan.', 422);
         }
 
-        if (! $this->stos->isConfigured()) {
-            return $this->respondError($request, 'STOS backend tidak dikonfigurasi.', 503);
-        }
-
         $payload = $this->buildPayload($request, $tender->id);
 
         try {
-            $response = $submit
-                ? $this->stos->submitPenyediaanIklan($tender->id, $payload)
-                : $this->stos->savePenyediaanIklan($tender->id, $payload);
+            $this->penyediaanIklanService->save($tender, $payload, $submit);
 
-            if (! $response->successful()) {
-                $message = $response->json('message') ?? 'Gagal menyimpan penyediaan iklan.';
+            if ($this->stos->isConfigured()) {
+                try {
+                    $response = $submit
+                        ? $this->stos->submitPenyediaanIklan($tender->id, $payload)
+                        : $this->stos->savePenyediaanIklan($tender->id, $payload);
 
-                return $this->respondError($request, $message, $response->status());
+                    if (! $response->successful()) {
+                        Log::warning('STOS penyediaan-iklan sync failed (saved locally)', [
+                            'tender_id' => $tender->id,
+                            'status' => $response->status(),
+                            'message' => $response->json('message'),
+                        ]);
+                    }
+                } catch (\Throwable $e) {
+                    Log::warning('STOS penyediaan-iklan sync failed (saved locally)', [
+                        'tender_id' => $tender->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
             }
 
             $message = $submit
