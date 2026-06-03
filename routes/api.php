@@ -43,6 +43,13 @@ Route::prefix('v1')->group(function () {
         ->name('stos.webhook');
 });
 
+// Penyediaan Iklan API (used by StosBackendClient when STOS_BACKEND_URL points here)
+Route::middleware('stos.api')->group(function () {
+    Route::get('tenders/{tender}/penyediaan-iklan', 'App\Http\Controllers\API\PenyediaanIklanApiController@show');
+    Route::post('tenders/{tender}/penyediaan-iklan', 'App\Http\Controllers\API\PenyediaanIklanApiController@store');
+    Route::post('tenders/{tender}/penyediaan-iklan/submit', 'App\Http\Controllers\API\PenyediaanIklanApiController@submit');
+});
+
 Route::get('/mail-manager/test', 'MailManagerController@test');
 Route::get('/mail-manager/unsend-today-email', 'MailManagerController@resend_unsend_daily_email');
 Route::get('/mail-manager/unsend-weekly-email', 'MailManagerController@resend_unsend_this_week_email');
