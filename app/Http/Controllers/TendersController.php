@@ -117,6 +117,7 @@ class TendersController extends Controller
 					return $tender->status;
 				})
 				->addColumn('actions', function ($tender) {
+					
 					if (!auth()->check()) {
 						return '';
 					}
@@ -133,74 +134,45 @@ class TendersController extends Controller
 						}
 					}
 
-					if ($canCreateCommittee && $tender->status === 'Tiada Jawatan Kuasa') {
-						$url = route('pelantikanJawatankuasa') . '?tender=' . $tender->uuid;
+					if (!$canCreateCommittee) {
+						return '';
+					}
 
-						return
-							'<button type="button"
-							class="btn btn-sm btn-selangor btn-pilih-peringkat"
-							data-bs-toggle="modal"
-							data-bs-target="#modalPilihPeringkat"
+					// Scenario C: process completed — no button shown
+					if ($tender->status !== 'Tiada Jawatan Kuasa') {
+						return '';
+					}
+
+					$tenderPeringkat = $tender->tender_peringkat ?? null;
+
+					// Scenario B: peringkat already saved (draft in progress) — yellow "Sambung" button
+					if (!empty($tenderPeringkat)) {
+						if ((int) $tenderPeringkat === 1) {
+							$sambungUrl = route('pelantikanJawatankuasaSatuPeringkat') . '?tender=' . $tender->uuid;
+						} else {
+							$sambungUrl = route('pelantikanJawatankuasa') . '?tender=' . $tender->uuid;
+						}
+
+						return '<a href="' . $sambungUrl . '"
+							class="btn btn-sm btn-warning text-white fw-semibold btn-sambung-lantik"
 							data-tender-uuid="' . $tender->uuid . '"
-							data-lantik-url="' . $url . '">
-							Lantik Jawatan Kuasa
-						</button>';
+							data-peringkat="' . $tenderPeringkat . '">
+							Sambung Proses Lantikan
+						</a>';
 					}
 
-					return '';
-				}
+					// Scenario A: no peringkat yet — red "Lantik" button opens the selection modal
+					$url = route('pelantikanJawatankuasa') . '?tender=' . $tender->uuid;
 
-				$user = auth()->user();
-				$canCreateCommittee = $user->can('committee:create');
-
-				// Support both legacy Entrust-style and Spatie permission mappings.
-				if (!$canCreateCommittee && method_exists($user, 'hasPermissionTo')) {
-					try {
-						$canCreateCommittee = $user->hasPermissionTo('committee:create');
-					} catch (\Throwable $th) {
-						$canCreateCommittee = false;
-					}
-				}
-
-				if (!$canCreateCommittee) {
-					return '';
-				}
-
-				// Scenario C: process completed — no button shown
-				if ($tender->status !== 'Tiada Jawatan Kuasa') {
-					return '';
-				}
-
-				$tenderPeringkat = $tender->tender_peringkat ?? null;
-
-				// Scenario B: peringkat already saved (draft in progress) — yellow "Sambung" button
-				if (!empty($tenderPeringkat)) {
-					if ((int) $tenderPeringkat === 1) {
-						$sambungUrl = route('pelantikanJawatankuasaSatuPeringkat') . '?tender=' . $tender->uuid;
-					} else {
-						$sambungUrl = route('pelantikanJawatankuasa') . '?tender=' . $tender->uuid;
-					}
-
-					return '<a href="' . $sambungUrl . '"
-						class="btn btn-sm btn-warning text-white fw-semibold btn-sambung-lantik"
+					return '<button type="button"
+						class="btn btn-sm btn-selangor btn-pilih-peringkat"
+						data-bs-toggle="modal"
+						data-bs-target="#modalPilihPeringkat"
 						data-tender-uuid="' . $tender->uuid . '"
-						data-peringkat="' . $tenderPeringkat . '">
-						Sambung Proses Lantikan
-					</a>';
-				}
-
-				// Scenario A: no peringkat yet — red "Lantik" button opens the selection modal
-				$url = route('pelantikanJawatankuasa') . '?tender=' . $tender->uuid;
-
-				return '<button type="button"
-					class="btn btn-sm btn-selangor btn-pilih-peringkat"
-					data-bs-toggle="modal"
-					data-bs-target="#modalPilihPeringkat"
-					data-tender-uuid="' . $tender->uuid . '"
-					data-lantik-url="' . $url . '">
-					Lantik Jawatan Kuasa
-				</button>';
-			})
+						data-lantik-url="' . $url . '">
+						Lantik Jawatan Kuasa
+					</button>';
+				})
 			->removeColumn('id')
 			->removeColumn('ref_number')
 			->removeColumn('organization_unit_id')
