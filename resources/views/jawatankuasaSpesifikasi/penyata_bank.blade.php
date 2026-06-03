@@ -389,6 +389,12 @@ $(document).ready(function () {
     var STORE_URL   = '{{ route("penyataBank.store", $tender->uuid) }}';
     var CSRF_TOKEN  = '{{ csrf_token() }}';
     var penyataData = @json($penyataData ?? null);
+    @php
+        $redirectUrl = (isset($tender->kategori_perolehan_name) && strtolower($tender->kategori_perolehan_name) === 'kerja')
+            ? url("/senarai-kewangan-kerja/" . $tender->uuid)
+            : url("/senarai-kewangan-bekalan/" . $tender->uuid);
+    @endphp
+    var REDIRECT_URL = '{{ $redirectUrl }}';
 
     // ── Helpers ──────────────────────────────────────────────────────────────
     function parseRm(raw) {
@@ -596,7 +602,7 @@ $(document).ready(function () {
             if (res && res.success) {
                 $('#loading-text').text('Berjaya disimpan! Mengalih...');
                 $('#loading-overlay').addClass('success');
-                window.location.href = '{{ url("/senarai-kewangan-bekalan/" . $tender->uuid) }}';
+                window.location.href = REDIRECT_URL;
             } else {
                 unblockUI();
                 alert(res.message || 'Ralat semasa menyimpan.');

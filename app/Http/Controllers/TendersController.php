@@ -69,6 +69,7 @@ class TendersController extends Controller
 				'tenders.briefing_required',
 				'tenders.briefing_datetime',
 				'tenders.briefing_address',
+				'tenders.tender_peringkat',
 			]);
 			$tenders = $tenders->orderBy('created_at', 'desc');
 			$datatable = Datatables::of($tenders)
@@ -116,47 +117,71 @@ class TendersController extends Controller
 					return $tender->status;
 				})
 				->addColumn('actions', function ($tender) {
-					if (!auth()->check()) {
-						return '';
-					}
-
-					$user = auth()->user();
-					$canCreateCommittee = $user->can('committee:create');
-
-					// Support both legacy Entrust-style and Spatie permission mappings.
-					if (!$canCreateCommittee && method_exists($user, 'hasPermissionTo')) {
-						try {
-							$canCreateCommittee = $user->hasPermissionTo('committee:create');
-						} catch (\Throwable $th) {
-							$canCreateCommittee = false;
-						}
-					}
-
-					if ($canCreateCommittee && $tender->status === 'Tiada Jawatan Kuasa') {
-						$url = route('pelantikanJawatankuasa') . '?tender=' . $tender->uuid;
-						
-						return 
-						'<button type="button"
-							class="btn btn-sm btn-selangor btn-pilih-peringkat"
-							data-bs-toggle="modal"
-							data-bs-target="#modalPilihPeringkat"
-							data-tender-uuid="' . $tender->uuid . '"
-							data-lantik-url="' . $url . '">
-							Lantik Jawatan Kuasa
-						</button>';
-					}
-
+				if (!auth()->check()) {
 					return '';
-				})
-				->removeColumn('id')
-				->removeColumn('ref_number')
-				->removeColumn('organization_unit_id')
-				->removeColumn('invitation')
-				->removeColumn('publish_winner')
-				->removeColumn('briefing_required')
-				->removeColumn('briefing_datetime')
-				->removeColumn('briefing_address')
-				->removeColumn('publish_prices');
+				}
+
+				$user = auth()->user();
+				$canCreateCommittee = $user->can('committee:create');
+
+				// Support both legacy Entrust-style and Spatie permission mappings.
+				if (!$canCreateCommittee && method_exists($user, 'hasPermissionTo')) {
+					try {
+						$canCreateCommittee = $user->hasPermissionTo('committee:create');
+					} catch (\Throwable $th) {
+						$canCreateCommittee = false;
+					}
+				}
+
+				if (!$canCreateCommittee) {
+					return '';
+				}
+
+				// Scenario C: process completed — no button shown
+				if ($tender->status !== 'Tiada Jawatan Kuasa') {
+					return '';
+				}
+
+				$tenderPeringkat = $tender->tender_peringkat ?? null;
+
+				// Scenario B: peringkat already saved (draft in progress) — yellow "Sambung" button
+				if (!empty($tenderPeringkat)) {
+					if ((int) $tenderPeringkat === 1) {
+						$sambungUrl = route('pelantikanJawatankuasaSatuPeringkat') . '?tender=' . $tender->uuid;
+					} else {
+						$sambungUrl = route('pelantikanJawatankuasa') . '?tender=' . $tender->uuid;
+					}
+
+					return '<a href="' . $sambungUrl . '"
+						class="btn btn-sm btn-warning text-white fw-semibold btn-sambung-lantik"
+						data-tender-uuid="' . $tender->uuid . '"
+						data-peringkat="' . $tenderPeringkat . '">
+						Sambung Proses Lantikan
+					</a>';
+				}
+
+				// Scenario A: no peringkat yet — red "Lantik" button opens the selection modal
+				$url = route('pelantikanJawatankuasa') . '?tender=' . $tender->uuid;
+
+				return '<button type="button"
+					class="btn btn-sm btn-selangor btn-pilih-peringkat"
+					data-bs-toggle="modal"
+					data-bs-target="#modalPilihPeringkat"
+					data-tender-uuid="' . $tender->uuid . '"
+					data-lantik-url="' . $url . '">
+					Lantik Jawatan Kuasa
+				</button>';
+			})
+			->removeColumn('id')
+			->removeColumn('ref_number')
+			->removeColumn('organization_unit_id')
+			->removeColumn('invitation')
+			->removeColumn('publish_winner')
+			->removeColumn('briefing_required')
+			->removeColumn('briefing_datetime')
+			->removeColumn('briefing_address')
+			->removeColumn('publish_prices')
+			->removeColumn('tender_peringkat');
 
 			if (!auth()->check() || auth()->user()->hasRole('Vendor')) $datatable = $datatable->removeColumn('approver_id');
 
@@ -588,15 +613,17 @@ class TendersController extends Controller
 				->addColumn('status', function ($tender) {
 					$categoryName = mb_strtolower(trim((string) ($tender->kategori_perolehan_name ?? '')));
 					$isBekalan = in_array($categoryName, ['bekalan', 'perkhidmatan'], true);
-					$telahDihantar = $isBekalan
-						&& $tender->checklist_status === 'submitted'
-						&& $tender->financial_status === 'submitted';
+					$isKerja   = ($categoryName === 'kerja');
+
+					$telahDihantar =
+						($isBekalan && $tender->checklist_status === 'submitted' && $tender->financial_status === 'submitted')
+						|| ($isKerja   && $tender->spesifikasi_status === 'submitted' && $tender->kewangan_kerja_status === 'submitted');
 
 					if ($telahDihantar) {
 						return '<span class="d-inline-flex align-items-center gap-1 px-2 py-1 rounded-2 fw-semibold" style="background:#dcfce7;color:#166534;font-size:0.72rem;border:1px solid #bbf7d0;"><span class="rounded-circle" style="width:6px;height:6px;background:#16a34a;flex-shrink:0;display:inline-block;"></span>Telah Dihantar</span>';
 					}
 
-					return '<span class="d-inline-flex align-items-center gap-1 px-2 py-1 rounded-2 fw-semibold" style="background:#fef9c3;color:#854d0e;font-size:0.72rem;border:1px solid #fde68a;"><span class="rounded-circle" style="width:6px;height:6px;background:#ca8a04;flex-shrink:0;display:inline-block;"></span>Dalam Process</span>';
+					return '<span class="d-inline-flex align-items-center gap-1 px-2 py-1 rounded-2 fw-semibold" style="background:#fef9c3;color:#854d0e;font-size:0.72rem;border:1px solid #fde68a;"><span class="rounded-circle" style="width:6px;height:6px;background:#ca8a04;flex-shrink:0;display:inline-block;"></span>Dalam Proses</span>';
 				})
 				->addColumn('tindakan', function ($tender) {
 					return $this->manageSpecificationActionButtons($tender);
@@ -612,12 +639,33 @@ class TendersController extends Controller
 	{
 		$committeeTable = DB::getSchemaBuilder()->hasTable('jawatankuasas') ? 'jawatankuasas' : 'jawatankuasa';
 
-		$completedCommitteeTenders = DB::table($committeeTable)
+		// 2-Peringkat: all 4 jenis (spec, open, tech, fin) with 12 role combos, all notified
+		$twoPeringkat = DB::table($committeeTable)
 			->select('tender_id')
 			->whereIn('jenis_jawatankuasa', ['spec', 'open', 'tech', 'fin'])
 			->groupBy('tender_id')
 			->havingRaw("COUNT(DISTINCT CASE WHEN user_id IS NOT NULL THEN CONCAT(jenis_jawatankuasa, ':', peranan) END) = 12")
 			->havingRaw("SUM(CASE WHEN user_id IS NOT NULL AND dihantar_pemakluman_pada IS NULL THEN 1 ELSE 0 END) = 0");
+
+		// 1-Peringkat: only 3 jenis (open, tech, fin) with 9 role combos, all notified,
+		// and the tender must be marked as tender_peringkat = 1
+		$onePeringkat = DB::table($committeeTable)
+			->select("{$committeeTable}.tender_id")
+			->join('tenders as t1p', 't1p.id', '=', "{$committeeTable}.tender_id")
+			->whereIn("{$committeeTable}.jenis_jawatankuasa", ['open', 'tech', 'fin'])
+			->where('t1p.tender_peringkat', '=', 1)
+			->groupBy("{$committeeTable}.tender_id")
+			->havingRaw("COUNT(DISTINCT CASE WHEN {$committeeTable}.user_id IS NOT NULL THEN CONCAT({$committeeTable}.jenis_jawatankuasa, ':', {$committeeTable}.peranan) END) = 9")
+			->havingRaw("SUM(CASE WHEN {$committeeTable}.user_id IS NOT NULL AND {$committeeTable}.dihantar_pemakluman_pada IS NULL THEN 1 ELSE 0 END) = 0");
+
+		// UNION both sets so either peringkat can appear in the list
+		$completedCommitteeTenders = DB::query()
+			->fromSub(
+				$twoPeringkat->unionAll($onePeringkat),
+				'unioned_tenders'
+			)
+			->select('tender_id')
+			->groupBy('tender_id');
 
 		return Tender::query()
 			->joinSub($completedCommitteeTenders, 'completed_committees', function ($join) {
@@ -641,6 +689,18 @@ class TendersController extends Controller
 				'=',
 				'tenders.id'
 			)
+			->leftJoin(
+				'spesifikasi_kerja_headers as skheader',
+				'skheader.tender_id',
+				'=',
+				'tenders.id'
+			)
+			->leftJoin(
+				'kewangan_kerja_headers as kkheader',
+				'kkheader.tender_id',
+				'=',
+				'tenders.id'
+			)
 			->select([
 				'tenders.id',
 				'tenders.uuid',
@@ -653,6 +713,8 @@ class TendersController extends Controller
 				DB::raw("COALESCE(NULLIF(tenders.no_tender, ''), tenders.ref_number) as tender_number"),
 				'tcheader.status as checklist_status',
 				'fcheader.status as financial_status',
+				'skheader.status as spesifikasi_status',
+				'kkheader.status as kewangan_kerja_status',
 			])
 			->orderBy('tenders.document_stop_date', 'desc')
 			->orderBy('tenders.id', 'desc');
@@ -679,15 +741,17 @@ class TendersController extends Controller
 		}
 
 		if ($categoryName === 'kerja') {
-			$specificationUrl = route('penyediaanSpekTender') . $tenderQuery;
-			$financialUrl     = route('senaraiKewanganKerja') . $tenderQuery;
+			$specificationUrl = !empty($tender->uuid) ? route('penyediaanSpekTender', $tender->uuid) : '#';
+			$financialUrl     = !empty($tender->uuid) ? route('senaraiKewanganKerja', $tender->uuid) : '#';
 
-			$kewangan = $checklistDone
+			// Kewangan only unlocks after Spesifikasi is submitted
+			$kewangan = ($tender->spesifikasi_status === 'submitted')
 				? '<a href="' . e($financialUrl) . '" class="btn btn-sm btn-success">Kewangan</a>'
 				: '';
 
 			return '<div class="d-flex gap-1 justify-content-center">'
-				. '<a href="' . e($specificationUrl) . '" class="btn btn-sm btn-info text-white">Spesifikasi</a>'
+				// . '<a href="' . e($specificationUrl) . '" class="btn btn-sm btn-info text-white">Spesifikasi</a>'
+				. '<a href="' . e($specificationUrl) . '" class="btn btn-sm btn-warning text-white">Teknikal</a>'
 				. $kewangan
 				. '</div>';
 		}

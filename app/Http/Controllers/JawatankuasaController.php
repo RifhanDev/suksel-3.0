@@ -26,7 +26,29 @@ class JawatankuasaController extends Controller
      */
     public function create(Request $request)
     {
+        $tenderUuid = $request->input('tender');
+        if (!empty($tenderUuid)) {
+            $tender = Tender::where('uuid', $tenderUuid)->first();
+            if ($tender) {
+                $tender->update(['tender_peringkat' => 2]);
+            }
+        }
         return $this->renderPelantikanView($request);
+    }
+
+    /**
+     * Show the form for creating a new 1 peringkat resource.
+     */
+    public function create1Peringkat(Request $request)
+    {
+        $tenderUuid = $request->input('tender');
+        if (!empty($tenderUuid)) {
+            $tender = Tender::where('uuid', $tenderUuid)->first();
+            if ($tender) {
+                $tender->update(['tender_peringkat' => 1]);
+            }
+        }
+        return $this->renderPelantikanView1Peringkat($request);
     }
 
     /**
@@ -317,6 +339,9 @@ class JawatankuasaController extends Controller
         }
 
         $requiredJenis = ['spec', 'open', 'tech', 'fin'];
+        if ($tender->tender_peringkat == 1) {
+            $requiredJenis = ['open', 'tech', 'fin'];
+        }
         $requiredPeranan = ['1', '2', '3']; // Pengerusi, Setiausaha, Ahli
 
         $grouped = $members->groupBy('jenis_jawatankuasa');
@@ -587,6 +612,71 @@ class JawatankuasaController extends Controller
         }
 
         return view('tenders.pelantikan_jawatankuasa', compact('tender', 'committeeDrafts', 'supportedDraftJenis', 'icUsers'));
+    }
+
+    private function renderPelantikanView1Peringkat(Request $request)
+    {
+        $tenderUuid = $request->input('tender');
+        $tender = null;
+        $committeeDrafts = [];
+        $supportedDraftJenis = ['open', 'tech', 'fin'];
+        $icUsers = User::query()
+            ->whereNotNull('ic_number')
+            ->where('ic_number', '!=', '')
+            ->orderBy('ic_number')
+            ->get(['id', 'ic_number', 'name', 'email', 'jawatan', 'gred'])
+            ->map(function ($user) {
+                return [
+                    'id' => (int) $user->id,
+                    'ic_number' => (string) $user->ic_number,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'jawatan' => $user->jawatan ?? '-',
+                    'gred' => $user->gred ?? '-',
+                ];
+            })
+            ->values();
+
+        if (!empty($tenderUuid)) {
+            $tender = Tender::with('tenderer')->where('uuid', $tenderUuid)->first();
+        }
+
+        if ($tender) {
+            $committeeDrafts = Jawatankuasa::with('user')
+                ->where('tender_id', $tender->id)
+                ->orderBy('id')
+                ->get()
+                ->groupBy('jenis_jawatankuasa')
+                ->map(function ($rows) {
+                    $firstRow = $rows->first();
+
+                    return [
+                        'catatan' => optional($firstRow)->catatan,
+                        'dokumen_sokongan_nama' => optional($firstRow)->dokumen_sokongan_nama,
+                        'dokumen_sokongan_path' => optional($firstRow)->dokumen_sokongan_path,
+                        'rows' => $rows
+                            ->filter(function ($row) {
+                                return !empty($row->user_id) && !empty($row->user);
+                            })
+                            ->map(function ($row) {
+                                return [
+                                    'user_id' => (int) $row->user_id,
+                                    'ic_number' => $row->user->ic_number ?? '',
+                                    'name' => $row->user->name,
+                                    'email' => $row->user->email,
+                                    'jawatan' => $row->user->jawatan ?? '-',
+                                    'gred' => $row->user->gred ?? '-',
+                                    'p_p' => (string) $row->p_p,
+                                    'peranan' => (string) $row->peranan,
+                                ];
+                            })
+                            ->values(),
+                    ];
+                })
+                ->toArray();
+        }
+
+        return view('tenders.pelantikan_jawatankuasa_1_peringkat', compact('tender', 'committeeDrafts', 'supportedDraftJenis', 'icUsers'));
     }
 
     private function getSupportedJenis(): array

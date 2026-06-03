@@ -95,6 +95,8 @@ use App\Http\Controllers\PenilaianKewanganController;
 use App\Http\Controllers\PenilaianTeknikalController;
 use App\Http\Controllers\PerakuanJabatanController;
 use App\Http\Controllers\EbiddingController;
+use App\Http\Controllers\SpesifikasiTenderKerjaController;
+use App\Http\Controllers\SenaraiKewanganKerjaController;
 
 // Basic routes to get the application running
 Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -225,15 +227,14 @@ Route::get('/penyediaan-iklan', [DummyController::class, 'penyediaanIklan'])->na
 Route::post('/penyediaan-iklan/simpan', [DummyController::class, 'storePenyediaanIklan'])->name('penyediaanIklan.store');
 
 Route::get('/pelantikan-jawatankuasa', [JawatankuasaController::class, 'create'])->middleware(['auth'])->name('pelantikanJawatankuasa');
-Route::view('/pelantikan-jawatankuasa-1-peringkat', 'tenders.pelantikan_jawatankuasa_1_peringkat')->middleware(['auth'])->name('pelantikanJawatankuasaSatuPeringkat');
+Route::get('/pelantikan-jawatankuasa-1-peringkat', [JawatankuasaController::class, 'create1Peringkat'])->middleware(['auth'])->name('pelantikanJawatankuasaSatuPeringkat');
 Route::get('/pelantikan-jawatankuasa/laporan', [JawatankuasaController::class, 'laporan'])->middleware(['auth'])->name('jawatankuasa.laporan');
 Route::post('/pelantikan-jawatankuasa/hantar-pemakluman', [JawatankuasaController::class, 'hantarPemakluman'])->middleware(['auth'])->name('jawatankuasa.hantarPemakluman');
 Route::view('/senarai-semak', 'newModule.jawatankuasaSpesifikasi.index')->name('senaraiSemak');
 
 
-Route::view('/senarai-kewangan-kerja', 'newModule.jawatankuasaSpesifikasi.senarai_kewangan_kerja')->name('senaraiKewanganKerja');
-Route::post('/senarai-kewangan-kerja/hantar', [JawatankuasaController::class, 'simpanSenaraiKewanganKerja'])->name('jawatankuasa.simpanSenaraiKewanganKerja');
-Route::view('/penyediaan-spesifikasi-tender', 'newModule.jawatankuasaSpesifikasi.form_penyediaan_spesifikasi_tender')->name('penyediaanSpekTender');
+// senaraiKewanganKerja routes are auth-protected — defined inside middleware group below
+// penyediaanSpekTender routes are auth-protected — defined inside middleware group below
 Route::view('/lembaran-imbangan', 'newModule.jawatankuasaSpesifikasi.form_lembaran_imbangan')->name('lembaranImbangan');
 Route::view('/bon-atau-saham', 'newModule.jawatankuasaSpesifikasi.form_bon_saham')->name('bonAtauSaham');
 Route::post('/bon-atau-saham/submit', [JawatankuasaController::class, 'storeBonSaham'])->middleware(['auth'])->name('jawatankuasa.hantarBonSaham');
@@ -369,6 +370,20 @@ Route::middleware(['auth'])->group(function ()
 	// Route::post('tender/{id}/exception', [TendersController::class, 'exception'])->name('tenders.exception');
 
 	Route::get('/pengurusan-spesifikasi', [TendersController::class, 'manageSpecification'])->name('pengurusanSpesifikasi');
+
+	// Penyediaan Spesifikasi Tender (Kerja)
+	Route::get('/penyediaan-spesifikasi-tender/{tenderUuid}', [SpesifikasiTenderKerjaController::class, 'index'])->name('penyediaanSpekTender');
+	Route::post('/penyediaan-spesifikasi-tender/{tenderUuid}', [SpesifikasiTenderKerjaController::class, 'store'])->name('penyediaanSpekTender.store');
+	Route::post('/penyediaan-spesifikasi-tender/{tenderUuid}/hantar', [SpesifikasiTenderKerjaController::class, 'submit'])->name('penyediaanSpekTender.submit');
+	Route::post('/penyediaan-spesifikasi-tender/{tenderUuid}/fail', [SpesifikasiTenderKerjaController::class, 'uploadFile'])->name('penyediaanSpekTender.uploadFile');
+	Route::delete('/penyediaan-spesifikasi-tender/fail/{fileUuid}', [SpesifikasiTenderKerjaController::class, 'deleteFile'])->name('penyediaanSpekTender.deleteFile');
+
+	// Senarai Kewangan Kerja
+	Route::get('/senarai-kewangan-kerja/{tenderUuid}', [SenaraiKewanganKerjaController::class, 'index'])->name('senaraiKewanganKerja');
+	Route::post('/senarai-kewangan-kerja/{tenderUuid}', [SenaraiKewanganKerjaController::class, 'store'])->name('senaraiKewanganKerja.store');
+	Route::post('/senarai-kewangan-kerja/{tenderUuid}/hantar', [SenaraiKewanganKerjaController::class, 'submit'])->name('senaraiKewanganKerja.submit');
+	Route::post('/senarai-kewangan-kerja/{tenderUuid}/fail', [SenaraiKewanganKerjaController::class, 'uploadFile'])->name('senaraiKewanganKerja.uploadFile');
+	Route::delete('/senarai-kewangan-kerja/fail/{fileUuid}', [SenaraiKewanganKerjaController::class, 'deleteFile'])->name('senaraiKewanganKerja.deleteFile');
 
 	// Perakuan Jabatan
 	Route::get('/perakuan-jabatan', [PerakuanJabatanController::class, 'index'])->name('perakuanjabatan.index');

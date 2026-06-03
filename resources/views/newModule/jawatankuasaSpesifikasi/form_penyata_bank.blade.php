@@ -147,7 +147,7 @@
                 </div>
             </div>
 
-            <!-- Separator -->
+            {{-- <!-- Separator -->
             <div class="border-top pt-4 mb-3">
                 <div class="rounded-2 px-3 py-2 d-inline-flex align-items-center gap-2"
                     style="background:#eff6ff; border:1px solid #bfdbfe; font-size:0.78rem; color:#1e40af;">
@@ -234,7 +234,7 @@
                         </div>
                     </div>
                 </div>
-            </div>
+            </div> --}}
 
         </div>
     </div>
