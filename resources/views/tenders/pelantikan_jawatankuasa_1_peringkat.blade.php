@@ -42,7 +42,7 @@
 @section('content')
     @php
         $availableTabs = ['open', 'tech', 'fin'];
-        // $draftTenderUuid = optional($tender)->uuid ?? request('tender');
+        $draftTenderUuid = optional($tender)->uuid ?? request('tender');
         $supportedDraftJenisData = $supportedDraftJenis ?? ['open', 'tech', 'fin'];
         $localIcUsersData = $icUsers ?? [];
         $tabLabels = [
@@ -76,7 +76,7 @@
                                 <span class="text-muted fw-semibold text-uppercase"
                                     style="font-size:0.67rem; letter-spacing:0.5px;">PTJ</span>
                                 <span class="fw-semibold text-dark" style="font-size:0.88rem;">
-                                    {{-- {{ optional(optional($tender)->tenderer)->name ?? '-' }} --}}
+                                    {{ optional(optional($tender)->tenderer)->name ?? '-' }}
                                 </span>
                             </div>
                         </div>
@@ -344,7 +344,7 @@
 @section('scripts')
     <script>
         const initialCommitteeDrafts = @json($committeeDrafts ?? []);
-        {{-- const tenderUuid = @json($draftTenderUuid); --}}
+        const tenderUuid = @json($draftTenderUuid);
         const saveDraftUrl = @json(route('jawatankuasa.store'));
         const hantarPemaklumanUrl = @json(route('jawatankuasa.hantarPemakluman'));
         const supportedDraftJenis = @json($supportedDraftJenisData);
