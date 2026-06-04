@@ -75,9 +75,9 @@ class PenyediaanIklanService
             $updates['district_list_rule'] = json_encode($syarat['district_list_rule']);
         }
 
-        if ($updates !== []) {
-            Tender::query()->where('id', $tender->id)->update($updates);
-        }
+        $updates['status_process_id'] = 5;
+
+        Tender::query()->where('id', $tender->id)->update($updates);
     }
 
     protected function parseDate(?string $value): ?string
