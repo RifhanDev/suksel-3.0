@@ -422,11 +422,24 @@ class TendersController extends Controller
 
 			if ($response->successful()) {
 				$data = $response->json();
+				$tenderId = (int) ($data['tender_id'] ?? 0);
+
+				if ($tenderId > 0) {
+					Tender::query()->where('id', $tenderId)->update([
+						'status_process_id' => 1,
+						'advertise_start_date' => null,
+						'advertise_stop_date' => null,
+						'document_start_date' => null,
+						'document_stop_date' => null,
+						'submission_datetime' => null,
+					]);
+				}
+
 				Log::info(
 					'Tender created via backend API',
 					[
-						'tender_id' => $data['tender_id'],
-						'ref_number' => $data['ref_number']
+						'tender_id' => $tenderId,
+						'ref_number' => $data['ref_number'] ?? null,
 					]
 				);
 
@@ -434,7 +447,7 @@ class TendersController extends Controller
 					return response()->json($data, 201);
 				}
 
-				return redirect('tenders/' . $data['tender_id'])->with('success', 'Tender berjaya dicipta');
+				return redirect('tenders/' . $tenderId)->with('success', 'Tender berjaya dicipta');
 			} else {
 				Log::error(
 					'Backend API error',

@@ -60,6 +60,10 @@ class PenyediaanIklanService
             'advertise_stop_date' => $this->parseDate($iklan['tarikh_tutup'] ?? null),
             'document_start_date' => $this->parseDate($iklan['tarikh_jual'] ?? null),
             'document_stop_date' => $this->parseDate($iklan['tarikh_tutup'] ?? null),
+            'submission_datetime' => $this->parseSubmissionDatetime(
+                $iklan['tarikh_tutup'] ?? null,
+                $iklan['masa_tutup'] ?? null
+            ),
             'tender_rules' => $iklan['syarat_tender'] ?? null,
             'only_selangor' => isset($syarat['only_selangor']) ? (int) $syarat['only_selangor'] : null,
             'only_bumiputera' => array_key_exists('only_bumiputera', $syarat) ? (int) (bool) $syarat['only_bumiputera'] : null,
@@ -95,6 +99,29 @@ class PenyediaanIklanService
             return Carbon::parse($value)->format('Y-m-d');
         } catch (\Throwable) {
             return null;
+        }
+    }
+
+    protected function parseSubmissionDatetime(?string $date, ?string $time): ?string
+    {
+        $parsedDate = $this->parseDate($date);
+        if ($parsedDate === null) {
+            return null;
+        }
+
+        $parsedTime = trim((string) $time);
+        if ($parsedTime === '') {
+            $parsedTime = '12:00';
+        }
+
+        try {
+            return Carbon::parse($parsedDate . ' ' . $parsedTime)->format('Y-m-d H:i:s');
+        } catch (\Throwable) {
+            try {
+                return Carbon::parse($parsedDate)->setTime(12, 0)->format('Y-m-d H:i:s');
+            } catch (\Throwable) {
+                return null;
+            }
         }
     }
 }

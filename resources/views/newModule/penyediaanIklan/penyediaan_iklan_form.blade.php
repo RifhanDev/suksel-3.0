@@ -236,7 +236,7 @@
                 <div class="col-md-4">
                     <label class="form-label fw-semibold">Tarikh Jual <span class="text-danger">*</span></label>
                     <input type="text" class="form-control form-control-lg datepicker" name="tarikh_jual"
-                        placeholder="Pilih tarikh..." readonly>
+                        value="{{ $iklan['tarikh_jual'] ?? '' }}" placeholder="Pilih tarikh..." readonly>
                 </div>
                 <div class="col-md-4">
                     <label class="form-label fw-semibold">Tempoh Iklan (Hari)</label>

@@ -557,26 +557,19 @@
 										</tr>
 										<tr>
 											<th>Tarikh Iklan</th>
-											<td>{{ \Carbon\Carbon::parse($tender->advertise_start_date)->format('j M Y') }}
-												-
-												{{ \Carbon\Carbon::parse($tender->advertise_stop_date)->format('j M Y') }}
-											</td>
+											<td>{{ $tender->tarikh_iklan_display }}</td>
 										</tr>
 										<tr>
 											<th>Tarikh Jual</th>
-											<td>{{ \Carbon\Carbon::parse($tender->document_start_date)->format('j M Y') }}
-												-
-												{{ \Carbon\Carbon::parse($tender->document_stop_date)->format('j M Y') }}
-											</td>
+											<td>{{ $tender->tarikh_jual_display }}</td>
 										</tr>
 										<tr>
 											<th>Tarikh Tutup</th>
-											<td>{{ \Carbon\Carbon::parse($tender->submission_datetime)->format('j M Y') }}
-											</td>
+											<td>{{ $tender->tarikh_tutup_display }}</td>
 										</tr>
 										<tr>
 											<th>Masa Tutup</th>
-											<td>12:00 PM</td>
+											<td>{{ $tender->masa_tutup_display }}</td>
 										</tr>
 										<tr>
 											<th>Tempat Hantar</th>

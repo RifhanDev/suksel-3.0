@@ -165,14 +165,14 @@
                             <tr><th>No. {{ App\Tender::$types[$tender->type] ?? 'Tender' }}</th><td>{{ $tender->ref_number ?? '-' }}</td></tr>
                             <tr>
                                 <th>Tarikh Iklan</th>
-                                <td>{{ \Carbon\Carbon::parse($tender->advertise_start_date)->format('j M Y') }} – {{ \Carbon\Carbon::parse($tender->advertise_stop_date)->format('j M Y') }}</td>
+                                <td>{{ $tender->tarikh_iklan_display }}</td>
                             </tr>
                             <tr>
                                 <th>Tarikh Jual</th>
-                                <td>{{ \Carbon\Carbon::parse($tender->document_start_date)->format('j M Y') }} – {{ \Carbon\Carbon::parse($tender->document_stop_date)->format('j M Y') }}</td>
+                                <td>{{ $tender->tarikh_jual_display }}</td>
                             </tr>
-                            <tr><th>Tarikh Tutup</th><td>{{ \Carbon\Carbon::parse($tender->submission_datetime)->format('j M Y') }}</td></tr>
-                            <tr><th>Masa Tutup</th><td>12:00 PM</td></tr>
+                            <tr><th>Tarikh Tutup</th><td>{{ $tender->tarikh_tutup_display }}</td></tr>
+                            <tr><th>Masa Tutup</th><td>{{ $tender->masa_tutup_display }}</td></tr>
                             @if($tender->submission_location_address)
                                 <tr><th>Tempat Hantar</th><td>{!! nl2br(e($tender->submission_location_address)) !!}</td></tr>
                             @endif

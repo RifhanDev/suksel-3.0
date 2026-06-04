@@ -463,6 +463,46 @@ class Tender extends Model
 		}
 	}
 
+	public function getTarikhIklanDisplayAttribute(): string
+	{
+		return $this->formatDateRangeDisplay($this->advertise_start_date, $this->advertise_stop_date);
+	}
+
+	public function getTarikhJualDisplayAttribute(): string
+	{
+		return $this->formatDateRangeDisplay($this->document_start_date, $this->document_stop_date);
+	}
+
+	public function getTarikhTutupDisplayAttribute(): string
+	{
+		if (empty($this->submission_datetime)) {
+			return '-';
+		}
+
+		return Carbon::parse($this->submission_datetime)->format('j M Y');
+	}
+
+	public function getMasaTutupDisplayAttribute(): string
+	{
+		if (empty($this->submission_datetime)) {
+			return '-';
+		}
+
+		return Carbon::parse($this->submission_datetime)->format('g:i A');
+	}
+
+	protected function formatDateRangeDisplay($start, $stop): string
+	{
+		if (empty($start) && empty($stop)) {
+			return '-';
+		}
+
+		$startLabel = empty($start) ? '-' : Carbon::parse($start)->format('j M Y');
+		$stopLabel = empty($stop) ? '-' : Carbon::parse($stop)->format('j M Y');
+
+		return $startLabel . ' - ' . $stopLabel;
+	}
+
 	public function getMofCodesAttribute()
 	{
 		return $this->codes()->with('code')->orderBy('order', 'asc')->where('code_type', 'mof')->get();
@@ -761,6 +801,10 @@ class Tender extends Model
 
 	public function validDocumentDate()
 	{
+		if (empty($this->document_start_date) || empty($this->document_stop_date)) {
+			return false;
+		}
+
 		$today = Carbon::today();
 		return $today->gte(Carbon::parse($this->document_start_date))
 			&& $today->lte(Carbon::parse($this->document_stop_date));
@@ -768,6 +812,10 @@ class Tender extends Model
 
 	public function nearSubmission()
 	{
+		if (empty($this->submission_datetime)) {
+			return false;
+		}
+
 		$submission_date = Carbon::parse($this->submission_datetime);
 		if ($submission_date->timestamp > time()) {
 			$minus_a_day = $submission_date->subDay();
@@ -779,6 +827,10 @@ class Tender extends Model
 
 	public function nearDocumentStop()
 	{
+		if (empty($this->document_stop_date)) {
+			return false;
+		}
+
 		$submission_date = Carbon::parse($this->document_stop_date);
 		if ($submission_date->subDay()->timestamp > time()) {
 			return $submission_date->addDay()->timestamp < time();
