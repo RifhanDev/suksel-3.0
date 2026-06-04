@@ -193,17 +193,90 @@ class StandardChecklistItemSeeder extends Seeder
                 'is_active'             => true,
                 'sort_order'         => 12,
             ],
+            [
+                'category'              => 'kewangan_kerja',
+                'type'                  => 'borang_atas_talian',
+                'title'                 => 'Lembaran Imbangan',
+                'mechanism_default'     => null,
+                'vendor_action_default' => null,
+                'action_url'            => '/lembaran-imbangan',
+                'is_active'             => true,
+                'sort_order'            => 1,
+            ],
+            [
+                'category'              => 'kewangan_kerja',
+                'type'                  => 'borang_atas_talian',
+                'title'                 => 'Penyata Bulanan / Akaun Bank',
+                'mechanism_default'     => null,
+                'vendor_action_default' => null,
+                'action_url'            => '/penyata-bank',
+                'is_active'             => true,
+                'sort_order'            => 2,
+            ],
+            [
+                'category'              => 'kewangan_kerja',
+                'type'                  => 'borang_atas_talian',
+                'title'                 => 'Bon Atau Saham',
+                'mechanism_default'     => null,
+                'vendor_action_default' => null,
+                'action_url'            => '/bon-atau-saham',
+                'is_active'             => true,
+                'sort_order'            => 3,
+            ],
+            [
+                'category'              => 'kewangan_kerja',
+                'type'                  => 'borang_atas_talian',
+                'title'                 => 'Prestasi Kerja Semasa Petender',
+                'mechanism_default'     => null,
+                'vendor_action_default' => null,
+                'action_url'            => '/prestasi-kerja-semasa-petender',
+                'is_active'             => true,
+                'sort_order'            => 4,
+            ],
+            [
+                'category'              => 'kewangan_kerja',
+                'type'                  => 'standard',
+                'title'                 => 'Laporan Bank atau Borang CA',
+                'mechanism_default'     => null,
+                'vendor_action_default' => null,
+                'action_url'            => null,
+                'is_active'             => true,
+                'sort_order'            => 5,
+            ],
+            [
+                'category'              => 'kewangan_kerja',
+                'type'                  => 'standard',
+                'title'                 => 'Laporan Penyelia Projek Bagi Kerja Semasa',
+                'mechanism_default'     => null,
+                'vendor_action_default' => null,
+                'action_url'            => null,
+                'is_active'             => true,
+                'sort_order'            => 6,
+            ],
         ];
 
         foreach ($items as $item) {
-            DB::table('standard_checklist_items')->updateOrInsert(
-                ['title' => $item['title'], 'category' => $item['category'], 'type' => $item['type']],
-                array_merge($item, [
+            $exists = DB::table('standard_checklist_items')
+                ->where('title', $item['title'])
+                ->where('category', $item['category'])
+                ->where('type', $item['type'])
+                ->exists();
+
+            if ($exists) {
+                DB::table('standard_checklist_items')
+                    ->where('title', $item['title'])
+                    ->where('category', $item['category'])
+                    ->where('type', $item['type'])
+                    ->update(array_merge($item, [
+                        'updated_at' => now(),
+                    ]));
+            } else {
+                DB::table('standard_checklist_items')->insert(array_merge($item, [
                     'uuid'       => (string) Str::uuid(),
-                    'updated_at' => now(),
                     'created_at' => now(),
-                ])
-            );
+                    'updated_at' => now(),
+                ]));
+            }
         }
     }
 }
