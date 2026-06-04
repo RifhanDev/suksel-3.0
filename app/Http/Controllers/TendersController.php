@@ -521,7 +521,6 @@ class TendersController extends Controller
 	 */
 	public function edit(Request $request, $id)
 	{
-		dd('here');
 		$tender = Tender::with('creator', 'officer')->findOrFail($id);
 		$visits = TenderVisit::where('tender_id', $tender->id)->get()->toArray();
 		$country_states = RefState::where('display_status', 1)->get();
