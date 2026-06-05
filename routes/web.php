@@ -91,6 +91,7 @@ use App\Http\Controllers\ProfilPetenderController;
 use App\Http\Controllers\PenyataBankController;
 use App\Http\Controllers\CutOffController;
 use App\Http\Controllers\JawatankuasaPerolehanController;
+use App\Http\Controllers\PenyediaanMesyuaratController;
 use App\Http\Controllers\PenilaianKewanganController;
 use App\Http\Controllers\PenilaianTeknikalController;
 use App\Http\Controllers\PerakuanJabatanController;
@@ -258,8 +259,12 @@ Route::post('/penyata-bank/submit', [JawatankuasaController::class, 'storePenyat
 Route::view('/penilaian-teknikal', 'newModule.penilaian.teknikal')->name('penilaianTeknikal');
 Route::view('/penilaian-teknikal-kerja', 'newModule.penilaian.teknikal_kerja')->name('penilaianTeknikalKerja');
 Route::view('/penilaian-kewangan', 'newModule.penilaian.kewangan')->name('penilaianKewangan');
-Route::view('/index-perincian', 'newModule.penyediaanMesyuarat.index_perincian')->name('perincianMesyuarat');
-Route::view('/perincian-page', 'newModule.penyediaanMesyuarat.perincian_mesyuarat')->name('perincianPage');
+Route::middleware(['auth'])->group(function () {
+	Route::get('/index-perincian', [PenyediaanMesyuaratController::class, 'index'])->name('perincianMesyuarat');
+	Route::get('/perincian-page', [PenyediaanMesyuaratController::class, 'show'])->name('perincianPage');
+	Route::post('/penyediaan-mesyuarat/simpan', [PenyediaanMesyuaratController::class, 'simpan'])->name('penyediaanMesyuarat.simpan');
+	Route::post('/penyediaan-mesyuarat/hantar', [PenyediaanMesyuaratController::class, 'hantar'])->name('penyediaanMesyuarat.hantar');
+});
 Route::view('/index-jawatankuasa', 'newModule.penyediaanMesyuarat.index_jawatankuasa')->name('jawatankuasaMesyuarat');
 Route::view('/jawatankuasa-page', 'newModule.penyediaanMesyuarat.jawatankuasa')->name('jawatankuasaPage');
 Route::middleware('auth')->group(function () {

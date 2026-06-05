@@ -134,22 +134,32 @@
         }
     </style>
 
+    @php
+        $firstUiTab = ($uiTabs[0]['ui'] ?? 'pembuka');
+        $visibleUiTabs = collect($uiTabs ?? [])->pluck('ui')->all();
+    @endphp
+
     <div class="card border shadow-sm mb-2 rounded-3">
         <div class="card-body p-3">
             <div class="row g-2 align-items-end">
+                <div class="col-12">
+                    <label class="form-label small fw-bold text-secondary text-uppercase mb-1">
+                        {{ ($tender->type ?? '') === 'quotation' ? 'Nama Sebut Harga' : 'Nama Tender' }}
+                    </label>
+                    <h6 class="text-primary mb-2">{{ $tender->name ?? '-' }}</h6>
+                </div>
                 <div class="col-4 col-lg-4">
                     <label class="form-label small fw-bold text-secondary text-uppercase mb-1">No. Tender</label>
-                    <h6 class="text-primary">SUKSEL/PERT/2026/001</h6>
-                    <!-- <input type="text" id="" class="form-control form-control-sm" placeholder="" readonly> -->
+                    <h6 class="text-primary">{{ $tender->no_tender ?: $tender->ref_number ?: '-' }}</h6>
                 </div>
                 <div class="col-4 col-lg-4">
-                    <label for="filter_tajuk" class="form-label small fw-bold text-secondary text-uppercase mb-1">PTJ</label>
-                    <h6 class="text-primary">100-007</h6>
+                    <label class="form-label small fw-bold text-secondary text-uppercase mb-1">PTJ</label>
+                    <h6 class="text-primary">{{ optional($tender->tenderer)->name ?? '-' }}</h6>
                 </div>
                 <div class="col-4 col-lg-4">
-                    <label for="filter_status" class="form-label small fw-bold text-secondary text-uppercase mb-1">Status</label>
+                    <label class="form-label small fw-bold text-secondary text-uppercase mb-1">Status</label>
                     <span class="badge rounded-pill bg-warning-subtle text-warning border border-warning-subtle px-3 py-2 fw-bold text-uppercase heartbeat" style="font-size: 0.8rem;">
-                        Dalam Proses
+                        {{ $tender->status ?? '-' }}
                     </span>
                 </div>
             </div>
@@ -157,25 +167,16 @@
     </div>
 
     <div class="nested-tabs">
-        <button class="nested-tab-btn active" data-tab="pembuka">
-            Jawatankuasa Pembuka
+        @foreach($uiTabs ?? [] as $tab)
+        <button type="button" class="nested-tab-btn {{ $loop->first ? 'active' : '' }}" data-tab="{{ $tab['ui'] }}" data-jenis="{{ $tab['jenis'] }}">
+            {{ $tab['label'] }}
         </button>
-
-        <button class="nested-tab-btn" data-tab="teknikal">
-            Jawatankuasa Penilaian Teknikal
-        </button>
-
-        <button class="nested-tab-btn" data-tab="kewangan">
-            Jawatankuasa Penilaian Kewangan
-        </button>
-
-        <button class="nested-tab-btn" data-tab="sebutharga">
-            Jawatankuasa Penilaian Sebut Harga/Tender
-        </button>
+        @endforeach
     </div>
 
     <div class="nested-content">
-        <div class="tab-content" data-tab="pembuka">
+        @if(in_array('pembuka', $visibleUiTabs))
+        <div class="tab-content {{ $firstUiTab !== 'pembuka' ? 'd-none' : '' }}" data-tab="pembuka" data-jenis="open">
             <div class="content-card mb-4 p-0">
                 <div class="content-card-header p-4 pb-3 border-bottom">
                     <div class="d-flex align-items-center gap-3">
@@ -280,51 +281,7 @@
                                 </tr>
                             </thead>
                             <tbody id="tbl-jkpembuka-body">
-                                <tr>
-                                    <td class="text-center">780922140090</td>
-                                    <td>Azman Bin Musa</td>
-                                    <td>Ketua Setiausaha</td>
-                                    <td>azman@suksel.com</td>
-                                    <td class="text-center">G52</td>
-                                    <td class="text-center">Ya</td>
-                                    <td>
-                                        <select class="form-select form-select-sm">
-                                            <option value="Pengerusi" selected>Pengerusi</option>
-                                            <option value="Setiausaha">Setiausaha</option>
-                                            <option value="Ahli">Ahli</option>
-                                        </select>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td class="text-center">900909067888</td>
-                                    <td>Hazwani Binti Zafri</td>
-                                    <td>Penolong Setiausaha</td>
-                                    <td>hazwani@suksel</td>
-                                    <td class="text-center">G41</td>
-                                    <td class="text-center">Tidak</td>
-                                    <td>
-                                        <select class="form-select form-select-sm">
-                                            <option value="Pengerusi">Pengerusi</option>
-                                            <option value="Setiausaha" selected>Setiausaha</option>
-                                            <option value="Ahli">Ahli</option>
-                                        </select>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td class="text-center">980808109988</td>
-                                    <td>Yasmin Binti Yusof</td>
-                                    <td>Penolong Setiausaha</td>
-                                    <td>yasmin@suksel.com</td>
-                                    <td class="text-center">G41</td>
-                                    <td class="text-center">Tidak</td>
-                                    <td>
-                                        <select class="form-select form-select-sm">
-                                            <option value="Pengerusi">Pengerusi</option>
-                                            <option value="Setiausaha">Setiausaha</option>
-                                            <option value="Ahli" selected>Ahli</option>
-                                        </select>
-                                    </td>
-                                </tr>
+                                @include('newModule.penyediaanMesyuarat._senarai_ahli', ['jenis' => 'open'])
                             </tbody>
                         </table>
                     </div>
@@ -335,7 +292,7 @@
             <div class="d-flex justify-content-end align-items-center mb-4 flex-wrap gap-2">
         
                 <div class="d-flex gap-2">
-                    <button type="button" class="btn-form btn-form-success">
+                    <button type="button" class="btn-form btn-form-success btn-simpan-mesyuarat" data-ui-tab="pembuka">
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
@@ -344,7 +301,7 @@
                         </svg>
                         Simpan
                     </button>
-                    <button type="button" class="btn-form btn-form-primary">
+                    <button type="button" class="btn-form btn-form-primary btn-hantar-mesyuarat" data-ui-tab="pembuka">
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <line x1="22" y1="2" x2="11" y2="13"></line>
@@ -355,7 +312,9 @@
                 </div>
             </div>
         </div>
-        <div class="tab-content" data-tab="teknikal" style="display:none;">
+        @endif
+        @if(in_array('teknikal', $visibleUiTabs))
+        <div class="tab-content {{ $firstUiTab !== 'teknikal' ? 'd-none' : '' }}" data-tab="teknikal" data-jenis="tech">
             <div class="content-card mb-4 p-0">
                 <div class="content-card-header p-4 pb-3 border-bottom">
                     <div class="d-flex align-items-center gap-3">
@@ -460,51 +419,7 @@
                                 </tr>
                             </thead>
                             <tbody id="tbl-jkteknikal-body">
-                                <tr>
-                                    <td class="text-center">780922140090</td>
-                                    <td>Azman Bin Musa</td>
-                                    <td>Ketua Setiausaha</td>
-                                    <td>azman@suksel.com</td>
-                                    <td class="text-center">G52</td>
-                                    <td class="text-center">Ya</td>
-                                    <td>
-                                        <select class="form-select form-select-sm">
-                                            <option value="Pengerusi" selected>Pengerusi</option>
-                                            <option value="Setiausaha">Setiausaha</option>
-                                            <option value="Ahli">Ahli</option>
-                                        </select>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td class="text-center">900909067888</td>
-                                    <td>Hazwani Binti Zafri</td>
-                                    <td>Penolong Setiausaha</td>
-                                    <td>hazwani@suksel</td>
-                                    <td class="text-center">G41</td>
-                                    <td class="text-center">Tidak</td>
-                                    <td>
-                                        <select class="form-select form-select-sm">
-                                            <option value="Pengerusi">Pengerusi</option>
-                                            <option value="Setiausaha" selected>Setiausaha</option>
-                                            <option value="Ahli">Ahli</option>
-                                        </select>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td class="text-center">980808109988</td>
-                                    <td>Yasmin Binti Yusof</td>
-                                    <td>Penolong Setiausaha</td>
-                                    <td>yasmin@suksel.com</td>
-                                    <td class="text-center">G41</td>
-                                    <td class="text-center">Tidak</td>
-                                    <td>
-                                        <select class="form-select form-select-sm">
-                                            <option value="Pengerusi">Pengerusi</option>
-                                            <option value="Setiausaha">Setiausaha</option>
-                                            <option value="Ahli" selected>Ahli</option>
-                                        </select>
-                                    </td>
-                                </tr>
+                                @include('newModule.penyediaanMesyuarat._senarai_ahli', ['jenis' => 'tech'])
                             </tbody>
                         </table>
                     </div>
@@ -515,7 +430,7 @@
             <div class="d-flex justify-content-end align-items-center mb-4 flex-wrap gap-2">
         
                 <div class="d-flex gap-2">
-                    <button type="button" class="btn-form btn-form-success">
+                    <button type="button" class="btn-form btn-form-success btn-simpan-mesyuarat" data-ui-tab="teknikal">
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
@@ -524,7 +439,7 @@
                         </svg>
                         Simpan
                     </button>
-                    <button type="button" class="btn-form btn-form-primary">
+                    <button type="button" class="btn-form btn-form-primary btn-hantar-mesyuarat" data-ui-tab="teknikal">
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <line x1="22" y1="2" x2="11" y2="13"></line>
@@ -535,7 +450,9 @@
                 </div>
             </div>
         </div>
-        <div class="tab-content" data-tab="kewangan" style="display:none;">
+        @endif
+        @if(in_array('kewangan', $visibleUiTabs))
+        <div class="tab-content {{ $firstUiTab !== 'kewangan' ? 'd-none' : '' }}" data-tab="kewangan" data-jenis="fin">
             <div class="content-card mb-4 p-0">
                 <div class="content-card-header p-4 pb-3 border-bottom">
                     <div class="d-flex align-items-center gap-3">
@@ -640,51 +557,7 @@
                                 </tr>
                             </thead>
                             <tbody id="tbl-jkkewangan-body">
-                                <tr>
-                                    <td class="text-center">780922140090</td>
-                                    <td>Azman Bin Musa</td>
-                                    <td>Ketua Setiausaha</td>
-                                    <td>azman@suksel.com</td>
-                                    <td class="text-center">G52</td>
-                                    <td class="text-center">Ya</td>
-                                    <td>
-                                        <select class="form-select form-select-sm">
-                                            <option value="Pengerusi" selected>Pengerusi</option>
-                                            <option value="Setiausaha">Setiausaha</option>
-                                            <option value="Ahli">Ahli</option>
-                                        </select>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td class="text-center">900909067888</td>
-                                    <td>Hazwani Binti Zafri</td>
-                                    <td>Penolong Setiausaha</td>
-                                    <td>hazwani@suksel</td>
-                                    <td class="text-center">G41</td>
-                                    <td class="text-center">Tidak</td>
-                                    <td>
-                                        <select class="form-select form-select-sm">
-                                            <option value="Pengerusi">Pengerusi</option>
-                                            <option value="Setiausaha" selected>Setiausaha</option>
-                                            <option value="Ahli">Ahli</option>
-                                        </select>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td class="text-center">980808109988</td>
-                                    <td>Yasmin Binti Yusof</td>
-                                    <td>Penolong Setiausaha</td>
-                                    <td>yasmin@suksel.com</td>
-                                    <td class="text-center">G41</td>
-                                    <td class="text-center">Tidak</td>
-                                    <td>
-                                        <select class="form-select form-select-sm">
-                                            <option value="Pengerusi">Pengerusi</option>
-                                            <option value="Setiausaha">Setiausaha</option>
-                                            <option value="Ahli" selected>Ahli</option>
-                                        </select>
-                                    </td>
-                                </tr>
+                                @include('newModule.penyediaanMesyuarat._senarai_ahli', ['jenis' => 'fin'])
                             </tbody>
                         </table>
                     </div>
@@ -695,7 +568,7 @@
             <div class="d-flex justify-content-end align-items-center mb-4 flex-wrap gap-2">
         
                 <div class="d-flex gap-2">
-                    <button type="button" class="btn-form btn-form-success">
+                    <button type="button" class="btn-form btn-form-success btn-simpan-mesyuarat" data-ui-tab="kewangan">
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
@@ -704,7 +577,7 @@
                         </svg>
                         Simpan
                     </button>
-                    <button type="button" class="btn-form btn-form-primary">
+                    <button type="button" class="btn-form btn-form-primary btn-hantar-mesyuarat" data-ui-tab="kewangan">
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <line x1="22" y1="2" x2="11" y2="13"></line>
@@ -715,7 +588,9 @@
                 </div>
             </div>
         </div>
-        <div class="tab-content" data-tab="sebutharga" style="display:none;">
+        @endif
+        @if(in_array('sebutharga', $visibleUiTabs))
+        <div class="tab-content {{ $firstUiTab !== 'sebutharga' ? 'd-none' : '' }}" data-tab="sebutharga" data-jenis="harga">
             <div class="content-card mb-4 p-0">
                 <div class="content-card-header p-4 pb-3 border-bottom">
                     <div class="d-flex align-items-center gap-3">
@@ -820,51 +695,7 @@
                                 </tr>
                             </thead>
                             <tbody id="tbl-jksebutharga-body">
-                                <tr>
-                                    <td class="text-center">780922140090</td>
-                                    <td>Azman Bin Musa</td>
-                                    <td>Ketua Setiausaha</td>
-                                    <td>azman@suksel.com</td>
-                                    <td class="text-center">G52</td>
-                                    <td class="text-center">Ya</td>
-                                    <td>
-                                        <select class="form-select form-select-sm">
-                                            <option value="Pengerusi" selected>Pengerusi</option>
-                                            <option value="Setiausaha">Setiausaha</option>
-                                            <option value="Ahli">Ahli</option>
-                                        </select>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td class="text-center">900909067888</td>
-                                    <td>Hazwani Binti Zafri</td>
-                                    <td>Penolong Setiausaha</td>
-                                    <td>hazwani@suksel</td>
-                                    <td class="text-center">G41</td>
-                                    <td class="text-center">Tidak</td>
-                                    <td>
-                                        <select class="form-select form-select-sm">
-                                            <option value="Pengerusi">Pengerusi</option>
-                                            <option value="Setiausaha" selected>Setiausaha</option>
-                                            <option value="Ahli">Ahli</option>
-                                        </select>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td class="text-center">980808109988</td>
-                                    <td>Yasmin Binti Yusof</td>
-                                    <td>Penolong Setiausaha</td>
-                                    <td>yasmin@suksel.com</td>
-                                    <td class="text-center">G41</td>
-                                    <td class="text-center">Tidak</td>
-                                    <td>
-                                        <select class="form-select form-select-sm">
-                                            <option value="Pengerusi">Pengerusi</option>
-                                            <option value="Setiausaha">Setiausaha</option>
-                                            <option value="Ahli" selected>Ahli</option>
-                                        </select>
-                                    </td>
-                                </tr>
+                                @include('newModule.penyediaanMesyuarat._senarai_ahli', ['jenis' => 'harga'])
                             </tbody>
                         </table>
                     </div>
@@ -875,7 +706,7 @@
             <div class="d-flex justify-content-end align-items-center mb-4 flex-wrap gap-2">
         
                 <div class="d-flex gap-2">
-                    <button type="button" class="btn-form btn-form-success">
+                    <button type="button" class="btn-form btn-form-success btn-simpan-mesyuarat" data-ui-tab="sebutharga">
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
@@ -884,7 +715,7 @@
                         </svg>
                         Simpan
                     </button>
-                    <button type="button" class="btn-form btn-form-primary">
+                    <button type="button" class="btn-form btn-form-primary btn-hantar-mesyuarat" data-ui-tab="sebutharga">
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <line x1="22" y1="2" x2="11" y2="13"></line>
@@ -895,14 +726,103 @@
                 </div>
             </div>
         </div>
+        @endif
     </div>
 
  
 
 
+<script type="application/json" id="mesyuarat-page-config">{!! json_encode([
+    'tenderUuid' => $tender->uuid ?? '',
+    'jenisByUiTab' => $jenisByUiTab ?? [],
+    'savedMeetings' => $meetingsForJs ?? [],
+    'saveUrl' => route('penyediaanMesyuarat.simpan'),
+    'hantarUrl' => route('penyediaanMesyuarat.hantar'),
+    'csrfToken' => csrf_token(),
+]) !!}</script>
+
 <script type="text/javascript">
 
     document.addEventListener('DOMContentLoaded', function () {
+
+        const {
+            tenderUuid,
+            jenisByUiTab,
+            savedMeetings,
+            saveUrl,
+            hantarUrl,
+            csrfToken,
+        } = JSON.parse(document.getElementById('mesyuarat-page-config').textContent);
+
+        function seedMeetingRows(uiTab, $body, buildRowFn) {
+            const saved = savedMeetings[uiTab] || [];
+            $body.empty();
+            if (!saved.length) {
+                $body.append(buildRowFn(1));
+                return;
+            }
+            saved.forEach(function (row, index) {
+                const $row = $(buildRowFn(index + 1));
+                $row.find('input[type="date"]').val(row.tarikh_mesyuarat || '');
+                $row.find('input[type="time"]').val(row.masa || '');
+                $row.find('input[type="text"]').val(row.tempat || '');
+                $body.append($row);
+            });
+        }
+
+        function collectRows(uiTab) {
+            const tableMap = {
+                pembuka: '#tbl-mesyuarat-pembuka-body',
+                teknikal: '#tbl-mesyuarat-teknikal-body',
+                kewangan: '#tbl-mesyuarat-kewangan-body',
+                sebutharga: '#tbl-mesyuarat-sebutharga-body',
+            };
+            const rows = [];
+            $(tableMap[uiTab] + ' tr').each(function () {
+                const tarikh = $(this).find('input[type="date"]').val();
+                const masa = $(this).find('input[type="time"]').val();
+                const tempat = $(this).find('input[type="text"]').val();
+                if (tarikh && masa && tempat) {
+                    rows.push({ tarikh_mesyuarat: tarikh, masa: masa, tempat: tempat });
+                }
+            });
+            return rows;
+        }
+
+        function postMeeting(action, uiTab) {
+            const rows = collectRows(uiTab);
+            if (!rows.length) {
+                alert('Sila lengkapkan sekurang-kurangnya satu perincian mesyuarat.');
+                return;
+            }
+            if (action === 'hantar' && !confirm('Hantar jemputan mesyuarat kepada ahli jawatankuasa tab ini?')) {
+                return;
+            }
+            $.ajax({
+                url: action === 'hantar' ? hantarUrl : saveUrl,
+                method: 'POST',
+                data: {
+                    _token: csrfToken,
+                    tender: tenderUuid,
+                    jenis_jawatankuasa: jenisByUiTab[uiTab],
+                    rows: rows,
+                },
+                success: function (res) {
+                    alert(res.message || 'Berjaya.');
+                },
+                error: function (xhr) {
+                    alert((xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Gagal memproses permintaan.');
+                },
+            });
+        }
+
+        $(document).on('click', '.btn-simpan-mesyuarat', function () {
+            postMeeting('simpan', $(this).data('ui-tab'));
+        });
+
+        $(document).on('click', '.btn-hantar-mesyuarat', function () {
+            postMeeting('hantar', $(this).data('ui-tab'));
+        });
 
         function buildRow(bil) {
             return $('<tr class="mesyuarat-pembuka">' +
@@ -928,8 +848,7 @@
             });
         }
 
-        // Seed first row
-        $mesyuaratPembukaBody.append(buildRow(1));
+        seedMeetingRows('pembuka', $mesyuaratPembukaBody, buildRow);
 
         // Add one row per click
         $('#btn-tambah-row-mesyuarat-pembuka').on('click', function () {
@@ -967,8 +886,7 @@
             });
         }
 
-        // Seed first row
-        $mesyuaratTeknikalBody.append(buildRowTeknikal(1));
+        seedMeetingRows('teknikal', $mesyuaratTeknikalBody, buildRowTeknikal);
 
         // Add one row per click
         $('#btn-tambah-row-mesyuarat-teknikal').on('click', function () {
@@ -1006,8 +924,7 @@
             });
         }
 
-        // Seed first row
-        $mesyuaratKewanganBody.append(buildRowKewangan(1));
+        seedMeetingRows('kewangan', $mesyuaratKewanganBody, buildRowKewangan);
 
         // Add one row per click
         $('#btn-tambah-row-mesyuarat-kewangan').on('click', function () {
@@ -1045,8 +962,7 @@
             });
         }
 
-        // Seed first row
-        $mesyuaratSebuthargaBody.append(buildRowSebutharga(1));
+        seedMeetingRows('sebutharga', $mesyuaratSebuthargaBody, buildRowSebutharga);
 
         // Add one row per click
         $('#btn-tambah-row-mesyuarat-sebutharga').on('click', function () {
@@ -1079,8 +995,7 @@
                 // toggle content
                 contentWrapper.querySelectorAll('.tab-content')
                     .forEach(div => {
-                        div.style.display =
-                            (div.dataset.tab === tab) ? 'block' : 'none';
+                        div.classList.toggle('d-none', div.dataset.tab !== tab);
                     });
             });
         });
