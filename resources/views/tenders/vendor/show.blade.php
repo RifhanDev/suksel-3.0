@@ -686,11 +686,17 @@
 
             </div>{{-- /.tab-content --}}
 
-            <div class="mt-3">
+            <div class="mt-3 d-flex gap-2 flex-wrap">
                 <a href="{{ url('dashboard') }}" class="btn-form btn-form-secondary">
                     <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
                     Kembali ke Dashboard
                 </a>
+                @if (Request::get('from') === 'prices' && $tender->canShowTabs())
+                    <a href="{{ asset('tenders/' . $tender->id . '/vendors') }}" class="btn-form btn-form-primary">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M9 8h1m-1 4h1m-1 4h1m4-8h1m-1 4h1m-1 4h1M5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16"/></svg>
+                        Maklumat Syarikat
+                    </a>
+                @endif
             </div>
 
         </div>{{-- /.col-lg-9 --}}
