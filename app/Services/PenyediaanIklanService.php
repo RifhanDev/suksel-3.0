@@ -59,6 +59,7 @@ class PenyediaanIklanService
             'advertise_start_date' => $this->parseDate($iklan['tarikh_iklan'] ?? null),
             'advertise_stop_date' => $this->parseDate($iklan['tarikh_tutup'] ?? null),
             'document_start_date' => $this->parseDate($iklan['tarikh_jual'] ?? null),
+            'document_stop_date' => $this->parseDate($iklan['tarikh_tutup'] ?? null),
             'tender_rules' => $iklan['syarat_tender'] ?? null,
             'only_selangor' => isset($syarat['only_selangor']) ? (int) $syarat['only_selangor'] : null,
             'only_bumiputera' => array_key_exists('only_bumiputera', $syarat) ? (int) (bool) $syarat['only_bumiputera'] : null,
