@@ -65,6 +65,21 @@ class StosBackendClient
         return $this->post('/api/tenders/' . $tenderId . '/penyediaan-iklan/submit', $payload);
     }
 
+    public function getPenyediaanMesyuarat(int $tenderId): Response
+    {
+        return $this->get('/api/tenders/' . $tenderId . '/penyediaan-mesyuarat');
+    }
+
+    public function savePenyediaanMesyuarat(int $tenderId, array $payload): Response
+    {
+        return $this->post('/api/tenders/' . $tenderId . '/penyediaan-mesyuarat', $payload);
+    }
+
+    public function submitPenyediaanMesyuarat(int $tenderId, array $payload): Response
+    {
+        return $this->post('/api/tenders/' . $tenderId . '/penyediaan-mesyuarat/submit', $payload);
+    }
+
     protected function request(string $method, string $path, array $options = []): Response
     {
         if (! $this->isConfigured()) {
