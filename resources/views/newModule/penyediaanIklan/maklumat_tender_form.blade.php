@@ -293,8 +293,36 @@
 			flex-basis: 100%;
 			text-align: center;
 		}
+
+		.kv-yes {
+			color: #16a34a;
+			font-weight: 600;
+			display: inline-flex;
+			align-items: center;
+			gap: 5px;
+		}
+
+		.kv-no {
+			color: #94a3b8;
+			font-weight: 500;
+			display: inline-flex;
+			align-items: center;
+			gap: 5px;
+		}
+
+		.kv-value.muted {
+			color: #94a3b8;
+			font-weight: 400;
+		}
 	</style>
 @endpush
+
+@php
+    $review = $tenderReview ?? \App\Support\TenderReviewPresenter::for($tender);
+    $mofGroups = $review->mofGroups();
+    $cidbSpecGroups = $review->cidbSpecGroups();
+    $cidbGrades = $review->cidbGrades();
+@endphp
 
 <!-- SECTION 1: MAKLUMAT UMUM -->
 <div class="content-card mb-4 p-0">
@@ -319,8 +347,10 @@
 	<div class="review-tajuk">
 		<span class="tajuk-label">Tajuk Perolehan</span>
 		<span class="tajuk-value">
-			MEMBEKAL RANGSUM PUKAL (AIR MINERAL) UNTUK BANGUNAN KERAJAAN
-			<span class="tajuk-type">(Bekalan Perkhidmatan)</span>
+			{{ $review->tajuk() }}
+			@if ($review->tajukSubtitle())
+				<span class="tajuk-type">{{ $review->tajukSubtitle() }}</span>
+			@endif
 		</span>
 	</div>
 
@@ -329,37 +359,37 @@
 		<div class="col-12 col-lg-6 kv-col-left">
 			<div class="kv-row">
 				<span class="kv-label">Kaedah Perolehan</span>
-				<span class="kv-value">Tender Terbuka</span>
+				<span class="kv-value">{{ $review->kaedahPerolehan() }}</span>
 			</div>
 			<div class="kv-row">
 				<span class="kv-label">Kategori Jenis Perolehan</span>
-				<span class="kv-value">Bekalan</span>
+				<span class="kv-value">{{ $review->kategoriJenisPerolehan() }}</span>
 			</div>
 			<div class="kv-row">
 				<span class="kv-label">Jenis Kontrak</span>
-				<span class="kv-value">Jabatan</span>
+				<span class="kv-value">{{ $review->jenisKontrak() }}</span>
 			</div>
 			<div class="kv-row" style="border-bottom:none;">
 				<span class="kv-label">Disediakan Untuk PTJ</span>
-				<span class="kv-value">JABATAN KERJA RAYA SELANGOR (100-007)</span>
+				<span class="kv-value">{{ $review->ptj() }}</span>
 			</div>
 		</div>
 		<div class="col-12 col-lg-6">
 			<div class="kv-row">
 				<span class="kv-label">No. Rujukan Fail</span>
-				<span class="kv-value">JKR.SEL.100-007/2026</span>
+				<span class="kv-value">{{ $review->noRujukanFail() }}</span>
 			</div>
 			<div class="kv-row">
 				<span class="kv-label">No. Tender / Sebut Harga</span>
-				<span class="kv-value accent">SUKSEL/PERT/2026/001</span>
+				<span class="kv-value accent">{{ $review->noTender() }}</span>
 			</div>
 			<div class="kv-row">
 				<span class="kv-label">Tarikh Dicipta</span>
-				<span class="kv-value">14/04/2026</span>
+				<span class="kv-value">{{ $review->tarikhDicipta() }}</span>
 			</div>
 			<div class="kv-row" style="border-bottom:none;">
 				<span class="kv-label">No. Kontrak Sedia Ada</span>
-				<span class="kv-value text-secondary fw-normal">—</span>
+				<span class="kv-value muted">{{ $review->noKontrak() }}</span>
 			</div>
 		</div>
 	</div>
@@ -371,21 +401,33 @@
 		<div class="col-12 col-lg-6 kv-col-left">
 			<div class="kv-row kv-amount">
 				<span class="kv-label">Harga Indikatif Jabatan</span>
-				<span class="kv-value"><span class="rm-prefix">RM</span>125,000.00</span>
+				<span class="kv-value">
+					@if ($review->hargaIndikatif() !== '-')
+						<span class="rm-prefix">RM</span>{{ $review->hargaIndikatif() }}
+					@else
+						—
+					@endif
+				</span>
 			</div>
 			<div class="kv-row kv-amount" style="border-bottom:none;">
 				<span class="kv-label">Anggaran Jabatan</span>
-				<span class="kv-value"><span class="rm-prefix">RM</span>118,500.00</span>
+				<span class="kv-value">
+					@if ($review->anggaranJabatan() !== '-')
+						<span class="rm-prefix">RM</span>{{ $review->anggaranJabatan() }}
+					@else
+						—
+					@endif
+				</span>
 			</div>
 		</div>
 		<div class="col-12 col-lg-6">
 			<div class="kv-row">
 				<span class="kv-label">Kategori Perolehan</span>
-				<span class="kv-value">Perkhidmatan Am</span>
+				<span class="kv-value">{{ $review->kategoriPerolehan() }}</span>
 			</div>
 			<div class="kv-row" style="border-bottom:none;">
 				<span class="kv-label">Tempoh Kontrak / Penyiapan</span>
-				<span class="kv-value">12 Bulan</span>
+				<span class="kv-value">{{ $review->tempohKontrak() }}</span>
 			</div>
 		</div>
 	</div>
@@ -397,59 +439,49 @@
 		<div class="col-12 col-lg-6 kv-col-left">
 			<div class="kv-row">
 				<span class="kv-label">Sumber Peruntukan</span>
-				<span class="kv-value">Pembangunan</span>
+				<span class="kv-value">{{ $review->sumberPeruntukan() }}</span>
 			</div>
 			<div class="kv-row">
 				<span class="kv-label">Lokaliti Liputan</span>
-				<span class="kv-value">Petaling Jaya</span>
+				<span class="kv-value">{{ $review->lokaliti() }}</span>
 			</div>
 			<div class="kv-row">
 				<span class="kv-label">Zon / Lokasi</span>
-				<span class="kv-value text-success fw-semibold d-inline-flex align-items-center gap-1">
-					<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none"
-						stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-						<polyline points="20 6 9 17 4 12"></polyline>
-					</svg>
-					Ya
-				</span>
+				@if ($review->isYes($tender->zon_lokasi))
+					<span class="kv-value kv-yes">Ya</span>
+				@else
+					<span class="kv-value kv-no">Tidak</span>
+				@endif
 			</div>
 			<div class="kv-row" style="border-bottom:none;">
 				<span class="kv-label">Penghantaran Fizikal</span>
-				<span class="kv-value text-secondary fw-medium d-inline-flex align-items-center gap-1">
-					<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none"
-						stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-						<line x1="18" y1="6" x2="6" y2="18"></line>
-						<line x1="6" y1="6" x2="18" y2="18"></line>
-					</svg>
-					Tidak
-				</span>
+				@if ($review->isYes($tender->penilaian_fizikal))
+					<span class="kv-value kv-yes">Ya</span>
+				@else
+					<span class="kv-value kv-no">Tidak</span>
+				@endif
 			</div>
 		</div>
 		<div class="col-12 col-lg-6">
 			<div class="kv-row">
 				<span class="kv-label">Terbuka Kepada</span>
-				<span class="kv-value">Semua</span>
+				<span class="kv-value">{{ $review->terbukaKepada() }}</span>
 			</div>
 			<div class="kv-row">
 				<span class="kv-label">Jawatankuasa Spesifikasi</span>
-				<span class="kv-value text-success fw-semibold d-inline-flex align-items-center gap-1">
-					<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none"
-						stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-						<polyline points="20 6 9 17 4 12"></polyline>
-					</svg>
-					Ya
-				</span>
+				@if ($review->isYes($tender->jawatankuasa))
+					<span class="kv-value kv-yes">Ya</span>
+				@else
+					<span class="kv-value kv-no">Tidak</span>
+				@endif
 			</div>
 			<div class="kv-row" style="border-bottom:none;">
 				<span class="kv-label">Taklimat Tender / Lawatan Tapak</span>
-				<span class="kv-value text-secondary fw-medium d-inline-flex align-items-center gap-1">
-					<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none"
-						stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-						<line x1="18" y1="6" x2="6" y2="18"></line>
-						<line x1="6" y1="6" x2="18" y2="18"></line>
-					</svg>
-					Tiada
-				</span>
+				@if ($review->isYes($tender->lawatan_tapak) || $tender->siteVisits->count() > 0)
+					<span class="kv-value kv-yes">Ya</span>
+				@else
+					<span class="kv-value kv-no">Tiada</span>
+				@endif
 			</div>
 		</div>
 	</div>
@@ -487,46 +519,50 @@
 
 	<!-- MOF groups -->
 	<div class="p-3 d-flex flex-column gap-0">
-		<div class="code-group">
-			<div class="code-group-header">
-				<span class="group-label">Kumpulan 1</span>
-			</div>
-			<div class="code-group-items">
-				<span class="code-tag">210101 — Makanan &amp; Minuman Industri</span>
-				<span class="logic-connector">ATAU</span>
-				<span class="code-tag">210102 — Bekalan Air Minuman</span>
-			</div>
-		</div>
-		<div class="group-connector">
-			<div class="group-connector-text">
-				<span class="logic-connector">DAN</span>
-				<span>Kumpulan 1 dan Kumpulan 2 mesti dipenuhi serentak</span>
-			</div>
-		</div>
-		<div class="code-group">
-			<div class="code-group-header">
-				<span class="group-label">Kumpulan 2</span>
-			</div>
-			<div class="code-group-items">
-				<span class="code-tag">310401 — Perkhidmatan Pengedaran</span>
-			</div>
-		</div>
+		@if ($review->hasMofCodes())
+			@foreach ($mofGroups as $groupIndex => $group)
+				@if ($groupIndex > 0)
+					<div class="group-connector">
+						<div class="group-connector-text">
+							<span class="logic-connector">{{ $review->logicLabel($group['join_rule'] ?? 'and') }}</span>
+							<span>Kumpulan {{ $groupIndex }} dan Kumpulan {{ $groupIndex + 1 }} mesti dipenuhi serentak</span>
+						</div>
+					</div>
+				@endif
+				<div class="code-group">
+					<div class="code-group-header">
+						<span class="group-label">Kumpulan {{ $groupIndex + 1 }}</span>
+					</div>
+					<div class="code-group-items">
+						@foreach ($group['codes'] ?? [] as $codeLabel)
+							@if (!$loop->first)
+								<span class="logic-connector">{{ $review->logicLabel($group['inner_rule'] ?? 'or') }}</span>
+							@endif
+							<span class="code-tag">{!! strip_tags($codeLabel, '<b><strong>') !!}</span>
+						@endforeach
+					</div>
+				</div>
+			@endforeach
+		@else
+			<p class="text-muted small mb-0 px-1">Tiada kod bidang MOF ditetapkan untuk tender ini.</p>
+		@endif
 	</div>
 
-	<!-- MOF ↔ CIDB separator -->
-	<div class="mof-cidb-separator">
-		<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
-			stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-			<circle cx="12" cy="12" r="10"></circle>
-			<line x1="12" y1="16" x2="12" y2="12"></line>
-			<line x1="12" y1="8" x2="12.01" y2="8"></line>
-		</svg>
-		<span class="sep-label">Kelayakan MOF</span>
-		<span class="sep-connector">DAN</span>
-		<span class="sep-label">Kelayakan CIDB</span>
-		<span class="sep-note ms-1">— Syarikat mesti memenuhi kedua-dua kelayakan ini secara serentak untuk layak menyertai
-			tender.</span>
-	</div>
+	@if ($review->hasMofCodes() && $review->hasCidbCodes())
+		<!-- MOF ↔ CIDB separator -->
+		<div class="mof-cidb-separator">
+			<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+				stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+				<circle cx="12" cy="12" r="10"></circle>
+				<line x1="12" y1="16" x2="12" y2="12"></line>
+				<line x1="12" y1="8" x2="12.01" y2="8"></line>
+			</svg>
+			<span class="sep-label">Kelayakan MOF</span>
+			<span class="sep-connector">{{ $review->mofCidbRuleLabel() === 'OR' ? 'ATAU' : 'DAN' }}</span>
+			<span class="sep-label">Kelayakan CIDB</span>
+			<span class="sep-note ms-1">— Syarikat mesti memenuhi kedua-dua kelayakan mengikut peraturan tender.</span>
+		</div>
+	@endif
 
 	<!-- CIDB sub-header -->
 	<div class="kodbidang-subheader">
@@ -543,30 +579,64 @@
 
 	<!-- CIDB groups -->
 	<div class="p-3">
-		<div class="code-group">
-			<div class="code-group-header">
-				<span class="group-label">Kumpulan 1</span>
-			</div>
-			<div>
-				<div class="code-item">
-					<span class="code-item-type">Gred</span>
-					<div class="d-flex align-items-center flex-wrap gap-1">
-						<span class="code-tag">G5</span>
-						<span class="code-tag">G6</span>
-						<span class="code-tag">G7</span>
-						<span class="text-secondary" style="font-size:0.68rem; margin-left:4px;">(mana-mana satu)</span>
+		@if ($review->hasCidbCodes())
+			@foreach ($cidbSpecGroups as $groupIndex => $group)
+				@if ($groupIndex > 0)
+					<div class="group-connector my-2">
+						<div class="group-connector-text">
+							<span class="logic-connector">{{ $review->logicLabel($group['join_rule'] ?? 'or') }}</span>
+						</div>
+					</div>
+				@endif
+				<div class="code-group {{ $groupIndex > 0 ? 'mt-2' : '' }}">
+					<div class="code-group-header">
+						<span class="group-label">Kumpulan {{ $groupIndex + 1 }}</span>
+					</div>
+					<div>
+						@if (!empty($cidbGrades) && $groupIndex === 0)
+							<div class="code-item">
+								<span class="code-item-type">Gred</span>
+								<div class="d-flex align-items-center flex-wrap gap-1">
+									@foreach ($cidbGrades as $grade)
+										<span class="code-tag">{{ $grade }}</span>
+									@endforeach
+									@if (count($cidbGrades) > 1)
+										<span class="text-secondary" style="font-size:0.68rem; margin-left:4px;">(mana-mana satu)</span>
+									@endif
+								</div>
+							</div>
+						@endif
+						@if (!empty($group['codes']))
+							<div class="code-item">
+								<span class="code-item-type">Pengkhususan</span>
+								<div class="d-flex align-items-center flex-wrap gap-1">
+									@foreach ($group['codes'] as $codeLabel)
+										@if (!$loop->first)
+											<span class="logic-connector">{{ $review->logicLabel($group['inner_rule'] ?? 'and') }}</span>
+										@endif
+										<span class="code-tag">{!! strip_tags($codeLabel, '<b><strong>') !!}</span>
+									@endforeach
+								</div>
+							</div>
+						@endif
 					</div>
 				</div>
-				<div class="code-item">
-					<span class="code-item-type">Pengkhususan</span>
-					<div class="d-flex align-items-center flex-wrap gap-1">
-						<span class="code-tag">CE21 — Jalan Raya</span>
-						<span class="logic-connector">ATAU</span>
-						<span class="code-tag">CE22 — Jambatan</span>
+			@endforeach
+			@if (empty($cidbSpecGroups) && !empty($cidbGrades))
+				<div class="code-group">
+					<div class="code-group-header">
+						<span class="group-label">Gred</span>
+					</div>
+					<div class="code-group-items">
+						@foreach ($cidbGrades as $grade)
+							<span class="code-tag">{{ $grade }}</span>
+						@endforeach
 					</div>
 				</div>
-			</div>
-		</div>
+			@endif
+		@else
+			<p class="text-muted small mb-0">Tiada kod bidang CIDB ditetapkan untuk tender ini.</p>
+		@endif
 	</div>
 
 </div>

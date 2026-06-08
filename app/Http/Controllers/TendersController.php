@@ -510,6 +510,7 @@ class TendersController extends Controller
 	public function show(Request $request, $id)
 	{
 		$tender = Tender::with('codes')->with('siteVisits', 'creator', 'officer')->findOrFail($id);
+		$pegawaiDisplay = \App\Support\TenderPegawaiPresenter::for($tender);
 
 		$organizationunit   = $tender->tenderer;
 		$invites            = $tender->invites()->has('vendor')->get();
@@ -541,15 +542,15 @@ class TendersController extends Controller
 		view()->share('global_ou', $tender->tenderer);
 
 		if (!auth()->check()) {
-			return view('tenders.guest.show', compact('tender', 'organizationunit', 'invites', 'histories', 'exception', 'templates', 'tender_winner'));
+			return view('tenders.guest.show', compact('tender', 'organizationunit', 'invites', 'histories', 'exception', 'templates', 'tender_winner', 'pegawaiDisplay'));
 		}
 
 		if (auth()->user()->hasRole('Vendor')) {
-			return view('tenders.vendor.show', compact('tender', 'organizationunit', 'invites', 'histories', 'exception', 'templates', 'tender_winner'));
+			return view('tenders.vendor.show', compact('tender', 'organizationunit', 'invites', 'histories', 'exception', 'templates', 'tender_winner', 'pegawaiDisplay'));
 		}
 
 		// dd($tender->validDocumentDate());
-		return view('tenders.auth.show', compact('tender', 'organizationunit', 'invites', 'histories', 'exception', 'templates', 'tender_winner'));
+		return view('tenders.auth.show', compact('tender', 'organizationunit', 'invites', 'histories', 'exception', 'templates', 'tender_winner', 'pegawaiDisplay'));
 	}
 
 	public function manageSpecification(Request $request)
@@ -1359,6 +1360,12 @@ class TendersController extends Controller
 			return redirect('tenders/' . $tender->id)->with('error', 'Tender / Sebut Harga belum disiarkan.');
 
 		$tender->approver_id = null;
+
+		// Allow re-editing Penyediaan Iklan after unpublish.
+		if ((int) ($tender->status_process_id ?? 0) >= 5) {
+			$tender->status_process_id = 4;
+		}
+
 		$tender->save();
 
 		TenderHistory::log($tender->id, 'unpublish');
