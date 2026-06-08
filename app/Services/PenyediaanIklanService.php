@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\PenyediaanIklan;
 use App\Tender;
+use App\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -27,9 +28,68 @@ class PenyediaanIklanService
             $meta['kelulusan'] = PenyediaanIklan::defaultKelulusan();
         }
 
+        $meta['pegawai'] = $this->normalizePegawaiMeta($meta['pegawai'] ?? []);
+
         return [
             'meta' => $meta,
             'penyediaan_iklan' => $penyediaanIklan,
+        ];
+    }
+
+    public function normalizePegawaiMeta(array $pegawai): array
+    {
+        $pegawai1 = $pegawai['pegawai1'] ?? [];
+        $pegawai2 = $pegawai['pegawai2'] ?? [];
+
+        $pegawai2 = $this->resolvePegawai2Record($pegawai2);
+
+        return [
+            'pegawai1' => [
+                'nama' => trim((string) ($pegawai1['nama'] ?? '')),
+                'emel' => trim((string) ($pegawai1['emel'] ?? '')),
+                'tel' => trim((string) ($pegawai1['tel'] ?? '')),
+                'jabatan' => trim((string) ($pegawai1['jabatan'] ?? '')),
+            ],
+            'pegawai2' => $pegawai2,
+        ];
+    }
+
+    protected function resolvePegawai2Record(array $pegawai2): array
+    {
+        $userId = $pegawai2['user_id'] ?? null;
+        if ($userId) {
+            $user = User::query()->find($userId);
+            if ($user) {
+                return [
+                    'user_id' => (int) $user->id,
+                    'nama' => $user->name,
+                    'emel' => trim((string) ($pegawai2['emel'] ?? $user->email ?? '')),
+                    'tel' => trim((string) ($pegawai2['tel'] ?? $user->tel ?? '')),
+                    'jabatan' => trim((string) ($pegawai2['jabatan'] ?? $user->department ?? '')),
+                ];
+            }
+        }
+
+        $nama = trim((string) ($pegawai2['nama'] ?? ''));
+        if ($nama !== '' && ctype_digit($nama)) {
+            $user = User::query()->find((int) $nama);
+            if ($user) {
+                return [
+                    'user_id' => (int) $user->id,
+                    'nama' => $user->name,
+                    'emel' => trim((string) ($pegawai2['emel'] ?? $user->email ?? '')),
+                    'tel' => trim((string) ($pegawai2['tel'] ?? $user->tel ?? '')),
+                    'jabatan' => trim((string) ($pegawai2['jabatan'] ?? $user->department ?? '')),
+                ];
+            }
+        }
+
+        return [
+            'user_id' => null,
+            'nama' => $nama,
+            'emel' => trim((string) ($pegawai2['emel'] ?? '')),
+            'tel' => trim((string) ($pegawai2['tel'] ?? '')),
+            'jabatan' => trim((string) ($pegawai2['jabatan'] ?? '')),
         ];
     }
 

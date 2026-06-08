@@ -422,22 +422,9 @@
                             <div class="header-icon"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
                             <h6>Pegawai Bertanggungjawab</h6>
                         </div>
-                        @if ($tender->hasOfficer())
-                            <table class="info-table">
-                                <tr><th colspan="2" class="text-center" style="background:#f8fafc;">Pegawai Bertanggungjawab 1</th><th colspan="2" class="text-center" style="background:#f8fafc;">Pegawai Bertanggungjawab 2</th></tr>
-                                <tr><th>Nama</th><td>{{ data_get($tender, 'creator,name') }}</td><th>Nama</th><td>{{ data_get($tender, 'officer,name') }}</td></tr>
-                                <tr><th>E-mel</th><td>{{ data_get($tender, 'creator,email') }}</td><th>E-mel</th><td>{{ data_get($tender, 'officer,email') }}</td></tr>
-                                <tr><th>No. Tel</th><td>{{ data_get($tender, 'creator,tel') }}</td><th>No. Tel</th><td>{{ data_get($tender, 'officer,tel') }}</td></tr>
-                                <tr><th>Jabatan</th><td>{{ data_get($tender, 'creator,department') }}</td><th>Jabatan</th><td>{{ data_get($tender, 'officer,department') }}</td></tr>
-                            </table>
-                        @else
-                            <table class="info-table">
-                                <tr><th>Nama</th><td>{{ optional($tender->creator)->name ?? '-' }}</td></tr>
-                                <tr><th>E-mel</th><td>{{ optional($tender->creator)->email ?? '-' }}</td></tr>
-                                <tr><th>No. Tel</th><td>{{ optional($tender->creator)->tel ?? '-' }}</td></tr>
-                                <tr><th>Jabatan</th><td>{{ optional($tender->creator)->department ?? '-' }}</td></tr>
-                            </table>
-                        @endif
+                        @include('tenders._pegawai_bertanggungjawab_table', [
+                            'tableClass' => 'info-table',
+                        ])
                     </div>
                 </div>
 

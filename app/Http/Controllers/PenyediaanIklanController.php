@@ -8,9 +8,11 @@ use App\Services\PenyediaanIklanService;
 use App\Services\StosBackendClient;
 use App\Support\TenderReviewPresenter;
 use App\Tender;
+use App\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 
 class PenyediaanIklanController extends Controller
@@ -44,9 +46,9 @@ class PenyediaanIklanController extends Controller
     public function show(Tender $tender)
     {
         if ((int) $tender->status_process_id !== 4) {
-            return redirect()
-                ->route('penyediaanIklan.index')
-                ->with('error', 'Tender ini tidak berada dalam peringkat Penyediaan Iklan.');
+            /** @var \Illuminate\Http\RedirectResponse $redirect */
+            $redirect = redirect()->route('penyediaanIklan.index');
+            return $redirect->with('error', 'Tender ini tidak berada dalam peringkat Penyediaan Iklan.');
         }
 
         $country_states = RefState::where('display_status', 1)->get();
@@ -72,6 +74,7 @@ class PenyediaanIklanController extends Controller
 
         $tender->load(['tenderer', 'codes.code', 'creator', 'officer', 'siteVisits']);
         $tenderReview = TenderReviewPresenter::for($tender);
+        $pegawaiPilihan = $this->pegawaiPilihanForTender($tender);
 
         if (empty($meta['kelulusan'])) {
             $meta['kelulusan'] = PenyediaanIklan::defaultKelulusan();
@@ -82,7 +85,8 @@ class PenyediaanIklanController extends Controller
             'country_states',
             'meta',
             'penyediaanIklan',
-            'tenderReview'
+            'tenderReview',
+            'pegawaiPilihan'
         ));
     }
 
@@ -140,9 +144,13 @@ class PenyediaanIklanController extends Controller
                 ]);
             }
 
-            return redirect()
-                ->to($submit ? route('tenders.index') : route('penyediaanIklan.show', $tender->id))
-                ->with('success', $message);
+            $redirectUrl = $submit
+                ? route('tenders.index')
+                : route('penyediaanIklan.show', $tender->id);
+
+            /** @var \Illuminate\Http\RedirectResponse $redirect */
+            $redirect = redirect()->to($redirectUrl);
+            return $redirect->with('success', $message);
         } catch (\Throwable $e) {
             Log::error('Penyediaan iklan persist failed', [
                 'tender_id' => $tender->id,
@@ -201,21 +209,86 @@ class PenyediaanIklanController extends Controller
                 ],
                 'dokumen_sokongan' => $this->storeDokumenSokongan($request, $tenderId),
             ],
-            'pegawai' => [
-                'pegawai1' => [
-                    'nama' => $request->input('pegawai1_nama'),
-                    'emel' => $request->input('pegawai1_emel'),
-                    'tel' => $request->input('pegawai1_tel'),
-                    'jabatan' => $request->input('pegawai1_jabatan'),
-                ],
-                'pegawai2' => [
-                    'nama' => $request->input('pegawai2_nama'),
-                    'emel' => $request->input('pegawai2_emel'),
-                    'tel' => $request->input('pegawai2_tel'),
-                    'jabatan' => $request->input('pegawai2_jabatan'),
-                ],
-            ],
+            'pegawai' => $this->buildPegawaiPayload($request),
         ];
+    }
+
+    protected function buildPegawaiPayload(Request $request): array
+    {
+        return $this->penyediaanIklanService->normalizePegawaiMeta([
+            'pegawai1' => [
+                'nama' => $request->input('pegawai1_nama'),
+                'emel' => $request->input('pegawai1_emel'),
+                'tel' => $request->input('pegawai1_tel'),
+                'jabatan' => $request->input('pegawai1_jabatan'),
+            ],
+            'pegawai2' => $this->resolvePegawai2FromRequest($request),
+        ]);
+    }
+
+    protected function resolvePegawai2FromRequest(Request $request): array
+    {
+        $userId = $request->input('pegawai2_user_id') ?: $request->input('pegawai2_nama');
+        $tel = trim((string) $request->input('pegawai2_tel', ''));
+        $jabatan = trim((string) $request->input('pegawai2_jabatan', ''));
+        $emel = trim((string) $request->input('pegawai2_emel', ''));
+
+        if ($userId !== null && $userId !== '' && ctype_digit((string) $userId)) {
+            $user = User::query()->find((int) $userId);
+            if ($user) {
+                return [
+                    'user_id' => (int) $user->id,
+                    'nama' => $user->name,
+                    'emel' => $emel !== '' ? $emel : ($user->email ?? ''),
+                    'tel' => $tel !== '' ? $tel : ($user->tel ?? ''),
+                    'jabatan' => $jabatan !== '' ? $jabatan : ($user->department ?? ''),
+                ];
+            }
+        }
+
+        $nama = trim((string) $request->input('pegawai2_nama', ''));
+        if ($nama === '' && $emel === '' && $tel === '' && $jabatan === '') {
+            return [
+                'user_id' => null,
+                'nama' => '',
+                'emel' => '',
+                'tel' => '',
+                'jabatan' => '',
+            ];
+        }
+
+        return [
+            'user_id' => null,
+            'nama' => $nama,
+            'emel' => $emel,
+            'tel' => $tel,
+            'jabatan' => $jabatan,
+        ];
+    }
+
+    protected function pegawaiPilihanForTender(Tender $tender): array
+    {
+        $orgId = $tender->organization_unit_id ?: Auth::user()?->organization_unit_id;
+
+        if (! $orgId) {
+            return [];
+        }
+
+        return User::query()
+            ->where('organization_unit_id', $orgId)
+            ->whereNotNull('name')
+            ->where('name', '!=', '')
+            ->orderBy('name')
+            ->get(['id', 'name', 'email', 'tel', 'department'])
+            ->map(fn (User $user) => [
+                'id' => (int) $user->id,
+                'nama' => $user->name,
+                'email' => $user->email ?? '',
+                'tel' => $user->tel ?? '',
+                'jabatan' => $user->department ?? '',
+            ])
+            ->values()
+            ->all();
     }
 
     protected function parseKelulusan(Request $request, int $tenderId): array

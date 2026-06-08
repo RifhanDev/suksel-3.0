@@ -224,72 +224,12 @@
 								</h3>
 							</div>
 							<div class="card-body p-0">
-								@if ($tender->hasOfficer())
-									<div class="table-responsive">
-										<table class="table tender-info-table mb-0">
-											<thead>
-												<tr>
-													<th colspan="2" class="text-center">Pegawai Bertanggungjawab 1</th>
-													<th colspan="2" class="text-center">Pegawai Bertanggungjawab 2</th>
-												</tr>
-											</thead>
-											<tbody>
-												<tr>
-													<th>Nama</th>
-													<td>{{ data_get($tender, 'creator,name') }}</td>
-													<th>Nama</th>
-													<td>{{ data_get($tender, 'officer,name') }}</td>
-												</tr>
-												<tr>
-													<th>E-mel</th>
-													<td>{{ data_get($tender, 'creator,email') }}</td>
-													<th>E-mel</th>
-													<td>{{ data_get($tender, 'officer,email') }}</td>
-												</tr>
-												<tr>
-													<th>No. Tel</th>
-													<td>{{ data_get($tender, 'creator,tel') }}</td>
-													<th>No. Tel</th>
-													<td>{{ data_get($tender, 'officer,tel') }}</td>
-												</tr>
-												<tr>
-													<th>Jabatan</th>
-													<td>{{ data_get($tender, 'creator,department') }}</td>
-													<th>Jabatan</th>
-													<td>{{ data_get($tender, 'officer,department') }}</td>
-												</tr>
-											</tbody>
-										</table>
-									</div>
-								@else
-									<div class="table-responsive">
-										<table class="table tender-info-table mb-0">
-											<thead>
-												<tr>
-													<th colspan="2" class="text-center">Pegawai Bertanggungjawab</th>
-												</tr>
-											</thead>
-											<tbody>
-												<tr>
-													<th>Nama</th>
-													<td>{{ @$tender->creator->name }}</td>
-												</tr>
-												<tr>
-													<th>E-mel</th>
-													<td>{{ @$tender->creator->email }}</td>
-												</tr>
-												<tr>
-													<th>No. Tel</th>
-													<td>{{ @$tender->creator->tel }}</td>
-												</tr>
-												<tr>
-													<th>Jabatan</th>
-													<td>{{ @$tender->creator->department }}</td>
-												</tr>
-											</tbody>
-										</table>
-									</div>
-								@endif
+								<div class="table-responsive">
+									@include('tenders._pegawai_bertanggungjawab_table', [
+										'tableClass' => 'table tender-info-table mb-0',
+										'headerBg' => '',
+									])
+								</div>
 							</div>
 						</div>
 					</div>
