@@ -6,6 +6,7 @@ use App\Models\PenyediaanIklan;
 use App\Models\RefState;
 use App\Services\PenyediaanIklanService;
 use App\Services\StosBackendClient;
+use App\Support\TenderReviewPresenter;
 use App\Tender;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -69,7 +70,8 @@ class PenyediaanIklanController extends Controller
             }
         }
 
-        $tender->load(['tenderer', 'codes', 'creator', 'officer']);
+        $tender->load(['tenderer', 'codes.code', 'creator', 'officer', 'siteVisits']);
+        $tenderReview = TenderReviewPresenter::for($tender);
 
         if (empty($meta['kelulusan'])) {
             $meta['kelulusan'] = PenyediaanIklan::defaultKelulusan();
@@ -79,7 +81,8 @@ class PenyediaanIklanController extends Controller
             'tender',
             'country_states',
             'meta',
-            'penyediaanIklan'
+            'penyediaanIklan',
+            'tenderReview'
         ));
     }
 
