@@ -1360,6 +1360,12 @@ class TendersController extends Controller
 			return redirect('tenders/' . $tender->id)->with('error', 'Tender / Sebut Harga belum disiarkan.');
 
 		$tender->approver_id = null;
+
+		// Allow re-editing Penyediaan Iklan after unpublish.
+		if ((int) ($tender->status_process_id ?? 0) >= 5) {
+			$tender->status_process_id = 4;
+		}
+
 		$tender->save();
 
 		TenderHistory::log($tender->id, 'unpublish');
