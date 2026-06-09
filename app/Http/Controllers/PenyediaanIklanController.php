@@ -56,7 +56,9 @@ class PenyediaanIklanController extends Controller
         $meta = $stored['meta'];
         $penyediaanIklan = $stored['penyediaan_iklan'];
 
-        if ($this->stos->isConfigured()) {
+        // Prefer local DB when a record exists. STOS is only a fallback for tenders
+        // with no local draft yet — otherwise empty STOS meta would hide saved data.
+        if ($this->stos->isConfigured() && $penyediaanIklan === null) {
             try {
                 $response = $this->stos->getPenyediaanIklan($tender->id);
                 if ($response->successful()) {
@@ -167,7 +169,10 @@ class PenyediaanIklanController extends Controller
     {
         $kelulusan = $this->parseKelulusan($request, $tenderId);
 
-        $taklimat = [];
+        $existing = PenyediaanIklan::query()->where('tender_id', $tenderId)->first();
+        $existingIklan = is_array($existing?->meta) ? ($existing->meta['iklan'] ?? []) : [];
+
+        $taklimat = $existingIklan['taklimat'] ?? [];
         if ($request->filled('taklimat_rows')) {
             $decoded = json_decode($request->input('taklimat_rows'), true);
             if (is_array($decoded)) {
@@ -209,7 +214,10 @@ class PenyediaanIklanController extends Controller
                     'only_advertise' => $request->boolean('only_advertise'),
                     'district_list_rule' => $districtRules,
                 ],
-                'dokumen_sokongan' => $this->storeDokumenSokongan($request, $tenderId),
+                'dokumen_sokongan' => array_values(array_merge(
+                    $existingIklan['dokumen_sokongan'] ?? [],
+                    $this->storeDokumenSokongan($request, $tenderId)
+                )),
             ],
             'pegawai' => $this->buildPegawaiPayload($request),
         ];
