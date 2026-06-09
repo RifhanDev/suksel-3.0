@@ -96,6 +96,22 @@ class PenyediaanIklanService
     public function save(Tender $tender, array $payload, bool $submit = false): PenyediaanIklan
     {
         return DB::transaction(function () use ($tender, $payload, $submit) {
+            $existing = PenyediaanIklan::query()->where('tender_id', $tender->id)->first();
+            $previousTaklimat = is_array($existing?->meta)
+                ? ($existing->meta['iklan']['taklimat'] ?? [])
+                : [];
+
+            $taklimat = $payload['iklan']['taklimat'] ?? [];
+            $payload['iklan']['taklimat'] = $this->syncTaklimatToSiteVisits(
+                $tender,
+                $taklimat,
+                $previousTaklimat
+            );
+
+            if (count($payload['iklan']['taklimat']) > 0) {
+                Tender::query()->where('id', $tender->id)->update(['lawatan_tapak' => 1]);
+            }
+
             $record = PenyediaanIklan::query()->firstOrNew(['tender_id' => $tender->id]);
             $record->meta = $payload;
 
@@ -108,6 +124,89 @@ class PenyediaanIklanService
 
             return $record;
         });
+    }
+
+    /**
+     * Mirror Penyediaan Iklan taklimat / lawatan tapak rows into tender_visits
+     * so vendor tender pages can display them (they read siteVisits, not meta).
+     */
+    protected function syncTaklimatToSiteVisits(Tender $tender, array $taklimatRows, array $previousTaklimat): array
+    {
+        $previousIds = collect($previousTaklimat)
+            ->pluck('visit_id')
+            ->filter()
+            ->map(fn ($id) => (int) $id)
+            ->values()
+            ->all();
+
+        if ($taklimatRows === []) {
+            if ($previousIds !== []) {
+                $tender->siteVisits()->whereIn('id', $previousIds)->delete();
+            }
+
+            return [];
+        }
+
+        $keptIds = [];
+        $updatedRows = [];
+
+        foreach ($taklimatRows as $row) {
+            $datetime = $this->parseTaklimatDatetime($row['tarikh'] ?? null, $row['masa'] ?? null);
+            if ($datetime === null) {
+                continue;
+            }
+
+            $attrs = [
+                'meetpoint' => trim((string) ($row['perihal'] ?? '')) ?: '-',
+                'address' => trim((string) ($row['lokasi'] ?? '')) ?: '-',
+                'datetime' => $datetime,
+                'required' => ($row['kehadiran'] ?? '') === 'Wajib',
+            ];
+
+            $visitId = $row['visit_id'] ?? null;
+            $visit = $visitId ? $tender->siteVisits()->find($visitId) : null;
+
+            if ($visit) {
+                $visit->update($attrs);
+            } else {
+                $visit = $tender->siteVisits()->create(array_merge($attrs, [
+                    'tender_id' => $tender->id,
+                ]));
+            }
+
+            $keptIds[] = (int) $visit->id;
+            $updatedRows[] = array_merge($row, ['visit_id' => (int) $visit->id]);
+        }
+
+        $toDelete = array_diff($previousIds, $keptIds);
+        if ($toDelete !== []) {
+            $tender->siteVisits()->whereIn('id', $toDelete)->delete();
+        }
+
+        return $updatedRows;
+    }
+
+    protected function parseTaklimatDatetime(?string $date, ?string $time): ?string
+    {
+        $parsedDate = $this->parseDate($date);
+        if ($parsedDate === null) {
+            return null;
+        }
+
+        $parsedTime = trim((string) $time);
+        if ($parsedTime === '') {
+            $parsedTime = '00:00';
+        }
+
+        try {
+            return Carbon::parse($parsedDate . ' ' . $parsedTime)->format('Y-m-d H:i:s');
+        } catch (\Throwable) {
+            try {
+                return Carbon::parse($parsedDate)->startOfDay()->format('Y-m-d H:i:s');
+            } catch (\Throwable) {
+                return null;
+            }
+        }
     }
 
     protected function applyPayloadToTender(Tender $tender, array $payload): void
