@@ -186,6 +186,33 @@
 
 @php
     $iklan = $meta['iklan'] ?? [];
+    $syarat = $iklan['syarat'] ?? [];
+
+    $onlySelangor = $syarat['only_selangor'] ?? $tender->only_selangor ?? null;
+    $onlyBumiputera = array_key_exists('only_bumiputera', $syarat)
+        ? $syarat['only_bumiputera']
+        : (bool) ($tender->only_bumiputera ?? false);
+    $invitation = array_key_exists('invitation', $syarat)
+        ? $syarat['invitation']
+        : (bool) ($tender->invitation ?? false);
+    $onlyAdvertise = array_key_exists('only_advertise', $syarat)
+        ? $syarat['only_advertise']
+        : (bool) ($tender->only_advertise ?? false);
+
+    $districtRules = $syarat['district_list_rule'] ?? [];
+    if ($districtRules === [] && ! empty($tender->district_list_rule)) {
+        $decodedRules = json_decode($tender->district_list_rule, true);
+        if (is_array($decodedRules)) {
+            foreach ($decodedRules as $rule) {
+                $districtRules[] = [
+                    'district_id' => is_array($rule) ? ($rule['district_id'] ?? null) : ($rule->district_id ?? null),
+                    'state_id' => is_array($rule) ? ($rule['state_id'] ?? '0') : ($rule->state_id ?? '0'),
+                ];
+            }
+        }
+    }
+
+    $isChecked = static fn ($value): bool => filter_var($value, FILTER_VALIDATE_BOOLEAN);
 @endphp
 
     <!-- ══ STEP 1: PENYEDIAAN IKLAN ══ -->
@@ -331,15 +358,18 @@
 
                     <div class="d-flex flex-column gap-2">
                         <label class="sk-radio-card d-flex align-items-center gap-3 px-3 py-2 border rounded-2">
-                            <input type="radio" name="only_selangor" id="only_selangor1" value="1">
+                            <input type="radio" name="only_selangor" id="only_selangor1" value="1"
+                                @checked((string) $onlySelangor === '1')>
                             <span class="sk-radio-label">Syarikat Selangor Sahaja</span>
                         </label>
                         <label class="sk-radio-card d-flex align-items-center gap-3 px-3 py-2 border rounded-2">
-                            <input type="radio" name="only_selangor" id="only_selangor2" value="2">
+                            <input type="radio" name="only_selangor" id="only_selangor2" value="2"
+                                @checked((string) $onlySelangor === '2')>
                             <span class="sk-radio-label">Syarikat Selangor Dan Lain-lain Negeri</span>
                         </label>
                         <label class="sk-radio-card d-flex align-items-center gap-3 px-3 py-2 border rounded-2">
-                            <input type="radio" name="only_selangor" id="only_selangor3" value="3">
+                            <input type="radio" name="only_selangor" id="only_selangor3" value="3"
+                                @checked((string) $onlySelangor === '3')>
                             <span class="sk-radio-label">Seluruh Malaysia</span>
                         </label>
                     </div>
@@ -387,15 +417,18 @@
 
                     <div class="d-flex flex-column gap-2">
                         <label class="sk-check-row">
-                            <input type="checkbox" name="only_bumiputera" id="sk_bumi" value="1">
+                            <input type="checkbox" name="only_bumiputera" id="sk_bumi" value="1"
+                                @checked($isChecked($onlyBumiputera))>
                             <span class="sk-check-label">Bumiputera Sahaja</span>
                         </label>
                         <label class="sk-check-row">
-                            <input type="checkbox" name="invitation" id="sk_terhad" value="1">
+                            <input type="checkbox" name="invitation" id="sk_terhad" value="1"
+                                @checked($isChecked($invitation))>
                             <span class="sk-check-label">Tender Terhad</span>
                         </label>
                         <label class="sk-check-row">
-                            <input type="checkbox" name="only_advertise" id="sk_iklan" value="1">
+                            <input type="checkbox" name="only_advertise" id="sk_iklan" value="1"
+                                @checked($isChecked($onlyAdvertise))>
                             <span class="sk-check-label">Iklan Sahaja</span>
                         </label>
                     </div>
@@ -694,8 +727,12 @@ $(document).ready(function () {
         }
         if (typeof taklimatRows !== 'undefined') {
             $('#formPenyediaanIklan #taklimat_rows_hidden').remove();
-            $('<input>').attr({ type: 'hidden', id: 'taklimat_rows_hidden', name: 'taklimat_rows' })
-                .val(JSON.stringify(taklimatRows)).appendTo('#formPenyediaanIklan');
+            // Only send taklimat on step 3 (or when rows exist) so step 1/2 draft
+            // saves do not wipe previously saved lawatan tapak / taklimat data.
+            if (taklimatRows.length > 0 || iklanCurrentStep === 3) {
+                $('<input>').attr({ type: 'hidden', id: 'taklimat_rows_hidden', name: 'taklimat_rows' })
+                    .val(JSON.stringify(taklimatRows)).appendTo('#formPenyediaanIklan');
+            }
         }
         return form;
     }
@@ -972,6 +1009,43 @@ $(document).ready(function () {
         $row.prev('.sk-atau-divider').remove();
         $row.remove();
     });
+
+    var savedDistrictRules = @json($districtRules);
+    var savedOnlySelangor = @json($onlySelangor !== null ? (string) $onlySelangor : null);
+
+    function applyDistrictRule(idx, rule) {
+        if (!rule || rule.district_id === null || rule.district_id === '') {
+            return;
+        }
+
+        var suffix = idx > 1 ? String(idx) : '';
+        var $district = $('#district_id_new' + suffix);
+        var $state = $('#state_id_new' + suffix);
+
+        $district.val(String(rule.district_id)).trigger('change');
+        if (String(rule.district_id) === '0' && $state.length) {
+            $state.val(rule.state_id ? String(rule.state_id) : '').show();
+        }
+    }
+
+    function restoreSyaratKhas() {
+        if (savedOnlySelangor) {
+            $('[name="only_selangor"][value="' + savedOnlySelangor + '"]').prop('checked', true).trigger('change');
+        }
+
+        if (!savedDistrictRules.length || !savedOnlySelangor || savedOnlySelangor === '3') {
+            return;
+        }
+
+        applyDistrictRule(1, savedDistrictRules[0]);
+
+        for (var i = 1; i < savedDistrictRules.length; i++) {
+            $('#btnTambahDaerah').trigger('click');
+            applyDistrictRule(skRowCounter, savedDistrictRules[i]);
+        }
+    }
+
+    restoreSyaratKhas();
 
     /* ── Dokumen Sokongan Terawal: FileUpload zone (init when step 2 shown) ── */
     var fileUploadInitialised = false;
