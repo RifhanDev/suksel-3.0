@@ -241,6 +241,7 @@
                 <div class="col-md-4">
                     <label class="form-label fw-semibold">Tempoh Iklan (Hari)</label>
                     <input type="number" class="form-control form-control-lg" name="tempoh_iklan"
+                        value="{{ $iklan['tempoh_iklan'] ?? '' }}"
                         min="0" placeholder="cth: 14">
                 </div>
 
@@ -248,11 +249,13 @@
                 <div class="col-md-4">
                     <label class="form-label fw-semibold">Tempoh Sah Laku Tawaran (Hari)</label>
                     <input type="number" class="form-control form-control-lg" name="tempoh_sah_laku"
+                        value="{{ $iklan['tempoh_sah_laku'] ?? '' }}"
                         min="0" placeholder="cth: 90">
                 </div>
                 <div class="col-md-4">
                     <label class="form-label fw-semibold">Sah Laku Tawaran Tamat</label>
                     <input type="text" class="form-control form-control-lg datepicker" name="sah_laku_tamat"
+                        value="{{ $iklan['sah_laku_tamat'] ?? '' }}"
                         placeholder="Pilih tarikh..." readonly>
                 </div>
 
@@ -260,7 +263,8 @@
                 <div class="col-12 mt-1">
                     <label class="form-label fw-semibold">Kebenaran Khas</label>
                     <label class="kebenaran-check-card">
-                        <input type="checkbox" name="kebenaran_khas" value="1">
+                        <input type="checkbox" name="kebenaran_khas" value="1"
+                            @checked(!empty($iklan['kebenaran_khas']))>
                         <div>
                             <div class="kc-label">Kebenaran Khas Diperlukan</div>
                             <div class="kc-desc">Tandakan jika tender ini memerlukan kebenaran khas sebelum iklan diterbitkan.</div>
@@ -641,6 +645,7 @@ $(document).ready(function () {
 
         $('#iklanStepperWrapper').attr('data-step', step);
         iklanCurrentStep = step;
+        sessionStorage.setItem('penyediaanIklanStep_{{ $tender->id }}', String(step));
 
         /* Init step 2 components once */
         if (step === 2) { initFileUpload(); }
@@ -680,26 +685,87 @@ $(document).ready(function () {
         if (offset) $('html, body').animate({ scrollTop: offset.top - 80 }, 200);
     }
 
-    /* ── Sync CKEditor + serialize taklimat, then show success modal ── */
-    $('#iklanBtnSimpan').on('click', function (e) {
-        e.preventDefault();
+    function preparePenyediaanIklanForm() {
         var form = document.getElementById('formPenyediaanIklan');
-        if (!form) return;
+        if (!form) return null;
         form.action = '{{ route("penyediaanIklan.simpan", $tender) }}';
         if (typeof CKEDITOR !== 'undefined' && CKEDITOR.instances['syarat_tender']) {
             CKEDITOR.instances['syarat_tender'].updateElement();
         }
-        $('#formPenyediaanIklan #taklimat_rows_hidden').remove();
-        $('<input>').attr({ type: 'hidden', id: 'taklimat_rows_hidden', name: 'taklimat_rows' })
-            .val(JSON.stringify(taklimatRows)).appendTo('#formPenyediaanIklan');
+        if (typeof taklimatRows !== 'undefined') {
+            $('#formPenyediaanIklan #taklimat_rows_hidden').remove();
+            $('<input>').attr({ type: 'hidden', id: 'taklimat_rows_hidden', name: 'taklimat_rows' })
+                .val(JSON.stringify(taklimatRows)).appendTo('#formPenyediaanIklan');
+        }
+        return form;
+    }
+
+    function savePenyediaanIklanDraft(done) {
+        var form = preparePenyediaanIklanForm();
+        if (!form) return;
+
+        var $btn = $(document.activeElement);
+        $btn.prop('disabled', true);
+
+        $.ajax({
+            url: form.action,
+            method: 'POST',
+            data: new FormData(form),
+            processData: false,
+            contentType: false,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json',
+            },
+            success: function () {
+                if (typeof done === 'function') done();
+            },
+            error: function (xhr) {
+                var message = (xhr.responseJSON && xhr.responseJSON.message)
+                    ? xhr.responseJSON.message
+                    : 'Gagal menyimpan maklumat iklan.';
+                alert(message);
+            },
+            complete: function () {
+                $btn.prop('disabled', false);
+            },
+        });
+    }
+
+    /* ── Sync CKEditor + serialize taklimat, then show success modal ── */
+    $('#iklanBtnSimpan').on('click', function (e) {
+        e.preventDefault();
+        var form = preparePenyediaanIklanForm();
+        if (!form) return;
         form.submit();
     });
 
     /* ── Stepper button wiring ── */
-    $('#iklanBtnNext1').on('click', function () { iklanGoToStep(2); });
+    $('#iklanBtnNext1').on('click', function () {
+        savePenyediaanIklanDraft(function () { iklanGoToStep(2); });
+    });
     $('#iklanBtnBack2').on('click', function () { iklanGoToStep(1); });
-    $('#iklanBtnNext2').on('click', function () { iklanGoToStep(3); });
+    $('#iklanBtnNext2').on('click', function () {
+        savePenyediaanIklanDraft(function () { iklanGoToStep(3); });
+    });
     $('#iklanBtnBack3').on('click', function () { iklanGoToStep(2); });
+
+    var savedIklanStep = sessionStorage.getItem('penyediaanIklanStep_{{ $tender->id }}');
+    if (savedIklanStep && $('#tab-iklan-btn').hasClass('active')) {
+        var stepNum = parseInt(savedIklanStep, 10);
+        if (stepNum >= 1 && stepNum <= iklanTotalSteps) {
+            iklanGoToStep(stepNum);
+        }
+    }
+    $('#tab-iklan-btn').on('shown.bs.tab', function () {
+        var step = sessionStorage.getItem('penyediaanIklanStep_{{ $tender->id }}');
+        if (step) {
+            var stepNum = parseInt(step, 10);
+            if (stepNum >= 1 && stepNum <= iklanTotalSteps) {
+                iklanGoToStep(stepNum);
+            }
+        }
+    });
 
     /* ── Datepicker (step 1 + modal) ── */
     $('#iklanStep1Content .datepicker').datepicker({

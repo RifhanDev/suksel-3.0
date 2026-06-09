@@ -218,6 +218,11 @@ $(document).ready(function () {
     var tabs = ['#tab-maklumat-btn', '#tab-kelulusan-btn', '#tab-iklan-btn', '#tab-pegawai-btn', '#tab-dokumen-btn'];
     var currentTab = 0;
 
+    if (new URLSearchParams(window.location.search).get('tab') === 'iklan') {
+        currentTab = 2;
+        $('#tab-iklan-btn').tab('show');
+    }
+
     function updateNavButtons() {
         /* Sebelum: hide on first tab */
         if (currentTab === 0) {

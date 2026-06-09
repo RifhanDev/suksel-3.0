@@ -140,13 +140,15 @@ class PenyediaanIklanController extends Controller
                 return response()->json([
                     'success' => true,
                     'message' => $message,
-                    'redirect' => $submit ? route('tenders.index') : route('penyediaanIklan.show', $tender->id),
+                    'redirect' => $submit
+                        ? route('tenders.index')
+                        : route('penyediaanIklan.show', $tender->id) . '?tab=iklan',
                 ]);
             }
 
             $redirectUrl = $submit
                 ? route('tenders.index')
-                : route('penyediaanIklan.show', $tender->id);
+                : route('penyediaanIklan.show', $tender->id) . '?tab=iklan';
 
             /** @var \Illuminate\Http\RedirectResponse $redirect */
             $redirect = redirect()->to($redirectUrl);
