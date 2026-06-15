@@ -151,7 +151,7 @@
     </div>
 
     <div class="tender-info">
-        <strong>No Tender:</strong> {{ $tender->ref_number ?? '-' }} &nbsp;&nbsp;|&nbsp;&nbsp;
+        <strong>No {{ $tender->procurement_label }}:</strong> {{ $tender->ref_number ?? '-' }} &nbsp;&nbsp;|&nbsp;&nbsp;
         <strong>PTJ:</strong> {{ optional(optional($tender)->tenderer)->name ?? '-' }} &nbsp;&nbsp;|&nbsp;&nbsp;
         <strong>Status:</strong> {{ $tender->status ?? '-' }}
     </div>

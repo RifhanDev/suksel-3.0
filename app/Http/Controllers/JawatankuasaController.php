@@ -269,10 +269,13 @@ class JawatankuasaController extends Controller
         $tenderUuid = $request->input('tender');
 
         if (empty($tenderUuid)) {
-            abort(404, 'Tender tidak ditemui.');
+            abort(404, 'Tender/Sebut Harga tidak ditemui.');
         }
 
-        $tender = Tender::with('tenderer')->where('uuid', $tenderUuid)->firstOrFail();
+        $tender = Tender::with('tenderer')->where('uuid', $tenderUuid)->first();
+        if (!$tender) {
+            abort(404, 'Tender/Sebut Harga tidak ditemui.');
+        }
 
         $committeeDrafts = Jawatankuasa::with('user')
             ->where('tender_id', $tender->id)
@@ -373,6 +376,7 @@ class JawatankuasaController extends Controller
             $to = trim($member->user->email);
             $subject = 'Pemakluman Pelantikan ' . $jenisLabel . ' - ' . ($tender->ref_number ?? '');
             $viewParams = [
+                'tender' => $tender,
                 'emailUser' => $member->user,
                 'jenisLabel' => $jenisLabel,
                 'perananLabel' => $perananLabel,

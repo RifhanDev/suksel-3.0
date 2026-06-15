@@ -158,6 +158,13 @@ class Tender extends Model
 		self::$rules = self::$_rules[$name];
 	}
 
+	public function getProcurementLabelAttribute()
+	{
+		return $this->type === 'quotation'
+			? 'Sebut Harga'
+			: 'Tender';
+	}
+
 	/**
 	 * ACL
 	 */

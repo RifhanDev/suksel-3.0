@@ -61,10 +61,20 @@
 
                     <div class="row g-3 pb-3">
 
+                        <div class="col-12 col-sm-12 col-lg-12">
+                            <div class="d-flex flex-column gap-1">
+                                <span class="text-muted fw-semibold text-uppercase"
+                                    style="font-size:0.67rem; letter-spacing:0.5px;">Nama {{ $tender->procurement_label }}</span>
+                                <span class="fw-semibold text-dark" style="font-size:0.88rem;">
+                                    <strong>{{ $tender->name ?? request('tender_id', '-') }}</strong>
+                                </span>
+                            </div>
+                        </div>
+
                         <div class="col-12 col-sm-6 col-lg-4">
                             <div class="d-flex flex-column gap-1">
                                 <span class="text-muted fw-semibold text-uppercase"
-                                    style="font-size:0.67rem; letter-spacing:0.5px;">No. Tender</span>
+                                    style="font-size:0.67rem; letter-spacing:0.5px;">No. {{ $tender->procurement_label }}</span>
                                 <span class="fw-semibold text-dark" style="font-size:0.88rem;">
                                     {{ $tender->ref_number ?? request('tender_id', '-') }}
                                 </span>
@@ -535,7 +545,7 @@
 
         function saveAllDrafts(triggerButton, successModal) {
             if (!tenderUuid) {
-                alert('Tender tidak ditemui. Sila buka semula halaman menggunakan pautan tender.');
+                alert('{{ $tender->procurement_label }} tidak ditemui. Sila buka semula halaman menggunakan pautan {{ strtolower($tender->procurement_label) }}.');
                 return;
             }
 
@@ -632,7 +642,7 @@
             document.querySelectorAll('.btn-hantar').forEach(btn => {
                 btn.addEventListener('click', function() {
                     if (!tenderUuid) {
-                        alert('Tender tidak ditemui. Sila buka semula halaman menggunakan pautan tender.');
+                        alert('{{ $tender->procurement_label }} tidak ditemui. Sila buka semula halaman menggunakan pautan {{ strtolower($tender->procurement_label) }}.');
                         return;
                     }
 
@@ -740,7 +750,7 @@
         // GENERATE REPORT PDF
         function printLaporan() {
             if (!tenderUuid) {
-                alert('Tender tidak ditemui. Sila buka semula halaman menggunakan pautan tender.');
+                alert('{{ $tender->procurement_label }} tidak ditemui. Sila buka semula halaman menggunakan pautan {{ strtolower($tender->procurement_label) }}.');
                 return;
             }
             const url = @json(route('jawatankuasa.laporan')) + '?tender=' + encodeURIComponent(tenderUuid);

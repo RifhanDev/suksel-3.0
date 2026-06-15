@@ -235,10 +235,10 @@ Route::view('/senarai-semak', 'newModule.jawatankuasaSpesifikasi.index')->name('
 
 // senaraiKewanganKerja routes are auth-protected — defined inside middleware group below
 // penyediaanSpekTender routes are auth-protected — defined inside middleware group below
-Route::view('/lembaran-imbangan', 'newModule.jawatankuasaSpesifikasi.form_lembaran_imbangan')->name('lembaranImbangan');
-Route::view('/bon-atau-saham', 'newModule.jawatankuasaSpesifikasi.form_bon_saham')->name('bonAtauSaham');
+Route::view('/lembaran-imbangan/{tenderUuid?}', 'newModule.jawatankuasaSpesifikasi.form_lembaran_imbangan')->name('lembaranImbangan');
+Route::view('/bon-atau-saham/{tenderUuid?}', 'newModule.jawatankuasaSpesifikasi.form_bon_saham')->name('bonAtauSaham');
 Route::post('/bon-atau-saham/submit', [JawatankuasaController::class, 'storeBonSaham'])->middleware(['auth'])->name('jawatankuasa.hantarBonSaham');
-Route::view('/prestasi-kerja-semasa-petender', 'newModule.jawatankuasaSpesifikasi.form_prestasi_kerja_semasa_petender')->name('prestasiKerjaSemasa');
+Route::view('/prestasi-kerja-semasa-petender/{tenderUuid?}', 'newModule.jawatankuasaSpesifikasi.form_prestasi_kerja_semasa_petender')->name('prestasiKerjaSemasa');
 Route::post('/prestasi-kerja-semasa-petender/submit', [JawatankuasaController::class, 'storePrestasiKerjaSemasa'])->middleware(['auth'])->name('jawatankuasa.hantarPrestasiKerjaSemasa');
 Route::view('/templat-spesifikasi', 'newModule.jawatankuasaSpesifikasi.form_cipta_spesifikasi')->name('spesifikasiForm');
 Route::view('/pengalaman-kerja', 'newModule.jawatankuasaSpesifikasi.form_pengalaman_kerja')->name('pgmnKerjaForm');

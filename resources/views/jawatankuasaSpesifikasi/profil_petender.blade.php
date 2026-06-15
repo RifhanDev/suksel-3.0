@@ -282,7 +282,10 @@
         </div>
 
         @php
-            $kembaliUrl = route('senaraiKewanganBekalan', $tender->uuid);
+            $isKerja = (isset($tender->kategori_perolehan_name) && strtolower($tender->kategori_perolehan_name) === 'kerja');
+            $kembaliUrl = $isKerja 
+                ? route('senaraiKewanganKerja', $tender->uuid) 
+                : route('senaraiKewanganBekalan', $tender->uuid);
         @endphp
 
         <!-- ===================== ACTION BUTTONS ===================== -->
@@ -666,7 +669,7 @@ $(document).ready(function () {
             if (res && res.success) {
                 $('#loading-text').text('Berjaya disimpan! Mengalih...');
                 $('#loading-overlay').addClass('success');
-                window.location.href = '{{ url("/senarai-kewangan-bekalan/" . $tender->uuid) }}';
+                window.location.href = '{{ $kembaliUrl }}';
             } else {
                 unblockUI();
                 alert(res.message || 'Ralat semasa menyimpan.');

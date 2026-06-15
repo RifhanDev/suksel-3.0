@@ -497,7 +497,8 @@ $(document).ready(function () {
 
         var kemaskiniButton = '-';
 
-        if (data.tajuk === 'Penyata Bulanan / Akaun Bank') {
+        // if (data.tajuk === 'Penyata Bulanan / Akaun Bank') {
+        if (data.tindakanUrl) {
             kemaskiniButton =
                 '<a href="' + data.tindakanUrl + '" class="btn btn-sm btn-warning d-inline-flex align-items-center justify-content-center p-1" style="width:30px;height:30px;" title="Kemaskini">' +
                 EDIT_ICON +
