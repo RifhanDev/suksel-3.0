@@ -24,7 +24,7 @@
                 <span class="text-muted fw-semibold text-uppercase d-block mb-1"
                     style="font-size: 0.67rem; letter-spacing: 0.5px;">Tajuk Tender</span>
                 <h5 class="fw-bold text-dark mb-0" style="line-height: 1.45; font-size: 1rem;">
-                    PROJEK MENAIKTARAF JALAN PELABUHAN UTARA DARI KLANG CONTAINER TERMINAL
+                    {{ $tender->name ?? '-' }}
                     <span class="fw-normal text-muted fst-italic" style="font-size: 0.85rem;">(Kerja)</span>
                 </h5>
             </div>
@@ -34,27 +34,40 @@
                 <div class="col-6 col-md-3">
                     <span class="text-muted fw-semibold text-uppercase d-block mb-1"
                         style="font-size: 0.67rem; letter-spacing: 0.5px;">No. Tender</span>
-                    <span class="fw-semibold text-dark" style="font-size: 0.875rem;">SUKSEL/PERT/2026/001</span>
+                    <span class="fw-semibold text-dark" style="font-size: 0.875rem;">
+                        {{ $tender->no_tender ?: ($tender->ref_number ?? '-') }}
+                    </span>
                 </div>
                 <div class="col-6 col-md-3">
                     <span class="text-muted fw-semibold text-uppercase d-block mb-1"
                         style="font-size: 0.67rem; letter-spacing: 0.5px;">PTJ</span>
-                    <span class="fw-semibold text-dark" style="font-size: 0.875rem;">100-007</span>
+                    <span class="fw-semibold text-dark" style="font-size: 0.875rem;">
+                        {{ $tender->tenderer->name ?? '-' }}
+                    </span>
                 </div>
                 <div class="col-12 col-md-6 d-md-flex justify-content-md-end align-items-md-center">
-                    <span class="d-inline-flex align-items-center gap-2 px-3 py-2 rounded-2 fw-semibold"
-                        style="background: #fef9c3; color: #854d0e; font-size: 0.8rem; border: 1px solid #fde68a;">
-                        <span class="d-inline-block rounded-circle"
-                            style="width:7px;height:7px;background:#ca8a04;flex-shrink:0;"></span>
-                        Dalam Proses
-                    </span>
+                    @if(isset($bonSaham) && $bonSaham->status === 'submitted')
+                        <span id="status-badge" class="d-inline-flex align-items-center gap-2 px-3 py-2 rounded-2 fw-semibold"
+                            style="background: #dcfce7; color: #166534; font-size: 0.8rem; border: 1px solid #bbf7d0;">
+                            <span class="d-inline-block rounded-circle"
+                                style="width:7px;height:7px;background:#16a34a;flex-shrink:0;"></span>
+                            Telah Dihantar
+                        </span>
+                    @else
+                        <span id="status-badge" class="d-inline-flex align-items-center gap-2 px-3 py-2 rounded-2 fw-semibold"
+                            style="background: #fef9c3; color: #854d0e; font-size: 0.8rem; border: 1px solid #fde68a;">
+                            <span class="d-inline-block rounded-circle"
+                                style="width:7px;height:7px;background:#ca8a04;flex-shrink:0;"></span>
+                            Dalam Proses
+                        </span>
+                    @endif
                 </div>
             </div>
 
         </div>
     </div>
 
-    <form id="form-bon-saham" action="{{ route('jawatankuasa.hantarBonSaham') }}" method="POST">
+    <form id="form-bon-saham" action="{{ route('bonAtauSaham.store', $tender->uuid) }}" method="POST">
     @csrf
 
         <!-- ===================== SECTION: SAHAM ATAU BON ===================== -->
@@ -77,46 +90,105 @@
 
                 <!-- Akaun rows container -->
                 <div id="akaun-list">
-                    <!-- Akaun 1 -->
-                    <div class="akaun-item mb-3 p-3 rounded-2" style="border:1px solid #e2e8f0;" data-akaun="1">
-                        <span class="fw-bold text-dark d-block mb-3" style="font-size:0.9rem;">Akaun 1</span>
+                    @if(isset($bonSaham) && $bonSaham->accounts->isNotEmpty())
+                        @foreach($bonSaham->accounts as $index => $account)
+                            <div class="akaun-item mb-3 p-3 rounded-2" style="border:1px solid #e2e8f0;" data-akaun="{{ $index + 1 }}">
+                                <div class="d-flex align-items-center justify-content-between mb-3">
+                                    <span class="fw-bold text-dark" style="font-size:0.9rem;">Akaun {{ $index + 1 }}</span>
+                                    @if($index > 0)
+                                        <button type="button" class="btn btn-sm btn-hapus-akaun d-inline-flex align-items-center gap-1"
+                                            style="background:#fee2e2;color:#ef4444;border:none;border-radius:6px;padding:4px 10px;font-size:0.78rem;">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                                <polyline points="3 6 5 6 21 6"></polyline>
+                                                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+                                                <path d="M10 11v6"></path><path d="M14 11v6"></path>
+                                                <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>
+                                            </svg>
+                                            Buang
+                                        </button>
+                                    @endif
+                                </div>
 
-                        <!-- Info note -->
-                        <div class="rounded-2 px-3 py-2 mb-3 d-inline-flex align-items-center gap-2"
-                            style="background:#eff6ff; border:1px solid #bfdbfe; font-size:0.78rem; color:#1e40af;">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
-                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0">
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <line x1="12" y1="16" x2="12" y2="12"></line>
-                                <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                            </svg>
-                            Perlu diisi oleh Petender
-                        </div>
+                                <!-- Info note -->
+                                <div class="rounded-2 px-3 py-2 mb-3 d-inline-flex align-items-center gap-2"
+                                    style="background:#eff6ff; border:1px solid #bfdbfe; font-size:0.78rem; color:#1e40af;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                    </svg>
+                                    Perlu diisi oleh Petender
+                                </div>
 
-                        <div class="row g-3">
-                            <div class="col-12 col-md-6">
-                                <label class="form-label fw-semibold small">Bank / Institusi</label>
-                                <select name="bank_institusi[]" class="form-select form-select-sm">
-                                    <option value="">— Sila pilih —</option>
-                                    <option value="maybank">Maybank</option>
-                                    <option value="cimb">CIMB Bank</option>
-                                    <option value="publicbank">Public Bank</option>
-                                    <option value="rhb">RHB Bank</option>
-                                    <option value="hongleong">Hong Leong Bank</option>
-                                    <option value="ambank">AmBank</option>
-                                    <option value="bsn">Bank Simpanan Nasional (BSN)</option>
-                                    <option value="bkr">Bank Kerjasama Rakyat</option>
-                                    <option value="affin">Affin Bank</option>
-                                    <option value="agro">Agrobank</option>
-                                    <option value="lain">Lain-lain</option>
-                                </select>
+                                <div class="row g-3">
+                                    <div class="col-12 col-md-6">
+                                        <label class="form-label fw-semibold small">Bank / Institusi</label>
+                                        <select name="bank_institusi[]" class="form-select form-select-sm">
+                                            <option value="">— Sila pilih —</option>
+                                            <option value="maybank" {{ $account->bank_institusi == 'maybank' ? 'selected' : '' }}>Maybank</option>
+                                            <option value="cimb" {{ $account->bank_institusi == 'cimb' ? 'selected' : '' }}>CIMB Bank</option>
+                                            <option value="publicbank" {{ $account->bank_institusi == 'publicbank' ? 'selected' : '' }}>Public Bank</option>
+                                            <option value="rhb" {{ $account->bank_institusi == 'rhb' ? 'selected' : '' }}>RHB Bank</option>
+                                            <option value="hongleong" {{ $account->bank_institusi == 'hongleong' ? 'selected' : '' }}>Hong Leong Bank</option>
+                                            <option value="ambank" {{ $account->bank_institusi == 'ambank' ? 'selected' : '' }}>AmBank</option>
+                                            <option value="bsn" {{ $account->bank_institusi == 'bsn' ? 'selected' : '' }}>Bank Simpanan Nasional (BSN)</option>
+                                            <option value="bkr" {{ $account->bank_institusi == 'bkr' ? 'selected' : '' }}>Bank Kerjasama Rakyat</option>
+                                            <option value="affin" {{ $account->bank_institusi == 'affin' ? 'selected' : '' }}>Affin Bank</option>
+                                            <option value="agro" {{ $account->bank_institusi == 'agro' ? 'selected' : '' }}>Agrobank</option>
+                                            <option value="lain" {{ $account->bank_institusi == 'lain' ? 'selected' : '' }}>Lain-lain</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-12 col-md-6">
+                                        <label class="form-label fw-semibold small">Jumlah Deposit Tetap / Saham / Bon (RM)</label>
+                                        <input type="text" name="jumlah_deposit[]" class="form-control form-control-sm text-end amount-input jumlah-deposit" placeholder="0.00" value="{{ number_format($account->jumlah_deposit, 2) }}">
+                                    </div>
+                                </div>
                             </div>
-                            <div class="col-12 col-md-6">
-                                <label class="form-label fw-semibold small">Jumlah Deposit Tetap / Saham / Bon (RM)</label>
-                                <input type="text" name="jumlah_deposit[]" class="form-control form-control-sm text-end amount-input jumlah-deposit" placeholder="0.00">
+                        @endforeach
+                    @else
+                        <!-- Default empty Akaun 1 -->
+                        <div class="akaun-item mb-3 p-3 rounded-2" style="border:1px solid #e2e8f0;" data-akaun="1">
+                            <span class="fw-bold text-dark d-block mb-3" style="font-size:0.9rem;">Akaun 1</span>
+
+                            <!-- Info note -->
+                            <div class="rounded-2 px-3 py-2 mb-3 d-inline-flex align-items-center gap-2"
+                                style="background:#eff6ff; border:1px solid #bfdbfe; font-size:0.78rem; color:#1e40af;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="12" y1="16" x2="12" y2="12"></line>
+                                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                </svg>
+                                Perlu diisi oleh Petender
+                            </div>
+
+                            <div class="row g-3">
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label fw-semibold small">Bank / Institusi</label>
+                                    <select name="bank_institusi[]" class="form-select form-select-sm">
+                                        <option value="">— Sila pilih —</option>
+                                        <option value="maybank">Maybank</option>
+                                        <option value="cimb">CIMB Bank</option>
+                                        <option value="publicbank">Public Bank</option>
+                                        <option value="rhb">RHB Bank</option>
+                                        <option value="hongleong">Hong Leong Bank</option>
+                                        <option value="ambank">AmBank</option>
+                                        <option value="bsn">Bank Simpanan Nasional (BSN)</option>
+                                        <option value="bkr">Bank Kerjasama Rakyat</option>
+                                        <option value="affin">Affin Bank</option>
+                                        <option value="agro">Agrobank</option>
+                                        <option value="lain">Lain-lain</option>
+                                    </select>
+                                </div>
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label fw-semibold small">Jumlah Deposit Tetap / Saham / Bon (RM)</label>
+                                    <input type="text" name="jumlah_deposit[]" class="form-control form-control-sm text-end amount-input jumlah-deposit" placeholder="0.00">
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    @endif
                 </div>
 
                 <!-- Tambah Akaun -->
@@ -137,8 +209,10 @@
                         <div class="d-flex align-items-center justify-content-between py-2 px-3 rounded-2 border-top mt-2"
                             style="background:#f8fafc; border:1px solid #e2e8f0 !important;">
                             <span class="fw-semibold text-muted" style="font-size:0.82rem;">Jumlah Keseluruhan Deposit Tetap / Saham / Bon (RM)</span>
-                            <span class="fw-bold text-dark ms-3 flex-shrink-0" id="jumlah-keseluruhan" style="font-size:1rem;">0.00</span>
-                            <input type="hidden" name="jumlah_keseluruhan" id="jumlah-keseluruhan-input" value="0">
+                            <span class="fw-bold text-dark ms-3 flex-shrink-0" id="jumlah-keseluruhan" style="font-size:1rem;">
+                                {{ isset($bonSaham) ? number_format($bonSaham->jumlah_keseluruhan, 2) : '0.00' }}
+                            </span>
+                            <input type="hidden" name="jumlah_keseluruhan" id="jumlah-keseluruhan-input" value="{{ isset($bonSaham) ? $bonSaham->jumlah_keseluruhan : '0.00' }}">
                         </div>
                     </div>
                 </div>
@@ -188,7 +262,7 @@
 <script>
 $(document).ready(function () {
 
-    var akaunCount = 1;
+    var akaunCount = {{ isset($bonSaham) && $bonSaham->accounts->isNotEmpty() ? $bonSaham->accounts->count() : 1 }};
 
     // ── Bank options (reused when building new rows) ─────────────────────────
     var bankOptions =

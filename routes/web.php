@@ -89,6 +89,9 @@ use App\Http\Controllers\FinancialChecklistController;
 use App\Http\Controllers\SpecificationPricingController;
 use App\Http\Controllers\ProfilPetenderController;
 use App\Http\Controllers\PenyataBankController;
+use App\Http\Controllers\LembaranImbanganController;
+use App\Http\Controllers\BonSahamController;
+use App\Http\Controllers\TenderPrestasiKerjaController;
 use App\Http\Controllers\CutOffController;
 use App\Http\Controllers\JawatankuasaPerolehanController;
 use App\Http\Controllers\PenilaianKewanganController;
@@ -235,11 +238,11 @@ Route::view('/senarai-semak', 'newModule.jawatankuasaSpesifikasi.index')->name('
 
 // senaraiKewanganKerja routes are auth-protected — defined inside middleware group below
 // penyediaanSpekTender routes are auth-protected — defined inside middleware group below
-Route::view('/lembaran-imbangan/{tenderUuid?}', 'newModule.jawatankuasaSpesifikasi.form_lembaran_imbangan')->name('lembaranImbangan');
-Route::view('/bon-atau-saham/{tenderUuid?}', 'newModule.jawatankuasaSpesifikasi.form_bon_saham')->name('bonAtauSaham');
-Route::post('/bon-atau-saham/submit', [JawatankuasaController::class, 'storeBonSaham'])->middleware(['auth'])->name('jawatankuasa.hantarBonSaham');
-Route::view('/prestasi-kerja-semasa-petender/{tenderUuid?}', 'newModule.jawatankuasaSpesifikasi.form_prestasi_kerja_semasa_petender')->name('prestasiKerjaSemasa');
-Route::post('/prestasi-kerja-semasa-petender/submit', [JawatankuasaController::class, 'storePrestasiKerjaSemasa'])->middleware(['auth'])->name('jawatankuasa.hantarPrestasiKerjaSemasa');
+// Lembaran Imbangan routes are registered inside auth group below
+// Route::view('/bon-atau-saham/{tenderUuid?}', 'newModule.jawatankuasaSpesifikasi.form_bon_saham')->name('bonAtauSaham');
+// Route::post('/bon-atau-saham/submit', [JawatankuasaController::class, 'storeBonSaham'])->middleware(['auth'])->name('jawatankuasa.hantarBonSaham');
+// Route::view('/prestasi-kerja-semasa-petender/{tenderUuid?}', 'newModule.jawatankuasaSpesifikasi.form_prestasi_kerja_semasa_petender')->name('prestasiKerjaSemasa');
+// Route::post('/prestasi-kerja-semasa-petender/submit', [JawatankuasaController::class, 'storePrestasiKerjaSemasa'])->middleware(['auth'])->name('jawatankuasa.hantarPrestasiKerjaSemasa');
 Route::view('/templat-spesifikasi', 'newModule.jawatankuasaSpesifikasi.form_cipta_spesifikasi')->name('spesifikasiForm');
 Route::view('/pengalaman-kerja', 'newModule.jawatankuasaSpesifikasi.form_pengalaman_kerja')->name('pgmnKerjaForm');
 Route::post('/pengalaman-kerja/simpan', [JawatankuasaController::class, 'simpanPengalamanKerja'])->name('jawatankuasa.simpanPengalamanKerja');
@@ -359,6 +362,17 @@ Route::middleware(['auth'])->group(function ()
 	Route::post('/penyata-bank/{tenderUuid}/selesai', [PenyataBankController::class, 'submit'])->name('penyataBank.submit')->middleware(['auth']);
 	Route::post('/penyata-bank/{tenderUuid}/fail', [PenyataBankController::class, 'uploadFile'])->name('penyataBank.uploadFile')->middleware(['auth']);
 	Route::delete('/penyata-bank-fail/{fileUuid}', [PenyataBankController::class, 'deleteFile'])->name('penyataBank.deleteFile')->middleware(['auth']);
+
+	Route::get('/lembaran-imbangan/{tenderUuid}', [LembaranImbanganController::class, 'index'])->name('lembaranImbangan');
+	Route::post('/lembaran-imbangan/{tenderUuid}', [LembaranImbanganController::class, 'store'])->name('lembaranImbangan.store');
+	Route::post('/lembaran-imbangan/{tenderUuid}/selesai', [LembaranImbanganController::class, 'submit'])->name('lembaranImbangan.submit');
+
+	Route::get('/bon-atau-saham/{tenderUuid}', [BonSahamController::class, 'index'])->name('bonAtauSaham');
+	Route::post('/bon-atau-saham/{tenderUuid}', [BonSahamController::class, 'store'])->name('bonAtauSaham.store');
+
+	Route::get('/prestasi-kerja-semasa-petender/{tenderUuid}', [TenderPrestasiKerjaController::class, 'index'])->name('prestasiKerjaSemasa');
+	Route::post('/prestasi-kerja-semasa-petender/{tenderUuid}', [TenderPrestasiKerjaController::class, 'store'])->name('prestasiKerjaSemasa.store');
+	Route::delete('/prestasi-kerja-semasa-petender/fail/{fileUuid}', [TenderPrestasiKerjaController::class, 'deleteFile'])->name('prestasiKerjaSemasa.deleteFile');
 	//////////////////////////
 
 	// Route::get('tender/select', [TendersController::class, 'select']);

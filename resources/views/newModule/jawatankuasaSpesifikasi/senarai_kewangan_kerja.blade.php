@@ -458,13 +458,14 @@ $(document).ready(function () {
                     mekanisma:             'Borang Atas Talian',
                     tindakanPembekal:      'Kunci Masuk',
                     skema:                 item.score || 0,
-                    status:                (item.status === 'submitted' || (item.score || 0) > 0) ? 'Selesai' : 'Draf',
-                    statusClass:           (item.status === 'submitted' || (item.score || 0) > 0) ? 'badge-status-success' : 'badge-status-warning',
+                    status:                item.status === 'submitted' ? 'Selesai' : 'Draf',
+                    statusClass:           item.status === 'submitted' ? 'badge-status-success' : 'badge-status-warning',
                     tindakanUrl:           item.action_url + '/' + TENDER_UUID,
                     score:                 item.score || 0,
                     standard_item_uuid:    item.standard_item_uuid || '',
                     spesifikasi_item_uuid: item.spesifikasi_item_uuid || '',
                     statusKey:             item.status || 'draft',
+                    form_updated:          item.form_updated ?? true,
                 });
             } else {
                 $tr = buildEditableRow(item);
@@ -475,38 +476,22 @@ $(document).ready(function () {
         updateSkemaMaksima();
     }
 
-    // ── Build a locked "initial" row (borang atas talian items) ──────────────
-    // function buildInitialRow(data) {
-    //     var statusVal = (data.score > 0) ? 'submitted' : (data.statusKey || 'draft');
-    //     return $(
-    //         '<tr class="initial-row" data-uuid="' + (data.uuid || '') + '" data-source="borang_atas_talian" data-standard-item-uuid="' + (data.standard_item_uuid || '') + '" data-spesifikasi-item-uuid="' + (data.spesifikasi_item_uuid || '') + '" data-status="' + statusVal + '">' +
-    //         '<td class="text-center"><span class="text-muted" style="font-size:0.75rem;" title="Item sistem">—</span></td>' +
-    //         '<td><span class="small fw-semibold">' + htmlEscape(data.tajuk) + '</span></td>' +
-    //         '<td class="text-center"><span class="small fw-semibold text-muted">' + data.mekanisma + '</span></td>' +
-    //         '<td class="text-center small">' + data.tindakanPembekal + '</td>' +
-    //         '<td class="text-center"><input type="number" name="skema[]" class="form-control form-control-sm text-center skema-input fw-semibold" value="' + data.score + '" min="0" style="max-width:90px;margin:0 auto;"></td>' +
-    //         '<td class="text-center"><span class="badge-status ' + data.statusClass + '">' + data.status + '</span></td>' +
-    //         '<td class="text-center text-muted small rujukan-cell">—</td>' +
-    //         '<td class="text-center"><a href="' + data.tindakanUrl + '" class="btn btn-sm btn-warning d-inline-flex align-items-center justify-content-center p-1" style="width:30px;height:30px;" title="Kemaskini">' + EDIT_ICON + '</a></td>' +
-    //         '</tr>'
-    //     );
-    // }
-
     function buildInitialRow(data) {
-        var statusVal = (data.score > 0) ? 'submitted' : (data.statusKey || 'draft');
+        var statusVal = data.statusKey || 'draft';
 
         var kemaskiniButton = '-';
 
-        // if (data.tajuk === 'Penyata Bulanan / Akaun Bank') {
-        if (data.tindakanUrl) {
+        if (data.tajuk === 'Penyata Bulanan / Akaun Bank') {
             kemaskiniButton =
                 '<a href="' + data.tindakanUrl + '" class="btn btn-sm btn-warning d-inline-flex align-items-center justify-content-center p-1" style="width:30px;height:30px;" title="Kemaskini">' +
                 EDIT_ICON +
                 '</a>';
         }
 
+        var formUpdatedAttr = (data.form_updated !== undefined) ? ' data-form-updated="' + data.form_updated + '"' : '';
+
         return $(
-            '<tr class="initial-row" data-uuid="' + (data.uuid || '') + '" data-source="borang_atas_talian" data-standard-item-uuid="' + (data.standard_item_uuid || '') + '" data-spesifikasi-item-uuid="' + (data.spesifikasi_item_uuid || '') + '" data-status="' + statusVal + '">' +
+            '<tr class="initial-row" data-uuid="' + (data.uuid || '') + '" data-source="borang_atas_talian" data-standard-item-uuid="' + (data.standard_item_uuid || '') + '" data-spesifikasi-item-uuid="' + (data.spesifikasi_item_uuid || '') + '" data-status="' + statusVal + '"' + formUpdatedAttr + '>' +
             '<td class="text-center"><span class="text-muted" style="font-size:0.75rem;" title="Item sistem">—</span></td>' +
             '<td><span class="small fw-semibold">' + htmlEscape(data.tajuk) + '</span></td>' +
             '<td class="text-center"><span class="small fw-semibold text-muted">' + data.mekanisma + '</span></td>' +
@@ -524,7 +509,7 @@ $(document).ready(function () {
         var uuid      = item.uuid || '';
         var mechanism = item.mechanism || 'petender_muat_naik';
         var score     = item.score || 0;
-        var status    = (item.status === 'submitted' || score > 0) ? 'submitted' : (item.status || 'draft');
+        var status    = item.status || 'draft';
         var standardItemUuid = item.standard_item_uuid || '';
         var spesifikasiItemUuid = item.spesifikasi_item_uuid || '';
         var sourceType = item.source_type || 'manual';
@@ -757,8 +742,20 @@ $(document).ready(function () {
 
     // ── UI Helpers ─────────────────────────────────────────────────────────────
     function updateRowStatus($row) {
-        var score = parseFloat($row.find('.skema-input').val()) || 0;
-        var isComplete = (score > 0);
+        var scoreVal = $row.find('.skema-input').val();
+        var isFilled = (scoreVal !== undefined && scoreVal !== null && scoreVal.trim() !== '');
+
+        var title = $row.find('[name="tajuk_dokumen[]"]').val() || $row.find('td:eq(1) span').text().trim();
+
+        var isComplete = false;
+
+        if (title === 'Penyata Bulanan / Akaun Bank') {
+            var formUpdated = $row.attr('data-form-updated') === 'true';
+            isComplete = isFilled && formUpdated;
+        } else {
+            isComplete = isFilled;
+        }
+
         var $badge = $row.find('.badge-status');
         if (isComplete) {
             $badge.removeClass('badge-status-warning').addClass('badge-status-success').text('Selesai');
