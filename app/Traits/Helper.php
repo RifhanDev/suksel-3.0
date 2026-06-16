@@ -334,7 +334,7 @@ trait Helper
             $content = view($view_name, $view_params)->render();
 
             $result = $this->createEmailQueue($content, $to, $subject);
-            if ($result !== "Email send to queue") {
+            if (! $this->emailSendSucceeded($result)) {
                 Log::error('[sendMail] Failed to queue email.', ['to' => $to, 'subject' => $subject, 'reason' => $result]);
             }
             return $result;
@@ -345,7 +345,7 @@ trait Helper
             }
 
             $result = $this->createEmailQueue($raw_text, $to, $subject);
-            if ($result !== "Email send to queue") {
+            if (! $this->emailSendSucceeded($result)) {
                 Log::error('[sendMail] Failed to queue email.', ['to' => $to, 'subject' => $subject, 'reason' => $result]);
             }
             return $result;
@@ -418,8 +418,12 @@ trait Helper
         $available_config = $this->getAvailableEmailConfig();
 
         if (count($available_config) == 0) {
-            Log::error('[createEmailQueue] Aborted — no available SMTP config.', ['to' => $to, 'subject' => $subject]);
-            return "No Available Email Config";
+            Log::warning('[createEmailQueue] No SMTP queue config — falling back to Laravel mailer.', [
+                'to' => $to,
+                'subject' => $subject,
+            ]);
+
+            return $this->sendViaLaravelMailer($content, $to, $subject);
         }
 
         $config = $this->setEmailConfig($available_config);
@@ -493,6 +497,32 @@ trait Helper
         }
 
         echo $status;
+    }
+
+    protected function emailSendSucceeded(string $result): bool
+    {
+        return in_array($result, ['Email send to queue', 'Email sent via Laravel mailer'], true);
+    }
+
+    protected function sendViaLaravelMailer(string $content, string $to, string $subject): string
+    {
+        try {
+            Mail::html($content, function ($message) use ($to, $subject) {
+                $message->to($to)->subject($subject);
+            });
+
+            Log::info('[sendViaLaravelMailer] Email sent.', ['to' => $to, 'subject' => $subject]);
+
+            return 'Email sent via Laravel mailer';
+        } catch (\Throwable $e) {
+            Log::error('[sendViaLaravelMailer] Failed to send email.', [
+                'to' => $to,
+                'subject' => $subject,
+                'error' => $e->getMessage(),
+            ]);
+
+            return 'Failed to send email: ' . $e->getMessage();
+        }
     }
 
     public function generateEligible($tender_id)

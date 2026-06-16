@@ -14,6 +14,7 @@ use App\Vendor;
 use Carbon\Carbon;
 use Hash;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Mail;
 
@@ -80,7 +81,17 @@ class RegistrationController extends Controller
                         $subject = 'Sahkan Alamat Emel - Sistem Tender Online Selangor';
                         $send_status = $this->sendMail("html", $to, $subject, "", "auth.emails.confirm", ['emailUser' => $user, 'user_name' => $user->name, 'confirmation_code' => $user->confirmation_code]);
 
-                        $notice = 'Akaun anda telah didaftarkan. Sila semak email untuk pengesahan akaun.';
+                        if ($send_status === 'Email send to queue' || $send_status === 'Email sent via Laravel mailer') {
+                            $notice = 'Akaun anda telah didaftarkan. Sila semak email untuk pengesahan akaun.';
+                        } else {
+                            Log::error('Registration confirmation email failed', [
+                                'user_id' => $user->id,
+                                'email' => $to,
+                                'reason' => $send_status,
+                            ]);
+                            $notice = 'Akaun anda telah didaftarkan tetapi emel pengesahan gagal dihantar. Sila hubungi pentadbir sistem.';
+                        }
+
                         return redirect('/')->with('notice', $notice);
                     }
 
