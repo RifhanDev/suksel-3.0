@@ -6,6 +6,7 @@ use App\Models\PenyediaanIklan;
 use App\Models\RefState;
 use App\Services\PenyediaanIklanService;
 use App\Services\StosBackendClient;
+use App\Support\TenderDokumenPresenter;
 use App\Support\TenderReviewPresenter;
 use App\Tender;
 use App\User;
@@ -76,6 +77,7 @@ class PenyediaanIklanController extends Controller
 
         $tender->load(['tenderer', 'codes.code', 'creator', 'officer', 'siteVisits']);
         $tenderReview = TenderReviewPresenter::for($tender);
+        $tenderDokumen = TenderDokumenPresenter::for($tender);
         $pegawaiPilihan = $this->pegawaiPilihanForTender($tender);
 
         if (empty($meta['kelulusan'])) {
@@ -88,6 +90,7 @@ class PenyediaanIklanController extends Controller
             'meta',
             'penyediaanIklan',
             'tenderReview',
+            'tenderDokumen',
             'pegawaiPilihan'
         ));
     }

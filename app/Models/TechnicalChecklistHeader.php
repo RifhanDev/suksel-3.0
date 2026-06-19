@@ -2,7 +2,10 @@
 
 namespace App\Models;
 
+use App\Tender;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class TechnicalChecklistHeader extends Model
 {
@@ -29,5 +32,15 @@ class TechnicalChecklistHeader extends Model
     public function getRouteKeyName(): string
     {
         return 'uuid';
+    }
+
+    public function tender(): BelongsTo
+    {
+        return $this->belongsTo(Tender::class);
+    }
+
+    public function items(): HasMany
+    {
+        return $this->hasMany(TechnicalChecklistItem::class)->orderBy('sort_order');
     }
 }

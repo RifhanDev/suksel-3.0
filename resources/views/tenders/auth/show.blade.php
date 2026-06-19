@@ -5,9 +5,12 @@
 	{{-- <link href="{{ asset('css/form.css') }}" rel="stylesheet"> --}}
 	{{-- <link href="{{ asset('css/tender.form.css') }}" rel="stylesheet"> --}}
 	<link href="{{ asset('css/components/tender-show.css') }}" rel="stylesheet">
+	<link href="{{ asset('css/components/badges.css') }}" rel="stylesheet">
 @endsection
 
 @section('content')
+	@php $dokumenList = $tenderDokumen->items(); @endphp
+
 	<div class="row">
 		<div class="col-12">
 			@include('tenders._menu')
@@ -126,7 +129,17 @@
 									<span class="badge bg-primary ms-2">{{ $tender->files()->where('public', 1)->count() }}</span>
 								</a>
 							@endif
-							@if (Auth::check() && $tender->canShowFiles(Auth::user()->vendor_id))
+							@if ($tender->showDokumenSenaraiTab())
+								<a href="#tf-dokumen-tawaran" aria-controls="settings" role="tab" data-bs-toggle="tab" class="nav-link">
+									<svg xmlns="http://www.w3.org/2000/svg" class="me-1" width="18" height="18" viewBox="0 0 24 24">
+										<path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+											d="M9 11l3 3l8-8M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+									</svg>
+									{{ $tender->dokumenSenaraiTabLabel() }}
+									<span class="badge bg-primary ms-2">{{ count($dokumenList) }}</span>
+								</a>
+							@endif
+							@if (!$tender->showDokumenSenaraiTab() && Auth::check() && $tender->canShowFiles(Auth::user()->vendor_id))
 								<a href="#tf-doc2" aria-controls="settings" role="tab" data-bs-toggle="tab" class="nav-link">
 									<svg xmlns="http://www.w3.org/2000/svg" class="me-1" width="18" height="18" viewBox="0 0 24 24">
 										<g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
@@ -860,8 +873,29 @@
 						</div>
 					</div>
 
-					{{-- === TAB: Dokumen Tender === --}}
-					@if (Auth::check() && $tender->canShowFiles(Auth::user()->vendor_id))
+					{{-- === TAB: Dokumen Tender/Tawaran atau Sebut Harga (senarai semak) === --}}
+					@if ($tender->showDokumenSenaraiTab())
+						<div role="tabpanel" class="tab-pane" id="tf-dokumen-tawaran">
+							<div class="tender-tab-card">
+								<div class="card-header">
+									<h3 class="card-title">
+										<svg xmlns="http://www.w3.org/2000/svg" class="me-1" width="18" height="18" viewBox="0 0 24 24">
+											<path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+												stroke-width="2" d="M9 11l3 3l8-8M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+										</svg>
+										{{ $tender->dokumenSenaraiTabLabel() }}
+									</h3>
+									<p class="text-muted small mb-0 mt-1">Senarai dokumen yang diperlukan daripada petender</p>
+								</div>
+								<div class="card-body p-0">
+									@include('tenders._dokumen_tender_checklist_table', ['dokumenList' => $dokumenList])
+								</div>
+							</div>
+						</div>
+					@endif
+
+					{{-- === TAB: Dokumen muat turun (legacy) === --}}
+					@if (!$tender->showDokumenSenaraiTab() && Auth::check() && $tender->canShowFiles(Auth::user()->vendor_id))
 						<div role="tabpanel" class="tab-pane" id="tf-doc2">
 							@if (count($tender->tender_files) > 0)
 								<div class="tender-tab-card">

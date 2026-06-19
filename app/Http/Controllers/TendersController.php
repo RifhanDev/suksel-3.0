@@ -511,6 +511,7 @@ class TendersController extends Controller
 	{
 		$tender = Tender::with('codes')->with('siteVisits', 'creator', 'officer')->findOrFail($id);
 		$pegawaiDisplay = \App\Support\TenderPegawaiPresenter::for($tender);
+		$tenderDokumen = \App\Support\TenderDokumenPresenter::for($tender);
 
 		$organizationunit   = $tender->tenderer;
 		$invites            = $tender->invites()->has('vendor')->get();
@@ -542,15 +543,15 @@ class TendersController extends Controller
 		view()->share('global_ou', $tender->tenderer);
 
 		if (!auth()->check()) {
-			return view('tenders.guest.show', compact('tender', 'organizationunit', 'invites', 'histories', 'exception', 'templates', 'tender_winner', 'pegawaiDisplay'));
+			return view('tenders.guest.show', compact('tender', 'organizationunit', 'invites', 'histories', 'exception', 'templates', 'tender_winner', 'pegawaiDisplay', 'tenderDokumen'));
 		}
 
 		if (auth()->user()->hasRole('Vendor')) {
-			return view('tenders.vendor.show', compact('tender', 'organizationunit', 'invites', 'histories', 'exception', 'templates', 'tender_winner', 'pegawaiDisplay'));
+			return view('tenders.vendor.show', compact('tender', 'organizationunit', 'invites', 'histories', 'exception', 'templates', 'tender_winner', 'pegawaiDisplay', 'tenderDokumen'));
 		}
 
 		// dd($tender->validDocumentDate());
-		return view('tenders.auth.show', compact('tender', 'organizationunit', 'invites', 'histories', 'exception', 'templates', 'tender_winner', 'pegawaiDisplay'));
+		return view('tenders.auth.show', compact('tender', 'organizationunit', 'invites', 'histories', 'exception', 'templates', 'tender_winner', 'pegawaiDisplay', 'tenderDokumen'));
 	}
 
 	public function manageSpecification(Request $request)

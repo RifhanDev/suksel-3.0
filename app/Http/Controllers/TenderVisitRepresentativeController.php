@@ -34,7 +34,13 @@ class TenderVisitRepresentativeController extends Controller
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        $visit = TenderVisit::findOrFail($visitId);
+        $visit = TenderVisit::with('tender')->findOrFail($visitId);
+
+        if (!$visit->tender || !$visit->tender->hasParticipate($user->vendor_id)) {
+            return response()->json([
+                'message' => 'Sila beli dokumen tender terlebih dahulu untuk mendaftar wakil syarikat.',
+            ], 403);
+        }
 
         $data = $request->validate([
             'reps'                 => 'array',

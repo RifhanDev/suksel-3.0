@@ -627,6 +627,45 @@ class Tender extends Model
 		return $this->files()->where('public', 0)->orderBy('name', 'asc')->get();
 	}
 
+	/**
+	 * Kaedah perolehan: 1 = Tender, 2 = Sebut Harga.
+	 * Falls back to legacy type when kaedah_perolehan_id is null.
+	 */
+	public function resolvedKaedahPerolehanId(): ?int
+	{
+		if ($this->kaedah_perolehan_id !== null) {
+			return (int) $this->kaedah_perolehan_id;
+		}
+
+		return match ($this->type) {
+			'quotation' => 2,
+			'tender' => 1,
+			default => null,
+		};
+	}
+
+	public function isTenderKaedah(): bool
+	{
+		return $this->resolvedKaedahPerolehanId() === 1;
+	}
+
+	public function isSebutHargaKaedah(): bool
+	{
+		return $this->resolvedKaedahPerolehanId() === 2;
+	}
+
+	public function showDokumenSenaraiTab(): bool
+	{
+		return in_array($this->resolvedKaedahPerolehanId(), [1, 2], true);
+	}
+
+	public function dokumenSenaraiTabLabel(): string
+	{
+		return $this->isSebutHargaKaedah()
+			? 'Dokumen Sebut Harga'
+			: 'Dokumen Tender/Tawaran';
+	}
+
 	public function hasParticipate($id)
 	{
 		$participate = $this->participants()->where('vendor_id', $id)->first();

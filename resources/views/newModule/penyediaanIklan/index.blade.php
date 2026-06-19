@@ -121,14 +121,16 @@
                         Pegawai Bertanggungjawab
                     </a>
 
+                    @if ($tender->showDokumenSenaraiTab())
                     <a class="nav-link" id="tab-dokumen-btn" data-bs-toggle="pill"
                         href="#tab-dokumen" role="tab" aria-controls="tab-dokumen" aria-selected="false">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
                             <polyline points="13 2 13 9 20 9"></polyline>
                         </svg>
-                        Dokumen Tender/Tawaran
+                        {{ $tender->dokumenSenaraiTabLabel() }}
                     </a>
+                    @endif
 
                 </nav>
             </div>
@@ -163,10 +165,12 @@
                     @include('newModule.penyediaanIklan.pegawai_bertanggungjawab_form')
                 </div>
 
-                {{-- ══ TAB 5: DOKUMEN TENDER/TAWARAN ══ --}}
+                @if ($tender->showDokumenSenaraiTab())
+                {{-- ══ TAB 5: DOKUMEN TENDER/TAWARAN ATAU SEBUT HARGA ══ --}}
                 <div class="tab-pane fade" id="tab-dokumen" role="tabpanel" aria-labelledby="tab-dokumen-btn">
                     @include('newModule.penyediaanIklan.dokumen_tender_form')
                 </div>
+                @endif
 
             </div>
             {{-- End tab-content --}}
@@ -215,7 +219,13 @@
 $(document).ready(function () {
 
     /* ── Tab IDs in order ── */
-    var tabs = ['#tab-maklumat-btn', '#tab-kelulusan-btn', '#tab-iklan-btn', '#tab-pegawai-btn', '#tab-dokumen-btn'];
+    var tabs = [
+        '#tab-maklumat-btn',
+        '#tab-kelulusan-btn',
+        '#tab-iklan-btn',
+        '#tab-pegawai-btn'@if ($tender->showDokumenSenaraiTab()),
+        '#tab-dokumen-btn'@endif
+    ];
     var currentTab = 0;
 
     if (new URLSearchParams(window.location.search).get('tab') === 'iklan') {
