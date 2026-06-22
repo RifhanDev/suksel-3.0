@@ -41,14 +41,14 @@
 
 @section('content')
     @php
-        $availableTabs = ['open', 'tech', 'fin'];
+        $availableTabs = ['spec', 'open', 'eval'];
         $draftTenderUuid = optional($tender)->uuid ?? request('tender');
-        $supportedDraftJenisData = $supportedDraftJenis ?? ['open', 'tech', 'fin'];
+        $supportedDraftJenisData = $supportedDraftJenis ?? ['spec', 'open', 'eval'];
         $localIcUsersData = $icUsers ?? [];
         $tabLabels = [
+            'spec'  => 'Jawatankuasa Spesifikasi',
             'open'  => 'Jawatankuasa Pembuka',
-            'tech'  => 'Jawatankuasa Penilaian Teknikal',
-            'fin'   => 'Jawatankuasa Penilaian Kewangan',
+            'eval'  => 'Jawatankuasa Penilaian Sebut Harga/Tender',
         ];
     @endphp
 
@@ -647,7 +647,7 @@
                     }
 
                     // Validate all 4 tabs have Pengerusi(1), Setiausaha(2), Ahli(3)
-                    const requiredTabs = ['open', 'tech', 'fin'];
+                    const requiredTabs = ['spec', 'open', 'eval'];
                     const requiredPeranan = ['1', '2', '3'];
 
                     for (let i = 0; i < requiredTabs.length; i++) {

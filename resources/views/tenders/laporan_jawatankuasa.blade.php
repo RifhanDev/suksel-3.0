@@ -162,10 +162,12 @@
             'open' => 'Jawatankuasa Pembuka',
             'tech' => 'Jawatankuasa Penilaian Teknikal',
             'fin'  => 'Jawatankuasa Penilaian Kewangan',
+            'eval' => 'Jawatankuasa Penilaian Sebut Harga/Tender',
         ];
 
         if (isset($tender) && $tender->tender_peringkat == 1) {
-            unset($tabLabels['spec']);
+            unset($tabLabels['tech']);
+            unset($tabLabels['fin']);
         }
 
         $perananLabels = [

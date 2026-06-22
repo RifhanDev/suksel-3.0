@@ -1124,7 +1124,7 @@ class Tender extends Model
 	{
 		$requiredJenis   = ['spec', 'open', 'tech', 'fin'];
 		if ($this->tender_peringkat == 1) {
-			$requiredJenis = ['open', 'tech', 'fin'];
+			$requiredJenis = ['spec', 'open', 'eval'];
 		}
 		$requiredPeranan = ['1', '2', '3'];
 		$tableName = DB::getSchemaBuilder()->hasTable('jawatankuasas') ? 'jawatankuasas' : 'jawatankuasa';
