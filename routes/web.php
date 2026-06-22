@@ -11,6 +11,7 @@ use App\Http\Controllers\RegistrationController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BannersController;
 use App\Http\Controllers\TendersController;
+use App\Http\Controllers\LantikanTerusController;
 use App\Http\Controllers\FpxController;
 use App\Http\Controllers\EbpgController;
 use App\Http\Controllers\DuitNowController;
@@ -238,6 +239,17 @@ Route::get('/pelantikan-jawatankuasa/laporan', [JawatankuasaController::class, '
 Route::post('/pelantikan-jawatankuasa/hantar-pemakluman', [JawatankuasaController::class, 'hantarPemakluman'])->middleware(['auth'])->name('jawatankuasa.hantarPemakluman');
 Route::view('/senarai-semak', 'newModule.jawatankuasaSpesifikasi.index')->name('senaraiSemak');
 
+Route::get('/lantikan-terus/cipta-projek', [LantikanTerusController::class, 'index'])->name('lantikan.index');
+Route::get('/lantikan-terus/cipta-projek/baru', [LantikanTerusController::class, 'create'])->name('lantikan.create');
+Route::get('/lantikan-terus/cipta-projek/{id}/kemaskini', [LantikanTerusController::class, 'edit'])->name('lantikan.edit');
+Route::get('/sebut-harga-terus', [LantikanTerusController::class, 'sebutHargaIndex'])->name('sebutHargaTerus.index');
+Route::get('/sebut-harga-terus/{id}/lihat', [LantikanTerusController::class, 'sebutHargaShow'])->name('sebutHargaTerus.show');
+Route::get('/cut-off-terus', [LantikanTerusController::class, 'cutOffIndex'])->name('cutOffTerus.index');
+Route::get('/cut-off-terus/{id}/lihat', [LantikanTerusController::class, 'cutOffShow'])->name('cutOffTerus.show');
+Route::get('/pemilihan-syarikat-terus', [LantikanTerusController::class, 'pemilihanIndex'])->name('pemilihanTerus.index');
+Route::get('/pemilihan-syarikat-terus/{id}/lihat', [LantikanTerusController::class, 'pemilihanShow'])->name('pemilihanTerus.show');
+Route::get('/keputusan-syarikat-terus', [LantikanTerusController::class, 'keputusanIndex'])->name('keputusanTerus.index');
+Route::get('/keputusan-syarikat-terus/{id}/lihat', [LantikanTerusController::class, 'keputusanShow'])->name('keputusanTerus.show');
 
 // senaraiKewanganKerja routes are auth-protected — defined inside middleware group below
 // penyediaanSpekTender routes are auth-protected — defined inside middleware group below

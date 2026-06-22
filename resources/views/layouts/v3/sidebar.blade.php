@@ -1206,6 +1206,84 @@
 						</ul>
 					</div>
 				</li>
+
+				<!-- Menu: Lantikan Terus -->
+				<li class="nav-item">
+					<a class="sidebar-link {{ request()->is('lantikan-terus*') || request()->is('sebut-harga-terus*') || request()->is('cut-off-terus*') || request()->is('pemilihan-syarikat-terus*') || request()->is('keputusan-syarikat-terus*') ? '' : 'collapsed' }}" data-bs-toggle="collapse"
+						data-bs-target="#menuLantikanTerus"
+						aria-expanded="{{ request()->is('lantikan-terus*') || request()->is('sebut-harga-terus*') || request()->is('cut-off-terus*') || request()->is('pemilihan-syarikat-terus*') || request()->is('keputusan-syarikat-terus*') ? 'true' : 'false' }}" style="cursor: pointer;">
+						<svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none"
+							stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+							<path d="m7.5 4.27 9 5.15M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/>
+							<path d="m3.3 7 8.7 5 8.7-5M12 22V12"/>
+						</svg>
+						<span class="nav-text">Lantikan Terus</span>
+						<svg xmlns="http://www.w3.org/2000/svg" class="nav-arrow" viewBox="0 0 24 24" fill="none"
+							stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+							<polyline points="9 18 15 12 9 6"></polyline>
+						</svg>
+					</a>
+					<div class="collapse {{ request()->is('lantikan-terus*') || request()->is('sebut-harga-terus*') || request()->is('cut-off-terus*') || request()->is('pemilihan-syarikat-terus*') || request()->is('keputusan-syarikat-terus*') ? 'show' : '' }}" id="menuLantikanTerus">
+						<ul class="sidebar-submenu">
+							<li>
+								<a
+									class="submenu-item {{ request()->routeIs('lantikan.index') || request()->routeIs('lantikan.create') || request()->routeIs('lantikan.edit') ? 'active' : '' }}"
+									href="{{ route('lantikan.index') }}" style="cursor: pointer;">
+									<div class="submenu-icon"
+										style="{{ request()->routeIs('lantikan.index') || request()->routeIs('lantikan.create') || request()->routeIs('lantikan.edit') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}">
+									</div><span
+										class="{{ request()->routeIs('lantikan.index') || request()->routeIs('lantikan.create') || request()->routeIs('lantikan.edit') ? 'text-white' : '' }}">Cipta
+										Projek</span>
+								</a>
+							</li>
+							<li>
+								<a
+									class="submenu-item {{ request()->routeIs('sebutHargaTerus.index') || request()->routeIs('sebutHargaTerus.show') ? 'active' : '' }}"
+									href="{{ route('sebutHargaTerus.index') }}" style="cursor: pointer;">
+									<div class="submenu-icon"
+										style="{{ request()->routeIs('sebutHargaTerus.index') || request()->routeIs('sebutHargaTerus.show') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}">
+									</div><span
+										class="{{ request()->routeIs('sebutHargaTerus.index') || request()->routeIs('sebutHargaTerus.show') ? 'text-white' : '' }}">Sebut
+										Harga</span>
+								</a>
+							</li>
+							<li>
+								<a
+									class="submenu-item {{ request()->routeIs('cutOffTerus.index') || request()->routeIs('cutOffTerus.show') ? 'active' : '' }}"
+									href="{{ route('cutOffTerus.index') }}" style="cursor: pointer;">
+									<div class="submenu-icon"
+										style="{{ request()->routeIs('cutOffTerus.index') || request()->routeIs('cutOffTerus.show') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}">
+									</div><span
+										class="{{ request()->routeIs('cutOffTerus.index') || request()->routeIs('cutOffTerus.show') ? 'text-white' : '' }}">
+										Cut Off Projek
+									</span>
+								</a>
+							</li>
+							<li>
+								<a
+									class="submenu-item {{ request()->routeIs('pemilihanTerus.index') || request()->routeIs('pemilihanTerus.show') ? 'active' : '' }}"
+									href="{{ route('pemilihanTerus.index') }}" style="cursor: pointer;">
+									<div class="submenu-icon"
+										style="{{ request()->routeIs('pemilihanTerus.index') || request()->routeIs('pemilihanTerus.show') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}">
+									</div><span
+										class="{{ request()->routeIs('pemilihanTerus.index') || request()->routeIs('pemilihanTerus.show') ? 'text-white' : '' }}">Pemilihan
+										Syarikat</span>
+								</a>
+							</li>
+							<li>
+								<a
+									class="submenu-item {{ request()->routeIs('keputusanTerus.index') || request()->routeIs('keputusanTerus.show') ? 'active' : '' }}"
+									href="{{ route('keputusanTerus.index') }}" style="cursor: pointer;">
+									<div class="submenu-icon"
+										style="{{ request()->routeIs('keputusanTerus.index') || request()->routeIs('keputusanTerus.show') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}">
+									</div><span
+										class="{{ request()->routeIs('keputusanTerus.index') || request()->routeIs('keputusanTerus.show') ? 'text-white' : '' }}">Keputusan
+										Syarikat</span>
+								</a>
+							</li>
+						</ul>
+					</div>
+				</li>
 			</ul>
 		</div>
 	</aside>
