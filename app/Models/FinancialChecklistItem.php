@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class FinancialChecklistItem extends Model
 {
@@ -27,5 +28,10 @@ class FinancialChecklistItem extends Model
     public function getRouteKeyName(): string
     {
         return 'uuid';
+    }
+
+    public function header(): BelongsTo
+    {
+        return $this->belongsTo(FinancialChecklistHeader::class, 'financial_checklist_header_id');
     }
 }

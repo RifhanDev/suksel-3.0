@@ -5,11 +5,13 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class TechnicalChecklistItem extends Model
+class KewanganKerjaItem extends Model
 {
     protected $fillable = [
         'uuid',
-        'technical_checklist_header_id',
+        'kewangan_kerja_header_id',
+        'spesifikasi_item_id',
+        'standard_item_id',
         'source_type',
         'title',
         'mechanism',
@@ -17,10 +19,6 @@ class TechnicalChecklistItem extends Model
         'score',
         'status',
         'sort_order',
-        'standard_item_id',
-        'specification_document_id',
-        'online_form_key',
-        'online_form_route',
     ];
 
     protected $casts = [
@@ -34,6 +32,6 @@ class TechnicalChecklistItem extends Model
 
     public function header(): BelongsTo
     {
-        return $this->belongsTo(TechnicalChecklistHeader::class, 'technical_checklist_header_id');
+        return $this->belongsTo(KewanganKerjaHeader::class, 'kewangan_kerja_header_id');
     }
 }
