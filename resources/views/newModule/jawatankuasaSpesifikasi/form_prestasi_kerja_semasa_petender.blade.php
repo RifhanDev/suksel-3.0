@@ -59,31 +59,43 @@
             <div class="mb-3 pb-3 border-bottom">
                 <span class="text-muted fw-semibold text-uppercase d-block mb-1" style="font-size:0.67rem;letter-spacing:0.5px;">Tajuk Tender</span>
                 <h5 class="fw-bold text-dark mb-0" style="line-height:1.45;font-size:1rem;">
-                    PROJEK MENAIKTARAF JALAN PELABUHAN UTARA DARI KLANG CONTAINER TERMINAL
+                    {{ $tender->name ?? '-' }}
                     <span class="fw-normal text-muted fst-italic" style="font-size:0.85rem;">(Kerja)</span>
                 </h5>
             </div>
             <div class="row g-3">
                 <div class="col-6 col-md-3">
                     <span class="text-muted fw-semibold text-uppercase d-block mb-1" style="font-size:0.67rem;letter-spacing:0.5px;">No. Tender</span>
-                    <span class="fw-semibold text-dark" style="font-size:0.875rem;">SUKSEL/PERT/2026/001</span>
+                    <span class="fw-semibold text-dark" style="font-size:0.875rem;">
+                        {{ $tender->no_tender ?: ($tender->ref_number ?? '-') }}
+                    </span>
                 </div>
                 <div class="col-6 col-md-3">
                     <span class="text-muted fw-semibold text-uppercase d-block mb-1" style="font-size:0.67rem;letter-spacing:0.5px;">PTJ</span>
-                    <span class="fw-semibold text-dark" style="font-size:0.875rem;">100-007</span>
+                    <span class="fw-semibold text-dark" style="font-size:0.875rem;">
+                        {{ $tender->tenderer->name ?? '-' }}
+                    </span>
                 </div>
                 <div class="col-12 col-md-6 d-md-flex justify-content-md-end align-items-md-center">
-                    <span class="d-inline-flex align-items-center gap-2 px-3 py-2 rounded-2 fw-semibold"
-                        style="background:#fef9c3;color:#854d0e;font-size:0.8rem;border:1px solid #fde68a;">
-                        <span class="d-inline-block rounded-circle" style="width:7px;height:7px;background:#ca8a04;flex-shrink:0;"></span>
-                        Dalam Proses
-                    </span>
+                    @if(isset($prestasi) && $prestasi->status === 'submitted')
+                        <span id="status-badge" class="d-inline-flex align-items-center gap-2 px-3 py-2 rounded-2 fw-semibold"
+                            style="background:#dcfce7;color:#166534;font-size:0.8rem;border:1px solid #bbf7d0;">
+                            <span class="d-inline-block rounded-circle" style="width:7px;height:7px;background:#16a34a;flex-shrink:0;"></span>
+                            Telah Dihantar
+                        </span>
+                    @else
+                        <span id="status-badge" class="d-inline-flex align-items-center gap-2 px-3 py-2 rounded-2 fw-semibold"
+                            style="background:#fef9c3;color:#854d0e;font-size:0.8rem;border:1px solid #fde68a;">
+                            <span class="d-inline-block rounded-circle" style="width:7px;height:7px;background:#ca8a04;flex-shrink:0;"></span>
+                            Dalam Proses
+                        </span>
+                    @endif
                 </div>
             </div>
         </div>
     </div>
 
-    <form id="form-prestasi" action="{{ route('jawatankuasa.hantarPrestasiKerjaSemasa') }}" method="POST" enctype="multipart/form-data">
+    <form id="form-prestasi" action="{{ route('prestasiKerjaSemasa.store', $tender->uuid) }}" method="POST" enctype="multipart/form-data">
     @csrf
 
         <!-- ===================== SECTION 1: PRESTASI KERJA SEMASA ===================== -->
@@ -188,13 +200,46 @@
                     <span class="upload-zone-sub">PDF, Word, Excel, Imej — saiz maksimum 10 MB setiap fail</span>
                     <input type="file" id="input-dokumen-prestasi" name="dokumen_prestasi[]" multiple hidden accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg">
                 </label>
-                <div class="file-chip-list" id="file-chip-list-prestasi"></div>
+                <div class="file-chip-list" id="file-chip-list-prestasi">
+                    @if(isset($prestasi) && $prestasi->dokumens->isNotEmpty())
+                        @foreach($prestasi->dokumens as $doc)
+                            <div class="file-chip" data-file-uuid="{{ $doc->uuid }}">
+                                <span class="file-chip-ext ext-{{ strtolower(pathinfo($doc->original_name, PATHINFO_EXTENSION)) }}">
+                                    {{ strtolower(pathinfo($doc->original_name, PATHINFO_EXTENSION)) }}
+                                </span>
+                                <div class="file-chip-body">
+                                    <a href="{{ asset($doc->path) }}" target="_blank" class="file-chip-name" title="{{ $doc->original_name }}">
+                                        {{ $doc->original_name }}
+                                    </a>
+                                    <span class="file-chip-size">
+                                        @if($doc->size < 1024)
+                                            {{ $doc->size }} B
+                                        @elseif($doc->size < 1048576)
+                                            {{ number_format($doc->size / 1024, 1) }} KB
+                                        @else
+                                            {{ number_format($doc->size / 1048576, 1) }} MB
+                                        @endif
+                                    </span>
+                                </div>
+                                <button type="button" class="file-chip-remove btn-delete-file" data-file-uuid="{{ $doc->uuid }}" title="Buang fail">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                                    </svg>
+                                </button>
+                            </div>
+                        @endforeach
+                    @endif
+                </div>
             </div>
         </div>
 
-        <!-- ACTION BUTTONS -->
+        @php
+            $tenderUuid = request()->route('tenderUuid') ?? request()->segment(2);
+            $kembaliUrl = $tenderUuid ? route('senaraiKewanganKerja', $tenderUuid) : route('pengurusanSpesifikasi');
+        @endphp
         <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-            <a href="{{ route('senaraiKewanganKerja') }}" class="btn-form btn-form-secondary">
+            <a href="{{ $kembaliUrl }}" class="btn-form btn-form-secondary">
                 <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <line x1="19" y1="12" x2="5" y2="12"></line>
                     <polyline points="12 19 5 12 12 5"></polyline>
@@ -291,8 +336,55 @@
 <script>
 $(document).ready(function () {
 
-    var entries = [];
+    @php
+        $prestasiItems = isset($prestasi) ? $prestasi->items->map(function($item) {
+            return [
+                'nama'             => $item->nama,
+                'no_kontrak'       => $item->no_kontrak,
+                'harga'            => floatval($item->harga),
+                'tarikh_tapak'     => $item->tarikh_tapak,
+                'tempoh'           => $item->tempoh,
+                'tarikh_siap'      => $item->tarikh_siap,
+                'tarikh_penilaian' => $item->tarikh_penilaian,
+                'luputan'          => $item->luputan,
+                'kemajuan_sebenar' => $item->kemajuan_sebenar,
+                'kemajuan_jadual'  => $item->kemajuan_jadual,
+            ];
+        })->toArray() : [];
+    @endphp
+    var entries = @json($prestasiItems);
+    
     var editIdx = null;
+
+    if (entries.length > 0) {
+        renderTable();
+    }
+
+    // ── Delete File via AJAX ──────────────────────────────────────────────────
+    $('#file-chip-list-prestasi').on('click', '.btn-delete-file', function () {
+        var $chip = $(this).closest('.file-chip');
+        var fileUuid = $(this).data('file-uuid');
+        
+        if (confirm('Adakah anda pasti mahu memadam fail ini?')) {
+            $.ajax({
+                url: '{{ route("prestasiKerjaSemasa.deleteFile", "FILE_UUID") }}'.replace('FILE_UUID', fileUuid),
+                type: 'DELETE',
+                data: {
+                    _token: '{{ csrf_token() }}'
+                },
+                success: function (res) {
+                    if (res.success) {
+                        $chip.remove();
+                    } else {
+                        alert(res.message || 'Gagal memadam fail.');
+                    }
+                },
+                error: function () {
+                    alert('Ralat semasa menghubungi pelayan.');
+                }
+            });
+        }
+    });
 
     // ── Datepickers in modal ──────────────────────────────────────────────────
     $('.mk-date').datepicker({ format: 'd M yyyy', autoclose: true, todayHighlight: true, todayBtn: 'linked' });

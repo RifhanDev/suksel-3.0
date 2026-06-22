@@ -269,10 +269,13 @@ class JawatankuasaController extends Controller
         $tenderUuid = $request->input('tender');
 
         if (empty($tenderUuid)) {
-            abort(404, 'Tender tidak ditemui.');
+            abort(404, 'Tender/Sebut Harga tidak ditemui.');
         }
 
-        $tender = Tender::with('tenderer')->where('uuid', $tenderUuid)->firstOrFail();
+        $tender = Tender::with('tenderer')->where('uuid', $tenderUuid)->first();
+        if (!$tender) {
+            abort(404, 'Tender/Sebut Harga tidak ditemui.');
+        }
 
         $committeeDrafts = Jawatankuasa::with('user')
             ->where('tender_id', $tender->id)
@@ -319,6 +322,7 @@ class JawatankuasaController extends Controller
             'open' => 'Jawatankuasa Pembuka',
             'tech' => 'Jawatankuasa Penilaian Teknikal',
             'fin'  => 'Jawatankuasa Penilaian Kewangan',
+            'eval' => 'Jawatankuasa Penilaian Sebut Harga/Tender',
         ];
 
         $perananLabels = [
@@ -340,7 +344,7 @@ class JawatankuasaController extends Controller
 
         $requiredJenis = ['spec', 'open', 'tech', 'fin'];
         if ($tender->tender_peringkat == 1) {
-            $requiredJenis = ['open', 'tech', 'fin'];
+            $requiredJenis = ['spec', 'open', 'eval'];
         }
         $requiredPeranan = ['1', '2', '3']; // Pengerusi, Setiausaha, Ahli
 
@@ -373,6 +377,7 @@ class JawatankuasaController extends Controller
             $to = trim($member->user->email);
             $subject = 'Pemakluman Pelantikan ' . $jenisLabel . ' - ' . ($tender->ref_number ?? '');
             $viewParams = [
+                'tender' => $tender,
                 'emailUser' => $member->user,
                 'jenisLabel' => $jenisLabel,
                 'perananLabel' => $perananLabel,
@@ -619,7 +624,7 @@ class JawatankuasaController extends Controller
         $tenderUuid = $request->input('tender');
         $tender = null;
         $committeeDrafts = [];
-        $supportedDraftJenis = ['open', 'tech', 'fin'];
+        $supportedDraftJenis = ['spec', 'open', 'eval'];
         $icUsers = User::query()
             ->whereNotNull('ic_number')
             ->where('ic_number', '!=', '')
@@ -681,7 +686,7 @@ class JawatankuasaController extends Controller
 
     private function getSupportedJenis(): array
     {
-        $fallback = ['spec', 'open', 'tech', 'fin'];
+        $fallback = ['spec', 'open', 'tech', 'fin', 'eval'];
 
         try {
             $table = (new Jawatankuasa())->getTable();
@@ -696,7 +701,7 @@ class JawatankuasaController extends Controller
             }
 
             $enumValues = str_getcsv($matches[1], ',', "'");
-            $supported = array_values(array_intersect($enumValues, ['spec', 'open', 'tech', 'fin', 'harga']));
+            $supported = array_values(array_intersect($enumValues, ['spec', 'open', 'tech', 'fin', 'eval', 'harga']));
 
             return !empty($supported) ? $supported : $fallback;
         } catch (\Throwable $e) {

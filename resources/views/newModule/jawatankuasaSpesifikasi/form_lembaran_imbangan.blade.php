@@ -19,44 +19,51 @@
     <!-- TENDER INFO -->
     <div class="content-card mb-4 p-0">
         <div class="content-card-body p-4">
-
-            <!-- Tajuk Tender -->
             <div class="mb-3 pb-3 border-bottom">
                 <span class="text-muted fw-semibold text-uppercase d-block mb-1"
-                    style="font-size: 0.67rem; letter-spacing: 0.5px;">Tajuk Tender</span>
-                <h5 class="fw-bold text-dark mb-0" style="line-height: 1.45; font-size: 1rem;">
-                    PROJEK MENAIKTARAF JALAN PELABUHAN UTARA DARI KLANG CONTAINER TERMINAL
-                    <span class="fw-normal text-muted fst-italic" style="font-size: 0.85rem;">(Kerja)</span>
+                    style="font-size:0.67rem;letter-spacing:0.5px;">Tajuk Tender</span>
+                <h5 class="fw-bold text-dark mb-0" style="line-height:1.45;font-size:1rem;">
+                    {{ $tender->name ?? '-' }}
+                    <span class="fw-normal text-muted fst-italic" style="font-size:0.85rem;">(Kerja)</span>
                 </h5>
             </div>
-
-            <!-- Metadata: No. Tender · PTJ · Status -->
             <div class="row g-3">
                 <div class="col-6 col-md-3">
                     <span class="text-muted fw-semibold text-uppercase d-block mb-1"
-                        style="font-size: 0.67rem; letter-spacing: 0.5px;">No. Tender</span>
-                    <span class="fw-semibold text-dark" style="font-size: 0.875rem;">SUKSEL/PERT/2026/001</span>
+                        style="font-size:0.67rem;letter-spacing:0.5px;">No. Tender</span>
+                    <span class="fw-semibold text-dark" style="font-size:0.875rem;">
+                        {{ $tender->no_tender ?: ($tender->ref_number ?? '-') }}
+                    </span>
                 </div>
                 <div class="col-6 col-md-3">
                     <span class="text-muted fw-semibold text-uppercase d-block mb-1"
-                        style="font-size: 0.67rem; letter-spacing: 0.5px;">PTJ</span>
-                    <span class="fw-semibold text-dark" style="font-size: 0.875rem;">100-007</span>
-                </div>
-                <div class="col-12 col-md-6 d-md-flex justify-content-md-end align-items-md-center">
-                    <span class="d-inline-flex align-items-center gap-2 px-3 py-2 rounded-2 fw-semibold"
-                        style="background: #fef9c3; color: #854d0e; font-size: 0.8rem; border: 1px solid #fde68a;">
-                        <span class="d-inline-block rounded-circle"
-                            style="width:7px;height:7px;background:#ca8a04;flex-shrink:0;"></span>
-                        Dalam Proses
+                        style="font-size:0.67rem;letter-spacing:0.5px;">PTJ</span>
+                    <span class="fw-semibold text-dark" style="font-size:0.875rem;">
+                        {{ $tender->tenderer->name ?? '-' }}
                     </span>
                 </div>
+                <div class="col-12 col-md-6 d-md-flex justify-content-md-end align-items-md-center">
+                    @if(($checklistData['status'] ?? null) === 'submitted')
+                        <span id="status-badge" class="d-inline-flex align-items-center gap-2 px-3 py-2 rounded-2 fw-semibold"
+                            style="background:#dcfce7;color:#166534;font-size:0.8rem;border:1px solid #bbf7d0;">
+                            <span class="d-inline-block rounded-circle" style="width:7px;height:7px;background:#16a34a;flex-shrink:0;"></span>
+                            Telah Dihantar
+                        </span>
+                    @else
+                        <span id="status-badge" class="d-inline-flex align-items-center gap-2 px-3 py-2 rounded-2 fw-semibold"
+                            style="background:#fef9c3;color:#854d0e;font-size:0.8rem;border:1px solid #fde68a;">
+                            <span class="d-inline-block rounded-circle" style="width:7px;height:7px;background:#ca8a04;flex-shrink:0;"></span>
+                            Dalam Proses
+                        </span>
+                    @endif
+                </div>
             </div>
-
         </div>
     </div>
 
-    <form id="form-lembaran-imbangan" action="#" method="POST">
-    @csrf
+    <form id="form-lembaran-imbangan" action="{{ route('lembaranImbangan.store', $tender->uuid) }}" method="POST">
+        @csrf
+        <input type="hidden" name="status" value="submitted">
 
     <!-- ===================== SECTION 1: LEMBARAN IMBANGAN ===================== -->
     <div class="content-card mb-4 p-0">
@@ -88,23 +95,28 @@
             <div class="row g-3">
                 <div class="col-12 col-md-6">
                     <label class="form-label fw-semibold small">Aset Tetap (RM)</label>
-                    <input type="text" name="aset_tetap" class="form-control form-control-sm text-end amount-input" placeholder="0.00">
+                    <input type="text" name="aset_tetap" class="form-control form-control-sm text-end amount-input" 
+                        value="{{ isset($lembaranData['aset_tetap']) ? number_format($lembaranData['aset_tetap'], 2, '.', ',') : '' }}" placeholder="0.00">
                 </div>
                 <div class="col-12 col-md-6">
                     <label class="form-label fw-semibold small">Aset Semasa (RM)</label>
-                    <input type="text" name="aset_semasa" class="form-control form-control-sm text-end amount-input" placeholder="0.00">
+                    <input type="text" name="aset_semasa" class="form-control form-control-sm text-end amount-input" 
+                        value="{{ isset($lembaranData['aset_semasa']) ? number_format($lembaranData['aset_semasa'], 2, '.', ',') : '' }}" placeholder="0.00">
                 </div>
                 <div class="col-12 col-md-6">
                     <label class="form-label fw-semibold small">Liabiliti Semasa (RM)</label>
-                    <input type="text" name="liabiliti_semasa" class="form-control form-control-sm text-end amount-input" placeholder="0.00">
+                    <input type="text" name="liabiliti_semasa" class="form-control form-control-sm text-end amount-input" 
+                        value="{{ isset($lembaranData['liabiliti_semasa']) ? number_format($lembaranData['liabiliti_semasa'], 2, '.', ',') : '' }}" placeholder="0.00">
                 </div>
                 <div class="col-12 col-md-6">
                     <label class="form-label fw-semibold small">Long Term / Liabiliti Tetap (RM)</label>
-                    <input type="text" name="liabiliti_tetap" class="form-control form-control-sm text-end amount-input" placeholder="0.00">
+                    <input type="text" name="liabiliti_tetap" class="form-control form-control-sm text-end amount-input" 
+                        value="{{ isset($lembaranData['liabiliti_tetap']) ? number_format($lembaranData['liabiliti_tetap'], 2, '.', ',') : '' }}" placeholder="0.00">
                 </div>
                 <div class="col-12 col-md-6">
                     <label class="form-label fw-semibold small">Wang Tunai Dalam Tangan (RM)</label>
-                    <input type="text" name="wang_tunai" class="form-control form-control-sm text-end amount-input" placeholder="0.00">
+                    <input type="text" name="wang_tunai" class="form-control form-control-sm text-end amount-input" 
+                        value="{{ isset($lembaranData['wang_tunai']) ? number_format($lembaranData['wang_tunai'], 2, '.', ',') : '' }}" placeholder="0.00">
                 </div>
             </div>
 
@@ -145,7 +157,8 @@
             <div class="row g-3">
                 <div class="col-12 col-md-6">
                     <label class="form-label fw-semibold small">Baki Kemudahan Kredit (RM)</label>
-                    <input type="text" name="baki_kemudahan_kredit" class="form-control form-control-sm text-end amount-input" placeholder="0.00">
+                    <input type="text" name="baki_kemudahan_kredit" class="form-control form-control-sm text-end amount-input" 
+                        value="{{ isset($lembaranData['baki_kemudahan_kredit']) ? number_format($lembaranData['baki_kemudahan_kredit'], 2, '.', ',') : '' }}" placeholder="0.00">
                 </div>
             </div>
 
@@ -154,7 +167,11 @@
 
     <!-- ACTION BUTTONS -->
     <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-        <a href="{{ route('senaraiKewanganKerja') }}" class="btn-form btn-form-secondary">
+        @php
+            $tenderUuid = request()->route('tenderUuid') ?? request()->segment(2);
+            $kembaliUrl = $tenderUuid ? route('senaraiKewanganKerja', $tenderUuid) : route('pengurusanSpesifikasi');
+        @endphp
+        <a href="{{ $kembaliUrl }}" class="btn-form btn-form-secondary">
             <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="19" y1="12" x2="5" y2="12"></line>

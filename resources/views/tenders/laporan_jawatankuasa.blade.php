@@ -151,15 +151,9 @@
     </div>
 
     <div class="tender-info">
-        <div style="padding-bottom: 6px; margin-bottom: 6px; border-bottom: 1px solid #ddd;">
-            <strong>{{ $tender->type === 'quotation' ? 'Nama Sebut Harga' : 'Nama Tender' }}:</strong>
-            {{ $tender->name ?? '-' }}
-        </div>
-        <div>
-            <strong>{{ $tender->type === 'quotation' ? 'No. Sebut Harga' : 'No. Tender' }}:</strong> {{ $tender->ref_number ?? '-' }} &nbsp;&nbsp;|&nbsp;&nbsp;
-            <strong>PTJ:</strong> {{ optional(optional($tender)->tenderer)->name ?? '-' }} &nbsp;&nbsp;|&nbsp;&nbsp;
-            <strong>Status:</strong> {{ $tender->status ?? '-' }}
-        </div>
+        <strong>No {{ $tender->procurement_label }}:</strong> {{ $tender->ref_number ?? '-' }} &nbsp;&nbsp;|&nbsp;&nbsp;
+        <strong>PTJ:</strong> {{ optional(optional($tender)->tenderer)->name ?? '-' }} &nbsp;&nbsp;|&nbsp;&nbsp;
+        <strong>Status:</strong> {{ $tender->status ?? '-' }}
     </div>
 
     @php
@@ -168,10 +162,12 @@
             'open' => 'Jawatankuasa Pembuka',
             'tech' => 'Jawatankuasa Penilaian Teknikal',
             'fin'  => 'Jawatankuasa Penilaian Kewangan',
+            'eval' => 'Jawatankuasa Penilaian Sebut Harga/Tender',
         ];
 
         if (isset($tender) && $tender->tender_peringkat == 1) {
-            unset($tabLabels['spec']);
+            unset($tabLabels['tech']);
+            unset($tabLabels['fin']);
         }
 
         $perananLabels = [

@@ -669,7 +669,7 @@ class TendersController extends Controller
 		$onePeringkat = DB::table($committeeTable)
 			->select("{$committeeTable}.tender_id")
 			->join('tenders as t1p', 't1p.id', '=', "{$committeeTable}.tender_id")
-			->whereIn("{$committeeTable}.jenis_jawatankuasa", ['open', 'tech', 'fin'])
+			->whereIn("{$committeeTable}.jenis_jawatankuasa", ['spec', 'open', 'eval'])
 			->where('t1p.tender_peringkat', '=', 1)
 			->groupBy("{$committeeTable}.tender_id")
 			->havingRaw("COUNT(DISTINCT CASE WHEN {$committeeTable}.user_id IS NOT NULL THEN CONCAT({$committeeTable}.jenis_jawatankuasa, ':', {$committeeTable}.peranan) END) = 9")

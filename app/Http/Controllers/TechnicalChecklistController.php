@@ -36,7 +36,7 @@ class TechnicalChecklistController extends Controller
             ]);
         }
 
-        $standardApiUrl = $this->url('standard-checklist-items');
+        $standardApiUrl = $this->url('standard-checklist-items?category=technical');
         $standardResponse = $this->api()->get($standardApiUrl);
 
         $standardItems = [];
