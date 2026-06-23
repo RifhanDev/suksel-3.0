@@ -2,12 +2,32 @@
 
 namespace App\Services;
 
+use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class StosBackendClient
 {
+    public static function http(): PendingRequest
+    {
+        $client = Http::timeout(30)->withHeaders([
+            'X-API-Key' => config('services.stos_backend.api_key'),
+            'Accept' => 'application/json',
+        ]);
+
+        if (! config('services.stos_backend.verify_ssl', true)) {
+            $client = $client->withoutVerifying();
+        }
+
+        return $client;
+    }
+
+    public static function apiUrl(string $path): string
+    {
+        return rtrim((string) config('services.stos_backend.url'), '/') . '/api/' . ltrim($path, '/');
+    }
+
     protected string $baseUrl;
 
     protected ?string $apiKey;
@@ -88,12 +108,7 @@ class StosBackendClient
 
         $url = $this->baseUrl . '/' . ltrim($path, '/');
 
-        $client = Http::withoutVerifying()
-            ->timeout(30)
-            ->withHeaders([
-                'X-API-Key' => $this->apiKey,
-                'Accept' => 'application/json',
-            ]);
+        $client = self::http();
 
         try {
             if ($method === 'get') {

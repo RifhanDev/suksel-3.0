@@ -3,9 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Tender;
+use App\Services\StosBackendClient;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class SpecificationPricingController extends Controller
@@ -104,14 +104,11 @@ class SpecificationPricingController extends Controller
 
     private function api()
     {
-        return Http::withHeaders([
-            'X-Api-Key' => config('services.stos_backend.api_key'),
-            'Accept'    => 'application/json',
-        ]);
+        return StosBackendClient::http();
     }
 
     private function url(string $path): string
     {
-        return config('services.stos_backend.url') . '/api/' . $path;
+        return StosBackendClient::apiUrl($path);
     }
 }

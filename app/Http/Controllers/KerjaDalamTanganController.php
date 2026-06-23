@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Tender;
+use App\Services\StosBackendClient;
 use Illuminate\Http\Client\Response;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
@@ -202,15 +203,12 @@ class KerjaDalamTanganController extends Controller
 
     private function api()
     {
-        return Http::withHeaders([
-            'X-Api-Key' => config('services.stos_backend.api_key'),
-            'Accept'    => 'application/json',
-        ]);
+        return StosBackendClient::http();
     }
 
     private function url(string $path): string
     {
-        return config('services.stos_backend.url') . '/api/' . $path;
+        return StosBackendClient::apiUrl($path);
     }
 
     private function logStoreFailure(string $tenderUuid, array $payload, string $apiUrl, Response $response): void
