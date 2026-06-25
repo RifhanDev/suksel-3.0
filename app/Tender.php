@@ -385,6 +385,11 @@ class Tender extends Model
 		return $this->belongsTo('App\OrganizationUnit', 'organization_unit_id');
 	}
 
+	public function jawatankuasas()
+	{
+		return $this->hasMany(\App\Models\Jawatankuasa::class, 'tender_id');
+	}
+
 	public function news()
 	{
 		return $this->hasMany('App\News');
@@ -761,10 +766,9 @@ class Tender extends Model
 
 	public function validDocumentDate()
 	{
-		$valid = true;
-		$valid = $valid && (strtotime($this->document_start_date) <= time());
-		$valid = $valid && (time() < Carbon::parse($this->document_stop_date)->addDay()->timestamp);
-		return $valid;
+		$today = Carbon::today();
+		return $today->gte(Carbon::parse($this->document_start_date))
+			&& $today->lte(Carbon::parse($this->document_stop_date));
 	}
 
 	public function nearSubmission()

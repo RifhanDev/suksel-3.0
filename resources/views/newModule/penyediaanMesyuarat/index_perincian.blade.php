@@ -137,36 +137,37 @@
 				<table data-path="" class=" table table-modern w-100 mb-0">
 					<thead>
 						<tr>
-							<th class="text-center">Maklumat Tender</th>
-							<th class="text-center" width="150px">Tarikh Jual</th>
-							<th class="text-center" width="150px">Tarikh Tutup</th>
-							<th class="text-center" width="150px">Harga (RM)</th>
-							<th class="text-center" width="150px">Tindakan</th>
+							<th class="text-center">Nama Tender / Sebut Harga</th>
+							<th class="text-center" width="130px">No. Tender</th>
+							<th class="text-center" width="150px">PTJ</th>
+							<th class="text-center" width="120px">Status</th>
+							<th class="text-center" width="120px">Tarikh Jual</th>
+							<th class="text-center" width="120px">Tarikh Tutup</th>
+							<th class="text-center" width="120px">Harga (RM)</th>
+							<th class="text-center" width="120px">Tindakan</th>
 						</tr>
 					</thead>
 					<tbody>
-                         <tr>
-                            <td>MEMBEKAL RANGSUM PUKAL (AIR MINERAL) UNTUK BANGUNAN KERAJAAN</td>
-                            <td class="text-center">03/01/2026</td>
-                            <td class="text-center">01/05/2026</td>
-                            <td class="text-center">193,000.00</td>
-                            <td class="text-center">
-                                <a href="{{ route('perincianPage') }}" class="btn btn-sm btn-info text-white" title="Kemaskini">
-                                    Kemaskini
-                                </a>
-                            </td>
-                        </tr>
+                        @forelse($tenders as $item)
                         <tr>
-                            <td>PROJEK MENAIKTARAF JALAN PELABUHAN UTARA DARI KLANG CONTAINER TERMINAL</td>
-                            <td class="text-center">27/02/2026</td>
-                            <td class="text-center">31/07/2026</td>
-                            <td class="text-center">5,800,000.00</td>
+                            <td>{{ $item['name'] }}</td>
+                            <td class="text-center">{{ $item['no_tender'] }}</td>
+                            <td>{{ $item['ptj'] }}</td>
+                            <td class="text-center">{{ $item['status'] }}</td>
+                            <td class="text-center">{{ $item['tarikh_jual'] }}</td>
+                            <td class="text-center">{{ $item['tarikh_tutup'] }}</td>
+                            <td class="text-center">{{ $item['harga'] }}</td>
                             <td class="text-center">
-                            <a href="{{ route('perincianPage') }}" class="btn btn-sm btn-info text-white" title="Kemaskini">
+                                <a href="{{ route('perincianPage', ['tender' => $item['uuid']]) }}" class="btn btn-sm btn-info text-white" title="Kemaskini">
                                     Kemaskini
                                 </a>
                             </td>
                         </tr>
+                        @empty
+                        <tr>
+                            <td colspan="8" class="text-center text-muted py-4">Tiada tender / sebut harga tersedia. Tender akan dipaparkan selepas proses pelantikan jawatankuasa.</td>
+                        </tr>
+                        @endforelse
                     </tbody>
 				</table>
 			</div>

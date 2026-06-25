@@ -82,10 +82,13 @@ use App\Http\Controllers\DummyController;
 use App\Http\Controllers\JawatankuasaController;
 use App\Http\Controllers\CutOffController;
 use App\Http\Controllers\JawatankuasaPerolehanController;
+use App\Http\Controllers\PenyediaanMesyuaratController;
 use App\Http\Controllers\PenilaianKewanganController;
 use App\Http\Controllers\PenilaianTeknikalController;
 use App\Http\Controllers\PerakuanJabatanController;
 use App\Http\Controllers\EbiddingController;
+use App\Http\Controllers\TenderVisitRepresentativeController;
+use App\Http\Controllers\LawatanTapakUrusetiaController;
 
 // Basic routes to get the application running
 Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -166,7 +169,9 @@ Route::post('auth/reset', [AuthController::class, 'doResetPassword']);
 
 // Tenders
 Route::get('tenders/select', [TendersController::class, 'select']);
-Route::resource('tenders', TendersController::class);
+// Route::resource('tenders', TendersController::class);
+Route::get('tenders', [TendersController::class, 'index'])->name('tenders.index');
+Route::get('tenders/{id}', [TendersController::class, 'show'])->name('tenders.show');
 Route::get('tenders/{id}/prices', [TendersController::class, 'prices'])->name('tenders.prices');
 Route::get('tenders/{tender_id}/files/{id}', [TendersController::class, 'file'])->name('tenders.files');
 Route::get('tenders/{id}/vendors', [TendersController::class, 'vendors'])->name('tenders.vendors');
@@ -246,13 +251,20 @@ Route::post('/penyata-bank/submit', [JawatankuasaController::class, 'storePenyat
 Route::view('/penilaian-teknikal', 'newModule.penilaian.teknikal')->name('penilaianTeknikal');
 Route::view('/penilaian-teknikal-kerja', 'newModule.penilaian.teknikal_kerja')->name('penilaianTeknikalKerja');
 Route::view('/penilaian-kewangan', 'newModule.penilaian.kewangan')->name('penilaianKewangan');
-Route::view('/index-perincian', 'newModule.penyediaanMesyuarat.index_perincian')->name('perincianMesyuarat');
-Route::view('/perincian-page', 'newModule.penyediaanMesyuarat.perincian_mesyuarat')->name('perincianPage');
+Route::middleware(['auth'])->group(function () {
+	Route::get('/index-perincian', [PenyediaanMesyuaratController::class, 'index'])->name('perincianMesyuarat');
+	Route::get('/perincian-page', [PenyediaanMesyuaratController::class, 'show'])->name('perincianPage');
+	Route::post('/penyediaan-mesyuarat/simpan', [PenyediaanMesyuaratController::class, 'simpan'])->name('penyediaanMesyuarat.simpan');
+	Route::post('/penyediaan-mesyuarat/hantar', [PenyediaanMesyuaratController::class, 'hantar'])->name('penyediaanMesyuarat.hantar');
+});
 Route::view('/index-jawatankuasa', 'newModule.penyediaanMesyuarat.index_jawatankuasa')->name('jawatankuasaMesyuarat');
 Route::view('/jawatankuasa-page', 'newModule.penyediaanMesyuarat.jawatankuasa')->name('jawatankuasaPage');
-Route::view('/lawatan-tapak-urusetia', 'newModule.lawatanTapak.index')->name('lawatanTapakUrusetia');
-Route::view('/pengesahan-lawatan-tapak-urusetia', 'newModule.lawatanTapak.pengesahanLawatanTapak')->name('pengesahanLawatanTapak');
-Route::view('/kelulusan-lawatan-tapak-urusetia', 'newModule.lawatanTapak.kelulusanLawatanTapak')->name('kelulusanLawatanTapak');
+Route::middleware('auth')->group(function () {
+	Route::get('/lawatan-tapak-urusetia', [LawatanTapakUrusetiaController::class, 'index'])->name('lawatanTapakUrusetia');
+	Route::get('/pengesahan-lawatan-tapak-urusetia/{tender}', [LawatanTapakUrusetiaController::class, 'pengesahan'])->name('pengesahanLawatanTapak');
+	Route::post('/pengesahan-lawatan-tapak-urusetia/{tender}', [LawatanTapakUrusetiaController::class, 'updatePengesahan'])->name('pengesahanLawatanTapak.update');
+	Route::get('/kelulusan-lawatan-tapak-urusetia/{tender}', [LawatanTapakUrusetiaController::class, 'kelulusan'])->name('kelulusanLawatanTapak');
+});
 Route::view('/index-penyediaan-surat-niat', 'newModule.penyediaanSuratNiat.index')->name('indexPenyediaanSuratNiat');
 Route::view('/penyediaan-surat-niat', 'newModule.penyediaanSuratNiat.penyediaanSuratNiat')->name('penyediaanSuratNiat');
 Route::view('/index-penyediaan-sst', 'newModule.penyediaanSST.index')->name('indexPenyediaanSST');
@@ -299,9 +311,9 @@ Route::view('/penilaian-kewangan-kerja-borang15', 'newModule.penilaian.borang15'
 Route::view('/lawatan-tapak', 'newModule.syarikatPembekal.lawatan_tapak')->name('lawatanTapak');
 
 Route::middleware('auth')->group(function () {
-	Route::get('/visits/{visit}/representatives', 'TenderVisitRepresentativeController@index')
+	Route::get('/visits/{visit}/representatives', [TenderVisitRepresentativeController::class, 'index'])
 		->name('visits.representatives.index');
-	Route::post('/visits/{visit}/representatives', 'TenderVisitRepresentativeController@store')
+	Route::post('/visits/{visit}/representatives', [TenderVisitRepresentativeController::class, 'store'])
 		->name('visits.representatives.store');
 });
 Route::view('/syarat-tender', 'newModule.syarikatPembekal.syarat_tender')->name('syaratTender');
