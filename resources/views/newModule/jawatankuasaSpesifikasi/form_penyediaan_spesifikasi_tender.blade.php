@@ -209,7 +209,6 @@ $(document).ready(function () {
     const UPLOAD_URL     = @json(route('penyediaanSpekTender.uploadFile', $tender->uuid));
     const DELETE_BASE    = @json(url('/penyediaan-spesifikasi-tender/fail'));
     const USER_ID        = @json(auth()->id());
-    const IS_SUBMITTED   = @json(($checklistData['status'] ?? null) === 'submitted');
 
     // Server-provided existing data (null if first visit)
     var serverData = @json($checklistData ?? null);
@@ -219,10 +218,6 @@ $(document).ready(function () {
     // ── Init ───────────────────────────────────────────────────────────────────
     if (serverData && serverData.items && serverData.items.length > 0) {
         renderItems(serverData.items);
-    }
-
-    if (IS_SUBMITTED) {
-        setFormReadonly(true);
     }
 
     // ── Render existing items ──────────────────────────────────────────────────
@@ -452,7 +447,7 @@ $(document).ready(function () {
     function submitSpesifikasi() {
         if (!validateBeforeSubmit()) return;
 
-        if (!confirm('Hantar spesifikasi ini? Selepas menghantar, borang tidak boleh diedit.')) return;
+        if (!confirm('Hantar spesifikasi ini?')) return;
 
         // Save first, then submit
         saveDraft(function () {
@@ -467,7 +462,7 @@ $(document).ready(function () {
                     if (response && response.success) {
                         showToast('Spesifikasi berjaya dihantar!', 'success');
                         updateStatusBadge('submitted');
-                        setFormReadonly(true);
+                        setBusy('#btn-hantar', false, 'Hantar');
                     } else {
                         var msg = (response && response.message) ? response.message : 'Gagal menghantar.';
                         showToast(msg, 'danger');
@@ -492,13 +487,6 @@ $(document).ready(function () {
                   .html('<span class="d-inline-block rounded-circle" style="width:7px;height:7px;background:#16a34a;flex-shrink:0;"></span> Telah Dihantar');
             $badge.addClass('d-inline-flex align-items-center gap-2 px-3 py-2 rounded-2 fw-semibold');
         }
-    }
-
-    function setFormReadonly(readonly) {
-        if (!readonly) return;
-        $('#tbl-spesifikasi-body textarea, #tbl-spesifikasi-body select').prop('disabled', true);
-        $('#tbl-spesifikasi-body .btn-hapus-spesifikasi, #tbl-spesifikasi-body .upload-btn-row').addClass('disabled-upload').prop('disabled', true);
-        $('#btn-tambah-spesifikasi, #btn-simpan, #btn-hantar').hide();
     }
 
     function reNumber() {
@@ -560,7 +548,6 @@ $(document).ready(function () {
 
     // Add row
     $('#btn-tambah-spesifikasi').on('click', function () {
-        if (IS_SUBMITTED) return;
         $('#tbl-spesifikasi-empty').remove();
         var bil = $('#tbl-spesifikasi-body .spesifikasi-row').length + 1;
         $('#tbl-spesifikasi-body').append(buildRow(bil, {}));
@@ -575,13 +562,11 @@ $(document).ready(function () {
 
     // Simpan button
     $('#btn-simpan').on('click', function () {
-        if (IS_SUBMITTED) return;
         saveDraft();
     });
 
     // Hantar button
     $('#btn-hantar').on('click', function () {
-        if (IS_SUBMITTED) return;
         submitSpesifikasi();
     });
 

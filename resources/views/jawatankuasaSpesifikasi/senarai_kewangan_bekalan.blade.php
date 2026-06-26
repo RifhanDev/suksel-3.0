@@ -77,12 +77,20 @@
                     <span class="fw-semibold text-dark" style="font-size: 0.875rem;">{{ $ptj }}</span>
                 </div>
                 <div class="col-12 col-md-6 d-md-flex justify-content-md-end align-items-md-center">
-                    <span class="d-inline-flex align-items-center gap-2 px-3 py-2 rounded-2 fw-semibold"
+                    @if(($checklistData['status'] ?? null) === 'submitted')
+                        <span id="status-badge" class="d-inline-flex align-items-center gap-2 px-3 py-2 rounded-2 fw-semibold"
+                            style="background:#dcfce7;color:#166534;font-size:0.8rem;border:1px solid #bbf7d0;">
+                            <span class="d-inline-block rounded-circle" style="width:7px;height:7px;background:#16a34a;flex-shrink:0;"></span>
+                            Telah Dihantar
+                        </span>
+                    @else
+                    <span id="status-badge" class="d-inline-flex align-items-center gap-2 px-3 py-2 rounded-2 fw-semibold"
                         style="background: #fef9c3; color: #854d0e; font-size: 0.8rem; border: 1px solid #fde68a;">
                         <span class="d-inline-block rounded-circle"
                             style="width:7px;height:7px;background:#ca8a04;flex-shrink:0;"></span>
                         Dalam Proses
                     </span>
+                    @endif
                 </div>
             </div>
 
@@ -478,6 +486,7 @@
             var CSRF_TOKEN      = '{{ csrf_token() }}';
             var checklistItems   = @json($checklistData['items'] ?? []);
             var sokonganFiles   = @json($checklistData['files'] ?? []);
+            var IS_SUBMITTED    = @json(($checklistData['status'] ?? null) === 'submitted');
 
             var statusLabelMap = {
                 'submitted': { label: 'Selesai', cls: 'badge-status-success' },
@@ -1212,6 +1221,10 @@
                 });
             }
 
+            if (IS_SUBMITTED) {
+                setFormReadonly(true);
+            }
+
             // ─── LOADING OVERLAY ─────────────────────────────────────────────────────
             function blockUI(msg) {
                 $('#loading-overlay').removeClass('success');
@@ -1222,10 +1235,25 @@
                 $('#loading-overlay').removeClass('active success');
             }
 
+            function updateStatusBadge() {
+                $('#status-badge')
+                    .attr('style', 'background:#dcfce7;color:#166534;font-size:0.8rem;border:1px solid #bbf7d0;')
+                    .addClass('d-inline-flex align-items-center gap-2 px-3 py-2 rounded-2 fw-semibold')
+                    .html('<span class="d-inline-block rounded-circle" style="width:7px;height:7px;background:#16a34a;flex-shrink:0;"></span> Telah Dihantar');
+            }
+
+            function setFormReadonly(readonly) {
+                if (!readonly) return;
+                $('#tbl-kewangan input, #tbl-kewangan select, #input-penilaian, #input-harga-indikatif').prop('disabled', true);
+                $('.btn-tambah-kewangan, .btn-hapus-kewangan, .btn-simpan, .btn-hantar').hide();
+                $('#upload-zone-sokongan').hide();
+            }
+
             // ─── SIMPAN ───────────────────────────────────────────────────────────────
             var successModal = new bootstrap.Modal(document.getElementById('successModal'));
 
             $('.btn-simpan').on('click', function() {
+                if (IS_SUBMITTED) return;
                 blockUI('Menyimpan...');
                 doSave(function() {
                     unblockUI();
@@ -1240,6 +1268,7 @@
 
             // ─── HANTAR ───────────────────────────────────────────────────────────────
             $('.btn-hantar').on('click', function() {
+                if (IS_SUBMITTED) return;
                 // Check all rows are selesai
                 var $rows      = $('#tbl-kewangan tbody tr:not(#tbl-empty-row)');
                 var notSelesai = [];
@@ -1272,9 +1301,12 @@
                     })
                     .done(function(res) {
                         if (res && res.success) {
+                            IS_SUBMITTED = true;
+                            updateStatusBadge();
+                            setFormReadonly(true);
                             $('#loading-text').text('Berjaya dihantar! Mengalih...');
                             $('#loading-overlay').addClass('success');
-                            window.location.href = '{{ route('pengurusanSpesifikasi') }}';
+                            window.location.href = @json($afterSpecificationUrl ?? route('pengurusanSpesifikasi'));
                         } else {
                             unblockUI();
                             alert(res.message || 'Ralat semasa menghantar.');

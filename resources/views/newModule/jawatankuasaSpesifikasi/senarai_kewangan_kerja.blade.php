@@ -425,6 +425,7 @@ $(document).ready(function () {
     const TENDER_UUID  = @json($tender->uuid);
     const SAVE_URL     = @json(route('senaraiKewanganKerja.store', $tender->uuid));
     const SUBMIT_URL   = @json(route('senaraiKewanganKerja.submit', $tender->uuid));
+    const AFTER_SPEC_URL = @json($afterSpecificationUrl ?? route('pengurusanSpesifikasi'));
     const UPLOAD_URL   = @json(route('senaraiKewanganKerja.uploadFile', $tender->uuid));
     const DELETE_BASE  = @json(url('/senarai-kewangan-kerja/fail'));
     const USER_ID      = @json(auth()->id());
@@ -707,6 +708,9 @@ $(document).ready(function () {
                         showToast('Senarai kewangan berjaya dihantar!', 'success');
                         updateStatusBadge('submitted');
                         setFormReadonly(true);
+                        setTimeout(function () {
+                            window.location.href = AFTER_SPEC_URL;
+                        }, 1200);
                     } else {
                         var msg = (response && response.message) ? response.message : 'Gagal menghantar.';
                         showToast(msg, 'danger');

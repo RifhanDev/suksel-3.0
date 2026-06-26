@@ -4,6 +4,7 @@ namespace App\Support;
 
 use App\Models\FinancialChecklistItem;
 use App\Models\KewanganKerjaItem;
+use App\Models\SpesifikasiKerjaItem;
 use App\Models\TechnicalChecklistItem;
 use App\Tender;
 use Illuminate\Support\Collection;
@@ -22,12 +23,24 @@ class TenderDokumenPresenter
      */
     public function items(): array
     {
+        if ($this->isKerjaCategory()) {
+            return collect()
+                ->concat($this->spesifikasiKerjaItems())
+                ->concat($this->kewanganKerjaItems())
+                ->values()
+                ->all();
+        }
+
         return collect()
             ->concat($this->technicalItems())
             ->concat($this->financialItems())
-            ->concat($this->kewanganKerjaItems())
             ->values()
             ->all();
+    }
+
+    protected function isKerjaCategory(): bool
+    {
+        return (int) ($this->tender->kategori_perolehan_id ?? 0) === 3;
     }
 
     protected function technicalItems(): Collection
@@ -49,6 +62,22 @@ class TenderDokumenPresenter
             ->orderBy('id')
             ->get()
             ->map(fn (FinancialChecklistItem $item) => $this->formatItem($item, 'financial'))
+            ->toBase();
+    }
+
+    protected function spesifikasiKerjaItems(): Collection
+    {
+        return SpesifikasiKerjaItem::query()
+            ->whereHas('header', fn ($query) => $query->where('tender_id', $this->tender->id))
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->get()
+            ->map(fn (SpesifikasiKerjaItem $item) => [
+                'nama' => $item->spesifikasi,
+                'tindakan' => 'Muat Naik',
+                'badge_class' => VendorActionLabel::badgeClass('Muat Naik'),
+                'source' => 'spesifikasi_kerja',
+            ])
             ->toBase();
     }
 
