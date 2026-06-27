@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Tender;
 use App\Services\StosBackendClient;
+use App\Support\PenyediaanIklanNavigation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
@@ -50,7 +51,12 @@ class FinancialChecklistController extends Controller
             ]);
         }
 
-        return view('jawatankuasaSpesifikasi.senarai_kewangan_bekalan', compact('tender', 'checklistData', 'standardItems'));
+        return view('jawatankuasaSpesifikasi.senarai_kewangan_bekalan', [
+            'tender' => $tender,
+            'checklistData' => $checklistData,
+            'standardItems' => $standardItems,
+            'afterSpecificationUrl' => PenyediaanIklanNavigation::afterSpecificationUrl($tender),
+        ]);
     }
 
     public function store(Request $request, string $tenderUuid)

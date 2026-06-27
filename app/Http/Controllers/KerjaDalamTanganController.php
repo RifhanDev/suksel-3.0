@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\HandlesTenderFormAccess;
 use App\Models\Tender;
 use App\Services\StosBackendClient;
 use Illuminate\Http\Client\Response;
@@ -13,10 +14,10 @@ use Throwable;
 
 class KerjaDalamTanganController extends Controller
 {
+    use HandlesTenderFormAccess;
+
     public function create(?string $tenderUuid = null)
     {
-        $this->ensureSpecificationAccess();
-
         if (!$tenderUuid)
         {
             abort(404);
@@ -29,9 +30,14 @@ class KerjaDalamTanganController extends Controller
             abort(404);
         }
 
+        $this->ensureTenderFormAccess($tender);
+
         $existingData = null;
 
-        $response = $this->api()->get($this->url('kerja-dalam-tangan/' . $tenderUuid));
+        $apiPath = 'kerja-dalam-tangan/' . $tenderUuid;
+        $response = $this->isVendorFormMode()
+            ? $this->api()->get($this->stosUrlWithVendor($apiPath))
+            : $this->api()->get($this->url($apiPath));
 
         if ($response->successful())
         {
@@ -46,12 +52,24 @@ class KerjaDalamTanganController extends Controller
             ]);
         }
 
-        return view('tenderKerjaDalamTangan.form_kerja_dalam_tangan', compact('tender', 'existingData'));
+        if ($this->isVendorFormMode() && empty($existingData)) {
+            $existingData = $this->loadVendorFormPayload($tender, 'kerja_dalam_tangan');
+        }
+
+        return view('tenderKerjaDalamTangan.form_kerja_dalam_tangan', array_merge(
+            compact('tender', 'existingData'),
+            $this->formViewVars($tender)
+        ));
     }
 
     public function store(Request $request, string $tenderUuid)
     {
-        $this->ensureSpecificationAccess();
+        $tender = $this->findTender($tenderUuid);
+        if (!$tender) {
+            abort(404);
+        }
+        $this->ensureTenderFormAccess($tender);
+        $this->ensureFormEditable();
 
         $tajukList   = $request->input('kdt_tajuk', []);
         $picList     = $request->input('kdt_pic', []);
@@ -77,6 +95,10 @@ class KerjaDalamTanganController extends Controller
             'items'   => $items,
             'user_id' => auth()->id(),
         ];
+        if ($this->isVendorFormMode()) {
+            $payload['vendor_id'] = $this->vendorId();
+            $this->persistVendorFormPayload($tender, 'kerja_dalam_tangan', $payload);
+        }
 
         $apiUrl = $this->url('kerja-dalam-tangan/' . $tenderUuid);
 
@@ -93,12 +115,30 @@ class KerjaDalamTanganController extends Controller
                 'exception_line'  => $e->getLine(),
             ]);
 
+            if ($this->isVendorFormMode()) {
+                $this->trackVendorFormSubmitted($tender, 'kerja_dalam_tangan', [
+                    'text' => count($items) . ' rekod kerja dalam tangan (disimpan tempatan)',
+                ]);
+
+                return redirect($request->input('return', $this->vendorFormReturnUrl($tender)))
+                    ->with('warning', 'Data disimpan secara tempatan. Penyegerakan STOS gagal.');
+            }
+
             return redirect()->back()
                 ->with('error', 'Terdapat ralat sambungan semasa menyimpan. Sila cuba lagi.');
         }
 
         if (!$response->successful()) {
             $this->logStoreFailure($tenderUuid, $payload, $apiUrl, $response);
+
+            if ($this->isVendorFormMode()) {
+                $this->trackVendorFormSubmitted($tender, 'kerja_dalam_tangan', [
+                    'text' => count($items) . ' rekod kerja dalam tangan (disimpan tempatan)',
+                ]);
+
+                return redirect($request->input('return', $this->vendorFormReturnUrl($tender)))
+                    ->with('warning', 'Data disimpan secara tempatan. Penyegerakan STOS gagal.');
+            }
 
             $message = $response->json('message') ?: 'Terdapat ralat semasa menyimpan kerja dalam tangan.';
 
@@ -117,9 +157,13 @@ class KerjaDalamTanganController extends Controller
                 $uploadUrl = $this->url('kerja-dalam-tangan/' . $tenderUuid . '/files');
 
                 try {
+                    $uploadExtra = ['user_id' => auth()->id()];
+                    if ($this->isVendorFormMode()) {
+                        $uploadExtra['vendor_id'] = $this->vendorId();
+                    }
                     $uploadResponse = $this->api()
                         ->attach('file', file_get_contents($file->getRealPath()), $file->getClientOriginalName())
-                        ->post($uploadUrl, ['user_id' => auth()->id()]);
+                        ->post($uploadUrl, $uploadExtra);
 
                     if (!$uploadResponse->successful()) {
                         $fileErrors[] = $file->getClientOriginalName() . ': gagal dimuat naik.';
@@ -149,9 +193,28 @@ class KerjaDalamTanganController extends Controller
         }
 
         if (!empty($fileErrors)) {
+            if ($this->isVendorFormMode()) {
+                $this->trackVendorFormSubmitted($tender, 'kerja_dalam_tangan', [
+                    'text' => count($items) . ' rekod kerja dalam tangan (sebahagian fail gagal)',
+                ]);
+
+                return redirect($request->input('return', $this->vendorFormReturnUrl($tender)))
+                    ->with('success', 'Kerja dalam tangan berjaya disimpan.')
+                    ->with('warning', 'Beberapa fail gagal dimuat naik: ' . implode(', ', $fileErrors));
+            }
+
             return redirect()->back()
                 ->with('success', 'Kerja dalam tangan berjaya disimpan.')
                 ->with('warning', 'Beberapa fail gagal dimuat naik: ' . implode(', ', $fileErrors));
+        }
+
+        if ($this->isVendorFormMode()) {
+            $this->trackVendorFormSubmitted($tender, 'kerja_dalam_tangan', [
+                'text' => count($items) . ' rekod kerja dalam tangan',
+            ]);
+
+            return redirect($request->input('return', $this->vendorFormReturnUrl($tender)))
+                ->with('success', 'Kerja dalam tangan berjaya disimpan.');
         }
 
         return redirect()
@@ -161,7 +224,11 @@ class KerjaDalamTanganController extends Controller
 
     public function deleteFile(string $fileUuid)
     {
-        $this->ensureSpecificationAccess();
+        $user = auth()->user();
+        if (! $user->hasRole('Admin') && ! $user->can('tender:specification-management') && ! $user->vendor_id) {
+            abort(403);
+        }
+        $this->ensureFormEditable();
 
         $apiUrl = $this->url('kerja-dalam-tangan-files/' . $fileUuid);
 
@@ -231,14 +298,5 @@ class KerjaDalamTanganController extends Controller
             'response_message'      => $response->json('message'),
             'response_body_preview' => Str::limit($response->body(), 500),
         ]);
-    }
-
-    private function ensureSpecificationAccess(): void
-    {
-        $user = auth()->user();
-
-        if (!$user->hasRole('Admin') && !$user->can('tender:specification-management')) {
-            abort(403);
-        }
     }
 }

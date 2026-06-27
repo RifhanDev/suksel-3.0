@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\HandlesTenderFormAccess;
 use App\Models\Tender;
 use App\Models\TenderPrestasiKerja;
 use App\Models\TenderPrestasiKerjaItem;
@@ -14,26 +15,33 @@ use Illuminate\Support\Str;
 
 class TenderPrestasiKerjaController extends Controller
 {
+    use HandlesTenderFormAccess;
+
     public function index(string $tenderUuid)
     {
-        $this->ensureAccess();
-
         $tender = Tender::with('tenderer')
             ->leftJoin('ref_kategori_jenis_perolehans as k', 'k.id', '=', 'tenders.kategori_perolehan_id')
             ->select('tenders.*', 'k.name as kategori_perolehan_name')
             ->where('tenders.uuid', $tenderUuid)
             ->firstOrFail();
 
-        $prestasi = TenderPrestasiKerja::with(['items', 'dokumens'])->where('tender_id', $tender->id)->first();
+        $this->ensureTenderFormAccess($tender);
 
-        return view('newModule.jawatankuasaSpesifikasi.form_prestasi_kerja_semasa_petender', compact('tender', 'prestasi'));
+        $prestasi = TenderPrestasiKerja::with(['items', 'dokumens'])
+            ->where($this->vendorFormRecordKeys($tender))
+            ->first();
+
+        return view('newModule.jawatankuasaSpesifikasi.form_prestasi_kerja_semasa_petender', array_merge(
+            compact('tender', 'prestasi'),
+            $this->formViewVars($tender)
+        ));
     }
 
     public function store(Request $request, string $tenderUuid)
     {
-        $this->ensureAccess();
-
         $tender = Tender::where('uuid', $tenderUuid)->firstOrFail();
+        $this->ensureTenderFormAccess($tender);
+        $this->ensureFormEditable();
 
         $validated = $request->validate([
             'nama'               => ['nullable', 'array'],
@@ -51,7 +59,7 @@ class TenderPrestasiKerjaController extends Controller
             'tarikh_penilaian'   => ['nullable', 'array'],
             'tarikh_penilaian.*' => ['nullable', 'string', 'max:100'],
             'luputan'            => ['nullable', 'array'],
-            'luputan.*'          => ['nullable', 'string', 'max:100'],
+            'luputan.*'          => ['nullable', 'integer', 'min:0'],
             'kemajuan_sebenar'   => ['nullable', 'array'],
             'kemajuan_sebenar.*' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'kemajuan_jadual'    => ['nullable', 'array'],
@@ -62,12 +70,15 @@ class TenderPrestasiKerjaController extends Controller
 
         try {
             DB::transaction(function () use ($validated, $tender, $request) {
+                $keys = $this->vendorFormRecordKeys($tender);
+                $existing = TenderPrestasiKerja::query()->where($keys)->first();
+
                 $prestasi = TenderPrestasiKerja::updateOrCreate(
-                    ['tender_id' => $tender->id],
+                    $keys,
                     [
-                        'uuid'       => (string) Str::uuid(),
+                        'uuid'       => $existing?->uuid ?? (string) Str::uuid(),
                         'status'     => 'submitted',
-                        'created_by' => auth()->id(),
+                        'created_by' => $existing?->created_by ?? auth()->id(),
                         'updated_by' => auth()->id(),
                     ]
                 );
@@ -126,6 +137,26 @@ class TenderPrestasiKerjaController extends Controller
                         ]);
                     }
                 }
+
+                if ($this->isVendorFormMode()) {
+                    $itemsPayload = $prestasi->items()->get()->map(fn ($item) => [
+                        'nama' => $item->nama,
+                        'no_kontrak' => $item->no_kontrak,
+                        'harga' => (float) $item->harga,
+                        'tarikh_tapak' => $item->tarikh_tapak,
+                        'tempoh' => $item->tempoh,
+                        'tarikh_siap' => $item->tarikh_siap,
+                        'tarikh_penilaian' => $item->tarikh_penilaian,
+                        'luputan' => $item->luputan,
+                        'kemajuan_sebenar' => $item->kemajuan_sebenar,
+                        'kemajuan_jadual' => $item->kemajuan_jadual,
+                    ])->all();
+
+                    $this->persistVendorFormPayload($tender, 'prestasi_kerja', [
+                        'items' => $itemsPayload,
+                        'dokumen_count' => $prestasi->dokumens()->count(),
+                    ]);
+                }
             });
 
             // Sync status to backend API
@@ -141,11 +172,22 @@ class TenderPrestasiKerjaController extends Controller
                 ]);
             }
 
+            if ($this->isVendorFormMode()) {
+                $this->trackVendorFormSubmitted($tender, 'prestasi_kerja', [
+                    'text' => 'Prestasi kerja semasa disimpan',
+                ]);
+            }
+
             if ($request->ajax()) {
                 return response()->json([
                     'success' => true,
                     'message' => 'Berjaya disimpan.',
                 ]);
+            }
+
+            $redirect = $request->input('return');
+            if ($redirect) {
+                return redirect($redirect)->with('success', 'Prestasi Kerja Semasa Petender berjaya disimpan.');
             }
 
             return redirect()->route('senaraiKewanganKerja', $tenderUuid)->with('success', 'Prestasi Kerja Semasa Petender berjaya disimpan.');
@@ -165,7 +207,7 @@ class TenderPrestasiKerjaController extends Controller
 
     public function deleteFile(Request $request, string $fileUuid)
     {
-        $this->ensureAccess();
+        $this->ensureFormEditable();
 
         try {
             $dokumen = TenderPrestasiKerjaDokumen::where('uuid', $fileUuid)->firstOrFail();
@@ -192,15 +234,6 @@ class TenderPrestasiKerjaController extends Controller
                 'success' => false,
                 'message' => 'Gagal memadam dokumen.'
             ], 500);
-        }
-    }
-
-    private function ensureAccess(): void
-    {
-        $user = auth()->user();
-
-        if (!$user->hasRole('Admin') && !$user->can('tender:specification-management')) {
-            abort(403);
         }
     }
 

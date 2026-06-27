@@ -192,6 +192,12 @@ Route::get('tenders/{tender_id}/files/{id}', [TendersController::class, 'file'])
 Route::get('tenders/{id}/vendors', [TendersController::class, 'vendors'])->name('tenders.vendors');
 Route::post('tenders/{id}/exception', [TendersController::class, 'exception'])->name('tenders.exception');
 
+Route::middleware(['auth'])->group(function () {
+	Route::post('tenders/{tender}/dokumen/{itemUuid}/upload', [\App\Http\Controllers\VendorTenderDokumenController::class, 'upload'])->name('tenderDokumen.upload');
+	Route::delete('tenders/dokumen-files/{fileUuid}', [\App\Http\Controllers\VendorTenderDokumenController::class, 'deleteFile'])->name('tenderDokumen.deleteFile');
+	Route::post('tenders/{tender}/dokumen/{itemUuid}/key-in', [\App\Http\Controllers\VendorTenderDokumenController::class, 'saveKeyIn'])->name('tenderDokumen.saveKeyIn');
+});
+
 // Petender Performance
 Route::prefix('petenders')->controller(PetenderPerformanceController::class)->group(function () {
 	Route::post('petender-performance/{tender}/{vendor}', 'store')->name('store.PetenderPerformance');

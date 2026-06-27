@@ -14,7 +14,11 @@
         </div>
     </div>
 
-    @include('tenders._dokumen_tender_checklist_table', ['tenderDokumen' => $tenderDokumen])
+    @include('tenders._dokumen_tender_checklist_table', [
+        'tenderDokumen' => $tenderDokumen,
+        'tender' => $tender,
+        'mode' => 'admin',
+    ])
 
 </div>
 <!-- End Senarai Dokumen -->

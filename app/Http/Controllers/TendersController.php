@@ -510,6 +510,7 @@ class TendersController extends Controller
 	public function show(Request $request, $id)
 	{
 		$tender = Tender::with('codes')->with('siteVisits', 'creator', 'officer')->findOrFail($id);
+		app(\App\Services\StosTenderChecklistSync::class)->syncForTender($tender);
 		$pegawaiDisplay = \App\Support\TenderPegawaiPresenter::for($tender);
 		$tenderDokumen = \App\Support\TenderDokumenPresenter::for($tender);
 
@@ -733,6 +734,33 @@ class TendersController extends Controller
 				'skheader.status as spesifikasi_status',
 				'kkheader.status as kewangan_kerja_status',
 			])
+			->where(function ($query) {
+				// Bekalan / Perkhidmatan — hide only when both teknikal & kewangan are submitted
+				$query->where(function ($q) {
+					$q->whereIn('tenders.kategori_perolehan_id', [1, 2])
+						->where(function ($inner) {
+							$inner->whereNull('tcheader.status')
+								->orWhere('tcheader.status', '!=', 'submitted')
+								->orWhereNull('fcheader.status')
+								->orWhere('fcheader.status', '!=', 'submitted');
+						});
+				})
+				// Kerja — hide only when both spesifikasi & kewangan kerja are submitted
+				->orWhere(function ($q) {
+					$q->where('tenders.kategori_perolehan_id', 3)
+						->where(function ($inner) {
+							$inner->whereNull('skheader.status')
+								->orWhere('skheader.status', '!=', 'submitted')
+								->orWhereNull('kkheader.status')
+								->orWhere('kkheader.status', '!=', 'submitted');
+						});
+				})
+				// Other / unset category — keep visible
+				->orWhere(function ($q) {
+					$q->whereNull('tenders.kategori_perolehan_id')
+						->orWhereNotIn('tenders.kategori_perolehan_id', [1, 2, 3]);
+				});
+			})
 			->orderBy('tenders.document_stop_date', 'desc')
 			->orderBy('tenders.id', 'desc');
 	}

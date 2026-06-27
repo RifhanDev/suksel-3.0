@@ -19,6 +19,7 @@ class TechnicalChecklistItem extends Model
         'sort_order',
         'standard_item_id',
         'specification_document_id',
+        'standard_item_id',
         'online_form_key',
         'online_form_route',
     ];

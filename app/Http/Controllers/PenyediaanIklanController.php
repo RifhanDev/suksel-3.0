@@ -6,6 +6,7 @@ use App\Models\PenyediaanIklan;
 use App\Models\RefState;
 use App\Services\PenyediaanIklanService;
 use App\Services\StosBackendClient;
+use App\Services\StosTenderChecklistSync;
 use App\Support\TenderDokumenPresenter;
 use App\Support\TenderReviewPresenter;
 use App\Tender;
@@ -20,7 +21,8 @@ class PenyediaanIklanController extends Controller
 {
     public function __construct(
         protected StosBackendClient $stos,
-        protected PenyediaanIklanService $penyediaanIklanService
+        protected PenyediaanIklanService $penyediaanIklanService,
+        protected StosTenderChecklistSync $checklistSync
     ) {}
 
     public function index()
@@ -76,6 +78,7 @@ class PenyediaanIklanController extends Controller
         }
 
         $tender->load(['tenderer', 'codes.code', 'creator', 'officer', 'siteVisits']);
+        $this->checklistSync->syncForTender($tender);
         $tenderReview = TenderReviewPresenter::for($tender);
         $tenderDokumen = TenderDokumenPresenter::for($tender);
         $pegawaiPilihan = $this->pegawaiPilihanForTender($tender);

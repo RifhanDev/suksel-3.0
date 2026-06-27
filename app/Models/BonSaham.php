@@ -12,6 +12,7 @@ class BonSaham extends Model
     protected $fillable = [
         'uuid',
         'tender_id',
+        'vendor_id',
         'jumlah_keseluruhan',
         'status',
         'created_by',

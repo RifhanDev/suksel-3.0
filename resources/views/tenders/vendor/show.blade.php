@@ -109,10 +109,11 @@
 @section('content')
 
     @php
-        $dokumenList = $tenderDokumen->items();
-        $canManageWakilLawatan = Auth::check()
+        $vendorCanEdit = Auth::check()
             && Auth::user()->vendor_id
             && $tender->hasParticipate(Auth::user()->vendor_id);
+        $dokumenList = $tenderDokumen->items('vendor', $vendorCanEdit ? (int) Auth::user()->vendor_id : null);
+        $canManageWakilLawatan = $vendorCanEdit;
     @endphp
 
 	{{-- Breadcrumb + Header --}}
@@ -711,7 +712,12 @@
 									<small class="text-muted" style="font-size:0.72rem;">Senarai dokumen yang diperlukan daripada petender</small>
 								</div>
 							</div>
-							@include('tenders._dokumen_tender_checklist_table', ['dokumenList' => $dokumenList])
+							@include('tenders._dokumen_tender_checklist_table', [
+								'tenderDokumen' => $tenderDokumen,
+								'tender' => $tender,
+								'mode' => 'vendor',
+								'vendorCanEdit' => $vendorCanEdit,
+							])
 						</div>
 					</div>
 				@endif
