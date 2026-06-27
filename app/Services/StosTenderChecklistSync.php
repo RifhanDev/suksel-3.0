@@ -8,8 +8,10 @@ use App\Models\KewanganKerjaHeader;
 use App\Models\KewanganKerjaItem;
 use App\Models\SpesifikasiKerjaHeader;
 use App\Models\SpesifikasiKerjaItem;
+use App\Models\StandardChecklistItem;
 use App\Models\TechnicalChecklistHeader;
 use App\Models\TechnicalChecklistItem;
+use App\Models\TechnicalSpecificationDocument;
 use App\Tender;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -87,6 +89,8 @@ class StosTenderChecklistSync
                     'score' => $item['score'] ?? 0,
                     'status' => $item['status'] ?? 'draft',
                     'sort_order' => $item['sort_order'] ?? 0,
+                    'standard_item_id' => $this->resolveStandardItemId($item['standard_item_uuid'] ?? null),
+                    'specification_document_id' => $this->resolveSpecificationDocumentId($item['specification_document_uuid'] ?? null),
                 ]
             );
         });
@@ -131,6 +135,8 @@ class StosTenderChecklistSync
                     'score' => $item['score'] ?? 0,
                     'status' => $item['status'] ?? 'draft',
                     'sort_order' => $item['sort_order'] ?? 0,
+                    'standard_item_id' => $this->resolveStandardItemId($item['standard_item_uuid'] ?? null),
+                    'technical_item_id' => $this->resolveTechnicalItemId($tender->id, $item['technical_item_uuid'] ?? null),
                 ]
             );
         });
@@ -214,6 +220,7 @@ class StosTenderChecklistSync
                     'score' => $item['score'] ?? 0,
                     'status' => $item['status'] ?? 'draft',
                     'sort_order' => $item['sort_order'] ?? 0,
+                    'standard_item_id' => $this->resolveStandardItemId($item['standard_item_uuid'] ?? null),
                 ]
             );
         });
@@ -256,5 +263,35 @@ class StosTenderChecklistSync
             ->where($headerForeignKey, $headerId)
             ->when(! empty($keptIds), fn ($query) => $query->whereNotIn('id', $keptIds))
             ->delete();
+    }
+
+    protected function resolveStandardItemId(?string $uuid): ?int
+    {
+        if (! $uuid) {
+            return null;
+        }
+
+        return StandardChecklistItem::query()->where('uuid', $uuid)->value('id');
+    }
+
+    protected function resolveSpecificationDocumentId(?string $uuid): ?int
+    {
+        if (! $uuid) {
+            return null;
+        }
+
+        return TechnicalSpecificationDocument::query()->where('uuid', $uuid)->value('id');
+    }
+
+    protected function resolveTechnicalItemId(int $tenderId, ?string $uuid): ?int
+    {
+        if (! $uuid) {
+            return null;
+        }
+
+        return TechnicalChecklistItem::query()
+            ->whereHas('header', fn ($query) => $query->where('tender_id', $tenderId))
+            ->where('uuid', $uuid)
+            ->value('id');
     }
 }

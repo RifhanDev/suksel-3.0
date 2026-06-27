@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\HandlesTenderFormAccess;
 use App\Models\Tender;
 use App\Services\StosBackendClient;
 use Illuminate\Http\Client\Response;
@@ -13,25 +14,24 @@ use Throwable;
 
 class PengalamanKerjaController extends Controller
 {
+    use HandlesTenderFormAccess;
+
     public function create(?string $tenderUuid = null)
     {
-        $this->ensureSpecificationAccess();
-
         if (!$tenderUuid)
         {
             abort(404);
         }
 
         $tender = $this->findTender($tenderUuid);
-
-        if (!$tender)
-        {
-            abort(404);
-        }
+        $this->ensureTenderFormAccess($tender);
 
         $existingData = null;
 
-        $response = $this->api()->get($this->url('pengalaman-kerja/' . $tenderUuid));
+        $apiPath = 'pengalaman-kerja/' . $tenderUuid;
+        $response = $this->isVendorFormMode()
+            ? $this->api()->get($this->stosUrlWithVendor($apiPath))
+            : $this->api()->get($this->url($apiPath));
 
         if ($response->successful())
         {
@@ -46,12 +46,24 @@ class PengalamanKerjaController extends Controller
             ]);
         }
 
-        return view('tenderPengalamanKerja.form_pengalaman_kerja', compact('tender', 'existingData'));
+        if ($this->isVendorFormMode() && empty($existingData)) {
+            $existingData = $this->loadVendorFormPayload($tender, 'pengalaman_kerja');
+        }
+
+        return view('tenderPengalamanKerja.form_pengalaman_kerja', array_merge([
+            'tender' => $tender,
+            'existingData' => $existingData,
+        ], $this->formViewVars($tender)));
     }
 
     public function store(Request $request, string $tenderUuid)
     {
-        $this->ensureSpecificationAccess();
+        $tender = $this->findTender($tenderUuid);
+        if (!$tender) {
+            abort(404);
+        }
+        $this->ensureTenderFormAccess($tender);
+        $this->ensureFormEditable();
 
         $tajukList   = $request->input('pengalaman_tajuk', []);
         $picList     = $request->input('pengalaman_pic', []);
@@ -77,6 +89,10 @@ class PengalamanKerjaController extends Controller
             'items'   => $items,
             'user_id' => auth()->id(),
         ];
+        if ($this->isVendorFormMode()) {
+            $payload['vendor_id'] = $this->vendorId();
+            $this->persistVendorFormPayload($tender, 'pengalaman_kerja', $payload);
+        }
 
         $apiUrl = $this->url('pengalaman-kerja/' . $tenderUuid);
 
@@ -93,12 +109,30 @@ class PengalamanKerjaController extends Controller
                 'exception_line'  => $e->getLine(),
             ]);
 
+            if ($this->isVendorFormMode()) {
+                $this->trackVendorFormSubmitted($tender, 'pengalaman_kerja', [
+                    'text' => count($items) . ' rekod pengalaman (disimpan tempatan)',
+                ]);
+
+                return redirect($request->input('return', $this->vendorFormReturnUrl($tender)))
+                    ->with('warning', 'Data disimpan secara tempatan. Penyegerakan STOS gagal.');
+            }
+
             return redirect()->back()
                 ->with('error', 'Terdapat ralat sambungan semasa menyimpan. Sila cuba lagi.');
         }
 
         if (!$response->successful()) {
             $this->logStoreFailure($tenderUuid, $payload, $apiUrl, $response);
+
+            if ($this->isVendorFormMode()) {
+                $this->trackVendorFormSubmitted($tender, 'pengalaman_kerja', [
+                    'text' => count($items) . ' rekod pengalaman (disimpan tempatan)',
+                ]);
+
+                return redirect($request->input('return', $this->vendorFormReturnUrl($tender)))
+                    ->with('warning', 'Data disimpan secara tempatan. Penyegerakan STOS gagal.');
+            }
 
             $message = $response->json('message') ?: 'Terdapat ralat semasa menyimpan pengalaman kerja.';
 
@@ -118,9 +152,13 @@ class PengalamanKerjaController extends Controller
                 $uploadUrl = $this->url('pengalaman-kerja/' . $tenderUuid . '/files');
 
                 try {
+                    $uploadExtra = ['user_id' => auth()->id()];
+                    if ($this->isVendorFormMode()) {
+                        $uploadExtra['vendor_id'] = $this->vendorId();
+                    }
                     $uploadResponse = $this->api()
                         ->attach('file', file_get_contents($file->getRealPath()), $file->getClientOriginalName())
-                        ->post($uploadUrl, ['user_id' => auth()->id()]);
+                        ->post($uploadUrl, $uploadExtra);
 
                     if (!$uploadResponse->successful()) {
                         $fileErrors[] = $file->getClientOriginalName() . ': gagal dimuat naik.';
@@ -150,9 +188,24 @@ class PengalamanKerjaController extends Controller
         }
 
         if (!empty($fileErrors)) {
+            if ($this->isVendorFormMode()) {
+                $this->trackVendorFormSubmitted($tender, 'pengalaman_kerja', [
+                    'text' => count($items) . ' rekod pengalaman (sebahagian fail gagal)',
+                ]);
+            }
+
             return redirect()->back()
                 ->with('success', 'Pengalaman kerja berjaya disimpan.')
                 ->with('warning', 'Beberapa fail gagal dimuat naik: ' . implode(', ', $fileErrors));
+        }
+
+        if ($this->isVendorFormMode()) {
+            $this->trackVendorFormSubmitted($tender, 'pengalaman_kerja', [
+                'text' => count($items) . ' rekod pengalaman kerja',
+            ]);
+
+            return redirect($request->input('return', $this->vendorFormReturnUrl($tender)))
+                ->with('success', 'Pengalaman kerja berjaya disimpan.');
         }
 
         return redirect()
@@ -162,7 +215,11 @@ class PengalamanKerjaController extends Controller
 
     public function deleteFile(string $fileUuid)
     {
-        $this->ensureSpecificationAccess();
+        $user = auth()->user();
+        if (! $user->hasRole('Admin') && ! $user->can('tender:specification-management') && ! $user->vendor_id) {
+            abort(403);
+        }
+        $this->ensureFormEditable();
 
         $apiUrl = $this->url('pengalaman-kerja-files/' . $fileUuid);
 
@@ -232,14 +289,5 @@ class PengalamanKerjaController extends Controller
             'response_message'     => $response->json('message'),
             'response_body_preview'=> Str::limit($response->body(), 500),
         ]);
-    }
-
-    private function ensureSpecificationAccess(): void
-    {
-        $user = auth()->user();
-
-        if (!$user->hasRole('Admin') && !$user->can('tender:specification-management')) {
-            abort(403);
-        }
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\HandlesTenderFormAccess;
 use App\Models\Tender;
 use App\Models\LembaranImbangan;
 use App\Services\StosBackendClient;
@@ -11,34 +12,51 @@ use Illuminate\Support\Str;
 
 class LembaranImbanganController extends Controller
 {
+    use HandlesTenderFormAccess;
+
     public function index(string $tenderUuid)
     {
-        $this->ensureAccess();
-
         $tender = Tender::with('tenderer')
             ->leftJoin('ref_kategori_jenis_perolehans as k', 'k.id', '=', 'tenders.kategori_perolehan_id')
             ->select('tenders.*', 'k.name as kategori_perolehan_name')
             ->where('tenders.uuid', $tenderUuid)
             ->firstOrFail();
 
-        // Load lembaran data locally
-        $lembaranData = LembaranImbangan::where('tender_id', $tender->id)->first();
-        if (!$lembaranData) {
-            $lembaranData = LembaranImbangan::create([
-                'uuid'      => (string) Str::uuid(),
-                'tender_id' => $tender->id,
-                'status'    => 'draft',
-            ]);
+        $this->ensureTenderFormAccess($tender);
+
+        // Load lembaran data scoped to vendor or PTJ
+        $keys = $this->vendorFormRecordKeys($tender);
+        $lembaranData = LembaranImbangan::where($keys)->first();
+
+        if (! $lembaranData && $this->isVendorFormMode()) {
+            $fallback = $this->loadVendorFormPayload($tender, 'lembaran_imbangan');
+            if ($fallback) {
+                $lembaranData = new LembaranImbangan($fallback);
+            }
         }
 
-        return view('newModule.jawatankuasaSpesifikasi.form_lembaran_imbangan', compact('tender', 'lembaranData'));
+        if (! $lembaranData && ! $this->isVendorFormMode()) {
+            $lembaranData = LembaranImbangan::create(array_merge($keys, [
+                'uuid'   => (string) Str::uuid(),
+                'status' => 'draft',
+            ]));
+        }
+
+        if (! $lembaranData) {
+            $lembaranData = new LembaranImbangan();
+        }
+
+        return view('newModule.jawatankuasaSpesifikasi.form_lembaran_imbangan', array_merge(
+            compact('tender', 'lembaranData'),
+            $this->formViewVars($tender)
+        ));
     }
 
     public function store(Request $request, string $tenderUuid)
     {
-        $this->ensureAccess();
-
         $tender = Tender::where('uuid', $tenderUuid)->firstOrFail();
+        $this->ensureTenderFormAccess($tender);
+        $this->ensureFormEditable();
 
         $validated = $request->validate([
             'aset_tetap'             => ['nullable', 'numeric', 'min:0'],
@@ -51,21 +69,28 @@ class LembaranImbanganController extends Controller
         ]);
 
         try {
+            $keys = $this->vendorFormRecordKeys($tender);
+            $existing = LembaranImbangan::query()->where($keys)->first();
+
             $lembaran = LembaranImbangan::updateOrCreate(
-                ['tender_id' => $tender->id],
+                $keys,
                 [
-                    'uuid'                  => (string) Str::uuid(),
+                    'uuid'                  => $existing?->uuid ?? (string) Str::uuid(),
                     'aset_tetap'            => $validated['aset_tetap'] ?? 0.00,
                     'aset_semasa'           => $validated['aset_semasa'] ?? 0.00,
                     'liabiliti_semasa'      => $validated['liabiliti_semasa'] ?? 0.00,
                     'liabiliti_tetap'       => $validated['liabiliti_tetap'] ?? 0.00,
                     'wang_tunai'            => $validated['wang_tunai'] ?? 0.00,
                     'baki_kemudahan_kredit' => $validated['baki_kemudahan_kredit'] ?? 0.00,
-                    'status'                => $validated['status'] ?? 'draft',
-                    'created_by'            => auth()->id(),
+                    'status'                => $validated['status'] ?? 'submitted',
+                    'created_by'            => $existing?->created_by ?? auth()->id(),
                     'updated_by'            => auth()->id(),
                 ]
             );
+
+            if ($this->isVendorFormMode()) {
+                $this->persistVendorFormPayload($tender, 'lembaran_imbangan', $validated);
+            }
 
             // Sync checklist item status to backend API
             $syncResponse = $this->api()->post(
@@ -80,12 +105,23 @@ class LembaranImbanganController extends Controller
                 ]);
             }
 
+            if ($this->isVendorFormMode()) {
+                $this->trackVendorFormSubmitted($tender, 'lembaran_imbangan', [
+                    'text' => 'Lembaran imbangan disimpan',
+                ]);
+            }
+
             if ($request->ajax()) {
                 return response()->json([
                     'success' => true,
                     'message' => 'Berjaya disimpan.',
                     'data'    => $lembaran
                 ]);
+            }
+
+            $redirect = $request->input('return');
+            if ($redirect) {
+                return redirect($redirect)->with('success', 'Lembaran Imbangan berjaya disimpan.');
             }
 
             return redirect()->route('senaraiKewanganKerja', $tenderUuid)->with('success', 'Lembaran Imbangan berjaya disimpan.');
@@ -100,15 +136,6 @@ class LembaranImbanganController extends Controller
             }
 
             return redirect()->back()->withInput()->with('error', 'Ralat semasa menyimpan Lembaran Imbangan.');
-        }
-    }
-
-    private function ensureAccess(): void
-    {
-        $user = auth()->user();
-
-        if (!$user->hasRole('Admin') && !$user->can('tender:specification-management')) {
-            abort(403);
         }
     }
 

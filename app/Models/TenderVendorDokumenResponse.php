@@ -2,25 +2,26 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Tender;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class BonSaham extends Model
+class TenderVendorDokumenResponse extends Model
 {
-    use HasFactory;
-
     protected $fillable = [
         'uuid',
         'tender_id',
         'vendor_id',
-        'jumlah_keseluruhan',
+        'checklist_item_uuid',
+        'section',
+        'response_type',
+        'payload',
         'status',
-        'created_by',
         'updated_by',
     ];
 
     protected $casts = [
-        'jumlah_keseluruhan' => 'decimal:2',
+        'payload' => 'array',
     ];
 
     public function getRouteKeyName(): string
@@ -28,13 +29,8 @@ class BonSaham extends Model
         return 'uuid';
     }
 
-    public function tender()
+    public function tender(): BelongsTo
     {
         return $this->belongsTo(Tender::class);
-    }
-
-    public function accounts()
-    {
-        return $this->hasMany(BonSahamAccount::class);
     }
 }
