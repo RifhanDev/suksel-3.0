@@ -35,7 +35,7 @@
         </div>
         <div class="text-muted mt-2" style="font-size:0.78rem;">
             @if ($mode === 'vendor' && $vendorCanEdit)
-                Sila isi maklum balas mengikut jenis skema (Text, Nombor, Ya/Tidak) yang ditetapkan PTJ.
+                Sila isi Pematuhan, Cadangan Petender (sub-item) dan Tawaran Harga (item utama).
             @elseif ($mode === 'admin')
                 Pratonton templat spesifikasi dan skema maklum balas petender.
             @else
