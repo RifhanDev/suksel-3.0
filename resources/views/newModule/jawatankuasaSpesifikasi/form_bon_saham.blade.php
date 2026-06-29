@@ -1,11 +1,62 @@
-@extends('layouts.v3.master')
+@extends($layout ?? 'layouts.v3.master')
 
 @section('styles')
     <link href="{{ asset('css/components/badges.css') }}" rel="stylesheet">
     <link href="{{ asset('css/components/button-components.css') }}" rel="stylesheet">
+    <style>
+        .borang-title-bar {
+            background: #e2e8f0;
+            color: #1e293b;
+            font-weight: 700;
+            font-size: 0.82rem;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            padding: 10px 16px;
+            border-radius: 6px 6px 0 0;
+        }
+        .borang-subtitle {
+            font-size: 0.78rem;
+            color: #1e40af;
+            font-weight: 600;
+        }
+        .bon-akaun-block {
+            border-bottom: 2px dotted #cbd5e1;
+            padding-bottom: 1.25rem;
+            margin-bottom: 1.25rem;
+        }
+        .bon-akaun-block:last-of-type {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        .btn-hapus-akaun {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            background: #fee2e2;
+            color: #ef4444;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+        }
+    </style>
 @endsection
 
 @section('content')
+    @include('tenders.forms._view_only_lock')
+
+    @php
+        $kembaliUrl = $returnUrl ?? route('senaraiKewanganKerja', $tender->uuid);
+        $viewOnly = $viewOnly ?? false;
+        $initialAccounts = isset($bonSaham) && $bonSaham->accounts->isNotEmpty()
+            ? $bonSaham->accounts->map(fn ($a) => [
+                'bank_institusi' => $a->bank_institusi,
+                'jumlah_deposit' => (float) $a->jumlah_deposit,
+            ])->values()->toArray()
+            : [];
+    @endphp
 
     <!-- HEADER -->
     <div class="d-flex flex-column flex-lg-row justify-content-start align-items-start align-items-lg-center mb-4">
@@ -18,18 +69,16 @@
     <!-- TENDER INFO -->
     <div class="content-card mb-4 p-0">
         <div class="content-card-body p-4">
-
-            <!-- Tajuk Tender -->
             <div class="mb-3 pb-3 border-bottom">
                 <span class="text-muted fw-semibold text-uppercase d-block mb-1"
                     style="font-size: 0.67rem; letter-spacing: 0.5px;">Tajuk Tender</span>
                 <h5 class="fw-bold text-dark mb-0" style="line-height: 1.45; font-size: 1rem;">
                     {{ $tender->name ?? '-' }}
-                    <span class="fw-normal text-muted fst-italic" style="font-size: 0.85rem;">(Kerja)</span>
+                    @if($tender?->kategori_perolehan_name)
+                    <span class="fw-normal text-muted fst-italic" style="font-size: 0.85rem;">({{ $tender->kategori_perolehan_name }})</span>
+                    @endif
                 </h5>
             </div>
-
-            <!-- Metadata -->
             <div class="row g-3">
                 <div class="col-6 col-md-3">
                     <span class="text-muted fw-semibold text-uppercase d-block mb-1"
@@ -47,14 +96,14 @@
                 </div>
                 <div class="col-12 col-md-6 d-md-flex justify-content-md-end align-items-md-center">
                     @if(isset($bonSaham) && $bonSaham->status === 'submitted')
-                        <span id="status-badge" class="d-inline-flex align-items-center gap-2 px-3 py-2 rounded-2 fw-semibold"
+                        <span class="d-inline-flex align-items-center gap-2 px-3 py-2 rounded-2 fw-semibold"
                             style="background: #dcfce7; color: #166534; font-size: 0.8rem; border: 1px solid #bbf7d0;">
                             <span class="d-inline-block rounded-circle"
                                 style="width:7px;height:7px;background:#16a34a;flex-shrink:0;"></span>
                             Telah Dihantar
                         </span>
                     @else
-                        <span id="status-badge" class="d-inline-flex align-items-center gap-2 px-3 py-2 rounded-2 fw-semibold"
+                        <span class="d-inline-flex align-items-center gap-2 px-3 py-2 rounded-2 fw-semibold"
                             style="background: #fef9c3; color: #854d0e; font-size: 0.8rem; border: 1px solid #fde68a;">
                             <span class="d-inline-block rounded-circle"
                                 style="width:7px;height:7px;background:#ca8a04;flex-shrink:0;"></span>
@@ -63,176 +112,55 @@
                     @endif
                 </div>
             </div>
-
         </div>
     </div>
 
     <form id="form-bon-saham" action="{{ route('bonAtauSaham.store', $tender->uuid) }}" method="POST">
     @csrf
+    @if (! empty($returnUrl))
+        <input type="hidden" name="return" value="{{ $returnUrl }}">
+    @endif
+    @if ($modalEmbed ?? false)
+        <input type="hidden" name="modal" value="1">
+    @endif
 
-        <!-- ===================== SECTION: SAHAM ATAU BON ===================== -->
         <div class="content-card mb-4 p-0">
-            <div class="content-card-header p-4 pb-3 border-bottom">
-                <div class="d-flex align-items-center gap-3">
-                    <div class="content-card-icon" style="width: 38px; height: 38px;">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+            <div class="borang-title-bar">Saham atau Bon</div>
+            <div class="content-card-body p-4 pt-3">
+                <div id="bon-akaun-container"></div>
+
+                @unless($viewOnly)
+                <div class="d-flex justify-content-end mt-3">
+                    <button type="button" id="btn-tambah-akaun" class="btn btn-sm btn-success d-inline-flex align-items-center gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
                         </svg>
-                    </div>
-                    <div>
-                        <h3 class="content-card-title mb-0" style="font-size: 1rem;">Saham atau Bon</h3>
-                        <p class="text-muted mb-0" style="font-size: 0.78rem;">Maklumat akaun deposit tetap / saham / bon</p>
-                    </div>
+                        Tambah Akaun
+                    </button>
                 </div>
-            </div>
-            <div class="content-card-body p-4">
+                @endunless
 
-                <!-- Akaun rows container -->
-                <div id="akaun-list">
-                    @if(isset($bonSaham) && $bonSaham->accounts->isNotEmpty())
-                        @foreach($bonSaham->accounts as $index => $account)
-                            <div class="akaun-item mb-3 p-3 rounded-2" style="border:1px solid #e2e8f0;" data-akaun="{{ $index + 1 }}">
-                                <div class="d-flex align-items-center justify-content-between mb-3">
-                                    <span class="fw-bold text-dark" style="font-size:0.9rem;">Akaun {{ $index + 1 }}</span>
-                                    @if($index > 0)
-                                        <button type="button" class="btn btn-sm btn-hapus-akaun d-inline-flex align-items-center gap-1"
-                                            style="background:#fee2e2;color:#ef4444;border:none;border-radius:6px;padding:4px 10px;font-size:0.78rem;">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                                stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                                <polyline points="3 6 5 6 21 6"></polyline>
-                                                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
-                                                <path d="M10 11v6"></path><path d="M14 11v6"></path>
-                                                <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>
-                                            </svg>
-                                            Buang
-                                        </button>
-                                    @endif
-                                </div>
-
-                                <!-- Info note -->
-                                <div class="rounded-2 px-3 py-2 mb-3 d-inline-flex align-items-center gap-2"
-                                    style="background:#eff6ff; border:1px solid #bfdbfe; font-size:0.78rem; color:#1e40af;">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
-                                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0">
-                                        <circle cx="12" cy="12" r="10"></circle>
-                                        <line x1="12" y1="16" x2="12" y2="12"></line>
-                                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                                    </svg>
-                                    Perlu diisi oleh Petender
-                                </div>
-
-                                <div class="row g-3">
-                                    <div class="col-12 col-md-6">
-                                        <label class="form-label fw-semibold small">Bank / Institusi</label>
-                                        <select name="bank_institusi[]" class="form-select form-select-sm">
-                                            <option value="">— Sila pilih —</option>
-                                            <option value="maybank" {{ $account->bank_institusi == 'maybank' ? 'selected' : '' }}>Maybank</option>
-                                            <option value="cimb" {{ $account->bank_institusi == 'cimb' ? 'selected' : '' }}>CIMB Bank</option>
-                                            <option value="publicbank" {{ $account->bank_institusi == 'publicbank' ? 'selected' : '' }}>Public Bank</option>
-                                            <option value="rhb" {{ $account->bank_institusi == 'rhb' ? 'selected' : '' }}>RHB Bank</option>
-                                            <option value="hongleong" {{ $account->bank_institusi == 'hongleong' ? 'selected' : '' }}>Hong Leong Bank</option>
-                                            <option value="ambank" {{ $account->bank_institusi == 'ambank' ? 'selected' : '' }}>AmBank</option>
-                                            <option value="bsn" {{ $account->bank_institusi == 'bsn' ? 'selected' : '' }}>Bank Simpanan Nasional (BSN)</option>
-                                            <option value="bkr" {{ $account->bank_institusi == 'bkr' ? 'selected' : '' }}>Bank Kerjasama Rakyat</option>
-                                            <option value="affin" {{ $account->bank_institusi == 'affin' ? 'selected' : '' }}>Affin Bank</option>
-                                            <option value="agro" {{ $account->bank_institusi == 'agro' ? 'selected' : '' }}>Agrobank</option>
-                                            <option value="lain" {{ $account->bank_institusi == 'lain' ? 'selected' : '' }}>Lain-lain</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-12 col-md-6">
-                                        <label class="form-label fw-semibold small">Jumlah Deposit Tetap / Saham / Bon (RM)</label>
-                                        <input type="text" name="jumlah_deposit[]" class="form-control form-control-sm text-end amount-input jumlah-deposit" placeholder="0.00" value="{{ number_format($account->jumlah_deposit, 2) }}">
-                                    </div>
-                                </div>
-                            </div>
-                        @endforeach
-                    @else
-                        <!-- Default empty Akaun 1 -->
-                        <div class="akaun-item mb-3 p-3 rounded-2" style="border:1px solid #e2e8f0;" data-akaun="1">
-                            <span class="fw-bold text-dark d-block mb-3" style="font-size:0.9rem;">Akaun 1</span>
-
-                            <!-- Info note -->
-                            <div class="rounded-2 px-3 py-2 mb-3 d-inline-flex align-items-center gap-2"
-                                style="background:#eff6ff; border:1px solid #bfdbfe; font-size:0.78rem; color:#1e40af;">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
-                                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0">
-                                    <circle cx="12" cy="12" r="10"></circle>
-                                    <line x1="12" y1="16" x2="12" y2="12"></line>
-                                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                                </svg>
-                                Perlu diisi oleh Petender
-                            </div>
-
-                            <div class="row g-3">
-                                <div class="col-12 col-md-6">
-                                    <label class="form-label fw-semibold small">Bank / Institusi</label>
-                                    <select name="bank_institusi[]" class="form-select form-select-sm">
-                                        <option value="">— Sila pilih —</option>
-                                        <option value="maybank">Maybank</option>
-                                        <option value="cimb">CIMB Bank</option>
-                                        <option value="publicbank">Public Bank</option>
-                                        <option value="rhb">RHB Bank</option>
-                                        <option value="hongleong">Hong Leong Bank</option>
-                                        <option value="ambank">AmBank</option>
-                                        <option value="bsn">Bank Simpanan Nasional (BSN)</option>
-                                        <option value="bkr">Bank Kerjasama Rakyat</option>
-                                        <option value="affin">Affin Bank</option>
-                                        <option value="agro">Agrobank</option>
-                                        <option value="lain">Lain-lain</option>
-                                    </select>
-                                </div>
-                                <div class="col-12 col-md-6">
-                                    <label class="form-label fw-semibold small">Jumlah Deposit Tetap / Saham / Bon (RM)</label>
-                                    <input type="text" name="jumlah_deposit[]" class="form-control form-control-sm text-end amount-input jumlah-deposit" placeholder="0.00">
-                                </div>
-                            </div>
-                        </div>
-                    @endif
-                </div>
-
-                <!-- Tambah Akaun -->
-                <button type="button" id="btn-tambah-akaun"
-                    class="d-flex align-items-center justify-content-center gap-2 w-100 py-2 mb-4 rounded-2 fw-semibold small"
-                    style="background:#f8fafc; border:1.5px dashed #cbd5e1; color:#64748b; cursor:pointer;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="12" y1="5" x2="12" y2="19"></line>
-                        <line x1="5" y1="12" x2="19" y2="12"></line>
-                    </svg>
-                    Tambah Akaun
-                </button>
-
-                <!-- Jumlah Keseluruhan -->
-                <div class="row">
-                    <div class="col-12 col-md-6 ms-auto">
-                        <div class="d-flex align-items-center justify-content-between py-2 px-3 rounded-2 border-top mt-2"
-                            style="background:#f8fafc; border:1px solid #e2e8f0 !important;">
-                            <span class="fw-semibold text-muted" style="font-size:0.82rem;">Jumlah Keseluruhan Deposit Tetap / Saham / Bon (RM)</span>
-                            <span class="fw-bold text-dark ms-3 flex-shrink-0" id="jumlah-keseluruhan" style="font-size:1rem;">
-                                {{ isset($bonSaham) ? number_format($bonSaham->jumlah_keseluruhan, 2) : '0.00' }}
-                            </span>
-                            <input type="hidden" name="jumlah_keseluruhan" id="jumlah-keseluruhan-input" value="{{ isset($bonSaham) ? $bonSaham->jumlah_keseluruhan : '0.00' }}">
+                <div class="row justify-content-end mt-4 pt-3">
+                    <div class="col-12 col-md-6">
+                        <div class="d-flex align-items-center gap-3">
+                            <label class="fw-semibold text-muted mb-0 flex-shrink-0" style="font-size:0.82rem;">
+                                Jumlah Keseluruhan Deposit Tetap/Saham/Bon (RM)
+                            </label>
+                            <input type="text" class="form-control form-control-sm bg-light text-end fw-semibold"
+                                id="jumlah-keseluruhan-display" readonly tabindex="-1"
+                                value="{{ isset($bonSaham) ? number_format($bonSaham->jumlah_keseluruhan, 2) : '0.00' }}">
+                            <input type="hidden" name="jumlah_keseluruhan" id="jumlah-keseluruhan-input"
+                                value="{{ isset($bonSaham) ? $bonSaham->jumlah_keseluruhan : '0.00' }}">
                         </div>
                     </div>
                 </div>
-
             </div>
         </div>
 
-        @php
-            $tenderUuid = request()->route('tenderUuid') ?? request()->segment(2);
-            $kembaliUrl = $tenderUuid ? route('senaraiKewanganKerja', $tenderUuid) : route('pengurusanSpesifikasi');
-        @endphp
         <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-            <a href="{{ $kembaliUrl }}" class="btn-form btn-form-secondary">
-                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="19" y1="12" x2="5" y2="12"></line>
-                    <polyline points="12 19 5 12 12 5"></polyline>
-                </svg>
-                Kembali
-            </a>
+            @include('tenders.forms._vendor_form_kembali', ['kembaliUrl' => $kembaliUrl])
             <div class="d-flex gap-2">
                 <button type="button" class="btn-form btn-form-primary">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
@@ -242,6 +170,7 @@
                     </svg>
                     Laporan
                 </button>
+                @unless($viewOnly)
                 <button type="submit" class="btn-form btn-form-success">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -251,6 +180,7 @@
                     </svg>
                     Simpan
                 </button>
+                @endunless
             </div>
         </div>
 
@@ -262,93 +192,10 @@
 <script>
 $(document).ready(function () {
 
-    var akaunCount = {{ isset($bonSaham) && $bonSaham->accounts->isNotEmpty() ? $bonSaham->accounts->count() : 1 }};
+    var VIEW_ONLY = @json($viewOnly);
+    var accounts = @json($initialAccounts);
+    var akaunCounter = 0;
 
-    // ── Bank options (reused when building new rows) ─────────────────────────
-    var bankOptions =
-        '<option value="">— Sila pilih —</option>' +
-        '<option value="maybank">Maybank</option>' +
-        '<option value="cimb">CIMB Bank</option>' +
-        '<option value="publicbank">Public Bank</option>' +
-        '<option value="rhb">RHB Bank</option>' +
-        '<option value="hongleong">Hong Leong Bank</option>' +
-        '<option value="ambank">AmBank</option>' +
-        '<option value="bsn">Bank Simpanan Nasional (BSN)</option>' +
-        '<option value="bkr">Bank Kerjasama Rakyat</option>' +
-        '<option value="affin">Affin Bank</option>' +
-        '<option value="agro">Agrobank</option>' +
-        '<option value="lain">Lain-lain</option>';
-
-    // ── Info note HTML ────────────────────────────────────────────────────────
-    var infoNote =
-        '<div class="rounded-2 px-3 py-2 mb-3 d-inline-flex align-items-center gap-2" ' +
-        'style="background:#eff6ff; border:1px solid #bfdbfe; font-size:0.78rem; color:#1e40af;">' +
-            '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" ' +
-            'stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0">' +
-                '<circle cx="12" cy="12" r="10"></circle>' +
-                '<line x1="12" y1="16" x2="12" y2="12"></line>' +
-                '<line x1="12" y1="8" x2="12.01" y2="8"></line>' +
-            '</svg>' +
-            'Perlu diisi oleh Petender' +
-        '</div>';
-
-    // ── Build new akaun block ─────────────────────────────────────────────────
-    function buildAkaun(num) {
-        return $(
-            '<div class="akaun-item mb-3 p-3 rounded-2" style="border:1px solid #e2e8f0;" data-akaun="' + num + '">' +
-                '<div class="d-flex align-items-center justify-content-between mb-3">' +
-                    '<span class="fw-bold text-dark" style="font-size:0.9rem;">Akaun ' + num + '</span>' +
-                    '<button type="button" class="btn btn-sm btn-hapus-akaun d-inline-flex align-items-center gap-1" ' +
-                    'style="background:#fee2e2;color:#ef4444;border:none;border-radius:6px;padding:4px 10px;font-size:0.78rem;">' +
-                        '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
-                        'stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">' +
-                            '<polyline points="3 6 5 6 21 6"></polyline>' +
-                            '<path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>' +
-                            '<path d="M10 11v6"></path><path d="M14 11v6"></path>' +
-                            '<path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>' +
-                        '</svg>' +
-                        'Buang' +
-                    '</button>' +
-                '</div>' +
-                infoNote +
-                '<div class="row g-3">' +
-                    '<div class="col-12 col-md-6">' +
-                        '<label class="form-label fw-semibold small">Bank / Institusi</label>' +
-                        '<select name="bank_institusi[]" class="form-select form-select-sm">' + bankOptions + '</select>' +
-                    '</div>' +
-                    '<div class="col-12 col-md-6">' +
-                        '<label class="form-label fw-semibold small">Jumlah Deposit Tetap / Saham / Bon (RM)</label>' +
-                        '<input type="text" name="jumlah_deposit[]" class="form-control form-control-sm text-end amount-input jumlah-deposit" placeholder="0.00">' +
-                    '</div>' +
-                '</div>' +
-            '</div>'
-        );
-    }
-
-    // ── Re-number all akaun titles ────────────────────────────────────────────
-    function reNumberAkaun() {
-        $('#akaun-list .akaun-item').each(function (i) {
-            $(this).attr('data-akaun', i + 1);
-            $(this).find('span.fw-bold').first().text('Akaun ' + (i + 1));
-        });
-        akaunCount = $('#akaun-list .akaun-item').length;
-    }
-
-    // ── Tambah Akaun ──────────────────────────────────────────────────────────
-    $('#btn-tambah-akaun').on('click', function () {
-        akaunCount++;
-        var $newAkaun = buildAkaun(akaunCount);
-        $('#akaun-list').append($newAkaun);
-    });
-
-    // ── Hapus Akaun (delegated) ───────────────────────────────────────────────
-    $('#akaun-list').on('click', '.btn-hapus-akaun', function () {
-        $(this).closest('.akaun-item').remove();
-        reNumberAkaun();
-        updateJumlah();
-    });
-
-    // ── Jumlah Keseluruhan ────────────────────────────────────────────────────
     function parseAmount(val) {
         return parseFloat(String(val).replace(/,/g, '')) || 0;
     }
@@ -357,36 +204,101 @@ $(document).ready(function () {
         return n.toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
+    function esc(v) { return $('<div/>').text(v || '').html(); }
+    function ro() { return VIEW_ONLY ? ' readonly' : ''; }
+
+    function buildAkaunBlock(index, data) {
+        data = data || {};
+        var canDelete = index > 0;
+        var jumlahFmt = data.jumlah_deposit ? formatAmount(data.jumlah_deposit) : '';
+
+        var $block = $(
+            '<div class="bon-akaun-block" data-akaun-index="' + index + '">' +
+                '<div class="d-flex justify-content-between align-items-center mb-2">' +
+                    '<span class="fw-bold text-dark" style="font-size:0.9rem;">Akaun ' + (index + 1) + '</span>' +
+                    (canDelete && !VIEW_ONLY
+                        ? '<button type="button" class="btn-hapus-akaun" title="Buang akaun">' +
+                            '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">' +
+                            '<polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>' +
+                            '<path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></svg>' +
+                          '</button>'
+                        : '') +
+                '</div>' +
+                '<p class="borang-subtitle mb-3">Perlu diisi oleh Petender</p>' +
+                '<div class="row g-3 align-items-end">' +
+                    '<div class="col-12 col-md-8">' +
+                        '<label class="form-label fw-semibold small">Bank / Institusi</label>' +
+                        '<input type="text" name="bank_institusi[]" class="form-control form-control-sm field-bank" placeholder="Bank / institusi..." value="' + esc(data.bank_institusi) + '"' + ro() + '>' +
+                    '</div>' +
+                    '<div class="col-12 col-md-4">' +
+                        '<label class="form-label fw-semibold small">Jumlah Deposit Tetap/Saham/Bon (RM)</label>' +
+                        '<input type="text" name="jumlah_deposit[]" class="form-control form-control-sm text-end amount-input jumlah-deposit" placeholder="0.00" value="' + jumlahFmt + '"' + ro() + '>' +
+                    '</div>' +
+                '</div>' +
+            '</div>'
+        );
+
+        $('#bon-akaun-container').append($block);
+        return $block;
+    }
+
+    function renumberAkaun() {
+        $('#bon-akaun-container .bon-akaun-block').each(function (i) {
+            $(this).attr('data-akaun-index', i);
+            $(this).find('.fw-bold').first().text('Akaun ' + (i + 1));
+            $(this).find('.btn-hapus-akaun').toggle(i > 0 && !VIEW_ONLY);
+        });
+        akaunCounter = $('#bon-akaun-container .bon-akaun-block').length;
+    }
+
     function updateJumlah() {
         var total = 0;
         $('.jumlah-deposit').each(function () {
             total += parseAmount($(this).val());
         });
-        $('#jumlah-keseluruhan').text(formatAmount(total));
+        $('#jumlah-keseluruhan-display').val(formatAmount(total));
         $('#jumlah-keseluruhan-input').val(total.toFixed(2));
     }
 
-    $('#akaun-list').on('input change', '.jumlah-deposit', updateJumlah);
+    function initAccounts() {
+        if (!accounts.length) {
+            accounts = [{}, {}];
+        }
+        accounts.forEach(function (acc, i) { buildAkaunBlock(i, acc); });
+        akaunCounter = accounts.length;
+        updateJumlah();
+    }
 
-    // ── Amount input formatting ───────────────────────────────────────────────
-    $(document).on('focus', '.amount-input', function () {
-        var raw = $(this).val().replace(/,/g, '');
-        if (parseFloat(raw) === 0) raw = '';
-        $(this).val(raw);
+    initAccounts();
+
+    $('#btn-tambah-akaun').on('click', function () {
+        buildAkaunBlock(akaunCounter, {});
+        akaunCounter++;
+        renumberAkaun();
     });
 
-    $(document).on('blur', '.amount-input', function () {
-        var val = $(this).val();
-        if (val === '') return;
-        $(this).val(formatAmount(parseAmount(val)));
+    $('#bon-akaun-container').on('click', '.btn-hapus-akaun', function () {
+        if ($('#bon-akaun-container .bon-akaun-block').length <= 1) return;
+        $(this).closest('.bon-akaun-block').remove();
+        renumberAkaun();
         updateJumlah();
     });
 
+    $('#bon-akaun-container').on('input change', '.jumlah-deposit', updateJumlah);
+
+    $(document).on('focus', '.amount-input', function () {
+        var raw = $(this).val().replace(/,/g, '');
+        $(this).val(parseFloat(raw) === 0 ? '' : raw);
+    });
+    $(document).on('blur', '.amount-input', function () {
+        var val = $(this).val();
+        if (val !== '') $(this).val(formatAmount(parseAmount(val)));
+        updateJumlah();
+    });
     $(document).on('input', '.amount-input', function () {
         $(this).val($(this).val().replace(/[^\d.]/g, ''));
     });
 
-    // ── Form submit — strip commas ────────────────────────────────────────────
     $('#form-bon-saham').on('submit', function () {
         $(this).find('.amount-input').each(function () {
             $(this).val($(this).val().replace(/,/g, ''));

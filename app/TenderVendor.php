@@ -15,6 +15,7 @@ class TenderVendor extends Model
         	'amount',
         	'label',
         	'price',
+        	'exception',
         	'participate',
         	'briefing',
         	'winner',

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Tender;
 use App\Services\StosBackendClient;
+use App\Support\PenyediaanIklanNavigation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
@@ -45,7 +46,12 @@ class SenaraiKewanganKerjaController extends Controller
 
         return view(
             'newModule.jawatankuasaSpesifikasi.senarai_kewangan_kerja',
-            compact('tender', 'checklistData', 'standardItems')
+            [
+                'tender' => $tender,
+                'checklistData' => $checklistData,
+                'standardItems' => $standardItems,
+                'afterSpecificationUrl' => PenyediaanIklanNavigation::afterSpecificationUrl($tender),
+            ]
         );
     }
 

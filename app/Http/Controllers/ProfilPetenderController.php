@@ -2,25 +2,27 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\HandlesTenderFormAccess;
 use App\Models\Tender;
 use App\Services\StosBackendClient;
+use App\Support\VendorProfilPetenderDefaults;
+use App\Vendor;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
 class ProfilPetenderController extends Controller
 {
+    use HandlesTenderFormAccess;
+
     public function index(string $tenderUuid)
     {
-        $this->ensureAccess();
+        $tender = $this->findTender($tenderUuid);
+        $this->ensureTenderFormAccess($tender);
 
-        $tender = Tender::with('tenderer')
-            ->leftJoin('ref_kategori_jenis_perolehans as k', 'k.id', '=', 'tenders.kategori_perolehan_id')
-            ->select('tenders.*', 'k.name as kategori_perolehan_name')
-            ->where('tenders.uuid', $tenderUuid)
-            ->firstOrFail();
-
-        $apiUrl   = $this->url('profil-petenders/' . $tenderUuid);
-        $response = $this->api()->get($apiUrl);
+        $apiPath = 'profil-petenders/' . $tenderUuid;
+        $response = $this->isVendorFormMode()
+            ? $this->api()->get($this->stosUrlWithVendor($apiPath))
+            : $this->api()->get($this->url($apiPath));
 
         $profilData = null;
 
@@ -34,27 +36,86 @@ class ProfilPetenderController extends Controller
             ]);
         }
 
+        if ($this->isVendorFormMode() && empty($profilData)) {
+            $profilData = $this->loadVendorFormPayload($tender, 'profil_petender');
+        }
+
+        $vendorProfilDefaults = [];
+        if ($this->isVendorFormMode() && $this->vendorId()) {
+            $vendorProfilDefaults = VendorProfilPetenderDefaults::fromVendor(
+                Vendor::find($this->vendorId())
+            );
+        }
+
         $aj = (float) ($tender->anggaran_jabatan ?? 0);
         $automatikRowsBerbayar   = $this->calcAutomatikRowsBerbayar($aj);
         $automatikRowsDibenarkan = $this->calcAutomatikRowsDibenarkan($aj);
 
-        return view('jawatankuasaSpesifikasi.profil_petender', compact('tender', 'profilData', 'automatikRowsBerbayar', 'automatikRowsDibenarkan'));
+        return view('jawatankuasaSpesifikasi.profil_petender', array_merge([
+            'tender' => $tender,
+            'profilData' => $profilData,
+            'vendorProfilDefaults' => $vendorProfilDefaults,
+            'automatikRowsBerbayar' => $automatikRowsBerbayar,
+            'automatikRowsDibenarkan' => $automatikRowsDibenarkan,
+            'showVendorForm' => $this->isVendorFormMode() || $this->isFormViewOnly(),
+            'showScoringConfig' => ! $this->isVendorFormMode() && ! $this->isFormViewOnly(),
+        ], $this->formViewVars($tender)));
     }
 
     public function store(Request $request, string $tenderUuid)
     {
-        $this->ensureAccess();
+        $tender = $this->findTender($tenderUuid);
+        $this->ensureTenderFormAccess($tender);
+        $this->ensureFormEditable();
 
-        $response = $this->api()->post($this->url('profil-petenders/' . $tenderUuid), $request->except('_token'));
+        $payload = $request->except('_token');
+        if ($this->isVendorFormMode()) {
+            $payload['vendor_id'] = $this->vendorId();
+            $payload = $this->mergeVendorProfilLockedFields($payload);
+        }
+
+        $response = $this->api()->post($this->url('profil-petenders/' . $tenderUuid), $payload);
+
+        if ($this->isVendorFormMode()) {
+            $this->persistVendorFormPayload($tender, 'profil_petender', $payload);
+            $this->trackVendorFormSubmitted($tender, 'profil_petender', [
+                'text' => 'Profil petender disimpan',
+            ]);
+
+            if (! $response->successful()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Disimpan secara tempatan.',
+                    'warning' => 'Penyegerakan STOS gagal.',
+                ]);
+            }
+
+            return response()->json($response->json(), $response->status());
+        }
 
         return response()->json($response->json(), $response->status());
     }
 
     public function submit(Request $request, string $tenderUuid)
     {
-        $this->ensureAccess();
+        $tender = $this->findTender($tenderUuid);
+        $this->ensureTenderFormAccess($tender);
+        $this->ensureFormEditable();
 
-        $response = $this->api()->post($this->url('profil-petenders/' . $tenderUuid . '/submit'), $request->except('_token'));
+        $payload = $request->except('_token');
+        if ($this->isVendorFormMode()) {
+            $payload['vendor_id'] = $this->vendorId();
+            $payload = $this->mergeVendorProfilLockedFields($payload);
+        }
+
+        $response = $this->api()->post($this->url('profil-petenders/' . $tenderUuid . '/submit'), $payload);
+
+        if ($response->successful() && $this->isVendorFormMode()) {
+            $this->persistVendorFormPayload($tender, 'profil_petender', $payload);
+            $this->trackVendorFormSubmitted($tender, 'profil_petender', [
+                'text' => 'Profil petender dihantar',
+            ]);
+        }
 
         return response()->json($response->json(), $response->status());
     }
@@ -95,13 +156,30 @@ class ProfilPetenderController extends Controller
         ];
     }
 
-    private function ensureAccess(): void
+    /**
+     * @param  array<string, mixed>  $payload
+     * @return array<string, mixed>
+     */
+    private function mergeVendorProfilLockedFields(array $payload): array
     {
-        $user = auth()->user();
-
-        if (!$user->hasRole('Admin') && !$user->can('tender:specification-management')) {
-            abort(403);
+        $vendorId = $this->vendorId();
+        if (! $vendorId) {
+            return $payload;
         }
+
+        return VendorProfilPetenderDefaults::mergeLockedFields(
+            $payload,
+            VendorProfilPetenderDefaults::fromVendor(Vendor::find($vendorId))
+        );
+    }
+
+    private function findTender(string $tenderUuid): Tender
+    {
+        return Tender::with('tenderer')
+            ->leftJoin('ref_kategori_jenis_perolehans as k', 'k.id', '=', 'tenders.kategori_perolehan_id')
+            ->select('tenders.*', 'k.name as kategori_perolehan_name')
+            ->where('tenders.uuid', $tenderUuid)
+            ->firstOrFail();
     }
 
     private function api()

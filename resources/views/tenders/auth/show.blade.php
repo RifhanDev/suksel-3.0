@@ -9,7 +9,16 @@
 @endsection
 
 @section('content')
-	@php $dokumenList = $tenderDokumen->items(); @endphp
+	@php
+		$vendorCanEdit = Auth::check()
+			&& Auth::user()->vendor_id
+			&& $tender->hasParticipate(Auth::user()->vendor_id);
+		$dokumenMode = $vendorCanEdit ? 'vendor' : 'admin';
+		$dokumenList = $tenderDokumen->items(
+			$dokumenMode,
+			$vendorCanEdit ? (int) Auth::user()->vendor_id : null
+		);
+	@endphp
 
 	<div class="row">
 		<div class="col-12">
@@ -888,7 +897,12 @@
 									<p class="text-muted small mb-0 mt-1">Senarai dokumen yang diperlukan daripada petender</p>
 								</div>
 								<div class="card-body p-0">
-									@include('tenders._dokumen_tender_checklist_table', ['dokumenList' => $dokumenList])
+									@include('tenders._dokumen_tender_checklist_table', [
+										'tenderDokumen' => $tenderDokumen,
+										'tender' => $tender,
+										'mode' => $dokumenMode,
+										'vendorCanEdit' => $vendorCanEdit,
+									])
 								</div>
 							</div>
 						</div>
@@ -1364,4 +1378,7 @@
 			})
 		}
 	</script>
+	@if ($tender->showDokumenSenaraiTab())
+		@include('tenders.forms._online_form_modal')
+	@endif
 @endsection

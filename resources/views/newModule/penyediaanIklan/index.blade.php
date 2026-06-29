@@ -215,6 +215,9 @@
 @endsection
 
 @section('scripts')
+@if ($tender->showDokumenSenaraiTab())
+    @include('tenders.forms._online_form_modal')
+@endif
 <script>
 $(document).ready(function () {
 
@@ -231,6 +234,12 @@ $(document).ready(function () {
     if (new URLSearchParams(window.location.search).get('tab') === 'iklan') {
         currentTab = 2;
         $('#tab-iklan-btn').tab('show');
+    } else if (new URLSearchParams(window.location.search).get('tab') === 'dokumen') {
+        var dokumenIndex = tabs.indexOf('#tab-dokumen-btn');
+        if (dokumenIndex >= 0) {
+            currentTab = dokumenIndex;
+            $('#tab-dokumen-btn').tab('show');
+        }
     }
 
     function updateNavButtons() {

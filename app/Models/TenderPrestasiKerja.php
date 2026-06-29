@@ -12,6 +12,7 @@ class TenderPrestasiKerja extends Model
     protected $fillable = [
         'uuid',
         'tender_id',
+        'vendor_id',
         'status',
         'created_by',
         'updated_by',

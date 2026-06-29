@@ -12,6 +12,7 @@ class LembaranImbangan extends Model
     protected $fillable = [
         'uuid',
         'tender_id',
+        'vendor_id',
         'aset_tetap',
         'aset_semasa',
         'liabiliti_semasa',
