@@ -3,12 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Jawatankuasa;
-use App\Models\PenyediaanMesyuaratMeeting;
 use App\Services\StosBackendClient;
 use App\Tender;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 
@@ -39,6 +37,7 @@ class PenyediaanMesyuaratController extends Controller
                     'uuid' => $tender->uuid,
                     'name' => $tender->name ?: '-',
                     'no_tender' => $tender->no_tender ?: $tender->ref_number ?: '-',
+                    'ptj' => $tender->tenderer?->name ?? '-',
                     'tarikh_jual' => $tender->advertise_start_date
                         ? Carbon::parse($tender->advertise_start_date)->format('d/m/Y')
                         : '-',
@@ -62,19 +61,23 @@ class PenyediaanMesyuaratController extends Controller
 
         $visibleJenis = $this->resolveVisibleJenis($tender);
 
+        if (empty($visibleJenis)) {
+            return redirect()
+                ->route('perincianMesyuarat')
+                ->with('error', 'Tiada jawatankuasa yang layak. Sila lengkapkan pelantikan jawatankuasa terlebih dahulu.');
+        }
+
         $membersByJenis = Jawatankuasa::with('user')
             ->where('tender_id', $tender->id)
             ->whereIn('jenis_jawatankuasa', $visibleJenis)
             ->whereNotNull('user_id')
+            ->whereNotNull('dihantar_pemakluman_pada')
             ->orderBy('id')
             ->get()
             ->groupBy('jenis_jawatankuasa');
 
         $meetingsByJenis = $this->fetchMeetingsFromApi($tender->id, $visibleJenis);
-
-        if ($meetingsByJenis->isEmpty()) {
-            $meetingsByJenis = $this->fetchMeetingsFromLocal($tender->id, $visibleJenis);
-        }
+        $tempatMesyuarat = $this->fetchTempatMesyuaratFromApi($tender->id);
 
         $uiTabs = collect($visibleJenis)->map(function ($jenis) {
             return [
@@ -92,13 +95,25 @@ class PenyediaanMesyuaratController extends Controller
             return [$tab['ui'] => $rows];
         })->all();
 
+        $meetingStatusByJenis = collect($visibleJenis)->mapWithKeys(function (string $jenis) use ($meetingsByJenis) {
+            $rows = $meetingsByJenis[$jenis] ?? collect();
+            $status = $rows->isNotEmpty() ? ($rows->last()['status'] ?? 'Draf') : 'Belum Disimpan';
+
+            return [$jenis => $status];
+        })->all();
+
+        $stosConfigured = $this->stos->isConfigured();
+
         return view('newModule.penyediaanMesyuarat.perincian_mesyuarat', compact(
             'tender',
             'uiTabs',
             'jenisByUiTab',
             'meetingsForJs',
             'membersByJenis',
-            'meetingsByJenis'
+            'meetingsByJenis',
+            'meetingStatusByJenis',
+            'tempatMesyuarat',
+            'stosConfigured'
         ));
     }
 
@@ -141,16 +156,16 @@ class PenyediaanMesyuaratController extends Controller
                 return response()->json(['message' => $message], $response->status());
             }
 
-            $this->syncLocalMeetings(
-                $tender,
-                $validated['jenis_jawatankuasa'],
-                $validated['rows'],
-                $submit
-            );
-
             $message = $submit
                 ? 'Jemputan mesyuarat berjaya dihantar.'
                 : 'Perincian mesyuarat berjaya disimpan.';
+
+            if ($submit) {
+                $emailsSent = $response->json('data.emails_sent');
+                if (is_numeric($emailsSent)) {
+                    $message .= ' (' . (int) $emailsSent . ' emel dihantar)';
+                }
+            }
 
             return response()->json(['message' => $message]);
         } catch (\Throwable $e) {
@@ -161,6 +176,32 @@ class PenyediaanMesyuaratController extends Controller
             ]);
 
             return response()->json(['message' => 'Ralat sistem: ' . $e->getMessage()], 500);
+        }
+    }
+
+    protected function fetchTempatMesyuaratFromApi(int $tenderId): array
+    {
+        if (! $this->stos->isConfigured()) {
+            return [];
+        }
+
+        try {
+            $response = $this->stos->getPenyediaanMesyuarat($tenderId);
+
+            if (! $response->successful()) {
+                return [];
+            }
+
+            $data = $response->json('data') ?? $response->json() ?? [];
+
+            return $data['tempat_mesyuarat'] ?? [];
+        } catch (\Throwable $e) {
+            Log::warning('STOS get tempat mesyuarat exception', [
+                'tender_id' => $tenderId,
+                'error' => $e->getMessage(),
+            ]);
+
+            return [];
         }
     }
 
@@ -227,51 +268,6 @@ class PenyediaanMesyuaratController extends Controller
         });
     }
 
-    protected function fetchMeetingsFromLocal(int $tenderId, array $visibleJenis): \Illuminate\Support\Collection
-    {
-        return PenyediaanMesyuaratMeeting::query()
-            ->where('tender_id', $tenderId)
-            ->whereIn('jenis_jawatankuasa', $visibleJenis)
-            ->orderBy('id')
-            ->get()
-            ->groupBy('jenis_jawatankuasa')
-            ->map(function ($rows) {
-                return $rows->map(function (PenyediaanMesyuaratMeeting $meeting) {
-                    return [
-                        'tarikh_mesyuarat' => optional($meeting->tarikh_mesyuarat)->format('Y-m-d'),
-                        'masa' => $meeting->masa,
-                        'tempat' => $meeting->tempat,
-                        'status' => $meeting->status,
-                    ];
-                })->values();
-            });
-    }
-
-    protected function syncLocalMeetings(Tender $tender, string $jenis, array $rows, bool $forSubmit): void
-    {
-        DB::transaction(function () use ($tender, $jenis, $rows, $forSubmit) {
-            PenyediaanMesyuaratMeeting::query()
-                ->where('tender_id', $tender->id)
-                ->where('jenis_jawatankuasa', $jenis)
-                ->delete();
-
-            $now = $forSubmit ? now() : null;
-            $status = $forSubmit ? 'Dihantar' : 'Draf';
-
-            foreach ($rows as $row) {
-                PenyediaanMesyuaratMeeting::query()->create([
-                    'tender_id' => $tender->id,
-                    'jenis_jawatankuasa' => $jenis,
-                    'tarikh_mesyuarat' => $row['tarikh_mesyuarat'],
-                    'masa' => trim($row['masa']),
-                    'tempat' => trim($row['tempat']),
-                    'status' => $status,
-                    'submitted_at' => $now,
-                ]);
-            }
-        });
-    }
-
     private function validateMeetingPayload(Request $request, Tender $tender): array
     {
         $visibleJenis = $this->resolveVisibleJenis($tender);
@@ -280,9 +276,11 @@ class PenyediaanMesyuaratController extends Controller
             'tender' => ['required', 'string', 'exists:tenders,uuid'],
             'jenis_jawatankuasa' => ['required', Rule::in($visibleJenis)],
             'rows' => ['required', 'array', 'min:1'],
-            'rows.*.tarikh_mesyuarat' => ['required', 'date'],
+            'rows.*.tarikh_mesyuarat' => ['required', 'date', 'after_or_equal:today'],
             'rows.*.masa' => ['required', 'string', 'max:10'],
             'rows.*.tempat' => ['required', 'string', 'max:255'],
+        ], [
+            'rows.*.tarikh_mesyuarat.after_or_equal' => 'Tarikh mesyuarat mestilah hari ini atau selepasnya.',
         ]);
     }
 
@@ -291,15 +289,12 @@ class PenyediaanMesyuaratController extends Controller
         $existing = Jawatankuasa::query()
             ->where('tender_id', $tender->id)
             ->whereNotNull('user_id')
+            ->whereNotNull('dihantar_pemakluman_pada')
             ->distinct()
             ->pluck('jenis_jawatankuasa')
             ->all();
 
-        if (in_array('harga', $existing, true)) {
-            $order = ['spec', 'open', 'harga'];
-        } else {
-            $order = ['spec', 'open', 'tech', 'fin'];
-        }
+        $order = ['open', 'tech', 'fin', 'harga'];
 
         return array_values(array_intersect($order, $existing));
     }

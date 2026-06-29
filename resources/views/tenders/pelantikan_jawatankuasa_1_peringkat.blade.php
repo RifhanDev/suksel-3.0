@@ -46,17 +46,17 @@
 @endsection
 
 @section('content')
-	@php
-		$availableTabs = ['spec', 'open', 'eval'];
-		$draftTenderUuid = optional($tender)->uuid ?? request('tender');
-		$supportedDraftJenisData = $supportedDraftJenis ?? ['spec', 'open', 'eval'];
-		$localIcUsersData = $icUsers ?? [];
-		$tabLabels = [
-		    'spec' => 'Jawatankuasa Spesifikasi',
-		    'open' => 'Jawatankuasa Pembuka',
-		    'eval' => 'Jawatankuasa Penilaian Sebut Harga/Tender',
-		];
-	@endphp
+    @php
+        $availableTabs = ['spec', 'open', 'harga'];
+        // $draftTenderUuid = optional($tender)->uuid ?? request('tender');
+        $supportedDraftJenisData = $supportedDraftJenis ?? ['spec', 'open', 'harga'];
+        $localIcUsersData = $icUsers ?? [];
+        $tabLabels = [
+            'spec'  => 'Jawatankuasa Spesifikasi',
+            'open'  => 'Jawatankuasa Pembuka',
+            'harga' => 'Jawatankuasa Penilaian Sebut Harga/Tender',
+        ];
+    @endphp
 
 	<div id="laporanArea">
 		<div id="pageDetail">
@@ -643,9 +643,9 @@
 						return;
 					}
 
-					// Validate all 4 tabs have Pengerusi(1), Setiausaha(2), Ahli(3)
-					const requiredTabs = ['spec', 'open', 'eval'];
-					const requiredPeranan = ['1', '2', '3'];
+                    // Validate all 4 tabs have Pengerusi(1), Setiausaha(2), Ahli(3)
+                    const requiredTabs = ['spec', 'open', 'harga'];
+                    const requiredPeranan = ['1', '2', '3'];
 
 					for (let i = 0; i < requiredTabs.length; i++) {
 						const tab = requiredTabs[i];

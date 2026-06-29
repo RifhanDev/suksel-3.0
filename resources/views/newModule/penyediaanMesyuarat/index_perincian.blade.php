@@ -137,17 +137,23 @@
 				<table data-path="" class=" table table-modern w-100 mb-0">
 					<thead>
 						<tr>
-							<th class="text-center">Maklumat Tender</th>
-							<th class="text-center" width="150px">Tarikh Jual</th>
-							<th class="text-center" width="150px">Tarikh Tutup</th>
-							<th class="text-center" width="150px">Harga (RM)</th>
-							<th class="text-center" width="150px">Tindakan</th>
+							<th class="text-center">Nama Tender / Sebut Harga</th>
+							<th class="text-center" width="130px">No. Tender</th>
+							<th class="text-center" width="150px">PTJ</th>
+							<th class="text-center" width="120px">Status</th>
+							<th class="text-center" width="120px">Tarikh Jual</th>
+							<th class="text-center" width="120px">Tarikh Tutup</th>
+							<th class="text-center" width="120px">Harga (RM)</th>
+							<th class="text-center" width="120px">Tindakan</th>
 						</tr>
 					</thead>
 					<tbody>
                         @forelse($tenders as $item)
                         <tr>
                             <td>{{ $item['name'] }}</td>
+                            <td class="text-center">{{ $item['no_tender'] }}</td>
+                            <td>{{ $item['ptj'] }}</td>
+                            <td class="text-center">{{ $item['status'] }}</td>
                             <td class="text-center">{{ $item['tarikh_jual'] }}</td>
                             <td class="text-center">{{ $item['tarikh_tutup'] }}</td>
                             <td class="text-center">{{ $item['harga'] }}</td>
@@ -159,7 +165,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="5" class="text-center text-muted py-4">Tiada tender / sebut harga tersedia.</td>
+                            <td colspan="8" class="text-center text-muted py-4">Tiada tender / sebut harga tersedia. Tender akan dipaparkan selepas proses pelantikan jawatankuasa.</td>
                         </tr>
                         @endforelse
                     </tbody>
