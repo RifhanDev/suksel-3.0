@@ -12,6 +12,7 @@ class TenderVendor extends Model
 
    protected $fillable = [
         	'ref_number',
+        	'kod_pembekal',
         	'amount',
         	'label',
         	'price',
@@ -79,5 +80,10 @@ class TenderVendor extends Model
         	$new_count = $count + 1;
 
         	return "{$tender->ref_number} ONLINE {$new_count}";
+   }
+
+   public static function syncKodPembekal(int $tenderId): void
+   {
+       	app(\App\Services\KodPembekalService::class)->syncForTender($tenderId);
    }
 }

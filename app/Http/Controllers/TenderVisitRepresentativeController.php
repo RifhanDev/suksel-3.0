@@ -42,6 +42,9 @@ class TenderVisitRepresentativeController extends Controller
             ], 403);
         }
 
+        app(\App\Services\VendorTenderSubmissionService::class)
+            ->assertEditable($visit->tender, (int) $user->vendor_id);
+
         $data = $request->validate([
             'reps'                 => 'array',
             'reps.*.ic_no'         => 'nullable|string|max:32',
