@@ -26,16 +26,26 @@
         </div>
         <div class="d-flex flex-column align-items-stretch gap-1">
             @if ($mode === 'vendor' && $vendorCanEdit && ! empty($form['url']))
-                <a href="{{ $form['url'] }}" class="btn btn-sm btn-primary">
+                <button type="button" class="btn btn-sm btn-primary"
+                    data-online-form-modal
+                    data-form-url="{{ $form['url'] }}"
+                    data-form-title="{{ $form['label'] ?? 'Borang Atas Talian' }}"
+                    data-reload-on-complete="1"
+                    data-reload-hash="vt-dokumen-tawaran">
                     {{ ($form['status_key'] ?? '') === 'submitted' ? 'Kemaskini Borang' : 'Isi Borang' }}
-                </a>
+                </button>
             @elseif ($mode === 'admin' && ! empty($form['url']))
                 @php
-                    $adminViewUrl = ($form['url'] ?? '') . (str_contains($form['url'] ?? '', '?') ? '&' : '?') . 'mode=view';
+                    $adminViewUrl = ($form['url'] ?? '') . (str_contains($form['url'] ?? '', '?') ? '&' : '?') . 'mode=view&modal=1';
                 @endphp
-                <a href="{{ $adminViewUrl }}" class="btn btn-sm btn-outline-secondary" target="_blank">
+                <button type="button" class="btn btn-sm btn-outline-secondary"
+                    data-online-form-modal
+                    data-form-url="{{ $adminViewUrl }}"
+                    data-form-title="{{ $form['label'] ?? 'Borang Atas Talian' }}"
+                    data-reload-on-complete="0"
+                    data-reload-hash="tf-dokumen-tawaran">
                     Lihat Borang
-                </a>
+                </button>
             @else
                 <span class="text-muted small text-center">Borang atas talian</span>
             @endif

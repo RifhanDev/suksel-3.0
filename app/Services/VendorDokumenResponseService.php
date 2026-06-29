@@ -23,7 +23,7 @@ class VendorDokumenResponseService
     }
 
     /**
-     * @return array<string, array{key_in: ?string, files: array<int, array<string, mixed>>, status: string}>
+     * @return array<string, array{key_in: ?string, specification: array<string, string>, files: array<int, array<string, mixed>>, status: string}>
      */
     public function responsesByItemUuid(Tender $tender, int $vendorId): array
     {
@@ -48,7 +48,10 @@ class VendorDokumenResponseService
             $itemFiles = $files->get($uuid, collect());
 
             $result[$uuid] = [
-                'key_in' => $response?->payload['value'] ?? null,
+                'key_in' => $response?->response_type === 'key_in' ? ($response->payload['value'] ?? null) : null,
+                'specification' => $response?->response_type === 'specification'
+                    ? ($response->payload['responses'] ?? [])
+                    : [],
                 'files' => $itemFiles->map(fn (TenderVendorDokumenFile $file) => [
                     'uuid' => $file->uuid,
                     'name' => $file->original_name,
@@ -135,6 +138,51 @@ class VendorDokumenResponseService
         return $record;
     }
 
+    /**
+     * @param  array<string, string|null>  $responses  keyed by specification detail uuid
+     */
+    public function saveSpecificationResponses(
+        Tender $tender,
+        int $vendorId,
+        string $checklistItemUuid,
+        string $section,
+        array $responses
+    ): TenderVendorDokumenResponse {
+        $this->assertVendorParticipation($tender, $vendorId);
+        $this->assertValidSection($section);
+
+        $normalized = [];
+        foreach ($responses as $detailUuid => $value) {
+            $detailUuid = trim((string) $detailUuid);
+            if ($detailUuid === '') {
+                continue;
+            }
+            $normalized[$detailUuid] = is_string($value) ? trim($value) : $value;
+        }
+
+        $record = TenderVendorDokumenResponse::query()->firstOrNew([
+            'tender_id' => $tender->id,
+            'vendor_id' => $vendorId,
+            'checklist_item_uuid' => $checklistItemUuid,
+        ]);
+
+        if (! $record->exists) {
+            $record->uuid = (string) Str::uuid();
+        }
+
+        $hasValue = collect($normalized)->contains(fn ($value) => $value !== null && $value !== '');
+
+        $record->fill([
+            'section' => $section,
+            'response_type' => 'specification',
+            'payload' => ['responses' => $normalized],
+            'status' => $hasValue ? 'submitted' : 'draft',
+            'updated_by' => Auth::id(),
+        ])->save();
+
+        return $record;
+    }
+
     protected function assertValidSection(string $section): void
     {
         if (! in_array($section, ['technical', 'financial', 'kewangan_kerja', 'spesifikasi_kerja'], true)) {
@@ -148,6 +196,13 @@ class VendorDokumenResponseService
     {
         if ($fileCount > 0) {
             return 'submitted';
+        }
+
+        if ($response?->response_type === 'specification') {
+            $responses = $response->payload['responses'] ?? [];
+            if (is_array($responses) && collect($responses)->contains(fn ($value) => $value !== null && $value !== '')) {
+                return $response->status === 'submitted' ? 'submitted' : 'draft';
+            }
         }
 
         if ($response && ($response->status === 'submitted' || ! empty($response->payload['value']))) {

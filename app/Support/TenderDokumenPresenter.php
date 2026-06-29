@@ -68,7 +68,11 @@ class TenderDokumenPresenter
                 if ($vendorId && ! empty($item['uuid']) && isset($vendorResponses[$item['uuid']])) {
                     $item['vendor_content'] = $vendorResponses[$item['uuid']];
                 } else {
-                    $item['vendor_content'] = ['key_in' => null, 'files' => [], 'status' => 'draft'];
+                    $item['vendor_content'] = ['key_in' => null, 'specification' => [], 'files' => [], 'status' => 'draft'];
+                }
+
+                if (($item['action'] ?? '') === 'view_specification' && ! empty($item['uuid'])) {
+                    $item['vendor_content']['specification'] = $item['vendor_content']['specification'] ?? [];
                 }
 
                 $item['vendor_status'] = $this->resolveVendorItemStatus($item, $vendorResponses, $vendorFormStatuses);
@@ -95,6 +99,9 @@ class TenderDokumenPresenter
         if (! empty($vendorForm['url'])) {
             $separator = str_contains($vendorForm['url'], '?') ? '&' : '?';
             $vendorForm['url'] .= $separator . 'return=' . urlencode($vendorForm['return_url']);
+            if (! str_contains($vendorForm['url'], 'modal=1')) {
+                $vendorForm['url'] .= '&modal=1';
+            }
         }
 
         $item['admin_content']['form'] = $vendorForm;
@@ -112,6 +119,13 @@ class TenderDokumenPresenter
             $formKey = $item['admin_content']['form']['form_key'] ?? null;
             if ($formKey && ($vendorFormStatuses[$formKey]['status'] ?? '') === 'submitted') {
                 return 'submitted';
+            }
+        }
+
+        if (($item['action'] ?? '') === 'view_specification') {
+            $uuid = $item['uuid'] ?? null;
+            if ($uuid && isset($vendorResponses[$uuid])) {
+                return $vendorResponses[$uuid]['status'] ?? 'draft';
             }
         }
 

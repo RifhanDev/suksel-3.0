@@ -10,17 +10,40 @@
 @endphp
 
 <style>
-    .dokumen-checklist-row { cursor: pointer; transition: background 0.15s; }
+    .dokumen-checklist-wrap .table-bordered > :not(caption) > * > * {
+        border-color: #e2e8f0;
+    }
+    .dokumen-checklist-row {
+        cursor: pointer;
+        transition: background 0.15s ease, box-shadow 0.15s ease;
+        background: #fff;
+    }
     .dokumen-checklist-row:hover { background: #f8fafc; }
-    .dokumen-checklist-row.is-open { background: #f1f5f9; }
-    .dokumen-checklist-detail td { background: #fafbfc; border-top: none !important; }
-    .dokumen-checklist-chevron { transition: transform 0.2s; color: #94a3b8; }
-    .dokumen-checklist-row.is-open .dokumen-checklist-chevron { transform: rotate(90deg); }
+    .dokumen-checklist-row.is-open td {
+        background: #dce5f0 !important;
+        border-color: #b8c8da !important;
+    }
+    .dokumen-checklist-row.is-open td:first-child {
+        box-shadow: inset 3px 0 0 #1e3a5f;
+    }
+    .dokumen-checklist-detail td {
+        background: #eef2f7 !important;
+        border-top: none !important;
+        border-bottom: 2px solid #c5d0de !important;
+        padding-top: 0.5rem !important;
+        padding-bottom: 0.85rem !important;
+    }
+    .dokumen-checklist-chevron { transition: transform 0.2s; color: #64748b; }
+    .dokumen-checklist-row.is-open .dokumen-checklist-chevron {
+        transform: rotate(90deg);
+        color: #1e3a5f;
+    }
     .dokumen-content-box {
-        border: 1px solid #e2e8f0;
+        border: 1px solid #d4dde8;
         border-radius: 8px;
         background: #fff;
         padding: 0.85rem 1rem;
+        box-shadow: 0 1px 4px rgba(15, 23, 42, 0.07);
     }
     .dokumen-upload-placeholder {
         border: 1.5px dashed #cbd5e1;
@@ -109,7 +132,7 @@
         window.__dokumenChecklistInit = true;
 
         document.addEventListener('click', function (e) {
-            if (e.target.closest('.dokumen-upload-zone, .dokumen-key-in-form, .dokumen-delete-file, a')) {
+            if (e.target.closest('.dokumen-upload-zone, .dokumen-key-in-form, .dokumen-delete-file, .dokumen-spec-form, a, button, [data-online-form-modal], [data-vendor-form-modal]')) {
                 return;
             }
             var row = e.target.closest('[data-dokumen-toggle]');
@@ -117,7 +140,23 @@
             var targetId = row.getAttribute('data-dokumen-toggle');
             var detail = document.getElementById(targetId);
             if (!detail) return;
+
+            var wrap = row.closest('.dokumen-checklist-wrap');
             var isOpen = !detail.classList.contains('d-none');
+
+            if (wrap) {
+                wrap.querySelectorAll('.dokumen-checklist-detail:not(.d-none)').forEach(function (openDetail) {
+                    if (openDetail.id !== targetId) {
+                        openDetail.classList.add('d-none');
+                    }
+                });
+                wrap.querySelectorAll('.dokumen-checklist-row.is-open').forEach(function (openRow) {
+                    if (openRow !== row) {
+                        openRow.classList.remove('is-open');
+                    }
+                });
+            }
+
             detail.classList.toggle('d-none', isOpen);
             row.classList.toggle('is-open', !isOpen);
         });

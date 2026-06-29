@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\HandlesTenderFormAccess;
 use App\Models\TenderVendorDokumenFile;
 use App\Services\VendorDokumenResponseService;
 use App\Support\TenderDokumenPresenter;
@@ -12,12 +13,14 @@ use Illuminate\Validation\ValidationException;
 
 class VendorTenderDokumenController extends Controller
 {
+    use HandlesTenderFormAccess;
+
     public function __construct(protected VendorDokumenResponseService $responses) {}
 
     public function upload(Request $request, Tender $tender, string $itemUuid)
     {
         $vendorId = $this->vendorId();
-        $item = $this->findChecklistItem($tender, $itemUuid);
+        $item = $this->findChecklistItem($tender, $itemUuid, 'vendor', $vendorId);
 
         if (! in_array($item['action'], ['vendor_upload', 'download_upload'], true)) {
             throw ValidationException::withMessages([
@@ -72,7 +75,7 @@ class VendorTenderDokumenController extends Controller
     public function saveKeyIn(Request $request, Tender $tender, string $itemUuid)
     {
         $vendorId = $this->vendorId();
-        $item = $this->findChecklistItem($tender, $itemUuid);
+        $item = $this->findChecklistItem($tender, $itemUuid, 'vendor', $vendorId);
 
         if (($item['action'] ?? '') !== 'key_in') {
             throw ValidationException::withMessages([
@@ -109,6 +112,66 @@ class VendorTenderDokumenController extends Controller
         ]);
     }
 
+    public function specificationForm(Tender $tender, string $itemUuid)
+    {
+        $this->ensureTenderFormAccess($tender);
+
+        $isVendor = $this->isVendorFormMode();
+        $vendorId = $isVendor ? $this->vendorId() : null;
+
+        $item = $this->findChecklistItem($tender, $itemUuid, $isVendor ? 'vendor' : 'admin', $vendorId);
+
+        if (($item['action'] ?? '') !== 'view_specification') {
+            abort(404, 'Item dokumen spesifikasi tidak dijumpai.');
+        }
+
+        return view('tenders.dokumen.specification_form', array_merge([
+            'tender' => $tender,
+            'item' => $item,
+        ], $this->formViewVars($tender)));
+    }
+
+    public function saveSpecification(Request $request, Tender $tender, string $itemUuid)
+    {
+        $vendorId = $this->vendorId();
+        $item = $this->findChecklistItem($tender, $itemUuid, 'vendor', $vendorId);
+
+        if (($item['action'] ?? '') !== 'view_specification') {
+            throw ValidationException::withMessages([
+                'item' => 'Item ini tidak memerlukan maklum balas spesifikasi.',
+            ]);
+        }
+
+        $data = $request->validate([
+            'section' => 'required|string|in:technical,financial,kewangan_kerja,spesifikasi_kerja',
+            'responses' => 'required|array',
+            'responses.*' => 'nullable|string|max:5000',
+        ]);
+
+        if ($data['section'] !== $item['section']) {
+            throw ValidationException::withMessages([
+                'section' => 'Seksyen dokumen tidak sepadan.',
+            ]);
+        }
+
+        $response = $this->responses->saveSpecificationResponses(
+            $tender,
+            $vendorId,
+            $itemUuid,
+            $data['section'],
+            $data['responses']
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Maklum balas spesifikasi berjaya disimpan.',
+            'data' => [
+                'responses' => $response->payload['responses'] ?? [],
+                'status' => $response->status,
+            ],
+        ]);
+    }
+
     protected function vendorId(): int
     {
         $user = Auth::user();
@@ -123,9 +186,13 @@ class VendorTenderDokumenController extends Controller
     /**
      * @return array<string, mixed>
      */
-    protected function findChecklistItem(Tender $tender, string $itemUuid): array
-    {
-        $item = collect(TenderDokumenPresenter::for($tender)->items('admin'))
+    protected function findChecklistItem(
+        Tender $tender,
+        string $itemUuid,
+        string $mode = 'admin',
+        ?int $vendorId = null
+    ): array {
+        $item = collect(TenderDokumenPresenter::for($tender)->items($mode, $vendorId))
             ->first(fn (array $row) => ($row['uuid'] ?? '') === $itemUuid);
 
         if (! $item) {

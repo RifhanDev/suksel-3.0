@@ -1,4 +1,4 @@
-@extends('layouts.v3.master')
+@extends($layout ?? 'layouts.v3.master')
 
 @section('styles')
     <link href="{{ asset('css/components/custom-table.css') }}" rel="stylesheet">
@@ -164,6 +164,10 @@
             color: #475569;
             line-height: 1.55;
         }
+        .vendor-profile-locked {
+            background-color: #f8fafc !important;
+            cursor: not-allowed;
+        }
     </style>
 @endsection
 
@@ -194,6 +198,9 @@
 
     <form id="form-profil-petender" action="{{ route('profilPetender.store', $tender->uuid) }}" method="POST">
     @csrf
+    @if ($modalEmbed ?? false)
+        <input type="hidden" name="modal" value="1">
+    @endif
 
         <!-- TENDER INFO CARD -->
         <div class="content-card mb-4 p-0">
@@ -238,6 +245,10 @@
 
         <!-- ===================== SECTION 1: MAKLUMAT PROFIL PETENDER ===================== -->
         @if ($showVendorForm)
+        @php
+            $lockVendorProfile = ($vendorFormMode ?? false);
+            $vp = $vendorProfilDefaults ?? [];
+        @endphp
         <div class="content-card mb-4 p-0">
             <div class="borang-title-bar">Maklumat Profil Petender</div>
             <div class="content-card-body p-4 pt-3">
@@ -249,6 +260,11 @@
                     <p class="borang-instruction mb-0">
                         <strong>2.</strong> Jangan gunakan atau merujuk kepada <strong>lampiran lain</strong>, kecuali diminta di ruang berkenaan. Jika ruang tidak mencukupi, borang boleh dicetak semula dalam format asal.
                     </p>
+                    @if ($lockVendorProfile)
+                        <p class="borang-instruction mb-0 mt-2 text-primary">
+                            <strong>Nota:</strong> Maklumat syarikat (nama, jenis, alamat, pendaftaran, modal, dll.) diambil daripada profil syarikat anda dan tidak boleh diubah di sini.
+                        </p>
+                    @endif
                 </div>
 
                 <!-- Table -->
@@ -266,20 +282,32 @@
                             <tr>
                                 <td class="text-center fw-semibold text-muted" style="font-size:0.8rem;">1</td>
                                 <td class="fw-semibold" style="font-size:0.85rem;">Nama Syarikat</td>
-                                <td><input type="text" name="nama_syarikat" class="form-control form-control-sm" placeholder="Masukkan nama syarikat..."></td>
+                                <td>
+                                    <input type="text" name="nama_syarikat"
+                                        class="form-control form-control-sm{{ $lockVendorProfile ? ' vendor-profile-locked' : '' }}"
+                                        placeholder="Masukkan nama syarikat..."
+                                        value="{{ $vp['nama_syarikat'] ?? '' }}"
+                                        @if ($lockVendorProfile) readonly @endif>
+                                </td>
                             </tr>
                             <!-- 2. Jenis Syarikat -->
                             <tr>
                                 <td class="text-center fw-semibold text-muted" style="font-size:0.8rem;">2</td>
                                 <td class="fw-semibold" style="font-size:0.85rem;">Jenis Syarikat</td>
                                 <td>
-                                    <select name="jenis_syarikat" class="form-select form-select-sm">
-                                        <option value="">— Sila pilih —</option>
-                                        <option value="persendirian">Persendirian</option>
-                                        <option value="perkongsian">Perkongsian</option>
-                                        <option value="koperasi">Koperasi</option>
-                                        <option value="sdn_bhd">Sdn Bhd</option>
-                                    </select>
+                                    @if ($lockVendorProfile)
+                                        <input type="text" class="form-control form-control-sm vendor-profile-locked" readonly
+                                            value="{{ $vp['jenis_syarikat_label'] ?? '' }}">
+                                        <input type="hidden" name="jenis_syarikat" value="{{ $vp['jenis_syarikat'] ?? '' }}">
+                                    @else
+                                        <select name="jenis_syarikat" class="form-select form-select-sm">
+                                            <option value="">— Sila pilih —</option>
+                                            <option value="persendirian">Persendirian</option>
+                                            <option value="perkongsian">Perkongsian</option>
+                                            <option value="koperasi">Koperasi</option>
+                                            <option value="sdn_bhd">Sdn Bhd</option>
+                                        </select>
+                                    @endif
                                 </td>
                             </tr>
                             <!-- 3. Taraf Petender -->
@@ -287,18 +315,29 @@
                                 <td class="text-center fw-semibold text-muted" style="font-size:0.8rem;">3</td>
                                 <td class="fw-semibold" style="font-size:0.85rem;">Taraf Petender <span class="fw-normal text-muted" style="font-size:0.75rem;">(Sertakan salinan sijil)</span></td>
                                 <td>
-                                    <select name="taraf_petender" class="form-select form-select-sm">
-                                        <option value="">— Sila pilih —</option>
-                                        <option value="bumiputera">Bumiputera</option>
-                                        <option value="bukan_bumiputera">Bukan Bumiputera</option>
-                                    </select>
+                                    @if ($lockVendorProfile)
+                                        <input type="text" class="form-control form-control-sm vendor-profile-locked" readonly
+                                            value="{{ $vp['taraf_petender_label'] ?? '' }}">
+                                        <input type="hidden" name="taraf_petender" value="{{ $vp['taraf_petender'] ?? '' }}">
+                                    @else
+                                        <select name="taraf_petender" class="form-select form-select-sm">
+                                            <option value="">— Sila pilih —</option>
+                                            <option value="bumiputera">Bumiputera</option>
+                                            <option value="bukan_bumiputera">Bukan Bumiputera</option>
+                                        </select>
+                                    @endif
                                 </td>
                             </tr>
                             <!-- 4. Alamat -->
                             <tr>
                                 <td class="text-center fw-semibold text-muted" style="font-size:0.8rem;">4</td>
                                 <td class="fw-semibold" style="font-size:0.85rem;">Alamat</td>
-                                <td><textarea name="alamat_syarikat" class="form-control form-control-sm" rows="3" placeholder="Masukkan alamat penuh syarikat..."></textarea></td>
+                                <td>
+                                    <textarea name="alamat_syarikat"
+                                        class="form-control form-control-sm{{ $lockVendorProfile ? ' vendor-profile-locked' : '' }}"
+                                        rows="3" placeholder="Masukkan alamat penuh syarikat..."
+                                        @if ($lockVendorProfile) readonly @endif>{{ $vp['alamat'] ?? '' }}</textarea>
+                                </td>
                             </tr>
                             <!-- 5. Pegawai untuk dihubungi -->
                             <tr>
@@ -307,15 +346,27 @@
                                 <td>
                                     <div class="sub-field-row">
                                         <span class="sub-field-label">Nama</span>
-                                        <input type="text" name="pegawai_nama" class="form-control form-control-sm sub-field-input" placeholder="Nama pegawai...">
+                                        <input type="text" name="pegawai_nama"
+                                            class="form-control form-control-sm sub-field-input{{ $lockVendorProfile ? ' vendor-profile-locked' : '' }}"
+                                            placeholder="Nama pegawai..."
+                                            value="{{ $vp['pegawai_nama'] ?? '' }}"
+                                            @if ($lockVendorProfile) readonly @endif>
                                     </div>
                                     <div class="sub-field-row">
                                         <span class="sub-field-label">No. Telefon</span>
-                                        <input type="text" name="pegawai_telefon" class="form-control form-control-sm sub-field-input" placeholder="Cth: 012-3456789">
+                                        <input type="text" name="pegawai_telefon"
+                                            class="form-control form-control-sm sub-field-input{{ $lockVendorProfile ? ' vendor-profile-locked' : '' }}"
+                                            placeholder="Cth: 012-3456789"
+                                            value="{{ $vp['pegawai_telefon'] ?? '' }}"
+                                            @if ($lockVendorProfile) readonly @endif>
                                     </div>
                                     <div class="sub-field-row">
                                         <span class="sub-field-label">E-mel</span>
-                                        <input type="email" name="pegawai_emel" class="form-control form-control-sm sub-field-input" placeholder="contoh@email.com">
+                                        <input type="email" name="pegawai_emel"
+                                            class="form-control form-control-sm sub-field-input{{ $lockVendorProfile ? ' vendor-profile-locked' : '' }}"
+                                            placeholder="contoh@email.com"
+                                            value="{{ $vp['pegawai_emel'] ?? '' }}"
+                                            @if ($lockVendorProfile) readonly @endif>
                                     </div>
                                 </td>
                             </tr>
@@ -326,15 +377,27 @@
                                 <td>
                                     <div class="sub-field-row">
                                         <span class="sub-field-label">No. SSM</span>
-                                        <input type="text" name="no_ssm" class="form-control form-control-sm sub-field-input" placeholder="No. SSM...">
+                                        <input type="text" name="no_ssm"
+                                            class="form-control form-control-sm sub-field-input{{ $lockVendorProfile ? ' vendor-profile-locked' : '' }}"
+                                            placeholder="No. SSM..."
+                                            value="{{ $vp['no_ssm'] ?? '' }}"
+                                            @if ($lockVendorProfile) readonly @endif>
                                     </div>
                                     <div class="sub-field-row">
                                         <span class="sub-field-label">No. MOF</span>
-                                        <input type="text" name="no_mof" class="form-control form-control-sm sub-field-input" placeholder="No. MOF...">
+                                        <input type="text" name="no_mof"
+                                            class="form-control form-control-sm sub-field-input{{ $lockVendorProfile ? ' vendor-profile-locked' : '' }}"
+                                            placeholder="No. MOF..."
+                                            value="{{ $vp['no_mof'] ?? '' }}"
+                                            @if ($lockVendorProfile) readonly @endif>
                                     </div>
                                     <div class="sub-field-row">
                                         <span class="sub-field-label">Tempoh Sah MOF</span>
-                                        <input type="text" name="tempoh_sah_mof" class="form-control form-control-sm sub-field-input" placeholder="">
+                                        <input type="text" name="tempoh_sah_mof"
+                                            class="form-control form-control-sm sub-field-input{{ $lockVendorProfile ? ' vendor-profile-locked' : '' }}"
+                                            placeholder=""
+                                            value="{{ $vp['tempoh_sah_mof'] ?? '' }}"
+                                            @if ($lockVendorProfile) readonly @endif>
                                     </div>
                                 </td>
                             </tr>
@@ -367,7 +430,11 @@
                                 <td>
                                     <div class="d-flex align-items-center gap-2" style="max-width:220px;">
                                         <span class="text-muted small flex-shrink-0">RM</span>
-                                        <input type="text" name="modal_berbayar" class="form-control form-control-sm text-end amount-input" placeholder="0.00">
+                                        <input type="text" name="modal_berbayar"
+                                            class="form-control form-control-sm text-end amount-input{{ $lockVendorProfile ? ' vendor-profile-locked' : '' }}"
+                                            placeholder="0.00"
+                                            value="{{ ! empty($vp['modal_berbayar']) ? number_format((float) $vp['modal_berbayar'], 2) : '' }}"
+                                            @if ($lockVendorProfile) readonly @endif>
                                     </div>
                                 </td>
                             </tr>
@@ -378,7 +445,11 @@
                                 <td>
                                     <div class="d-flex align-items-center gap-2" style="max-width:220px;">
                                         <span class="text-muted small flex-shrink-0">RM</span>
-                                        <input type="text" name="modal_dibenarkan" class="form-control form-control-sm text-end amount-input" placeholder="0.00">
+                                        <input type="text" name="modal_dibenarkan"
+                                            class="form-control form-control-sm text-end amount-input{{ $lockVendorProfile ? ' vendor-profile-locked' : '' }}"
+                                            placeholder="0.00"
+                                            value="{{ ! empty($vp['modal_dibenarkan']) ? number_format((float) $vp['modal_dibenarkan'], 2) : '' }}"
+                                            @if ($lockVendorProfile) readonly @endif>
                                     </div>
                                 </td>
                             </tr>
@@ -636,14 +707,7 @@
 
         <!-- ===================== ACTION BUTTONS ===================== -->
         <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-            <a href="{{ $kembaliUrl }}" class="btn-form btn-form-secondary">
-                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="19" y1="12" x2="5" y2="12"></line>
-                    <polyline points="12 19 5 12 12 5"></polyline>
-                </svg>
-                Kembali
-            </a>
+            @include('tenders.forms._vendor_form_kembali', ['kembaliUrl' => $kembaliUrl])
             <div class="d-flex gap-2">
                 @if (!($viewOnly ?? false))
                 <button type="button" class="btn-form btn-form-primary">
@@ -695,6 +759,8 @@ $(document).ready(function () {
         '</button>';
 
     var profilData = @json($profilData ?? null);
+    var vendorProfilDefaults = @json($vendorProfilDefaults ?? null);
+    var LOCK_VENDOR_PROFILE = @json($vendorFormMode ?? false);
     var STORE_URL  = '{{ route("profilPetender.store", $tender->uuid) }}';
     var CSRF_TOKEN = '{{ csrf_token() }}';
     var KEMBALI_URL = @json($kembaliUrl);
@@ -705,21 +771,38 @@ $(document).ready(function () {
     function fmtAmt(n) { return n.toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
 
     function prefillVendorFields() {
+        if (LOCK_VENDOR_PROFILE && vendorProfilDefaults) {
+            $('#form-profil-petender [name="nama_syarikat"]').val(vendorProfilDefaults.nama_syarikat || '');
+            $('#form-profil-petender [name="jenis_syarikat"]').val(vendorProfilDefaults.jenis_syarikat || '');
+            $('#form-profil-petender [name="taraf_petender"]').val(vendorProfilDefaults.taraf_petender || '');
+            $('#form-profil-petender [name="alamat_syarikat"]').val(vendorProfilDefaults.alamat || '');
+            $('#form-profil-petender [name="pegawai_nama"]').val(vendorProfilDefaults.pegawai_nama || '');
+            $('#form-profil-petender [name="pegawai_telefon"]').val(vendorProfilDefaults.pegawai_telefon || '');
+            $('#form-profil-petender [name="pegawai_emel"]').val(vendorProfilDefaults.pegawai_emel || '');
+            $('#form-profil-petender [name="no_ssm"]').val(vendorProfilDefaults.no_ssm || '');
+            $('#form-profil-petender [name="no_mof"]').val(vendorProfilDefaults.no_mof || '');
+            $('#form-profil-petender [name="tempoh_sah_mof"]').val(vendorProfilDefaults.tempoh_sah_mof || '');
+            $('#form-profil-petender [name="modal_berbayar"]').val(vendorProfilDefaults.modal_berbayar > 0 ? fmtAmt(vendorProfilDefaults.modal_berbayar) : '');
+            $('#form-profil-petender [name="modal_dibenarkan"]').val(vendorProfilDefaults.modal_dibenarkan > 0 ? fmtAmt(vendorProfilDefaults.modal_dibenarkan) : '');
+        } else if (profilData) {
+            $('#form-profil-petender [name="nama_syarikat"]').val(profilData.nama_syarikat || '');
+            $('#form-profil-petender [name="jenis_syarikat"]').val(profilData.jenis_syarikat || '');
+            $('#form-profil-petender [name="taraf_petender"]').val(profilData.taraf_petender || '');
+            $('#form-profil-petender [name="alamat_syarikat"]').val(profilData.alamat || '');
+            $('#form-profil-petender [name="pegawai_nama"]').val(profilData.pegawai_nama || '');
+            $('#form-profil-petender [name="pegawai_telefon"]').val(profilData.pegawai_telefon || '');
+            $('#form-profil-petender [name="pegawai_emel"]').val(profilData.pegawai_emel || '');
+            $('#form-profil-petender [name="no_ssm"]').val(profilData.no_ssm || '');
+            $('#form-profil-petender [name="no_mof"]').val(profilData.no_mof || '');
+            $('#form-profil-petender [name="tempoh_sah_mof"]').val(profilData.tempoh_sah_mof || '');
+            $('#form-profil-petender [name="modal_berbayar"]').val(profilData.modal_berbayar > 0 ? fmtAmt(profilData.modal_berbayar) : '');
+            $('#form-profil-petender [name="modal_dibenarkan"]').val(profilData.modal_dibenarkan > 0 ? fmtAmt(profilData.modal_dibenarkan) : '');
+        }
+
         if (!profilData) return;
-        $('#form-profil-petender [name="nama_syarikat"]').val(profilData.nama_syarikat || '');
-        $('#form-profil-petender [name="jenis_syarikat"]').val(profilData.jenis_syarikat || '');
-        $('#form-profil-petender [name="taraf_petender"]').val(profilData.taraf_petender || '');
-        $('#form-profil-petender [name="alamat_syarikat"]').val(profilData.alamat || '');
-        $('#form-profil-petender [name="pegawai_nama"]').val(profilData.pegawai_nama || '');
-        $('#form-profil-petender [name="pegawai_telefon"]').val(profilData.pegawai_telefon || '');
-        $('#form-profil-petender [name="pegawai_emel"]').val(profilData.pegawai_emel || '');
-        $('#form-profil-petender [name="no_ssm"]').val(profilData.no_ssm || '');
-        $('#form-profil-petender [name="no_mof"]').val(profilData.no_mof || '');
-        $('#form-profil-petender [name="tempoh_sah_mof"]').val(profilData.tempoh_sah_mof || '');
+
         $('#form-profil-petender [name="bil_pekerja_sekarang"]').val(profilData.bil_pekerja || 0);
         $('#form-profil-petender [name="bil_pekerja_teknikal"]').val(profilData.bil_pekerja_teknikal || 0);
-        $('#form-profil-petender [name="modal_berbayar"]').val(profilData.modal_berbayar > 0 ? fmtAmt(profilData.modal_berbayar) : '');
-        $('#form-profil-petender [name="modal_dibenarkan"]').val(profilData.modal_dibenarkan > 0 ? fmtAmt(profilData.modal_dibenarkan) : '');
         if (profilData.aset && profilData.aset.length) {
             profilData.aset.forEach(function (v, i) { $('#form-profil-petender [name="aset[]"]').eq(i).val(v || ''); });
         }
@@ -937,19 +1020,19 @@ $(document).ready(function () {
         return num.toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
-    $(document).on('focus', '.amount-input', function () {
+    $(document).on('focus', '.amount-input:not(.vendor-profile-locked)', function () {
         var raw = $(this).val().replace(/,/g, '');
         if (parseFloat(raw) === 0) raw = '';
         $(this).val(raw);
     });
 
-    $(document).on('blur', '.amount-input', function () {
+    $(document).on('blur', '.amount-input:not(.vendor-profile-locked)', function () {
         var val = $(this).val();
         if (val === '') return;
         $(this).val(formatAmount(val));
     });
 
-    $(document).on('input', '.amount-input', function () {
+    $(document).on('input', '.amount-input:not(.vendor-profile-locked)', function () {
         $(this).val($(this).val().replace(/[^\d.]/g, ''));
     });
 
@@ -1073,7 +1156,11 @@ $(document).ready(function () {
             if (res && res.success) {
                 $('#loading-text').text('Berjaya disimpan! Mengalih...');
                 $('#loading-overlay').addClass('success');
-                window.location.href = KEMBALI_URL;
+                if (typeof vendorFormNavigate === 'function') {
+                    vendorFormNavigate(KEMBALI_URL);
+                } else {
+                    window.location.href = KEMBALI_URL;
+                }
             } else {
                 unblockUI();
                 alert(res.message || 'Ralat semasa menyimpan.');

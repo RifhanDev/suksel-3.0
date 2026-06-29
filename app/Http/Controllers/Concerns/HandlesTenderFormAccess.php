@@ -6,6 +6,9 @@ use App\Models\Tender;
 use App\Services\OnlineFormStatusService;
 use App\Services\VendorFormPayloadService;
 use App\Tender as LegacyTender;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 
 trait HandlesTenderFormAccess
 {
@@ -40,6 +43,11 @@ trait HandlesTenderFormAccess
         return request('mode') === 'view' || request()->boolean('view');
     }
 
+    protected function isFormModalEmbed(): bool
+    {
+        return request()->boolean('modal');
+    }
+
     protected function ensureFormEditable(): void
     {
         if ($this->isFormViewOnly()) {
@@ -48,15 +56,56 @@ trait HandlesTenderFormAccess
     }
 
     /**
-     * @return array{viewOnly: bool, vendorFormMode: bool, returnUrl: string|null}
+     * @return array{viewOnly: bool, vendorFormMode: bool, modalEmbed: bool, layout: string, returnUrl: string|null}
      */
     protected function formViewVars(Tender|LegacyTender $tender): array
     {
+        $modalEmbed = $this->isFormModalEmbed();
+
         return [
             'viewOnly' => $this->isFormViewOnly(),
             'vendorFormMode' => $this->isVendorFormMode(),
+            'modalEmbed' => $modalEmbed,
+            'layout' => $modalEmbed ? 'layouts.form_modal_embed' : 'layouts.v3.master',
             'returnUrl' => request('return', $this->isVendorFormMode() ? $this->vendorFormReturnUrl($tender) : null),
         ];
+    }
+
+    protected function appendModalEmbedToUrl(?string $url): ?string
+    {
+        if (! $url) {
+            return null;
+        }
+
+        if (str_contains($url, 'modal=1')) {
+            return $url;
+        }
+
+        $separator = str_contains($url, '?') ? '&' : '?';
+
+        return $url . $separator . 'modal=1';
+    }
+
+    protected function vendorFormRedirect(
+        Request $request,
+        Tender|LegacyTender $tender,
+        string $message,
+        string $flashKey = 'success',
+        bool $useBack = false
+    ): RedirectResponse|Response {
+        if ($request->boolean('modal')) {
+            return response()->view('tenders.forms.modal_complete', [
+                'message' => $message,
+                'flashKey' => $flashKey,
+            ]);
+        }
+
+        if ($useBack) {
+            return redirect()->back()->withInput()->with($flashKey, $message);
+        }
+
+        return redirect($request->input('return', $this->vendorFormReturnUrl($tender)))
+            ->with($flashKey, $message);
     }
 
     protected function appendViewModeToUrl(?string $url, bool $viewOnly = true): ?string

@@ -114,8 +114,7 @@ class PengalamanKerjaController extends Controller
                     'text' => count($items) . ' rekod pengalaman (disimpan tempatan)',
                 ]);
 
-                return redirect($request->input('return', $this->vendorFormReturnUrl($tender)))
-                    ->with('warning', 'Data disimpan secara tempatan. Penyegerakan STOS gagal.');
+                return $this->vendorFormRedirect($request, $tender, 'Data disimpan secara tempatan. Penyegerakan STOS gagal.', 'warning');
             }
 
             return redirect()->back()
@@ -130,8 +129,7 @@ class PengalamanKerjaController extends Controller
                     'text' => count($items) . ' rekod pengalaman (disimpan tempatan)',
                 ]);
 
-                return redirect($request->input('return', $this->vendorFormReturnUrl($tender)))
-                    ->with('warning', 'Data disimpan secara tempatan. Penyegerakan STOS gagal.');
+                return $this->vendorFormRedirect($request, $tender, 'Data disimpan secara tempatan. Penyegerakan STOS gagal.', 'warning');
             }
 
             $message = $response->json('message') ?: 'Terdapat ralat semasa menyimpan pengalaman kerja.';
@@ -192,6 +190,12 @@ class PengalamanKerjaController extends Controller
                 $this->trackVendorFormSubmitted($tender, 'pengalaman_kerja', [
                     'text' => count($items) . ' rekod pengalaman (sebahagian fail gagal)',
                 ]);
+
+                return $this->vendorFormRedirect(
+                    $request,
+                    $tender,
+                    'Pengalaman kerja berjaya disimpan. Beberapa fail gagal dimuat naik: ' . implode(', ', $fileErrors)
+                );
             }
 
             return redirect()->back()
@@ -204,8 +208,7 @@ class PengalamanKerjaController extends Controller
                 'text' => count($items) . ' rekod pengalaman kerja',
             ]);
 
-            return redirect($request->input('return', $this->vendorFormReturnUrl($tender)))
-                ->with('success', 'Pengalaman kerja berjaya disimpan.');
+            return $this->vendorFormRedirect($request, $tender, 'Pengalaman kerja berjaya disimpan.');
         }
 
         return redirect()

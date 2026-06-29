@@ -215,6 +215,9 @@
 @endsection
 
 @section('scripts')
+@if ($tender->showDokumenSenaraiTab())
+    @include('tenders.forms._online_form_modal')
+@endif
 <script>
 $(document).ready(function () {
 

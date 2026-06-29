@@ -119,6 +119,10 @@ class LembaranImbanganController extends Controller
                 ]);
             }
 
+            if ($this->isVendorFormMode()) {
+                return $this->vendorFormRedirect($request, $tender, 'Lembaran Imbangan berjaya disimpan.');
+            }
+
             $redirect = $request->input('return');
             if ($redirect) {
                 return redirect($redirect)->with('success', 'Lembaran Imbangan berjaya disimpan.');
