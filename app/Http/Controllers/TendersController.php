@@ -548,7 +548,30 @@ class TendersController extends Controller
 		}
 
 		if (auth()->user()->hasRole('Vendor')) {
-			return view('tenders.vendor.show', compact('tender', 'organizationunit', 'invites', 'histories', 'exception', 'templates', 'tender_winner', 'pegawaiDisplay', 'tenderDokumen'));
+			$vendorPurchase = null;
+			$vendorSubmitted = false;
+			if (auth()->user()->vendor_id) {
+				$vendorPurchase = $tender->participants()
+					->where('vendor_id', auth()->user()->vendor_id)
+					->where('participate', 1)
+					->orderByDesc('id')
+					->first();
+				$vendorSubmitted = $vendorPurchase ? (bool) $vendorPurchase->submitted : false;
+			}
+
+			return view('tenders.vendor.show', compact(
+				'tender',
+				'organizationunit',
+				'invites',
+				'histories',
+				'exception',
+				'templates',
+				'tender_winner',
+				'pegawaiDisplay',
+				'tenderDokumen',
+				'vendorPurchase',
+				'vendorSubmitted'
+			));
 		}
 
 		// dd($tender->validDocumentDate());
@@ -1233,6 +1256,8 @@ class TendersController extends Controller
 
 			$purchase->save();
 		}
+
+		TenderVendor::syncKodPembekal($tender->id);
 
 		foreach ($tender->siteVisits as $visit) {
 			$visit->visitors()->delete();

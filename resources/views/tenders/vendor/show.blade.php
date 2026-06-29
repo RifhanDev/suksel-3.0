@@ -108,13 +108,14 @@
 
 @section('content')
 
-    @php
-        $vendorCanEdit = Auth::check()
-            && Auth::user()->vendor_id
-            && $tender->hasParticipate(Auth::user()->vendor_id);
-        $dokumenList = $tenderDokumen->items('vendor', $vendorCanEdit ? (int) Auth::user()->vendor_id : null);
-        $canManageWakilLawatan = $vendorCanEdit;
-    @endphp
+	@php
+		$vendorPurchase = $vendorPurchase ?? null;
+		$vendorSubmitted = $vendorSubmitted ?? false;
+		$vendorHasPurchased = Auth::check() && Auth::user()->vendor_id && $tender->hasParticipate(Auth::user()->vendor_id);
+		$vendorCanEdit = $vendorHasPurchased && !$vendorSubmitted;
+		$dokumenList = $tenderDokumen->items('vendor', $vendorCanEdit ? (int) Auth::user()->vendor_id : null);
+		$canManageWakilLawatan = $vendorCanEdit;
+	@endphp
 
 	{{-- Breadcrumb + Header --}}
 	<div class="mb-4">
@@ -134,6 +135,93 @@
 	</div>
 
 	@include('tenders._notification')
+
+	@if ($vendorHasPurchased)
+		<div class="mb-4" id="vendor-submission-panel">
+			@if ($vendorSubmitted)
+				<div class="alert alert-success d-flex align-items-start gap-2 mb-0 py-3 px-3" style="font-size:0.84rem;">
+					<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+						stroke="currentColor" stroke-width="2.5" class="flex-shrink-0 mt-1">
+						<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+						<polyline points="22 4 12 14.01 9 11.01"></polyline>
+					</svg>
+					<div>
+						<strong>Tawaran telah dihantar.</strong>
+						Maklumat lawatan tapak dan dokumen tender tidak boleh dikemaskini.
+						@if (!empty($vendorPurchase?->kod_pembekal))
+							<div class="mt-1">Kod Pembekal: <strong>{{ $vendorPurchase->kod_pembekal }}</strong></div>
+						@endif
+					</div>
+				</div>
+			@else
+				<div class="vendor-tender-card mb-0">
+					<div class="vendor-tender-card-header">
+						<div class="header-icon">
+							<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+								stroke="currentColor" stroke-width="2">
+								<line x1="22" y1="2" x2="11" y2="13"></line>
+								<polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+							</svg>
+						</div>
+						<div class="flex-grow-1">
+							<h6 class="mb-0">Hantar Tawaran</h6>
+							<small class="text-muted" style="font-size:0.72rem;">
+								Lengkapkan lawatan tapak dan dokumen tender/tawaran sebelum menghantar.
+							</small>
+						</div>
+						@if (!empty($vendorPurchase?->kod_pembekal))
+							<span class="badge bg-light text-dark border">Kod: {{ $vendorPurchase->kod_pembekal }}</span>
+						@endif
+					</div>
+					<div class="p-4">
+						<div id="vendor-submission-errors" class="alert alert-warning d-none py-2 px-3 mb-3" style="font-size:0.8rem;">
+						</div>
+						<div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+							<p class="text-muted small mb-0">
+								Selepas dihantar, status proses tender akan bergerak ke peringkat seterusnya dan anda tidak boleh mengubah
+								maklumat.
+							</p>
+							<button type="button" class="btn btn-danger px-4" id="btn-vendor-submit-tawaran">
+								Hantar Tawaran
+							</button>
+						</div>
+					</div>
+				</div>
+			@endif
+		</div>
+
+		@if (!$vendorSubmitted)
+			<div class="modal fade" id="vendorSubmissionWarningModal" tabindex="-1"
+				aria-labelledby="vendorSubmissionWarningModalLabel" aria-hidden="true">
+				<div class="modal-dialog modal-dialog-centered">
+					<div class="modal-content border-0 shadow">
+						<div class="modal-header border-0 pb-0">
+							<h6 class="modal-title fw-bold text-warning d-flex align-items-center gap-2"
+								id="vendorSubmissionWarningModalLabel">
+								<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+									stroke="currentColor" stroke-width="2">
+									<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+									<line x1="12" y1="9" x2="12" y2="13"></line>
+									<line x1="12" y1="17" x2="12.01" y2="17"></line>
+								</svg>
+								Tidak Boleh Hantar Tawaran
+							</h6>
+							<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+						</div>
+						<div class="modal-body pt-2">
+							<p class="text-muted small mb-2">
+								Sila lengkapkan perkara berikut sebelum menghantar tawaran:
+							</p>
+							<ul id="vendor-submission-modal-errors" class="mb-0 ps-3 small" style="line-height:1.6;"></ul>
+						</div>
+						<div class="modal-footer border-0 pt-0">
+							<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+						</div>
+					</div>
+				</div>
+			</div>
+		@endif
+	@endif
 
 	<div class="row g-4 align-items-start">
 
@@ -175,7 +263,8 @@
 					@endif
 
 					@if (count($tender->mof_codes) > 0 || count($tender->cidb_grades) > 0 || count($tender->cidb_codes) > 0)
-						<a class="nav-link {{ Auth::user()->vendor && $tender->codeErrors(Auth::user()->vendor_id) ? 'text-danger' : '' }}"
+						<a
+							class="nav-link {{ Auth::user()->vendor && $tender->codeErrors(Auth::user()->vendor_id) ? 'text-danger' : '' }}"
 							href="#vt-kod" data-bs-toggle="pill" role="tab">
 							<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
 								stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -441,7 +530,8 @@
 									</p>
 								@else
 									<p class="text-muted small mb-0">
-										Maklumat lawatan tapak adalah untuk rujukan. Sila <strong>beli dokumen tender</strong> terlebih dahulu untuk mendaftar wakil syarikat.
+										Maklumat lawatan tapak adalah untuk rujukan. Sila <strong>beli dokumen tender</strong> terlebih dahulu untuk
+										mendaftar wakil syarikat.
 									</p>
 								@endif
 							</div>
@@ -520,47 +610,47 @@
 					</div>
 
 					@if ($canManageWakilLawatan)
-					{{-- Modal: Wakil Syarikat --}}
-					<div class="modal fade" id="wakilLawatanModal" tabindex="-1" aria-labelledby="wakilLawatanModalLabel"
-						aria-hidden="true">
-						<div class="modal-dialog modal-lg modal-dialog-centered">
-							<div class="modal-content">
-								<div class="modal-header" style="background:#c41e3a; color:#fff;">
-									<h6 class="modal-title" id="wakilLawatanModalLabel">Wakil Syarikat</h6>
-									<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
-										aria-label="Tutup"></button>
-								</div>
-								<div class="modal-body">
-									<p class="text-muted small mb-3" id="wakilLawatanVisitInfo"></p>
-									<div class="table-responsive">
-										<table class="table table-bordered align-middle mb-0" id="wakilLawatanTable">
-											<thead>
-												<tr>
-													<th width="28%">No. IC</th>
-													<th>Nama Individu</th>
-													<th width="12%" class="text-center">Hadir</th>
-													<th width="8%"></th>
-												</tr>
-											</thead>
-											<tbody id="wakilLawatanRows"></tbody>
-										</table>
+						{{-- Modal: Wakil Syarikat --}}
+						<div class="modal fade" id="wakilLawatanModal" tabindex="-1" aria-labelledby="wakilLawatanModalLabel"
+							aria-hidden="true">
+							<div class="modal-dialog modal-lg modal-dialog-centered">
+								<div class="modal-content">
+									<div class="modal-header" style="background:#c41e3a; color:#fff;">
+										<h6 class="modal-title" id="wakilLawatanModalLabel">Wakil Syarikat</h6>
+										<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+											aria-label="Tutup"></button>
 									</div>
-									<button type="button" class="btn btn-sm btn-outline-secondary mt-2" id="wakilLawatanAddRow">+ Tambah
-										wakil</button>
-									<p class="text-muted small mt-3 mb-0">
-										Nota: Tandakan <strong>Hadir</strong> untuk sekurang-kurangnya seorang wakil yang hadir ke lawatan tapak. Nama
-										hendaklah selari dengan sijil CIDB / MOF jika berkenaan.
-									</p>
-									<div class="alert alert-danger d-none mt-3 mb-0" id="wakilLawatanError"></div>
-									<div class="alert alert-success d-none mt-3 mb-0" id="wakilLawatanSuccess"></div>
-								</div>
-								<div class="modal-footer justify-content-center">
-									<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-									<button type="button" class="btn btn-selangor px-4" id="wakilLawatanSave">Simpan</button>
+									<div class="modal-body">
+										<p class="text-muted small mb-3" id="wakilLawatanVisitInfo"></p>
+										<div class="table-responsive">
+											<table class="table table-bordered align-middle mb-0" id="wakilLawatanTable">
+												<thead>
+													<tr>
+														<th width="28%">No. IC</th>
+														<th>Nama Individu</th>
+														<th width="12%" class="text-center">Hadir</th>
+														<th width="8%"></th>
+													</tr>
+												</thead>
+												<tbody id="wakilLawatanRows"></tbody>
+											</table>
+										</div>
+										<button type="button" class="btn btn-sm btn-outline-secondary mt-2" id="wakilLawatanAddRow">+ Tambah
+											wakil</button>
+										<p class="text-muted small mt-3 mb-0">
+											Nota: Tandakan <strong>Hadir</strong> untuk sekurang-kurangnya seorang wakil yang hadir ke lawatan tapak. Nama
+											hendaklah selari dengan sijil CIDB / MOF jika berkenaan.
+										</p>
+										<div class="alert alert-danger d-none mt-3 mb-0" id="wakilLawatanError"></div>
+										<div class="alert alert-success d-none mt-3 mb-0" id="wakilLawatanSuccess"></div>
+									</div>
+									<div class="modal-footer justify-content-center">
+										<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+										<button type="button" class="btn btn-selangor px-4" id="wakilLawatanSave">Simpan</button>
+									</div>
 								</div>
 							</div>
 						</div>
-					</div>
 					@endif
 				@endif
 
@@ -1109,5 +1199,114 @@
 
 	@if ($tender->showDokumenSenaraiTab())
 		@include('tenders.forms._online_form_modal')
+	@endif
+
+	@if ($vendorHasPurchased && !$vendorSubmitted)
+		<script>
+			$(function() {
+				var READINESS_URL = @json(route('tenders.vendorSubmission.readiness', $tender->id));
+				var SUBMIT_URL = @json(route('tenders.vendorSubmission.submit', $tender->id));
+				var CSRF = @json(csrf_token());
+				var warningModal = document.getElementById('vendorSubmissionWarningModal');
+				var warningModalInstance = warningModal && typeof bootstrap !== 'undefined' ?
+					bootstrap.Modal.getOrCreateInstance(warningModal) :
+					null;
+				var latestReadiness = {
+					ready: false,
+					errors: []
+				};
+
+				function showErrors(errors) {
+					var $box = $('#vendor-submission-errors');
+					if (!errors || !errors.length) {
+						$box.addClass('d-none').empty();
+						return;
+					}
+					$box.removeClass('d-none').html('<ul class="mb-0 ps-3">' + errors.map(function(e) {
+						return '<li>' + e + '</li>';
+					}).join('') + '</ul>');
+				}
+
+				function showWarningModal(errors) {
+					var list = errors && errors.length ? errors : ['Sila lengkapkan semua keperluan sebelum menghantar.'];
+					$('#vendor-submission-modal-errors').html(list.map(function(e) {
+						return '<li>' + e + '</li>';
+					}).join(''));
+					showErrors(list);
+					if (warningModalInstance) {
+						warningModalInstance.show();
+					} else {
+						alert('Sila lengkapkan perkara berikut:\n\n- ' + list.join('\n- '));
+					}
+				}
+
+				function fetchReadiness() {
+					return $.get(READINESS_URL).then(function(res) {
+						latestReadiness = {
+							ready: !!(res && res.ready),
+							errors: (res && res.errors) ? res.errors : [],
+						};
+						if (latestReadiness.errors.length) {
+							showErrors(latestReadiness.errors);
+						}
+						return latestReadiness;
+					});
+				}
+
+				fetchReadiness();
+
+				function submitTawaran($btn) {
+					$btn.prop('disabled', true);
+					showErrors([]);
+
+					$.ajax({
+							url: SUBMIT_URL,
+							type: 'POST',
+							headers: {
+								'X-CSRF-TOKEN': CSRF
+							},
+						})
+						.done(function(res) {
+							if (res && res.success) {
+								window.location.reload();
+								return;
+							}
+							$btn.prop('disabled', false);
+							alert((res && res.message) || 'Gagal menghantar tawaran.');
+						})
+						.fail(function(xhr) {
+							$btn.prop('disabled', false);
+							var json = xhr.responseJSON || {};
+							if (json.errors && json.errors.checklist) {
+								var list = Array.isArray(json.errors.checklist) ? json.errors.checklist : [json.errors
+									.checklist
+								];
+								showWarningModal(list);
+							} else {
+								alert(json.message || 'Gagal menghantar tawaran.');
+							}
+						});
+				}
+
+				$('#btn-vendor-submit-tawaran').on('click', function() {
+					var $btn = $(this);
+
+					fetchReadiness().done(function(state) {
+						if (!state.ready) {
+							showWarningModal(state.errors);
+							return;
+						}
+
+						if (!confirm('Hantar tawaran? Maklumat tidak boleh dikemaskini selepas ini.')) {
+							return;
+						}
+
+						submitTawaran($btn);
+					}).fail(function() {
+						alert('Gagal menyemak status tawaran. Sila cuba lagi.');
+					});
+				});
+			});
+		</script>
 	@endif
 @endsection
