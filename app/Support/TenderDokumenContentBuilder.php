@@ -196,27 +196,53 @@ class TenderDokumenContentBuilder
         }
 
         $document = TechnicalSpecificationDocument::query()->find($documentId);
-        $rows = TechnicalSpecificationItem::query()
+        $items = TechnicalSpecificationItem::query()
+            ->with('details')
             ->where('technical_specification_document_id', $documentId)
             ->orderBy('sort_order')
             ->orderBy('id')
-            ->get()
-            ->values()
-            ->map(fn (TechnicalSpecificationItem $row, int $i) => [
-                'bil' => $i + 1,
-                'title' => $row->title,
-                'quantity' => $row->quantity,
-                'unit' => $row->unit,
-            ])
-            ->all();
+            ->get();
+
+        $rows = [];
+        $itemIndex = 0;
+
+        foreach ($items as $item) {
+            $itemIndex++;
+            $rows[] = [
+                'kind' => 'item',
+                'bil' => (string) $itemIndex,
+                'item_uuid' => $item->uuid,
+                'title' => $item->title,
+                'quantity' => $item->quantity,
+                'unit' => $item->unit,
+                'response_type' => null,
+            ];
+
+            $detailIndex = 0;
+            foreach ($item->details as $detail) {
+                $detailIndex++;
+                $rows[] = [
+                    'kind' => 'detail',
+                    'bil' => $itemIndex . '.' . $detailIndex,
+                    'item_uuid' => $item->uuid,
+                    'detail_uuid' => $detail->uuid,
+                    'title' => $detail->description,
+                    'quantity' => null,
+                    'unit' => null,
+                    'response_type' => $detail->response_type,
+                ];
+            }
+        }
 
         return [
             'document_title' => $document?->title ?: $documentTitle,
             'rows' => $rows ?: [[
-                'bil' => 1,
+                'kind' => 'item',
+                'bil' => '1',
                 'title' => $documentTitle,
                 'quantity' => null,
                 'unit' => null,
+                'response_type' => null,
             ]],
         ];
     }
@@ -289,6 +315,9 @@ class TenderDokumenContentBuilder
         if (! empty($base['url'])) {
             $separator = str_contains($base['url'], '?') ? '&' : '?';
             $base['url'] .= $separator . 'return=' . urlencode($base['return_url']);
+            if (! str_contains($base['url'], 'modal=1')) {
+                $base['url'] .= '&modal=1';
+            }
         }
 
         return $base;

@@ -19,7 +19,13 @@
     @endif
 
     @if ($type === 'specification_table')
-        @include('tenders.dokumen.partials.specification_table', ['content' => $content])
+        @include('tenders.dokumen.partials.specification_card', [
+            'content' => $content,
+            'dok' => $dok,
+            'tender' => $tender,
+            'mode' => $mode,
+            'vendorCanEdit' => $vendorCanEdit,
+        ])
     @elseif ($type === 'files')
         @include('tenders.dokumen.partials.files', [
             'content' => $content,

@@ -185,6 +185,10 @@ class TenderPrestasiKerjaController extends Controller
                 ]);
             }
 
+            if ($this->isVendorFormMode()) {
+                return $this->vendorFormRedirect($request, $tender, 'Prestasi Kerja Semasa Petender berjaya disimpan.');
+            }
+
             $redirect = $request->input('return');
             if ($redirect) {
                 return redirect($redirect)->with('success', 'Prestasi Kerja Semasa Petender berjaya disimpan.');

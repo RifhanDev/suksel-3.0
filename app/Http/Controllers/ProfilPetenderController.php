@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Concerns\HandlesTenderFormAccess;
 use App\Models\Tender;
 use App\Services\StosBackendClient;
+use App\Support\VendorProfilPetenderDefaults;
+use App\Vendor;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
@@ -38,6 +40,13 @@ class ProfilPetenderController extends Controller
             $profilData = $this->loadVendorFormPayload($tender, 'profil_petender');
         }
 
+        $vendorProfilDefaults = [];
+        if ($this->isVendorFormMode() && $this->vendorId()) {
+            $vendorProfilDefaults = VendorProfilPetenderDefaults::fromVendor(
+                Vendor::find($this->vendorId())
+            );
+        }
+
         $aj = (float) ($tender->anggaran_jabatan ?? 0);
         $automatikRowsBerbayar   = $this->calcAutomatikRowsBerbayar($aj);
         $automatikRowsDibenarkan = $this->calcAutomatikRowsDibenarkan($aj);
@@ -45,6 +54,7 @@ class ProfilPetenderController extends Controller
         return view('jawatankuasaSpesifikasi.profil_petender', array_merge([
             'tender' => $tender,
             'profilData' => $profilData,
+            'vendorProfilDefaults' => $vendorProfilDefaults,
             'automatikRowsBerbayar' => $automatikRowsBerbayar,
             'automatikRowsDibenarkan' => $automatikRowsDibenarkan,
             'showVendorForm' => $this->isVendorFormMode() || $this->isFormViewOnly(),
@@ -61,6 +71,7 @@ class ProfilPetenderController extends Controller
         $payload = $request->except('_token');
         if ($this->isVendorFormMode()) {
             $payload['vendor_id'] = $this->vendorId();
+            $payload = $this->mergeVendorProfilLockedFields($payload);
         }
 
         $response = $this->api()->post($this->url('profil-petenders/' . $tenderUuid), $payload);
@@ -94,6 +105,7 @@ class ProfilPetenderController extends Controller
         $payload = $request->except('_token');
         if ($this->isVendorFormMode()) {
             $payload['vendor_id'] = $this->vendorId();
+            $payload = $this->mergeVendorProfilLockedFields($payload);
         }
 
         $response = $this->api()->post($this->url('profil-petenders/' . $tenderUuid . '/submit'), $payload);
@@ -142,6 +154,23 @@ class ProfilPetenderController extends Controller
             ['dari' => 0.00,   'hingga' => $hingga1, 'skema' => '0'],
             ['dari' => $dari2, 'hingga' => null,      'skema' => '10'],
         ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     * @return array<string, mixed>
+     */
+    private function mergeVendorProfilLockedFields(array $payload): array
+    {
+        $vendorId = $this->vendorId();
+        if (! $vendorId) {
+            return $payload;
+        }
+
+        return VendorProfilPetenderDefaults::mergeLockedFields(
+            $payload,
+            VendorProfilPetenderDefaults::fromVendor(Vendor::find($vendorId))
+        );
     }
 
     private function findTender(string $tenderUuid): Tender

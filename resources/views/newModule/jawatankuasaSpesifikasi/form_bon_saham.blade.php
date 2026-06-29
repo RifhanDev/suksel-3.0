@@ -1,4 +1,4 @@
-@extends('layouts.v3.master')
+@extends($layout ?? 'layouts.v3.master')
 
 @section('styles')
     <link href="{{ asset('css/components/badges.css') }}" rel="stylesheet">
@@ -120,6 +120,9 @@
     @if (! empty($returnUrl))
         <input type="hidden" name="return" value="{{ $returnUrl }}">
     @endif
+    @if ($modalEmbed ?? false)
+        <input type="hidden" name="modal" value="1">
+    @endif
 
         <div class="content-card mb-4 p-0">
             <div class="borang-title-bar">Saham atau Bon</div>
@@ -157,14 +160,7 @@
         </div>
 
         <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-            <a href="{{ $kembaliUrl }}" class="btn-form btn-form-secondary">
-                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="19" y1="12" x2="5" y2="12"></line>
-                    <polyline points="12 19 5 12 12 5"></polyline>
-                </svg>
-                Kembali
-            </a>
+            @include('tenders.forms._vendor_form_kembali', ['kembaliUrl' => $kembaliUrl])
             <div class="d-flex gap-2">
                 <button type="button" class="btn-form btn-form-primary">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"

@@ -120,8 +120,7 @@ class KerjaDalamTanganController extends Controller
                     'text' => count($items) . ' rekod kerja dalam tangan (disimpan tempatan)',
                 ]);
 
-                return redirect($request->input('return', $this->vendorFormReturnUrl($tender)))
-                    ->with('warning', 'Data disimpan secara tempatan. Penyegerakan STOS gagal.');
+                return $this->vendorFormRedirect($request, $tender, 'Data disimpan secara tempatan. Penyegerakan STOS gagal.', 'warning');
             }
 
             return redirect()->back()
@@ -136,8 +135,7 @@ class KerjaDalamTanganController extends Controller
                     'text' => count($items) . ' rekod kerja dalam tangan (disimpan tempatan)',
                 ]);
 
-                return redirect($request->input('return', $this->vendorFormReturnUrl($tender)))
-                    ->with('warning', 'Data disimpan secara tempatan. Penyegerakan STOS gagal.');
+                return $this->vendorFormRedirect($request, $tender, 'Data disimpan secara tempatan. Penyegerakan STOS gagal.', 'warning');
             }
 
             $message = $response->json('message') ?: 'Terdapat ralat semasa menyimpan kerja dalam tangan.';
@@ -198,9 +196,11 @@ class KerjaDalamTanganController extends Controller
                     'text' => count($items) . ' rekod kerja dalam tangan (sebahagian fail gagal)',
                 ]);
 
-                return redirect($request->input('return', $this->vendorFormReturnUrl($tender)))
-                    ->with('success', 'Kerja dalam tangan berjaya disimpan.')
-                    ->with('warning', 'Beberapa fail gagal dimuat naik: ' . implode(', ', $fileErrors));
+                return $this->vendorFormRedirect(
+                    $request,
+                    $tender,
+                    'Kerja dalam tangan berjaya disimpan. Beberapa fail gagal dimuat naik: ' . implode(', ', $fileErrors)
+                );
             }
 
             return redirect()->back()
@@ -213,8 +213,7 @@ class KerjaDalamTanganController extends Controller
                 'text' => count($items) . ' rekod kerja dalam tangan',
             ]);
 
-            return redirect($request->input('return', $this->vendorFormReturnUrl($tender)))
-                ->with('success', 'Kerja dalam tangan berjaya disimpan.');
+            return $this->vendorFormRedirect($request, $tender, 'Kerja dalam tangan berjaya disimpan.');
         }
 
         return redirect()

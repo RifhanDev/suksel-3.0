@@ -1378,4 +1378,7 @@
 			})
 		}
 	</script>
+	@if ($tender->showDokumenSenaraiTab())
+		@include('tenders.forms._online_form_modal')
+	@endif
 @endsection

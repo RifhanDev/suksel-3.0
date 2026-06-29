@@ -127,6 +127,10 @@ class BonSahamController extends Controller
                 ]);
             }
 
+            if ($this->isVendorFormMode()) {
+                return $this->vendorFormRedirect($request, $tender, 'Maklumat Bon atau Saham berjaya disimpan.');
+            }
+
             $redirect = $request->input('return');
             if ($redirect) {
                 return redirect($redirect)->with('success', 'Maklumat Bon atau Saham berjaya disimpan.');
