@@ -133,7 +133,21 @@ class VendorTenderDokumenController extends Controller
 
     public function saveSpecification(Request $request, Tender $tender, string $itemUuid)
     {
-        $vendorId = $this->vendorId();
+        $user = Auth::user();
+        $isAdmin = $user && ($user->hasRole('Admin') || $user->can('tender:specification-management'));
+
+        if ($isAdmin) {
+            $this->ensureTenderFormAccess($tender);
+            $vendorId = (int) $request->input('vendor_id');
+            if ($vendorId <= 0) {
+                throw ValidationException::withMessages([
+                    'vendor_id' => 'Vendor diperlukan untuk menyimpan pematuhan.',
+                ]);
+            }
+        } else {
+            $vendorId = $this->vendorId();
+        }
+
         $item = $this->findChecklistItem($tender, $itemUuid, 'vendor', $vendorId);
 
         if (($item['action'] ?? '') !== 'view_specification') {
@@ -144,8 +158,13 @@ class VendorTenderDokumenController extends Controller
 
         $data = $request->validate([
             'section' => 'required|string|in:technical,financial,kewangan_kerja,spesifikasi_kerja',
-            'responses' => 'required|array',
-            'responses.*' => 'nullable|string|max:5000',
+            'vendor_id' => 'nullable|integer|min:1',
+            'item_prices' => 'nullable|array',
+            'item_prices.*' => 'nullable|string|max:5000',
+            'details' => 'nullable|array',
+            'details.*' => 'nullable|array',
+            'details.*.pematuhan' => 'nullable|string|max:10',
+            'details.*.cadangan' => 'nullable|string|max:5000',
         ]);
 
         if ($data['section'] !== $item['section']) {
@@ -159,14 +178,15 @@ class VendorTenderDokumenController extends Controller
             $vendorId,
             $itemUuid,
             $data['section'],
-            $data['responses']
+            $data,
+            $isAdmin
         );
 
         return response()->json([
             'success' => true,
             'message' => 'Maklum balas spesifikasi berjaya disimpan.',
             'data' => [
-                'responses' => $response->payload['responses'] ?? [],
+                'specification' => $this->responses->normalizeSpecificationPayload($response->payload),
                 'status' => $response->status,
             ],
         ]);

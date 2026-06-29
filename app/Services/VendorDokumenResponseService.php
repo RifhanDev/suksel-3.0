@@ -50,8 +50,8 @@ class VendorDokumenResponseService
             $result[$uuid] = [
                 'key_in' => $response?->response_type === 'key_in' ? ($response->payload['value'] ?? null) : null,
                 'specification' => $response?->response_type === 'specification'
-                    ? ($response->payload['responses'] ?? [])
-                    : [],
+                    ? $this->normalizeSpecificationPayload($response->payload)
+                    : ['item_prices' => [], 'details' => []],
                 'files' => $itemFiles->map(fn (TenderVendorDokumenFile $file) => [
                     'uuid' => $file->uuid,
                     'name' => $file->original_name,
@@ -139,26 +139,69 @@ class VendorDokumenResponseService
     }
 
     /**
-     * @param  array<string, string|null>  $responses  keyed by specification detail uuid
+     * @return array{item_prices: array<string, string>, details: array<string, array{pematuhan?: string, cadangan?: string}>}
+     */
+    public function normalizeSpecificationPayload(?array $payload): array
+    {
+        if (! is_array($payload)) {
+            return ['item_prices' => [], 'details' => []];
+        }
+
+        if (isset($payload['item_prices']) || isset($payload['details'])) {
+            return [
+                'item_prices' => collect($payload['item_prices'] ?? [])
+                    ->mapWithKeys(fn ($value, $key) => [trim((string) $key) => is_string($value) ? trim($value) : (string) $value])
+                    ->all(),
+                'details' => collect($payload['details'] ?? [])
+                    ->mapWithKeys(function ($value, $key) {
+                        $key = trim((string) $key);
+                        if (! is_array($value)) {
+                            return [$key => ['pematuhan' => '', 'cadangan' => is_string($value) ? trim($value) : '']];
+                        }
+
+                        return [$key => [
+                            'pematuhan' => trim((string) ($value['pematuhan'] ?? '')),
+                            'cadangan' => trim((string) ($value['cadangan'] ?? '')),
+                        ]];
+                    })
+                    ->all(),
+            ];
+        }
+
+        $legacy = $payload['responses'] ?? $payload;
+        $details = [];
+
+        if (is_array($legacy)) {
+            foreach ($legacy as $uuid => $value) {
+                $uuid = trim((string) $uuid);
+                if ($uuid === '' || $value === null || $value === '') {
+                    continue;
+                }
+                $value = is_string($value) ? trim($value) : (string) $value;
+                $details[$uuid] = in_array($value, ['yes', 'no'], true)
+                    ? ['pematuhan' => $value, 'cadangan' => '']
+                    : ['pematuhan' => '', 'cadangan' => $value];
+            }
+        }
+
+        return ['item_prices' => [], 'details' => $details];
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
      */
     public function saveSpecificationResponses(
         Tender $tender,
         int $vendorId,
         string $checklistItemUuid,
         string $section,
-        array $responses
+        array $data,
+        bool $adminSave = false
     ): TenderVendorDokumenResponse {
         $this->assertVendorParticipation($tender, $vendorId);
         $this->assertValidSection($section);
 
-        $normalized = [];
-        foreach ($responses as $detailUuid => $value) {
-            $detailUuid = trim((string) $detailUuid);
-            if ($detailUuid === '') {
-                continue;
-            }
-            $normalized[$detailUuid] = is_string($value) ? trim($value) : $value;
-        }
+        $normalized = $this->normalizeSpecificationPayload($data);
 
         $record = TenderVendorDokumenResponse::query()->firstOrNew([
             'tender_id' => $tender->id,
@@ -166,16 +209,66 @@ class VendorDokumenResponseService
             'checklist_item_uuid' => $checklistItemUuid,
         ]);
 
+        $existing = $this->normalizeSpecificationPayload($record->exists ? $record->payload : null);
+
+        $itemPrices = [];
+        foreach ($normalized['item_prices'] as $itemUuid => $value) {
+            $itemUuid = trim((string) $itemUuid);
+            if ($itemUuid === '') {
+                continue;
+            }
+            $itemPrices[$itemUuid] = trim((string) $value);
+        }
+
+        $details = [];
+        foreach ($normalized['details'] as $detailUuid => $fields) {
+            $detailUuid = trim((string) $detailUuid);
+            if ($detailUuid === '') {
+                continue;
+            }
+            $details[$detailUuid] = [
+                'pematuhan' => trim((string) ($fields['pematuhan'] ?? '')),
+                'cadangan' => trim((string) ($fields['cadangan'] ?? '')),
+            ];
+        }
+
+        if ($adminSave) {
+            $mergedDetails = $existing['details'];
+            foreach ($details as $detailUuid => $fields) {
+                if (! isset($mergedDetails[$detailUuid])) {
+                    $mergedDetails[$detailUuid] = ['pematuhan' => '', 'cadangan' => ''];
+                }
+                $mergedDetails[$detailUuid]['pematuhan'] = $fields['pematuhan'];
+            }
+            $details = $mergedDetails;
+            if ($itemPrices === []) {
+                $itemPrices = $existing['item_prices'];
+            }
+        } else {
+            $mergedDetails = $existing['details'];
+            foreach ($details as $detailUuid => $fields) {
+                if (! isset($mergedDetails[$detailUuid])) {
+                    $mergedDetails[$detailUuid] = ['pematuhan' => '', 'cadangan' => ''];
+                }
+                $mergedDetails[$detailUuid]['cadangan'] = $fields['cadangan'];
+            }
+            $details = $mergedDetails;
+        }
+
         if (! $record->exists) {
             $record->uuid = (string) Str::uuid();
         }
 
-        $hasValue = collect($normalized)->contains(fn ($value) => $value !== null && $value !== '');
+        $hasValue = collect($itemPrices)->contains(fn ($value) => $value !== '')
+            || collect($details)->contains(fn ($fields) => ($fields['pematuhan'] ?? '') !== '' || ($fields['cadangan'] ?? '') !== '');
 
         $record->fill([
             'section' => $section,
             'response_type' => 'specification',
-            'payload' => ['responses' => $normalized],
+            'payload' => [
+                'item_prices' => $itemPrices,
+                'details' => $details,
+            ],
             'status' => $hasValue ? 'submitted' : 'draft',
             'updated_by' => Auth::id(),
         ])->save();
@@ -199,8 +292,12 @@ class VendorDokumenResponseService
         }
 
         if ($response?->response_type === 'specification') {
-            $responses = $response->payload['responses'] ?? [];
-            if (is_array($responses) && collect($responses)->contains(fn ($value) => $value !== null && $value !== '')) {
+            $spec = $this->normalizeSpecificationPayload($response->payload);
+            $hasSpecValue = collect($spec['item_prices'] ?? [])->contains(fn ($value) => $value !== '')
+                || collect($spec['details'] ?? [])->contains(
+                    fn ($fields) => ($fields['pematuhan'] ?? '') !== '' || ($fields['cadangan'] ?? '') !== ''
+                );
+            if ($hasSpecValue) {
                 return $response->status === 'submitted' ? 'submitted' : 'draft';
             }
         }
