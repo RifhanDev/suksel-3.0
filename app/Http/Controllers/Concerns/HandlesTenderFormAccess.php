@@ -53,6 +53,20 @@ trait HandlesTenderFormAccess
         if ($this->isFormViewOnly()) {
             abort(403, 'Borang ini dalam mod paparan sahaja dan tidak boleh diedit.');
         }
+
+        if ($this->isVendorFormMode() && $this->vendorId()) {
+            $routeTender = request()->route('tender');
+            $resolved = null;
+            if ($routeTender instanceof \App\Tender || $routeTender instanceof Tender) {
+                $resolved = $routeTender;
+            } elseif ($routeTender) {
+                $resolved = \App\Tender::query()->find($routeTender);
+            }
+
+            if ($resolved && app(\App\Services\VendorTenderSubmissionService::class)->isSubmitted($resolved, $this->vendorId())) {
+                abort(403, 'Tawaran telah dihantar. Borang tidak boleh dikemaskini.');
+            }
+        }
     }
 
     /**

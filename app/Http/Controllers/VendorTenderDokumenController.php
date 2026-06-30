@@ -15,11 +15,15 @@ class VendorTenderDokumenController extends Controller
 {
     use HandlesTenderFormAccess;
 
-    public function __construct(protected VendorDokumenResponseService $responses) {}
+    public function __construct(
+        protected VendorDokumenResponseService $responses,
+        protected \App\Services\VendorTenderSubmissionService $submissions,
+    ) {}
 
     public function upload(Request $request, Tender $tender, string $itemUuid)
     {
         $vendorId = $this->vendorId();
+        $this->submissions->assertEditable($tender, $vendorId);
         $item = $this->findChecklistItem($tender, $itemUuid, 'vendor', $vendorId);
 
         if (! in_array($item['action'], ['vendor_upload', 'download_upload'], true)) {
@@ -63,6 +67,8 @@ class VendorTenderDokumenController extends Controller
     {
         $vendorId = $this->vendorId();
         $file = TenderVendorDokumenFile::query()->where('uuid', $fileUuid)->firstOrFail();
+        $tender = \App\Tender::query()->findOrFail($file->tender_id);
+        $this->submissions->assertEditable($tender, $vendorId);
 
         $this->responses->deleteFile($file, $vendorId);
 
@@ -75,6 +81,7 @@ class VendorTenderDokumenController extends Controller
     public function saveKeyIn(Request $request, Tender $tender, string $itemUuid)
     {
         $vendorId = $this->vendorId();
+        $this->submissions->assertEditable($tender, $vendorId);
         $item = $this->findChecklistItem($tender, $itemUuid, 'vendor', $vendorId);
 
         if (($item['action'] ?? '') !== 'key_in') {
@@ -117,6 +124,9 @@ class VendorTenderDokumenController extends Controller
         $this->ensureTenderFormAccess($tender);
 
         $isVendor = $this->isVendorFormMode();
+        if ($isVendor && $this->vendorId()) {
+            $this->submissions->assertEditable($tender, $this->vendorId());
+        }
         $vendorId = $isVendor ? $this->vendorId() : null;
 
         $item = $this->findChecklistItem($tender, $itemUuid, $isVendor ? 'vendor' : 'admin', $vendorId);
@@ -133,7 +143,22 @@ class VendorTenderDokumenController extends Controller
 
     public function saveSpecification(Request $request, Tender $tender, string $itemUuid)
     {
-        $vendorId = $this->vendorId();
+        $user = Auth::user();
+        $isAdmin = $user && ($user->hasRole('Admin') || $user->can('tender:specification-management'));
+
+        if ($isAdmin) {
+            $this->ensureTenderFormAccess($tender);
+            $vendorId = (int) $request->input('vendor_id');
+            if ($vendorId <= 0) {
+                throw ValidationException::withMessages([
+                    'vendor_id' => 'Vendor diperlukan untuk menyimpan pematuhan.',
+                ]);
+            }
+        } else {
+            $vendorId = $this->vendorId();
+            $this->submissions->assertEditable($tender, $vendorId);
+        }
+
         $item = $this->findChecklistItem($tender, $itemUuid, 'vendor', $vendorId);
 
         if (($item['action'] ?? '') !== 'view_specification') {
@@ -144,8 +169,13 @@ class VendorTenderDokumenController extends Controller
 
         $data = $request->validate([
             'section' => 'required|string|in:technical,financial,kewangan_kerja,spesifikasi_kerja',
-            'responses' => 'required|array',
-            'responses.*' => 'nullable|string|max:5000',
+            'vendor_id' => 'nullable|integer|min:1',
+            'item_prices' => 'nullable|array',
+            'item_prices.*' => 'nullable|string|max:5000',
+            'details' => 'nullable|array',
+            'details.*' => 'nullable|array',
+            'details.*.pematuhan' => 'nullable|string|max:10',
+            'details.*.cadangan' => 'nullable|string|max:5000',
         ]);
 
         if ($data['section'] !== $item['section']) {
@@ -159,14 +189,15 @@ class VendorTenderDokumenController extends Controller
             $vendorId,
             $itemUuid,
             $data['section'],
-            $data['responses']
+            $data,
+            $isAdmin
         );
 
         return response()->json([
             'success' => true,
             'message' => 'Maklum balas spesifikasi berjaya disimpan.',
             'data' => [
-                'responses' => $response->payload['responses'] ?? [],
+                'specification' => $this->responses->normalizeSpecificationPayload($response->payload),
                 'status' => $response->status,
             ],
         ]);

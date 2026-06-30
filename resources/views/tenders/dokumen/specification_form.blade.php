@@ -43,16 +43,47 @@
         }
         .spec-item-row td {
             background: #f8fafc;
-            font-weight: 600;
         }
-        .spec-detail-row td:first-child + td {
-            padding-left: 1.5rem;
+        .spec-detail-row td {
+            background: #fff;
         }
-        .spec-type-badge {
-            font-size: 0.62rem;
-            font-weight: 600;
-            letter-spacing: 0.03em;
-            text-transform: uppercase;
+        .spec-text-box {
+            border: 1px solid #cbd5e1;
+            border-radius: 4px;
+            padding: 8px 10px;
+            background: #fff;
+            font-size: 0.8rem;
+            line-height: 1.45;
+            min-height: 2.5rem;
+        }
+        .spec-text-box-sub {
+            margin-left: 0.5rem;
+            font-size: 0.78rem;
+        }
+        .spec-price-cell {
+            background: #f8fafc !important;
+            vertical-align: middle !important;
+        }
+        .spec-total-row td {
+            background: #e8eef5 !important;
+            border-top: 2px solid #94a3b8 !important;
+            font-size: 0.84rem;
+        }
+        .spec-pematuhan-readonly {
+            display: inline-block;
+            padding: 4px 8px;
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+            font-size: 0.78rem;
+        }
+        .spec-price-total-value {
+            display: inline-block;
+            min-width: 90px;
+            padding: 4px 8px;
+            background: #dbeafe;
+            border: 1px solid #93c5fd;
+            border-radius: 4px;
         }
         #loading-overlay {
             display: none;
@@ -136,8 +167,8 @@
         <div class="content-card-body p-4 pt-3">
             @unless ($viewOnly ?? false)
             <p class="borang-instruction mb-3">
-                Isi maklum balas bagi setiap sub-spesifikasi mengikut jenis skema yang ditetapkan oleh PTJ
-                (<strong>Text</strong>, <strong>Nombor</strong>, atau <strong>Ya/Tidak</strong>).
+                Isi <strong>Cadangan Petender</strong> bagi setiap sub-spesifikasi dan <strong>Tawaran Harga</strong> bagi setiap item utama.
+                Ruangan <strong>Pematuhan</strong> ditetapkan oleh PTJ sahaja.
             </p>
             @else
             <p class="borang-instruction mb-3">Paparan maklum balas spesifikasi (mod baca sahaja).</p>
@@ -188,15 +219,53 @@ $(document).ready(function () {
     var CSRF_TOKEN = @json(csrf_token());
     var SECTION = @json($section);
     var VIEW_ONLY = @json($viewOnly ?? false);
+    var IS_ADMIN_MODE = @json($viewOnly ?? false);
+
+    function formatMoney(value) {
+        return (parseFloat(value) || 0).toLocaleString('ms-MY', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
+    }
+
+    function updateSpecTotal() {
+        var total = 0;
+        $('.dokumen-spec-price').each(function () {
+            total += parseFloat($(this).val()) || 0;
+        });
+        $('#spec-price-total').text(formatMoney(total));
+    }
 
     function collectResponses() {
-        var responses = {};
-        $('.dokumen-spec-input').each(function () {
-            var uuid = $(this).data('detail-uuid');
-            if (uuid) responses[uuid] = $(this).val() || '';
+        var data = { item_prices: {}, details: {} };
+
+        $('.dokumen-spec-price').each(function () {
+            var uuid = $(this).data('item-uuid');
+            if (uuid) {
+                data.item_prices[uuid] = $(this).val() || '';
+            }
         });
-        return responses;
+
+        $('.dokumen-spec-pematuhan').each(function () {
+            if (!IS_ADMIN_MODE) return;
+            var uuid = $(this).data('detail-uuid');
+            if (!uuid) return;
+            if (!data.details[uuid]) data.details[uuid] = {};
+            data.details[uuid].pematuhan = $(this).val() || '';
+        });
+
+        $('.dokumen-spec-cadangan').each(function () {
+            var uuid = $(this).data('detail-uuid');
+            if (!uuid) return;
+            if (!data.details[uuid]) data.details[uuid] = {};
+            data.details[uuid].cadangan = $(this).val() || '';
+        });
+
+        return data;
     }
+
+    $(document).on('input change', '.dokumen-spec-price', updateSpecTotal);
+    updateSpecTotal();
 
     $('#btn-simpan-spec').on('click', function () {
         if (VIEW_ONLY) return;
@@ -208,7 +277,7 @@ $(document).ready(function () {
             url: SAVE_URL,
             type: 'POST',
             contentType: 'application/json',
-            data: JSON.stringify({ section: SECTION, responses: collectResponses() }),
+            data: JSON.stringify(Object.assign({ section: SECTION }, collectResponses())),
             headers: { 'X-CSRF-TOKEN': CSRF_TOKEN },
         })
         .done(function (res) {
