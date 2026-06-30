@@ -48,7 +48,7 @@
 @section('content')
     @php
         $availableTabs = ['spec', 'open', 'harga'];
-        // $draftTenderUuid = optional($tender)->uuid ?? request('tender');
+        $draftTenderUuid = optional($tender)->uuid ?? request('tender');
         $supportedDraftJenisData = $supportedDraftJenis ?? ['spec', 'open', 'harga'];
         $localIcUsersData = $icUsers ?? [];
         $tabLabels = [
