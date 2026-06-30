@@ -300,6 +300,7 @@
 						</a>
 					@endif
 
+					{{-- Duplicate of Dokumen Tender/Tawaran checklist tab — hidden for vendor view
 					@if ($tender->showDokumenSenaraiTab() && $tender->canShowFiles(Auth::user()->vendor_id))
 						<a class="nav-link" href="#vt-doc2" data-bs-toggle="pill" role="tab">
 							<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
@@ -312,6 +313,7 @@
 								style="font-size:0.6rem;">{{ $tender->files()->where('public', 0)->count() }}</span>
 						</a>
 					@endif
+					--}}
 
 					<a class="nav-link" href="#vt-news" data-bs-toggle="pill" role="tab">
 						<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
