@@ -56,7 +56,13 @@ class JawatankuasaController extends Controller
      */
     public function store(Request $request)
     {
-        $supportedJenis = $this->getSupportedJenis();
+        $tenderUuid = $request->input('tender_uuid');
+        $tender = null;
+        if (!empty($tenderUuid)) {
+            $tender = Tender::where('uuid', $tenderUuid)->first();
+        }
+
+        $supportedJenis = $this->getSupportedJenis($tender);
 
         if ($request->has('tabs')) {
             return $this->storeAllTabsDraft($request, $supportedJenis);
@@ -558,8 +564,12 @@ class JawatankuasaController extends Controller
     {
         $tenderUuid = $request->input('tender');
         $tender = null;
+        if (!empty($tenderUuid)) {
+            $tender = Tender::with('tenderer')->where('uuid', $tenderUuid)->first();
+        }
+
         $committeeDrafts = [];
-        $supportedDraftJenis = $this->getSupportedJenis();
+        $supportedDraftJenis = $this->getSupportedJenis($tender);
         $icUsers = User::query()
             ->whereNotNull('ic_number')
             ->where('ic_number', '!=', '')
@@ -576,10 +586,6 @@ class JawatankuasaController extends Controller
                 ];
             })
             ->values();
-
-        if (!empty($tenderUuid)) {
-            $tender = Tender::with('tenderer')->where('uuid', $tenderUuid)->first();
-        }
 
         if ($tender) {
             $committeeDrafts = Jawatankuasa::with('user')
@@ -623,8 +629,12 @@ class JawatankuasaController extends Controller
     {
         $tenderUuid = $request->input('tender');
         $tender = null;
+        if (!empty($tenderUuid)) {
+            $tender = Tender::with('tenderer')->where('uuid', $tenderUuid)->first();
+        }
+
         $committeeDrafts = [];
-        $supportedDraftJenis = ['spec', 'open', 'eval'];
+        $supportedDraftJenis = $this->getSupportedJenis($tender);
         $icUsers = User::query()
             ->whereNotNull('ic_number')
             ->where('ic_number', '!=', '')
@@ -641,10 +651,6 @@ class JawatankuasaController extends Controller
                 ];
             })
             ->values();
-
-        if (!empty($tenderUuid)) {
-            $tender = Tender::with('tenderer')->where('uuid', $tenderUuid)->first();
-        }
 
         if ($tender) {
             $committeeDrafts = Jawatankuasa::with('user')
@@ -684,32 +690,14 @@ class JawatankuasaController extends Controller
         return view('tenders.pelantikan_jawatankuasa_1_peringkat', compact('tender', 'committeeDrafts', 'supportedDraftJenis', 'icUsers'));
     }
 
-    private function getSupportedJenis(): array
+    private function getSupportedJenis(?Tender $tender = null): array
     {
-        $fallback = ['spec', 'open', 'tech', 'fin', 'eval'];
-
-        try {
-            $table = (new Jawatankuasa())->getTable();
-            $column = DB::selectOne("SHOW COLUMNS FROM `{$table}` WHERE Field = 'jenis_jawatankuasa'");
-
-            if (empty($column) || empty($column->Type)) {
-                return $fallback;
+        if ($tender) {
+            if ((int) $tender->tender_peringkat === 1) {
+                return ['spec', 'open', 'eval'];
             }
-
-            if (!preg_match('/^enum\((.*)\)$/i', $column->Type, $matches)) {
-                return $fallback;
-            }
-
-            $enumValues = str_getcsv($matches[1], ',', "'");
-            $supported = array_values(array_intersect($enumValues, ['spec', 'open', 'tech', 'fin', 'eval', 'harga']));
-
-            return !empty($supported) ? $supported : $fallback;
-        } catch (\Throwable $e) {
-            Log::warning('Tidak dapat baca enum jenis_jawatankuasa', [
-                'message' => $e->getMessage(),
-            ]);
-
-            return $fallback;
+            return ['spec', 'open', 'tech', 'fin'];
         }
+        return ['spec', 'open', 'tech', 'fin', 'eval'];
     }
 }
