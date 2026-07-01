@@ -235,12 +235,32 @@ class RegistrationController extends Controller
         $user   = auth()->user();
         $vendor = $user->vendor;
 
-        // DEV BYPASS: Skip payment gateway, update vendor directly in DB
+        // DEV BYPASS: Skip payment gateway by creating a successful subscription.
+        // NOTE: Vendor::$registration_paid and $expiry_date are computed accessors
+        // backed by the subscriptions table (registration_paid = subscriptions > 0),
+        // so updating those columns directly is a no-op. We must create a real
+        // subscription — mirroring the live gateway callback — for the account to
+        // count as paid and pass the registration gate.
         if (config('app.debug')) {
-            \DB::table('vendors')->where('id', $vendor->id)->update([
-                'registration_paid' => 1,
-                'expiry_date' => date('Y-m-d', strtotime('+1 year')),
-            ]);
+            if ($vendor->subscriptions()->count() === 0) {
+                $cached_data = [
+                    'start_date' => date('Y-m-d'),
+                    'end_date'   => date('Y-m-d', strtotime('+1 year')),
+                ];
+
+                $transaction = $vendor->transactions()->save(new Transaction([
+                    'type'                 => 'subscription',
+                    'method'               => 'bypass',
+                    'status'               => 'success',
+                    'user_id'              => $user->id,
+                    'organization_unit_id' => config('app.global_cart_ou'),
+                    'amount'               => 0,
+                    'ip'                   => request()->ip(),
+                    'cached_data'          => serialize($cached_data),
+                ]));
+
+                $transaction->generateSubscription();
+            }
 
             return redirect('dashboard')->with('success', 'Pembayaran berjaya (dev bypass). Akaun anda kini aktif.');
         }
