@@ -318,7 +318,7 @@
 
 			<div class="page-header-modern">
 				<div class="header-content">
-					<div class="header-pretitle">Sistem Perolehan Selangor</div>
+					{{-- TEMP-HIDE (revert to restore): <div class="header-pretitle">Sistem Perolehan Selangor</div> --}}
 					<h2 class="header-title">Senarai Tender</h2>
 					<p class="header-subtitle">
 						Senarai perolehan rasmi Kerajaan Negeri Selangor yang aktif, sedang dibuka untuk bidaan, dan dikemaskini secara

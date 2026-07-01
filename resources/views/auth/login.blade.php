@@ -232,7 +232,7 @@
 					</div>
 
 					<h1 class="h4 fw-bold mb-1 text-uppercase" style="letter-spacing: -0.5px; color:var(--sg-red)">Daftar Masuk</h1>
-					<p class="text-muted small fw-semibold mb-0">Sistem Perolehan Selangor</p>
+					{{-- TEMP-HIDE (revert to restore): <p class="text-muted small fw-semibold mb-0">Sistem Perolehan Selangor</p> --}}
 				</div>
 
 				<div class="card-body-custom">

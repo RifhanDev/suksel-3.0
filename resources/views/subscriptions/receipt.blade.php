@@ -114,7 +114,7 @@
         	</div>
 	    	</section>
 	    	<footer>No Kelulusan Perbendaharaan : </footer>
-	    	<footer>Resit ini dihasilkan oleh Sistem Tender Online Selangor</footer>
+	    	<footer>Resit ini dihasilkan oleh Sistem Perolehan</footer>
 	</div>
 </body>
 </html>

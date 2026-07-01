@@ -218,7 +218,7 @@
         
         <div class="page-header-modern">
             <div class="header-content">
-                <div class="header-pretitle">Sistem Perolehan Selangor</div>
+                {{-- TEMP-HIDE (revert to restore): <div class="header-pretitle">Sistem Perolehan Selangor</div> --}}
                 <h2 class="header-title">Pekeliling</h2>
                 <p class="header-subtitle">
                     Rujukan rasmi mengenai tatacara perolehan dan pekeliling perbendaharaan Kerajaan Negeri Selangor.

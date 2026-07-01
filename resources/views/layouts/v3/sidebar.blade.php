@@ -5,14 +5,14 @@
 		<div class="sidebar-header">
 			<a href="/" class="sidebar-brand">
 				<div class="sidebar-logo-container">
-					<img src="{{ asset('images/Jata_Negeri_Selangor_2025.png') }}" alt="Logo" class="sidebar-logo">
+					{{-- TEMP-HIDE (revert to restore): <img src="{{ asset('images/Jata_Negeri_Selangor_2025.png') }}" alt="Logo" class="sidebar-logo"> --}}
 				</div>
 				<div class="sidebar-brand-text">
 					<span class="brand-title">
-						<span class="brand-title-top">Perolehan</span>
-						<span class="brand-title-bottom">Selangor</span>
+						<span class="brand-title-top">Sistem</span>
+						<span class="brand-title-bottom">Perolehan</span>
 					</span>
-					<span class="brand-subtitle">Sistem Perolehan Selangor</span>
+					{{-- TEMP-HIDE (revert to restore): <span class="brand-subtitle">Sistem Perolehan Selangor</span> --}}
 				</div>
 			</a>
 		</div>
@@ -1293,14 +1293,14 @@
 		<div class="sidebar-header">
 			<a href="/" class="sidebar-brand">
 				<div class="sidebar-logo-container">
-					<img src="{{ asset('images/Jata_Negeri_Selangor_2025.png') }}" alt="Logo" class="sidebar-logo">
+					{{-- TEMP-HIDE (revert to restore): <img src="{{ asset('images/Jata_Negeri_Selangor_2025.png') }}" alt="Logo" class="sidebar-logo"> --}}
 				</div>
 				<div class="sidebar-brand-text">
 					<span class="brand-title">
-						<span class="brand-title-top">Perolehan</span>
-						<span class="brand-title-bottom">Selangor</span>
+						<span class="brand-title-top">Sistem</span>
+						<span class="brand-title-bottom">Perolehan</span>
 					</span>
-					<span class="brand-subtitle">Sistem Perolehan Negeri</span>
+					{{-- TEMP-HIDE (revert to restore): <span class="brand-subtitle">Sistem Perolehan Negeri</span> --}}
 				</div>
 			</a>
 		</div>

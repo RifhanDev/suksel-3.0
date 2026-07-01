@@ -147,7 +147,7 @@
 
     <div class="report-header">
         <h2>Laporan Pelantikan Jawatankuasa</h2>
-        <p>Sistem Perolehan Selangor</p>
+        {{-- TEMP-HIDE (revert to restore): <p>Sistem Perolehan Selangor</p> --}}
     </div>
 
     <div class="tender-info">
@@ -226,7 +226,7 @@
     @endforeach
 
     <div class="footer">
-        <span>&copy; {{ date('Y') }} Sistem Perolehan Selangor</span>
+        {{-- TEMP-HIDE (revert to restore): <span>&copy; {{ date('Y') }} Sistem Perolehan Selangor</span> --}}
         <span>Tarikh Dijana: {{ date('d M Y H:i:s') }}</span>
     </div>
 

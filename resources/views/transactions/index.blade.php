@@ -11,7 +11,7 @@
 			<h3 class="fw-bold text-dark m-0" style="letter-spacing: -0.5px;">
 				Senarai Transaksi {{ isset($subtitle) ? ': ' . $subtitle : '' }}
 			</h3>
-			<p class="text-muted small m-0">Pengurusan transaksi Sistem e-Perolehan Selangor</p>
+			<p class="text-muted small m-0">Pengurusan transaksi Sistem Perolehan</p>
 		</div>
 		<div class="d-flex flex-wrap align-items-center gap-3 bg-white px-3 py-2 rounded-2 shadow-sm border">
 			<div class="d-flex align-items-center gap-2">

@@ -162,7 +162,7 @@
                 </div>
 
                 <h1 class="h4 fw-bold mb-1 text-uppercase" style="letter-spacing: -0.5px; color: var(--sg-red);">Lupa Kata Laluan</h1>
-                <p class="text-muted small fw-semibold mb-0">Sistem e-Perolehan Selangor</p>
+                <p class="text-muted small fw-semibold mb-0">Sistem Perolehan</p>
             </div>
 
             <!-- Body -->

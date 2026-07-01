@@ -52,7 +52,7 @@
 @endif
 @if(isset($error))<div class="alert alert-danger">{{ $error }}</div>@endif
 
-<section id="footer"><p id="copyright" class="pull-left">&copy;{{ date('Y') }} Sistem Tender Online Selangor.</p></section>
+<section id="footer"><p id="copyright" class="pull-left">&copy;{{ date('Y') }} Sistem Perolehan.</p></section>
         
 <!--[if lt IE 9]><script src="/assets/javascripts/ie.min.js"></script><![endif]-->
 {{App\Libraries\Asset::tags('js')}}

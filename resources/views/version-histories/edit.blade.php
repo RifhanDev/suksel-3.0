@@ -9,7 +9,7 @@
     <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center mb-4">
         <div class="mb-3 mb-lg-0">
             <h3 class="fw-bold text-dark m-0" style="letter-spacing: -0.5px;">Kemaskini Rekod Versi</h3>
-            <p class="text-muted small m-0">Sistem Tender Online Selangor</p>
+            <p class="text-muted small m-0">Sistem Perolehan</p>
         </div>
         <a href="{{ route('version-histories.show', $versionHistory->id) }}" class="btn-form btn-form-secondary">
             <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>

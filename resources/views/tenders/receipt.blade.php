@@ -115,7 +115,7 @@
 			</div>
 		</section>
 		<footer>NO. KELULUSAN : </footer>
-		<footer>Resit ini dihasilkan oleh Sistem Tender Online Selangor</footer>
+		<footer>Resit ini dihasilkan oleh Sistem Perolehan</footer>
 		<br>
 		<a style="text-decoration: none;" class="hidden-print pull-right" href="javascript:window:print()"><span class="glyphicon glyphicon-print"></span> Cetak</a> <br>
 	</div>

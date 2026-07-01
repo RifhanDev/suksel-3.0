@@ -7,7 +7,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="_token" content="{{ csrf_token() }}">
-    <title>Sistem Perolehan Selangor</title>
+    {{-- TEMP-HIDE (revert to restore): <title>Sistem Perolehan Selangor</title> --}}
 
     <link rel="apple-touch-icon" sizes="120x120" href="{{ asset('favicon/apple-touch-icon.png') }}">
     <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon/favicon-32x32.png') }}">
@@ -1268,11 +1268,11 @@
             <div class="container-fluid">
                 <a href="/" class="navbar-brand-logo" title="Sistem Tender Online Selangor">
                     <div class="logo-bg-box">
-                        <img src="{{ asset('images/Jata_Negeri_Selangor_2025.png') }}" alt="Selangor">
+                        {{-- TEMP-HIDE (revert to restore): <img src="{{ asset('images/Jata_Negeri_Selangor_2025.png') }}" alt="Selangor"> --}}
                     </div>
                     <div class="brand-text-stack">
-                        <span class="brand-line-top">Perolehan</span>
-                        <span class="brand-line-btm">SELANGOR</span>
+                        <span class="brand-line-top">Sistem</span>
+                        <span class="brand-line-btm">Perolehan</span>
                     </div>
                 </a>
 

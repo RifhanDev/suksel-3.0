@@ -229,7 +229,7 @@
 			<!-- Header -->
             <div class="page-header-modern">
                 <div class="header-content">
-                    <div class="header-pretitle">Sistem Perolehan Selangor</div>
+                    {{-- TEMP-HIDE (revert to restore): <div class="header-pretitle">Sistem Perolehan Selangor</div> --}}
                     <h2 class="header-title">Penender Berjaya</h2>
                     <p class="header-subtitle">
                         Senarai keputusan rasmi tender dan sebut harga yang telah dianugerahkan kepada vendor yang berjaya.

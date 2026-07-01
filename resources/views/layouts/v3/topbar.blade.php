@@ -14,7 +14,7 @@
 			</span>
 		</div>
 		@else
-		<h1 class="page-title">Sistem Tender Online Selangor</h1>
+		<h1 class="page-title">Sistem Perolehan</h1>
 		@endif
 	</div>
 

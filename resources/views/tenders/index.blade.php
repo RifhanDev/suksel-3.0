@@ -114,7 +114,7 @@
         <!-- Title -->
         <div class="mb-3 mb-lg-0">
             <h3 class="fw-bold text-dark m-0" style="letter-spacing: -0.5px;">Senarai Tender / Sebutharga</h3>
-            <p class="text-muted small m-0">Paparan maklumat tender terkini di bawah Sistem e-Perolehan Selangor.</p>
+            <p class="text-muted small m-0">Paparan maklumat tender terkini di bawah Sistem Perolehan.</p>
         </div>
     </div>
 

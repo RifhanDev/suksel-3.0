@@ -9,7 +9,7 @@
 		<meta http-equiv="X-UA-Compatible" content="IE=edge">
 		<meta name="_token" content="{{csrf_token()}}">
 		@yield('meta')
-		<title>Laporan Sistem Tender Online Selangor</title>
+		<title>Laporan Sistem Perolehan</title>
 		<link href="//fonts.googleapis.com/css?family=Open+Sans:400,300,600,700&subset=all" rel="stylesheet" type="text/css">
 		<link href="{{ asset('css/application.css') }}" rel="stylesheet">
 		<link href="{{ asset('css/report.css') }}" rel="stylesheet">
@@ -19,7 +19,7 @@
 		@yield('content')
 
 		<section id="footer">
-		<p id="copyright" class="pull-left">&copy;{{ date('Y') }} Sistem Tender Online Selangor.</p>
+		<p id="copyright" class="pull-left">&copy;{{ date('Y') }} Sistem Perolehan.</p>
 		<p id="service" class="pull-right">Tarikh Dijana: {{ date('d M Y H:i:s') }}</p>
 		</section>
 				

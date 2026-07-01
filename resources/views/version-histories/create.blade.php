@@ -9,7 +9,7 @@
     <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center mb-4">
         <div class="mb-3 mb-lg-0">
             <h3 class="fw-bold text-dark m-0" style="letter-spacing: -0.5px;">Tambah Rekod Versi</h3>
-            <p class="text-muted small m-0">Sistem Tender Online Selangor</p>
+            <p class="text-muted small m-0">Sistem Perolehan</p>
         </div>
     </div>
 
