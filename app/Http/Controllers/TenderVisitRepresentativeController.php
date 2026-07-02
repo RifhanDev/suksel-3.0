@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\TenderVisitRepresentative;
 use App\TenderVisit;
-use App\TenderVisitor;
 use Illuminate\Http\Request;
 
 class TenderVisitRepresentativeController extends Controller
@@ -36,9 +35,13 @@ class TenderVisitRepresentativeController extends Controller
 
         $visit = TenderVisit::with('tender')->findOrFail($visitId);
 
-        if (!$visit->tender || !$visit->tender->hasParticipate($user->vendor_id)) {
+        if (!$visit->tender) {
+            return response()->json(['message' => 'Tender tidak dijumpai.'], 404);
+        }
+
+        if (!$visit->canSubmitRepresentatives()) {
             return response()->json([
-                'message' => 'Sila beli dokumen tender terlebih dahulu untuk mendaftar wakil syarikat.',
+                'message' => 'Pendaftaran wakil hanya dibenarkan sehingga tarikh lawatan tapak.',
             ], 403);
         }
 
@@ -49,15 +52,11 @@ class TenderVisitRepresentativeController extends Controller
             'reps'                 => 'array',
             'reps.*.ic_no'         => 'nullable|string|max:32',
             'reps.*.name'          => 'nullable|string|max:255',
-            'reps.*.attended'      => 'nullable|boolean',
         ]);
 
-        // Clear existing reps for this vendor + visit
         TenderVisitRepresentative::where('visit_id', $visit->id)
             ->where('vendor_id', $user->vendor_id)
             ->delete();
-
-        $hasAttended = false;
 
         if (!empty($data['reps'])) {
             foreach ($data['reps'] as $rep) {
@@ -65,35 +64,16 @@ class TenderVisitRepresentativeController extends Controller
                     continue;
                 }
 
-                $attended = !empty($rep['attended']);
-                if ($attended) {
-                    $hasAttended = true;
-                }
-
                 TenderVisitRepresentative::create([
                     'visit_id' => $visit->id,
                     'vendor_id' => $user->vendor_id,
                     'ic_no' => $rep['ic_no'] ?? null,
                     'name' => $rep['name'] ?? null,
-                    'attended' => $attended,
+                    'attended' => false,
                 ]);
             }
         }
 
-        if ($hasAttended && !TenderVisitor::hasVisit($visit->id, $user->vendor_id)) {
-            TenderVisitor::create([
-                'visit_id' => $visit->id,
-                'vendor_id' => $user->vendor_id,
-            ]);
-        }
-
-        if (!$hasAttended && TenderVisitor::hasVisit($visit->id, $user->vendor_id)) {
-            TenderVisitor::where('visit_id', $visit->id)
-                ->where('vendor_id', $user->vendor_id)
-                ->delete();
-        }
-
-        return response()->json(['message' => 'Berjaya disimpan.', 'attended' => $hasAttended]);
+        return response()->json(['message' => 'Berjaya disimpan.']);
     }
 }
-

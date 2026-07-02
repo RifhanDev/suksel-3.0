@@ -127,7 +127,7 @@ class VendorTenderSubmissionService
         $tender->loadMissing('siteVisits');
         foreach ($tender->siteVisits as $visit) {
             if ($visit->required && ! TenderVisitor::hasVisit($visit->id, $vendorId)) {
-                $errors[] = 'Lawatan tapak wajib belum ditandakan hadir.';
+                $errors[] = 'Kehadiran lawatan tapak wajib belum disahkan urus setia.';
                 break;
             }
         }

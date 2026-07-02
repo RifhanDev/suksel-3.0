@@ -52,14 +52,32 @@
 			</div>
 		@endif
 
-		@if (!$tender->validDocumentDate())
-			<div class="alert alert-danger"><svg xmlns="http://www.w3.org/2000/svg" class="me-1" width="18" height="18"
-					viewBox="0 0 24 24">
-					<path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-						d="M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0M5.7 5.7l12.6 12.6" />
-				</svg>
-				{{ App\Tender::$types[$tender->type] }} ini tidak
-				boleh dibeli lagi.</div>
+		@if (
+			!$tender->validDocumentDate() &&
+				!(Auth::user()->hasRole('Vendor') && $tender->hasParticipate(Auth::user()->vendor_id)))
+			@if ($tender->documentSalesNotYetOpen())
+				<div class="alert alert-info"><svg xmlns="http://www.w3.org/2000/svg" class="me-1" width="18" height="18"
+						viewBox="0 0 24 24">
+						<g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+							<path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0-18 0m9-3h.01" />
+							<path d="M11 12h1v4h1" />
+						</g>
+					</svg>
+					{{ App\Tender::$types[$tender->type] }} ini belum dibuka untuk jualan.
+					@if ($tender->document_start_date)
+						Tarikh mula jualan:
+						<strong>{{ \Carbon\Carbon::parse($tender->document_start_date)->format('j M Y') }}</strong>.
+					@endif
+				</div>
+			@else
+				<div class="alert alert-danger"><svg xmlns="http://www.w3.org/2000/svg" class="me-1" width="18" height="18"
+						viewBox="0 0 24 24">
+						<path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+							d="M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0M5.7 5.7l12.6 12.6" />
+					</svg>
+					{{ App\Tender::$types[$tender->type] }} ini tidak
+					boleh dibeli lagi.</div>
+			@endif
 		@elseif(Auth::user()->hasRole('Vendor') && !Auth::user()->vendor->valid())
 			<div class="alert alert-danger"><svg xmlns="http://www.w3.org/2000/svg" class="me-1" width="18" height="18"
 					viewBox="0 0 24 24">
@@ -100,7 +118,7 @@
 					dibenarkan membeli dokumen tender / sebut harga ini.</div>
 			@endif
 
-			@if (!$tender->attendVisits(Auth::user()->vendor_id))
+			@if ($tender->hasRequiredSiteVisits() && !$tender->attendVisits(Auth::user()->vendor_id))
 				<div class="alert alert-danger"><svg xmlns="http://www.w3.org/2000/svg" class="me-1" width="18"
 						height="18" viewBox="0 0 24 24">
 						<g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
@@ -109,10 +127,10 @@
 						</g>
 					</svg>
 					@if ($tender->hasParticipate(Auth::user()->vendor_id))
-						Sila daftar wakil syarikat dan tandakan kehadiran di tab <strong>Lawatan Tapak</strong>.
+						Kehadiran lawatan tapak wajib belum disahkan urus setia.
 					@else
-						Anda perlu menghadiri lawatan tapak
-						sebelum dibenarkan membeli dokumen tender / sebut harga ini.
+						Sila daftar wakil syarikat di tab <strong>Lawatan Tapak</strong> (sebelum tarikh lawatan).
+						Kehadiran akan disahkan urus setia sebelum anda boleh membeli dokumen tender / sebut harga ini.
 					@endif
 				</div>
 			@endif

@@ -829,16 +829,25 @@ class Tender extends Model
 		return $participate;
 	}
 
+	public function hasRequiredSiteVisits(): bool
+	{
+		return count($this->siteVisits) > 0
+			&& $this->siteVisits->contains(fn ($visit) => (bool) $visit->required);
+	}
+
 	public function attendVisits($vendor_id)
 	{
+		if (! $this->hasRequiredSiteVisits()) {
+			return true;
+		}
+
 		$participate = true;
-		if (count($this->siteVisits) > 0) {
-			foreach ($this->siteVisits as $visit) {
-				if ($visit->required) {
-					$participate = $participate && TenderVisitor::hasVisit($visit->id, $vendor_id);
-				}
+		foreach ($this->siteVisits as $visit) {
+			if ($visit->required) {
+				$participate = $participate && TenderVisitor::hasVisit($visit->id, $vendor_id);
 			}
 		}
+
 		return $participate;
 	}
 
@@ -860,6 +869,24 @@ class Tender extends Model
 		$today = Carbon::today();
 		return $today->gte(Carbon::parse($this->document_start_date))
 			&& $today->lte(Carbon::parse($this->document_stop_date));
+	}
+
+	public function documentSalesNotYetOpen(): bool
+	{
+		if (empty($this->document_start_date)) {
+			return true;
+		}
+
+		return Carbon::today()->lt(Carbon::parse($this->document_start_date)->startOfDay());
+	}
+
+	public function documentSalesClosed(): bool
+	{
+		if (empty($this->document_stop_date)) {
+			return true;
+		}
+
+		return Carbon::today()->gt(Carbon::parse($this->document_stop_date)->startOfDay());
 	}
 
 	public function nearSubmission()

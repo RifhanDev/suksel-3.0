@@ -43,7 +43,7 @@
 <div class="card border shadow-sm mb-4 rounded-3">
     <div class="card-header bg-white py-3">
         <h5 class="mb-0 fw-bold">Pengesahan Kehadiran Lawatan Tapak</h5>
-        <p class="text-muted small mb-0">Senarai syarikat yang telah membeli dokumen dan wakil yang didaftarkan.</p>
+        <p class="text-muted small mb-0">Senarai syarikat yang mendaftar wakil, hadir lawatan tapak, atau telah membeli dokumen.</p>
     </div>
     <div class="card-body p-0">
         <form method="post" action="{{ route('pengesahanLawatanTapak.update', $tender->id) }}" id="formPengesahanLawatan">
@@ -96,7 +96,7 @@
                         @empty
                             <tr>
                                 <td colspan="8" class="text-center text-muted py-4">
-                                    Tiada syarikat yang membeli dokumen untuk tender ini.
+                                    Tiada rekod syarikat untuk lawatan tapak tender ini.
                                 </td>
                             </tr>
                         @endforelse
@@ -119,7 +119,7 @@
 
 <div class="card border shadow-sm mb-4 rounded-3">
     <div class="card-header bg-white py-3">
-        <h6 class="mb-0 fw-bold">Tambah Wakil (Syarikat yang telah beli)</h6>
+        <h6 class="mb-0 fw-bold">Tambah Syarikat / Wakil</h6>
     </div>
     <div class="card-body">
         <form method="post" action="{{ route('pengesahanLawatanTapak.update', $tender->id) }}" class="row g-2 align-items-end">
@@ -133,14 +133,8 @@
                 </select>
             </div>
             <div class="col-md-3">
-                <label class="form-label small">Syarikat</label>
-                <select name="rows[999][vendor_id]" class="form-select form-select-sm" required>
-                    @foreach ($purchases as $p)
-                        @if ($p->vendor)
-                            <option value="{{ $p->vendor->id }}">{{ $p->vendor->registration }} — {{ Str::limit($p->vendor->name, 30) }}</option>
-                        @endif
-                    @endforeach
-                </select>
+                <label class="form-label small">No. ROC / Syarikat</label>
+                <input type="text" name="rows[999][vendor_registration]" class="form-control form-control-sm" placeholder="Contoh: 123456-A" required>
             </div>
             <div class="col-md-2">
                 <label class="form-label small">No. IC</label>
@@ -159,7 +153,7 @@
                 <button type="submit" class="btn btn-sm btn-primary w-100">Tambah</button>
             </div>
         </form>
-        <p class="text-muted small mt-2 mb-0">Gunakan borang ini jika syarikat belum daftar wakil melalui portal vendor.</p>
+        <p class="text-muted small mt-2 mb-0">Gunakan borang ini untuk syarikat yang hadir tetapi belum mendaftar wakil melalui portal vendor.</p>
     </div>
 </div>
 
