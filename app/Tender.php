@@ -871,6 +871,24 @@ class Tender extends Model
 			&& $today->lte(Carbon::parse($this->document_stop_date));
 	}
 
+	public function documentSalesNotYetOpen(): bool
+	{
+		if (empty($this->document_start_date)) {
+			return true;
+		}
+
+		return Carbon::today()->lt(Carbon::parse($this->document_start_date)->startOfDay());
+	}
+
+	public function documentSalesClosed(): bool
+	{
+		if (empty($this->document_stop_date)) {
+			return true;
+		}
+
+		return Carbon::today()->gt(Carbon::parse($this->document_stop_date)->startOfDay());
+	}
+
 	public function nearSubmission()
 	{
 		if (empty($this->submission_datetime)) {

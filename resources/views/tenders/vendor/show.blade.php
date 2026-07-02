@@ -103,6 +103,114 @@
 		.vendor-side-nav .nav-link.active svg {
 			opacity: 1;
 		}
+
+		.lawatan-info-banner {
+			position: relative;
+			display: flex;
+			background: linear-gradient(135deg, #f0f7ff 0%, #eef6ff 55%, #f8fbff 100%);
+			border: 1px solid #bfdbfe;
+			border-radius: 14px;
+			box-shadow: 0 8px 24px rgba(37, 99, 235, 0.08);
+			overflow: hidden;
+		}
+
+		.lawatan-info-banner__accent {
+			width: 5px;
+			background: linear-gradient(180deg, #2563eb 0%, #1d4ed8 100%);
+			flex-shrink: 0;
+		}
+
+		.lawatan-info-banner__body {
+			padding: 18px 20px;
+			width: 100%;
+		}
+
+		.lawatan-info-banner__icon {
+			width: 42px;
+			height: 42px;
+			border-radius: 12px;
+			background: rgba(37, 99, 235, 0.12);
+			color: #1d4ed8;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+		}
+
+		.lawatan-info-banner__eyebrow {
+			font-size: 0.68rem;
+			font-weight: 700;
+			text-transform: uppercase;
+			letter-spacing: 0.4px;
+			color: #1d4ed8;
+			margin-bottom: 4px;
+		}
+
+		.lawatan-info-banner__title {
+			font-size: 1rem;
+			font-weight: 700;
+			color: #0f172a;
+		}
+
+		.lawatan-info-banner__text {
+			font-size: 0.84rem;
+			line-height: 1.6;
+			color: #334155;
+			margin: 0;
+		}
+
+		.lawatan-info-banner__meta {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 8px;
+			margin-top: 4px;
+		}
+
+		.lawatan-info-banner__chip {
+			display: inline-flex;
+			align-items: center;
+			gap: 6px;
+			padding: 5px 10px;
+			border-radius: 999px;
+			background: rgba(255, 255, 255, 0.85);
+			border: 1px solid #dbeafe;
+			font-size: 0.72rem;
+			font-weight: 600;
+			color: #1e3a8a;
+		}
+
+		.lawatan-info-banner__chip--warn {
+			background: #fff7ed;
+			border-color: #fed7aa;
+			color: #9a3412;
+		}
+
+		.lawatan-info-banner__chip--ok {
+			background: #f0fdf4;
+			border-color: #bbf7d0;
+			color: #166534;
+		}
+
+		.lawatan-info-banner__cta {
+			display: inline-flex;
+			align-items: center;
+			gap: 6px;
+			background: #1d4ed8;
+			color: #fff;
+			border: none;
+			border-radius: 8px;
+			font-weight: 600;
+			padding: 8px 14px;
+		}
+
+		.lawatan-info-banner__cta:hover {
+			background: #1e40af;
+			color: #fff;
+		}
+
+		.lawatan-info-banner__close {
+			opacity: 0.45;
+			margin-top: 2px;
+		}
 	</style>
 @endsection
 
@@ -118,6 +226,51 @@
 		    && Auth::user()->vendor_id
 		    && !$vendorSubmitted
 		    && $tender->siteVisits->contains(fn ($visit) => $visit->canSubmitRepresentatives());
+
+		$lawatanInfoBanner = null;
+		if (Auth::check() && Auth::user()->vendor_id && !$vendorSubmitted && $tender->siteVisits->isNotEmpty()) {
+		    $lawatanVendorId = (int) Auth::user()->vendor_id;
+		    $openLawatanVisits = $tender->siteVisits
+		        ->filter(fn ($visit) => $visit->canSubmitRepresentatives())
+		        ->sortBy('datetime')
+		        ->values();
+
+		    if ($openLawatanVisits->isNotEmpty()) {
+		        $missingRepVisits = $openLawatanVisits->filter(function ($visit) use ($lawatanVendorId) {
+		            return !\App\Models\TenderVisitRepresentative::query()
+		                ->where('visit_id', $visit->id)
+		                ->where('vendor_id', $lawatanVendorId)
+		                ->exists();
+		        });
+
+		        $beforeSalesDate = filled($tender->document_start_date)
+		            && \Carbon\Carbon::today()->lt(\Carbon\Carbon::parse($tender->document_start_date)->startOfDay());
+
+		        $needsAttendance = $tender->hasRequiredSiteVisits() && !$tender->attendVisits($lawatanVendorId);
+		        $hasRegisteredReps = $missingRepVisits->count() < $openLawatanVisits->count();
+
+		        if ($missingRepVisits->isNotEmpty()) {
+		            $lawatanInfoBanner = [
+		                'tone' => 'action',
+		                'next_visit_label' => \Carbon\Carbon::parse($openLawatanVisits->first()->datetime)->format('j M Y, H:i'),
+		                'sales_date_label' => filled($tender->document_start_date)
+		                    ? \Carbon\Carbon::parse($tender->document_start_date)->format('j M Y')
+		                    : null,
+		                'mandatory' => $tender->hasRequiredSiteVisits(),
+		                'pending_visits' => $missingRepVisits->count(),
+		            ];
+		        } elseif ($hasRegisteredReps && $needsAttendance && ($beforeSalesDate || !$vendorHasPurchased)) {
+		            $lawatanInfoBanner = [
+		                'tone' => 'waiting',
+		                'next_visit_label' => \Carbon\Carbon::parse($openLawatanVisits->first()->datetime)->format('j M Y, H:i'),
+		                'sales_date_label' => filled($tender->document_start_date)
+		                    ? \Carbon\Carbon::parse($tender->document_start_date)->format('j M Y')
+		                    : null,
+		                'mandatory' => true,
+		            ];
+		        }
+		    }
+		}
 	@endphp
 
 	{{-- Breadcrumb + Header --}}
@@ -138,6 +291,86 @@
 	</div>
 
 	@include('tenders._notification')
+
+	@if ($lawatanInfoBanner)
+		<div class="lawatan-info-banner mb-4" id="lawatan-info-banner">
+			<div class="lawatan-info-banner__accent"></div>
+			<div class="lawatan-info-banner__body">
+				<div class="d-flex align-items-start gap-3">
+					<div class="lawatan-info-banner__icon flex-shrink-0">
+						<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"
+							stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+							<circle cx="12" cy="12" r="10"></circle>
+							<line x1="12" y1="16" x2="12" y2="12"></line>
+							<line x1="12" y1="8" x2="12.01" y2="8"></line>
+						</svg>
+					</div>
+					<div class="flex-grow-1">
+						@if ($lawatanInfoBanner['tone'] === 'action')
+							<div class="lawatan-info-banner__eyebrow">Tindakan Diperlukan</div>
+							<h6 class="lawatan-info-banner__title mb-2">Daftar Wakil Lawatan Tapak</h6>
+							<p class="lawatan-info-banner__text mb-2">
+								Sila daftar wakil syarikat di tab <strong>Lawatan Tapak</strong> sebelum
+								<strong>{{ $lawatanInfoBanner['next_visit_label'] }}</strong>.
+								@if ($lawatanInfoBanner['pending_visits'] > 1)
+									Terdapat {{ $lawatanInfoBanner['pending_visits'] }} lawatan yang masih memerlukan pendaftaran wakil.
+								@endif
+								Kehadiran akan disahkan oleh urus setia selepas lawatan dijalankan.
+							</p>
+						@else
+							<div class="lawatan-info-banner__eyebrow">Menunggu Pengesahan</div>
+							<h6 class="lawatan-info-banner__title mb-2">Wakil Telah Didaftarkan</h6>
+							<p class="lawatan-info-banner__text mb-2">
+								Maklumat wakil anda telah direkod. Sila tunggu urus setia mengesahkan kehadiran lawatan tapak
+								@if ($lawatanInfoBanner['sales_date_label'])
+									sebelum tarikh jualan dokumen pada <strong>{{ $lawatanInfoBanner['sales_date_label'] }}</strong>.
+								@else
+									sebelum anda boleh membeli dokumen tender.
+								@endif
+							</p>
+						@endif
+
+						@if (!empty($lawatanInfoBanner['sales_date_label']))
+							<div class="lawatan-info-banner__meta">
+								<span class="lawatan-info-banner__chip">
+									<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none"
+										stroke="currentColor" stroke-width="2">
+										<rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+										<line x1="16" y1="2" x2="16" y2="6"></line>
+										<line x1="8" y1="2" x2="8" y2="6"></line>
+										<line x1="3" y1="10" x2="21" y2="10"></line>
+									</svg>
+									Jualan dokumen: {{ $lawatanInfoBanner['sales_date_label'] }}
+								</span>
+								@if (!empty($lawatanInfoBanner['mandatory']))
+									<span class="lawatan-info-banner__chip lawatan-info-banner__chip--warn">
+										Lawatan wajib — kehadiran diperlukan untuk membeli
+									</span>
+								@else
+									<span class="lawatan-info-banner__chip lawatan-info-banner__chip--ok">
+										Lawatan tidak wajib — semua syarikat boleh membeli
+									</span>
+								@endif
+							</div>
+						@endif
+
+						@if ($lawatanInfoBanner['tone'] === 'action')
+							<button type="button" class="btn btn-sm lawatan-info-banner__cta mt-3" id="btn-go-lawatan-tab">
+								Pergi ke Lawatan Tapak
+								<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+									stroke="currentColor" stroke-width="2.5">
+									<line x1="5" y1="12" x2="19" y2="12"></line>
+									<polyline points="12 5 19 12 12 19"></polyline>
+								</svg>
+							</button>
+						@endif
+					</div>
+					<button type="button" class="btn-close lawatan-info-banner__close flex-shrink-0" data-bs-dismiss="alert"
+						aria-label="Tutup" onclick="document.getElementById('lawatan-info-banner').remove();"></button>
+				</div>
+			</div>
+		</div>
+	@endif
 
 	@if ($vendorHasPurchased)
 		<div class="mb-4" id="vendor-submission-panel">
@@ -1102,6 +1335,18 @@
 @endsection
 
 @section('scripts')
+	@if ($lawatanInfoBanner ?? null)
+		<script>
+			document.getElementById('btn-go-lawatan-tab')?.addEventListener('click', function() {
+				var tabLink = document.querySelector('#vendorTabs a[href="#vt-lawatan"]');
+				if (tabLink) {
+					bootstrap.Tab.getOrCreateInstance(tabLink).show();
+					document.getElementById('vt-lawatan')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+				}
+			});
+		</script>
+	@endif
+
 	@if (count($tender->siteVisits) > 0 && ($canManageWakilLawatan ?? false))
 		<script>
 			(function() {
