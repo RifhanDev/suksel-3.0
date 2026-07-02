@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Support\TenderDokumenPresenter;
 use App\Tender;
 use App\TenderVendor;
-use App\TenderVisitor;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -123,14 +122,6 @@ class VendorTenderSubmissionService
     protected function collectValidationErrors(Tender $tender, int $vendorId): array
     {
         $errors = [];
-
-        $tender->loadMissing('siteVisits');
-        foreach ($tender->siteVisits as $visit) {
-            if ($visit->required && ! TenderVisitor::hasVisit($visit->id, $vendorId)) {
-                $errors[] = 'Kehadiran lawatan tapak wajib belum disahkan urus setia.';
-                break;
-            }
-        }
 
         $items = TenderDokumenPresenter::for($tender)->items('vendor', $vendorId);
 
