@@ -73,6 +73,51 @@
             color: #fff;
             border-radius: 4px 4px 0 0;
         }
+        #mesyuarat-loading-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.55);
+            backdrop-filter: blur(2px);
+            z-index: 20000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+        #mesyuarat-loading-overlay.show {
+            display: flex;
+        }
+        .mesyuarat-loading-card {
+            background: #fff;
+            border-radius: 14px;
+            padding: 28px 34px;
+            box-shadow: 0 20px 45px rgba(0, 0, 0, 0.25);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 14px;
+            min-width: 260px;
+        }
+        .mesyuarat-loading-spinner {
+            width: 46px;
+            height: 46px;
+            border: 4px solid #fee2e2;
+            border-top-color: #c0392b;
+            border-radius: 50%;
+            animation: mesyuarat-spin 0.8s linear infinite;
+        }
+        @keyframes mesyuarat-spin {
+            to { transform: rotate(360deg); }
+        }
+        .mesyuarat-loading-title {
+            font-weight: 700;
+            color: #1e293b;
+            font-size: 1rem;
+        }
+        .mesyuarat-loading-sub {
+            color: #64748b;
+            font-size: 0.85rem;
+            text-align: center;
+        }
     </style>
 
     @php
@@ -99,6 +144,10 @@
                     <h6 class="text-primary">{{ $tender->no_tender ?: $tender->ref_number ?: '-' }}</h6>
                 </div>
                 <div class="col-4 col-lg-4">
+                    <label class="form-label small fw-bold text-secondary text-uppercase mb-1">Peringkat</label>
+                    <h6 class="text-primary">{{ (int) ($tender->tender_peringkat ?? 2) === 1 ? '1 Peringkat' : '2 Peringkat' }}</h6>
+                </div>
+                <div class="col-4 col-lg-4">
                     <label class="form-label small fw-bold text-secondary text-uppercase mb-1">PTJ</label>
                     <h6 class="text-primary">{{ optional($tender->tenderer)->name ?? '-' }}</h6>
                 </div>
@@ -112,10 +161,7 @@
         </div>
     </div>
 
-    @if(empty($uiTabs))
-        <div class="alert alert-info">Tiada jawatankuasa yang layak untuk mesyuarat. Sila lengkapkan pelantikan jawatankuasa terlebih dahulu.</div>
-    @else
-        <div class="nested-tabs">
+    <div class="nested-tabs">
             @foreach($uiTabs as $tab)
                 <button type="button" class="nested-tab-btn {{ $loop->first ? 'active' : '' }}" data-tab="{{ $tab['ui'] }}" data-jenis="{{ $tab['jenis'] }}">
                     {{ $tab['label'] }}
@@ -133,13 +179,20 @@
                 ])
             @endforeach
         </div>
-    @endif
 
     <datalist id="tempat-mesyuarat-options">
         @foreach($tempatMesyuarat ?? [] as $tempat)
             <option value="{{ $tempat }}"></option>
         @endforeach
     </datalist>
+
+    <div id="mesyuarat-loading-overlay" role="alertdialog" aria-live="assertive" aria-busy="true">
+        <div class="mesyuarat-loading-card">
+            <div class="mesyuarat-loading-spinner"></div>
+            <div class="mesyuarat-loading-title" id="mesyuarat-loading-title">Menghantar jemputan mesyuarat...</div>
+            <div class="mesyuarat-loading-sub">Sila tunggu, sistem sedang menjana memo dan menghantar emel kepada ahli jawatankuasa.</div>
+        </div>
+    </div>
 
     <script type="application/json" id="mesyuarat-page-config">{!! json_encode([
         'tenderUuid' => $tender->uuid ?? '',
@@ -227,6 +280,18 @@
                 return rows;
             }
 
+            const $loadingOverlay = $('#mesyuarat-loading-overlay');
+            const $loadingTitle = $('#mesyuarat-loading-title');
+
+            function showLoading(action) {
+                $loadingTitle.text(action === 'hantar' ? 'Menghantar jemputan mesyuarat...' : 'Menyimpan perincian mesyuarat...');
+                $loadingOverlay.addClass('show');
+            }
+
+            function hideLoading() {
+                $loadingOverlay.removeClass('show');
+            }
+
             function postMeeting(action, uiTab) {
                 if (!stosConfigured) {
                     alert('STOS backend tidak dikonfigurasi.');
@@ -243,6 +308,7 @@
                 if (action === 'hantar' && !confirm('Hantar jemputan mesyuarat kepada ahli jawatankuasa tab ini sahaja?')) {
                     return;
                 }
+                showLoading(action);
                 $.ajax({
                     url: action === 'hantar' ? hantarUrl : saveUrl,
                     method: 'POST',
@@ -257,6 +323,7 @@
                         window.location.reload();
                     },
                     error: function (xhr) {
+                        hideLoading();
                         alert((xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Gagal memproses permintaan.');
                     },
                 });
