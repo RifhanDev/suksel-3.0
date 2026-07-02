@@ -402,7 +402,7 @@
 						<div class="flex-grow-1">
 							<h6 class="mb-0">Hantar Tawaran</h6>
 							<small class="text-muted" style="font-size:0.72rem;">
-								Lengkapkan lawatan tapak dan dokumen tender/tawaran sebelum menghantar.
+								Lengkapkan dokumen tender/tawaran sebelum menghantar.
 							</small>
 						</div>
 						@if (!empty($vendorPurchase?->kod_pembekal))
