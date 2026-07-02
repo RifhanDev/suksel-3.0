@@ -114,7 +114,10 @@
 		$vendorHasPurchased = Auth::check() && Auth::user()->vendor_id && $tender->hasParticipate(Auth::user()->vendor_id);
 		$vendorCanEdit = $vendorHasPurchased && !$vendorSubmitted;
 		$dokumenList = $tenderDokumen->items('vendor', $vendorCanEdit ? (int) Auth::user()->vendor_id : null);
-		$canManageWakilLawatan = $vendorCanEdit;
+		$canManageWakilLawatan = Auth::check()
+		    && Auth::user()->vendor_id
+		    && !$vendorSubmitted
+		    && $tender->siteVisits->contains(fn ($visit) => $visit->canSubmitRepresentatives());
 	@endphp
 
 	{{-- Breadcrumb + Header --}}
@@ -527,13 +530,18 @@
 							<div class="px-4 pt-3 pb-0">
 								@if ($canManageWakilLawatan)
 									<p class="text-muted small mb-0">
-										Klik <strong>Wakil Syarikat</strong> pada setiap lawatan untuk masukkan No. IC, nama wakil dan tandakan
-										kehadiran selepas menghadiri lawatan tapak.
+										Klik <strong>Wakil Syarikat</strong> pada setiap lawatan untuk masukkan No. IC dan nama wakil
+										<strong>sebelum tarikh lawatan</strong>. Kehadiran akan disahkan oleh urus setia selepas lawatan tapak.
 									</p>
 								@else
 									<p class="text-muted small mb-0">
-										Maklumat lawatan tapak adalah untuk rujukan. Sila <strong>beli dokumen tender</strong> terlebih dahulu untuk
-										mendaftar wakil syarikat.
+										@if ($vendorSubmitted)
+											Maklumat lawatan tapak adalah untuk rujukan sahaja.
+										@elseif ($tender->siteVisits->isNotEmpty() && !$tender->siteVisits->contains(fn ($visit) => $visit->canSubmitRepresentatives()))
+											Tempoh pendaftaran wakil telah tamat. Kehadiran lawatan tapak direkodkan oleh urus setia.
+										@else
+											Maklumat lawatan tapak adalah untuk rujukan.
+										@endif
 									</p>
 								@endif
 							</div>
@@ -565,6 +573,7 @@
 												    Auth::check() && Auth::user()->vendor_id
 												        ? App\TenderVisitor::hasVisit($visit->id, Auth::user()->vendor_id)
 												        : false;
+												$canSubmitVisitReps = $canManageWakilLawatan && $visit->canSubmitRepresentatives();
 											@endphp
 											<tr style="border-color:#e5e7eb;">
 												<td class="ps-4">{{ $i + 1 }}</td>
@@ -579,10 +588,10 @@
 													@endif
 												</td>
 												<td class="pe-4 text-center">
-													@if ($canManageWakilLawatan)
-														@if ($visitAttended)
-															<span class="badge bg-success mb-1 d-block">Hadir</span>
-														@endif
+													@if ($visitAttended)
+														<span class="badge bg-success mb-1 d-block">Hadir (Disahkan)</span>
+													@endif
+													@if ($canSubmitVisitReps)
 														<button type="button" class="btn btn-sm btn-outline-danger btn-wakil-lawatan"
 															data-visit-id="{{ $visit->id }}"
 															data-visit-label="Lawatan {{ $i + 1 }} — {{ \Carbon\Carbon::parse($visit->datetime)->format('j M Y H:i') }}"
@@ -594,13 +603,13 @@
 															</svg>
 															Wakil
 														</button>
-													@else
+													@elseif (!$visitAttended)
 														<span class="text-muted small">—</span>
-														@if ($tender->canPurchase())
-															<div class="mt-1">
-																<a href="{{ route('tenders.buy', $tender->id) }}" class="small">Beli dokumen</a>
-															</div>
-														@endif
+													@endif
+													@if (!$vendorHasPurchased && $tender->canPurchase())
+														<div class="mt-1">
+															<a href="{{ route('tenders.buy', $tender->id) }}" class="small">Beli dokumen</a>
+														</div>
 													@endif
 												</td>
 											</tr>
@@ -628,9 +637,8 @@
 											<table class="table table-bordered align-middle mb-0" id="wakilLawatanTable">
 												<thead>
 													<tr>
-														<th width="28%">No. IC</th>
+														<th width="35%">No. IC</th>
 														<th>Nama Individu</th>
-														<th width="12%" class="text-center">Hadir</th>
 														<th width="8%"></th>
 													</tr>
 												</thead>
@@ -640,8 +648,8 @@
 										<button type="button" class="btn btn-sm btn-outline-secondary mt-2" id="wakilLawatanAddRow">+ Tambah
 											wakil</button>
 										<p class="text-muted small mt-3 mb-0">
-											Nota: Tandakan <strong>Hadir</strong> untuk sekurang-kurangnya seorang wakil yang hadir ke lawatan tapak. Nama
-											hendaklah selari dengan sijil CIDB / MOF jika berkenaan.
+											Nota: Nama hendaklah selari dengan sijil CIDB / MOF jika berkenaan. Kehadiran akan disahkan oleh urus setia
+											selepas lawatan tapak.
 										</p>
 										<div class="alert alert-danger d-none mt-3 mb-0" id="wakilLawatanError"></div>
 										<div class="alert alert-success d-none mt-3 mb-0" id="wakilLawatanSuccess"></div>
@@ -1104,7 +1112,6 @@
 					return '<tr class="wakil-row">' +
 						'<td><input type="text" class="form-control form-control-sm rep-ic" maxlength="32" placeholder="No. IC"></td>' +
 						'<td><input type="text" class="form-control form-control-sm rep-name" maxlength="255" placeholder="Nama"></td>' +
-						'<td class="text-center"><input type="checkbox" class="form-check-input rep-attended"></td>' +
 						'<td class="text-center"><button type="button" class="btn btn-sm btn-link text-danger p-0 btn-remove-rep" title="Buang">&times;</button></td>' +
 						'</tr>';
 				}
@@ -1121,7 +1128,6 @@
 						var $row = $(emptyRow());
 						$row.find('.rep-ic').val(rep.ic_no || '');
 						$row.find('.rep-name').val(rep.name || '');
-						$row.find('.rep-attended').prop('checked', !!rep.attended);
 						$tbody.append($row);
 					});
 					if (reps.length < 2) {
@@ -1158,12 +1164,10 @@
 					$('#wakilLawatanRows .wakil-row').each(function() {
 						var ic = $(this).find('.rep-ic').val().trim();
 						var name = $(this).find('.rep-name').val().trim();
-						var attended = $(this).find('.rep-attended').is(':checked');
 						if (ic || name) {
 							reps.push({
 								ic_no: ic,
-								name: name,
-								attended: attended ? 1 : 0
+								name: name
 							});
 						}
 					});

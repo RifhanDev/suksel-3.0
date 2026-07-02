@@ -26,8 +26,20 @@ class LawatanTapakUrusetiaController extends Controller
                 $q->where('lawatan_tapak', 1)
                     ->orWhereHas('siteVisits');
             })
-            ->whereHas('participants', function ($q) {
-                $q->where('participate', 1)->whereNotNull('ref_number');
+            ->where(function ($q) {
+                $q->whereHas('participants', function ($participantQuery) {
+                    $participantQuery->where('participate', 1)->whereNotNull('ref_number');
+                })->orWhereExists(function ($existsQuery) {
+                    $existsQuery->select(DB::raw(1))
+                        ->from('tender_visit_representatives as tvr')
+                        ->join('tender_visits as tv', 'tv.id', '=', 'tvr.visit_id')
+                        ->whereColumn('tv.tender_id', 'tenders.id');
+                })->orWhereExists(function ($existsQuery) {
+                    $existsQuery->select(DB::raw(1))
+                        ->from('tender_visitors as tvs')
+                        ->join('tender_visits as tv', 'tv.id', '=', 'tvs.visit_id')
+                        ->whereColumn('tv.tender_id', 'tenders.id');
+                });
             })
             ->with(['tenderer', 'siteVisits'])
             ->withCount([
@@ -97,7 +109,8 @@ class LawatanTapakUrusetiaController extends Controller
         $data = $request->validate([
             'rows' => 'array',
             'rows.*.visit_id' => 'required|integer',
-            'rows.*.vendor_id' => 'required|integer',
+            'rows.*.vendor_id' => 'nullable|integer',
+            'rows.*.vendor_registration' => 'nullable|string|max:64',
             'rows.*.rep_id' => 'nullable|integer',
             'rows.*.ic_no' => 'nullable|string|max:32',
             'rows.*.name' => 'nullable|string|max:255',
@@ -105,16 +118,25 @@ class LawatanTapakUrusetiaController extends Controller
         ]);
 
         $visitIds = $tender->siteVisits()->pluck('id')->all();
-        $purchaseVendorIds = $this->purchasedVendors($tender)->pluck('vendor_id')->all();
 
-        DB::transaction(function () use ($data, $visitIds, $purchaseVendorIds) {
+        DB::transaction(function () use ($data, $visitIds) {
             $touched = [];
 
             foreach ($data['rows'] ?? [] as $row) {
                 $visitId = (int) $row['visit_id'];
-                $vendorId = (int) $row['vendor_id'];
+                $vendorId = (int) ($row['vendor_id'] ?? 0);
 
-                if (!in_array($visitId, $visitIds, true) || !in_array($vendorId, $purchaseVendorIds, true)) {
+                if (!in_array($visitId, $visitIds, true)) {
+                    continue;
+                }
+
+                if ($vendorId <= 0 && !empty($row['vendor_registration'])) {
+                    $vendorId = (int) (Vendor::query()
+                        ->where('registration', trim($row['vendor_registration']))
+                        ->value('id') ?? 0);
+                }
+
+                if ($vendorId <= 0 || !Vendor::where('id', $vendorId)->exists()) {
                     continue;
                 }
 
@@ -239,16 +261,45 @@ class LawatanTapakUrusetiaController extends Controller
             ->get();
     }
 
+    /**
+     * @return array<int, int>
+     */
+    protected function attendanceVendorIds(Tender $tender, $purchases, $visits): array
+    {
+        $visitIds = $visits->pluck('id')->all();
+
+        $repVendorIds = TenderVisitRepresentative::query()
+            ->whereIn('visit_id', $visitIds)
+            ->pluck('vendor_id');
+
+        $visitorVendorIds = TenderVisitor::query()
+            ->whereIn('visit_id', $visitIds)
+            ->pluck('vendor_id');
+
+        return collect($purchases->pluck('vendor_id'))
+            ->merge($repVendorIds)
+            ->merge($visitorVendorIds)
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+    }
+
     protected function buildAttendanceRows(Tender $tender, $purchases, $visits): array
     {
         $rows = [];
+        $vendorIds = $this->attendanceVendorIds($tender, $purchases, $visits);
+        $vendors = Vendor::query()->whereIn('id', $vendorIds)->get()->keyBy('id');
+        $purchasesByVendor = $purchases->keyBy('vendor_id');
 
         foreach ($visits as $visit) {
-            foreach ($purchases as $purchase) {
-                $vendor = $purchase->vendor;
+            foreach ($vendorIds as $vendorId) {
+                $vendor = $vendors->get($vendorId);
                 if (!$vendor) {
                     continue;
                 }
+
+                $purchase = $purchasesByVendor->get($vendorId);
 
                 $reps = TenderVisitRepresentative::where('visit_id', $visit->id)
                     ->where('vendor_id', $vendor->id)
@@ -283,13 +334,15 @@ class LawatanTapakUrusetiaController extends Controller
 
     protected function resolveTenderLawatanStatus(Tender $tender): array
     {
-        $purchases = TenderVendor::where('tender_id', $tender->id)
-            ->where('participate', 1)
-            ->whereNotNull('ref_number')
-            ->pluck('vendor_id');
+        $visits = $tender->siteVisits;
+        $trackedVendorIds = $this->attendanceVendorIds(
+            $tender,
+            $tender->participants()->where('participate', 1)->whereNotNull('ref_number')->with('vendor')->get(),
+            $visits
+        );
 
-        if ($purchases->isEmpty()) {
-            return ['key' => 'tiada_pembeli', 'label' => 'Tiada Pembeli', 'class' => 'bg-secondary'];
+        if ($trackedVendorIds === []) {
+            return ['key' => 'tiada_pembeli', 'label' => 'Tiada Rekod', 'class' => 'bg-secondary'];
         }
 
         $requiredVisits = $tender->siteVisits->where('required', 1);
@@ -298,14 +351,14 @@ class LawatanTapakUrusetiaController extends Controller
         }
 
         $hasReps = TenderVisitRepresentative::whereIn('visit_id', $requiredVisits->pluck('id'))
-            ->whereIn('vendor_id', $purchases)
+            ->whereIn('vendor_id', $trackedVendorIds)
             ->exists();
 
         if (!$hasReps) {
             return ['key' => 'menunggu_wakil', 'label' => 'Menunggu Wakil', 'class' => 'bg-warning text-dark'];
         }
 
-        foreach ($purchases as $vendorId) {
+        foreach ($trackedVendorIds as $vendorId) {
             foreach ($requiredVisits as $visit) {
                 if (!TenderVisitor::hasVisit($visit->id, $vendorId)) {
                     return ['key' => 'belum_disemak', 'label' => 'Belum Disemak', 'class' => 'bg-warning text-dark'];

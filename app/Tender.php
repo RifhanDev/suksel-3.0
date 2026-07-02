@@ -829,16 +829,25 @@ class Tender extends Model
 		return $participate;
 	}
 
+	public function hasRequiredSiteVisits(): bool
+	{
+		return count($this->siteVisits) > 0
+			&& $this->siteVisits->contains(fn ($visit) => (bool) $visit->required);
+	}
+
 	public function attendVisits($vendor_id)
 	{
+		if (! $this->hasRequiredSiteVisits()) {
+			return true;
+		}
+
 		$participate = true;
-		if (count($this->siteVisits) > 0) {
-			foreach ($this->siteVisits as $visit) {
-				if ($visit->required) {
-					$participate = $participate && TenderVisitor::hasVisit($visit->id, $vendor_id);
-				}
+		foreach ($this->siteVisits as $visit) {
+			if ($visit->required) {
+				$participate = $participate && TenderVisitor::hasVisit($visit->id, $vendor_id);
 			}
 		}
+
 		return $participate;
 	}
 

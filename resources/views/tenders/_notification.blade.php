@@ -100,7 +100,7 @@
 					dibenarkan membeli dokumen tender / sebut harga ini.</div>
 			@endif
 
-			@if (!$tender->attendVisits(Auth::user()->vendor_id))
+			@if ($tender->hasRequiredSiteVisits() && !$tender->attendVisits(Auth::user()->vendor_id))
 				<div class="alert alert-danger"><svg xmlns="http://www.w3.org/2000/svg" class="me-1" width="18"
 						height="18" viewBox="0 0 24 24">
 						<g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
@@ -109,10 +109,10 @@
 						</g>
 					</svg>
 					@if ($tender->hasParticipate(Auth::user()->vendor_id))
-						Sila daftar wakil syarikat dan tandakan kehadiran di tab <strong>Lawatan Tapak</strong>.
+						Kehadiran lawatan tapak wajib belum disahkan urus setia.
 					@else
-						Anda perlu menghadiri lawatan tapak
-						sebelum dibenarkan membeli dokumen tender / sebut harga ini.
+						Sila daftar wakil syarikat di tab <strong>Lawatan Tapak</strong> (sebelum tarikh lawatan).
+						Kehadiran akan disahkan urus setia sebelum anda boleh membeli dokumen tender / sebut harga ini.
 					@endif
 				</div>
 			@endif
