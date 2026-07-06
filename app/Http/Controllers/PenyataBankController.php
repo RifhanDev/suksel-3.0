@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\HandlesTenderFormAccess;
 use App\Models\Tender;
+use App\Services\PenyataBankPersistenceService;
 use App\Services\StosBackendClient;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -11,6 +12,8 @@ use Illuminate\Support\Facades\Log;
 class PenyataBankController extends Controller
 {
     use HandlesTenderFormAccess;
+
+    public function __construct(protected PenyataBankPersistenceService $penyataBankPersistence) {}
 
     public function index(string $tenderUuid)
     {
@@ -34,15 +37,26 @@ class PenyataBankController extends Controller
             ]);
         }
 
-        if ($this->isVendorFormMode() && empty($penyataData)) {
-            $penyataData = $this->loadVendorFormPayload($tender, 'penyata_bank');
+        $localData = $this->penyataBankPersistence->loadForTender($tender);
+
+        if ($this->isVendorFormMode()) {
+            $vendorPayload = $this->loadVendorFormPayload($tender, 'penyata_bank');
+            $penyataData = $this->penyataBankPersistence->mergeVendorPayload(
+                $localData ?? $penyataData,
+                $vendorPayload
+            ) ?? $localData ?? $penyataData;
+        } elseif (empty($penyataData)) {
+            $penyataData = $localData;
         }
+
+        $isAdminForm = ! $this->isVendorFormMode() && ! $this->isFormViewOnly();
 
         return view('jawatankuasaSpesifikasi.penyata_bank', array_merge([
             'tender' => $tender,
             'penyataData' => $penyataData,
             'showVendorForm' => $this->isVendorFormMode() || $this->isFormViewOnly(),
-            'showScoringConfig' => ! $this->isVendorFormMode() && ! $this->isFormViewOnly(),
+            'showPeriodConfig' => $isAdminForm,
+            'showScoringConfig' => $isAdminForm,
         ], $this->formViewVars($tender)));
     }
 
@@ -52,7 +66,7 @@ class PenyataBankController extends Controller
         $this->ensureTenderFormAccess($tender);
         $this->ensureFormEditable();
 
-        $payload = $request->except('_token');
+        $payload = $request->json()->all() ?: $request->except('_token');
         if ($this->isVendorFormMode()) {
             $payload['vendor_id'] = $this->vendorId();
         }
@@ -76,7 +90,18 @@ class PenyataBankController extends Controller
             return response()->json($response->json(), $response->status());
         }
 
-        return response()->json($response->json(), $response->status());
+        $record = $this->penyataBankPersistence->saveForTender($tender, $payload);
+
+        if ($response->successful()) {
+            return response()->json($response->json(), $response->status());
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Berjaya disimpan.',
+            'data' => $this->penyataBankPersistence->loadForTender($tender),
+            'warning' => 'Penyegerakan STOS gagal.',
+        ]);
     }
 
     public function submit(Request $request, string $tenderUuid)
