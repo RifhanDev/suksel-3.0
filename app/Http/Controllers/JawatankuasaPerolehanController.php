@@ -8,7 +8,9 @@ use App\Models\JawatankuasaPerolehanPemilihanHeader;
 use App\Models\JawatankuasaPerolehanPemilihanItem;
 use App\Models\JawatankuasaPerolehanPemilihanPetender;
 use App\Models\PerakuanJabatanKertasTaklimatItem;
+use App\Support\VendorCidbMeta;
 use App\Tender;
+use App\Vendor;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -71,6 +73,7 @@ class JawatankuasaPerolehanController extends Controller
         $pemilihanHeader = $this->blankPemilihanHeader();
         $pemilihanItems = collect();
         $pemilihanOpts = $this->pemilihanDropdownOptions();
+        $pemilihanVendors = collect();
 
         if ($tender) {
             $meetings = JawatankuasaPerolehanMeeting::query()
@@ -115,6 +118,7 @@ class JawatankuasaPerolehanController extends Controller
                 ->first();
 
             $this->ensurePemilihanDefaults($tender);
+            $this->syncPemilihanPetenderVendors($tender);
             $headerModel = JawatankuasaPerolehanPemilihanHeader::query()
                 ->where('tender_id', $tender->id)
                 ->first();
@@ -133,7 +137,7 @@ class JawatankuasaPerolehanController extends Controller
             $pemilihanItems = JawatankuasaPerolehanPemilihanItem::query()
                 ->where('tender_id', $tender->id)
                 ->with(['petenders' => function ($q) {
-                    $q->orderBy('sort_order');
+                    $q->orderBy('sort_order')->with('vendor:id,name,meta');
                 }])
                 ->orderBy('sort_order')
                 ->get()
@@ -148,8 +152,13 @@ class JawatankuasaPerolehanController extends Controller
                         'pembekal_dipilih' => (int) $item->pembekal_dipilih,
                         'kuantiti' => (string) $item->kuantiti,
                         'petenders' => $item->petenders->map(function (JawatankuasaPerolehanPemilihanPetender $p) {
+                            $hasCidbMeta = $p->vendor_id
+                                && is_array(VendorCidbMeta::normalizeMeta(is_array($p->vendor?->meta) ? $p->vendor->meta : null));
+
                             return [
                                 'id' => $p->id,
+                                'vendor_id' => $p->vendor_id,
+                                'cidb_has_meta' => $hasCidbMeta,
                                 'bil_label' => $p->bil_label,
                                 'status_bumiputra' => $p->status_bumiputra,
                                 'harga_tawaran' => (string) $p->harga_tawaran,
@@ -167,6 +176,16 @@ class JawatankuasaPerolehanController extends Controller
                     ];
                 })
                 ->values();
+
+            $vendorIds = $pemilihanItems
+                ->flatMap(fn (array $item) => collect($item['petenders'])->pluck('vendor_id'))
+                ->filter()
+                ->unique()
+                ->values();
+
+            $pemilihanVendors = $vendorIds->isEmpty()
+                ? collect()
+                : Vendor::query()->whereIn('id', $vendorIds)->get(['id', 'name', 'meta']);
         }
 
         return view('newModule.jawatankuasaPerolehan.form', compact(
@@ -177,6 +196,7 @@ class JawatankuasaPerolehanController extends Controller
             'pemilihanHeader',
             'pemilihanItems',
             'pemilihanOpts',
+            'pemilihanVendors',
         ));
     }
 
@@ -659,6 +679,36 @@ class JawatankuasaPerolehanController extends Controller
                 $pet->catatan_urusetia = $this->nullableTrim($p['catatan_urusetia'] ?? null);
                 $pet->save();
             }
+        }
+    }
+
+    private function syncPemilihanPetenderVendors(Tender $tender): void
+    {
+        $vendorIds = Vendor::query()
+            ->whereNotNull('meta')
+            ->orderBy('id')
+            ->pluck('id')
+            ->values();
+
+        if ($vendorIds->isEmpty()) {
+            return;
+        }
+
+        $petenders = JawatankuasaPerolehanPemilihanPetender::query()
+            ->whereHas('item', function ($query) use ($tender) {
+                $query->where('tender_id', $tender->id);
+            })
+            ->orderBy('pemilihan_item_id')
+            ->orderBy('sort_order')
+            ->get();
+
+        foreach ($petenders as $index => $petender) {
+            if ($petender->vendor_id || ! isset($vendorIds[$index])) {
+                continue;
+            }
+
+            $petender->vendor_id = $vendorIds[$index];
+            $petender->save();
         }
     }
 

@@ -64,10 +64,14 @@ class Vendor extends Model
 		'certificate_generated_at',
 		'officer_tel',
 		'state_id',
-		'rejection_template_id'
+		'rejection_template_id',
+		'meta',
 	];
 
-	protected $casts = ['ssm_expiry' => 'date'];
+	protected $casts = [
+		'ssm_expiry' => 'date',
+		'meta' => 'array',
+	];
 
 	/**
 	 * These attributes excluded from the model's JSON form.

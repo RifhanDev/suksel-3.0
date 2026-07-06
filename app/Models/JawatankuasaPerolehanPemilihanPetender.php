@@ -11,6 +11,7 @@ class JawatankuasaPerolehanPemilihanPetender extends Model
 
     protected $fillable = [
         'pemilihan_item_id',
+        'vendor_id',
         'sort_order',
         'bil_label',
         'status_bumiputra',
@@ -32,5 +33,10 @@ class JawatankuasaPerolehanPemilihanPetender extends Model
     public function item(): BelongsTo
     {
         return $this->belongsTo(JawatankuasaPerolehanPemilihanItem::class, 'pemilihan_item_id');
+    }
+
+    public function vendor(): BelongsTo
+    {
+        return $this->belongsTo(\App\Vendor::class, 'vendor_id');
     }
 }

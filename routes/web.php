@@ -491,6 +491,7 @@ Route::middleware(['auth'])->group(function ()
 	Route::put('vendors/{user}/edit_email', [VendorsController::class, 'updateEmail']);
 	Route::get('vendors/{user}/histories', [VendorsController::class, 'histories']);
 	Route::get('vendors/{user}/certificate', [VendorsController::class, 'certificate']);
+	Route::post('vendors/{id}/cidb/integrate', [VendorsController::class, 'integrateCidb'])->name('vendors.cidb.integrate');
 	Route::resource('vendor.blacklists', VendorBlacklistsController::class);
 	Route::get('vendor/{vendor}/blacklists/{blacklists}/file', [VendorBlacklistsController::class, 'file'])->name('vendor.blacklists.file');
 	Route::put('vendor/{vendor}/blacklists/{blacklists}/cancel', [VendorBlacklistsController::class, 'cancel'])->name('vendor.blacklists.cancel');
