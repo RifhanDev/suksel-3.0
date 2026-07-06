@@ -138,7 +138,7 @@
 									<span class="badge bg-primary ms-2">{{ $tender->files()->where('public', 1)->count() }}</span>
 								</a>
 							@endif
-							@if ($tender->showDokumenSenaraiTab())
+							@if ($tender->canShowDokumenSenaraiTab(Auth::user()->vendor_id))
 								<a href="#tf-dokumen-tawaran" aria-controls="settings" role="tab" data-bs-toggle="tab" class="nav-link">
 									<svg xmlns="http://www.w3.org/2000/svg" class="me-1" width="18" height="18" viewBox="0 0 24 24">
 										<path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -883,7 +883,7 @@
 					</div>
 
 					{{-- === TAB: Dokumen Tender/Tawaran atau Sebut Harga (senarai semak) === --}}
-					@if ($tender->showDokumenSenaraiTab())
+					@if ($tender->canShowDokumenSenaraiTab(Auth::user()->vendor_id))
 						<div role="tabpanel" class="tab-pane" id="tf-dokumen-tawaran">
 							<div class="tender-tab-card">
 								<div class="card-header">
@@ -1378,7 +1378,7 @@
 			})
 		}
 	</script>
-	@if ($tender->showDokumenSenaraiTab())
+	@if ($tender->canShowDokumenSenaraiTab(Auth::user()->vendor_id))
 		@include('tenders.forms._online_form_modal')
 	@endif
 @endsection

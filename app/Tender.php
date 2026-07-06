@@ -666,6 +666,11 @@ class Tender extends Model
 		return in_array($this->resolvedKaedahPerolehanId(), [1, 2], true);
 	}
 
+	public function canShowDokumenSenaraiTab($vendor_id = null): bool
+	{
+		return $this->showDokumenSenaraiTab() && $this->canShowFiles($vendor_id);
+	}
+
 	public function dokumenSenaraiTabLabel(): string
 	{
 		return $this->isSebutHargaKaedah()
