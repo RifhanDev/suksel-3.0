@@ -96,14 +96,19 @@ class TenderReviewPresenter
         return $this->tender->no_kontrak ?: '—';
     }
 
+    public function hargaDokumen(): string
+    {
+        return $this->formatMoney($this->tender->price ?? '0');
+    }
+
     public function hargaIndikatif(): string
     {
-        return $this->formatMoney($this->tender->harga_indikatif ?? $this->tender->price);
+        return $this->formatMoney($this->tender->harga_indikatif ?? '0');
     }
 
     public function anggaranJabatan(): string
     {
-        return $this->formatMoney($this->tender->anggaran_jabatan ?? $this->tender->price);
+        return $this->formatMoney($this->tender->anggaran_jabatan ?? '0');
     }
 
     public function kategoriPerolehan(): string
@@ -184,7 +189,7 @@ class TenderReviewPresenter
             : $this->tender->cidb_grades->loadMissing('code');
 
         return $grades
-            ->map(fn ($row) => optional($row->code)->label ?? optional($row->code)->code)
+            ->map(fn($row) => optional($row->code)->label ?? optional($row->code)->code)
             ->filter()
             ->values()
             ->all();
