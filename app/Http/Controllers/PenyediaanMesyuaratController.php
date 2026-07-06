@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\AdvancesTenderProcessStatus;
 use App\Models\Jawatankuasa;
 use App\Services\StosBackendClient;
+use App\Support\TenderProcessStatus;
 use App\Tender;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -12,6 +14,8 @@ use Illuminate\Validation\Rule;
 
 class PenyediaanMesyuaratController extends Controller
 {
+    use AdvancesTenderProcessStatus;
+
     private const JENIS_LABELS = [
         'spec' => 'Jawatankuasa Spesifikasi',
         'open' => 'Jawatankuasa Pembuka',
@@ -26,6 +30,7 @@ class PenyediaanMesyuaratController extends Controller
     {
         $tenders = Tender::query()
             ->with('tenderer')
+            ->where('status_process_id', TenderProcessStatus::penyediaanMesyuaratListStatus())
             ->whereHas('jawatankuasas', function ($query) {
                 $query->whereNotNull('user_id')
                     ->whereNotNull('dihantar_pemakluman_pada');
@@ -165,6 +170,8 @@ class PenyediaanMesyuaratController extends Controller
                 if (is_numeric($emailsSent)) {
                     $message .= ' (' . (int) $emailsSent . ' emel dihantar)';
                 }
+
+                $this->tryAdvancePenyediaanMesyuarat($tender);
             }
 
             return response()->json(['message' => $message]);
@@ -309,6 +316,37 @@ class PenyediaanMesyuaratController extends Controller
             'harga' => 'sebutharga',
             default => $jenis,
         };
+    }
+
+    private function tryAdvancePenyediaanMesyuarat(Tender $tender): void
+    {
+        $visibleJenis = $this->resolveVisibleJenis($tender);
+
+        if (empty($visibleJenis)) {
+            return;
+        }
+
+        $meetingsByJenis = $this->fetchMeetingsFromApi($tender->id, $visibleJenis);
+        $draftStatuses = ['Draf', 'Belum Disimpan', ''];
+
+        foreach ($visibleJenis as $jenis) {
+            $rows = $meetingsByJenis[$jenis] ?? collect();
+            $hasSubmitted = $rows->contains(function (array $row) use ($draftStatuses) {
+                $status = trim((string) ($row['status'] ?? ''));
+
+                return $status !== '' && ! in_array($status, $draftStatuses, true);
+            });
+
+            if (! $hasSubmitted) {
+                return;
+            }
+        }
+
+        $this->advanceTenderProcess(
+            $tender,
+            TenderProcessStatus::PENYEDIAAN_MESYUARAT,
+            TenderProcessStatus::penyediaanMesyuaratListStatus()
+        );
     }
 
     private function resolveTender($identifier): ?Tender

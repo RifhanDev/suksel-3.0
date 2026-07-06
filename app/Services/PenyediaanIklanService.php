@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\PenyediaanIklan;
+use App\Support\TenderProcessStatus;
 use App\Tender;
 use App\User;
 use Carbon\Carbon;
@@ -234,7 +235,7 @@ class PenyediaanIklanService
             $updates['district_list_rule'] = json_encode($syarat['district_list_rule']);
         }
 
-        $updates['status_process_id'] = 5;
+        $updates['status_process_id'] = TenderProcessStatus::PENYEDIAAN_IKLAN;
 
         Tender::query()->where('id', $tender->id)->update($updates);
     }

@@ -12,7 +12,7 @@ class PenyediaanIklanNavigation
      */
     public static function afterSpecificationUrl(Tender|TenderModel $tender): string
     {
-        if ((int) ($tender->status_process_id ?? 0) === 4) {
+        if ((int) ($tender->status_process_id ?? 0) >= TenderProcessStatus::penyediaanIklanListStatus()) {
             return route('penyediaanIklan.show', $tender->id) . '?tab=dokumen';
         }
 
