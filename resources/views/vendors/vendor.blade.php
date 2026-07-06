@@ -436,9 +436,26 @@
             <!-- 4. CIDB -->
             <div class="tab-pane fade" id="vf-cidb">
                 <div class="card border shadow-sm rounded-3 overflow-hidden mb-4">
-                    <div class="card-header bg-light py-3 border-bottom fw-bold text-secondary">Lembaga Pembangunan
-                        Industri Pembinaan (CIDB)</div>
+                    <div class="card-header bg-light py-3 border-bottom d-flex justify-content-between align-items-center gap-3">
+                        <div class="fw-bold text-secondary">Lembaga Pembangunan Industri Pembinaan (CIDB)</div>
+                        <div class="d-flex align-items-center gap-2 flex-wrap justify-content-end">
+                            @include('components.vendor-cidb-meta', [
+                                'vendor' => $vendor,
+                                'trigger' => 'button',
+                                'showIntegrate' => Auth::user() && Auth::user()->hasRole('Admin'),
+                                'showComparison' => true,
+                                'openOnLoad' => session('cidb_integrated') && (int) session('cidb_integrated_vendor_id') === (int) $vendor->id,
+                                'scrollToComparison' => session('cidb_integrated') && (int) session('cidb_integrated_vendor_id') === (int) $vendor->id,
+                            ])
+                        </div>
+                    </div>
                     <div class="card-body p-4">
+                        @if (session('success') && session('cidb_integrated'))
+                            <div class="alert alert-success border-0 shadow-sm mb-4">
+                                {{ session('success') }}
+                            </div>
+                        @endif
+
                         <div class="row g-4">
                             <div class="col-md-6">
                                 <label class="small text-muted fw-bold text-uppercase d-block mb-1">No Sijil
@@ -537,6 +554,7 @@
                                 <div class="text-muted text-center fst-italic">Tiada maklumat Gred.</div>
                             @endforelse
                         </div>
+
                     </div>
                 </div>
             </div>
@@ -1003,6 +1021,17 @@
             }
         });
     </script>
+
+    @if (session('cidb_integrated'))
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const cidbTab = document.querySelector('a[href="#vf-cidb"]');
+                if (cidbTab && window.bootstrap) {
+                    window.bootstrap.Tab.getOrCreateInstance(cidbTab).show();
+                }
+            });
+        </script>
+    @endif
 
     <!-- Show/Hide Sensitive Info (IC. NO.) -->
     @if ($canViewSensitiveIdentity)

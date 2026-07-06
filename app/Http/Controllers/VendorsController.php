@@ -30,6 +30,7 @@ use App\Models\Ref\RefHaveNo;
 use App\Models\OrganizationType;
 use App\Models\Ref\RefOrganizationType;
 use App\Models\VendorSubUser;
+use App\Services\VendorCidbSyncService;
 
 class VendorsController extends Controller
 {
@@ -406,6 +407,32 @@ class VendorsController extends Controller
 		]);
 
 		return view('vendors.show', compact('vendor', 'transactions', 'templates'));
+	}
+
+	public function integrateCidb(Request $request, $id, VendorCidbSyncService $cidbSyncService)
+	{
+		if (! auth()->user() || ! auth()->user()->hasRole('Admin')) {
+			return $this->_access_denied();
+		}
+
+		$vendor = Vendor::findOrFail($id);
+
+		if (! $vendor->canShow()) {
+			return $this->_access_denied();
+		}
+
+		$result = $cidbSyncService->integrate($vendor, auth()->id());
+
+		$message = $result['has_changes']
+			? 'Integrasi CIDB berjaya. '.$result['change_count'].' perubahan ditemui.'
+			: 'Integrasi CIDB berjaya. Tiada perubahan ditemui.';
+
+		return redirect()
+			->route('vendors.show', $vendor->id)
+			->with('success', $message)
+			->with('cidb_integrated', true)
+			->with('cidb_integrated_vendor_id', $vendor->id)
+			->withFragment('vf-cidb');
 	}
 
 	public function certificate($id)
