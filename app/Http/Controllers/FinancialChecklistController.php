@@ -74,6 +74,10 @@ class FinancialChecklistController extends Controller
 
         $response = $this->api()->post($this->url('financial-checklists/' . $tenderUuid . '/submit'), $request->except('_token'));
 
+        if ($response->successful()) {
+            Tender::where('uuid', $tenderUuid)->update(['status_process_id' => 4]);
+        }
+
         return response()->json($response->json(), $response->status());
     }
 

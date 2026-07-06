@@ -281,6 +281,7 @@ class TendersController extends Controller
 		Tender::setRules('store');
 		$tender = new Tender;
 		$tender->fill($data);
+		$tender->status_process_id = 1;
 
 		if (!$tender->save()) {
 			return $this->_validation_error($tender);

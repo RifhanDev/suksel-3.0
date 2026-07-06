@@ -429,6 +429,8 @@ class JawatankuasaController extends Controller
             ->whereNotNull('user_id')
             ->update(['dihantar_pemakluman_pada' => Carbon::now()]);
 
+        $tender->update(['status_process_id' => 2]);
+
         Log::debug('hantarPemakluman completed', [
             'email_count' => $emailCount,
             'use_queue' => $useQueue,

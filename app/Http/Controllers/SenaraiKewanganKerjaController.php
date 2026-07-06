@@ -82,6 +82,10 @@ class SenaraiKewanganKerjaController extends Controller
             $request->except('_token')
         );
 
+        if ($response->successful()) {
+            Tender::where('uuid', $tenderUuid)->update(['status_process_id' => 4]);
+        }
+
         return response()->json($response->json(), $response->status());
     }
 
