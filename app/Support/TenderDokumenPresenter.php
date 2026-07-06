@@ -4,6 +4,7 @@ namespace App\Support;
 
 use App\Models\FinancialChecklistItem;
 use App\Models\KewanganKerjaItem;
+use App\Models\SpesifikasiKerjaHeader;
 use App\Models\SpesifikasiKerjaItem;
 use App\Models\TechnicalChecklistItem;
 use App\Services\StosBackendClient;
@@ -164,14 +165,16 @@ class TenderDokumenPresenter
      */
     protected function kerjaItems(): array
     {
-        $spesifikasi = SpesifikasiKerjaItem::query()
-            ->whereHas('header', fn ($query) => $query->where('tender_id', $this->tender->id))
-            ->orderBy('sort_order')
-            ->orderBy('id')
-            ->get()
-            ->values()
-            ->map(fn (SpesifikasiKerjaItem $item, int $index) => $this->contentBuilder->buildForSpesifikasiKerjaItem($item, $index))
-            ->all();
+        $spesifikasi = [];
+
+        $header = SpesifikasiKerjaHeader::query()
+            ->where('tender_id', $this->tender->id)
+            ->with(['items' => fn ($query) => $query->orderBy('sort_order')->orderBy('id')])
+            ->first();
+
+        if ($header && $header->items->isNotEmpty()) {
+            $spesifikasi[] = $this->contentBuilder->buildForSpesifikasiKerjaHeader($header, $header->items);
+        }
 
         $kewangan = KewanganKerjaItem::query()
             ->whereHas('header', fn ($query) => $query->where('tender_id', $this->tender->id))

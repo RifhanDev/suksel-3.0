@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers\Concerns;
 
-use App\Models\Tender;
 use App\Services\TenderProcessStatusService;
+use App\Tender;
 
 trait UpdatesTenderProcessAfterChecklistSubmit
 {

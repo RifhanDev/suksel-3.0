@@ -5,6 +5,7 @@ namespace App\Support;
 use App\Models\FinancialChecklistFile;
 use App\Models\FinancialChecklistItem;
 use App\Models\KewanganKerjaItem;
+use App\Models\SpesifikasiKerjaHeader;
 use App\Models\SpesifikasiKerjaItem;
 use App\Models\StandardChecklistItem;
 use App\Models\TechnicalChecklistFile;
@@ -56,6 +57,51 @@ class TenderDokumenContentBuilder
             'source' => $section,
             'status' => $item->status ?? 'draft',
             'admin_content' => $adminContent,
+        ];
+    }
+
+    /**
+     * One dokumen row for the whole kerja specification list (ABC, DEF, … as table rows).
+     *
+     * @param  \Illuminate\Support\Collection<int, SpesifikasiKerjaItem>  $items
+     * @return array<string, mixed>
+     */
+    public function buildForSpesifikasiKerjaHeader(SpesifikasiKerjaHeader $header, $items): array
+    {
+        $rows = $items->values()->map(function (SpesifikasiKerjaItem $item, int $index) {
+            return [
+                'kind' => 'item',
+                'bil' => $index + 1,
+                'item_uuid' => $item->uuid,
+                'title' => $item->spesifikasi,
+                'ya_tidak' => $item->ya_tidak,
+                'catatan' => $item->catatan,
+            ];
+        })->all();
+
+        $label = 'Spesifikasi';
+
+        return [
+            'uuid' => $header->uuid,
+            'title' => 'Senarai Spesifikasi',
+            'nama' => 'Senarai Spesifikasi',
+            'section' => 'spesifikasi_kerja',
+            'source_type' => 'specification',
+            'mechanism' => null,
+            'vendor_action' => null,
+            'action' => 'view_specification',
+            'tindakan' => $label,
+            'badge_class' => VendorActionLabel::badgeClass($label),
+            'source' => 'spesifikasi_kerja',
+            'status' => $header->status ?? 'draft',
+            'admin_content' => [
+                'type' => 'specification_table',
+                'document_title' => 'Senarai Spesifikasi',
+                'rows' => $rows,
+                'files' => [],
+                'form' => null,
+                'note' => null,
+            ],
         ];
     }
 

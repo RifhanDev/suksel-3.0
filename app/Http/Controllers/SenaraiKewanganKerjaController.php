@@ -86,9 +86,6 @@ class SenaraiKewanganKerjaController extends Controller
 
         if ($response->successful()) {
             $this->refreshTenderProcessAfterChecklistSubmit($tenderUuid);
-=======
-            $this->refreshTenderProcessAfterChecklistSubmit($tenderUuid);
->>>>>>> ef2addc99f96ee697754b9781a138906b76e3efe
         }
 
         return response()->json($response->json(), $response->status());
