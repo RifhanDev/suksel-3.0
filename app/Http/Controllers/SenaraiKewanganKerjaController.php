@@ -85,8 +85,7 @@ class SenaraiKewanganKerjaController extends Controller
         );
 
         if ($response->successful()) {
-<<<<<<< HEAD
-            Tender::where('uuid', $tenderUuid)->update(['status_process_id' => 4]);
+            $this->refreshTenderProcessAfterChecklistSubmit($tenderUuid);
 =======
             $this->refreshTenderProcessAfterChecklistSubmit($tenderUuid);
 >>>>>>> ef2addc99f96ee697754b9781a138906b76e3efe
