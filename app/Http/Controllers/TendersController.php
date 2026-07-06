@@ -27,6 +27,7 @@ use Datatables;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use App\Services\StosBackendClient;
+use App\Support\TenderProcessStatus;
 use Illuminate\Support\Facades\Queue;
 use Mail;
 use PDF;
@@ -452,7 +453,7 @@ class TendersController extends Controller
 
 				if ($tenderId > 0) {
 					Tender::query()->where('id', $tenderId)->update([
-						'status_process_id' => 1,
+						'status_process_id' => TenderProcessStatus::CIPTA_TENDER,
 						'advertise_start_date' => null,
 						'advertise_stop_date' => null,
 						'document_start_date' => null,
@@ -712,6 +713,7 @@ class TendersController extends Controller
 			->joinSub($completedCommitteeTenders, 'completed_committees', function ($join) {
 				$join->on('tenders.id', '=', 'completed_committees.tender_id');
 			})
+			->whereIn('tenders.status_process_id', TenderProcessStatus::pengurusanSpesifikasiListStatuses())
 			->leftJoin(
 				'ref_kategori_jenis_perolehans as kategori_perolehan',
 				'kategori_perolehan.id',
@@ -1416,8 +1418,8 @@ class TendersController extends Controller
 		$tender->approver_id = null;
 
 		// Allow re-editing Penyediaan Iklan after unpublish.
-		if ((int) ($tender->status_process_id ?? 0) >= 5) {
-			$tender->status_process_id = 4;
+		if ((int) ($tender->status_process_id ?? 0) >= TenderProcessStatus::PENYEDIAAN_IKLAN) {
+			$tender->status_process_id = TenderProcessStatus::penyediaanIklanListStatus();
 		}
 
 		$tender->save();

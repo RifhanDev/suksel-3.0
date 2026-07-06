@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\AdvancesTenderProcessStatus;
 use App\Models\PerakuanJabatanKertasTaklimat;
 use App\Models\PerakuanJabatanKertasTaklimatItem;
 use App\Models\PerakuanJabatanKertasTaklimatItemFile;
 use App\Models\PerakuanJabatanPengesyoranPembekal;
+use App\Services\TenderProcessStatusService;
+use App\Support\TenderProcessStatus;
 use App\Tender;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -14,13 +17,15 @@ use Illuminate\Support\Facades\DB;
 
 class PerakuanJabatanController extends Controller
 {
+    use AdvancesTenderProcessStatus;
+
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
         $tenders = Tender::query()
-            ->where('status_process_id', 2)
+            ->where('status_process_id', TenderProcessStatus::perakuanJabatanListStatus())
             ->orderByDesc('id')
             ->get([
                 'id',
@@ -45,7 +50,7 @@ class PerakuanJabatanController extends Controller
                     'no_tender' => $noTender,
                     'tajuk' => $tender->name ?: '-',
                     'tarikh' => $submissionDate ? $submissionDate->format('d/m/Y') : '-',
-                    'status_label' => ((int) $tender->status_process_id === 2) ? 'Dalam Proses' : 'Selesai',
+                    'status_label' => 'Dalam Proses',
                     'show_url' => route('perakuanjabatan.show', ['id' => $tender->id]),
                 ];
             })
@@ -143,11 +148,7 @@ class PerakuanJabatanController extends Controller
             $record->submitted_at = now();
             $record->save();
 
-            // Use direct query update to avoid Tender model events that call cache tags
-            // (some cache drivers do not support tagging).
-            Tender::query()
-                ->where('id', $tender->id)
-                ->update(['status_process_id' => 3]);
+            app(TenderProcessStatusService::class)->syncPerakuanJabatanCompletion($tender->fresh());
         });
 
         return response()->json(['message' => 'Pengesyoran pembekal berjaya dihantar. Status proses tender dikemas kini.']);
@@ -338,6 +339,8 @@ class PerakuanJabatanController extends Controller
                 }
             }
         });
+
+        app(TenderProcessStatusService::class)->syncPerakuanJabatanCompletion($tender->fresh());
     }
 
     private function storeItemFile(PerakuanJabatanKertasTaklimatItem $item, UploadedFile $file, int $tenderId): void

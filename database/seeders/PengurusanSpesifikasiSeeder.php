@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Jawatankuasa;
+use App\Support\TenderProcessStatus;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -40,7 +41,7 @@ class PengurusanSpesifikasiSeeder extends Seeder
                 'document_stop_date' => '2026-06-30',
                 'submission_datetime' => '2026-07-07 12:00:00',
                 'kategori_perolehan_id' => 1,
-                'status_process_id' => 4,
+                'status_process_id' => TenderProcessStatus::SPESIFIKASI_TEKNIKAL,
             ],
             'jenisList' => ['spec', 'open', 'tech', 'fin'],
             'resetChecklists' => ['technical_checklist_headers', 'financial_checklist_headers'],
@@ -59,7 +60,7 @@ class PengurusanSpesifikasiSeeder extends Seeder
                 'document_stop_date' => '2026-05-15',
                 'submission_datetime' => '2026-05-06 12:00:00',
                 'kategori_perolehan_id' => 3,
-                'status_process_id' => 4,
+                'status_process_id' => TenderProcessStatus::SPESIFIKASI_TEKNIKAL,
             ],
             'jenisList' => ['spec', 'open', 'tech', 'fin'],
             'resetChecklists' => ['spesifikasi_kerja_headers', 'kewangan_kerja_headers'],

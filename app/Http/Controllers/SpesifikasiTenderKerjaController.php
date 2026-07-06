@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\UpdatesTenderProcessAfterChecklistSubmit;
 use App\Models\Tender;
 use App\Services\StosBackendClient;
 use Illuminate\Http\Request;
@@ -10,6 +11,7 @@ use Illuminate\Support\Facades\Http;
 
 class SpesifikasiTenderKerjaController extends Controller
 {
+    use UpdatesTenderProcessAfterChecklistSubmit;
     /**
      * Display the Penyediaan Spesifikasi Tender page with existing data.
      */
@@ -71,6 +73,10 @@ class SpesifikasiTenderKerjaController extends Controller
             $this->url('spesifikasi-kerja/' . $tenderUuid . '/submit'),
             $request->except('_token')
         );
+
+        if ($response->successful()) {
+            $this->refreshTenderProcessAfterChecklistSubmit($tenderUuid);
+        }
 
         return response()->json($response->json(), $response->status());
     }
