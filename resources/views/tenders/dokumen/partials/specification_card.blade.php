@@ -3,6 +3,7 @@
     $rows = $content['rows'] ?? [];
     $detailCount = collect($rows)->where('kind', 'detail')->count();
     $itemCount = collect($rows)->where('kind', 'item')->count();
+    $hasKerjaCols = collect($rows)->contains(fn ($row) => isset($row['ya_tidak']) || isset($row['catatan']));
     $itemUuid = $dok['uuid'] ?? '';
     $section = $dok['section'] ?? '';
     $tenderId = $tender->id ?? null;
@@ -20,6 +21,16 @@
     }
 @endphp
 
+@if ($hasKerjaCols)
+    @include('tenders.dokumen.partials.specification_table', [
+        'content' => $content,
+        'dok' => $dok,
+        'tender' => $tender,
+        'mode' => $mode,
+        'vendorCanEdit' => $vendorCanEdit,
+        'standalone' => false,
+    ])
+@else
 <div class="d-flex flex-wrap align-items-start justify-content-between gap-3">
     <div class="flex-grow-1">
         <div class="fw-semibold" style="font-size:0.84rem;">{{ $title }}</div>
@@ -70,3 +81,4 @@
         @endif
     </div>
 </div>
+@endif

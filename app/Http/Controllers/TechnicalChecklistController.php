@@ -14,7 +14,7 @@ class TechnicalChecklistController extends Controller
     public function index(string $tenderUuid)
     {
         $this->ensureSpecificationAccess();
-        
+
         $tender = Tender::with('tenderer')
             ->leftJoin('ref_kategori_jenis_perolehans as k', 'k.id', '=', 'tenders.kategori_perolehan_id')
             ->select('tenders.*', 'k.name as kategori_perolehan_name')
@@ -73,9 +73,6 @@ class TechnicalChecklistController extends Controller
 
         if ($response->successful()) {
             $this->refreshTenderProcessAfterChecklistSubmit($tenderUuid);
-=======
-            $this->refreshTenderProcessAfterChecklistSubmit($tenderUuid);
->>>>>>> ef2addc99f96ee697754b9781a138906b76e3efe
         }
 
         return response()->json($response->json(), $response->status());
