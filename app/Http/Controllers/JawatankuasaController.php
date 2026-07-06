@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Jawatankuasa;
+use App\Services\TenderProcessStatusService;
 use App\Tender;
 use App\User;
 use Carbon\Carbon;
@@ -428,6 +429,13 @@ class JawatankuasaController extends Controller
         Jawatankuasa::where('tender_id', $tender->id)
             ->whereNotNull('user_id')
             ->update(['dihantar_pemakluman_pada' => Carbon::now()]);
+
+<<<<<<< HEAD
+        $tender->update(['status_process_id' => 2]);
+=======
+        $tender->refresh();
+        app(TenderProcessStatusService::class)->markPelantikanJawatankuasaSelesai($tender);
+>>>>>>> ef2addc99f96ee697754b9781a138906b76e3efe
 
         Log::debug('hantarPemakluman completed', [
             'email_count' => $emailCount,

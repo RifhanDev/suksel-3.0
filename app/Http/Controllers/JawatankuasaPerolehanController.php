@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\AdvancesTenderProcessStatus;
 use App\Models\JawatankuasaPerolehanKertasKeputusan;
 use App\Models\JawatankuasaPerolehanMeeting;
 use App\Models\JawatankuasaPerolehanPemilihanHeader;
 use App\Models\JawatankuasaPerolehanPemilihanItem;
 use App\Models\JawatankuasaPerolehanPemilihanPetender;
 use App\Models\PerakuanJabatanKertasTaklimatItem;
+use App\Support\TenderProcessStatus;
 use App\Support\VendorCidbMeta;
 use App\Tender;
 use App\Vendor;
@@ -20,13 +22,15 @@ use Illuminate\Validation\ValidationException;
 
 class JawatankuasaPerolehanController extends Controller
 {
+    use AdvancesTenderProcessStatus;
+
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
         $tenders = Tender::query()
-            ->where('status_process_id', 3)
+            ->where('status_process_id', TenderProcessStatus::jawatankuasaPerolehanListStatus())
             ->orderByDesc('id')
             ->get([
                 'id',
@@ -53,7 +57,7 @@ class JawatankuasaPerolehanController extends Controller
                     'tajuk' => $tender->name ?: '-',
                     'tarikh_serahan' => $submissionDate ? $submissionDate->format('d/m/Y') : '-',
                     'tempoh_sah_laku' => $tempohSahLaku,
-                    'status_label' => ((int) $tender->status_process_id === 3) ? 'Dalam Proses' : 'Selesai',
+                    'status_label' => 'Dalam Proses',
                 ];
             })
             ->values();
@@ -379,7 +383,6 @@ class JawatankuasaPerolehanController extends Controller
             Tender::query()
                 ->where('id', $tender->id)
                 ->update([
-                    'status_process_id' => 4,
                     'is_ebidding' => $isEbidding,
                     'ebidding_process_stage_id' => $isEbidding ? 1 : null,
                 ]);
@@ -414,6 +417,12 @@ class JawatankuasaPerolehanController extends Controller
         DB::transaction(function () use ($tender, $payload) {
             $this->applyPemilihanPayload($tender, $payload, true);
         });
+
+        $this->advanceTenderProcess(
+            $tender->fresh(),
+            TenderProcessStatus::JAWATANKUASA_PEROLEHAN,
+            TenderProcessStatus::jawatankuasaPerolehanListStatus()
+        );
 
         return response()->json(['message' => 'Memuktamadkan pemilihan pembekal berjaya dihantar.']);
     }

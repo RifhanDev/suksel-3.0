@@ -133,18 +133,18 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr class="cutoff-row-link" style="cursor: pointer;" data-href="{{ route('cutOff.show', 'QT210000000023741') }}">
-                            <td><a href="{{ route('cutOff.show', 'QT210000000023741') }}" class="text-decoration-none"><span class="tender-number">QT210000000023741</span></a></td>
-                            <td><span class="fw-medium">TENDER PERKHIDMATAN DIGITAL FORENSIK KE ATAS ALIRAN PROSES SISTEM XXXX</span></td>
-                            <td><span class="text-muted small">3/3/2024</span></td>
-                            <td></td>
+                        @forelse($tenders ?? [] as $item)
+                        <tr class="cutoff-row-link" style="cursor: pointer;" data-href="{{ $item['show_url'] }}">
+                            <td><a href="{{ $item['show_url'] }}" class="text-decoration-none"><span class="tender-number">{{ $item['no_tender'] }}</span></a></td>
+                            <td><span class="fw-medium">{{ $item['tajuk'] }}</span></td>
+                            <td><span class="text-muted small">{{ $item['tarikh'] }}</span></td>
+                            <td><span class="text-muted small">{{ $item['status_label'] }}</span></td>
                         </tr>
-                        <tr class="cutoff-row-link" style="cursor: pointer;" data-href="{{ route('cutOff.show', 'QT210000000023740') }}">
-                            <td><a href="{{ route('cutOff.show', 'QT210000000023740') }}" class="text-decoration-none"><span class="tender-number">QT210000000023740</span></a></td>
-                            <td><span class="fw-medium">TAJUK PEROLEHAN 1</span></td>
-                            <td><span class="text-muted small">2/2/2024</span></td>
-                            <td></td>
+                        @empty
+                        <tr>
+                            <td colspan="4" class="text-center text-muted py-4">Tiada tender pada peringkat ini.</td>
                         </tr>
+                        @endforelse
                     </tbody>
                 </table>
             </div>
