@@ -11,6 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (Schema::hasTable('ref_type_of_tenders')) {
+            return;
+        }
+
         Schema::create('ref_type_of_tenders', function (Blueprint $table) {
             $table->id();
             $table->string('name', 255)->nullable();

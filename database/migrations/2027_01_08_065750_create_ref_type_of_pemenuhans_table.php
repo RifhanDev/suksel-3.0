@@ -11,6 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (Schema::hasTable('ref_type_of_pemenuhans')) {
+            return;
+        }
+
         Schema::create('ref_type_of_pemenuhans', function (Blueprint $table) {
             $table->id();
             $table->string('name', 255)->nullable();
