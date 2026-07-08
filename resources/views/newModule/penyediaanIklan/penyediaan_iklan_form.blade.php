@@ -118,6 +118,18 @@
     .kebenaran-check-card .kc-label { font-size: 0.85rem; font-weight: 600; color: #1e293b; }
     .kebenaran-check-card .kc-desc  { font-size: 0.75rem; color: #64748b; margin-top: 2px; }
 
+    .meja-terkawal-row {
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 12px 14px;
+        background: #fff;
+    }
+    .meja-terkawal-row .existing-file-note {
+        font-size: 0.75rem;
+        color: #15803d;
+        margin-top: 4px;
+    }
+
     /* ── Syarat Khas radio cards ── */
     .sk-radio-card { cursor: pointer; transition: border-color 0.15s, background 0.15s; }
     .sk-radio-card:has(input:checked) { border-color: var(--sg-red, #c41e3a) !important; background: #fef2f2; }
@@ -446,30 +458,27 @@
             </div>
         </div>
 
-        {{-- ── Section 3: Dokumen Sokongan Terawal ── --}}
+        {{-- ── Section 3: Dokumen Meja Terawal ── --}}
         <div class="iklan-step-header">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--sg-red,#c41e3a)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
                 <polyline points="13 2 13 9 20 9"></polyline>
             </svg>
-            <span>Dokumen Sokongan Terawal</span>
+            <span>Dokumen Meja Terawal</span>
         </div>
         <div class="p-4">
-            <label class="upload-zone w-100" id="upload-zone-iklan" for="input-dokumen-iklan">
-                <div class="upload-zone-icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="16 16 12 12 8 16"></polyline>
-                        <line x1="12" y1="12" x2="12" y2="21"></line>
-                        <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"></path>
-                    </svg>
-                </div>
-                <span class="upload-zone-label">Klik atau seret fail ke sini untuk muat naik</span>
-                <span class="upload-zone-sub">PDF, Word, Excel, Imej, ZIP — saiz maksimum 10 MB setiap fail</span>
-                <input type="file" id="input-dokumen-iklan" name="dokumen_sokongan_terawal[]" multiple hidden
-                    accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.zip,.rar">
-            </label>
-            <div class="file-chip-list" id="file-chip-list-iklan"></div>
+            <p class="text-muted small mb-3">
+                Tambah satu atau lebih dokumen meja terkawal. Setiap dokumen perlu mempunyai <strong>nama</strong> dan fail.
+            </p>
+            <div id="mejaTerkawalRows"></div>
+            <button type="button" class="btn btn-sm btn-success d-inline-flex align-items-center gap-1 mt-2" id="btnTambahMejaTerkawal">
+                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                Tambah Dokumen
+            </button>
         </div>
 
         <div class="iklan-step-footer">
@@ -681,7 +690,10 @@ $(document).ready(function () {
         sessionStorage.setItem('penyediaanIklanStep_{{ $tender->id }}', String(step));
 
         /* Init step 2 components once */
-        if (step === 2) { initFileUpload(); }
+        if (step === 2) {
+            mejaStepVisited = true;
+            initMejaTerkawalRows();
+        }
 
         /* Init CKEditor once when step 2 first shown.
            Wrapped in setTimeout so the element is fully painted before CKEditor
@@ -734,6 +746,9 @@ $(document).ready(function () {
                     .val(JSON.stringify(taklimatRows)).appendTo('#formPenyediaanIklan');
             }
         }
+        // Avoid wiping dokumen meja when saving from step 1 before step 2 is opened.
+        var includeMejaInSave = mejaStepVisited || (savedMejaDocs && savedMejaDocs.length > 0);
+        $('#mejaTerkawalRows').find(':input').prop('disabled', !includeMejaInSave);
         return form;
     }
 
@@ -764,6 +779,8 @@ $(document).ready(function () {
                 alert(message);
             },
             complete: function () {
+                var includeMejaInSave = mejaStepVisited || (savedMejaDocs && savedMejaDocs.length > 0);
+                $('#mejaTerkawalRows').find(':input').prop('disabled', !includeMejaInSave);
                 $btn.prop('disabled', false);
             },
         });
@@ -1047,18 +1064,90 @@ $(document).ready(function () {
 
     restoreSyaratKhas();
 
-    /* ── Dokumen Sokongan Terawal: FileUpload zone (init when step 2 shown) ── */
-    var fileUploadInitialised = false;
-    function initFileUpload() {
-        if (!fileUploadInitialised && typeof FileUpload !== 'undefined') {
-            FileUpload.init({
-                zoneId     : 'upload-zone-iklan',
-                inputId    : 'input-dokumen-iklan',
-                chipListId : 'file-chip-list-iklan',
+    /* ── Dokumen Meja Terawal: multiple rows with custom names ── */
+    var mejaRowIndex = 0;
+    var savedMejaDocs = @json($iklan['dokumen_sokongan'] ?? []);
+    var mejaRowsInitialised = false;
+    var mejaStepVisited = false;
+
+    function escapeMejaAttr(value) {
+        return String(value || '')
+            .replace(/&/g, '&amp;')
+            .replace(/"/g, '&quot;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+    }
+
+    function buildMejaTerkawalRow(doc, index) {
+        doc = doc || {};
+        var i = (index !== undefined && index !== null) ? index : mejaRowIndex++;
+        var displayName = doc.nama || doc.original_name || '';
+        var existingPath = doc.path || '';
+        var existingUrl = doc.url || '';
+        var uploadId = doc.upload_id || '';
+        var existingNote = existingPath
+            ? '<div class="existing-file-note">Fail sedia ada: ' + escapeMejaAttr(displayName) +
+              (existingUrl ? ' · <a href="' + escapeMejaAttr(existingUrl) + '" target="_blank" rel="noopener">Lihat</a>' : '') +
+              '</div>'
+            : '';
+
+        return (
+            '<div class="meja-terkawal-row mb-2" data-index="' + i + '">' +
+                '<div class="row g-2 align-items-end">' +
+                    '<div class="col-md-5">' +
+                        '<label class="form-label fw-semibold small mb-1">Nama Dokumen <span class="text-danger">*</span></label>' +
+                        '<input type="text" class="form-control form-control-sm" name="dokumen_meja[' + i + '][nama]" value="' + escapeMejaAttr(displayName) + '" placeholder="cth: Spesifikasi Teknikal">' +
+                        (existingPath ? '<input type="hidden" name="dokumen_meja[' + i + '][existing_path]" value="' + escapeMejaAttr(existingPath) + '">' : '') +
+                        (uploadId ? '<input type="hidden" name="dokumen_meja[' + i + '][upload_id]" value="' + escapeMejaAttr(uploadId) + '">' : '') +
+                    '</div>' +
+                    '<div class="col-md-5">' +
+                        '<label class="form-label fw-semibold small mb-1">Fail</label>' +
+                        '<input type="file" class="form-control form-control-sm" name="dokumen_meja[' + i + '][file]" accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.zip,.rar">' +
+                        existingNote +
+                    '</div>' +
+                    '<div class="col-md-2 text-md-end">' +
+                        '<button type="button" class="btn btn-sm btn-outline-danger btn-remove-meja w-100">Buang</button>' +
+                    '</div>' +
+                '</div>' +
+            '</div>'
+        );
+    }
+
+    function initMejaTerkawalRows() {
+        if (mejaRowsInitialised) return;
+        mejaRowsInitialised = true;
+
+        var $wrap = $('#mejaTerkawalRows');
+        $wrap.empty();
+        mejaRowIndex = 0;
+
+        if (savedMejaDocs.length) {
+            savedMejaDocs.forEach(function (doc, idx) {
+                $wrap.append(buildMejaTerkawalRow(doc, idx));
+                mejaRowIndex = Math.max(mejaRowIndex, idx + 1);
             });
-            fileUploadInitialised = true;
+        } else {
+            $wrap.append(buildMejaTerkawalRow({}, 0));
+            mejaRowIndex = 1;
         }
     }
+
+    $('#btnTambahMejaTerkawal').on('click', function () {
+        $('#mejaTerkawalRows').append(buildMejaTerkawalRow({}));
+    });
+
+    $(document).on('click', '.btn-remove-meja', function () {
+        var $rows = $('#mejaTerkawalRows .meja-terkawal-row');
+        if ($rows.length <= 1) {
+            $(this).closest('.meja-terkawal-row').find('input[type="text"], input[type="file"]').val('');
+            $(this).closest('.meja-terkawal-row').find('input[type="hidden"]').remove();
+            $(this).closest('.meja-terkawal-row').find('.existing-file-note').remove();
+            return;
+        }
+        $(this).closest('.meja-terkawal-row').remove();
+    });
+
+    initMejaTerkawalRows();
 
 });
 </script>
