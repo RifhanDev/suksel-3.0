@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\UpdatesTenderProcessAfterChecklistSubmit;
 use App\Models\Tender;
 use App\Services\StosBackendClient;
 use Illuminate\Http\Request;
@@ -9,10 +10,11 @@ use Illuminate\Support\Facades\Log;
 
 class TechnicalChecklistController extends Controller
 {
+    use UpdatesTenderProcessAfterChecklistSubmit;
     public function index(string $tenderUuid)
     {
         $this->ensureSpecificationAccess();
-        
+
         $tender = Tender::with('tenderer')
             ->leftJoin('ref_kategori_jenis_perolehans as k', 'k.id', '=', 'tenders.kategori_perolehan_id')
             ->select('tenders.*', 'k.name as kategori_perolehan_name')
@@ -70,7 +72,11 @@ class TechnicalChecklistController extends Controller
         $response = $this->api()->post($this->url('technical-checklists/' . $tenderUuid . '/submit'), $request->except('_token'));
 
         if ($response->successful()) {
+<<<<<<< HEAD
             Tender::where('uuid', $tenderUuid)->update(['status_process_id' => 3]);
+=======
+            $this->refreshTenderProcessAfterChecklistSubmit($tenderUuid);
+>>>>>>> main
         }
 
         return response()->json($response->json(), $response->status());

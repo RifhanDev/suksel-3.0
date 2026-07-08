@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Services\PenyediaanIklanService;
+use App\Support\TenderProcessStatus;
 use App\Tender;
 use Illuminate\Http\Request;
 
@@ -13,10 +14,10 @@ class PenyediaanIklanApiController extends Controller
 
     public function show(Tender $tender)
     {
-        if ((int) $tender->status_process_id !== 4) {
+        if ((int) $tender->status_process_id !== TenderProcessStatus::penyediaanIklanListStatus()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Tender tidak dalam peringkat Penyediaan Iklan.',
+                'message' => 'Tender belum selesai pengurusan spesifikasi.',
             ], 422);
         }
 
@@ -37,10 +38,10 @@ class PenyediaanIklanApiController extends Controller
 
     protected function persist(Request $request, Tender $tender, bool $submit)
     {
-        if ((int) $tender->status_process_id !== 4) {
+        if ((int) $tender->status_process_id !== TenderProcessStatus::penyediaanIklanListStatus()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Tender tidak dalam peringkat Penyediaan Iklan.',
+                'message' => 'Tender belum selesai pengurusan spesifikasi.',
             ], 422);
         }
 

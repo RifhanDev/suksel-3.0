@@ -108,6 +108,7 @@
                 : url('/senarai-kewangan-bekalan/' . $tender->uuid)
         );
         $showVendorForm = $showVendorForm ?? false;
+        $showPeriodConfig = $showPeriodConfig ?? false;
         $showScoringConfig = $showScoringConfig ?? true;
     @endphp
 
@@ -115,7 +116,15 @@
     <div class="d-flex flex-column flex-lg-row justify-content-start align-items-start align-items-lg-center mb-4">
         <div>
             <h3 class="fw-bold text-dark m-0" style="letter-spacing: -0.5px;">Penyata Bank</h3>
-            <p class="text-muted small m-0">Maklumat penyata bank terkini petender bagi tender / sebutharga ini.</p>
+            <p class="text-muted small m-0">
+                @if ($showPeriodConfig)
+                    Tetapkan tempoh penyata bank sekali sahaja. Tempoh yang sama akan digunakan untuk semua akaun petender.
+                @elseif ($showVendorForm)
+                    Sila lengkapkan penyata bank mengikut tempoh yang ditetapkan oleh pemilik projek.
+                @else
+                    Maklumat penyata bank terkini petender bagi tender / sebutharga ini.
+                @endif
+            </p>
         </div>
     </div>
 
@@ -175,8 +184,11 @@
         <input type="hidden" name="return" value="{{ $returnUrl }}">
     @endif
 
-    @if ($showVendorForm)
-        @include('jawatankuasaSpesifikasi.partials.penyata_bank_vendor')
+    @if ($showVendorForm || $showPeriodConfig)
+        @include('jawatankuasaSpesifikasi.partials.penyata_bank_vendor', [
+            'showPeriodConfig' => $showPeriodConfig,
+            'showVendorForm' => $showVendorForm,
+        ])
     @endif
 
     @if ($showScoringConfig)
@@ -286,10 +298,13 @@ $(document).ready(function () {
     var CSRF_TOKEN       = '{{ csrf_token() }}';
     var penyataData      = @json($penyataData ?? null);
     var SHOW_VENDOR      = @json($showVendorForm ?? false);
+    var SHOW_PERIOD      = @json($showPeriodConfig ?? false);
     var SHOW_SCORING     = @json($showScoringConfig ?? true);
     var VIEW_ONLY        = @json($viewOnly ?? false);
     var VENDOR_MODE      = @json($vendorFormMode ?? false);
     var REDIRECT_URL     = @json($returnUrl ?? $kembaliUrl);
+    var ADMIN_PERIOD     = SHOW_PERIOD && !SHOW_VENDOR;
+    var LOCK_PERIOD      = false;
 
     var BULAN_MS = ['', 'Januari', 'Februari', 'Mac', 'April', 'Mei', 'Jun', 'Julai', 'Ogos', 'September', 'Oktober', 'November', 'Disember'];
     var akaunCounter = 0;
@@ -315,7 +330,30 @@ $(document).ready(function () {
         return BULAN_MS[m] || String(m);
     }
 
-    // ── Multi-account vendor form ─────────────────────────────────────────────
+    function monthsInRange(dm, dy, hm, hy) {
+        var months = [];
+        if (!dm || !dy || !hm || !hy) return months;
+        var start = new Date(dy, dm - 1, 1);
+        var end   = new Date(hy, hm - 1, 1);
+        if (start > end) return months;
+        var cur = new Date(start.getTime());
+        while (cur <= end) {
+            months.push({ bulan: cur.getMonth() + 1, tahun: cur.getFullYear() });
+            cur.setMonth(cur.getMonth() + 1);
+        }
+        return months;
+    }
+
+    function hasConfiguredPeriod(data) {
+        if (!data) return false;
+        if (data.dari_bulan && data.dari_tahun) return true;
+        if (data.accounts && data.accounts.length) {
+            return data.accounts.some(function (a) { return a.dari_bulan && a.dari_tahun; });
+        }
+        return false;
+    }
+
+    // ── Multi-account vendor / admin period form ───────────────────────────────
     function buildMonthOptions(selected) {
         var html = '<option value="">Pilih Bulan</option>';
         for (var m = 1; m <= 12; m++) {
@@ -348,25 +386,8 @@ $(document).ready(function () {
                           '</button>'
                         : '') +
                 '</div>' +
-                '<p class="text-muted small mb-3">Sila pilih bulan pertama penyata bank yang perlu dikemukakan oleh petender</p>' +
-                '<div class="row g-3 mb-3">' +
-                    '<div class="col-12 col-md-6">' +
-                        '<label class="form-label fw-semibold small">Dari (Bulan) <span class="text-danger">*</span></label>' +
-                        '<div class="row g-2">' +
-                            '<div class="col-6"><select class="form-select form-select-sm akaun-dari-bulan"' + (VIEW_ONLY ? ' disabled' : '') + '>' + buildMonthOptions(data.dari_bulan || null) + '</select></div>' +
-                            '<div class="col-6"><select class="form-select form-select-sm akaun-dari-tahun"' + (VIEW_ONLY ? ' disabled' : '') + '>' + buildYearOptions(data.dari_tahun || null) + '</select></div>' +
-                        '</div>' +
-                    '</div>' +
-                    '<div class="col-12 col-md-6">' +
-                        '<label class="form-label fw-semibold small">Hingga (Bulan)</label>' +
-                        '<div class="row g-2">' +
-                            '<div class="col-6"><input type="text" class="form-control form-control-sm bg-light akaun-hingga-bulan" readonly tabindex="-1"></div>' +
-                            '<div class="col-6"><input type="text" class="form-control form-control-sm bg-light akaun-hingga-tahun" readonly tabindex="-1"></div>' +
-                        '</div>' +
-                    '</div>' +
-                '</div>' +
                 '<p class="borang-subtitle mb-3">Perlu diisi oleh Petender</p>' +
-                '<div class="row g-4">' +
+                '<div class="row g-4 akaun-vendor-section">' +
                     '<div class="col-12 col-md-6">' +
                         '<div class="akaun-bulan-rows"></div>' +
                         '<div class="mt-3 pt-3 border-top">' +
@@ -400,7 +421,7 @@ $(document).ready(function () {
         );
 
         $('#penyata-akaun-container').append($block);
-        updateAkaunHingga($block);
+        rebuildAkaunBulanRows($block);
         if (data.bulans && data.bulans.length) {
             setTimeout(function () {
                 data.bulans.forEach(function (b) {
@@ -420,30 +441,65 @@ $(document).ready(function () {
         return $block;
     }
 
-    function updateAkaunHingga($block) {
-        var dm = parseInt($block.find('.akaun-dari-bulan').val(), 10);
-        var dy = parseInt($block.find('.akaun-dari-tahun').val(), 10);
-        if (!dm || !dy) {
-            $block.find('.akaun-hingga-bulan').val('');
-            $block.find('.akaun-hingga-tahun').val('');
-            rebuildAkaunBulanRows($block);
-            return;
-        }
-        var h = bulanSelepas(dy, dm, 2);
-        $block.find('.akaun-hingga-bulan').val(bulanLabel(h.m));
-        $block.find('.akaun-hingga-tahun').val(h.y);
-        rebuildAkaunBulanRows($block, dm, dy, h.m, h.y);
+    function globalPeriod() {
+        var dm = parseInt($('#penyata-dari-bulan').val(), 10) || null;
+        var dy = parseInt($('#penyata-dari-tahun').val(), 10) || null;
+        var hTxt = $('#penyata-hingga-bulan-display').val();
+        var hm = BULAN_MS.indexOf(hTxt);
+        if (hm < 0) hm = parseInt(hTxt, 10) || null;
+        var hy = parseInt($('#penyata-hingga-tahun-display').val(), 10) || null;
+        return { dm: dm, dy: dy, hm: hm, hy: hy };
     }
 
-    function rebuildAkaunBulanRows($block, dm, dy, hm, hy) {
-        if (dm == null) dm = parseInt($block.find('.akaun-dari-bulan').val(), 10);
-        if (dy == null) dy = parseInt($block.find('.akaun-dari-tahun').val(), 10);
-        if (hm == null) {
-            var hTxt = $block.find('.akaun-hingga-bulan').val();
-            hm = BULAN_MS.indexOf(hTxt);
-            if (hm < 0) hm = parseInt(hTxt, 10);
+    function initGlobalPeriod(data) {
+        data = data || {};
+        if (data.dari_bulan) $('#penyata-dari-bulan').val(data.dari_bulan);
+        if (data.dari_tahun) $('#penyata-dari-tahun').val(data.dari_tahun);
+        updateGlobalPeriod();
+        if (LOCK_PERIOD || VIEW_ONLY) {
+            $('#penyata-dari-bulan, #penyata-dari-tahun').prop('disabled', true);
         }
-        if (hy == null) hy = parseInt($block.find('.akaun-hingga-tahun').val(), 10);
+    }
+
+    function updateGlobalPeriod() {
+        var dm = parseInt($('#penyata-dari-bulan').val(), 10);
+        var dy = parseInt($('#penyata-dari-tahun').val(), 10);
+        var $preview = $('#penyata-global-period-preview');
+
+        if (!dm || !dy) {
+            $('#penyata-hingga-bulan-display').val('');
+            $('#penyata-hingga-tahun-display').val('');
+            if ($preview.length) {
+                $preview.text('Tempoh bulan akan dipaparkan selepas Dari (Bulan) dipilih.');
+            }
+            $('#penyata-akaun-container .penyata-akaun-block').each(function () {
+                rebuildAkaunBulanRows($(this));
+            });
+            return;
+        }
+
+        var h = bulanSelepas(dy, dm, 2);
+        $('#penyata-hingga-bulan-display').val(bulanLabel(h.m));
+        $('#penyata-hingga-tahun-display').val(h.y);
+
+        if ($preview.length) {
+            var labels = monthsInRange(dm, dy, h.m, h.y).map(function (m) {
+                return bulanLabel(m.bulan) + ' ' + m.tahun;
+            });
+            $preview.html('<strong>Tempoh untuk semua akaun:</strong> ' + labels.join(', ') + ' (' + labels.length + ' bulan)');
+        }
+
+        $('#penyata-akaun-container .penyata-akaun-block').each(function () {
+            rebuildAkaunBulanRows($(this));
+        });
+    }
+
+    function rebuildAkaunBulanRows($block) {
+        var period = globalPeriod();
+        var dm = period.dm;
+        var dy = period.dy;
+        var hm = period.hm;
+        var hy = period.hy;
 
         var $wrap = $block.find('.akaun-bulan-rows');
         var existing = {};
@@ -506,49 +562,54 @@ $(document).ready(function () {
         updateGrandTotal();
     }
 
-    function initVendorForm() {
-        var accounts = [];
-        if (penyataData) {
-            if (penyataData.accounts && penyataData.accounts.length) {
-                accounts = penyataData.accounts;
-            } else if (penyataData.dari_bulan || (penyataData.bulans && penyataData.bulans.length)) {
-                accounts = [{
-                    dari_bulan: penyataData.dari_bulan,
-                    dari_tahun: penyataData.dari_tahun,
-                    hingga_bulan: penyataData.hingga_bulan,
-                    hingga_tahun: penyataData.hingga_tahun,
-                    bulans: penyataData.bulans || [],
-                    jumlah_keseluruhan: penyataData.jumlah_keseluruhan,
-                    purata: penyataData.purata,
-                    files: penyataData.files || [],
-                }];
-            }
+    function initPenyataAkaunForm() {
+        LOCK_PERIOD = SHOW_VENDOR && hasConfiguredPeriod(penyataData);
+        initGlobalPeriod(penyataData);
+
+        if (ADMIN_PERIOD) {
+            return;
         }
-        if (!accounts.length) accounts = [{}, {}];
+
+        if (LOCK_PERIOD) {
+            $('#penyata-global-period').before(
+                '<div class="rounded-2 px-3 py-2 mb-3" style="background:#f0fdf4;border:1px solid #bbf7d0;font-size:0.78rem;color:#166534;">' +
+                'Tempoh penyata bank telah ditetapkan oleh pemilik projek. Sila isi amaun dan muat naik dokumen untuk setiap akaun.' +
+                '</div>'
+            );
+        }
+
+        var accounts = [];
+        if (penyataData && penyataData.accounts && penyataData.accounts.length) {
+            accounts = penyataData.accounts;
+        }
+        if (!accounts.length) {
+            accounts = [{}];
+        }
+
         accounts.forEach(function (acc, i) { buildAkaunBlock(i, acc); });
         akaunCounter = accounts.length;
         updateGrandTotal();
     }
 
-    if (SHOW_VENDOR) {
-        initVendorForm();
+    if (SHOW_VENDOR || SHOW_PERIOD) {
+        initPenyataAkaunForm();
 
-        $('#btn-tambah-akaun').on('click', function () {
-            buildAkaunBlock(akaunCounter, {});
-            akaunCounter++;
-            renumberAkaun();
-        });
+        $('#penyata-dari-bulan, #penyata-dari-tahun').on('change', updateGlobalPeriod);
+
+        if (SHOW_VENDOR) {
+        if (!VIEW_ONLY) {
+            $('#btn-tambah-akaun').on('click', function () {
+                buildAkaunBlock(akaunCounter, {});
+                akaunCounter++;
+                renumberAkaun();
+            });
+        }
 
         $('#penyata-akaun-container').on('click', '.btn-hapus-akaun', function () {
             if ($('#penyata-akaun-container .penyata-akaun-block').length <= 1) return;
             $(this).closest('.penyata-akaun-block').remove();
             renumberAkaun();
         });
-
-        $('#penyata-akaun-container').on('change', '.akaun-dari-bulan, .akaun-dari-tahun', function () {
-            updateAkaunHingga($(this).closest('.penyata-akaun-block'));
-        });
-
         $('#penyata-akaun-container').on('input change', '.penyata-bank-bulan-input', function () {
             updateAkaunTotals($(this).closest('.penyata-akaun-block'));
         });
@@ -626,6 +687,7 @@ $(document).ready(function () {
             $(this).val('');
             arr.forEach(function (f) { uploadFileForAkaun(f, $block); });
         });
+        }
     }
 
     // ── Purata scoring table (PTJ) ────────────────────────────────────────────
@@ -734,37 +796,49 @@ $(document).ready(function () {
         $('#loading-overlay').removeClass('active success');
     }
 
-    function hinggaNumeric($block) {
-        var hTxt = $block.find('.akaun-hingga-bulan').val();
-        var hm = BULAN_MS.indexOf(hTxt);
-        if (hm < 0) hm = parseInt(hTxt, 10);
-        return {
-            bulan: hm,
-            tahun: parseInt($block.find('.akaun-hingga-tahun').val(), 10) || null,
-        };
+    function collectAccountBulans($block) {
+        var bulans = [];
+        $block.find('.penyata-bank-bulan-input').each(function () {
+            bulans.push({
+                bulan:  parseInt($(this).data('bulan'), 10),
+                tahun:  parseInt($(this).data('tahun'), 10),
+                jumlah: parseRm($(this).val()),
+            });
+        });
+        return bulans;
+    }
+
+    function applyGlobalPeriodToPayload(payload) {
+        var period = globalPeriod();
+        payload.dari_bulan = period.dm;
+        payload.dari_tahun = period.dy;
+        payload.hingga_bulan = period.hm;
+        payload.hingga_tahun = period.hy;
+        payload.bulans = monthsInRange(period.dm, period.dy, period.hm, period.hy).map(function (m) {
+            return { bulan: m.bulan, tahun: m.tahun, jumlah: 0 };
+        });
+        return payload;
     }
 
     function buildPayload() {
         var payload = {};
 
+        if (SHOW_PERIOD) {
+            applyGlobalPeriodToPayload(payload);
+            payload.accounts = [];
+        }
+
         if (SHOW_VENDOR) {
+            var period = globalPeriod();
             var accounts = [];
             $('#penyata-akaun-container .penyata-akaun-block').each(function () {
                 var $block = $(this);
-                var hingga = hinggaNumeric($block);
-                var bulans = [];
-                $block.find('.penyata-bank-bulan-input').each(function () {
-                    bulans.push({
-                        bulan:  parseInt($(this).data('bulan'), 10),
-                        tahun:  parseInt($(this).data('tahun'), 10),
-                        jumlah: parseRm($(this).val()),
-                    });
-                });
+                var bulans = collectAccountBulans($block);
                 accounts.push({
-                    dari_bulan:         parseInt($block.find('.akaun-dari-bulan').val(), 10) || null,
-                    dari_tahun:         parseInt($block.find('.akaun-dari-tahun').val(), 10) || null,
-                    hingga_bulan:       hingga.bulan,
-                    hingga_tahun:       hingga.tahun,
+                    dari_bulan:         period.dm,
+                    dari_tahun:         period.dy,
+                    hingga_bulan:       period.hm,
+                    hingga_tahun:       period.hy,
                     bulans:             bulans,
                     jumlah_keseluruhan: parseRm($block.find('.akaun-jumlah').val()),
                     purata:             parseRm($block.find('.akaun-purata').val()),
@@ -772,16 +846,14 @@ $(document).ready(function () {
             });
             payload.accounts = accounts;
             payload.jumlah_keseluruhan_grand = parseRm($('#penyata-grand-total').val());
-
+            applyGlobalPeriodToPayload(payload);
             if (accounts.length) {
-                var first = accounts[0];
-                payload.dari_bulan = first.dari_bulan;
-                payload.dari_tahun = first.dari_tahun;
-                payload.hingga_bulan = first.hingga_bulan;
-                payload.hingga_tahun = first.hingga_tahun;
-                payload.bulans = first.bulans;
-                payload.jumlah_keseluruhan = first.jumlah_keseluruhan;
-                payload.purata = first.purata;
+                payload.jumlah_keseluruhan = accounts.reduce(function (sum, a) {
+                    return sum + (a.jumlah_keseluruhan || 0);
+                }, 0);
+                payload.purata = accounts.reduce(function (sum, a) {
+                    return sum + (a.purata || 0);
+                }, 0) / accounts.length;
             }
         }
 
@@ -807,6 +879,14 @@ $(document).ready(function () {
 
     // ── Save ─────────────────────────────────────────────────────────────────
     $('#btn-simpan').on('click', function () {
+        if (ADMIN_PERIOD) {
+            var period = globalPeriod();
+            if (!period.dm || !period.dy) {
+                alert('Sila pilih Dari (Bulan) dan Tahun.');
+                return;
+            }
+        }
+
         blockUI('Menyimpan...');
         $.ajax({
             url:         STORE_URL,

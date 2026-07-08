@@ -524,7 +524,7 @@
 						</a>
 					@endif
 
-					@if ($tender->showDokumenSenaraiTab())
+					@if ($tender->canShowDokumenSenaraiTab(Auth::user()->vendor_id))
 						<a class="nav-link" href="#vt-dokumen-tawaran" data-bs-toggle="pill" role="tab">
 							<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
 								stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1030,7 +1030,7 @@
 				</div>
 
 				{{-- TAB: Dokumen Tender/Tawaran atau Sebut Harga (senarai semak) --}}
-				@if ($tender->showDokumenSenaraiTab())
+				@if ($tender->canShowDokumenSenaraiTab(Auth::user()->vendor_id))
 					<div class="tab-pane fade" id="vt-dokumen-tawaran" role="tabpanel">
 						<div class="vendor-tender-card">
 							<div class="vendor-tender-card-header">
@@ -1448,7 +1448,7 @@
 		</script>
 	@endif
 
-	@if ($tender->showDokumenSenaraiTab())
+	@if ($tender->canShowDokumenSenaraiTab(Auth::user()->vendor_id))
 		@include('tenders.forms._online_form_modal')
 	@endif
 

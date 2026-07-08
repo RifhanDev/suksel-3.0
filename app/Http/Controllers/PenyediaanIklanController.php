@@ -7,6 +7,7 @@ use App\Models\RefState;
 use App\Services\PenyediaanIklanService;
 use App\Services\StosBackendClient;
 use App\Services\StosTenderChecklistSync;
+use App\Support\TenderProcessStatus;
 use App\Support\TenderDokumenPresenter;
 use App\Support\TenderReviewPresenter;
 use App\Tender;
@@ -28,7 +29,7 @@ class PenyediaanIklanController extends Controller
     public function index()
     {
         $tenders = Tender::query()
-            ->where('status_process_id', 4)
+            ->where('status_process_id', TenderProcessStatus::penyediaanIklanListStatus())
             ->with('tenderer')
             ->orderByDesc('id')
             ->get()
@@ -48,10 +49,10 @@ class PenyediaanIklanController extends Controller
 
     public function show(Tender $tender)
     {
-        if ((int) $tender->status_process_id !== 4) {
+        if ((int) $tender->status_process_id !== TenderProcessStatus::penyediaanIklanListStatus()) {
             /** @var \Illuminate\Http\RedirectResponse $redirect */
             $redirect = redirect()->route('penyediaanIklan.index');
-            return $redirect->with('error', 'Tender ini tidak berada dalam peringkat Penyediaan Iklan.');
+            return $redirect->with('error', 'Tender ini belum selesai pengurusan spesifikasi (status ' . TenderProcessStatus::SPESIFIKASI_KEWANGAN . ').');
         }
 
         $country_states = RefState::where('display_status', 1)->get();
@@ -110,8 +111,8 @@ class PenyediaanIklanController extends Controller
 
     protected function persist(Request $request, Tender $tender, bool $submit)
     {
-        if ((int) $tender->status_process_id !== 4) {
-            return $this->respondError($request, 'Tender tidak dalam peringkat Penyediaan Iklan.', 422);
+        if ((int) $tender->status_process_id !== TenderProcessStatus::penyediaanIklanListStatus()) {
+            return $this->respondError($request, 'Tender belum selesai pengurusan spesifikasi.', 422);
         }
 
         $payload = $this->buildPayload($request, $tender->id);

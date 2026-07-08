@@ -318,10 +318,10 @@
 @endpush
 
 @php
-    $review = $tenderReview ?? \App\Support\TenderReviewPresenter::for($tender);
-    $mofGroups = $review->mofGroups();
-    $cidbSpecGroups = $review->cidbSpecGroups();
-    $cidbGrades = $review->cidbGrades();
+	$review = $tenderReview ?? \App\Support\TenderReviewPresenter::for($tender);
+	$mofGroups = $review->mofGroups();
+	$cidbSpecGroups = $review->cidbSpecGroups();
+	$cidbGrades = $review->cidbGrades();
 @endphp
 
 <!-- SECTION 1: MAKLUMAT UMUM -->
@@ -399,6 +399,16 @@
 		style="letter-spacing:0.5px; font-size:0.68rem;">Nilai &amp; Tempoh</div>
 	<div class="row g-0">
 		<div class="col-12 col-lg-6 kv-col-left">
+			<div class="kv-row kv-amount">
+				<span class="kv-label">Harga Dokumen</span>
+				<span class="kv-value">
+					@if ($review->hargaDokumen() !== '-')
+						<span class="rm-prefix">RM</span>{{ $review->hargaDokumen() }}
+					@else
+						—
+					@endif
+				</span>
+			</div>
 			<div class="kv-row kv-amount">
 				<span class="kv-label">Harga Indikatif Jabatan</span>
 				<span class="kv-value">

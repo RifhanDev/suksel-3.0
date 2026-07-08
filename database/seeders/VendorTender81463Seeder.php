@@ -5,12 +5,11 @@ namespace Database\Seeders;
 use App\Tender;
 use App\TenderVendor;
 use App\User;
-use App\Vendor;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Allow user #6 (vendor #5) to purchase tender #81463 for dokumen/tender testing.
+ * Mark user #6 (vendor #5) as having purchased tender #81463 for dokumen / penyata bank testing.
  */
 class VendorTender81463Seeder extends Seeder
 {
@@ -51,20 +50,20 @@ class VendorTender81463Seeder extends Seeder
             ->first();
 
         if ($purchase) {
-            $purchase->exception = 1;
-            $purchase->participate = 0;
+            $purchase->exception = 0;
+            $purchase->participate = 1;
             $purchase->save();
         } else {
             TenderVendor::query()->create([
                 'tender_id' => $tenderId,
                 'vendor_id' => $vendorId,
                 'ref_number' => TenderVendor::generateNumber($tenderId),
-                'exception' => 1,
-                'participate' => 0,
-                'amount' => 0,
+                'exception' => 0,
+                'participate' => 1,
+                'amount' => $tender->price ?? 0,
             ]);
         }
 
-        $this->command?->info("VendorTender81463Seeder: user {$userId} (vendor {$vendorId}) can buy tender {$tenderId}.");
+        $this->command?->info("VendorTender81463Seeder: user {$userId} (vendor {$vendorId}) marked as purchased tender {$tenderId}.");
     }
 }

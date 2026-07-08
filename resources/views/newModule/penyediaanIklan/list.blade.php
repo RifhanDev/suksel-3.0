@@ -4,7 +4,7 @@
     <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center mb-4">
         <div>
             <h3 class="fw-bold text-dark m-0" style="letter-spacing: -0.5px;">Penyediaan Iklan</h3>
-            <p class="text-muted small m-0">Senarai tender dengan status proses penyediaan iklan (status 4).</p>
+            <p class="text-muted small m-0">Senarai tender dengan status proses 4 (selesai spesifikasi kewangan), sedia untuk penyediaan iklan.</p>
         </div>
     </div>
 

@@ -141,16 +141,16 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @forelse($tender as $t)
-                        <tr class="kewangan-tender-row" data-href="{{ route('penilaianKewangan.show', $t['no']) }}">
-                            <td><a href="{{ route('penilaianKewangan.show', $t['no']) }}" class="text-decoration-none"><span class="tender-number">{{ $t['no'] }}</span></a></td>
-                            <td><span class="fw-medium">{{ $t['tajuk'] }}</span></td>
-                            <td><span class="text-muted small">{{ $t['tamat'] }}</span></td>
-                            <td></td>
+                        @forelse($tenders ?? [] as $item)
+                        <tr class="kewangan-tender-row" data-href="{{ $item['show_url'] }}">
+                            <td><a href="{{ $item['show_url'] }}" class="text-decoration-none"><span class="tender-number">{{ $item['no_tender'] }}</span></a></td>
+                            <td><span class="fw-medium">{{ $item['tajuk'] }}</span></td>
+                            <td><span class="text-muted small">{{ $item['tarikh'] }}</span></td>
+                            <td><span class="text-muted small">{{ $item['status_label'] }}</span></td>
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="4">No tender found</td>
+                            <td colspan="4" class="text-center text-muted py-4">Tiada tender pada peringkat ini.</td>
                         </tr>
                         @endforelse
                     </tbody>

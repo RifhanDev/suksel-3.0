@@ -145,28 +145,23 @@
 						</tr>
 					</thead>
 					<tbody>
-                         <tr>
-                            <td>MEMBEKAL RANGSUM PUKAL (AIR MINERAL) UNTUK BANGUNAN KERAJAAN</td>
-                            <td class="text-center">03/01/2026</td>
-                            <td class="text-center">01/05/2026</td>
-                            <td class="text-center">193,000.00</td>
-                            <td class="text-center">
-                                <a href="{{ route('penyediaanSuratNiat') }}" class="btn btn-sm btn-info text-white" title="Kemaskini">
-                                    Kemaskini
-                                </a>
-                            </td>
-                        </tr>
+                        @forelse($tenders ?? [] as $item)
                         <tr>
-                            <td>PROJEK MENAIKTARAF JALAN PELABUHAN UTARA DARI KLANG CONTAINER TERMINAL</td>
-                            <td class="text-center">27/02/2026</td>
-                            <td class="text-center">31/07/2026</td>
-                            <td class="text-center">5,800,000.00</td>
+                            <td>{{ $item['name'] }}</td>
+                            <td class="text-center">{{ $item['tarikh_jual'] }}</td>
+                            <td class="text-center">{{ $item['tarikh_tutup'] }}</td>
+                            <td class="text-center">{{ $item['harga'] }}</td>
                             <td class="text-center">
-                            <a href="{{ route('penyediaanSuratNiat') }}" class="btn btn-sm btn-info text-white" title="Kemaskini">
+                                <a href="{{ $item['show_url'] }}" class="btn btn-sm btn-info text-white" title="Kemaskini">
                                     Kemaskini
                                 </a>
                             </td>
                         </tr>
+                        @empty
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-4">Tiada tender pada peringkat ini.</td>
+                        </tr>
+                        @endforelse
                     </tbody>
 				</table>
 			</div>

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Support\TenderProcessStatus;
 use App\Support\TenderDokumenPresenter;
 use App\Tender;
 use App\TenderVendor;
@@ -58,7 +59,7 @@ class VendorTenderSubmissionService
             throw ValidationException::withMessages(['checklist' => $readiness['errors']]);
         }
 
-        if ((int) ($tender->status_process_id ?? 0) !== 5) {
+        if ((int) ($tender->status_process_id ?? 0) !== TenderProcessStatus::PENYEDIAAN_IKLAN) {
             throw ValidationException::withMessages([
                 'tender' => 'Tender tidak berada dalam fasa penghantaran tawaran.',
             ]);
@@ -79,8 +80,8 @@ class VendorTenderSubmissionService
             $purchase->submitted = 1;
             $purchase->save();
 
-            if ((int) ($tender->status_process_id ?? 0) === 5) {
-                $tender->status_process_id = 6;
+            if ((int) ($tender->status_process_id ?? 0) === TenderProcessStatus::PENYEDIAAN_IKLAN) {
+                $tender->status_process_id = TenderProcessStatus::HANTAR_DOKUMEN_SYARIKAT;
                 $tender->save();
             }
 

@@ -19,6 +19,7 @@ class PenyataBank extends Model
         'jumlah_keseluruhan',
         'purata',
         'jenis_skor_purata',
+        'accounts',
         'status',
         'created_by',
         'updated_by',
@@ -27,6 +28,7 @@ class PenyataBank extends Model
     protected $casts = [
         'jumlah_keseluruhan' => 'decimal:2',
         'purata'             => 'decimal:2',
+        'accounts'           => 'array',
     ];
 
     public function getRouteKeyName(): string

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\UpdatesTenderProcessAfterChecklistSubmit;
 use App\Models\Tender;
 use App\Services\StosBackendClient;
 use App\Support\PenyediaanIklanNavigation;
@@ -10,6 +11,7 @@ use Illuminate\Support\Facades\Log;
 
 class SenaraiKewanganKerjaController extends Controller
 {
+    use UpdatesTenderProcessAfterChecklistSubmit;
     /**
      * Display the Senarai Kewangan Kerja page with existing checklist data.
      */
@@ -83,7 +85,11 @@ class SenaraiKewanganKerjaController extends Controller
         );
 
         if ($response->successful()) {
+<<<<<<< HEAD
             Tender::where('uuid', $tenderUuid)->update(['status_process_id' => 4]);
+=======
+            $this->refreshTenderProcessAfterChecklistSubmit($tenderUuid);
+>>>>>>> main
         }
 
         return response()->json($response->json(), $response->status());

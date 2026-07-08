@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\UpdatesTenderProcessAfterChecklistSubmit;
 use App\Models\Tender;
 use App\Services\StosBackendClient;
 use Illuminate\Http\Request;
@@ -10,6 +11,7 @@ use Illuminate\Support\Facades\Http;
 
 class SpesifikasiTenderKerjaController extends Controller
 {
+    use UpdatesTenderProcessAfterChecklistSubmit;
     /**
      * Display the Penyediaan Spesifikasi Tender page with existing data.
      */
@@ -73,7 +75,11 @@ class SpesifikasiTenderKerjaController extends Controller
         );
 
         if ($response->successful()) {
+<<<<<<< HEAD
             Tender::where('uuid', $tenderUuid)->update(['status_process_id' => 3]);
+=======
+            $this->refreshTenderProcessAfterChecklistSubmit($tenderUuid);
+>>>>>>> main
         }
 
         return response()->json($response->json(), $response->status());
