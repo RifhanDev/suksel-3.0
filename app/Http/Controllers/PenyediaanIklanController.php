@@ -202,6 +202,7 @@ class PenyediaanIklanController extends Controller
 
         return [
             'kelulusan' => $kelulusan,
+            '_sync_dokumen_meja' => $request->has('dokumen_meja'),
             'iklan' => [
                 'tarikh_iklan' => $request->input('tarikh_iklan'),
                 'masa_iklan' => $request->input('masa_iklan'),
@@ -221,10 +222,13 @@ class PenyediaanIklanController extends Controller
                     'only_advertise' => $request->boolean('only_advertise'),
                     'district_list_rule' => $districtRules,
                 ],
-                'dokumen_sokongan' => array_values(array_merge(
-                    $existingIklan['dokumen_sokongan'] ?? [],
-                    $this->storeDokumenSokongan($request, $tenderId)
-                )),
+                'dokumen_sokongan' => $request->has('dokumen_meja')
+                    ? $this->parseDokumenMejaTerkawal(
+                        $request,
+                        $tenderId,
+                        $existingIklan['dokumen_sokongan'] ?? []
+                    )
+                    : ($existingIklan['dokumen_sokongan'] ?? []),
             ],
             'pegawai' => $this->buildPegawaiPayload($request),
         ];
@@ -391,31 +395,61 @@ class PenyediaanIklanController extends Controller
         ];
     }
 
-    protected function storeDokumenSokongan(Request $request, int $tenderId): array
+    protected function parseDokumenMejaTerkawal(Request $request, int $tenderId, array $existingDocs): array
     {
-        $stored = [];
-        $files = (array) $request->file('dokumen_sokongan_terawal', []);
-        $dir = public_path("uploads/penyediaan-iklan/{$tenderId}/sokongan");
+        $rows = (array) $request->input('dokumen_meja', []);
+        $existingByPath = collect($existingDocs)->keyBy('path');
+        $result = [];
 
+        foreach ($rows as $index => $row) {
+            if (! is_array($row)) {
+                continue;
+            }
+
+            $nama = trim((string) ($row['nama'] ?? ''));
+            $existingPath = trim((string) ($row['existing_path'] ?? ''));
+            $uploadId = $row['upload_id'] ?? null;
+            $file = $request->file("dokumen_meja.{$index}.file");
+
+            if ($file instanceof UploadedFile) {
+                $stored = $this->storeMejaTerkawalFile($file, $tenderId);
+                $stored['nama'] = $nama !== '' ? $nama : $stored['original_name'];
+                if ($uploadId) {
+                    $stored['upload_id'] = (int) $uploadId;
+                }
+                $result[] = $stored;
+                continue;
+            }
+
+            if ($existingPath !== '' && $existingByPath->has($existingPath)) {
+                $doc = $existingByPath->get($existingPath);
+                $doc['nama'] = $nama !== '' ? $nama : ($doc['nama'] ?? $doc['original_name'] ?? '');
+                if ($uploadId) {
+                    $doc['upload_id'] = (int) $uploadId;
+                }
+                $result[] = $doc;
+            }
+        }
+
+        return array_values($result);
+    }
+
+    protected function storeMejaTerkawalFile(UploadedFile $file, int $tenderId): array
+    {
+        $dir = public_path("uploads/penyediaan-iklan/{$tenderId}/sokongan");
         if (! is_dir($dir)) {
             mkdir($dir, 0755, true);
         }
 
-        foreach ($files as $file) {
-            if (! $file instanceof UploadedFile) {
-                continue;
-            }
-            $name = Str::uuid() . '.' . $file->getClientOriginalExtension();
-            $file->move($dir, $name);
-            $relative = "uploads/penyediaan-iklan/{$tenderId}/sokongan/{$name}";
-            $stored[] = [
-                'path' => $relative,
-                'original_name' => $file->getClientOriginalName(),
-                'url' => asset($relative),
-            ];
-        }
+        $name = Str::uuid() . '.' . $file->getClientOriginalExtension();
+        $file->move($dir, $name);
+        $relative = "uploads/penyediaan-iklan/{$tenderId}/sokongan/{$name}";
 
-        return $stored;
+        return [
+            'path' => $relative,
+            'original_name' => $file->getClientOriginalName(),
+            'url' => asset($relative),
+        ];
     }
 
     protected function respondError(Request $request, string $message, int $status)

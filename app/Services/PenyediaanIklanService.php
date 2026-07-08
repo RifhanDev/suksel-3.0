@@ -5,9 +5,11 @@ namespace App\Services;
 use App\Models\PenyediaanIklan;
 use App\Support\TenderProcessStatus;
 use App\Tender;
+use App\Upload;
 use App\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class PenyediaanIklanService
 {
@@ -112,6 +114,21 @@ class PenyediaanIklanService
             if (count($payload['iklan']['taklimat']) > 0) {
                 Tender::query()->where('id', $tender->id)->update(['lawatan_tapak' => 1]);
             }
+
+            $previousDocs = is_array($existing?->meta)
+                ? ($existing->meta['iklan']['dokumen_sokongan'] ?? [])
+                : [];
+
+            if (! empty($payload['_sync_dokumen_meja'])) {
+                $payload['iklan']['dokumen_sokongan'] = $this->syncDokumenMejaToTenderUploads(
+                    $tender,
+                    $payload['iklan']['dokumen_sokongan'] ?? [],
+                    $previousDocs
+                );
+            } else {
+                $payload['iklan']['dokumen_sokongan'] = $previousDocs;
+            }
+            unset($payload['_sync_dokumen_meja']);
 
             $record = PenyediaanIklan::query()->firstOrNew(['tender_id' => $tender->id]);
             $record->meta = $payload;
@@ -283,5 +300,171 @@ class PenyediaanIklanService
                 return null;
             }
         }
+    }
+
+    public function syncDokumenMejaToTenderUploads(Tender $tender, array $documents, array $previousDocuments = []): array
+    {
+        $previousByUploadId = collect($previousDocuments)
+            ->filter(fn ($doc) => ! empty($doc['upload_id']))
+            ->keyBy('upload_id');
+
+        $keptUploadIds = [];
+        $updated = [];
+
+        foreach ($documents as $doc) {
+            $nama = trim((string) ($doc['nama'] ?? $doc['original_name'] ?? 'Dokumen'));
+            if ($nama === '') {
+                $nama = $doc['original_name'] ?? 'Dokumen';
+            }
+
+            $sourcePath = public_path($doc['path'] ?? '');
+            if (! is_file($sourcePath)) {
+                continue;
+            }
+
+            $uploadId = $doc['upload_id'] ?? null;
+            if ($uploadId) {
+                $upload = Upload::query()
+                    ->where('id', $uploadId)
+                    ->where('uploadable_type', 'App\Tender')
+                    ->where('uploadable_id', $tender->id)
+                    ->first();
+
+                if ($upload) {
+                    $prev = $previousByUploadId->get($uploadId);
+                    $pathUnchanged = $prev && ($prev['path'] ?? '') === ($doc['path'] ?? '');
+
+                    if ($pathUnchanged) {
+                        $upload->label = $nama;
+                        $upload->save();
+                        $keptUploadIds[] = (int) $upload->id;
+                        $updated[] = array_merge($doc, [
+                            'upload_id' => (int) $upload->id,
+                            'nama' => $nama,
+                        ]);
+                        continue;
+                    }
+
+                    $this->deleteTenderUpload($upload);
+                }
+            }
+
+            $upload = $this->createTenderMejaUpload($tender, $sourcePath, $nama);
+            $keptUploadIds[] = (int) $upload->id;
+            $updated[] = array_merge($doc, [
+                'upload_id' => (int) $upload->id,
+                'nama' => $nama,
+                'url' => $upload->getUrl(),
+            ]);
+        }
+
+        $previousUploadIds = collect($previousDocuments)
+            ->pluck('upload_id')
+            ->filter()
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        foreach (array_diff($previousUploadIds, $keptUploadIds) as $orphanId) {
+            $upload = Upload::query()->find($orphanId);
+            if ($upload && (int) $upload->uploadable_id === (int) $tender->id) {
+                $this->deleteTenderUpload($upload);
+            }
+        }
+
+        return $updated;
+    }
+
+    protected function createTenderMejaUpload(Tender $tender, string $sourcePath, string $label): Upload
+    {
+        $hash = Str::random(40);
+        $destDir = public_path('uploads/' . $hash . '/');
+        if (! is_dir($destDir)) {
+            mkdir($destDir, 0755, true);
+        }
+
+        $filename = basename($sourcePath);
+        if (! copy($sourcePath, $destDir . $filename)) {
+            throw new \RuntimeException('Gagal menyalin fail dokumen meja terkawal.');
+        }
+
+        $fullPath = $destDir . $filename;
+        $mime = mime_content_type($fullPath) ?: 'application/octet-stream';
+
+        $upload = new Upload();
+        $upload->fill([
+            'name' => $filename,
+            'size' => filesize($fullPath),
+            'type' => $mime,
+            'public' => 1,
+            'label' => $label,
+            'path' => $destDir,
+            'url' => request()->root() . '/uploads/' . $hash,
+            'uploadable_type' => 'App\Tender',
+            'uploadable_id' => $tender->id,
+        ]);
+        $upload->save();
+
+        if ($mime === 'application/pdf' && method_exists($tender, 'setWatermark')) {
+            try {
+                $tender->setWatermark($fullPath, public_path('images/etender-dokumen-watermark.png'));
+            } catch (\Throwable) {
+                // Non-fatal: dokumen tetap disimpan tanpa watermark.
+            }
+        }
+
+        return $upload;
+    }
+
+    protected function deleteTenderUpload(Upload $upload): void
+    {
+        $dir = rtrim((string) $upload->path, '/');
+        if ($dir !== '' && is_dir($dir)) {
+            foreach (glob($dir . '/*') ?: [] as $file) {
+                if (is_file($file)) {
+                    @unlink($file);
+                }
+            }
+            @rmdir($dir);
+        }
+
+        $upload->delete();
+    }
+
+    /**
+     * Backfill penyediaan iklan dokumen into tender uploads when viewing a tender.
+     */
+    public function ensureMejaTerkawalSyncedForTender(Tender $tender): void
+    {
+        $record = PenyediaanIklan::query()->where('tender_id', $tender->id)->first();
+        if (! $record || ! is_array($record->meta)) {
+            return;
+        }
+
+        $docs = $record->meta['iklan']['dokumen_sokongan'] ?? [];
+        if ($docs === []) {
+            return;
+        }
+
+        $needsSync = collect($docs)->contains(function ($doc) {
+            if (empty($doc['upload_id'])) {
+                return true;
+            }
+
+            return ! Upload::query()->where('id', $doc['upload_id'])->exists();
+        });
+
+        if (! $needsSync) {
+            return;
+        }
+
+        DB::transaction(function () use ($tender, $record, $docs) {
+            $synced = $this->syncDokumenMejaToTenderUploads($tender, $docs, $docs);
+            $meta = $record->meta;
+            $meta['iklan']['dokumen_sokongan'] = $synced;
+            $record->meta = $meta;
+            $record->save();
+        });
+
+        $tender->unsetRelation('files');
     }
 }
