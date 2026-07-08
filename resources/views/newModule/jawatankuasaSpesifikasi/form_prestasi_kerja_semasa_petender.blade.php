@@ -111,6 +111,18 @@
 
     <form id="form-prestasi" action="{{ route('prestasiKerjaSemasa.store', $tender->uuid) }}" method="POST" enctype="multipart/form-data">
     @csrf
+    @if (session('error'))
+        <div class="alert alert-danger py-2 px-3 mb-3" style="font-size:0.85rem;">{{ session('error') }}</div>
+    @endif
+    @if ($errors->any())
+        <div class="alert alert-danger py-2 px-3 mb-3" style="font-size:0.85rem;">
+            <ul class="mb-0 ps-3">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
     @if (! empty($returnUrl))
         <input type="hidden" name="return" value="{{ $returnUrl }}">
     @endif
@@ -257,25 +269,40 @@ $(document).ready(function () {
 
     var VIEW_ONLY = @json($viewOnly);
     @php
-        $prestasiItems = isset($prestasi) ? $prestasi->items->map(function ($item) {
-            return [
-                'nama'             => $item->nama,
-                'no_kontrak'       => $item->no_kontrak,
-                'harga'            => floatval($item->harga),
-                'tarikh_tapak'     => $item->tarikh_tapak,
-                'tempoh'           => $item->tempoh,
-                'tarikh_siap'      => $item->tarikh_siap,
-                'tarikh_penilaian' => $item->tarikh_penilaian,
-                'luputan'          => $item->luputan,
-                'kemajuan_sebenar' => $item->kemajuan_sebenar,
-                'kemajuan_jadual'  => $item->kemajuan_jadual,
-            ];
-        })->toArray() : [];
+        if (old('nama')) {
+            $prestasiItems = collect(old('nama', []))->map(function ($nama, $index) {
+                return [
+                    'nama'             => $nama,
+                    'no_kontrak'       => old('no_kontrak.' . $index),
+                    'harga'            => old('harga.' . $index),
+                    'tarikh_tapak'     => old('tarikh_tapak.' . $index),
+                    'tempoh'           => old('tempoh.' . $index),
+                    'tarikh_siap'      => old('tarikh_siap.' . $index),
+                    'tarikh_penilaian' => old('tarikh_penilaian.' . $index),
+                    'luputan'          => old('luputan.' . $index),
+                    'kemajuan_sebenar' => old('kemajuan_sebenar.' . $index),
+                    'kemajuan_jadual'  => old('kemajuan_jadual.' . $index),
+                ];
+            })->values()->toArray();
+        } else {
+            $prestasiItems = isset($prestasi) ? $prestasi->items->map(function ($item) {
+                return [
+                    'nama'             => $item->nama,
+                    'no_kontrak'       => $item->no_kontrak,
+                    'harga'            => floatval($item->harga),
+                    'tarikh_tapak'     => $item->tarikh_tapak,
+                    'tempoh'           => $item->tempoh,
+                    'tarikh_siap'      => $item->tarikh_siap,
+                    'tarikh_penilaian' => $item->tarikh_penilaian,
+                    'luputan'          => $item->luputan,
+                    'kemajuan_sebenar' => $item->kemajuan_sebenar,
+                    'kemajuan_jadual'  => $item->kemajuan_jadual,
+                ];
+            })->toArray() : [];
+        }
     @endphp
     var entries = @json($prestasiItems);
 
-    var ADD_BTN = '<button type="button" class="row-action-btn btn-tambah-inline btn-tambah-row" title="Tambah baris">' +
-        '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></button>';
     var DELETE_BTN = '<button type="button" class="row-action-btn btn-hapus-row" title="Buang baris">' +
         '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></svg></button>';
 
@@ -289,7 +316,7 @@ $(document).ready(function () {
         data = data || {};
         var hargaFmt = data.harga ? fmtAmt(data.harga) : '';
         var actionCol = VIEW_ONLY ? '' :
-            '<td class="text-center"><div class="d-inline-flex align-items-center gap-1">' + ADD_BTN + DELETE_BTN + '</div></td>';
+            '<td class="text-center"><div class="d-inline-flex align-items-center justify-content-center">' + DELETE_BTN + '</div></td>';
 
         return $('<tr class="prestasi-row">' +
             '<td class="text-center row-bil fw-semibold text-muted" style="font-size:0.8rem;">' + bil + '</td>' +
@@ -331,17 +358,9 @@ $(document).ready(function () {
         $.each(entries, function (i, e) { appendRow(e); });
     } else {
         appendRow({});
-        appendRow({});
     }
 
     $('#btn-tambah-prestasi').on('click', function () { appendRow({}); });
-
-    $('#tbl-prestasi-body').on('click', '.btn-tambah-row', function () {
-        var $row = buildRow($('#tbl-prestasi-body .prestasi-row').length + 1, {});
-        $(this).closest('tr').after($row);
-        initDatepickers($row);
-        reNumber();
-    });
 
     $('#tbl-prestasi-body').on('click', '.btn-hapus-row', function () {
         if ($('#tbl-prestasi-body .prestasi-row').length <= 1) return;
@@ -358,12 +377,27 @@ $(document).ready(function () {
     });
 
     $('#form-prestasi').on('submit', function (e) {
+        $('#tbl-prestasi-body .field-harga').each(function () {
+            $(this).val(($(this).val() || '').replace(/,/g, ''));
+        });
+
+        $('#tbl-prestasi-body .prestasi-row').each(function () {
+            if (!$(this).find('.field-nama').val().trim()) {
+                $(this).find(':input').prop('disabled', true);
+            }
+        });
+
         var hasContent = false;
         $('#tbl-prestasi-body .field-nama').each(function () {
-            if ($(this).val().trim()) { hasContent = true; return false; }
+            if (!$(this).prop('disabled') && $(this).val().trim()) {
+                hasContent = true;
+                return false;
+            }
         });
+
         if (!hasContent) {
             e.preventDefault();
+            $('#tbl-prestasi-body .prestasi-row :input').prop('disabled', false);
             alert('Sila isi sekurang-kurangnya satu baris prestasi kerja semasa.');
         }
     });
