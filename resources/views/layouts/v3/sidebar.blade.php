@@ -809,9 +809,29 @@
                 </li>
 
 				<!-- Menu : Penyediaan Mesyuarat -->
+                @php
+                    $isPenyediaanMesyuaratMenuActive = request()->routeIs(
+                        'perincianMesyuarat',
+                        'perincianPage',
+                        'penyediaanMesyuarat.*',
+                        'jawatankuasaMesyuarat',
+                        'jawatankuasaPage',
+                        'kehadiranMesyuarat.*'
+                    );
+                    $isPerincianMesyuaratActive = request()->routeIs(
+                        'perincianMesyuarat',
+                        'perincianPage',
+                        'penyediaanMesyuarat.*'
+                    );
+                    $isKehadiranMesyuaratActive = request()->routeIs(
+                        'jawatankuasaMesyuarat',
+                        'jawatankuasaPage',
+                        'kehadiranMesyuarat.*'
+                    );
+                @endphp
                 <li class="nav-item">
-                    <a class="sidebar-link collapsed" data-bs-toggle="collapse"
-                        data-bs-target="#menuPenyediaanMesyuarat" aria-expanded="false" style="cursor: pointer;">
+                    <a class="sidebar-link {{ $isPenyediaanMesyuaratMenuActive ? 'active' : 'collapsed' }}" data-bs-toggle="collapse"
+                        data-bs-target="#menuPenyediaanMesyuarat" aria-expanded="{{ $isPenyediaanMesyuaratMenuActive ? 'true' : 'false' }}" style="cursor: pointer;">
                         <svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none"
                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
@@ -824,13 +844,15 @@
                             <polyline points="9 18 15 12 9 6"></polyline>
                         </svg>
                     </a>
-                    <div class="collapse" id="menuPenyediaanMesyuarat">
+                    <div class="collapse {{ $isPenyediaanMesyuaratMenuActive ? 'show' : '' }}" id="menuPenyediaanMesyuarat">
                         <ul class="sidebar-submenu">
-                            <li><a class="submenu-item" href="{{ route('perincianMesyuarat') }}">
-                                    <div class="submenu-icon"></div><span>Perincian Mesyuarat</span>
+                            <li><a class="submenu-item {{ $isPerincianMesyuaratActive ? 'active' : '' }}" href="{{ route('perincianMesyuarat') }}">
+                                    <div class="submenu-icon" style="{{ $isPerincianMesyuaratActive ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}"></div>
+                                    <span class="{{ $isPerincianMesyuaratActive ? 'text-white' : '' }}">Perincian Mesyuarat</span>
                                 </a></li>
-                            <li><a class="submenu-item" href="{{ route('jawatankuasaMesyuarat') }}">
-                                    <div class="submenu-icon"></div><span>Jawatankuasa</span>
+                            <li><a class="submenu-item {{ $isKehadiranMesyuaratActive ? 'active' : '' }}" href="{{ route('jawatankuasaMesyuarat') }}">
+                                    <div class="submenu-icon" style="{{ $isKehadiranMesyuaratActive ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}"></div>
+                                    <span class="{{ $isKehadiranMesyuaratActive ? 'text-white' : '' }}">Kehadiran Mesyuarat</span>
                                 </a></li>
                         </ul>
                     </div>

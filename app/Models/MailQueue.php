@@ -19,6 +19,7 @@ class MailQueue extends Model
         "content",
         "config",
         "payload",
+        "attachments",
         "status",
         "email_send_at",
         "created_by",

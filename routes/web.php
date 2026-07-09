@@ -290,9 +290,11 @@ Route::middleware(['auth'])->group(function () {
 	Route::get('/perincian-page', [PenyediaanMesyuaratController::class, 'show'])->name('perincianPage');
 	Route::post('/penyediaan-mesyuarat/simpan', [PenyediaanMesyuaratController::class, 'simpan'])->name('penyediaanMesyuarat.simpan');
 	Route::post('/penyediaan-mesyuarat/hantar', [PenyediaanMesyuaratController::class, 'hantar'])->name('penyediaanMesyuarat.hantar');
+
+	Route::get('/index-jawatankuasa', [PenyediaanMesyuaratController::class, 'indexKehadiran'])->name('jawatankuasaMesyuarat');
+	Route::get('/jawatankuasa-page', [PenyediaanMesyuaratController::class, 'showKehadiran'])->name('jawatankuasaPage');
+	Route::post('/kehadiran-mesyuarat/simpan', [PenyediaanMesyuaratController::class, 'simpanKehadiran'])->name('kehadiranMesyuarat.simpan');
 });
-Route::view('/index-jawatankuasa', 'newModule.penyediaanMesyuarat.index_jawatankuasa')->name('jawatankuasaMesyuarat');
-Route::view('/jawatankuasa-page', 'newModule.penyediaanMesyuarat.jawatankuasa')->name('jawatankuasaPage');
 Route::middleware('auth')->group(function () {
 	Route::get('/lawatan-tapak-urusetia', [LawatanTapakUrusetiaController::class, 'index'])->name('lawatanTapakUrusetia');
 	Route::get('/pengesahan-lawatan-tapak-urusetia/{tender}', [LawatanTapakUrusetiaController::class, 'pengesahan'])->name('pengesahanLawatanTapak');

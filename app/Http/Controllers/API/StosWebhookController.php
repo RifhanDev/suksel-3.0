@@ -31,6 +31,7 @@ class StosWebhookController extends Controller
                 break;
             case 'penyediaan_mesyuarat.saved':
             case 'penyediaan_mesyuarat.submitted':
+            case 'kehadiran_mesyuarat.saved':
                 break;
             default:
                 if (is_string($event) && str_starts_with($event, 'process.')) {

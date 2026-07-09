@@ -83,6 +83,7 @@ html { -webkit-text-size-adjust:none; -ms-text-size-adjust: none;}
                 &bull; Tarikh: {{ $meeting['tarikh'] }}, Masa: {{ $meeting['masa'] }}, Tempat: {{ $meeting['tempat'] }}<br>
                 @endforeach
                 <br>
+                Surat memo pemakluman mesyuarat dilampirkan bersama e-mel ini.<br>
                 Sila log masuk ke sistem untuk maklumat lanjut.<br><br>
               </span>
               </font>

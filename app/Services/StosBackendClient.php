@@ -100,6 +100,18 @@ class StosBackendClient
         return $this->post('/api/tenders/' . $tenderId . '/penyediaan-mesyuarat/submit', $payload);
     }
 
+    public function getKehadiranMesyuarat(int $tenderId, ?int $meetingId = null): Response
+    {
+        $query = $meetingId ? ['meeting_id' => $meetingId] : [];
+
+        return $this->get('/api/tenders/' . $tenderId . '/kehadiran-mesyuarat', $query);
+    }
+
+    public function saveKehadiranMesyuarat(int $tenderId, array $payload): Response
+    {
+        return $this->post('/api/tenders/' . $tenderId . '/kehadiran-mesyuarat', $payload);
+    }
+
     protected function request(string $method, string $path, array $options = []): Response
     {
         if (! $this->isConfigured()) {
