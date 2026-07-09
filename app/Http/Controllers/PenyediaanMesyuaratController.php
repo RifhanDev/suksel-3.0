@@ -31,32 +31,6 @@ class PenyediaanMesyuaratController extends Controller
 
     public function index(Request $request)
     {
-        $tenders = Tender::query()
-            ->with('tenderer')
-            ->where('status_process_id', TenderProcessStatus::penyediaanMesyuaratListStatus())
-            ->whereHas('jawatankuasas', function ($query) {
-                $query->whereNotNull('user_id')
-                    ->whereNotNull('dihantar_pemakluman_pada');
-            })
-            ->orderByDesc('id')
-            ->get()
-            ->map(function (Tender $tender) {
-                return [
-                    'uuid' => $tender->uuid,
-                    'name' => $tender->name ?: '-',
-                    'no_tender' => $tender->no_tender ?: $tender->ref_number ?: '-',
-                    'ptj' => $tender->tenderer?->name ?? '-',
-                    'tarikh_jual' => $tender->advertise_start_date
-                        ? Carbon::parse($tender->advertise_start_date)->format('d/m/Y')
-                        : '-',
-                    'tarikh_tutup' => $tender->advertise_stop_date
-                        ? Carbon::parse($tender->advertise_stop_date)->format('d/m/Y')
-                        : '-',
-                    'harga' => number_format((float) ($tender->price ?? 0), 2),
-                    'status' => $tender->status ?? '-',
-                ];
-            })
-            ->values();
         $tenders = $this->listTendersForMesyuarat($request);
 
         return view('newModule.penyediaanMesyuarat.index_perincian', compact('tenders'));
@@ -240,12 +214,8 @@ class PenyediaanMesyuaratController extends Controller
                 : 'Perincian mesyuarat berjaya disimpan.';
 
             if ($submit) {
-                $emailsSent = $response->json('data.emails_sent');
-                if (is_numeric($emailsSent)) {
-                    $message .= ' (' . (int) $emailsSent . ' emel dihantar)';
-                }
-
                 $this->tryAdvancePenyediaanMesyuarat($tender);
+
                 // STOS renders the invitation (HTML body + PDF memo) and returns the
                 // recipients. Actual delivery goes through the shared mail-server queue
                 // here — only after STOS confirmed success — so this stays consistent
