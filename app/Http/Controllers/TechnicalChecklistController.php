@@ -72,11 +72,7 @@ class TechnicalChecklistController extends Controller
         $response = $this->api()->post($this->url('technical-checklists/' . $tenderUuid . '/submit'), $request->except('_token'));
 
         if ($response->successful()) {
-<<<<<<< HEAD
-            Tender::where('uuid', $tenderUuid)->update(['status_process_id' => 3]);
-=======
             $this->refreshTenderProcessAfterChecklistSubmit($tenderUuid);
->>>>>>> main
         }
 
         return response()->json($response->json(), $response->status());
