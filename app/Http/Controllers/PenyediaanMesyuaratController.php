@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Jawatankuasa;
 use App\Services\StosBackendClient;
 use App\Tender;
+use App\Traits\Helper;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -12,6 +13,8 @@ use Illuminate\Validation\Rule;
 
 class PenyediaanMesyuaratController extends Controller
 {
+    use Helper;
+
     private const JENIS_LABELS = [
         'spec' => 'Jawatankuasa Spesifikasi',
         'open' => 'Jawatankuasa Pembuka',
@@ -208,10 +211,12 @@ class PenyediaanMesyuaratController extends Controller
                 : 'Perincian mesyuarat berjaya disimpan.';
 
             if ($submit) {
-                $emailsSent = $response->json('data.emails_sent');
-                if (is_numeric($emailsSent)) {
-                    $message .= ' (' . (int) $emailsSent . ' emel dihantar)';
-                }
+                // STOS renders the invitation (HTML body + PDF memo) and returns the
+                // recipients. Actual delivery goes through the shared mail-server queue
+                // here — only after STOS confirmed success — so this stays consistent
+                // with the rest of the system's email pipeline.
+                $queued = $this->queueMesyuaratInvitations($response->json('data.recipients') ?? []);
+                $message .= ' (' . $queued . ' emel beratur untuk dihantar)';
             }
 
             return response()->json(['message' => $message]);
@@ -224,6 +229,43 @@ class PenyediaanMesyuaratController extends Controller
 
             return response()->json(['message' => 'Ralat sistem: ' . $e->getMessage()], 500);
         }
+    }
+
+    /**
+     * Queue each meeting invitation (already rendered by STOS) through the shared
+     * mail-server pipeline. Returns the number of emails successfully queued.
+     *
+     * @param  array  $recipients  [{ to, subject, content, attachments: [{ filename, mime, data }] }]
+     */
+    protected function queueMesyuaratInvitations(array $recipients): int
+    {
+        $queued = 0;
+
+        foreach ($recipients as $recipient) {
+            $to = $recipient['to'] ?? null;
+
+            if (empty($to)) {
+                continue;
+            }
+
+            $result = $this->createEmailQueue(
+                $recipient['content'] ?? '',
+                $to,
+                $recipient['subject'] ?? '',
+                $recipient['attachments'] ?? []
+            );
+
+            if ($this->emailSendSucceeded($result)) {
+                $queued++;
+            } else {
+                Log::error('Penyediaan mesyuarat invitation queue failed', [
+                    'to' => $to,
+                    'reason' => $result,
+                ]);
+            }
+        }
+
+        return $queued;
     }
 
     protected function listTendersForMesyuarat(?Request $request = null): \Illuminate\Support\Collection
