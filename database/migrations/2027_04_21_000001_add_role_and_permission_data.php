@@ -82,6 +82,8 @@ return new class extends Migration
     {
         $syncLegacyPivot = Schema::hasTable('permission_role');
         $syncSpatiePivot = Schema::hasTable('role_has_permissions');
+        $legacyPivotColumns = $syncLegacyPivot ? $this->tableColumns('permission_role') : [];
+        $spatiePivotColumns = $syncSpatiePivot ? $this->tableColumns('role_has_permissions') : [];
 
         foreach ($this->rolePermissions() as $mapping) {
             $role = DB::table('roles')->where('name', $mapping['role'])->first();
@@ -104,12 +106,12 @@ return new class extends Migration
                         ->exists();
 
                     if (!$legacyPivotExists) {
-                        DB::table('permission_role')->insert([
+                        DB::table('permission_role')->insert($this->filterColumns([
                             'permission_id' => $permission->id,
                             'role_id' => $role->id,
                             'created_at' => $timestamp,
                             'updated_at' => $timestamp,
-                        ]);
+                        ], $legacyPivotColumns));
                     }
                 }
 
@@ -120,10 +122,10 @@ return new class extends Migration
                         ->exists();
 
                     if (!$spatiePivotExists) {
-                        DB::table('role_has_permissions')->insert([
+                        DB::table('role_has_permissions')->insert($this->filterColumns([
                             'permission_id' => $permission->id,
                             'role_id' => $role->id,
-                        ]);
+                        ], $spatiePivotColumns));
                     }
                 }
             }
