@@ -200,18 +200,19 @@
 		<div class="row g-2 align-items-end">
 			<div class="col-4 col-lg-4">
 				<label class="form-label small fw-bold text-secondary text-uppercase mb-1">No. Tender</label>
-				<h6 class="text-primary">SUKSEL/PERT/2026/001</h6>
-				<!-- <input type="text" id="" class="form-control form-control-sm" placeholder=""> -->
+				<h6 class="text-primary mb-0">{{ $tender->no_tender ?: ($tender->ref_number ?: '-') }}</h6>
+				<small class="text-muted">{{ \Illuminate\Support\Str::limit($tender->name ?? '-', 80) }}</small>
 			</div>
 			<div class="col-4 col-lg-4">
-				<label for="filter_tajuk" class="form-label small fw-bold text-secondary text-uppercase mb-1">PTJ</label>
-				<h6 class="text-primary">100-007</h6>
+				<label class="form-label small fw-bold text-secondary text-uppercase mb-1">PTJ</label>
+				<h6 class="text-primary mb-0">{{ $tender->tenderer->name ?? '-' }}</h6>
 			</div>
 			<div class="col-4 col-lg-4">
-				<label for="filter_status" class="form-label small fw-bold text-secondary text-uppercase mb-1">Status</label>
-				<span class="badge rounded-pill bg-warning-subtle text-warning border border-warning-subtle px-3 py-2 fw-bold text-uppercase heartbeat" style="font-size: 0.8rem;">
+				<label class="form-label small fw-bold text-secondary text-uppercase mb-1">Status</label>
+				<span class="badge rounded-pill bg-warning-subtle text-warning border border-warning-subtle px-3 py-2 fw-bold text-uppercase" style="font-size: 0.8rem;">
 					Dalam Proses
 				</span>
+				<div class="small text-muted mt-1">{{ count($vendors ?? []) }} petender beli dokumen</div>
 			</div>
 		</div>
 	</div>
@@ -263,56 +264,57 @@
 						<th class="text-center" style="width: 50px;">Bil</th>
 						<th>Tajuk / Dokumen</th>
 						<th class="text-center">Mekanisma</th>
-						<th class="text-center">Status Penilaian</th>
+						<th class="text-center">Status Penyerahan</th>
 						<th class="text-center" style="width: 100px;">Tindakan</th>
 					</tr>
 				</thead>
 				<tbody>
-					<tr>
-						<td class="text-center">1</td>
-						<td class="fw-medium">Penilaian Forensik Sistem XXXX</td>
-						<td class="text-center"><span class="badge bg-light text-dark border">Spesifikasi</span></td>
-						<td class="text-center">
-							<span class="status-badge status-pending">
-								<i class="bi bi-clock-history me-1"></i>Menunggu Penyerahan
-							</span>
-						</td>
-						<td class="text-center">
-							<button type="button" class="btn btn-danger btn-sm rounded-pill px-3 btn-semak" data-title="Penilaian Forensik Sistem XXXX">
-								Semak
-							</button>
-						</td>
-					</tr>
-					<tr>
-						<td class="text-center">2</td>
-						<td class="fw-medium">Surat Pengesahan Prinsipal</td>
-						<td class="text-center"><span class="badge bg-light text-dark border">Petender Muat Naik</span></td>
-						<td class="text-center">
-							<span class="status-badge status-pending">
-								<i class="bi bi-clock-history me-1"></i>Menunggu Penyerahan
-							</span>
-						</td>
-						<td class="text-center">
-							<button type="button" class="btn btn-danger btn-sm rounded-pill px-3 btn-semak" data-title="Surat Pengesahan Prinsipal">
-								Semak
-							</button>
-						</td>
-					</tr>
-					<tr>
-						<td class="text-center">3</td>
-						<td class="fw-medium">Senarai Kakitangan Teknikal</td>
-						<td class="text-center"><span class="badge bg-light text-dark border">Petender Muat Naik</span></td>
-						<td class="text-center">
-							<span class="status-badge status-pending">
-								<i class="bi bi-clock-history me-1"></i>Menunggu Penyerahan
-							</span>
-						</td>
-						<td class="text-center">
-							<button type="button" class="btn btn-danger btn-sm rounded-pill px-3 btn-semak" data-title="Senarai Kakitangan Teknikal">
-								Semak
-							</button>
-						</td>
-					</tr>
+					@forelse (($teknikalItems ?? []) as $i => $item)
+						@php
+							$uuid = $item['uuid'] ?? '';
+							$payload = $semakPayload[$uuid] ?? null;
+							$submitted = (int) ($payload['submitted_count'] ?? 0);
+							$totalVendors = (int) ($payload['vendor_count'] ?? count($vendors ?? []));
+						@endphp
+						<tr>
+							<td class="text-center">{{ $i + 1 }}</td>
+							<td class="fw-medium">{{ $item['title'] ?? $item['nama'] ?? '-' }}</td>
+							<td class="text-center">
+								<span class="badge bg-light text-dark border">{{ $item['tindakan'] ?? '-' }}</span>
+							</td>
+							<td class="text-center">
+								@if ($totalVendors === 0)
+									<span class="status-badge status-pending">
+										<i class="bi bi-people me-1"></i>Tiada petender
+									</span>
+								@elseif ($submitted >= $totalVendors && $totalVendors > 0)
+									<span class="status-badge status-completed">
+										<i class="bi bi-check-circle me-1"></i>{{ $submitted }} / {{ $totalVendors }} dihantar
+									</span>
+								@elseif ($submitted > 0)
+									<span class="status-badge status-pending">
+										<i class="bi bi-hourglass-split me-1"></i>{{ $submitted }} / {{ $totalVendors }} dihantar
+									</span>
+								@else
+									<span class="status-badge status-pending">
+										<i class="bi bi-clock-history me-1"></i>Menunggu Penyerahan
+									</span>
+								@endif
+							</td>
+							<td class="text-center">
+								<button type="button"
+									class="btn btn-danger btn-sm rounded-pill px-3 btn-semak"
+									data-item-uuid="{{ $uuid }}"
+									data-title="{{ $item['title'] ?? $item['nama'] ?? '-' }}">
+									Semak
+								</button>
+							</td>
+						</tr>
+					@empty
+						<tr>
+							<td colspan="5" class="text-center text-muted py-4">Tiada dokumen teknikal untuk tender ini.</td>
+						</tr>
+					@endforelse
 				</tbody>
 			</table>
 		</div>
@@ -342,71 +344,57 @@
 						<th class="text-center" style="width: 50px;">Bil</th>
 						<th>Tajuk / Dokumen</th>
 						<th class="text-center">Mekanisma</th>
-						<th class="text-center">Status Penilaian</th>
+						<th class="text-center">Status Penyerahan</th>
 						<th class="text-center" style="width: 100px;">Tindakan</th>
 					</tr>
 				</thead>
 				<tbody>
-					<tr>
-						<td class="text-center">1</td>
-						<td class="fw-medium">Maklumat Profil Petender</td>
-						<td class="text-center"><span class="badge bg-light text-dark border">Borang Atas Talian</span></td>
-						<td class="text-center">
-							<span class="status-badge status-pending">
-								<i class="bi bi-clock-history me-1"></i>Menunggu Penyerahan
-							</span>
-						</td>
-						<td class="text-center">
-							<button type="button" class="btn btn-danger btn-sm rounded-pill px-3 btn-semak" data-title="Maklumat Profil Petender">
-								Semak
-							</button>
-						</td>
-					</tr>
-					<tr>
-						<td class="text-center">2</td>
-						<td class="fw-medium">Penyata Bank (3 Bulan)</td>
-						<td class="text-center"><span class="badge bg-light text-dark border">Borang Atas Talian</span></td>
-						<td class="text-center">
-							<span class="status-badge status-pending">
-								<i class="bi bi-clock-history me-1"></i>Menunggu Penyerahan
-							</span>
-						</td>
-						<td class="text-center">
-							<button type="button" class="btn btn-danger btn-sm rounded-pill px-3 btn-semak" data-title="Penyata Bank (3 Bulan)">
-								Semak
-							</button>
-						</td>
-					</tr>
-					<tr>
-						<td class="text-center">3</td>
-						<td class="fw-medium">Sijil Pendaftaran MOF</td>
-						<td class="text-center"><span class="badge bg-light text-dark border">Petender Muat Naik</span></td>
-						<td class="text-center">
-							<span class="status-badge status-pending">
-								<i class="bi bi-clock-history me-1"></i>Menunggu Penyerahan
-							</span>
-						</td>
-						<td class="text-center">
-							<button type="button" class="btn btn-danger btn-sm rounded-pill px-3 btn-semak" data-title="Sijil Pendaftaran MOF">
-								Semak
-							</button>
-						</td>
-					</tr>
-					<tr>
-						<td class="text-center">4</td>
-						<td class="fw-medium">Surat Akuan Pembida</td>
-						<td class="text-center"><span class="badge bg-light text-dark border">PTJ Muat Naik</span></td>
-						<td class="text-center">
-							<span class="status-badge status-pending">
-								<i class="bi bi-clock-history me-1"></i>Menunggu Penyerahan
-							</span>
-						</td>
-						<td class="text-center">
-							<button type="button" class="btn btn-danger btn-sm rounded-pill px-3 btn-semak" data-title="Surat Akuan Pembida">
-								Semak
-							</button>
-						</td>
-					</tr>
+					@forelse (($kewanganItems ?? []) as $i => $item)
+						@php
+							$uuid = $item['uuid'] ?? '';
+							$payload = $semakPayload[$uuid] ?? null;
+							$submitted = (int) ($payload['submitted_count'] ?? 0);
+							$totalVendors = (int) ($payload['vendor_count'] ?? count($vendors ?? []));
+						@endphp
+						<tr>
+							<td class="text-center">{{ $i + 1 }}</td>
+							<td class="fw-medium">{{ $item['title'] ?? $item['nama'] ?? '-' }}</td>
+							<td class="text-center">
+								<span class="badge bg-light text-dark border">{{ $item['tindakan'] ?? '-' }}</span>
+							</td>
+							<td class="text-center">
+								@if ($totalVendors === 0)
+									<span class="status-badge status-pending">
+										<i class="bi bi-people me-1"></i>Tiada petender
+									</span>
+								@elseif ($submitted >= $totalVendors && $totalVendors > 0)
+									<span class="status-badge status-completed">
+										<i class="bi bi-check-circle me-1"></i>{{ $submitted }} / {{ $totalVendors }} dihantar
+									</span>
+								@elseif ($submitted > 0)
+									<span class="status-badge status-pending">
+										<i class="bi bi-hourglass-split me-1"></i>{{ $submitted }} / {{ $totalVendors }} dihantar
+									</span>
+								@else
+									<span class="status-badge status-pending">
+										<i class="bi bi-clock-history me-1"></i>Menunggu Penyerahan
+									</span>
+								@endif
+							</td>
+							<td class="text-center">
+								<button type="button"
+									class="btn btn-danger btn-sm rounded-pill px-3 btn-semak"
+									data-item-uuid="{{ $uuid }}"
+									data-title="{{ $item['title'] ?? $item['nama'] ?? '-' }}">
+									Semak
+								</button>
+							</td>
+						</tr>
+					@empty
+						<tr>
+							<td colspan="5" class="text-center text-muted py-4">Tiada dokumen kewangan untuk tender ini.</td>
+						</tr>
+					@endforelse
 				</tbody>
 			</table>
 		</div>
@@ -557,58 +545,9 @@
 										<th style="width: 250px;">Catatan</th>
 									</tr>
 								</thead>
-								<tbody>
+								<tbody id="modalSemakBody">
 									<tr>
-										<td class="text-center fw-bold">1</td>
-										<td>
-											<div class="d-flex align-items-center">
-												<div class="bg-primary-subtle p-2 rounded-2 me-3">
-													<i class="bi bi-file-earmark-pdf-fill text-primary fs-5"></i>
-												</div>
-												<span class="modal-doc-filename fw-medium text-dark small"></span>
-											</div>
-										</td>
-										<td class="text-center">
-											<span class="status-badge status-success py-1 px-3">
-												Hantar
-											</span>
-										</td>
-										<td>
-											<select class="form-select shadow-none border-2 small">
-												<option value="" selected>Ada / Tiada</option>
-												<option value="1">Ada</option>
-												<option value="0">Tiada</option>
-											</select>
-										</td>
-										<td>
-											<textarea class="form-control shadow-none border-2 small" rows="1" placeholder="Masukkan catatan..."></textarea>
-										</td>
-									</tr>
-									<tr>
-										<td class="text-center fw-bold">2</td>
-										<td>
-											<div class="d-flex align-items-center">
-												<div class="bg-primary-subtle p-2 rounded-2 me-3">
-													<i class="bi bi-file-earmark-pdf-fill text-primary fs-5"></i>
-												</div>
-												<span class="modal-doc-filename fw-medium text-dark small"></span>
-											</div>
-										</td>
-										<td class="text-center">
-											<span class="status-badge status-success py-1 px-3">
-												Hantar
-											</span>
-										</td>
-										<td>
-											<select class="form-select shadow-none border-2 small">
-												<option value="" selected>Ada / Tiada</option>
-												<option value="1">Ada</option>
-												<option value="0">Tiada</option>
-											</select>
-										</td>
-										<td>
-											<textarea class="form-control shadow-none border-2 small" rows="1" placeholder="Masukkan catatan..."></textarea>
-										</td>
+										<td colspan="5" class="text-center text-muted py-4">Pilih dokumen untuk semakan.</td>
 									</tr>
 								</tbody>
 							</table>
@@ -728,11 +667,73 @@
 			info: false
 		});
 
+		const SEMAK_PAYLOAD = @json($semakPayload ?? []);
+
+		function escapeHtml(value) {
+			return String(value || '')
+				.replace(/&/g, '&amp;')
+				.replace(/</g, '&lt;')
+				.replace(/>/g, '&gt;')
+				.replace(/"/g, '&quot;');
+		}
+
+		function renderSemakRows(item) {
+			const $body = $('#modalSemakBody');
+			$body.empty();
+
+			const vendors = item?.vendors || [];
+			if (!vendors.length) {
+				$body.append('<tr><td colspan="5" class="text-center text-muted py-4">Tiada petender yang membeli dokumen.</td></tr>');
+				return;
+			}
+
+			vendors.forEach(function (vendor, index) {
+				const statusClass = vendor.status === 'submitted' ? 'status-success' : 'status-pending';
+				let docHtml = '<div class="small text-muted">' + escapeHtml(vendor.summary || '-') + '</div>';
+
+				if (Array.isArray(vendor.files) && vendor.files.length) {
+					docHtml = vendor.files.map(function (file) {
+						return '<a href="' + escapeHtml(file.url) + '" target="_blank" class="d-block small text-primary">' +
+							'<i class="bi bi-file-earmark-arrow-down me-1"></i>' + escapeHtml(file.name) +
+							'</a>';
+					}).join('');
+				} else if (vendor.form_url) {
+					docHtml += '<div class="mt-1"><a href="' + escapeHtml(vendor.form_url) + '" target="_blank" class="small">Buka borang</a></div>';
+				}
+
+				$body.append(
+					'<tr>' +
+						'<td class="text-center fw-bold">' + escapeHtml(vendor.kod) + '</td>' +
+						'<td>' +
+							'<div class="fw-semibold text-dark small mb-1">' + escapeHtml(vendor.name) + '</div>' +
+							docHtml +
+						'</td>' +
+						'<td class="text-center"><span class="status-badge ' + statusClass + ' py-1 px-3">' +
+							escapeHtml(vendor.status_label) +
+						'</span></td>' +
+						'<td>' +
+							'<select class="form-select shadow-none border-2 small">' +
+								'<option value="" selected>Ada / Tiada</option>' +
+								'<option value="1">Ada</option>' +
+								'<option value="0">Tiada</option>' +
+							'</select>' +
+						'</td>' +
+						'<td>' +
+							'<textarea class="form-control shadow-none border-2 small" rows="1" placeholder="Masukkan catatan..."></textarea>' +
+						'</td>' +
+					'</tr>'
+				);
+			});
+		}
+
 		// Handle Modal Semak
 		$(document).on('click', '.btn-semak', function() {
 			const title = $(this).data('title');
-			$('#modalDocTitle').text(title);
-			$('.modal-doc-filename').text(title + '.pdf');
+			const itemUuid = String($(this).data('item-uuid') || '');
+			const item = SEMAK_PAYLOAD[itemUuid] || null;
+
+			$('#modalDocTitle').text(title || item?.title || '-');
+			renderSemakRows(item);
 			
 			// Use Bootstrap 5 JS API for better compatibility
 			const modalEl = document.getElementById('modalSemak');
