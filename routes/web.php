@@ -127,17 +127,27 @@ Route::view('/perakuan-jabatan/pengesyoran-pembekal', 'newModule.perakuanJabatan
 Route::get('/eBidding/index', [EbiddingController::class, 'index'])->middleware(['auth'])->name('eBidding.index');
 Route::view('/keputusan-mesyuarat', 'newModule.eBidding.keptusan_mesyuarat')->name('keputusanMesyuarat');
 
-Route::prefix('pembelian-terus')->controller(PembelianTerusController::class)->group(function () {
-	Route::get('/cipta-projek', 'createProject')->name('pembelianTerus.createProject');
+Route::get('/pembelian-terus/maklumat-projek/{id}', [PembelianTerusController::class, 'detailProject'])
+	->name('pembelianTerus.detailProject');
+
+Route::prefix('pembelian-terus')->controller(PembelianTerusController::class)->middleware(['auth'])->group(function () {
+	Route::get('/cipta-projek', 'index')->name('pembelianTerus.createProject');
+	Route::get('/cipta-projek/baru', 'create')->name('pembelianTerus.create');
+	Route::post('/cipta-projek', 'store')->name('pembelianTerus.store');
+	Route::get('/cipta-projek/{id}/kemaskini', 'edit')->name('pembelianTerus.edit');
+	Route::put('/cipta-projek/{id}', 'update')->name('pembelianTerus.update');
 	Route::get('/sebut-harga', 'quoteProject')->name('pembelianTerus.quoteProject');
-	Route::get('/maklumat-projek/{tender_no}', 'detailProject')->name('pembelianTerus.detailProject');
+	Route::post('/maklumat-projek/{id}/tawaran', 'submitOffer')->name('pembelianTerus.submitOffer');
 	Route::get('/cut-off-projek', 'cutOffProject')->name('pembelianTerus.cutOffProject');
-	Route::get('/cut-off-details/{tender_no}', 'cutOffDetails')->name('pembelianTerus.cutOffDetails');
+	Route::get('/cut-off-details/{id}', 'cutOffDetails')->name('pembelianTerus.cutOffDetails');
+	Route::post('/cut-off-details/{id}', 'storeCutoff')->name('pembelianTerus.storeCutoff');
 	Route::get('/pemilihan-syarikat', 'pemilihanSyarikat')->name('pembelianTerus.pemilihanSyarikat');
-	Route::get('/pemilihan-syarikat-details/{tender_no}', 'pemilihanSyarikatDetails')->name('pembelianTerus.pemilihanSyarikatDetails');
+	Route::get('/pemilihan-syarikat-details/{id}', 'pemilihanSyarikatDetails')->name('pembelianTerus.pemilihanSyarikatDetails');
+	Route::post('/pemilihan-syarikat-details/{id}', 'storePemilihan')->name('pembelianTerus.storePemilihan');
 	Route::get('/keputusan-syarikat', 'keputusanSyarikat')->name('pembelianTerus.keputusanSyarikat');
-	Route::get('/keputusan-syarikat-details/{tender_no}', 'keputusanSyarikatDetails')->name('pembelianTerus.keputusanSyarikatDetails');
-	Route::get('/surat-setuju-terima/{tender_no}', 'downloadSuratSetujuTerima')->name('pembelianTerus.downloadSuratSetujuTerima');
+	Route::get('/keputusan-syarikat-details/{id}', 'keputusanSyarikatDetails')->name('pembelianTerus.keputusanSyarikatDetails');
+	Route::post('/keputusan-syarikat-details/{id}', 'storeKeputusan')->name('pembelianTerus.storeKeputusan');
+	Route::get('/surat-setuju-terima/{id}', 'downloadSuratSetujuTerima')->name('pembelianTerus.downloadSuratSetujuTerima');
 });
 /////////////////////////////////////////////////////////////
 
