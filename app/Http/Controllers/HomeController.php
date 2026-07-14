@@ -70,14 +70,18 @@ class HomeController extends Controller
 				case 'quotations':
 					$tenders = $base->whereType('quotation');
 					break;
+				case 'pembelian_terus':
+					$tenders = $base->whereType('pembelian_terus')->where('status_process_id', '>=', 5);
+					break;
 				default:
-					$tenders = $base;
+					$tenders = $base->whereIn('type', ['tender', 'quotation', 'pembelian_terus']);
 					break;
 			}
 
 			$tenders = $tenders->select([
 				'id',
 				'name',
+				'type',
 				'document_start_date',
 				'submission_datetime',
 				'price',
@@ -98,7 +102,10 @@ class HomeController extends Controller
 					$string   = [];
 					$string[] = '<strong><u>' . $tender->tenderer->name . '</u></strong>';
 					$string[] = '<small><strong>' . $tender->ref_number . '</strong></small>';
-					$string[] = '<a class="table-tender-title" href="' . route('tenders.show', $tender->id) . '">' . $tender->name . '</a>';
+					$detailUrl = $tender->type === 'pembelian_terus'
+						? route('pembelianTerus.detailProject', $tender->id)
+						: route('tenders.show', $tender->id);
+					$string[] = '<a class="table-tender-title" href="' . $detailUrl . '">' . $tender->name . '</a>';
 
 					if ($tender->briefing_required) {
 						$string[] = '';
@@ -213,6 +220,9 @@ class HomeController extends Controller
 				break;
 			case 'quotations':
 				$path = '/?type=quotations';
+				break;
+			case 'pembelian_terus':
+				$path = '/?type=pembelian_terus';
 				break;
 			default:
 				$path = '/';
