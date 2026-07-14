@@ -248,14 +248,31 @@
 					<p class="text-secondary small mb-0">Sila semak dan sahkan pematuhan teknikal bagi setiap pembekal.</p>
 				</div>
 			</div>
-			
-			<div class="alert alert-info border-0 shadow-sm rounded-3 d-flex align-items-center" role="alert">
-				<i class="bi bi-info-circle-fill fs-5 me-3 text-info"></i>
-				<div>
-					<span class="small fw-medium text-info-emphasis">Informasi:</span>
+
+			<style>
+				@keyframes alertPopBuzz {
+					0%   { transform: scale(0.15); opacity: 0; }
+					50%  { transform: scale(1.05); opacity: 1; }
+					60%  { transform: scale(1) rotate(0deg); }
+					67%  { transform: scale(1) rotate(2deg) translateX(1px); }
+					74%  { transform: scale(1) rotate(-2deg) translateX(-1px); }
+					81%  { transform: scale(1) rotate(1.5deg) translateX(0.5px); }
+					88%  { transform: scale(1) rotate(-1deg) translateX(-0.5px); }
+					94%  { transform: scale(1) rotate(0.5deg); }
+					100% { transform: scale(1) rotate(0deg) translateX(0); opacity: 1; }
+				}
+			</style>
+			<div class="rounded-2 px-3 py-2 d-inline-flex align-items-center gap-2" style="background:#eff6ff; border:1px solid #bfdbfe; font-size:0.78rem; color:#1e40af; animation: alertPopBuzz 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) both;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="16" x2="12" y2="12"></line>
+                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                </svg>
+                <div>
+					<span class="small fw-medium text-info-emphasis"><strong>Informasi:</strong></span>
 					<p class="mb-0 small">Klik butang Semak untuk meneruskan penilaian pematuhan</p>
 				</div>
-			</div>
+            </div>
 
 			<table id="tableTeknikal" class="table table-hover table-striped border shadow-sm rounded-3">
 				<thead class="table-header">

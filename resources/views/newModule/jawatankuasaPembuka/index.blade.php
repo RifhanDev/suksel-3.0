@@ -147,7 +147,10 @@
 					<tbody>
                         @forelse($tenders ?? [] as $item)
                         <tr>
-                            <td>{{ $item['name'] }}</td>
+                            <td>
+                                <strong>{{ $item['no_tender'] }}</strong><br>
+                                <small>{{ $item['name'] }}</small>
+                            </td>
                             <td class="text-center">{{ $item['tarikh_jual'] }}</td>
                             <td class="text-center">{{ $item['tarikh_tutup'] }}</td>
                             <td class="text-center">{{ $item['harga'] }}</td>
