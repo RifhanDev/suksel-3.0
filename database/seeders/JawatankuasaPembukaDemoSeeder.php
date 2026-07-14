@@ -80,7 +80,7 @@ class JawatankuasaPembukaDemoSeeder extends Seeder
         }
 
         $withChecklist = DB::table('technical_checklist_items as ti')
-            ->join('technical_checklist_headers as th', 'th.id', '=', 'ti.header_id')
+            ->join('technical_checklist_headers as th', 'th.id', '=', 'ti.technical_checklist_header_id')
             ->orderByDesc('th.tender_id')
             ->value('th.tender_id');
 
@@ -120,7 +120,7 @@ class JawatankuasaPembukaDemoSeeder extends Seeder
         if ($vendorIds === []) {
             $vendorIds = $tender->participants()
                 ->pluck('vendor_id')
-                ->map(fn ($id) => (int) $id)
+                ->map(fn($id) => (int) $id)
                 ->filter()
                 ->unique()
                 ->values()
