@@ -87,6 +87,23 @@ class TenderVisit extends Model
 	public function visitors() {
 		return $this->hasMany('App\TenderVisitor', 'visit_id');
 	}
+
+	public function representatives()
+	{
+		return $this->hasMany(\App\Models\TenderVisitRepresentative::class, 'visit_id');
+	}
+
+	/**
+	 * Vendors may register representatives on or before the site visit date.
+	 */
+	public function canSubmitRepresentatives(): bool
+	{
+		if (empty($this->datetime)) {
+			return false;
+		}
+
+		return \Carbon\Carbon::today()->lte(\Carbon\Carbon::parse($this->datetime)->startOfDay());
+	}
 	
 	public static function boot() {
 		parent::boot();

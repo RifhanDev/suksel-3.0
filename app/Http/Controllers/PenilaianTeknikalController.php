@@ -2,63 +2,64 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\AdvancesTenderProcessStatus;
+use App\Http\Controllers\Concerns\ResolvesTenderForProcess;
+use App\Support\TenderProcessStatus;
+use App\Tender;
 use Illuminate\Http\Request;
 
 class PenilaianTeknikalController extends Controller
 {
-    /**
-     * Display SENARAI TENDER (first page - Peringkat Penilaian Teknikal).
-     */
+    use AdvancesTenderProcessStatus;
+    use ResolvesTenderForProcess;
+
     public function index()
     {
-        return view('newModule.penilaian.teknikal_index');
+        $tenders = $this->mapTendersForProcessList(
+            Tender::query()
+                ->where('status_process_id', TenderProcessStatus::penilaianTeknikalListStatus())
+                ->orderByDesc('id')
+                ->get(['id', 'uuid', 'no_tender', 'ref_number', 'name', 'submission_datetime', 'kategori_perolehan_id']),
+            function (Tender $tender, string $noTender) {
+                if ((int) ($tender->kategori_perolehan_id ?? 0) === 3) {
+                    return route('penilaianTeknikalKerja.show', $noTender);
+                }
+
+                return route('penilaianTeknikal.show', $noTender);
+            }
+        );
+
+        return view('newModule.penilaian_teknikal.teknikal_index', compact('tenders'));
     }
 
-    /**
-     * Display penilaian teknikal form for a tender (second page).
-     */
     public function show(string $tender_no)
     {
-        return view('newModule.penilaian.teknikal', compact('tender_no'));
+        return view('newModule.penilaian_teknikal.teknikal', compact('tender_no'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
+    public function showTeknikalKerja(string $tender_no)
     {
-        //
+        return view('newModule.penilaian_teknikal.teknikal_kerja', compact('tender_no'));
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
+    public function hantar(Request $request)
     {
-        //
-    }
+        $tender = $this->resolveTenderByIdentifier($request->input('tender'));
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
-    }
+        if (! $tender) {
+            return response()->json(['message' => 'Tender tidak ditemui.'], 404);
+        }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
+        if (! $this->advanceTenderProcess(
+            $tender,
+            TenderProcessStatus::PENILAIAN_TEKNIKAL,
+            TenderProcessStatus::penilaianTeknikalListStatus()
+        )) {
+            return response()->json([
+                'message' => 'Tender belum sedia untuk penilaian teknikal (status ' . TenderProcessStatus::penilaianTeknikalListStatus() . ').',
+            ], 422);
+        }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
+        return response()->json(['message' => 'Penilaian teknikal berjaya dihantar.']);
     }
 }

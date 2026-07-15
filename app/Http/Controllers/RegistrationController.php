@@ -14,6 +14,7 @@ use App\Vendor;
 use Carbon\Carbon;
 use Hash;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Mail;
 
@@ -80,7 +81,17 @@ class RegistrationController extends Controller
                         $subject = 'Sahkan Alamat Emel - Sistem Tender Online Selangor';
                         $send_status = $this->sendMail("html", $to, $subject, "", "auth.emails.confirm", ['emailUser' => $user, 'user_name' => $user->name, 'confirmation_code' => $user->confirmation_code]);
 
-                        $notice = 'Akaun anda telah didaftarkan. Sila semak email untuk pengesahan akaun.';
+                        if ($send_status === 'Email send to queue' || $send_status === 'Email sent via Laravel mailer') {
+                            $notice = 'Akaun anda telah didaftarkan. Sila semak email untuk pengesahan akaun.';
+                        } else {
+                            Log::error('Registration confirmation email failed', [
+                                'user_id' => $user->id,
+                                'email' => $to,
+                                'reason' => $send_status,
+                            ]);
+                            $notice = 'Akaun anda telah didaftarkan tetapi emel pengesahan gagal dihantar. Sila hubungi pentadbir sistem.';
+                        }
+
                         return redirect('/')->with('notice', $notice);
                     }
 
@@ -221,9 +232,38 @@ class RegistrationController extends Controller
 
     public function storePayment(Request $request)
     {
-
         $user   = auth()->user();
         $vendor = $user->vendor;
+
+        // DEV BYPASS: Skip payment gateway by creating a successful subscription.
+        // NOTE: Vendor::$registration_paid and $expiry_date are computed accessors
+        // backed by the subscriptions table (registration_paid = subscriptions > 0),
+        // so updating those columns directly is a no-op. We must create a real
+        // subscription — mirroring the live gateway callback — for the account to
+        // count as paid and pass the registration gate.
+        if (config('app.debug')) {
+            if ($vendor->subscriptions()->count() === 0) {
+                $cached_data = [
+                    'start_date' => date('Y-m-d'),
+                    'end_date'   => date('Y-m-d', strtotime('+1 year')),
+                ];
+
+                $transaction = $vendor->transactions()->save(new Transaction([
+                    'type'                 => 'subscription',
+                    'method'               => 'bypass',
+                    'status'               => 'success',
+                    'user_id'              => $user->id,
+                    'organization_unit_id' => config('app.global_cart_ou'),
+                    'amount'               => 0,
+                    'ip'                   => request()->ip(),
+                    'cached_data'          => serialize($cached_data),
+                ]));
+
+                $transaction->generateSubscription();
+            }
+
+            return redirect('dashboard')->with('success', 'Pembayaran berjaya (dev bypass). Akaun anda kini aktif.');
+        }
 
         if (!in_array($request->method, ['fpx-1', 'fpx-2', 'ebpg', 'duitnow'])) {
             return redirect()->back()->with('error', 'Sila pilih saluran pembayaran yang sah.');

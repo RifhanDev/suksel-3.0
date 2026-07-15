@@ -26,6 +26,10 @@ class ReportVendorSummaryController extends Controller
 
         $lists = Transaction::where('vendor_id', $vendor_id)->whereYear('created_at', $year)->where('status', 'success')->with('purchases.tender')->get();
         // dd($lists);
+        if (Auth::user()->hasRole('Vendor')) { //ni utk vendor view
+            return view('reports.vendor.summary.vendor', compact('vendor_id', 'year', 'lists', 'total_transaction', 'total_sum', 'total_transaction_yearly'));
+        }
+        //ni original (admin view)
         return view('reports.vendor.summary.index', compact('vendor_id', 'year', 'lists', 'total_transaction', 'total_sum', 'total_transaction_yearly'));
     }
 }

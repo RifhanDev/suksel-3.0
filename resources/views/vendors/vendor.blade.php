@@ -436,9 +436,26 @@
             <!-- 4. CIDB -->
             <div class="tab-pane fade" id="vf-cidb">
                 <div class="card border shadow-sm rounded-3 overflow-hidden mb-4">
-                    <div class="card-header bg-light py-3 border-bottom fw-bold text-secondary">Lembaga Pembangunan
-                        Industri Pembinaan (CIDB)</div>
+                    <div class="card-header bg-light py-3 border-bottom d-flex justify-content-between align-items-center gap-3">
+                        <div class="fw-bold text-secondary">Lembaga Pembangunan Industri Pembinaan (CIDB)</div>
+                        <div class="d-flex align-items-center gap-2 flex-wrap justify-content-end">
+                            @include('components.vendor-cidb-meta', [
+                                'vendor' => $vendor,
+                                'trigger' => 'button',
+                                'showIntegrate' => Auth::user() && Auth::user()->hasRole('Admin'),
+                                'showComparison' => true,
+                                'openOnLoad' => session('cidb_integrated') && (int) session('cidb_integrated_vendor_id') === (int) $vendor->id,
+                                'scrollToComparison' => session('cidb_integrated') && (int) session('cidb_integrated_vendor_id') === (int) $vendor->id,
+                            ])
+                        </div>
+                    </div>
                     <div class="card-body p-4">
+                        @if (session('success') && session('cidb_integrated'))
+                            <div class="alert alert-success border-0 shadow-sm mb-4">
+                                {{ session('success') }}
+                            </div>
+                        @endif
+
                         <div class="row g-4">
                             <div class="col-md-6">
                                 <label class="small text-muted fw-bold text-uppercase d-block mb-1">No Sijil
@@ -537,6 +554,7 @@
                                 <div class="text-muted text-center fst-italic">Tiada maklumat Gred.</div>
                             @endforelse
                         </div>
+
                     </div>
                 </div>
             </div>
@@ -897,35 +915,45 @@
 
             <!-- 13. SUBSCRIPTIONS -->
             <div class="tab-pane fade" id="vf-subscriptions">
-                <div class="card border shadow-sm rounded-3 overflow-hidden mb-4">
-                    <div class="card-header bg-white py-3 border-bottom fw-bold">Bayaran Pendaftaran</div>
+                <div class="card border-0 shadow-sm rounded-3 overflow-hidden mb-4">
+                    <div class="card-header bg-white py-3 border-bottom d-flex align-items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#c41e3a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                        <span class="fw-bold" style="font-size:0.88rem;">Bayaran Pendaftaran</span>
+                    </div>
                     <div class="card-body p-0">
                         @if ($vendor->subscriptions()->count() > 0)
                             <div class="table-responsive">
                                 <table class="table table-hover align-middle mb-0">
-                                    <thead class="bg-light">
+                                    <thead style="background:#f8fafc;">
                                         <tr>
-                                            <th class="px-4 py-3 border-bottom-0 text-uppercase small text-muted">No
-                                                Transaksi</th>
-                                            <th class="px-4 py-3 border-bottom-0 text-uppercase small text-muted">No
-                                                Resit</th>
-                                            <th class="px-4 py-3 border-bottom-0 text-uppercase small text-muted">
-                                                Tempoh Langganan</th>
-                                            <th class="px-4 py-3 border-bottom-0 text-uppercase small text-muted">
-                                                Tindakan</th>
+                                            <th style="font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#6b7280;border-color:#e5e7eb;padding:10px 16px;">Bil.</th>
+                                            <th style="font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#6b7280;border-color:#e5e7eb;padding:10px 16px;">No Transaksi</th>
+                                            <th style="font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#6b7280;border-color:#e5e7eb;padding:10px 16px;">No Resit</th>
+                                            <th style="font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#6b7280;border-color:#e5e7eb;padding:10px 16px;">Tempoh Langganan</th>
+                                            <th style="font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#6b7280;border-color:#e5e7eb;padding:10px 16px;text-align:center;">Tindakan</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         @foreach ($transactions as $transaction)
-                                            <tr>
-                                                <td class="px-4">{{ $transaction->number }} </td>
-                                                <td class="px-4">
+                                            <tr style="border-color:#f1f5f9;">
+                                                <td style="font-size:0.78rem;color:#9ca3af;padding:12px 16px;border-color:#f1f5f9;">{{ $loop->index + 1 }}.</td>
+                                                <td style="font-size:0.82rem;color:#374151;padding:12px 16px;border-color:#f1f5f9;">{{ $transaction->number }}</td>
+                                                <td style="font-size:0.82rem;color:#374151;padding:12px 16px;border-color:#f1f5f9;">
                                                     {{ $transaction->receipt != 'old' ? $transaction->receipt : $transaction->receipt_number }}
                                                 </td>
-                                                <td class="px-4">{{ $transaction->start_date }} -
-                                                    {{ $transaction->end_date }}</td>
-                                                <td class="px-4">
-                                                    {{ link_to_route('vendors.subscriptions.receipt', 'Resit', [$vendor->id, $transaction->subscription_id], ['target' => 'new', 'class' => 'btn btn-xs btn-outline-danger']) }}
+                                                <td style="font-size:0.82rem;color:#374151;padding:12px 16px;border-color:#f1f5f9;white-space:nowrap;">
+                                                    {{ $transaction->start_date }} — {{ $transaction->end_date }}
+                                                </td>
+                                                <td style="padding:12px 16px;border-color:#f1f5f9;text-align:center;">
+                                                    @if ($transaction->subscription_id !== 'TIADA')
+                                                        <a href="{{ route('vendors.subscriptions.receipt', [$vendor->id, $transaction->subscription_id]) }}" target="_blank"
+                                                            style="display:inline-flex;align-items:center;gap:4px;font-size:0.72rem;font-weight:600;color:#0369a1;padding:4px 12px;background:#f0f9ff;border-radius:5px;border:1px solid #bae6fd;text-decoration:none;">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                                                            Resit
+                                                        </a>
+                                                    @else
+                                                        <span style="font-size:0.72rem;color:#9ca3af;">-</span>
+                                                    @endif
                                                 </td>
                                             </tr>
                                         @endforeach
@@ -933,7 +961,7 @@
                                 </table>
                             </div>
                         @else
-                            <div class="p-4 text-center text-muted fst-italic">Tiada maklumat langganan.</div>
+                            <div class="p-4 text-center text-muted" style="font-size:0.82rem;">Tiada maklumat langganan.</div>
                         @endif
                     </div>
                 </div>
@@ -993,6 +1021,17 @@
             }
         });
     </script>
+
+    @if (session('cidb_integrated'))
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const cidbTab = document.querySelector('a[href="#vf-cidb"]');
+                if (cidbTab && window.bootstrap) {
+                    window.bootstrap.Tab.getOrCreateInstance(cidbTab).show();
+                }
+            });
+        </script>
+    @endif
 
     <!-- Show/Hide Sensitive Info (IC. NO.) -->
     @if ($canViewSensitiveIdentity)

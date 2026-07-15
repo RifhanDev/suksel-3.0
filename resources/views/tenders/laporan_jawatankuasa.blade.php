@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="Content-type" content="text/html; charset=utf-8">
-    <title>Laporan Jawatankuasa - {{ $tender->ref_number ?? '-' }}</title>
+    <title>Laporan Jawatankuasa - {{ $tender->ref_number ?? '-' }} | {{ $tender->type === 'quotation' ? 'Sebut Harga' : 'Tender' }}</title>
     <style>
         * {
             margin: 0;
@@ -151,7 +151,7 @@
     </div>
 
     <div class="tender-info">
-        <strong>No Tender:</strong> {{ $tender->ref_number ?? '-' }} &nbsp;&nbsp;|&nbsp;&nbsp;
+        <strong>No {{ $tender->procurement_label }}:</strong> {{ $tender->ref_number ?? '-' }} &nbsp;&nbsp;|&nbsp;&nbsp;
         <strong>PTJ:</strong> {{ optional(optional($tender)->tenderer)->name ?? '-' }} &nbsp;&nbsp;|&nbsp;&nbsp;
         <strong>Status:</strong> {{ $tender->status ?? '-' }}
     </div>
@@ -162,7 +162,13 @@
             'open' => 'Jawatankuasa Pembuka',
             'tech' => 'Jawatankuasa Penilaian Teknikal',
             'fin'  => 'Jawatankuasa Penilaian Kewangan',
+            'eval' => 'Jawatankuasa Penilaian Sebut Harga/Tender',
         ];
+
+        if (isset($tender) && $tender->tender_peringkat == 1) {
+            unset($tabLabels['tech']);
+            unset($tabLabels['fin']);
+        }
 
         $perananLabels = [
             '1' => 'Pengerusi',

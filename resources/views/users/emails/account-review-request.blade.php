@@ -222,7 +222,6 @@
 														Semak Akaun Saya
 													</font>
 												</a>
-												@endif
 											</div>
 											<!-- padding -->
 											<div style="height: 100px; line-height: 100px; font-size: 10px;">&nbsp;</div>

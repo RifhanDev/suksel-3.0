@@ -36,6 +36,18 @@ Route::prefix('v1')->group(function () {
     Route::post('tender_agency', 'App\Http\Controllers\API\ApiController@tenderAgency')->name('tenderAgencyApi');       //10-FEB-2025  API utk tender agency AUFA & MBSA
     Route::post('detail_vendor', 'App\Http\Controllers\API\ApiController@detailVendor')->name('detailVendorApi');        //10-FEB-2025  API utk maklumat vendor AUFA & MBSA
     Route::post('transaction_contract', 'App\Http\Controllers\API\ApiController@transactionContract')->name('transactionContractApi'); //10-FEB-2025  API utk transaksi tender agency AUFA & MBSA
+
+    // Inbound webhooks from STOS-EPENILAIAN-WEB
+    Route::post('stos/webhook', 'App\Http\Controllers\API\StosWebhookController@handle')
+        ->middleware('stos.api')
+        ->name('stos.webhook');
+});
+
+// Penyediaan Iklan API (used by StosBackendClient when STOS_BACKEND_URL points here)
+Route::middleware('stos.api')->group(function () {
+    Route::get('tenders/{tender}/penyediaan-iklan', 'App\Http\Controllers\API\PenyediaanIklanApiController@show');
+    Route::post('tenders/{tender}/penyediaan-iklan', 'App\Http\Controllers\API\PenyediaanIklanApiController@store');
+    Route::post('tenders/{tender}/penyediaan-iklan/submit', 'App\Http\Controllers\API\PenyediaanIklanApiController@submit');
 });
 
 Route::get('/mail-manager/test', 'MailManagerController@test');

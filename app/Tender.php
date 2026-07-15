@@ -102,7 +102,11 @@ class Tender extends Model
 		'zon_lokasi',
 		'jawatankuasa',
 		'lawatan_tapak',
-		'penilaian_fizikal'
+		'penilaian_fizikal',
+		'status_process_id',
+		'is_ebidding',
+		'ebidding_process_stage_id',
+		'tender_peringkat',
 	];
 
 	/**
@@ -152,6 +156,13 @@ class Tender extends Model
 	public static function setRules($name)
 	{
 		self::$rules = self::$_rules[$name];
+	}
+
+	public function getProcurementLabelAttribute()
+	{
+		return $this->type === 'quotation'
+			? 'Sebut Harga'
+			: 'Tender';
 	}
 
 	/**
@@ -382,6 +393,11 @@ class Tender extends Model
 		return $this->belongsTo('App\OrganizationUnit', 'organization_unit_id');
 	}
 
+	public function jawatankuasas()
+	{
+		return $this->hasMany(\App\Models\Jawatankuasa::class, 'tender_id');
+	}
+
 	public function news()
 	{
 		return $this->hasMany('App\News');
@@ -458,6 +474,46 @@ class Tender extends Model
 		} else {
 			return null;
 		}
+	}
+
+	public function getTarikhIklanDisplayAttribute(): string
+	{
+		return $this->formatDateRangeDisplay($this->advertise_start_date, $this->advertise_stop_date);
+	}
+
+	public function getTarikhJualDisplayAttribute(): string
+	{
+		return $this->formatDateRangeDisplay($this->document_start_date, $this->document_stop_date);
+	}
+
+	public function getTarikhTutupDisplayAttribute(): string
+	{
+		if (empty($this->submission_datetime)) {
+			return '-';
+		}
+
+		return Carbon::parse($this->submission_datetime)->format('j M Y');
+	}
+
+	public function getMasaTutupDisplayAttribute(): string
+	{
+		if (empty($this->submission_datetime)) {
+			return '-';
+		}
+
+		return Carbon::parse($this->submission_datetime)->format('g:i A');
+	}
+
+	protected function formatDateRangeDisplay($start, $stop): string
+	{
+		if (empty($start) && empty($stop)) {
+			return '-';
+		}
+
+		$startLabel = empty($start) ? '-' : Carbon::parse($start)->format('j M Y');
+		$stopLabel = empty($stop) ? '-' : Carbon::parse($stop)->format('j M Y');
+
+		return $startLabel . ' - ' . $stopLabel;
 	}
 
 	public function getMofCodesAttribute()
@@ -576,6 +632,50 @@ class Tender extends Model
 	public function getTenderFilesAttribute()
 	{
 		return $this->files()->where('public', 0)->orderBy('name', 'asc')->get();
+	}
+
+	/**
+	 * Kaedah perolehan: 1 = Tender, 2 = Sebut Harga.
+	 * Falls back to legacy type when kaedah_perolehan_id is null.
+	 */
+	public function resolvedKaedahPerolehanId(): ?int
+	{
+		if ($this->kaedah_perolehan_id !== null) {
+			return (int) $this->kaedah_perolehan_id;
+		}
+
+		return match ($this->type) {
+			'quotation' => 2,
+			'tender' => 1,
+			default => null,
+		};
+	}
+
+	public function isTenderKaedah(): bool
+	{
+		return $this->resolvedKaedahPerolehanId() === 1;
+	}
+
+	public function isSebutHargaKaedah(): bool
+	{
+		return $this->resolvedKaedahPerolehanId() === 2;
+	}
+
+	public function showDokumenSenaraiTab(): bool
+	{
+		return in_array($this->resolvedKaedahPerolehanId(), [1, 2], true);
+	}
+
+	public function canShowDokumenSenaraiTab($vendor_id = null): bool
+	{
+		return $this->showDokumenSenaraiTab() && $this->canShowFiles($vendor_id);
+	}
+
+	public function dokumenSenaraiTabLabel(): string
+	{
+		return $this->isSebutHargaKaedah()
+			? 'Dokumen Sebut Harga'
+			: 'Dokumen Tender/Tawaran';
 	}
 
 	public function hasParticipate($id)
@@ -734,16 +834,25 @@ class Tender extends Model
 		return $participate;
 	}
 
+	public function hasRequiredSiteVisits(): bool
+	{
+		return count($this->siteVisits) > 0
+			&& $this->siteVisits->contains(fn ($visit) => (bool) $visit->required);
+	}
+
 	public function attendVisits($vendor_id)
 	{
+		if (! $this->hasRequiredSiteVisits()) {
+			return true;
+		}
+
 		$participate = true;
-		if (count($this->siteVisits) > 0) {
-			foreach ($this->siteVisits as $visit) {
-				if ($visit->required) {
-					$participate = $participate && TenderVisitor::hasVisit($visit->id, $vendor_id);
-				}
+		foreach ($this->siteVisits as $visit) {
+			if ($visit->required) {
+				$participate = $participate && TenderVisitor::hasVisit($visit->id, $vendor_id);
 			}
 		}
+
 		return $participate;
 	}
 
@@ -758,14 +867,39 @@ class Tender extends Model
 
 	public function validDocumentDate()
 	{
-		$valid = true;
-		$valid = $valid && (strtotime($this->document_start_date) <= time());
-		$valid = $valid && (time() < Carbon::parse($this->document_stop_date)->addDay()->timestamp);
-		return $valid;
+		if (empty($this->document_start_date) || empty($this->document_stop_date)) {
+			return false;
+		}
+
+		$today = Carbon::today();
+		return $today->gte(Carbon::parse($this->document_start_date))
+			&& $today->lte(Carbon::parse($this->document_stop_date));
+	}
+
+	public function documentSalesNotYetOpen(): bool
+	{
+		if (empty($this->document_start_date)) {
+			return true;
+		}
+
+		return Carbon::today()->lt(Carbon::parse($this->document_start_date)->startOfDay());
+	}
+
+	public function documentSalesClosed(): bool
+	{
+		if (empty($this->document_stop_date)) {
+			return true;
+		}
+
+		return Carbon::today()->gt(Carbon::parse($this->document_stop_date)->startOfDay());
 	}
 
 	public function nearSubmission()
 	{
+		if (empty($this->submission_datetime)) {
+			return false;
+		}
+
 		$submission_date = Carbon::parse($this->submission_datetime);
 		if ($submission_date->timestamp > time()) {
 			$minus_a_day = $submission_date->subDay();
@@ -777,6 +911,10 @@ class Tender extends Model
 
 	public function nearDocumentStop()
 	{
+		if (empty($this->document_stop_date)) {
+			return false;
+		}
+
 		$submission_date = Carbon::parse($this->document_stop_date);
 		if ($submission_date->subDay()->timestamp > time()) {
 			return $submission_date->addDay()->timestamp < time();
@@ -1112,6 +1250,9 @@ class Tender extends Model
 	public function hasCompleteJawatankuasa()
 	{
 		$requiredJenis   = ['spec', 'open', 'tech', 'fin'];
+		if ($this->tender_peringkat == 1) {
+			$requiredJenis = ['spec', 'open', 'eval'];
+		}
 		$requiredPeranan = ['1', '2', '3'];
 		$tableName = DB::getSchemaBuilder()->hasTable('jawatankuasas') ? 'jawatankuasas' : 'jawatankuasa';
 
@@ -1439,17 +1580,29 @@ class Tender extends Model
 
 		self::created(function ($tender) {
 			TenderHistory::log($tender->id, 'create');
-			cache()->tags('Tender')->flush();
+			try {
+				cache()->tags('Tender')->flush();
+			} catch (\BadMethodCallException $e) {
+				cache()->flush();
+			}
 		});
 
 		self::updated(function ($tender) {
 			// Log tender update (backup in case updateTender is not called)
 			// Only log if updateTender wasn't called (we can't easily detect this, so we'll rely on updateTender's audit flag)
-			cache()->tags('Tender')->flush();
+			try {
+				cache()->tags('Tender')->flush();
+			} catch (\BadMethodCallException $e) {
+				cache()->flush();
+			}
 		});
 
 		self::deleted(function () {
-			cache()->tags('Tender')->flush();
+			try {
+				cache()->tags('Tender')->flush();
+			} catch (\BadMethodCallException $e) {
+				cache()->flush();
+			}
 		});
 
 		static::saving(function ($model) {

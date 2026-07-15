@@ -247,30 +247,43 @@ class Transaction extends Model
 	
 	public function generateTenderVendor() {
 	
-		if ($this->type == 'purchase' && $this->status == 'success') {
-			$items = unserialize($this->cached_data);
-			$tenders = Tender::whereIn('id', $items)->get();
-		
-			foreach ($tenders as $tender) {
-				$purchase = $tender->participants()->where('vendor_id', $this->vendor_id)->first();
-				
-				if ($purchase) {
-					if ($purchase->participate == 0) {
+		if ($this->type !== 'purchase' || $this->status !== 'success') {
+			return;
+		}
+
+		$justSucceeded = $this->wasRecentlyCreated || $this->getOriginal('status') !== 'success';
+
+		if (! $justSucceeded) {
+			return;
+		}
+
+		$items = unserialize($this->cached_data);
+		$tenders = Tender::whereIn('id', $items)->get();
+	
+		foreach ($tenders as $tender) {
+			$purchase = $tender->participants()->where('vendor_id', $this->vendor_id)->first();
+			
+			if ($purchase) {
+				if ((int) $purchase->participate === 0) {
 					$purchase->participate = 1;
-					$purchase->ref_number = TenderVendor::generateNumber($tender->id);
-					$purchase->amount = $tender->price;
-					$purchase->transaction_id = $this->id;
-					$purchase->save();
+					if (empty($purchase->ref_number)) {
+						$purchase->ref_number = TenderVendor::generateNumber($tender->id);
 					}
-				} else {
-					$tender->participants()->save(new TenderVendor([
-					'ref_number' => TenderVendor::generateNumber($tender->id),
-					'transaction_id' => $this->id,
-					'participate' => 1,
-					'amount' => $tender->price,
-					'vendor_id' => $this->vendor_id
-					]));
 				}
+
+				$purchase->amount = $tender->price;
+				$purchase->transaction_id = $this->id;
+				$purchase->save();
+				TenderVendor::syncKodPembekal($tender->id);
+			} else {
+				$tender->participants()->save(new TenderVendor([
+				'ref_number' => TenderVendor::generateNumber($tender->id),
+				'transaction_id' => $this->id,
+				'participate' => 1,
+				'amount' => $tender->price,
+				'vendor_id' => $this->vendor_id
+				]));
+				TenderVendor::syncKodPembekal($tender->id);
 			}
 		}
 	}

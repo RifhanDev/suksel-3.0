@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Jawatankuasa;
+use App\Services\TenderProcessStatusService;
 use App\Tender;
 use App\User;
 use Carbon\Carbon;
@@ -26,7 +27,29 @@ class JawatankuasaController extends Controller
      */
     public function create(Request $request)
     {
+        $tenderUuid = $request->input('tender');
+        if (!empty($tenderUuid)) {
+            $tender = Tender::where('uuid', $tenderUuid)->first();
+            if ($tender) {
+                $tender->update(['tender_peringkat' => 2]);
+            }
+        }
         return $this->renderPelantikanView($request);
+    }
+
+    /**
+     * Show the form for creating a new 1 peringkat resource.
+     */
+    public function create1Peringkat(Request $request)
+    {
+        $tenderUuid = $request->input('tender');
+        if (!empty($tenderUuid)) {
+            $tender = Tender::where('uuid', $tenderUuid)->first();
+            if ($tender) {
+                $tender->update(['tender_peringkat' => 1]);
+            }
+        }
+        return $this->renderPelantikanView1Peringkat($request);
     }
 
     /**
@@ -34,7 +57,13 @@ class JawatankuasaController extends Controller
      */
     public function store(Request $request)
     {
-        $supportedJenis = $this->getSupportedJenis();
+        $tenderUuid = $request->input('tender_uuid');
+        $tender = null;
+        if (!empty($tenderUuid)) {
+            $tender = Tender::where('uuid', $tenderUuid)->first();
+        }
+
+        $supportedJenis = $this->getSupportedJenis($tender);
 
         if ($request->has('tabs')) {
             return $this->storeAllTabsDraft($request, $supportedJenis);
@@ -247,10 +276,13 @@ class JawatankuasaController extends Controller
         $tenderUuid = $request->input('tender');
 
         if (empty($tenderUuid)) {
-            abort(404, 'Tender tidak ditemui.');
+            abort(404, 'Tender/Sebut Harga tidak ditemui.');
         }
 
-        $tender = Tender::with('tenderer')->where('uuid', $tenderUuid)->firstOrFail();
+        $tender = Tender::with('tenderer')->where('uuid', $tenderUuid)->first();
+        if (!$tender) {
+            abort(404, 'Tender/Sebut Harga tidak ditemui.');
+        }
 
         $committeeDrafts = Jawatankuasa::with('user')
             ->where('tender_id', $tender->id)
@@ -297,6 +329,7 @@ class JawatankuasaController extends Controller
             'open' => 'Jawatankuasa Pembuka',
             'tech' => 'Jawatankuasa Penilaian Teknikal',
             'fin'  => 'Jawatankuasa Penilaian Kewangan',
+            'eval' => 'Jawatankuasa Penilaian Sebut Harga/Tender',
         ];
 
         $perananLabels = [
@@ -317,6 +350,9 @@ class JawatankuasaController extends Controller
         }
 
         $requiredJenis = ['spec', 'open', 'tech', 'fin'];
+        if ($tender->tender_peringkat == 1) {
+            $requiredJenis = ['spec', 'open', 'eval'];
+        }
         $requiredPeranan = ['1', '2', '3']; // Pengerusi, Setiausaha, Ahli
 
         $grouped = $members->groupBy('jenis_jawatankuasa');
@@ -328,7 +364,7 @@ class JawatankuasaController extends Controller
             foreach ($requiredPeranan as $peranan) {
                 if (!in_array($peranan, $existingPeranan)) {
                     return response()->json([
-                        'message' => 'Jawatan Kuasa tidak Mencukupi',
+                        'message' => 'Jawatan Kuasa Tidak Mencukupi',
                     ], 422);
                 }
             }
@@ -348,6 +384,7 @@ class JawatankuasaController extends Controller
             $to = trim($member->user->email);
             $subject = 'Pemakluman Pelantikan ' . $jenisLabel . ' - ' . ($tender->ref_number ?? '');
             $viewParams = [
+                'tender' => $tender,
                 'emailUser' => $member->user,
                 'jenisLabel' => $jenisLabel,
                 'perananLabel' => $perananLabel,
@@ -393,6 +430,8 @@ class JawatankuasaController extends Controller
             ->whereNotNull('user_id')
             ->update(['dihantar_pemakluman_pada' => Carbon::now()]);
 
+        app(TenderProcessStatusService::class)->markPelantikanJawatankuasaSelesai($tender);
+
         Log::debug('hantarPemakluman completed', [
             'email_count' => $emailCount,
             'use_queue' => $useQueue,
@@ -402,6 +441,94 @@ class JawatankuasaController extends Controller
             'message' => "Pemakluman berjaya dihantar kepada {$emailCount} ahli jawatankuasa.",
             'email_count' => $emailCount,
         ]);
+    }
+
+    public function storeProfilPetender(Request $request)
+    {
+        $data = $request->all();
+
+        dd($data);
+    }
+
+    public function simpanSenaraiKewanganKerja(Request $request)
+    {
+        $data = $request->all();
+
+        dd($data);
+    }
+
+    public function simpanSenaraiKewanganBekalan(Request $request)
+    {
+        $data = $request->all();
+
+        dd($data);
+    }
+
+    public function simpanSenaraiTeknikal(Request $request)
+    {
+        $data = $request->all();
+
+        dd($data);
+    }
+
+    public function storePenyataKewangan(Request $request)
+    {
+        $data = $request->all();
+
+        dd($data);
+    }
+
+    public function storeBonSaham(Request $request)
+    {
+        $data = $request->all();
+
+        dd($data);
+    }
+
+    public function storePrestasiKerjaSemasa(Request $request)
+    {
+        $data = $request->all();
+
+        dd($data);
+    }
+
+    public function spesifikasiKewanganBekalan(Request $request, ?string $spesifikasiUuid = null)
+    {
+        $tender = null;
+
+        // Dummy data — will be replaced with real DB queries later
+        $anggaranJabatan = 150000.00;
+
+        $items = [
+            [
+                'nama'      => 'Air Mineral 500ml',
+                'kuantiti'  => 1000,
+                'uom'       => 'Lot',
+                'specs'     => [
+                    'Jenama tempatan yang diiktiraf KKM',
+                    'Pembungkusan shrink wrap 24 botol per karton',
+                ],
+            ],
+            [
+                'nama'      => 'Air Mineral 1.5L',
+                'kuantiti'  => 500,
+                'uom'       => 'Unit',
+                'specs'     => [
+                    'Jenama tempatan yang diiktiraf KKM',
+                    'Tarikh luput minima 6 bulan dari tarikh penghantaran',
+                ],
+            ],
+            [
+                'nama'      => 'Air Mineral 5 Gallon',
+                'kuantiti'  => 100,
+                'uom'       => 'Hari',
+                'specs'     => [
+                    'Dispenser compatible standard fitting',
+                ],
+            ],
+        ];
+
+        return view('newModule.jawatankuasaSpesifikasi.form_spesifikasi_kewangan_bekalan', compact('items', 'anggaranJabatan', 'tender'));
     }
 
     /**
@@ -440,8 +567,12 @@ class JawatankuasaController extends Controller
     {
         $tenderUuid = $request->input('tender');
         $tender = null;
+        if (!empty($tenderUuid)) {
+            $tender = Tender::with('tenderer')->where('uuid', $tenderUuid)->first();
+        }
+
         $committeeDrafts = [];
-        $supportedDraftJenis = $this->getSupportedJenis();
+        $supportedDraftJenis = $this->getSupportedJenis($tender);
         $icUsers = User::query()
             ->whereNotNull('ic_number')
             ->where('ic_number', '!=', '')
@@ -458,10 +589,6 @@ class JawatankuasaController extends Controller
                 ];
             })
             ->values();
-
-        if (!empty($tenderUuid)) {
-            $tender = Tender::with('tenderer')->where('uuid', $tenderUuid)->first();
-        }
 
         if ($tender) {
             $committeeDrafts = Jawatankuasa::with('user')
@@ -501,32 +628,79 @@ class JawatankuasaController extends Controller
         return view('tenders.pelantikan_jawatankuasa', compact('tender', 'committeeDrafts', 'supportedDraftJenis', 'icUsers'));
     }
 
-    private function getSupportedJenis(): array
+    private function renderPelantikanView1Peringkat(Request $request)
     {
-        $fallback = ['spec', 'open', 'tech', 'fin'];
-
-        try {
-            $table = (new Jawatankuasa())->getTable();
-            $column = DB::selectOne("SHOW COLUMNS FROM `{$table}` WHERE Field = 'jenis_jawatankuasa'");
-
-            if (empty($column) || empty($column->Type)) {
-                return $fallback;
-            }
-
-            if (!preg_match('/^enum\((.*)\)$/i', $column->Type, $matches)) {
-                return $fallback;
-            }
-
-            $enumValues = str_getcsv($matches[1], ',', "'");
-            $supported = array_values(array_intersect($enumValues, ['spec', 'open', 'tech', 'fin', 'harga']));
-
-            return !empty($supported) ? $supported : $fallback;
-        } catch (\Throwable $e) {
-            Log::warning('Tidak dapat baca enum jenis_jawatankuasa', [
-                'message' => $e->getMessage(),
-            ]);
-
-            return $fallback;
+        $tenderUuid = $request->input('tender');
+        $tender = null;
+        if (!empty($tenderUuid)) {
+            $tender = Tender::with('tenderer')->where('uuid', $tenderUuid)->first();
         }
+
+        $committeeDrafts = [];
+        $supportedDraftJenis = $this->getSupportedJenis($tender);
+        $icUsers = User::query()
+            ->whereNotNull('ic_number')
+            ->where('ic_number', '!=', '')
+            ->orderBy('ic_number')
+            ->get(['id', 'ic_number', 'name', 'email', 'jawatan', 'gred'])
+            ->map(function ($user) {
+                return [
+                    'id' => (int) $user->id,
+                    'ic_number' => (string) $user->ic_number,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'jawatan' => $user->jawatan ?? '-',
+                    'gred' => $user->gred ?? '-',
+                ];
+            })
+            ->values();
+
+        if ($tender) {
+            $committeeDrafts = Jawatankuasa::with('user')
+                ->where('tender_id', $tender->id)
+                ->orderBy('id')
+                ->get()
+                ->groupBy('jenis_jawatankuasa')
+                ->map(function ($rows) {
+                    $firstRow = $rows->first();
+
+                    return [
+                        'catatan' => optional($firstRow)->catatan,
+                        'dokumen_sokongan_nama' => optional($firstRow)->dokumen_sokongan_nama,
+                        'dokumen_sokongan_path' => optional($firstRow)->dokumen_sokongan_path,
+                        'rows' => $rows
+                            ->filter(function ($row) {
+                                return !empty($row->user_id) && !empty($row->user);
+                            })
+                            ->map(function ($row) {
+                                return [
+                                    'user_id' => (int) $row->user_id,
+                                    'ic_number' => $row->user->ic_number ?? '',
+                                    'name' => $row->user->name,
+                                    'email' => $row->user->email,
+                                    'jawatan' => $row->user->jawatan ?? '-',
+                                    'gred' => $row->user->gred ?? '-',
+                                    'p_p' => (string) $row->p_p,
+                                    'peranan' => (string) $row->peranan,
+                                ];
+                            })
+                            ->values(),
+                    ];
+                })
+                ->toArray();
+        }
+
+        return view('tenders.pelantikan_jawatankuasa_1_peringkat', compact('tender', 'committeeDrafts', 'supportedDraftJenis', 'icUsers'));
+    }
+
+    private function getSupportedJenis(?Tender $tender = null): array
+    {
+        if ($tender) {
+            if ((int) $tender->tender_peringkat === 1) {
+                return ['spec', 'open', 'eval'];
+            }
+            return ['spec', 'open', 'tech', 'fin'];
+        }
+        return ['spec', 'open', 'tech', 'fin', 'eval'];
     }
 }

@@ -4,6 +4,13 @@
 	<link href="{{ asset('css/components/tender-show.css') }}" rel="stylesheet">
 @endsection
 
+@php
+	$refNo = $tender->no_tender ?: $tender->ref_number ?: '-';
+	$ptj = optional($tender->tenderer)->name ?: '-';
+	$tarikhSerahan = !empty($tender->submission_datetime) ? \Carbon\Carbon::parse($tender->submission_datetime) : null;
+	$sahLakuTamat = $tarikhSerahan ? $tarikhSerahan->copy()->addDays(90)->format('d/m/Y') : '-';
+@endphp
+
 @section('content')
 	<!-- BREADCRUMB -->
 	<div class="d-flex align-items-center gap-2 mb-3">
@@ -30,11 +37,11 @@
 			<div class="tender-ref-label">
 				<span class="tender-type-label">Sebut Harga / Tender</span>
 				<span class="tender-ref-sep">·</span>
-				<span class="tender-ref-no">QT210000000023741</span>
+				<span class="tender-ref-no">{{ $refNo }}</span>
 			</div>
 
 			<!-- Tender title -->
-			<h2 class="tender-title-main mb-3">KERJA-KERJA MENAIK TARAF SUNGAI BATU DAN KAWASAN SEKITAR, SELANGOR DARUL EHSAN</h2>
+			<h2 class="tender-title-main mb-3">{{ $tender->name }}</h2>
 
 			<!-- Detail fields grid -->
 			<div class="row g-3 pb-3">
@@ -42,7 +49,7 @@
 				<div class="col-12 col-sm-6 col-lg-3">
 					<div class="d-flex flex-column gap-1">
 						<span class="text-muted fw-semibold text-uppercase" style="font-size:0.67rem; letter-spacing:0.5px;">PTJ</span>
-						<span class="fw-semibold text-dark" style="font-size:0.88rem;">JABATAN PENGAIRAN DAN SALIRAN</span>
+						<span class="fw-semibold text-dark" style="font-size:0.88rem;">{{ $ptj }}</span>
 					</div>
 				</div>
 
@@ -58,7 +65,7 @@
 					<div class="d-flex flex-column gap-1">
 						<span class="text-muted fw-semibold text-uppercase" style="font-size:0.67rem; letter-spacing:0.5px;">Sah Laku
 							Tawaran Tamat</span>
-						<span class="fw-semibold text-dark" style="font-size:0.88rem;">17/01/2027</span>
+						<span class="fw-semibold text-dark" style="font-size:0.88rem;">{{ $sahLakuTamat }}</span>
 					</div>
 				</div>
 
@@ -96,7 +103,7 @@
 							<line x1="16" y1="13" x2="8" y2="13"></line>
 							<line x1="16" y1="17" x2="8" y2="17"></line>
 						</svg>
-						Paparan Kertas Taklimat
+						Penyediaan Kertas Taklimat
 					</a>
 				</li>
 
@@ -120,7 +127,7 @@
 	<!-- TAB CONTENT -->
 	<div class="tab-content">
 
-		<!-- Tab 1: Paparan Kertas Taklimat -->
+		<!-- Tab 1: Seksyen Laporan -->
 		@include('newModule.perakuanJabatan.kertas_taklimat')
 
 		<!-- Tab 2: Pengesyoran Pembekal -->

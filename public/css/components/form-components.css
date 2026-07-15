@@ -43,6 +43,11 @@
     font-weight: 600;
 }
 
+/* --- CHECKBOX / RADIO BASE --- */
+.form-check-input {
+    border-color: #94a3b8;
+}
+
 /* --- CHECKBOX / RADIO CHECKED STATE --- */
 .form-check-input:checked {
     background-color: var(--sg-red);

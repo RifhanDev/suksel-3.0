@@ -29,6 +29,9 @@
     <link href="{{ asset('css/components/content-card.css') }}" rel="stylesheet">
     <link href="{{ asset('css/components/badges.css') }}" rel="stylesheet">
 
+    <!-- Bootstrap Icons (bi-*); used by penilaian & other v3 screens -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" crossorigin="anonymous">
+
     <!-- Selectize CSS -->
     <link href="{{ asset('packages/selectize/dist/css/selectize.default.css') }}" rel="stylesheet">
 
@@ -604,6 +607,17 @@
             letter-spacing: 0.5px;
         }
 
+        .dropdown-header-vendor {
+            padding: 1rem 1rem 0.8rem;
+        }
+
+        .dropdown-header-vendor strong {
+            font-size: 0.95rem;
+            color: #1f2937;
+            display: block;
+            margin-bottom: 2px;
+        }
+
         .dropdown-item {
             padding: 0.7rem 1rem;
             font-size: 0.9rem;
@@ -886,23 +900,52 @@
             });
         });
     </script>
-    <!-- Botman Chatbot Widget -->
+
+    {{-- ╔══════════════════════════════════════════════════════════════════════╗
+         ║  CHATBOT LELA — BotMan Widget                                        ║
+         ║                                                                      ║
+         ║  Load order (must stay in this sequence):                            ║
+         ║    1. Pre-hide CSS   — suppresses flash on page load                 ║
+         ║    2. Pre-hide JS    — reads localStorage, applies CSS class early   ║
+         ║    3. Widget config  — botmanWidget settings + message handler       ║
+         ║    4. widget.js      — BotMan script (renders into #botmanWidgetRoot)║
+         ║    5. Toggle script  — hide/show button & ribbon tab                 ║
+         ╚══════════════════════════════════════════════════════════════════════╝ --}}
+
+    {{-- 1. Pre-hide CSS: keeps widget off-screen until JS takes over --}}
+    <style>
+        html.chatbot-pre-hidden #botmanWidgetRoot > * {
+            transform: translateX(200%) !important;
+            transition: none !important;
+        }
+    </style>
+
+    {{-- 2. Pre-hide JS: runs synchronously before widget renders --}}
+    <script>
+        try {
+            if (localStorage.getItem('chatbotHidden') === '1') {
+                document.documentElement.classList.add('chatbot-pre-hidden');
+            }
+        } catch (e) {}
+    </script>
+
+    {{-- 3. Widget config + BotMan message handler --}}
     <script>
         @php $chat_id = Str::random(8); @endphp
 
         var botmanWidget = {
-            title: 'Lela (Bot)',
-            introMessage: 'Hi, saya Lela. Saya di sini untuk membantu anda dan menjawab persoalan anda.',
-            mainColor: '#c41e3a',
-            aboutText: '',
+            title           : 'Lela (Bot)',
+            introMessage    : 'Hi, saya Lela. Saya di sini untuk membantu anda dan menjawab persoalan anda.',
+            mainColor       : '#c41e3a',
+            aboutText       : '',
             bubbleBackground: '#c41e3a',
-            headerTextColor: '#fff',
-            desktopHeight: 500,
-            desktopWidth: 400,
-            bubbleAvatarUrl: '{{ asset('images/chatbot.png') }}',
-            placeholderText: 'Hantar Pesanan..',
-            frameEndpoint: "{{ route('chat_widget', ['chat_id' => $chat_id]) }}",
-            userId: "{{ $chat_id }}"
+            headerTextColor : '#fff',
+            desktopHeight   : 500,
+            desktopWidth    : 400,
+            bubbleAvatarUrl : '{{ asset('images/chatbot.png') }}',
+            placeholderText : 'Hantar Pesanan..',
+            frameEndpoint   : "{{ route('chat_widget', ['chat_id' => $chat_id]) }}",
+            userId          : "{{ $chat_id }}"
         };
 
         window.addEventListener("message", (event) => {
@@ -943,7 +986,11 @@
             }
         });
     </script>
+
+    {{-- 4. BotMan widget script --}}
     <script src='{{ asset('packages/botman/build/js/widget.js') }}'></script>
+    {{-- 5. Toggle script: hide button + ribbon tab --}}
+    <script src="{{ asset('js/chatbot-widget.js') }}"></script>
 
     @yield('scripts')
     @stack('scripts')
