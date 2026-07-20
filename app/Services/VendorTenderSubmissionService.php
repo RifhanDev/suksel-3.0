@@ -34,6 +34,15 @@ class VendorTenderSubmissionService
             ];
         }
 
+        $windowReason = $tender->vendorDokumenWindowBlockedReason();
+        if ($windowReason !== null) {
+            return [
+                'ready' => false,
+                'errors' => [$windowReason],
+                'purchase' => $purchase,
+            ];
+        }
+
         $errors = $this->collectValidationErrors($tender, $vendorId);
 
         return [
@@ -96,6 +105,13 @@ class VendorTenderSubmissionService
         if ($purchase && $purchase->submitted) {
             throw ValidationException::withMessages([
                 'vendor' => 'Tawaran telah dihantar. Maklumat tidak boleh dikemaskini.',
+            ]);
+        }
+
+        $windowReason = $tender->vendorDokumenWindowBlockedReason();
+        if ($windowReason !== null) {
+            throw ValidationException::withMessages([
+                'vendor' => $windowReason,
             ]);
         }
     }
