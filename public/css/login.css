@@ -1,0 +1,7 @@
+/**
+ *= require bootswatch.less
+ *= require_self
+ */
+label.checkbox {
+  padding-left: 24px;
+}

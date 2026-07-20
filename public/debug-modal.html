@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Debug Modal - Sistem Tender Online Selangor</title>
+    
+    <!-- Tabler CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0-beta20/dist/css/tabler.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@tabler/icons@2.40.0/tabler-icons.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="page">
+        <div class="container mt-5">
+            <h1>Debug Login Modal</h1>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <h3>Test Buttons:</h3>
+                    <button type="button" class="btn btn-primary mb-2" data-bs-toggle="modal" data-bs-target="#loginModal">
+                        Test Modal (data-bs-toggle)
+                    </button>
+                    <br>
+                    <button type="button" class="btn btn-success mb-2" onclick="showModalProgrammatically()">
+                        Test Modal (JavaScript)
+                    </button>
+                    <br>
+                    <button type="button" class="btn btn-warning mb-2" onclick="checkBootstrap()">
+                        Check Bootstrap Status
+                    </button>
+                </div>
+                
+                <div class="col-md-6">
+                    <h3>Debug Console:</h3>
+                    <div id="debug-console" style="background: #f8f9fa; padding: 10px; border-radius: 5px; height: 200px; overflow-y: auto; font-family: monospace; font-size: 12px;">
+                        <div>Ready to test...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Login Modal -->
+    <div class="modal modal-blur fade" id="loginModal" tabindex="-1" role="dialog" aria-labelledby="loginModalLabel">
+        <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="loginModalLabel">Daftar Masuk</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Alamat Emel</label>
+                            <input type="email" class="form-control" name="email" placeholder="Alamat Emel" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Kata Laluan</label>
+                            <input type="password" class="form-control" name="password" placeholder="Kata Laluan" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-primary">Daftar Masuk</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <!-- Tabler JS (includes Bootstrap 5) -->
+    <script src="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0-beta20/dist/js/tabler.min.js"></script>
+
+    <script>
+        function log(message) {
+            const console = document.getElementById('debug-console');
+            const div = document.createElement('div');
+            div.textContent = new Date().toLocaleTimeString() + ': ' + message;
+            console.appendChild(div);
+            console.scrollTop = console.scrollHeight;
+        }
+
+        function checkBootstrap() {
+            log('=== Bootstrap Check ===');
+            
+            if (typeof bootstrap !== 'undefined') {
+                log('✓ Bootstrap is loaded');
+                log('Bootstrap version: ' + (bootstrap.Modal ? 'Modal available' : 'Modal NOT available'));
+                
+                if (bootstrap.Modal) {
+                    log('✓ Bootstrap.Modal is available');
+                } else {
+                    log('✗ Bootstrap.Modal is NOT available');
+                }
+            } else {
+                log('✗ Bootstrap is NOT loaded');
+            }
+            
+            if (typeof jQuery !== 'undefined') {
+                log('✓ jQuery is loaded (v' + jQuery.fn.jquery + ')');
+            } else {
+                log('✗ jQuery is NOT loaded');
+            }
+            
+            const modal = document.getElementById('loginModal');
+            if (modal) {
+                log('✓ Modal element found');
+                log('Modal classes: ' + modal.className);
+            } else {
+                log('✗ Modal element NOT found');
+            }
+        }
+
+        function showModalProgrammatically() {
+            log('=== Programmatic Modal Test ===');
+            
+            if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                const modal = document.getElementById('loginModal');
+                if (modal) {
+                    try {
+                        const bsModal = new bootstrap.Modal(modal);
+                        bsModal.show();
+                        log('✓ Modal shown programmatically');
+                    } catch (error) {
+                        log('✗ Error showing modal: ' + error.message);
+                    }
+                } else {
+                    log('✗ Modal element not found');
+                }
+            } else {
+                log('✗ Bootstrap.Modal not available');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            log('DOM Content Loaded');
+            
+            // Check initial state
+            checkBootstrap();
+            
+            // Add event listeners to modal
+            const modal = document.getElementById('loginModal');
+            if (modal) {
+                modal.addEventListener('show.bs.modal', function(event) {
+                    log('Event: Modal opening (show.bs.modal)');
+                });
+                
+                modal.addEventListener('shown.bs.modal', function(event) {
+                    log('Event: Modal opened (shown.bs.modal)');
+                });
+                
+                modal.addEventListener('hide.bs.modal', function(event) {
+                    log('Event: Modal closing (hide.bs.modal)');
+                });
+                
+                modal.addEventListener('hidden.bs.modal', function(event) {
+                    log('Event: Modal closed (hidden.bs.modal)');
+                });
+            }
+            
+            // Test data-bs-toggle buttons
+            const toggleButtons = document.querySelectorAll('[data-bs-toggle="modal"]');
+            log('Found ' + toggleButtons.length + ' modal toggle buttons');
+            
+            toggleButtons.forEach((btn, index) => {
+                btn.addEventListener('click', function(e) {
+                    log('Button ' + (index + 1) + ' clicked');
+                });
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,197 @@
+<?php
+
+namespace App\Http\Conversations;
+
+use App\Models\CustomerQuestion;
+use App\Models\Faq;
+use BotMan\BotMan\Messages\Conversations\Conversation;
+use BotMan\BotMan\Messages\Incoming\Answer;
+use BotMan\BotMan\Messages\Outgoing\Actions\Button;
+use BotMan\BotMan\Messages\Outgoing\Question;
+use Illuminate\Foundation\Inspiring;
+
+class GlobalConversation extends Conversation
+{
+    public $input_message = "";
+
+    public function __construct($input)
+    {
+        $unJson = json_decode($input);
+        $this->input_message = $unJson->message;
+    }
+
+    /**
+     * First question
+     */
+    public function askReason()
+    {
+        $question = Question::create("Huh - you woke me up. What do you need?")
+            ->fallback('Unable to ask question')
+            ->callbackId('ask_reason')
+            ->addButtons([
+                Button::create('Tell a joke')->value('joke'),
+                Button::create('Give me a fancy quote')->value('quote'),
+            ]);
+
+        return $this->ask($question, function (Answer $answer) {
+            if ($answer->isInteractiveMessageReply()) {
+                if ($answer->getValue() === 'joke') {
+
+                    $curl = curl_init();
+
+                    curl_setopt_array($curl, [
+                        CURLOPT_URL => "https://dad-jokes.p.rapidapi.com/random/joke",
+                        CURLOPT_RETURNTRANSFER => true,
+                        CURLOPT_FOLLOWLOCATION => true,
+                        CURLOPT_ENCODING => "",
+                        CURLOPT_MAXREDIRS => 10,
+                        CURLOPT_TIMEOUT => 30,
+                        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+                        CURLOPT_CUSTOMREQUEST => "GET",
+                        CURLOPT_HTTPHEADER => [
+                            "X-RapidAPI-Host: dad-jokes.p.rapidapi.com",
+                            "X-RapidAPI-Key: 6d34bca57fmshc7217c0da426decp1c6ee3jsn94c666ebd071"
+                        ],
+                    ]);
+
+                    $response = curl_exec($curl);
+                    $err = curl_error($curl);
+
+                    curl_close($curl);
+
+                    // if ($err) {
+                    //     echo "cURL Error #:" . $err;
+                    // } else {
+                    //     echo $response;
+                    // }
+
+                    $joke = json_decode($response);
+
+                    // dd($joke);
+
+                    $this->say($joke->body[0]->setup);
+                    $this->say($joke->body[0]->punchline);
+                } else {
+                    $this->say(Inspiring::quote());
+                }
+            }
+        });
+    }
+
+    public function askFaq()
+    {
+        // First check existing question in db
+
+        $question_button = [];
+
+        if ($this->input_message != "")
+        {
+            $this->say('Soalan yang dimasukkan oleh anda: '.$this->input_message);
+
+            $keyword_array = explode(" ", $this->input_message);
+
+            $list_possible_question = [];
+            foreach ($keyword_array as $keyword) 
+            {
+                if ($keyword != "")
+                {
+                    $nearMatchingQuestion = Faq::whereRaw('lower(question) like ?', ["%".$keyword."%"])->get();
+                    
+                    foreach ($nearMatchingQuestion as $rows) {
+                        $list_possible_question[] = array("id" => $rows->id, "question" => $rows->question);
+                    }
+                    
+                }
+            }
+
+            // array_unique($list_possible_question);
+
+            foreach ($list_possible_question as $rows) {
+                $question_button[] = Button::create($rows["question"])->value($rows["id"]);
+            }
+            
+            
+            if(count($question_button) > 0)
+            {
+                $question_button[] = Button::create("Bukan disenarai diatas")->value(-999);
+
+                $question = Question::create("Adakah soalan anda seperti cadangan soalan berikut?")
+                ->fallback('Unable to ask question')
+                ->callbackId('ask_reason')
+                ->addButtons($question_button);
+            }
+            else
+            {
+                // Save invalid question to another table
+                $invalid_question = array(
+                    "question" => $this->input_message,
+                    "created_by" => "69"
+                );
+                CustomerQuestion::create($invalid_question);
+
+
+                $this->say("Harap maaf, kami tidak menjumpai sebarang padanan berkaitan soalan anda di dalam pangkalan data kami. Sila hubungi SUK SELANGOR");
+                // $this->say(Faq::whereRaw('instr(lower(question), ?)', strtolower($this->input_message))->toSql());
+                // $this->say('Input : '.$this->input_message);
+            }
+        }
+        else
+        {
+            $list_faq = Faq::all();
+        
+            foreach ($list_faq as $rows) {
+                $question_button[] = Button::create($rows->question)->value($rows->id);
+            }
+
+            $question_button[] = Button::create("Bukan disenarai diatas")->value(-999);
+
+            $question = Question::create("Hi, apa yang boleh saya bantu?")
+            ->fallback('Unable to ask question')
+            ->callbackId('ask_reason')
+            ->addButtons($question_button);
+        }
+
+        if ( count($question_button) > 0 )
+        {
+            return $this->ask($question, function (Answer $answer) {
+    
+                if ($answer->isInteractiveMessageReply()) 
+                {
+                    $faq_id = $answer->getValue() ?? "";
+                    $checkAnswer = Faq::find($faq_id);
+    
+                    if (isset($checkAnswer->answer) && $checkAnswer->answer != "")
+                    {
+                        $this->say('Anda telah memilih soalan: '.$checkAnswer->question);
+                        $this->say('Jawapan: '.$checkAnswer->answer);
+                    }
+                    else
+                    {
+                        $this->say("Harap maaf, saya tidak dapat memberikan jawapan bagi soalan anda. Sila hubungi SUK SELANGOR");
+                        // Save invalid question to another table
+                        $invalid_question = array(
+                            "question" => $this->input_message,
+                            "created_by" => "69"
+                        );
+                        CustomerQuestion::create($invalid_question);
+                    }
+                }
+                else
+                {
+                    $this->say("Harap maaf, pilihan soalan anda tidak wujud. Sila pilih semula");
+                    $this->repeat();
+                }
+            });
+        }
+
+    }
+
+    /**
+     * Start the conversation
+     */
+    public function run()
+    {
+        // $this->askReason();
+        $this->askFaq();
+    }
+}

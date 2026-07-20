@@ -1,0 +1,21 @@
+<?php
+
+namespace App\Models\Ref;
+
+use Illuminate\Database\Eloquent\Model;
+
+class RefKategoriJenisPerolehan extends Model
+{
+    protected $table = 'ref_kategori_jenis_perolehans';
+
+    protected $casts = [
+        'active' => 'bool'
+    ];
+
+    protected $guarded = [];
+
+    public function typeOfPerolehans()
+    {
+        return $this->hasMany(RefTypeOfPerolehan::class, 'ref_kategori_jenis_perolehan_id');
+    }
+}

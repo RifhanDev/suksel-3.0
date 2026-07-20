@@ -1,0 +1,247 @@
+:root {
+    --sg-red: #c41e3a;
+    --sg-red-dark: #8b1428;
+    --sg-yellow: #ffcc00;
+}
+
+.stats-card {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    border: 1px solid #f1f5f9;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.stats-card:hover {
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.08);
+    transform: translateY(-4px);
+    border-color: rgba(196, 30, 58, 0.1);
+}
+
+/* 
+    Selangor Red accent in the top-right corner
+*/
+.stats-card::before {
+    content: '';
+    position: absolute;
+    top: -25px;
+    right: -25px;
+    width: 80px;
+    height: 80px;
+    background: var(--sg-red);
+    opacity: 0.03;
+    border-radius: 20px;
+    transform: rotate(45deg);
+    transition: all 0.4s ease;
+    pointer-events: none;
+}
+
+.stats-card::after {
+    content: '';
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    width: 6px;
+    height: 6px;
+    background: var(--sg-yellow);
+    border-radius: 50%;
+    opacity: 0.6;
+    transition: all 0.4s ease;
+}
+
+.stats-card:hover::before {
+    opacity: 0.08;
+    transform: rotate(45deg) scale(1.1);
+}
+
+.stats-card:hover::after {
+    transform: scale(1.5);
+    opacity: 1;
+    box-shadow: 0 0 10px rgba(255, 204, 0, 0.5);
+}
+
+
+.stats-card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    z-index: 1; /* Sit above the background shape */
+}
+
+.stats-card-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: #64748b;
+    margin: 0;
+    width: 185px;
+    white-space: normal;
+}
+
+.stats-card-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff1f2;
+    color: var(--sg-red);
+    border: 1px solid #ffe4e6;
+    flex-shrink: 0;
+    transition: all 0.4s ease;
+}
+
+.stats-card:hover .stats-card-icon {
+    background: var(--sg-red);
+    color: white;
+    border-color: var(--sg-red);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 15px rgba(196, 30, 58, 0.25);
+}
+
+/* --- Stats Icon Color Modifiers --- */
+/* Warning (Yellow) */
+.stats-card-icon.stats-icon-warning {
+    background: #fffbeb;
+    color: #d97706;
+    border-color: #fef3c7;
+}
+
+.stats-card:hover .stats-card-icon.stats-icon-warning {
+    background: #f59e0b;
+    color: white;
+    border-color: #f59e0b;
+    box-shadow: 0 8px 15px rgba(245, 158, 11, 0.25);
+}
+
+/* Success (Green) */
+.stats-card-icon.stats-icon-success {
+    background: #f0fdf4;
+    color: #16a34a;
+    border-color: #dcfce7;
+}
+
+.stats-card:hover .stats-card-icon.stats-icon-success {
+    background: #15803d;
+    color: white;
+    border-color: #15803d;
+    box-shadow: 0 8px 15px rgba(21, 128, 61, 0.25);
+}
+
+.stats-card-icon svg {
+    width: 20px;
+    height: 20px;
+    stroke-width: 2;
+}
+
+.stats-card-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    z-index: 1;
+}
+
+.stats-card-value {
+    font-size: 2.2rem;
+    font-weight: 800;
+    color: #1e293b;
+    margin: 0;
+    line-height: 1;
+    /* font-family: 'Poppins', sans-serif; */
+    letter-spacing: -1px;
+}
+
+.stats-card-footer {
+    margin-top: 20px;
+    padding-top: 16px;
+    position: relative;
+}
+
+.stats-card-footer::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: #f1f5f9;
+}
+
+/* The "Red Shining" Effect */
+.stats-card-footer::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 25%;
+    right: 25%;
+    height: 1px;
+    /* Red shine against white background */
+    background: linear-gradient(90deg, transparent 0%, rgba(196, 30, 58, 0.6) 50%, transparent 100%);
+    z-index: 2;
+    transition: all 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.stats-card:hover .stats-card-footer::after {
+    left: 0;
+    right: 0;
+    background: linear-gradient(90deg, transparent 0%, var(--sg-red) 50%, transparent 100%);
+    box-shadow: 0 0 10px rgba(196, 30, 58, 0.3);
+}
+
+.stats-card-link {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #64748b;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.3s ease;
+}
+
+.stats-card:hover .stats-card-link {
+    color: var(--sg-red);
+}
+
+.stats-card-link:hover {
+    gap: 10px; /* Slight arrow movement */
+    color: var(--sg-red-dark);
+}
+
+/* 
+    SPECIFIC STATUS COLORS 
+*/
+
+/* Success (Langganan Aktif) */
+.stats-card.status-success .stats-card-icon {
+    background: #f0fdf4;
+    color: #16a34a;
+    border-color: #dcfce7;
+}
+.stats-card.status-success:hover .stats-card-icon {
+    background: #16a34a;
+    color: white;
+    border-color: #16a34a;
+    box-shadow: 0 8px 15px rgba(22, 163, 74, 0.25);
+}
+.stats-card.status-success::before { background: #16a34a; } /* Green triangle accent */
+.stats-card.status-success::after { background: #bbf7d0; } /* Light green dot */
+
+/* Danger (Langganan Tamat) */
+.stats-card.status-danger .stats-card-icon {
+    background: #fef2f2; color: #dc2626; border-color: #fee2e2;
+}
+.stats-card.status-danger:hover .stats-card-icon {
+    background: #dc2626; color: white; border-color: #dc2626;
+    box-shadow: 0 8px 15px rgba(220, 38, 38, 0.25);
+}

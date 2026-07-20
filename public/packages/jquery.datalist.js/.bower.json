@@ -1,0 +1,14 @@
+{
+  "name": "jquery.datalist.js",
+  "homepage": "https://github.com/miketaylr/jquery.datalist.js",
+  "_release": "d20f96fa4f",
+  "_resolution": {
+    "type": "branch",
+    "branch": "master",
+    "commit": "d20f96fa4fd3c48f0660bc74d8f4727226500f7d"
+  },
+  "_source": "git://github.com/miketaylr/jquery.datalist.js.git",
+  "_target": "*",
+  "_originalSource": "miketaylr/jquery.datalist.js",
+  "_direct": true
+}
