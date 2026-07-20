@@ -10,6 +10,7 @@ use App\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class PenyediaanIklanService
 {
@@ -105,6 +106,7 @@ class PenyediaanIklanService
                 : [];
 
             $taklimat = $payload['iklan']['taklimat'] ?? [];
+            $this->assertTaklimatWithinIklanWindow($payload['iklan'] ?? [], $taklimat);
             $payload['iklan']['taklimat'] = $this->syncTaklimatToSiteVisits(
                 $tender,
                 $taklimat,
@@ -142,6 +144,46 @@ class PenyediaanIklanService
 
             return $record;
         });
+    }
+
+    /**
+     * Lawatan/taklimat dates must fall within tarikh iklan … tarikh tutup.
+     *
+     * @param  array<string, mixed>  $iklan
+     * @param  array<int, array<string, mixed>>  $taklimatRows
+     */
+    protected function assertTaklimatWithinIklanWindow(array $iklan, array $taklimatRows): void
+    {
+        if ($taklimatRows === []) {
+            return;
+        }
+
+        $start = $this->parseDate($iklan['tarikh_iklan'] ?? null);
+        $end = $this->parseDate($iklan['tarikh_tutup'] ?? null);
+
+        if ($start === null || $end === null) {
+            throw ValidationException::withMessages([
+                'taklimat' => 'Sila tetapkan Tarikh Iklan dan Tarikh Tutup sebelum menambah lawatan/taklimat.',
+            ]);
+        }
+
+        $startDay = Carbon::parse($start)->startOfDay();
+        $endDay = Carbon::parse($end)->endOfDay();
+
+        foreach ($taklimatRows as $index => $row) {
+            $parsed = $this->parseDate($row['tarikh'] ?? null);
+            if ($parsed === null) {
+                continue;
+            }
+
+            $day = Carbon::parse($parsed)->startOfDay();
+            if ($day->lt($startDay) || $day->gt($endDay)) {
+                $label = trim((string) ($row['perihal'] ?? '')) ?: ('#' . ($index + 1));
+                throw ValidationException::withMessages([
+                    'taklimat' => "Tarikh lawatan/taklimat \"{$label}\" mesti dalam julat Tarikh Iklan hingga Tarikh Tutup.",
+                ]);
+            }
+        }
     }
 
     /**

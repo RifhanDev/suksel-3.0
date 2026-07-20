@@ -17,6 +17,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class PenyediaanIklanController extends Controller
 {
@@ -162,6 +163,10 @@ class PenyediaanIklanController extends Controller
             /** @var \Illuminate\Http\RedirectResponse $redirect */
             $redirect = redirect()->to($redirectUrl);
             return $redirect->with('success', $message);
+        } catch (ValidationException $e) {
+            $message = collect($e->errors())->flatten()->first() ?: 'Data tidak sah.';
+
+            return $this->respondError($request, $message, 422);
         } catch (\Throwable $e) {
             Log::error('Penyediaan iklan persist failed', [
                 'tender_id' => $tender->id,
