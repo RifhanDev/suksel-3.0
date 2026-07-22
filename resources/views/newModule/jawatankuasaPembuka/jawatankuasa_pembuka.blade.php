@@ -753,9 +753,13 @@
 				(savedStatus === 0 ? '' : 'disabled') +
 				'>' + escapeHtml(savedCatatan) + '</textarea>';
 
+			const kodDisplay = vendor.kod
+				? escapeHtml(vendor.kod)
+				: '<span class="fst-italic small text-muted">Kod Pembekal Belum Dijana</span>';
+
 			$body.append(
 				'<tr>' +
-					'<td class="text-center fw-bold" style="background-color: #efeff0ff; color: #3f3f3fff;" data-vendor-id="' + vendor.vendor_id + '">' + escapeHtml(vendor.kod) + '</td>' +
+					'<td class="text-center fw-bold" style="background-color: #efeff0ff; color: #3f3f3fff;" data-vendor-id="' + vendor.vendor_id + '">' + kodDisplay + '</td>' +
 					'<td>' +
 						'<div class="fw-semibold text-dark small mb-1">' + escapeHtml(vendor.name) + '</div>' +
 						docHtml +

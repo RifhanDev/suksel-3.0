@@ -94,7 +94,7 @@ class JawatankuasaPembukaController extends Controller
             return [
                 'vendor_id' => (int) $participant->vendor_id,
                 'name'      => $participant->vendor?->name ?: ('Vendor #' . $participant->vendor_id),
-                'kod'       => $participant->vendor?->registration ?: (string) $participant->vendor_id,
+                'kod'       => $participant->kod_pembekal ?: null,
             ];
         })->values()->all();
 
@@ -192,7 +192,7 @@ class JawatankuasaPembukaController extends Controller
         $vendors = $participants->map(fn ($p) => [
             'vendor_id' => (int) $p->vendor_id,
             'name'      => $p->vendor?->name ?: ('Vendor #' . $p->vendor_id),
-            'kod'       => $p->vendor?->registration ?: (string) $p->vendor_id,
+            'kod'       => $p->kod_pembekal ?: null,
             // Include existing rumusan values (pre-fill)
             'is_bumiputera' => $p->is_bumiputera,
             'harga_tawaran' => $p->harga_tawaran,
