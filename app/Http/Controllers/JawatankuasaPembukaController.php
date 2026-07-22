@@ -214,7 +214,7 @@ class JawatankuasaPembukaController extends Controller
     {
         $request->validate([
             'tender'         => 'required|string',
-            'pilihan'        => 'required|in:cut_off,skip_cut_off',
+            'pilihan'        => 'nullable|string',
             'rumusan'        => 'nullable|array',
             'rumusan.*.vendor_id'      => 'required|integer',
             'rumusan.*.is_bumiputera'  => 'nullable|in:0,1',
@@ -285,11 +285,8 @@ class JawatankuasaPembukaController extends Controller
         );
 
         // ── Advance tender status ─────────────────────────────────────
-        // Pilihan 1 = proceed to Cut-Off  → target status = PENILAIAN_PEMBUKA (8)
-        // Pilihan 2 = skip Cut-Off        → target status = CUT_OFF (9)
-        $targetStatus = $request->input('pilihan') === 'cut_off'
-            ? TenderProcessStatus::PENILAIAN_PEMBUKA
-            : TenderProcessStatus::CUT_OFF;
+        // Always proceed to Cut-Off → target status = PENILAIAN_PEMBUKA (status_process_id = 8)
+        $targetStatus = TenderProcessStatus::PENILAIAN_PEMBUKA;
 
         if (! $this->advanceTenderProcess(
             $tender,

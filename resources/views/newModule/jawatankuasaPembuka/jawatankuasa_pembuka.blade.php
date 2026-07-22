@@ -432,7 +432,10 @@
 			<div id="rumusan-content" class="d-none">
 
 				{{-- Senarai Layak --}}
-				<h6 class="fw-bold text-dark mb-2 mt-2"><i class="bi bi-check-circle text-success me-2"></i>Senarai Petender Layak</h6>
+				<div class="mb-2 mt-2">
+					<h6 class="fw-bold text-dark mb-0"><i class="bi bi-check-circle text-success me-2"></i>Senarai Pembekal Layak</h6>
+					<div class="small text-muted mt-1" id="totalLayakText">0 pembekal layak</div>
+				</div>
 				<table id="tableRumusan" class="table table-hover border shadow-sm rounded-3 mb-4">
 					<thead class="table-header">
 						<tr>
@@ -452,26 +455,33 @@
 					<div class="card-body p-3">
 						<h6 class="fw-bold text-dark mb-3"><i class="bi bi-shield-check me-2 text-primary"></i>Pengesahan Akhir</h6>
 						<div class="form-check mb-2">
-							<input class="form-check-input" type="radio" name="pilihan_rumusan" id="pilihan_cutoff" value="cut_off">
-							<label class="form-check-label small fw-medium" for="pilihan_cutoff">
+							<input class="form-check-input" type="checkbox" id="pengesahan_cutoff" name="pengesahan_cutoff">
+							<label class="form-check-label small fw-medium" for="pengesahan_cutoff">
 								Saya mengesahkan petender perlu melalui proses <span class="text-danger fw-bold">Cut-Off</span>
 							</label>
 						</div>
 						<div class="form-check">
-							<input class="form-check-input" type="radio" name="pilihan_rumusan" id="pilihan_skip" value="skip_cut_off">
-							<label class="form-check-label small fw-medium" for="pilihan_skip">
-								Saya mengesahkan semua petender disemak dan <span class="text-success fw-bold">layak dinilai</span> (langkau Cut-Off)
+							<input class="form-check-input" type="checkbox" id="pengesahan_layak" name="pengesahan_layak">
+							<label class="form-check-label small fw-medium" for="pengesahan_layak">
+								Saya mengesahkan semua petender disemak dan <span class="text-success fw-bold">layak dinilai</span>
 							</label>
 						</div>
 					</div>
 				</div>
 
 				{{-- Senarai Tidak Layak --}}
-				<div class="d-flex align-items-center mb-3 mt-5">
+				<!-- <div class="d-flex align-items-center mb-3 mt-5">
 					<div class="bg-danger-subtle p-2 rounded-2 me-3">
 						<i class="bi bi-exclamation-triangle text-danger fs-5"></i>
 					</div>
-					<h5 class="fw-bold mb-0">Senarai Pembekal Tidak Layak</h5>
+					<div>
+						<h5 class="fw-bold mb-0">Senarai Pembekal Tidak Layak</h5>
+						<div class="small text-muted mt-1" id="totalTidakLayakText">0 pembekal tidak layak</div>
+					</div>
+				</div> -->
+				<div class="mb-2 mt-4">
+					<h6 class="fw-bold text-dark mb-0"><i class="bi bi-exclamation-circle text-danger me-2"></i>Senarai Pembekal Tidak Layak</h6>
+					<div class="small text-muted mt-1" id="totalTidakLayakText">0 pembekal layak</div>
 				</div>
 
 				<table id="tableTidakLayak" class="table table-hover border shadow-sm rounded-3">
@@ -611,6 +621,7 @@
 </div>
 
 @push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 	// ─────────────────────────────────────────────────────────────────
 	// CONSTANTS (from Blade)
@@ -926,6 +937,9 @@
 		const layak     = data.layak      || [];
 		const tidakLayak = data.tidak_layak || [];
 
+		$('#totalLayakText').text(`${layak.length} pembekal layak`);
+		$('#totalTidakLayakText').text(`${tidakLayak.length} pembekal tidak layak`);
+
 		// ── Senarai Layak Table ────────────────────────────────────
 		const $rumusanBody = $('#tableRumusanBody');
 		$rumusanBody.empty();
@@ -983,9 +997,27 @@
 	// SELESAI – Submit final evaluation
 	// ─────────────────────────────────────────────────────────────────
 	function submitSelesai() {
-		const pilihan = $('input[name="pilihan_rumusan"]:checked').val();
-		if (!pilihan) {
-			Swal.fire('Pilihan Diperlukan', 'Sila pilih sama ada petender perlu melalui Cut-Off atau terus ke Penilaian Teknikal.', 'warning');
+		const $cutoff = $('#pengesahan_cutoff');
+		const $layak  = $('#pengesahan_layak');
+
+		const cutoffChecked = $cutoff.is(':checked');
+		const layakChecked  = $layak.is(':checked');
+
+		$cutoff.toggleClass('is-invalid', !cutoffChecked);
+		$layak.toggleClass('is-invalid', !layakChecked);
+
+		if (!cutoffChecked || !layakChecked) {
+			if (typeof Swal !== 'undefined') {
+				Swal.fire({
+					title: 'Pengesahan Diperlukan',
+					text: 'Sila tandakan kedua-dua pengesahan sebelum meneruskan.',
+					icon: 'warning',
+					confirmButtonText: 'Kembali Semula',
+					confirmButtonColor: '#df9657ff'
+				});
+			} else {
+				alert('Pengesahan Diperlukan: Sila tandakan kedua-dua pengesahan sebelum meneruskan.');
+			}
 			return;
 		}
 
@@ -1005,9 +1037,7 @@
 
 		Swal.fire({
 			title: 'Selesaikan Penilaian?',
-			html: pilihan === 'cut_off'
-				? 'Tender akan diteruskan ke proses <strong>Cut-Off</strong>.'
-				: 'Tender akan terus ke peringkat <strong>Penilaian Teknikal</strong> (Cut-Off dilangkau).',
+			html: 'Tender akan diteruskan ke proses <strong>Cut-Off</strong>.',
 			icon: 'question',
 			showCancelButton: true,
 			confirmButtonColor: '#10b981',
@@ -1023,7 +1053,7 @@
 				data: {
 					_token:  CSRF_TOKEN,
 					tender:  TENDER_IDENTIFIER,
-					pilihan: pilihan,
+					pilihan: 'cut_off',
 					rumusan: rumusanRows,
 				}
 			}).done(function (resp) {
@@ -1111,6 +1141,12 @@
 
 		dataTables.teknikal = $('#tableTeknikal').DataTable(dtOptions);
 		dataTables.kewangan = $('#tableKewangan').DataTable(dtOptions);
+
+		$('#pengesahan_cutoff, #pengesahan_layak').on('change', function () {
+			if ($(this).is(':checked')) {
+				$(this).removeClass('is-invalid');
+			}
+		});
 
 		updateStepperUI();
 	});
