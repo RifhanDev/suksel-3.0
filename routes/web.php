@@ -320,6 +320,8 @@ Route::middleware(['auth'])->group(function () {
 	Route::post('/penyediaan-sst/hantar', [PenyediaanSuratSstController::class, 'hantar'])->name('penyediaanSST.hantar');
 	Route::get('/index-jawatankuasa-pembuka', [JawatankuasaPembukaController::class, 'index'])->name('indexJawatankuasaPembuka');
 	Route::get('/jawatankuasa-pembuka', [JawatankuasaPembukaController::class, 'show'])->name('jawatankuasaPembuka');
+	Route::post('/jawatankuasa-pembuka/simpan-pematuhan', [JawatankuasaPembukaController::class, 'simpanPematuhan'])->name('jawatankuasaPembuka.simpanPematuhan');
+	Route::get('/jawatankuasa-pembuka/rumusan-data', [JawatankuasaPembukaController::class, 'getRumusanData'])->name('jawatankuasaPembuka.rumusanData');
 	Route::post('/jawatankuasa-pembuka/hantar', [JawatankuasaPembukaController::class, 'hantar'])->name('jawatankuasaPembuka.hantar');
 });
 Route::view('/show-soalan-lazim', 'helps.show')->name('showSoalanLazim');

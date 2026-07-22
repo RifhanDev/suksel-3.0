@@ -58,13 +58,21 @@ trait HandlesTenderFormAccess
             $routeTender = request()->route('tender');
             $resolved = null;
             if ($routeTender instanceof \App\Tender || $routeTender instanceof Tender) {
-                $resolved = $routeTender;
+                $resolved = \App\Tender::query()->find($routeTender->id);
             } elseif ($routeTender) {
                 $resolved = \App\Tender::query()->find($routeTender);
             }
 
-            if ($resolved && app(\App\Services\VendorTenderSubmissionService::class)->isSubmitted($resolved, $this->vendorId())) {
-                abort(403, 'Tawaran telah dihantar. Borang tidak boleh dikemaskini.');
+            if ($resolved) {
+                $submissions = app(\App\Services\VendorTenderSubmissionService::class);
+                if ($submissions->isSubmitted($resolved, $this->vendorId())) {
+                    abort(403, 'Tawaran telah dihantar. Borang tidak boleh dikemaskini.');
+                }
+
+                $windowReason = $resolved->vendorDokumenWindowBlockedReason();
+                if ($windowReason !== null) {
+                    abort(403, $windowReason);
+                }
             }
         }
     }

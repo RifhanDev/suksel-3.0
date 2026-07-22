@@ -393,9 +393,14 @@
                             <tbody id="tbl-standard-body">
                                 {{-- Populated by JS from $standardItems --}}
                                 @forelse($standardItems ?? [] as $stdItem)
-                                    <tr data-tajuk="{{ $stdItem['title'] }}" data-uuid="{{ $stdItem['uuid'] ?? '' }}">
+                                    <tr data-tajuk="{{ $stdItem['title'] }}" data-uuid="{{ $stdItem['uuid'] ?? '' }}" data-type="{{ $stdItem['type'] ?? '' }}" data-action-url="{{ $stdItem['action_url'] ?? '' }}">
                                         <td class="text-center"><input type="checkbox" class="form-check-input row-check-standard"></td>
-                                        <td>{{ $stdItem['title'] }}</td>
+                                        <td>
+                                            {{ $stdItem['title'] }}
+                                            @if (($stdItem['type'] ?? '') === 'borang_atas_talian')
+                                                <span class="ms-1 d-inline-flex align-items-center" style="font-size:0.6rem;background:#fef9c3;color:#854d0e;border-radius:3px;padding:1px 5px;vertical-align:middle;border:1px solid #fde68a;">Borang Atas Talian</span>
+                                            @endif
+                                        </td>
                                     </tr>
                                 @empty
                                     <tr><td colspan="2" class="text-center text-muted small py-3">Tiada item standard.</td></tr>

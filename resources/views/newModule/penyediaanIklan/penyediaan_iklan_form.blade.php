@@ -672,8 +672,75 @@ $(document).ready(function () {
     var iklanStepContents   = ['#iklanStep1Content', '#iklanStep2Content', '#iklanStep3Content'];
     var iklanStepIndicators = ['#iklanStep1Indicator', '#iklanStep2Indicator', '#iklanStep3Indicator'];
 
+    function parseDmY(value) {
+        if (!value) return null;
+        var parts = String(value).split('/');
+        if (parts.length !== 3) return null;
+        var d = parseInt(parts[0], 10);
+        var m = parseInt(parts[1], 10) - 1;
+        var y = parseInt(parts[2], 10);
+        if (isNaN(d) || isNaN(m) || isNaN(y)) return null;
+        var date = new Date(y, m, d);
+        if (date.getFullYear() !== y || date.getMonth() !== m || date.getDate() !== d) return null;
+        return date;
+    }
+
+    function validateIklanStep1Dates() {
+        var tarikhIklan = $.trim($('input[name="tarikh_iklan"]').val() || '');
+        var masaIklan = $.trim($('input[name="masa_iklan"]').val() || '');
+        var tarikhTutup = $.trim($('input[name="tarikh_tutup"]').val() || '');
+        var masaTutup = $.trim($('input[name="masa_tutup"]').val() || '');
+        var tarikhJual = $.trim($('input[name="tarikh_jual"]').val() || '');
+
+        var missing = [];
+        if (!tarikhIklan) missing.push('Tarikh Iklan');
+        if (!masaIklan) missing.push('Masa Iklan');
+        if (!tarikhTutup) missing.push('Tarikh Tutup');
+        if (!masaTutup) missing.push('Masa Tutup');
+        if (!tarikhJual) missing.push('Tarikh Jual');
+
+        if (missing.length) {
+            alert('Sila lengkapkan medan wajib berikut sebelum meneruskan:\n• ' + missing.join('\n• '));
+            return false;
+        }
+
+        var startDate = parseDmY(tarikhIklan);
+        var endDate = parseDmY(tarikhTutup);
+        var jualDate = parseDmY(tarikhJual);
+
+        if (!startDate || !endDate || !jualDate) {
+            alert('Sila pastikan semua tarikh diisi dalam format yang betul (dd/mm/yyyy).');
+            return false;
+        }
+
+        if (endDate < startDate) {
+            alert('Tarikh Tutup mestilah pada atau selepas Tarikh Iklan.');
+            return false;
+        }
+
+        if (jualDate < startDate || jualDate > endDate) {
+            alert('Tarikh Jual mestilah dalam julat Tarikh Iklan hingga Tarikh Tutup.');
+            return false;
+        }
+
+        return true;
+    }
+
+    function iklanHasRequiredDates() {
+        return !!$.trim($('input[name="tarikh_iklan"]').val() || '')
+            && !!$.trim($('input[name="masa_iklan"]').val() || '')
+            && !!$.trim($('input[name="tarikh_tutup"]').val() || '')
+            && !!$.trim($('input[name="masa_tutup"]').val() || '')
+            && !!$.trim($('input[name="tarikh_jual"]').val() || '');
+    }
+
     function iklanGoToStep(step) {
         if (step < 1 || step > iklanTotalSteps) return;
+
+        if (step > 1 && !iklanHasRequiredDates()) {
+            alert('Sila lengkapkan Tarikh/Masa Iklan, Tarikh/Masa Tutup dan Tarikh Jual dahulu sebelum meneruskan.');
+            step = 1;
+        }
 
         $.each(iklanStepContents, function (i, sel) { $(sel).hide(); });
         $(iklanStepContents[step - 1]).show();
@@ -796,10 +863,15 @@ $(document).ready(function () {
 
     /* ── Stepper button wiring ── */
     $('#iklanBtnNext1').on('click', function () {
+        if (!validateIklanStep1Dates()) return;
         savePenyediaanIklanDraft(function () { iklanGoToStep(2); });
     });
     $('#iklanBtnBack2').on('click', function () { iklanGoToStep(1); });
     $('#iklanBtnNext2').on('click', function () {
+        if (!validateIklanStep1Dates()) {
+            iklanGoToStep(1);
+            return;
+        }
         savePenyediaanIklanDraft(function () { iklanGoToStep(3); });
     });
     $('#iklanBtnBack3').on('click', function () { iklanGoToStep(2); });
@@ -827,10 +899,40 @@ $(document).ready(function () {
         autoclose: true,
         todayHighlight: true,
     });
-    $('#taklimat_tarikh').datepicker({
-        format: 'dd/mm/yyyy',
-        autoclose: true,
-        todayHighlight: true,
+
+    function refreshTaklimatDatepickerBounds() {
+        var startVal = $('input[name="tarikh_iklan"]').val();
+        var endVal = $('input[name="tarikh_tutup"]').val();
+        var startDate = parseDmY(startVal);
+        var endDate = parseDmY(endVal);
+        var opts = {
+            format: 'dd/mm/yyyy',
+            autoclose: true,
+            todayHighlight: true,
+        };
+        if (startDate) opts.startDate = startDate;
+        if (endDate) opts.endDate = endDate;
+
+        var $tarikh = $('#taklimat_tarikh');
+        var current = $tarikh.val();
+        if ($tarikh.data('datepicker')) {
+            $tarikh.datepicker('destroy');
+        }
+        $tarikh.datepicker(opts);
+
+        var currentDate = parseDmY(current);
+        if (currentDate) {
+            if ((startDate && currentDate < startDate) || (endDate && currentDate > endDate)) {
+                $tarikh.val('');
+            } else {
+                $tarikh.datepicker('update', currentDate);
+            }
+        }
+    }
+
+    refreshTaklimatDatepickerBounds();
+    $('input[name="tarikh_iklan"], input[name="tarikh_tutup"]').on('changeDate change', function () {
+        refreshTaklimatDatepickerBounds();
     });
 
     /* ════════════════════════════════════════════
@@ -865,11 +967,19 @@ $(document).ready(function () {
 
     /* Open modal & reset */
     $('#btnTambahTaklimat').on('click', function () {
+        var startVal = $('input[name="tarikh_iklan"]').val();
+        var endVal = $('input[name="tarikh_tutup"]').val();
+        if (!startVal || !endVal) {
+            alert('Sila tetapkan Tarikh Iklan dan Tarikh Tutup pada langkah 1 dahulu.');
+            return;
+        }
+
         $('#taklimat_perihal').val('');
         $('#taklimat_tarikh').val('');
         $('#taklimat_masa').val('');
         $('#taklimat_lokasi').val('');
         $('#taklimat_kehadiran').prop('checked', false);
+        refreshTaklimatDatepickerBounds();
         var modal = new bootstrap.Modal(document.getElementById('modalTaklimat'));
         modal.show();
     });
@@ -884,6 +994,18 @@ $(document).ready(function () {
 
         if (!perihal || !tarikh) {
             alert('Sila isi sekurang-kurangnya Perihal dan Tarikh.');
+            return;
+        }
+
+        var selected = parseDmY(tarikh);
+        var startDate = parseDmY($('input[name="tarikh_iklan"]').val());
+        var endDate = parseDmY($('input[name="tarikh_tutup"]').val());
+        if (!selected || !startDate || !endDate) {
+            alert('Sila pastikan Tarikh Iklan, Tarikh Tutup dan Tarikh Lawatan diisi dengan betul.');
+            return;
+        }
+        if (selected < startDate || selected > endDate) {
+            alert('Tarikh lawatan/taklimat mesti dalam julat Tarikh Iklan hingga Tarikh Tutup.');
             return;
         }
 
