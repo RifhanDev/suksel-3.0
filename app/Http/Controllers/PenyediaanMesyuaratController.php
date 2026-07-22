@@ -277,7 +277,7 @@ class PenyediaanMesyuaratController extends Controller
     {
         $query = Tender::query()
             ->with('tenderer')
-            ->where('status_process_id', 5);
+            ->where('status_process_id', TenderProcessStatus::penyediaanMesyuaratListStatus());
 
         if ($request?->filled('no_tender')) {
             $term = $request->input('no_tender');
