@@ -398,7 +398,7 @@ class JawatankuasaPembukaController extends Controller
                 $formUrl = $vendorItem['admin_content']['form']['url'] ?? ($item['admin_content']['form']['url'] ?? null);
                 if (($item['action'] ?? '') === 'view_specification') {
                     $formUrl = route('tenderDokumen.specificationForm', [
-                        'tender'    => $tender->uuid,
+                        'tender'    => $tender->id,
                         'itemUuid'  => $uuid,
                         'vendor_id' => $vendorId,
                         'modal'     => 1,
