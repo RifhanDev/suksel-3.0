@@ -1075,8 +1075,15 @@
 	// ─────────────────────────────────────────────────────────────────
 	$(document).on('click', '.btn-preview-file', function (e) {
 		e.preventDefault();
-		const url  = $(this).attr('href');
+		let url  = $(this).attr('href') || '';
 		const name = $(this).data('name') || 'Fail';
+
+		if (url && (url.startsWith('http://') || url.startsWith('https://'))) {
+			try {
+				const parsed = new URL(url);
+				url = parsed.pathname + parsed.search + parsed.hash;
+			} catch (err) {}
+		}
 
 		$('#modalPreviewTitle').text(name);
 		$('#btnNewTabPreview').attr('href', url);

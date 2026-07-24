@@ -42,9 +42,13 @@ class TenderVendorDokumenFile extends Model
         }
 
         if (Storage::disk('public')->exists($path)) {
-            return Storage::disk('public')->url($path);
+            $url = Storage::disk('public')->url($path);
+            $parsedPath = parse_url($url, PHP_URL_PATH);
+            return $parsedPath ?: '/storage/' . $path;
         }
 
-        return asset($path);
+        $assetUrl = asset($path);
+        $parsedPath = parse_url($assetUrl, PHP_URL_PATH);
+        return $parsedPath ?: '/' . $path;
     }
 }
