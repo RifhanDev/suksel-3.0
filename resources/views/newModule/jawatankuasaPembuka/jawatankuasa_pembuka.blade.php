@@ -299,7 +299,10 @@
 					</tr>
 				</thead>
 				<tbody>
-					@forelse (($teknikalItems ?? []) as $i => $item)
+					@php
+						$teknikalItemsFiltered = collect($teknikalItems ?? [])->filter(fn ($item) => strtolower(trim($item['tindakan'] ?? $item['mekanisma'] ?? '')) !== 'muat turun')->values()->all();
+					@endphp
+					@forelse ($teknikalItemsFiltered as $i => $item)
 						@php
 							$uuid        = $item['uuid'] ?? '';
 							$payload     = $semakPayload[$uuid] ?? null;
@@ -366,7 +369,10 @@
 					</tr>
 				</thead>
 				<tbody>
-					@forelse (($kewanganItems ?? []) as $i => $item)
+					@php
+						$kewanganItemsFiltered = collect($kewanganItems ?? [])->filter(fn ($item) => strtolower(trim($item['tindakan'] ?? $item['mekanisma'] ?? '')) !== 'muat turun')->values()->all();
+					@endphp
+					@forelse ($kewanganItemsFiltered as $i => $item)
 						@php
 							$uuid         = $item['uuid'] ?? '';
 							$payload      = $semakPayload[$uuid] ?? null;
@@ -745,7 +751,10 @@
 						'</a>';
 				}).join('');
 			} else if (vendor.form_url) {
-				docHtml += '<div class="mt-1"><a href="' + escapeHtml(vendor.form_url) + '" data-name="Borang ' + escapeHtml(vendor.name) + '" class="small btn-preview-file">Buka borang</a></div>';
+				const isSpec = (item?.action === 'view_specification');
+				const label  = isSpec ? 'Buka spesifikasi' : 'Buka borang';
+				const icon   = isSpec ? 'bi bi-file-earmark-text' : 'bi bi-window';
+				docHtml += '<div class="mt-1"><a href="' + escapeHtml(vendor.form_url) + '" data-name="' + (isSpec ? 'Spesifikasi ' : 'Borang ') + escapeHtml(vendor.name) + '" class="small btn-preview-file"><i class="' + icon + ' me-1"></i>' + label + '</a></div>';
 			}
 
 			// Status Pematuhan – pre-fill from saved evaluation
@@ -760,9 +769,8 @@
 				'</select>';
 
 			const catatanHtml =
-				'<textarea class="form-control shadow-none border-2 small semak-catatan" rows="2" placeholder="Catatan (Wajib jika Tiada)..." ' +
-				(savedStatus === 0 ? '' : 'disabled') +
-				'>' + escapeHtml(savedCatatan) + '</textarea>';
+				'<textarea class="form-control shadow-none border-2 small semak-catatan" rows="2" placeholder="Catatan...">' +
+				escapeHtml(savedCatatan) + '</textarea>';
 
 			const kodDisplay = vendor.kod
 				? escapeHtml(vendor.kod)
@@ -780,18 +788,6 @@
 					'<td>' + catatanHtml + '</td>' +
 				'</tr>'
 			);
-		});
-
-		// Enable/disable catatan textarea based on pematuhan selection
-		$body.find('.semak-pematuhan').on('change', function () {
-			const val     = $(this).val();
-			const $row    = $(this).closest('tr');
-			const $catatan = $row.find('.semak-catatan');
-			if (val === '0') {
-				$catatan.prop('disabled', false).focus();
-			} else {
-				$catatan.prop('disabled', true).val('');
-			}
 		});
 	}
 

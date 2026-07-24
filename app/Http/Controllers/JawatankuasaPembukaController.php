@@ -81,12 +81,16 @@ class JawatankuasaPembukaController extends Controller
         }
 
         $checklistItems  = $tenderDokumen->items('admin');
+        $isNotMuatTurun  = fn (array $item) => strtolower(trim($item['tindakan'] ?? $item['mekanisma'] ?? '')) !== 'muat turun';
+
         $teknikalItems   = collect($checklistItems)
             ->filter(fn (array $item) => in_array($item['source'] ?? $item['section'] ?? '', ['technical', 'spesifikasi_kerja'], true))
+            ->filter($isNotMuatTurun)
             ->values()
             ->all();
         $kewanganItems   = collect($checklistItems)
             ->filter(fn (array $item) => in_array($item['source'] ?? $item['section'] ?? '', ['financial', 'kewangan_kerja'], true))
+            ->filter($isNotMuatTurun)
             ->values()
             ->all();
 
@@ -98,7 +102,7 @@ class JawatankuasaPembukaController extends Controller
             ];
         })->values()->all();
 
-        $semakPayload = $this->buildSemakPayload($teknikalItems, $kewanganItems, $dokumenByVendor, $vendors);
+        $semakPayload = $this->buildSemakPayload($tender, $teknikalItems, $kewanganItems, $dokumenByVendor, $vendors);
 
         // Load existing evaluations and merge into semakPayload for pre-filling dropdowns
         $evaluations  = $this->service->loadEvaluations($tender);
@@ -182,11 +186,15 @@ class JawatankuasaPembukaController extends Controller
         }
 
         $checklistItems = $tenderDokumen->items('admin');
+        $isNotMuatTurun = fn (array $i) => strtolower(trim($i['tindakan'] ?? $i['mekanisma'] ?? '')) !== 'muat turun';
+
         $teknikalItems  = collect($checklistItems)
             ->filter(fn (array $i) => in_array($i['source'] ?? $i['section'] ?? '', ['technical', 'spesifikasi_kerja'], true))
+            ->filter($isNotMuatTurun)
             ->values()->all();
         $kewanganItems  = collect($checklistItems)
             ->filter(fn (array $i) => in_array($i['source'] ?? $i['section'] ?? '', ['financial', 'kewangan_kerja'], true))
+            ->filter($isNotMuatTurun)
             ->values()->all();
 
         $vendors = $participants->map(fn ($p) => [
@@ -198,7 +206,7 @@ class JawatankuasaPembukaController extends Controller
             'harga_tawaran' => $p->harga_tawaran,
         ])->values()->all();
 
-        $semakPayload = $this->buildSemakPayload($teknikalItems, $kewanganItems, $dokumenByVendor, $vendors);
+        $semakPayload = $this->buildSemakPayload($tender, $teknikalItems, $kewanganItems, $dokumenByVendor, $vendors);
         $evaluations  = $this->service->loadEvaluations($tender);
 
         $result = $this->service->computeVendorQualifications($vendors, $semakPayload, $evaluations);
@@ -242,11 +250,15 @@ class JawatankuasaPembukaController extends Controller
         }
 
         $checklistItems = $tenderDokumen->items('admin');
+        $isNotMuatTurun = fn (array $i) => strtolower(trim($i['tindakan'] ?? $i['mekanisma'] ?? '')) !== 'muat turun';
+
         $teknikalItems  = collect($checklistItems)
             ->filter(fn (array $i) => in_array($i['source'] ?? $i['section'] ?? '', ['technical', 'spesifikasi_kerja'], true))
+            ->filter($isNotMuatTurun)
             ->values()->all();
         $kewanganItems  = collect($checklistItems)
             ->filter(fn (array $i) => in_array($i['source'] ?? $i['section'] ?? '', ['financial', 'kewangan_kerja'], true))
+            ->filter($isNotMuatTurun)
             ->values()->all();
 
         $vendors = $participants->map(fn ($p) => [
@@ -255,7 +267,7 @@ class JawatankuasaPembukaController extends Controller
             'kod'       => $p->vendor?->registration ?: (string) $p->vendor_id,
         ])->values()->all();
 
-        $semakPayload  = $this->buildSemakPayload($teknikalItems, $kewanganItems, $dokumenByVendor, $vendors);
+        $semakPayload  = $this->buildSemakPayload($tender, $teknikalItems, $kewanganItems, $dokumenByVendor, $vendors);
         $evaluations   = $this->service->loadEvaluations($tender);
 
         // ── Validate completeness ─────────────────────────────────────
@@ -335,13 +347,14 @@ class JawatankuasaPembukaController extends Controller
      * Build semakPayload keyed by checklist item UUID.
      * (Preserved from original controller, unchanged.)
      *
+     * @param  \App\Tender  $tender
      * @param  array<int, array<string, mixed>>  $teknikalItems
      * @param  array<int, array<string, mixed>>  $kewanganItems
      * @param  array<int, array<int, array<string, mixed>>>  $dokumenByVendor
      * @param  array<int, array{vendor_id: int, name: string, kod: string}>  $vendors
      * @return array<string, array<string, mixed>>
      */
-    protected function buildSemakPayload(array $teknikalItems, array $kewanganItems, array $dokumenByVendor, array $vendors): array
+    protected function buildSemakPayload(Tender $tender, array $teknikalItems, array $kewanganItems, array $dokumenByVendor, array $vendors): array
     {
         $payload = [];
 
@@ -382,6 +395,16 @@ class JawatankuasaPembukaController extends Controller
                     default => ($status === 'submitted') ? 'Dihantar' : 'Belum dihantar',
                 };
 
+                $formUrl = $vendorItem['admin_content']['form']['url'] ?? ($item['admin_content']['form']['url'] ?? null);
+                if (($item['action'] ?? '') === 'view_specification') {
+                    $formUrl = route('tenderDokumen.specificationForm', [
+                        'tender'    => $tender->uuid,
+                        'itemUuid'  => $uuid,
+                        'vendor_id' => $vendorId,
+                        'modal'     => 1,
+                    ]);
+                }
+
                 $vendorRows[] = [
                     'vendor_id'    => $vendorId,
                     'name'         => $vendor['name'],
@@ -390,7 +413,7 @@ class JawatankuasaPembukaController extends Controller
                     'status_label' => $status === 'submitted' ? 'Hantar' : 'Menunggu',
                     'summary'      => $summary,
                     'files'        => $files,
-                    'form_url'     => $vendorItem['admin_content']['form']['url'] ?? ($item['admin_content']['form']['url'] ?? null),
+                    'form_url'     => $formUrl,
                     'form_key'     => $item['admin_content']['form']['form_key'] ?? null,
                     // Evaluation fields (will be merged in show())
                     'status_pematuhan' => null,
