@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\AdvancesTenderProcessStatus;
 use App\Http\Controllers\Concerns\ResolvesTenderForProcess;
+use App\Models\TenderVendorDokumenResponse;
 use App\Services\JawatankuasaPembukaService;
 use App\Support\TenderDokumenPresenter;
 use App\Support\TenderProcessStatus;
@@ -198,12 +199,12 @@ class JawatankuasaPembukaController extends Controller
             ->values()->all();
 
         $vendors = $participants->map(fn ($p) => [
-            'vendor_id' => (int) $p->vendor_id,
-            'name'      => $p->vendor?->name ?: ('Vendor #' . $p->vendor_id),
-            'kod'       => $p->kod_pembekal ?: null,
-            // Include existing rumusan values (pre-fill)
+            'vendor_id'     => (int) $p->vendor_id,
+            'name'          => $p->vendor?->name ?: ('Vendor #' . $p->vendor_id),
+            'kod'           => $p->kod_pembekal ?: null,
+            // Include existing rumusan values or auto-calculated specification price
             'is_bumiputera' => $p->is_bumiputera,
-            'harga_tawaran' => $p->harga_tawaran,
+            'harga_tawaran' => $this->resolveVendorHargaTawaran($tender, (int) $p->vendor_id, $p->harga_tawaran),
         ])->values()->all();
 
         $semakPayload = $this->buildSemakPayload($tender, $teknikalItems, $kewanganItems, $dokumenByVendor, $vendors);
@@ -212,6 +213,41 @@ class JawatankuasaPembukaController extends Controller
         $result = $this->service->computeVendorQualifications($vendors, $semakPayload, $evaluations);
 
         return response()->json($result);
+    }
+
+    /**
+     * Resolve vendor's Harga Tawaran. If empty/null/0, auto-calculates total specification price
+     * from tender_vendor_dokumen_responses where response_type = 'specification'.
+     */
+    protected function resolveVendorHargaTawaran(Tender $tender, int $vendorId, mixed $existingHarga): mixed
+    {
+        if (filled($existingHarga) && (float) $existingHarga > 0) {
+            return (float) $existingHarga;
+        }
+
+        $responses = TenderVendorDokumenResponse::query()
+            ->where('tender_id', $tender->id)
+            ->where('vendor_id', $vendorId)
+            ->where('response_type', 'specification')
+            ->get();
+
+        $totalSpecPrice = 0;
+        $hasPrices = false;
+
+        foreach ($responses as $response) {
+            $payload = $response->payload ?? [];
+            $itemPrices = $payload['item_prices'] ?? [];
+            if (is_array($itemPrices)) {
+                foreach ($itemPrices as $val) {
+                    if (is_numeric($val) && (float) $val > 0) {
+                        $totalSpecPrice += (float) $val;
+                        $hasPrices = true;
+                    }
+                }
+            }
+        }
+
+        return $hasPrices ? number_format($totalSpecPrice, 2, '.', '') : $existingHarga;
     }
 
     // ─────────────────────────────────────────────────────────────────
@@ -396,6 +432,20 @@ class JawatankuasaPembukaController extends Controller
                 };
 
                 $formUrl = $vendorItem['admin_content']['form']['url'] ?? ($item['admin_content']['form']['url'] ?? null);
+                if ($formUrl && ($item['action'] ?? '') === 'online_form') {
+                    $separator = str_contains($formUrl, '?') ? '&' : '?';
+                    if (! str_contains($formUrl, 'vendor_id=')) {
+                        $formUrl .= $separator . 'vendor_id=' . $vendorId;
+                        $separator = '&';
+                    }
+                    if (! str_contains($formUrl, 'modal=1')) {
+                        $formUrl .= $separator . 'modal=1';
+                        $separator = '&';
+                    }
+                    if (! str_contains($formUrl, 'mode=view')) {
+                        $formUrl .= $separator . 'mode=view';
+                    }
+                }
                 if (($item['action'] ?? '') === 'view_specification') {
                     $formUrl = route('tenderDokumen.specificationForm', [
                         'tender'    => $tender->id,

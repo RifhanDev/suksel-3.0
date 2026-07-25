@@ -117,11 +117,13 @@ class JawatankuasaPembukaService
             }
 
             $entry = [
-                'vendor_id'   => $vendorId,
-                'name'        => $vendor['name'],
-                'kod'         => $vendor['kod'],
-                'is_layak'    => empty($reasons),
-                'reasons'     => $reasons,
+                'vendor_id'     => $vendorId,
+                'name'          => $vendor['name'],
+                'kod'           => $vendor['kod'],
+                'is_bumiputera' => $vendor['is_bumiputera'] ?? null,
+                'harga_tawaran' => $vendor['harga_tawaran'] ?? null,
+                'is_layak'      => empty($reasons),
+                'reasons'       => $reasons,
             ];
 
             if (empty($reasons)) {

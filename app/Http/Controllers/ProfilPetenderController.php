@@ -19,9 +19,10 @@ class ProfilPetenderController extends Controller
         $tender = $this->findTender($tenderUuid);
         $this->ensureTenderFormAccess($tender);
 
-        $apiPath = 'profil-petenders/' . $tenderUuid;
-        $response = $this->isVendorFormMode()
-            ? $this->api()->get($this->stosUrlWithVendor($apiPath))
+        $vendorId = $this->vendorId();
+        $apiPath  = 'profil-petenders/' . $tenderUuid;
+        $response = $vendorId
+            ? $this->api()->get($this->stosUrlWithVendor($apiPath, $vendorId))
             : $this->api()->get($this->url($apiPath));
 
         $profilData = null;
@@ -36,14 +37,14 @@ class ProfilPetenderController extends Controller
             ]);
         }
 
-        if ($this->isVendorFormMode() && empty($profilData)) {
+        if ($vendorId && empty($profilData)) {
             $profilData = $this->loadVendorFormPayload($tender, 'profil_petender');
         }
 
         $vendorProfilDefaults = [];
-        if ($this->isVendorFormMode() && $this->vendorId()) {
+        if ($vendorId) {
             $vendorProfilDefaults = VendorProfilPetenderDefaults::fromVendor(
-                Vendor::find($this->vendorId())
+                Vendor::find($vendorId)
             );
         }
 
