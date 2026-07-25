@@ -135,9 +135,22 @@ class VendorTenderDokumenController extends Controller
             abort(404, 'Item dokumen spesifikasi tidak dijumpai.');
         }
 
-        return view('tenders.dokumen.specification_form', array_merge([
+        $viewName = (! $isVendor && $vendorId) ? 'tenders.dokumen.specification_review' : 'tenders.dokumen.specification_form';
+
+        $vendorInfo = null;
+        if (! $isVendor && $vendorId) {
+            $vendorModel = \App\Vendor::query()->find($vendorId);
+            $vendorInfo  = [
+                'id'   => $vendorId,
+                'name' => $vendorModel?->name ?: ('Petender #' . $vendorId),
+                'kod'  => $vendorModel?->registration ?: '-',
+            ];
+        }
+
+        return view($viewName, array_merge([
             'tender' => $tender,
             'item' => $item,
+            'vendor' => $vendorInfo,
             'isReadOnly' => ! $isVendor,
         ], $this->formViewVars($tender)));
     }
