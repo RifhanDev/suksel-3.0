@@ -219,7 +219,7 @@ class PenyediaanIklanController extends Controller
                 'tarikh_iklan' => $request->input('tarikh_iklan'),
                 'masa_iklan' => $request->input('masa_iklan'),
                 'tarikh_tutup' => $request->input('tarikh_tutup'),
-                'masa_tutup' => $request->input('masa_tutup'),
+                'masa_tutup' => '12:00',
                 'tarikh_jual' => $request->input('tarikh_jual'),
                 'tempoh_iklan' => $request->input('tempoh_iklan'),
                 'tempoh_sah_laku' => $request->input('tempoh_sah_laku'),

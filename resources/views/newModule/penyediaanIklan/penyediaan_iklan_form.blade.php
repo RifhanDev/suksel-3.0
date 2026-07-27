@@ -403,9 +403,9 @@
 								value="{{ $iklan['tarikh_tutup'] ?? '' }}" placeholder="Pilih tarikh..." readonly>
 						</div>
 						<div class="col-5">
-							<label class="form-label fw-semibold">Masa <span class="text-danger">*</span></label>
-							<input type="time" class="form-control form-control-lg" name="masa_tutup"
-								value="{{ $iklan['masa_tutup'] ?? '' }}">
+							<label class="form-label fw-semibold">Masa Tutup</label>
+							<input type="time" class="form-control form-control-lg bg-light" name="masa_tutup"
+								value="12:00" readonly tabindex="-1">
 						</div>
 					</div>
 				</div>
@@ -418,20 +418,20 @@
 				</div>
 				<div class="col-md-4">
 					<label class="form-label fw-semibold">Tempoh Iklan (Hari)</label>
-					<input type="number" class="form-control form-control-lg" name="tempoh_iklan"
-						value="{{ $iklan['tempoh_iklan'] ?? '' }}" min="0" placeholder="cth: 14">
+					<input type="number" class="form-control form-control-lg bg-light" name="tempoh_iklan"
+						value="{{ $iklan['tempoh_iklan'] ?? '' }}" min="0" placeholder="Auto" readonly tabindex="-1">
 				</div>
 
 				{{-- Row 3: Tempoh Sah Laku | Sah Laku Tawaran Tamat --}}
 				<div class="col-md-4">
-					<label class="form-label fw-semibold">Tempoh Sah Laku Tawaran (Hari)</label>
+					<label class="form-label fw-semibold">Tempoh Sah Laku Tawaran (Hari) <span class="text-danger">*</span></label>
 					<input type="number" class="form-control form-control-lg" name="tempoh_sah_laku"
-						value="{{ $iklan['tempoh_sah_laku'] ?? '' }}" min="0" placeholder="cth: 90">
+						value="{{ $iklan['tempoh_sah_laku'] ?? '' }}" min="90" placeholder="cth: 90">
 				</div>
 				<div class="col-md-4">
 					<label class="form-label fw-semibold">Sah Laku Tawaran Tamat</label>
-					<input type="text" class="form-control form-control-lg datepicker" name="sah_laku_tamat"
-						value="{{ $iklan['sah_laku_tamat'] ?? '' }}" placeholder="Pilih tarikh..." readonly>
+					<input type="text" class="form-control form-control-lg bg-light" name="sah_laku_tamat"
+						value="{{ $iklan['sah_laku_tamat'] ?? '' }}" placeholder="Auto" readonly tabindex="-1">
 				</div>
 
 				{{-- Row 4: Kebenaran Khas --}}
@@ -440,8 +440,7 @@
 					<label class="kebenaran-check-card">
 						<input type="checkbox" name="kebenaran_khas" value="1" @checked(!empty($iklan['kebenaran_khas']))>
 						<div>
-							<div class="kc-label">Kebenaran Khas Diperlukan</div>
-							<div class="kc-desc">Tandakan jika tender ini memerlukan kebenaran khas sebelum iklan diterbitkan.</div>
+							<div class="kc-label">Tandakan jika tender ini memerlukan kebenaran khas</div>
 						</div>
 					</label>
 				</div>
@@ -838,12 +837,56 @@
 				return date;
 			}
 
+			function formatDmY(date) {
+				if (!date) return '';
+				var d = String(date.getDate()).padStart(2, '0');
+				var m = String(date.getMonth() + 1).padStart(2, '0');
+				var y = date.getFullYear();
+				return d + '/' + m + '/' + y;
+			}
+
+			function daysBetween(startDate, endDate) {
+				if (!startDate || !endDate) return null;
+				var ms = endDate.getTime() - startDate.getTime();
+				return Math.round(ms / 86400000);
+			}
+
+			function addDays(date, days) {
+				var result = new Date(date.getTime());
+				result.setDate(result.getDate() + days);
+				return result;
+			}
+
+			function refreshIklanDerivedFields() {
+				$('input[name="masa_tutup"]').val('12:00');
+
+				var startDate = parseDmY($('input[name="tarikh_iklan"]').val());
+				var endDate = parseDmY($('input[name="tarikh_tutup"]').val());
+				var tempohSah = parseInt($('input[name="tempoh_sah_laku"]').val(), 10);
+
+				if (startDate && endDate && endDate >= startDate) {
+					$('input[name="tempoh_iklan"]').val(daysBetween(startDate, endDate));
+				} else {
+					$('input[name="tempoh_iklan"]').val('');
+				}
+
+				if (endDate && !isNaN(tempohSah) && tempohSah >= 0) {
+					$('input[name="sah_laku_tamat"]').val(formatDmY(addDays(endDate, tempohSah)));
+				} else {
+					$('input[name="sah_laku_tamat"]').val('');
+				}
+			}
+
 			function validateIklanStep1Dates() {
+				$('input[name="masa_tutup"]').val('12:00');
+				refreshIklanDerivedFields();
+
 				var tarikhIklan = $.trim($('input[name="tarikh_iklan"]').val() || '');
 				var masaIklan = $.trim($('input[name="masa_iklan"]').val() || '');
 				var tarikhTutup = $.trim($('input[name="tarikh_tutup"]').val() || '');
 				var masaTutup = $.trim($('input[name="masa_tutup"]').val() || '');
 				var tarikhJual = $.trim($('input[name="tarikh_jual"]').val() || '');
+				var tempohSah = $.trim($('input[name="tempoh_sah_laku"]').val() || '');
 
 				var missing = [];
 				if (!tarikhIklan) missing.push('Tarikh Iklan');
@@ -851,6 +894,7 @@
 				if (!tarikhTutup) missing.push('Tarikh Tutup');
 				if (!masaTutup) missing.push('Masa Tutup');
 				if (!tarikhJual) missing.push('Tarikh Jual');
+				if (!tempohSah) missing.push('Tempoh Sah Laku Tawaran');
 
 				if (missing.length) {
 					alert('Sila lengkapkan medan wajib berikut sebelum meneruskan:\n• ' + missing.join('\n• '));
@@ -860,6 +904,7 @@
 				var startDate = parseDmY(tarikhIklan);
 				var endDate = parseDmY(tarikhTutup);
 				var jualDate = parseDmY(tarikhJual);
+				var tempohSahNum = parseInt(tempohSah, 10);
 
 				if (!startDate || !endDate || !jualDate) {
 					alert('Sila pastikan semua tarikh diisi dalam format yang betul (dd/mm/yyyy).');
@@ -873,6 +918,11 @@
 
 				if (jualDate < startDate || jualDate > endDate) {
 					alert('Tarikh Jual mestilah dalam julat Tarikh Iklan hingga Tarikh Tutup.');
+					return false;
+				}
+
+				if (isNaN(tempohSahNum) || tempohSahNum < 90) {
+					alert('Tempoh Sah Laku Tawaran mestilah 90 hari atau lebih.');
 					return false;
 				}
 
@@ -1106,6 +1156,15 @@
 				todayHighlight: true,
 			});
 
+			refreshIklanDerivedFields();
+			$('input[name="tarikh_iklan"], input[name="tarikh_tutup"]').on('changeDate change', function() {
+				refreshIklanDerivedFields();
+				refreshTaklimatDatepickerBounds();
+			});
+			$('input[name="tempoh_sah_laku"]').on('input change', function() {
+				refreshIklanDerivedFields();
+			});
+
 			function refreshTaklimatDatepickerBounds() {
 				var startVal = $('input[name="tarikh_iklan"]').val();
 				var endVal = $('input[name="tarikh_tutup"]').val();
@@ -1137,9 +1196,6 @@
 			}
 
 			refreshTaklimatDatepickerBounds();
-			$('input[name="tarikh_iklan"], input[name="tarikh_tutup"]').on('changeDate change', function() {
-				refreshTaklimatDatepickerBounds();
-			});
 
 			/* ════════════════════════════════════════════
 			   STEP 3 — TAKLIMAT TENDER
