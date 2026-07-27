@@ -513,8 +513,10 @@ class TendersController extends Controller
 	{
 		$tender = Tender::with('codes')->with('siteVisits', 'creator', 'officer')->findOrFail($id);
 		app(\App\Services\StosTenderChecklistSync::class)->syncForTender($tender);
+		app(\App\Services\PenyediaanIklanService::class)->ensureMejaTerkawalSyncedForTender($tender);
 		$pegawaiDisplay = \App\Support\TenderPegawaiPresenter::for($tender);
 		$tenderDokumen = \App\Support\TenderDokumenPresenter::for($tender);
+		$mejaTerkawal = \App\Support\TenderMejaTerkawalPresenter::for($tender);
 
 		$organizationunit   = $tender->tenderer;
 		$invites            = $tender->invites()->has('vendor')->get();
@@ -546,7 +548,7 @@ class TendersController extends Controller
 		view()->share('global_ou', $tender->tenderer);
 
 		if (!auth()->check()) {
-			return view('tenders.guest.show', compact('tender', 'organizationunit', 'invites', 'histories', 'exception', 'templates', 'tender_winner', 'pegawaiDisplay', 'tenderDokumen'));
+			return view('tenders.guest.show', compact('tender', 'organizationunit', 'invites', 'histories', 'exception', 'templates', 'tender_winner', 'pegawaiDisplay', 'tenderDokumen', 'mejaTerkawal'));
 		}
 
 		if (auth()->user()->hasRole('Vendor')) {
@@ -572,12 +574,13 @@ class TendersController extends Controller
 				'pegawaiDisplay',
 				'tenderDokumen',
 				'vendorPurchase',
-				'vendorSubmitted'
+				'vendorSubmitted',
+				'mejaTerkawal'
 			));
 		}
 
 		// dd($tender->validDocumentDate());
-		return view('tenders.auth.show', compact('tender', 'organizationunit', 'invites', 'histories', 'exception', 'templates', 'tender_winner', 'pegawaiDisplay', 'tenderDokumen'));
+		return view('tenders.auth.show', compact('tender', 'organizationunit', 'invites', 'histories', 'exception', 'templates', 'tender_winner', 'pegawaiDisplay', 'tenderDokumen', 'mejaTerkawal'));
 	}
 
 	public function manageSpecification(Request $request)
@@ -1090,11 +1093,19 @@ class TendersController extends Controller
 		if ($file->public == 0) {
 			if (!auth()->check())
 				return $this->_access_denied();
-			if (auth()->user()->hasRole('Vendor') && !Tender::hasParticipate(auth()->user()->vendor_id))
+			if (auth()->user()->hasRole('Vendor') && !$tender->hasParticipate(auth()->user()->vendor_id))
 				return $this->_access_denied();
 		}
 
-		return Response::download($file->path, $file->name);
+		$fullPath = method_exists($file, 'getPath') ? $file->getPath() : (rtrim((string) $file->path, '/\\') . DIRECTORY_SEPARATOR . $file->name);
+
+		if (! is_file($fullPath)) {
+			abort(404, 'Fail tidak dijumpai.');
+		}
+
+		$downloadName = $file->label ?: $file->name;
+
+		return Response::download($fullPath, $downloadName);
 	}
 
 	public function receipt($tender_id, $id)

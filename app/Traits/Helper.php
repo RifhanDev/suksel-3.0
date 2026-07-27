@@ -313,7 +313,7 @@ trait Helper
      * @return string
      * @throws conditon
      **/
-    public function sendMail($type = "raw_text", $to = "", $subject = "", $raw_text = "", $view_name = "", $view_params = [])
+    public function sendMail($type = "raw_text", $to = "", $subject = "", $raw_text = "", $view_name = "", $view_params = [], $attachments = [])
     {
         if ($to == "") {
             Log::error('[sendMail] Missing recipient address. to cannot be empty.');
@@ -333,7 +333,7 @@ trait Helper
 
             $content = view($view_name, $view_params)->render();
 
-            $result = $this->createEmailQueue($content, $to, $subject);
+            $result = $this->createEmailQueue($content, $to, $subject, $attachments);
             if (! $this->emailSendSucceeded($result)) {
                 Log::error('[sendMail] Failed to queue email.', ['to' => $to, 'subject' => $subject, 'reason' => $result]);
             }
@@ -344,7 +344,7 @@ trait Helper
                 return "Missing parameter raw_text. raw_text can't be empty";
             }
 
-            $result = $this->createEmailQueue($raw_text, $to, $subject);
+            $result = $this->createEmailQueue($raw_text, $to, $subject, $attachments);
             if (! $this->emailSendSucceeded($result)) {
                 Log::error('[sendMail] Failed to queue email.', ['to' => $to, 'subject' => $subject, 'reason' => $result]);
             }
@@ -412,7 +412,7 @@ trait Helper
         );
     }
 
-    public function createEmailQueue($content = "", $to = [], $subject = [])
+    public function createEmailQueue($content = "", $to = [], $subject = [], $attachments = [])
     {
         // Retrieve available config based on today date
         $available_config = $this->getAvailableEmailConfig();
@@ -423,7 +423,7 @@ trait Helper
                 'subject' => $subject,
             ]);
 
-            return $this->sendViaLaravelMailer($content, $to, $subject);
+            return $this->sendViaLaravelMailer($content, $to, $subject, $attachments);
         }
 
         $config = $this->setEmailConfig($available_config);
@@ -442,6 +442,7 @@ trait Helper
             "content" => $content,
             "config" => json_encode($config),
             "payload" => json_encode($payload),
+            "attachments" => ! empty($attachments) ? json_encode($attachments) : null,
             "status" => 'N',
         );
 
@@ -504,11 +505,23 @@ trait Helper
         return in_array($result, ['Email send to queue', 'Email sent via Laravel mailer'], true);
     }
 
-    protected function sendViaLaravelMailer(string $content, string $to, string $subject): string
+    protected function sendViaLaravelMailer(string $content, string $to, string $subject, array $attachments = []): string
     {
         try {
-            Mail::html($content, function ($message) use ($to, $subject) {
+            Mail::html($content, function ($message) use ($to, $subject, $attachments) {
                 $message->to($to)->subject($subject);
+
+                foreach ($attachments as $attachment) {
+                    if (empty($attachment['data'])) {
+                        continue;
+                    }
+
+                    $message->attachData(
+                        base64_decode($attachment['data']),
+                        $attachment['filename'] ?? 'attachment',
+                        ['mime' => $attachment['mime'] ?? 'application/octet-stream']
+                    );
+                }
             });
 
             Log::info('[sendViaLaravelMailer] Email sent.', ['to' => $to, 'subject' => $subject]);

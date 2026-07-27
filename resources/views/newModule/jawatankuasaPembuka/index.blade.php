@@ -73,7 +73,7 @@
 	<div class="d-flex flex-column flex-lg-row justify-content-start align-items-start align-items-lg-center mb-4">
 		<!-- Title -->
 		<div class="mb-3 mb-lg-0">
-			<h3 class="fw-bold text-dark m-0" style="letter-spacing: -0.5px;">Senarai Tender / Sebutharga</h3>
+			<h3 class="fw-bold text-dark m-0" style="letter-spacing: -0.5px;">Senarai Tender / Sebut Harga</h3>
 			<p class="text-muted small m-0">Paparan maklumat tender terkini di bawah Sistem e-Perolehan Selangor.</p>
 		</div>
 	</div>
@@ -84,7 +84,7 @@
 			<div class="row g-2 align-items-end">
 
 				<div class="col-12 col-lg-2">
-					<label for="filter_no_tender" class="form-label small fw-bold text-secondary text-uppercase mb-1">No. Tender</label>
+					<label for="filter_no_tender" class="form-label small fw-bold text-secondary text-uppercase mb-1">No. Tender/Sebut Harga</label>
 					<input type="text" id="filter_no_tender" class="form-control form-control-sm" placeholder="Cth: JPS/01">
 				</div>
 
@@ -128,7 +128,7 @@
 				<div class="d-flex align-items-center justify-content-center bg-danger bg-opacity-10 text-danger rounded-2" style="width: 36px; height: 36px;">
 					<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
 				</div>
-				Senarai Tender
+				Senarai Tender / Sebut Harga
 			</h3>
 		</div>
 
@@ -137,7 +137,7 @@
 				<table data-path="" class=" table table-modern w-100 mb-0">
 					<thead>
 						<tr>
-							<th class="text-center">Maklumat Tender</th>
+							<th class="text-center">Maklumat Tender/Sebut Harga</th>
 							<th class="text-center" width="150px">Tarikh Jual</th>
 							<th class="text-center" width="150px">Tarikh Tutup</th>
 							<th class="text-center" width="150px">Harga (RM)</th>
@@ -147,7 +147,10 @@
 					<tbody>
                         @forelse($tenders ?? [] as $item)
                         <tr>
-                            <td>{{ $item['name'] }}</td>
+                            <td>
+                                <strong>{{ $item['no_tender'] }}</strong><br>
+                                <small>{{ $item['name'] }}</small>
+                            </td>
                             <td class="text-center">{{ $item['tarikh_jual'] }}</td>
                             <td class="text-center">{{ $item['tarikh_tutup'] }}</td>
                             <td class="text-center">{{ $item['harga'] }}</td>

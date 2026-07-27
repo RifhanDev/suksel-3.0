@@ -13,8 +13,14 @@ return new class extends Migration
         }
 
         Schema::table('vendors', function (Blueprint $table) {
-            if (! Schema::hasColumn('vendors', 'meta')) {
-                $table->json('meta')->nullable()->after('state_id');
+            if (Schema::hasColumn('vendors', 'meta')) {
+                return;
+            }
+
+            $column = $table->json('meta')->nullable();
+
+            if (Schema::hasColumn('vendors', 'state_id')) {
+                $column->after('state_id');
             }
         });
     }

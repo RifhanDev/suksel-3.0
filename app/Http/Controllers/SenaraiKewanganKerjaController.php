@@ -43,8 +43,28 @@ class SenaraiKewanganKerjaController extends Controller
         }
 
         // Load standard items for the "Senarai Semak Standard" modal
-        $standardResponse = $this->api()->get($this->url('standard-checklist-items?category=kewangan_kerja&type=standard'));
-        $standardItems    = $standardResponse->successful() ? $standardResponse->json('data') : [];
+        $standardItems = [];
+        try {
+            $standardResponse = $this->api()->get($this->url('standard-checklist-items?category=kewangan_kerja'));
+
+            if ($standardResponse->successful()) {
+                $standardItems = $standardResponse->json('data') ?? [];
+            }
+        } catch (\Throwable $e) {
+            Log::warning('SenaraiKewanganKerjaController@index: STOS API request failed, using local DB fallback', [
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        if (empty($standardItems)) {
+            $standardItems = \Illuminate\Support\Facades\DB::table('standard_checklist_items')
+                ->where('category', 'kewangan_kerja')
+                ->where('is_active', 1)
+                ->orderBy('sort_order')
+                ->get()
+                ->map(fn ($item) => (array) $item)
+                ->all();
+        }
 
         return view(
             'newModule.jawatankuasaSpesifikasi.senarai_kewangan_kerja',
@@ -85,11 +105,7 @@ class SenaraiKewanganKerjaController extends Controller
         );
 
         if ($response->successful()) {
-<<<<<<< HEAD
-            Tender::where('uuid', $tenderUuid)->update(['status_process_id' => 4]);
-=======
             $this->refreshTenderProcessAfterChecklistSubmit($tenderUuid);
->>>>>>> main
         }
 
         return response()->json($response->json(), $response->status());

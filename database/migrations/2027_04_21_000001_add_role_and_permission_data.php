@@ -11,6 +11,8 @@ return new class extends Migration
     {
         DB::transaction(function () {
             $timestamp = now();
+            $roleColumns = $this->tableColumns('roles');
+            $permissionColumns = $this->tableColumns('permissions');
 
             foreach ($this->newRoles() as $role) {
                 $roleExists = DB::table('roles')
@@ -21,14 +23,14 @@ return new class extends Migration
                     continue;
                 }
 
-                DB::table('roles')->insert([
+                DB::table('roles')->insert($this->filterColumns([
                     'name' => $role['name'],
                     'guard_name' => $role['guard_name'] ?? 'web',
                     'display_name' => $role['display_name'] ?? null,
                     'description' => $role['description'] ?? null,
                     'created_at' => $timestamp,
                     'updated_at' => $timestamp,
-                ]);
+                ], $roleColumns));
             }
 
             foreach ($this->newPermissions() as $permission) {
@@ -40,14 +42,15 @@ return new class extends Migration
                     continue;
                 }
 
-                DB::table('permissions')->insert([
+                DB::table('permissions')->insert($this->filterColumns([
                     'name' => $permission['name'],
-                    'group_name' => $permission['group_name'],
+                    'group_name' => $permission['group_name'] ?? null,
+                    'guard_name' => $permission['guard_name'] ?? 'web',
                     'display_name' => $permission['display_name'] ?? null,
                     'description' => $permission['description'] ?? null,
                     'created_at' => $timestamp,
                     'updated_at' => $timestamp,
-                ]);
+                ], $permissionColumns));
             }
 
             $this->attachRolePermissions($timestamp);
@@ -79,6 +82,8 @@ return new class extends Migration
     {
         $syncLegacyPivot = Schema::hasTable('permission_role');
         $syncSpatiePivot = Schema::hasTable('role_has_permissions');
+        $legacyPivotColumns = $syncLegacyPivot ? $this->tableColumns('permission_role') : [];
+        $spatiePivotColumns = $syncSpatiePivot ? $this->tableColumns('role_has_permissions') : [];
 
         foreach ($this->rolePermissions() as $mapping) {
             $role = DB::table('roles')->where('name', $mapping['role'])->first();
@@ -101,12 +106,12 @@ return new class extends Migration
                         ->exists();
 
                     if (!$legacyPivotExists) {
-                        DB::table('permission_role')->insert([
+                        DB::table('permission_role')->insert($this->filterColumns([
                             'permission_id' => $permission->id,
                             'role_id' => $role->id,
                             'created_at' => $timestamp,
                             'updated_at' => $timestamp,
-                        ]);
+                        ], $legacyPivotColumns));
                     }
                 }
 
@@ -117,10 +122,10 @@ return new class extends Migration
                         ->exists();
 
                     if (!$spatiePivotExists) {
-                        DB::table('role_has_permissions')->insert([
+                        DB::table('role_has_permissions')->insert($this->filterColumns([
                             'permission_id' => $permission->id,
                             'role_id' => $role->id,
-                        ]);
+                        ], $spatiePivotColumns));
                     }
                 }
             }
@@ -168,6 +173,28 @@ return new class extends Migration
         if (class_exists(PermissionRegistrar::class)) {
             app(PermissionRegistrar::class)->forgetCachedPermissions();
         }
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function tableColumns(string $table): array
+    {
+        return collect(DB::select(
+            'SELECT COLUMN_NAME FROM information_schema.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?',
+            [$table]
+        ))->pluck('COLUMN_NAME')->map(fn ($name) => (string) $name)->all();
+    }
+
+    /**
+     * @param  array<string, mixed>  $row
+     * @param  array<int, string>  $columns
+     * @return array<string, mixed>
+     */
+    private function filterColumns(array $row, array $columns): array
+    {
+        return array_intersect_key($row, array_flip($columns));
     }
 
     private function newRoles(): array

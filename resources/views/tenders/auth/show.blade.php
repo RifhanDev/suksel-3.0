@@ -10,14 +10,9 @@
 
 @section('content')
 	@php
-		$vendorCanEdit = Auth::check()
-			&& Auth::user()->vendor_id
-			&& $tender->hasParticipate(Auth::user()->vendor_id);
+		$vendorCanEdit = Auth::check() && Auth::user()->vendor_id && $tender->hasParticipate(Auth::user()->vendor_id);
 		$dokumenMode = $vendorCanEdit ? 'vendor' : 'admin';
-		$dokumenList = $tenderDokumen->items(
-			$dokumenMode,
-			$vendorCanEdit ? (int) Auth::user()->vendor_id : null
-		);
+		$dokumenList = $tenderDokumen->items($dokumenMode, $vendorCanEdit ? (int) Auth::user()->vendor_id : null);
 	@endphp
 
 	<div class="row">
@@ -128,14 +123,14 @@
 									Kod-Kod Bidang
 								</a>
 							@endif
-							@if (count($tender->table_files) > 0)
+							@if ($mejaTerkawal->hasDocuments())
 								<a href="#tf-doc1" aria-controls="settings" role="tab" data-bs-toggle="tab" class="nav-link">
 									<svg xmlns="http://www.w3.org/2000/svg" class="me-1" width="18" height="18" viewBox="0 0 24 24">
 										<path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
 											d="M5 4h4l3 3h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2" />
 									</svg>
-									Dokumen Meja Terkawal
-									<span class="badge bg-primary ms-2">{{ $tender->files()->where('public', 1)->count() }}</span>
+									{{ \App\Support\TenderMejaTerkawalPresenter::TAB_LABEL }}
+									<span class="badge bg-primary ms-2">{{ $mejaTerkawal->count() }}</span>
 								</a>
 							@endif
 							@if ($tender->canShowDokumenSenaraiTab(Auth::user()->vendor_id))
@@ -835,52 +830,25 @@
 					@endif
 
 					{{-- === TAB: Dokumen Meja Terkawal === --}}
-					<div role="tabpanel" class="tab-pane" id="tf-doc1">
-						<div class="tender-tab-card">
-							<div class="card-header">
-								<h3 class="card-title">
-									<svg xmlns="http://www.w3.org/2000/svg" class="me-1" width="18" height="18" viewBox="0 0 24 24">
-										<path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-											d="M14 3v4a1 1 0 0 0 1 1h4M5 8v-3a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2h-5M2 21v-1a2 2 0 0 1 2 -2h4a2 2 0 0 1 2 2v1M4 18a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
-									</svg>
-									Dokumen Meja Terkawal
-								</h3>
-							</div>
-							<div class="card-body p-0">
-								<div class="table-responsive">
-									<table class="table tender-doc-table mb-0">
-										<thead>
-											<tr>
-												<th>Nama</th>
-												<th>Saiz</th>
-												<th>Jenis</th>
-												<th>&nbsp;</th>
-											</tr>
-										</thead>
-										<tbody>
-											@foreach ($tender->tableFiles as $upload)
-												<tr>
-													<td>{{ $upload->label }}</td>
-													<td>{{ $upload->size }}</td>
-													<td>{{ $upload->type }}</td>
-													<td>
-														<a href="{{ $upload->url }}" class="btn btn-sm btn-selangor" download>
-															<svg xmlns="http://www.w3.org/2000/svg" class="me-1" width="16" height="16"
-																viewBox="0 0 24 24">
-																<path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
-																	stroke-width="2" d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2M7 11l5 5l5 -5M12 4l0 12" />
-															</svg>
-															Muat Turun
-														</a>
-													</td>
-												</tr>
-											@endforeach
-										</tbody>
-									</table>
+					@if ($mejaTerkawal->hasDocuments())
+						<div role="tabpanel" class="tab-pane" id="tf-doc1">
+							<div class="tender-tab-card">
+								<div class="card-header">
+									<h3 class="card-title">
+										<svg xmlns="http://www.w3.org/2000/svg" class="me-1" width="18" height="18" viewBox="0 0 24 24">
+											<path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+												stroke-width="2"
+												d="M14 3v4a1 1 0 0 0 1 1h4M5 8v-3a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2h-5M2 21v-1a2 2 0 0 1 2 -2h4a2 2 0 0 1 2 2v1M4 18a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+										</svg>
+										{{ \App\Support\TenderMejaTerkawalPresenter::TAB_LABEL }}
+									</h3>
+								</div>
+								<div class="card-body p-0">
+									@include('tenders._meja_terkawal_table', ['mejaTerkawal' => $mejaTerkawal])
 								</div>
 							</div>
 						</div>
-					</div>
+					@endif
 
 					{{-- === TAB: Dokumen Tender/Tawaran atau Sebut Harga (senarai semak) === --}}
 					@if ($tender->canShowDokumenSenaraiTab(Auth::user()->vendor_id))

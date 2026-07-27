@@ -17,6 +17,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class PenyediaanIklanController extends Controller
 {
@@ -78,7 +79,7 @@ class PenyediaanIklanController extends Controller
             }
         }
 
-        $tender->load(['tenderer', 'codes.code', 'creator', 'officer', 'siteVisits']);
+        $tender->load(['tenderer', 'codes.code', 'creator.organizationunit', 'officer.organizationunit', 'siteVisits']);
         $this->checklistSync->syncForTender($tender);
         $tenderReview = TenderReviewPresenter::for($tender);
         $tenderDokumen = TenderDokumenPresenter::for($tender);
@@ -87,6 +88,9 @@ class PenyediaanIklanController extends Controller
         if (empty($meta['kelulusan'])) {
             $meta['kelulusan'] = PenyediaanIklan::defaultKelulusan();
         }
+
+        // Re-hydrate pegawai1 from creator after any STOS overlay.
+        $meta['pegawai'] = $this->penyediaanIklanService->normalizePegawaiMeta($meta['pegawai'] ?? [], $tender);
 
         return view('newModule.penyediaanIklan.index', compact(
             'tender',
@@ -162,6 +166,10 @@ class PenyediaanIklanController extends Controller
             /** @var \Illuminate\Http\RedirectResponse $redirect */
             $redirect = redirect()->to($redirectUrl);
             return $redirect->with('success', $message);
+        } catch (ValidationException $e) {
+            $message = collect($e->errors())->flatten()->first() ?: 'Data tidak sah.';
+
+            return $this->respondError($request, $message, 422);
         } catch (\Throwable $e) {
             Log::error('Penyediaan iklan persist failed', [
                 'tender_id' => $tender->id,
@@ -202,6 +210,7 @@ class PenyediaanIklanController extends Controller
 
         return [
             'kelulusan' => $kelulusan,
+            '_sync_dokumen_meja' => $request->has('dokumen_meja'),
             'iklan' => [
                 'tarikh_iklan' => $request->input('tarikh_iklan'),
                 'masa_iklan' => $request->input('masa_iklan'),
@@ -221,17 +230,22 @@ class PenyediaanIklanController extends Controller
                     'only_advertise' => $request->boolean('only_advertise'),
                     'district_list_rule' => $districtRules,
                 ],
-                'dokumen_sokongan' => array_values(array_merge(
-                    $existingIklan['dokumen_sokongan'] ?? [],
-                    $this->storeDokumenSokongan($request, $tenderId)
-                )),
+                'dokumen_sokongan' => $request->has('dokumen_meja')
+                    ? $this->parseDokumenMejaTerkawal(
+                        $request,
+                        $tenderId,
+                        $existingIklan['dokumen_sokongan'] ?? []
+                    )
+                    : ($existingIklan['dokumen_sokongan'] ?? []),
             ],
-            'pegawai' => $this->buildPegawaiPayload($request),
+            'pegawai' => $this->buildPegawaiPayload($request, $tenderId),
         ];
     }
 
-    protected function buildPegawaiPayload(Request $request): array
+    protected function buildPegawaiPayload(Request $request, int $tenderId): array
     {
+        $tender = Tender::query()->with(['creator.organizationunit'])->find($tenderId);
+
         return $this->penyediaanIklanService->normalizePegawaiMeta([
             'pegawai1' => [
                 'nama' => $request->input('pegawai1_nama'),
@@ -240,7 +254,7 @@ class PenyediaanIklanController extends Controller
                 'jabatan' => $request->input('pegawai1_jabatan'),
             ],
             'pegawai2' => $this->resolvePegawai2FromRequest($request),
-        ]);
+        ], $tender);
     }
 
     protected function resolvePegawai2FromRequest(Request $request): array
@@ -391,31 +405,61 @@ class PenyediaanIklanController extends Controller
         ];
     }
 
-    protected function storeDokumenSokongan(Request $request, int $tenderId): array
+    protected function parseDokumenMejaTerkawal(Request $request, int $tenderId, array $existingDocs): array
     {
-        $stored = [];
-        $files = (array) $request->file('dokumen_sokongan_terawal', []);
-        $dir = public_path("uploads/penyediaan-iklan/{$tenderId}/sokongan");
+        $rows = (array) $request->input('dokumen_meja', []);
+        $existingByPath = collect($existingDocs)->keyBy('path');
+        $result = [];
 
+        foreach ($rows as $index => $row) {
+            if (! is_array($row)) {
+                continue;
+            }
+
+            $nama = trim((string) ($row['nama'] ?? ''));
+            $existingPath = trim((string) ($row['existing_path'] ?? ''));
+            $uploadId = $row['upload_id'] ?? null;
+            $file = $request->file("dokumen_meja.{$index}.file");
+
+            if ($file instanceof UploadedFile) {
+                $stored = $this->storeMejaTerkawalFile($file, $tenderId);
+                $stored['nama'] = $nama !== '' ? $nama : $stored['original_name'];
+                if ($uploadId) {
+                    $stored['upload_id'] = (int) $uploadId;
+                }
+                $result[] = $stored;
+                continue;
+            }
+
+            if ($existingPath !== '' && $existingByPath->has($existingPath)) {
+                $doc = $existingByPath->get($existingPath);
+                $doc['nama'] = $nama !== '' ? $nama : ($doc['nama'] ?? $doc['original_name'] ?? '');
+                if ($uploadId) {
+                    $doc['upload_id'] = (int) $uploadId;
+                }
+                $result[] = $doc;
+            }
+        }
+
+        return array_values($result);
+    }
+
+    protected function storeMejaTerkawalFile(UploadedFile $file, int $tenderId): array
+    {
+        $dir = public_path("uploads/penyediaan-iklan/{$tenderId}/sokongan");
         if (! is_dir($dir)) {
             mkdir($dir, 0755, true);
         }
 
-        foreach ($files as $file) {
-            if (! $file instanceof UploadedFile) {
-                continue;
-            }
-            $name = Str::uuid() . '.' . $file->getClientOriginalExtension();
-            $file->move($dir, $name);
-            $relative = "uploads/penyediaan-iklan/{$tenderId}/sokongan/{$name}";
-            $stored[] = [
-                'path' => $relative,
-                'original_name' => $file->getClientOriginalName(),
-                'url' => asset($relative),
-            ];
-        }
+        $name = Str::uuid() . '.' . $file->getClientOriginalExtension();
+        $file->move($dir, $name);
+        $relative = "uploads/penyediaan-iklan/{$tenderId}/sokongan/{$name}";
 
-        return $stored;
+        return [
+            'path' => $relative,
+            'original_name' => $file->getClientOriginalName(),
+            'url' => asset($relative),
+        ];
     }
 
     protected function respondError(Request $request, string $message, int $status)

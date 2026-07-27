@@ -100,6 +100,68 @@ class StosBackendClient
         return $this->post('/api/tenders/' . $tenderId . '/penyediaan-mesyuarat/submit', $payload);
     }
 
+    public function getKehadiranMesyuarat(int $tenderId, ?int $meetingId = null): Response
+    {
+        $query = $meetingId ? ['meeting_id' => $meetingId] : [];
+
+        return $this->get('/api/tenders/' . $tenderId . '/kehadiran-mesyuarat', $query);
+    }
+
+    public function saveKehadiranMesyuarat(int $tenderId, array $payload): Response
+    {
+        return $this->post('/api/tenders/' . $tenderId . '/kehadiran-mesyuarat', $payload);
+    }
+
+    public function listPembelianTerus(array $query = []): Response
+    {
+        return $this->get('/api/pembelian-terus', $query);
+    }
+
+    public function getPembelianTerus(int $tenderId): Response
+    {
+        return $this->get('/api/pembelian-terus/' . $tenderId);
+    }
+
+    public function createPembelianTerus(array $payload): Response
+    {
+        return $this->post('/api/pembelian-terus', $payload);
+    }
+
+    public function updatePembelianTerus(int $tenderId, array $payload): Response
+    {
+        return $this->request('put', '/api/pembelian-terus/' . $tenderId, ['json' => $payload]);
+    }
+
+    public function publishPembelianTerus(int $tenderId): Response
+    {
+        return $this->post('/api/pembelian-terus/' . $tenderId . '/publish');
+    }
+
+    public function getPembelianTerusOffers(int $tenderId): Response
+    {
+        return $this->get('/api/pembelian-terus/' . $tenderId . '/offers');
+    }
+
+    public function submitPembelianTerusOffer(int $tenderId, array $payload): Response
+    {
+        return $this->post('/api/pembelian-terus/' . $tenderId . '/offers', $payload);
+    }
+
+    public function cutoffPembelianTerus(int $tenderId, array $payload): Response
+    {
+        return $this->post('/api/pembelian-terus/' . $tenderId . '/cutoff', $payload);
+    }
+
+    public function selectPembelianTerusWinner(int $tenderId, array $payload): Response
+    {
+        return $this->post('/api/pembelian-terus/' . $tenderId . '/select-winner', $payload);
+    }
+
+    public function keputusanPembelianTerus(int $tenderId, array $payload): Response
+    {
+        return $this->post('/api/pembelian-terus/' . $tenderId . '/company-decision', $payload);
+    }
+
     protected function request(string $method, string $path, array $options = []): Response
     {
         if (! $this->isConfigured()) {
@@ -113,6 +175,10 @@ class StosBackendClient
         try {
             if ($method === 'get') {
                 return $client->get($url, $options['query'] ?? []);
+            }
+
+            if ($method === 'put') {
+                return $client->put($url, $options['json'] ?? []);
             }
 
             return $client->post($url, $options['json'] ?? []);

@@ -38,19 +38,28 @@ class TechnicalChecklistController extends Controller
             ]);
         }
 
-        $standardApiUrl = $this->url('standard-checklist-items?category=technical');
-        $standardResponse = $this->api()->get($standardApiUrl);
-
         $standardItems = [];
+        try {
+            $standardApiUrl   = $this->url('standard-checklist-items?category=technical');
+            $standardResponse = $this->api()->get($standardApiUrl);
 
-        if ($standardResponse->successful()) {
-            $standardItems = $standardResponse->json('data') ?? [];
-        } else {
-            Log::warning('TechnicalChecklistController@index: Failed to fetch standard checklist items', [
-                'api_url' => $standardApiUrl,
-                'status'  => $standardResponse->status(),
-                'body'    => $standardResponse->body(),
+            if ($standardResponse->successful()) {
+                $standardItems = $standardResponse->json('data') ?? [];
+            }
+        } catch (\Throwable $e) {
+            Log::warning('TechnicalChecklistController@index: STOS API request failed, using local DB fallback', [
+                'error' => $e->getMessage(),
             ]);
+        }
+
+        if (empty($standardItems)) {
+            $standardItems = \Illuminate\Support\Facades\DB::table('standard_checklist_items')
+                ->where('category', 'technical')
+                ->where('is_active', 1)
+                ->orderBy('sort_order')
+                ->get()
+                ->map(fn ($item) => (array) $item)
+                ->all();
         }
 
         return view('TechnicalChecklist.senarai_teknikal', compact('tender', 'checklistData', 'standardItems'));
@@ -72,11 +81,7 @@ class TechnicalChecklistController extends Controller
         $response = $this->api()->post($this->url('technical-checklists/' . $tenderUuid . '/submit'), $request->except('_token'));
 
         if ($response->successful()) {
-<<<<<<< HEAD
-            Tender::where('uuid', $tenderUuid)->update(['status_process_id' => 3]);
-=======
             $this->refreshTenderProcessAfterChecklistSubmit($tenderUuid);
->>>>>>> main
         }
 
         return response()->json($response->json(), $response->status());

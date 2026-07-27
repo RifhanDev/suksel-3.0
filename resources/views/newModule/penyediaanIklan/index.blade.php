@@ -296,6 +296,7 @@ $(document).ready(function () {
                     $('<input>').attr({ type: 'hidden', id: 'taklimat_rows_hidden', name: 'taklimat_rows' })
                         .val(JSON.stringify(taklimatRows)).appendTo('#formPenyediaanIklan');
                 }
+                $('#mejaTerkawalRows').find(':input').prop('disabled', false);
                 form.submit();
             }
         } else {

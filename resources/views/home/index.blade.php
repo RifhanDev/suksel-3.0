@@ -757,6 +757,12 @@
                                 Sebut Harga
                             </a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link @if (Request::get('type') == 'pembelian_terus') active @endif"
+                                href="{{ action('HomeController@index', ['type' => 'pembelian_terus']) }}">
+                                Pembelian Terus
+                            </a>
+                        </li>
                     </ul>
 				</div>
 

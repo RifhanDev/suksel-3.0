@@ -131,17 +131,27 @@ Route::view('/perakuan-jabatan/pengesyoran-pembekal', 'newModule.perakuanJabatan
 Route::get('/eBidding/index', [EbiddingController::class, 'index'])->middleware(['auth'])->name('eBidding.index');
 Route::view('/keputusan-mesyuarat', 'newModule.eBidding.keptusan_mesyuarat')->name('keputusanMesyuarat');
 
-Route::prefix('pembelian-terus')->controller(PembelianTerusController::class)->group(function () {
-	Route::get('/cipta-projek', 'createProject')->name('pembelianTerus.createProject');
+Route::get('/pembelian-terus/maklumat-projek/{id}', [PembelianTerusController::class, 'detailProject'])
+	->name('pembelianTerus.detailProject');
+
+Route::prefix('pembelian-terus')->controller(PembelianTerusController::class)->middleware(['auth'])->group(function () {
+	Route::get('/cipta-projek', 'index')->name('pembelianTerus.createProject');
+	Route::get('/cipta-projek/baru', 'create')->name('pembelianTerus.create');
+	Route::post('/cipta-projek', 'store')->name('pembelianTerus.store');
+	Route::get('/cipta-projek/{id}/kemaskini', 'edit')->name('pembelianTerus.edit');
+	Route::put('/cipta-projek/{id}', 'update')->name('pembelianTerus.update');
 	Route::get('/sebut-harga', 'quoteProject')->name('pembelianTerus.quoteProject');
-	Route::get('/maklumat-projek/{tender_no}', 'detailProject')->name('pembelianTerus.detailProject');
+	Route::post('/maklumat-projek/{id}/tawaran', 'submitOffer')->name('pembelianTerus.submitOffer');
 	Route::get('/cut-off-projek', 'cutOffProject')->name('pembelianTerus.cutOffProject');
-	Route::get('/cut-off-details/{tender_no}', 'cutOffDetails')->name('pembelianTerus.cutOffDetails');
+	Route::get('/cut-off-details/{id}', 'cutOffDetails')->name('pembelianTerus.cutOffDetails');
+	Route::post('/cut-off-details/{id}', 'storeCutoff')->name('pembelianTerus.storeCutoff');
 	Route::get('/pemilihan-syarikat', 'pemilihanSyarikat')->name('pembelianTerus.pemilihanSyarikat');
-	Route::get('/pemilihan-syarikat-details/{tender_no}', 'pemilihanSyarikatDetails')->name('pembelianTerus.pemilihanSyarikatDetails');
+	Route::get('/pemilihan-syarikat-details/{id}', 'pemilihanSyarikatDetails')->name('pembelianTerus.pemilihanSyarikatDetails');
+	Route::post('/pemilihan-syarikat-details/{id}', 'storePemilihan')->name('pembelianTerus.storePemilihan');
 	Route::get('/keputusan-syarikat', 'keputusanSyarikat')->name('pembelianTerus.keputusanSyarikat');
-	Route::get('/keputusan-syarikat-details/{tender_no}', 'keputusanSyarikatDetails')->name('pembelianTerus.keputusanSyarikatDetails');
-	Route::get('/surat-setuju-terima/{tender_no}', 'downloadSuratSetujuTerima')->name('pembelianTerus.downloadSuratSetujuTerima');
+	Route::get('/keputusan-syarikat-details/{id}', 'keputusanSyarikatDetails')->name('pembelianTerus.keputusanSyarikatDetails');
+	Route::post('/keputusan-syarikat-details/{id}', 'storeKeputusan')->name('pembelianTerus.storeKeputusan');
+	Route::get('/surat-setuju-terima/{id}', 'downloadSuratSetujuTerima')->name('pembelianTerus.downloadSuratSetujuTerima');
 });
 /////////////////////////////////////////////////////////////
 
@@ -201,6 +211,7 @@ Route::middleware(['auth'])->group(function () {
 	Route::post('tenders/{tender}/vendor-submission', [\App\Http\Controllers\VendorTenderSubmissionController::class, 'submit'])->name('tenders.vendorSubmission.submit');
 	Route::get('tenders/{tender}/dokumen/{itemUuid}/specification', [\App\Http\Controllers\VendorTenderDokumenController::class, 'specificationForm'])->name('tenderDokumen.specificationForm');
 	Route::post('tenders/{tender}/dokumen/{itemUuid}/upload', [\App\Http\Controllers\VendorTenderDokumenController::class, 'upload'])->name('tenderDokumen.upload');
+	Route::get('tenders/dokumen-files/{fileUuid}/download', [\App\Http\Controllers\VendorTenderDokumenController::class, 'download'])->name('tenderDokumen.download');
 	Route::delete('tenders/dokumen-files/{fileUuid}', [\App\Http\Controllers\VendorTenderDokumenController::class, 'deleteFile'])->name('tenderDokumen.deleteFile');
 	Route::post('tenders/{tender}/dokumen/{itemUuid}/key-in', [\App\Http\Controllers\VendorTenderDokumenController::class, 'saveKeyIn'])->name('tenderDokumen.saveKeyIn');
 	Route::post('tenders/{tender}/dokumen/{itemUuid}/specification', [\App\Http\Controllers\VendorTenderDokumenController::class, 'saveSpecification'])->name('tenderDokumen.saveSpecification');
@@ -290,9 +301,11 @@ Route::middleware(['auth'])->group(function () {
 	Route::get('/perincian-page', [PenyediaanMesyuaratController::class, 'show'])->name('perincianPage');
 	Route::post('/penyediaan-mesyuarat/simpan', [PenyediaanMesyuaratController::class, 'simpan'])->name('penyediaanMesyuarat.simpan');
 	Route::post('/penyediaan-mesyuarat/hantar', [PenyediaanMesyuaratController::class, 'hantar'])->name('penyediaanMesyuarat.hantar');
+
+	Route::get('/index-jawatankuasa', [PenyediaanMesyuaratController::class, 'indexKehadiran'])->name('jawatankuasaMesyuarat');
+	Route::get('/jawatankuasa-page', [PenyediaanMesyuaratController::class, 'showKehadiran'])->name('jawatankuasaPage');
+	Route::post('/kehadiran-mesyuarat/simpan', [PenyediaanMesyuaratController::class, 'simpanKehadiran'])->name('kehadiranMesyuarat.simpan');
 });
-Route::view('/index-jawatankuasa', 'newModule.penyediaanMesyuarat.index_jawatankuasa')->name('jawatankuasaMesyuarat');
-Route::view('/jawatankuasa-page', 'newModule.penyediaanMesyuarat.jawatankuasa')->name('jawatankuasaPage');
 Route::middleware('auth')->group(function () {
 	Route::get('/lawatan-tapak-urusetia', [LawatanTapakUrusetiaController::class, 'index'])->name('lawatanTapakUrusetia');
 	Route::get('/pengesahan-lawatan-tapak-urusetia/{tender}', [LawatanTapakUrusetiaController::class, 'pengesahan'])->name('pengesahanLawatanTapak');
@@ -308,6 +321,8 @@ Route::middleware(['auth'])->group(function () {
 	Route::post('/penyediaan-sst/hantar', [PenyediaanSuratSstController::class, 'hantar'])->name('penyediaanSST.hantar');
 	Route::get('/index-jawatankuasa-pembuka', [JawatankuasaPembukaController::class, 'index'])->name('indexJawatankuasaPembuka');
 	Route::get('/jawatankuasa-pembuka', [JawatankuasaPembukaController::class, 'show'])->name('jawatankuasaPembuka');
+	Route::post('/jawatankuasa-pembuka/simpan-pematuhan', [JawatankuasaPembukaController::class, 'simpanPematuhan'])->name('jawatankuasaPembuka.simpanPematuhan');
+	Route::get('/jawatankuasa-pembuka/rumusan-data', [JawatankuasaPembukaController::class, 'getRumusanData'])->name('jawatankuasaPembuka.rumusanData');
 	Route::post('/jawatankuasa-pembuka/hantar', [JawatankuasaPembukaController::class, 'hantar'])->name('jawatankuasaPembuka.hantar');
 });
 Route::view('/show-soalan-lazim', 'helps.show')->name('showSoalanLazim');

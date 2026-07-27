@@ -43,9 +43,36 @@ class TenderPrestasiKerjaController extends Controller
         $this->ensureTenderFormAccess($tender);
         $this->ensureFormEditable();
 
+        $arrayFields = [
+            'nama', 'no_kontrak', 'harga', 'tarikh_tapak', 'tempoh', 'tarikh_siap',
+            'tarikh_penilaian', 'luputan', 'kemajuan_sebenar', 'kemajuan_jadual',
+        ];
+
+        foreach ($arrayFields as $field) {
+            if (! $request->has($field)) {
+                continue;
+            }
+
+            $request->merge([
+                $field => collect($request->input($field, []))
+                    ->map(function ($value) use ($field) {
+                        if ($value === '' || $value === null) {
+                            return null;
+                        }
+
+                        if ($field === 'harga') {
+                            return str_replace(',', '', (string) $value);
+                        }
+
+                        return $value;
+                    })
+                    ->all(),
+            ]);
+        }
+
         $validated = $request->validate([
             'nama'               => ['nullable', 'array'],
-            'nama.*'             => ['required', 'string', 'max:255'],
+            'nama.*'             => ['nullable', 'string', 'max:255'],
             'no_kontrak'         => ['nullable', 'array'],
             'no_kontrak.*'       => ['nullable', 'string', 'max:255'],
             'harga'              => ['nullable', 'array'],
@@ -65,11 +92,29 @@ class TenderPrestasiKerjaController extends Controller
             'kemajuan_jadual'    => ['nullable', 'array'],
             'kemajuan_jadual.*'  => ['nullable', 'numeric', 'min:0', 'max:100'],
             'dokumen_prestasi'   => ['nullable', 'array'],
-            'dokumen_prestasi.*' => ['file', 'max:10240'], // 10MB limit per file
+            'dokumen_prestasi.*' => ['file', 'max:10240'],
         ]);
 
+        $filledRows = collect($validated['nama'] ?? [])
+            ->map(fn ($name, $index) => [
+                'index' => $index,
+                'nama' => trim((string) $name),
+            ])
+            ->filter(fn (array $row) => $row['nama'] !== '')
+            ->values();
+
+        if ($filledRows->isEmpty()) {
+            $message = 'Sila isi sekurang-kurangnya satu baris prestasi kerja semasa.';
+
+            if ($request->ajax() || $request->boolean('modal')) {
+                return redirect()->back()->withInput()->with('error', $message);
+            }
+
+            return redirect()->back()->withInput()->with('error', $message);
+        }
+
         try {
-            DB::transaction(function () use ($validated, $tender, $request) {
+            DB::transaction(function () use ($validated, $tender, $request, $filledRows) {
                 $keys = $this->vendorFormRecordKeys($tender);
                 $existing = TenderPrestasiKerja::query()->where($keys)->first();
 
@@ -87,25 +132,16 @@ class TenderPrestasiKerjaController extends Controller
                 $prestasi->items()->delete();
 
                 // Save new items
-                $names = $validated['nama'] ?? [];
-                foreach ($names as $index => $name) {
-                    if (!empty($name)) {
-                        TenderPrestasiKerjaItem::create([
-                            'uuid'                     => (string) Str::uuid(),
-                            'tender_prestasi_kerja_id' => $prestasi->id,
-                            'nama'                     => $name,
-                            'no_kontrak'               => $validated['no_kontrak'][$index] ?? null,
-                            'harga'                    => $validated['harga'][$index] ?? 0.00,
-                            'tarikh_tapak'             => $validated['tarikh_tapak'][$index] ?? null,
-                            'tempoh'                   => $validated['tempoh'][$index] ?? null,
-                            'tarikh_siap'              => $validated['tarikh_siap'][$index] ?? null,
-                            'tarikh_penilaian'         => $validated['tarikh_penilaian'][$index] ?? null,
-                            'luputan'                  => $validated['luputan'][$index] ?? null,
-                            'kemajuan_sebenar'         => $validated['kemajuan_sebenar'][$index] ?? null,
-                            'kemajuan_jadual'          => $validated['kemajuan_jadual'][$index] ?? null,
-                            'sort_order'               => $index,
-                        ]);
-                    }
+                foreach ($filledRows as $sortOrder => $row) {
+                    $index = $row['index'];
+                    $itemAttrs = $this->prestasiItemAttributes($validated, $index, $row['nama']);
+
+                    TenderPrestasiKerjaItem::create(array_merge($itemAttrs, [
+                        'uuid'                     => (string) Str::uuid(),
+                        'tender_prestasi_kerja_id' => $prestasi->id,
+                        'harga'                    => $itemAttrs['harga'] ?? 0.00,
+                        'sort_order'               => $sortOrder,
+                    ]));
                 }
 
                 // Handle file uploads
@@ -139,22 +175,18 @@ class TenderPrestasiKerjaController extends Controller
                 }
 
                 if ($this->isVendorFormMode()) {
-                    $itemsPayload = $prestasi->items()->get()->map(fn ($item) => [
-                        'nama' => $item->nama,
-                        'no_kontrak' => $item->no_kontrak,
-                        'harga' => (float) $item->harga,
-                        'tarikh_tapak' => $item->tarikh_tapak,
-                        'tempoh' => $item->tempoh,
-                        'tarikh_siap' => $item->tarikh_siap,
-                        'tarikh_penilaian' => $item->tarikh_penilaian,
-                        'luputan' => $item->luputan,
-                        'kemajuan_sebenar' => $item->kemajuan_sebenar,
-                        'kemajuan_jadual' => $item->kemajuan_jadual,
-                    ])->all();
+                    $prestasi->load(['items', 'dokumens']);
 
                     $this->persistVendorFormPayload($tender, 'prestasi_kerja', [
-                        'items' => $itemsPayload,
-                        'dokumen_count' => $prestasi->dokumens()->count(),
+                        'items' => $prestasi->items->map(fn ($item) => $this->prestasiItemPayloadFromModel($item))->values()->all(),
+                        'dokumen' => $prestasi->dokumens->map(fn ($doc) => [
+                            'uuid' => $doc->uuid,
+                            'original_name' => $doc->original_name,
+                            'path' => $doc->path,
+                            'mime_type' => $doc->mime_type,
+                            'size' => $doc->size,
+                        ])->values()->all(),
+                        'dokumen_count' => $prestasi->dokumens->count(),
                     ]);
                 }
             });
@@ -249,5 +281,46 @@ class TenderPrestasiKerjaController extends Controller
     private function url(string $path): string
     {
         return StosBackendClient::apiUrl($path);
+    }
+
+    /**
+     * Normalised row attributes for DB insert. Empty optional fields are stored as null.
+     *
+     * @param  array<string, mixed>  $validated
+     * @return array<string, mixed>
+     */
+    protected function prestasiItemAttributes(array $validated, int $index, string $nama): array
+    {
+        return [
+            'nama' => $nama,
+            'no_kontrak' => $validated['no_kontrak'][$index] ?? null,
+            'harga' => $validated['harga'][$index] ?? null,
+            'tarikh_tapak' => $validated['tarikh_tapak'][$index] ?? null,
+            'tempoh' => $validated['tempoh'][$index] ?? null,
+            'tarikh_siap' => $validated['tarikh_siap'][$index] ?? null,
+            'tarikh_penilaian' => $validated['tarikh_penilaian'][$index] ?? null,
+            'luputan' => $validated['luputan'][$index] ?? null,
+            'kemajuan_sebenar' => $validated['kemajuan_sebenar'][$index] ?? null,
+            'kemajuan_jadual' => $validated['kemajuan_jadual'][$index] ?? null,
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function prestasiItemPayloadFromModel(TenderPrestasiKerjaItem $item): array
+    {
+        return [
+            'nama' => $item->nama,
+            'no_kontrak' => $item->no_kontrak,
+            'harga' => $item->harga !== null ? (float) $item->harga : null,
+            'tarikh_tapak' => $item->tarikh_tapak,
+            'tempoh' => $item->tempoh,
+            'tarikh_siap' => $item->tarikh_siap,
+            'tarikh_penilaian' => $item->tarikh_penilaian,
+            'luputan' => $item->luputan,
+            'kemajuan_sebenar' => $item->kemajuan_sebenar !== null ? (float) $item->kemajuan_sebenar : null,
+            'kemajuan_jadual' => $item->kemajuan_jadual !== null ? (float) $item->kemajuan_jadual : null,
+        ];
     }
 }

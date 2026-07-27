@@ -12,11 +12,17 @@ return new class extends Migration
      */
     public function up(): void
     {
+        $hasGroupName = Schema::hasColumn('permissions', 'group_name');
+        $hasDescription = Schema::hasColumn('permissions', 'description');
+        $hasGuardName = Schema::hasColumn('permissions', 'guard_name');
+
         $permissions = [
             [
                 'name' => 'Refund:list',
                 'display_name' => 'List Refund',
                 'group_name' => 'Refund',
+                'description' => null,
+                'guard_name' => 'web',
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
@@ -24,6 +30,8 @@ return new class extends Migration
                 'name' => 'Refund:create',
                 'display_name' => 'Create Refund',
                 'group_name' => 'Refund',
+                'description' => null,
+                'guard_name' => 'web',
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
@@ -31,6 +39,8 @@ return new class extends Migration
                 'name' => 'Refund:store',
                 'display_name' => 'Store Refund',
                 'group_name' => 'Refund',
+                'description' => null,
+                'guard_name' => 'web',
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
@@ -38,6 +48,8 @@ return new class extends Migration
                 'name' => 'Refund:edit',
                 'display_name' => 'Edit Refund',
                 'group_name' => 'Refund',
+                'description' => null,
+                'guard_name' => 'web',
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
@@ -45,6 +57,8 @@ return new class extends Migration
                 'name' => 'Refund:update',
                 'display_name' => 'Update Refund',
                 'group_name' => 'Refund',
+                'description' => null,
+                'guard_name' => 'web',
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
@@ -52,6 +66,8 @@ return new class extends Migration
                 'name' => 'Refund:delete',
                 'display_name' => 'Delete Refund',
                 'group_name' => 'Refund',
+                'description' => null,
+                'guard_name' => 'web',
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
@@ -59,6 +75,8 @@ return new class extends Migration
                 'name' => 'Refund:show',
                 'display_name' => 'Show Refund',
                 'group_name' => 'Refund',
+                'description' => null,
+                'guard_name' => 'web',
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
@@ -71,6 +89,16 @@ return new class extends Migration
                 ->exists();
 
             if (!$exists) {
+                if (! $hasGroupName) {
+                    unset($permission['group_name']);
+                }
+                if (! $hasDescription) {
+                    unset($permission['description']);
+                }
+                if (! $hasGuardName) {
+                    unset($permission['guard_name']);
+                }
+
                 DB::table('permissions')->insert($permission);
             }
         }

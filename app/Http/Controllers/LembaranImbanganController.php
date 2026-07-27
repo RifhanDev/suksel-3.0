@@ -28,7 +28,7 @@ class LembaranImbanganController extends Controller
         $keys = $this->vendorFormRecordKeys($tender);
         $lembaranData = LembaranImbangan::where($keys)->first();
 
-        if (! $lembaranData && $this->isVendorFormMode()) {
+        if (! $lembaranData && $this->vendorId()) {
             $fallback = $this->loadVendorFormPayload($tender, 'lembaran_imbangan');
             if ($fallback) {
                 $lembaranData = new LembaranImbangan($fallback);

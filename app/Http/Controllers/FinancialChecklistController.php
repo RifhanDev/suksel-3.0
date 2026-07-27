@@ -38,19 +38,28 @@ class FinancialChecklistController extends Controller
             ]);
         }
 
-        $standardApiUrl  = $this->url('standard-checklist-items?category=financial');
-        $standardResponse = $this->api()->get($standardApiUrl);
-
         $standardItems = [];
+        try {
+            $standardApiUrl   = $this->url('standard-checklist-items?category=financial');
+            $standardResponse = $this->api()->get($standardApiUrl);
 
-        if ($standardResponse->successful()) {
-            $standardItems = $standardResponse->json('data') ?? [];
-        } else {
-            Log::warning('FinancialChecklistController@index: Failed to fetch financial standard items', [
-                'api_url' => $standardApiUrl,
-                'status'  => $standardResponse->status(),
-                'body'    => $standardResponse->body(),
+            if ($standardResponse->successful()) {
+                $standardItems = $standardResponse->json('data') ?? [];
+            }
+        } catch (\Throwable $e) {
+            Log::warning('FinancialChecklistController@index: STOS API request failed, using local DB fallback', [
+                'error' => $e->getMessage(),
             ]);
+        }
+
+        if (empty($standardItems)) {
+            $standardItems = \Illuminate\Support\Facades\DB::table('standard_checklist_items')
+                ->where('category', 'financial')
+                ->where('is_active', 1)
+                ->orderBy('sort_order')
+                ->get()
+                ->map(fn ($item) => (array) $item)
+                ->all();
         }
 
         return view('jawatankuasaSpesifikasi.senarai_kewangan_bekalan', [
@@ -77,11 +86,7 @@ class FinancialChecklistController extends Controller
         $response = $this->api()->post($this->url('financial-checklists/' . $tenderUuid . '/submit'), $request->except('_token'));
 
         if ($response->successful()) {
-<<<<<<< HEAD
-            Tender::where('uuid', $tenderUuid)->update(['status_process_id' => 4]);
-=======
             $this->refreshTenderProcessAfterChecklistSubmit($tenderUuid);
->>>>>>> main
         }
 
         return response()->json($response->json(), $response->status());
