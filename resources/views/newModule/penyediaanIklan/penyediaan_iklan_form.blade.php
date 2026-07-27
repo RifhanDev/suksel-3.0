@@ -597,18 +597,18 @@
 			</div>
 		</div>
 
-		{{-- ── Section 3: Dokumen Meja Terkawal ── --}}
+		{{-- ── Section 3: Syarat Tender ── --}}
 		<div class="iklan-step-header">
 			<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
 				stroke="var(--sg-red,#c41e3a)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 				<path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
 				<polyline points="13 2 13 9 20 9"></polyline>
 			</svg>
-			<span>Dokumen Meja Terkawal</span>
+			<span>Syarat Tender</span>
 		</div>
 		<div class="p-4">
 			<p class="text-muted small mb-3">
-				Tambah satu atau lebih dokumen meja terkawal. Setiap dokumen perlu mempunyai <strong>nama</strong> dan fail.
+				Tambah satu atau lebih Syarat Tender. Setiap dokumen perlu mempunyai <strong>nama</strong> dan fail.
 			</p>
 			<div id="mejaTerkawalRows"></div>
 			<button type="button" class="btn btn-sm btn-success d-inline-flex align-items-center gap-1 mt-2"
@@ -892,7 +892,8 @@
 
 				if (step > 1 && !iklanHasRequiredDates()) {
 					alert(
-						'Sila lengkapkan Tarikh/Masa Iklan, Tarikh/Masa Tutup dan Tarikh Jual dahulu sebelum meneruskan.');
+						'Sila lengkapkan Tarikh/Masa Iklan, Tarikh/Masa Tutup dan Tarikh Jual dahulu sebelum meneruskan.'
+						);
 					step = 1;
 				}
 
@@ -1386,7 +1387,7 @@
 
 			restoreSyaratKhas();
 
-			/* ── Dokumen Meja Terkawal: multiple rows with custom names ── */
+			/* ── Syarat Tender: multiple rows with custom names ── */
 			var mejaRowIndex = 0;
 			var savedMejaDocs = @json($iklan['dokumen_sokongan'] ?? []);
 			var mejaRowsInitialised = false;

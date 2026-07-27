@@ -79,7 +79,7 @@ class PenyediaanIklanController extends Controller
             }
         }
 
-        $tender->load(['tenderer', 'codes.code', 'creator', 'officer', 'siteVisits']);
+        $tender->load(['tenderer', 'codes.code', 'creator.organizationunit', 'officer.organizationunit', 'siteVisits']);
         $this->checklistSync->syncForTender($tender);
         $tenderReview = TenderReviewPresenter::for($tender);
         $tenderDokumen = TenderDokumenPresenter::for($tender);
@@ -88,6 +88,9 @@ class PenyediaanIklanController extends Controller
         if (empty($meta['kelulusan'])) {
             $meta['kelulusan'] = PenyediaanIklan::defaultKelulusan();
         }
+
+        // Re-hydrate pegawai1 from creator after any STOS overlay.
+        $meta['pegawai'] = $this->penyediaanIklanService->normalizePegawaiMeta($meta['pegawai'] ?? [], $tender);
 
         return view('newModule.penyediaanIklan.index', compact(
             'tender',
@@ -235,12 +238,14 @@ class PenyediaanIklanController extends Controller
                     )
                     : ($existingIklan['dokumen_sokongan'] ?? []),
             ],
-            'pegawai' => $this->buildPegawaiPayload($request),
+            'pegawai' => $this->buildPegawaiPayload($request, $tenderId),
         ];
     }
 
-    protected function buildPegawaiPayload(Request $request): array
+    protected function buildPegawaiPayload(Request $request, int $tenderId): array
     {
+        $tender = Tender::query()->with(['creator.organizationunit'])->find($tenderId);
+
         return $this->penyediaanIklanService->normalizePegawaiMeta([
             'pegawai1' => [
                 'nama' => $request->input('pegawai1_nama'),
@@ -249,7 +254,7 @@ class PenyediaanIklanController extends Controller
                 'jabatan' => $request->input('pegawai1_jabatan'),
             ],
             'pegawai2' => $this->resolvePegawai2FromRequest($request),
-        ]);
+        ], $tender);
     }
 
     protected function resolvePegawai2FromRequest(Request $request): array
