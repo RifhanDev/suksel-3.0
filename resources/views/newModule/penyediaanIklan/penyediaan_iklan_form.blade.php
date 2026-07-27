@@ -1039,12 +1039,24 @@
 				});
 			}
 
-			/* ── Sync CKEditor + serialize taklimat, then show success modal ── */
+			/* ── Simpan: AJAX draft save + single success modal (avoid double flash) ── */
 			$('#iklanBtnSimpan').on('click', function(e) {
 				e.preventDefault();
-				var form = preparePenyediaanIklanForm();
-				if (!form) return;
-				form.submit();
+				e.stopImmediatePropagation();
+
+				if (!validateIklanStep1Dates()) {
+					iklanGoToStep(1);
+					return;
+				}
+
+				savePenyediaanIklanDraft(function() {
+					var el = document.getElementById('modalBerjayaIklan');
+					if (el && typeof bootstrap !== 'undefined') {
+						bootstrap.Modal.getOrCreateInstance(el).show();
+					} else {
+						alert('Penyediaan iklan berjaya disimpan.');
+					}
+				});
 			});
 
 			/* ── Stepper button wiring ── */
