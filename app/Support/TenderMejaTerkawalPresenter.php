@@ -7,7 +7,7 @@ use App\Tender;
 
 class TenderMejaTerkawalPresenter
 {
-    public const TAB_LABEL = 'Dokumen Meja Terawal';
+    public const TAB_LABEL = 'Dokumen Meja Terkawal';
 
     public function __construct(protected Tender $tender) {}
 
@@ -32,13 +32,13 @@ class TenderMejaTerkawalPresenter
     public function documents(): array
     {
         $fromUploads = $this->tender->tableFiles
-            ->map(fn ($upload) => [
+            ->map(fn($upload) => [
                 'label' => trim((string) ($upload->label ?: $upload->name)),
                 'url' => route('tenders.files', [$this->tender->id, $upload->id]),
                 'size' => $this->formatSize($upload->size),
                 'type' => $upload->type ?: '-',
             ])
-            ->filter(fn (array $doc) => $doc['label'] !== '' && $doc['url'] !== '')
+            ->filter(fn(array $doc) => $doc['label'] !== '' && $doc['url'] !== '')
             ->values()
             ->all();
 
