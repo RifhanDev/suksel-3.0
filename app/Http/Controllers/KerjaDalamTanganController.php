@@ -52,8 +52,8 @@ class KerjaDalamTanganController extends Controller
             ]);
         }
 
-        if ($this->isVendorFormMode() && empty($existingData)) {
-            $existingData = $this->loadVendorFormPayload($tender, 'kerja_dalam_tangan');
+        if ($this->isVendorFormMode()) {
+            $existingData = $this->resolveVendorFormDisplayData($tender, 'kerja_dalam_tangan', is_array($existingData) ? $existingData : null);
         }
 
         return view('tenderKerjaDalamTangan.form_kerja_dalam_tangan', array_merge(

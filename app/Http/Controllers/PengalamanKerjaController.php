@@ -46,8 +46,8 @@ class PengalamanKerjaController extends Controller
             ]);
         }
 
-        if ($this->isVendorFormMode() && empty($existingData)) {
-            $existingData = $this->loadVendorFormPayload($tender, 'pengalaman_kerja');
+        if ($this->isVendorFormMode()) {
+            $existingData = $this->resolveVendorFormDisplayData($tender, 'pengalaman_kerja', is_array($existingData) ? $existingData : null);
         }
 
         return view('tenderPengalamanKerja.form_pengalaman_kerja', array_merge([

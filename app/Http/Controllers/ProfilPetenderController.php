@@ -36,8 +36,8 @@ class ProfilPetenderController extends Controller
             ]);
         }
 
-        if ($this->isVendorFormMode() && empty($profilData)) {
-            $profilData = $this->loadVendorFormPayload($tender, 'profil_petender');
+        if ($this->isVendorFormMode()) {
+            $profilData = $this->resolveVendorFormDisplayData($tender, 'profil_petender', is_array($profilData) ? $profilData : null);
         }
 
         $vendorProfilDefaults = [];
