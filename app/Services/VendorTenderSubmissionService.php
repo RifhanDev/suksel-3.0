@@ -68,11 +68,7 @@ class VendorTenderSubmissionService
             throw ValidationException::withMessages(['checklist' => $readiness['errors']]);
         }
 
-        if ((int) ($tender->status_process_id ?? 0) !== TenderProcessStatus::PENYEDIAAN_IKLAN) {
-            throw ValidationException::withMessages([
-                'tender' => 'Tender tidak berada dalam fasa penghantaran tawaran.',
-            ]);
-        }
+        $this->assertTenderAcceptsVendorSubmission($tender);
 
         return DB::transaction(function () use ($tender, $vendorId) {
             $purchase = TenderVendor::query()
@@ -86,16 +82,32 @@ class VendorTenderSubmissionService
                 throw ValidationException::withMessages(['vendor' => 'Tawaran telah dihantar.']);
             }
 
+            // Only mark this vendor's purchase as submitted.
+            // Do not advance tender status_process_id — other vendors must still
+            // be able to submit during the same iklan window.
             $purchase->submitted = 1;
             $purchase->save();
 
-            if ((int) ($tender->status_process_id ?? 0) === TenderProcessStatus::PENYEDIAAN_IKLAN) {
-                $tender->status_process_id = TenderProcessStatus::HANTAR_DOKUMEN_SYARIKAT;
-                $tender->save();
-            }
-
             return $purchase->fresh();
         });
+    }
+
+    /**
+     * Vendor submission stays open after penyediaan iklan until mesyuarat/evaluation.
+     * Status must not flip on the first vendor submit (that blocked other companies).
+     */
+    protected function assertTenderAcceptsVendorSubmission(Tender $tender): void
+    {
+        $status = (int) ($tender->status_process_id ?? 0);
+
+        if (
+            $status < TenderProcessStatus::PENYEDIAAN_IKLAN
+            || $status >= TenderProcessStatus::PENYEDIAAN_MESYUARAT
+        ) {
+            throw ValidationException::withMessages([
+                'tender' => 'Tender tidak berada dalam fasa penghantaran tawaran.',
+            ]);
+        }
     }
 
     public function assertEditable(Tender $tender, int $vendorId): void
