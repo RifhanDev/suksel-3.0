@@ -40,7 +40,15 @@ trait HandlesTenderFormAccess
 
     protected function isFormViewOnly(): bool
     {
-        return request('mode') === 'view' || request()->boolean('view');
+        if (request('mode') === 'view' || request()->boolean('view')) {
+            return true;
+        }
+
+        if (! $this->isVendorFormMode() && (int) request('vendor_id') > 0) {
+            return true;
+        }
+
+        return false;
     }
 
     protected function isFormModalEmbed(): bool
@@ -145,7 +153,13 @@ trait HandlesTenderFormAccess
     {
         $user = auth()->user();
 
-        return $user?->vendor_id ? (int) $user->vendor_id : null;
+        if ($user?->vendor_id) {
+            return (int) $user->vendor_id;
+        }
+
+        $queryVendorId = (int) request('vendor_id');
+
+        return $queryVendorId > 0 ? $queryVendorId : null;
     }
 
     /**
@@ -196,7 +210,7 @@ trait HandlesTenderFormAccess
     {
         return [
             'tender_id' => $tender->id,
-            'vendor_id' => $this->isVendorFormMode() ? $this->vendorId() : null,
+            'vendor_id' => $this->vendorId(),
         ];
     }
 
@@ -232,7 +246,8 @@ trait HandlesTenderFormAccess
      */
     protected function loadVendorFormPayload(Tender|LegacyTender $tender, string $formKey): ?array
     {
-        if (! $this->isVendorFormMode() || ! $this->vendorId()) {
+        $vId = $this->vendorId();
+        if (! $vId) {
             return null;
         }
 
@@ -243,7 +258,7 @@ trait HandlesTenderFormAccess
 
         return app(VendorFormPayloadService::class)->get(
             $resolved,
-            $this->vendorId(),
+            $vId,
             $formKey
         );
     }

@@ -20,9 +20,10 @@ class PenyataBankController extends Controller
         $tender = $this->findTender($tenderUuid);
         $this->ensureTenderFormAccess($tender);
 
-        $apiPath = 'penyata-banks/' . $tenderUuid;
-        $response = $this->isVendorFormMode()
-            ? $this->api()->get($this->stosUrlWithVendor($apiPath))
+        $vendorId = $this->vendorId();
+        $apiPath  = 'penyata-banks/' . $tenderUuid;
+        $response = $vendorId
+            ? $this->api()->get($this->stosUrlWithVendor($apiPath, $vendorId))
             : $this->api()->get($this->url($apiPath));
 
         $penyataData = null;
@@ -39,7 +40,7 @@ class PenyataBankController extends Controller
 
         $localData = $this->penyataBankPersistence->loadForTender($tender);
 
-        if ($this->isVendorFormMode()) {
+        if ($vendorId) {
             $vendorPayload = $this->loadVendorFormPayload($tender, 'penyata_bank');
             $penyataData = $this->penyataBankPersistence->mergeVendorPayload(
                 $localData ?? $penyataData,

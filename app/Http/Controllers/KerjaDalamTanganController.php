@@ -34,9 +34,10 @@ class KerjaDalamTanganController extends Controller
 
         $existingData = null;
 
-        $apiPath = 'kerja-dalam-tangan/' . $tenderUuid;
-        $response = $this->isVendorFormMode()
-            ? $this->api()->get($this->stosUrlWithVendor($apiPath))
+        $vendorId = $this->vendorId();
+        $apiPath  = 'kerja-dalam-tangan/' . $tenderUuid;
+        $response = $vendorId
+            ? $this->api()->get($this->stosUrlWithVendor($apiPath, $vendorId))
             : $this->api()->get($this->url($apiPath));
 
         if ($response->successful())

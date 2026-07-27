@@ -27,6 +27,19 @@ class PenyediaanMesyuaratController extends Controller
         'harga' => 'Jawatankuasa Penilaian Sebut Harga/Tender',
     ];
 
+    /**
+     * Fasa mesyuarat masih berjalan sepanjang status ini — mesyuarat setiap
+     * jawatankuasa tidak serentak, jadi tender kekal dalam senarai sehingga
+     * semua tab jemputan dihantar.
+     */
+    private const MESYUARAT_PHASE_STATUSES = [
+        TenderProcessStatus::HANTAR_DOKUMEN_SYARIKAT,
+        TenderProcessStatus::PENYEDIAAN_MESYUARAT,
+        TenderProcessStatus::PENILAIAN_PEMBUKA,
+        TenderProcessStatus::CUT_OFF,
+        TenderProcessStatus::PENILAIAN_TEKNIKAL,
+    ];
+
     public function __construct(protected StosBackendClient $stos) {}
 
     public function index(Request $request)
@@ -38,7 +51,7 @@ class PenyediaanMesyuaratController extends Controller
 
     public function indexKehadiran()
     {
-        $tenders = $this->listTendersForMesyuarat();
+        $tenders = $this->listTendersForKehadiran();
 
         return view('newModule.penyediaanMesyuarat.index_jawatankuasa', compact('tenders'));
     }
@@ -220,8 +233,7 @@ class PenyediaanMesyuaratController extends Controller
                 // recipients. Actual delivery goes through the shared mail-server queue
                 // here — only after STOS confirmed success — so this stays consistent
                 // with the rest of the system's email pipeline.
-                $queued = $this->queueMesyuaratInvitations($response->json('data.recipients') ?? []);
-                $message .= ' (' . $queued . ' emel beratur untuk dihantar)';
+                $this->queueMesyuaratInvitations($response->json('data.recipients') ?? []);
             }
 
             return response()->json(['message' => $message]);
@@ -273,11 +285,36 @@ class PenyediaanMesyuaratController extends Controller
         return $queued;
     }
 
+    /**
+     * Senarai Penyediaan Mesyuarat: tender dalam fasa mesyuarat yang MASIH ada
+     * tab jemputan belum dihantar. Tender keluar dari senarai hanya bila semua
+     * tab (ikut peringkat) sudah dihantar.
+     */
     protected function listTendersForMesyuarat(?Request $request = null): \Illuminate\Support\Collection
+    {
+        return $this->listTendersInMesyuaratPhase($request, function ($query) {
+            $query->whereRaw($this->submittedTabCountSql() . ' < ' . $this->requiredTabCountSql());
+        });
+    }
+
+    /**
+     * Senarai Kehadiran Mesyuarat: tender yang sekurang-kurangnya satu tab sudah
+     * dihantar — kehadiran hanya boleh direkod selepas jemputan mesyuarat keluar.
+     */
+    protected function listTendersForKehadiran(?Request $request = null): \Illuminate\Support\Collection
+    {
+        return $this->listTendersInMesyuaratPhase($request, function ($query) {
+            $query->whereRaw($this->submittedTabCountSql() . ' >= 1');
+        });
+    }
+
+    protected function listTendersInMesyuaratPhase(?Request $request, callable $applyScope): \Illuminate\Support\Collection
     {
         $query = Tender::query()
             ->with('tenderer')
-            ->where('status_process_id', 5);
+            ->whereIn('status_process_id', self::MESYUARAT_PHASE_STATUSES);
+
+        $applyScope($query);
 
         if ($request?->filled('no_tender')) {
             $term = $request->input('no_tender');
@@ -322,6 +359,37 @@ class PenyediaanMesyuaratController extends Controller
                 ];
             })
             ->values();
+    }
+
+    /**
+     * Bilangan tab jemputan yang SUDAH dihantar untuk sesuatu tender.
+     * 'harga' dinormalkan jadi 'eval' (jawatankuasa sama) supaya tak terkira dua kali,
+     * dan hanya jenis yang relevan dengan peringkat tender dikira.
+     */
+    private function submittedTabCountSql(): string
+    {
+        return "(
+            SELECT COUNT(DISTINCT CASE
+                        WHEN pm.jenis_jawatankuasa IN ('eval', 'harga') THEN 'eval'
+                        ELSE pm.jenis_jawatankuasa
+                   END)
+            FROM penyediaan_mesyuarat pm
+            WHERE pm.tender_id = tenders.id
+              AND pm.status = 'Dihantar'
+              AND (
+                    (COALESCE(tenders.tender_peringkat, 2) = 1 AND pm.jenis_jawatankuasa IN ('open', 'eval', 'harga'))
+                 OR (COALESCE(tenders.tender_peringkat, 2) <> 1 AND pm.jenis_jawatankuasa IN ('open', 'tech', 'fin'))
+              )
+        )";
+    }
+
+    /**
+     * Bilangan tab yang WAJIB dihantar: 1 peringkat = 2 tab (open, eval),
+     * 2 peringkat = 3 tab (open, tech, fin). NULL dianggap 2 peringkat.
+     */
+    private function requiredTabCountSql(): string
+    {
+        return "CASE WHEN COALESCE(tenders.tender_peringkat, 2) = 1 THEN 2 ELSE 3 END";
     }
 
     protected function fetchKehadiranFromApi(int $tenderId, ?int $meetingId): array
@@ -552,17 +620,21 @@ class PenyediaanMesyuaratController extends Controller
         $meetingsByJenis = $this->fetchMeetingsFromApi($tender->id, $visibleJenis);
         $draftStatuses = ['Draf', 'Belum Disimpan', ''];
 
-        foreach ($visibleJenis as $jenis) {
+        // Mesyuarat tidak berlaku serentak untuk semua jawatankuasa — tab Pembuka
+        // dihantar dahulu, tab lain menyusul kemudian. Jadi cukup satu tab sahaja
+        // dihantar untuk tender bergerak ke fasa seterusnya.
+        $hasAnySubmitted = collect($visibleJenis)->contains(function (string $jenis) use ($meetingsByJenis, $draftStatuses) {
             $rows = $meetingsByJenis[$jenis] ?? collect();
-            $hasSubmitted = $rows->contains(function (array $row) use ($draftStatuses) {
+
+            return $rows->contains(function (array $row) use ($draftStatuses) {
                 $status = trim((string) ($row['status'] ?? ''));
 
                 return $status !== '' && ! in_array($status, $draftStatuses, true);
             });
+        });
 
-            if (! $hasSubmitted) {
-                return;
-            }
+        if (! $hasAnySubmitted) {
+            return;
         }
 
         $this->advanceTenderProcess(

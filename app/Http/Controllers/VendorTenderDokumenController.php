@@ -144,7 +144,7 @@ class VendorTenderDokumenController extends Controller
         ]);
     }
 
-    public function specificationForm(Tender $tender, string $itemUuid)
+    public function specificationForm(Tender $tender, string $itemUuid, Request $request)
     {
         $this->ensureTenderFormAccess($tender);
 
@@ -152,17 +152,31 @@ class VendorTenderDokumenController extends Controller
         if ($isVendor && $this->vendorId()) {
             $this->submissions->assertEditable($tender, $this->vendorId());
         }
-        $vendorId = $isVendor ? $this->vendorId() : null;
+        $vendorId = $isVendor ? $this->vendorId() : ((int) $request->query('vendor_id') ?: null);
 
-        $item = $this->findChecklistItem($tender, $itemUuid, $isVendor ? 'vendor' : 'admin', $vendorId);
+        $item = $this->findChecklistItem($tender, $itemUuid, $vendorId ? 'vendor' : 'admin', $vendorId);
 
         if (($item['action'] ?? '') !== 'view_specification') {
             abort(404, 'Item dokumen spesifikasi tidak dijumpai.');
         }
 
-        return view('tenders.dokumen.specification_form', array_merge([
+        $viewName = (! $isVendor && $vendorId) ? 'tenders.dokumen.specification_review' : 'tenders.dokumen.specification_form';
+
+        $vendorInfo = null;
+        if (! $isVendor && $vendorId) {
+            $vendorModel = \App\Vendor::query()->find($vendorId);
+            $vendorInfo  = [
+                'id'   => $vendorId,
+                'name' => $vendorModel?->name ?: ('Petender #' . $vendorId),
+                'kod'  => $vendorModel?->registration ?: '-',
+            ];
+        }
+
+        return view($viewName, array_merge([
             'tender' => $tender,
             'item' => $item,
+            'vendor' => $vendorInfo,
+            'isReadOnly' => ! $isVendor,
         ], $this->formViewVars($tender)));
     }
 

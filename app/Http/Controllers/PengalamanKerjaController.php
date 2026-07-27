@@ -28,9 +28,10 @@ class PengalamanKerjaController extends Controller
 
         $existingData = null;
 
-        $apiPath = 'pengalaman-kerja/' . $tenderUuid;
-        $response = $this->isVendorFormMode()
-            ? $this->api()->get($this->stosUrlWithVendor($apiPath))
+        $vendorId = $this->vendorId();
+        $apiPath  = 'pengalaman-kerja/' . $tenderUuid;
+        $response = $vendorId
+            ? $this->api()->get($this->stosUrlWithVendor($apiPath, $vendorId))
             : $this->api()->get($this->url($apiPath));
 
         if ($response->successful())
