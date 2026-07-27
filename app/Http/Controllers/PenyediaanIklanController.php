@@ -87,6 +87,10 @@ class PenyediaanIklanController extends Controller
 
         if (empty($meta['kelulusan'])) {
             $meta['kelulusan'] = PenyediaanIklan::defaultKelulusan();
+        } else {
+            $meta['kelulusan'] = PenyediaanIklan::normalizeKelulusanRows(
+                is_array($meta['kelulusan']) ? $meta['kelulusan'] : []
+            );
         }
 
         // Re-hydrate pegawai1 from creator after any STOS overlay.
@@ -324,8 +328,7 @@ class PenyediaanIklanController extends Controller
 
     protected function parseKelulusan(Request $request, int $tenderId): array
     {
-        $fixedLabels = ['Kelulusan Berbelanja', 'Kelulusan Projek ICT'];
-        $statuses = (array) $request->input('kelulusan_status', []);
+        $fixedLabels = ['Kelulusan Berbelanja'];
         $catatans = (array) $request->input('kelulusan_catatan', []);
         $jenisDynamic = (array) $request->input('kelulusan_jenis', []);
         $files = (array) $request->file('kelulusan_dokumen', []);
@@ -343,7 +346,6 @@ class PenyediaanIklanController extends Controller
             $rows[] = [
                 'jenis' => $label,
                 'is_fixed' => true,
-                'status' => $statuses[$i] ?? null,
                 'catatan' => $catatans[$i] ?? null,
                 'dokumen' => $dokumen,
             ];
@@ -361,13 +363,12 @@ class PenyediaanIklanController extends Controller
             $rows[] = [
                 'jenis' => trim((string) $jenis),
                 'is_fixed' => false,
-                'status' => $statuses[$idx] ?? null,
                 'catatan' => $catatans[$idx] ?? null,
                 'dokumen' => $dokumen,
             ];
         }
 
-        return $rows;
+        return PenyediaanIklan::normalizeKelulusanRows($rows);
     }
 
     protected function resolveKelulusanFile(?UploadedFile $file, int $tenderId, ?string $existingPath): ?array
