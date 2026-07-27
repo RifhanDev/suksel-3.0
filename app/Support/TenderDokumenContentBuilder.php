@@ -427,7 +427,17 @@ class TenderDokumenContentBuilder
             return $path;
         }
 
-        return asset(ltrim($path, '/'));
+        $normalized = ltrim(str_replace('\\', '/', $path), '/');
+
+        if (str_starts_with($normalized, 'storage/')) {
+            return url('/' . $normalized);
+        }
+
+        if (\Illuminate\Support\Facades\Storage::disk('public')->exists($normalized)) {
+            return url('/storage/' . $normalized);
+        }
+
+        return url('/' . $normalized);
     }
 
     protected function guessActionUrlFromTitle(string $title): ?string

@@ -201,6 +201,7 @@ Route::middleware(['auth'])->group(function () {
 	Route::post('tenders/{tender}/vendor-submission', [\App\Http\Controllers\VendorTenderSubmissionController::class, 'submit'])->name('tenders.vendorSubmission.submit');
 	Route::get('tenders/{tender}/dokumen/{itemUuid}/specification', [\App\Http\Controllers\VendorTenderDokumenController::class, 'specificationForm'])->name('tenderDokumen.specificationForm');
 	Route::post('tenders/{tender}/dokumen/{itemUuid}/upload', [\App\Http\Controllers\VendorTenderDokumenController::class, 'upload'])->name('tenderDokumen.upload');
+	Route::get('tenders/dokumen-files/{fileUuid}/download', [\App\Http\Controllers\VendorTenderDokumenController::class, 'download'])->name('tenderDokumen.download');
 	Route::delete('tenders/dokumen-files/{fileUuid}', [\App\Http\Controllers\VendorTenderDokumenController::class, 'deleteFile'])->name('tenderDokumen.deleteFile');
 	Route::post('tenders/{tender}/dokumen/{itemUuid}/key-in', [\App\Http\Controllers\VendorTenderDokumenController::class, 'saveKeyIn'])->name('tenderDokumen.saveKeyIn');
 	Route::post('tenders/{tender}/dokumen/{itemUuid}/specification', [\App\Http\Controllers\VendorTenderDokumenController::class, 'saveSpecification'])->name('tenderDokumen.saveSpecification');

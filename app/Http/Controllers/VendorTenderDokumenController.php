@@ -78,6 +78,31 @@ class VendorTenderDokumenController extends Controller
         ]);
     }
 
+    public function download(string $fileUuid)
+    {
+        $file = TenderVendorDokumenFile::query()->where('uuid', $fileUuid)->firstOrFail();
+        $tender = Tender::query()->findOrFail($file->tender_id);
+        $user = Auth::user();
+
+        $isAdmin = $user && ($user->hasRole('Admin') || $user->can('tender:specification-management'));
+        $isOwner = $user && $user->vendor_id && (int) $user->vendor_id === (int) $file->vendor_id;
+
+        if (! $isAdmin && ! $isOwner) {
+            abort(403, 'Akses fail tidak dibenarkan.');
+        }
+
+        if ($isOwner && ! $tender->hasParticipate((int) $user->vendor_id)) {
+            abort(403, 'Sila beli dokumen tender terlebih dahulu.');
+        }
+
+        $absolutePath = $file->absolutePath();
+        if (! $absolutePath || ! is_file($absolutePath)) {
+            abort(404, 'Fail tidak dijumpai.');
+        }
+
+        return response()->download($absolutePath, $file->original_name ?: $file->stored_name);
+    }
+
     public function saveKeyIn(Request $request, Tender $tender, string $itemUuid)
     {
         $vendorId = $this->vendorId();
