@@ -715,6 +715,28 @@
                         </div>
                     </div>
 
+                    <!-- ROW 4B — Wang Kos Prima & Wang Peruntukan Sementara (kategori Kerja sahaja) -->
+                    <div class="row g-3 mb-4 d-none" id="wang_kerja_group">
+                        <div class="col-md-6">
+                            <label class="form-label">Wang Kos Prima</label>
+                            <div class="input-group">
+                                <span class="input-group-text">RM</span>
+                                <input type="text" class="form-control text-end amount-input" name="wang_kos_prima"
+                                    value="{{ old('wang_kos_prima') ? number_format(old('wang_kos_prima'), 2) : '' }}"
+                                    placeholder="0.00" inputmode="decimal" autocomplete="off">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Wang Peruntukan Sementara</label>
+                            <div class="input-group">
+                                <span class="input-group-text">RM</span>
+                                <input type="text" class="form-control text-end amount-input" name="wang_peruntukan_sementara"
+                                    value="{{ old('wang_peruntukan_sementara') ? number_format(old('wang_peruntukan_sementara'), 2) : '' }}"
+                                    placeholder="0.00" inputmode="decimal" autocomplete="off">
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- ROW 5 -->
                     <div class="row mb-4 g-3">
                         <div class="col-md-4">
@@ -1333,11 +1355,27 @@
                 }
             }
 
+            // Function to toggle Wang Kos Prima & Wang Peruntukan Sementara
+            // (hanya dipaparkan untuk Kategori Jenis Perolehan "Kerja")
+            function updateWangKerjaFields() {
+                const selectedText = (kategoriPerolehanDropdown.find('option:selected').text() || '')
+                    .trim()
+                    .toLowerCase();
+                const wangKerjaGroup = $('#wang_kerja_group');
+
+                if (selectedText === 'kerja') {
+                    wangKerjaGroup.removeClass('d-none');
+                } else {
+                    wangKerjaGroup.addClass('d-none');
+                }
+            }
+
             // Initial setup on page load
             updateKategoriPerolehanOptions();
             updateJenisField();
             updateTempohField();
             updateJawatankuasaField();
+            updateWangKerjaFields();
 
             // Listen for changes
             kategoriPerolehanDropdown.change(function() {
@@ -1345,6 +1383,7 @@
                 updateJenisField();
                 updateTempohField();
                 updateJawatankuasaField();
+                updateWangKerjaFields();
             });
 
             // --- SELECTIZE INITIALIZATION ---
