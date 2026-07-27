@@ -90,17 +90,26 @@ class TenderVisit extends Model
 	
 	public static function boot() {
 		parent::boot();
-		
-		self::created(function(){
+
+		self::created(function () {
+			static::flushSiteVisitCache();
+		});
+
+		self::updated(function () {
+			static::flushSiteVisitCache();
+		});
+
+		self::deleted(function () {
+			static::flushSiteVisitCache();
+		});
+	}
+
+	protected static function flushSiteVisitCache(): void
+	{
+		try {
 			cache()->tags('TenderSiteVisit')->flush();
-		});
-		
-			self::updated(function(){
-		cache()->tags('TenderSiteVisit')->flush();
-		});
-		
-		self::deleted(function(){
-			cache()->tags('TenderSiteVisit')->flush();
-		});
+		} catch (\Throwable) {
+			// File/database cache drivers do not support tags.
+		}
 	}
 }
