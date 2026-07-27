@@ -262,4 +262,87 @@ trait HandlesTenderFormAccess
             $formKey
         );
     }
+
+    /**
+     * Vendor forms must never show another company's tender-level / shared STOS data.
+     * Prefer the local per-vendor payload; only use API data when it is explicitly scoped
+     * to the current vendor.
+     *
+     * @param  array<string, mixed>|null  $apiData
+     * @return array<string, mixed>|null
+     */
+    protected function resolveVendorFormDisplayData(
+        Tender|LegacyTender $tender,
+        string $formKey,
+        ?array $apiData
+    ): ?array {
+        if (! $this->isVendorFormMode()) {
+            return $apiData;
+        }
+
+        $local = $this->loadVendorFormPayload($tender, $formKey);
+        if ($this->vendorFormPayloadHasContent($local)) {
+            return $local;
+        }
+
+        if ($this->stosDataBelongsToCurrentVendor($apiData)) {
+            return $apiData;
+        }
+
+        // Empty local payload still wins over shared/unscoped API data.
+        return $local;
+    }
+
+    /**
+     * @param  array<string, mixed>|null  $payload
+     */
+    protected function vendorFormPayloadHasContent(?array $payload): bool
+    {
+        if ($payload === null || $payload === []) {
+            return false;
+        }
+
+        if (array_key_exists('items', $payload) && is_array($payload['items'])) {
+            return count($payload['items']) > 0
+                || ! empty($payload['dokumens'] ?? null)
+                || ! empty($payload['files'] ?? null);
+        }
+
+        $ignore = ['vendor_id', 'user_id', '_token', 'status'];
+        foreach ($payload as $key => $value) {
+            if (in_array($key, $ignore, true)) {
+                continue;
+            }
+            if ($value === null || $value === '' || $value === []) {
+                continue;
+            }
+
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * @param  array<string, mixed>|null  $data
+     */
+    protected function stosDataBelongsToCurrentVendor(?array $data): bool
+    {
+        if ($data === null || $data === []) {
+            return false;
+        }
+
+        $vendorId = $this->vendorId();
+        if (! $vendorId) {
+            return false;
+        }
+
+        $payloadVendorId = $data['vendor_id'] ?? $data['vendorId'] ?? null;
+
+        if ($payloadVendorId === null && isset($data['meta']) && is_array($data['meta'])) {
+            $payloadVendorId = $data['meta']['vendor_id'] ?? $data['meta']['vendorId'] ?? null;
+        }
+
+        return $payloadVendorId !== null && (int) $payloadVendorId === $vendorId;
+    }
 }
