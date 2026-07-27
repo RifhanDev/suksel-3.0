@@ -30,6 +30,10 @@ class PenyediaanIklanService
 
         if (empty($meta['kelulusan'])) {
             $meta['kelulusan'] = PenyediaanIklan::defaultKelulusan();
+        } else {
+            $meta['kelulusan'] = PenyediaanIklan::normalizeKelulusanRows(
+                is_array($meta['kelulusan']) ? $meta['kelulusan'] : []
+            );
         }
 
         $meta['pegawai'] = $this->normalizePegawaiMeta($meta['pegawai'] ?? [], $tender);
