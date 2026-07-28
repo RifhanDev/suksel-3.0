@@ -95,6 +95,7 @@ use App\Http\Controllers\BonSahamController;
 use App\Http\Controllers\TenderPrestasiKerjaController;
 use App\Http\Controllers\CutOffController;
 use App\Http\Controllers\JawatankuasaPembukaController;
+use App\Http\Controllers\VendorSubmissionsDemoController;
 use App\Http\Controllers\PenyediaanSuratNiatController;
 use App\Http\Controllers\PenyediaanSuratSstController;
 use App\Http\Controllers\JawatankuasaPerolehanController;
@@ -325,6 +326,10 @@ Route::middleware(['auth'])->group(function () {
 	Route::post('/jawatankuasa-pembuka/simpan-pematuhan', [JawatankuasaPembukaController::class, 'simpanPematuhan'])->name('jawatankuasaPembuka.simpanPematuhan');
 	Route::get('/jawatankuasa-pembuka/rumusan-data', [JawatankuasaPembukaController::class, 'getRumusanData'])->name('jawatankuasaPembuka.rumusanData');
 	Route::post('/jawatankuasa-pembuka/hantar', [JawatankuasaPembukaController::class, 'hantar'])->name('jawatankuasaPembuka.hantar');
+
+	// Demo: reference page for loading vendor checklist submissions
+	Route::get('/demo/penyerahan-petender', [VendorSubmissionsDemoController::class, 'index'])->name('demo.vendorSubmissions.index');
+	Route::get('/demo/penyerahan-petender/{tender}', [VendorSubmissionsDemoController::class, 'show'])->name('demo.vendorSubmissions.show');
 });
 Route::view('/show-soalan-lazim', 'helps.show')->name('showSoalanLazim');
 
