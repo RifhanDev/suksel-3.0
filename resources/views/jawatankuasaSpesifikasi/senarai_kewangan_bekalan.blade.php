@@ -699,6 +699,15 @@
                 }
             });
 
+            // Hide modal items that are already in the checklist on initial load
+            $('#tbl-standard tbody tr[data-uuid]').each(function() {
+                var $stdTr = $(this);
+                var uuid   = $stdTr.data('uuid');
+                if (uuid && $('#tbl-kewangan tbody tr[data-standard-item-uuid="' + uuid + '"]').length) {
+                    $stdTr.hide();
+                }
+            });
+
             // ─── CHECKBOX: Senarai Semak Kewangan ────────────────────────────────────
             $('#tbl-kewangan').on('change', '.check-all-kewangan', function() {
                 $('#tbl-kewangan .row-check-kewangan').prop('checked', $(this).prop('checked'));
@@ -927,12 +936,26 @@
 
             // ─── HAPUS ROW (CHECKED ONLY) ─────────────────────────────────────────────
             $('.btn-hapus-kewangan').on('click', function() {
-                var checked = $('#tbl-kewangan .row-check-kewangan:checked');
-                if (checked.length === 0) {
+                var $checked = $('#tbl-kewangan .row-check-kewangan:checked');
+                if ($checked.length === 0) {
                     alert('Sila pilih sekurang-kurangnya satu rekod untuk dihapus.');
                     return;
                 }
-                checked.closest('tr').remove();
+
+                $checked.each(function() {
+                    var $row = $(this).closest('tr');
+                    var standardItemUuid = $row.data('standard-item-uuid') || $row.data('standardItemUuid') || $row.attr('data-standard-item-uuid');
+                    if (standardItemUuid) {
+                        var $stdTr = $('#tbl-standard tbody tr[data-uuid="' + standardItemUuid + '"]');
+                        if ($stdTr.length) {
+                            $stdTr.find('.row-check-standard').prop('checked', false);
+                            $stdTr.show();
+                        }
+                    }
+                    $row.remove();
+                });
+
+                $('#tbl-standard .check-all-standard').prop('checked', false);
                 $('#tbl-kewangan .check-all-kewangan').prop('checked', false);
                 syncTableEmpty();
                 updateSkemaMaksima();
@@ -1077,7 +1100,7 @@
             function buildBorangAtasTalianRow(tajuk, actionUrl, standardItemUuid) {
                 var routeUrl = actionUrl ? (actionUrl.startsWith('/') || actionUrl.startsWith('http') ? actionUrl : '/' + actionUrl + '/' + TENDER_UUID) : '';
                 var stdAttr  = standardItemUuid ? ' data-standard-item-uuid="' + $('<span>').text(standardItemUuid).html() + '"' : '';
-                return $(
+                var $row = $(
                     '<tr data-source-type="borang_atas_talian"' + stdAttr + '>' +
                     '<td class="text-center"><input type="checkbox" name="row_check_kewangan[]" class="form-check-input row-check-kewangan"></td>' +
                     '<td><span class="small fw-semibold">' + $('<span>').text(tajuk).html() + '</span></td>' +
@@ -1091,13 +1114,18 @@
                     '<td class="text-center">' + buildBorangAtasTalianActionCell(routeUrl) + '</td>' +
                     '</tr>'
                 );
+                if (standardItemUuid) {
+                    $row.data('standard-item-uuid', standardItemUuid);
+                }
+                return $row;
             }
 
             // ─── ROW BUILDER for Senarai Semak Standard ─────────────────────────────
             function buildStandardRow(tajuk, standardItemUuid) {
                 var defaultMekanisma = 'petender_muat_naik';
-                return $(
-                    '<tr class="row-kewangan-tambah" data-source-type="standard_item" data-status="draft" data-standard-item-uuid="' + (standardItemUuid || '') + '">' +
+                var stdAttr = standardItemUuid ? ' data-standard-item-uuid="' + (standardItemUuid || '') + '"' : '';
+                var $row = $(
+                    '<tr class="row-kewangan-tambah" data-source-type="standard_item" data-status="draft"' + stdAttr + '>' +
                     '<td class="text-center"><input type="checkbox" name="row_check_kewangan[]" class="form-check-input row-check-kewangan"></td>' +
                     '<td><span class="small fw-semibold">' + $('<span>').text(tajuk).html() + '</span></td>' +
                     '<td class="text-center">' +
@@ -1115,6 +1143,10 @@
                     '<td class="text-center tindakan-cell">' + buildTindakanCell(defaultMekanisma) + '</td>' +
                     '</tr>'
                 );
+                if (standardItemUuid) {
+                    $row.data('standard-item-uuid', standardItemUuid);
+                }
+                return $row;
             }
 
             // ─── CHECKBOX: Modal Senarai Semak Standard ───────────────────────────────
@@ -1142,6 +1174,11 @@
                     var tajuk            = $tr.data('tajuk') || $tr.find('td:last-child').text().trim();
                     var standardItemUuid = $tr.data('uuid') || '';
                     var actionUrl        = $tr.data('actionUrl') || '';
+
+                    if (standardItemUuid && $('#tbl-kewangan tbody tr[data-standard-item-uuid="' + standardItemUuid + '"]').length > 0) {
+                        $tr.hide();
+                        return;
+                    }
 
                     if (type === 'borang_atas_talian') {
                         $('#tbl-kewangan tbody').append(buildBorangAtasTalianRow(tajuk, actionUrl, standardItemUuid));
