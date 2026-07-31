@@ -120,7 +120,7 @@ Route::view('/jawatankuasa-spesifikasi/senarai-teknikal', 'newModule.jawatankuas
 Route::view('/jawatankuasa-spesifikasi/senarai-kewangan', 'newModule.jawatankuasaSpesifikasi.senarai_kewangan')->name('jawatankuasaSpesifikasi.kewangan');
 
 Route::get('/cut-off', [CutOffController::class, 'index'])->middleware(['auth'])->name('cutOff.index');
-Route::get('/cut-off/{tender_no}', [CutOffController::class, 'show'])->middleware(['auth'])->name('cutOff.show');
+Route::get('/cut-off/{uuid}', [CutOffController::class, 'show'])->middleware(['auth'])->name('cutOff.show');
 Route::post('/cut-off/hantar', [CutOffController::class, 'hantar'])->middleware(['auth'])->name('cutOff.hantar');
 
 Route::get('/perakuan-jabatan', [PerakuanJabatanController::class, 'index'])->middleware(['auth'])->name('perakuanjabatan.index');

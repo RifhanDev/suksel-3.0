@@ -59,7 +59,7 @@ class CutOffController extends Controller
 
             return $this->mapTendersForProcessList(
                 Tender::hydrate($rows),
-                fn (Tender $tender, string $noTender) => route('cutOff.show', $noTender)
+                fn (Tender $tender) => route('cutOff.show', $tender->uuid)
             );
         } catch (\Throwable $e) {
             Log::warning('Ralat mengambil senarai cut-off dari STOS.', [
@@ -70,9 +70,55 @@ class CutOffController extends Controller
         }
     }
 
-    public function show(string $tender_no)
+    /**
+     * Butiran tender untuk halaman Cut Off. Dicari melalui uuid (bukan no_tender —
+     * medan itu boleh kosong/bertindih antara tender). Query dilakukan di penilaian
+     * (STOS): suksel hantar uuid → STOS cari tender → pulangkan → suksel petakan.
+     */
+    public function show(string $uuid)
     {
-        return view('newModule.cut_off.show', ['tender_no' => $tender_no]);
+        if (! $this->stos->isConfigured()) {
+            abort(503, 'STOS backend tidak dikonfigurasi.');
+        }
+
+        try {
+            $response = $this->stos->getCutOffTender($uuid);
+
+            if (! $response->successful()) {
+                abort($response->status() === 404 ? 404 : 502, 'Tender tidak ditemui.');
+            }
+
+            $row = $response->json('data') ?? [];
+        } catch (\Throwable $e) {
+            Log::warning('Ralat mengambil butiran cut-off dari STOS.', [
+                'uuid' => $uuid,
+                'error' => $e->getMessage(),
+            ]);
+
+            abort(502, 'Ralat menghubungi STOS.');
+        }
+
+        $tender_no = $row['no_tender'] ?: $row['ref_number'] ?: (string) ($row['id'] ?? $uuid);
+        $hargaCutOff = $row['harga_cutoff'] ?? [];
+
+        return view('newModule.cut_off.show', [
+            'tender_no' => $tender_no,
+            'tajuk' => $row['name'] ?? '-',
+            'aj' => $this->formatHarga($hargaCutOff['aj'] ?? null),
+            'pcp' => $this->formatHarga($hargaCutOff['pcp'] ?? null),
+            'bwa' => $this->formatHarga($hargaCutOff['bwa'] ?? null),
+        ]);
+    }
+
+    /**
+     * Format nilai RM: '-' untuk kosong/sifar, selain itu format 2 titik perpuluhan
+     * dengan pemisah ribu (ikut gaya paparan sedia ada di halaman ini).
+     */
+    private function formatHarga($value): string
+    {
+        $value = (float) ($value ?? 0);
+
+        return $value > 0 ? number_format($value, 2) : '-';
     }
 
     public function hantar(Request $request)

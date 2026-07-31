@@ -112,6 +112,11 @@ class StosBackendClient
         return $this->get('/api/cut-off/tenders', $query);
     }
 
+    public function getCutOffTender(string $uuid): Response
+    {
+        return $this->get('/api/cut-off/tenders/' . $uuid);
+    }
+
     public function saveKehadiranMesyuarat(int $tenderId, array $payload): Response
     {
         return $this->post('/api/tenders/' . $tenderId . '/kehadiran-mesyuarat', $payload);
