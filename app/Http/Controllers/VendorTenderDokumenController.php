@@ -177,6 +177,10 @@ class VendorTenderDokumenController extends Controller
             'item' => $item,
             'vendor' => $vendorInfo,
             'isReadOnly' => ! $isVendor,
+            // Pilihan paparan ringkasan khusus panggilan (cth. 'dokumentasi' untuk
+            // Langkah 1 Penilaian Teknikal). Kosong = paparan penuh sedia ada
+            // (digunakan oleh Jawatankuasa Pembuka & lain-lain, tidak berubah).
+            'summary' => $request->query('summary'),
         ], $this->formViewVars($tender)));
     }
 
