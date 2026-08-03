@@ -182,7 +182,7 @@
                 <div class="col-md-6"><strong>No. Sebut Harga / Tender:</strong> {{ $tender_no }}</div>
                 <div class="col-md-6"><strong>Tempoh Sah Laku Tawaran (Hari):</strong> 90</div>
                 <div class="col-md-6"><strong>PTJ:</strong> BAHAGIAN PENTADBIRAN - CAWANGAN KEWANGAN - KEMENTERIAN KEWANGAN</div>
-                <div class="col-md-6"><strong>Tajuk Perolehan:</strong> Tender Perkhidmatan Penilaian Forensik Keatas Sistem XXXX</div>
+                <div class="col-md-6"><strong>Tajuk Perolehan:</strong> {{ $tajuk ?? '-' }}</div>
                 <div class="col-md-6"><strong>STATUS:</strong> Menunggu Pengesahan CutOff</div>
                 <div class="col-md-6"><strong>Sah Laku Tawaran Tamat:</strong> 17/01/2022</div>
             </div>
@@ -238,15 +238,15 @@
                         <tbody>
                             <tr>
                                 <td><strong>Anggaran Jabatan (AJ)</strong></td>
-                                <td class="text-center">892,000.00</td>
+                                <td class="text-center">{{ $aj ?? '-' }}</td>
                             </tr>
                             <tr>
                                 <td><strong>PC & Prov. Sums (PCP)</strong></td>
-                                <td class="text-center">-</td>
+                                <td class="text-center">{{ $pcp ?? '-' }}</td>
                             </tr>
                             <tr>
                                 <td><strong>Builder's Work in AJ (Bwa)</strong></td>
-                                <td class="text-center">892,000.00</td>
+                                <td class="text-center">{{ $bwa ?? '-' }}</td>
                             </tr>
                         </tbody>
                     </table>
@@ -277,23 +277,23 @@
                         <tbody>
                             <tr>
                                 <td><strong>No. of Tender Analysed (Nt)</strong></td>
-                                <td class="text-center">11</td>
+                                <td class="text-center">{{ $nt ?? '-' }}</td>
                             </tr>
                             <tr>
                                 <td><strong>Mean of BW (mean)</strong></td>
-                                <td class="text-center">826,077.78</td>
+                                <td class="text-center">{{ $mean ?? '-' }}</td>
                             </tr>
                             <tr>
                                 <td><strong>Overall Mean</strong></td>
-                                <td class="text-center">826,077.78</td>
+                                <td class="text-center">{{ $overallMean ?? '-' }}</td>
                             </tr>
                             <tr>
                                 <td><strong>Standard Deviation (SD)</strong></td>
-                                <td class="text-center">117,506.36</td>
+                                <td class="text-center">{{ $sd ?? '-' }}</td>
                             </tr>
                             <tr>
                                 <td><strong>Coefficient of Variation (CV)</strong></td>
-                                <td class="text-center">0.1422</td>
+                                <td class="text-center">{{ $cv ?? '-' }}</td>
                             </tr>
                         </tbody>
                     </table>

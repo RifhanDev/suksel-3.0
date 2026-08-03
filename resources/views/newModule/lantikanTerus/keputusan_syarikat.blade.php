@@ -256,6 +256,11 @@
         </div>
 
     </div>
+
+    <form id="keputusanForm" action="{{ route('keputusanTerus.store', $p->id ?? $project->id) }}" method="POST" class="d-none">
+        @csrf
+        <input type="hidden" name="decision" id="keputusan-decision" value="">
+    </form>
 @endsection
 
 @section('scripts')
@@ -265,6 +270,10 @@
             var $status  = $('#decision-status');
             var $actions = $('#decision-actions');
             var $surat   = $('#btn-surat');
+            var form     = document.getElementById('keputusanForm');
+            var decisionInput = document.getElementById('keputusan-decision');
+            var suratUrl = @json(route('lantikan.downloadSuratSetujuTerima', $p->id ?? $project->id));
+            var currentStatus = @json($decision->status ?? 'pending');
 
             var STATUS_ICONS = {
                 accepted: '<polyline points="20 6 9 17 4 12"></polyline>',
@@ -280,18 +289,25 @@
                 }
             }
 
-            // --- TERIMA: unlock Surat Setuju Terima ---
-            $('#btn-terima').on('click', function() {
+            if (currentStatus === 'accepted') {
                 setStatus('accepted', 'Diterima');
                 $actions.addClass('d-none');
                 $surat.prop('disabled', false);
+            } else if (currentStatus === 'rejected') {
+                setStatus('rejected', 'Ditolak');
+                $actions.addClass('d-none');
+                $surat.prop('disabled', true);
+            }
+
+            $('#btn-terima').on('click', function() {
+                decisionInput.value = 'accepted';
+                form.submit();
             });
 
-            // --- TOLAK: confirm via modal ---
             $('#btn-tolak').on('click', function() {
                 Swal.fire({
                     title: 'Tolak Syarikat?',
-                    text: 'Adakah anda pasti untuk menolak syarikat ini? Tindakan ini tidak boleh diubah.',
+                    text: 'Adakah anda pasti untuk menolak syarikat ini? Projek akan dikembalikan ke pemilihan syarikat.',
                     icon: 'warning',
                     showCancelButton: true,
                     confirmButtonColor: '#dc2626',
@@ -300,28 +316,14 @@
                     cancelButtonText: 'Batal'
                 }).then(function(result) {
                     if (result.isConfirmed) {
-                        setStatus('rejected', 'Ditolak');
-                        $actions.addClass('d-none');
-                        $surat.prop('disabled', true);
-                        Swal.fire({
-                            title: 'Syarikat Ditolak',
-                            text: 'Syarikat ini telah ditandakan sebagai ditolak.',
-                            icon: 'success',
-                            confirmButtonColor: '#1e293b'
-                        });
+                        decisionInput.value = 'rejected';
+                        form.submit();
                     }
                 });
             });
 
-            // --- SURAT SETUJU TERIMA ---
             $surat.on('click', function() {
-                // TODO: hook to the real "Surat Setuju Terima" generation/route when ready
-                Swal.fire({
-                    title: 'Surat Setuju Terima',
-                    text: 'Surat Setuju Terima akan dijana untuk syarikat ini.',
-                    icon: 'info',
-                    confirmButtonColor: '#1e293b'
-                });
+                window.location.href = suratUrl;
             });
 
         });

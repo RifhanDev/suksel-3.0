@@ -107,6 +107,16 @@ class StosBackendClient
         return $this->get('/api/tenders/' . $tenderId . '/kehadiran-mesyuarat', $query);
     }
 
+    public function getCutOffTenders(array $query = []): Response
+    {
+        return $this->get('/api/cut-off/tenders', $query);
+    }
+
+    public function getCutOffTender(string $uuid): Response
+    {
+        return $this->get('/api/cut-off/tenders/' . $uuid);
+    }
+
     public function saveKehadiranMesyuarat(int $tenderId, array $payload): Response
     {
         return $this->post('/api/tenders/' . $tenderId . '/kehadiran-mesyuarat', $payload);
@@ -230,6 +240,56 @@ class StosBackendClient
     public function keputusanPembelianTerus(int $tenderId, array $payload): Response
     {
         return $this->post('/api/pembelian-terus/' . $tenderId . '/company-decision', $payload);
+    }
+
+    public function listLantikanTerus(array $query = []): Response
+    {
+        return $this->get('/api/lantikan-terus', $query);
+    }
+
+    public function getLantikanTerus(int $tenderId): Response
+    {
+        return $this->get('/api/lantikan-terus/' . $tenderId);
+    }
+
+    public function createLantikanTerus(array $payload): Response
+    {
+        return $this->post('/api/lantikan-terus', $payload);
+    }
+
+    public function updateLantikanTerus(int $tenderId, array $payload): Response
+    {
+        return $this->request('put', '/api/lantikan-terus/' . $tenderId, ['json' => $payload]);
+    }
+
+    public function publishLantikanTerus(int $tenderId): Response
+    {
+        return $this->post('/api/lantikan-terus/' . $tenderId . '/publish');
+    }
+
+    public function getLantikanTerusOffers(int $tenderId): Response
+    {
+        return $this->get('/api/lantikan-terus/' . $tenderId . '/offers');
+    }
+
+    public function submitLantikanTerusOffer(int $tenderId, array $payload): Response
+    {
+        return $this->post('/api/lantikan-terus/' . $tenderId . '/offers', $payload);
+    }
+
+    public function cutoffLantikanTerus(int $tenderId, array $payload): Response
+    {
+        return $this->post('/api/lantikan-terus/' . $tenderId . '/cutoff', $payload);
+    }
+
+    public function selectLantikanTerusWinner(int $tenderId, array $payload): Response
+    {
+        return $this->post('/api/lantikan-terus/' . $tenderId . '/select-winner', $payload);
+    }
+
+    public function keputusanLantikanTerus(int $tenderId, array $payload): Response
+    {
+        return $this->post('/api/lantikan-terus/' . $tenderId . '/company-decision', $payload);
     }
 
     protected function request(string $method, string $path, array $options = []): Response
