@@ -100,6 +100,7 @@ class CutOffController extends Controller
 
         $tender_no = $row['no_tender'] ?: $row['ref_number'] ?: (string) ($row['id'] ?? $uuid);
         $hargaCutOff = $row['harga_cutoff'] ?? [];
+        $statisticalAttribute = $row['statistical_attribute'] ?? [];
 
         return view('newModule.cut_off.show', [
             'tender_no' => $tender_no,
@@ -107,6 +108,11 @@ class CutOffController extends Controller
             'aj' => $this->formatHarga($hargaCutOff['aj'] ?? null),
             'pcp' => $this->formatHarga($hargaCutOff['pcp'] ?? null),
             'bwa' => $this->formatHarga($hargaCutOff['bwa'] ?? null),
+            'nt' => (int) ($statisticalAttribute['nt'] ?? 1),
+            'mean' => $this->formatHarga($statisticalAttribute['mean'] ?? null),
+            'overallMean' => $this->formatHarga($statisticalAttribute['overall_mean'] ?? null),
+            'sd' => $this->formatHarga($statisticalAttribute['sd'] ?? null),
+            'cv' => $this->formatCv($statisticalAttribute['cv'] ?? null),
         ]);
     }
 
@@ -119,6 +125,15 @@ class CutOffController extends Controller
         $value = (float) ($value ?? 0);
 
         return $value > 0 ? number_format($value, 2) : '-';
+    }
+
+    /**
+     * Format Coefficient of Variation: nisbah (bukan RM), 4 titik perpuluhan.
+     * '-' bila tiada data (contoh: tiada syarikat lulus Penilaian Pembuka).
+     */
+    private function formatCv($value): string
+    {
+        return $value === null ? '-' : number_format((float) $value, 4);
     }
 
     public function hantar(Request $request)

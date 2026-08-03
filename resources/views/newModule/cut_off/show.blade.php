@@ -277,23 +277,23 @@
                         <tbody>
                             <tr>
                                 <td><strong>No. of Tender Analysed (Nt)</strong></td>
-                                <td class="text-center">11</td>
+                                <td class="text-center">{{ $nt ?? '-' }}</td>
                             </tr>
                             <tr>
                                 <td><strong>Mean of BW (mean)</strong></td>
-                                <td class="text-center">826,077.78</td>
+                                <td class="text-center">{{ $mean ?? '-' }}</td>
                             </tr>
                             <tr>
                                 <td><strong>Overall Mean</strong></td>
-                                <td class="text-center">826,077.78</td>
+                                <td class="text-center">{{ $overallMean ?? '-' }}</td>
                             </tr>
                             <tr>
                                 <td><strong>Standard Deviation (SD)</strong></td>
-                                <td class="text-center">117,506.36</td>
+                                <td class="text-center">{{ $sd ?? '-' }}</td>
                             </tr>
                             <tr>
                                 <td><strong>Coefficient of Variation (CV)</strong></td>
-                                <td class="text-center">0.1422</td>
+                                <td class="text-center">{{ $cv ?? '-' }}</td>
                             </tr>
                         </tbody>
                     </table>
