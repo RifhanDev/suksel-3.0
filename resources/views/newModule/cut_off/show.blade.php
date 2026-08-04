@@ -65,17 +65,6 @@
         font-weight: 600;
     }
 
-    .cutoff-actions .btn-laporan {
-        background: #10b981;
-        color: #fff;
-        border: none;
-    }
-
-    .cutoff-actions .btn-laporan:hover {
-        background: #059669;
-        color: #fff;
-    }
-
     .cutoff-actions .btn-simpan {
         background: #0d9488;
         color: #fff;
@@ -396,7 +385,6 @@
 
         {{-- Action buttons --}}
         <div class="d-flex flex-wrap gap-2 justify-content-end cutoff-actions">
-            <button type="button" class="btn btn-laporan px-4" id="btnLaporanCutoff" disabled>Laporan</button>
             <button type="button" class="btn btn-simpan px-4" id="btnSimpanCutoff">Simpan</button>
             <button type="button" class="btn btn-hantar px-4" id="btnHantarCutoff" disabled>Hantar</button>
         </div>
@@ -451,6 +439,10 @@
         var freq = freqStr.map(function(n) {
             return parseInt(n, 10);
         });
+        // Had paksi-Y dikira secara dinamik ikut data sebenar (bukan tetap 6) —
+        // supaya puncak taburan tak terpotong/rata bila kekerapan melebihi 6.
+        var maxFreq = Math.max.apply(null, freq.concat([0]));
+        var yMax = maxFreq + Math.max(1, Math.ceil(maxFreq * 0.15));
         new Chart(el.getContext('2d'), {
             type: 'line',
             data: {
@@ -484,9 +476,9 @@
                 scales: {
                     y: {
                         beginAtZero: true,
-                        max: 6,
+                        max: yMax,
                         ticks: {
-                            stepSize: 1
+                            precision: 0
                         },
                         title: {
                             display: true,
@@ -540,7 +532,6 @@
 
         var btnSimpan = document.getElementById('btnSimpanCutoff');
         var btnHantar = document.getElementById('btnHantarCutoff');
-        var btnLaporan = document.getElementById('btnLaporanCutoff');
         var feedbackEl = document.getElementById('cutoffFeedback');
 
         function getCheckboxes() {
@@ -588,12 +579,10 @@
             if (selectAll) selectAll.disabled = true;
             if (btnSimpan) btnSimpan.disabled = true;
             if (btnHantar) btnHantar.disabled = true;
-            if (btnLaporan) btnLaporan.disabled = false;
         }
 
         function unlockAfterSimpan() {
             if (btnHantar) btnHantar.disabled = false;
-            if (btnLaporan) btnLaporan.disabled = false;
             cutoffConfig.selectionStatus = 'draft';
         }
 
@@ -709,14 +698,6 @@
             });
         }
 
-        if (btnLaporan) {
-            btnLaporan.addEventListener('click', function() {
-                if (btnLaporan.disabled) return;
-                // KIV — template laporan belum disediakan. Janaan sebenar akan
-                // disambungkan kemudian.
-                alert('Ciri janaan Laporan akan datang.');
-            });
-        }
     })();
 </script>
 
