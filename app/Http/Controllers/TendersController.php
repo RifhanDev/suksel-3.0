@@ -1093,11 +1093,19 @@ class TendersController extends Controller
 		if ($file->public == 0) {
 			if (!auth()->check())
 				return $this->_access_denied();
-			if (auth()->user()->hasRole('Vendor') && !Tender::hasParticipate(auth()->user()->vendor_id))
+			if (auth()->user()->hasRole('Vendor') && !$tender->hasParticipate(auth()->user()->vendor_id))
 				return $this->_access_denied();
 		}
 
-		return Response::download($file->path, $file->name);
+		$fullPath = method_exists($file, 'getPath') ? $file->getPath() : (rtrim((string) $file->path, '/\\') . DIRECTORY_SEPARATOR . $file->name);
+
+		if (! is_file($fullPath)) {
+			abort(404, 'Fail tidak dijumpai.');
+		}
+
+		$downloadName = $file->label ?: $file->name;
+
+		return Response::download($fullPath, $downloadName);
 	}
 
 	public function receipt($tender_id, $id)

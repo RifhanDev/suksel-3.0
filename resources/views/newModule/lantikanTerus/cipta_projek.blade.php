@@ -345,9 +345,14 @@
         </div>
     </div>
 
-    {{-- TODO: point action to the store/terbit route once the controller is ready --}}
-    <form id="createProjekForm" action="#" method="POST" enctype="multipart/form-data">
+    <form id="createProjekForm"
+        action="{{ $p ? route('lantikan.update', $p->id) : route('lantikan.store') }}"
+        method="POST" enctype="multipart/form-data">
         @csrf
+        @if ($p)
+            @method('PUT')
+        @endif
+        <input type="hidden" name="action" id="form-action" value="draft">
 
         <div class="modern-card">
 
@@ -361,7 +366,7 @@
                         <line x1="16" y1="13" x2="8" y2="13"></line>
                         <line x1="16" y1="17" x2="8" y2="17"></line>
                     </svg>
-                    <span class="fw-bold text-dark text-uppercase small">Cipta Projek Untuk Pembelian Terus</span>
+                    <span class="fw-bold text-dark text-uppercase small">Cipta Projek Untuk Lantikan Terus</span>
                 </div>
 
                 <div class="p-4">
@@ -927,6 +932,19 @@
                 } else {
                     $('#lokaliti-group').addClass('d-none').find('select').val('');
                 }
+            });
+
+            // --- SAVE DRAFT / PUBLISH ---
+            $('#btn-save').on('click', function() {
+                $('#form-action').val('draft');
+                $('#createProjekForm').submit();
+            });
+
+            $('#btn-submit').on('click', function(e) {
+                e.preventDefault();
+                if (typeof validateCurrentStep === 'function' && !validateCurrentStep()) return;
+                $('#form-action').val('publish');
+                $('#createProjekForm').submit();
             });
 
             // --- WIZARD NAVIGATION (3 steps) ---

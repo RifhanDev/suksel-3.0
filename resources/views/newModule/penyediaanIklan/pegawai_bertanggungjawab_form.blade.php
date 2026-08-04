@@ -24,7 +24,8 @@
 @endpush
 
 @php
-    $pegawai1 = $meta['pegawai']['pegawai1'] ?? [];
+    $pegawaiPresenter = \App\Support\TenderPegawaiPresenter::for($tender, $meta);
+    $pegawai1 = $pegawaiPresenter->pegawai1();
     $pegawai2 = $meta['pegawai']['pegawai2'] ?? [];
     $pegawaiPilihan = $pegawaiPilihan ?? [];
 @endphp
@@ -49,29 +50,29 @@
 
     <div class="p-4 d-flex flex-column gap-4">
 
-        {{-- ── Pegawai 1 ── --}}
+        {{-- ── Pegawai 1 (auto from tender creator) ── --}}
         <div>
             <div class="pegawai-section-label">Pegawai Bertanggungjawab 1 <span class="text-danger">*</span></div>
             <div class="row g-3">
                 <div class="col-md-6">
                     <label class="form-label fw-medium small">Nama</label>
                     <input type="text" class="form-control bg-light" name="pegawai1_nama"
-                        value="{{ $pegawai1['nama'] ?? (Auth::user()->name ?? '') }}" readonly>
+                        value="{{ $pegawai1['nama'] !== '-' ? $pegawai1['nama'] : '' }}" readonly>
                 </div>
                 <div class="col-md-6">
                     <label class="form-label fw-medium small">E-mel</label>
                     <input type="text" class="form-control bg-light" name="pegawai1_emel"
-                        value="{{ $pegawai1['emel'] ?? (Auth::user()->email ?? '') }}" readonly>
+                        value="{{ $pegawai1['emel'] !== '-' ? $pegawai1['emel'] : '' }}" readonly>
                 </div>
                 <div class="col-md-6">
                     <label class="form-label fw-medium small">No. Telefon <span class="text-danger">*</span></label>
                     <input type="text" class="form-control" name="pegawai1_tel"
-                        value="{{ $pegawai1['tel'] ?? '' }}" placeholder="Contoh: 03-5544 1234">
+                        value="{{ $pegawai1['tel'] !== '-' ? $pegawai1['tel'] : '' }}" placeholder="Contoh: 03-5544 1234">
                 </div>
                 <div class="col-md-6">
                     <label class="form-label fw-medium small">Jabatan <span class="text-danger">*</span></label>
                     <input type="text" class="form-control" name="pegawai1_jabatan"
-                        value="{{ $pegawai1['jabatan'] ?? '' }}" placeholder="Contoh: Bahagian Perolehan">
+                        value="{{ $pegawai1['jabatan'] !== '-' ? $pegawai1['jabatan'] : '' }}" placeholder="Contoh: Bahagian Perolehan">
                 </div>
             </div>
         </div>

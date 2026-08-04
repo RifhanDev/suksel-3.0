@@ -1171,12 +1171,12 @@
 						<ul class="sidebar-submenu">
 							<li>
 								<a
-									class="submenu-item {{ request()->routeIs('pembelianTerus.createProject') || request()->is('pembelian-terus/cipta-projek*') ? 'active' : '' }}"
+									class="submenu-item {{ request()->routeIs('pembelianTerus.createProject') || request()->routeIs('pembelianTerus.create') || request()->routeIs('pembelianTerus.edit') || request()->is('pembelian-terus/cipta-projek*') ? 'active' : '' }}"
 									href="{{ route('pembelianTerus.createProject') }}" style="cursor: pointer;">
 									<div class="submenu-icon"
-										style="{{ request()->routeIs('pembelianTerus.createProject') || request()->is('pembelian-terus/cipta-projek*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}">
+										style="{{ request()->routeIs('pembelianTerus.createProject') || request()->routeIs('pembelianTerus.create') || request()->routeIs('pembelianTerus.edit') || request()->is('pembelian-terus/cipta-projek*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}">
 									</div><span
-										class="{{ request()->routeIs('pembelianTerus.createProject') || request()->is('pembelian-terus/cipta-projek*') ? 'text-white' : '' }}">Cipta
+										class="{{ request()->routeIs('pembelianTerus.createProject') || request()->routeIs('pembelianTerus.create') || request()->routeIs('pembelianTerus.edit') || request()->is('pembelian-terus/cipta-projek*') ? 'text-white' : '' }}">Cipta
 										Projek</span>
 								</a>
 							</li>
@@ -1645,12 +1645,12 @@
 						<ul class="sidebar-submenu">
 							<li>
 								<a
-									class="submenu-item {{ request()->routeIs('pembelianTerus.createProject') || request()->is('pembelian-terus/cipta-projek*') ? 'active' : '' }}"
+									class="submenu-item {{ request()->routeIs('pembelianTerus.createProject') || request()->routeIs('pembelianTerus.create') || request()->routeIs('pembelianTerus.edit') || request()->is('pembelian-terus/cipta-projek*') ? 'active' : '' }}"
 									href="{{ route('pembelianTerus.createProject') }}" style="cursor: pointer;">
 									<div class="submenu-icon"
-										style="{{ request()->routeIs('pembelianTerus.createProject') || request()->is('pembelian-terus/cipta-projek*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}">
+										style="{{ request()->routeIs('pembelianTerus.createProject') || request()->routeIs('pembelianTerus.create') || request()->routeIs('pembelianTerus.edit') || request()->is('pembelian-terus/cipta-projek*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}">
 									</div><span
-										class="{{ request()->routeIs('pembelianTerus.createProject') || request()->is('pembelian-terus/cipta-projek*') ? 'text-white' : '' }}">Cipta
+										class="{{ request()->routeIs('pembelianTerus.createProject') || request()->routeIs('pembelianTerus.create') || request()->routeIs('pembelianTerus.edit') || request()->is('pembelian-terus/cipta-projek*') ? 'text-white' : '' }}">Cipta
 										Projek</span>
 								</a>
 							</li>

@@ -36,7 +36,7 @@ class CertificationCodesController extends Controller
 			$certificationcodes = $certificationcodes->select([
 				'codes.id',
 				'codes.code',
-				'codes.name',
+				'codes.description as name',
 				'codes.type'
 			]);
 			$datatable = Datatables::of($certificationcodes)

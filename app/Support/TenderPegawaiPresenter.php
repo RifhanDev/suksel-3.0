@@ -30,6 +30,8 @@ class TenderPegawaiPresenter
             return $this->formatPegawai($saved);
         }
 
+        $this->tender->loadMissing('creator.organizationunit');
+
         return $this->formatPegawaiFromUser($this->tender->creator);
     }
 
@@ -39,6 +41,8 @@ class TenderPegawaiPresenter
         if ($this->hasPegawaiData($saved)) {
             return $this->formatPegawai($saved);
         }
+
+        $this->tender->loadMissing('officer.organizationunit');
 
         if ($this->tender->officer) {
             return $this->formatPegawaiFromUser($this->tender->officer);
@@ -68,9 +72,9 @@ class TenderPegawaiPresenter
     {
         $nama = trim((string) ($data['nama'] ?? ''));
         if ($nama !== '' && ctype_digit($nama)) {
-            $user = User::query()->find((int) $nama);
+            $user = User::query()->with('organizationunit')->find((int) $nama);
             if ($user) {
-                $nama = $user->name;
+                return $this->formatPegawaiFromUser($user);
             }
         }
 
@@ -84,20 +88,13 @@ class TenderPegawaiPresenter
 
     protected function formatPegawaiFromUser(?User $user): array
     {
-        if (! $user) {
-            return [
-                'nama' => '-',
-                'emel' => '-',
-                'tel' => '-',
-                'jabatan' => '-',
-            ];
-        }
+        $fields = app(PenyediaanIklanService::class)->pegawaiFieldsFromUser($user);
 
         return [
-            'nama' => $user->name ?: '-',
-            'emel' => $user->email ?: '-',
-            'tel' => $user->tel ?: '-',
-            'jabatan' => $user->department ?: '-',
+            'nama' => $fields['nama'] !== '' ? $fields['nama'] : '-',
+            'emel' => $fields['emel'] !== '' ? $fields['emel'] : '-',
+            'tel' => $fields['tel'] !== '' ? $fields['tel'] : '-',
+            'jabatan' => $fields['jabatan'] !== '' ? $fields['jabatan'] : '-',
         ];
     }
 

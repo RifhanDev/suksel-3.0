@@ -30,17 +30,47 @@ class PenyediaanIklan extends Model
             [
                 'jenis' => 'Kelulusan Berbelanja',
                 'is_fixed' => true,
-                'status' => null,
-                'catatan' => null,
-                'dokumen' => null,
-            ],
-            [
-                'jenis' => 'Kelulusan Projek ICT',
-                'is_fixed' => true,
-                'status' => null,
                 'catatan' => null,
                 'dokumen' => null,
             ],
         ];
+    }
+
+    /**
+     * Drop removed fixed rows (e.g. Kelulusan Projek ICT) from stored meta.
+     *
+     * @param  array<int, array<string, mixed>>  $rows
+     * @return array<int, array<string, mixed>>
+     */
+    public static function normalizeKelulusanRows(array $rows): array
+    {
+        $normalized = [];
+        $hasBerbelanja = false;
+
+        foreach ($rows as $row) {
+            if (! is_array($row)) {
+                continue;
+            }
+
+            $jenis = trim((string) ($row['jenis'] ?? ''));
+            if ($jenis === 'Kelulusan Projek ICT' && ! empty($row['is_fixed'])) {
+                continue;
+            }
+
+            unset($row['status']);
+
+            if ($jenis === 'Kelulusan Berbelanja' && ! empty($row['is_fixed'])) {
+                $hasBerbelanja = true;
+                $row['is_fixed'] = true;
+            }
+
+            $normalized[] = $row;
+        }
+
+        if (! $hasBerbelanja) {
+            array_unshift($normalized, self::defaultKelulusan()[0]);
+        }
+
+        return array_values($normalized);
     }
 }

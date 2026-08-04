@@ -1,0 +1,110 @@
+/* ============================================================
+   STEPPER
+   Circle-and-connector step indicator for multi-step flows.
+   Usage:
+   <ul class="progress-wrapper">
+     <li class="progress-step [active|done]">
+       <button class="step-number">1</button>
+       <div class="step-label">Step name</div>
+     </li>
+     ...
+   </ul>
+   JS toggles "active"/"done" on .progress-step as the flow advances —
+   this file only renders whatever state is currently applied.
+   ============================================================ */
+
+.progress-wrapper {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    position: relative;
+    margin: 4px 0 20px;
+    padding: 10px 20px;
+    list-style: none;
+}
+
+.progress-step {
+    flex: 1;
+    text-align: center;
+    position: relative;
+}
+
+/* Connector line */
+.progress-step:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    top: 19px;
+    left: 50%;
+    width: 100%;
+    height: 4px;
+    background: #e2e8f0;
+    border-radius: 4px;
+    z-index: 0;
+}
+
+.progress-step.done:not(:last-child)::after {
+    background: var(--sg-red, #c41e3a);
+}
+
+.progress-step.active:not(:last-child)::after {
+    background: linear-gradient(90deg, var(--sg-red, #c41e3a) 0%, #e2e8f0 100%);
+}
+
+.progress-step.active~.progress-step:not(:last-child)::after {
+    background: #e2e8f0;
+}
+
+/* Step circle */
+.step-number {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: #fff;
+    border: 3px solid #cbd5e1;
+    color: #94a3b8;
+    font-weight: 700;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+    position: relative;
+    z-index: 2;
+    cursor: default;
+    transition: all 0.25s ease;
+}
+
+.progress-step.active .step-number {
+    border-color: var(--sg-red, #c41e3a);
+    background: var(--sg-red, #c41e3a);
+    color: #fff;
+    box-shadow: 0 0 0 5px rgba(196, 30, 58, 0.08), 0 2px 8px rgba(196, 30, 58, 0.3);
+    transform: scale(1.05);
+}
+
+.progress-step.done .step-number {
+    border-color: var(--sg-red, #c41e3a);
+    background: var(--sg-red, #c41e3a);
+    color: #fff;
+    box-shadow: 0 2px 6px rgba(196, 30, 58, 0.3);
+}
+
+/* Step label */
+.step-label {
+    margin-top: 10px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: #94a3b8;
+    line-height: 1.3;
+    transition: color 0.25s ease;
+}
+
+.progress-step.active .step-label {
+    color: var(--sg-red, #c41e3a);
+}
+
+.progress-step.done .step-label {
+    color: var(--sg-red, #c41e3a);
+}

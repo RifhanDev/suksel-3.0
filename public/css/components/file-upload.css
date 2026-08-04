@@ -117,6 +117,16 @@
     max-width: 160px;
 }
 
+a.file-chip-name {
+    text-decoration: none;
+    cursor: pointer;
+}
+
+a.file-chip-name:hover {
+    color: var(--sg-red);
+    text-decoration: underline;
+}
+
 .file-chip-size {
     font-size: 0.68rem;
     color: #94a3b8;

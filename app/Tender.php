@@ -876,6 +876,156 @@ class Tender extends Model
 			&& $today->lte(Carbon::parse($this->document_stop_date));
 	}
 
+	/**
+	 * Vendor dokumen key-in opens at tarikh/masa iklan (penyediaan iklan),
+	 * falling back to advertise_start_date start of day.
+	 */
+	public function vendorDokumenOpensAt(): ?Carbon
+	{
+		$iklan = $this->penyediaanIklanMeta();
+		$fromMeta = $this->combineIklanDateTime(
+			$iklan['tarikh_iklan'] ?? null,
+			$iklan['masa_iklan'] ?? null,
+			'00:00'
+		);
+		if ($fromMeta) {
+			return $fromMeta;
+		}
+
+		if (! empty($this->advertise_start_date)) {
+			return Carbon::parse($this->advertise_start_date)->startOfDay();
+		}
+
+		return null;
+	}
+
+	/**
+	 * Vendor dokumen key-in closes at tarikh/masa tutup, falling back to submission_datetime.
+	 */
+	public function vendorDokumenClosesAt(): ?Carbon
+	{
+		$iklan = $this->penyediaanIklanMeta();
+		$fromMeta = $this->combineIklanDateTime(
+			$iklan['tarikh_tutup'] ?? null,
+			$iklan['masa_tutup'] ?? null,
+			'23:59'
+		);
+		if ($fromMeta) {
+			return $fromMeta;
+		}
+
+		if (! empty($this->submission_datetime)) {
+			return Carbon::parse($this->submission_datetime);
+		}
+
+		return null;
+	}
+
+	public function isWithinVendorDokumenWindow(?Carbon $at = null): bool
+	{
+		$at = $at ?? Carbon::now();
+		$opens = $this->vendorDokumenOpensAt();
+		$closes = $this->vendorDokumenClosesAt();
+
+		if ($opens === null && $closes === null) {
+			return true;
+		}
+
+		if ($opens !== null && $at->lt($opens)) {
+			return false;
+		}
+
+		if ($closes !== null && $at->gt($closes)) {
+			return false;
+		}
+
+		return true;
+	}
+
+	public function vendorDokumenWindowBlockedReason(?Carbon $at = null): ?string
+	{
+		if ($this->isWithinVendorDokumenWindow($at)) {
+			return null;
+		}
+
+		$at = $at ?? Carbon::now();
+		$opens = $this->vendorDokumenOpensAt();
+		$closes = $this->vendorDokumenClosesAt();
+
+		if ($opens !== null && $at->lt($opens)) {
+			return 'Tempoh key-in dokumen belum bermula. Dibuka pada '.$opens->format('d/m/Y H:i').'.';
+		}
+
+		if ($closes !== null && $at->gt($closes)) {
+			return 'Tempoh key-in dokumen telah tamat pada '.$closes->format('d/m/Y H:i').'.';
+		}
+
+		return 'Di luar tempoh key-in dokumen.';
+	}
+
+	/**
+	 * @return array<string, mixed>
+	 */
+	protected function penyediaanIklanMeta(): array
+	{
+		$record = \App\Models\PenyediaanIklan::query()
+			->where('tender_id', $this->id)
+			->first();
+
+		if (! $record || ! is_array($record->meta)) {
+			return [];
+		}
+
+		$iklan = $record->meta['iklan'] ?? [];
+
+		return is_array($iklan) ? $iklan : [];
+	}
+
+	protected function combineIklanDateTime(?string $date, ?string $time, string $defaultTime): ?Carbon
+	{
+		$parsedDate = $this->parseFlexibleIklanDate($date);
+		if ($parsedDate === null) {
+			return null;
+		}
+
+		$parsedTime = trim((string) $time);
+		if ($parsedTime === '') {
+			$parsedTime = $defaultTime;
+		}
+
+		try {
+			return Carbon::parse($parsedDate.' '.$parsedTime);
+		} catch (\Throwable) {
+			try {
+				return Carbon::parse($parsedDate)->setTimeFromTimeString($defaultTime);
+			} catch (\Throwable) {
+				return Carbon::parse($parsedDate)->startOfDay();
+			}
+		}
+	}
+
+	protected function parseFlexibleIklanDate(?string $value): ?string
+	{
+		if ($value === null || trim($value) === '') {
+			return null;
+		}
+
+		$formats = ['Y-m-d', 'd/m/Y', 'd-m-Y', 'j M Y', 'd M Y'];
+		foreach ($formats as $format) {
+			try {
+				return Carbon::createFromFormat($format, trim($value))->format('Y-m-d');
+			} catch (\Throwable) {
+				continue;
+			}
+		}
+
+		try {
+			return Carbon::parse($value)->format('Y-m-d');
+		} catch (\Throwable) {
+			return null;
+		}
+	}
+
 	public function documentSalesNotYetOpen(): bool
 	{
 		if (empty($this->document_start_date)) {

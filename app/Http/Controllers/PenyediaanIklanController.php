@@ -17,6 +17,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class PenyediaanIklanController extends Controller
 {
@@ -78,7 +79,7 @@ class PenyediaanIklanController extends Controller
             }
         }
 
-        $tender->load(['tenderer', 'codes.code', 'creator', 'officer', 'siteVisits']);
+        $tender->load(['tenderer', 'codes.code', 'creator.organizationunit', 'officer.organizationunit', 'siteVisits']);
         $this->checklistSync->syncForTender($tender);
         $tenderReview = TenderReviewPresenter::for($tender);
         $tenderDokumen = TenderDokumenPresenter::for($tender);
@@ -86,7 +87,14 @@ class PenyediaanIklanController extends Controller
 
         if (empty($meta['kelulusan'])) {
             $meta['kelulusan'] = PenyediaanIklan::defaultKelulusan();
+        } else {
+            $meta['kelulusan'] = PenyediaanIklan::normalizeKelulusanRows(
+                is_array($meta['kelulusan']) ? $meta['kelulusan'] : []
+            );
         }
+
+        // Re-hydrate pegawai1 from creator after any STOS overlay.
+        $meta['pegawai'] = $this->penyediaanIklanService->normalizePegawaiMeta($meta['pegawai'] ?? [], $tender);
 
         return view('newModule.penyediaanIklan.index', compact(
             'tender',
@@ -162,6 +170,10 @@ class PenyediaanIklanController extends Controller
             /** @var \Illuminate\Http\RedirectResponse $redirect */
             $redirect = redirect()->to($redirectUrl);
             return $redirect->with('success', $message);
+        } catch (ValidationException $e) {
+            $message = collect($e->errors())->flatten()->first() ?: 'Data tidak sah.';
+
+            return $this->respondError($request, $message, 422);
         } catch (\Throwable $e) {
             Log::error('Penyediaan iklan persist failed', [
                 'tender_id' => $tender->id,
@@ -207,7 +219,7 @@ class PenyediaanIklanController extends Controller
                 'tarikh_iklan' => $request->input('tarikh_iklan'),
                 'masa_iklan' => $request->input('masa_iklan'),
                 'tarikh_tutup' => $request->input('tarikh_tutup'),
-                'masa_tutup' => $request->input('masa_tutup'),
+                'masa_tutup' => '12:00',
                 'tarikh_jual' => $request->input('tarikh_jual'),
                 'tempoh_iklan' => $request->input('tempoh_iklan'),
                 'tempoh_sah_laku' => $request->input('tempoh_sah_laku'),
@@ -230,12 +242,14 @@ class PenyediaanIklanController extends Controller
                     )
                     : ($existingIklan['dokumen_sokongan'] ?? []),
             ],
-            'pegawai' => $this->buildPegawaiPayload($request),
+            'pegawai' => $this->buildPegawaiPayload($request, $tenderId),
         ];
     }
 
-    protected function buildPegawaiPayload(Request $request): array
+    protected function buildPegawaiPayload(Request $request, int $tenderId): array
     {
+        $tender = Tender::query()->with(['creator.organizationunit'])->find($tenderId);
+
         return $this->penyediaanIklanService->normalizePegawaiMeta([
             'pegawai1' => [
                 'nama' => $request->input('pegawai1_nama'),
@@ -244,7 +258,7 @@ class PenyediaanIklanController extends Controller
                 'jabatan' => $request->input('pegawai1_jabatan'),
             ],
             'pegawai2' => $this->resolvePegawai2FromRequest($request),
-        ]);
+        ], $tender);
     }
 
     protected function resolvePegawai2FromRequest(Request $request): array
@@ -314,8 +328,7 @@ class PenyediaanIklanController extends Controller
 
     protected function parseKelulusan(Request $request, int $tenderId): array
     {
-        $fixedLabels = ['Kelulusan Berbelanja', 'Kelulusan Projek ICT'];
-        $statuses = (array) $request->input('kelulusan_status', []);
+        $fixedLabels = ['Kelulusan Berbelanja'];
         $catatans = (array) $request->input('kelulusan_catatan', []);
         $jenisDynamic = (array) $request->input('kelulusan_jenis', []);
         $files = (array) $request->file('kelulusan_dokumen', []);
@@ -333,7 +346,6 @@ class PenyediaanIklanController extends Controller
             $rows[] = [
                 'jenis' => $label,
                 'is_fixed' => true,
-                'status' => $statuses[$i] ?? null,
                 'catatan' => $catatans[$i] ?? null,
                 'dokumen' => $dokumen,
             ];
@@ -351,13 +363,12 @@ class PenyediaanIklanController extends Controller
             $rows[] = [
                 'jenis' => trim((string) $jenis),
                 'is_fixed' => false,
-                'status' => $statuses[$idx] ?? null,
                 'catatan' => $catatans[$idx] ?? null,
                 'dokumen' => $dokumen,
             ];
         }
 
-        return $rows;
+        return PenyediaanIklan::normalizeKelulusanRows($rows);
     }
 
     protected function resolveKelulusanFile(?UploadedFile $file, int $tenderId, ?string $existingPath): ?array

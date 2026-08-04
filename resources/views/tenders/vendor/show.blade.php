@@ -220,18 +220,21 @@
 		$vendorPurchase = $vendorPurchase ?? null;
 		$vendorSubmitted = $vendorSubmitted ?? false;
 		$vendorHasPurchased = Auth::check() && Auth::user()->vendor_id && $tender->hasParticipate(Auth::user()->vendor_id);
-		$vendorCanEdit = $vendorHasPurchased && !$vendorSubmitted;
-		$dokumenList = $tenderDokumen->items('vendor', $vendorCanEdit ? (int) Auth::user()->vendor_id : null);
-		$canManageWakilLawatan = Auth::check()
-		    && Auth::user()->vendor_id
-		    && !$vendorSubmitted
-		    && $tender->siteVisits->contains(fn ($visit) => $visit->canSubmitRepresentatives());
+		$vendorWithinDokumenWindow = $tender->isWithinVendorDokumenWindow();
+		$vendorDokumenWindowReason = $tender->vendorDokumenWindowBlockedReason();
+		$vendorCanEdit = $vendorHasPurchased && !$vendorSubmitted && $vendorWithinDokumenWindow;
+		$dokumenList = $tenderDokumen->items('vendor', $vendorHasPurchased ? (int) Auth::user()->vendor_id : null);
+		$canManageWakilLawatan =
+		    Auth::check() &&
+		    Auth::user()->vendor_id &&
+		    !$vendorSubmitted &&
+		    $tender->siteVisits->contains(fn($visit) => $visit->canSubmitRepresentatives());
 
 		$lawatanInfoBanner = null;
 		if (Auth::check() && Auth::user()->vendor_id && !$vendorSubmitted && $tender->siteVisits->isNotEmpty()) {
 		    $lawatanVendorId = (int) Auth::user()->vendor_id;
 		    $openLawatanVisits = $tender->siteVisits
-		        ->filter(fn ($visit) => $visit->canSubmitRepresentatives())
+		        ->filter(fn($visit) => $visit->canSubmitRepresentatives())
 		        ->sortBy('datetime')
 		        ->values();
 
@@ -243,8 +246,9 @@
 		                ->exists();
 		        });
 
-		        $beforeSalesDate = filled($tender->document_start_date)
-		            && \Carbon\Carbon::today()->lt(\Carbon\Carbon::parse($tender->document_start_date)->startOfDay());
+		        $beforeSalesDate =
+		            filled($tender->document_start_date) &&
+		            \Carbon\Carbon::today()->lt(\Carbon\Carbon::parse($tender->document_start_date)->startOfDay());
 
 		        $needsAttendance = $tender->hasRequiredSiteVisits() && !$tender->attendVisits($lawatanVendorId);
 		        $hasRegisteredReps = $missingRepVisits->count() < $openLawatanVisits->count();
@@ -252,7 +256,9 @@
 		        if ($missingRepVisits->isNotEmpty()) {
 		            $lawatanInfoBanner = [
 		                'tone' => 'action',
-		                'next_visit_label' => \Carbon\Carbon::parse($openLawatanVisits->first()->datetime)->format('j M Y, H:i'),
+		                'next_visit_label' => \Carbon\Carbon::parse($openLawatanVisits->first()->datetime)->format(
+		                    'j M Y, H:i',
+		                ),
 		                'sales_date_label' => filled($tender->document_start_date)
 		                    ? \Carbon\Carbon::parse($tender->document_start_date)->format('j M Y')
 		                    : null,
@@ -262,7 +268,9 @@
 		        } elseif ($hasRegisteredReps && $needsAttendance && ($beforeSalesDate || !$vendorHasPurchased)) {
 		            $lawatanInfoBanner = [
 		                'tone' => 'waiting',
-		                'next_visit_label' => \Carbon\Carbon::parse($openLawatanVisits->first()->datetime)->format('j M Y, H:i'),
+		                'next_visit_label' => \Carbon\Carbon::parse($openLawatanVisits->first()->datetime)->format(
+		                    'j M Y, H:i',
+		                ),
 		                'sales_date_label' => filled($tender->document_start_date)
 		                    ? \Carbon\Carbon::parse($tender->document_start_date)->format('j M Y')
 		                    : null,
@@ -386,6 +394,28 @@
 						Maklumat lawatan tapak dan dokumen tender tidak boleh dikemaskini.
 						@if (!empty($vendorPurchase?->kod_pembekal))
 							<div class="mt-1">Kod Pembekal: <strong>{{ $vendorPurchase->kod_pembekal }}</strong></div>
+						@endif
+					</div>
+				</div>
+			@elseif (!$vendorWithinDokumenWindow && $vendorDokumenWindowReason)
+				<div class="alert alert-warning d-flex align-items-start gap-2 mb-0 py-3 px-3" style="font-size:0.84rem;">
+					<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+						stroke="currentColor" stroke-width="2" class="flex-shrink-0 mt-1">
+						<circle cx="12" cy="12" r="10"></circle>
+						<line x1="12" y1="8" x2="12" y2="12"></line>
+						<line x1="12" y1="16" x2="12.01" y2="16"></line>
+					</svg>
+					<div>
+						<strong>Key-in dokumen tidak dibenarkan.</strong>
+						{{ $vendorDokumenWindowReason }}
+						@php
+							$opensAt = $tender->vendorDokumenOpensAt();
+							$closesAt = $tender->vendorDokumenClosesAt();
+						@endphp
+						@if ($opensAt && $closesAt)
+							<div class="mt-1 text-muted">
+								Tempoh: {{ $opensAt->format('d/m/Y H:i') }} — {{ $closesAt->format('d/m/Y H:i') }}
+							</div>
 						@endif
 					</div>
 				</div>
@@ -519,8 +549,7 @@
 								<polyline points="13 2 13 9 20 9" />
 							</svg>
 							{{ \App\Support\TenderMejaTerkawalPresenter::TAB_LABEL }}
-							<span class="badge bg-primary ms-auto"
-								style="font-size:0.6rem;">{{ $mejaTerkawal->count() }}</span>
+							<span class="badge bg-primary ms-auto" style="font-size:0.6rem;">{{ $mejaTerkawal->count() }}</span>
 						</a>
 					@endif
 
@@ -770,7 +799,9 @@
 									<p class="text-muted small mb-0">
 										@if ($vendorSubmitted)
 											Maklumat lawatan tapak adalah untuk rujukan sahaja.
-										@elseif ($tender->siteVisits->isNotEmpty() && !$tender->siteVisits->contains(fn ($visit) => $visit->canSubmitRepresentatives()))
+										@elseif (
+											$tender->siteVisits->isNotEmpty() &&
+												!$tender->siteVisits->contains(fn($visit) => $visit->canSubmitRepresentatives()))
 											Tempoh pendaftaran wakil telah tamat. Kehadiran lawatan tapak direkodkan oleh urus setia.
 										@else
 											Maklumat lawatan tapak adalah untuk rujukan.
@@ -980,7 +1011,7 @@
 					</div>
 				@endif
 
-				{{-- TAB: Dokumen Meja Terawal --}}
+				{{-- TAB: Dokumen Meja Terkawal --}}
 				@if ($mejaTerkawal->hasDocuments())
 					<div class="tab-pane fade" id="vt-doc1" role="tabpanel">
 						<div class="vendor-tender-card">
@@ -1313,7 +1344,10 @@
 				var tabLink = document.querySelector('#vendorTabs a[href="#vt-lawatan"]');
 				if (tabLink) {
 					bootstrap.Tab.getOrCreateInstance(tabLink).show();
-					document.getElementById('vt-lawatan')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+					document.getElementById('vt-lawatan')?.scrollIntoView({
+						behavior: 'smooth',
+						block: 'start'
+					});
 				}
 			});
 		</script>

@@ -125,6 +125,7 @@
     @include('tenders.forms._view_only_lock')
 
     @php
+        $viewOnly = $viewOnly ?? $isReadOnly ?? false;
         $content = $item['admin_content'] ?? [];
         $rows = $content['rows'] ?? [];
         $savedResponses = $item['vendor_content']['specification'] ?? [];

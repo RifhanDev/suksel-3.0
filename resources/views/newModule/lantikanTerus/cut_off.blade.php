@@ -133,7 +133,7 @@
     </div>
 
     {{-- TODO: point action to the "selesai" submit route once the controller is ready --}}
-    <form id="cutOffForm" action="#" method="POST" enctype="multipart/form-data">
+    <form id="cutOffForm" action="{{ route('cutOffTerus.store', $p->id ?? $project->id) }}" method="POST" enctype="multipart/form-data">
         @csrf
 
         <div class="modern-card">
@@ -186,7 +186,7 @@
                                     </td>
                                     <td class="text-center pe-4">
                                         <input type="checkbox" class="form-check-input supplier-check"
-                                            name="pilih_pembekal[]" value="{{ $index }}">
+                                            name="offer_ids[]" value="{{ $supplier->id }}">
                                     </td>
                                 </tr>
                             @endforeach
@@ -222,7 +222,7 @@
                             </div>
                             <span class="upload-zone-label">Sila muat naik fail di sini</span>
                             <span class="upload-zone-sub">PDF, Word, Excel — satu fail sahaja</span>
-                            <input type="file" id="input-jpict" name="dokumen_jpict" hidden
+                            <input type="file" id="input-jpict" name="jpict" hidden
                                 accept=".pdf,.doc,.docx,.xls,.xlsx">
                         </label>
                         <div class="file-chip-list" id="file-chip-list-jpict"></div>
@@ -242,7 +242,7 @@
                             </div>
                             <span class="upload-zone-label">Sila muat naik fail di sini</span>
                             <span class="upload-zone-sub">PDF, Word, Excel — satu fail sahaja</span>
-                            <input type="file" id="input-minit" name="dokumen_minit_bebas" hidden
+                            <input type="file" id="input-minit" name="minit_bebas" hidden
                                 accept=".pdf,.doc,.docx,.xls,.xlsx">
                         </label>
                         <div class="file-chip-list" id="file-chip-list-minit"></div>

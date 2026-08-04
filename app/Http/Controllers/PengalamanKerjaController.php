@@ -28,9 +28,10 @@ class PengalamanKerjaController extends Controller
 
         $existingData = null;
 
-        $apiPath = 'pengalaman-kerja/' . $tenderUuid;
-        $response = $this->isVendorFormMode()
-            ? $this->api()->get($this->stosUrlWithVendor($apiPath))
+        $vendorId = $this->vendorId();
+        $apiPath  = 'pengalaman-kerja/' . $tenderUuid;
+        $response = $vendorId
+            ? $this->api()->get($this->stosUrlWithVendor($apiPath, $vendorId))
             : $this->api()->get($this->url($apiPath));
 
         if ($response->successful())
@@ -46,8 +47,8 @@ class PengalamanKerjaController extends Controller
             ]);
         }
 
-        if ($this->isVendorFormMode() && empty($existingData)) {
-            $existingData = $this->loadVendorFormPayload($tender, 'pengalaman_kerja');
+        if ($this->isVendorFormMode()) {
+            $existingData = $this->resolveVendorFormDisplayData($tender, 'pengalaman_kerja', is_array($existingData) ? $existingData : null);
         }
 
         return view('tenderPengalamanKerja.form_pengalaman_kerja', array_merge([

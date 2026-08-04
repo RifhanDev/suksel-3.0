@@ -254,7 +254,7 @@
     </div>
 
     {{-- TODO: point action to the "selesai" submit route once the controller is ready --}}
-    <form id="sebutHargaForm" action="#" method="POST" enctype="multipart/form-data">
+    <form id="sebutHargaForm" action="{{ route('sebutHargaTerus.submitOffer', $p->id ?? $project->id) }}" method="POST" enctype="multipart/form-data">
         @csrf
 
         <div class="modern-card">

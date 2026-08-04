@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class TechnicalSpecificationDetail extends Model
 {
@@ -29,5 +30,12 @@ class TechnicalSpecificationDetail extends Model
     public function item(): BelongsTo
     {
         return $this->belongsTo(TechnicalSpecificationItem::class, 'technical_specification_item_id');
+    }
+
+    public function scoreRules(): HasMany
+    {
+        return $this->hasMany(TechnicalSpecificationScoreRule::class, 'technical_specification_detail_id')
+            ->orderBy('sort_order')
+            ->orderBy('id');
     }
 }

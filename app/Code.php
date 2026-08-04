@@ -49,9 +49,23 @@ class Code extends Model
    */
    protected $fillable = [
         	'code',
+        	'description',
         	'name',
         	'type'
    ];
+
+   /**
+    * Legacy UI / API still use "name"; DB column is "description".
+    */
+   public function getNameAttribute()
+   {
+        	return $this->attributes['description'] ?? $this->attributes['name'] ?? null;
+   }
+
+   public function setNameAttribute($value)
+   {
+        	$this->attributes['description'] = $value;
+   }
 
    /**
    * These attributes excluded from the model's JSON form.
