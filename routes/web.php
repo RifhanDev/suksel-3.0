@@ -121,6 +121,7 @@ Route::view('/jawatankuasa-spesifikasi/senarai-kewangan', 'newModule.jawatankuas
 
 Route::get('/cut-off', [CutOffController::class, 'index'])->middleware(['auth'])->name('cutOff.index');
 Route::get('/cut-off/{uuid}', [CutOffController::class, 'show'])->middleware(['auth'])->name('cutOff.show');
+Route::post('/cut-off/simpan', [CutOffController::class, 'simpan'])->middleware(['auth'])->name('cutOff.simpan');
 Route::post('/cut-off/hantar', [CutOffController::class, 'hantar'])->middleware(['auth'])->name('cutOff.hantar');
 
 Route::get('/perakuan-jabatan', [PerakuanJabatanController::class, 'index'])->middleware(['auth'])->name('perakuanjabatan.index');
