@@ -363,7 +363,7 @@
                         <td class="text-center {{ $r['freak'] ? 'text-freak' : '' }}">{{ $r['bw'] }}</td>
                         <td class="text-center">{{ $r['z'] }}</td>
                         <td class="text-center">{{ $r['pct_aj'] }}</td>
-                        <td class="text-center">{{ $r['pct_mean'] }}</td>
+                        <td class="text-center {{ $r['freak'] ? 'text-freak' : '' }}">{{ $r['pct_mean'] }}</td>
                         <td class="text-center">
                             <input type="checkbox" class="form-check-input pilih-checkbox" name="pilih[]"
                                 value="{{ $r['ruj'] }}"
