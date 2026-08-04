@@ -83,24 +83,26 @@
         <h4 class="fw-bold mb-4 pb-2 border-bottom" style="color: var(--sg-red-dark);">SENARAI TENDER</h4>
 
         {{-- Filter/Search Section --}}
-        <div class="row g-3 align-items-end mb-4">
+        <form method="GET" action="{{ route('cutOff.index') }}" class="row g-3 align-items-end mb-4">
 
             <!-- No Tender -->
             <div class="col-12 col-md">
                 <label class="form-label fw-bold">No. Tender</label>
-                <input type="text" class="form-control" id="searchTenderNo" placeholder="Cari No. Tender">
+                <input type="text" name="no_tender" class="form-control" id="searchTenderNo"
+                    placeholder="Cari No. Tender" value="{{ request('no_tender') }}">
             </div>
 
             <!-- Tajuk -->
             <div class="col-12 col-md">
                 <label class="form-label fw-bold">Tajuk Perolehan</label>
-                <input type="text" class="form-control" id="searchTajuk" placeholder="Cari Tajuk">
+                <input type="text" name="tajuk" class="form-control" id="searchTajuk"
+                    placeholder="Cari Tajuk" value="{{ request('tajuk') }}">
             </div>
 
             <!-- Status -->
             <div class="col-12 col-md">
                 <label class="form-label fw-bold">Status</label>
-                <select class="form-select" id="searchStatus">
+                <select class="form-select" id="searchStatus" disabled>
                     <option value="">Semua Status</option>
                     <option value="Dalam Proses">Dalam Proses</option>
                     <option value="Selesai">Selesai</option>
@@ -110,15 +112,19 @@
             <!-- Tarikh -->
             <div class="col-12 col-md">
                 <label class="form-label fw-bold">Tarikh</label>
-                <input type="date" class="form-control" id="searchTarikh">
+                <input type="date" name="tarikh" class="form-control" id="searchTarikh"
+                    value="{{ request('tarikh') }}">
             </div>
 
             <!-- Button -->
-            <div class="col-12 col-md-auto">
-                <button type="button" class="btn btn-tapis w-100 px-4">Tapis</button>
+            <div class="col-12 col-md-auto d-flex gap-2">
+                <button type="submit" class="btn btn-tapis w-100 px-4">Tapis</button>
+                @if (request()->hasAny(['no_tender', 'tajuk', 'tarikh']))
+                    <a href="{{ route('cutOff.index') }}" class="btn btn-outline-secondary px-3" title="Set semula">Reset</a>
+                @endif
             </div>
 
-        </div>
+        </form>
 
         {{-- Tender Table --}}
         <div class="bg-white rounded overflow-hidden mb-4">

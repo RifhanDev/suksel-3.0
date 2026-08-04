@@ -1,5 +1,7 @@
 @php
-    $kelulusanRows = $meta['kelulusan'] ?? \App\Models\PenyediaanIklan::defaultKelulusan();
+    $kelulusanRows = \App\Models\PenyediaanIklan::normalizeKelulusanRows(
+        $meta['kelulusan'] ?? \App\Models\PenyediaanIklan::defaultKelulusan()
+    );
 @endphp
 
 @push('styles')
@@ -10,9 +12,6 @@
     #tblKelulusan tbody tr:hover { background: #fafbfc; }
     #tblKelulusan tbody tr.kelulusan-fixed { background: #fafafa; }
     #tblKelulusan .fixed-label { font-size: 0.82rem; font-weight: 600; color: #1e293b; }
-    .status-select { font-size: 0.8rem; border-radius: 6px; }
-    .status-select.status-lulus { border-color: #22c55e; color: #15803d; background-color: #f0fdf4; }
-    .status-select.status-tidak { border-color: #ef4444; color: #b91c1c; background-color: #fef2f2; }
     .upload-mini { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border: 1px dashed #cbd5e1; border-radius: 6px; cursor: pointer; font-size: 0.75rem; color: #64748b; background: #f8fafc; transition: border-color 0.15s, background 0.15s; white-space: nowrap; }
     .upload-mini:hover { border-color: #c41e3a; color: #c41e3a; background: #fef2f2; }
     .upload-mini input[type=file] { display: none; }
@@ -52,7 +51,6 @@
                 <tr>
                     <th style="width:44px;" class="text-center"><input type="checkbox" id="chkSelectAll" title="Pilih semua"></th>
                     <th style="min-width:200px;">Jenis Kelulusan</th>
-                    <th style="width:160px;">Status</th>
                     <th style="width:180px;">Dokumen</th>
                     <th style="min-width:160px;">Catatan</th>
                 </tr>
@@ -62,7 +60,6 @@
                     @php
                         $isFixed = !empty($row['is_fixed']);
                         $dokumen = $row['dokumen'] ?? null;
-                        $statusClass = ($row['status'] ?? '') === 'Diluluskan' ? 'status-lulus' : ((($row['status'] ?? '') === 'Tidak Diluluskan') ? 'status-tidak' : '');
                     @endphp
                     <tr class="{{ $isFixed ? 'kelulusan-fixed' : 'kelulusan-dynamic' }}">
                         <td class="text-center {{ $isFixed ? 'lock-icon' : '' }}">
@@ -78,13 +75,6 @@
                             @else
                                 <textarea class="form-control form-control-sm" name="kelulusan_jenis[]" rows="2">{{ $row['jenis'] ?? '' }}</textarea>
                             @endif
-                        </td>
-                        <td>
-                            <select class="form-select form-select-sm status-select {{ $statusClass }}" name="kelulusan_status[]">
-                                <option value="">— Pilih —</option>
-                                <option value="Diluluskan" @selected(($row['status'] ?? '') === 'Diluluskan')>Diluluskan</option>
-                                <option value="Tidak Diluluskan" @selected(($row['status'] ?? '') === 'Tidak Diluluskan')>Tidak Diluluskan</option>
-                            </select>
                         </td>
                         <td class="text-center">
                             @if ($dokumen)
@@ -116,11 +106,6 @@ $(document).ready(function () {
         return `<tr class="kelulusan-dynamic">
             <td class="text-center"><input type="checkbox" class="chk-row"></td>
             <td><textarea class="form-control form-control-sm" name="kelulusan_jenis[]" rows="2" placeholder="Masukkan jenis kelulusan..."></textarea></td>
-            <td><select class="form-select form-select-sm status-select" name="kelulusan_status[]">
-                <option value="">— Pilih —</option>
-                <option value="Diluluskan">Diluluskan</option>
-                <option value="Tidak Diluluskan">Tidak Diluluskan</option>
-            </select></td>
             <td class="text-center">
                 <label class="upload-mini"><input type="file" name="kelulusan_dokumen[]" accept=".pdf,.doc,.docx,.jpg,.png">Pilih Fail</label>
                 <div class="file-info-display" style="display:none;"><span class="file-name-text"></span><button type="button" class="btn-remove-file">&times;</button></div>
@@ -140,12 +125,6 @@ $(document).ready(function () {
         });
         $('#chkSelectAll').prop('checked', false);
         if ($('#tblKelulusan tbody tr.kelulusan-dynamic').length === 0) $('#btnHapusKelulusan').hide();
-    });
-
-    $(document).on('change', '#tblKelulusan .status-select', function () {
-        $(this).removeClass('status-lulus status-tidak');
-        if ($(this).val() === 'Diluluskan') $(this).addClass('status-lulus');
-        if ($(this).val() === 'Tidak Diluluskan') $(this).addClass('status-tidak');
     });
 
     $(document).on('change', '#tblKelulusan .upload-mini input[type=file]', function () {

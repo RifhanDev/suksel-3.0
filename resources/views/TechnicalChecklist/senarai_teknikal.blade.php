@@ -1154,12 +1154,35 @@
             });
 
             $('.btn-hapus-teknikal').on('click', function() {
-                var checked = $('#tbl-teknikal .row-check-teknikal:checked');
-                if (checked.length === 0) {
+                var $checked = $('#tbl-teknikal .row-check-teknikal:checked');
+                if ($checked.length === 0) {
                     alert('Sila pilih sekurang-kurangnya satu rekod untuk dihapus.');
                     return;
                 }
-                checked.closest('tr').remove();
+
+                $checked.each(function() {
+                    var $row = $(this).closest('tr');
+                    var standardItemUuid = $row.data('standard-item-uuid') || $row.data('standardItemUuid') || $row.attr('data-standard-item-uuid');
+                    if (standardItemUuid) {
+                        var $stdTr = $('#tbl-standard tbody tr[data-uuid="' + standardItemUuid + '"]');
+                        if ($stdTr.length) {
+                            $stdTr.find('.row-check-standard').prop('checked', false);
+                            $stdTr.show();
+                        }
+                    }
+
+                    var specUuid = $row.data('specification-uuid') || $row.attr('data-specification-uuid') || $row.find('input[name="specification_document_uuid[]"]').val();
+                    if (specUuid) {
+                        $('#templateTable tbody tr').filter(function() {
+                            var s = $(this).data('spec');
+                            return s && s.uuid === specUuid;
+                        }).show();
+                    }
+
+                    $row.remove();
+                });
+
+                $('#tbl-standard .check-all-standard').prop('checked', false);
                 $('#tbl-teknikal .check-all-teknikal').prop('checked', false);
                 syncTableEmpty();
                 updateSkemaMaksima();
@@ -1273,7 +1296,7 @@
                 var normalizedSlug = normalizeActionSlug(slug);
                 var routeUrl = normalizedSlug ? '/senarai-teknikal/' + CURRENT_TENDER_UUID + '/' + normalizedSlug : '';
                 var stdAttr  = standardItemUuid ? ' data-standard-item-uuid="' + $('<span>').text(standardItemUuid).html() + '"' : '';
-                return $(
+                var $row = $(
                     '<tr data-source-type="borang_atas_talian" data-action-url-slug="' + $('<span>').text(normalizedSlug).html() + '"' + stdAttr + '>' +
                     '<td class="text-center"><input type="checkbox" name="row_check_teknikal[]" class="form-check-input row-check-teknikal"></td>' +
                     '<td><span class="small fw-semibold">' + $('<span>').text(tajuk).html() + '</span></td>' +
@@ -1287,12 +1310,16 @@
                     '<td class="text-center">' + buildBorangAtasTalianActionCell(routeUrl) + '</td>' +
                     '</tr>'
                 );
+                if (standardItemUuid) {
+                    $row.data('standard-item-uuid', standardItemUuid);
+                }
+                return $row;
             }
 
             function buildStandardRow(tajuk, standardItemUuid) {
                 var defaultMekanisma = 'petender_muat_naik';
                 var stdAttr = standardItemUuid ? ' data-standard-item-uuid="' + $('<span>').text(standardItemUuid).html() + '"' : '';
-                return $(
+                var $row = $(
                     '<tr class="row-teknikal-tambah" data-source-type="standard"' + stdAttr + '>' +
                     '<td class="text-center"><input type="checkbox" name="row_check_teknikal[]" class="form-check-input row-check-teknikal"></td>' +
                     '<td><span class="small fw-semibold">' + $('<span>').text(tajuk).html() + '</span></td>' +
@@ -1311,6 +1338,10 @@
                     '<td class="text-center tindakan-cell">' + buildTindakanCell(defaultMekanisma) + '</td>' +
                     '</tr>'
                 );
+                if (standardItemUuid) {
+                    $row.data('standard-item-uuid', standardItemUuid);
+                }
+                return $row;
             }
 
             $('#senaraiSemakStandard').on('change', '.check-all-standard', function() {
@@ -1335,6 +1366,11 @@
                     var type   = $tr.data('type');
                     var tajuk  = $tr.data('tajuk') || $tr.find('td:last-child').text().trim();
                     var uuid   = $tr.data('uuid');
+
+                    if (uuid && $('#tbl-teknikal tbody tr[data-standard-item-uuid="' + uuid + '"]').length > 0) {
+                        $tr.hide();
+                        return;
+                    }
 
                     if (type === 'borang_atas_talian') {
                         $('#tbl-teknikal tbody').append(buildBorangAtasTalianRow(tajuk, $tr.data('actionUrl'), uuid));

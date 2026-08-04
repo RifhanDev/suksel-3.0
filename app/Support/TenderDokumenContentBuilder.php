@@ -380,11 +380,7 @@ class TenderDokumenContentBuilder
     ): array {
         if (! empty($apiOverlay['files']) && is_array($apiOverlay['files'])) {
             return collect($apiOverlay['files'])
-                ->map(fn ($file) => [
-                    'uuid' => $file['uuid'] ?? null,
-                    'name' => $file['original_name'] ?? $file['name'] ?? 'Dokumen',
-                    'url' => $file['url'] ?? $this->resolveFileUrl($file['path'] ?? '#'),
-                ])
+                ->map(fn ($file) => $this->mapChecklistFile($file, $section))
                 ->values()
                 ->all();
         }
@@ -405,15 +401,39 @@ class TenderDokumenContentBuilder
             default => collect(),
         };
 
-        return collect($files)->map(function ($file) {
-            $file = is_object($file) ? $file : (object) $file;
+        return collect($files)->map(function ($file) use ($section) {
+            $file = is_object($file) ? (array) $file : $file;
 
-            return [
-                'uuid' => $file->uuid ?? null,
-                'name' => $file->original_name ?? 'Dokumen',
-                'url' => $this->resolveFileUrl($file->path ?? '#'),
-            ];
+            return $this->mapChecklistFile($file, $section);
         })->values()->all();
+    }
+
+    /**
+     * @param  array<string, mixed>  $file
+     * @return array{uuid: ?string, name: string, url: string}
+     */
+    protected function mapChecklistFile(array $file, string $section): array
+    {
+        $uuid = $file['uuid'] ?? null;
+        $name = $file['original_name'] ?? $file['name'] ?? 'Dokumen';
+
+        if (! empty($uuid) && in_array($section, ['technical', 'financial', 'kewangan_kerja'], true)) {
+            return [
+                'uuid' => $uuid,
+                'name' => $name,
+                'url' => route('tenderChecklist.download', [
+                    'tender' => $this->tender->id,
+                    'section' => $section,
+                    'fileUuid' => $uuid,
+                ]),
+            ];
+        }
+
+        return [
+            'uuid' => $uuid,
+            'name' => $name,
+            'url' => $file['url'] ?? $this->resolveFileUrl($file['path'] ?? '#'),
+        ];
     }
 
     protected function resolveFileUrl(?string $path): string
@@ -427,7 +447,17 @@ class TenderDokumenContentBuilder
             return $path;
         }
 
-        return asset(ltrim($path, '/'));
+        $normalized = ltrim(str_replace('\\', '/', $path), '/');
+
+        if (str_starts_with($normalized, 'storage/')) {
+            return url('/' . $normalized);
+        }
+
+        if (\Illuminate\Support\Facades\Storage::disk('public')->exists($normalized)) {
+            return url('/storage/' . $normalized);
+        }
+
+        return url('/' . $normalized);
     }
 
     protected function guessActionUrlFromTitle(string $title): ?string

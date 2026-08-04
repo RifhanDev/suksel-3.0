@@ -7,7 +7,7 @@ use App\Tender;
 
 class TenderMejaTerkawalPresenter
 {
-    public const TAB_LABEL = 'Dokumen Meja Terawal';
+    public const TAB_LABEL = 'Dokumen Meja Terkawal';
 
     public function __construct(protected Tender $tender) {}
 
@@ -32,13 +32,13 @@ class TenderMejaTerkawalPresenter
     public function documents(): array
     {
         $fromUploads = $this->tender->tableFiles
-            ->map(fn ($upload) => [
+            ->map(fn($upload) => [
                 'label' => trim((string) ($upload->label ?: $upload->name)),
-                'url' => $upload->getUrl(),
+                'url' => route('tenders.files', [$this->tender->id, $upload->id]),
                 'size' => $this->formatSize($upload->size),
                 'type' => $upload->type ?: '-',
             ])
-            ->filter(fn (array $doc) => $doc['label'] !== '' && $doc['url'] !== '')
+            ->filter(fn(array $doc) => $doc['label'] !== '' && $doc['url'] !== '')
             ->values()
             ->all();
 
@@ -69,8 +69,13 @@ class TenderMejaTerkawalPresenter
 
             $path = trim((string) ($doc['path'] ?? ''));
             $url = trim((string) ($doc['url'] ?? ''));
-            if ($url === '' && $path !== '') {
-                $url = asset($path);
+            $uploadId = (int) ($doc['upload_id'] ?? 0);
+            if ($uploadId > 0) {
+                $url = route('tenders.files', [$this->tender->id, $uploadId]);
+            } elseif ($url === '' && $path !== '') {
+                $url = '/' . ltrim(str_replace('\\', '/', $path), '/');
+            } elseif ($url !== '' && ! str_starts_with($url, '/') && ! str_starts_with($url, 'http://') && ! str_starts_with($url, 'https://')) {
+                $url = '/' . ltrim($url, '/');
             }
 
             $label = trim((string) ($doc['nama'] ?? $doc['original_name'] ?? ''));

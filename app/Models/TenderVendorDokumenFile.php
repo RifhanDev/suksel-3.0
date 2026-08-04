@@ -35,16 +35,30 @@ class TenderVendorDokumenFile extends Model
 
     public function url(): string
     {
+        return route('tenderDokumen.download', $this->uuid);
+    }
+
+    public function absolutePath(): ?string
+    {
         $path = ltrim((string) $this->path, '/');
 
+        if ($path === '') {
+            return null;
+        }
+
         if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
-            return $path;
+            return null;
         }
 
         if (Storage::disk('public')->exists($path)) {
-            return Storage::disk('public')->url($path);
+            return Storage::disk('public')->path($path);
         }
 
-        return asset($path);
+        $publicPath = public_path($path);
+        if (is_file($publicPath)) {
+            return $publicPath;
+        }
+
+        return null;
     }
 }

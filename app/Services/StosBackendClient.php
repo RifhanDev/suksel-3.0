@@ -107,9 +107,199 @@ class StosBackendClient
         return $this->get('/api/tenders/' . $tenderId . '/kehadiran-mesyuarat', $query);
     }
 
+    public function getCutOffTenders(array $query = []): Response
+    {
+        return $this->get('/api/cut-off/tenders', $query);
+    }
+
+    public function getCutOffTender(string $uuid): Response
+    {
+        return $this->get('/api/cut-off/tenders/' . $uuid);
+    }
+
+    public function simpanCutOff(string $uuid, array $payload): Response
+    {
+        return $this->post('/api/cut-off/tenders/' . $uuid . '/simpan', $payload);
+    }
+
+    public function finalizeCutOff(string $uuid, array $payload = []): Response
+    {
+        return $this->post('/api/cut-off/tenders/' . $uuid . '/finalize', $payload);
+    }
+
     public function saveKehadiranMesyuarat(int $tenderId, array $payload): Response
     {
         return $this->post('/api/tenders/' . $tenderId . '/kehadiran-mesyuarat', $payload);
+    }
+
+    public function savePematuhanTeknikal(array $payload): Response
+    {
+        return $this->post('/api/penilaian-teknikal/pematuhan', $payload);
+    }
+
+    public function getRumusanPematuhanTeknikal(int $tenderId): Response
+    {
+        return $this->get('/api/tenders/' . $tenderId . '/penilaian-teknikal/pematuhan/rumusan');
+    }
+
+    public function hantarPematuhanTeknikal(int $tenderId, array $payload = []): Response
+    {
+        return $this->post('/api/tenders/' . $tenderId . '/penilaian-teknikal/pematuhan/hantar', $payload);
+    }
+
+    public function getSpesifikasiRollup(int $tenderId, string $checklistItemUuid): Response
+    {
+        return $this->get('/api/tenders/' . $tenderId . '/penilaian-teknikal/spesifikasi/' . $checklistItemUuid . '/rollup');
+    }
+
+    public function getSpesifikasiDetail(int $tenderId, string $checklistItemUuid, int $vendorId): Response
+    {
+        return $this->get('/api/tenders/' . $tenderId . '/penilaian-teknikal/spesifikasi/' . $checklistItemUuid . '/vendor/' . $vendorId);
+    }
+
+    public function saveSpesifikasiTeknikal(array $payload): Response
+    {
+        return $this->post('/api/penilaian-teknikal/spesifikasi', $payload);
+    }
+
+    public function confirmSpesifikasiTeknikal(array $payload): Response
+    {
+        return $this->post('/api/penilaian-teknikal/spesifikasi/sahkan', $payload);
+    }
+
+    public function getBorangEvaluations(int $tenderId, string $checklistItemUuid): Response
+    {
+        return $this->get('/api/tenders/' . $tenderId . '/penilaian-teknikal/borang/' . $checklistItemUuid);
+    }
+
+    public function saveBorangTeknikal(array $payload): Response
+    {
+        return $this->post('/api/penilaian-teknikal/borang', $payload);
+    }
+
+    public function getRumusanPenilaianTeknikal(int $tenderId): Response
+    {
+        return $this->get('/api/tenders/' . $tenderId . '/penilaian-teknikal/rumusan');
+    }
+
+    public function getLaporanTeknikal(int $tenderId): Response
+    {
+        return $this->get('/api/tenders/' . $tenderId . '/penilaian-teknikal/laporan');
+    }
+
+    public function saveDrafLaporanTeknikal(array $payload): Response
+    {
+        return $this->post('/api/penilaian-teknikal/laporan/draf', $payload);
+    }
+
+    public function hantarPenilaianTeknikal(array $payload): Response
+    {
+        return $this->post('/api/penilaian-teknikal/hantar', $payload);
+    }
+
+    public function hantarPenilaianTeknikalKerja(array $payload): Response
+    {
+        return $this->post('/api/penilaian-teknikal-kerja/hantar', $payload);
+    }
+
+    public function listPembelianTerus(array $query = []): Response
+    {
+        return $this->get('/api/pembelian-terus', $query);
+    }
+
+    public function getPembelianTerus(int $tenderId): Response
+    {
+        return $this->get('/api/pembelian-terus/' . $tenderId);
+    }
+
+    public function createPembelianTerus(array $payload): Response
+    {
+        return $this->post('/api/pembelian-terus', $payload);
+    }
+
+    public function updatePembelianTerus(int $tenderId, array $payload): Response
+    {
+        return $this->request('put', '/api/pembelian-terus/' . $tenderId, ['json' => $payload]);
+    }
+
+    public function publishPembelianTerus(int $tenderId): Response
+    {
+        return $this->post('/api/pembelian-terus/' . $tenderId . '/publish');
+    }
+
+    public function getPembelianTerusOffers(int $tenderId): Response
+    {
+        return $this->get('/api/pembelian-terus/' . $tenderId . '/offers');
+    }
+
+    public function submitPembelianTerusOffer(int $tenderId, array $payload): Response
+    {
+        return $this->post('/api/pembelian-terus/' . $tenderId . '/offers', $payload);
+    }
+
+    public function cutoffPembelianTerus(int $tenderId, array $payload): Response
+    {
+        return $this->post('/api/pembelian-terus/' . $tenderId . '/cutoff', $payload);
+    }
+
+    public function selectPembelianTerusWinner(int $tenderId, array $payload): Response
+    {
+        return $this->post('/api/pembelian-terus/' . $tenderId . '/select-winner', $payload);
+    }
+
+    public function keputusanPembelianTerus(int $tenderId, array $payload): Response
+    {
+        return $this->post('/api/pembelian-terus/' . $tenderId . '/company-decision', $payload);
+    }
+
+    public function listLantikanTerus(array $query = []): Response
+    {
+        return $this->get('/api/lantikan-terus', $query);
+    }
+
+    public function getLantikanTerus(int $tenderId): Response
+    {
+        return $this->get('/api/lantikan-terus/' . $tenderId);
+    }
+
+    public function createLantikanTerus(array $payload): Response
+    {
+        return $this->post('/api/lantikan-terus', $payload);
+    }
+
+    public function updateLantikanTerus(int $tenderId, array $payload): Response
+    {
+        return $this->request('put', '/api/lantikan-terus/' . $tenderId, ['json' => $payload]);
+    }
+
+    public function publishLantikanTerus(int $tenderId): Response
+    {
+        return $this->post('/api/lantikan-terus/' . $tenderId . '/publish');
+    }
+
+    public function getLantikanTerusOffers(int $tenderId): Response
+    {
+        return $this->get('/api/lantikan-terus/' . $tenderId . '/offers');
+    }
+
+    public function submitLantikanTerusOffer(int $tenderId, array $payload): Response
+    {
+        return $this->post('/api/lantikan-terus/' . $tenderId . '/offers', $payload);
+    }
+
+    public function cutoffLantikanTerus(int $tenderId, array $payload): Response
+    {
+        return $this->post('/api/lantikan-terus/' . $tenderId . '/cutoff', $payload);
+    }
+
+    public function selectLantikanTerusWinner(int $tenderId, array $payload): Response
+    {
+        return $this->post('/api/lantikan-terus/' . $tenderId . '/select-winner', $payload);
+    }
+
+    public function keputusanLantikanTerus(int $tenderId, array $payload): Response
+    {
+        return $this->post('/api/lantikan-terus/' . $tenderId . '/company-decision', $payload);
     }
 
     protected function request(string $method, string $path, array $options = []): Response
@@ -125,6 +315,10 @@ class StosBackendClient
         try {
             if ($method === 'get') {
                 return $client->get($url, $options['query'] ?? []);
+            }
+
+            if ($method === 'put') {
+                return $client->put($url, $options['json'] ?? []);
             }
 
             return $client->post($url, $options['json'] ?? []);

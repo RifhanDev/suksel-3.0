@@ -133,7 +133,7 @@
     </div>
 
     {{-- TODO: point action to the "selesai" submit route once the controller is ready --}}
-    <form id="pemilihanForm" action="#" method="POST">
+    <form id="pemilihanForm" action="{{ route('pemilihanTerus.store', $p->id ?? $project->id) }}" method="POST">
         @csrf
 
         <div class="modern-card">
@@ -157,12 +157,7 @@
                                 <th class="py-3 fw-bold">Nama Pembekal</th>
                                 <th class="py-3 fw-bold text-center" width="200px">Jumlah Harga Tawaran (RM)</th>
                                 <th class="py-3 fw-bold text-center" width="180px">Dokumen BQ</th>
-                                <th class="py-3 pe-4 fw-bold text-center" width="80px">
-                                    <div class="d-flex align-items-center justify-content-center gap-2">
-                                        Pilih
-                                        <input type="checkbox" class="form-check-input mt-0" id="check-all-supplier">
-                                    </div>
-                                </th>
+                                <th class="py-3 pe-4 fw-bold text-center" width="80px">Pilih</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -185,8 +180,8 @@
                                         </a>
                                     </td>
                                     <td class="text-center pe-4">
-                                        <input type="checkbox" class="form-check-input supplier-check"
-                                            name="pilih_pembekal[]" value="{{ $index }}">
+                                        <input type="radio" class="form-check-input supplier-check"
+                                            name="offer_id" value="{{ $supplier->id }}" required>
                                     </td>
                                 </tr>
                             @endforeach

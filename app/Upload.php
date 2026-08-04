@@ -31,7 +31,28 @@ class Upload extends Model
 
 	public function getUrl()
 	{
-		return $this->url . '/' . $this->name;
+		$fullPath = $this->getPath();
+		$publicRoot = rtrim(str_replace('\\', '/', public_path()), '/');
+		$normalized = str_replace('\\', '/', (string) $fullPath);
+
+		if ($publicRoot !== '' && str_starts_with($normalized, $publicRoot . '/')) {
+			$relative = ltrim(substr($normalized, strlen($publicRoot)), '/');
+
+			return url('/' . $relative);
+		}
+
+		$url = rtrim((string) $this->url, '/');
+		$name = ltrim((string) $this->name, '/');
+
+		if ($url === '' || $name === '') {
+			return '';
+		}
+
+		if (str_ends_with($url, '/' . $name)) {
+			return $url;
+		}
+
+		return $url . '/' . $name;
 	}
 
 	public function getPublicUrl()

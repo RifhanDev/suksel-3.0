@@ -10,6 +10,7 @@ use App\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class PenyediaanIklanService
 {
@@ -29,9 +30,13 @@ class PenyediaanIklanService
 
         if (empty($meta['kelulusan'])) {
             $meta['kelulusan'] = PenyediaanIklan::defaultKelulusan();
+        } else {
+            $meta['kelulusan'] = PenyediaanIklan::normalizeKelulusanRows(
+                is_array($meta['kelulusan']) ? $meta['kelulusan'] : []
+            );
         }
 
-        $meta['pegawai'] = $this->normalizePegawaiMeta($meta['pegawai'] ?? []);
+        $meta['pegawai'] = $this->normalizePegawaiMeta($meta['pegawai'] ?? [], $tender);
 
         return [
             'meta' => $meta,
@@ -39,50 +44,119 @@ class PenyediaanIklanService
         ];
     }
 
-    public function normalizePegawaiMeta(array $pegawai): array
+    public function normalizePegawaiMeta(array $pegawai, ?Tender $tender = null): array
     {
         $pegawai1 = $pegawai['pegawai1'] ?? [];
         $pegawai2 = $pegawai['pegawai2'] ?? [];
 
+        $pegawai1 = $this->resolvePegawai1Record($pegawai1, $tender);
         $pegawai2 = $this->resolvePegawai2Record($pegawai2);
 
         return [
-            'pegawai1' => [
-                'nama' => trim((string) ($pegawai1['nama'] ?? '')),
-                'emel' => trim((string) ($pegawai1['emel'] ?? '')),
-                'tel' => trim((string) ($pegawai1['tel'] ?? '')),
-                'jabatan' => trim((string) ($pegawai1['jabatan'] ?? '')),
-            ],
+            'pegawai1' => $pegawai1,
             'pegawai2' => $pegawai2,
         ];
+    }
+
+    /**
+     * Pegawai 1 is always the tender creator; fill blanks from that user.
+     *
+     * @param  array<string, mixed>  $pegawai1
+     * @return array{nama: string, emel: string, tel: string, jabatan: string, user_id: int|null}
+     */
+    protected function resolvePegawai1Record(array $pegawai1, ?Tender $tender = null): array
+    {
+        $creator = $tender?->relationLoaded('creator')
+            ? $tender->creator
+            : ($tender?->creator_id ? User::query()->with('organizationunit')->find($tender->creator_id) : null);
+
+        if ($creator && ! $creator->relationLoaded('organizationunit')) {
+            $creator->load('organizationunit');
+        }
+
+        $fromCreator = $this->pegawaiFieldsFromUser($creator);
+
+        return [
+            'user_id' => $creator?->id,
+            'nama' => $this->firstFilled($pegawai1['nama'] ?? null, $fromCreator['nama']),
+            'emel' => $this->firstFilled($pegawai1['emel'] ?? null, $fromCreator['emel']),
+            'tel' => $this->firstFilled($pegawai1['tel'] ?? null, $fromCreator['tel']),
+            'jabatan' => $this->firstFilled($pegawai1['jabatan'] ?? null, $fromCreator['jabatan']),
+        ];
+    }
+
+    /**
+     * @return array{nama: string, emel: string, tel: string, jabatan: string}
+     */
+    public function pegawaiFieldsFromUser(?User $user): array
+    {
+        if (! $user) {
+            return [
+                'nama' => '',
+                'emel' => '',
+                'tel' => '',
+                'jabatan' => '',
+            ];
+        }
+
+        $jabatan = trim((string) ($user->department ?? ''));
+        if ($jabatan === '') {
+            $jabatan = trim((string) ($user->jawatan ?? ''));
+        }
+        if ($jabatan === '' && $user->organizationunit) {
+            $jabatan = trim((string) ($user->organizationunit->name ?? ''));
+        }
+
+        return [
+            'nama' => trim((string) ($user->name ?? '')),
+            'emel' => trim((string) ($user->email ?? '')),
+            'tel' => trim((string) ($user->tel ?? '')),
+            'jabatan' => $jabatan,
+        ];
+    }
+
+    protected function firstFilled(mixed ...$values): string
+    {
+        foreach ($values as $value) {
+            $trimmed = trim((string) ($value ?? ''));
+            if ($trimmed !== '') {
+                return $trimmed;
+            }
+        }
+
+        return '';
     }
 
     protected function resolvePegawai2Record(array $pegawai2): array
     {
         $userId = $pegawai2['user_id'] ?? null;
         if ($userId) {
-            $user = User::query()->find($userId);
+            $user = User::query()->with('organizationunit')->find($userId);
             if ($user) {
+                $fromUser = $this->pegawaiFieldsFromUser($user);
+
                 return [
                     'user_id' => (int) $user->id,
-                    'nama' => $user->name,
-                    'emel' => trim((string) ($pegawai2['emel'] ?? $user->email ?? '')),
-                    'tel' => trim((string) ($pegawai2['tel'] ?? $user->tel ?? '')),
-                    'jabatan' => trim((string) ($pegawai2['jabatan'] ?? $user->department ?? '')),
+                    'nama' => $fromUser['nama'],
+                    'emel' => $this->firstFilled($pegawai2['emel'] ?? null, $fromUser['emel']),
+                    'tel' => $this->firstFilled($pegawai2['tel'] ?? null, $fromUser['tel']),
+                    'jabatan' => $this->firstFilled($pegawai2['jabatan'] ?? null, $fromUser['jabatan']),
                 ];
             }
         }
 
         $nama = trim((string) ($pegawai2['nama'] ?? ''));
         if ($nama !== '' && ctype_digit($nama)) {
-            $user = User::query()->find((int) $nama);
+            $user = User::query()->with('organizationunit')->find((int) $nama);
             if ($user) {
+                $fromUser = $this->pegawaiFieldsFromUser($user);
+
                 return [
                     'user_id' => (int) $user->id,
-                    'nama' => $user->name,
-                    'emel' => trim((string) ($pegawai2['emel'] ?? $user->email ?? '')),
-                    'tel' => trim((string) ($pegawai2['tel'] ?? $user->tel ?? '')),
-                    'jabatan' => trim((string) ($pegawai2['jabatan'] ?? $user->department ?? '')),
+                    'nama' => $fromUser['nama'],
+                    'emel' => $this->firstFilled($pegawai2['emel'] ?? null, $fromUser['emel']),
+                    'tel' => $this->firstFilled($pegawai2['tel'] ?? null, $fromUser['tel']),
+                    'jabatan' => $this->firstFilled($pegawai2['jabatan'] ?? null, $fromUser['jabatan']),
                 ];
             }
         }
@@ -105,6 +179,7 @@ class PenyediaanIklanService
                 : [];
 
             $taklimat = $payload['iklan']['taklimat'] ?? [];
+            $this->assertTaklimatWithinIklanWindow($payload['iklan'] ?? [], $taklimat);
             $payload['iklan']['taklimat'] = $this->syncTaklimatToSiteVisits(
                 $tender,
                 $taklimat,
@@ -142,6 +217,46 @@ class PenyediaanIklanService
 
             return $record;
         });
+    }
+
+    /**
+     * Lawatan/taklimat dates must fall within tarikh iklan … tarikh tutup.
+     *
+     * @param  array<string, mixed>  $iklan
+     * @param  array<int, array<string, mixed>>  $taklimatRows
+     */
+    protected function assertTaklimatWithinIklanWindow(array $iklan, array $taklimatRows): void
+    {
+        if ($taklimatRows === []) {
+            return;
+        }
+
+        $start = $this->parseDate($iklan['tarikh_iklan'] ?? null);
+        $end = $this->parseDate($iklan['tarikh_tutup'] ?? null);
+
+        if ($start === null || $end === null) {
+            throw ValidationException::withMessages([
+                'taklimat' => 'Sila tetapkan Tarikh Iklan dan Tarikh Tutup sebelum menambah lawatan/taklimat.',
+            ]);
+        }
+
+        $startDay = Carbon::parse($start)->startOfDay();
+        $endDay = Carbon::parse($end)->endOfDay();
+
+        foreach ($taklimatRows as $index => $row) {
+            $parsed = $this->parseDate($row['tarikh'] ?? null);
+            if ($parsed === null) {
+                continue;
+            }
+
+            $day = Carbon::parse($parsed)->startOfDay();
+            if ($day->lt($startDay) || $day->gt($endDay)) {
+                $label = trim((string) ($row['perihal'] ?? '')) ?: ('#' . ($index + 1));
+                throw ValidationException::withMessages([
+                    'taklimat' => "Tarikh lawatan/taklimat \"{$label}\" mesti dalam julat Tarikh Iklan hingga Tarikh Tutup.",
+                ]);
+            }
+        }
     }
 
     /**

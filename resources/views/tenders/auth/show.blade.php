@@ -10,14 +10,9 @@
 
 @section('content')
 	@php
-		$vendorCanEdit = Auth::check()
-			&& Auth::user()->vendor_id
-			&& $tender->hasParticipate(Auth::user()->vendor_id);
+		$vendorCanEdit = Auth::check() && Auth::user()->vendor_id && $tender->hasParticipate(Auth::user()->vendor_id);
 		$dokumenMode = $vendorCanEdit ? 'vendor' : 'admin';
-		$dokumenList = $tenderDokumen->items(
-			$dokumenMode,
-			$vendorCanEdit ? (int) Auth::user()->vendor_id : null
-		);
+		$dokumenList = $tenderDokumen->items($dokumenMode, $vendorCanEdit ? (int) Auth::user()->vendor_id : null);
 	@endphp
 
 	<div class="row">
@@ -834,14 +829,15 @@
 						</div>
 					@endif
 
-					{{-- === TAB: Dokumen Meja Terawal === --}}
+					{{-- === TAB: Dokumen Meja Terkawal === --}}
 					@if ($mejaTerkawal->hasDocuments())
 						<div role="tabpanel" class="tab-pane" id="tf-doc1">
 							<div class="tender-tab-card">
 								<div class="card-header">
 									<h3 class="card-title">
 										<svg xmlns="http://www.w3.org/2000/svg" class="me-1" width="18" height="18" viewBox="0 0 24 24">
-											<path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+											<path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+												stroke-width="2"
 												d="M14 3v4a1 1 0 0 0 1 1h4M5 8v-3a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2h-5M2 21v-1a2 2 0 0 1 2 -2h4a2 2 0 0 1 2 2v1M4 18a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
 										</svg>
 										{{ \App\Support\TenderMejaTerkawalPresenter::TAB_LABEL }}

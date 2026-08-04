@@ -445,12 +445,15 @@
                             </thead>
                             <tbody>
                                 @forelse ($standardItems as $item)
-                                    @if ($item['type'] === 'standard')
                                     <tr data-uuid="{{ $item['uuid'] }}" data-type="{{ $item['type'] }}" data-tajuk="{{ $item['title'] }}" data-action-url="{{ $item['action_url'] ?? '' }}">
                                         <td class="text-center"><input type="checkbox" class="form-check-input row-check-standard"></td>
-                                        <td>{{ $item['title'] }}</td>
+                                        <td>
+                                            {{ $item['title'] }}
+                                            @if (($item['type'] ?? '') === 'borang_atas_talian')
+                                                <span class="ms-1 d-inline-flex align-items-center" style="font-size:0.6rem;background:#fef9c3;color:#854d0e;border-radius:3px;padding:1px 5px;vertical-align:middle;border:1px solid #fde68a;">Borang Atas Talian</span>
+                                            @endif
+                                        </td>
                                     </tr>
-                                    @endif
                                 @empty
                                 <tr>
                                     <td colspan="2" class="text-center text-muted py-3">Tiada senarai semak standard dijumpai.</td>
@@ -696,6 +699,15 @@
                 }
             });
 
+            // Hide modal items that are already in the checklist on initial load
+            $('#tbl-standard tbody tr[data-uuid]').each(function() {
+                var $stdTr = $(this);
+                var uuid   = $stdTr.data('uuid');
+                if (uuid && $('#tbl-kewangan tbody tr[data-standard-item-uuid="' + uuid + '"]').length) {
+                    $stdTr.hide();
+                }
+            });
+
             // ─── CHECKBOX: Senarai Semak Kewangan ────────────────────────────────────
             $('#tbl-kewangan').on('change', '.check-all-kewangan', function() {
                 $('#tbl-kewangan .row-check-kewangan').prop('checked', $(this).prop('checked'));
@@ -924,12 +936,26 @@
 
             // ─── HAPUS ROW (CHECKED ONLY) ─────────────────────────────────────────────
             $('.btn-hapus-kewangan').on('click', function() {
-                var checked = $('#tbl-kewangan .row-check-kewangan:checked');
-                if (checked.length === 0) {
+                var $checked = $('#tbl-kewangan .row-check-kewangan:checked');
+                if ($checked.length === 0) {
                     alert('Sila pilih sekurang-kurangnya satu rekod untuk dihapus.');
                     return;
                 }
-                checked.closest('tr').remove();
+
+                $checked.each(function() {
+                    var $row = $(this).closest('tr');
+                    var standardItemUuid = $row.data('standard-item-uuid') || $row.data('standardItemUuid') || $row.attr('data-standard-item-uuid');
+                    if (standardItemUuid) {
+                        var $stdTr = $('#tbl-standard tbody tr[data-uuid="' + standardItemUuid + '"]');
+                        if ($stdTr.length) {
+                            $stdTr.find('.row-check-standard').prop('checked', false);
+                            $stdTr.show();
+                        }
+                    }
+                    $row.remove();
+                });
+
+                $('#tbl-standard .check-all-standard').prop('checked', false);
                 $('#tbl-kewangan .check-all-kewangan').prop('checked', false);
                 syncTableEmpty();
                 updateSkemaMaksima();
@@ -1060,11 +1086,46 @@
                 });
             });
 
+            function buildBorangAtasTalianActionCell(routeUrl) {
+                if (!routeUrl) {
+                    return '<span class="text-muted small">—</span>';
+                }
+
+                return '' +
+                    '<a href="' + routeUrl + '" class="btn btn-sm btn-warning d-inline-flex align-items-center justify-content-center p-1" style="width:30px;height:30px;" title="Kemaskini">' +
+                        '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>' +
+                    '</a>';
+            }
+
+            function buildBorangAtasTalianRow(tajuk, actionUrl, standardItemUuid) {
+                var routeUrl = actionUrl ? (actionUrl.startsWith('/') || actionUrl.startsWith('http') ? actionUrl : '/' + actionUrl + '/' + TENDER_UUID) : '';
+                var stdAttr  = standardItemUuid ? ' data-standard-item-uuid="' + $('<span>').text(standardItemUuid).html() + '"' : '';
+                var $row = $(
+                    '<tr data-source-type="borang_atas_talian"' + stdAttr + '>' +
+                    '<td class="text-center"><input type="checkbox" name="row_check_kewangan[]" class="form-check-input row-check-kewangan"></td>' +
+                    '<td><span class="small fw-semibold">' + $('<span>').text(tajuk).html() + '</span></td>' +
+                    '<td class="text-center"><span class="small fw-semibold text-muted">Borang Atas Talian</span></td>' +
+                    '<td class="text-center small">Kunci Masuk</td>' +
+                    '<td class="text-center">' +
+                        '<input type="number" name="skema[]" class="form-control form-control-sm text-center skema-input fw-semibold" value="0" min="0" style="max-width:90px;margin:0 auto;">' +
+                    '</td>' +
+                    '<td class="text-center"><span class="badge-status badge-status-warning">Draf</span></td>' +
+                    '<td class="text-center text-muted small">—</td>' +
+                    '<td class="text-center">' + buildBorangAtasTalianActionCell(routeUrl) + '</td>' +
+                    '</tr>'
+                );
+                if (standardItemUuid) {
+                    $row.data('standard-item-uuid', standardItemUuid);
+                }
+                return $row;
+            }
+
             // ─── ROW BUILDER for Senarai Semak Standard ─────────────────────────────
             function buildStandardRow(tajuk, standardItemUuid) {
                 var defaultMekanisma = 'petender_muat_naik';
-                return $(
-                    '<tr class="row-kewangan-tambah" data-source-type="standard_item" data-status="draft" data-standard-item-uuid="' + (standardItemUuid || '') + '">' +
+                var stdAttr = standardItemUuid ? ' data-standard-item-uuid="' + (standardItemUuid || '') + '"' : '';
+                var $row = $(
+                    '<tr class="row-kewangan-tambah" data-source-type="standard_item" data-status="draft"' + stdAttr + '>' +
                     '<td class="text-center"><input type="checkbox" name="row_check_kewangan[]" class="form-check-input row-check-kewangan"></td>' +
                     '<td><span class="small fw-semibold">' + $('<span>').text(tajuk).html() + '</span></td>' +
                     '<td class="text-center">' +
@@ -1082,6 +1143,10 @@
                     '<td class="text-center tindakan-cell">' + buildTindakanCell(defaultMekanisma) + '</td>' +
                     '</tr>'
                 );
+                if (standardItemUuid) {
+                    $row.data('standard-item-uuid', standardItemUuid);
+                }
+                return $row;
             }
 
             // ─── CHECKBOX: Modal Senarai Semak Standard ───────────────────────────────
@@ -1105,10 +1170,21 @@
 
                 $checked.each(function() {
                     var $tr              = $(this).closest('tr');
+                    var type             = $tr.data('type');
                     var tajuk            = $tr.data('tajuk') || $tr.find('td:last-child').text().trim();
                     var standardItemUuid = $tr.data('uuid') || '';
+                    var actionUrl        = $tr.data('actionUrl') || '';
 
-                    $('#tbl-kewangan tbody').append(buildStandardRow(tajuk, standardItemUuid));
+                    if (standardItemUuid && $('#tbl-kewangan tbody tr[data-standard-item-uuid="' + standardItemUuid + '"]').length > 0) {
+                        $tr.hide();
+                        return;
+                    }
+
+                    if (type === 'borang_atas_talian') {
+                        $('#tbl-kewangan tbody').append(buildBorangAtasTalianRow(tajuk, actionUrl, standardItemUuid));
+                    } else {
+                        $('#tbl-kewangan tbody').append(buildStandardRow(tajuk, standardItemUuid));
+                    }
                     $tr.hide(); // hide from list once added — prevents duplicate selection
                 });
 
