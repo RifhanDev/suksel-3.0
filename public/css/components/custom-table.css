@@ -1,8 +1,29 @@
-/**
- * custom-table.css
- * Reusable custom table component — use .table-modern on any <table>.
- * Pair with Bootstrap's .table and .table-responsive as needed.
- */
+/* ==========================================================================
+   CUSTOM TABLE COMPONENTS
+   Reusable table styles. Pair with Bootstrap's .table / .table-responsive.
+
+   Three DISTINCT variants — pick ONE per table, don't combine them:
+
+     1. .table-modern    — subtle light-grey header, quiet/neutral look.
+                           Best for dense data lists & admin tables.
+
+     2. .table-gradient  — bold Selangor-red gradient header, white uppercase
+                           labels. Best for form/evaluation tables that need
+                           a strong branded heading. Use only when red isn't
+                           already the page's dominant nav/accent colour.
+
+     3. .table-slate     — light-blue (#dbeafe) header, dark-slate uppercase
+                           labels. Same shape as .table-gradient but calm.
+                           Use when the page already spends red on nav/status
+                           and every table should stay consistent & neutral.
+   ========================================================================== */
+
+
+/* --------------------------------------------------------------------------
+   1. QUIET TABLE  (.table-modern)
+      Subtle grey <thead>, light row hover.
+      Usage: <table class="table table-modern"> … </table>
+   -------------------------------------------------------------------------- */
 
 .table-modern thead th {
     background-color: #f8fafc;
@@ -30,4 +51,123 @@
 
 .table-modern tbody tr:hover {
     background-color: #fafbfc;
+}
+
+
+/* --------------------------------------------------------------------------
+   2. BRAND GRADIENT TABLE  (.table-gradient)
+      Bold Selangor-red gradient <thead> with white uppercase labels,
+      rounded corners and a light red row hover.
+      Usage: <table class="table table-bordered table-gradient"> … </table>
+      Header rules use !important so they also win over Bootstrap's
+      .table-primary thead colouring.
+   -------------------------------------------------------------------------- */
+
+.table-gradient {
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.table-gradient td {
+    font-size: 13px;
+    padding: 12px;
+    vertical-align: middle;
+}
+
+.table-gradient thead th {
+    background: linear-gradient(135deg, #c41e3a 0%, #9b1830 100%) !important;
+    color: #fff !important;
+    text-align: center;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    padding: 12px;
+    /* transparent (not white) so the gradient stays seamless — no hairline frame */
+    border-color: transparent !important;
+}
+
+.table-gradient thead tr {
+    background: transparent !important;
+    /* the header's top/bottom border lives on the row (th cells have 0 top/bottom
+       border) — clear it so no grey line shows through the rounded corners */
+    border-color: transparent !important;
+}
+
+.table-gradient.table-bordered > :not(caption) > * {
+    border-color: #e5e7eb;
+}
+
+.table-gradient tbody tr:hover {
+    background: #fdedec;
+}
+
+
+/* --------------------------------------------------------------------------
+   3. SLATE TABLE  (.table-slate)
+      Light-blue <thead> with dark-slate uppercase labels. Same shape as
+      .table-gradient but calm/corporate — use when brand red is already
+      carrying the navigation/status accents and data tables should stay
+      neutral so nothing competes.
+      Usage: <table class="table table-bordered table-slate"> … </table>
+   -------------------------------------------------------------------------- */
+
+.table-slate {
+    /* 12px + separate/spacing 0 supaya SEMUA sudut (atas & bawah) membulat sama
+       seperti kad; border-collapse: collapse tidak mengapit sudut bawah dengan betul */
+    border-radius: 12px;
+    overflow: hidden;
+    border-collapse: separate;
+    border-spacing: 0;
+    /* bingkai luar penuh supaya badan jadual tidak "tenggelam" ke dalam latar */
+    border: 1px solid #e5e7eb;
+}
+
+/* garisan dalaman tunggal: pemisah lajur (kanan) + pemisah baris (bawah) —
+   ganti grid .table-bordered supaya tiada border berganda dgn border-collapse: separate */
+.table-slate > :not(caption) > * > * {
+    /* padding 12px 16px sepadan dengan .rumusan-table */
+    padding: 12px 16px;
+    border: 0 !important;
+    border-right: 1px solid #e5e7eb !important;
+    border-bottom: 1px solid #e5e7eb !important;
+}
+
+.table-slate > :not(caption) > * > *:last-child {
+    border-right: 0 !important;
+}
+
+.table-slate td {
+    /* padan tipografi badan dengan .rumusan-table */
+    font-size: 0.85rem;
+    color: #334155;
+    vertical-align: middle;
+}
+
+.table-slate thead th {
+    background: #dbeafe !important;
+    color: #1e293b !important;
+    text-align: center;
+    /* padan tipografi kepala dengan .rumusan-table */
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    /* header slate rata — tiada pemisah/garisan */
+    border-right: 0 !important;
+    border-bottom: 0 !important;
+}
+
+/* baris terakhir tanpa garisan bawah — sudut bawah kekal bersih & membulat */
+.table-slate tbody tr:last-child > *,
+.table-slate tfoot tr:last-child > * {
+    border-bottom: 0 !important;
+}
+
+.table-slate tbody tr:hover {
+    background: #f8fafc;
+}
+
+.table-slate .btn-form {
+    padding: 5px 14px;
+    font-size: 0.76rem;
 }

@@ -2,26 +2,8 @@
 
 @section('styles')
     <link href="{{ asset('css/components/custom-table.css') }}" rel="stylesheet">
-    <link href="{{ asset('css/components/badges.css') }}" rel="stylesheet">
     <link href="{{ asset('css/components/button-components.css') }}" rel="stylesheet">
-    <link href="{{ asset('css/components/content-card.css') }}" rel="stylesheet">
     <style>
-        .borang-title-bar {
-            background: #1e293b;
-            color: #fff;
-            font-weight: 700;
-            font-size: 0.82rem;
-            letter-spacing: 0.06em;
-            text-transform: uppercase;
-            padding: 10px 16px;
-            border-radius: 6px 6px 0 0;
-        }
-        .review-info-card {
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            padding: 16px 20px;
-        }
         .badge-pematuhan-ya {
             background-color: #dcfce7 !important;
             color: #15803d !important;
@@ -105,57 +87,21 @@
 @section('content')
     @php
         $content = $item['admin_content'] ?? [];
-        $vendorName = $vendor['name'] ?? $vendor['nama'] ?? 'Petender';
-        $vendorKod  = $vendor['kod'] ?? '-';
-        $status     = $item['vendor_status'] ?? ($item['vendor_content']['status'] ?? 'draft');
+
+        // ?summary=dokumentasi swaps in Penilaian Teknikal's own partial without touching
+        // the shared specification_table.blade.php (also used by the vendor form + Jawatankuasa Pembuka).
+        $summaryPartials = [
+            'dokumentasi' => 'newModule.penilaian_teknikal.partials.specification_dokumentasi',
+        ];
+        $specificationPartial = $summaryPartials[$summary ?? ''] ?? 'tenders.dokumen.partials.specification_table';
     @endphp
 
-    {{-- Header Review Metadata Card --}}
-    <div class="review-info-card mb-4">
-        <div class="row g-3 align-items-center">
-            <div class="col-md-6">
-                <span class="text-muted fw-semibold text-uppercase d-block mb-1" style="font-size:0.68rem;letter-spacing:0.5px;">Petender / Kod</span>
-                <h6 class="fw-bold text-dark m-0 d-flex align-items-center gap-2" style="font-size:0.95rem;">
-                    <i class="bi bi-building text-primary"></i> {{ $vendorName }}
-                    @if ($vendorKod && $vendorKod !== '-')
-                        <span class="badge bg-secondary font-monospace" style="font-size:0.75rem;">{{ $vendorKod }}</span>
-                    @endif
-                </h6>
-            </div>
-            <div class="col-md-4">
-                <span class="text-muted fw-semibold text-uppercase d-block mb-1" style="font-size:0.68rem;letter-spacing:0.5px;">Dokumen Spesifikasi</span>
-                <span class="fw-semibold text-dark" style="font-size:0.875rem;">{{ $content['document_title'] ?? $item['title'] ?? '-' }}</span>
-            </div>
-            <div class="col-md-2 text-md-end">
-                <span class="text-muted fw-semibold text-uppercase d-block mb-1" style="font-size:0.68rem;letter-spacing:0.5px;">Status Penghantaran</span>
-                @if ($status === 'submitted')
-                    <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1" style="font-size:0.78rem;">
-                        <i class="bi bi-check-circle me-1"></i>Dihantar
-                    </span>
-                @else
-                    <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2 py-1" style="font-size:0.78rem;">
-                        <i class="bi bi-clock me-1"></i>Draf / Menunggu
-                    </span>
-                @endif
-            </div>
-        </div>
-    </div>
-
-    {{-- Executive Summary Read-Only Table --}}
-    <div class="content-card mb-4 p-0">
-        <div class="borang-title-bar d-flex justify-content-between align-items-center">
-            <span><i class="bi bi-file-earmark-check me-2"></i>Ringkasan Maklum Balas Spesifikasi Petender</span>
-            <span class="badge bg-light text-dark font-monospace" style="font-size:0.72rem;">Paparan Semakan Jawatankuasa</span>
-        </div>
-        <div class="content-card-body p-4 pt-3">
-            @include('tenders.dokumen.partials.specification_table', [
-                'content' => $content,
-                'dok' => $item,
-                'tender' => $tender,
-                'mode' => 'admin',
-                'vendorCanEdit' => false,
-                'standalone' => true,
-            ])
-        </div>
-    </div>
+    @include($specificationPartial, [
+        'content' => $content,
+        'dok' => $item,
+        'tender' => $tender,
+        'mode' => 'admin',
+        'vendorCanEdit' => false,
+        'standalone' => true,
+    ])
 @endsection
