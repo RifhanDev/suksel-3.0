@@ -126,7 +126,7 @@
                                 <tr>
                                     <th class="text-center" style="width: 130px;">Kedudukan</th>
                                     <th class="text-center" style="width: 130px;">Bil</th>
-                                    <th>Jumlah Skor</th>
+                                    <th>Markah Teknikal (%)</th>
                                 </tr>
                             </thead>
                             <tbody id="rumusanStep2MelepasiTbody">
@@ -200,7 +200,7 @@
                     <thead>
                         <tr>
                             <th class="text-center" style="width: 130px;">Bil</th>
-                            <th>Jumlah Skor</th>
+                            <th>Markah Teknikal (%)</th>
                         </tr>
                     </thead>
                     <tbody id="rumusanStep2TidakMelepasiTbody">
@@ -1216,7 +1216,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     tdBil.className = 'text-center';
                     tdBil.textContent = row.kod_pembekal || '-';
                     const tdJumlah = document.createElement('td');
-                    tdJumlah.textContent = row.jumlah_skor;
+                    tdJumlah.textContent = (row.peratus ?? 0) + '%';
                     tr.append(tdKedudukan, tdBil, tdJumlah);
                     melepasiTbody.appendChild(tr);
                 });
@@ -1238,7 +1238,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     tdBil.className = 'text-center';
                     tdBil.textContent = row.kod_pembekal || '-';
                     const tdJumlah = document.createElement('td');
-                    tdJumlah.textContent = row.jumlah_skor;
+                    tdJumlah.textContent = (row.peratus ?? 0) + '%';
                     tr.append(tdBil, tdJumlah);
                     tidakMelepasiTbody.appendChild(tr);
                 });

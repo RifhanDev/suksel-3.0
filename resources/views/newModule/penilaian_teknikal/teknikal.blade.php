@@ -1085,10 +1085,32 @@
     const RESUME_TAB = '{{ $resumeTab }}';
     const FULLY_SUBMITTED = {{ $fullySubmitted ? 'true' : 'false' }};
     const SAHKAN_SPESIFIKASI_URL = '{{ route('penilaianTeknikal.confirmSpesifikasi') }}';
+    const CETAK_LAPORAN_URL = '{{ route('penilaianTeknikal.cetakLaporan', $tender->id) }}';
     // let, not const — flipped true in memory right after confirmation, so gates stay
     // correct within the same session without a page reload.
     let PEMATUHAN_CONFIRMED = {{ $pematuhanConfirmed ? 'true' : 'false' }};
     let SPESIFIKASI_CONFIRMED = {{ $spesifikasiConfirmed ? 'true' : 'false' }};
+
+    function cetakLaporanTeknikal() {
+        // Nothing to flush once submitted — the fields are locked and already saved.
+        if (FULLY_SUBMITTED || typeof window.simpanDrafLaporanSebelumCetak !== 'function') {
+            window.open(CETAK_LAPORAN_URL, '_blank');
+            return;
+        }
+
+        // Opened here, not in the .done() below: a window.open() outside the click's own call
+        // stack gets treated as a popup and blocked.
+        const tab = window.open('', '_blank');
+
+        window.simpanDrafLaporanSebelumCetak()
+            .done(function() {
+                if (tab) tab.location = CETAK_LAPORAN_URL;
+            })
+            .fail(function(xhr) {
+                if (tab) tab.close();
+                showToast('error', xhr.responseJSON?.message || 'Ralat semasa menyimpan draf laporan.');
+            });
+    }
 
     // Global (outside DOMContentLoaded) so teknikal_step2/step3's separate closures can call it too.
     function showOuterStep(stepId) {
