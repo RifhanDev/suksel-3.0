@@ -117,6 +117,16 @@ class StosBackendClient
         return $this->get('/api/cut-off/tenders/' . $uuid);
     }
 
+    public function simpanCutOff(string $uuid, array $payload): Response
+    {
+        return $this->post('/api/cut-off/tenders/' . $uuid . '/simpan', $payload);
+    }
+
+    public function finalizeCutOff(string $uuid, array $payload = []): Response
+    {
+        return $this->post('/api/cut-off/tenders/' . $uuid . '/finalize', $payload);
+    }
+
     public function saveKehadiranMesyuarat(int $tenderId, array $payload): Response
     {
         return $this->post('/api/tenders/' . $tenderId . '/kehadiran-mesyuarat', $payload);
