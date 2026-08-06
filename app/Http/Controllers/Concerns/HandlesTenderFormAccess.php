@@ -15,12 +15,24 @@ trait HandlesTenderFormAccess
     protected function ensureTenderFormAccess(Tender|LegacyTender $tender): void
     {
         $user = auth()->user();
+        if (! $user) {
+            abort(403);
+        }
 
         if ($user->hasRole('Admin') || $user->can('tender:specification-management')) {
             return;
         }
 
-        if ($user->vendor_id && $tender->hasParticipate($user->vendor_id)) {
+        // PTJ / Jawatankuasa / agency staff reviewing tender documents
+        if (! $user->vendor_id) {
+            return;
+        }
+
+        if ($user->hasRole('Jawatankuasa') || $user->hasRole('Agency Admin') || $user->hasRole('Agency User') || $user->hasRole('Front Desk')) {
+            return;
+        }
+
+        if ($tender->hasParticipate($user->vendor_id)) {
             return;
         }
 
@@ -35,7 +47,15 @@ trait HandlesTenderFormAccess
             return false;
         }
 
-        return ! $user->hasRole('Admin') && ! $user->can('tender:specification-management');
+        if ($user->hasRole('Admin') || $user->can('tender:specification-management')) {
+            return false;
+        }
+
+        if ($user->hasRole('Jawatankuasa') || $user->hasRole('Agency Admin') || $user->hasRole('Agency User')) {
+            return false;
+        }
+
+        return true;
     }
 
     protected function isFormViewOnly(): bool
