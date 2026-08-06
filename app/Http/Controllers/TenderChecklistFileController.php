@@ -2,19 +2,21 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\AuthorizesTenderFileAccess;
 use App\Services\StosBackendClient;
 use App\Tender;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class TenderChecklistFileController extends Controller
 {
+    use AuthorizesTenderFileAccess;
+
     public function download(Request $request, Tender $tender, string $section, string $fileUuid)
     {
-        $this->assertCanAccess($tender);
+        $this->assertCanAccessTenderFile($tender);
 
         $localFile = $this->findLocalFile($section, $fileUuid, $tender->id);
         if ($localFile) {
@@ -27,25 +29,6 @@ class TenderChecklistFileController extends Controller
         }
 
         abort(404, 'Fail tidak dijumpai.');
-    }
-
-    protected function assertCanAccess(Tender $tender): void
-    {
-        $user = Auth::user();
-        if (! $user) {
-            abort(403, 'Sila log masuk untuk memuat turun fail.');
-        }
-
-        $isAdmin = $user->hasRole('Admin') || $user->can('tender:specification-management');
-        if ($isAdmin) {
-            return;
-        }
-
-        if ($user->hasRole('Vendor') && $user->vendor_id && $tender->hasParticipate((int) $user->vendor_id)) {
-            return;
-        }
-
-        abort(403, 'Akses fail tidak dibenarkan.');
     }
 
     /**
@@ -141,13 +124,18 @@ class TenderChecklistFileController extends Controller
         $name = (string) ($file->original_name ?? 'Dokumen');
 
         if ($path !== '' && Storage::disk('public')->exists($path)) {
-            return Storage::disk('public')->download($path, $name);
+            return Storage::disk('public')->response($path, $name, [
+                'Content-Disposition' => 'inline; filename="' . addslashes($name) . '"',
+            ]);
         }
 
         if ($path !== '') {
             $publicPath = public_path($path);
             if (is_file($publicPath)) {
-                return response()->download($publicPath, $name);
+                return response()->file($publicPath, [
+                    'Content-Type' => $file->mime_type ?? mime_content_type($publicPath) ?: 'application/octet-stream',
+                    'Content-Disposition' => 'inline; filename="' . addslashes($name) . '"',
+                ]);
             }
         }
 
@@ -163,7 +151,9 @@ class TenderChecklistFileController extends Controller
         $path = ltrim((string) ($file['path'] ?? ''), '/');
 
         if ($path !== '' && Storage::disk('public')->exists($path)) {
-            return Storage::disk('public')->download($path, $name);
+            return Storage::disk('public')->response($path, $name, [
+                'Content-Disposition' => 'inline; filename="' . addslashes($name) . '"',
+            ]);
         }
 
         $remoteUrl = trim((string) ($file['url'] ?? ''));
@@ -186,7 +176,7 @@ class TenderChecklistFileController extends Controller
             echo $response->body();
         }, 200, [
             'Content-Type' => $mimeType,
-            'Content-Disposition' => 'attachment; filename="' . addslashes($name) . '"',
+            'Content-Disposition' => 'inline; filename="' . addslashes($name) . '"',
         ]);
     }
 }

@@ -838,7 +838,37 @@ class PenilaianTeknikalController extends Controller
 
         $response = StosBackendClient::http()->get($url);
 
-        return $response->successful() ? (array) $response->json('data') : [];
+        return $response->successful()
+            ? $this->rewriteOnlineFormDokumens($apiSlug, $tenderUuid, (array) $response->json('data'))
+            : [];
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    private function rewriteOnlineFormDokumens(string $apiSlug, string $tenderUuid, array $data): array
+    {
+        if (empty($data['dokumens']) || ! is_array($data['dokumens'])) {
+            return $data;
+        }
+
+        $tender = Tender::query()->where('uuid', $tenderUuid)->first();
+        if (! $tender) {
+            return $data;
+        }
+
+        $type = match ($apiSlug) {
+            'pengalaman-kerja' => 'pengalaman-kerja',
+            'kerja-dalam-tangan' => 'kerja-dalam-tangan',
+            default => null,
+        };
+
+        if ($type) {
+            $data['dokumens'] = StosFormFileController::rewriteDokumenUrls($tender, $type, $data['dokumens']);
+        }
+
+        return $data;
     }
 
     /** Resolves a tender from an index-page identifier (no_tender / ref_number / id). */

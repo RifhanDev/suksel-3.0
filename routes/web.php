@@ -214,6 +214,7 @@ Route::middleware(['auth'])->group(function () {
 	Route::get('tenders/{tender}/dokumen/{itemUuid}/specification', [\App\Http\Controllers\VendorTenderDokumenController::class, 'specificationForm'])->name('tenderDokumen.specificationForm');
 	Route::post('tenders/{tender}/dokumen/{itemUuid}/upload', [\App\Http\Controllers\VendorTenderDokumenController::class, 'upload'])->name('tenderDokumen.upload');
 	Route::get('tenders/{tender}/checklist-files/{section}/{fileUuid}/download', [\App\Http\Controllers\TenderChecklistFileController::class, 'download'])->name('tenderChecklist.download');
+	Route::get('tenders/{tender}/stos-form-files/{type}/{fileUuid}/download', [\App\Http\Controllers\StosFormFileController::class, 'download'])->name('stosFormFile.download');
 	Route::get('tenders/dokumen-files/{fileUuid}/download', [\App\Http\Controllers\VendorTenderDokumenController::class, 'download'])->name('tenderDokumen.download');
 	Route::delete('tenders/dokumen-files/{fileUuid}', [\App\Http\Controllers\VendorTenderDokumenController::class, 'deleteFile'])->name('tenderDokumen.deleteFile');
 	Route::post('tenders/{tender}/dokumen/{itemUuid}/key-in', [\App\Http\Controllers\VendorTenderDokumenController::class, 'saveKeyIn'])->name('tenderDokumen.saveKeyIn');
