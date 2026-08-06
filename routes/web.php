@@ -57,6 +57,7 @@ use App\Http\Controllers\GatewaysController;
 use App\Http\Controllers\PaymentsController;
 use App\Http\Controllers\HelpCategoriesController;
 use App\Http\Controllers\PembelianTerusController;
+use App\Http\Controllers\SuratNiatController;
 use App\Http\Controllers\ReportRevenueController;
 use App\Http\Controllers\ReportAgencyActiveController;
 use App\Http\Controllers\ReportAgencyAllController;
@@ -318,7 +319,20 @@ Route::middleware('auth')->group(function () {
 	Route::get('/kelulusan-lawatan-tapak-urusetia/{tender}', [LawatanTapakUrusetiaController::class, 'kelulusan'])->name('kelulusanLawatanTapak');
 });
 Route::view('/index-penyediaan-surat-niat', 'newModule.penyediaanSuratNiat.index')->name('indexPenyediaanSuratNiat');
-Route::view('/penyediaan-surat-niat', 'newModule.penyediaanSuratNiat.penyediaanSuratNiat')->name('penyediaanSuratNiat');
+
+Route::prefix('penyediaan-surat-niat')->controller(SuratNiatController::class)->middleware(['auth'])->group(function () {
+	Route::get('/{tender}', 'show')->name('penyediaanSuratNiat');
+	Route::get('/{tender}/pembekals', 'pembekals')->name('suratNiat.pembekals');
+	Route::post('/{tender}/pembekals', 'savePembekals')->name('suratNiat.savePembekals');
+	Route::get('/{tender}/surat', 'suratList')->name('suratNiat.suratList');
+	Route::post('/{tender}/surat', 'generateSurat')->name('suratNiat.generateSurat');
+	Route::post('/{tender}/hantar', 'hantar')->name('suratNiat.hantar');
+});
+Route::middleware(['auth'])->controller(SuratNiatController::class)->group(function () {
+	Route::put('/surat-niat/surat/{id}', 'updateSurat')->name('suratNiat.updateSurat');
+	Route::delete('/surat-niat/surat/{id}', 'deleteSurat')->name('suratNiat.deleteSurat');
+	Route::get('/surat-niat/surat/{id}/download', 'download')->name('suratNiat.download');
+});
 Route::view('/index-penyediaan-sst', 'newModule.penyediaanSST.index')->name('indexPenyediaanSST');
 Route::view('/penyediaan-sst', 'newModule.penyediaanSST.penyediaanSST')->name('penyediaanSST');
 Route::view('/index-jawatankuasa-pembuka', 'newModule.jawatankuasaPembuka.index')->name('indexJawatankuasaPembuka');

@@ -151,7 +151,7 @@
                             <td class="text-center">01/05/2026</td>
                             <td class="text-center">193,000.00</td>
                             <td class="text-center">
-                                <a href="{{ route('penyediaanSuratNiat') }}" class="btn btn-sm btn-info text-white" title="Kemaskini">
+                                <a href="{{ route('penyediaanSuratNiat', 1) }}" class="btn btn-sm btn-info text-white" title="Kemaskini">
                                     Kemaskini
                                 </a>
                             </td>
@@ -162,7 +162,7 @@
                             <td class="text-center">31/07/2026</td>
                             <td class="text-center">5,800,000.00</td>
                             <td class="text-center">
-                            <a href="{{ route('penyediaanSuratNiat') }}" class="btn btn-sm btn-info text-white" title="Kemaskini">
+                            <a href="{{ route('penyediaanSuratNiat', 2) }}" class="btn btn-sm btn-info text-white" title="Kemaskini">
                                     Kemaskini
                                 </a>
                             </td>
