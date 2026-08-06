@@ -9,9 +9,9 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 class StosStoredFile
 {
     /**
-     * Stream a file that may live on suksel public disk, STOS disk, or STOS HTTP storage.
+     * Stream a file that may live on suksel public disk, STOS disk, STOS API download, or HTTP storage.
      *
-     * @param  array<string, mixed>  $file
+     * @param  array<string, mixed>  $file  Optional keys: path, url, original_name, mime_type, download_api
      */
     public static function response(array $file)
     {
@@ -33,29 +33,41 @@ class StosStoredFile
             ]);
         }
 
+        $apiPath = trim((string) ($file['download_api'] ?? ''));
+        if ($apiPath !== '') {
+            $apiResponse = StosBackendClient::http()->get(StosBackendClient::apiUrl($apiPath));
+            if ($apiResponse->successful()) {
+                $mimeType = (string) ($file['mime_type'] ?? $apiResponse->header('Content-Type') ?? $mime);
+
+                return new StreamedResponse(function () use ($apiResponse) {
+                    echo $apiResponse->body();
+                }, 200, [
+                    'Content-Type' => $mimeType,
+                    'Content-Disposition' => 'inline; filename="' . addslashes($name) . '"',
+                ]);
+            }
+        }
+
         $remoteUrl = trim((string) ($file['url'] ?? ''));
         if ($remoteUrl === '' && $path !== '') {
             $remoteUrl = rtrim((string) config('services.stos_backend.url'), '/') . '/storage/' . $path;
         }
 
-        if ($remoteUrl === '') {
-            abort(404, 'Fail tidak dijumpai.');
+        if ($remoteUrl !== '') {
+            $response = StosBackendClient::http()->get($remoteUrl);
+            if ($response->successful()) {
+                $mimeType = (string) ($file['mime_type'] ?? $response->header('Content-Type') ?? $mime);
+
+                return new StreamedResponse(function () use ($response) {
+                    echo $response->body();
+                }, 200, [
+                    'Content-Type' => $mimeType,
+                    'Content-Disposition' => 'inline; filename="' . addslashes($name) . '"',
+                ]);
+            }
         }
 
-        $response = StosBackendClient::http()->get($remoteUrl);
-        if (! $response->successful()) {
-            // Never surface STOS storage 403 as a permission page on suksel.
-            abort(404, 'Fail tidak dijumpai.');
-        }
-
-        $mimeType = (string) ($file['mime_type'] ?? $response->header('Content-Type') ?? $mime);
-
-        return new StreamedResponse(function () use ($response) {
-            echo $response->body();
-        }, 200, [
-            'Content-Type' => $mimeType,
-            'Content-Disposition' => 'inline; filename="' . addslashes($name) . '"',
-        ]);
+        abort(404, 'Fail tidak dijumpai.');
     }
 
     protected static function absolutePathOnStosDisk(string $path): ?string

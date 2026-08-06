@@ -18,10 +18,12 @@ class StosFormFileController extends Controller
         'pengalaman-kerja' => [
             'api' => 'pengalaman-kerja',
             'collection' => 'dokumens',
+            'download_api' => 'pengalaman-kerja-files/{uuid}/download',
         ],
         'kerja-dalam-tangan' => [
             'api' => 'kerja-dalam-tangan',
             'collection' => 'dokumens',
+            'download_api' => 'kerja-dalam-tangan-files/{uuid}/download',
         ],
     ];
 
@@ -35,7 +37,14 @@ class StosFormFileController extends Controller
 
         $file = $this->findFileMeta($tender->uuid, $config['api'], $config['collection'], $fileUuid);
         if (! $file) {
-            abort(404, 'Fail tidak dijumpai.');
+            // Still try authenticated STOS download by uuid (meta list may be empty / filtered).
+            $file = [
+                'uuid' => $fileUuid,
+                'original_name' => 'Dokumen',
+                'download_api' => str_replace('{uuid}', $fileUuid, $config['download_api']),
+            ];
+        } else {
+            $file['download_api'] = str_replace('{uuid}', $fileUuid, $config['download_api']);
         }
 
         return StosStoredFile::response($file);
