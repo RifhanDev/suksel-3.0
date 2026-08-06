@@ -4,11 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\AuthorizesTenderFileAccess;
 use App\Services\StosBackendClient;
+use App\Support\StosStoredFile;
 use App\Tender;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
-use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class TenderChecklistFileController extends Controller
 {
@@ -25,7 +25,7 @@ class TenderChecklistFileController extends Controller
 
         $remoteFile = $this->findRemoteFile($tender, $section, $fileUuid);
         if ($remoteFile) {
-            return $this->streamRemoteFile($remoteFile);
+            return StosStoredFile::response($remoteFile);
         }
 
         abort(404, 'Fail tidak dijumpai.');
@@ -140,43 +140,5 @@ class TenderChecklistFileController extends Controller
         }
 
         abort(404, 'Fail tidak dijumpai.');
-    }
-
-    /**
-     * @param  array<string, mixed>  $file
-     */
-    protected function streamRemoteFile(array $file)
-    {
-        $name = (string) ($file['original_name'] ?? $file['name'] ?? 'Dokumen');
-        $path = ltrim((string) ($file['path'] ?? ''), '/');
-
-        if ($path !== '' && Storage::disk('public')->exists($path)) {
-            return Storage::disk('public')->response($path, $name, [
-                'Content-Disposition' => 'inline; filename="' . addslashes($name) . '"',
-            ]);
-        }
-
-        $remoteUrl = trim((string) ($file['url'] ?? ''));
-        if ($remoteUrl === '' && $path !== '') {
-            $remoteUrl = rtrim((string) config('services.stos_backend.url'), '/') . '/storage/' . $path;
-        }
-
-        if ($remoteUrl === '') {
-            abort(404, 'Fail tidak dijumpai.');
-        }
-
-        $response = StosBackendClient::http()->get($remoteUrl);
-        if (! $response->successful()) {
-            abort($response->status() === 403 ? 403 : 404, 'Fail tidak dapat dimuat turun.');
-        }
-
-        $mimeType = (string) ($file['mime_type'] ?? $response->header('Content-Type') ?? 'application/octet-stream');
-
-        return new StreamedResponse(function () use ($response) {
-            echo $response->body();
-        }, 200, [
-            'Content-Type' => $mimeType,
-            'Content-Disposition' => 'inline; filename="' . addslashes($name) . '"',
-        ]);
     }
 }
