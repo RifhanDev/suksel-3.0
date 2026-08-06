@@ -541,6 +541,18 @@
                                     </table>
                                 </div>
 
+                                <!-- Declaration gate -->
+                                <label for="confirmLayak"
+                                    class="d-flex align-items-center gap-3 p-3 rounded-3 mb-4"
+                                    style="background: #ffffff; border: 1px solid #e5e7eb; border-left: 3px solid var(--sg-red, #c41e3a); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); cursor: {{ $pematuhanConfirmed ? 'default' : 'pointer' }};">
+                                    <input class="form-check-input flex-shrink-0" type="checkbox" id="confirmLayak"
+                                        style="width: 1.3rem; height: 1.3rem; cursor: {{ $pematuhanConfirmed ? 'default' : 'pointer' }};" @checked($pematuhanConfirmed) @disabled($pematuhanConfirmed)>
+                                    <span class="d-flex flex-column">
+                                        <span class="fw-semibold text-dark" style="font-size: 0.9rem; line-height: 1.4;">Saya mengesahkan petender di atas layak untuk penilaian peringkat seterusnya.</span>
+                                        <span class="text-muted" style="font-size: 0.78rem;">Tandakan pengesahan ini untuk membuka penilaian peringkat seterusnya.</span>
+                                    </span>
+                                </label>
+
                                 <!-- SECTION 2: Pembekal Tidak Melepasi -->
                                 <div class="mb-4">
                                     <div class="d-flex align-items-center gap-3 mb-3">
@@ -579,19 +591,6 @@
                                         </tfoot>
                                     </table>
                                 </div>
-
-                                <!-- Declaration gate: user MUST tick this to proceed to Step 2 -->
-                                {{-- Locked once confirmed — the elimination it triggers already happened. --}}
-                                <label for="confirmLayak"
-                                    class="d-flex align-items-center gap-3 p-3 rounded-3 mb-4"
-                                    style="background: #ffffff; border: 1px solid #e5e7eb; border-left: 3px solid var(--sg-red, #c41e3a); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); cursor: {{ $pematuhanConfirmed ? 'default' : 'pointer' }};">
-                                    <input class="form-check-input flex-shrink-0" type="checkbox" id="confirmLayak"
-                                        style="width: 1.3rem; height: 1.3rem; cursor: {{ $pematuhanConfirmed ? 'default' : 'pointer' }};" @checked($pematuhanConfirmed) @disabled($pematuhanConfirmed)>
-                                    <span class="d-flex flex-column">
-                                        <span class="fw-semibold text-dark" style="font-size: 0.9rem; line-height: 1.4;">Saya mengesahkan petender di atas layak untuk penilaian peringkat seterusnya.</span>
-                                        <span class="text-muted" style="font-size: 0.78rem;">Tandakan pengesahan ini untuk membuka penilaian peringkat seterusnya.</span>
-                                    </span>
-                                </label>
 
                                 <!-- Action Buttons -->
                                 <div class="d-flex justify-content-between">
