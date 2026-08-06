@@ -51,6 +51,14 @@ class PengalamanKerjaController extends Controller
             $existingData = $this->resolveVendorFormDisplayData($tender, 'pengalaman_kerja', is_array($existingData) ? $existingData : null);
         }
 
+        if (is_array($existingData) && ! empty($existingData['dokumens'])) {
+            $existingData['dokumens'] = StosFormFileController::rewriteDokumenUrls(
+                $tender,
+                'pengalaman-kerja',
+                $existingData['dokumens']
+            );
+        }
+
         return view('tenderPengalamanKerja.form_pengalaman_kerja', array_merge([
             'tender' => $tender,
             'existingData' => $existingData,
