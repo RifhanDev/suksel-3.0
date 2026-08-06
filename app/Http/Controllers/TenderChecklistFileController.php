@@ -67,13 +67,26 @@ class TenderChecklistFileController extends Controller
      */
     protected function findRemoteFile(Tender $tender, string $section, string $fileUuid): ?array
     {
-        if (empty($tender->uuid)) {
+        $downloadApi = $this->downloadApiForSection($section, $fileUuid);
+        if ($downloadApi === null) {
             return null;
+        }
+
+        if (empty($tender->uuid)) {
+            return [
+                'uuid' => $fileUuid,
+                'original_name' => 'Dokumen',
+                'download_api' => $downloadApi,
+            ];
         }
 
         $stos = app(StosBackendClient::class);
         if (! $stos->isConfigured()) {
-            return null;
+            return [
+                'uuid' => $fileUuid,
+                'original_name' => 'Dokumen',
+                'download_api' => $downloadApi,
+            ];
         }
 
         $path = match ($section) {
@@ -83,36 +96,49 @@ class TenderChecklistFileController extends Controller
             default => null,
         };
 
-        if ($path === null) {
-            return null;
-        }
+        if ($path !== null) {
+            $response = $stos->get($path);
+            if ($response->successful()) {
+                $data = $response->json('data') ?? [];
 
-        $response = $stos->get($path);
-        if (! $response->successful()) {
-            return null;
-        }
+                foreach ($data['files'] ?? [] as $file) {
+                    if (is_array($file) && ($file['uuid'] ?? '') === $fileUuid) {
+                        $file['download_api'] = $downloadApi;
 
-        $data = $response->json('data') ?? [];
+                        return $file;
+                    }
+                }
 
-        foreach ($data['files'] ?? [] as $file) {
-            if (is_array($file) && ($file['uuid'] ?? '') === $fileUuid) {
-                return $file;
-            }
-        }
+                foreach ($data['items'] ?? [] as $item) {
+                    if (! is_array($item)) {
+                        continue;
+                    }
 
-        foreach ($data['items'] ?? [] as $item) {
-            if (! is_array($item)) {
-                continue;
-            }
+                    foreach ($item['files'] ?? [] as $file) {
+                        if (is_array($file) && ($file['uuid'] ?? '') === $fileUuid) {
+                            $file['download_api'] = $downloadApi;
 
-            foreach ($item['files'] ?? [] as $file) {
-                if (is_array($file) && ($file['uuid'] ?? '') === $fileUuid) {
-                    return $file;
+                            return $file;
+                        }
+                    }
                 }
             }
         }
 
-        return null;
+        return [
+            'uuid' => $fileUuid,
+            'original_name' => 'Dokumen',
+            'download_api' => $downloadApi,
+        ];
+    }
+
+    protected function downloadApiForSection(string $section, string $fileUuid): ?string
+    {
+        return match ($section) {
+            'technical' => 'technical-checklist-files/' . $fileUuid . '/download',
+            'financial' => 'financial-checklist-files/' . $fileUuid . '/download',
+            default => null,
+        };
     }
 
     /**
