@@ -570,7 +570,17 @@
                 var sourceType = normalizeSourceType($row.data('source-type'), {
                     standard_item_uuid: $row.data('standard-item-uuid') || null
                 });
-                var mechanism       = normalizeMechanism($row.find('.mekanisma-select').val() || $row.data('mechanism'));
+                var rawMechanism    = String($row.find('.mekanisma-select').val() || $row.data('mechanism') || '').toLowerCase();
+                var mechanismLabel  = String($row.find('td:nth-child(3)').text() || '').toLowerCase();
+                var isBorangAtasTalian = (sourceType === 'borang_atas_talian' || rawMechanism === 'borang_atas_talian' || mechanismLabel.indexOf('borang atas talian') !== -1);
+
+                if (!isBorangAtasTalian) {
+                    var hasSkema = hasSkemaValue($row);
+                    setRowStatus($row, hasSkema ? 'submitted' : 'draft');
+                    return;
+                }
+
+                var mechanism       = normalizeMechanism(rawMechanism);
                 var hasUploadedFile = $row.find('.dokumen-ptj-ours').length > 0;
 
                 if (sourceType === 'standard_item') {
@@ -698,6 +708,8 @@
                     $('#tbl-kewangan-body').append($row);
                 }
             });
+
+            updateAllCompletionStatuses();
 
             // Hide modal items that are already in the checklist on initial load
             $('#tbl-standard tbody tr[data-uuid]').each(function() {

@@ -50,117 +50,81 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td class="px-3 py-3">
-                            <div class="d-flex align-items-center gap-2">
-                                <div class="bg-success bg-opacity-10 p-2 rounded-2 text-primary d-inline-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
-                                    <i class="bi bi-file-earmark-text fs-6 text-success"></i>
+                    @forelse($kewanganItems as $index => $item)
+                        @php
+                            $itemTitle = $item['title'] ?? $item['nama'] ?? 'Item Senarai Semak Kewangan';
+                            $itemMekanisma = $item['tindakan'] ?? $item['mekanisma'] ?? 'Spesifikasi';
+                            $itemUuid = $item['uuid'] ?? '';
+
+                            $itemPayload = $semakPayload[$itemUuid] ?? null;
+                            $itemVendors = $itemPayload['vendors'] ?? [];
+
+                            $failedStep1VendorIds = collect($semakPayload ?? [])
+                                ->reject(function ($payload, $uuid) use ($penyataBankItems) {
+                                    return in_array($uuid, collect($penyataBankItems ?? [])->pluck('uuid')->all(), true);
+                                })
+                                ->flatMap(function ($payload) {
+                                    return collect($payload['vendors'] ?? [])
+                                        ->filter(fn ($v) => $v['status_pematuhan'] === 'tidak_mematuhi' || $v['status_pematuhan'] === 0 || $v['status_pematuhan'] === '0')
+                                        ->pluck('vendor_id');
+                                })
+                                ->unique()
+                                ->toArray();
+
+                            $eligibleVendors = collect($itemVendors)->reject(function ($v) use ($failedStep1VendorIds) {
+                                return in_array((int) $v['vendor_id'], $failedStep1VendorIds, true);
+                            });
+
+                            $totalEligible = $eligibleVendors->count();
+
+                            $reviewedCount = $eligibleVendors->filter(function($v) {
+                                return $v['status_pematuhan'] !== null && $v['status_pematuhan'] !== '';
+                            })->count();
+
+                            $isItemSelesai = ($totalEligible > 0 && $reviewedCount === $totalEligible);
+                        @endphp
+                        <tr data-item-uuid="{{ $itemUuid }}">
+                            <td class="px-3 py-3">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="bg-success bg-opacity-10 p-2 rounded-2 text-primary d-inline-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                                        <i class="bi bi-file-earmark-text fs-6 text-success"></i>
+                                    </div>
+                                    <span class="fw-semibold text-dark">{{ $itemTitle }}</span>
                                 </div>
-                                <span class="fw-semibold text-dark">Perkhidmatan Penilaian Forensik Keatas Sistem XXXX</span>
-                            </div>
-                        </td>
-                        <td class="text-center px-3">
-                            <span class="badge bg-light text-dark border px-2.5 py-1.5 rounded-2 font-monospace fw-medium">
-                                Spesifikasi
-                            </span>
-                        </td>
-                        <td class="status-penilaian text-center px-3">
-                            <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-20 px-2.5 py-1.5 rounded-pill">
-                                <i class="bi bi-check-circle me-1"></i>Selesai
-                            </span>
-                        </td>
-                        <td class="text-center px-3">
-                            <button type="button" class="btn btn-sm btn-success btn-papar-semakan-kewangan px-3 py-1.5 d-inline-flex align-items-center gap-1"
-                                data-bs-toggle="modal" data-bs-target="#modalPaparCadanganKewanganStep3"
-                                data-dokumen="Perkhidmatan Penilaian Forensik Keatas Sistem XXXX">
-                                <i class="bi bi-eye"></i>
-                                <span>Papar</span>
-                            </button>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td class="px-3 py-3">
-                            <div class="d-flex align-items-center gap-2">
-                                <div class="bg-success bg-opacity-10 p-2 rounded-2 text-primary d-inline-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
-                                    <i class="bi bi-file-earmark-text fs-6 text-success"></i>
-                                </div>
-                                <span class="fw-semibold text-dark">Maklumat Profil Petender</span>
-                            </div>
-                        </td>
-                        <td class="text-center px-3">
-                            <span class="badge bg-light text-dark border px-2.5 py-1.5 rounded-2 font-monospace fw-medium">
-                                Borang Atas Talian
-                            </span>
-                        </td>
-                        <td class="status-penilaian text-center px-3">
-                            <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-20 px-2.5 py-1.5 rounded-pill">
-                                <i class="bi bi-check-circle me-1"></i>Selesai
-                            </span>
-                        </td>
-                        <td class="text-center px-3">
-                            <button type="button" class="btn btn-sm btn-success btn-papar-semakan-kewangan btn-open-profil-petender-readonly px-3 py-1.5 d-inline-flex align-items-center gap-1"
-                                data-bs-toggle="modal" data-bs-target="#modalProfilPetenderReadonly">
-                                <i class="bi bi-eye"></i>
-                                <span>Papar</span>
-                            </button>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td class="px-3 py-3">
-                            <div class="d-flex align-items-center gap-2">
-                                <div class="bg-success bg-opacity-10 p-2 rounded-2 text-primary d-inline-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
-                                    <i class="bi bi-file-earmark-text fs-6 text-success"></i>
-                                </div>
-                                <span class="fw-semibold text-dark">Salinan Sijil Pendaftaran dengan Kementerian Kewangan</span>
-                            </div>
-                        </td>
-                        <td class="text-center px-3">
-                            <span class="badge bg-light text-dark border px-2.5 py-1.5 rounded-2 font-monospace fw-medium">
-                                Petender Muat Naik
-                            </span>
-                        </td>
-                        <td class="status-penilaian text-center px-3">
-                            <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-20 px-2.5 py-1.5 rounded-pill">
-                                <i class="bi bi-check-circle me-1"></i>Selesai
-                            </span>
-                        </td>
-                        <td class="text-center px-3">
-                            <button type="button" class="btn btn-sm btn-success btn-papar-semakan-kewangan px-3 py-1.5 d-inline-flex align-items-center gap-1"
-                                data-bs-toggle="modal" data-bs-target="#modalPaparCadanganKewanganStep3"
-                                data-dokumen="Salinan Sijil Pendaftaran dengan Kementerian Kewangan">
-                                <i class="bi bi-eye"></i>
-                                <span>Papar</span>
-                            </button>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td class="px-3 py-3">
-                            <div class="d-flex align-items-center gap-2">
-                                <div class="bg-success bg-opacity-10 p-2 rounded-2 text-primary d-inline-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
-                                    <i class="bi bi-file-earmark-text fs-6 text-success"></i>
-                                </div>
-                                <span class="fw-semibold text-dark">Surat Akuan Pembida</span>
-                            </div>
-                        </td>
-                        <td class="text-center px-3">
-                            <span class="badge bg-light text-dark border px-2.5 py-1.5 rounded-2 font-monospace fw-medium">
-                                PTJ Muat Naik
-                            </span>
-                        </td>
-                        <td class="status-penilaian text-center px-3">
-                            <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-20 px-2.5 py-1.5 rounded-pill">
-                                <i class="bi bi-check-circle me-1"></i>Selesai
-                            </span>
-                        </td>
-                        <td class="text-center px-3">
-                            <button type="button" class="btn btn-sm btn-success btn-papar-semakan-kewangan px-3 py-1.5 d-inline-flex align-items-center gap-1"
-                                data-bs-toggle="modal" data-bs-target="#modalPaparCadanganKewanganStep3"
-                                data-dokumen="Surat Akuan Pembida">
-                                <i class="bi bi-eye"></i>
-                                <span>Papar</span>
-                            </button>
-                        </td>
-                    </tr>
+                            </td>
+                            <td class="text-center px-3">
+                                <span class="badge bg-light text-dark border px-2.5 py-1.5 rounded-2 font-monospace fw-medium">
+                                    {{ $itemMekanisma }}
+                                </span>
+                            </td>
+                            <td class="status-penilaian text-center px-3">
+                                @if($isItemSelesai)
+                                    <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-20 px-2.5 py-1.5 rounded-pill">
+                                        <i class="bi bi-check-circle me-1"></i>Selesai
+                                    </span>
+                                @else
+                                    <span class="badge bg-warning bg-opacity-10 text-warning-emphasis border border-warning border-opacity-20 px-2.5 py-1.5 rounded-pill">
+                                        <i class="bi bi-clock me-1"></i>Menunggu Penilaian
+                                    </span>
+                                @endif
+                            </td>
+                            <td class="text-center px-3">
+                                <button type="button" class="btn btn-sm btn-success btn-papar-semakan-kewangan px-3 py-1.5 d-inline-flex align-items-center gap-1"
+                                    data-bs-toggle="modal" data-bs-target="#modalSemakanKetepatanDokumenKewangan"
+                                    data-dokumen="{{ $itemTitle }}"
+                                    data-uuid="{{ $itemUuid }}">
+                                    <i class="bi bi-pencil-square"></i>
+                                    <span>Menilai</span>
+                                </button>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="4" class="text-center text-muted py-4">
+                                <i class="bi bi-inbox me-1 fs-5"></i>Tiada item spesifikasi kewangan dijumpai bagi tender ini.
+                            </td>
+                        </tr>
+                    @endforelse
                 </tbody>
             </table>
         </div>
