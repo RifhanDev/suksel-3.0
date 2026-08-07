@@ -350,6 +350,8 @@ Route::middleware(['auth'])->group(function () {
 	// new penilaian kewangan
 	Route::get('/penilaian-kewangan', [PenilaianKewanganController::class, 'index'])->name('penilaianKewangan');
 	Route::get('/penilaian-kewangan/{tender_no}', [PenilaianKewanganController::class, 'show'])->name('penilaianKewangan.show');
+	Route::post('/penilaian-kewangan/simpan-pematuhan', [PenilaianKewanganController::class, 'simpanPematuhan'])->name('penilaianKewangan.simpanPematuhan');
+	Route::post('/penilaian-kewangan/kemaskini-langkah', [PenilaianKewanganController::class, 'kemaskiniLangkah'])->name('penilaianKewangan.kemaskiniLangkah');
 	Route::post('/penilaian-kewangan/hantar', [PenilaianKewanganController::class, 'hantar'])->name('penilaianKewangan.hantar');
 });
 

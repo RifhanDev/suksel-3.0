@@ -8,59 +8,157 @@
     </li>
 </ul>
 
-<div class="tab-content">
+<div class="tab-content mt-4">
     <div class="tab-pane fade show active step3-kewangan-pane" id="kewangan-3" role="tabpanel" aria-labelledby="kewangan-3-tab">
-        <h4 class="card-title card-title-grey mb-0">CADANGAN KEWANGAN</h4>
-        <p class="card-title-desc text-primary fst-italic mb-3">Klik butang Menilai untuk meneruskan penilaian.</p>
+        <div class="d-flex align-items-center mb-4">
+            <div class="bg-primary-subtle p-2 rounded-2 me-3">
+                <i class="bi bi-file-earmark-text text-primary fs-4"></i>
+            </div>
+            <div>
+                <h5 class="fw-bold mb-0">Pematuhan Spesifikasi Kewangan</h5>
+                <p class="text-secondary small mb-0">Papar maklumat penilaian cadangan kewangan.</p>
+            </div>
+        </div>
+        <div class="rounded-2 px-3 py-2 d-inline-flex align-items-center gap-2 mb-3" style="background:#eff6ff; border:1px solid #bfdbfe; font-size:0.78rem; color:#1e40af; animation: alertPopBuzz 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) both;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="16" x2="12" y2="12"></line>
+                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+            </svg>
+            <div>
+                <span class="small fw-medium text-info-emphasis"><strong>Informasi:</strong></span>
+                <p class="mb-0 small">Klik butang <strong>Papar</strong> untuk meneruskan penilaian.</p>
+            </div>
+        </div>
 
-        <div class="table-responsive">
-            <table class="table table-bordered dt-responsive w-100 align-middle mb-0 step3-kewangan-table">
-                <thead class="text-white">
-                    <tr>
-                        <th class="text-start">Tajuk / Dokumen</th>
-                        <th class="text-center">Mekanisma</th>
-                        <th class="text-center">Status Penilaian</th>
-                        <th class="text-center">Tindakan</th>
+        <div class="table-responsive mb-3 rounded-3 shadow-sm border bg-white">
+            <table class="table table-hover align-middle mb-0 w-100 step3-kewangan-table">
+                <thead>
+                    <tr class="bg-light">
+                        <th class="py-3 px-3 text-start fw-bold text-secondary text-uppercase" style="width: 42%; font-size: 0.75rem; letter-spacing: 0.5px;">
+                            <i class="bi bi-file-earmark-text text-danger me-1"></i>Tajuk / Dokumen
+                        </th>
+                        <th class="py-3 px-3 text-center fw-bold text-secondary text-uppercase" style="width: 22%; font-size: 0.75rem; letter-spacing: 0.5px;">
+                            <i class="bi bi-gear text-danger me-1"></i>Mekanisma
+                        </th>
+                        <th class="py-3 px-3 text-center fw-bold text-secondary text-uppercase" style="width: 20%; font-size: 0.75rem; letter-spacing: 0.5px;">
+                            <i class="bi bi-shield-check text-danger me-1"></i>Status Penilaian
+                        </th>
+                        <th class="py-3 px-3 text-center fw-bold text-secondary text-uppercase" style="width: 16%; font-size: 0.75rem; letter-spacing: 0.5px;">
+                            <i class="bi bi-sliders text-danger me-1"></i>Tindakan
+                        </th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
-                        <td>Perkhidmatan Penilaian Forensik Keatas Sistem XXXX</td>
-                        <td class="text-center">Spesifikasi</td>
-                        <td class="text-center">Selesai</td>
-                        <td class="text-center">
-                            <button type="button" class="btn btn-papar-semakan-kewangan"
+                        <td class="px-3 py-3">
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="bg-success bg-opacity-10 p-2 rounded-2 text-primary d-inline-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                                    <i class="bi bi-file-earmark-text fs-6 text-success"></i>
+                                </div>
+                                <span class="fw-semibold text-dark">Perkhidmatan Penilaian Forensik Keatas Sistem XXXX</span>
+                            </div>
+                        </td>
+                        <td class="text-center px-3">
+                            <span class="badge bg-light text-dark border px-2.5 py-1.5 rounded-2 font-monospace fw-medium">
+                                Spesifikasi
+                            </span>
+                        </td>
+                        <td class="status-penilaian text-center px-3">
+                            <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-20 px-2.5 py-1.5 rounded-pill">
+                                <i class="bi bi-check-circle me-1"></i>Selesai
+                            </span>
+                        </td>
+                        <td class="text-center px-3">
+                            <button type="button" class="btn btn-sm btn-success btn-papar-semakan-kewangan px-3 py-1.5 d-inline-flex align-items-center gap-1"
                                 data-bs-toggle="modal" data-bs-target="#modalPaparCadanganKewanganStep3"
-                                data-dokumen="Perkhidmatan Penilaian Forensik Keatas Sistem XXXX">Papar</button>
+                                data-dokumen="Perkhidmatan Penilaian Forensik Keatas Sistem XXXX">
+                                <i class="bi bi-eye"></i>
+                                <span>Papar</span>
+                            </button>
                         </td>
                     </tr>
                     <tr>
-                        <td>Maklumat Profil Petender</td>
-                        <td class="text-center">Borang Atas Talian</td>
-                        <td class="text-center">Selesai</td>
-                        <td class="text-center">
-                            <button type="button" class="btn btn-papar-semakan-kewangan btn-open-profil-petender-readonly"
-                                data-bs-toggle="modal" data-bs-target="#modalProfilPetenderReadonly">Papar</button>
+                        <td class="px-3 py-3">
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="bg-success bg-opacity-10 p-2 rounded-2 text-primary d-inline-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                                    <i class="bi bi-file-earmark-text fs-6 text-success"></i>
+                                </div>
+                                <span class="fw-semibold text-dark">Maklumat Profil Petender</span>
+                            </div>
+                        </td>
+                        <td class="text-center px-3">
+                            <span class="badge bg-light text-dark border px-2.5 py-1.5 rounded-2 font-monospace fw-medium">
+                                Borang Atas Talian
+                            </span>
+                        </td>
+                        <td class="status-penilaian text-center px-3">
+                            <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-20 px-2.5 py-1.5 rounded-pill">
+                                <i class="bi bi-check-circle me-1"></i>Selesai
+                            </span>
+                        </td>
+                        <td class="text-center px-3">
+                            <button type="button" class="btn btn-sm btn-success btn-papar-semakan-kewangan btn-open-profil-petender-readonly px-3 py-1.5 d-inline-flex align-items-center gap-1"
+                                data-bs-toggle="modal" data-bs-target="#modalProfilPetenderReadonly">
+                                <i class="bi bi-eye"></i>
+                                <span>Papar</span>
+                            </button>
                         </td>
                     </tr>
                     <tr>
-                        <td>Salinan Sijil Pendaftaran dengan Kementerian Kewangan</td>
-                        <td class="text-center">Petender Muat Naik</td>
-                        <td class="text-center">Selesai</td>
-                        <td class="text-center">
-                            <button type="button" class="btn btn-papar-semakan-kewangan"
+                        <td class="px-3 py-3">
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="bg-success bg-opacity-10 p-2 rounded-2 text-primary d-inline-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                                    <i class="bi bi-file-earmark-text fs-6 text-success"></i>
+                                </div>
+                                <span class="fw-semibold text-dark">Salinan Sijil Pendaftaran dengan Kementerian Kewangan</span>
+                            </div>
+                        </td>
+                        <td class="text-center px-3">
+                            <span class="badge bg-light text-dark border px-2.5 py-1.5 rounded-2 font-monospace fw-medium">
+                                Petender Muat Naik
+                            </span>
+                        </td>
+                        <td class="status-penilaian text-center px-3">
+                            <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-20 px-2.5 py-1.5 rounded-pill">
+                                <i class="bi bi-check-circle me-1"></i>Selesai
+                            </span>
+                        </td>
+                        <td class="text-center px-3">
+                            <button type="button" class="btn btn-sm btn-success btn-papar-semakan-kewangan px-3 py-1.5 d-inline-flex align-items-center gap-1"
                                 data-bs-toggle="modal" data-bs-target="#modalPaparCadanganKewanganStep3"
-                                data-dokumen="Salinan Sijil Pendaftaran dengan Kementerian Kewangan">Papar</button>
+                                data-dokumen="Salinan Sijil Pendaftaran dengan Kementerian Kewangan">
+                                <i class="bi bi-eye"></i>
+                                <span>Papar</span>
+                            </button>
                         </td>
                     </tr>
                     <tr>
-                        <td>Surat Akuan Pembida</td>
-                        <td class="text-center">PTJ Muat Naik</td>
-                        <td class="text-center">Selesai</td>
-                        <td class="text-center">
-                            <button type="button" class="btn btn-papar-semakan-kewangan"
+                        <td class="px-3 py-3">
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="bg-success bg-opacity-10 p-2 rounded-2 text-primary d-inline-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                                    <i class="bi bi-file-earmark-text fs-6 text-success"></i>
+                                </div>
+                                <span class="fw-semibold text-dark">Surat Akuan Pembida</span>
+                            </div>
+                        </td>
+                        <td class="text-center px-3">
+                            <span class="badge bg-light text-dark border px-2.5 py-1.5 rounded-2 font-monospace fw-medium">
+                                PTJ Muat Naik
+                            </span>
+                        </td>
+                        <td class="status-penilaian text-center px-3">
+                            <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-20 px-2.5 py-1.5 rounded-pill">
+                                <i class="bi bi-check-circle me-1"></i>Selesai
+                            </span>
+                        </td>
+                        <td class="text-center px-3">
+                            <button type="button" class="btn btn-sm btn-success btn-papar-semakan-kewangan px-3 py-1.5 d-inline-flex align-items-center gap-1"
                                 data-bs-toggle="modal" data-bs-target="#modalPaparCadanganKewanganStep3"
-                                data-dokumen="Surat Akuan Pembida">Papar</button>
+                                data-dokumen="Surat Akuan Pembida">
+                                <i class="bi bi-eye"></i>
+                                <span>Papar</span>
+                            </button>
                         </td>
                     </tr>
                 </tbody>

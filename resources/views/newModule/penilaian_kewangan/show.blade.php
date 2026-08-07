@@ -1,536 +1,555 @@
 @extends('layouts.v3.master')
-
-@section('content')
-{{-- Breadcrumb: back to SENARAI TENDER (first page) --}}
-<nav aria-label="breadcrumb" class="py-2 mb-3">
-    <ol class="breadcrumb mb-0">
-        <li class="breadcrumb-item"><a href="#" class="text-secondary text-decoration-none">STOS</a></li>
-        <li class="breadcrumb-item"><a href="{{ route('penilaianKewangan') }}" class="text-decoration-none">Senarai Penilaian Kewangan</a></li>
-        <li class="breadcrumb-item active" aria-current="page">Penilaian Kewangan</li>
-    </ol>
-</nav>
-
+@section('styles')
 <style>
-    /* ========================
-   GLOBAL
-======================== */
-    body {
-        background: #F3F4F6;
-    }
-
-    .card {
-        border-radius: 12px;
-        border: 1px solid #E5E7EB;
-    }
-
-    .card-body {
-        padding: 24px;
-    }
-
-    /* ========================
-   HEADER SUMMARY
-======================== */
-    .card-body .row > .col-md-4 {
-        border-right: 1px solid #E5E7EB;
-    }
-
-    .card-body .row > .col-md-4:last-child {
-        border-right: none;
-    }
-
-    .card-body b {
-        font-size: 13px;
-        color: #374151;
-    }
-
-    /* ========================
-   STEPPER
-======================== */
     :root {
-        --sg-red: #C4161C;
-        --sg-red-dark: #9F1216;
-        --step-grey: #E5E7EB;
-        --text-grey: #6B7280;
+        --sg-red: #dc2626;
+        --sg-red-dark: #991b1b;
+        --sg-red-light: #fef2f2;
+        --step-grey: #e2e8f0;
+        --text-grey: #64748b;
+    }
+
+    body {
+        background: #f8fafc;
+    }
+
+    .kewangan-detail-container {
+        padding: 0.5rem 0 2rem 0;
     }
 
     /* ========================
-   STEPPER WRAPPER
-======================== */
+       TENDER SUMMARY CARD
+    ======================== */
+    .tender-summary-card {
+        background: #ffffff;
+        border-radius: 16px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.04);
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+    }
+
+    .tender-summary-header {
+        background: linear-gradient(135deg, var(--sg-red) 0%, var(--sg-red-dark) 100%);
+        padding: 1.25rem 1.75rem;
+        color: #ffffff;
+    }
+
+    .tender-summary-body {
+        padding: 1.5rem 1.75rem;
+    }
+
+    .info-grid-box {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 1rem 1.15rem;
+        height: 100%;
+        transition: all 0.2s ease-in-out;
+    }
+
+    .info-grid-box:hover {
+        background: #ffffff;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+        border-color: #cbd5e1;
+    }
+
+    .info-grid-label {
+        font-size: 0.725rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #64748b;
+        margin-bottom: 0.35rem;
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+    }
+
+    .info-grid-value {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #1e293b;
+    }
+
+    .tender-badge-mono {
+        font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+        font-weight: 700;
+        font-size: 0.9rem;
+        color: var(--sg-red-dark);
+        background: var(--sg-red-light);
+        border: 1px solid rgba(220, 38, 38, 0.2);
+        padding: 0.35rem 0.75rem;
+        border-radius: 8px;
+        display: inline-block;
+    }
+
+    .status-pill-process {
+        background: #fffbeb;
+        color: #b45309;
+        border: 1px solid #fde68a;
+        font-weight: 600;
+        font-size: 0.8rem;
+        padding: 0.35rem 0.85rem;
+        border-radius: 50rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.375rem;
+    }
+
+    .status-pill-process .pulse-dot {
+        width: 7px;
+        height: 7px;
+        background-color: #f18705ff;
+        border-radius: 50%;
+        box-shadow: 0 0 0 0 rgba(217, 119, 6, 0.4);
+        animation: pulse-ring 1.8s infinite;
+    }
+
+    @keyframes pulse-ring {
+        0% { box-shadow: 0 0 0 0 rgba(217, 119, 6, 0.5); }
+        70% { box-shadow: 0 0 0 6px rgba(217, 119, 6, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(217, 119, 6, 0); }
+    }
+
+    /* ========================
+       STEPPER WIZARD
+    ======================== */
+    .progress-nav {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        padding: 1.25rem 1.5rem;
+    }
+
     .progress-wrapper {
         display: flex;
         justify-content: space-between;
         align-items: flex-start;
         position: relative;
-        margin: 20px 0;
-        padding: 10px 20px;
+        margin: 0;
+        padding: 0.5rem 0;
     }
 
-    /* ========================
-   STEPPER ITEM
-======================== */
     .progress-step {
         flex: 1;
         text-align: center;
         position: relative;
     }
 
-    /* ========================
-   CONNECTOR LINE
-======================== */
     .progress-step:not(:last-child)::after {
         content: '';
         position: absolute;
-        top: 22px;
-        /* aligns with circle center */
+        top: 20px;
         left: 50%;
         width: 100%;
         height: 3px;
         background: var(--step-grey);
         z-index: 0;
+        transition: background 0.3s ease;
     }
 
-    /* Active / completed connector */
     .progress-step.done:not(:last-child)::after,
     .progress-step.active:not(:last-child)::after {
         background: var(--sg-red);
     }
 
-    /* Reset future connectors */
     .progress-step.active~.progress-step:not(:last-child)::after {
         background: var(--step-grey);
     }
 
-    /* ========================
-   STEP CIRCLE
-======================== */
     .step-number {
-        width: 36px;
-        height: 36px;
+        width: 42px;
+        height: 42px;
         border-radius: 50%;
-        background: var(--step-grey);
-        color: #374151;
+        background: #ffffff;
+        color: #64748b;
         font-weight: 700;
+        font-size: 1rem;
         display: flex;
         align-items: center;
         justify-content: center;
         margin: 0 auto;
-        border: none;
+        border: 2px solid var(--step-grey);
         position: relative;
         z-index: 2;
-        /* ABOVE line */
         cursor: pointer;
-        margin-top: 5px;
+        transition: all 0.25s ease;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
     }
 
-    /* Active & done circle */
-    .progress-step.active .step-number,
+    .progress-step.active .step-number {
+        background: linear-gradient(135deg, var(--sg-red) 0%, var(--sg-red-dark) 100%);
+        color: #ffffff;
+        border-color: var(--sg-red);
+        box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+        transform: scale(1.08);
+    }
+
     .progress-step.done .step-number {
-        background: var(--sg-red);
-        color: #fff;
+        background: var(--sg-red-dark);
+        color: #ffffff;
+        border-color: var(--sg-red-dark);
     }
 
-    /* ========================
-   STEP LABEL
-======================== */
+    .progress-step.locked {
+        opacity: 0.55;
+    }
+
+    .progress-step.locked .step-number {
+        background: #f1f5f9 !important;
+        color: #94a3b8 !important;
+        border-color: #cbd5e1 !important;
+        box-shadow: none !important;
+        transform: none !important;
+        cursor: not-allowed !important;
+    }
+
+    .progress-step.locked .step-label {
+        color: #94a3b8 !important;
+    }
+
     .step-label {
-        margin-top: 8px;
-        font-size: 13px;
+        margin-top: 10px;
+        font-size: 0.825rem;
+        font-weight: 600;
         color: var(--text-grey);
         line-height: 1.3;
+        transition: color 0.2s ease;
     }
 
-    /* Active & done label */
-    .progress-step.active .step-label,
-    .progress-step.done .step-label {
+    .progress-step.active .step-label {
         color: var(--sg-red-dark);
-        font-weight: 600;
+        font-weight: 700;
+    }
+
+    .progress-step.done .step-label {
+        color: #334155;
     }
 
     /* ========================
-   OPTIONAL UX ENHANCEMENTS
-======================== */
-    .progress-step:hover .step-number {
-        transform: scale(1.05);
-        transition: 0.2s;
-    }
-
-    .progress-step:hover .step-label {
-        color: var(--sg-red-dark);
-    }
-
-    /* =========================
-   SECTION TITLES
-========================= */
+       SECTION TITLES & TABS
+    ======================== */
     .card-title-grey {
-        background: #F9FAFB;
-        padding: 12px 16px;
-        border-left: 5px solid #C0392B;
+        background: #f8fafc;
+        padding: 0.85rem 1.25rem;
+        border-left: 4px solid var(--sg-red);
         font-weight: 700;
-        font-size: 15px;
-        border-radius: 6px;
+        font-size: 0.95rem;
+        color: #1e293b;
+        border-radius: 8px;
+        margin-bottom: 0.5rem;
     }
 
-    /* ==========================
-   SUB TABS 
-========================== */
+    .custom-tab-size {
+        background: #f1f5f9;
+        padding: 4px;
+        border-radius: 12px;
+        gap: 4px;
+    }
+
     .custom-tab-size .nav-link {
-        border-radius: 8px 8px 0 0;
-        background: #FFFFFF;
-        color: #374151;
-        border: 1px solid #E5E7EB;
+        border-radius: 9px;
+        background: transparent;
+        color: #64748b;
+        border: none;
         font-weight: 600;
-        padding: 10px 18px;
+        font-size: 0.875rem;
+        padding: 8px 20px;
+        transition: all 0.2s ease;
+    }
+
+    .custom-tab-size .nav-link:hover {
+        color: #1e293b;
     }
 
     .custom-tab-size .nav-link.active {
-        background: #C0392B !important;
-        color: #FFFFFF !important;
-        border-color: #C0392B !important;
+        background: #ffffff !important;
+        color: var(--sg-red-dark) !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        font-weight: 700;
     }
 
-    /* ==========================
-   TABLE
-========================== */
-    .table {
-        border-radius: 0px;
+    /* ========================
+       TABLES
+    ======================== */
+    .table-responsive {
+        border-radius: 12px;
         overflow: hidden;
+        border: 1px solid #e2e8f0;
     }
 
-    .table td {
-        font-size: 13px;
-        padding: 12px;
+    .table {
+        margin-bottom: 0;
+    }
+
+    .table thead th,
+    .table-primary thead th {
+        background: #1e293b !important;
+        color: #ffffff !important;
+        text-align: center;
+        font-size: 0.775rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 0.9rem 1rem;
+        border: none !important;
+    }
+
+    .table tbody td {
+        font-size: 0.875rem;
+        padding: 0.9rem 1rem;
         vertical-align: middle;
+        color: #334155;
+        border-bottom: 1px solid #f1f5f9;
     }
 
-    /* ==========================
-   BUTTONS
-========================== */
+    .table tbody tr:hover {
+        background: #fcf8f8;
+    }
+
+    /* ========================
+       BUTTONS
+    ======================== */
     .btn {
-        border-radius: 8px;
+        border-radius: 10px;
         font-weight: 600;
-        padding: 8px 16px;
+        padding: 0.55rem 1.25rem;
+        transition: all 0.2s ease-in-out;
+    }
+
+    .btn-primary, .btn-seterusnya {
+        background: linear-gradient(135deg, var(--sg-red) 0%, var(--sg-red-dark) 100%);
+        border: none;
+        color: #ffffff;
+        box-shadow: 0 4px 12px rgba(220, 38, 38, 0.2);
+    }
+
+    .btn-primary:hover, .btn-seterusnya:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 16px rgba(220, 38, 38, 0.3);
+        color: #ffffff;
+    }
+
+    .btn-sebelumnya {
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        color: #475569;
+    }
+
+    .btn-sebelumnya:hover {
+        background: #f1f5f9;
+        color: #1e293b;
     }
 
     .btn-success {
-        background: #16A34A;
+        background: #16a34a;
         border: none;
+        color: #ffffff;
+        box-shadow: 0 4px 10px rgba(22, 163, 74, 0.2);
     }
 
     .btn-success:hover {
-        background: #15803D;
-    }
-
-    .btn-primary {
-        background: #1E3A8A;
-        border: none;
-    }
-
-    .btn-primary:hover {
-        background: #1E40AF;
-    }
-
-    .btn-outline-secondary {
-        border-radius: 8px;
-    }
-
-    /* ==========================
-   LINKS
-========================== */
-    .text-primary,
-    .text-primary:hover {
-        color: #2563EB !important;
-    }
-
-    /* ==========================
-   FORM
-========================== */
-    .form-control,
-    .form-select {
-        border-radius: 8px;
-        font-size: 13px;
-    }
-
-    .form-check-label {
-        font-size: 13px;
-    }
-
-    /* ==========================
-   MODAL
-========================== */
-    .modal-content {
-        border-radius: 14px;
-    }
-
-    .modal-header {
-        background: #1E3A8A;
-        color: white;
-    }
-
-    .modal-title {
-        color: white;
-        font-weight: 700;
-    }
-
-    .modal-semakan-kewangan .modal-header {
-        background: #F3F4F6;
-        color: #111827;
-        border-bottom: 1px solid #E5E7EB;
-    }
-
-    .modal-semakan-kewangan .modal-title {
-        color: #111827;
-        font-size: 1rem;
-    }
-
-    .modal-semakan-kewangan .btn-close {
-        filter: none;
-        opacity: 0.6;
-    }
-
-    .modal-footer {
-        border-top: 1px solid #E5E7EB;
-    }
-
-    /* Status Pematuhan dropdown: enough width, no overlap with chevron */
-    #modalSemakanKetepatanDokumenKewangan select.form-select {
-        min-width: 100%;
-        width: 100%;
-        padding-right: 2.25rem;
-        box-sizing: border-box;
-    }
-
-    #modalSemakanKetepatanDokumenKewangan td:nth-child(3) {
-        min-width: 200px;
-    }
-
-    #modalSemakanKetepatanDokumenKewangan td:nth-child(4) textarea {
-        min-height: 72px;
-        resize: vertical;
-    }
-
-    /* ==========================
-   TEXT HINTS
-========================== */
-    .card-title-desc {
-        font-size: 13px;
-        margin-bottom: 12px;
-    }
-
-    /* ==========================
-   ACTION FOOTER
-========================== */
-    .d-flex.justify-content-end.gap-2 button {
-        min-width: 120px;
-    }
-
-    /* ==========================
-   TABLE – RED THEME OVERRIDE
-========================== */
-
-    /* Table header */
-    .table thead th,
-    .table-primary thead th,
-    .table-primary th {
-        background-color: #C0392B !important;
-        color: #FFFFFF !important;
-        text-align: center;
-        font-size: 13px;
-        padding: 12px;
-        border-color: #A93226 !important;
-    }
-
-    /* Table header row */
-    .table thead tr {
-        background-color: #C0392B !important;
-    }
-
-    /* Table borders */
-    .table-bordered> :not(caption)>* {
-        border-color: #E5B4AF;
-    }
-
-    /* Table hover */
-    .table tbody tr:hover {
-        background: #FDEDEC;
-    }
-
-    /* Badges inside table */
-    .table .badge.bg-success {
-        background: #16A34A !important;
-    }
-
-    .table .badge.bg-warning {
-        background: #F59E0B !important;
-    }
-
-    /* Action buttons inside table */
-    .table .btn-success {
-        background: #16A34A;
-    }
-
-    .table .btn-primary {
-        background: #C0392B;
-        border: none;
-    }
-
-    .table .btn-primary:hover {
-        background: #A93226;
-    }
-
-    /* Pencil / icon buttons */
-    .table .btn-outline-secondary {
-        border-color: #C0392B;
-        color: #C0392B;
-    }
-
-    .table .btn-outline-secondary:hover {
-        background: #C0392B;
-        color: #fff;
-    }
-
-    .profil-readonly-form {
-        display: grid;
-        gap: 1rem;
-    }
-
-    .profil-readonly-section {
-        border: 1px solid #E5E7EB;
-        border-radius: 10px;
-        background: #F9FAFB;
-        padding: 14px;
-    }
-
-    .profil-readonly-title {
-        font-size: 0.92rem;
-        font-weight: 700;
-        color: #111827;
-        margin-bottom: 10px;
-    }
-
-    .profil-readonly-form .form-label {
-        font-size: 0.75rem;
-        font-weight: 600;
-        color: #6B7280;
-        margin-bottom: 4px;
-        text-transform: uppercase;
-        letter-spacing: .2px;
-    }
-
-    .profil-readonly-form .form-control,
-    .profil-readonly-form .form-select,
-    .profil-readonly-form textarea {
-        background: #fff;
-        color: #111827;
-        border: 1px solid #D1D5DB;
-        font-size: 0.85rem;
-    }
-
-    .profil-readonly-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: .4rem;
-        font-size: .72rem;
-        font-weight: 700;
-        color: #065F46;
-        background: #D1FAE5;
-        border: 1px solid #A7F3D0;
-        border-radius: 999px;
-        padding: 2px 10px;
+        background: #15803d;
+        color: #ffffff;
     }
 
     .profil-readonly-chip {
         display: inline-flex;
-        padding: 4px 10px;
+        padding: 4px 12px;
         border-radius: 999px;
-        background: #EEF2FF;
-        color: #3730A3;
-        border: 1px solid #C7D2FE;
-        font-size: .75rem;
+        background: #eef2ff;
+        color: #3730a3;
+        border: 1px solid #c7d2fe;
+        font-size: .775rem;
         font-weight: 600;
     }
+
+    .profil-readonly-section {
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        background: #f8fafc;
+        padding: 1rem 1.25rem;
+        margin-bottom: 1rem;
+    }
+
+    .profil-readonly-title {
+        font-size: 0.925rem;
+        font-weight: 700;
+        color: #0f172a;
+        margin-bottom: 0.75rem;
+    }
 </style>
+@endsection
 
-<div class="col-12">
-    <div class="card">
-        <div class="card-body">
-            {{-- Tender info strip (step 1 reference: No. Tender, Tempoh, PTJ, Tajuk, STATUS, Sah Laku Tamat) --}}
-            <div class="row mb-2">
-                <div class="col-md-4 border-end">
-                    <b>No. Sebut Harga / Tender</b>
-                    <div class="text-success">{{ $tender_no ?? 'Belum Dijana' }}</div>
-                </div>
-                <div class="col-md-4 border-end">
-                    <b>Tempoh Sah Laku Tawaran (Hari)</b>
-                    <div>90</div>
-                </div>
-                <div class="col-md-4">
-                    <b>PTJ</b>
-                    <div class="small">BAHAGIAN PENTADBIRAN - CAWANGAN KEWANGAN - KEMENTERIAN KEWANGAN</div>
-                </div>
+@section('content')
+
+<div class="container-fluid px-0 kewangan-detail-container">
+
+    {{-- Breadcrumb & Navigation Header --}}
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-3">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="#" class="text-muted text-decoration-none"><i class="bi bi-house-door me-1"></i>STOS</a></li>
+                <li class="breadcrumb-item"><a href="{{ route('penilaianKewangan') }}" class="text-muted text-decoration-none">Senarai Penilaian Kewangan</a></li>
+                <li class="breadcrumb-item active fw-medium text-danger" aria-current="page">Maklumat Penilaian Kewangan</li>
+            </ol>
+        </nav>
+        <a href="{{ route('penilaianKewangan') }}" class="btn btn-sm btn-sebelumnya d-inline-flex align-items-center gap-1">
+            <i class="bi bi-arrow-left"></i>
+            <span>Kembali ke Senarai</span>
+        </a>
+    </div>
+
+    {{-- Tender Summary Info Card --}}
+    <div class="tender-summary-card">
+        <div class="tender-summary-header d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-bank2 fs-5"></i>
+                <h5 class="fw-bold mb-0 text-white" style="letter-spacing: -0.3px;">RINGKASAN TENDER & PEROLEHAN</h5>
             </div>
-            <div class="row mb-3">
-                <div class="col-md-4 border-end">
-                    <b>Tajuk Perolehan</b>
-                    <div class="small">Tender Perkhidmatan Penilaian Forensik Keatas Sistem XXXX</div>
+            <span class="status-pill-process bg-warning text-white border-0">
+                <span class="pulse-dot"></span>
+                {{ $status_label ?? 'Menunggu Penilaian Kewangan' }}
+            </span>
+        </div>
+        <div class="tender-summary-body">
+            <div class="row g-3">
+                
+                <!-- No Tender -->
+                <div class="col-12 col-md-4 col-lg-4">
+                    <div class="info-grid-box">
+                        <div class="info-grid-label">
+                            <i class="bi bi-hash text-danger"></i>No. Sebut Harga / Tender
+                        </div>
+                        <div class="info-grid-value">
+                            <span class="tender-badge-mono">{{ $no_tender_display ?? $tender->no_tender ?? $tender->ref_number ?? $tender_no ?? 'Belum Dijana' }}</span>
+                        </div>
+                    </div>
                 </div>
-                <div class="col-md-4 border-end">
-                    <b>STATUS</b>
-                    <div>Menunggu Penilaian Kewangan</div>
+
+                <!-- Tempoh Sah Laku -->
+                <div class="col-12 col-md-4 col-lg-4">
+                    <div class="info-grid-box">
+                        <div class="info-grid-label">
+                            <i class="bi bi-hourglass-split text-danger"></i>Tempoh Sah Laku Tawaran
+                        </div>
+                        <div class="info-grid-value">
+                            <span class="badge bg-light text-dark border px-2.5 py-1.5 rounded-2 font-monospace fs-6 fw-bold">
+                                {{ $tempoh_sah_laku ?? 90 }} Hari
+                            </span>
+                        </div>
+                    </div>
                 </div>
-                <div class="col-md-4">
-                    <b>Sah Laku Tawaran Tamat</b>
-                    <div>17/01/2022</div>
+
+                <!-- PTJ -->
+                <div class="col-12 col-md-4 col-lg-4">
+                    <div class="info-grid-box">
+                        <div class="info-grid-label">
+                            <i class="bi bi-building text-danger"></i>PTJ / Jabatan
+                        </div>
+                        <div class="info-grid-value text-truncate" title="{{ $ptj_display ?? $tender->tenderer->name ?? '-' }}">
+                            {{ $ptj_display ?? $tender->tenderer->name ?? '-' }}
+                        </div>
+                    </div>
                 </div>
+
+                <!-- Tajuk Perolehan -->
+                <div class="col-12 col-md-4 col-lg-4">
+                    <div class="info-grid-box">
+                        <div class="info-grid-label">
+                            <i class="bi bi-file-earmark-text text-danger"></i>Tajuk Perolehan
+                        </div>
+                        <div class="info-grid-value small text-dark" style="line-height: 1.4;">
+                            {{ $tajuk_display ?? $tender->name ?? '-' }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Status -->
+                <div class="col-12 col-md-4 col-lg-4">
+                    <div class="info-grid-box">
+                        <div class="info-grid-label">
+                            <i class="bi bi-info-circle text-danger"></i>Status Peringkat
+                        </div>
+                        <div class="info-grid-value">
+                            <span class="status-pill-process">
+                                <span class="pulse-dot"></span>
+                                {{ $status_label ?? 'Menunggu Penilaian Kewangan' }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sah Laku Tamat -->
+                <div class="col-12 col-md-4 col-lg-4">
+                    <div class="info-grid-box">
+                        <div class="info-grid-label">
+                            <i class="bi bi-calendar-check text-danger"></i>Sah Laku Tawaran Tamat
+                        </div>
+                        <div class="info-grid-value font-monospace">
+                            <i class="bi bi-calendar-event text-secondary me-1"></i>{{ $sah_laku_tamat ?? '-' }}
+                        </div>
+                    </div>
+                </div>
+
             </div>
-            <div class="row">
-                <div id="custom-progress-bar" class="progress-nav mb-4 p-2">
+        </div>
+    </div>
 
-                    <ul class="nav progress-wrapper" role="tablist">
+    {{-- Main Process Card with Stepper --}}
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
+        <div class="card-body p-4">
 
-                        <li class="nav-item progress-step active" role="presentation">
-                            <button type="button"
-                                id="pematuhan-tab"
-                                class="nav-link step-number active"
-                                data-bs-toggle="pill"
-                                data-bs-target="#pematuhan"
-                                role="tab">1</button>
-                            <div class="step-label">Pematuhan Dokumentasi</div>
-                        </li>
+            {{-- Progress Stepper Bar --}}
+            <div id="custom-progress-bar" class="progress-nav mb-4">
+                <ul class="nav progress-wrapper" role="tablist">
 
-                        <li class="nav-item progress-step" role="presentation">
-                            <button type="button"
-                                id="penyata-bank-tab"
-                                class="nav-link step-number"
-                                data-bs-toggle="pill"
-                                data-bs-target="#penyata-bank"
-                                role="tab">2</button>
-                            <div class="step-label">Penyata Bulanan Bank</div>
-                        </li>
+                    <li class="nav-item progress-step active" role="presentation">
+                        <button type="button"
+                            id="pematuhan-tab"
+                            class="nav-link step-number active"
+                            data-bs-toggle="pill"
+                            data-bs-target="#pematuhan"
+                            role="tab">1</button>
+                        <div class="step-label">Pematuhan Dokumentasi</div>
+                    </li>
 
-                        <li class="nav-item progress-step" role="presentation">
-                            <button type="button"
-                                id="penilaian-tab"
-                                class="nav-link step-number"
-                                data-bs-toggle="pill"
-                                data-bs-target="#penilaian"
-                                role="tab">3</button>
-                            <div class="step-label">Pematuhan Spesifikasi Kewangan</div>
-                        </li>
+                    <li class="nav-item progress-step" role="presentation">
+                        <button type="button"
+                            id="penyata-bank-tab"
+                            class="nav-link step-number"
+                            data-bs-toggle="pill"
+                            data-bs-target="#penyata-bank"
+                            role="tab">2</button>
+                        <div class="step-label">Penyata Bulanan Bank</div>
+                    </li>
 
-                        <li class="nav-item progress-step" role="presentation">
-                            <button type="button"
-                                id="laporan-tab"
-                                class="nav-link step-number"
-                                data-bs-toggle="pill"
-                                data-bs-target="#laporan"
-                                role="tab">4</button>
-                            <div class="step-label">Penyediaan Laporan</div>
-                        </li>
+                    <li class="nav-item progress-step" role="presentation">
+                        <button type="button"
+                            id="penilaian-tab"
+                            class="nav-link step-number"
+                            data-bs-toggle="pill"
+                            data-bs-target="#penilaian"
+                            role="tab">3</button>
+                        <div class="step-label">Pematuhan Spesifikasi Kewangan</div>
+                    </li>
 
-                    </ul>
-                </div>
+                    <li class="nav-item progress-step" role="presentation">
+                        <button type="button"
+                            id="laporan-tab"
+                            class="nav-link step-number"
+                            data-bs-toggle="pill"
+                            data-bs-target="#laporan"
+                            role="tab">4</button>
+                        <div class="step-label">Penyediaan Laporan</div>
+                    </li>
+
+                </ul>
             </div>
-            <div class="tab-content px-3" id="application-content">
+
+            {{-- Tab Content Container --}}
+            <div class="tab-content px-1" id="application-content">
 
                 <!-- Outer Tab 1 Content -->
                 <div class="tab-pane fade show active" id="pematuhan" role="tabpanel"
@@ -546,165 +565,276 @@
                         </li>
                     </ul>
 
-                    <div class="tab-content">
+                    <div class="tab-content mt-4">
                         <div class="tab-pane fade show active" id="kewangan-1" role="tabpanel">
-                            <h4 class="card-title card-title-grey">PEMATUHAN CADANGAN KEWANGAN</h4>
-                            <p class="card-title-desc text-primary fst-italic">Klik butang Menilai untuk meneruskan penilaian.</p>
-                            <table class="table table-bordered dt-responsive nowrap w-100">
-                                <thead>
-                                    <tr>
-                                        <th class="text-center">Tajuk / Dokumen</th>
-                                        <th class="text-center">Mekanisma</th>
-                                        <th class="text-center">Status Penilaian</th>
-                                        <th class="text-center">Tindakan</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td>Perkhidmatan Penilaian Forensik Ke atas Sistem XXXX</td>
-                                        <td>Spesifikasi</td>
-                                        <td class="status-penilaian">Menunggu Penyerahan</td>
-                                        <td class="text-center">
-                                            <button type="button" class="btn btn-success btn-papar-semakan-kewangan"
-                                                data-bs-toggle="modal" data-bs-target="#modalSemakanKetepatanDokumenKewangan"
-                                                data-dokumen="Perkhidmatan Penilaian Forensik Ke atas Sistem XXXX">Menilai</button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>Maklumat Profil Petender</td>
-                                        <td>Borang Atas Talian</td>
-                                        <td class="status-penilaian">Menunggu Penyerahan</td>
-                                        <td class="text-center">
-                                            <button type="button" class="btn btn-success btn-papar-semakan-kewangan"
-                                                data-bs-toggle="modal" data-bs-target="#modalSemakanKetepatanDokumenKewangan"
-                                                data-dokumen="Maklumat Profil Petender">Menilai</button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>Penyata Bank Terkini (3 Bulan Terakhir) Syarikat</td>
-                                        <td>Borang Atas Talian</td>
-                                        <td class="status-penilaian">Menunggu Penyerahan</td>
-                                        <td class="text-center">
-                                            <button type="button" class="btn btn-success btn-papar-semakan-kewangan"
-                                                data-bs-toggle="modal" data-bs-target="#modalSemakanKetepatanDokumenKewangan"
-                                                data-dokumen="Penyata Bank Terkini (3 Bulan Terakhir) Syarikat">Menilai</button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>Salinan Sijil Pendaftaran dengan Kementerian Kewangan</td>
-                                        <td>Petender Muat Naik</td>
-                                        <td class="status-penilaian">Menunggu Penyerahan</td>
-                                        <td class="text-center">
-                                            <button type="button" class="btn btn-success btn-papar-semakan-kewangan"
-                                                data-bs-toggle="modal" data-bs-target="#modalSemakanKetepatanDokumenKewangan"
-                                                data-dokumen="Salinan Sijil Pendaftaran dengan Kementerian Kewangan">Menilai</button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>Surat Akuan Pembida</td>
-                                        <td>PTJ Muat Naik</td>
-                                        <td class="status-penilaian">Menunggu Penyerahan</td>
-                                        <td class="text-center">
-                                            <button type="button" class="btn btn-success btn-papar-semakan-kewangan"
-                                                data-bs-toggle="modal" data-bs-target="#modalSemakanKetepatanDokumenKewangan"
-                                                data-dokumen="Surat Akuan Pembida">Menilai</button>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                            <div class="row mb-3 px-3">
+                            <div class="d-flex align-items-center mb-4">
+                                <div class="bg-primary-subtle p-2 rounded-2 me-3">
+                                    <i class="bi bi-file-earmark-text text-primary fs-4"></i>
+                                </div>
+                                <div>
+                                    <h5 class="fw-bold mb-0">Pematuhan Cadangan Kewangan</h5>
+                                    <p class="text-secondary small mb-0">Papar maklumat penilaian cadangan kewangan.</p>
+                                </div>
+                            </div>
+                            <!-- <p class="card-title-desc text-primary fst-italic mb-3">Klik butang Menilai untuk meneruskan penilaian.</p> -->
+                            <div class="rounded-2 px-3 py-2 d-inline-flex align-items-center gap-2 mb-3" style="background:#eff6ff; border:1px solid #bfdbfe; font-size:0.78rem; color:#1e40af; animation: alertPopBuzz 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) both;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="12" y1="16" x2="12" y2="12"></line>
+                                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                </svg>
+                                <div>
+                                    <span class="small fw-medium text-info-emphasis"><strong>Informasi:</strong></span>
+                                    <p class="mb-0 small">Klik butang <strong>Menilai</strong> untuk meneruskan penilaian.</p>
+                                </div>
+                            </div>
+                            <div class="table-responsive mb-3 rounded-3 shadow-sm border bg-white">
+                                <table class="table table-hover align-middle mb-0 w-100">
+                                    <thead>
+                                        <tr class="bg-light">
+                                            <th class="py-3 px-3 text-start fw-bold text-secondary text-uppercase" style="width: 42%; font-size: 0.75rem; letter-spacing: 0.5px;">
+                                                <i class="bi bi-file-earmark-text text-danger me-1"></i>Tajuk / Dokumen
+                                            </th>
+                                            <th class="py-3 px-3 text-center fw-bold text-secondary text-uppercase" style="width: 22%; font-size: 0.75rem; letter-spacing: 0.5px;">
+                                                <i class="bi bi-gear text-danger me-1"></i>Mekanisma
+                                            </th>
+                                            <th class="py-3 px-3 text-center fw-bold text-secondary text-uppercase" style="width: 20%; font-size: 0.75rem; letter-spacing: 0.5px;">
+                                                <i class="bi bi-shield-check text-danger me-1"></i>Status Penilaian
+                                            </th>
+                                            <th class="py-3 px-3 text-center fw-bold text-secondary text-uppercase" style="width: 16%; font-size: 0.75rem; letter-spacing: 0.5px;">
+                                                <i class="bi bi-sliders text-danger me-1"></i>Tindakan
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @forelse($kewanganItems as $index => $item)
+                                            @php
+                                                $itemTitle = $item['title'] ?? $item['nama'] ?? 'Item Senarai Semak Kewangan';
+                                                $itemMekanisma = $item['tindakan'] ?? $item['mekanisma'] ?? 'Spesifikasi';
+                                                $itemUuid = $item['uuid'] ?? '';
+
+                                                $itemPayload = $semakPayload[$itemUuid] ?? null;
+                                                $itemVendors = $itemPayload['vendors'] ?? [];
+                                                $totalVendors = count($itemVendors);
+
+                                                $reviewedCount = collect($itemVendors)->filter(function($v) {
+                                                    return $v['status_pematuhan'] !== null && $v['status_pematuhan'] !== '';
+                                                })->count();
+
+                                                $isItemSelesai = ($totalVendors > 0 && $reviewedCount === $totalVendors);
+                                            @endphp
+                                            <tr data-item-uuid="{{ $itemUuid }}">
+                                                <td class="px-3 py-3">
+                                                    <div class="d-flex align-items-center gap-2">
+                                                        <div class="bg-success bg-opacity-10 p-2 rounded-2 text-primary d-inline-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                                                            <i class="bi bi-file-earmark-text fs-6 text-success"></i>
+                                                        </div>
+                                                        <span class="fw-semibold text-dark">{{ $itemTitle }}</span>
+                                                    </div>
+                                                </td>
+                                                <td class="text-center px-3">
+                                                    <span class="badge bg-light text-dark border px-2.5 py-1.5 rounded-2 font-monospace fw-medium">
+                                                        {{ $itemMekanisma }}
+                                                    </span>
+                                                </td>
+                                                <td class="status-penilaian text-center px-3">
+                                                    @if($isItemSelesai)
+                                                        <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-20 px-2.5 py-1.5 rounded-pill">
+                                                            <i class="bi bi-check-circle me-1"></i>Selesai
+                                                        </span>
+                                                    @else
+                                                        <span class="badge bg-warning bg-opacity-10 text-warning-emphasis border border-warning border-opacity-20 px-2.5 py-1.5 rounded-pill">
+                                                            <i class="bi bi-clock me-1"></i>Menunggu Penilaian
+                                                        </span>
+                                                    @endif
+                                                </td>
+                                                <td class="text-center px-3">
+                                                    <button type="button" class="btn btn-sm btn-success btn-papar-semakan-kewangan px-3 py-1.5 d-inline-flex align-items-center gap-1"
+                                                        data-bs-toggle="modal" data-bs-target="#modalSemakanKetepatanDokumenKewangan"
+                                                        data-dokumen="{{ $itemTitle }}"
+                                                        data-uuid="{{ $itemUuid }}">
+                                                        <i class="bi bi-pencil-square"></i>
+                                                        <span>Menilai</span>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        @empty
+                                            <tr>
+                                                <td colspan="4" class="text-center text-muted py-4">
+                                                    <i class="bi bi-inbox me-1 fs-5"></i>Tiada item senarai semak kewangan dijumpai bagi tender ini.
+                                                </td>
+                                            </tr>
+                                        @endforelse
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="row mb-3">
                                 <div class="col-md-12 d-flex justify-content-end">
-                                    <button class="btn btn-primary btn-seterusnya">Seterusnya</button>
+                                    <button class="btn btn-primary btn-seterusnya">Seterusnya <i class="bi bi-chevron-right ms-1"></i></button>
                                 </div>
                             </div>
                         </div>
 
                         <div class="tab-pane fade" id="rumusan-1" role="tabpanel" aria-labelledby="rumusan-tab">
-                            <div class="container-fluid mt-3">
+                            <div class="container-fluid mt-3 px-0">
+                                <div class="d-flex align-items-center mb-4">
+                                    <div class="bg-primary-subtle p-2 rounded-2 me-3">
+                                        <i class="bi bi-clipboard-data text-primary fs-4"></i>
+                                    </div>
+                                    <div>
+                                        <h5 class="fw-bold mb-0">Rumusan</h5>
+                                        <p class="text-secondary small mb-0">Rumusan keseluruhan bagi penilaian pematuhan dokumentasi.</p>
+                                    </div>
+                                </div>
                                 <!-- SECTION 1: Pembekal Melepasi -->
-                                <div class="row">
-                                    <div class="col-12 bg-light p-2 fw-bold">
-                                        SENARAI PEMBEKAL YANG MELEPASI PENILAIAN PEMATUHAN DOKUMENTASI
-                                    </div>
+                                <div class="mb-2 mt-2">
+                                    <h6 class="fw-bold text-dark mb-0"><i class="bi bi-check-circle text-success me-2"></i>Senarai Pembekal Yang Melepasi Penilaian Pematuhan Dokumentasi</h6>
+                                    <div class="small text-muted mt-1" id="totalMelepasiText">{{ count($pembekalMelepasi ?? []) }} pembekal melepasi</div>
                                 </div>
-                                <div class="row">
+                                
+                                <div class="row mb-3">
                                     <div class="col-12">
-                                        <table class="table table-bordered mt-2">
-                                            <thead class="table-primary text-center text-white">
-                                                <tr>
-                                                    <th>Bil</th>
-                                                    <th>Ulasan</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                <tr>
-                                                    <td class="text-center">1/2</td>
-                                                    <td class="text-center">XXX</td>
-                                                </tr>
-                                                <tr>
-                                                    <td class="text-center">2/2</td>
-                                                    <td class="text-center">XXX</td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
+                                        <div class="table-responsive rounded-3 border bg-white shadow-sm">
+                                            <table class="table table-hover align-middle mb-0 w-100">
+                                                <thead class="bg-light">
+                                                    <tr>
+                                                        <th class="py-2.5 px-3 text-center text-uppercase text-secondary fw-bold" style="width: 8%; font-size: 0.725rem; letter-spacing: 0.5px;">BIL</th>
+                                                        <th class="py-2.5 px-3 text-start text-uppercase text-secondary fw-bold" style="width: 35%; font-size: 0.725rem; letter-spacing: 0.5px;">NAMA PEMBEKAL</th>
+                                                        <th class="py-2.5 px-3 text-start text-uppercase text-secondary fw-bold" style="font-size: 0.725rem; letter-spacing: 0.5px;">ULASAN</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @forelse($pembekalMelepasi ?? [] as $i => $p)
+                                                        <tr>
+                                                            <td class="text-center py-3 px-3">
+                                                                <span class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1.5 rounded-pill font-monospace fw-bold">{{ $i + 1 }}</span>
+                                                            </td>
+                                                            <td class="py-3 px-3 fw-semibold text-dark">
+                                                                <div>{{ $p['name'] }}</div>
+                                                                @if(!empty($p['kod']))
+                                                                    <div class="small text-muted font-monospace">{{ $p['kod'] }}</div>
+                                                                @endif
+                                                            </td>
+                                                            <td class="py-3 px-3 fw-medium text-dark">{{ $p['ulasan'] }}</td>
+                                                        </tr>
+                                                    @empty
+                                                        <tr>
+                                                            <td class="text-center text-muted py-4" colspan="3" style="font-size: 0.875rem;">
+                                                                <i class="bi bi-inbox me-1 fs-5"></i>Tiada pembekal melepasi lagi buat masa ini.
+                                                            </td>
+                                                        </tr>
+                                                    @endforelse
+                                                </tbody>
+                                            </table>
+                                        </div>
                                     </div>
                                 </div>
-
-                                <!-- Bilangan Pembekal + Checkbox -->
-                                <div class="row my-3">
-                                    <div class="col-md-3 text-start fw-bold mt-1">Bilangan Pembekal</div>
-                                    <div class="col-md-1 text-start">
-                                        <input type="text" class="form-control text-center" value="2" readonly>
-                                    </div>
-                                </div>
-                                <div class="row mb-4">
-                                    <div class="col-md-12">
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" id="confirmLayak">
-                                            <label class="form-check-label" for="confirmLayak">
-                                                Saya mengesahkan petender diatas layak untuk penilaian peringkat
-                                                seterusnya.
+                                <div class="card bg-light border-0 shadow-none mt-3 rounded-3">
+                                    <div class="card-body p-3">
+                                        <h6 class="fw-bold text-dark mb-3"><i class="bi bi-shield-check me-2 text-primary"></i>Pengesahan Akhir</h6>
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input" type="checkbox" id="confirmLayakStep1" name="confirm_layak_step1">
+                                            <label class="form-check-label small fw-medium" for="confirmLayakStep1">
+                                                Saya mengesahkan petender di atas <span class="text-success fw-bold">layak</span> untuk penilaian peringkat seterusnya.
                                             </label>
                                         </div>
                                     </div>
                                 </div>
 
                                 <!-- SECTION 2: Pembekal Tidak Melepasi -->
-                                <div class="row">
-                                    <div class="col-12 bg-light p-2 fw-bold">
-                                        SENARAI PEMBEKAL TIDAK MELEPASI PENILAIAN PEMATUHAN DOKUMENTASI
-                                    </div>
+                                <div class="mb-2 mt-4">
+                                    <h6 class="fw-bold text-dark mb-0"><i class="bi bi-exclamation-circle text-danger me-2"></i>Senarai Pembekal Tidak Melepasi Penilaian Pematuhan Dokumentasi</h6>
+                                    <div class="small text-muted mt-1" id="totalTidakLayakText">{{ count($pembekalTidakMelepasi ?? []) }} pembekal tidak melepasi</div>
                                 </div>
-                                <div class="row">
+                                <div class="row mb-3">
                                     <div class="col-12">
-                                        <table class="table table-bordered mt-2">
-                                            <thead class="table-primary text-center text-white">
-                                                <tr>
-                                                    <th>Bil</th>
-                                                    <th>Ulasan</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                <tr>
-                                                    <td class="text-center" colspan="2">Tiada rekod dijumpai</td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
+                                        <div class="table-responsive rounded-3 border bg-white shadow-sm">
+                                            <table class="table table-hover align-middle mb-0 w-100">
+                                                <thead class="bg-light">
+                                                    <tr>
+                                                        <th class="py-2.5 px-3 text-center text-uppercase text-secondary fw-bold" style="width: 8%; font-size: 0.725rem; letter-spacing: 0.5px;">BIL</th>
+                                                        <th class="py-2.5 px-3 text-start text-uppercase text-secondary fw-bold" style="width: 35%; font-size: 0.725rem; letter-spacing: 0.5px;">NAMA PEMBEKAL</th>
+                                                        <th class="py-2.5 px-3 text-start text-uppercase text-secondary fw-bold" style="font-size: 0.725rem; letter-spacing: 0.5px;">SEBAB / ULASAN</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @forelse($pembekalTidakMelepasi ?? [] as $i => $p)
+                                                        <tr>
+                                                            <td class="text-center py-3 px-3">
+                                                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2.5 py-1.5 rounded-pill font-monospace fw-bold">{{ $i + 1 }}</span>
+                                                            </td>
+                                                            <td class="py-3 px-3 fw-semibold text-dark">
+                                                                <div>{{ $p['name'] }}</div>
+                                                                @if(!empty($p['kod']))
+                                                                    <div class="small text-muted font-monospace">{{ $p['kod'] }}</div>
+                                                                @endif
+                                                            </td>
+                                                            <td class="py-3 px-3 fw-medium text-danger">{{ $p['ulasan'] }}</td>
+                                                        </tr>
+                                                    @empty
+                                                        <tr>
+                                                            <td class="text-center text-muted py-4" colspan="3" style="font-size: 0.875rem;">
+                                                                <i class="bi bi-inbox me-1 fs-5"></i>Tiada pembekal gagal.
+                                                            </td>
+                                                        </tr>
+                                                    @endforelse
+                                                </tbody>
+                                            </table>
+                                        </div>
                                     </div>
                                 </div>
 
-                                <!-- Bilangan Pembekal Tidak Melepasi -->
-                                <div class="row mb-4 align-items-center">
-                                    <div class="col-md-3 text-start fw-bold mt-1">Bilangan Pembekal</div>
-                                    <div class="col-md-1">
-                                        <input type="text" class="form-control text-center" value="0" readonly>
+                                <!-- SECTION 3: Pembekal Belum Dinilai Sepenuhnya -->
+                                @if(count($pembekalBelumDinilai ?? []) > 0)
+                                <div class="mb-2 mt-4">
+                                    <h6 class="fw-bold text-dark mb-0"><i class="bi bi-hourglass-split text-secondary me-2"></i>Pembekal Belum Dinilai Sepenuhnya</h6>
+                                    <div class="small text-muted mt-1">{{ count($pembekalBelumDinilai) }} pembekal masih menunggu penilaian lengkap</div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-12">
+                                        <div class="table-responsive rounded-3 border bg-white shadow-sm">
+                                            <table class="table table-hover align-middle mb-0 w-100">
+                                                <thead class="bg-light">
+                                                    <tr>
+                                                        <th class="py-2.5 px-3 text-center text-uppercase text-secondary fw-bold" style="width: 8%; font-size: 0.725rem; letter-spacing: 0.5px;">BIL</th>
+                                                        <th class="py-2.5 px-3 text-start text-uppercase text-secondary fw-bold" style="width: 30%; font-size: 0.725rem; letter-spacing: 0.5px;">NAMA PEMBEKAL</th>
+                                                        <th class="py-2.5 px-3 text-center text-uppercase text-secondary fw-bold" style="width: 20%; font-size: 0.725rem; letter-spacing: 0.5px;">KEMAJUAN</th>
+                                                        <th class="py-2.5 px-3 text-start text-uppercase text-secondary fw-bold" style="font-size: 0.725rem; letter-spacing: 0.5px;">STATUS</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @foreach($pembekalBelumDinilai as $i => $p)
+                                                        @php $pct = $p['total'] > 0 ? round(($p['evaluated'] / $p['total']) * 100) : 0; @endphp
+                                                        <tr>
+                                                            <td class="text-center py-3 px-3">
+                                                                <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2.5 py-1.5 rounded-pill font-monospace fw-bold">{{ $i + 1 }}</span>
+                                                            </td>
+                                                            <td class="py-3 px-3 fw-semibold text-dark">
+                                                                <div>{{ $p['name'] }}</div>
+                                                                @if(!empty($p['kod']))
+                                                                    <div class="small text-muted font-monospace">{{ $p['kod'] }}</div>
+                                                                @endif
+                                                            </td>
+                                                            <td class="py-3 px-3 text-center">
+                                                                <div class="progress rounded-pill" style="height: 8px;">
+                                                                    <div class="progress-bar bg-warning" role="progressbar" style="width: {{ $pct }}%;" aria-valuenow="{{ $pct }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                                                </div>
+                                                                <div class="small text-muted mt-1 font-monospace">{{ $p['evaluated'] }}/{{ $p['total'] }}</div>
+                                                            </td>
+                                                            <td class="py-3 px-3 fw-medium text-secondary">{{ $p['ulasan'] }}</td>
+                                                        </tr>
+                                                    @endforeach
+                                                </tbody>
+                                            </table>
+                                        </div>
                                     </div>
                                 </div>
+                                @endif
 
                                 <!-- Action Button -->
                                 <div class="row mb-3">
                                     <div class="col-md-12 d-flex justify-content-end">
-                                        <button class="btn btn-primary btn-seterusnya">Seterusnya</button>
+                                        <button class="btn btn-primary btn-seterusnya">Seterusnya <i class="bi bi-chevron-right ms-1"></i></button>
                                     </div>
                                 </div>
                             </div>
@@ -737,72 +867,105 @@
         aria-hidden="true">
         <div class="modal-dialog modal-xl">
             <div class="modal-content modal-semakan-kewangan">
-                <div class="modal-header">
+                <!-- <div class="modal-header">
                     <h5 class="modal-title text-uppercase" id="modalLabelSemakanKewangan">SEMAKAN PEMATUHAN DOKUMEN KEWANGAN</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+                </div> -->
+                <div class="modal-header px-4 pt-4 border-0">
+                    <div class="d-flex align-items-center rounded-3 mt-3">
+                        <div class="rounded-2 d-flex align-items-center justify-content-center me-3 flex-shrink-0" style="width: 40px; height: 40px; background: #dbeafe;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                            </svg>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <span class="d-block text-uppercase fw-semibold" style="font-size: 0.62rem; letter-spacing: 0.06em; color: #6b7280;">Tajuk / Dokumen</span>
+                            <h6 id="modalDocTitle" class="fw-bold text-dark mb-0" style="font-size: 0.95rem;">Perkhidmatan Penilaian Forensik Ke atas Sistem XXXX</h6>
+                        </div>
+                        <div class="mx-3 align-self-stretch" style="width: 1px; background: #d1d5db;"></div>
+                        <span class="text-secondary" style="font-size: 0.78rem;">Senarai dokumen yang perlu dikemukakan oleh petender.</span>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-
                 <div class="modal-body">
-                    <p class="mb-2"><strong>Tajuk / Dokumen:</strong> <span id="modalSemakanKewanganTajuk">Perkhidmatan Penilaian Forensik Ke atas Sistem XXXX</span></p>
-
-                    <div class="card-title card-title-grey mb-2">Senarai Pembekal</div>
-                    <p class="card-title-desc text-primary fst-italic mb-3">Sila pilih status pematuhan untuk meneruskan penilaian pematuhan.</p>
-
-                    <div class="table-responsive">
-                        <table class="table table-bordered align-middle">
-                            <thead class="table-primary text-center text-white">
+                    <div class="table-responsive rounded-3" style="border: 1px solid #e5e7eb;">
+                        <table class="table align-middle mb-0" style="font-size: 0.85rem;">
+                            <thead style="--bs-table-bg: #d7d7d9; --bs-table-color: #3f3f3f;">
                                 <tr>
-                                    <th style="width: 10%;">Bil</th>
-                                    <th style="width: 32%;">Dokumen</th>
-                                    <th style="width: 22%;">Status Pematuhan</th>
-                                    <th style="width: 22%;">Catatan</th>
+                                    <th class="text-center text-uppercase fw-bold py-2" style="width: 120px; font-size: 0.7rem; letter-spacing: 0.05em; background-color: #d7d7d9 !important; color: #3f3f3f !important;">Kod Pembekal</th>
+                                    <th class="text-center text-uppercase fw-bold py-2" style="font-size: 0.7rem; letter-spacing: 0.05em; background-color: #d7d7d9 !important; color: #3f3f3f !important;">Dokumen / Penyerahan</th>
+                                    <th class="text-center text-uppercase fw-bold py-2" style="width: 150px; font-size: 0.7rem; letter-spacing: 0.05em; background-color: #d7d7d9 !important; color: #3f3f3f !important;">Status Penyerahan</th>
+                                    <th class="text-center text-uppercase fw-bold py-2" style="width: 180px; font-size: 0.7rem; letter-spacing: 0.05em; background-color: #d7d7d9 !important; color: #3f3f3f !important;">Status Pematuhan</th>
+                                    <th class="text-center text-uppercase fw-bold py-2" style="width: 220px; font-size: 0.7rem; letter-spacing: 0.05em; background-color: #d7d7d9 !important; color: #3f3f3f !important;">Catatan</th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody id="modalSemakanKewanganBody">
                                 <tr>
-                                    <td class="text-center">1/2</td>
-                                    <td>
-                                        <a href="https://ontheline.trincoll.edu/images/bookdown/sample-local-pdf.pdf" target="_blank" class="text-decoration-none">
-                                            <i class="bi bi-file-earmark-pdf-fill text-primary" aria-hidden="true"></i>
-                                        </a>
-                                        Perkhidmatan Penilaian Forensik Ke atas Sistem XXXX.pdf
-                                    </td>
-                                    <td class="align-middle">
-                                        <select class="form-select" aria-label="Status Pematuhan baris 1">
-                                            <option selected value="">Sila Pilih</option>
-                                            <option value="mematuhi">Mematuhi</option>
-                                            <option value="tidak_mematuhi">Tidak Mematuhi</option>
-                                        </select>
-                                    </td>
-                                    <td>
-                                        <textarea class="form-control" rows="2" placeholder="Catatan" aria-label="Catatan pembekal 1"></textarea>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td class="text-center">2/2</td>
-                                    <td>
-                                        <a href="https://ontheline.trincoll.edu/images/bookdown/sample-local-pdf.pdf" target="_blank" class="text-decoration-none">
-                                            <i class="bi bi-file-earmark-pdf-fill text-primary" aria-hidden="true"></i>
-                                        </a>
-                                        Perkhidmatan Penilaian Forensik Ke atas Sistem XXXXn.pdf
-                                    </td>
-                                    <td class="align-middle">
-                                        <select class="form-select" aria-label="Status Pematuhan baris 2">
-                                            <option selected value="">Sila Pilih</option>
-                                            <option value="mematuhi">Mematuhi</option>
-                                            <option value="tidak_mematuhi">Tidak Mematuhi</option>
-                                        </select>
-                                    </td>
-                                    <td>
-                                        <textarea class="form-control" rows="2" placeholder="Catatan" aria-label="Catatan pembekal 2"></textarea>
-                                    </td>
+                                    <td colspan="5" class="text-center text-muted py-4">Pilih dokumen untuk semakan.</td>
                                 </tr>
                             </tbody>
                         </table>
                     </div>
+                    <div class="rounded-2 px-3 py-2 d-inline-flex align-items-center gap-2 mt-3" style="background: #fffbeb; border: 1px solid #fde68a; font-size: 0.78rem; color: #92400e;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="#f59e0b" stroke="#f59e0b" stroke-width="0" class="flex-shrink-0 me-2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="8" x2="12" y2="12" stroke="white" stroke-width="2" stroke-linecap="round"></line>
+                            <line x1="12" y1="16" x2="12.01" y2="16" stroke="white" stroke-width="2" stroke-linecap="round"></line>
+                        </svg>
+                        Sila pilih status pematuhan untuk meneruskan penilaian pematuhan.
+                    </div>
                 </div>
-                <div class="modal-footer justify-content-center gap-2">
-                    <button type="button" id="btnStep1SimpanDokKewangan" class="btn btn-success" data-bs-dismiss="modal">Simpan</button>
+                <div class="modal-footer bg-light border-0 px-4 py-3 justify-content-between">
+                    <button type="button" class="btn btn-sm btn-secondary px-4 fw-bold" data-bs-dismiss="modal">Batal / Tutup</button>
+                    <span id="readOnlyNoticeStep1" class="badge bg-secondary text-white px-3 py-2 d-none"><i class="bi bi-lock-fill me-1"></i>Mod Paparan Sahaja (Langkah Telah Disahkan)</span>
+                    <button type="button" class="btn btn-sm btn-success px-4 fw-bold" id="btnStep1SimpanDokKewangan">
+                        <i class="bi bi-save me-2"></i>Simpan Penilaian
+                    </button>
+                </div>
+    </div>
+
+    {{-- MODAL: Prebiu Dokumen/Borang --}}
+    <div class="modal fade" id="modalPreview" tabindex="-1" aria-labelledby="modalPreviewLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered" style="max-width: 90%; height: 90vh;">
+            <div class="modal-content h-100 border-0 shadow-lg rounded-3">
+                <div class="modal-header px-4 py-3 border-bottom d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center">
+                        <div class="rounded-2 d-flex align-items-center justify-content-center me-3 flex-shrink-0" style="width: 40px; height: 40px; background-color: #e0f2fe;">
+                            <i class="bi bi-file-earmark-pdf text-primary fs-5" id="previewIcon"></i>
+                        </div>
+                        <div>
+                            <span class="d-block text-uppercase fw-semibold" style="font-size: 0.62rem; letter-spacing: 0.06em; color: #6b7280;">Prebiu Dokumen</span>
+                            <h6 id="modalPreviewTitle" class="fw-bold text-dark mb-0" style="font-size: 0.95rem;">-</h6>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <a id="btnNewTabPreview" href="#" target="_blank" class="btn btn-sm btn-outline-primary d-flex align-items-center gap-1">
+                            <i class="bi bi-box-arrow-up-right"></i> <span class="d-none d-sm-inline">Buka di Tab Baru</span>
+                        </a>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                </div>
+                <div class="modal-body p-0 bg-light position-relative d-flex align-items-center justify-content-center" style="height: calc(100% - 75px); overflow: hidden;">
+                    <div id="previewSpinner" class="spinner-border text-primary position-absolute" role="status" style="z-index: 10; width: 3rem; height: 3rem;">
+                        <span class="visually-hidden">Memuatkan...</span>
+                    </div>
+                    <iframe id="previewIframe" src="" class="w-100 h-100 border-0 d-none" style="background: white;"></iframe>
+                    <div id="previewImageWrapper" class="w-100 h-100 d-none overflow-auto p-3 text-center">
+                        <img id="previewImage" src="" class="img-fluid rounded shadow-sm" style="max-height: 100%; object-fit: contain;" />
+                    </div>
+                    <div id="previewFallback" class="text-center p-4 d-none">
+                        <div class="bg-warning-subtle text-warning rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
+                            <i class="bi bi-file-earmark-zip fs-1"></i>
+                        </div>
+                        <h5 class="fw-bold text-dark">Prebiu tidak disokong</h5>
+                        <p class="text-muted small mx-auto" style="max-width: 400px;">Format fail ini tidak menyokong paparan terus. Sila klik butang di bawah untuk memuat turun.</p>
+                        <a id="btnFallbackDownload" href="#" target="_blank" class="btn btn-primary px-4 fw-bold mt-2">
+                            <i class="bi bi-download me-2"></i>Muat Turun Fail
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -820,8 +983,8 @@
                     <p class="card-title-desc text-primary fst-italic mb-3">Paparan ringkas borang profil petender (contoh data).</p>
 
                     <div class="profil-readonly-form">
-                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-                            <div class="profil-readonly-chip">No. Tender: SUKSEL/PERT/2026/001</div>
+                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+                            <div class="profil-readonly-chip">No. Tender: {{ $no_tender_display ?? 'SUKSEL/PERT/2026/001' }}</div>
                             <div class="profil-readonly-badge">Profil Lengkap</div>
                         </div>
 
@@ -922,19 +1085,23 @@
                             <div class="row g-3">
                                 <div class="col-md-6">
                                     <label class="form-label">Aset Utama (5 Terbesar)</label>
-                                    <textarea class="form-control" rows="5" readonly>1. Bangunan pejabat 3 tingkat - RM 1,200,000.00
-2. Pelayan data (server cluster) - RM 350,000.00
-3. 15 unit workstation teknikal - RM 180,000.00
-4. Perisian lesen enterprise - RM 120,000.00
-5. Kenderaan operasi - RM 95,000.00</textarea>
+                                    <textarea class="form-control" rows="5" readonly>
+                                        1. Bangunan pejabat 3 tingkat - RM 1,200,000.00
+                                        2. Pelayan data (server cluster) - RM 350,000.00
+                                        3. 15 unit workstation teknikal - RM 180,000.00
+                                        4. Perisian lesen enterprise - RM 120,000.00
+                                        5. Kenderaan operasi - RM 95,000.00
+                                    </textarea>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">Peralatan Berkaitan Tender (5 Item)</label>
-                                    <textarea class="form-control" rows="5" readonly>1. Network analyzer set - RM 80,000.00
-2. Security appliance - RM 65,000.00
-3. Portable forensic workstation - RM 58,000.00
-4. Backup storage system - RM 45,000.00
-5. Audit toolkit license - RM 30,000.00</textarea>
+                                    <textarea class="form-control" rows="5" readonly>
+                                        1. Network analyzer set - RM 80,000.00
+                                        2. Security appliance - RM 65,000.00
+                                        3. Portable forensic workstation - RM 58,000.00
+                                        4. Backup storage system - RM 45,000.00
+                                        5. Audit toolkit license - RM 30,000.00
+                                    </textarea>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">Tanggungan / Liabilities (RM)</label>
@@ -980,11 +1147,318 @@
 </div>
 
 
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
+    const SEMAK_PAYLOAD = @json($semakPayload ?? []);
+    const PENYATA_BANK_UUIDS = @json(collect($penyataBankItems ?? [])->pluck('uuid')->filter()->values()->all());
+    const PENYATA_BANK_CONFIG = @json($penyataBankConfig ?? []);
+
+    let activeStep2Uuid = PENYATA_BANK_UUIDS[0] || null;
+    let activeStep2VendorId = null;
+
+    let dbConfirmed = {
+        step1: {{ $progress?->isStep1Confirmed() ? 'true' : 'false' }},
+        step2: {{ $progress?->isStep2Confirmed() ? 'true' : 'false' }},
+        step3: {{ $progress?->isStep3Confirmed() ? 'true' : 'false' }}
+    };
+    let dbCurrentStep = {{ (int) ($progress?->current_step ?? 1) }};
+
+    function escapeHtml(value) {
+        return String(value || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
+    function renderSemakanKewanganRows(item) {
+        const $body = $('#modalSemakanKewanganBody');
+        $body.empty();
+
+        const vendors = item?.vendors || [];
+        if (!vendors.length) {
+            $body.append('<tr><td colspan="5" class="text-center text-muted py-4">Tiada petender yang membeli dokumen bagi tender ini.</td></tr>');
+            return;
+        }
+
+        const itemUuid = item?.uuid || activeItemUuid;
+        const isStep2Item = (PENYATA_BANK_UUIDS.includes(itemUuid));
+        const isReadOnly = isStep2Item
+            ? (dbConfirmed.step2 || dbCurrentStep > 2)
+            : (dbConfirmed.step1 || dbCurrentStep > 1);
+
+        if (isReadOnly) {
+            $('#btnStep1SimpanDokKewangan').addClass('d-none');
+            $('#readOnlyNoticeStep1').removeClass('d-none');
+        } else {
+            $('#btnStep1SimpanDokKewangan').removeClass('d-none');
+            $('#readOnlyNoticeStep1').addClass('d-none');
+        }
+
+        vendors.forEach(function (vendor) {
+            const isSubmitted = vendor.status === 'submitted';
+            const statusBadge = isSubmitted
+                ? '<span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-20 px-2.5 py-1.5 rounded-pill"><i class="bi bi-check-circle me-1"></i>Hantar</span>'
+                : '<span class="badge bg-warning bg-opacity-10 text-warning-emphasis border border-warning border-opacity-20 px-2.5 py-1.5 rounded-pill"><i class="bi bi-clock me-1"></i>Menunggu</span>';
+
+            let docHtml = '<div class="small text-muted">' + escapeHtml(vendor.summary || '-') + '</div>';
+            if (Array.isArray(vendor.files) && vendor.files.length) {
+                docHtml = vendor.files.map(function (file) {
+                    const ext = (file.name || '').split('.').pop().toLowerCase();
+                    if (['pdf', 'png', 'jpg', 'jpeg', 'svg', 'webp'].includes(ext)) {
+                        return '<a href="' + escapeHtml(file.url) + '" data-name="' + escapeHtml(file.name) + '" class="d-block small text-primary btn-preview-file text-decoration-none mb-1">' +
+                            '<i class="bi bi-file-earmark-pdf-fill text-danger me-1"></i>' + escapeHtml(file.name) +
+                            '</a>';
+                    } else {
+                        return '<a href="' + escapeHtml(file.url) + '" download data-name="' + escapeHtml(file.name) + '" class="d-block small text-primary text-decoration-none mb-1">' +
+                            '<i class="bi bi-file-earmark-arrow-down me-1"></i>' + escapeHtml(file.name) +
+                            '</a>';
+                    }
+                }).join('');
+            } else if (vendor.form_url) {
+                const isSpec = (item?.action === 'view_specification');
+                const label  = isSpec ? 'Buka spesifikasi' : 'Buka borang';
+                const icon   = isSpec ? 'bi bi-file-earmark-text' : 'bi bi-window';
+                docHtml = '<div class="mt-1"><a href="' + escapeHtml(vendor.form_url) + '" data-name="' + (isSpec ? 'Spesifikasi ' : 'Borang ') + escapeHtml(vendor.name) + '" class="small btn-preview-file text-decoration-none"><i class="' + icon + ' me-1"></i>' + label + '</a></div>';
+            }
+
+            const savedStatus  = vendor.status_pematuhan;
+            const savedCatatan = vendor.catatan || '';
+
+            const disabledAttr = isReadOnly ? 'disabled' : '';
+            const readonlyAttr = isReadOnly ? 'readonly disabled' : '';
+
+            const selectHtml =
+                '<select class="form-select form-select-sm semak-pematuhan" ' + disabledAttr + ' data-vendor-id="' + vendor.vendor_id + '">' +
+                    '<option value="" ' + (savedStatus === null || savedStatus === undefined || savedStatus === '' ? 'selected' : '') + ' disabled>-- Sila Pilih --</option>' +
+                    '<option value="mematuhi" ' + (savedStatus === 'mematuhi' || savedStatus === 1 ? 'selected' : '') + '>Mematuhi</option>' +
+                    '<option value="tidak_mematuhi" ' + (savedStatus === 'tidak_mematuhi' || savedStatus === 0 ? 'selected' : '') + '>Tidak Mematuhi</option>' +
+                '</select>';
+
+            const catatanHtml =
+                '<textarea class="form-control form-control-sm semak-catatan" ' + readonlyAttr + ' rows="2" placeholder="Catatan...">' +
+                escapeHtml(savedCatatan) + '</textarea>';
+
+            const kodDisplay = vendor.kod
+                ? escapeHtml(vendor.kod)
+                : '<span class="fst-italic small text-muted">Belum Dijana</span>';
+
+            $body.append(
+                '<tr>' +
+                    '<td class="text-center fw-bold align-middle" style="background-color: #efeff0ff; color: #3f3f3fff;">' + kodDisplay + '</td>' +
+                    '<td>' +
+                        '<div class="fw-semibold text-dark small mb-1">' + escapeHtml(vendor.name) + '</div>' +
+                        docHtml +
+                    '</td>' +
+                    '<td class="text-center align-middle">' + statusBadge + '</td>' +
+                    '<td class="align-middle">' + selectHtml + '</td>' +
+                    '<td class="align-middle">' + catatanHtml + '</td>' +
+                '</tr>'
+            );
+        });
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
+
+        const KEMASKINI_LANGKAH_URL = "{{ route('penilaianKewangan.kemaskiniLangkah') }}";
+        const TENDER_IDENTIFIER = "{{ $tender_no }}";
+        const CSRF_TOKEN = "{{ csrf_token() }}";
 
         const steps = document.querySelectorAll('.progress-step');
         const tabs = document.querySelectorAll('.step-number');
+
+        const tabList = [
+            { id: 'pematuhan-tab', target: '#pematuhan', checkboxId: 'confirmLayakStep1', stepNum: 1, name: 'Langkah 1 (Pematuhan Dokumentasi)', index: 0 },
+            { id: 'penyata-bank-tab', target: '#penyata-bank', checkboxId: 'confirmLayakStep2', stepNum: 2, name: 'Langkah 2 (Penyata Bulanan Bank)', index: 1 },
+            { id: 'penilaian-tab', target: '#penilaian', checkboxId: 'confirmLayakStep3', stepNum: 3, name: 'Langkah 3 (Pematuhan Spesifikasi Kewangan)', index: 2 },
+            { id: 'laporan-tab', target: '#laporan', checkboxId: null, stepNum: 4, name: 'Langkah 4 (Penyediaan Laporan)', index: 3 }
+        ];
+
+        // Set initial checkbox states from DB
+        const cb1 = document.getElementById('confirmLayakStep1') || document.getElementById('confirmLayak');
+        const cb2 = document.getElementById('confirmLayakStep2');
+        const cb3 = document.getElementById('confirmLayakStep3');
+
+        if (cb1) cb1.checked = dbConfirmed.step1;
+        if (cb2) cb2.checked = dbConfirmed.step2;
+        if (cb3) cb3.checked = dbConfirmed.step3;
+
+        function isStepUnlocked(stepIndex) {
+            if (stepIndex <= 0) return true; // Step 1 is always unlocked
+            if (stepIndex === 1) return dbConfirmed.step1;
+            if (stepIndex === 2) return dbConfirmed.step1 && dbConfirmed.step2;
+            if (stepIndex === 3) return dbConfirmed.step1 && dbConfirmed.step2 && dbConfirmed.step3;
+            return false;
+        }
+
+        function updateStepLocks() {
+            tabList.forEach((tabInfo, idx) => {
+                const stepEl = steps[idx];
+                const tabBtn = document.getElementById(tabInfo.id);
+                if (!stepEl || !tabBtn) return;
+
+                const unlocked = isStepUnlocked(idx);
+                if (unlocked) {
+                    stepEl.classList.remove('locked');
+                    tabBtn.removeAttribute('aria-disabled');
+                    tabBtn.style.pointerEvents = 'auto';
+                } else {
+                    stepEl.classList.add('locked');
+                    tabBtn.setAttribute('aria-disabled', 'true');
+                }
+            });
+
+            // Lock confirmation checkboxes for completed steps when process has advanced past them
+            if (cb1) cb1.disabled = (dbCurrentStep > 1);
+            if (cb2) cb2.disabled = (dbCurrentStep > 2);
+            if (cb3) cb3.disabled = (dbCurrentStep > 3);
+        }
+
+        function areAllStep2VendorsEvaluated() {
+            const uuidToUse = activeStep2Uuid || (PENYATA_BANK_UUIDS && PENYATA_BANK_UUIDS[0]) || '';
+            const itemObj = SEMAK_PAYLOAD[uuidToUse] || Object.values(SEMAK_PAYLOAD).find(item => PENYATA_BANK_UUIDS.includes(item?.uuid));
+            const rawVendors = itemObj?.vendors || [];
+            const failedStep1Ids = getFailedStep1VendorIds();
+            const eligibleVendors = rawVendors.filter(v => !failedStep1Ids.includes(parseInt(v.vendor_id)));
+
+            if (!eligibleVendors.length) return true;
+
+            const unevaluated = eligibleVendors.filter(v => v.status_pematuhan === null || v.status_pematuhan === '' || v.status_pematuhan === undefined);
+            return unevaluated.length === 0;
+        }
+
+        window.saveConfirmedStates = async function(stepNum, confirmedVal) {
+            if (stepNum === 2 && confirmedVal) {
+                if (!areAllStep2VendorsEvaluated()) {
+                    const cb = document.getElementById('confirmLayakStep2');
+                    if (cb) cb.checked = false;
+                    Swal.fire({
+                        title: 'Penilaian Belum Selesai',
+                        text: 'Semua pembekal yang melepasi Langkah 1 mesti dinilai terlebih dahulu sebelum membuat pengesahan akhir Langkah 2.',
+                        icon: 'warning',
+                        confirmButtonText: 'Faham',
+                        confirmButtonColor: '#1e293b'
+                    });
+                    return;
+                }
+            }
+
+            try {
+                const res = await $.ajax({
+                    url: KEMASKINI_LANGKAH_URL,
+                    method: 'POST',
+                    data: {
+                        _token: CSRF_TOKEN,
+                        tender: TENDER_IDENTIFIER,
+                        step: stepNum,
+                        confirmed: confirmedVal ? 1 : 0
+                    }
+                });
+
+                if (res.confirmed) {
+                    dbConfirmed.step1 = res.confirmed.step1;
+                    dbConfirmed.step2 = res.confirmed.step2;
+                    dbConfirmed.step3 = res.confirmed.step3;
+                }
+                if (res.current_step) {
+                    dbCurrentStep = res.current_step;
+                }
+            } catch (err) {
+                const cb = document.getElementById(stepNum === 2 ? 'confirmLayakStep2' : (stepNum === 1 ? 'confirmLayakStep1' : 'confirmLayakStep3'));
+                if (cb) cb.checked = !confirmedVal;
+                Swal.fire({
+                    title: 'Ralat',
+                    text: err.responseJSON?.message || 'Gagal mengemaskini pengesahan langkah ke DB.',
+                    icon: 'error',
+                    confirmButtonText: 'Tutup',
+                    confirmButtonColor: '#1e293b'
+                });
+            }
+            updateStepLocks();
+        };
+
+        // Attach listeners to confirmation checkboxes
+        [
+            { id: 'confirmLayakStep1', step: 1 },
+            { id: 'confirmLayak', step: 1 },
+            { id: 'confirmLayakStep2', step: 2 },
+            { id: 'confirmLayakStep3', step: 3 }
+        ].forEach(item => {
+            const cb = document.getElementById(item.id);
+            if (cb) {
+                cb.addEventListener('change', function () {
+                    window.saveConfirmedStates(item.step, this.checked);
+                });
+            }
+        });
+
+        // Tab click protection & activation listeners
+        tabList.forEach((tabInfo, index) => {
+            const tabBtn = document.getElementById(tabInfo.id);
+            if (!tabBtn) return;
+
+            tabBtn.addEventListener('click', (e) => {
+                if (index === 2) { // Target: Step 3
+                    if (!areAllStep2VendorsEvaluated()) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        Swal.fire({
+                            title: 'Penilaian Belum Selesai',
+                            text: 'Semua pembekal yang melepasi Langkah 1 mesti dinilai terlebih dahulu sebelum meneruskan ke Langkah 3.',
+                            icon: 'warning',
+                            confirmButtonText: 'Faham',
+                            confirmButtonColor: '#1e293b'
+                        });
+                        return false;
+                    }
+                    if (!dbConfirmed.step2 && !$('#confirmLayakStep2').is(':checked')) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        Swal.fire({
+                            title: 'Pengesahan Akhir Diperlukan',
+                            text: 'Sila lengkapkan pengesahan akhir (Pengesahan Akhir) di tab Rumusan Langkah 2 terlebih dahulu sebelum meneruskan ke Langkah 3.',
+                            icon: 'warning',
+                            confirmButtonText: 'Faham',
+                            confirmButtonColor: '#1e293b'
+                        });
+                        return false;
+                    }
+                }
+
+                if (!isStepUnlocked(index)) {
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    let reqName = 'Langkah 1 (Pematuhan Dokumentasi)';
+                    if (index === 2 && !isStepUnlocked(1)) reqName = 'Langkah 2 (Penyata Bulanan Bank)';
+                    else if (index === 3 && !isStepUnlocked(2)) reqName = 'Langkah 3 (Pematuhan Spesifikasi Kewangan)';
+
+                    Swal.fire({
+                        title: 'Langkah Terkunci',
+                        text: 'Sila lengkapkan dan sahkan ' + reqName + ' terlebih dahulu sebelum meneruskan.',
+                        icon: 'warning',
+                        confirmButtonText: 'Faham',
+                        confirmButtonColor: '#1e293b'
+                    });
+                    return false;
+                }
+            });
+
+            tabBtn.addEventListener('shown.bs.tab', () => {
+                updateStepper(index);
+                $.ajax({
+                    url: KEMASKINI_LANGKAH_URL,
+                    method: 'POST',
+                    data: {
+                        _token: CSRF_TOKEN,
+                        tender: TENDER_IDENTIFIER,
+                        target_step: index + 1
+                    }
+                }).done(res => {
+                    if (res.current_step) dbCurrentStep = res.current_step;
+                });
+            });
+        });
 
         function updateStepper(activeIndex) {
             steps.forEach((step, i) => {
@@ -995,43 +1469,672 @@
             });
         }
 
-        tabs.forEach((tab, index) => {
-            tab.addEventListener('shown.bs.tab', () => {
-                updateStepper(index);
-            });
-        });
+        // Initialize step locks
+        updateStepLocks();
 
-        // Init
-        updateStepper(0);
+        // Activate active step from DB
+        let initialStepIndex = dbCurrentStep - 1;
+        if (!isStepUnlocked(initialStepIndex)) {
+            initialStepIndex = 0;
+            for (let i = tabList.length - 1; i >= 0; i--) {
+                if (isStepUnlocked(i)) {
+                    initialStepIndex = i;
+                    break;
+                }
+            }
+        }
+
+        const initialBtn = document.getElementById(tabList[initialStepIndex].id);
+        if (initialBtn && typeof bootstrap !== 'undefined') {
+            bootstrap.Tab.getOrCreateInstance(initialBtn).show();
+        }
+
+        renderStep2RumusanTables();
 
         let activeSemakanButton = null;
+        let activeItemUuid = null;
+        const SIMPAN_URL = "{{ route('penilaianKewangan.simpanPematuhan') }}";
         const btnSimpanDokKewangan = document.getElementById('btnStep1SimpanDokKewangan');
 
-        document.querySelectorAll('.btn-papar-semakan-kewangan:not(.btn-open-profil-petender-readonly)').forEach((btn) => {
-            btn.addEventListener('click', () => {
-                const t = btn.getAttribute('data-dokumen')?.trim() || '';
-                const el = document.getElementById('modalSemakanKewanganTajuk');
-                activeSemakanButton = btn;
-                if (el && t) {
-                    el.textContent = t;
-                }
-            });
+        $(document).on('click', '.btn-papar-semakan-kewangan:not(.btn-open-profil-petender-readonly)', function() {
+            const btn = this;
+            const t = btn.getAttribute('data-dokumen')?.trim() || '';
+            activeItemUuid = btn.getAttribute('data-uuid')?.trim() || '';
+            const el = document.getElementById('modalDocTitle') || document.getElementById('modalSemakanKewanganTajuk');
+            activeSemakanButton = btn;
+            const item = SEMAK_PAYLOAD[activeItemUuid] || null;
+
+            if (el && (t || item?.title)) {
+                el.textContent = t || item?.title;
+            }
+
+            renderSemakanKewanganRows(item);
         });
 
         if (btnSimpanDokKewangan) {
-            btnSimpanDokKewangan.addEventListener('click', () => {
-                if (!activeSemakanButton) return;
+            btnSimpanDokKewangan.addEventListener('click', async () => {
+                if (!activeItemUuid) return;
 
-                const currentRow = activeSemakanButton.closest('tr');
-                const statusCell = currentRow?.querySelector('.status-penilaian');
-                if (statusCell) {
-                    statusCell.textContent = 'Selesai';
+                const rows = [];
+                let hasError = false;
+
+                $('#modalSemakanKewanganBody tr').each(function () {
+                    const $select  = $(this).find('.semak-pematuhan');
+                    const $catatan = $(this).find('.semak-catatan');
+                    if (!$select.length) return;
+
+                    const vendorId        = $select.data('vendor-id');
+                    const statusPematuhan = $select.val();
+                    const catatan         = $catatan.val() ? $catatan.val().trim() : '';
+
+                    if (statusPematuhan === '' || statusPematuhan === null) {
+                        hasError = true;
+                        $select.addClass('is-invalid');
+                        return;
+                    }
+                    $select.removeClass('is-invalid');
+
+                    if (statusPematuhan === 'tidak_mematuhi' && !catatan) {
+                        hasError = true;
+                        $catatan.addClass('is-invalid');
+                        return;
+                    }
+                    $catatan.removeClass('is-invalid');
+
+                    rows.push({ vendor_id: vendorId, status_pematuhan: statusPematuhan, catatan });
+                });
+
+                if (hasError) {
+                    Swal.fire({
+                        title: 'Ralat Validasi',
+                        text: 'Sila pilih Status Pematuhan bagi setiap petender. Catatan wajib diisi jika Status Pematuhan = Tidak Mematuhi.',
+                        icon: 'warning',
+                        confirmButtonText: 'Faham',
+                        confirmButtonColor: '#1e293b'
+                    });
+                    return;
                 }
 
-                activeSemakanButton.textContent = 'Papar';
+                // Save evaluations to backend
+                let saveErrors = 0;
+                for (const row of rows) {
+                    try {
+                        await $.ajax({
+                            url: SIMPAN_URL,
+                            method: 'POST',
+                            data: {
+                                _token: CSRF_TOKEN,
+                                tender: TENDER_IDENTIFIER,
+                                vendor_id: row.vendor_id,
+                                checklist_item_uuid: activeItemUuid,
+                                status_pematuhan: row.status_pematuhan,
+                                catatan: row.catatan,
+                            }
+                        });
+
+                        if (SEMAK_PAYLOAD[activeItemUuid]) {
+                            const vRow = SEMAK_PAYLOAD[activeItemUuid].vendors.find(v => v.vendor_id == row.vendor_id);
+                            if (vRow) {
+                                vRow.status_pematuhan = row.status_pematuhan;
+                                vRow.catatan = row.catatan;
+                            }
+                        }
+                    } catch (err) {
+                        saveErrors++;
+                        console.error('Failed to save evaluation for vendor ' + row.vendor_id, err);
+                    }
+                }
+
+                if (saveErrors > 0) {
+                    Swal.fire({
+                        title: 'Ralat',
+                        text: saveErrors + ' daripada ' + rows.length + ' penilaian gagal disimpan. Sila semak konsol untuk maklumat lanjut.',
+                        icon: 'error',
+                        confirmButtonText: 'Tutup',
+                        confirmButtonColor: '#1e293b'
+                    });
+                    return;
+                }
+
+                // Re-evaluate if ALL vendor submissions for activeItemUuid are reviewed
+                const itemObj = SEMAK_PAYLOAD[activeItemUuid];
+                const vendorsArr = itemObj?.vendors || [];
+                const totalV = vendorsArr.length;
+                const reviewedV = vendorsArr.filter(v => v.status_pematuhan !== null && v.status_pematuhan !== '').length;
+                const isAllReviewed = (totalV > 0 && reviewedV === totalV);
+
+                const $outerTr = $('tr[data-item-uuid="' + activeItemUuid + '"]');
+                const $statusCell = $outerTr.find('.status-penilaian');
+
+                if ($statusCell.length) {
+                    if (isAllReviewed) {
+                        $statusCell.html('<span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-20 px-2.5 py-1.5 rounded-pill"><i class="bi bi-check-circle me-1"></i>Selesai</span>');
+                    } else {
+                        $statusCell.html('<span class="badge bg-warning bg-opacity-10 text-warning-emphasis border border-warning border-opacity-20 px-2.5 py-1.5 rounded-pill"><i class="bi bi-clock me-1"></i>Menunggu Penilaian</span>');
+                    }
+                }
+
+                Swal.fire({
+                    title: 'Berjaya!',
+                    text: 'Penilaian pematuhan telah disimpan.',
+                    icon: 'success',
+                    confirmButtonText: 'OK',
+                    confirmButtonColor: '#1e293b'
+                }).then(() => {
+                    location.reload();
+                });
+
                 activeSemakanButton = null;
+                const modalEl = document.getElementById('modalSemakanKetepatanDokumenKewangan');
+                if (modalEl && typeof bootstrap !== 'undefined') {
+                    const modal = bootstrap.Modal.getInstance(modalEl);
+                    if (modal) modal.hide();
+                }
             });
         }
+
+        // Click Papar on Step 2 table row
+        $(document).on('click', '.btn-papar-cadangan-kewangan-step2', function () {
+            activeStep2Uuid = $(this).data('uuid') || (PENYATA_BANK_UUIDS[0] ?? '');
+            const docTitle = $(this).data('dokumen') || 'Penyata Bank Terkini (3 Bulan Terakhir) Syarikat';
+            $('#modalCadanganKewanganTajukStep2').text(docTitle);
+
+            renderStep2VendorListModal();
+        });
+
+        function getFailedStep1VendorIds() {
+            const failedSet = new Set();
+
+            Object.keys(SEMAK_PAYLOAD).forEach(uuid => {
+                if (!PENYATA_BANK_UUIDS.includes(uuid)) {
+                    const itemObj = SEMAK_PAYLOAD[uuid];
+                    (itemObj?.vendors || []).forEach(v => {
+                        if (v.status_pematuhan === 'tidak_mematuhi' || v.status_pematuhan === 0 || v.status_pematuhan === '0') {
+                            failedSet.add(parseInt(v.vendor_id));
+                        }
+                    });
+                }
+            });
+
+            return Array.from(failedSet);
+        }
+
+        function renderStep2VendorListModal() {
+            const $tbody = $('#modalStep2VendorTableBody');
+            $tbody.empty();
+
+            const itemObj = SEMAK_PAYLOAD[activeStep2Uuid];
+            const rawVendors = itemObj?.vendors || [];
+            const failedVendorIds = getFailedStep1VendorIds();
+
+            // Exclude vendors listed under "Tidak Melepasi" in Step 1
+            const eligibleVendors = rawVendors.filter(v => !failedVendorIds.includes(parseInt(v.vendor_id)));
+
+            if (!eligibleVendors.length) {
+                $tbody.append('<tr><td colspan="4" class="text-center text-muted py-4"><i class="bi bi-info-circle me-1"></i>Tiada petender yang melepasi penilaian pematuhan dokumentasi.</td></tr>');
+                return;
+            }
+
+            const maxScore = (function() {
+                let max = 0;
+                if (PENYATA_BANK_CONFIG.scoring_items && PENYATA_BANK_CONFIG.scoring_items.length) {
+                    PENYATA_BANK_CONFIG.scoring_items.forEach(s => {
+                        const val = parseFloat(s.skema) || 0;
+                        if (val > max) max = val;
+                    });
+                }
+                if (max === 0) {
+                    const itemObj = SEMAK_PAYLOAD[activeStep2Uuid];
+                    max = parseFloat(itemObj?.score || itemObj?.weight) || 10;
+                }
+                return max;
+            })();
+
+            eligibleVendors.forEach((v, idx) => {
+                const kodDisplay = v.kod ? escapeHtml(v.kod) : ((idx + 1) + '/' + eligibleVendors.length);
+                const isEvaluated = (v.status_pematuhan !== null && v.status_pematuhan !== '' && v.status_pematuhan !== undefined);
+
+                const statusBadge = isEvaluated
+                    ? '<span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-20 px-2.5 py-1.5 rounded-pill"><i class="bi bi-check-circle me-1"></i>Selesai</span>'
+                    : '<span class="badge bg-warning bg-opacity-10 text-warning-emphasis border border-warning border-opacity-20 px-2.5 py-1.5 rounded-pill"><i class="bi bi-clock me-1"></i>Menunggu Penilaian</span>';
+
+                const scoreVal = (v.skor !== null && v.skor !== undefined && v.skor !== '') ? v.skor : ((v.status_pematuhan === 'mematuhi' || v.status_pematuhan === 1) ? maxScore : 0);
+                const scoreDisplay = isEvaluated
+                    ? (scoreVal + ' / <strong class="fw-bold text-dark">' + maxScore + '</strong>')
+                    : ('- / <strong class="fw-bold text-muted">' + maxScore + '</strong>');
+
+                const actionBtn = isEvaluated
+                    ? '<button type="button" class="btn btn-outline-primary btn-sm btn-papar-penyata-bank-detail-step2 px-3 py-1.5" ' +
+                        'data-vendor-id="' + v.vendor_id + '" ' +
+                        'data-kod="' + kodDisplay + '" ' +
+                        'data-nama="' + escapeHtml(v.name || '') + '">' +
+                        '<i class="bi bi-eye me-1"></i>Lihat' +
+                    '</button>'
+                    : '<button type="button" class="btn btn-success btn-sm btn-papar-penyata-bank-detail-step2 px-3 py-1.5" ' +
+                        'data-vendor-id="' + v.vendor_id + '" ' +
+                        'data-kod="' + kodDisplay + '" ' +
+                        'data-nama="' + escapeHtml(v.name || '') + '">' +
+                        '<i class="bi bi-pencil-square me-1"></i>Papar / Menilai' +
+                    '</button>';
+
+                $tbody.append(
+                    '<tr>' +
+                        '<td class="text-center fw-bold align-middle" style="background-color: #efeff0ff; color: #3f3f3fff;">' + kodDisplay + '</td>' +
+                        '<td class="text-center align-middle font-monospace">' + scoreDisplay + '</td>' +
+                        '<td class="text-center align-middle">' + statusBadge + '</td>' +
+                        '<td class="text-center align-middle">' + actionBtn + '</td>' +
+                    '</tr>'
+                );
+            });
+        }
+
+        function renderStep2RumusanTables() {
+            const $melepasiTbody = $('#step2RumusanMelepasiTableBody');
+            const $tidakMelepasiTbody = $('#step2RumusanTidakMelepasiTableBody');
+            const $melepasiText = $('#step2TotalMelepasiText');
+            const $tidakMelepasiText = $('#step2TotalTidakMelepasiText');
+
+            if (!$melepasiTbody.length || !$tidakMelepasiTbody.length) return;
+
+            $melepasiTbody.empty();
+            $tidakMelepasiTbody.empty();
+
+            const targetUuid = activeStep2Uuid || (PENYATA_BANK_UUIDS && PENYATA_BANK_UUIDS[0]) || '';
+            const itemObj = SEMAK_PAYLOAD[targetUuid] || Object.values(SEMAK_PAYLOAD).find(item => PENYATA_BANK_UUIDS.includes(item?.uuid));
+            const rawVendors = itemObj?.vendors || [];
+            const failedStep1Ids = getFailedStep1VendorIds();
+            const eligibleVendors = rawVendors.filter(v => !failedStep1Ids.includes(parseInt(v.vendor_id)));
+
+            const melepasiList = [];
+            const tidakMelepasiList = [];
+
+            eligibleVendors.forEach(v => {
+                if (v.status_pematuhan === 'mematuhi' || v.status_pematuhan === 1) {
+                    melepasiList.push(v);
+                } else if (v.status_pematuhan === 'tidak_mematuhi' || v.status_pematuhan === 0) {
+                    tidakMelepasiList.push(v);
+                }
+            });
+
+            // Render Melepasi Table
+            if (melepasiList.length > 0) {
+                melepasiList.forEach((v, idx) => {
+                    const kodDisplay = v.kod ? escapeHtml(v.kod) : ((idx + 1) + '/' + melepasiList.length);
+                    const ulasanTxt = v.catatan ? escapeHtml(v.catatan) : 'Mematuhi semua syarat penilaian penyata bulanan bank.';
+                    $melepasiTbody.append(
+                        '<tr>' +
+                            '<td class="text-center py-3 px-3">' +
+                                '<span class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1.5 rounded-pill font-monospace fw-bold">' + kodDisplay + '</span>' +
+                            '</td>' +
+                            '<td class="py-3 px-3 fw-semibold text-dark">' +
+                                '<div>' + escapeHtml(v.name || '') + '</div>' +
+                                '<div class="small text-muted font-normal mt-1">' + ulasanTxt + '</div>' +
+                            '</td>' +
+                        '</tr>'
+                    );
+                });
+            } else {
+                $melepasiTbody.append('<tr><td class="text-center text-muted py-4" colspan="2" style="font-size: 0.875rem;"><i class="bi bi-inbox me-1 fs-5"></i>Tiada pembekal melepasi lagi buat masa ini.</td></tr>');
+            }
+
+            // Render Tidak Melepasi Table
+            if (tidakMelepasiList.length > 0) {
+                tidakMelepasiList.forEach((v, idx) => {
+                    const kodDisplay = v.kod ? escapeHtml(v.kod) : ((idx + 1) + '/' + tidakMelepasiList.length);
+                    const ulasanTxt = v.catatan ? escapeHtml(v.catatan) : 'Tidak mematuhi syarat penilaian penyata bulanan bank.';
+                    $tidakMelepasiTbody.append(
+                        '<tr>' +
+                            '<td class="text-center py-3 px-3">' +
+                                '<span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2.5 py-1.5 rounded-pill font-monospace fw-bold">' + kodDisplay + '</span>' +
+                            '</td>' +
+                            '<td class="py-3 px-3 fw-semibold text-dark">' +
+                                '<div>' + escapeHtml(v.name || '') + '</div>' +
+                                '<div class="small text-danger font-medium mt-1">' + ulasanTxt + '</div>' +
+                            '</td>' +
+                        '</tr>'
+                    );
+                });
+            } else {
+                $tidakMelepasiTbody.append('<tr><td class="text-center text-muted py-4" colspan="2" style="font-size: 0.875rem;"><i class="bi bi-inbox me-1 fs-5"></i>Tiada rekod dijumpai</td></tr>');
+            }
+
+            if ($melepasiText.length) $melepasiText.text(melepasiList.length + ' pembekal melepasi');
+            if ($tidakMelepasiText.length) $tidakMelepasiText.text(tidakMelepasiList.length + ' pembekal tidak melepasi');
+        }
+
+        function calculateStep2Totals() {
+            let total = 0;
+            let count = 0;
+            $('.step2-bulan-input').each(function () {
+                const val = parseFloat($(this).val().replace(/,/g, '')) || 0;
+                total += val;
+                count++;
+            });
+
+            const purata = count > 0 ? (total / count) : 0;
+            const roundedPurata = Math.round(purata * 100) / 100;
+
+            let autoSkor = 0;
+            const itemsArr = (PENYATA_BANK_CONFIG.scoring_items && PENYATA_BANK_CONFIG.scoring_items.length)
+                ? [...PENYATA_BANK_CONFIG.scoring_items].sort((a, b) => (parseFloat(a.dari) || 0) - (parseFloat(b.dari) || 0))
+                : [
+                    { dari: 0, hingga: 10064.99, skema: '0' },
+                    { dari: 10065, hingga: null, skema: '10' }
+                ];
+
+            let matchFound = false;
+
+            // 1. Check exact range match
+            for (const s of itemsArr) {
+                const dari = parseFloat(s.dari) || 0;
+                const hingga = (s.hingga !== null && s.hingga !== undefined && parseFloat(s.hingga) > 0)
+                    ? parseFloat(s.hingga)
+                    : Infinity;
+
+                if (roundedPurata >= dari && roundedPurata <= hingga) {
+                    autoSkor = s.skema;
+                    matchFound = true;
+                    break;
+                }
+            }
+
+            // 2. Exceeds highest range? Assign highest available score
+            if (!matchFound && itemsArr.length > 0) {
+                const maxItem = itemsArr[itemsArr.length - 1];
+                const maxHingga = (maxItem.hingga !== null && maxItem.hingga !== undefined && parseFloat(maxItem.hingga) > 0)
+                    ? parseFloat(maxItem.hingga)
+                    : Infinity;
+
+                if (roundedPurata > maxHingga) {
+                    autoSkor = maxItem.skema;
+                    matchFound = true;
+                } else {
+                    // 3. Middle gap fallback: assign nearest lower tier score
+                    for (const s of itemsArr) {
+                        if (roundedPurata >= (parseFloat(s.dari) || 0)) {
+                            autoSkor = s.skema;
+                        }
+                    }
+                }
+            }
+
+            $('#step2-jumlah-amaun').val(total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+            $('#step2-purata').val(purata.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+            $('#step2-skor-automatik').val(autoSkor);
+        }
+
+        // Click Papar / Menilai inside Step 2 Modal 1 for a vendor
+        $(document).on('click', '.btn-papar-penyata-bank-detail-step2', function () {
+            activeStep2VendorId = $(this).data('vendor-id');
+            const kod = $(this).data('kod');
+            const nama = $(this).data('nama');
+
+            $('#modalStep2KodPembekal').text(kod);
+            $('#modalStep2NamaPembekal').text(nama || '-');
+            $('#modalButiranCadanganKewanganTajukStep2').text($('#modalCadanganKewanganTajukStep2').text() || $('#modalDocTitle').text() || 'Penyata Bank Terkini (3 Bulan Terakhir) Syarikat');
+
+            // Render dynamic month rows matching PENYATA_BANK_CONFIG.bulans
+            const $bulanTbody = $('#modalStep2BulanTableBody');
+            $bulanTbody.empty();
+
+            const bulansArr = (PENYATA_BANK_CONFIG.bulans && PENYATA_BANK_CONFIG.bulans.length)
+                ? PENYATA_BANK_CONFIG.bulans
+                : [
+                    { bulan: 6, tahun: 2025, nama: 'Bulan 6 (Jun 2025)', jumlah: 500000 },
+                    { bulan: 7, tahun: 2025, nama: 'Bulan 7 (Julai 2025)', jumlah: 300000 },
+                    { bulan: 8, tahun: 2025, nama: 'Bulan 8 (Ogos 2025)', jumlah: 200000 }
+                ];
+
+            bulansArr.forEach((b, idx) => {
+                const rowId = 'step2-bulan-' + (b.bulan || (idx + 6));
+                const amtVal = (typeof b.jumlah === 'number')
+                    ? b.jumlah.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                    : (b.jumlah || '0.00');
+
+                $bulanTbody.append(
+                    '<tr>' +
+                        '<td class="text-center font-monospace fw-semibold px-3 py-2.5 bg-light-subtle">' + escapeHtml(b.nama || ('Bulan ' + b.bulan)) + '</td>' +
+                        '<td class="px-3 py-2">' +
+                            '<div class="input-group input-group-sm">' +
+                                '<span class="input-group-text bg-light text-muted fw-bold">RM</span>' +
+                                '<input type="text" class="form-control text-end font-monospace fw-semibold step2-bulan-input" id="' + rowId + '" inputmode="decimal" value="' + escapeHtml(amtVal) + '" aria-label="Amaun ' + escapeHtml(b.nama) + '">' +
+                            '</div>' +
+                        '</td>' +
+                    '</tr>'
+                );
+            });
+
+            // Render dynamic reference scoring scale matching PENYATA_BANK_CONFIG.scoring_items
+            const $scaleTbody = $('#modalStep2ScoringScaleTableBody');
+            $scaleTbody.empty();
+
+            const itemsArr = (PENYATA_BANK_CONFIG.scoring_items && PENYATA_BANK_CONFIG.scoring_items.length)
+                ? PENYATA_BANK_CONFIG.scoring_items
+                : [
+                    { dari: 0, hingga: 10064.99, skema: '0' },
+                    { dari: 10065, hingga: null, skema: '10' }
+                ];
+
+            itemsArr.forEach(s => {
+                const dariStr = (typeof s.dari === 'number') ? s.dari.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : s.dari;
+                const hinggaStr = (s.hingga !== null && s.hingga !== undefined)
+                    ? ((typeof s.hingga === 'number') ? s.hingga.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : s.hingga)
+                    : 'Ke Atas';
+
+                const isPass = (s.skema && s.skema !== '0' && s.skema !== 0);
+                const badge = isPass
+                    ? '<span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-20 px-2.5 py-1 rounded-pill">' + escapeHtml(s.skema) + '</span>'
+                    : '<span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-20 px-2.5 py-1 rounded-pill">' + escapeHtml(s.skema) + '</span>';
+
+                $scaleTbody.append(
+                    '<tr>' +
+                        '<td class="font-monospace">' + dariStr + '</td>' +
+                        '<td class="font-monospace">' + hinggaStr + '</td>' +
+                        '<td>' + badge + '</td>' +
+                    '</tr>'
+                );
+            });
+
+            const itemObj = SEMAK_PAYLOAD[activeStep2Uuid];
+            const vRow = itemObj?.vendors?.find(v => v.vendor_id == activeStep2VendorId);
+
+            const savedStatus  = vRow ? vRow.status_pematuhan : null;
+            const savedCatatan = vRow ? (vRow.catatan || '') : '';
+
+            const $kelayakan = $('#step2-status-kelayakan');
+            const $catatan   = $('#step2-catatan-penyata');
+
+            if (savedStatus === 'mematuhi' || savedStatus === 1) {
+                $kelayakan.val('layak');
+            } else if (savedStatus === 'tidak_mematuhi' || savedStatus === 0) {
+                $kelayakan.val('tidak_layak');
+            } else {
+                $kelayakan.val('');
+            }
+
+            $catatan.val(savedCatatan);
+
+            // Read-only handling for Step 2
+            const isStep2ReadOnly = (dbConfirmed.step2 || dbCurrentStep > 2);
+            if (isStep2ReadOnly) {
+                $kelayakan.prop('disabled', true);
+                $catatan.prop('disabled', true).prop('readonly', true);
+                $('.step2-bulan-input').prop('disabled', true).prop('readonly', true);
+                $('#btnStep2SimpanPenyataBank').addClass('d-none');
+            } else {
+                $kelayakan.prop('disabled', false);
+                $catatan.prop('disabled', false).prop('readonly', false);
+                $('.step2-bulan-input').prop('disabled', false).prop('readonly', false);
+                $('#btnStep2SimpanPenyataBank').removeClass('d-none');
+            }
+
+            calculateStep2Totals();
+
+            const modal1El = document.getElementById('modalPenilaianCadanganKewanganStep2');
+            const modal2El = document.getElementById('modalButiranCadanganKewanganStep2');
+
+            if (modal1El) bootstrap.Modal.getInstance(modal1El)?.hide();
+            if (modal2El) bootstrap.Modal.getOrCreateInstance(modal2El).show();
+        });
+
+        // Calculate totals on monthly amount inputs change
+        $(document).on('input', '.step2-bulan-input', calculateStep2Totals);
+
+        // Save evaluation in Modal 2
+        $(document).on('click', '#btnStep2SimpanPenyataBank', async function () {
+            const kelayakan = $('#step2-status-kelayakan').val();
+            const catatan   = $('#step2-catatan-penyata').val() ? $('#step2-catatan-penyata').val().trim() : '';
+
+            if (!kelayakan) {
+                Swal.fire({
+                    title: 'Ralat Validasi',
+                    text: 'Sila pilih Status Kelayakan (Layak / Tidak Layak).',
+                    icon: 'warning',
+                    confirmButtonText: 'Faham',
+                    confirmButtonColor: '#1e293b'
+                });
+                return;
+            }
+
+            if (kelayakan === 'tidak_layak' && !catatan) {
+                Swal.fire({
+                    title: 'Ralat Validasi',
+                    text: 'Catatan wajib diisi jika Status Kelayakan = Tidak Layak.',
+                    icon: 'warning',
+                    confirmButtonText: 'Faham',
+                    confirmButtonColor: '#1e293b'
+                });
+                return;
+            }
+
+            const statusPematuhan = (kelayakan === 'layak') ? 'mematuhi' : 'tidak_mematuhi';
+            const skorVal = parseFloat($('#step2-skor-automatik').val()) || 0;
+
+            try {
+                const res = await $.ajax({
+                    url: SIMPAN_URL,
+                    method: 'POST',
+                    data: {
+                        _token: CSRF_TOKEN,
+                        tender: TENDER_IDENTIFIER,
+                        vendor_id: activeStep2VendorId,
+                        checklist_item_uuid: activeStep2Uuid,
+                        status_pematuhan: statusPematuhan,
+                        catatan: catatan,
+                        skor: skorVal,
+                        step: 2
+                    }
+                });
+
+                if (SEMAK_PAYLOAD[activeStep2Uuid]) {
+                    const vRow = SEMAK_PAYLOAD[activeStep2Uuid].vendors.find(v => v.vendor_id == activeStep2VendorId);
+                    if (vRow) {
+                        vRow.status_pematuhan = statusPematuhan;
+                        vRow.catatan = catatan;
+                        vRow.skor = (res.skor !== undefined && res.skor !== null) ? res.skor : skorVal;
+                    }
+                }
+
+                const itemObj = SEMAK_PAYLOAD[activeStep2Uuid];
+                const rawVendors = itemObj?.vendors || [];
+                const failedVendorIds = getFailedStep1VendorIds();
+                const eligibleVendors = rawVendors.filter(v => !failedVendorIds.includes(parseInt(v.vendor_id)));
+
+                const totalV = eligibleVendors.length;
+                const reviewedV = eligibleVendors.filter(v => v.status_pematuhan !== null && v.status_pematuhan !== '' && v.status_pematuhan !== undefined).length;
+                const isAllReviewed = (totalV > 0 && reviewedV === totalV);
+
+                const $outerTr = $('tr[data-item-uuid="' + activeStep2Uuid + '"]');
+                const $statusCell = $outerTr.find('.status-penilaian');
+
+                if ($statusCell.length) {
+                    if (isAllReviewed) {
+                        $statusCell.html('<span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-20 px-2.5 py-1.5 rounded-pill"><i class="bi bi-check-circle me-1"></i>Selesai</span>');
+                    } else {
+                        $statusCell.html('<span class="badge bg-warning bg-opacity-10 text-warning-emphasis border border-warning border-opacity-20 px-2.5 py-1.5 rounded-pill"><i class="bi bi-clock me-1"></i>Menunggu Penilaian</span>');
+                    }
+                }
+
+                Swal.fire({
+                    title: 'Berjaya!',
+                    text: 'Penilaian Penyata Bulanan Bank telah disimpan.',
+                    icon: 'success',
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+
+                const modal2El = document.getElementById('modalButiranCadanganKewanganStep2');
+                const modal1El = document.getElementById('modalPenilaianCadanganKewanganStep2');
+
+                if (modal2El) bootstrap.Modal.getInstance(modal2El)?.hide();
+                renderStep2VendorListModal();
+                renderStep2RumusanTables();
+                if (modal1El) bootstrap.Modal.getOrCreateInstance(modal1El).show();
+
+            } catch (err) {
+                Swal.fire({
+                    title: 'Ralat',
+                    text: err.responseJSON?.message || 'Gagal menyimpan penilaian. Sila cuba lagi.',
+                    icon: 'error',
+                    confirmButtonText: 'Tutup',
+                    confirmButtonColor: '#1e293b'
+                });
+            }
+        });
+
+        $(document).on('click', '.btn-preview-file', function (e) {
+            e.preventDefault();
+            let url  = $(this).attr('href');
+            const name = $(this).data('name') || $(this).text();
+
+            if (!url || url === '#') return;
+
+            if (url && (url.startsWith('http://') || url.startsWith('https://'))) {
+                try {
+                    const parsed = new URL(url);
+                    url = parsed.pathname + parsed.search + parsed.hash;
+                } catch (err) {}
+            }
+
+            $('#modalPreviewTitle').text(name);
+            $('#btnNewTabPreview').attr('href', url);
+            $('#btnFallbackDownload').attr('href', url);
+
+            $('#previewSpinner').removeClass('d-none');
+            $('#previewIframe').addClass('d-none').attr('src', '');
+            $('#previewImageWrapper').addClass('d-none');
+            $('#previewImage').attr('src', '');
+            $('#previewFallback').addClass('d-none');
+
+            const urlPath  = url.split(/[#?]/)[0];
+            const extension = urlPath.split('.').pop().trim().toLowerCase();
+            const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp'];
+            const filenamePortion = urlPath.substring(urlPath.lastIndexOf('/') + 1);
+            const isProbablyPage  = !filenamePortion.includes('.') || filenamePortion.endsWith('.html') || url.includes('form') || url.includes('borang');
+
+            const $icon = $('#previewIcon');
+            $icon.removeClass();
+            if (imageExtensions.includes(extension)) {
+                $icon.addClass('bi bi-file-earmark-image text-primary fs-5');
+                $('#previewImage').attr('src', url);
+                $('#previewImageWrapper').removeClass('d-none');
+            } else if (extension === 'pdf') {
+                $icon.addClass('bi bi-file-earmark-pdf text-danger fs-5');
+                $('#previewIframe').attr('src', url).removeClass('d-none');
+            } else if (isProbablyPage) {
+                $icon.addClass('bi bi-window text-success fs-5');
+                $('#previewIframe').attr('src', url).removeClass('d-none');
+            } else {
+                $icon.addClass('bi bi-file-earmark-zip text-warning fs-5');
+                $('#previewSpinner').addClass('d-none');
+                $('#previewFallback').removeClass('d-none');
+            }
+
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('modalPreview')).show();
+        });
+
+        $('#previewIframe').on('load', function () { $('#previewSpinner').addClass('d-none'); });
+        $('#previewImage').on('load',  function () { $('#previewSpinner').addClass('d-none'); });
 
     });
 
@@ -1044,14 +2147,27 @@
 
             const currentId = current.id;
             const checks = [
-                { id: 'pematuhan-tab', el: document.getElementById('confirmLayak') },
+                { id: 'pematuhan-tab', el: document.getElementById('confirmLayakStep1') || document.getElementById('confirmLayak') },
                 { id: 'penyata-bank-tab', el: document.getElementById('confirmLayakStep2') },
                 { id: 'penilaian-tab', el: document.getElementById('confirmLayakStep3') },
             ];
             const stepCheck = checks.find(c => c.id === currentId);
             if (stepCheck?.el && !stepCheck.el.checked) {
-                alert(msgTandakanPengesahan);
+                Swal.fire({
+                    title: 'Amaran Pengesahan',
+                    text: msgTandakanPengesahan,
+                    icon: 'warning',
+                    confirmButtonText: 'Faham',
+                    confirmButtonColor: '#1e293b'
+                });
                 return;
+            }
+
+            const stepNumMap = { 'pematuhan-tab': 1, 'penyata-bank-tab': 2, 'penilaian-tab': 3 };
+            const currentStepNum = stepNumMap[currentId] || 1;
+
+            if (typeof window.saveConfirmedStates === 'function') {
+                window.saveConfirmedStates(currentStepNum, true);
             }
 
             const next = current.closest('.progress-step')?.nextElementSibling?.querySelector('.step-number');
