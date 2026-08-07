@@ -94,6 +94,16 @@
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
 }
 
+/* Disabled — same greyed look for every variant, so a busy/locked button reads clearly. */
+.btn-form:disabled,
+.btn-form:disabled:hover {
+    background: #e5e7eb;
+    color: #9ca3af;
+    border-color: #e5e7eb;
+    box-shadow: none;
+    cursor: not-allowed;
+}
+
 
 /* --------------------------------------------------------------------------
    2. ACTION BUTTONS  (.btn-action)

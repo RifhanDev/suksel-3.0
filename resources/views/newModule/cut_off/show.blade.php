@@ -65,17 +65,6 @@
         font-weight: 600;
     }
 
-    .cutoff-actions .btn-laporan {
-        background: #10b981;
-        color: #fff;
-        border: none;
-    }
-
-    .cutoff-actions .btn-laporan:hover {
-        background: #059669;
-        color: #fff;
-    }
-
     .cutoff-actions .btn-simpan {
         background: #0d9488;
         color: #fff;
@@ -96,6 +85,13 @@
     .cutoff-actions .btn-hantar:hover {
         background: #6d28d9;
         color: #fff;
+    }
+
+    .cutoff-actions button:disabled,
+    .cutoff-actions a.disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+        pointer-events: none;
     }
 
     .dist-chart-wrap {
@@ -190,11 +186,7 @@
 
         <h4 class="fw-bold mb-4 pb-2 border-bottom" style="color: var(--sg-red-dark);">PENENTUAN HARGA CUT OFF</h4>
 
-        {{-- Section 1 --}}
-        @php
-        $bins = ['Less', '-90%', '-70%', '-50%', '-30%', '-10%', '10%', '30%', '50%', '70%', '90%', 'More'];
-        $freq = [0, 0, 0, 0, 2, 5, 2, 0, 0, 0, 0, 0];
-        @endphp
+        {{-- Section 1 — $bins & $freq dihantar dari CutOffController --}}
         <div class="row mb-4">
             <div class="col-lg-8">
                 <div class="section-title-cutoff">Tender Prices Distribution Curve</div>
@@ -312,23 +304,23 @@
                         <tbody>
                             <tr>
                                 <td><strong>Bilangan Tender Melebihi 10 iaitu Nt &gt; 10</strong></td>
-                                <td class="text-center">OK</td>
+                                <td class="text-center">{{ $melebihi10 ?? '-' }}</td>
                             </tr>
                             <tr>
                                 <td>Mean - X*Mean or Mean - X*SD (yang mana lebih tinggi)</td>
-                                <td class="text-center">RM 685,544.55 and RM 708,572.41</td>
+                                <td class="text-center">{{ $meanFormula ?? '-' }}</td>
                             </tr>
                             <tr>
                                 <td>Cut-off Bagi Builder's Works sahaja (tanpa PCP)</td>
-                                <td class="text-center">RM 708,572.41</td>
+                                <td class="text-center">{{ $cutoffTanpaPcp ?? '-' }}</td>
                             </tr>
                             <tr>
                                 <td>Cut-off Bagi Tender (termasuk PCP)</td>
-                                <td class="text-center">RM 708,572.41</td>
+                                <td class="text-center">{{ $cutoffTermasukPcp ?? '-' }}</td>
                             </tr>
                             <tr>
-                                <td><strong>Harap CUT-OFF (rounded down) YANG DITETAPKAN</strong></td>
-                                <td class="text-center fw-bold text-dark">RM 708,000.00</td>
+                                <td><strong>Harga CUT-OFF (rounded down) YANG DITETAPKAN</strong></td>
+                                <td class="text-center fw-bold text-dark">{{ $hargaCutOffFinal ?? '-' }}</td>
                             </tr>
                         </tbody>
                     </table>
@@ -353,56 +345,48 @@
                             <div class="d-inline-flex align-items-center gap-1">
                                 Pilih
                                 <div class="form-check m-0">
-                                    <input type="checkbox" class="form-check-input" id="selectAllPilih">
+                                    <input type="checkbox" class="form-check-input" id="selectAllPilih"
+                                        {{ ($selectionStatus ?? null) === 'submitted' ? 'disabled' : '' }}>
                                 </div>
                             </div>
                         </th>
                     </tr>
                 </thead>
                 <tbody>
-                    @php
-                    $rows = [
-                    ['ruj' => '1/16', 'price' => '892,000.00', 'bw' => '892,000.00', 'z' => '0.56', 'pct_aj' => '0.00%', 'pct_mean' => '7.58%', 'freak' => false],
-                    ['ruj' => '2/16', 'price' => '850,000.00', 'bw' => 'FREAK', 'z' => '-', 'pct_aj' => '-', 'pct_mean' => '-', 'freak' => true],
-                    ['ruj' => '3/16', 'price' => '820,000.00', 'bw' => '820,000.00', 'z' => '-0.05', 'pct_aj' => '-8.07%', 'pct_mean' => '-0.73%', 'freak' => false],
-                    ['ruj' => '4/16', 'price' => '795,000.00', 'bw' => '795,000.00', 'z' => '-0.26', 'pct_aj' => '-10.87%', 'pct_mean' => '-3.76%', 'freak' => false],
-                    ['ruj' => '5/16', 'price' => '810,000.00', 'bw' => '810,000.00', 'z' => '-0.14', 'pct_aj' => '-9.19%', 'pct_mean' => '-1.95%', 'freak' => false],
-                    ['ruj' => '6/16', 'price' => '830,000.00', 'bw' => '830,000.00', 'z' => '0.03', 'pct_aj' => '-6.95%', 'pct_mean' => '0.47%', 'freak' => false],
-                    ['ruj' => '7/16', 'price' => '825,000.00', 'bw' => '825,000.00', 'z' => '-0.01', 'pct_aj' => '-7.51%', 'pct_mean' => '-0.13%', 'freak' => false],
-                    ['ruj' => '8/16', 'price' => '818,000.00', 'bw' => '818,000.00', 'z' => '-0.07', 'pct_aj' => '-8.30%', 'pct_mean' => '-0.98%', 'freak' => false],
-                    ['ruj' => '9/16', 'price' => '840,000.00', 'bw' => '840,000.00', 'z' => '0.12', 'pct_aj' => '-5.83%', 'pct_mean' => '1.69%', 'freak' => false],
-                    ['ruj' => '10/16', 'price' => '815,000.00', 'bw' => '815,000.00', 'z' => '-0.09', 'pct_aj' => '-8.63%', 'pct_mean' => '-1.34%', 'freak' => false],
-                    ['ruj' => '11/16', 'price' => '808,000.00', 'bw' => '808,000.00', 'z' => '-0.15', 'pct_aj' => '-9.42%', 'pct_mean' => '-2.19%', 'freak' => false],
-                    ['ruj' => '12/16', 'price' => '822,000.00', 'bw' => '822,000.00', 'z' => '-0.03', 'pct_aj' => '-7.85%', 'pct_mean' => '-0.49%', 'freak' => false],
-                    ['ruj' => '13/16', 'price' => '835,000.00', 'bw' => '835,000.00', 'z' => '0.08', 'pct_aj' => '-6.39%', 'pct_mean' => '1.08%', 'freak' => false],
-                    ['ruj' => '14/16', 'price' => '828,000.00', 'bw' => '828,000.00', 'z' => '0.02', 'pct_aj' => '-7.17%', 'pct_mean' => '0.23%', 'freak' => false],
-                    ['ruj' => '15/16', 'price' => '812,000.00', 'bw' => '812,000.00', 'z' => '-0.12', 'pct_aj' => '-8.97%', 'pct_mean' => '-1.70%', 'freak' => false],
-                    ['ruj' => '16/16', 'price' => '838,000.00', 'bw' => '838,000.00', 'z' => '0.10', 'pct_aj' => '-6.05%', 'pct_mean' => '1.44%', 'freak' => false],
-                    ];
-                    @endphp
-                    @foreach($rows as $idx => $r)
+                    {{-- $rows dihantar dari CutOffController (data sebenar dari STOS) --}}
+                    @php $isSubmitted = ($selectionStatus ?? null) === 'submitted'; @endphp
+                    @forelse($rows ?? [] as $idx => $r)
                     <tr>
-                        <td class="text-center">{{ $idx + 1 }}</td>
+                        <td class="text-center">{{ $r['no'] }}</td>
                         <td class="text-center">{{ $r['ruj'] }}</td>
                         <td class="text-center">{{ $r['price'] }}</td>
                         <td class="text-center {{ $r['freak'] ? 'text-freak' : '' }}">{{ $r['bw'] }}</td>
                         <td class="text-center">{{ $r['z'] }}</td>
                         <td class="text-center">{{ $r['pct_aj'] }}</td>
-                        <td class="text-center">{{ $r['pct_mean'] }}</td>
+                        <td class="text-center {{ $r['freak'] ? 'text-freak' : '' }}">{{ $r['pct_mean'] }}</td>
                         <td class="text-center">
-                            <input type="checkbox" class="form-check-input pilih-checkbox" name="pilih[]" value="{{ $idx + 1 }}">
+                            <input type="checkbox" class="form-check-input pilih-checkbox" name="pilih[]"
+                                value="{{ $r['ruj'] }}"
+                                {{ in_array($r['ruj'], $selectedRefs ?? [], true) ? 'checked' : '' }}
+                                {{ $isSubmitted ? 'disabled' : '' }}>
                         </td>
                     </tr>
-                    @endforeach
+                    @empty
+                    <tr>
+                        <td colspan="8" class="text-center text-muted py-4">Tiada syarikat untuk dianalisis.</td>
+                    </tr>
+                    @endforelse
                 </tbody>
             </table>
         </div>
 
+        {{-- Mesej maklum balas Simpan/Hantar --}}
+        <div id="cutoffFeedback" class="alert d-none mb-3" role="alert"></div>
+
         {{-- Action buttons --}}
         <div class="d-flex flex-wrap gap-2 justify-content-end cutoff-actions">
-            <a href="#" class="btn btn-laporan px-4">Laporan</a>
             <button type="button" class="btn btn-simpan px-4" id="btnSimpanCutoff">Simpan</button>
-            <button type="button" class="btn btn-hantar px-4" id="btnHantarCutoff">Hantar</button>
+            <button type="button" class="btn btn-hantar px-4" id="btnHantarCutoff" disabled>Hantar</button>
         </div>
 
     </div>
@@ -455,6 +439,10 @@
         var freq = freqStr.map(function(n) {
             return parseInt(n, 10);
         });
+        // Had paksi-Y dikira secara dinamik ikut data sebenar (bukan tetap 6) —
+        // supaya puncak taburan tak terpotong/rata bila kekerapan melebihi 6.
+        var maxFreq = Math.max.apply(null, freq.concat([0]));
+        var yMax = maxFreq + Math.max(1, Math.ceil(maxFreq * 0.15));
         new Chart(el.getContext('2d'), {
             type: 'line',
             data: {
@@ -488,9 +476,9 @@
                 scales: {
                     y: {
                         beginAtZero: true,
-                        max: 6,
+                        max: yMax,
                         ticks: {
-                            stepSize: 1
+                            precision: 0
                         },
                         title: {
                             display: true,
@@ -516,7 +504,7 @@
         selectAll.addEventListener('change', function() {
             var checked = selectAll.checked;
             checkboxes.forEach(function(cb) {
-                cb.checked = checked;
+                if (!cb.disabled) cb.checked = checked;
             });
         });
     })();
@@ -528,11 +516,188 @@
             modal.show();
         }
     }
+
     (function() {
-        var btnHantar = document.getElementById('btnHantarCutoff');
-        if (btnHantar) btnHantar.addEventListener('click', showCutoffSuccessModal);
+        var cutoffConfig = {
+            tenderUuid: @json($tenderUuid ?? ''),
+            csrfToken: @json(csrf_token()),
+            simpanUrl: @json(route('cutOff.simpan')),
+            hantarUrl: @json(route('cutOff.hantar')),
+            indexUrl: @json(route('cutOff.index')),
+            requireAll: @json($requireAll ?? false),
+            minSelect: @json($minSelect ?? 10),
+            totalCount: @json($totalCount ?? 0),
+            selectionStatus: @json($selectionStatus ?? null) // null | 'draft' | 'submitted'
+        };
+
         var btnSimpan = document.getElementById('btnSimpanCutoff');
-        if (btnSimpan) btnSimpan.addEventListener('click', showCutoffSuccessModal);
+        var btnHantar = document.getElementById('btnHantarCutoff');
+        var feedbackEl = document.getElementById('cutoffFeedback');
+
+        function getCheckboxes() {
+            return document.querySelectorAll('.pilih-checkbox');
+        }
+
+        function getSelectedRefs() {
+            var refs = [];
+            getCheckboxes().forEach(function(cb) {
+                if (cb.checked) refs.push(cb.value);
+            });
+            return refs;
+        }
+
+        function showFeedback(message, type) {
+            if (!feedbackEl) return;
+            feedbackEl.textContent = message;
+            feedbackEl.className = 'alert mb-3 alert-' + (type === 'error' ? 'danger' : 'success');
+        }
+
+        function clearFeedback() {
+            if (!feedbackEl) return;
+            feedbackEl.className = 'alert d-none mb-3';
+            feedbackEl.textContent = '';
+        }
+
+        // Padan peraturan yang sama di STOS Api\CutOffController::simpan() — pengesahan
+        // di sini hanya untuk maklum balas segera; STOS tetap pihak berkuasa muktamad.
+        function validateSelection(selectedCount) {
+            if (cutoffConfig.requireAll) {
+                if (selectedCount < cutoffConfig.totalCount) {
+                    return 'Sila tandakan SEMUA baris (' + cutoffConfig.totalCount + ') — jumlah tender terhad atau semua tender adalah \'FREAK\'.';
+                }
+                return null;
+            }
+            if (selectedCount < cutoffConfig.minSelect) {
+                return 'Sila tandakan sekurang-kurangnya ' + cutoffConfig.minSelect + ' baris (ditandakan: ' + selectedCount + ').';
+            }
+            return null;
+        }
+
+        function lockPageAsSubmitted() {
+            getCheckboxes().forEach(function(cb) { cb.disabled = true; });
+            var selectAll = document.getElementById('selectAllPilih');
+            if (selectAll) selectAll.disabled = true;
+            if (btnSimpan) btnSimpan.disabled = true;
+            if (btnHantar) btnHantar.disabled = true;
+        }
+
+        function unlockAfterSimpan() {
+            if (btnHantar) btnHantar.disabled = false;
+            cutoffConfig.selectionStatus = 'draft';
+        }
+
+        // Inisialisasi status butang ikut state sedia ada (bila page dimuat semula).
+        if (cutoffConfig.selectionStatus === 'submitted') {
+            lockPageAsSubmitted();
+        } else if (cutoffConfig.selectionStatus === 'draft') {
+            unlockAfterSimpan();
+        }
+
+        if (btnSimpan) {
+            btnSimpan.addEventListener('click', function() {
+                clearFeedback();
+                var refs = getSelectedRefs();
+                var error = validateSelection(refs.length);
+                if (error) {
+                    showFeedback(error, 'error');
+                    return;
+                }
+
+                btnSimpan.disabled = true;
+                btnSimpan.textContent = 'Menyimpan...';
+
+                fetch(cutoffConfig.simpanUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': cutoffConfig.csrfToken
+                        },
+                        body: JSON.stringify({
+                            tender: cutoffConfig.tenderUuid,
+                            selected_refs: refs
+                        })
+                    })
+                    .then(function(res) {
+                        return res.json().then(function(body) {
+                            return { ok: res.ok, body: body };
+                        });
+                    })
+                    .then(function(result) {
+                        btnSimpan.disabled = false;
+                        btnSimpan.textContent = 'Simpan';
+
+                        if (!result.ok) {
+                            showFeedback(result.body.message || 'Gagal menyimpan.', 'error');
+                            return;
+                        }
+
+                        showFeedback(result.body.message || 'Perincian cut-off telah disimpan.', 'success');
+                        unlockAfterSimpan();
+                    })
+                    .catch(function() {
+                        btnSimpan.disabled = false;
+                        btnSimpan.textContent = 'Simpan';
+                        showFeedback('Ralat rangkaian. Sila cuba lagi.', 'error');
+                    });
+            });
+        }
+
+        if (btnHantar) {
+            btnHantar.addEventListener('click', function() {
+                if (btnHantar.disabled) return;
+                if (!confirm('Sahkan Hantar cut-off? Tindakan ini muktamad dan tidak boleh diubah selepas ini.')) {
+                    return;
+                }
+
+                clearFeedback();
+                btnHantar.disabled = true;
+                btnHantar.textContent = 'Menghantar...';
+
+                fetch(cutoffConfig.hantarUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': cutoffConfig.csrfToken
+                        },
+                        body: JSON.stringify({ tender: cutoffConfig.tenderUuid })
+                    })
+                    .then(function(res) {
+                        return res.json().then(function(body) {
+                            return { ok: res.ok, body: body };
+                        });
+                    })
+                    .then(function(result) {
+                        btnHantar.textContent = 'Hantar';
+
+                        if (!result.ok) {
+                            btnHantar.disabled = false;
+                            showFeedback(result.body.message || 'Gagal menghantar.', 'error');
+                            return;
+                        }
+
+                        cutoffConfig.selectionStatus = 'submitted';
+                        lockPageAsSubmitted();
+                        showCutoffSuccessModal();
+
+                        // Redirect ke senarai cut-off selepas modal ditutup (butang
+                        // Tutup, backdrop, atau ESC — semua trigger 'hidden.bs.modal').
+                        var modalEl = document.getElementById('cutoffSuccessModal');
+                        if (modalEl) {
+                            modalEl.addEventListener('hidden.bs.modal', function() {
+                                window.location.href = cutoffConfig.indexUrl;
+                            }, { once: true });
+                        }
+                    })
+                    .catch(function() {
+                        btnHantar.disabled = false;
+                        btnHantar.textContent = 'Hantar';
+                        showFeedback('Ralat rangkaian. Sila cuba lagi.', 'error');
+                    });
+            });
+        }
+
     })();
 </script>
 

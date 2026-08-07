@@ -117,9 +117,89 @@ class StosBackendClient
         return $this->get('/api/cut-off/tenders/' . $uuid);
     }
 
+    public function simpanCutOff(string $uuid, array $payload): Response
+    {
+        return $this->post('/api/cut-off/tenders/' . $uuid . '/simpan', $payload);
+    }
+
+    public function finalizeCutOff(string $uuid, array $payload = []): Response
+    {
+        return $this->post('/api/cut-off/tenders/' . $uuid . '/finalize', $payload);
+    }
+
     public function saveKehadiranMesyuarat(int $tenderId, array $payload): Response
     {
         return $this->post('/api/tenders/' . $tenderId . '/kehadiran-mesyuarat', $payload);
+    }
+
+    public function savePematuhanTeknikal(array $payload): Response
+    {
+        return $this->post('/api/penilaian-teknikal/pematuhan', $payload);
+    }
+
+    public function getRumusanPematuhanTeknikal(int $tenderId): Response
+    {
+        return $this->get('/api/tenders/' . $tenderId . '/penilaian-teknikal/pematuhan/rumusan');
+    }
+
+    public function hantarPematuhanTeknikal(int $tenderId, array $payload = []): Response
+    {
+        return $this->post('/api/tenders/' . $tenderId . '/penilaian-teknikal/pematuhan/hantar', $payload);
+    }
+
+    public function getSpesifikasiRollup(int $tenderId, string $checklistItemUuid): Response
+    {
+        return $this->get('/api/tenders/' . $tenderId . '/penilaian-teknikal/spesifikasi/' . $checklistItemUuid . '/rollup');
+    }
+
+    public function getSpesifikasiDetail(int $tenderId, string $checklistItemUuid, int $vendorId): Response
+    {
+        return $this->get('/api/tenders/' . $tenderId . '/penilaian-teknikal/spesifikasi/' . $checklistItemUuid . '/vendor/' . $vendorId);
+    }
+
+    public function saveSpesifikasiTeknikal(array $payload): Response
+    {
+        return $this->post('/api/penilaian-teknikal/spesifikasi', $payload);
+    }
+
+    public function confirmSpesifikasiTeknikal(array $payload): Response
+    {
+        return $this->post('/api/penilaian-teknikal/spesifikasi/sahkan', $payload);
+    }
+
+    public function getBorangEvaluations(int $tenderId, string $checklistItemUuid): Response
+    {
+        return $this->get('/api/tenders/' . $tenderId . '/penilaian-teknikal/borang/' . $checklistItemUuid);
+    }
+
+    public function saveBorangTeknikal(array $payload): Response
+    {
+        return $this->post('/api/penilaian-teknikal/borang', $payload);
+    }
+
+    public function getRumusanPenilaianTeknikal(int $tenderId): Response
+    {
+        return $this->get('/api/tenders/' . $tenderId . '/penilaian-teknikal/rumusan');
+    }
+
+    public function getLaporanTeknikal(int $tenderId): Response
+    {
+        return $this->get('/api/tenders/' . $tenderId . '/penilaian-teknikal/laporan');
+    }
+
+    public function saveDrafLaporanTeknikal(array $payload): Response
+    {
+        return $this->post('/api/penilaian-teknikal/laporan/draf', $payload);
+    }
+
+    public function hantarPenilaianTeknikal(array $payload): Response
+    {
+        return $this->post('/api/penilaian-teknikal/hantar', $payload);
+    }
+
+    public function hantarPenilaianTeknikalKerja(array $payload): Response
+    {
+        return $this->post('/api/penilaian-teknikal-kerja/hantar', $payload);
     }
 
     public function listPembelianTerus(array $query = []): Response

@@ -2,121 +2,8 @@
 
 @section('styles')
     <link href="{{ asset('css/components/button-components.css') }}" rel="stylesheet">
+    <link href="{{ asset('css/components/stepper.css') }}" rel="stylesheet">
     <style>
-        /* --- TIMELINE --- */
-        .stepper-wrapper {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 2rem;
-            position: relative;
-            padding: 0 40px;
-        }
-
-        /* Track container for the line */
-        .stepper-track {
-            position: absolute;
-            top: 15px;
-            left: 40px;
-            right: 40px;
-            height: 4px;
-            background: #e2e8f0;
-            border-radius: 4px;
-            z-index: 0;
-            overflow: hidden;
-        }
-
-        /* Progress fill inside the track */
-        .stepper-progress {
-            position: absolute;
-            top: 0;
-            left: 0;
-            height: 100%;
-            width: 0%;
-            background: var(--sg-red);
-            border-radius: 4px;
-            transition: width 0.4s ease;
-        }
-
-        /* Progress states */
-        .stepper-wrapper[data-step="1"] .stepper-progress {
-            width: 50%;
-            background: var(--sg-red);
-        }
-
-        .stepper-wrapper[data-step="2"] .stepper-progress {
-            width: 100%;
-            background: linear-gradient(90deg, #10b981 0%, #10b981 10%, var(--sg-red) 100%);
-        }
-
-        .stepper-item {
-            position: relative;
-            z-index: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            flex: 1;
-        }
-
-        .step-counter {
-            width: 34px;
-            height: 34px;
-            border-radius: 50%;
-            background: #fff;
-            border: 3px solid #cbd5e1;
-            color: #94a3b8;
-            font-weight: 700;
-            font-size: 0.85rem;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin-bottom: 8px;
-            transition: all 0.3s ease;
-            position: relative;
-        }
-
-        .step-name {
-            font-size: 0.72rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: #94a3b8;
-            transition: color 0.3s ease;
-        }
-
-        /* Active Step */
-        .stepper-item.active .step-counter {
-            border-color: var(--sg-red);
-            background: var(--sg-red);
-            color: #fff;
-            box-shadow: 0 0 0 5px var(--sg-red-soft), 0 2px 8px rgba(196, 30, 58, 0.3);
-            transform: scale(1.05);
-        }
-
-        .stepper-item.active .step-name {
-            color: var(--sg-red);
-        }
-
-        /* Completed Step */
-        .stepper-item.completed .step-counter {
-            border-color: #10b981;
-            background: #10b981;
-            color: #fff;
-            box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3);
-        }
-
-        .stepper-item.completed .step-counter::after {
-            content: '✓';
-            font-size: 0.9rem;
-        }
-
-        .stepper-item.completed .step-counter span {
-            display: none;
-        }
-
-        .stepper-item.completed .step-name {
-            color: #10b981;
-        }
-
         /* --- CONDITION BUILDER --- */
         .condition-builder {
             background: #f8fafc;
@@ -379,26 +266,6 @@
         /* --- MOBILE --- */
         @media (max-width: 991px) {
 
-            /* Timeline */
-            .stepper-wrapper {
-                padding: 0 20px;
-            }
-
-            .stepper-track {
-                left: 40px;
-                right: 40px;
-            }
-
-            .step-name {
-                font-size: 0.65rem;
-            }
-
-            .step-counter {
-                width: 30px;
-                height: 30px;
-                font-size: 0.75rem;
-            }
-
             /* Condition Builder */
             .condition-group-header {
                 padding: 12px 16px;
@@ -523,19 +390,6 @@
         }
 
         @media (max-width: 576px) {
-            .stepper-wrapper {
-                padding: 0 10px;
-            }
-
-            .stepper-track {
-                left: 30px;
-                right: 30px;
-            }
-
-            .step-name {
-                font-size: 0.6rem;
-            }
-
             .condition-group-header .group-title small {
                 display: none;
             }
@@ -576,21 +430,16 @@
     </div>
 
     <!-- TIMELINE -->
-    <div class="stepper-wrapper" data-step="1" id="stepper-wrapper">
-        <!-- Progress -->
-        <div class="stepper-track">
-            <div class="stepper-progress" id="stepper-progress"></div>
-        </div>
-
-        <div class="stepper-item active" id="step1-indicator">
-            <div class="step-counter"><span>1</span></div>
-            <div class="step-name">Maklumat Umum</div>
-        </div>
-        <div class="stepper-item" id="step2-indicator">
-            <div class="step-counter"><span>2</span></div>
-            <div class="step-name">Kod Bidang</div>
-        </div>
-    </div>
+    <ul class="progress-wrapper" id="stepper-wrapper">
+        <li class="progress-step active" id="step1-indicator">
+            <button type="button" class="step-number">1</button>
+            <div class="step-label">Maklumat Umum</div>
+        </li>
+        <li class="progress-step" id="step2-indicator">
+            <button type="button" class="step-number">2</button>
+            <div class="step-label">Kod Bidang</div>
+        </li>
+    </ul>
 
     <form id="createTenderForm" action="{{ route('storeCiptaTender') }}" method="POST">
         @csrf
@@ -1429,9 +1278,6 @@
             let currentStep = 1;
 
             function updateWizardUI() {
-                // Update data-step attribute for progress bar
-                $('#stepper-wrapper').attr('data-step', currentStep);
-
                 if (currentStep === 1) {
                     $('#step1-content').removeClass('d-none');
                     $('#step2-content').addClass('d-none');
@@ -1440,7 +1286,7 @@
                     $('#btn-next').removeClass('d-none');
                     $('#btn-submit').addClass('d-none');
 
-                    $('#step1-indicator').removeClass('completed').addClass('active');
+                    $('#step1-indicator').removeClass('done').addClass('active');
                     $('#step2-indicator').removeClass('active');
                 } else {
                     $('#step1-content').addClass('d-none');
@@ -1450,7 +1296,7 @@
                     $('#btn-next').addClass('d-none');
                     $('#btn-submit').removeClass('d-none');
 
-                    $('#step1-indicator').removeClass('active').addClass('completed');
+                    $('#step1-indicator').removeClass('active').addClass('done');
                     $('#step2-indicator').addClass('active');
                 }
             }

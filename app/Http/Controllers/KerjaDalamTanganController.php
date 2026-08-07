@@ -57,6 +57,14 @@ class KerjaDalamTanganController extends Controller
             $existingData = $this->resolveVendorFormDisplayData($tender, 'kerja_dalam_tangan', is_array($existingData) ? $existingData : null);
         }
 
+        if (is_array($existingData) && ! empty($existingData['dokumens'])) {
+            $existingData['dokumens'] = StosFormFileController::rewriteDokumenUrls(
+                $tender,
+                'kerja-dalam-tangan',
+                $existingData['dokumens']
+            );
+        }
+
         return view('tenderKerjaDalamTangan.form_kerja_dalam_tangan', array_merge(
             compact('tender', 'existingData'),
             $this->formViewVars($tender)

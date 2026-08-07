@@ -262,3 +262,72 @@
         font-size: 0.7rem;
     }
 }
+
+
+/* ==========================================================================
+   SEGMENTED CONTROL  (.segmented-tabs)
+   Compact iOS-style pill switcher — a grey rounded "track" holding equal
+   tabs; the active tab is filled with the brand red gradient. Self-contained
+   (no wrapper needed), sizes to its content. Reads clearly as a tab group
+   even on a white card. Independent of .modern-nav-tabs above.
+   Usage:
+     <ul class="nav segmented-tabs" role="tablist">
+       <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#a">Teknikal</a></li>
+       <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#b">Rumusan</a></li>
+     </ul>
+   ========================================================================== */
+
+.segmented-tabs {
+    display: inline-flex;
+    align-items: stretch;
+    gap: 4px;
+    padding: 4px;
+    margin: 0;
+    list-style: none;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.segmented-tabs .nav-item {
+    margin: 0;
+    display: flex;
+}
+
+.segmented-tabs .nav-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 7px 24px;
+    border: none;
+    background: transparent;
+    color: #64748b;
+    font-weight: 600;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    border-radius: 7px;
+    cursor: pointer;
+    transition: color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.segmented-tabs .nav-link:hover:not(.active) {
+    color: #334155;
+    background: #f1f5f9;
+}
+
+.segmented-tabs .nav-link.active {
+    background: linear-gradient(135deg, #c41e3a 0%, #9b1830 100%);
+    color: #fff;
+    box-shadow: 0 1px 3px rgba(196, 30, 58, 0.3);
+}
+
+.segmented-tabs .nav-link:focus {
+    outline: none;
+    box-shadow: none;
+}
+
+.segmented-tabs .nav-link.active:focus {
+    box-shadow: 0 1px 3px rgba(196, 30, 58, 0.3);
+}

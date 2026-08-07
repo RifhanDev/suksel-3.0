@@ -121,6 +121,7 @@ Route::view('/jawatankuasa-spesifikasi/senarai-kewangan', 'newModule.jawatankuas
 
 Route::get('/cut-off', [CutOffController::class, 'index'])->middleware(['auth'])->name('cutOff.index');
 Route::get('/cut-off/{uuid}', [CutOffController::class, 'show'])->middleware(['auth'])->name('cutOff.show');
+Route::post('/cut-off/simpan', [CutOffController::class, 'simpan'])->middleware(['auth'])->name('cutOff.simpan');
 Route::post('/cut-off/hantar', [CutOffController::class, 'hantar'])->middleware(['auth'])->name('cutOff.hantar');
 
 Route::get('/perakuan-jabatan', [PerakuanJabatanController::class, 'index'])->middleware(['auth'])->name('perakuanjabatan.index');
@@ -213,6 +214,7 @@ Route::middleware(['auth'])->group(function () {
 	Route::get('tenders/{tender}/dokumen/{itemUuid}/specification', [\App\Http\Controllers\VendorTenderDokumenController::class, 'specificationForm'])->name('tenderDokumen.specificationForm');
 	Route::post('tenders/{tender}/dokumen/{itemUuid}/upload', [\App\Http\Controllers\VendorTenderDokumenController::class, 'upload'])->name('tenderDokumen.upload');
 	Route::get('tenders/{tender}/checklist-files/{section}/{fileUuid}/download', [\App\Http\Controllers\TenderChecklistFileController::class, 'download'])->name('tenderChecklist.download');
+	Route::get('tenders/{tender}/stos-form-files/{type}/{fileUuid}/download', [\App\Http\Controllers\StosFormFileController::class, 'download'])->name('stosFormFile.download');
 	Route::get('tenders/dokumen-files/{fileUuid}/download', [\App\Http\Controllers\VendorTenderDokumenController::class, 'download'])->name('tenderDokumen.download');
 	Route::delete('tenders/dokumen-files/{fileUuid}', [\App\Http\Controllers\VendorTenderDokumenController::class, 'deleteFile'])->name('tenderDokumen.deleteFile');
 	Route::post('tenders/{tender}/dokumen/{itemUuid}/key-in', [\App\Http\Controllers\VendorTenderDokumenController::class, 'saveKeyIn'])->name('tenderDokumen.saveKeyIn');
@@ -342,10 +344,30 @@ Route::view('/show-soalan-lazim', 'helps.show')->name('showSoalanLazim');
 
 // penilaian teknikal
 Route::middleware(['auth'])->group(function () {
-	Route::get('/penilaian-teknikal', [PenilaianTeknikalController::class, 'index'])->name('penilaianTeknikal');
-	Route::get('/penilaian-teknikal/{tender_no}', [PenilaianTeknikalController::class, 'show'])->name('penilaianTeknikal.show');
-	Route::get('/penilaian-teknikal-kerja/{tender_no}', [PenilaianTeknikalController::class, 'showTeknikalKerja'])->name('penilaianTeknikalKerja.show');
+	Route::get('/penilaian-teknikal', [PenilaianTeknikalController::class, 'indexDatatable'])->name('penilaianTeknikal');
+	Route::get('/penilaian-teknikal/{uuid}', [PenilaianTeknikalController::class, 'show'])->name('penilaianTeknikal.show');
+	Route::get('/penilaian-teknikal-kerja/{uuid}', [PenilaianTeknikalController::class, 'showTeknikalKerja'])->name('penilaianTeknikalKerja.show');
 	Route::post('/penilaian-teknikal/hantar', [PenilaianTeknikalController::class, 'hantar'])->name('penilaianTeknikal.hantar');
+	Route::get('/penilaian-teknikal/{tender}/pengalaman-kerja-review', [PenilaianTeknikalController::class, 'pengalamanKerjaReview'])->name('penilaianTeknikal.pengalamanKerjaReview');
+	Route::get('/penilaian-teknikal/{tender}/kerja-dalam-tangan-review', [PenilaianTeknikalController::class, 'kerjaDalamTanganReview'])->name('penilaianTeknikal.kerjaDalamTanganReview');
+	Route::post('/penilaian-teknikal/pematuhan/simpan', [PenilaianTeknikalController::class, 'simpanPematuhan'])->name('penilaianTeknikal.simpanPematuhan');
+	Route::get('/penilaian-teknikal/{tender}/rumusan-pematuhan', [PenilaianTeknikalController::class, 'rumusanPematuhan'])->name('penilaianTeknikal.rumusanPematuhan');
+	Route::post('/penilaian-teknikal/{tender}/hantar-pematuhan', [PenilaianTeknikalController::class, 'hantarPematuhan'])->name('penilaianTeknikal.hantarPematuhan');
+	Route::post('/penilaian-teknikal/spesifikasi/sahkan', [PenilaianTeknikalController::class, 'confirmSpesifikasi'])->name('penilaianTeknikal.confirmSpesifikasi');
+	Route::get('/penilaian-teknikal/{tender}/spesifikasi/{checklistItemUuid}/rollup', [PenilaianTeknikalController::class, 'spesifikasiRollup'])->name('penilaianTeknikal.spesifikasiRollup');
+	Route::get('/penilaian-teknikal/{tender}/spesifikasi/{checklistItemUuid}/vendor/{vendorId}', [PenilaianTeknikalController::class, 'spesifikasiDetail'])->name('penilaianTeknikal.spesifikasiDetail');
+	Route::post('/penilaian-teknikal/spesifikasi/simpan', [PenilaianTeknikalController::class, 'simpanSpesifikasi'])->name('penilaianTeknikal.simpanSpesifikasi');
+	Route::get('/penilaian-teknikal/{tender}/borang/{checklistItemUuid}/rows', [PenilaianTeknikalController::class, 'borangRows'])->name('penilaianTeknikal.borangRows');
+	Route::post('/penilaian-teknikal/borang/simpan', [PenilaianTeknikalController::class, 'simpanBorang'])->name('penilaianTeknikal.simpanBorang');
+	Route::get('/penilaian-teknikal/{tender}/rumusan-penilaian-teknikal', [PenilaianTeknikalController::class, 'rumusanPenilaianTeknikal'])->name('penilaianTeknikal.rumusanPenilaianTeknikal');
+	Route::get('/penilaian-teknikal/{tender}/laporan', [PenilaianTeknikalController::class, 'laporanPenilaianTeknikal'])->name('penilaianTeknikal.laporanPenilaianTeknikal');
+	Route::get('/penilaian-teknikal/{tender}/laporan/cetak', [PenilaianTeknikalController::class, 'cetakLaporan'])->name('penilaianTeknikal.cetakLaporan');
+	Route::post('/penilaian-teknikal/laporan/simpan-draf', [PenilaianTeknikalController::class, 'simpanDrafLaporan'])->name('penilaianTeknikal.simpanDrafLaporan');
+	Route::post('/penilaian-teknikal-kerja/hantar', [PenilaianTeknikalController::class, 'hantarTeknikalKerja'])->name('penilaianTeknikalKerja.hantar');
+	Route::post('/penilaian-teknikal-kerja/{tender}/lampiran/upload', [PenilaianTeknikalController::class, 'uploadLampiranKerja'])->name('penilaianTeknikalKerja.lampiran.upload');
+	Route::post('/penilaian-teknikal-kerja/lampiran/{lampiran}/rename', [PenilaianTeknikalController::class, 'renameLampiranKerja'])->name('penilaianTeknikalKerja.lampiran.rename');
+	Route::delete('/penilaian-teknikal-kerja/lampiran/{lampiran}', [PenilaianTeknikalController::class, 'deleteLampiranKerja'])->name('penilaianTeknikalKerja.lampiran.delete');
+	Route::get('/penilaian-teknikal-kerja/lampiran/{lampiran}/download', [PenilaianTeknikalController::class, 'downloadLampiranKerja'])->name('penilaianTeknikalKerja.lampiran.download');
 
 	// new penilaian kewangan
 	Route::get('/penilaian-kewangan', [PenilaianKewanganController::class, 'index'])->name('penilaianKewangan');

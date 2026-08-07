@@ -448,8 +448,11 @@ class PenyediaanIklanService
                 if ($upload) {
                     $prev = $previousByUploadId->get($uploadId);
                     $pathUnchanged = $prev && ($prev['path'] ?? '') === ($doc['path'] ?? '');
+                    $existingPath = method_exists($upload, 'resolveAbsolutePath')
+                        ? $upload->resolveAbsolutePath()
+                        : (is_file($upload->getPath()) ? $upload->getPath() : null);
 
-                    if ($pathUnchanged) {
+                    if ($pathUnchanged && $existingPath) {
                         $upload->label = $nama;
                         $upload->save();
                         $keptUploadIds[] = (int) $upload->id;
@@ -492,7 +495,8 @@ class PenyediaanIklanService
     protected function createTenderMejaUpload(Tender $tender, string $sourcePath, string $label): Upload
     {
         $hash = Str::random(40);
-        $destDir = public_path('uploads/' . $hash . '/');
+        $relativeDir = 'uploads/' . $hash;
+        $destDir = public_path($relativeDir . '/');
         if (! is_dir($destDir)) {
             mkdir($destDir, 0755, true);
         }
@@ -512,8 +516,9 @@ class PenyediaanIklanService
             'type' => $mime,
             'public' => 1,
             'label' => $label,
-            'path' => $destDir,
-            'url' => request()->root() . '/uploads/' . $hash,
+            // Store relative path so downloads survive deploy path changes.
+            'path' => $relativeDir . '/',
+            'url' => url($relativeDir),
             'uploadable_type' => 'App\Tender',
             'uploadable_id' => $tender->id,
         ]);
@@ -532,7 +537,14 @@ class PenyediaanIklanService
 
     protected function deleteTenderUpload(Upload $upload): void
     {
-        $dir = rtrim((string) $upload->path, '/');
+        $dir = method_exists($upload, 'resolveAbsolutePath') && $upload->resolveAbsolutePath()
+            ? dirname($upload->resolveAbsolutePath())
+            : rtrim((string) $upload->path, '/');
+
+        if ($dir !== '' && ! str_starts_with($dir, '/') && ! preg_match('/^[A-Za-z]:/', $dir)) {
+            $dir = public_path($dir);
+        }
+
         if ($dir !== '' && is_dir($dir)) {
             foreach (glob($dir . '/*') ?: [] as $file) {
                 if (is_file($file)) {
@@ -565,7 +577,16 @@ class PenyediaanIklanService
                 return true;
             }
 
-            return ! Upload::query()->where('id', $doc['upload_id'])->exists();
+            $upload = Upload::query()->find($doc['upload_id']);
+            if (! $upload) {
+                return true;
+            }
+
+            if (method_exists($upload, 'resolveAbsolutePath')) {
+                return $upload->resolveAbsolutePath() === null;
+            }
+
+            return ! is_file($upload->getPath());
         });
 
         if (! $needsSync) {
