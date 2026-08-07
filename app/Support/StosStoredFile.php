@@ -35,7 +35,9 @@ class StosStoredFile
 
         $apiPath = trim((string) ($file['download_api'] ?? ''));
         if ($apiPath !== '') {
-            $apiResponse = StosBackendClient::http()->get(StosBackendClient::apiUrl($apiPath));
+            $apiResponse = StosBackendClient::http()
+                ->withHeaders(['Accept' => '*/*'])
+                ->get(StosBackendClient::apiUrl($apiPath));
             if ($apiResponse->successful()) {
                 $mimeType = (string) ($file['mime_type'] ?? $apiResponse->header('Content-Type') ?? $mime);
 
@@ -54,7 +56,9 @@ class StosStoredFile
         }
 
         if ($remoteUrl !== '') {
-            $response = StosBackendClient::http()->get($remoteUrl);
+            $response = StosBackendClient::http()
+                ->withHeaders(['Accept' => '*/*'])
+                ->get($remoteUrl);
             if ($response->successful()) {
                 $mimeType = (string) ($file['mime_type'] ?? $response->header('Content-Type') ?? $mime);
 
