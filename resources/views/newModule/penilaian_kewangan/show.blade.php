@@ -1285,6 +1285,7 @@
 
         function isStepUnlocked(stepIndex) {
             if (stepIndex <= 0) return true; // Step 1 is always unlocked
+            if ((stepIndex + 1) <= dbCurrentStep) return true;
             if (stepIndex === 1) return dbConfirmed.step1;
             if (stepIndex === 2) return dbConfirmed.step1 && dbConfirmed.step2;
             if (stepIndex === 3) return dbConfirmed.step1 && dbConfirmed.step2 && dbConfirmed.step3;
