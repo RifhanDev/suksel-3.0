@@ -330,6 +330,15 @@ Route::middleware(['auth'])->group(function () {
 	Route::get('/index-penyediaan-sst', [PenyediaanSuratSstController::class, 'index'])->name('indexPenyediaanSST');
 	Route::get('/penyediaan-sst', [PenyediaanSuratSstController::class, 'show'])->name('penyediaanSST');
 	Route::post('/penyediaan-sst/hantar', [PenyediaanSuratSstController::class, 'hantar'])->name('penyediaanSST.hantar');
+	Route::post('/penyediaan-sst/simpan', [PenyediaanSuratSstController::class, 'simpan'])->name('penyediaanSST.simpan');
+	Route::post('/penyediaan-sst/jana', [PenyediaanSuratSstController::class, 'jana'])->name('penyediaanSST.jana');
+	Route::get('/penyediaan-sst/{tender}/pembekal', [PenyediaanSuratSstController::class, 'pembekal'])->name('penyediaanSST.pembekal');
+	Route::get('/penyediaan-sst/{tender}/surat', [PenyediaanSuratSstController::class, 'senaraiSurat'])->name('penyediaanSST.senaraiSurat');
+	Route::get('/penyediaan-sst/{tender}/vendor/{vendorId}', [PenyediaanSuratSstController::class, 'sst'])->name('penyediaanSST.sst');
+	Route::get('/penyediaan-sst/{tender}/vendor/{vendorId}/surat-setuju-terima', [PenyediaanSuratSstController::class, 'suratSetujuTerima'])->name('penyediaanSST.suratSetujuTerima');
+	Route::get('/penyediaan-sst/{tender}/vendor/{vendorId}/surat-akuan-pembida-berjaya', [PenyediaanSuratSstController::class, 'suratAkuanPembidaBerjaya'])->name('penyediaanSST.suratAkuanPembidaBerjaya');
+	Route::get('/penyediaan-sst/{tender}/vendor/{vendorId}/surat-akuan-sumpah-syarikat', [PenyediaanSuratSstController::class, 'suratAkuanSumpahSyarikat'])->name('penyediaanSST.suratAkuanSumpahSyarikat');
+	Route::post('/penyediaan-sst/{tender}/dokumen', [PenyediaanSuratSstController::class, 'muatNaikDokumen'])->name('penyediaanSST.muatNaikDokumen');
 	Route::get('/index-jawatankuasa-pembuka', [JawatankuasaPembukaController::class, 'index'])->name('indexJawatankuasaPembuka');
 	Route::get('/jawatankuasa-pembuka', [JawatankuasaPembukaController::class, 'show'])->name('jawatankuasaPembuka');
 	Route::post('/jawatankuasa-pembuka/simpan-pematuhan', [JawatankuasaPembukaController::class, 'simpanPematuhan'])->name('jawatankuasaPembuka.simpanPematuhan');
