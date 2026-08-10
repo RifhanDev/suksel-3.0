@@ -252,12 +252,109 @@ trait HandlesTenderFormAccess
             return;
         }
 
+        // Preserve previously uploaded dokumen metadata unless caller replaces it.
+        if (! array_key_exists('dokumens', $payload)) {
+            $existing = app(VendorFormPayloadService::class)->get(
+                $resolved,
+                $this->vendorId(),
+                $formKey
+            );
+            if (! empty($existing['dokumens']) && is_array($existing['dokumens'])) {
+                $payload['dokumens'] = $existing['dokumens'];
+            }
+        }
+
+        $payload['vendor_id'] = $this->vendorId();
+
         app(VendorFormPayloadService::class)->save(
             $resolved,
             $this->vendorId(),
             $formKey,
             $payload,
             $status
+        );
+    }
+
+    /**
+     * @param  array<string, mixed>  $dokumen
+     */
+    protected function appendVendorFormDokumen(
+        Tender|LegacyTender $tender,
+        string $formKey,
+        array $dokumen
+    ): void {
+        if (! $this->isVendorFormMode() || ! $this->vendorId()) {
+            return;
+        }
+
+        $resolved = \App\Tender::query()->find($tender->id);
+        if (! $resolved) {
+            return;
+        }
+
+        $payload = app(VendorFormPayloadService::class)->get(
+            $resolved,
+            $this->vendorId(),
+            $formKey
+        ) ?? [
+            'items' => [],
+            'vendor_id' => $this->vendorId(),
+        ];
+
+        $dokumens = is_array($payload['dokumens'] ?? null) ? $payload['dokumens'] : [];
+        $uuid = (string) ($dokumen['uuid'] ?? '');
+        if ($uuid !== '') {
+            $dokumens = array_values(array_filter(
+                $dokumens,
+                fn ($row) => (string) ($row['uuid'] ?? '') !== $uuid
+            ));
+        }
+        $dokumens[] = $dokumen;
+        $payload['dokumens'] = $dokumens;
+
+        app(VendorFormPayloadService::class)->save(
+            $resolved,
+            $this->vendorId(),
+            $formKey,
+            $payload,
+            $payload['status'] ?? 'submitted'
+        );
+    }
+
+    protected function removeVendorFormDokumen(
+        Tender|LegacyTender $tender,
+        string $formKey,
+        string $fileUuid
+    ): void {
+        if (! $this->vendorId()) {
+            return;
+        }
+
+        $resolved = \App\Tender::query()->find($tender->id);
+        if (! $resolved) {
+            return;
+        }
+
+        $payload = app(VendorFormPayloadService::class)->get(
+            $resolved,
+            $this->vendorId(),
+            $formKey
+        );
+        if (! is_array($payload) || empty($payload['dokumens']) || ! is_array($payload['dokumens'])) {
+            return;
+        }
+
+        $payload['dokumens'] = array_values(array_filter(
+            $payload['dokumens'],
+            fn ($row) => (string) ($row['uuid'] ?? '') !== $fileUuid
+        ));
+
+        app(VendorFormPayloadService::class)->save(
+            $resolved,
+            $this->vendorId(),
+            $formKey,
+            $payload,
+            $payload['status'] ?? 'submitted'
         );
     }
 
@@ -284,9 +381,9 @@ trait HandlesTenderFormAccess
     }
 
     /**
-     * Vendor forms must never show another company's tender-level / shared STOS data.
-     * Prefer the local per-vendor payload; only use API data when it is explicitly scoped
-     * to the current vendor.
+     * Vendor forms (and staff previews with ?vendor_id=) must never show another
+     * company's tender-level / shared STOS data. Prefer the local per-vendor payload;
+     * only use API data when it is explicitly scoped to that vendor.
      *
      * @param  array<string, mixed>|null  $apiData
      * @return array<string, mixed>|null
@@ -296,21 +393,40 @@ trait HandlesTenderFormAccess
         string $formKey,
         ?array $apiData
     ): ?array {
-        if (! $this->isVendorFormMode()) {
+        $vendorId = $this->vendorId();
+        if (! $vendorId) {
             return $apiData;
         }
 
         $local = $this->loadVendorFormPayload($tender, $formKey);
         if ($this->vendorFormPayloadHasContent($local)) {
-            return $local;
+            $merged = $local;
+            $merged['vendor_id'] = $vendorId;
+
+            // Only attach STOS files when the API payload is vendor-scoped.
+            if (
+                empty($merged['dokumens'])
+                && $this->stosDataBelongsToCurrentVendor($apiData)
+                && ! empty($apiData['dokumens'])
+                && is_array($apiData['dokumens'])
+            ) {
+                $merged['dokumens'] = $apiData['dokumens'];
+            }
+
+            return $merged;
         }
 
         if ($this->stosDataBelongsToCurrentVendor($apiData)) {
             return $apiData;
         }
 
-        // Empty local payload still wins over shared/unscoped API data.
-        return $local;
+        // Never leak shared tender-level STOS rows into another vendor's view.
+        return [
+            'tender_uuid' => $tender->uuid ?? null,
+            'vendor_id' => $vendorId,
+            'items' => is_array($local) ? ($local['items'] ?? []) : [],
+            'dokumens' => is_array($local) ? ($local['dokumens'] ?? []) : [],
+        ];
     }
 
     /**
