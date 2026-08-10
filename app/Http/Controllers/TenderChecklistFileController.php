@@ -20,7 +20,19 @@ class TenderChecklistFileController extends Controller
 
         $localFile = $this->findLocalFile($section, $fileUuid, $tender->id);
         if ($localFile) {
-            return $this->streamLocalFile($localFile);
+            $streamed = $this->streamLocalFileOrNull($localFile);
+            if ($streamed) {
+                return $streamed;
+            }
+
+            // DB row exists (often shared with STOS) but file is only on STOS disk/API.
+            return StosStoredFile::response([
+                'uuid' => $fileUuid,
+                'original_name' => $localFile->original_name ?? 'Dokumen',
+                'path' => $localFile->path ?? null,
+                'mime_type' => $localFile->mime_type ?? null,
+                'download_api' => $this->downloadApiForSection($section, $fileUuid),
+            ]);
         }
 
         $remoteFile = $this->findRemoteFile($tender, $section, $fileUuid);
@@ -143,8 +155,9 @@ class TenderChecklistFileController extends Controller
 
     /**
      * @param  object{original_name?: string, path?: string, mime_type?: string|null}  $file
+     * @return \Symfony\Component\HttpFoundation\BinaryFileResponse|\Symfony\Component\HttpFoundation\StreamedResponse|null
      */
-    protected function streamLocalFile(object $file)
+    protected function streamLocalFileOrNull(object $file)
     {
         $path = ltrim((string) ($file->path ?? ''), '/');
         $name = (string) ($file->original_name ?? 'Dokumen');
@@ -165,6 +178,6 @@ class TenderChecklistFileController extends Controller
             }
         }
 
-        abort(404, 'Fail tidak dijumpai.');
+        return null;
     }
 }

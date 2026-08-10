@@ -481,6 +481,7 @@
             var EDIT_ICON = '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>';
 
             var SPEC_FORM_BASE   = @json(rtrim(route('spesifikasiFormKewanganBekalan', ['spesifikasiUuid' => '__uuid__']), '/'));
+            var SPEC_TEKNIKAL_FORM_BASE = @json(rtrim(route('spesifikasiForm', ['tenderUuid' => $tender->uuid]), '/'));
             var TENDER_UUID      = @json($tender->uuid);
             var STORE_URL       = '{{ route('senaraiKewanganBekalan.store', $tender->uuid) }}';
             var SUBMIT_URL      = '{{ route('senaraiKewanganBekalan.submit', $tender->uuid) }}';
@@ -570,7 +571,17 @@
                 var sourceType = normalizeSourceType($row.data('source-type'), {
                     standard_item_uuid: $row.data('standard-item-uuid') || null
                 });
-                var mechanism       = normalizeMechanism($row.find('.mekanisma-select').val() || $row.data('mechanism'));
+                var rawMechanism    = String($row.find('.mekanisma-select').val() || $row.data('mechanism') || '').toLowerCase();
+                var mechanismLabel  = String($row.find('td:nth-child(3)').text() || '').toLowerCase();
+                var isBorangAtasTalian = (sourceType === 'borang_atas_talian' || rawMechanism === 'borang_atas_talian' || mechanismLabel.indexOf('borang atas talian') !== -1);
+
+                if (!isBorangAtasTalian) {
+                    var hasSkema = hasSkemaValue($row);
+                    setRowStatus($row, hasSkema ? 'submitted' : 'draft');
+                    return;
+                }
+
+                var mechanism       = normalizeMechanism(rawMechanism);
                 var hasUploadedFile = $row.find('.dokumen-ptj-ours').length > 0;
 
                 if (sourceType === 'standard_item') {
@@ -657,16 +668,27 @@
             }
 
             // Render rows on page load — locked for spec/borang items, editable for manual/standard
+            var seenSpecKeys = {};
             checklistItems.forEach(function(item) {
                 item.source_type = normalizeSourceType(item.source_type, item);
                 item.mechanism = normalizeMechanism(item.mechanism);
+
+                var isSpec = item.source_type === 'specification_document' || item.mechanism === 'spesifikasi';
+                if (isSpec) {
+                    var specKey = item.specification_document_uuid || item.technical_item_uuid || item.title || item.uuid;
+                    if (seenSpecKeys[specKey]) {
+                        return; // Skip duplicate specification_document row
+                    }
+                    seenSpecKeys[specKey] = true;
+                }
 
                 var locked = item.source_type === 'specification_document' || item.source_type === 'borang_atas_talian';
                 if (locked) {
                     var s = statusMeta(item.status);
                     var mekanismaLabel = item.source_type === 'specification_document' ? 'Spesifikasi' : 'Borang Atas Talian';
+                    var specDocUuid    = item.specification_document_uuid || item.technical_item_uuid || item.uuid || '';
                     var tindakanUrl    = item.source_type === 'specification_document'
-                        ? (item.technical_item_uuid ? SPEC_FORM_BASE.replace('__uuid__', item.technical_item_uuid) : '#')
+                        ? (specDocUuid ? SPEC_FORM_BASE.replace('__uuid__', encodeURIComponent(specDocUuid)) : '#')
                         : (valueOr(item.action_url, '') ? item.action_url + '/' + TENDER_UUID : '#');
                     $('#tbl-kewangan-body').append(buildInitialRow({
                         uuid:                item.uuid,
@@ -698,6 +720,8 @@
                     $('#tbl-kewangan-body').append($row);
                 }
             });
+
+            updateAllCompletionStatuses();
 
             // Hide modal items that are already in the checklist on initial load
             $('#tbl-standard tbody tr[data-uuid]').each(function() {

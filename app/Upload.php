@@ -27,19 +27,73 @@ class Upload extends Model
 
 	public function getPath()
 	{
-		return $this->path . $this->name;
+		return $this->resolveAbsolutePath() ?? ($this->path . $this->name);
+	}
+
+	/**
+	 * Resolve the on-disk path even when uploads.path was saved with an old absolute deploy path.
+	 */
+	public function resolveAbsolutePath(): ?string
+	{
+		$name = ltrim(str_replace('\\', '/', (string) $this->name), '/');
+		$path = str_replace('\\', '/', (string) $this->path);
+		$url = str_replace('\\', '/', (string) $this->url);
+		$candidates = [];
+
+		if ($path !== '' && $name !== '') {
+			$candidates[] = $path . $name;
+			$candidates[] = rtrim($path, '/') . '/' . $name;
+		}
+
+		// Relative path under public/ (e.g. uploads/{hash}/)
+		if ($path !== '' && $name !== '' && ! str_starts_with($path, '/') && ! preg_match('/^[A-Za-z]:/', $path)) {
+			$candidates[] = public_path(rtrim($path, '/') . '/' . $name);
+		}
+
+		// Remap stale absolute .../uploads/... paths onto current public_path()
+		foreach ([$path, $url] as $source) {
+			if ($source === '' || ! preg_match('#/(uploads/.+)$#', rtrim($source, '/') . '/', $matches)) {
+				continue;
+			}
+
+			$relative = rtrim($matches[1], '/');
+			if ($name !== '' && (str_ends_with($relative, '/' . $name) || str_ends_with($relative, $name))) {
+				$candidates[] = public_path($relative);
+			} elseif ($name !== '') {
+				$candidates[] = public_path($relative . '/' . $name);
+			}
+		}
+
+		if ($url !== '' && $name !== '' && preg_match('#/(uploads/[^?\s]+)#', $url, $matches)) {
+			$relative = rawurldecode($matches[1]);
+			if (str_ends_with($relative, '/' . $name) || str_ends_with($relative, $name)) {
+				$candidates[] = public_path($relative);
+			} else {
+				$candidates[] = public_path(rtrim($relative, '/') . '/' . $name);
+			}
+		}
+
+		foreach (array_unique(array_filter($candidates)) as $candidate) {
+			if (is_file($candidate)) {
+				return $candidate;
+			}
+		}
+
+		return null;
 	}
 
 	public function getUrl()
 	{
-		$fullPath = $this->getPath();
+		$fullPath = $this->resolveAbsolutePath();
 		$publicRoot = rtrim(str_replace('\\', '/', public_path()), '/');
-		$normalized = str_replace('\\', '/', (string) $fullPath);
 
-		if ($publicRoot !== '' && str_starts_with($normalized, $publicRoot . '/')) {
-			$relative = ltrim(substr($normalized, strlen($publicRoot)), '/');
+		if ($fullPath) {
+			$normalized = str_replace('\\', '/', $fullPath);
+			if ($publicRoot !== '' && str_starts_with($normalized, $publicRoot . '/')) {
+				$relative = ltrim(substr($normalized, strlen($publicRoot)), '/');
 
-			return url('/' . $relative);
+				return url('/' . $relative);
+			}
 		}
 
 		$url = rtrim((string) $this->url, '/');
