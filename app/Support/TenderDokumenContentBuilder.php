@@ -68,18 +68,39 @@ class TenderDokumenContentBuilder
      */
     public function buildForSpesifikasiKerjaHeader(SpesifikasiKerjaHeader $header, $items): array
     {
-        $rows = $items->values()->map(function (SpesifikasiKerjaItem $item, int $index) {
-            return [
+        $rows = [];
+        $bil = 0;
+
+        foreach ($items as $item) {
+            $bil++;
+            $rows[] = [
                 'kind' => 'item',
-                'bil' => $index + 1,
+                'bil' => $bil,
                 'item_uuid' => $item->uuid,
-                'title' => $item->spesifikasi,
+                'title' => $item->nama_item ?: $item->spesifikasi,
+                'unit' => $item->unit,
+                'kuantiti' => $item->kuantiti,
+                'kadar' => $item->kadar,
+                'jumlah' => $item->jumlah(),
                 'ya_tidak' => $item->ya_tidak,
                 'catatan' => $item->catatan,
             ];
-        })->all();
 
-        $label = 'Spesifikasi';
+            foreach ($item->specs as $spec) {
+                $rows[] = [
+                    'kind' => 'spec',
+                    'bil' => null,
+                    'item_uuid' => $spec->uuid,
+                    'title' => $spec->spesifikasi,
+                    'unit' => null,
+                    'kuantiti' => null,
+                    'kadar' => null,
+                    'jumlah' => null,
+                    'ya_tidak' => $spec->ya_tidak,
+                    'catatan' => $spec->catatan,
+                ];
+            }
+        }
 
         return [
             'uuid' => $header->uuid,
@@ -90,8 +111,8 @@ class TenderDokumenContentBuilder
             'mechanism' => null,
             'vendor_action' => null,
             'action' => 'view_specification',
-            'tindakan' => $label,
-            'badge_class' => VendorActionLabel::badgeClass($label),
+            'tindakan' => 'Spesifikasi',
+            'badge_class' => VendorActionLabel::badgeClass('Spesifikasi'),
             'source' => 'spesifikasi_kerja',
             'status' => $header->status ?? 'draft',
             'admin_content' => [
@@ -114,8 +135,8 @@ class TenderDokumenContentBuilder
 
         return [
             'uuid' => $item->uuid ?? null,
-            'title' => $item->spesifikasi ?? '',
-            'nama' => $item->spesifikasi ?? '',
+            'title' => $item->nama_item ?: ($item->spesifikasi ?? ''),
+            'nama' => $item->nama_item ?: ($item->spesifikasi ?? ''),
             'section' => 'spesifikasi_kerja',
             'source_type' => 'specification',
             'mechanism' => null,
@@ -130,9 +151,9 @@ class TenderDokumenContentBuilder
                 'document_title' => null,
                 'rows' => [[
                     'bil' => $index + 1,
-                    'title' => $item->spesifikasi,
-                    'quantity' => null,
-                    'unit' => null,
+                    'title' => $item->nama_item ?: $item->spesifikasi,
+                    'quantity' => $item->kuantiti,
+                    'unit' => $item->unit,
                     'ya_tidak' => $item->ya_tidak,
                     'catatan' => $item->catatan,
                 ]],
