@@ -38,6 +38,81 @@ class FinancialChecklistController extends Controller
             ]);
         }
 
+        // Check if $checklistData['items'] already has a specification_document item (linked via technical_item_id)
+        $hasSpecItem = collect($checklistData['items'] ?? [])->contains(function ($item) {
+            return ($item['source_type'] ?? '') === 'specification_document' || ($item['mechanism'] ?? '') === 'spesifikasi';
+        });
+
+        // Only fetch and merge from technical checklist if financial checklist does NOT have it yet
+        if (!$hasSpecItem) {
+            $specItems = [];
+            try {
+                $techApiUrl = $this->url('technical-checklists/' . $tenderUuid);
+                $techResponse = $this->api()->get($techApiUrl);
+                if ($techResponse->successful()) {
+                    $techItems = $techResponse->json('data.items') ?? [];
+                    foreach ($techItems as $tItem) {
+                        if (($tItem['source_type'] ?? '') === 'specification_document' || ($tItem['mechanism'] ?? '') === 'spesifikasi') {
+                            $specItems[] = $tItem;
+                        }
+                    }
+                }
+            } catch (\Throwable $e) {
+                Log::warning('FinancialChecklistController@index: STOS API request for technical-checklists failed', [
+                    'error' => $e->getMessage(),
+                ]);
+            }
+
+            // Local DB fallback for specification_document items if API returned empty
+            if (empty($specItems)) {
+                $dbSpecItems = \Illuminate\Support\Facades\DB::table('technical_checklist_items as tci')
+                    ->join('technical_checklist_headers as tch', 'tch.id', '=', 'tci.technical_checklist_header_id')
+                    ->leftJoin('technical_specification_documents as tsd', 'tsd.id', '=', 'tci.specification_document_id')
+                    ->where('tch.tender_id', $tender->id)
+                    ->where(function ($q) {
+                        $q->where('tci.source_type', 'specification_document')
+                          ->orWhereNotNull('tci.specification_document_id');
+                    })
+                    ->select([
+                        'tci.uuid',
+                        'tci.source_type',
+                        'tci.title',
+                        'tci.mechanism',
+                        'tci.score',
+                        'tci.status',
+                        'tsd.uuid as specification_document_uuid',
+                    ])
+                    ->get()
+                    ->map(function ($item) {
+                        return [
+                            'uuid' => $item->uuid,
+                            'source_type' => 'specification_document',
+                            'title' => $item->title,
+                            'mechanism' => 'spesifikasi',
+                            'score' => (float) $item->score,
+                            'status' => $item->status ?: 'submitted',
+                            'specification_document_uuid' => $item->specification_document_uuid ?: $item->uuid,
+                            'technical_item_uuid' => $item->specification_document_uuid ?: $item->uuid,
+                        ];
+                    })
+                    ->all();
+
+                $specItems = $dbSpecItems;
+            }
+
+            if (!empty($specItems)) {
+                if (!$checklistData) {
+                    $checklistData = ['items' => []];
+                }
+                if (!isset($checklistData['items']) || !is_array($checklistData['items'])) {
+                    $checklistData['items'] = [];
+                }
+                foreach ($specItems as $sItem) {
+                    array_unshift($checklistData['items'], $sItem);
+                }
+            }
+        }
+
         $standardItems = [];
         try {
             $standardApiUrl   = $this->url('standard-checklist-items?category=financial');

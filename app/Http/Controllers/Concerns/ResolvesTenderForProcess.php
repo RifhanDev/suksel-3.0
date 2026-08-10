@@ -17,7 +17,13 @@ trait ResolvesTenderForProcess
             return Tender::query()->where('id', (int) $identifier)->first();
         }
 
-        return Tender::query()->where('uuid', $identifier)->first();
+        return Tender::query()
+            ->where(function ($q) use ($identifier) {
+                $q->where('uuid', $identifier)
+                  ->orWhere('no_tender', $identifier)
+                  ->orWhere('ref_number', $identifier);
+            })
+            ->first();
     }
 
     /** @return list<array<string, mixed>> */
