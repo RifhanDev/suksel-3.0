@@ -810,10 +810,11 @@ class PenilaianTeknikalController extends Controller
 
         $local = $this->loadVendorFormPayload($tender, 'pengalaman_kerja');
         $remote = $this->fetchOnlineFormData('pengalaman-kerja', $tender->uuid, (int) $request->query('vendor_id'));
+        $resolved = $this->resolveVendorFormDisplayData($tender, 'pengalaman_kerja', $remote ?: null);
 
         return view('newModule.penilaian_teknikal.review.pengalaman_kerja_review', array_merge([
-            'items'    => $local['items'] ?? [],
-            'dokumens' => $remote['dokumens'] ?? [],
+            'items'    => $resolved['items'] ?? ($local['items'] ?? []),
+            'dokumens' => $resolved['dokumens'] ?? [],
         ], $this->formViewVars($tender)));
     }
 
@@ -823,10 +824,11 @@ class PenilaianTeknikalController extends Controller
 
         $local = $this->loadVendorFormPayload($tender, 'kerja_dalam_tangan');
         $remote = $this->fetchOnlineFormData('kerja-dalam-tangan', $tender->uuid, (int) $request->query('vendor_id'));
+        $resolved = $this->resolveVendorFormDisplayData($tender, 'kerja_dalam_tangan', $remote ?: null);
 
         return view('newModule.penilaian_teknikal.review.kerja_dalam_tangan_review', array_merge([
-            'items'    => $local['items'] ?? [],
-            'dokumens' => $remote['dokumens'] ?? [],
+            'items'    => $resolved['items'] ?? ($local['items'] ?? []),
+            'dokumens' => $resolved['dokumens'] ?? [],
         ], $this->formViewVars($tender)));
     }
 
