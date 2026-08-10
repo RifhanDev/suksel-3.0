@@ -1158,10 +1158,19 @@ class PenilaianKewanganController extends Controller
 
                 $itemHarga = $vendor['harga_tawaran'] ?? null;
 
+                $techItemRecord = \Illuminate\Support\Facades\DB::table('financial_checklist_items as fci')
+                    ->leftJoin('technical_checklist_items as tci', 'tci.id', '=', 'fci.technical_item_id')
+                    ->where('fci.uuid', $uuid)
+                    ->orWhere('tci.uuid', $uuid)
+                    ->select('fci.uuid as fci_uuid', 'tci.uuid as tci_uuid')
+                    ->first();
+
+                $searchItemUuids = array_unique(array_filter([$uuid, $techItemRecord?->fci_uuid ?? null, $techItemRecord?->tci_uuid ?? null]));
+
                 $itemSpecResp = \App\Models\TenderVendorDokumenResponse::query()
                     ->where('tender_id', $tender->id)
                     ->where('vendor_id', $vendorId)
-                    ->where('checklist_item_uuid', $uuid)
+                    ->whereIn('checklist_item_uuid', $searchItemUuids)
                     ->where('response_type', 'specification')
                     ->first();
 
@@ -1255,14 +1264,22 @@ class PenilaianKewanganController extends Controller
                 }
 
                 if ($techItem && $techItem->sp_id) {
-                    $pricingMap = \Illuminate\Support\Facades\DB::table('specification_pricing_items')
-                        ->where('specification_pricing_id', $techItem->sp_id)
+                    $pricingMap = \Illuminate\Support\Facades\DB::table('specification_pricing_items as spi')
+                        ->leftJoin('technical_specification_items as tsi', 'tsi.id', '=', 'spi.spec_item_id')
+                        ->where('spi.specification_pricing_id', $techItem->sp_id)
+                        ->select('spi.*', 'tsi.uuid as tsi_uuid')
                         ->get()
-                        ->keyBy('spec_item_id')
-                        ->map(fn ($spi) => [
-                            'harga'    => (float) ($spi->harga ?? 0),
-                            'kuantiti' => (float) ($spi->kuantiti ?? 0),
-                        ])
+                        ->flatMap(function ($spi) {
+                            $val = [
+                                'harga'    => (float) ($spi->harga ?? 0),
+                                'kuantiti' => (float) ($spi->kuantiti ?? 0),
+                            ];
+                            $map = [(string) $spi->spec_item_id => $val];
+                            if (!empty($spi->tsi_uuid)) {
+                                $map[(string) $spi->tsi_uuid] = $val;
+                            }
+                            return $map;
+                        })
                         ->all();
                 }
 

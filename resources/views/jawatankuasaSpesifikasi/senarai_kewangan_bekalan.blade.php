@@ -605,6 +605,8 @@
             // Build a table row from an initial row object (locked — no checkbox, no delete)
             function buildInitialRow(data) {
                 var tindakanUrl = valueOr(data.tindakanUrl, '#');
+                var isSpec = (data.source_type === 'specification_document' || data.mechanism === 'spesifikasi');
+                var skemaReadonlyAttr = isSpec ? ' readonly style="max-width:90px;margin:0 auto;background:#f8fafc;"' : ' style="max-width:90px;margin:0 auto;"';
                 return $(
                     '<tr class="initial-row"' +
                     ' data-row-uuid="' + (data.uuid || '') + '"' +
@@ -619,7 +621,7 @@
                     '<td class="text-center"><span class="small fw-semibold text-muted">' + valueOr(data.mekanismaLabel, '—') + '</span></td>' +
                     '<td class="text-center small">' + valueOr(data.tindakanPembekal, 'Kunci Masuk') + '</td>' +
                     '<td class="text-center">' +
-                        '<input type="number" name="skema[]" class="form-control form-control-sm text-center skema-input fw-semibold" value="' + valueOr(data.skema, 0) + '" min="0" style="max-width:90px;margin:0 auto;">' +
+                        '<input type="number" name="skema[]" class="form-control form-control-sm text-center skema-input fw-semibold" value="' + valueOr(data.skema, 0) + '" min="0"' + skemaReadonlyAttr + '>' +
                     '</td>' +
                     '<td class="text-center"><span class="badge-status ' + valueOr(data.statusClass, 'badge-status-warning') + '">' + valueOr(data.status, 'Draf') + '</span></td>' +
                     '<td class="text-center text-muted small rujukan-cell">' + valueOr(data.dokumen, '—') + '</td>' +

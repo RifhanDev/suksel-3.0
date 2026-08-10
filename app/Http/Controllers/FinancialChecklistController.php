@@ -38,6 +38,32 @@ class FinancialChecklistController extends Controller
             ]);
         }
 
+        if (!empty($checklistData['items']) && is_array($checklistData['items'])) {
+            $dbTechScores = \Illuminate\Support\Facades\DB::table('technical_checklist_items as tci')
+                ->join('technical_checklist_headers as tch', 'tch.id', '=', 'tci.technical_checklist_header_id')
+                ->where('tch.tender_id', $tender->id)
+                ->where(function ($q) {
+                    $q->where('tci.source_type', 'specification_document')
+                      ->orWhere('tci.mechanism', 'spesifikasi');
+                })
+                ->pluck('tci.score', 'tci.uuid')
+                ->all();
+
+            foreach ($checklistData['items'] as &$item) {
+                if (($item['source_type'] ?? '') === 'specification_document' || ($item['mechanism'] ?? '') === 'spesifikasi') {
+                    if (empty($item['score']) || (float)$item['score'] == 0) {
+                        $techUuid = $item['technical_item_uuid'] ?? $item['specification_document_uuid'] ?? null;
+                        if ($techUuid && isset($dbTechScores[$techUuid])) {
+                            $item['score'] = (float) $dbTechScores[$techUuid];
+                        } elseif (!empty($dbTechScores)) {
+                            $item['score'] = (float) reset($dbTechScores);
+                        }
+                    }
+                }
+            }
+            unset($item);
+        }
+
         // Check if $checklistData['items'] already has a specification_document item (linked via technical_item_id)
         $hasSpecItem = collect($checklistData['items'] ?? [])->contains(function ($item) {
             return ($item['source_type'] ?? '') === 'specification_document' || ($item['mechanism'] ?? '') === 'spesifikasi';

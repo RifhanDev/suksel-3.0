@@ -1307,13 +1307,20 @@ document.addEventListener('DOMContentLoaded', function() {
                     const unitStr = item.unit || item.uom || 'Unit';
 
                     // Anggaran Jabatan (status_process_id = 3)
-                    const pricingItem = pricingItems[itemUuid] || null;
-                    const anggaranHargaUnit = pricingItem ? parseFloat(pricingItem.harga || 0) : 0;
-                    const itemAnggaranTotal = anggaranHargaUnit > 0 ? (anggaranHargaUnit * qty) : 0;
+                    const pricingItem = pricingItems[itemUuid] || pricingItems[item.spec_item_id] || pricingItems[item.id] || null;
+                    const itemAnggaranTotal = pricingItem ? parseFloat(pricingItem.harga || 0) : 0;
                     totalAnggaran += itemAnggaranTotal;
 
                     // Tawaran Harga (status_process_id = 5)
-                    const vendorSubmittedHarga = itemPricesMap[itemUuid] ? parseFloat(itemPricesMap[itemUuid]) : (groups.length === 1 ? parseFloat(vendorObj.harga_tawaran || 0) : 0);
+                    let vendorSubmittedHarga = 0;
+                    if (itemPricesMap[itemUuid] !== undefined && itemPricesMap[itemUuid] !== null && itemPricesMap[itemUuid] !== '') {
+                        vendorSubmittedHarga = parseFloat(itemPricesMap[itemUuid]);
+                    } else if (item.spec_item_id && itemPricesMap[item.spec_item_id] !== undefined) {
+                        vendorSubmittedHarga = parseFloat(itemPricesMap[item.spec_item_id]);
+                    } else if (groups.length === 1 && vendorObj.harga_tawaran) {
+                        vendorSubmittedHarga = parseFloat(vendorObj.harga_tawaran || 0);
+                    }
+                    if (isNaN(vendorSubmittedHarga)) vendorSubmittedHarga = 0;
                     totalTawaran += vendorSubmittedHarga;
 
                     const trItem = document.createElement('tr');
