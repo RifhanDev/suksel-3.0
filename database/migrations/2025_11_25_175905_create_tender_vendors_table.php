@@ -11,6 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Restored/legacy databases may already have this table with real data.
+        // Bail out BEFORE the drop below — do not touch it.
+        if (Schema::hasTable('tender_vendors')) {
+            return;
+        }
+
         Schema::dropIfExists('tender_vendors');
 
         Schema::create('tender_vendors', function (Blueprint $table) {
@@ -28,8 +34,8 @@ return new class extends Migration
             $table->boolean('submitted')->nullable()->default(0);
 
             $table->unsignedInteger('transaction_id');
-            $table->unsignedBigInteger('vendor_id');
-            $table->unsignedBigInteger('tender_id');
+            $table->unsignedInteger('vendor_id');
+            $table->unsignedInteger('tender_id');
 
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();

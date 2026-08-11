@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('tender_vendor_online_form_statuses', function (Blueprint $table) {
             $table->id();
             $table->uuid('uuid')->unique();
-            $table->unsignedBigInteger('tender_id')->index();
+            $table->unsignedInteger('tender_id')->index();
             $table->unsignedBigInteger('vendor_id')->index();
             $table->string('form_key', 80)->index();
             $table->string('status', 30)->default('draft')->index();

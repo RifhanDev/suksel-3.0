@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('tender_teknikal_spesifikasi_evaluations', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('tender_id')->index('ttse_tender_idx');
+            $table->unsignedInteger('tender_id')->index('ttse_tender_idx');
             $table->unsignedBigInteger('vendor_id')->index('ttse_vendor_idx');
             $table->uuid('checklist_item_uuid')->index('ttse_item_idx');
             $table->uuid('specification_detail_uuid')->index('ttse_detail_idx');

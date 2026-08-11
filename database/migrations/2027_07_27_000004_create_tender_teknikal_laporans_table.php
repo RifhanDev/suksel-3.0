@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('tender_teknikal_laporans', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('tender_id')->unique();
+            $table->unsignedInteger('tender_id')->unique();
             // Bila Langkah 1 (Pematuhan) / Langkah 2 (Spesifikasi) disahkan hantar — boleh
             // null walaupun semua pembekal lulus (eliminateTidakLayak() singkir kosong dalam
             // kes itu, jadi bilangan disingkir bukan penanda dipercayai; ini penanda eksplisit).

@@ -17,7 +17,7 @@ return new class extends Migration
 
         Schema::create('penyediaan_mesyuarat', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('tender_id')->index();
+            $table->unsignedInteger('tender_id')->index();
             $table->string('jenis_jawatankuasa', 20)->index();
             $table->date('tarikh_mesyuarat');
             $table->string('masa', 10);

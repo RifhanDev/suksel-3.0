@@ -24,15 +24,15 @@ class CreateUsersTable extends Migration
             $table->unsignedTinyInteger('confirmed')->default(0);
             $table->string('remember_token', 128)->nullable();
             $table->string('auth_token', 128)->nullable();
-            $table->unsignedBigInteger('organization_unit_id')->nullable();
-            $table->unsignedBigInteger('vendor_id')->nullable();
+            $table->unsignedInteger('organization_unit_id')->nullable();
+            $table->unsignedInteger('vendor_id')->nullable();
             $table->string('email_token', 128)->nullable();
             $table->timestamp('email_verify_at')->nullable();
             $table->string('unconfirmed_email_token', 128)->nullable();
             $table->string('unconfirmed_email', 128)->nullable();
             $table->unsignedTinyInteger('approved')->nullable()->default(1);
             $table->unsignedInteger('role_applied')->nullable();
-            $table->unsignedBigInteger('approver_id')->nullable();
+            $table->unsignedInteger('approver_id')->nullable();
             $table->text('remark')->nullable();
             $table->dateTime('arr_sent_at')->nullable();
             $table->unsignedTinyInteger('arr')->nullable();

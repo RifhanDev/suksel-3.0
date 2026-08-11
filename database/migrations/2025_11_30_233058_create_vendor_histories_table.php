@@ -11,6 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Restored/legacy databases may already have this table with real data.
+        // Bail out BEFORE the drop below — do not touch it.
+        if (Schema::hasTable('vendor_histories')) {
+            return;
+        }
+
         Schema::dropIfExists('vendor_histories');
 
         Schema::create('vendor_histories', function (Blueprint $table) {

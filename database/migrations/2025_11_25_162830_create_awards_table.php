@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('name', 255);
             $table->text('description')->nullable();
             $table->string('by', 255)->nullable();
-            $table->unsignedBigInteger('vendor_id');
+            $table->unsignedInteger('vendor_id');
             $table->dateTime('created_at');
             $table->dateTime('updated_at');
 

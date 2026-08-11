@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('tender_vendor_dokumen_responses', function (Blueprint $table) {
             $table->id();
             $table->uuid('uuid')->unique();
-            $table->unsignedBigInteger('tender_id')->index();
+            $table->unsignedInteger('tender_id')->index();
             $table->unsignedBigInteger('vendor_id')->index();
             $table->uuid('checklist_item_uuid')->index();
             $table->string('section', 50)->index();
@@ -35,7 +35,7 @@ return new class extends Migration
         Schema::create('tender_vendor_dokumen_files', function (Blueprint $table) {
             $table->id();
             $table->uuid('uuid')->unique();
-            $table->unsignedBigInteger('tender_id')->index();
+            $table->unsignedInteger('tender_id')->index();
             $table->unsignedBigInteger('vendor_id')->index();
             $table->uuid('checklist_item_uuid')->index();
             $table->string('section', 50)->index();

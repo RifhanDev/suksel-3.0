@@ -10,14 +10,14 @@ return new class extends Migration
     {
         Schema::create('tender_kewangan_progress', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('tender_id')->unique();
+            $table->unsignedInteger('tender_id')->unique();
             $table->tinyInteger('current_step')->unsigned()->default(1)->comment('1=Pematuhan, 2=Penyata Bank, 3=Spesifikasi, 4=Laporan');
             $table->timestamp('step1_confirmed_at')->nullable();
-            $table->unsignedBigInteger('step1_confirmed_by')->nullable();
+            $table->unsignedInteger('step1_confirmed_by')->nullable();
             $table->timestamp('step2_confirmed_at')->nullable();
-            $table->unsignedBigInteger('step2_confirmed_by')->nullable();
+            $table->unsignedInteger('step2_confirmed_by')->nullable();
             $table->timestamp('step3_confirmed_at')->nullable();
-            $table->unsignedBigInteger('step3_confirmed_by')->nullable();
+            $table->unsignedInteger('step3_confirmed_by')->nullable();
             $table->timestamps();
 
             $table->foreign('tender_id', 'tkp_tender_fk')

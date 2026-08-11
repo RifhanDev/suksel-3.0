@@ -11,14 +11,21 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Restored/legacy databases may already have this table with real data.
+        // Bail out BEFORE the drop below — do not touch it.
+        if (Schema::hasTable('tender_visits')) {
+            return;
+        }
+
         Schema::dropIfExists('tender_visits');
+
         Schema::create('tender_visits', function (Blueprint $table) {
             $table->id();
             $table->text('meetpoint');
             $table->text('address');
             $table->datetime('datetime');
             $table->boolean('required')->default(0);
-            $table->unsignedBigInteger('tender_id');
+            $table->unsignedInteger('tender_id');
             $table->timestamps(0);
 
             $table->foreign('tender_id')

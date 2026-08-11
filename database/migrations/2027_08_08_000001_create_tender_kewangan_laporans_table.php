@@ -10,14 +10,14 @@ return new class extends Migration
     {
         Schema::create('tender_kewangan_laporans', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('tender_id')->unique();
+            $table->unsignedInteger('tender_id')->unique();
             $table->text('catatan_peringkat1')->nullable();
             $table->text('catatan_peringkat2')->nullable();
             $table->text('catatan_peringkat3')->nullable();
             $table->json('pengesyoran_justifikasi')->nullable();
             $table->string('status', 50)->default('draft');
             $table->timestamp('submitted_at')->nullable();
-            $table->unsignedBigInteger('submitted_by')->nullable();
+            $table->unsignedInteger('submitted_by')->nullable();
             $table->unsignedBigInteger('created_by')->nullable();
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->timestamps();

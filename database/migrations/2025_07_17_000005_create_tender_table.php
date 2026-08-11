@@ -8,14 +8,21 @@ class CreateTenderTable extends Migration
 {
     public function up(): void
     {
+        // Restored/legacy databases (e.g. staging seeded from a production backup)
+        // may already have this table with its full accumulated real-world schema.
+        // Skip creation there — only build it from scratch on a genuinely fresh DB.
+        if (Schema::hasTable('tenders')) {
+            return;
+        }
+
         Schema::create('tenders', function (Blueprint $table) {
             $table->id();
             $table->string('name');
             $table->string('ref_number')->nullable();
-            $table->unsignedBigInteger('creator_id')->nullable();
-            $table->unsignedBigInteger('officer_id')->nullable();
-            $table->unsignedBigInteger('approver_id')->nullable();
-            $table->unsignedBigInteger('organization_unit_id');
+            $table->unsignedInteger('creator_id')->nullable();
+            $table->unsignedInteger('officer_id')->nullable();
+            $table->unsignedInteger('approver_id')->nullable();
+            $table->unsignedInteger('organization_unit_id');
             $table->decimal('price', 15, 2)->nullable();
             $table->boolean('allow_exception')->default(false);
             $table->date('advertise_start_date')->nullable();

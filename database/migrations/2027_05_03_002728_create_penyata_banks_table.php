@@ -11,7 +11,8 @@ return new class extends Migration
         Schema::create('penyata_banks', function (Blueprint $table) {
             $table->id();
             $table->uuid('uuid')->unique();
-            $table->foreignId('tender_id')->unique()->constrained('tenders')->cascadeOnDelete();
+            $table->unsignedInteger('tender_id')->unique();
+            $table->foreign('tender_id')->references('id')->on('tenders')->cascadeOnDelete();
             $table->unsignedTinyInteger('dari_bulan')->nullable();
             $table->unsignedSmallInteger('dari_tahun')->nullable();
             $table->unsignedTinyInteger('hingga_bulan')->nullable();
@@ -20,8 +21,10 @@ return new class extends Migration
             $table->decimal('purata', 15, 2)->default(0);
             $table->string('jenis_skor_purata', 50)->nullable();
             $table->string('status', 50)->default('draft')->index();
-            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
-            $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->unsignedInteger('created_by')->nullable();
+            $table->foreign('created_by')->references('id')->on('users')->nullOnDelete();
+            $table->unsignedInteger('updated_by')->nullable();
+            $table->foreign('updated_by')->references('id')->on('users')->nullOnDelete();
             $table->timestamps();
         });
     }

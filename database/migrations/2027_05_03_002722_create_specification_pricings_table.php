@@ -15,8 +15,10 @@ return new class extends Migration
             $table->decimal('anggaran_jabatan', 15, 2)->default(0);
             $table->decimal('jumlah_harga', 15, 2)->default(0);
             $table->string('status', 50)->default('draft')->index();
-            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
-            $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->unsignedInteger('created_by')->nullable();
+            $table->foreign('created_by')->references('id')->on('users')->nullOnDelete();
+            $table->unsignedInteger('updated_by')->nullable();
+            $table->foreign('updated_by')->references('id')->on('users')->nullOnDelete();
             $table->timestamps();
         });
     }

@@ -20,7 +20,7 @@ return new class extends Migration
             $table->increments('id');
 
             $table->unsignedBigInteger('code_id');
-            $table->unsignedBigInteger('tender_id');
+            $table->unsignedInteger('tender_id');
 
             $table->string('code_type', 10);
 
