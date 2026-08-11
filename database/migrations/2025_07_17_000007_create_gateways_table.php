@@ -7,6 +7,12 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
+        // Restored/legacy databases may already have this table. Skip creation
+        // there — only build it from scratch on a genuinely fresh DB.
+        if (Schema::hasTable('gateways')) {
+            return;
+        }
+
         Schema::create('gateways', function (Blueprint $table) {
             $table->id();
             $table->string('type');
@@ -18,7 +24,7 @@ return new class extends Migration {
             $table->string('version')->nullable();
             $table->boolean('active')->default(false);
             $table->boolean('default')->default(false);
-            $table->unsignedBigInteger('organization_unit_id');
+            $table->unsignedInteger('organization_unit_id');
             $table->timestamps();
 
             $table->foreign('organization_unit_id')

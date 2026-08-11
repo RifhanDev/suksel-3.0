@@ -126,7 +126,7 @@ class PenyediaanIklanController extends Controller
         $payload = $this->buildPayload($request, $tender->id);
 
         try {
-            $this->penyediaanIklanService->save($tender, $payload, $submit);
+            $record = $this->penyediaanIklanService->save($tender, $payload, $submit);
 
             if ($this->stos->isConfigured()) {
                 try {
@@ -160,6 +160,12 @@ class PenyediaanIklanController extends Controller
                     'redirect' => $submit
                         ? route('tenders.index')
                         : route('penyediaanIklan.show', $tender->id) . '?tab=iklan',
+                    // Authoritative post-save state for Dokumen Meja Terkawal (optional
+                    // documents). The frontend uses this to refresh its hidden
+                    // existing_path/upload_id fields and clear used file inputs, so a
+                    // subsequent Simpan/Next-step save doesn't silently re-upload the same
+                    // file and orphan (delete) the document it just created.
+                    'dokumen_sokongan' => $record->meta['iklan']['dokumen_sokongan'] ?? [],
                 ]);
             }
 
@@ -409,6 +415,9 @@ class PenyediaanIklanController extends Controller
     protected function parseDokumenMejaTerkawal(Request $request, int $tenderId, array $existingDocs): array
     {
         $rows = (array) $request->input('dokumen_meja', []);
+        $existingByUploadId = collect($existingDocs)
+            ->filter(fn ($doc) => ! empty($doc['upload_id']))
+            ->keyBy('upload_id');
         $existingByPath = collect($existingDocs)->keyBy('path');
         $result = [];
 
@@ -432,8 +441,18 @@ class PenyediaanIklanController extends Controller
                 continue;
             }
 
-            if ($existingPath !== '' && $existingByPath->has($existingPath)) {
+            // Dokumen ini optional — jangan biarkan ia tercicir secara senyap. Utamakan
+            // padanan melalui upload_id (stabil) berbanding string path (rapuh, boleh
+            // tak sepadan akibat isu format/timing) supaya dokumen sedia ada yang tidak
+            // disentuh tidak dianggap "orphan" dan dipadam pada simpanan seterusnya.
+            $doc = null;
+            if ($uploadId && $existingByUploadId->has($uploadId)) {
+                $doc = $existingByUploadId->get($uploadId);
+            } elseif ($existingPath !== '' && $existingByPath->has($existingPath)) {
                 $doc = $existingByPath->get($existingPath);
+            }
+
+            if ($doc !== null) {
                 $doc['nama'] = $nama !== '' ? $nama : ($doc['nama'] ?? $doc['original_name'] ?? '');
                 if ($uploadId) {
                     $doc['upload_id'] = (int) $uploadId;

@@ -11,10 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Restored/legacy databases may already have this table. Skip creation
+        // there — only build it from scratch on a genuinely fresh DB.
+        if (Schema::hasTable('uploads')) {
+            return;
+        }
+
         Schema::create('uploads', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->unsignedBigInteger('user_id')->nullable();
+            $table->unsignedInteger('user_id')->nullable();
             $table->string('uploadable_type');
             $table->unsignedBigInteger('uploadable_id');
             $table->string('token')->nullable();

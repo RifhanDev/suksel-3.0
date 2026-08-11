@@ -17,7 +17,7 @@ return new class extends Migration
         Schema::create('code_vendor', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('parent_id')->nullable();
-            $table->unsignedBigInteger('vendor_id');
+            $table->unsignedInteger('vendor_id');
             $table->unsignedBigInteger('code_id');;
             $table->string('code_type', 10)->nullable();
 

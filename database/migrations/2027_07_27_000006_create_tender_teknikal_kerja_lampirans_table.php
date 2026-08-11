@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('tender_teknikal_kerja_lampirans', function (Blueprint $table) {
             $table->id();
             $table->uuid('uuid')->unique();
-            $table->unsignedBigInteger('tender_id')->index('ttkl_tender_idx');
+            $table->unsignedInteger('tender_id')->index('ttkl_tender_idx');
             // Nama paparan — boleh ditukar selepas muat naik (berasingan daripada nama fail asal).
             $table->string('display_name');
             $table->string('original_name');

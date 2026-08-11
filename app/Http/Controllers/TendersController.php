@@ -1097,15 +1097,71 @@ class TendersController extends Controller
 				return $this->_access_denied();
 		}
 
-		$fullPath = method_exists($file, 'getPath') ? $file->getPath() : (rtrim((string) $file->path, '/\\') . DIRECTORY_SEPARATOR . $file->name);
+		$fullPath = method_exists($file, 'resolveAbsolutePath')
+			? $file->resolveAbsolutePath()
+			: null;
+
+		if (! $fullPath) {
+			$fullPath = method_exists($file, 'getPath')
+				? $file->getPath()
+				: (rtrim((string) $file->path, '/\\') . DIRECTORY_SEPARATOR . $file->name);
+		}
 
 		if (! is_file($fullPath)) {
+			$fullPath = $this->resolveMejaTerkawalFallbackPath($tender, $file);
+		}
+
+		if (! $fullPath || ! is_file($fullPath)) {
 			abort(404, 'Fail tidak dijumpai.');
 		}
 
-		$downloadName = $file->label ?: $file->name;
+		$downloadName = trim((string) ($file->label ?: $file->name));
+		$extension = pathinfo((string) $file->name, PATHINFO_EXTENSION);
+		if ($extension !== '' && pathinfo($downloadName, PATHINFO_EXTENSION) === '') {
+			$downloadName .= '.' . $extension;
+		}
 
-		return Response::download($fullPath, $downloadName);
+		return response()->download($fullPath, $downloadName, [
+			'Content-Type' => $file->type ?: (mime_content_type($fullPath) ?: 'application/octet-stream'),
+		]);
+	}
+
+	/**
+	 * Meja terkawal uploads are copied from penyediaan-iklan; if the copy path is stale,
+	 * serve the original sokongan file still referenced in meta.
+	 */
+	protected function resolveMejaTerkawalFallbackPath(Tender $tender, $file): ?string
+	{
+		$record = \App\Models\PenyediaanIklan::query()->where('tender_id', $tender->id)->first();
+		if (! $record || ! is_array($record->meta)) {
+			return null;
+		}
+
+		$docs = $record->meta['iklan']['dokumen_sokongan'] ?? [];
+		foreach ($docs as $doc) {
+			if (! is_array($doc)) {
+				continue;
+			}
+
+			$uploadId = (int) ($doc['upload_id'] ?? 0);
+			$path = trim((string) ($doc['path'] ?? ''));
+			if ($path === '') {
+				continue;
+			}
+
+			$matchesUpload = $uploadId > 0 && $uploadId === (int) $file->id;
+			$matchesName = isset($doc['original_name']) && (string) $doc['original_name'] === (string) $file->name;
+			if (! $matchesUpload && ! $matchesName) {
+				continue;
+			}
+
+			$candidate = public_path(ltrim(str_replace('\\', '/', $path), '/'));
+			if (is_file($candidate)) {
+				return $candidate;
+			}
+		}
+
+		return null;
 	}
 
 	public function receipt($tender_id, $id)

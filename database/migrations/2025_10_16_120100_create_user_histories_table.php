@@ -8,10 +8,16 @@ class CreateUserHistoriesTable extends Migration
 {
     public function up()
     {
+        // Restored/legacy databases may already have this table. Skip creation
+        // there — only build it from scratch on a genuinely fresh DB.
+        if (Schema::hasTable('user_histories')) {
+            return;
+        }
+
         Schema::create('user_histories', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->string('action');
-            $table->unsignedBigInteger('user_id');
+            $table->unsignedInteger('user_id');
             $table->unsignedBigInteger('3p_id')->nullable();
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();

@@ -11,7 +11,7 @@ return new class extends Migration
     {
         Schema::create('lantikan_terus_documents', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('tender_id')->index();
+            $table->unsignedInteger('tender_id')->index();
             // bq = dokumen BQ pemilik projek; jpict/minit_bebas = cut-off; surat_setuju_terima = keputusan
             $table->enum('doc_type', ['bq', 'jpict', 'minit_bebas', 'surat_setuju_terima', 'lain']);
             $table->string('file_path');
@@ -25,7 +25,7 @@ return new class extends Migration
 
         Schema::create('lantikan_terus_offers', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('tender_id')->index();
+            $table->unsignedInteger('tender_id')->index();
             $table->unsignedBigInteger('vendor_id')->index();
             $table->decimal('harga_tawaran', 15, 2)->default(0);
             $table->string('bq_path')->nullable();

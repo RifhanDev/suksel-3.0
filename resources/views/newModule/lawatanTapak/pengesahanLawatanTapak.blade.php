@@ -17,10 +17,6 @@
     <a href="{{ route('lawatanTapakUrusetia') }}" class="btn btn-sm btn-light border">&larr; Kembali ke Senarai</a>
 </div>
 
-@if (session('success'))
-    <div class="alert alert-success">{{ session('success') }}</div>
-@endif
-
 <div class="card border shadow-sm mb-3 rounded-3">
     <div class="card-body p-3">
         <div class="row g-2">

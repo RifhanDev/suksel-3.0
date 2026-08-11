@@ -21,8 +21,8 @@ return new class extends Migration
             $table->unsignedBigInteger('approval_1_id')->nullable();
             $table->text('rejection_reason')->nullable();
             $table->string('rejection_template_id', 255)->nullable();
-            $table->unsignedBigInteger('user_id');
-            $table->unsignedBigInteger('vendor_id');
+            $table->unsignedInteger('user_id');
+            $table->unsignedInteger('vendor_id');
             $table->string('status', 20)->nullable();
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();

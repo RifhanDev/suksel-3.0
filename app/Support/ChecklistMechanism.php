@@ -17,6 +17,10 @@ final class ChecklistMechanism
     /** source_type marking a checklist item as a specification row. */
     public const SOURCE_SPECIFICATION = 'specification_document';
 
+    /** vendor_action for a ptj_muat_naik item that's download-only — excluded from
+     *  evaluation checklists since there's nothing for the petender to submit back. */
+    public const VENDOR_ACTION_MUAT_TURUN = 'muat_turun';
+
     /** Display label for the "Mekanisma" column. */
     public static function label(?string $mechanism, ?string $sourceType = null): string
     {

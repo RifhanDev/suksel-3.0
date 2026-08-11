@@ -22,8 +22,8 @@ return new class extends Migration
             $table->string('action_url', 500)->nullable()->comment('URL for tindakan button shown in Penyediaan Spesifikasi & Skor table');
             $table->boolean('is_active')->default(true)->index();
             $table->unsignedSmallInteger('sort_order')->default(0);
-            $table->unsignedBigInteger('created_by')->nullable();
-            $table->unsignedBigInteger('updated_by')->nullable();
+            $table->unsignedInteger('created_by')->nullable();
+            $table->unsignedInteger('updated_by')->nullable();
             $table->timestamps();
 
             $table->foreign('created_by', 'sci_created_by_fk')

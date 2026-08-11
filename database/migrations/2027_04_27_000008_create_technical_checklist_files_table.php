@@ -22,7 +22,7 @@ return new class extends Migration
             $table->string('path', 500);
             $table->string('mime_type', 150)->nullable();
             $table->unsignedBigInteger('size')->default(0);
-            $table->unsignedBigInteger('uploaded_by')->nullable();
+            $table->unsignedInteger('uploaded_by')->nullable();
             $table->timestamps();
 
             $table->foreign('technical_checklist_header_id', 'tcf_header_fk')

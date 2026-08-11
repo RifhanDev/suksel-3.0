@@ -11,6 +11,8 @@ use Illuminate\Validation\ValidationException;
 
 class VendorTenderSubmissionService
 {
+    public function __construct(protected TenderProcessStatusService $statusService) {}
+
     /**
      * @return array{ready: bool, errors: array<int, string>, purchase: ?TenderVendor}
      */
@@ -82,30 +84,59 @@ class VendorTenderSubmissionService
                 throw ValidationException::withMessages(['vendor' => 'Tawaran telah dihantar.']);
             }
 
-            // Only mark this vendor's purchase as submitted.
-            // Do not advance tender status_process_id — other vendors must still
-            // be able to submit during the same iklan window.
             $purchase->submitted = 1;
             $purchase->save();
+
+            $this->advanceToHantarDokumenSyarikat($tender);
 
             return $purchase->fresh();
         });
     }
 
     /**
-     * Vendor submission stays open after penyediaan iklan until mesyuarat/evaluation.
-     * Status must not flip on the first vendor submit (that blocked other companies).
+     * Company pertama yang hantar dokumen menaikkan tender 5 → 6, membolehkan modul
+     * Penyediaan Mesyuarat memaparkannya. Company lain yang belum hantar TIDAK
+     * tersekat — tempoh key-in (tarikh tutup) yang menentukan, bukan status proses.
+     */
+    protected function advanceToHantarDokumenSyarikat(Tender $tender): void
+    {
+        // Tender e-Bidding dikecualikan: EbiddingController memetakan status 5 =
+        // peringkat Vendor dan 6 = Agency Admin (Semakan), jadi menaikkan status
+        // akan melompatkan paparan e-bidding ke peringkat semakan serta-merta.
+        if ($tender->is_ebidding) {
+            return;
+        }
+
+        if ((int) ($tender->status_process_id ?? 0) !== TenderProcessStatus::PENYEDIAAN_IKLAN) {
+            return;
+        }
+
+        $this->statusService->advanceStatus($tender, TenderProcessStatus::HANTAR_DOKUMEN_SYARIKAT);
+    }
+
+    /**
+     * Tarikh tutup — bukan status proses — yang menentukan sama ada company masih
+     * boleh hantar. Status boleh naik ke 6 (company pertama hantar) atau 7 (urusetia
+     * hantar jemputan mesyuarat) sementara tempoh iklan masih terbuka; company lain
+     * mesti kekal boleh hantar. Tempoh dikuatkuasakan oleh
+     * vendorDokumenWindowBlockedReason() dalam readiness(), dipanggil sebelum ini.
      */
     protected function assertTenderAcceptsVendorSubmission(Tender $tender): void
     {
         $status = (int) ($tender->status_process_id ?? 0);
 
-        if (
-            $status < TenderProcessStatus::PENYEDIAAN_IKLAN
-            || $status >= TenderProcessStatus::PENYEDIAAN_MESYUARAT
-        ) {
+        if ($status < TenderProcessStatus::PENYEDIAAN_IKLAN) {
             throw ValidationException::withMessages([
-                'tender' => 'Tender tidak berada dalam fasa penghantaran tawaran.',
+                'tender' => 'Tender belum dibuka untuk penghantaran tawaran.',
+            ]);
+        }
+
+        // Jaring keselamatan: menjelang Penilaian Pembuka, jawatankuasa sudah membuka
+        // tawaran — tiada penghantaran baharu boleh diterima walau apa pun tarikh.
+        // Perlu kerana isWithinVendorDokumenWindow() gagal-terbuka bila tiada tarikh.
+        if ($status >= TenderProcessStatus::PENILAIAN_PEMBUKA) {
+            throw ValidationException::withMessages([
+                'tender' => 'Tender telah masuk fasa penilaian. Penghantaran tawaran telah ditutup.',
             ]);
         }
     }

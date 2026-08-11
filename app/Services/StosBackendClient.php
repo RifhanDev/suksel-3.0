@@ -202,6 +202,31 @@ class StosBackendClient
         return $this->post('/api/penilaian-teknikal-kerja/hantar', $payload);
     }
 
+    public function getSstPembekal(int $tenderId): Response
+    {
+        return $this->get('/api/tenders/' . $tenderId . '/sst/pembekal');
+    }
+
+    public function getSstSenaraiSurat(int $tenderId): Response
+    {
+        return $this->get('/api/tenders/' . $tenderId . '/sst/surat');
+    }
+
+    public function getSst(int $tenderId, int $vendorId): Response
+    {
+        return $this->get('/api/tenders/' . $tenderId . '/sst/vendor/' . $vendorId);
+    }
+
+    public function simpanSst(array $payload): Response
+    {
+        return $this->post('/api/sst/simpan', $payload);
+    }
+
+    public function hantarSst(array $payload): Response
+    {
+        return $this->post('/api/sst/hantar', $payload);
+    }
+
     public function listPembelianTerus(array $query = []): Response
     {
         return $this->get('/api/pembelian-terus', $query);

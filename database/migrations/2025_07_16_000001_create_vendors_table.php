@@ -36,7 +36,7 @@ class CreateVendorsTable extends Migration
         //     $table->date('blacklisted_until')->nullable();
         //     $table->text('blacklist_reason')->nullable();
 
-        //     $table->unsignedBigInteger('organization_unit_id')->nullable();
+        //     $table->unsignedInteger('organization_unit_id')->nullable();
         //     $table->string('mof_ref_no')->nullable();
         //     $table->date('mof_start_date')->nullable();
         //     $table->date('mof_end_date')->nullable();
@@ -120,7 +120,7 @@ class CreateVendorsTable extends Migration
             $table->text('rejection_reason')->nullable();
             $table->string('rejection_template_id', 255)->nullable();
             $table->boolean('smk')->default(0);
-            $table->unsignedBigInteger('organization_unit_id');
+            $table->unsignedInteger('organization_unit_id');
             $table->timestamp('certificate_generated_at')->nullable();
             $table->timestamps();
             $table->unsignedInteger('state_id')->nullable();

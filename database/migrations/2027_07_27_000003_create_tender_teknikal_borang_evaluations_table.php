@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('tender_teknikal_borang_evaluations', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('tender_id')->index('ttbe_tender_idx');
+            $table->unsignedInteger('tender_id')->index('ttbe_tender_idx');
             $table->unsignedBigInteger('vendor_id')->index('ttbe_vendor_idx');
             $table->uuid('checklist_item_uuid')->index('ttbe_item_idx');
             // Dihadkan pada skema markah (technical_checklist_items.score) semasa disimpan.

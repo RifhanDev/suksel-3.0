@@ -16,7 +16,7 @@ class CreateCutOffSelectionsTable extends Migration
         Schema::create('cut_off_selections', function (Blueprint $table) {
             $table->id();
             $table->uuid('uuid')->unique();
-            $table->unsignedBigInteger('tender_id')->unique(); // satu rekod aktif per tender
+            $table->unsignedInteger('tender_id')->unique(); // satu rekod aktif per tender
 
             // draft = selepas Simpan, submitted = selepas Hantar (terkunci)
             $table->string('status', 20)->default('draft');

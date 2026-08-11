@@ -20,7 +20,7 @@ return new class extends Migration
             $table->text('customer');
             $table->decimal('value', 20, 2);
             $table->string('period', 45)->nullable();
-            $table->unsignedBigInteger('vendor_id');
+            $table->unsignedInteger('vendor_id');
             $table->boolean('done')->default(0);
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();

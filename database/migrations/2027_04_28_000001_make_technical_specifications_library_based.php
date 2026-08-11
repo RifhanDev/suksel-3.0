@@ -26,7 +26,7 @@ return new class extends Migration
     {
         if (!Schema::hasColumn('technical_specification_documents', 'tender_id')) {
             Schema::table('technical_specification_documents', function (Blueprint $table) {
-                $table->unsignedBigInteger('tender_id')->nullable()->after('uuid');
+                $table->unsignedInteger('tender_id')->nullable()->after('uuid');
                 $table->index('tender_id', 'technical_specification_documents_tender_id_index');
                 $table->foreign('tender_id', 'tsd_tender_fk')
                     ->references('id')

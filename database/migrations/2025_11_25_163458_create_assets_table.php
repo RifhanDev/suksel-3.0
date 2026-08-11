@@ -18,7 +18,7 @@ return new class extends Migration
             $table->id();
             $table->string('name', 128);
             $table->decimal('value', 20, 2);
-            $table->unsignedBigInteger('vendor_id');
+            $table->unsignedInteger('vendor_id');
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
 

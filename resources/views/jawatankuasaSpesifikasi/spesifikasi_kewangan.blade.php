@@ -389,16 +389,22 @@
                 <div class="table-responsive">
                     <table id="tbl-spek-kewangan" class="table table-modern w-100 mb-0">
                         <thead>
-                            <tr>
-                                <th>
-                                    Item
-                                    <div style="font-size: 0.68rem; font-weight: 600; text-transform: none; letter-spacing: 0; color: #94a3b8; margin-top: 2px;">
-                                        Spesifikasi
+                            <tr style="background-color: #3b5998; color: #ffffff;">
+                                <th class="py-3 px-3 align-middle text-start" style="background-color: #3b5998; color: #ffffff; border-color: #2d4578;">
+                                    Item <span class="text-danger">*</span>
+                                    <div style="font-size: 0.72rem; font-weight: 600; text-transform: none; color: #e2e8f0; margin-top: 2px;">
+                                        Spesifikasi <span class="text-danger">*</span>
                                     </div>
                                 </th>
-                                <th class="text-center" style="width: 130px;">Kekerapan / Kuantiti</th>
-                                <th class="text-center" style="width: 130px;">Unit Ukuran</th>
-                                <th class="text-center" style="width: 180px;">Penetapan Harga (RM)</th>
+                                <th class="text-center align-middle py-3 px-3" style="width: 170px; background-color: #3b5998; color: #ffffff; border-color: #2d4578;">
+                                    Kekerapan / Kuantiti <span class="text-danger">*</span>
+                                </th>
+                                <th class="text-center align-middle py-3 px-3" style="width: 170px; background-color: #3b5998; color: #ffffff; border-color: #2d4578;">
+                                    Unit Ukuran <span class="text-danger">*</span>
+                                </th>
+                                <th class="text-center align-middle py-3 px-3" style="width: 220px; background-color: #3b5998; color: #ffffff; border-color: #2d4578;">
+                                    Penetapan Harga (RM) <span class="text-danger">*</span>
+                                </th>
                             </tr>
                         </thead>
                         <tbody id="tbl-spek-body">
@@ -408,27 +414,18 @@
                 </div>
 
                 <!-- Totals area — aligned right under Penetapan Harga column -->
-                <div class="d-flex justify-content-end mt-3">
-                    <div style="width: 360px;">
+                <div class="d-flex justify-content-end align-items-center mt-4">
+                    <div class="d-flex flex-column gap-2" style="min-width: 520px;">
                         <!-- Jumlah Harga -->
-                        <div class="d-flex align-items-center justify-content-between py-2 px-3 rounded-2 mb-2" style="background:#f8fafc; border:1px solid #e2e8f0;">
-                            <span class="fw-semibold text-dark" style="font-size:0.85rem;">Jumlah Harga (RM)</span>
-                            <span class="fw-bold text-dark" id="jumlah-harga" style="font-size:1rem;">0.00</span>
+                        <div class="d-flex align-items-center justify-content-end gap-3">
+                            <span class="fw-semibold text-dark" style="font-size:0.875rem;">Jumlah Harga (RM)</span>
+                            <div class="form-control form-control-sm text-end fw-bold bg-light" id="jumlah-harga" style="width: 180px; font-size: 0.95rem; border-color: #cbd5e1;">0.00</div>
                         </div>
                         <!-- Anggaran Jabatan -->
-                        <div class="d-flex align-items-center justify-content-between py-2 px-3 rounded-2 mb-2" style="background:#eff6ff; border:1px solid #bfdbfe;">
-                            <span class="fw-semibold" style="font-size:0.85rem; color:#1e40af;">Anggaran Jabatan (RM)</span>
-                            <span class="fw-bold" id="anggaran-jabatan" style="font-size:1rem; color:#1e40af;">{{ number_format($tender->anggaran_jabatan ?? $pricingData['anggaran_jabatan'] ?? 0, 2) }}</span>
-                        </div>
-                        <!-- Nota -->
-                        <div class="d-flex align-items-start gap-2 px-1">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none"
-                                stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0" style="margin-top:2px;">
-                                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-                                <line x1="12" y1="9" x2="12" y2="13"></line>
-                                <line x1="12" y1="17" x2="12.01" y2="17"></line>
-                            </svg>
-                            <span class="text-muted fst-italic" style="font-size:0.75rem; line-height:1.4;">Nota: Pastikan Jumlah Harga adalah sama dengan Anggaran Jabatan</span>
+                        <div class="d-flex align-items-center justify-content-end gap-3">
+                            <span class="text-primary small fst-italic me-auto" style="font-size:0.75rem;">(Nota: Pastikan Jumlah Harga adalah sama dengan Anggaran Jabatan)</span>
+                            <span class="fw-semibold text-dark" style="font-size:0.875rem;">Anggaran Jabatan (RM)</span>
+                            <input type="text" class="form-control form-control-sm text-end fw-bold bg-light" id="anggaran-jabatan" value="{{ number_format($tender->anggaran_jabatan ?? $pricingData['anggaran_jabatan'] ?? 0, 2) }}" readonly disabled style="width: 180px; font-size: 0.95rem; border-color: #cbd5e1;">
                         </div>
                     </div>
                 </div>
@@ -472,6 +469,7 @@
 @endsection
 
 @section('scripts')
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 $(document).ready(function () {
 
@@ -486,50 +484,58 @@ $(document).ready(function () {
     // ── Render table rows ────────────────────────────────────────────────────
     var $tbody = $('#tbl-spek-body');
 
-    $.each(items, function (itemIdx, item) {
-        var groupClass  = itemIdx % 2 === 1 ? ' group-alt' : '';
-        var details     = item.details || [];
-        var detailCount = details.length;
-        var hasDetails  = detailCount > 0;
-        var totalRows   = 1 + detailCount;
-        var savedHarga  = item.harga > 0 ? parseFloat(item.harga).toFixed(2) : '';
+    if (!items || items.length === 0) {
+        $tbody.append('<tr id="tbl-no-data"><td colspan="4" class="text-center text-muted py-4 small">Tiada Item Spesifikasi Dijumpai</td></tr>');
+    } else {
+        $.each(items, function (itemIdx, item) {
+            var groupClass  = itemIdx % 2 === 1 ? ' group-alt' : '';
+            var details     = item.details || [];
+            var detailCount = details.length;
+            var hasDetails  = detailCount > 0;
+            var totalRows   = 1 + detailCount;
+            var savedHarga  = item.harga > 0 ? parseFloat(item.harga).toFixed(2) : '';
 
-        // ── Parent item row — harga spans all rows ───────────────────
-        var $itemRow = $(
-            '<tr class="item-row' + groupClass + (hasDetails ? ' item-has-specs' : '') + '">' +
-                '<td style="padding-left:20px;">' +
-                    '<span class="fw-semibold" style="font-size:0.875rem;">' + $('<span>').text(item.title).html() + '</span>' +
-                '</td>' +
-                '<td class="text-center">' +
-                    '<span class="fw-semibold" style="font-size:0.875rem;">' + item.kuantiti + '</span>' +
-                '</td>' +
-                '<td class="text-center">' +
-                    '<span class="small text-muted">' + $('<span>').text(item.uom || '-').html() + '</span>' +
-                '</td>' +
-                '<td class="text-center" rowspan="' + totalRows + '" style="vertical-align:middle;">' +
-                    '<input type="text" name="harga_item[]" class="form-control form-control-sm text-end amount-input harga-input" placeholder="0.00" data-item-idx="' + itemIdx + '" value="' + savedHarga + '">' +
-                '</td>' +
-            '</tr>'
-        );
-        $tbody.append($itemRow);
-
-        // ── Child detail rows (display only, no harga cell) ──────────
-        $.each(details, function (dIdx, description) {
-            var isLast   = dIdx === detailCount - 1;
-            var rowClass = 'spec-row' + groupClass + (isLast ? ' spec-last' : '');
-
-            var $detailRow = $(
-                '<tr class="' + rowClass + '">' +
-                    '<td style="padding-left:44px;">' +
-                        '<span class="text-muted" style="font-size:0.82rem;">' + $('<span>').text(description).html() + '</span>' +
+            // ── Parent item row — harga spans all rows ───────────────────
+            var $itemRow = $(
+                '<tr class="item-row' + groupClass + (hasDetails ? ' item-has-specs' : '') + '">' +
+                    '<td class="p-3">' +
+                        '<div class="p-2.5 rounded-2 border bg-white shadow-sm fw-semibold text-dark" style="font-size:0.875rem; line-height:1.45;">' +
+                            $('<span>').text(item.title).html() +
+                        '</div>' +
                     '</td>' +
-                    '<td></td>' +
-                    '<td></td>' +
+                    '<td class="text-center align-middle">' +
+                        '<span class="fw-semibold text-dark" style="font-size:0.875rem;">' + item.kuantiti + '</span>' +
+                    '</td>' +
+                    '<td class="text-center align-middle">' +
+                        '<span class="fw-semibold text-dark text-uppercase" style="font-size:0.8rem;">' + $('<span>').text(item.uom || '-').html() + '</span>' +
+                    '</td>' +
+                    '<td class="text-center align-middle p-3" rowspan="' + totalRows + '">' +
+                        '<input type="text" name="harga_item[]" class="form-control form-control-sm text-end amount-input harga-input py-2 fw-semibold" placeholder="0.00" data-item-idx="' + itemIdx + '" value="' + savedHarga + '" style="font-size:0.95rem;">' +
+                    '</td>' +
                 '</tr>'
             );
-            $tbody.append($detailRow);
+            $tbody.append($itemRow);
+
+            // ── Child detail rows (display only, no harga cell) ──────────
+            $.each(details, function (dIdx, description) {
+                var isLast   = dIdx === detailCount - 1;
+                var rowClass = 'spec-row' + groupClass + (isLast ? ' spec-last' : '');
+
+                var $detailRow = $(
+                    '<tr class="' + rowClass + '">' +
+                        '<td class="p-3" style="padding-left:44px !important;">' +
+                            '<div class="p-2.5 rounded-2 border bg-white text-dark small" style="font-size:0.82rem; line-height:1.5;">' +
+                                $('<span>').text(description).html().replace(/\n/g, '<br>') +
+                            '</div>' +
+                        '</td>' +
+                        '<td></td>' +
+                        '<td></td>' +
+                    '</tr>'
+                );
+                $tbody.append($detailRow);
+            });
         });
-    });
+    }
 
     // ── Jumlah Harga calculation ─────────────────────────────────────────────
     function parseAmount(val) {
@@ -594,7 +600,7 @@ $(document).ready(function () {
             })
             .fail(function() {
                 unblockUI();
-                alert('Ralat semasa menyimpan. Sila cuba lagi.');
+                Swal.fire('Ralat', 'Ralat semasa menyimpan. Sila cuba lagi.', 'error');
             });
     }
 
@@ -606,6 +612,21 @@ $(document).ready(function () {
     });
 
     $('#btn-selesai').on('click', function() {
+        var totalInput      = parseAmount($('#jumlah-harga').text());
+        var anggaranJabatan = parseAmount($('#anggaran-jabatan').val());
+
+        // Validate that Jumlah Penetapan Harga equals Anggaran Jabatan
+        if (Math.abs(totalInput - anggaranJabatan) > 0.01) {
+            Swal.fire({
+                title: 'Ralat!',
+                text: 'Jumlah Penetapan Harga perlu sama dengan Anggaran Jabatan.',
+                icon: 'error',
+                confirmButtonColor: '#1e293b',
+                confirmButtonText: 'Tutup'
+            });
+            return;
+        }
+
         blockUI('Menghantar...');
         doSave(function() {
             $.post(SUBMIT_URL, { _token: CSRF_TOKEN })
@@ -616,12 +637,12 @@ $(document).ready(function () {
                         });
                     } else {
                         unblockUI();
-                        alert(res.message || 'Ralat semasa menghantar.');
+                        Swal.fire('Ralat', res.message || 'Ralat semasa menghantar.', 'error');
                     }
                 })
                 .fail(function() {
                     unblockUI();
-                    alert('Ralat semasa menghantar. Sila cuba lagi.');
+                    Swal.fire('Ralat', 'Ralat semasa menghantar. Sila cuba lagi.', 'error');
                 });
         });
     });

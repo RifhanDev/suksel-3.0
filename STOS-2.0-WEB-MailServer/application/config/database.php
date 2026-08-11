@@ -75,10 +75,6 @@ $query_builder = TRUE;
 
 $db['default'] = array(
 	'dsn'	=> '',
-	// 'hostname' => '127.0.0.1:1975',
-	// 'username' => 'petra',
-	// 'password' => '$Z0&Z{#K{p^cNZnT',
-	// 'database' => 'stos',
 	'hostname' => '127.0.0.1',
 	'username' => 'root',
 	'password' => 'root',

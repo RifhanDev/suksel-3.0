@@ -35,7 +35,7 @@ class TenderDokumenPresenter
 
         $items = $this->isKerjaCategory()
             ? $this->kerjaItems()
-            : $this->bekalanPerkhidmatanItems();
+            : $this->bekalanPerkhidmatanItems($mode);
 
         $vendorResponses = $vendorId
             ? app(\App\Services\VendorDokumenResponseService::class)->responsesByItemUuid($this->tender, $vendorId)
@@ -194,7 +194,7 @@ class TenderDokumenPresenter
     /**
      * @return array<int, array<string, mixed>>
      */
-    protected function bekalanPerkhidmatanItems(): array
+    protected function bekalanPerkhidmatanItems(string $mode = 'admin'): array
     {
         $technical = TechnicalChecklistItem::query()
             ->whereHas('header', fn ($query) => $query->where('tender_id', $this->tender->id))
@@ -208,8 +208,22 @@ class TenderDokumenPresenter
             ))
             ->all();
 
-        $financial = FinancialChecklistItem::query()
-            ->whereHas('header', fn ($query) => $query->where('tender_id', $this->tender->id))
+        $financialQuery = FinancialChecklistItem::query()
+            ->whereHas('header', fn ($query) => $query->where('tender_id', $this->tender->id));
+
+        if ($mode === 'vendor') {
+            $financialQuery->whereNull('technical_item_id')
+                ->where(function ($query) {
+                    $query->whereNotIn('source_type', ['specification_document', 'specification'])
+                        ->orWhereNull('source_type');
+                })
+                ->where(function ($query) {
+                    $query->where('mechanism', '!=', 'spesifikasi')
+                        ->orWhereNull('mechanism');
+                });
+        }
+
+        $financial = $financialQuery
             ->orderBy('sort_order')
             ->orderBy('id')
             ->get()

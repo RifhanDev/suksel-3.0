@@ -2,50 +2,45 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\AuthorizesTenderFileAccess;
 use App\Services\StosBackendClient;
+use App\Support\StosStoredFile;
 use App\Tender;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
-use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class TenderChecklistFileController extends Controller
 {
+    use AuthorizesTenderFileAccess;
+
     public function download(Request $request, Tender $tender, string $section, string $fileUuid)
     {
-        $this->assertCanAccess($tender);
+        $this->assertCanAccessTenderFile($tender);
 
         $localFile = $this->findLocalFile($section, $fileUuid, $tender->id);
         if ($localFile) {
-            return $this->streamLocalFile($localFile);
+            $streamed = $this->streamLocalFileOrNull($localFile);
+            if ($streamed) {
+                return $streamed;
+            }
+
+            // DB row exists (often shared with STOS) but file is only on STOS disk/API.
+            return StosStoredFile::response([
+                'uuid' => $fileUuid,
+                'original_name' => $localFile->original_name ?? 'Dokumen',
+                'path' => $localFile->path ?? null,
+                'mime_type' => $localFile->mime_type ?? null,
+                'download_api' => $this->downloadApiForSection($section, $fileUuid),
+            ]);
         }
 
         $remoteFile = $this->findRemoteFile($tender, $section, $fileUuid);
         if ($remoteFile) {
-            return $this->streamRemoteFile($remoteFile);
+            return StosStoredFile::response($remoteFile);
         }
 
         abort(404, 'Fail tidak dijumpai.');
-    }
-
-    protected function assertCanAccess(Tender $tender): void
-    {
-        $user = Auth::user();
-        if (! $user) {
-            abort(403, 'Sila log masuk untuk memuat turun fail.');
-        }
-
-        $isAdmin = $user->hasRole('Admin') || $user->can('tender:specification-management');
-        if ($isAdmin) {
-            return;
-        }
-
-        if ($user->hasRole('Vendor') && $user->vendor_id && $tender->hasParticipate((int) $user->vendor_id)) {
-            return;
-        }
-
-        abort(403, 'Akses fail tidak dibenarkan.');
     }
 
     /**
@@ -84,13 +79,26 @@ class TenderChecklistFileController extends Controller
      */
     protected function findRemoteFile(Tender $tender, string $section, string $fileUuid): ?array
     {
-        if (empty($tender->uuid)) {
+        $downloadApi = $this->downloadApiForSection($section, $fileUuid);
+        if ($downloadApi === null) {
             return null;
+        }
+
+        if (empty($tender->uuid)) {
+            return [
+                'uuid' => $fileUuid,
+                'original_name' => 'Dokumen',
+                'download_api' => $downloadApi,
+            ];
         }
 
         $stos = app(StosBackendClient::class);
         if (! $stos->isConfigured()) {
-            return null;
+            return [
+                'uuid' => $fileUuid,
+                'original_name' => 'Dokumen',
+                'download_api' => $downloadApi,
+            ];
         }
 
         $path = match ($section) {
@@ -100,93 +108,76 @@ class TenderChecklistFileController extends Controller
             default => null,
         };
 
-        if ($path === null) {
-            return null;
-        }
+        if ($path !== null) {
+            $response = $stos->get($path);
+            if ($response->successful()) {
+                $data = $response->json('data') ?? [];
 
-        $response = $stos->get($path);
-        if (! $response->successful()) {
-            return null;
-        }
+                foreach ($data['files'] ?? [] as $file) {
+                    if (is_array($file) && ($file['uuid'] ?? '') === $fileUuid) {
+                        $file['download_api'] = $downloadApi;
 
-        $data = $response->json('data') ?? [];
+                        return $file;
+                    }
+                }
 
-        foreach ($data['files'] ?? [] as $file) {
-            if (is_array($file) && ($file['uuid'] ?? '') === $fileUuid) {
-                return $file;
-            }
-        }
+                foreach ($data['items'] ?? [] as $item) {
+                    if (! is_array($item)) {
+                        continue;
+                    }
 
-        foreach ($data['items'] ?? [] as $item) {
-            if (! is_array($item)) {
-                continue;
-            }
+                    foreach ($item['files'] ?? [] as $file) {
+                        if (is_array($file) && ($file['uuid'] ?? '') === $fileUuid) {
+                            $file['download_api'] = $downloadApi;
 
-            foreach ($item['files'] ?? [] as $file) {
-                if (is_array($file) && ($file['uuid'] ?? '') === $fileUuid) {
-                    return $file;
+                            return $file;
+                        }
+                    }
                 }
             }
         }
 
-        return null;
+        return [
+            'uuid' => $fileUuid,
+            'original_name' => 'Dokumen',
+            'download_api' => $downloadApi,
+        ];
+    }
+
+    protected function downloadApiForSection(string $section, string $fileUuid): ?string
+    {
+        return match ($section) {
+            'technical' => 'technical-checklist-files/' . $fileUuid . '/download',
+            'financial' => 'financial-checklist-files/' . $fileUuid . '/download',
+            default => null,
+        };
     }
 
     /**
      * @param  object{original_name?: string, path?: string, mime_type?: string|null}  $file
+     * @return \Symfony\Component\HttpFoundation\BinaryFileResponse|\Symfony\Component\HttpFoundation\StreamedResponse|null
      */
-    protected function streamLocalFile(object $file)
+    protected function streamLocalFileOrNull(object $file)
     {
         $path = ltrim((string) ($file->path ?? ''), '/');
         $name = (string) ($file->original_name ?? 'Dokumen');
 
         if ($path !== '' && Storage::disk('public')->exists($path)) {
-            return Storage::disk('public')->download($path, $name);
+            return Storage::disk('public')->response($path, $name, [
+                'Content-Disposition' => 'inline; filename="' . addslashes($name) . '"',
+            ]);
         }
 
         if ($path !== '') {
             $publicPath = public_path($path);
             if (is_file($publicPath)) {
-                return response()->download($publicPath, $name);
+                return response()->file($publicPath, [
+                    'Content-Type' => $file->mime_type ?? mime_content_type($publicPath) ?: 'application/octet-stream',
+                    'Content-Disposition' => 'inline; filename="' . addslashes($name) . '"',
+                ]);
             }
         }
 
-        abort(404, 'Fail tidak dijumpai.');
-    }
-
-    /**
-     * @param  array<string, mixed>  $file
-     */
-    protected function streamRemoteFile(array $file)
-    {
-        $name = (string) ($file['original_name'] ?? $file['name'] ?? 'Dokumen');
-        $path = ltrim((string) ($file['path'] ?? ''), '/');
-
-        if ($path !== '' && Storage::disk('public')->exists($path)) {
-            return Storage::disk('public')->download($path, $name);
-        }
-
-        $remoteUrl = trim((string) ($file['url'] ?? ''));
-        if ($remoteUrl === '' && $path !== '') {
-            $remoteUrl = rtrim((string) config('services.stos_backend.url'), '/') . '/storage/' . $path;
-        }
-
-        if ($remoteUrl === '') {
-            abort(404, 'Fail tidak dijumpai.');
-        }
-
-        $response = StosBackendClient::http()->get($remoteUrl);
-        if (! $response->successful()) {
-            abort($response->status() === 403 ? 403 : 404, 'Fail tidak dapat dimuat turun.');
-        }
-
-        $mimeType = (string) ($file['mime_type'] ?? $response->header('Content-Type') ?? 'application/octet-stream');
-
-        return new StreamedResponse(function () use ($response) {
-            echo $response->body();
-        }, 200, [
-            'Content-Type' => $mimeType,
-            'Content-Disposition' => 'attachment; filename="' . addslashes($name) . '"',
-        ]);
+        return null;
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\HandlesTenderFormAccess;
+use App\Http\Controllers\Concerns\AuthorizesTenderFileAccess;
 use App\Models\TenderVendorDokumenFile;
 use App\Services\VendorDokumenResponseService;
 use App\Support\TenderDokumenPresenter;
@@ -14,6 +15,7 @@ use Illuminate\Validation\ValidationException;
 class VendorTenderDokumenController extends Controller
 {
     use HandlesTenderFormAccess;
+    use AuthorizesTenderFileAccess;
 
     public function __construct(
         protected VendorDokumenResponseService $responses,
@@ -82,25 +84,21 @@ class VendorTenderDokumenController extends Controller
     {
         $file = TenderVendorDokumenFile::query()->where('uuid', $fileUuid)->firstOrFail();
         $tender = Tender::query()->findOrFail($file->tender_id);
-        $user = Auth::user();
 
-        $isAdmin = $user && ($user->hasRole('Admin') || $user->can('tender:specification-management'));
-        $isOwner = $user && $user->vendor_id && (int) $user->vendor_id === (int) $file->vendor_id;
-
-        if (! $isAdmin && ! $isOwner) {
-            abort(403, 'Akses fail tidak dibenarkan.');
-        }
-
-        if ($isOwner && ! $tender->hasParticipate((int) $user->vendor_id)) {
-            abort(403, 'Sila beli dokumen tender terlebih dahulu.');
-        }
+        $this->assertCanAccessTenderFile($tender, (int) $file->vendor_id);
 
         $absolutePath = $file->absolutePath();
         if (! $absolutePath || ! is_file($absolutePath)) {
             abort(404, 'Fail tidak dijumpai.');
         }
 
-        return response()->download($absolutePath, $file->original_name ?: $file->stored_name);
+        $downloadName = $file->original_name ?: $file->stored_name;
+        $mime = $file->mime_type ?: mime_content_type($absolutePath) ?: 'application/octet-stream';
+
+        return response()->file($absolutePath, [
+            'Content-Type' => $mime,
+            'Content-Disposition' => 'inline; filename="' . addslashes($downloadName) . '"',
+        ]);
     }
 
     public function saveKeyIn(Request $request, Tender $tender, string $itemUuid)

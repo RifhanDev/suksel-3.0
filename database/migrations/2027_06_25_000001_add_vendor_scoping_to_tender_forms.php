@@ -29,7 +29,8 @@ return new class extends Migration
         Schema::create('tender_vendor_form_payloads', function (Blueprint $table) {
             $table->id();
             $table->uuid('uuid')->unique();
-            $table->foreignId('tender_id')->constrained('tenders')->cascadeOnDelete();
+            $table->unsignedInteger('tender_id');
+            $table->foreign('tender_id')->references('id')->on('tenders')->cascadeOnDelete();
             $table->unsignedBigInteger('vendor_id')->index();
             $table->string('form_key', 50)->index();
             $table->json('payload')->nullable();

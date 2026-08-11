@@ -35,7 +35,7 @@ return new class extends Migration
             $table->integer('fpx_job_status')->nullable()->default(0);
             $table->text('cached_data')->nullable();
 
-            $table->unsignedBigInteger('organization_unit_id');
+            $table->unsignedInteger('organization_unit_id');
             $table->unsignedInteger('vendor_id')->nullable();
             $table->unsignedInteger('user_id')->nullable();
             $table->unsignedInteger('gateway_id')->nullable();

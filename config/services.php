@@ -49,6 +49,7 @@ return [
         'api_key' => env('STOS_BACKEND_API_KEY'),
         'inbound_api_key' => env('STOS_INBOUND_API_KEY', env('STOS_BACKEND_API_KEY')),
         'verify_ssl' => env('STOS_BACKEND_VERIFY_SSL', env('APP_ENV') === 'production'),
+        // Optional absolute path to STOS storage/app/public (used when /storage URLs are blocked)
+        'storage_path' => env('STOS_BACKEND_STORAGE_PATH'),
     ],
-
 ];
