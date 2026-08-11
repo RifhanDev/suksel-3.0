@@ -280,7 +280,7 @@ class PenilaianKewanganController extends Controller
                         'ulasan'    => 'Tidak mematuhi syarat: ' . implode('; ', $failedReasons),
                         'failed_reasons' => $failedReasons,
                     ];
-                } else if ($totalStep1Items > 0 && $passedCount === $totalStep1Items) {
+                } else if ($passedCount === $totalStep1Items) {
                     $pembekalMelepasi[] = [
                         'vendor_id' => $vendorId,
                         'kod'       => $v['kod'],
