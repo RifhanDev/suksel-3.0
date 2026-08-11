@@ -181,7 +181,7 @@
                             <label class="form-label fw-bold text-dark small mb-1.5 d-flex align-items-center gap-1.5">
                                 <i class="bi bi-chat-left-text text-primary"></i>Justifikasi / Keputusan JPT (Peringkat 1):
                             </label>
-                            <textarea name="catatan_peringkat1" class="form-control bg-white" rows="2" style="font-size: 0.875rem;" {{ $isSubmitted ? 'readonly' : '' }}>{{ old('catatan_peringkat1', $laporanRecord->catatan_peringkat1 ?? ('Sehubungan dengan itu, JPT bersetuju untuk mengambil ' . count($pembekalMelepasi ?? []) . ' penyebut harga untuk ke Penilaian Peringkat Kedua.')) }}</textarea>
+                            <textarea name="catatan_peringkat1" class="form-control bg-white" rows="2" style="font-size: 0.875rem;" {{ $isSubmitted ? 'readonly' : '' }}>{{ old('catatan_peringkat1', $laporanRecord?->catatan_peringkat1 ?? ('Sehubungan dengan itu, JPT bersetuju untuk mengambil ' . count($pembekalMelepasi ?? []) . ' penyebut harga untuk ke Penilaian Peringkat Kedua.')) }}</textarea>
                         </div>
                     </div>
                 </div>
@@ -266,7 +266,7 @@
                             <label class="form-label fw-bold text-dark small mb-1.5 d-flex align-items-center gap-1.5">
                                 <i class="bi bi-chat-left-text text-primary"></i>Justifikasi / Keputusan JPT (Peringkat 2):
                             </label>
-                            <textarea name="catatan_peringkat2" class="form-control bg-white" rows="2" style="font-size: 0.875rem;" {{ $isSubmitted ? 'readonly' : '' }}>{{ old('catatan_peringkat2', $laporanRecord->catatan_peringkat2 ?? 'Sehubungan dengan itu, JPT bersetuju untuk mengambil penyebut harga yang melepasi untuk ke Penilaian Peringkat Ketiga.') }}</textarea>
+                            <textarea name="catatan_peringkat2" class="form-control bg-white" rows="2" style="font-size: 0.875rem;" {{ $isSubmitted ? 'readonly' : '' }}>{{ old('catatan_peringkat2', $laporanRecord?->catatan_peringkat2 ?? 'Sehubungan dengan itu, JPT bersetuju untuk mengambil penyebut harga yang melepasi untuk ke Penilaian Peringkat Ketiga.') }}</textarea>
                         </div>
                     </div>
                 </div>
@@ -366,7 +366,7 @@
                             <label class="form-label fw-bold text-dark small mb-1.5 d-flex align-items-center gap-1.5">
                                 <i class="bi bi-chat-left-text text-primary"></i>Justifikasi / Keputusan JPT (Peringkat 3):
                             </label>
-                            <textarea name="catatan_peringkat3" class="form-control bg-white" rows="2" style="font-size: 0.875rem;" {{ $isSubmitted ? 'readonly' : '' }}>{{ old('catatan_peringkat3', $laporanRecord->catatan_peringkat3 ?? 'Sehubungan dengan itu, JPT bersetuju untuk mengambil penyebut harga yang melepasi untuk ke Peringkat Pengesyoran.') }}</textarea>
+                            <textarea name="catatan_peringkat3" class="form-control bg-white" rows="2" style="font-size: 0.875rem;" {{ $isSubmitted ? 'readonly' : '' }}>{{ old('catatan_peringkat3', $laporanRecord?->catatan_peringkat3 ?? 'Sehubungan dengan itu, JPT bersetuju untuk mengambil penyebut harga yang melepasi untuk ke Peringkat Pengesyoran.') }}</textarea>
                         </div>
                     </div>
                 </div>
@@ -428,7 +428,7 @@
                     @else
                         <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-20 px-4 py-2.5 rounded-3 fw-bold font-monospace d-inline-flex align-items-center gap-2">
                             <i class="bi bi-check-circle-fill"></i>
-                            <span>Laporan telah dihantar pada {{ $laporanRecord->submitted_at ? $laporanRecord->submitted_at->format('d/m/Y h:i A') : '' }}</span>
+                            <span>Laporan telah dihantar pada {{ $laporanRecord?->submitted_at ? $laporanRecord->submitted_at->format('d/m/Y h:i A') : '' }}</span>
                         </span>
                     @endif
                 </div>
