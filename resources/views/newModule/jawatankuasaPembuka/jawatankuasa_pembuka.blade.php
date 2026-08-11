@@ -370,7 +370,21 @@
 				</thead>
 				<tbody>
 					@php
-						$kewanganItemsFiltered = collect($kewanganItems ?? [])->filter(fn ($item) => strtolower(trim($item['tindakan'] ?? $item['mekanisma'] ?? '')) !== 'muat turun')->values()->all();
+						$kewanganItemsFiltered = collect($kewanganItems ?? [])->filter(function ($item) {
+							$tindakan   = strtolower(trim($item['tindakan'] ?? ''));
+							$mekanisma  = strtolower(trim($item['mechanism'] ?? $item['mekanisma'] ?? ''));
+							$sourceType = strtolower(trim($item['source_type'] ?? ''));
+
+							if ($tindakan === 'muat turun' || $mekanisma === 'muat turun') {
+								return false;
+							}
+
+							if ($tindakan === 'spesifikasi' || $mekanisma === 'spesifikasi' || in_array($sourceType, ['specification', 'specification_document'], true)) {
+								return false;
+							}
+
+							return true;
+						})->values()->all();
 					@endphp
 					@forelse ($kewanganItemsFiltered as $i => $item)
 						@php

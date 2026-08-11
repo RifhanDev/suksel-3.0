@@ -83,6 +83,17 @@ class JawatankuasaPembukaController extends Controller
 
         $checklistItems  = $tenderDokumen->items('admin');
         $isNotMuatTurun  = fn (array $item) => strtolower(trim($item['tindakan'] ?? $item['mekanisma'] ?? '')) !== 'muat turun';
+        $isExcludedKewangan = function (array $item) {
+            $tindakan   = strtolower(trim($item['tindakan'] ?? ''));
+            $mekanisma  = strtolower(trim($item['mechanism'] ?? $item['mekanisma'] ?? ''));
+            $sourceType = strtolower(trim($item['source_type'] ?? ''));
+
+            return $tindakan === 'muat turun'
+                || $mekanisma === 'muat turun'
+                || $tindakan === 'spesifikasi'
+                || $mekanisma === 'spesifikasi'
+                || in_array($sourceType, ['specification', 'specification_document'], true);
+        };
 
         $teknikalItems   = collect($checklistItems)
             ->filter(fn (array $item) => in_array($item['source'] ?? $item['section'] ?? '', ['technical', 'spesifikasi_kerja'], true))
@@ -91,7 +102,7 @@ class JawatankuasaPembukaController extends Controller
             ->all();
         $kewanganItems   = collect($checklistItems)
             ->filter(fn (array $item) => in_array($item['source'] ?? $item['section'] ?? '', ['financial', 'kewangan_kerja'], true))
-            ->filter($isNotMuatTurun)
+            ->reject($isExcludedKewangan)
             ->values()
             ->all();
 
@@ -188,6 +199,17 @@ class JawatankuasaPembukaController extends Controller
 
         $checklistItems = $tenderDokumen->items('admin');
         $isNotMuatTurun = fn (array $i) => strtolower(trim($i['tindakan'] ?? $i['mekanisma'] ?? '')) !== 'muat turun';
+        $isExcludedKewangan = function (array $item) {
+            $tindakan   = strtolower(trim($item['tindakan'] ?? ''));
+            $mekanisma  = strtolower(trim($item['mechanism'] ?? $item['mekanisma'] ?? ''));
+            $sourceType = strtolower(trim($item['source_type'] ?? ''));
+
+            return $tindakan === 'muat turun'
+                || $mekanisma === 'muat turun'
+                || $tindakan === 'spesifikasi'
+                || $mekanisma === 'spesifikasi'
+                || in_array($sourceType, ['specification', 'specification_document'], true);
+        };
 
         $teknikalItems  = collect($checklistItems)
             ->filter(fn (array $i) => in_array($i['source'] ?? $i['section'] ?? '', ['technical', 'spesifikasi_kerja'], true))
@@ -195,7 +217,7 @@ class JawatankuasaPembukaController extends Controller
             ->values()->all();
         $kewanganItems  = collect($checklistItems)
             ->filter(fn (array $i) => in_array($i['source'] ?? $i['section'] ?? '', ['financial', 'kewangan_kerja'], true))
-            ->filter($isNotMuatTurun)
+            ->reject($isExcludedKewangan)
             ->values()->all();
 
         $vendors = $participants->map(fn ($p) => [
@@ -287,6 +309,17 @@ class JawatankuasaPembukaController extends Controller
 
         $checklistItems = $tenderDokumen->items('admin');
         $isNotMuatTurun = fn (array $i) => strtolower(trim($i['tindakan'] ?? $i['mekanisma'] ?? '')) !== 'muat turun';
+        $isExcludedKewangan = function (array $item) {
+            $tindakan   = strtolower(trim($item['tindakan'] ?? ''));
+            $mekanisma  = strtolower(trim($item['mechanism'] ?? $item['mekanisma'] ?? ''));
+            $sourceType = strtolower(trim($item['source_type'] ?? ''));
+
+            return $tindakan === 'muat turun'
+                || $mekanisma === 'muat turun'
+                || $tindakan === 'spesifikasi'
+                || $mekanisma === 'spesifikasi'
+                || in_array($sourceType, ['specification', 'specification_document'], true);
+        };
 
         $teknikalItems  = collect($checklistItems)
             ->filter(fn (array $i) => in_array($i['source'] ?? $i['section'] ?? '', ['technical', 'spesifikasi_kerja'], true))
@@ -294,7 +327,7 @@ class JawatankuasaPembukaController extends Controller
             ->values()->all();
         $kewanganItems  = collect($checklistItems)
             ->filter(fn (array $i) => in_array($i['source'] ?? $i['section'] ?? '', ['financial', 'kewangan_kerja'], true))
-            ->filter($isNotMuatTurun)
+            ->reject($isExcludedKewangan)
             ->values()->all();
 
         $vendors = $participants->map(fn ($p) => [

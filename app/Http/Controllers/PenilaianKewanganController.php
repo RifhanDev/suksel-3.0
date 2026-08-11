@@ -395,7 +395,10 @@ class PenilaianKewanganController extends Controller
 
         $readOnly = $tender ? ((int) ($tender->status_process_id ?? 0) !== TenderProcessStatus::penilaianKewanganListStatus()) : false;
 
-        return view('newModule.penilaian_kewangan.show', compact(
+        $isKerja = $tender ? ((int) ($tender->kategori_perolehan_id ?? 0) === 3) : false;
+        $viewPath = $isKerja ? 'newModule.penilaian_kewangan.penilaian.show' : 'newModule.penilaian_kewangan.show';
+
+        return view($viewPath, compact(
             'tender_no',
             'tender',
             'no_tender_display',
@@ -1158,21 +1161,39 @@ class PenilaianKewanganController extends Controller
 
                 $itemHarga = $vendor['harga_tawaran'] ?? null;
 
-                $techItemRecord = \Illuminate\Support\Facades\DB::table('financial_checklist_items as fci')
-                    ->leftJoin('technical_checklist_items as tci', 'tci.id', '=', 'fci.technical_item_id')
-                    ->where('fci.uuid', $uuid)
-                    ->orWhere('tci.uuid', $uuid)
-                    ->select('fci.uuid as fci_uuid', 'tci.uuid as tci_uuid')
-                    ->first();
+                $techUuids = \Illuminate\Support\Facades\DB::table('technical_checklist_headers as tch')
+                    ->join('technical_checklist_items as tci', 'tci.technical_checklist_header_id', '=', 'tch.id')
+                    ->leftJoin('technical_specification_documents as tsd', 'tsd.id', '=', 'tci.specification_document_id')
+                    ->leftJoin('specification_pricings as sp', 'sp.technical_checklist_item_id', '=', 'tci.id')
+                    ->where('tch.tender_id', $tender->id)
+                    ->select('tci.uuid as tci_uuid', 'tsd.uuid as tsd_uuid', 'sp.uuid as sp_uuid')
+                    ->get();
 
-                $searchItemUuids = array_unique(array_filter([$uuid, $techItemRecord?->fci_uuid ?? null, $techItemRecord?->tci_uuid ?? null]));
+                $searchItemUuids = array_unique(array_filter(array_merge(
+                    [$uuid],
+                    $techUuids->pluck('tci_uuid')->all(),
+                    $techUuids->pluck('tsd_uuid')->all(),
+                    $techUuids->pluck('sp_uuid')->all()
+                )));
 
                 $itemSpecResp = \App\Models\TenderVendorDokumenResponse::query()
                     ->where('tender_id', $tender->id)
                     ->where('vendor_id', $vendorId)
-                    ->whereIn('checklist_item_uuid', $searchItemUuids)
                     ->where('response_type', 'specification')
+                    ->where(function ($q) use ($searchItemUuids) {
+                        if (!empty($searchItemUuids)) {
+                            $q->whereIn('checklist_item_uuid', $searchItemUuids);
+                        }
+                    })
                     ->first();
+
+                if (!$itemSpecResp) {
+                    $itemSpecResp = \App\Models\TenderVendorDokumenResponse::query()
+                        ->where('tender_id', $tender->id)
+                        ->where('vendor_id', $vendorId)
+                        ->where('response_type', 'specification')
+                        ->first();
+                }
 
                 if ($itemSpecResp) {
                     $itemPrices = $itemSpecResp->payload['item_prices'] ?? [];
@@ -1215,7 +1236,7 @@ class PenilaianKewanganController extends Controller
 
             $maxScore = 0.0;
             $spesifikasiDetail = null;
-            if (($item['action'] ?? '') === 'view_specification') {
+            if (($item['action'] ?? '') === 'view_specification' || ($item['mechanism'] ?? '') === 'spesifikasi' || in_array($item['source_type'] ?? '', ['specification', 'specification_document'], true)) {
                 $rows = $item['admin_content']['rows'] ?? [];
 
                 $pricingMap = [];
@@ -1226,17 +1247,93 @@ class PenilaianKewanganController extends Controller
                     ->where('fci.uuid', $uuid)
                     ->orWhere('tci.uuid', $uuid)
                     ->orWhere('sp.uuid', $uuid)
+                    ->orWhere('tsd.uuid', $uuid)
                     ->select(
                         'sp.id as sp_id',
                         'sp.anggaran_jabatan',
                         'fci.score as fci_score',
+                        'tci.id as tci_id',
                         'tci.specification_document_id',
                         'tci.score as tci_score',
+                        'tsd.id as tsd_id',
                         'tsd.total_score as doc_total_score'
                     )
                     ->first();
 
-                $specDocId = $techItem?->specification_document_id;
+                $specDocId = $techItem?->specification_document_id ?? $techItem?->tsd_id ?? null;
+
+                // Fallback: If specDocId is still null, look up technical_checklist_items for this tender
+                if (!$specDocId) {
+                    $fallbackTci = \Illuminate\Support\Facades\DB::table('technical_checklist_headers as tch')
+                        ->join('technical_checklist_items as tci', 'tci.technical_checklist_header_id', '=', 'tch.id')
+                        ->leftJoin('specification_pricings as sp', 'sp.technical_checklist_item_id', '=', 'tci.id')
+                        ->where('tch.tender_id', $tender->id)
+                        ->where(function ($q) {
+                            $q->where('tci.source_type', 'specification_document')
+                              ->orWhere('tci.mechanism', 'spesifikasi');
+                        })
+                        ->select('tci.id as tci_id', 'tci.specification_document_id', 'sp.id as sp_id', 'sp.anggaran_jabatan')
+                        ->first();
+
+                    if ($fallbackTci) {
+                        $specDocId = $fallbackTci->specification_document_id;
+                        if ($techItem) {
+                            $techItem->sp_id = $fallbackTci->sp_id;
+                            if (empty($techItem->anggaran_jabatan)) {
+                                $techItem->anggaran_jabatan = $fallbackTci->anggaran_jabatan;
+                            }
+                        }
+                    }
+                }
+
+                // If specDocId is found and rows are empty or contain only 1 generic fallback row, build full items & details tree
+                if ($specDocId && (empty($rows) || count($rows) <= 1)) {
+                    $specItems = \App\Models\TechnicalSpecificationItem::query()
+                        ->with('details')
+                        ->where('technical_specification_document_id', $specDocId)
+                        ->orderBy('sort_order')
+                        ->orderBy('id')
+                        ->get();
+
+                    if ($specItems->isNotEmpty()) {
+                        $builtRows = [];
+                        $itemIndex = 0;
+                        foreach ($specItems as $sItem) {
+                            $itemIndex++;
+                            $builtRows[] = [
+                                'kind'          => 'item',
+                                'bil'           => (string) $itemIndex,
+                                'id'            => $sItem->id,
+                                'item_uuid'     => $sItem->uuid,
+                                'spec_item_id'  => $sItem->id,
+                                'title'         => $sItem->title,
+                                'quantity'      => $sItem->quantity,
+                                'unit'          => $sItem->unit,
+                                'response_type' => null,
+                            ];
+
+                            $detailIndex = 0;
+                            foreach ($sItem->details as $sDetail) {
+                                $detailIndex++;
+                                $builtRows[] = [
+                                    'kind'          => 'detail',
+                                    'bil'           => $itemIndex . '.' . $detailIndex,
+                                    'id'            => $sDetail->id,
+                                    'item_uuid'     => $sItem->uuid,
+                                    'detail_uuid'   => $sDetail->uuid,
+                                    'spec_item_id'  => $sItem->id,
+                                    'title'         => $sDetail->description,
+                                    'quantity'      => null,
+                                    'unit'          => null,
+                                    'response_type' => $sDetail->response_type,
+                                ];
+                            }
+                        }
+                        if (!empty($builtRows)) {
+                            $rows = $builtRows;
+                        }
+                    }
+                }
 
                 if ($specDocId) {
                     $detailsSum = (float) \Illuminate\Support\Facades\DB::table('technical_specification_items as tsi')
@@ -1246,7 +1343,7 @@ class PenilaianKewanganController extends Controller
 
                     if ($detailsSum > 0) {
                         $maxScore = $detailsSum;
-                    } elseif ($techItem->doc_total_score && (float) $techItem->doc_total_score > 0) {
+                    } elseif ($techItem && $techItem->doc_total_score && (float) $techItem->doc_total_score > 0) {
                         $maxScore = (float) $techItem->doc_total_score;
                     }
                 }
@@ -1263,10 +1360,23 @@ class PenilaianKewanganController extends Controller
                     $maxScore = 100.0;
                 }
 
-                if ($techItem && $techItem->sp_id) {
+                $spId = $techItem?->sp_id ?? null;
+                if (!$spId) {
+                    $spId = \Illuminate\Support\Facades\DB::table('specification_pricings')
+                        ->where('tender_id', $tender->id)
+                        ->orWhereIn('technical_checklist_item_id', function ($q) use ($tender) {
+                            $q->select('tci.id')
+                                ->from('technical_checklist_items as tci')
+                                ->join('technical_checklist_headers as tch', 'tch.id', '=', 'tci.technical_checklist_header_id')
+                                ->where('tch.tender_id', $tender->id);
+                        })
+                        ->value('id');
+                }
+
+                if ($spId) {
                     $pricingMap = \Illuminate\Support\Facades\DB::table('specification_pricing_items as spi')
                         ->leftJoin('technical_specification_items as tsi', 'tsi.id', '=', 'spi.spec_item_id')
-                        ->where('spi.specification_pricing_id', $techItem->sp_id)
+                        ->where('spi.specification_pricing_id', $spId)
                         ->select('spi.*', 'tsi.uuid as tsi_uuid')
                         ->get()
                         ->flatMap(function ($spi) {
@@ -1274,7 +1384,11 @@ class PenilaianKewanganController extends Controller
                                 'harga'    => (float) ($spi->harga ?? 0),
                                 'kuantiti' => (float) ($spi->kuantiti ?? 0),
                             ];
-                            $map = [(string) $spi->spec_item_id => $val];
+                            $map = [
+                                (string) $spi->spec_item_id => $val,
+                                (string) $spi->uuid         => $val,
+                                (string) $spi->id           => $val,
+                            ];
                             if (!empty($spi->tsi_uuid)) {
                                 $map[(string) $spi->tsi_uuid] = $val;
                             }
