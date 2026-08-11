@@ -11,7 +11,7 @@ return new class extends Migration
     {
         Schema::create('pembelian_terus_items', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('tender_id')->index();
+            $table->unsignedInteger('tender_id')->index();
             $table->string('nama_item');
             $table->decimal('kuantiti', 15, 2)->default(0);
             $table->boolean('sst')->default(true);
@@ -23,7 +23,7 @@ return new class extends Migration
 
         Schema::create('pembelian_terus_offers', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('tender_id')->index();
+            $table->unsignedInteger('tender_id')->index();
             $table->unsignedBigInteger('vendor_id')->index();
             $table->decimal('total_harga', 15, 2)->default(0);
             $table->decimal('total_harga_sst', 15, 2)->default(0);
@@ -59,7 +59,7 @@ return new class extends Migration
 
         Schema::create('pembelian_terus_documents', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('tender_id')->index();
+            $table->unsignedInteger('tender_id')->index();
             $table->enum('doc_type', ['jpict', 'minit_bebas', 'surat_setuju_terima', 'lain']);
             $table->string('file_path');
             $table->string('original_name')->nullable();

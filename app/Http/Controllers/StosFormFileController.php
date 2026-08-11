@@ -1,0 +1,105 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Http\Controllers\Concerns\AuthorizesTenderFileAccess;
+use App\Services\StosBackendClient;
+use App\Support\StosStoredFile;
+use App\Tender;
+
+/**
+ * Proxies vendor online-form files stored on STOS so browsers never hit the STOS host directly.
+ */
+class StosFormFileController extends Controller
+{
+    use AuthorizesTenderFileAccess;
+
+    private const TYPES = [
+        'pengalaman-kerja' => [
+            'api' => 'pengalaman-kerja',
+            'collection' => 'dokumens',
+            'download_api' => 'pengalaman-kerja-files/{uuid}/download',
+        ],
+        'kerja-dalam-tangan' => [
+            'api' => 'kerja-dalam-tangan',
+            'collection' => 'dokumens',
+            'download_api' => 'kerja-dalam-tangan-files/{uuid}/download',
+        ],
+    ];
+
+    public function download(Tender $tender, string $type, string $fileUuid)
+    {
+        $this->assertCanAccessTenderFile($tender);
+        $config = self::TYPES[$type] ?? null;
+        if (! $config || empty($tender->uuid)) {
+            abort(404, 'Fail tidak dijumpai.');
+        }
+
+        $file = $this->findFileMeta($tender->uuid, $config['api'], $config['collection'], $fileUuid);
+        if (! $file) {
+            // Still try authenticated STOS download by uuid (meta list may be empty / filtered).
+            $file = [
+                'uuid' => $fileUuid,
+                'original_name' => 'Dokumen',
+                'download_api' => str_replace('{uuid}', $fileUuid, $config['download_api']),
+            ];
+        } else {
+            $file['download_api'] = str_replace('{uuid}', $fileUuid, $config['download_api']);
+        }
+
+        return StosStoredFile::response($file);
+    }
+
+    /**
+     * Rewrite STOS absolute storage URLs to local authenticated proxy routes.
+     *
+     * @param  \App\Tender|\App\Models\Tender  $tender
+     * @param  array<int, array<string, mixed>>  $dokumens
+     * @return array<int, array<string, mixed>>
+     */
+    public static function rewriteDokumenUrls(object $tender, string $type, array $dokumens): array
+    {
+        if (! isset(self::TYPES[$type])) {
+            return $dokumens;
+        }
+
+        return collect($dokumens)->map(function ($doc) use ($tender, $type) {
+            if (! is_array($doc) || empty($doc['uuid'])) {
+                return $doc;
+            }
+
+            $doc['url'] = route('stosFormFile.download', [
+                'tender' => $tender->id,
+                'type' => $type,
+                'fileUuid' => $doc['uuid'],
+            ]);
+
+            return $doc;
+        })->values()->all();
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    protected function findFileMeta(string $tenderUuid, string $api, string $collection, string $fileUuid): ?array
+    {
+        $stos = app(StosBackendClient::class);
+        if (! $stos->isConfigured()) {
+            return null;
+        }
+
+        $response = $stos->get('/api/' . $api . '/' . $tenderUuid);
+        if (! $response->successful()) {
+            return null;
+        }
+
+        $data = $response->json('data') ?? [];
+        foreach ($data[$collection] ?? [] as $file) {
+            if (is_array($file) && ($file['uuid'] ?? '') === $fileUuid) {
+                return $file;
+            }
+        }
+
+        return null;
+    }
+}

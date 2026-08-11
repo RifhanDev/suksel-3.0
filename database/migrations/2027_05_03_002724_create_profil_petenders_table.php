@@ -11,7 +11,8 @@ return new class extends Migration
         Schema::create('profil_petenders', function (Blueprint $table) {
             $table->id();
             $table->uuid('uuid')->unique();
-            $table->foreignId('tender_id')->unique()->constrained('tenders')->cascadeOnDelete();
+            $table->unsignedInteger('tender_id')->unique();
+            $table->foreign('tender_id')->references('id')->on('tenders')->cascadeOnDelete();
             $table->string('nama_syarikat', 255)->nullable();
             $table->string('jenis_syarikat', 50)->nullable();
             $table->string('taraf_petender', 50)->nullable();
@@ -33,8 +34,10 @@ return new class extends Migration
             $table->string('jenis_skor_modal_berbayar', 50)->nullable();
             $table->string('jenis_skor_modal_dibenarkan', 50)->nullable();
             $table->string('status', 50)->default('draft')->index();
-            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
-            $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->unsignedInteger('created_by')->nullable();
+            $table->foreign('created_by')->references('id')->on('users')->nullOnDelete();
+            $table->unsignedInteger('updated_by')->nullable();
+            $table->foreign('updated_by')->references('id')->on('users')->nullOnDelete();
             $table->timestamps();
         });
     }

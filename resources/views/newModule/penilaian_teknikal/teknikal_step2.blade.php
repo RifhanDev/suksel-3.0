@@ -126,7 +126,7 @@
                                 <tr>
                                     <th class="text-center" style="width: 130px;">Kedudukan</th>
                                     <th class="text-center" style="width: 130px;">Bil</th>
-                                    <th>Jumlah Skor</th>
+                                    <th>Markah Teknikal (%)</th>
                                 </tr>
                             </thead>
                             <tbody id="rumusanStep2MelepasiTbody">
@@ -180,6 +180,17 @@
                 </div>
             </div>
 
+            <label for="confirmLayakStep2"
+                class="d-flex align-items-center gap-3 p-3 rounded-3 mb-4"
+                style="background: #ffffff; border: 1px solid #e5e7eb; border-left: 3px solid var(--sg-red, #c41e3a); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); cursor: {{ $spesifikasiConfirmed ? 'default' : 'pointer' }};">
+                <input class="form-check-input flex-shrink-0" type="checkbox" id="confirmLayakStep2"
+                    style="width: 1.3rem; height: 1.3rem; cursor: {{ $spesifikasiConfirmed ? 'default' : 'pointer' }};" @checked($spesifikasiConfirmed) @disabled($spesifikasiConfirmed)>
+                <span class="d-flex flex-column">
+                    <span class="fw-semibold text-dark" style="font-size: 0.9rem; line-height: 1.4;">Saya mengesahkan petender di atas layak untuk dinilai oleh Jawatankuasa Kewangan.</span>
+                    <span class="text-muted" style="font-size: 0.78rem;">Tandakan pengesahan ini untuk membuka penilaian peringkat seterusnya.</span>
+                </span>
+            </label>
+
             {{-- SECTION 2: Pembekal Tidak Melepasi --}}
             <div class="mb-4">
                 <div class="d-flex align-items-center gap-3 mb-3">
@@ -200,7 +211,7 @@
                     <thead>
                         <tr>
                             <th class="text-center" style="width: 130px;">Bil</th>
-                            <th>Jumlah Skor</th>
+                            <th>Markah Teknikal (%)</th>
                         </tr>
                     </thead>
                     <tbody id="rumusanStep2TidakMelepasiTbody">
@@ -218,18 +229,6 @@
                     </tfoot>
                 </table>
             </div>
-
-            {{-- Locked once confirmed — the scores it locks are already saved. --}}
-            <label for="confirmLayakStep2"
-                class="d-flex align-items-center gap-3 p-3 rounded-3 mb-4"
-                style="background: #ffffff; border: 1px solid #e5e7eb; border-left: 3px solid var(--sg-red, #c41e3a); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); cursor: {{ $spesifikasiConfirmed ? 'default' : 'pointer' }};">
-                <input class="form-check-input flex-shrink-0" type="checkbox" id="confirmLayakStep2"
-                    style="width: 1.3rem; height: 1.3rem; cursor: {{ $spesifikasiConfirmed ? 'default' : 'pointer' }};" @checked($spesifikasiConfirmed) @disabled($spesifikasiConfirmed)>
-                <span class="d-flex flex-column">
-                    <span class="fw-semibold text-dark" style="font-size: 0.9rem; line-height: 1.4;">Saya mengesahkan petender di atas layak untuk dinilai oleh Jawatankuasa Kewangan.</span>
-                    <span class="text-muted" style="font-size: 0.78rem;">Tandakan pengesahan ini untuk membuka penilaian peringkat seterusnya.</span>
-                </span>
-            </label>
 
             {{-- "Kembali" goes to this step's own Teknikal sub-tab, not back to Langkah 1. --}}
             <div class="d-flex justify-content-between">
@@ -1216,7 +1215,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     tdBil.className = 'text-center';
                     tdBil.textContent = row.kod_pembekal || '-';
                     const tdJumlah = document.createElement('td');
-                    tdJumlah.textContent = row.jumlah_skor;
+                    tdJumlah.textContent = (row.peratus ?? 0) + '%';
                     tr.append(tdKedudukan, tdBil, tdJumlah);
                     melepasiTbody.appendChild(tr);
                 });
@@ -1238,7 +1237,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     tdBil.className = 'text-center';
                     tdBil.textContent = row.kod_pembekal || '-';
                     const tdJumlah = document.createElement('td');
-                    tdJumlah.textContent = row.jumlah_skor;
+                    tdJumlah.textContent = (row.peratus ?? 0) + '%';
                     tr.append(tdBil, tdJumlah);
                     tidakMelepasiTbody.appendChild(tr);
                 });

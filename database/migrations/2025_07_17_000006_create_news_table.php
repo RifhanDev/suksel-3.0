@@ -11,12 +11,18 @@ class CreateNewsTable extends Migration
      */
     public function up(): void
     {
+        // Restored/legacy databases may already have this table. Skip creation
+        // there — only build it from scratch on a genuinely fresh DB.
+        if (Schema::hasTable('news')) {
+            return;
+        }
+
         Schema::create('news', function (Blueprint $table) {
             $table->id();
             $table->string('title');
             $table->text('notification');
-            $table->unsignedBigInteger('organization_unit_id');
-            $table->unsignedBigInteger('tender_id')->nullable();
+            $table->unsignedInteger('organization_unit_id');
+            $table->unsignedInteger('tender_id')->nullable();
             $table->timestamp('published_at')->nullable();
             $table->boolean('publish')->default(false);
             $table->boolean('featured')->default(false); // used in scopeFeatured

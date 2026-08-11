@@ -16,7 +16,7 @@ return new class extends Migration
         }
         Schema::create('shareholders', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('vendor_id');
+            $table->unsignedInteger('vendor_id');
             $table->string('name', 128);
             $table->string('identity', 128);
             $table->string('nationality', 128)->default('Malaysian');

@@ -117,7 +117,7 @@ class CutOffController extends Controller
                 'bw' => $isFreak ? 'FREAK' : number_format((float) ($r['bw'] ?? 0), 2),
                 'z' => isset($r['z_score']) && $r['z_score'] !== null ? number_format((float) $r['z_score'], 2) : '-',
                 'pct_aj' => $this->formatPeratus($r['pct_bwaj'] ?? null),
-                'pct_mean' => ($r['pct_bwam'] ?? null) === 'FREAK' ? '-' : $this->formatPeratus($r['pct_bwam'] ?? null),
+                'pct_mean' => ($r['pct_bwam'] ?? null) === 'FREAK' ? 'FREAK' : $this->formatPeratus($r['pct_bwam'] ?? null),
                 'freak' => $isFreak,
             ];
         })->all();

@@ -20,7 +20,7 @@ return new class extends Migration
             $table->string('designation', 45);
             $table->string('nationality', 45);
             $table->string('status', 45);
-            $table->unsignedBigInteger('vendor_id');
+            $table->unsignedInteger('vendor_id');
             $table->timestamps(0);
 
             $table->foreign('vendor_id')->references('id')->on('vendors')->onDelete('cascade')->onUpdate('cascade');

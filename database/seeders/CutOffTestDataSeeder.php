@@ -9,22 +9,31 @@ use Illuminate\Support\Facades\DB;
 /**
  * Data ujian untuk halaman Cut Off (/cut-off).
  *
- * Cipta kumpulan syarikat ujian (jika belum wujud) dan sertakan 20-30 daripadanya
- * (rawak) untuk SETIAP tender yang berstatus_process_id = 8 (Selesai Penilaian
- * Pembuka — fasa Cut Off), supaya team tester tak perlu tambah syarikat satu-satu
- * secara manual untuk setiap tender semasa ujian.
+ * Cipta kumpulan syarikat ujian (jika belum wujud) dan TAMBAH (top-up) syarikat
+ * ujian ke SETIAP tender yang berstatus_process_id = 8 (Selesai Penilaian
+ * Pembuka — fasa Cut Off) sehingga cukup 20-30 syarikat, supaya team tester tak
+ * perlu tambah syarikat satu-satu secara manual semasa ujian.
  *
  * Run:
  *   php artisan db:seed --class=CutOffTestDataSeeder
  *
+ * PENTING — tender di server sebenar mungkin sudah ada 1-2 syarikat BENAR yang
+ * membeli tender secara betul (bukan data ujian). Seeder ini TIDAK mengabaikan
+ * tender sebegitu — ia TOP-UP baki syarikat ujian sehingga jumlah keseluruhan
+ * (syarikat sebenar + syarikat ujian) cukup 20-30, tanpa mengubah/memadam
+ * syarikat sebenar yang sudah ada.
+ *
  * Selamat dijalankan berulang kali (idempoten):
  *   - Kumpulan syarikat ujian (kod pendaftaran bermula "CUTOFF-TEST-") dikesan &
  *     digunakan semula — tak cipta syarikat baharu berganda pada setiap run.
- *   - Tender yang SUDAH ADA sertaan syarikat (tender_vendors) dilangkau —
- *     tak tambah/duplikasi data sedia ada.
+ *   - Tender yang SUDAH ADA >= 20 syarikat (sebenar + ujian) dilangkau — tak
+ *     tambah lagi.
+ *   - Syarikat ujian yang sudah menyertai sesuatu tender tidak akan
+ *     ditambah/duplikasi semula ke tender yang sama.
  *
- * Setiap syarikat: participate=1, cancel_fg=0 (lulus Penilaian Pembuka),
- * harga_tawaran rawak ±20% sekitar Anggaran Jabatan (AJ) tender berkenaan.
+ * Setiap syarikat ujian yang ditambah: participate=1, cancel_fg=0 (lulus
+ * Penilaian Pembuka), harga_tawaran rawak ±20% sekitar Anggaran Jabatan (AJ)
+ * tender berkenaan.
  */
 class CutOffTestDataSeeder extends Seeder
 {
@@ -35,6 +44,10 @@ class CutOffTestDataSeeder extends Seeder
 
     private const VENDOR_POOL_SIZE = 30;
 
+    /**
+     * Tender dengan bilangan syarikat (sebenar + ujian) >= nilai ini dianggap
+     * sudah cukup dan dilangkau.
+     */
     private const JOIN_MIN = 20;
 
     private const JOIN_MAX = 30;
@@ -67,27 +80,40 @@ class CutOffTestDataSeeder extends Seeder
             return;
         }
 
-        $seeded = 0;
+        $topped = 0;
         $skipped = 0;
 
         foreach ($tenders as $tender) {
-            $alreadyHasVendors = DB::table('tender_vendors')->where('tender_id', $tender->id)->exists();
+            $existingVendorIds = DB::table('tender_vendors')
+                ->where('tender_id', $tender->id)
+                ->pluck('vendor_id')
+                ->map(fn ($id) => (int) $id)
+                ->all();
+            $existingCount = count($existingVendorIds);
 
-            if ($alreadyHasVendors) {
+            if ($existingCount >= self::JOIN_MIN) {
                 $skipped++;
-                $this->command?->line("  - Tender #{$tender->id} ({$tender->name}): dilangkau — sudah ada syarikat sertai.");
+                $this->command?->line("  - Tender #{$tender->id} ({$tender->name}): dilangkau — sudah ada {$existingCount} syarikat (cukup).");
 
                 continue;
             }
 
-            $joinCount = $this->joinVendorsToTender($tender, $vendorIds, $orgUnitId);
-            $seeded++;
-            $this->command?->info("  - Tender #{$tender->id} ({$tender->name}): {$joinCount} syarikat disertakan.");
+            $added = $this->topUpVendorsForTender($tender, $vendorIds, $existingVendorIds, $orgUnitId);
+
+            if ($added === 0) {
+                $skipped++;
+                $this->command?->warn("  - Tender #{$tender->id} ({$tender->name}): tiada syarikat ujian tersedia untuk ditambah (kumpulan telah digunakan sepenuhnya untuk tender ini).");
+
+                continue;
+            }
+
+            $topped++;
+            $this->command?->info("  - Tender #{$tender->id} ({$tender->name}): {$added} syarikat ujian ditambah (asal {$existingCount} → jumlah " . ($existingCount + $added) . ').');
         }
 
         $this->command?->info('CutOffTestDataSeeder: siap.');
-        $this->command?->info("  Tender diproses : {$seeded}");
-        $this->command?->info("  Tender dilangkau: {$skipped} (sudah ada data)");
+        $this->command?->info("  Tender di-top-up: {$topped}");
+        $this->command?->info("  Tender dilangkau: {$skipped}");
     }
 
     /**
@@ -143,16 +169,39 @@ class CutOffTestDataSeeder extends Seeder
     }
 
     /**
-     * Sertakan 20-30 syarikat (rawak) daripada kumpulan ke satu tender, dengan
-     * harga_tawaran rawak ±20% sekitar Anggaran Jabatan tender berkenaan.
+     * Tambah (top-up) syarikat ujian ke satu tender sehingga jumlah keseluruhan
+     * (sebenar + ujian) mencapai sasaran rawak 20-30. Syarikat ujian yang sudah
+     * menyertai tender ini (dari run sebelumnya) TIDAK dipilih semula.
      *
-     * @param  list<int>  $vendorPoolIds
+     * @param  list<int>  $vendorPoolIds     Kumpulan penuh syarikat ujian.
+     * @param  list<int>  $existingVendorIds Syarikat (sebenar + ujian) yang sudah menyertai tender ini.
      */
-    private function joinVendorsToTender(Tender $tender, array $vendorPoolIds, int $fallbackOrgUnitId): int
-    {
+    private function topUpVendorsForTender(
+        Tender $tender,
+        array $vendorPoolIds,
+        array $existingVendorIds,
+        int $fallbackOrgUnitId
+    ): int {
+        $target = random_int(self::JOIN_MIN, self::JOIN_MAX);
+        $needed = $target - count($existingVendorIds);
+
+        if ($needed <= 0) {
+            return 0;
+        }
+
+        // Jangan pilih syarikat ujian yang sudah menyertai tender ini.
+        $availablePoolIds = array_values(array_diff($vendorPoolIds, $existingVendorIds));
+        $needed = min($needed, count($availablePoolIds));
+
+        if ($needed <= 0) {
+            return 0;
+        }
+
+        $chosenVendorIds = $needed === count($availablePoolIds)
+            ? $availablePoolIds
+            : (array) array_rand(array_flip($availablePoolIds), $needed);
+
         $baseline = (float) ($tender->anggaran_jabatan ?: $tender->price ?: 100000);
-        $joinCount = min(random_int(self::JOIN_MIN, self::JOIN_MAX), count($vendorPoolIds));
-        $chosenVendorIds = (array) array_rand(array_flip($vendorPoolIds), $joinCount);
 
         $transactionId = DB::table('transactions')->insertGetId([
             'type' => 'cut_off_test_seed',

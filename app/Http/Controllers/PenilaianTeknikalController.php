@@ -5,6 +5,9 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Concerns\AdvancesTenderProcessStatus;
 use App\Http\Controllers\Concerns\HandlesTenderFormAccess;
 use App\Http\Controllers\Concerns\ResolvesTenderForProcess;
+use App\Models\Jawatankuasa;
+use App\Models\PenyediaanIklan;
+use App\Models\PenyediaanMesyuaratMeeting;
 use App\Models\TechnicalChecklistHeader;
 use App\Models\TechnicalChecklistItem;
 use App\Models\TenderTeknikalKerjaLampiran;
@@ -141,12 +144,10 @@ class PenilaianTeknikalController extends Controller
                 return '<div class="text-center"><span class="badge-status ' . $badgeClass . '">' . e($label) . '</span></div>';
             })
             ->addColumn('tindakan', function ($tender) {
-                $noTender = $tender->no_tender ?: $tender->ref_number ?: (string) $tender->id;
-
                 // kategori_perolehan_id 1/2 = bekalan/perkhidmatan (3-step), 3 = kerja.
                 $showUrl = (int) $tender->kategori_perolehan_id === 3
-                    ? route('penilaianTeknikalKerja.show', $noTender)
-                    : route('penilaianTeknikal.show', $noTender);
+                    ? route('penilaianTeknikalKerja.show', $tender->uuid)
+                    : route('penilaianTeknikal.show', $tender->uuid);
 
                 return '<a href="' . e($showUrl) . '" class="btn btn-sm btn-info text-white d-inline-flex align-items-center gap-1">'
                     . '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
@@ -209,9 +210,9 @@ class PenilaianTeknikalController extends Controller
         return $allComplete ? 'Selesai' : 'Dalam Proses';
     }
 
-    public function show(string $tender_no)
+    public function show(string $uuid)
     {
-        $tender = $this->resolveTender($tender_no);
+        $tender = $this->resolveTender($uuid);
         // Langkah 1 vendor list — frozen record, see loadPenilaianTeknikalVendors().
         $shortlistedVendors = $this->loadPenilaianTeknikalVendors($tender);
         $pematuhanEvaluations = $this->service->loadPematuhanEvaluations($tender);
@@ -248,7 +249,7 @@ class PenilaianTeknikalController extends Controller
         $fullySubmitted = (bool) ($laporan?->submitted_at);
 
         return view('newModule.penilaian_teknikal.teknikal', [
-            'tender_no'  => $tender_no,
+            'tender_no'  => $tender->no_tender ?: $tender->ref_number ?: (string) $tender->id,
             'tender'     => $tender,
             'step1Items' => $step1Items,
             'step2Items' => $step2Items,
@@ -279,7 +280,10 @@ class PenilaianTeknikalController extends Controller
             ->with('items')
             ->first();
 
-        return collect($header?->items ?? []);
+        return collect($header?->items ?? [])
+            ->reject(fn (TechnicalChecklistItem $item) => $item->mechanism === ChecklistMechanism::PTJ_MUAT_NAIK
+                && $item->vendor_action === ChecklistMechanism::VENDOR_ACTION_MUAT_TURUN)
+            ->values();
     }
 
     /**
@@ -806,10 +810,11 @@ class PenilaianTeknikalController extends Controller
 
         $local = $this->loadVendorFormPayload($tender, 'pengalaman_kerja');
         $remote = $this->fetchOnlineFormData('pengalaman-kerja', $tender->uuid, (int) $request->query('vendor_id'));
+        $resolved = $this->resolveVendorFormDisplayData($tender, 'pengalaman_kerja', $remote ?: null);
 
         return view('newModule.penilaian_teknikal.review.pengalaman_kerja_review', array_merge([
-            'items'    => $local['items'] ?? [],
-            'dokumens' => $remote['dokumens'] ?? [],
+            'items'    => $resolved['items'] ?? ($local['items'] ?? []),
+            'dokumens' => $resolved['dokumens'] ?? [],
         ], $this->formViewVars($tender)));
     }
 
@@ -819,10 +824,11 @@ class PenilaianTeknikalController extends Controller
 
         $local = $this->loadVendorFormPayload($tender, 'kerja_dalam_tangan');
         $remote = $this->fetchOnlineFormData('kerja-dalam-tangan', $tender->uuid, (int) $request->query('vendor_id'));
+        $resolved = $this->resolveVendorFormDisplayData($tender, 'kerja_dalam_tangan', $remote ?: null);
 
         return view('newModule.penilaian_teknikal.review.kerja_dalam_tangan_review', array_merge([
-            'items'    => $local['items'] ?? [],
-            'dokumens' => $remote['dokumens'] ?? [],
+            'items'    => $resolved['items'] ?? ($local['items'] ?? []),
+            'dokumens' => $resolved['dokumens'] ?? [],
         ], $this->formViewVars($tender)));
     }
 
@@ -838,17 +844,56 @@ class PenilaianTeknikalController extends Controller
 
         $response = StosBackendClient::http()->get($url);
 
-        return $response->successful() ? (array) $response->json('data') : [];
+        return $response->successful()
+            ? $this->rewriteOnlineFormDokumens($apiSlug, $tenderUuid, (array) $response->json('data'))
+            : [];
     }
 
-    /** Resolves a tender from an index-page identifier (no_tender / ref_number / id). */
-    private function resolveTender(string $identifier): Tender
+    /**
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    private function rewriteOnlineFormDokumens(string $apiSlug, string $tenderUuid, array $data): array
     {
-        return Tender::query()
-            ->where('no_tender', $identifier)
-            ->orWhere('ref_number', $identifier)
-            ->orWhere('id', $identifier)
-            ->firstOrFail();
+        if (empty($data['dokumens']) || ! is_array($data['dokumens'])) {
+            return $data;
+        }
+
+        $tender = Tender::query()->where('uuid', $tenderUuid)->first();
+        if (! $tender) {
+            return $data;
+        }
+
+        $type = match ($apiSlug) {
+            'pengalaman-kerja' => 'pengalaman-kerja',
+            'kerja-dalam-tangan' => 'kerja-dalam-tangan',
+            default => null,
+        };
+
+        if ($type) {
+            $data['dokumens'] = StosFormFileController::rewriteDokumenUrls($tender, $type, $data['dokumens']);
+        }
+
+        return $data;
+    }
+
+    /** Resolves a tender from the index-page link's uuid. */
+    private function resolveTender(string $uuid): Tender
+    {
+        return Tender::query()->where('uuid', $uuid)->firstOrFail();
+    }
+
+    /** catatan_pematuhan/catatan_spesifikasi/pengesyoran_intro are rich text now (contenteditable) —
+     *  keep only the formatting they actually use, strip everything else before it reaches the API. */
+    private function sanitizeCatatanFields(array $data): array
+    {
+        foreach (['catatan_pematuhan', 'catatan_spesifikasi', 'pengesyoran_intro'] as $field) {
+            if (! empty($data[$field])) {
+                $data[$field] = strip_tags($data[$field], '<strong><br>');
+            }
+        }
+
+        return $data;
     }
 
     /** Saved Langkah 3 report text, if any — reloaded each time the report step is shown. */
@@ -865,6 +910,179 @@ class PenilaianTeknikalController extends Controller
             'pengesyoran_intro' => $data['pengesyoran_intro'] ?? null,
             'pengesyoran_justifikasi' => $data['pengesyoran_justifikasi'] ?? [],
         ]);
+    }
+
+    /** Printable report — a standalone HTML page the browser turns into PDF via window.print(). */
+    public function cetakLaporan(Tender $tender)
+    {
+        $perananLabels = ['1' => 'Pengerusi', '2' => 'Setiausaha', '3' => 'Ahli'];
+
+        $jptMembers = Jawatankuasa::with('user')
+            ->where('tender_id', $tender->id)
+            ->where('jenis_jawatankuasa', 'tech')
+            ->whereNotNull('user_id')
+            ->orderBy('peranan')
+            ->orderBy('id')
+            ->get()
+            ->filter(fn (Jawatankuasa $row) => $row->user)
+            ->map(fn (Jawatankuasa $row) => [
+                'peranan_label' => $perananLabels[(string) $row->peranan] ?? 'Ahli',
+                'name' => $row->user->name,
+                'jawatan' => $row->user->jawatan ?: '-',
+                'tarikh_lantikan' => optional($row->created_at)->format('d.m.Y'),
+            ])
+            ->values();
+
+        $mesyuaratTeknikal = PenyediaanMesyuaratMeeting::query()
+            ->where('tender_id', $tender->id)
+            ->where('jenis_jawatankuasa', 'tech')
+            ->orderByDesc('tarikh_mesyuarat')
+            ->first();
+
+        $dokumenTeknikal = $this->loadStep1ChecklistItems($tender)
+            ->values()
+            ->map(fn (TechnicalChecklistItem $item, int $idx) => [
+                'bil' => $idx + 1,
+                'keterangan' => $item->title ?: '-',
+            ]);
+
+        $latarBelakang = $this->buildLatarBelakang($tender, $dokumenTeknikal->count());
+
+        $rumusanPematuhanResult = $this->callStos('load rumusan pematuhan (laporan cetak)', ['tender_id' => $tender->id],
+            fn () => $this->stos->getRumusanPematuhanTeknikal($tender->id));
+        $rumusanPematuhan = $rumusanPematuhanResult['ok']
+            ? ($rumusanPematuhanResult['body']['data'] ?? ['layak' => [], 'tidak_layak' => []])
+            : ['layak' => [], 'tidak_layak' => []];
+
+        $keputusanByVendorId = [];
+        foreach ($rumusanPematuhan['layak'] ?? [] as $row) {
+            $keputusanByVendorId[(int) $row['vendor_id']] = 'LULUS';
+        }
+        foreach ($rumusanPematuhan['tidak_layak'] ?? [] as $row) {
+            $keputusanByVendorId[(int) $row['vendor_id']] = 'GAGAL';
+        }
+
+        $step1Vendors = $this->loadPenilaianTeknikalVendors($tender)->values();
+        $totalStep1Vendors = $step1Vendors->count();
+
+        $penilaianPeringkatPertama = $step1Vendors->map(function (TenderVendor $vendor, int $idx) use ($keputusanByVendorId, $totalStep1Vendors) {
+            $keputusan = $keputusanByVendorId[(int) $vendor->vendor_id] ?? 'GAGAL';
+
+            return [
+                'bil' => $idx + 1,
+                'no_petender' => ($idx + 1) . '/' . $totalStep1Vendors,
+                'keputusan' => $keputusan,
+                'ulasan' => $keputusan === 'LULUS'
+                    ? 'Semua Dokumen Lengkap Dan Mencukupi Dan Layak Ke Penilaian Peringkat Kedua'
+                    : 'Dokumen Tidak Lengkap Dan/Atau Tidak Mencukupi Dan Tidak Layak Ke Penilaian Peringkat Kedua',
+            ];
+        });
+
+        $laporanResult = $this->callStos('load laporan (laporan cetak)', ['tender_id' => $tender->id],
+            fn () => $this->stos->getLaporanTeknikal($tender->id));
+        $laporanData = $laporanResult['ok'] ? ($laporanResult['body']['data'] ?? []) : [];
+        $catatanPematuhan = $laporanData['catatan_pematuhan'] ?? null;
+        $catatanSpesifikasi = $laporanData['catatan_spesifikasi'] ?? null;
+        $pengesyoranIntro = $laporanData['pengesyoran_intro'] ?? null;
+        $pengesyoranJustifikasi = $laporanData['pengesyoran_justifikasi'] ?? [];
+
+        $rumusanTeknikalResult = $this->callStos('load rumusan penilaian teknikal (laporan cetak)', ['tender_id' => $tender->id],
+            fn () => $this->stos->getRumusanPenilaianTeknikal($tender->id));
+        $rumusanPenilaianTeknikal = $rumusanTeknikalResult['ok'] ? ($rumusanTeknikalResult['body']['data'] ?? []) : [];
+        $passingPercentage = $rumusanPenilaianTeknikal['passing_percentage'] ?? null;
+
+        $passingPercentageFormatted = $passingPercentage !== null
+            ? rtrim(rtrim(number_format((float) $passingPercentage, 2), '0'), '.')
+            : 'Value to be confirm where to fetch it';
+
+        $peratusByVendorId = [];
+        $keputusanStep2ByVendorId = [];
+        $kedudukanByVendorId = [];
+        foreach ($rumusanPenilaianTeknikal['layak'] ?? [] as $row) {
+            $peratusByVendorId[(int) $row['vendor_id']] = $row['peratus'] ?? 0;
+            $keputusanStep2ByVendorId[(int) $row['vendor_id']] = 'LULUS';
+            $kedudukanByVendorId[(int) $row['vendor_id']] = $row['kedudukan'] ?? null;
+        }
+        foreach ($rumusanPenilaianTeknikal['tidak_layak'] ?? [] as $row) {
+            $peratusByVendorId[(int) $row['vendor_id']] = $row['peratus'] ?? 0;
+            $keputusanStep2ByVendorId[(int) $row['vendor_id']] = 'GAGAL';
+        }
+
+        $step2Vendors = $this->loadPematuhanLulusVendors($tender)->values();
+        $totalStep2Vendors = $step2Vendors->count();
+
+        $penilaianPeringkatKedua = $step2Vendors->map(function (TenderVendor $vendor, int $idx) use ($peratusByVendorId, $keputusanStep2ByVendorId, $kedudukanByVendorId, $totalStep2Vendors, $passingPercentageFormatted) {
+            $vendorId = (int) $vendor->vendor_id;
+            $keputusan = $keputusanStep2ByVendorId[$vendorId] ?? 'GAGAL';
+
+            return [
+                'bil' => $idx + 1,
+                'no_petender' => ($idx + 1) . '/' . $totalStep2Vendors,
+                'markah_teknikal' => $peratusByVendorId[$vendorId] ?? 0,
+                'keputusan' => $keputusan,
+                'kedudukan' => $kedudukanByVendorId[$vendorId] ?? null,
+                'ulasan' => $keputusan === 'LULUS'
+                    ? 'Layak Ke Penilaian Peringkat Pengesyoran'
+                    : "Tidak Layak Ke Penilaian Peringkat Pengesyoran Kerana Markah Lulus Teknikal Kurang Dari {$passingPercentageFormatted}%",
+            ];
+        });
+
+        // Everyone who passed Step 2 except the top-ranked vendor — 6.1 addresses the winner
+        // separately, this is the "also eligible" list for 6.2.
+        $petenderLainLulus = $penilaianPeringkatKedua
+            ->filter(fn (array $row) => $row['keputusan'] === 'LULUS' && (int) ($row['kedudukan'] ?? 0) !== 1)
+            ->pluck('no_petender')
+            ->values();
+
+        $petenderLainLulusText = null;
+        if ($petenderLainLulus->count() === 1) {
+            $petenderLainLulusText = $petenderLainLulus->first();
+        } elseif ($petenderLainLulus->count() > 1) {
+            $petenderLainLulusText = $petenderLainLulus->slice(0, -1)->implode(', ') . ' dan ' . $petenderLainLulus->last();
+        }
+
+        return view('newModule.penilaian_teknikal.laporan_cetak', [
+            'tender' => $tender,
+            'latarBelakang' => $latarBelakang,
+            'jptMembers' => $jptMembers,
+            'tarikhMesyuaratTeknikal' => $mesyuaratTeknikal?->tarikh_mesyuarat,
+            'dokumenTeknikal' => $dokumenTeknikal,
+            'penilaianPeringkatKedua' => $penilaianPeringkatKedua,
+            'passingPercentageFormatted' => $passingPercentageFormatted,
+            'penilaianPeringkatPertama' => $penilaianPeringkatPertama,
+            'catatanSpesifikasi' => $catatanSpesifikasi,
+            'pengesyoranIntro' => $pengesyoranIntro,
+            'pengesyoranJustifikasi' => $pengesyoranJustifikasi,
+            'petenderLainLulusText' => $petenderLainLulusText,
+            'catatanPematuhan' => $catatanPematuhan,
+            'tarikhLaporanDicetak' => $this->formatTarikhMalay(now()),
+        ]);
+    }
+
+    /** "29 Julai 2024" — Carbon has no built-in Malay locale here, so map months manually. */
+    private function formatTarikhMalay(Carbon $date): string
+    {
+        $bulanMs = ['', 'Januari', 'Februari', 'Mac', 'April', 'Mei', 'Jun', 'Julai', 'Ogos', 'September', 'Oktober', 'November', 'Disember'];
+
+        return $date->day . ' ' . $bulanMs[$date->month] . ' ' . $date->year;
+    }
+
+    private function buildLatarBelakang(Tender $tender, int $bilanganDokumen): array
+    {
+        $iklanRecord = PenyediaanIklan::query()->where('tender_id', $tender->id)->first();
+        $iklanMeta = ($iklanRecord && is_array($iklanRecord->meta)) ? ($iklanRecord->meta['iklan'] ?? []) : [];
+        $tempohSahLaku = $iklanMeta['tempoh_sah_laku'] ?? null;
+
+        return [
+            'agensi_pelaksana' => $tender->tenderer?->name ?? '-',
+            'kaedah_perolehan' => ($tender->isSebutHargaKaedah() ? 'Sebut Harga' : 'Tender') . ' Terbuka Melalui Sistem Perolehan Selangor',
+            'tarikh_iklan' => $tender->advertise_start_date ? $this->formatTarikhMalay(Carbon::parse($tender->advertise_start_date)) : '-',
+            'tarikh_jual' => $tender->document_start_date ? $this->formatTarikhMalay(Carbon::parse($tender->document_start_date)) : '-',
+            'tarikh_tutup' => $tender->submission_datetime ? $this->formatTarikhMalay(Carbon::parse($tender->submission_datetime)) : '-',
+            'masa_tutup' => $tender->masa_tutup_display,
+            'tempoh_sah_laku' => $tempohSahLaku ? $tempohSahLaku . ' Hari' : '-',
+            'bilangan_dokumen' => $bilanganDokumen,
+        ];
     }
 
     /**
@@ -884,7 +1102,7 @@ class PenilaianTeknikalController extends Controller
 
         $result = $this->callStos('save draf laporan', ['tender' => $request->input('tender')],
             fn () => $this->stos->saveDrafLaporanTeknikal(array_merge(
-                $request->only(['tender', 'catatan_pematuhan', 'catatan_spesifikasi', 'pengesyoran_intro', 'pengesyoran_justifikasi']),
+                $this->sanitizeCatatanFields($request->only(['tender', 'catatan_pematuhan', 'catatan_spesifikasi', 'pengesyoran_intro', 'pengesyoran_justifikasi'])),
                 ['acting_user_id' => Auth::id()]
             )));
 
@@ -928,7 +1146,7 @@ class PenilaianTeknikalController extends Controller
 
         $result = $this->callStos('submit penilaian teknikal', ['tender_id' => $tender->id],
             fn () => $this->stos->hantarPenilaianTeknikal(array_merge(
-                $request->only(['tender', 'catatan_pematuhan', 'catatan_spesifikasi', 'pengesyoran_intro', 'pengesyoran_justifikasi']),
+                $this->sanitizeCatatanFields($request->only(['tender', 'catatan_pematuhan', 'catatan_spesifikasi', 'pengesyoran_intro', 'pengesyoran_justifikasi'])),
                 ['acting_user_id' => Auth::id()]
             )));
 
@@ -975,13 +1193,10 @@ class PenilaianTeknikalController extends Controller
         return view('newModule.penilaian_teknikal.teknikal_index', compact('tenders'));
     }
 
-    public function showTeknikalKerja(string $tender_no)
+    public function showTeknikalKerja(string $uuid)
     {
-        $tender = Tender::with('tenderer')
-            ->where('no_tender', $tender_no)
-            ->orWhere('ref_number', $tender_no)
-            ->orWhere('id', $tender_no)
-            ->firstOrFail();
+        $tender = Tender::with('tenderer')->where('uuid', $uuid)->firstOrFail();
+        $tender_no = $tender->no_tender ?: $tender->ref_number ?: (string) $tender->id;
 
         $vendors = $this->kerjaService->loadShortlistedVendors($tender);
         $evaluations = $this->kerjaService->loadEvaluations($tender);

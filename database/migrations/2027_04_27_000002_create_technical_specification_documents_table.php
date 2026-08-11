@@ -23,8 +23,8 @@ return new class extends Migration
             $table->string('status', 50)->default('draft')->index();
             $table->decimal('total_score', 10, 2)->default(0);
             $table->timestamp('completed_at')->nullable();
-            $table->unsignedBigInteger('created_by')->nullable();
-            $table->unsignedBigInteger('updated_by')->nullable();
+            $table->unsignedInteger('created_by')->nullable();
+            $table->unsignedInteger('updated_by')->nullable();
             $table->timestamps();
 
             $table->foreign('created_by', 'tsd_created_by_fk')

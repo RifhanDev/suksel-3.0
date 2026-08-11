@@ -47,8 +47,21 @@ class PengalamanKerjaController extends Controller
             ]);
         }
 
-        if ($this->isVendorFormMode()) {
-            $existingData = $this->resolveVendorFormDisplayData($tender, 'pengalaman_kerja', is_array($existingData) ? $existingData : null);
+        // Staff preview (?vendor_id=) and vendor mode both need per-vendor isolation.
+        if ($this->vendorId()) {
+            $existingData = $this->resolveVendorFormDisplayData(
+                $tender,
+                'pengalaman_kerja',
+                is_array($existingData) ? $existingData : null
+            );
+        }
+
+        if (is_array($existingData) && ! empty($existingData['dokumens'])) {
+            $existingData['dokumens'] = StosFormFileController::rewriteDokumenUrls(
+                $tender,
+                'pengalaman-kerja',
+                $existingData['dokumens']
+            );
         }
 
         return view('tenderPengalamanKerja.form_pengalaman_kerja', array_merge([
@@ -169,6 +182,11 @@ class PengalamanKerjaController extends Controller
                             'status'        => $uploadResponse->status(),
                             'body'          => Str::limit($uploadResponse->body(), 300),
                         ]);
+                    } elseif ($this->isVendorFormMode()) {
+                        $uploaded = $uploadResponse->json('data');
+                        if (is_array($uploaded)) {
+                            $this->appendVendorFormDokumen($tender, 'pengalaman_kerja', $uploaded);
+                        }
                     }
                 } catch (Throwable $e) {
                     $fileErrors[] = $file->getClientOriginalName() . ': ralat semasa muat naik.';

@@ -108,6 +108,18 @@
         box-shadow: 0 0 0 3px rgba(196, 30, 58, 0.1);
     }
 
+    /* contenteditable version of .laporan-textarea — needs its own min-height since a div
+       has no "rows" attribute, and disabled-look styling since contenteditable ignores :disabled. */
+    .laporan-richtext {
+        min-height: 52px;
+        overflow-y: auto;
+    }
+
+    .laporan-richtext[contenteditable="false"] {
+        background-color: #e9ecef;
+        opacity: 1;
+    }
+
     .laporan-aras-card {
         display: flex;
         align-items: center;
@@ -361,7 +373,7 @@
 
         <div class="mt-3">
             <label class="laporan-label">Catatan Laporan</label>
-            <textarea id="laporan3CatatanPematuhan" class="form-control laporan-textarea" rows="2">Sehubungan dengan itu, JPT bersetuju untuk mengambil xx penyebut harga iaitu XX untuk ke Penilaian Peringkat Kedua</textarea>
+            <div id="laporan3CatatanPematuhan" class="form-control laporan-textarea laporan-richtext" contenteditable="true"></div>
         </div>
     </div>
 
@@ -404,7 +416,7 @@
                 <tr>
                     <th style="width: 130px;">KEDUDUKAN</th>
                     <th style="width: 130px;">BIL</th>
-                    <th>JUMLAH SKOR</th>
+                    <th>MARKAH TEKNIKAL (%)</th>
                 </tr>
             </thead>
             <tbody id="laporan3SpesifikasiMelepasiTbody">
@@ -446,7 +458,7 @@
             <thead>
                 <tr>
                     <th style="width: 130px;">BIL</th>
-                    <th>JUMLAH SKOR</th>
+                    <th>MARKAH TEKNIKAL (%)</th>
                 </tr>
             </thead>
             <tbody id="laporan3SpesifikasiTidakMelepasiTbody">
@@ -458,7 +470,7 @@
 
         <div class="mt-3">
             <label class="laporan-label">Catatan Laporan</label>
-            <textarea id="laporan3CatatanSpesifikasi" class="form-control laporan-textarea" rows="2">Sehubungan dengan itu, JPT bersetuju untuk mengambil xx penyebut harga iaitu XX untuk ke Peringkat Pengesyoran.</textarea>
+            <div id="laporan3CatatanSpesifikasi" class="form-control laporan-textarea laporan-richtext" contenteditable="true"></div>
         </div>
     </div>
 
@@ -490,7 +502,7 @@
             <label class="laporan-label">Justifikasi Pengesyoran</label>
 
             {{-- Baris pembuka — rata kiri, tanpa indentasi --}}
-            <textarea id="laporan3PengesyoranIntro" class="form-control pengesyoran-intro" rows="2">Dengan ini, JPT mengesyorkan XX (bil) untuk melaksanakan (NAMA PROJEK) untuk dibawa ke mesyuarat Jawatankuasa Sebut Harga PSU(K) berdasarkan justifikasi seperti berikut:</textarea>
+            <div id="laporan3PengesyoranIntro" class="form-control pengesyoran-intro laporan-richtext" contenteditable="true"></div>
 
             {{-- Justifikasi tambahan — berindentasi & bernombor auto (i, ii, iii …) --}}
             <ol id="pengesyoran-list" class="pengesyoran-list"></ol>
@@ -505,11 +517,11 @@
     <div class="d-flex justify-content-between align-items-center">
         <button type="button" class="btn-form btn-form-secondary" id="btnSebelumnyaStep3">Sebelumnya</button>
         <div class="d-flex gap-2">
+            <button type="button" class="btn-form btn-form-secondary" onclick="cetakLaporanTeknikal()">Laporan</button>
             @if ($fullySubmitted ?? false)
                 <a href="{{ route('penilaianTeknikal') }}" class="btn-form btn-form-primary">Kembali ke Senarai</a>
             @else
-                <button class="btn-form btn-form-secondary">Laporan</button>
-                <button type="button" class="btn-form btn-form-secondary" id="btnSimpanDrafLaporan">Simpan Draf</button>
+                <button type="button" class="btn-form btn-form-primary" id="btnSimpanDrafLaporan">Simpan Draf</button>
                 <button id="btnStep3Hantar" class="btn-form btn-form-success">Hantar</button>
             @endif
         </div>
@@ -553,6 +565,8 @@
         // Peringkat 1 & 2 previews reuse Langkah 1/2's own rumusan endpoints, reloaded every
         // time this tab is shown so it always reflects the latest saves.
         const STEP3_TENDER_IDENTIFIER = '{{ $tender->uuid }}';
+        const STEP3_TENDER_NAME = @json($tender->name ?? '-');
+        const STEP3_NO_TENDER = @json($tender->no_tender ?? '-');
         const STEP3_CSRF_TOKEN = '{{ csrf_token() }}';
         const RUMUSAN_PEMATUHAN_URL_STEP3 = '{{ route('penilaianTeknikal.rumusanPematuhan', ['tender' => $tender->id]) }}';
         const RUMUSAN_SPESIFIKASI_URL_STEP3 = '{{ route('penilaianTeknikal.rumusanPenilaianTeknikal', ['tender' => $tender->id]) }}';
@@ -583,6 +597,47 @@
             li.appendChild(textarea);
             li.appendChild(removeBtn);
             return li;
+        }
+
+        // "Enam (6)" — covers realistic vendor-count ranges (1-99); falls back to the bare
+        // numeral past that rather than guessing at bigger Malay number words.
+        function bilanganMalay(n) {
+            const ones = ['', 'Satu', 'Dua', 'Tiga', 'Empat', 'Lima', 'Enam', 'Tujuh', 'Lapan', 'Sembilan'];
+            let words;
+            if (n === 0) {
+                words = 'Sifar';
+            } else if (n === 10) {
+                words = 'Sepuluh';
+            } else if (n === 11) {
+                words = 'Sebelas';
+            } else if (n < 10) {
+                words = ones[n];
+            } else if (n < 20) {
+                words = ones[n - 10] + ' Belas';
+            } else if (n < 100) {
+                words = ones[Math.floor(n / 10)] + ' Puluh' + (n % 10 ? ' ' + ones[n % 10] : '');
+            } else {
+                words = String(n);
+            }
+            return words + ' (' + n + ')';
+        }
+
+        // "<strong>petender bil. 1/6, 2/6,</strong> dan <strong>5/6</strong>" — bold wraps the
+        // label + all-but-last (comma-separated), " dan " stays plain, last one gets its own bold.
+        function formatPetenderBoldList(items) {
+            if (!items.length) return '';
+            if (items.length === 1) {
+                return '<strong>petender bil. ' + items[0] + '</strong>';
+            }
+            const allButLast = items.slice(0, -1).join(', ');
+            const last = items[items.length - 1];
+            return '<strong>petender bil. ' + allButLast + ',</strong> dan <strong>' + last + '</strong>';
+        }
+
+        function buildPengesyoranIntroText(topVendorKod) {
+            const kod = topVendorKod || 'XX';
+            return 'Dengan ini, JPT mengesyorkan petender bil. <strong>' + kod + ' LAYAK DIPERTIMBANGKAN</strong> untuk melaksanakan <strong>'
+                + STEP3_TENDER_NAME + ' - No. Tender: ' + STEP3_NO_TENDER + ',</strong> berdasarkan kepada justifikasi seperti berikut:';
         }
 
         function renderLaporanPematuhan(data) {
@@ -639,6 +694,14 @@
                     });
                 }
             }
+
+            const elPematuhan = document.getElementById('laporan3CatatanPematuhan');
+            if (elPematuhan) {
+                const petenderList = layak.map(function(row) { return row.kod_pembekal || '-'; });
+                elPematuhan.innerHTML = 'Sehubungan dengan itu, JPT telah menyenaraikan ' + bilanganMalay(layak.length)
+                    + ' petender yang telah <strong>lulus</strong> kerana memenuhi semua syarat Penilaian Peringkat Pertama iaitu '
+                    + formatPetenderBoldList(petenderList) + ' layak untuk ke peringkat seterusnya.';
+            }
         }
 
         function renderLaporanSpesifikasi(data) {
@@ -666,7 +729,7 @@
                         tdBil.className = 'text-center';
                         tdBil.textContent = row.kod_pembekal || '-';
                         const tdJumlah = document.createElement('td');
-                        tdJumlah.textContent = row.jumlah_skor;
+                        tdJumlah.textContent = (row.peratus ?? 0) + '%';
                         tr.append(tdKedudukan, tdBil, tdJumlah);
                         melepasiTbody.appendChild(tr);
                     });
@@ -685,26 +748,42 @@
                         tdBil.className = 'text-center';
                         tdBil.textContent = row.kod_pembekal || '-';
                         const tdJumlah = document.createElement('td');
-                        tdJumlah.textContent = row.jumlah_skor;
+                        tdJumlah.textContent = (row.peratus ?? 0) + '%';
                         tr.append(tdBil, tdJumlah);
                         tidakMelepasiTbody.appendChild(tr);
                     });
                 }
             }
+
+            const elSpesifikasi = document.getElementById('laporan3CatatanSpesifikasi');
+            if (elSpesifikasi) {
+                const petenderList = layak.map(function(row) { return row.kod_pembekal || '-'; });
+                const pct = data.passing_percentage || 0;
+                const pctText = (pct % 1 === 0) ? pct : pct.toFixed(2);
+                elSpesifikasi.innerHTML = 'Sehubungan dengan itu, JPT telah menyenaraikan ' + bilanganMalay(layak.length)
+                    + ' petender yang telah <strong>lulus</strong> kerana memenuhi semua syarat Penilaian Peringkat Kedua dan melebihi markah lulus '
+                    + pctText + '% iaitu ' + formatPetenderBoldList(petenderList) + ' yang layak untuk ke peringkat pengesyoran.';
+            }
+
+            const elIntro = document.getElementById('laporan3PengesyoranIntro');
+            if (elIntro) {
+                const topVendorKod = layak.length ? layak[0].kod_pembekal : null;
+                elIntro.innerHTML = buildPengesyoranIntroText(topVendorKod);
+            }
         }
 
-        // Only overwrites the HTML's example text when a real saved draft exists.
+        // Only overwrites the predefined default when a real saved draft exists.
         function renderLaporanDraft(data) {
             if (!data) return;
 
             const elPematuhan = document.getElementById('laporan3CatatanPematuhan');
-            if (elPematuhan && filled(data.catatan_pematuhan)) elPematuhan.value = data.catatan_pematuhan;
+            if (elPematuhan && filled(data.catatan_pematuhan)) elPematuhan.innerHTML = data.catatan_pematuhan;
 
             const elSpesifikasi = document.getElementById('laporan3CatatanSpesifikasi');
-            if (elSpesifikasi && filled(data.catatan_spesifikasi)) elSpesifikasi.value = data.catatan_spesifikasi;
+            if (elSpesifikasi && filled(data.catatan_spesifikasi)) elSpesifikasi.innerHTML = data.catatan_spesifikasi;
 
             const elIntro = document.getElementById('laporan3PengesyoranIntro');
-            if (elIntro && filled(data.pengesyoran_intro)) elIntro.value = data.pengesyoran_intro;
+            if (elIntro && filled(data.pengesyoran_intro)) elIntro.innerHTML = data.pengesyoran_intro;
 
             const justifikasi = data.pengesyoran_justifikasi || [];
             if (pengesyoranList && justifikasi.length) {
@@ -725,7 +804,7 @@
 
             ['laporan3CatatanPematuhan', 'laporan3CatatanSpesifikasi', 'laporan3PengesyoranIntro'].forEach(function(id) {
                 const el = document.getElementById(id);
-                if (el) el.disabled = true;
+                if (el) el.contentEditable = 'false';
             });
 
             if (pengesyoranList) {
@@ -745,20 +824,24 @@
         const laporanTabLink = document.getElementById('laporan-tab');
         if (laporanTabLink) {
             laporanTabLink.addEventListener('shown.bs.tab', function() {
-                $.get(RUMUSAN_PEMATUHAN_URL_STEP3).done(renderLaporanPematuhan);
-                $.get(RUMUSAN_SPESIFIKASI_URL_STEP3).done(renderLaporanSpesifikasi);
-                // Lock after the draft renders — renderLaporanDraft() rebuilds the rows, which
-                // need to exist before they can be disabled.
-                $.get(LAPORAN_URL_STEP3).done(function(data) {
-                    renderLaporanDraft(data);
-                    applyStep3Lock();
+                // Rumusan calls fill the catatan fields with a predefined default first, so the
+                // draft fetch below can reliably overwrite it with a real saved value if one
+                // exists — .always(), not .done(), so a rumusan failure still lets the draft load.
+                $.when(
+                    $.get(RUMUSAN_PEMATUHAN_URL_STEP3).done(renderLaporanPematuhan),
+                    $.get(RUMUSAN_SPESIFIKASI_URL_STEP3).done(renderLaporanSpesifikasi)
+                ).always(function() {
+                    $.get(LAPORAN_URL_STEP3).done(function(data) {
+                        renderLaporanDraft(data);
+                        applyStep3Lock();
+                    });
                 });
             });
         }
 
         applyStep3Lock();
 
-        // Irreversible (eliminates vendors, ends the process) — confirm via modal, not window.confirm().
+        // Irreversible (eliminates vendors, ends the process) — confirm via modal.
         const modalKonfirmasiHantarLaporan = document.getElementById('modalKonfirmasiHantarLaporan');
         if (btnHantar && modalKonfirmasiHantarLaporan) {
             btnHantar.addEventListener('click', function(e) {
@@ -776,12 +859,22 @@
             return {
                 _token: STEP3_CSRF_TOKEN,
                 tender: STEP3_TENDER_IDENTIFIER,
-                catatan_pematuhan: document.getElementById('laporan3CatatanPematuhan')?.value || '',
-                catatan_spesifikasi: document.getElementById('laporan3CatatanSpesifikasi')?.value || '',
-                pengesyoran_intro: document.getElementById('laporan3PengesyoranIntro')?.value || '',
+                catatan_pematuhan: document.getElementById('laporan3CatatanPematuhan')?.innerHTML || '',
+                catatan_spesifikasi: document.getElementById('laporan3CatatanSpesifikasi')?.innerHTML || '',
+                pengesyoran_intro: document.getElementById('laporan3PengesyoranIntro')?.innerHTML || '',
                 pengesyoran_justifikasi: justifikasi,
             };
         }
+
+        // The printed report reads its text from the saved draft, so cetakLaporanTeknikal()
+        // (teknikal.blade.php) flushes unsaved edits through here before opening it.
+        window.simpanDrafLaporanSebelumCetak = function() {
+            return $.ajax({
+                url: SIMPAN_DRAF_LAPORAN_URL,
+                method: 'POST',
+                data: collectLaporanPayload(),
+            });
+        };
 
         // Saves report text without ending the process, so in-progress work survives a reload.
         const btnSimpanDrafLaporan = document.getElementById('btnSimpanDrafLaporan');

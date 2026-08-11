@@ -1071,7 +1071,17 @@
 						'X-Requested-With': 'XMLHttpRequest',
 						'Accept': 'application/json',
 					},
-					success: function() {
+					success: function(response) {
+						// Refresh local state with the server's authoritative Dokumen Meja
+						// Terkawal data straight after a successful save. Without this, the
+						// row's hidden existing_path/upload_id stay blank for a freshly
+						// uploaded (optional) document, and its <input type="file"> keeps
+						// holding the same selected file — so the NEXT Simpan/Next-step
+						// save silently re-uploads it as a duplicate and the original
+						// upload gets treated as orphaned and deleted.
+						if (response && Array.isArray(response.dokumen_sokongan)) {
+							refreshMejaTerkawalRows(response.dokumen_sokongan);
+						}
 						if (typeof done === 'function') done();
 					},
 					error: function(xhr) {
@@ -1527,6 +1537,12 @@
 					$wrap.append(buildMejaTerkawalRow({}, 0));
 					mejaRowIndex = 1;
 				}
+			}
+
+			function refreshMejaTerkawalRows(docs) {
+				savedMejaDocs = Array.isArray(docs) ? docs : [];
+				mejaRowsInitialised = false;
+				initMejaTerkawalRows();
 			}
 
 			$('#btnTambahMejaTerkawal').on('click', function() {

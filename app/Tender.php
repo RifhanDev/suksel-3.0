@@ -448,6 +448,11 @@ class Tender extends Model
 		return $this->hasMany(PetenderPerformance::class, 'tender_id');
 	}
 
+	public function kewanganProgress()
+	{
+		return $this->hasOne(\App\Models\TenderKewanganProgress::class, 'tender_id');
+	}
+
 	/**
 	 * Decorators
 	 */

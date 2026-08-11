@@ -7,6 +7,12 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
+        // Restored/legacy databases may already have this table. Skip creation
+        // there — only build it from scratch on a genuinely fresh DB.
+        if (Schema::hasTable('banners')) {
+            return;
+        }
+
         Schema::create('banners', function (Blueprint $table) {
             $table->id();
             $table->string('title');

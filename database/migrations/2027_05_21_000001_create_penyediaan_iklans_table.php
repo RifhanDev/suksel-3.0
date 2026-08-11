@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('penyediaan_iklans', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('tender_id')->unique();
+            $table->unsignedInteger('tender_id')->unique();
             $table->json('meta')->nullable();
             $table->timestamp('submitted_at')->nullable();
             $table->timestamps();

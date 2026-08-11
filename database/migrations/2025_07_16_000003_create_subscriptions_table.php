@@ -23,7 +23,7 @@ return new class extends Migration
             $table->boolean('renewal')->nullable()->default(0);
 
             $table->unsignedBigInteger('transaction_id');
-            $table->unsignedBigInteger('vendor_id');
+            $table->unsignedInteger('vendor_id');
 
             $table->timestamps();
 
