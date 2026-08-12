@@ -203,6 +203,8 @@ class VendorDokumenResponseService
 
         $normalized = $this->normalizeSpecificationPayload($data);
 
+        // Per-vendor row: unique(tender_id, vendor_id, checklist_item_uuid).
+        // Never writes to spesifikasi_kerja_items (PTJ/admin reference stays intact).
         $record = TenderVendorDokumenResponse::query()->firstOrNew([
             'tender_id' => $tender->id,
             'vendor_id' => $vendorId,
@@ -220,6 +222,10 @@ class VendorDokumenResponseService
             $itemPrices[$itemUuid] = trim((string) $value);
         }
 
+        if ($section === 'spesifikasi_kerja') {
+            $itemPrices = $this->filterKerjaVendorItemPrices($tender, $itemPrices);
+        }
+
         $details = [];
         foreach ($normalized['details'] as $detailUuid => $fields) {
             $detailUuid = trim((string) $detailUuid);
@@ -233,6 +239,7 @@ class VendorDokumenResponseService
         }
 
         if ($adminSave) {
+            // Admin/Jawatankuasa may only update pematuhan — never vendor offers (item_prices).
             $mergedDetails = $existing['details'];
             foreach ($details as $detailUuid => $fields) {
                 if (! isset($mergedDetails[$detailUuid])) {
@@ -241,10 +248,9 @@ class VendorDokumenResponseService
                 $mergedDetails[$detailUuid]['pematuhan'] = $fields['pematuhan'];
             }
             $details = $mergedDetails;
-            if ($itemPrices === []) {
-                $itemPrices = $existing['item_prices'];
-            }
+            $itemPrices = $existing['item_prices'];
         } else {
+            // Vendor updates cadangan / item_prices; keep any existing pematuhan from admin.
             $mergedDetails = $existing['details'];
             foreach ($details as $detailUuid => $fields) {
                 if (! isset($mergedDetails[$detailUuid])) {
@@ -274,6 +280,104 @@ class VendorDokumenResponseService
         ])->save();
 
         return $record;
+    }
+
+    /**
+     * Keep only child spesifikasi rows for this tender.
+     * Vendor offers live in item_prices — SpesifikasiKerjaItem.kadar (PTJ) is never updated here.
+     *
+     * @param  array<string, string>  $itemPrices
+     * @return array<string, string>
+     */
+    public function filterKerjaVendorItemPrices(Tender $tender, array $itemPrices): array
+    {
+        if ($itemPrices === []) {
+            return [];
+        }
+
+        $allowed = \App\Models\SpesifikasiKerjaItem::query()
+            ->whereIn('uuid', array_keys($itemPrices))
+            ->whereNotNull('parent_id')
+            ->whereHas('header', fn ($q) => $q->where('tender_id', $tender->id))
+            ->pluck('uuid')
+            ->all();
+
+        $allowedLookup = array_fill_keys($allowed, true);
+        $filtered = [];
+        foreach ($itemPrices as $uuid => $value) {
+            if (isset($allowedLookup[$uuid])) {
+                $filtered[$uuid] = $value;
+            }
+        }
+
+        return $filtered;
+    }
+
+    /**
+     * Jumlah keseluruhan from vendor item_prices.
+     * Kerja: sum(kadar × kuantiti) using PTJ kuantiti from spesifikasi_kerja_items.
+     * Bekalan / other: sum(item_prices) as line totals.
+     *
+     * @param  array<string, string|int|float>  $itemPrices
+     */
+    public function calculateSpecificationTotal(Tender $tender, array $itemPrices, ?string $section = null): float
+    {
+        if ($itemPrices === []) {
+            return 0.0;
+        }
+
+        $isKerja = $section === 'spesifikasi_kerja'
+            || \App\Models\SpesifikasiKerjaItem::query()
+                ->whereIn('uuid', array_keys($itemPrices))
+                ->whereNotNull('parent_id')
+                ->whereHas('header', fn ($q) => $q->where('tender_id', $tender->id))
+                ->exists();
+
+        if (! $isKerja) {
+            $total = 0.0;
+            foreach ($itemPrices as $value) {
+                $total += (float) str_replace(',', '', (string) $value);
+            }
+
+            return round($total, 2);
+        }
+
+        $specs = \App\Models\SpesifikasiKerjaItem::query()
+            ->whereIn('uuid', array_keys($itemPrices))
+            ->whereNotNull('parent_id')
+            ->whereHas('header', fn ($q) => $q->where('tender_id', $tender->id))
+            ->get(['uuid', 'kuantiti'])
+            ->keyBy('uuid');
+
+        $total = 0.0;
+        foreach ($itemPrices as $uuid => $kadarRaw) {
+            $spec = $specs->get($uuid);
+            if (! $spec) {
+                continue;
+            }
+            $kadar = (float) str_replace(',', '', (string) $kadarRaw);
+            $qty = (float) ($spec->kuantiti ?? 0);
+            $total += round($kadar * $qty, 2);
+        }
+
+        return round($total, 2);
+    }
+
+    /**
+     * Sync vendor's harga_tawaran from specification offers only.
+     * Does not modify SpesifikasiKerjaItem (PTJ/admin kadar).
+     *
+     * @param  array<string, string>  $itemPrices  keyed by child spec uuid => vendor kadar
+     */
+    public function syncHargaTawaranFromSpecification(Tender $tender, int $vendorId, array $itemPrices): void
+    {
+        $total = $this->calculateSpecificationTotal($tender, $itemPrices, 'spesifikasi_kerja');
+
+        $participant = $tender->participants()->where('vendor_id', $vendorId)->first();
+        if ($participant) {
+            $participant->harga_tawaran = $total;
+            $participant->save();
+        }
     }
 
     protected function assertValidSection(string $section): void

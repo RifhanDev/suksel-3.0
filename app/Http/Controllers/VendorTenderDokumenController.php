@@ -234,6 +234,15 @@ class VendorTenderDokumenController extends Controller
             $isAdmin
         );
 
+        if (! $isAdmin && $data['section'] === 'spesifikasi_kerja') {
+            // Vendor offer only — SpesifikasiKerjaItem.kadar (PTJ) is never modified.
+            $this->responses->syncHargaTawaranFromSpecification(
+                $tender,
+                $vendorId,
+                $this->responses->normalizeSpecificationPayload($response->payload)['item_prices'] ?? []
+            );
+        }
+
         return response()->json([
             'success' => true,
             'message' => 'Maklum balas spesifikasi berjaya disimpan.',
@@ -241,6 +250,48 @@ class VendorTenderDokumenController extends Controller
                 'specification' => $this->responses->normalizeSpecificationPayload($response->payload),
                 'status' => $response->status,
             ],
+        ]);
+    }
+
+    public function downloadSpesifikasiKerjaFile(Tender $tender, string $fileUuid)
+    {
+        $this->ensureTenderFormAccess($tender);
+        $this->assertCanAccessTenderFile($tender);
+
+        $file = \App\Models\SpesifikasiKerjaFile::query()
+            ->where('uuid', $fileUuid)
+            ->whereHas('header', fn ($q) => $q->where('tender_id', $tender->id))
+            ->firstOrFail();
+
+        $path = ltrim(str_replace('\\', '/', (string) $file->path), '/');
+        $absolute = storage_path('app/public/' . $path);
+        if (is_file($absolute)) {
+            return response()->file($absolute, [
+                'Content-Type' => $file->mime_type ?: 'application/octet-stream',
+                'Content-Disposition' => 'inline; filename="' . addslashes($file->original_name) . '"',
+            ]);
+        }
+
+        $stosPath = rtrim((string) config('services.stos_backend.storage_path'), '/') . '/' . $path;
+        if ($stosPath !== '/' . $path && is_file($stosPath)) {
+            return response()->file($stosPath, [
+                'Content-Type' => $file->mime_type ?: 'application/octet-stream',
+                'Content-Disposition' => 'inline; filename="' . addslashes($file->original_name) . '"',
+            ]);
+        }
+
+        $remote = rtrim((string) config('services.stos_backend.url'), '/') . '/storage/' . $path;
+        $api = \App\Services\StosBackendClient::http()
+            ->withHeaders(['Accept' => '*/*'])
+            ->get($remote);
+
+        if (! $api->successful()) {
+            abort(404, 'Fail tidak dijumpai.');
+        }
+
+        return response($api->body(), 200, [
+            'Content-Type' => $file->mime_type ?: ($api->header('Content-Type') ?: 'application/octet-stream'),
+            'Content-Disposition' => 'inline; filename="' . addslashes($file->original_name) . '"',
         ]);
     }
 

@@ -212,6 +212,7 @@ Route::middleware(['auth'])->group(function () {
 	Route::get('tenders/{tender}/vendor-submission/readiness', [\App\Http\Controllers\VendorTenderSubmissionController::class, 'readiness'])->name('tenders.vendorSubmission.readiness');
 	Route::post('tenders/{tender}/vendor-submission', [\App\Http\Controllers\VendorTenderSubmissionController::class, 'submit'])->name('tenders.vendorSubmission.submit');
 	Route::get('tenders/{tender}/dokumen/{itemUuid}/specification', [\App\Http\Controllers\VendorTenderDokumenController::class, 'specificationForm'])->name('tenderDokumen.specificationForm');
+	Route::get('tenders/{tender}/spesifikasi-kerja-files/{fileUuid}/download', [\App\Http\Controllers\VendorTenderDokumenController::class, 'downloadSpesifikasiKerjaFile'])->name('tenderDokumen.spesifikasiKerjaFile');
 	Route::post('tenders/{tender}/dokumen/{itemUuid}/upload', [\App\Http\Controllers\VendorTenderDokumenController::class, 'upload'])->name('tenderDokumen.upload');
 	Route::get('tenders/{tender}/checklist-files/{section}/{fileUuid}/download', [\App\Http\Controllers\TenderChecklistFileController::class, 'download'])->name('tenderChecklist.download');
 	Route::get('tenders/{tender}/stos-form-files/{type}/{fileUuid}/download', [\App\Http\Controllers\StosFormFileController::class, 'download'])->name('stosFormFile.download');

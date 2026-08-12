@@ -47,11 +47,24 @@ trait HandlesTenderFormAccess
             return false;
         }
 
-        if ($user->hasRole('Admin') || $user->can('tender:specification-management')) {
+        $isStaff = $user->hasRole('Admin')
+            || $user->can('tender:specification-management')
+            || $user->hasRole('Jawatankuasa')
+            || $user->hasRole('Agency Admin')
+            || $user->hasRole('Agency User');
+
+        // Staff/committee review (mode=view) must not run as vendor save/edit mode,
+        // even for dual-role Vendor + Jawatankuasa accounts.
+        if ($isStaff && (request('mode') === 'view' || request()->boolean('view'))) {
             return false;
         }
 
-        if ($user->hasRole('Jawatankuasa') || $user->hasRole('Agency Admin') || $user->hasRole('Agency User')) {
+        // Dual-role accounts still act as vendor when filling their own tender documents.
+        if ($user->hasRole('Vendor')) {
+            return true;
+        }
+
+        if ($isStaff) {
             return false;
         }
 
@@ -172,12 +185,17 @@ trait HandlesTenderFormAccess
     protected function vendorId(): ?int
     {
         $user = auth()->user();
+        $queryVendorId = (int) request('vendor_id');
+
+        // Staff review with ?vendor_id=... must use the queried vendor, not the
+        // reviewer's own vendor_id (dual-role Vendor + Jawatankuasa).
+        if (! $this->isVendorFormMode() && $queryVendorId > 0) {
+            return $queryVendorId;
+        }
 
         if ($user?->vendor_id) {
             return (int) $user->vendor_id;
         }
-
-        $queryVendorId = (int) request('vendor_id');
 
         return $queryVendorId > 0 ? $queryVendorId : null;
     }

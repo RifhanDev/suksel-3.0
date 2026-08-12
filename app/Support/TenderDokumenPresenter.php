@@ -169,7 +169,7 @@ class TenderDokumenPresenter
 
         $header = SpesifikasiKerjaHeader::query()
             ->where('tender_id', $this->tender->id)
-            ->with(['items' => fn ($query) => $query->orderBy('sort_order')->orderBy('id')])
+            ->with(['items' => fn ($query) => $query->orderBy('sort_order')->orderBy('id'), 'items.specs.files'])
             ->first();
 
         if ($header && $header->items->isNotEmpty()) {

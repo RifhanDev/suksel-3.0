@@ -30,6 +30,13 @@ class SpesifikasiKerjaHeader extends Model
 
     public function items(): HasMany
     {
+        return $this->hasMany(SpesifikasiKerjaItem::class)
+            ->whereNull('parent_id')
+            ->orderBy('sort_order');
+    }
+
+    public function allItems(): HasMany
+    {
         return $this->hasMany(SpesifikasiKerjaItem::class)->orderBy('sort_order');
     }
 }

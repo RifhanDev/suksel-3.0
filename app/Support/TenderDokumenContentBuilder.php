@@ -7,6 +7,7 @@ use App\Models\FinancialChecklistItem;
 use App\Models\KewanganKerjaItem;
 use App\Models\SpesifikasiKerjaHeader;
 use App\Models\SpesifikasiKerjaItem;
+use App\Models\SpesifikasiKerjaFile;
 use App\Models\StandardChecklistItem;
 use App\Models\TechnicalChecklistFile;
 use App\Models\TechnicalChecklistItem;
@@ -68,18 +69,53 @@ class TenderDokumenContentBuilder
      */
     public function buildForSpesifikasiKerjaHeader(SpesifikasiKerjaHeader $header, $items): array
     {
-        $rows = $items->values()->map(function (SpesifikasiKerjaItem $item, int $index) {
-            return [
-                'kind' => 'item',
-                'bil' => $index + 1,
-                'item_uuid' => $item->uuid,
-                'title' => $item->spesifikasi,
-                'ya_tidak' => $item->ya_tidak,
-                'catatan' => $item->catatan,
-            ];
-        })->all();
+        $rows = [];
+        $bil = 0;
 
-        $label = 'Spesifikasi';
+        foreach ($items as $item) {
+            $bil++;
+            $rows[] = [
+                'kind' => 'item',
+                'bil' => $bil,
+                'item_uuid' => $item->uuid,
+                'title' => $item->nama_item ?: $item->spesifikasi,
+                'unit' => null,
+                'kuantiti' => null,
+                'quantity' => null,
+                'kadar' => null,
+                'jumlah' => null,
+                'ya_tidak' => null,
+                'catatan' => null,
+                'files' => [],
+            ];
+
+            foreach ($item->specs as $spec) {
+                $rows[] = [
+                    'kind' => 'spec',
+                    'bil' => null,
+                    'item_uuid' => $spec->uuid,
+                    'title' => $spec->spesifikasi,
+                    'unit' => $spec->unit,
+                    'kuantiti' => $spec->kuantiti,
+                    'quantity' => $spec->kuantiti,
+                    // PTJ reference rate (read-only context); vendor offer uses item_prices.
+                    'kadar' => $spec->kadar,
+                    'jumlah' => $spec->jumlah(),
+                    'ya_tidak' => $spec->ya_tidak,
+                    'catatan' => $spec->catatan,
+                    'files' => $spec->files->map(fn (SpesifikasiKerjaFile $file) => [
+                        'uuid' => $file->uuid,
+                        'name' => $file->original_name,
+                        'url' => route('tenderDokumen.spesifikasiKerjaFile', [
+                            'tender' => $this->tender->id,
+                            'fileUuid' => $file->uuid,
+                        ]),
+                        'mime_type' => $file->mime_type,
+                        'size' => $file->size,
+                    ])->values()->all(),
+                ];
+            }
+        }
 
         return [
             'uuid' => $header->uuid,
@@ -90,8 +126,8 @@ class TenderDokumenContentBuilder
             'mechanism' => null,
             'vendor_action' => null,
             'action' => 'view_specification',
-            'tindakan' => $label,
-            'badge_class' => VendorActionLabel::badgeClass($label),
+            'tindakan' => 'Spesifikasi',
+            'badge_class' => VendorActionLabel::badgeClass('Spesifikasi'),
             'source' => 'spesifikasi_kerja',
             'status' => $header->status ?? 'draft',
             'admin_content' => [
@@ -114,8 +150,8 @@ class TenderDokumenContentBuilder
 
         return [
             'uuid' => $item->uuid ?? null,
-            'title' => $item->spesifikasi ?? '',
-            'nama' => $item->spesifikasi ?? '',
+            'title' => $item->nama_item ?: ($item->spesifikasi ?? ''),
+            'nama' => $item->nama_item ?: ($item->spesifikasi ?? ''),
             'section' => 'spesifikasi_kerja',
             'source_type' => 'specification',
             'mechanism' => null,
@@ -130,9 +166,9 @@ class TenderDokumenContentBuilder
                 'document_title' => null,
                 'rows' => [[
                     'bil' => $index + 1,
-                    'title' => $item->spesifikasi,
-                    'quantity' => null,
-                    'unit' => null,
+                    'title' => $item->nama_item ?: $item->spesifikasi,
+                    'quantity' => $item->kuantiti,
+                    'unit' => $item->unit,
                     'ya_tidak' => $item->ya_tidak,
                     'catatan' => $item->catatan,
                 ]],

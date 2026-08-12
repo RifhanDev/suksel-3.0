@@ -6,6 +6,7 @@ use App\Http\Controllers\Concerns\AdvancesTenderProcessStatus;
 use App\Http\Controllers\Concerns\ResolvesTenderForProcess;
 use App\Models\TenderVendorDokumenResponse;
 use App\Services\JawatankuasaPembukaService;
+use App\Services\VendorDokumenResponseService;
 use App\Support\TenderDokumenPresenter;
 use App\Support\TenderProcessStatus;
 use App\Tender;
@@ -240,6 +241,8 @@ class JawatankuasaPembukaController extends Controller
     /**
      * Resolve vendor's Harga Tawaran. If empty/null/0, auto-calculates total specification price
      * from tender_vendor_dokumen_responses where response_type = 'specification'.
+     * Kerja uses vendor kadar × PTJ kuantiti; bekalan sums item_prices as line totals.
+     * Never reads/writes SpesifikasiKerjaItem.kadar (PTJ reference).
      */
     protected function resolveVendorHargaTawaran(Tender $tender, int $vendorId, mixed $existingHarga): mixed
     {
@@ -253,23 +256,27 @@ class JawatankuasaPembukaController extends Controller
             ->where('response_type', 'specification')
             ->get();
 
-        $totalSpecPrice = 0;
+        $service = app(VendorDokumenResponseService::class);
+        $totalSpecPrice = 0.0;
         $hasPrices = false;
 
         foreach ($responses as $response) {
-            $payload = $response->payload ?? [];
+            $payload = $service->normalizeSpecificationPayload(
+                is_array($response->payload) ? $response->payload : null
+            );
             $itemPrices = $payload['item_prices'] ?? [];
-            if (is_array($itemPrices)) {
-                foreach ($itemPrices as $val) {
-                    if (is_numeric($val) && (float) $val > 0) {
-                        $totalSpecPrice += (float) $val;
-                        $hasPrices = true;
-                    }
-                }
+            if ($itemPrices === []) {
+                continue;
             }
+            $hasPrices = collect($itemPrices)->contains(fn ($v) => trim((string) $v) !== '');
+            $totalSpecPrice += $service->calculateSpecificationTotal(
+                $tender,
+                $itemPrices,
+                $response->section
+            );
         }
 
-        return $hasPrices ? number_format($totalSpecPrice, 2, '.', '') : $existingHarga;
+        return $hasPrices ? round($totalSpecPrice, 2) : $existingHarga;
     }
 
     // ─────────────────────────────────────────────────────────────────
@@ -485,6 +492,7 @@ class JawatankuasaPembukaController extends Controller
                         'itemUuid'  => $uuid,
                         'vendor_id' => $vendorId,
                         'modal'     => 1,
+                        'mode'      => 'view',
                     ]);
                 }
 
