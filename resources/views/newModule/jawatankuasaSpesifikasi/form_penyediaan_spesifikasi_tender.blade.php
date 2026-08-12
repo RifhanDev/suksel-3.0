@@ -279,13 +279,13 @@ $(document).ready(function () {
                 return {
                     uuid: item.uuid || '',
                     nama_item: item.nama_item || item.item || item.title || '',
-                    unit: item.unit || '',
-                    kuantiti: item.kuantiti != null ? item.kuantiti : (item.kekerapan != null ? item.kekerapan : ''),
-                    kadar: item.kadar != null ? item.kadar : '',
                     specs: (item.specs || item.children || []).map(function (s) {
                         return {
                             uuid: s.uuid || '',
                             spesifikasi: s.spesifikasi || s.title || '',
+                            unit: s.unit || item.unit || '',
+                            kuantiti: s.kuantiti != null ? s.kuantiti : (s.kekerapan != null ? s.kekerapan : (item.kuantiti != null ? item.kuantiti : '')),
+                            kadar: s.kadar != null ? s.kadar : (item.kadar != null ? item.kadar : ''),
                             ya_tidak: s.ya_tidak || s.pematuhan || '',
                             catatan: s.catatan || '',
                             files: s.files || [],
@@ -303,12 +303,12 @@ $(document).ready(function () {
                 return {
                     uuid: '',
                     nama_item: i.spesifikasi || '',
-                    unit: '',
-                    kuantiti: '',
-                    kadar: '',
                     specs: [{
                         uuid: i.uuid || '',
                         spesifikasi: i.spesifikasi || '',
+                        unit: i.unit || '',
+                        kuantiti: i.kuantiti != null ? i.kuantiti : '',
+                        kadar: i.kadar != null ? i.kadar : '',
                         ya_tidak: i.ya_tidak || '',
                         catatan: i.catatan || '',
                         files: i.files || [],
@@ -324,13 +324,13 @@ $(document).ready(function () {
             return {
                 uuid: p.uuid || '',
                 nama_item: p.nama_item || p.spesifikasi || '',
-                unit: p.unit || '',
-                kuantiti: p.kuantiti != null ? p.kuantiti : '',
-                kadar: p.kadar != null ? p.kadar : '',
                 specs: children.map(function (s) {
                     return {
                         uuid: s.uuid || '',
                         spesifikasi: s.spesifikasi || '',
+                        unit: s.unit || '',
+                        kuantiti: s.kuantiti != null ? s.kuantiti : '',
+                        kadar: s.kadar != null ? s.kadar : '',
                         ya_tidak: s.ya_tidak || '',
                         catatan: s.catatan || '',
                         files: s.files || [],
@@ -343,13 +343,6 @@ $(document).ready(function () {
     function buildItemRow(item) {
         item = item || {};
         var uuid = item.uuid || '';
-        var unit = item.unit || '';
-        var kuantiti = item.kuantiti !== '' && item.kuantiti != null ? item.kuantiti : '';
-        var kadar = item.kadar !== '' && item.kadar != null ? item.kadar : '';
-        var locked = (unit === 'HB' || unit === 'L/S');
-        if (locked) kuantiti = 1;
-
-        var jumlah = formatAmount((parseFloat(kuantiti) || 0) * (parseFloat(kadar) || 0));
 
         var $tr = $(
             '<tr class="item-row" data-uuid="' + htmlEscape(uuid) + '">' +
@@ -358,29 +351,13 @@ $(document).ready(function () {
                     'placeholder="Tajuk item..." style="resize:vertical;min-height:52px;">' +
                     htmlEscape(item.nama_item || '') + '</textarea>' +
                 '</td>' +
-                '<td class="text-center" style="vertical-align:top;padding-top:10px;">' +
-                    '<select name="unit" class="form-select form-select-sm unit-select">' +
-                        '<option value="">—</option>' +
-                        '<option value="HB"' + (unit === 'HB' ? ' selected' : '') + '>HB</option>' +
-                        '<option value="L/S"' + (unit === 'L/S' ? ' selected' : '') + '>L/S</option>' +
-                        '<option value="Unit"' + (unit === 'Unit' ? ' selected' : '') + '>Unit</option>' +
-                    '</select>' +
-                '</td>' +
-                '<td class="text-center" style="vertical-align:top;padding-top:10px;">' +
-                    '<input type="number" name="kuantiti" class="form-control form-control-sm text-center qty-input" ' +
-                    'min="0" step="1" value="' + htmlEscape(kuantiti) + '"' + (locked ? ' readonly' : '') + '>' +
-                '</td>' +
                 '<td class="text-center text-muted small">—</td>' +
                 '<td class="text-center text-muted small">—</td>' +
                 '<td class="text-center text-muted small">—</td>' +
-                '<td class="text-center" style="vertical-align:top;padding-top:10px;">' +
-                    '<input type="text" name="kadar" class="form-control form-control-sm text-end kadar-input" ' +
-                    'placeholder="0.00" value="' + (kadar !== '' ? formatAmount(parseFloat(kadar) || 0) : '') + '">' +
-                '</td>' +
-                '<td class="text-center" style="vertical-align:top;padding-top:10px;">' +
-                    '<input type="text" name="jumlah" class="form-control form-control-sm text-end jumlah-input" ' +
-                    'value="' + jumlah + '" readonly tabindex="-1">' +
-                '</td>' +
+                '<td class="text-center text-muted small">—</td>' +
+                '<td class="text-center text-muted small">—</td>' +
+                '<td class="text-center text-muted small">—</td>' +
+                '<td class="text-center text-muted small">—</td>' +
                 '<td class="text-center" style="vertical-align:middle;">' +
                     '<div class="d-flex flex-column gap-1 align-items-stretch">' +
                         '<button type="button" class="btn btn-sm btn-primary btn-tambah-spec" style="font-size:0.72rem;">+ Spesifikasi</button>' +
@@ -397,6 +374,12 @@ $(document).ready(function () {
         spec = spec || {};
         var uuid = spec.uuid || '';
         var yaTidak = spec.ya_tidak || '';
+        var unit = spec.unit || '';
+        var kuantiti = spec.kuantiti !== '' && spec.kuantiti != null ? spec.kuantiti : '';
+        var kadar = spec.kadar !== '' && spec.kadar != null ? spec.kadar : '';
+        var locked = (unit === 'HB' || unit === 'L/S');
+        if (locked) kuantiti = 1;
+        var jumlah = formatAmount((parseFloat(kuantiti) || 0) * (parseFloat(kadar) || 0));
         var files = spec.files || [];
         var tempId = 'row-' + (++rowSeq);
         var uploadId = 'upload-' + tempId;
@@ -413,8 +396,18 @@ $(document).ready(function () {
                     'placeholder="Penerangan spesifikasi..." style="resize:vertical;min-height:52px;">' +
                     htmlEscape(spec.spesifikasi || '') + '</textarea>' +
                 '</td>' +
-                '<td class="text-center text-muted small">—</td>' +
-                '<td class="text-center text-muted small">—</td>' +
+                '<td class="text-center" style="vertical-align:top;padding-top:10px;">' +
+                    '<select name="unit" class="form-select form-select-sm unit-select">' +
+                        '<option value="">—</option>' +
+                        '<option value="HB"' + (unit === 'HB' ? ' selected' : '') + '>HB</option>' +
+                        '<option value="L/S"' + (unit === 'L/S' ? ' selected' : '') + '>L/S</option>' +
+                        '<option value="Unit"' + (unit === 'Unit' ? ' selected' : '') + '>Unit</option>' +
+                    '</select>' +
+                '</td>' +
+                '<td class="text-center" style="vertical-align:top;padding-top:10px;">' +
+                    '<input type="number" name="kuantiti" class="form-control form-control-sm text-center qty-input" ' +
+                    'min="0" step="1" value="' + htmlEscape(kuantiti) + '"' + (locked ? ' readonly' : '') + '>' +
+                '</td>' +
                 '<td class="text-center" style="vertical-align:top;padding-top:10px;">' +
                     '<select name="ya_tidak" class="form-select form-select-sm">' +
                         '<option value=""' + (yaTidak === '' ? ' selected' : '') + '>—</option>' +
@@ -440,8 +433,14 @@ $(document).ready(function () {
                         '<div class="chips-container" id="' + chipId + '" style="display:flex;flex-wrap:wrap;gap:4px;"></div>' +
                     '</div>' +
                 '</td>' +
-                '<td class="text-center text-muted small">—</td>' +
-                '<td class="text-center text-muted small">—</td>' +
+                '<td class="text-center" style="vertical-align:top;padding-top:10px;">' +
+                    '<input type="text" name="kadar" class="form-control form-control-sm text-end kadar-input" ' +
+                    'placeholder="0.00" value="' + (kadar !== '' ? formatAmount(parseFloat(kadar) || 0) : '') + '">' +
+                '</td>' +
+                '<td class="text-center" style="vertical-align:top;padding-top:10px;">' +
+                    '<input type="text" name="jumlah" class="form-control form-control-sm text-end jumlah-input" ' +
+                    'value="' + jumlah + '" readonly tabindex="-1">' +
+                '</td>' +
                 '<td class="text-center" style="vertical-align:middle;">' +
                     '<button type="button" class="btn btn-sm btn-outline-danger btn-hapus-spec" style="font-size:0.72rem;width:100%;">Hapus</button>' +
                 '</td>' +
@@ -515,30 +514,30 @@ $(document).ready(function () {
         return Number(n).toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
-    function recalcItemJumlah($itemRow) {
-        var qty = parseAmount($itemRow.find('[name="kuantiti"]').val());
-        var kadar = parseAmount($itemRow.find('[name="kadar"]').val());
-        $itemRow.find('[name="jumlah"]').val(formatAmount(qty * kadar));
+    function recalcItemJumlah($row) {
+        var qty = parseAmount($row.find('[name="kuantiti"]').val());
+        var kadar = parseAmount($row.find('[name="kadar"]').val());
+        $row.find('[name="jumlah"]').val(formatAmount(qty * kadar));
         updateJumlahKeseluruhan();
     }
 
     function updateJumlahKeseluruhan() {
         var total = 0;
-        $('#tbl-spesifikasi-body tr.item-row').each(function () {
+        $('#tbl-spesifikasi-body tr.spec-row').each(function () {
             total += parseAmount($(this).find('[name="jumlah"]').val());
         });
         $('#jumlah-keseluruhan').text(formatAmount(total));
     }
 
-    function applyUnitRule($itemRow) {
-        var unit = $itemRow.find('[name="unit"]').val();
-        var $qty = $itemRow.find('[name="kuantiti"]');
+    function applyUnitRule($row) {
+        var unit = $row.find('[name="unit"]').val();
+        var $qty = $row.find('[name="kuantiti"]');
         if (unit === 'HB' || unit === 'L/S') {
             $qty.val(1).prop('readonly', true);
         } else {
             $qty.prop('readonly', false);
         }
-        recalcItemJumlah($itemRow);
+        recalcItemJumlah($row);
     }
 
     function uploadFile(itemUuid, file, $chips, $tr, fileType) {
@@ -621,6 +620,10 @@ $(document).ready(function () {
                 specs.push({
                     uuid: $spec.data('uuid') || null,
                     spesifikasi: ($spec.find('[name="spesifikasi"]').val() || '').trim(),
+                    unit: $spec.find('[name="unit"]').val() || null,
+                    kuantiti: parseAmount($spec.find('[name="kuantiti"]').val()),
+                    kadar: parseAmount($spec.find('[name="kadar"]').val()),
+                    jumlah: parseAmount($spec.find('[name="jumlah"]').val()),
                     ya_tidak: $spec.find('[name="ya_tidak"]').val() || null,
                     catatan: ($spec.find('[name="catatan"]').val() || '').trim() || null,
                     sort_order: sIdx,
@@ -629,10 +632,10 @@ $(document).ready(function () {
             items.push({
                 uuid: $item.data('uuid') || null,
                 nama_item: ($item.find('[name="nama_item"]').val() || '').trim(),
-                unit: $item.find('[name="unit"]').val() || null,
-                kuantiti: parseAmount($item.find('[name="kuantiti"]').val()),
-                kadar: parseAmount($item.find('[name="kadar"]').val()),
-                jumlah: parseAmount($item.find('[name="jumlah"]').val()),
+                unit: null,
+                kuantiti: null,
+                kadar: null,
+                jumlah: null,
                 sort_order: idx,
                 specs: specs,
             });
@@ -658,14 +661,6 @@ $(document).ready(function () {
                 $nama.removeClass('is-invalid');
             }
 
-            var $unit = $item.find('[name="unit"]');
-            if (!$unit.val()) {
-                $unit.addClass('is-invalid');
-                valid = false;
-            } else {
-                $unit.removeClass('is-invalid');
-            }
-
             var $specs = getItemSpecs($item);
             if ($specs.length === 0) {
                 valid = false;
@@ -674,12 +669,21 @@ $(document).ready(function () {
             }
 
             $specs.each(function () {
-                var $ta = $(this).find('[name="spesifikasi"]');
+                var $spec = $(this);
+                var $ta = $spec.find('[name="spesifikasi"]');
                 if (!$ta.val().trim()) {
                     $ta.addClass('is-invalid');
                     valid = false;
                 } else {
                     $ta.removeClass('is-invalid');
+                }
+
+                var $unit = $spec.find('[name="unit"]');
+                if (!$unit.val()) {
+                    $unit.addClass('is-invalid');
+                    valid = false;
+                } else {
+                    $unit.removeClass('is-invalid');
                 }
             });
         });
@@ -701,19 +705,30 @@ $(document).ready(function () {
             data: JSON.stringify({ items: items, status: 'draft', user_id: USER_ID }),
             success: function (response) {
                 if (response && response.success && response.data) {
-                    renderFromServer(response.data);
+                    if (typeof callback === 'function') {
+                        callback(response);
+                        return;
+                    }
+
                     showToast('Spesifikasi berjaya disimpan.', 'success');
-                    if (typeof callback === 'function') callback(response);
+                    setTimeout(function () {
+                        window.location.href = LIST_URL;
+                    }, 600);
                 } else {
                     showToast('Gagal menyimpan. Sila cuba lagi.', 'danger');
+                    setBusy('#btn-simpan', false, 'Simpan');
                 }
             },
             error: function (xhr) {
                 var msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Gagal menyimpan.';
                 showToast(msg, 'danger');
+                setBusy('#btn-simpan', false, 'Simpan');
             },
             complete: function () {
-                setBusy('#btn-simpan', false, 'Simpan');
+                // Keep busy state when redirecting after a plain Simpan.
+                if (typeof callback === 'function') {
+                    setBusy('#btn-simpan', false, 'Simpan');
+                }
             }
         });
     }
@@ -808,6 +823,7 @@ $(document).ready(function () {
         if (!confirm('Hapus spesifikasi ini?')) return;
         $(this).closest('tr').remove();
         reindexGroups();
+        updateJumlahKeseluruhan();
     });
 
     $('#tbl-spesifikasi-body').on('change', '.unit-select', function () {

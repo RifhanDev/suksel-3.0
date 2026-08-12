@@ -6,6 +6,11 @@
     <link href="{{ asset('css/components/button-components.css') }}" rel="stylesheet">
     <link href="{{ asset('css/components/content-card.css') }}" rel="stylesheet">
     <style>
+        .borang-instruction {
+            font-size: 0.78rem;
+            color: #475569;
+            line-height: 1.55;
+        }
         .borang-title-bar {
             background: #e2e8f0;
             color: #1e293b;
@@ -16,21 +21,8 @@
             padding: 10px 16px;
             border-radius: 6px 6px 0 0;
         }
-        .borang-instruction {
-            font-size: 0.78rem;
-            color: #475569;
-            line-height: 1.55;
-        }
         #tbl-specifikasi {
             border: 1px solid #e2e8f0;
-        }
-        #tbl-specifikasi thead th {
-            background: #1e3a5f;
-            color: #fff;
-            font-size: 0.78rem;
-            letter-spacing: 0.04em;
-            text-transform: uppercase;
-            border-color: #1e3a5f !important;
         }
         #tbl-specifikasi th,
         #tbl-specifikasi td {
@@ -41,12 +33,17 @@
         #tbl-specifikasi td:last-child {
             border-right: none !important;
         }
-        .spec-item-row td {
-            background: #f8fafc;
+        /* Bekalan (non-kerja) styles */
+        #tbl-specifikasi:not(.spec-kerja-table) thead th {
+            background: #1e3a5f;
+            color: #fff;
+            font-size: 0.78rem;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            border-color: #1e3a5f !important;
         }
-        .spec-detail-row td {
-            background: #fff;
-        }
+        .spec-item-row td { background: #f8fafc; }
+        .spec-detail-row td { background: #fff; }
         .spec-text-box {
             border: 1px solid #cbd5e1;
             border-radius: 4px;
@@ -120,7 +117,6 @@
         .loading-check { display: none; width: 28px; height: 28px; color: #22c55e; }
     </style>
 @endsection
-
 @section('content')
     @include('tenders.forms._view_only_lock')
 
@@ -132,7 +128,11 @@
         $itemUuid = $item['uuid'] ?? '';
         $section = $item['section'] ?? '';
         $kembaliUrl = $returnUrl ?? route('tenders.show', $tender->id) . '#vt-dokumen-tawaran';
-        $hasDetailRows = collect($rows)->contains(fn ($row) => ($row['kind'] ?? '') === 'detail');
+        $hasDetailRows = collect($rows)->contains(
+            fn ($row) => in_array($row['kind'] ?? '', ['detail', 'spec'], true)
+        );
+        $isKerjaSpec = ($section === 'spesifikasi_kerja')
+            || collect($rows)->contains(fn ($row) => ($row['kind'] ?? '') === 'spec');
     @endphp
 
     @unless ($modalEmbed ?? false)
@@ -164,26 +164,62 @@
     </div>
 
     <div class="content-card mb-4 p-0">
-        <div class="borang-title-bar">Item Spesifikasi & Maklum Balas</div>
-        <div class="content-card-body p-4 pt-3">
-            @unless ($viewOnly ?? false)
-            <p class="borang-instruction mb-3">
-                Isi <strong>Cadangan Petender</strong> bagi setiap sub-spesifikasi dan <strong>Tawaran Harga</strong> bagi setiap item utama.
-                Ruangan <strong>Pematuhan</strong> ditetapkan oleh PTJ sahaja.
-            </p>
-            @else
-            <p class="borang-instruction mb-3">Paparan maklum balas spesifikasi (mod baca sahaja).</p>
-            @endunless
+        @if ($isKerjaSpec)
+            <div class="content-card-header p-4 pb-3 border-bottom">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="content-card-icon" style="width:38px;height:38px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                            <line x1="8" y1="6" x2="16" y2="6"></line>
+                            <line x1="8" y1="10" x2="16" y2="10"></line>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="content-card-title mb-0" style="font-size:1rem;">Senarai Spesifikasi</h3>
+                        <p class="text-muted mb-0" style="font-size:0.78rem;">
+                            @unless ($viewOnly ?? false)
+                                Isi Kadar (RM) bagi setiap spesifikasi. Jumlah dikira automatik.
+                            @else
+                                Paparan maklum balas spesifikasi (mod baca sahaja).
+                            @endunless
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="content-card-body p-4">
+                @include('tenders.dokumen.partials.specification_table', [
+                    'content' => $content,
+                    'dok' => $item,
+                    'tender' => $tender,
+                    'mode' => ($viewOnly ?? false) ? 'admin' : 'vendor',
+                    'vendorCanEdit' => ! ($viewOnly ?? false),
+                    'standalone' => true,
+                ])
+            </div>
+        @else
+            <div class="borang-title-bar">Item Spesifikasi & Maklum Balas</div>
+            <div class="content-card-body p-4 pt-3">
+                @unless ($viewOnly ?? false)
+                <p class="borang-instruction mb-3">
+                    Isi <strong>Cadangan Petender</strong> bagi setiap sub-spesifikasi dan <strong>Tawaran Harga</strong> bagi setiap item utama.
+                    Ruangan <strong>Pematuhan</strong> ditetapkan oleh PTJ sahaja.
+                </p>
+                @else
+                <p class="borang-instruction mb-3">Paparan maklum balas spesifikasi (mod baca sahaja).</p>
+                @endunless
 
-            @include('tenders.dokumen.partials.specification_table', [
-                'content' => $content,
-                'dok' => $item,
-                'tender' => $tender,
-                'mode' => ($viewOnly ?? false) ? 'admin' : 'vendor',
-                'vendorCanEdit' => ! ($viewOnly ?? false),
-                'standalone' => true,
-            ])
-        </div>
+                @include('tenders.dokumen.partials.specification_table', [
+                    'content' => $content,
+                    'dok' => $item,
+                    'tender' => $tender,
+                    'mode' => ($viewOnly ?? false) ? 'admin' : 'vendor',
+                    'vendorCanEdit' => ! ($viewOnly ?? false),
+                    'standalone' => true,
+                ])
+            </div>
+        @endif
     </div>
 
     <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
@@ -221,6 +257,11 @@ $(document).ready(function () {
     var SECTION = @json($section);
     var VIEW_ONLY = @json($viewOnly ?? false);
     var IS_ADMIN_MODE = @json($viewOnly ?? false);
+    var IS_KERJA = @json($isKerjaSpec);
+
+    function parseMoney(value) {
+        return parseFloat(String(value || '').replace(/,/g, '')) || 0;
+    }
 
     function formatMoney(value) {
         return (parseFloat(value) || 0).toLocaleString('ms-MY', {
@@ -231,41 +272,64 @@ $(document).ready(function () {
 
     function updateSpecTotal() {
         var total = 0;
-        $('.dokumen-spec-price').each(function () {
-            total += parseFloat($(this).val()) || 0;
-        });
+        if (IS_KERJA) {
+            $('.dokumen-spec-kadar').each(function () {
+                var qty = parseMoney($(this).data('qty'));
+                var kadar = parseMoney($(this).val());
+                var jumlah = Math.round((qty * kadar) * 100) / 100;
+                var uuid = $(this).data('item-uuid');
+                $('.dokumen-spec-jumlah[data-item-uuid="' + uuid + '"]').val(formatMoney(jumlah));
+                total += jumlah;
+            });
+        } else {
+            $('.dokumen-spec-price').each(function () {
+                total += parseMoney($(this).val());
+            });
+        }
         $('#spec-price-total').text(formatMoney(total));
     }
 
     function collectResponses() {
         var data = { item_prices: {}, details: {} };
 
-        $('.dokumen-spec-price').each(function () {
-            var uuid = $(this).data('item-uuid');
-            if (uuid) {
-                data.item_prices[uuid] = $(this).val() || '';
-            }
-        });
+        if (IS_KERJA) {
+            $('.dokumen-spec-kadar').each(function () {
+                var uuid = $(this).data('item-uuid');
+                if (uuid) {
+                    data.item_prices[uuid] = $(this).val() || '';
+                }
+            });
+        } else {
+            $('.dokumen-spec-price').each(function () {
+                var uuid = $(this).data('item-uuid');
+                if (uuid) {
+                    data.item_prices[uuid] = $(this).val() || '';
+                }
+            });
 
-        $('.dokumen-spec-pematuhan').each(function () {
-            if (!IS_ADMIN_MODE) return;
-            var uuid = $(this).data('detail-uuid');
-            if (!uuid) return;
-            if (!data.details[uuid]) data.details[uuid] = {};
-            data.details[uuid].pematuhan = $(this).val() || '';
-        });
+            $('.dokumen-spec-pematuhan').each(function () {
+                if (!IS_ADMIN_MODE) return;
+                var uuid = $(this).data('detail-uuid');
+                if (!uuid) return;
+                if (!data.details[uuid]) data.details[uuid] = {};
+                data.details[uuid].pematuhan = $(this).val() || '';
+            });
 
-        $('.dokumen-spec-cadangan').each(function () {
-            var uuid = $(this).data('detail-uuid');
-            if (!uuid) return;
-            if (!data.details[uuid]) data.details[uuid] = {};
-            data.details[uuid].cadangan = $(this).val() || '';
-        });
+            $('.dokumen-spec-cadangan').each(function () {
+                var uuid = $(this).data('detail-uuid');
+                if (!uuid) return;
+                if (!data.details[uuid]) data.details[uuid] = {};
+                data.details[uuid].cadangan = $(this).val() || '';
+            });
+        }
 
         return data;
     }
 
-    $(document).on('input change', '.dokumen-spec-price', updateSpecTotal);
+    $(document).on('input change', '.dokumen-spec-price, .dokumen-spec-kadar', updateSpecTotal);
+    $(document).on('input', '.dokumen-spec-kadar', function () {
+        $(this).val(String($(this).val()).replace(/[^\d.]/g, ''));
+    });
     updateSpecTotal();
 
     $('#btn-simpan-spec').on('click', function () {

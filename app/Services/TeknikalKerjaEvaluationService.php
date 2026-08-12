@@ -35,7 +35,7 @@ class TeknikalKerjaEvaluationService
             ->values();
     }
 
-    /** Vendor's tender price — prefers tender_vendors.harga_tawaran, falls back to summing BQ item_prices. */
+    /** Vendor's tender price — prefers tender_vendors.harga_tawaran, falls back to specification offers. */
     public function resolveHargaTawaran(Tender $tender, TenderVendor $vendor): ?float
     {
         if (filled($vendor->harga_tawaran) && (float) $vendor->harga_tawaran > 0) {
@@ -48,21 +48,26 @@ class TeknikalKerjaEvaluationService
             ->where('response_type', 'specification')
             ->get();
 
+        $service = app(VendorDokumenResponseService::class);
         $total = 0.0;
         $hasPrices = false;
 
         foreach ($responses as $response) {
-            $itemPrices = $response->payload['item_prices'] ?? [];
-            if (! is_array($itemPrices)) {
+            $payload = $service->normalizeSpecificationPayload(
+                is_array($response->payload) ? $response->payload : null
+            );
+            $itemPrices = $payload['item_prices'] ?? [];
+            if ($itemPrices === []) {
                 continue;
             }
-
-            foreach ($itemPrices as $value) {
-                if (is_numeric($value) && (float) $value > 0) {
-                    $total += (float) $value;
-                    $hasPrices = true;
-                }
+            if (collect($itemPrices)->contains(fn ($v) => trim((string) $v) !== '')) {
+                $hasPrices = true;
             }
+            $total += $service->calculateSpecificationTotal(
+                $tender,
+                $itemPrices,
+                $response->section
+            );
         }
 
         return $hasPrices ? $total : null;

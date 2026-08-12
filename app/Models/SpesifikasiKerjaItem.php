@@ -42,6 +42,11 @@ class SpesifikasiKerjaItem extends Model
         return $this->hasMany(self::class, 'parent_id')->orderBy('sort_order');
     }
 
+    public function files(): HasMany
+    {
+        return $this->hasMany(SpesifikasiKerjaFile::class, 'spesifikasi_kerja_item_id');
+    }
+
     public function isParentItem(): bool
     {
         return $this->parent_id === null;

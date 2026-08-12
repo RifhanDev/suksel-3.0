@@ -178,12 +178,12 @@ class StosTenderChecklistSync
                     $parent = $this->upsertSpesifikasiKerjaItem($header->id, $item, [
                         'parent_id' => null,
                         'nama_item' => $item['nama_item'] ?? $item['item'] ?? $item['title'] ?? '',
-                        'spesifikasi' => null,
-                        'unit' => $item['unit'] ?? null,
-                        'kuantiti' => $item['kuantiti'] ?? $item['kekerapan'] ?? null,
+                        'spesifikasi' => '',
+                        'unit' => null,
+                        'kuantiti' => null,
                         'ya_tidak' => null,
                         'catatan' => null,
-                        'kadar' => $item['kadar'] ?? null,
+                        'kadar' => null,
                         'sort_order' => $item['sort_order'] ?? $index,
                     ]);
                     $keptIds[] = $parent->id;
@@ -197,11 +197,11 @@ class StosTenderChecklistSync
                             'parent_id' => $parent->id,
                             'nama_item' => null,
                             'spesifikasi' => $spec['spesifikasi'] ?? $spec['title'] ?? '',
-                            'unit' => null,
-                            'kuantiti' => null,
+                            'unit' => $spec['unit'] ?? null,
+                            'kuantiti' => $spec['kuantiti'] ?? $spec['kekerapan'] ?? null,
                             'ya_tidak' => $spec['ya_tidak'] ?? $spec['pematuhan'] ?? null,
                             'catatan' => $spec['catatan'] ?? null,
-                            'kadar' => null,
+                            'kadar' => $spec['kadar'] ?? null,
                             'sort_order' => $spec['sort_order'] ?? $specIndex,
                         ]);
                         $keptIds[] = $child->id;

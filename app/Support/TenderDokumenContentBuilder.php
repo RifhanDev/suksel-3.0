@@ -7,6 +7,7 @@ use App\Models\FinancialChecklistItem;
 use App\Models\KewanganKerjaItem;
 use App\Models\SpesifikasiKerjaHeader;
 use App\Models\SpesifikasiKerjaItem;
+use App\Models\SpesifikasiKerjaFile;
 use App\Models\StandardChecklistItem;
 use App\Models\TechnicalChecklistFile;
 use App\Models\TechnicalChecklistItem;
@@ -78,12 +79,14 @@ class TenderDokumenContentBuilder
                 'bil' => $bil,
                 'item_uuid' => $item->uuid,
                 'title' => $item->nama_item ?: $item->spesifikasi,
-                'unit' => $item->unit,
-                'kuantiti' => $item->kuantiti,
-                'kadar' => $item->kadar,
-                'jumlah' => $item->jumlah(),
-                'ya_tidak' => $item->ya_tidak,
-                'catatan' => $item->catatan,
+                'unit' => null,
+                'kuantiti' => null,
+                'quantity' => null,
+                'kadar' => null,
+                'jumlah' => null,
+                'ya_tidak' => null,
+                'catatan' => null,
+                'files' => [],
             ];
 
             foreach ($item->specs as $spec) {
@@ -92,12 +95,24 @@ class TenderDokumenContentBuilder
                     'bil' => null,
                     'item_uuid' => $spec->uuid,
                     'title' => $spec->spesifikasi,
-                    'unit' => null,
-                    'kuantiti' => null,
-                    'kadar' => null,
-                    'jumlah' => null,
+                    'unit' => $spec->unit,
+                    'kuantiti' => $spec->kuantiti,
+                    'quantity' => $spec->kuantiti,
+                    // PTJ reference rate (read-only context); vendor offer uses item_prices.
+                    'kadar' => $spec->kadar,
+                    'jumlah' => $spec->jumlah(),
                     'ya_tidak' => $spec->ya_tidak,
                     'catatan' => $spec->catatan,
+                    'files' => $spec->files->map(fn (SpesifikasiKerjaFile $file) => [
+                        'uuid' => $file->uuid,
+                        'name' => $file->original_name,
+                        'url' => route('tenderDokumen.spesifikasiKerjaFile', [
+                            'tender' => $this->tender->id,
+                            'fileUuid' => $file->uuid,
+                        ]),
+                        'mime_type' => $file->mime_type,
+                        'size' => $file->size,
+                    ])->values()->all(),
                 ];
             }
         }

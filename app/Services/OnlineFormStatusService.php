@@ -70,14 +70,28 @@ class OnlineFormStatusService
             ->where('form_key', $formKey)
             ->first();
 
-        if (! $record) {
-            return $this->formatStatus('draft');
+        if ($record) {
+            $formatted = $this->formatStatus($record->status);
+            $formatted['summary'] = $record->summary['text'] ?? $record->summary['label'] ?? null;
+
+            return $formatted;
         }
 
-        $formatted = $this->formatStatus($record->status);
-        $formatted['summary'] = $record->summary['text'] ?? $record->summary['label'] ?? null;
+        // Heal: domain/payload data exists but status row was never written
+        // (e.g. dual-role Vendor+Jawatankuasa previously skipped trackVendorFormSubmitted).
+        $inferred = $this->inferVendorSubmittedFromData($tender, $vendorId, $formKey);
+        if ($inferred !== null) {
+            $this->markSubmitted($tender, $vendorId, $formKey, [
+                'text' => $inferred,
+            ]);
 
-        return $formatted;
+            $formatted = $this->formatStatus('submitted');
+            $formatted['summary'] = $inferred;
+
+            return $formatted;
+        }
+
+        return $this->formatStatus('draft');
     }
 
     /**
@@ -85,17 +99,60 @@ class OnlineFormStatusService
      */
     public function vendorStatusesForTender(Tender $tender, int $vendorId): array
     {
-        return TenderVendorOnlineFormStatus::query()
-            ->where('tender_id', $tender->id)
-            ->where('vendor_id', $vendorId)
-            ->get()
-            ->mapWithKeys(function (TenderVendorOnlineFormStatus $record) {
-                $formatted = $this->formatStatus($record->status);
-                $formatted['summary'] = $record->summary['text'] ?? null;
+        $knownKeys = array_values(OnlineFormRegistry::actionPathToFormKey());
+        $statuses = [];
 
-                return [$record->form_key => $formatted];
-            })
-            ->all();
+        foreach ($knownKeys as $formKey) {
+            $statuses[$formKey] = $this->vendorStatus($tender, $vendorId, $formKey);
+        }
+
+        return $statuses;
+    }
+
+    /**
+     * Detect already-saved vendor form data when online-form status is missing.
+     */
+    protected function inferVendorSubmittedFromData(Tender $tender, int $vendorId, string $formKey): ?string
+    {
+        $payload = app(VendorFormPayloadService::class)->get($tender, $vendorId, $formKey);
+        if (is_array($payload) && $payload !== []) {
+            $ignore = ['vendor_id', 'user_id', '_token', 'status'];
+            foreach ($payload as $key => $value) {
+                if (in_array($key, $ignore, true)) {
+                    continue;
+                }
+                if ($value === null || $value === '' || $value === []) {
+                    continue;
+                }
+
+                return OnlineFormRegistry::label($formKey) . ' disimpan';
+            }
+        }
+
+        return match ($formKey) {
+            'lembaran_imbangan' => LembaranImbangan::query()
+                ->where('tender_id', $tender->id)
+                ->where('vendor_id', $vendorId)
+                ->where('status', 'submitted')
+                ->exists()
+                ? 'Lembaran imbangan disimpan'
+                : null,
+            'bon_saham' => BonSaham::query()
+                ->where('tender_id', $tender->id)
+                ->where('vendor_id', $vendorId)
+                ->where('status', 'submitted')
+                ->exists()
+                ? 'Bon atau saham disimpan'
+                : null,
+            'prestasi_kerja' => TenderPrestasiKerja::query()
+                ->where('tender_id', $tender->id)
+                ->where('vendor_id', $vendorId)
+                ->where('status', 'submitted')
+                ->exists()
+                ? 'Prestasi kerja disimpan'
+                : null,
+            default => null,
+        };
     }
 
     /**
