@@ -3,35 +3,140 @@
 @section('styles')
 <style>
     :root {
-        --kewangan-accent: #c41e3a;
-        --kewangan-accent-dark: #8b1428;
-        --p1-gradient: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
+        --sg-red: #dc2626;
+        --sg-red-dark: #991b1b;
+        --sg-red-light: #fef2f2;
     }
 
     .b1-card {
-        border: none;
+        border: 1px solid #e2e8f0;
         border-radius: 16px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
         background: #ffffff;
         overflow: hidden;
     }
 
     .b1-header-banner {
-        background: var(--p1-gradient);
-        padding: 1.75rem 2rem;
+        background: linear-gradient(135deg, var(--sg-red) 0%, var(--sg-red-dark) 100%);
+        padding: 1.5rem 1.75rem;
         color: #ffffff;
-        position: relative;
+    }
+
+    .btn-sebelumnya {
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        color: #475569;
+        border-radius: 10px;
+        font-weight: 600;
+        padding: 0.45rem 1rem;
+        transition: all 0.2s ease-in-out;
+    }
+
+    .btn-sebelumnya:hover {
+        background: #f1f5f9;
+        color: #1e293b;
+    }
+
+    .info-top-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        padding: 1.25rem 1.5rem;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
+    }
+
+    .info-item-label {
+        font-size: 0.725rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: #64748b;
+        letter-spacing: 0.5px;
+        margin-bottom: 0.25rem;
+    }
+
+    .info-item-value {
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: #1e293b;
     }
 
     .section-title-bar {
-        background: #f8fafc;
-        border-left: 4px solid #2563eb;
-        padding: 0.75rem 1.25rem;
-        border-radius: 0 10px 10px 0;
+        background: linear-gradient(90deg, rgba(220, 38, 38, 0.04) 0%, rgba(248, 250, 252, 0.9) 100%);
+        border: 1px solid #e2e8f0;
+        border-left: 4px solid var(--sg-red);
+        padding: 0.85rem 1.25rem;
+        border-radius: 12px;
         margin-bottom: 1.25rem;
         display: flex;
         align-items: center;
         justify-content: space-between;
+        gap: 1rem;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+    }
+
+    .section-title-bar-success {
+        background: linear-gradient(90deg, rgba(4, 120, 87, 0.04) 0%, rgba(248, 250, 252, 0.9) 100%);
+        border-left-color: #047857;
+    }
+
+    .section-icon-box {
+        width: 40px;
+        height: 40px;
+        background: rgba(220, 38, 38, 0.1);
+        color: var(--sg-red);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        flex-shrink: 0;
+    }
+
+    .section-icon-box-success {
+        background: rgba(4, 120, 87, 0.1);
+        color: #047857;
+    }
+
+    .section-badge-pill {
+        background: #fef2f2;
+        color: var(--sg-red);
+        border: 1px solid rgba(220, 38, 38, 0.2);
+        font-weight: 600;
+        font-size: 0.725rem;
+        padding: 0.25rem 0.65rem;
+        border-radius: 50rem;
+        display: inline-flex;
+        align-items: center;
+        white-space: nowrap;
+        box-shadow: 0 2px 4px rgba(220, 38, 38, 0.05);
+    }
+
+    .section-badge-pill-success {
+        background: #ecfdf5;
+        color: #047857;
+        border: 1px solid #a7f3d0;
+        font-weight: 600;
+        font-size: 0.725rem;
+        padding: 0.25rem 0.65rem;
+        border-radius: 50rem;
+        display: inline-flex;
+        align-items: center;
+        white-space: nowrap;
+        box-shadow: 0 2px 4px rgba(4, 120, 87, 0.05);
+    }
+
+    .section-badge-pill-primary {
+        background: #eff6ff;
+        color: #1d4ed8;
+        border: 1px solid #bfdbfe;
+        font-weight: 600;
+        font-size: 0.725rem;
+        padding: 0.25rem 0.65rem;
+        border-radius: 50rem;
+        display: inline-flex;
+        align-items: center;
+        white-space: nowrap;
+        box-shadow: 0 2px 4px rgba(29, 78, 216, 0.05);
     }
 
     /* Table Styling */
@@ -40,7 +145,6 @@
         border-radius: 14px;
         overflow: hidden;
         background: #ffffff;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
     }
 
     .table-modern-b1 {
@@ -51,13 +155,13 @@
     }
 
     .table-modern-b1 thead th {
-        background: #1e3a8a;
+        background: #1e293b;
         color: #ffffff;
         font-weight: 700;
         font-size: 0.775rem;
         text-transform: uppercase;
         letter-spacing: 0.5px;
-        padding: 0.9rem 1.25rem;
+        padding: 0.85rem 1.25rem;
         border-bottom: none;
         white-space: nowrap;
     }
@@ -71,7 +175,7 @@
     }
 
     .table-modern-b1 tbody td {
-        padding: 0.9rem 1.25rem;
+        padding: 0.85rem 1.25rem;
         vertical-align: middle;
         border-bottom: 1px solid #f1f5f9;
         font-size: 0.875rem;
@@ -80,7 +184,7 @@
 
     .btn-action-papar {
         background: #eff6ff;
-        color: #2563eb;
+        color: #1d4ed8;
         border: 1px solid #bfdbfe;
         font-weight: 600;
         font-size: 0.8rem;
@@ -90,10 +194,10 @@
     }
 
     .btn-action-papar:hover {
-        background: #2563eb;
+        background: #1d4ed8;
         color: #ffffff;
-        border-color: #2563eb;
-        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+        border-color: #1d4ed8;
+        box-shadow: 0 4px 12px rgba(29, 78, 216, 0.25);
     }
 
     .status-badge-sempurna {
@@ -126,7 +230,7 @@
         background: #f8fafc;
         border: 1px solid #e2e8f0;
         border-radius: 14px;
-        padding: 1.5rem;
+        padding: 1.25rem 1.5rem;
     }
 
     /* Modal Styling */
@@ -138,7 +242,7 @@
     }
 
     .modal-header-custom {
-        background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
+        background: linear-gradient(135deg, var(--sg-red) 0%, var(--sg-red-dark) 100%);
         color: #ffffff;
         padding: 1.25rem 1.75rem;
     }
@@ -152,8 +256,22 @@
     }
 
     .form-control-modern:focus, .form-select-modern:focus {
-        border-color: #2563eb;
-        box-shadow: 0 0 0 0.2rem rgba(37, 99, 235, 0.15);
+        border-color: var(--sg-red);
+        box-shadow: 0 0 0 0.2rem rgba(220, 38, 38, 0.15);
+    }
+
+    .btn-submit-danger {
+        background: linear-gradient(135deg, var(--sg-red) 0%, var(--sg-red-dark) 100%);
+        border: none;
+        color: #ffffff;
+        box-shadow: 0 4px 12px rgba(220, 38, 38, 0.2);
+        font-weight: 700;
+    }
+
+    .btn-submit-danger:hover {
+        color: #ffffff;
+        box-shadow: 0 6px 16px rgba(220, 38, 38, 0.3);
+        transform: translateY(-1px);
     }
 </style>
 @endsection
@@ -168,43 +286,107 @@
 
 <div class="container-fluid px-0 py-2">
 
-    {{-- Breadcrumb --}}
-    <nav aria-label="breadcrumb" class="mb-3">
-        <ol class="breadcrumb mb-0">
-            <li class="breadcrumb-item"><a href="#" class="text-muted text-decoration-none"><i class="bi bi-house-door me-1"></i>STOS</a></li>
-            <li class="breadcrumb-item"><a href="{{ route('penilaianKewangan') }}" class="text-muted text-decoration-none">Penilaian Kewangan</a></li>
-            <li class="breadcrumb-item"><a href="{{ $backToTenderUrl }}" class="text-muted text-decoration-none">Penilaian Kewangan (Kerja)</a></li>
-            <li class="breadcrumb-item active fw-medium text-danger" aria-current="page">Borang 1: Analisa Kesempurnaan Tender</li>
-        </ol>
-    </nav>
+    {{-- Breadcrumb & Navigation Header --}}
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-3">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="#" class="text-muted text-decoration-none"><i class="bi bi-house-door me-1"></i>STOS</a></li>
+                <li class="breadcrumb-item"><a href="{{ route('penilaianKewangan') }}" class="text-muted text-decoration-none">Penilaian Kewangan</a></li>
+                <li class="breadcrumb-item"><a href="{{ $backToTenderUrl }}" class="text-muted text-decoration-none">Penilaian Kewangan (Kerja)</a></li>
+                <li class="breadcrumb-item active fw-medium text-danger" aria-current="page">Borang 1</li>
+            </ol>
+        </nav>
+        <a href="{{ $backToTenderUrl }}" class="btn btn-sm btn-sebelumnya d-inline-flex align-items-center gap-1">
+            <i class="bi bi-arrow-left"></i>
+            <span>Kembali ke Borang Penilaian</span>
+        </a>
+    </div>
 
     {{-- Header Banner Card --}}
     <div class="b1-card mb-4">
         <div class="b1-header-banner d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
             <div>
                 <div class="d-flex align-items-center gap-2 mb-2">
-                    <span class="badge bg-white text-primary px-2.5 py-1 rounded-pill small fw-bold">Peringkat Pertama</span>
-                    <span class="badge bg-white bg-opacity-20 text-white px-2.5 py-1 rounded-pill small">BORANG 1</span>
+                    <span class="badge bg-warning text-white px-2.5 py-1 rounded-pill small fw-semibold">Peringkat Pertama</span>
                 </div>
-                <h3 class="fw-bold mb-1 text-white" style="letter-spacing: -0.5px;">BORANG 1 - ANALISA KESEMPURNAAN TENDER</h3>
+                <h3 class="fw-bold mb-1 text-white" style="letter-spacing: -0.5px;">BORANG 1 - Analisa Kesempurnaan Tender</h3>
                 <p class="text-white-50 mb-0 small">Semakan pematuhan kriteria kesempurnaan tender & dokumen asas perolehan kerja.</p>
             </div>
-            <div class="d-flex align-items-center gap-2">
-                <a href="{{ $backToTenderUrl }}" class="btn btn-light btn-sm fw-semibold shadow-sm px-3">
-                    <i class="bi bi-arrow-left me-1"></i>Kembali ke Borang Penilaian
-                </a>
+        </div>
+    </div>
+
+    {{-- Top Info Grid Card --}}
+    <div class="info-top-card p-3.5 mb-4" style="border: 1px solid #e2e8f0; border-radius: 16px; background: #ffffff; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);">
+        <div class="row g-3 align-items-center">
+            <div class="col-12 col-sm-6 col-md-3 border-end">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-3 p-2.5 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 44px; height: 44px; background: #fef2f2; color: #dc2626;">
+                        <i class="bi bi-archive fs-5"></i>
+                    </div>
+                    <div>
+                        <div class="info-item-label text-muted fw-bold text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em;">No. Sebut Harga / Tender</div>
+                        <div class="info-item-value text-danger font-monospace fw-bold" style="font-size: 0.95rem;">QT210000000023741</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-sm-6 col-md-3 border-end">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-3 p-2.5 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 44px; height: 44px; background: #eff6ff; color: #2563eb;">
+                        <i class="bi bi-building fs-5"></i>
+                    </div>
+                    <div>
+                        <div class="info-item-label text-muted fw-bold text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em;">PTJ Perolehan</div>
+                        <div class="info-item-value text-dark fw-bold" style="font-size: 0.88rem;">JABATAN PENGAIRAN DAN SALIRAN</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-sm-6 col-md-3 border-end">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-3 p-2.5 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 44px; height: 44px; background: #fffbeb; color: #d97706;">
+                        <i class="bi bi-hourglass-split fs-5"></i>
+                    </div>
+                    <div>
+                        <div class="info-item-label text-muted fw-bold text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em;">Status Proses</div>
+                        <div class="mt-1">
+                            <span class="badge bg-warning bg-opacity-10 text-warning-emphasis border border-warning border-opacity-25 px-2.5 py-1 rounded-pill fw-semibold" style="font-size: 0.72rem;">
+                                Menunggu Pengesahan
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-sm-6 col-md-3">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-3 p-2.5 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 44px; height: 44px; background: #ecfdf5; color: #059669;">
+                        <i class="bi bi-calendar-event fs-5"></i>
+                    </div>
+                    <div>
+                        <div class="info-item-label text-muted fw-bold text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em;">Sah Laku Tamat</div>
+                        <div class="info-item-value text-dark font-monospace fw-bold" style="font-size: 0.95rem;">17/01/2022</div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
     {{-- Section 1: Kriteria Kesempurnaan Tender --}}
     <div class="b1-card p-4 mb-4">
-        <div class="section-title-bar">
-            <div>
-                <h6 class="fw-bold text-dark mb-0">KRITERIA KESEMPURNAAN TENDER</h6>
-                <small class="text-muted">Sila klik butang <strong>Papar</strong> pada setiap kriteria untuk membuat semakan syarikat.</small>
+        <div class="d-flex align-items-center justify-content-between mb-4">
+            <div class="d-flex align-items-center">
+                <div class="bg-primary-subtle p-2 rounded-2 me-3">
+                    <i class="bi bi-list-check text-primary fs-4"></i>
+                </div>
+                <div>
+                    <h5 class="fw-bold mb-0">Kriteria Kesempurnaan Tender</h5>
+                    <p class="text-secondary small mb-0">Sila klik butang <strong>Papar & Semak</strong> pada setiap kriteria untuk membuat semakan syarikat.</p>
+                </div>
             </div>
-            <span class="badge bg-primary bg-opacity-10 text-primary fw-bold px-3 py-1.5 rounded-pill">7 Kriteria Utama</span>
+            <span class="section-badge-pill-primary ms-auto">
+                <i class="bi bi-shield-check me-1"></i>7 Kriteria Utama
+            </span>
         </div>
 
         <div class="table-modern-wrapper mb-2">
@@ -213,8 +395,8 @@
                     <thead>
                         <tr>
                             <th style="width: 60px;" class="text-center">#</th>
-                            <th>Kriteria-Kriteria Kesempurnaan Tender</th>
-                            <th style="width: 180px;" class="text-center">Tindakan Semakan</th>
+                            <th><i class="bi bi-file-earmark-text text-danger me-1"></i> Kriteria-Kriteria Kesempurnaan Tender</th>
+                            <th style="width: 180px;" class="text-center"><i class="bi bi-sliders text-danger me-1"></i> Tindakan Semakan</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -234,9 +416,9 @@
                             <tr>
                                 <td class="text-center text-muted fw-bold small">{{ $i + 1 }}</td>
                                 <td>
-                                    <div class="d-flex align-items-center gap-2">
-                                        <div class="bg-primary bg-opacity-10 text-primary p-2 rounded-2 d-inline-flex align-items-center justify-content-center" style="width:32px; height:32px;">
-                                            <i class="bi bi-check2-square"></i>
+                                    <div class="d-flex align-items-center gap-2.5">
+                                        <div class="bg-success bg-opacity-10 text-success p-2 rounded-2 d-inline-flex align-items-center justify-content-center" style="width:32px; height:32px; margin-right:10px">
+                                            <i class="bi bi-file-earmark-text"></i>
                                         </div>
                                         <span class="fw-semibold text-dark">{{ $label }}</span>
                                     </div>
@@ -260,12 +442,19 @@
 
     {{-- Section 2: Rumusan & Keputusan Penilaian --}}
     <div class="b1-card p-4 mb-4">
-        <div class="section-title-bar">
-            <div>
-                <h6 class="fw-bold text-dark mb-0">RUMUSAN KEPUTUSAN ANALISA KESEMPURNAAN TENDER</h6>
-                <small class="text-muted">Keputusan akhir kesempurnaan mengikut bilangan petender.</small>
+        <div class="d-flex align-items-center justify-content-between mb-4">
+            <div class="d-flex align-items-center">
+                <div class="bg-success-subtle p-2 rounded-2 me-3">
+                    <i class="bi bi-clipboard-data text-success fs-4"></i>
+                </div>
+                <div>
+                    <h5 class="fw-bold mb-0">Rumusan Keputusan Analisa Kesempurnaan Tender</h5>
+                    <p class="text-secondary small mb-0">Keputusan akhir kesempurnaan mengikut bilangan petender.</p>
+                </div>
             </div>
-            <span class="badge bg-success bg-opacity-10 text-success fw-bold px-3 py-1.5 rounded-pill">Keputusan Semakan</span>
+            <span class="section-badge-pill-success ms-auto">
+                <i class="bi bi-check-circle-fill me-1"></i>Keputusan Semakan
+            </span>
         </div>
 
         <div class="table-modern-wrapper mb-4">
@@ -311,7 +500,7 @@
             <div class="row g-3 align-items-center mb-3">
                 <div class="col-12 col-md-4">
                     <label class="form-label small fw-bold text-secondary text-uppercase mb-1">
-                        <i class="bi bi-people me-1"></i>Bilangan Pembekal Dinilai
+                        <i class="bi bi-people me-1 text-danger"></i>Bilangan Pembekal Dinilai
                     </label>
                     <input type="number" class="form-control form-control-modern font-monospace fw-bold" value="2" style="max-width: 140px;">
                 </div>
@@ -325,12 +514,12 @@
                 </div>
             </div>
 
-            <div class="d-flex justify-content-end gap-2 pt-2 border-top">
+            <div class="d-flex justify-content-end gap-2 pt-3 border-top">
                 <a href="{{ $backToTenderUrl }}" class="btn btn-outline-secondary px-4 rounded-3 fw-semibold">
                     <i class="bi bi-x-circle me-1"></i>Batal
                 </a>
-                <button type="button" class="btn btn-primary px-4 rounded-3 fw-bold shadow-sm" onclick="openSavedModal()">
-                    <i class="bi bi-floppy me-1 font-bold"></i>Simpan Keputusan
+                <button type="button" class="btn btn-submit-danger px-4 rounded-3" onclick="openSavedModal()">
+                    <i class="bi bi-floppy me-1"></i>Simpan Keputusan
                 </button>
             </div>
         </div>
@@ -346,97 +535,113 @@
     <div class="modal-dialog modal-xl modal-dialog-centered">
         <div class="modal-content modal-card">
 
-            <div class="modal-header-custom d-flex justify-content-between align-items-center">
-                <div class="d-flex align-items-center gap-2">
-                    <div class="bg-white bg-opacity-20 p-2 rounded-3 text-white d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
-                        <i class="bi bi-clipboard-check fs-5"></i>
+            <div class="modal-header px-4 pt-4 border-0">
+                <div class="d-flex align-items-center rounded-3 mt-3">
+                    <div class="rounded-2 d-flex align-items-center justify-content-center me-3 flex-shrink-0" style="width: 40px; height: 40px; background: #dbeafe;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                        </svg>
                     </div>
-                    <div>
-                        <h6 class="fw-bold text-white mb-0" id="paparTitle">JENIS KRITERIA</h6>
-                        <small class="text-white-50">Semakan Pematuhan Kriteria Mengikut Syarikat Petender</small>
+                    <div class="flex-shrink-0">
+                        <span class="d-block text-uppercase fw-semibold" style="font-size: 0.62rem; letter-spacing: 0.06em; color: #6b7280;">Kriteria Kesempurnaan Tender</span>
+                        <h6 id="modalDocTitle" class="fw-bold text-dark mb-0" style="font-size: 0.95rem;">Borang Tender Ditandatangani</h6>
                     </div>
+                    <div class="mx-3 align-self-stretch" style="width: 1px; background: #d1d5db;"></div>
+                    <span class="text-secondary" style="font-size: 0.78rem;">Semakan Pematuhan Kriteria Mengikut Syarikat Petender</span>
                 </div>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
 
             <div class="modal-body p-4">
 
-                <div class="alert alert-primary bg-primary bg-opacity-10 border-primary border-opacity-25 d-flex align-items-center gap-2 py-2.5 px-3 rounded-3 mb-3 text-primary small">
-                    <i class="bi bi-info-circle-fill fs-6"></i>
-                    <span>Pilih status kesempurnaan bagi setiap petender dan beri catatan jika perlu.</span>
+                <div class="table-responsive rounded-3 mb-2" style="border: 1px solid #e5e7eb;">
+                    <table class="table align-middle mb-0" style="font-size: 0.85rem;">
+                        <thead style="--bs-table-bg: #d7d7d9; --bs-table-color: #3f3f3f;">
+                            <tr>
+                                <th class="text-center text-uppercase fw-bold py-2" style="width: 80px; font-size: 0.7rem; letter-spacing: 0.05em; background-color: #d7d7d9 !important; color: #3f3f3f !important;">Bil</th>
+                                <th class="text-uppercase fw-bold py-2" style="font-size: 0.7rem; letter-spacing: 0.05em; background-color: #d7d7d9 !important; color: #3f3f3f !important;">Maklumat Dokumen / Syarikat</th>
+                                <th class="text-center text-uppercase fw-bold py-2" style="width: 220px; font-size: 0.7rem; letter-spacing: 0.05em; background-color: #d7d7d9 !important; color: #3f3f3f !important;">Status Kesempurnaan</th>
+                                <th class="text-uppercase fw-bold py-2" style="width: 280px; font-size: 0.7rem; letter-spacing: 0.05em; background-color: #d7d7d9 !important; color: #3f3f3f !important;">Catatan</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="text-center fw-bold text-muted" style="background-color: #efeff0ff; color: #3f3f3fff;">1/2</td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-3 py-1">
+                                        <div class="bg-danger bg-opacity-10 text-danger p-2.5 rounded-3 d-inline-flex align-items-center justify-content-center flex-shrink-0" style="width:40px; height:40px;">
+                                            <i class="bi bi-file-earmark-pdf fs-4"></i>
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold text-dark mb-0.5" style="font-size: 0.88rem;">Syarikat Petender A</div>
+                                            <a href="#" target="_blank" onclick="event.preventDefault();" class="d-inline-flex align-items-center gap-1.5 text-primary text-decoration-none small fw-medium" style="font-size: 0.78rem;">
+                                                <span>Dokumen Sokongan.pdf</span>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    <select class="form-select form-select-modern text-center fw-semibold">
+                                        <option value="Sempurna" selected>Sempurna</option>
+                                        <option value="Tidak">Tidak Sempurna</option>
+                                    </select>
+                                </td>
+                                <td>
+                                    <input type="text" class="form-control form-control-modern" value="" placeholder="Catatan...">
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="text-center fw-bold text-muted" style="background-color: #efeff0ff; color: #3f3f3fff;">2/2</td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-3 py-1">
+                                        <div class="bg-danger bg-opacity-10 text-danger p-2.5 rounded-3 d-inline-flex align-items-center justify-content-center flex-shrink-0" style="width:40px; height:40px;">
+                                            <i class="bi bi-file-earmark-pdf fs-4"></i>
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold text-dark mb-0.5" style="font-size: 0.88rem;">Syarikat Petender B</div>
+                                            <a href="#" target="_blank" onclick="event.preventDefault();" class="d-inline-flex align-items-center gap-1.5 text-primary text-decoration-none small fw-medium" style="font-size: 0.78rem;">
+                                                <span>Dokumen Sokongan.pdf</span>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    <select class="form-select form-select-modern text-center fw-semibold">
+                                        <option value="Sempurna" selected>Sempurna</option>
+                                        <option value="Tidak">Tidak Sempurna</option>
+                                    </select>
+                                </td>
+                                <td>
+                                    <input type="text" class="form-control form-control-modern" value="" placeholder="Catatan...">
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
 
-                <div class="table-modern-wrapper mb-4">
-                    <div class="table-responsive">
-                        <table class="table table-modern-b1 align-middle">
-                            <thead>
-                                <tr>
-                                    <th style="width: 80px;" class="text-center">Bil</th>
-                                    <th>Maklumat Dokumen / Syarikat</th>
-                                    <th style="width: 220px;" class="text-center">Status Kesempurnaan</th>
-                                    <th style="width: 280px;">Catatan</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td class="text-center fw-bold text-muted">1/2</td>
-                                    <td>
-                                        <div class="d-flex align-items-center gap-2.5">
-                                            <div class="bg-danger bg-opacity-10 text-danger p-2 rounded-2 d-inline-flex align-items-center justify-content-center" style="width:34px; height:34px;">
-                                                <i class="bi bi-file-earmark-pdf fs-5"></i>
-                                            </div>
-                                            <div>
-                                                <div class="fw-semibold text-dark">Syarikat Petender A</div>
-                                                <small class="text-muted extra-small">Dokumen Sokongan .pdf</small>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td class="text-center">
-                                        <select class="form-select form-select-modern text-center fw-semibold text-success">
-                                            <option value="Sempurna" selected>Sempurna</option>
-                                            <option value="Tidak">Tidak Sempurna</option>
-                                        </select>
-                                    </td>
-                                    <td>
-                                        <input type="text" class="form-control form-control-modern" value="Lengkap & ditandatangani" placeholder="Catatan...">
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td class="text-center fw-bold text-muted">2/2</td>
-                                    <td>
-                                        <div class="d-flex align-items-center gap-2.5">
-                                            <div class="bg-danger bg-opacity-10 text-danger p-2 rounded-2 d-inline-flex align-items-center justify-content-center" style="width:34px; height:34px;">
-                                                <i class="bi bi-file-earmark-pdf fs-5"></i>
-                                            </div>
-                                            <div>
-                                                <div class="fw-semibold text-dark">Syarikat Petender B</div>
-                                                <small class="text-muted extra-small">Dokumen Sokongan .pdf</small>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td class="text-center">
-                                        <select class="form-select form-select-modern text-center fw-semibold text-success">
-                                            <option value="Sempurna" selected>Sempurna</option>
-                                            <option value="Tidak">Tidak Sempurna</option>
-                                        </select>
-                                    </td>
-                                    <td>
-                                        <input type="text" class="form-control form-control-modern" value="Mematuhi tempoh siap" placeholder="Catatan...">
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
+                <div class="rounded-2 px-3 py-2 d-inline-flex align-items-center gap-2" style="background: #fffbeb; border: 1px solid #fde68a; font-size: 0.78rem; color: #92400e;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="#f59e0b" stroke="#f59e0b" stroke-width="0" class="flex-shrink-0 me-2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12" stroke="white" stroke-width="2" stroke-linecap="round"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16" stroke="white" stroke-width="2" stroke-linecap="round"></line>
+                    </svg>
+                    Pilih status kesempurnaan bagi setiap petender dan beri catatan jika perlu.
                 </div>
+            </div>
 
-                <div class="d-flex justify-content-end gap-2 pt-2 border-top">
-                    <button type="button" class="btn btn-light px-3 fw-semibold" data-bs-dismiss="modal">Tutup</button>
-                    <button type="button" class="btn btn-primary px-4 fw-bold shadow-sm" id="btnSimpanDalamModal">
-                        <i class="bi bi-check2-circle me-1"></i>Simpan Semakan
+            <div class="modal-footer bg-light border-0 px-4 py-3 justify-content-between">
+                <button type="button" class="btn btn-sm btn-secondary px-4 fw-bold" data-bs-dismiss="modal">Batal / Tutup</button>
+                <div class="d-flex align-items-center gap-2">
+                    <span id="readOnlyNoticeStep1" class="badge bg-secondary text-white px-3 py-2 d-none"><i class="bi bi-lock-fill me-1"></i>Mod Paparan Sahaja (Langkah Telah Disahkan)</span>
+                    <button type="button" class="btn btn-sm btn-success px-4 fw-bold" id="btnSimpanDalamModal">
+                        <i class="bi bi-save me-2"></i>Simpan Penilaian
                     </button>
                 </div>
-
             </div>
+
         </div>
     </div>
 </div>
@@ -457,7 +662,7 @@
             <h5 class="fw-bold text-dark mb-1">Berjaya Disimpan!</h5>
             <p class="text-muted small mb-4">Maklumat analisa kesempurnaan tender telah berjaya disimpan ke dalam sistem.</p>
 
-            <button type="button" class="btn btn-primary px-4 py-2 rounded-3 fw-bold w-100" data-bs-dismiss="modal">
+            <button type="button" class="btn btn-submit-danger px-4 py-2 rounded-3 w-100" data-bs-dismiss="modal">
                 Faham & Tutup
             </button>
         </div>
@@ -468,7 +673,10 @@
     document.querySelectorAll('.btn-papar').forEach(btn => {
         btn.addEventListener('click', function(){
             const title = this.dataset.title || 'JENIS KRITERIA';
-            document.getElementById('paparTitle').textContent = title;
+            const titleEl = document.getElementById('modalDocTitle') || document.getElementById('paparTitle');
+            if (titleEl) {
+                titleEl.textContent = title;
+            }
         });
     });
 
