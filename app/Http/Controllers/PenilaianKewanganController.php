@@ -46,8 +46,14 @@ class PenilaianKewanganController extends Controller
 
         $tenders = $this->mapTendersForProcessList(
             $query->orderByDesc('id')
-                ->get(['id', 'uuid', 'no_tender', 'ref_number', 'name', 'submission_datetime', 'status_process_id']),
-            fn (Tender $tender, string $noTender) => route('penilaianKewangan.show', $noTender)
+                ->get(['id', 'uuid', 'no_tender', 'ref_number', 'name', 'submission_datetime', 'status_process_id', 'kategori_perolehan_id']),
+            function (Tender $tender, string $noTender) {
+                $identifier = $tender->uuid ?: $tender->id;
+                if ((int) ($tender->kategori_perolehan_id ?? 0) === 3) {
+                    return route('penilaianKewanganKerja.show', $identifier);
+                }
+                return route('penilaianKewangan.show', $identifier);
+            }
         );
 
         return view('newModule.penilaian_kewangan.index', compact('tenders', 'totalCount'));
@@ -66,6 +72,10 @@ class PenilaianKewanganController extends Controller
                 }
             })
             ->first();
+
+        if ($tender && (int) ($tender->kategori_perolehan_id ?? 0) === 3) {
+            return redirect()->route('penilaianKewanganKerja.show', $tender->uuid ?: $tender->id);
+        }
 
         $no_tender_display = $tender ? ($tender->no_tender ?: $tender->ref_number ?: (string) $tender->id) : $tender_no;
         $tajuk_display = $tender->name ?? '-';

@@ -1006,22 +1006,7 @@
 										<li><a class="submenu-item" href="{{ route('borang5') }}">Borang 5</a></li>
 										<li><a class="submenu-item" href="{{ route('borang6') }}">Borang 6</a></li>
 
-										<li>
-											<a class="submenu-item d-flex justify-content-between align-items-center" data-bs-toggle="collapse"
-												href="#menuBorang7" role="button" aria-expanded="false">
-												<span>Borang 7</span>
-												<svg xmlns="http://www.w3.org/2000/svg" class="submenu-arrow" viewBox="0 0 24 24" fill="none"
-													stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-													<polyline points="9 18 15 12 9 6"></polyline>
-												</svg>
-											</a>
-											<div class="collapse" id="menuBorang7">
-												<ul class="sidebar-submenu sub-submenu-level-2">
-													<li><a class="submenu-item" href="{{ route('serupa') }}">Serupa</a></li>
-													<li><a class="submenu-item" href="{{ route('sebanding') }}">Sebanding</a></li>
-												</ul>
-											</div>
-										</li>
+										<li><a class="submenu-item" href="{{ route('borang7') }}">Borang 7</a></li>
 
 										<li><a class="submenu-item" href="{{ route('borang8') }}">Borang 8</a></li>
 
@@ -1509,22 +1494,7 @@
 										<li><a class="submenu-item" href="{{ route('borang5') }}">Borang 5</a></li>
 										<li><a class="submenu-item" href="{{ route('borang6') }}">Borang 6</a></li>
 
-										<li>
-											<a class="submenu-item d-flex justify-content-between align-items-center" data-bs-toggle="collapse"
-												href="#menuBorang7" role="button" aria-expanded="false">
-												<span>Borang 7</span>
-												<svg xmlns="http://www.w3.org/2000/svg" class="submenu-arrow" viewBox="0 0 24 24" fill="none"
-													stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-													<polyline points="9 18 15 12 9 6"></polyline>
-												</svg>
-											</a>
-											<div class="collapse" id="menuBorang7">
-												<ul class="sidebar-submenu sub-submenu-level-2">
-													<li><a class="submenu-item" href="{{ route('serupa') }}">Serupa</a></li>
-													<li><a class="submenu-item" href="{{ route('sebanding') }}">Sebanding</a></li>
-												</ul>
-											</div>
-										</li>
+										<li><a class="submenu-item" href="{{ route('borang7') }}">Borang 7</a></li>
 
 										<li><a class="submenu-item" href="{{ route('borang8') }}">Borang 8</a></li>
 

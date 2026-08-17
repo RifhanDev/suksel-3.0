@@ -162,6 +162,32 @@
         gap: 0.3rem;
     }
 
+    .status-badge-tidak {
+        background: #fef2f2;
+        color: #b91c1c;
+        border: 1px solid #fecaca;
+        font-weight: 700;
+        font-size: 0.775rem;
+        padding: 0.3rem 0.8rem;
+        border-radius: 50rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+
+    .status-badge-pending {
+        background: #f1f5f9;
+        color: #64748b;
+        border: 1px solid #cbd5e1;
+        font-weight: 600;
+        font-size: 0.775rem;
+        padding: 0.3rem 0.8rem;
+        border-radius: 50rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+
     .confirmation-box {
         background: #f8fafc;
         border: 1px solid #e2e8f0;
@@ -208,10 +234,8 @@
 
 @section('content')
 @php
-    $tenderParam = request('tender') ?: request('tender_no');
-    $backToTenderUrl = $tenderParam 
-        ? route('penilaianKewangan.show', $tenderParam) 
-        : (str_contains(url()->previous(), '/penilaian-kewangan') ? url()->previous() : route('penilaianKewangan'));
+    $tenderIdentifier = isset($tender) ? ($tender->uuid ?: $tender->id ?: $tender_no) : ($tender_no ?? '');
+    $backToTenderUrl = route('penilaianKewanganKerja.show', $tenderIdentifier);
 @endphp
 
 <div class="container-fluid px-0 py-2">
@@ -255,7 +279,7 @@
                     </div>
                     <div>
                         <div class="info-item-label text-muted fw-bold text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em;">No. Sebut Harga / Tender</div>
-                        <div class="info-item-value text-danger font-monospace fw-bold" style="font-size: 0.95rem;">QT210000000023741</div>
+                        <div class="info-item-value text-danger font-monospace fw-bold" style="font-size: 0.95rem;">{{ $no_tender_display ?? $tender->no_tender ?? $tender->ref_number ?? '-' }}</div>
                     </div>
                 </div>
             </div>
@@ -267,7 +291,7 @@
                     </div>
                     <div>
                         <div class="info-item-label text-muted fw-bold text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em;">PTJ Perolehan</div>
-                        <div class="info-item-value text-dark fw-bold" style="font-size: 0.88rem;">JABATAN PENGAIRAN DAN SALIRAN</div>
+                        <div class="info-item-value text-dark fw-bold text-truncate" style="font-size: 0.88rem;" title="{{ $ptj_display ?? $tender->tenderer->name ?? '-' }}">{{ $ptj_display ?? $tender->tenderer->name ?? '-' }}</div>
                     </div>
                 </div>
             </div>
@@ -281,7 +305,7 @@
                         <div class="info-item-label text-muted fw-bold text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em;">Status Proses</div>
                         <div class="mt-1">
                             <span class="badge bg-warning bg-opacity-10 text-warning-emphasis border border-warning border-opacity-25 px-2.5 py-1 rounded-pill fw-semibold" style="font-size: 0.72rem;">
-                                Menunggu Pengesahan
+                                {{ $status_label ?? 'Menunggu Penilaian Kewangan' }}
                             </span>
                         </div>
                     </div>
@@ -295,7 +319,7 @@
                     </div>
                     <div>
                         <div class="info-item-label text-muted fw-bold text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em;">Sah Laku Tamat</div>
-                        <div class="info-item-value text-dark font-monospace fw-bold" style="font-size: 0.95rem;">17/01/2022</div>
+                        <div class="info-item-value text-dark font-monospace fw-bold" style="font-size: 0.95rem;">{{ $sah_laku_tamat ?? '-' }}</div>
                     </div>
                 </div>
             </div>
@@ -315,7 +339,7 @@
                 </div>
             </div>
             <span class="section-badge-pill-primary ms-auto">
-                <i class="bi bi-file-earmark-medical me-1"></i>6 Dokumen Kewangan
+                <i class="bi bi-file-earmark-medical me-1"></i>{{ count($b2DocsList) }} Dokumen Kewangan
             </span>
         </div>
 
@@ -326,23 +350,17 @@
                         <tr>
                             <th style="width: 60px;" class="text-center">#</th>
                             <th><i class="bi bi-file-earmark-text text-danger me-1"></i> Dokumen Sokongan Kewangan</th>
-                            <th style="width: 180px;" class="text-center"><i class="bi bi-sliders text-danger me-1"></i> Tindakan Semakan</th>
+                            <th style="width: 180px;" class="text-center"><i class="bi bi-sliders text-danger me-1"></i> Status Dinilai</th>
+                            <th style="width: 180px;" class="text-center"><i class="bi bi-gear text-danger me-1"></i> Tindakan Semakan</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @php
-                            $docs = [
-                                ['id' => 'imbangan', 'name' => 'Lembaran Imbangan', 'icon' => 'bi-journal-bookmark'],
-                                ['id' => 'penyata_bank', 'name' => 'Penyata Bulanan / Akaun Bank', 'icon' => 'bi-bank'],
-                                ['id' => 'bon_saham', 'name' => 'Bon atau Saham', 'icon' => 'bi-cash-stack'],
-                                ['id' => 'prestasi', 'name' => 'Prestasi Kerja Semasa Petender', 'icon' => 'bi-briefcase'],
-                                ['id' => 'laporan_ca', 'name' => 'Laporan Bank atau Borang CA', 'icon' => 'bi-file-earmark-text'],
-                                ['id' => 'laporan_penyelia', 'name' => 'Laporan Penyelia Projek Bagi Kerja Semasa (Borang GA)', 'icon' => 'bi-person-badge'],
-                            ];
-                        @endphp
-                        @foreach($docs as $idx => $doc)
+                        @foreach($b2DocsList as $dId => $doc)
+                            @php
+                                $dStat = $b2DocStatusMap[$dId] ?? ['evaluated_count' => 0, 'total_count' => count($participants), 'is_complete' => false];
+                            @endphp
                             <tr>
-                                <td class="text-center text-muted fw-bold small">{{ $idx + 1 }}</td>
+                                <td class="text-center text-muted fw-bold small">{{ $loop->iteration }}</td>
                                 <td>
                                     <div class="d-flex align-items-center gap-2.5">
                                         <div class="bg-success bg-opacity-10 text-success p-2 rounded-2 d-inline-flex align-items-center justify-content-center" style="width:32px; height:32px; margin-right:10px">
@@ -352,7 +370,27 @@
                                     </div>
                                 </td>
                                 <td class="text-center">
-                                    <button class="btn-action-papar" type="button" onclick="openDocModal('{{ $doc['id'] }}','{{ $doc['name'] }}')">
+                                    @if($dStat['is_complete'])
+                                        <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2.5 py-1 rounded-pill small">
+                                            <i class="bi bi-check-circle-fill me-1"></i>Selesai ({{ $dStat['evaluated_count'] }}/{{ $dStat['total_count'] }})
+                                        </span>
+                                    @elseif($dStat['evaluated_count'] > 0)
+                                        <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 px-2.5 py-1 rounded-pill small">
+                                            <i class="bi bi-clock me-1"></i>Separa ({{ $dStat['evaluated_count'] }}/{{ $dStat['total_count'] }})
+                                        </span>
+                                    @else
+                                        <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 px-2.5 py-1 rounded-pill small">
+                                            <i class="bi bi-hourglass-split me-1"></i>Belum Dinilai
+                                        </span>
+                                    @endif
+                                </td>
+                                <td class="text-center">
+                                    <button class="btn-action-papar btn-papar-b2" type="button" 
+                                        data-doc-id="{{ $dId }}"
+                                        data-doc-name="{{ $doc['name'] }}"
+                                        data-show-diaudit="{{ $doc['showDiaudit'] ? 1 : 0 }}"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#docModal">
                                         <i class="bi bi-eye me-1"></i>Papar & Semak
                                     </button>
                                 </td>
@@ -377,7 +415,7 @@
                 </div>
             </div>
             <span class="section-badge-pill-success ms-auto">
-                <i class="bi bi-check-circle-fill me-1"></i>Hasil Semakan
+                <i class="bi bi-check-circle-fill me-1"></i>Hasil Semakan ({{ count($participants) }} Petender)
             </span>
         </div>
 
@@ -386,34 +424,50 @@
                 <table class="table table-modern-b2 align-middle">
                     <thead>
                         <tr>
-                            <th style="width: 100px;" class="text-center">Bil</th>
+                            <th style="width: 80px;" class="text-center">Bil</th>
+                            <th style="width: 260px;">Maklumat Petender</th>
                             <th style="width: 200px;" class="text-center">Keputusan Semakan</th>
-                            <th>Ulasan / Catatan Kecukupan <span class="text-danger">*</span></th>
+                            <th>Ulasan / Catatan Kecukupan</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr>
-                            <td class="text-center fw-bold text-muted">1/2</td>
-                            <td class="text-center">
-                                <span class="status-badge-cukup">
-                                    <i class="bi bi-check-circle-fill me-1"></i>Cukup
-                                </span>
-                            </td>
-                            <td>
-                                <input type="text" class="form-control form-control-modern" value="Dokumen kewangan lengkap dikemukakan." placeholder="Isi ulasan...">
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="text-center fw-bold text-muted">2/2</td>
-                            <td class="text-center">
-                                <span class="status-badge-cukup">
-                                    <i class="bi bi-check-circle-fill me-1"></i>*Cukup
-                                </span>
-                            </td>
-                            <td>
-                                <input type="text" class="form-control form-control-modern" value="Cukup (Tanpa Borang GA)." placeholder="Isi ulasan...">
-                            </td>
-                        </tr>
+                        @foreach($b2VendorSummary as $vId => $vSum)
+                            <tr>
+                                <td class="text-center fw-bold text-muted">{{ $loop->iteration }}/{{ count($b2VendorSummary) }}</td>
+                                <td>
+                                    <div class="fw-bold text-dark mb-0.5">{{ $vSum['vendor_name'] }}</div>
+                                    <div class="font-monospace extra-small text-muted">{{ $vSum['kod_pembekal'] }}</div>
+                                </td>
+                                <td class="text-center">
+                                    @if($vSum['is_cukup'])
+                                        <span class="status-badge-cukup">
+                                            <i class="bi bi-check-circle-fill me-1"></i>{{ $vSum['final_status'] }}
+                                        </span>
+                                    @elseif($vSum['final_status'] === 'Tidak Cukup')
+                                        <span class="status-badge-tidak">
+                                            <i class="bi bi-x-circle-fill me-1"></i>Tidak Cukup
+                                        </span>
+                                    @else
+                                        <span class="status-badge-pending">
+                                            <i class="bi bi-hourglass-split me-1"></i>Belum Dinilai
+                                        </span>
+                                    @endif
+                                </td>
+                                <td>
+                                    @if(! empty($vSum['failed_reasons']))
+                                        <ul class="mb-0 text-danger extra-small ps-3 fw-medium">
+                                            @foreach($vSum['failed_reasons'] as $reason)
+                                                <li>{{ $reason }}</li>
+                                            @endforeach
+                                        </ul>
+                                    @elseif($vSum['is_cukup'])
+                                        <span class="text-success small fw-semibold"><i class="bi bi-check2 me-1"></i>{{ $vSum['catatan'] ?: 'Dokumen kewangan lengkap dikemukakan.' }}</span>
+                                    @else
+                                        <span class="text-muted extra-small">Sila selesaikan semakan dokumen kewangan bagi petender ini.</span>
+                                    @endif
+                                </td>
+                            </tr>
+                        @endforeach
                     </tbody>
                 </table>
             </div>
@@ -426,11 +480,11 @@
                     <label class="form-label small fw-bold text-secondary text-uppercase mb-1">
                         <i class="bi bi-people me-1 text-danger"></i>Bilangan Pembekal Dinilai
                     </label>
-                    <input type="number" class="form-control form-control-modern font-monospace fw-bold" value="2" style="max-width: 140px;">
+                    <input type="number" class="form-control form-control-modern font-monospace fw-bold" value="{{ count($participants) }}" readonly style="max-width: 140px; background: #e2e8f0;">
                 </div>
                 <div class="col-12 col-md-8">
                     <div class="form-check p-3 bg-white rounded-3 border">
-                        <input class="form-check-input ms-0 me-2" type="checkbox" id="chkSah" checked>
+                        <input class="form-check-input ms-0 me-2" type="checkbox" id="chkSah">
                         <label class="form-check-label fw-semibold text-dark small" for="chkSah">
                             Saya mengesahkan petender di atas layak untuk penilaian peringkat seterusnya.
                         </label>
@@ -442,7 +496,7 @@
                 <a href="{{ $backToTenderUrl }}" class="btn btn-outline-secondary px-4 rounded-3 fw-semibold">
                     <i class="bi bi-x-circle me-1"></i>Batal
                 </a>
-                <button type="button" class="btn btn-submit-danger px-4 rounded-3" onclick="openSavedModal()">
+                <button type="button" class="btn btn-submit-danger px-4 rounded-3" id="btnSimpanMuktamad">
                     <i class="bi bi-floppy me-1"></i>Simpan Keputusan
                 </button>
             </div>
@@ -485,7 +539,7 @@
                 <div id="docViewList">
 
                     <div class="table-responsive rounded-3 mb-2" style="border: 1px solid #e5e7eb;">
-                        <table class="table align-middle mb-0" style="font-size: 0.85rem;">
+                        <table class="table align-middle mb-0" id="modalVendorTableB2" style="font-size: 0.85rem;">
                             <thead style="--bs-table-bg: #d7d7d9; --bs-table-color: #3f3f3f;">
                                 <tr>
                                     <th class="text-center text-uppercase fw-bold py-2" style="width: 80px; font-size: 0.7rem; letter-spacing: 0.05em; background-color: #d7d7d9 !important; color: #3f3f3f !important;">Bil</th>
@@ -495,7 +549,45 @@
                                     <th class="text-uppercase fw-bold py-2" style="width: 260px; font-size: 0.7rem; letter-spacing: 0.05em; background-color: #d7d7d9 !important; color: #3f3f3f !important;">Catatan</th>
                                 </tr>
                             </thead>
-                            <tbody id="docRows">
+                            <tbody>
+                                @foreach($participants as $idx => $p)
+                                    @php
+                                        $vId = $p->vendor_id;
+                                        $vSum = $b2VendorSummary[$vId] ?? [];
+                                        $docsData = $vSum['docs_data'] ?? [];
+                                    @endphp
+                                    <tr data-vendor-id="{{ $vId }}">
+                                        <td class="text-center fw-bold text-muted" style="background-color: #efeff0ff; color: #3f3f3fff;">{{ $idx + 1 }}/{{ count($participants) }}</td>
+                                        <td>
+                                            <div class="d-flex align-items-center gap-3 py-1">
+                                                <div class="bg-danger bg-opacity-10 text-danger p-2.5 rounded-3 d-inline-flex align-items-center justify-content-center flex-shrink-0" style="width:40px; height:40px;">
+                                                    <i class="bi bi-file-earmark-pdf fs-4"></i>
+                                                </div>
+                                                <div>
+                                                    <div class="fw-bold text-dark mb-0.5" style="font-size: 0.88rem;">{{ $p->vendor->name ?? $p->vendor->company_name ?? ('Syarikat Petender ' . $vId) }}</div>
+                                                    <a href="javascript:void(0)" onclick="openPenyataBankDetail()" class="d-inline-flex align-items-center gap-1.5 text-primary text-decoration-none small fw-medium btn-link-doc" style="font-size: 0.78rem;">
+                                                        <span>Dokumen Sokongan.pdf</span>
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="text-center">
+                                            <select class="form-select form-select-modern text-center fw-semibold select-dikemukakan">
+                                                <option value="Ya">Ya</option>
+                                                <option value="Tidak">Tidak</option>
+                                            </select>
+                                        </td>
+                                        <td class="text-center td-diaudit">
+                                            <select class="form-select form-select-modern text-center fw-semibold select-diaudit">
+                                                <option value="Ya">Ya</option>
+                                                <option value="Tidak">Tidak</option>
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <input type="text" class="form-control form-control-modern input-catatan" value="" placeholder="Catatan...">
+                                        </td>
+                                    </tr>
+                                @endforeach
                             </tbody>
                         </table>
                     </div>
@@ -577,7 +669,7 @@
                         <button class="btn btn-outline-secondary px-4 fw-semibold" type="button" onclick="backToDocList()">
                             <i class="bi bi-arrow-left me-1"></i>Kembali ke Senarai
                         </button>
-                        <button class="btn btn-submit-danger px-4 rounded-3" type="button" onclick="saveFromDocModal()">
+                        <button class="btn btn-submit-danger px-4 rounded-3" type="button" onclick="backToDocList()">
                             <i class="bi bi-check2-circle me-1"></i>Simpan Detail Penyata Bank
                         </button>
                     </div>
@@ -588,7 +680,7 @@
             <div id="docViewListFooter" class="modal-footer bg-light border-0 px-4 py-3 justify-content-between">
                 <button type="button" class="btn btn-sm btn-secondary px-4 fw-bold" data-bs-dismiss="modal">Batal / Tutup</button>
                 <div class="d-flex align-items-center gap-2">
-                    <button class="btn btn-sm btn-success px-4 fw-bold" type="button" onclick="saveFromDocModal()">
+                    <button class="btn btn-sm btn-success px-4 fw-bold" type="button" id="btnSimpanSemakanModal">
                         <i class="bi bi-check2-circle me-1"></i>Simpan Semakan
                     </button>
                 </div>
@@ -598,192 +690,237 @@
     </div>
 </div>
 
-{{-- =========================
-    MODAL: SIMPAN SUCCESS 
-========================== --}}
-<div class="modal fade" id="savedModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" style="max-width:440px;">
-        <div class="modal-content modal-card p-4 text-center">
-
-            <div class="my-3">
-                <div class="bg-success bg-opacity-10 text-success rounded-circle d-inline-flex align-items-center justify-content-center p-3 mb-2" style="width: 72px; height: 72px;">
-                    <i class="bi bi-check-circle-fill display-5"></i>
-                </div>
-            </div>
-
-            <h5 class="fw-bold text-dark mb-1">Berjaya Disimpan!</h5>
-            <p class="text-muted small mb-4">Maklumat analisa kecukupan dokumen telah berjaya disimpan ke dalam sistem.</p>
-
-            <button type="button" class="btn btn-submit-danger px-4 py-2 rounded-3 w-100" data-bs-dismiss="modal">
-                Faham & Tutup
-            </button>
-        </div>
-    </div>
-</div>
-
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-    // ====== DATA ======
-    const docTemplates = {
-        imbangan: {
-            showDiaudit: true,
-            rows: [
-                { bil:'1/2', label:'Syarikat Petender A', showAudit:true },
-                { bil:'2/2', label:'Syarikat Petender B', showAudit:true },
-            ],
-        },
-        bon_saham: {
-            showDiaudit: false,
-            rows: [
-                { bil:'1/2', label:'Syarikat Petender A', showAudit:false },
-                { bil:'2/2', label:'Syarikat Petender B', showAudit:false },
-            ],
-        },
-        prestasi: {
-            showDiaudit: false,
-            rows: [
-                { bil:'1/2', label:'Syarikat Petender A', showAudit:false },
-                { bil:'2/2', label:'Syarikat Petender B', showAudit:false },
-            ],
-        },
-        laporan_ca: {
-            showDiaudit: false,
-            rows: [
-                { bil:'1/2', label:'Syarikat Petender A', showAudit:false },
-                { bil:'2/2', label:'Syarikat Petender B', showAudit:false },
-            ],
-        },
-        laporan_penyelia: {
-            showDiaudit: false,
-            rows: [
-                { bil:'1/2', label:'Syarikat Petender A', icon:true, link:false, showAudit:false, ddText:'Ya / Tidak / T.K.S' },
-                { bil:'2/2', label:'Syarikat Petender B', icon:true, link:false, showAudit:false, ddText:'Ya / Tidak / T.K.S' },
-            ],
-        },
-        penyata_bank: {
-            showDiaudit: false,
-            rows: [
-                { bil:'1/2', label:'Syarikat Petender A', link:true, goDetail:true, showAudit:false },
-                { bil:'2/2', label:'Syarikat Petender B', link:true, goDetail:true, showAudit:false },
-            ],
+    document.addEventListener('DOMContentLoaded', function () {
+        let currentDocId = 'imbangan';
+        let currentShowDiaudit = true;
+        const b2VendorSummaryData = @json($b2VendorSummary);
+
+        const docViewList = document.getElementById('docViewList');
+        const docViewPenyataBank = document.getElementById('docViewPenyataBank');
+        const docViewListFooter = document.getElementById('docViewListFooter');
+        const thDiaudit = document.getElementById('thDiaudit');
+
+        // Populate modal data when Papar & Semak button is clicked
+        document.querySelectorAll('.btn-papar-b2').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                currentDocId = this.dataset.docId || 'imbangan';
+                const docName = this.dataset.docName || 'DOKUMEN KEWANGAN';
+                currentShowDiaudit = (parseInt(this.dataset.showDiaudit) === 1);
+
+                document.getElementById('docModalName').textContent = docName;
+
+                // Toggle views
+                docViewList.style.display = 'block';
+                if (docViewListFooter) docViewListFooter.style.display = 'flex';
+                docViewPenyataBank.style.display = 'none';
+
+                if (thDiaudit) {
+                    thDiaudit.style.display = currentShowDiaudit ? '' : 'none';
+                }
+
+                // Populate vendor rows
+                document.querySelectorAll('#modalVendorTableB2 tbody tr').forEach(function (tr) {
+                    const vendorId = tr.getAttribute('data-vendor-id');
+                    const vSum = b2VendorSummaryData[vendorId] || {};
+                    const docsData = vSum.docs_data || {};
+                    const item = docsData[currentDocId] || {};
+
+                    const selectDikemukakan = tr.querySelector('.select-dikemukakan');
+                    const selectDiaudit = tr.querySelector('.select-diaudit');
+                    const tdDiaudit = tr.querySelector('.td-diaudit');
+                    const inputCatatan = tr.querySelector('.input-catatan');
+
+                    if (selectDikemukakan) {
+                        selectDikemukakan.value = item.dikemukakan || 'Ya';
+                    }
+
+                    if (tdDiaudit) {
+                        tdDiaudit.style.display = currentShowDiaudit ? '' : 'none';
+                    }
+
+                    if (selectDiaudit) {
+                        selectDiaudit.value = item.diaudit || 'Ya';
+                    }
+
+                    if (inputCatatan) {
+                        inputCatatan.value = item.catatan || '';
+                    }
+                });
+            });
+        });
+
+        // AJAX Save Modal Evaluations for Borang 2 Document Item
+        document.getElementById('btnSimpanSemakanModal').addEventListener('click', function () {
+            const btn = this;
+            const evaluations = [];
+
+            document.querySelectorAll('#modalVendorTableB2 tbody tr').forEach(function (tr) {
+                const vendorId = tr.getAttribute('data-vendor-id');
+                const dikemukakan = tr.querySelector('.select-dikemukakan').value;
+                const selectDiaudit = tr.querySelector('.select-diaudit');
+                const diaudit = (currentShowDiaudit && selectDiaudit) ? selectDiaudit.value : 'T.K.S';
+                const catatan = tr.querySelector('.input-catatan').value;
+
+                evaluations.push({
+                    vendor_id: parseInt(vendorId),
+                    dikemukakan: dikemukakan,
+                    diaudit: diaudit,
+                    catatan: catatan
+                });
+            });
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Menyimpan...';
+
+            fetch('{{ route('penilaianKewanganKerja.borang2.simpanKriteria', $tenderIdentifier) }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    doc_id: currentDocId,
+                    evaluations: evaluations
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-check2-circle me-1"></i>Simpan Semakan';
+
+                if (data.success) {
+                    const docModalEl = document.getElementById('docModal');
+                    const docModal = bootstrap.Modal.getInstance(docModalEl) || new bootstrap.Modal(docModalEl);
+                    docModal.hide();
+
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Berjaya Disimpan!',
+                            text: data.message || 'Penilaian dokumen telah berjaya disimpan.',
+                            confirmButtonText: 'OK',
+                            confirmButtonColor: '#047857'
+                        }).then(() => {
+                            window.location.reload();
+                        });
+                    } else {
+                        alert(data.message || 'Berjaya disimpan.');
+                        window.location.reload();
+                    }
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Ralat!',
+                        text: data.message || 'Gagal menyimpan penilaian dokumen.',
+                        confirmButtonColor: '#dc2626'
+                    });
+                }
+            })
+            .catch(err => {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-check2-circle me-1"></i>Simpan Semakan';
+                console.error(err);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Ralat Sistem!',
+                    text: 'Berlaku masalah semasa berhubung dengan pelayan.',
+                    confirmButtonColor: '#dc2626'
+                });
+            });
+        });
+
+        // AJAX Final Submission of Borang 2
+        const btnSimpanMuktamad = document.getElementById('btnSimpanMuktamad');
+        if (btnSimpanMuktamad) {
+            btnSimpanMuktamad.addEventListener('click', function () {
+                const chkSah = document.getElementById('chkSah');
+                if (chkSah && ! chkSah.checked) {
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Pengesahan Diperlukan',
+                            html: '<p class="mb-1 text-secondary fs-6">Sila tandakan <strong>kotak pengesahan</strong> terlebih dahulu sebelum menyimpan keputusan.</p>',
+                            confirmButtonText: 'Faham',
+                            confirmButtonColor: '#dc2626',
+                            customClass: {
+                                popup: 'rounded-4 shadow',
+                                confirmButton: 'px-4 py-2 rounded-3 fw-semibold'
+                            }
+                        });
+                    } else {
+                        alert('Sila tandakan kotak pengesahan terlebih dahulu.');
+                    }
+                    return;
+                }
+
+                btnSimpanMuktamad.disabled = true;
+                btnSimpanMuktamad.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Menyimpan...';
+
+                fetch('{{ route('penilaianKewanganKerja.borang2.simpanMuktamad', $tenderIdentifier) }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ confirm: true })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    btnSimpanMuktamad.disabled = false;
+                    btnSimpanMuktamad.innerHTML = '<i class="bi bi-floppy me-1"></i>Simpan Keputusan';
+
+                    if (data.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Borang 2 Disahkan!',
+                            text: data.message || 'Borang 2 telah berjaya disimpan dan Borang 3 kini dibuka!',
+                            confirmButtonText: 'Seterusnya (Papan Pemuka)',
+                            confirmButtonColor: '#dc2626'
+                        }).then(() => {
+                            window.location.href = data.redirect || '{{ $backToTenderUrl }}';
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Ralat!',
+                            text: data.message || 'Gagal mengesahkan Borang 2.',
+                            confirmButtonColor: '#dc2626'
+                        });
+                    }
+                })
+                .catch(err => {
+                    btnSimpanMuktamad.disabled = false;
+                    btnSimpanMuktamad.innerHTML = '<i class="bi bi-floppy me-1"></i>Simpan Keputusan';
+                    console.error(err);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Ralat Sistem!',
+                        text: 'Berlaku masalah semasa berhubung dengan pelayan.',
+                        confirmButtonColor: '#dc2626'
+                    });
+                });
+            });
         }
-    };
-
-    // ====== Modal refs ======
-    const docModalEl = document.getElementById('docModal');
-    const docModal = () => new bootstrap.Modal(docModalEl);
-
-    const docModalName = document.getElementById('docModalName');
-    const docRows = document.getElementById('docRows');
-    const thDiaudit = document.getElementById('thDiaudit');
-
-    const docViewList = document.getElementById('docViewList');
-    const docViewPenyataBank = document.getElementById('docViewPenyataBank');
-    const docViewListFooter = document.getElementById('docViewListFooter');
-
-    let currentDocType = null;
-
-    function openDocModal(type, name){
-        currentDocType = type;
-
-        docModalName.textContent = name || '-';
-
-        // reset views
-        docViewList.style.display = 'block';
-        if (docViewListFooter) docViewListFooter.style.display = 'flex';
-        docViewPenyataBank.style.display = 'none';
-
-        // inject rows
-        const conf = docTemplates[type] || { showDiaudit:false, rows:[] };
-
-        thDiaudit.style.display = conf.showDiaudit ? '' : 'none';
-
-        docRows.innerHTML = conf.rows.map(r => {
-            const docCell = `
-                <div class="d-flex align-items-center gap-3 py-1">
-                    <div class="bg-danger bg-opacity-10 text-danger p-2.5 rounded-3 d-inline-flex align-items-center justify-content-center flex-shrink-0" style="width:40px; height:40px;">
-                        <i class="bi bi-file-earmark-pdf fs-4"></i>
-                    </div>
-                    <div>
-                        <div class="fw-bold text-dark mb-0.5" style="font-size: 0.88rem;">${escapeHtml(r.label)}</div>
-                        <a href="javascript:void(0)" onclick="${r.goDetail ? `openPenyataBankDetail()` : `event.preventDefault();`}" class="d-inline-flex align-items-center gap-1.5 text-primary text-decoration-none small fw-medium" style="font-size: 0.78rem;">
-                            <span>Dokumen Sokongan.pdf</span>
-                        </a>
-                    </div>
-                </div>
-            `;
-
-            const dikemukakanDd = r.ddText
-                ? `<select class="form-select form-select-modern text-center fw-semibold">
-                        <option selected>${escapeHtml(r.ddText)}</option>
-                        <option>Ya</option>
-                        <option>Tidak</option>
-                   </select>`
-                : `<select class="form-select form-select-modern text-center fw-semibold">
-                        <option selected>Ya / Tidak</option>
-                        <option>Ya</option>
-                        <option>Tidak</option>
-                   </select>`;
-
-            const diauditDd = conf.showDiaudit
-                ? `<td class="text-center">
-                        <select class="form-select form-select-modern text-center fw-semibold">
-                            <option selected>Ya / Tidak</option>
-                            <option>Ya</option>
-                            <option>Tidak</option>
-                        </select>
-                   </td>`
-                : ``;
-
-            return `
-                <tr>
-                    <td class="text-center fw-bold text-muted" style="background-color: #efeff0ff; color: #3f3f3fff;">${escapeHtml(r.bil)}</td>
-                    <td>${docCell}</td>
-                    <td class="text-center">${dikemukakanDd}</td>
-                    ${diauditDd}
-                    <td><input class="form-control form-control-modern" placeholder="Catatan..."></td>
-                </tr>
-            `;
-        }).join('');
-
-        docModal().show();
-    }
+    });
 
     function openPenyataBankDetail(){
-        docViewList.style.display = 'none';
+        document.getElementById('docViewList').style.display = 'none';
+        const docViewListFooter = document.getElementById('docViewListFooter');
         if (docViewListFooter) docViewListFooter.style.display = 'none';
-        docViewPenyataBank.style.display = 'block';
+        document.getElementById('docViewPenyataBank').style.display = 'block';
     }
 
     function backToDocList(){
-        docViewPenyataBank.style.display = 'none';
-        docViewList.style.display = 'block';
+        document.getElementById('docViewPenyataBank').style.display = 'none';
+        document.getElementById('docViewList').style.display = 'block';
+        const docViewListFooter = document.getElementById('docViewListFooter');
         if (docViewListFooter) docViewListFooter.style.display = 'flex';
     }
 
-    function saveFromDocModal(){
-        const m = bootstrap.Modal.getInstance(docModalEl);
-        if(m) m.hide();
-        openSavedModal();
-    }
-
-    function openSavedModal(){
-        new bootstrap.Modal(document.getElementById('savedModal')).show();
-    }
-
-    // helpers
-    function escapeHtml(str){
-        return String(str ?? '')
-            .replaceAll('&','&amp;')
-            .replaceAll('<','&lt;')
-            .replaceAll('>','&gt;')
-            .replaceAll('"','&quot;')
-            .replaceAll("'","&#039;");
-    }
-
-    // expose
-    window.openDocModal = openDocModal;
-    window.openSavedModal = openSavedModal;
-    window.saveFromDocModal = saveFromDocModal;
     window.openPenyataBankDetail = openPenyataBankDetail;
     window.backToDocList = backToDocList;
 </script>

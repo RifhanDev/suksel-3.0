@@ -70,7 +70,7 @@
         vertical-align:middle;
     }
     .table-7a thead th{
-        background:var(--blue);
+        background:var(--brand-red);
         color:#fff;
         text-align:center;
         font-weight:800;
@@ -110,7 +110,7 @@
     }
     .confetti{ width:44px;height:44px;margin:6px auto 8px; }
     .btn-modal{
-        background:var(--blue);
+        background:var(--brand-red);
         color:#fff;
         border:0;
         padding:10px 20px;

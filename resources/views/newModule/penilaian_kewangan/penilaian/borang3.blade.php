@@ -228,10 +228,8 @@
 
 @section('content')
 @php
-    $tenderParam = request('tender') ?: request('tender_no');
-    $backToTenderUrl = $tenderParam 
-        ? route('penilaianKewangan.show', $tenderParam) 
-        : (str_contains(url()->previous(), '/penilaian-kewangan') ? url()->previous() : route('penilaianKewangan'));
+    $tenderIdentifier = isset($tender) ? ($tender->uuid ?: $tender->id ?: ($tender_no ?? '')) : ($tender_no ?? '');
+    $backToTenderUrl = route('penilaianKewanganKerja.show', $tenderIdentifier);
 @endphp
 
 <div class="container-fluid px-0 py-2">
@@ -275,7 +273,7 @@
                     </div>
                     <div>
                         <div class="info-item-label text-muted fw-bold text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em;">No. Sebut Harga / Tender</div>
-                        <div class="info-item-value text-danger font-monospace fw-bold" style="font-size: 0.95rem;">QT210000000023741</div>
+                        <div class="info-item-value text-danger font-monospace fw-bold" style="font-size: 0.95rem;">{{ $no_tender_display ?? ($tender->no_tender ?? $tender->ref_number ?? '-') }}</div>
                     </div>
                 </div>
             </div>
@@ -287,7 +285,7 @@
                     </div>
                     <div>
                         <div class="info-item-label text-muted fw-bold text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em;">PTJ Perolehan</div>
-                        <div class="info-item-value text-dark fw-bold" style="font-size: 0.88rem;">JABATAN PENGAIRAN DAN SALIRAN</div>
+                        <div class="info-item-value text-dark fw-bold" style="font-size: 0.88rem;">{{ $ptj_display ?? ($tender->tenderer->name ?? '-') }}</div>
                     </div>
                 </div>
             </div>
@@ -301,7 +299,7 @@
                         <div class="info-item-label text-muted fw-bold text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em;">Status Proses</div>
                         <div class="mt-1">
                             <span class="badge bg-warning bg-opacity-10 text-warning-emphasis border border-warning border-opacity-25 px-2.5 py-1 rounded-pill fw-semibold" style="font-size: 0.72rem;">
-                                Menunggu Pengesahan
+                                {{ $status_label ?? 'Menunggu Pengesahan' }}
                             </span>
                         </div>
                     </div>
@@ -315,7 +313,7 @@
                     </div>
                     <div>
                         <div class="info-item-label text-muted fw-bold text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em;">Sah Laku Tamat</div>
-                        <div class="info-item-value text-dark font-monospace fw-bold" style="font-size: 0.95rem;">17/01/2022</div>
+                        <div class="info-item-value text-dark font-monospace fw-bold" style="font-size: 0.95rem;">{{ $sah_laku_tamat ?? '-' }}</div>
                     </div>
                 </div>
             </div>
@@ -417,26 +415,75 @@
                         </thead>
 
                         <tbody>
-                            @for($r=1; $r<=5; $r++)
+                            @php
+                                $b3DataMap = $b3VendorData ?? [];
+                            @endphp
+                            @forelse($participants as $idx => $p)
+                                @php
+                                    $vId = $p->vendor_id;
+                                    $vData = $b3DataMap[$vId] ?? [];
+                                    $ruj = $p->kod_pembekal ?: ($loop->iteration . '/' . count($participants));
+                                    $mudahCair = $vData['mudah_cair_m'] ?? 0;
+                                    $ca1Kredit = $vData['ca1_kredit_j'] ?? 0;
+                                @endphp
                                 <tr>
+                                    {{-- (a) Ruj. Petender --}}
                                     <td class="text-center font-monospace fw-bold" style="background-color: #efeff0ff;">
-                                        {{ $r }}/5
+                                        {{ $ruj }}
                                     </td>
-                                    <td class="text-end font-monospace">0.00</td>
-                                    <td class="text-end font-monospace">0.00</td>
-                                    <td class="text-end font-monospace fw-bold text-dark">0.00</td>
-                                    <td class="text-end font-monospace">0.00</td>
-                                    <td class="text-end font-monospace">0.00</td>
-                                    <td class="text-end font-monospace text-success">0.00</td>
-                                    <td class="text-end font-monospace fw-bold">0.00</td>
-                                    <td class="text-end font-monospace text-muted">0.00</td>
-                                    <td class="text-end font-monospace">0.00</td>
-                                    <td class="text-end font-monospace">0.00</td>
-                                    <td class="text-end font-monospace">0.00</td>
-                                    <td class="text-end font-monospace fw-bold">0.00</td>
-                                    <td class="text-end font-monospace text-muted">0.00</td>
+
+                                    {{-- (b) Aset Semasa --}}
+                                    <td class="text-end font-monospace">{{ number_format($vData['aset_semasa'] ?? 0, 2) }}</td>
+
+                                    {{-- (c) Liabiliti Semasa --}}
+                                    <td class="text-end font-monospace">{{ number_format($vData['liabiliti_semasa'] ?? 0, 2) }}</td>
+
+                                    {{-- (d) Modal Pusingan = (b) - (c) --}}
+                                    <td class="text-end font-monospace fw-bold text-dark">{{ number_format($vData['modal_pusingan'] ?? 0, 2) }}</td>
+
+                                    {{-- (e) Baki 3 Bulan --}}
+                                    <td class="text-end font-monospace">{{ number_format($vData['baki_3_bulan'] ?? 0, 2) }}</td>
+
+                                    {{-- (f) Purata 3 Bulan = (e)/3 --}}
+                                    <td class="text-end font-monospace">{{ number_format($vData['purata_3_bulan'] ?? 0, 2) }}</td>
+
+                                    {{-- (g) Wang Dalam Tangan Semasa --}}
+                                    <td class="text-end font-monospace text-success fw-semibold">{{ number_format($vData['wang_tangan_g'] ?? 0, 2) }}</td>
+
+                                    {{-- (k) Jumlah Modal --}}
+                                    <td class="text-end font-monospace fw-bold">{{ number_format($vData['jumlah_modal_k'] ?? 0, 2) }}</td>
+
+                                    {{-- (m) Mudah Cair Boleh Guna (Left Section) --}}
+                                    <td class="text-end font-monospace text-muted">{{ number_format($mudahCair, 2) }}</td>
+
+                                    {{-- (h) Borang CA 2 / Deposit / Saham --}}
+                                    <td class="text-end font-monospace">{{ number_format($vData['bon_saham_h'] ?? 0, 2) }}</td>
+
+                                    {{-- (i) Aset Cair = (h) atau (g)+(h) --}}
+                                    <td class="text-end font-monospace">{{ number_format($vData['aset_cair_i'] ?? 0, 2) }}</td>
+
+                                    {{-- (j) Borang CA 1 (Kredit) --}}
+                                    <td class="text-end font-monospace">
+                                        @if($ca1Kredit > 0)
+                                            {{ number_format($ca1Kredit, 2) }}
+                                        @else
+                                            <span class="text-danger fw-bold" title="Tiada pengesahan kredit">0.00</span>
+                                        @endif
+                                    </td>
+
+                                    {{-- (k) Jumlah Modal --}}
+                                    <td class="text-end font-monospace fw-bold">{{ number_format($vData['jumlah_modal_k'] ?? 0, 2) }}</td>
+
+                                    {{-- (m) Mudah Cair Boleh Guna vs 3% Min Requirement --}}
+                                    <td class="text-end font-monospace fw-bold {{ $mudahCair >= 0 ? 'text-success' : 'text-danger' }}">
+                                        {{ number_format($mudahCair, 2) }}
+                                    </td>
                                 </tr>
-                            @endfor
+                            @empty
+                                <tr>
+                                    <td colspan="14" class="text-center text-muted py-4">Tiada petender ditemui.</td>
+                                </tr>
+                            @endforelse
                         </tbody>
                     </table>
                 </div>
@@ -447,7 +494,7 @@
                 <div class="row g-3 align-items-center mb-3">
                     <div class="col-12 col-md-8">
                         <div class="form-check p-3 bg-white rounded-3 border">
-                            <input class="form-check-input ms-0 me-2" type="checkbox" id="sahPenilaian" checked>
+                            <input class="form-check-input ms-0 me-2" type="checkbox" id="sahPenilaian">
                             <label class="form-check-label fw-semibold text-dark small" for="sahPenilaian">
                                 Saya mengesahkan petender di atas layak untuk penilaian peringkat seterusnya.
                             </label>
@@ -458,7 +505,7 @@
                             <a href="{{ $backToTenderUrl }}" class="btn btn-outline-secondary px-4 rounded-3 fw-semibold">
                                 <i class="bi bi-x-circle me-1"></i>Batal
                             </a>
-                            <button type="button" class="btn btn-submit-danger px-4 rounded-3" onclick="showSuccessModal()">
+                            <button type="button" id="btnSimpanMuktamad" class="btn btn-submit-danger px-4 rounded-3" onclick="showSuccessModal()">
                                 <i class="bi bi-floppy me-1"></i>Simpan Keputusan
                             </button>
                         </div>
@@ -492,13 +539,13 @@
                     <table class="table-borang3-modern">
                         <thead>
                             <tr>
-                                <th colspan="9">ANALISA KECUKUPAN MODAL</th>
+                                <th colspan="8">ANALISA KECUKUPAN MODAL</th>
                             </tr>
                             <tr>
                                 <th colspan="6" class="subhead-main">
                                     MAKLUMAT DARI LEMBARAN IMBANGAN (BALANCE SHEET)
                                 </th>
-                                <th colspan="3" class="subhead-main">
+                                <th colspan="2" class="subhead-main">
                                     BORANG CA / SURAT BANK
                                 </th>
                             </tr>
@@ -510,26 +557,36 @@
                                 <th class="subhead-level2">Long Term / Liabiliti Tetap</th>
                                 <th class="subhead-level2">Wang Tunai Dalam Tangan</th>
                                 <th class="subhead-level2">Baki Kemudahan Kredit</th>
-                                <th class="subhead-level2">Pinjaman Bank</th>
-                                <th class="subhead-level2">Yang Akan Diluluskan</th>
+                                <th class="subhead-level2">Pinjaman Bank Yang Akan Diluluskan</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @for($i=1; $i<=6; $i++)
+                            @php
+                                $b3DataMap = $b3VendorData ?? [];
+                            @endphp
+                            @forelse($participants as $idx => $p)
+                                @php
+                                    $vId = $p->vendor_id;
+                                    $vData = $b3DataMap[$vId] ?? [];
+                                    $ruj = $p->kod_pembekal ?: ($loop->iteration . '/' . count($participants));
+                                @endphp
                                 <tr>
                                     <td class="text-center font-monospace fw-bold" style="background-color: #efeff0ff;">
-                                        {{ $i }}/6
+                                        {{ $ruj }}
                                     </td>
-                                    <td class="text-end font-monospace">0.00</td>
-                                    <td class="text-end font-monospace">0.00</td>
-                                    <td class="text-end font-monospace">0.00</td>
-                                    <td class="text-end font-monospace">0.00</td>
-                                    <td class="text-end font-monospace">0.00</td>
-                                    <td class="text-end font-monospace">0.00</td>
-                                    <td class="text-end font-monospace">0.00</td>
-                                    <td class="text-end font-monospace">0.00</td>
+                                    <td class="text-end font-monospace">{{ number_format($vData['aset_tetap'] ?? 0, 2) }}</td>
+                                    <td class="text-end font-monospace">{{ number_format($vData['aset_semasa'] ?? 0, 2) }}</td>
+                                    <td class="text-end font-monospace">{{ number_format($vData['liabiliti_semasa'] ?? 0, 2) }}</td>
+                                    <td class="text-end font-monospace">{{ number_format($vData['liabiliti_tetap'] ?? 0, 2) }}</td>
+                                    <td class="text-end font-monospace">{{ number_format($vData['wang_tunai'] ?? 0, 2) }}</td>
+                                    <td class="text-end font-monospace">{{ number_format($vData['baki_kredit'] ?? 0, 2) }}</td>
+                                    <td class="text-end font-monospace text-danger fw-bold" title="Data tiada sumber dalam sistem">0.00</td>
                                 </tr>
-                            @endfor
+                            @empty
+                                <tr>
+                                    <td colspan="8" class="text-center text-muted py-4">Tiada petender ditemui.</td>
+                                </tr>
+                            @endforelse
                         </tbody>
                     </table>
                 </div>
@@ -563,7 +620,7 @@
                                 <th colspan="11">MAKLUMAT BAKI AKAUN BANK BAGI 3 BULAN LEPAS</th>
                             </tr>
                             <tr>
-                                <th class="subhead-main" style="width: 80px;">Ruj.<br>Petender</th>
+                                <th class="subhead-main" style="width: 100px;">Ruj.<br>Petender</th>
                                 <th class="subhead-level2" style="width: 90px;">Bulan</th>
 
                                 <th class="subhead-level2">Akaun 1</th>
@@ -584,183 +641,72 @@
 
                         <tbody>
                             @php
-                                $rows = [
-                                    [
-                                        'ruj' => '45/53',
-                                        'bulan' => ['Aug 2024','Sep 2024','Oct 2024'],
-                                        'akaun1' => ['157,894.95','181,807.61','252,434.78'],
-                                        'bank1' => 'RHB BANK',
-                                        'akaun2' => ['','',''],
-                                        'bank2' => '',
-                                        'akaun3' => ['','',''],
-                                        'bank3' => '',
-                                        'akaun4' => ['','',''],
-                                        'bank4' => '',
-                                        'jumlah' => '591,937.34',
-                                    ],
-                                    [
-                                        'ruj' => '27/53',
-                                        'bulan' => ['Aug 2024','Sep 2024','Oct 2024'],
-                                        'akaun1' => ['287,753.15','509,483.59','514,701.07'],
-                                        'bank1' => "HONG LEONG\nBANK",
-                                        'akaun2' => ['','',''],
-                                        'bank2' => '',
-                                        'akaun3' => ['','',''],
-                                        'bank3' => '',
-                                        'akaun4' => ['','',''],
-                                        'bank4' => '',
-                                        'jumlah' => '1,019,988.71',
-                                    ],
-                                    [
-                                        'ruj' => '34/53',
-                                        'bulan' => ['Aug 2024','Sep 2024','Oct 2024'],
-                                        'akaun1' => ['63,607.87','63,699.87','168,297.97'],
-                                        'bank1' => 'ALLIANCE BANK',
-                                        'akaun2' => ['','',''],
-                                        'bank2' => '',
-                                        'akaun3' => ['','',''],
-                                        'bank3' => '',
-                                        'akaun4' => ['','',''],
-                                        'bank4' => '',
-                                        'jumlah' => '295,605.71',
-                                    ],
-                                    [
-                                        'ruj' => '24/53',
-                                        'bulan' => ['Aug 2024','Sep 2024','Oct 2024'],
-                                        'akaun1' => ['305,994.23','411,462.72','94,361.87'],
-                                        'bank1' => "MAYBANK\nBERHAD",
-                                        'akaun2' => ['','',''],
-                                        'bank2' => '',
-                                        'akaun3' => ['','',''],
-                                        'bank3' => '',
-                                        'akaun4' => ['','',''],
-                                        'bank4' => '',
-                                        'jumlah' => '811,817.82',
-                                    ],
-                                    [
-                                        'ruj' => '37/53',
-                                        'bulan' => ['Aug 2024','Sep 2024','Oct 2024'],
-                                        'akaun1' => ['148,201.90','350,061.90','300,800.09'],
-                                        'bank1' => "CIMB ISLAMIC\nBANK",
-                                        'akaun2' => ['','',''],
-                                        'bank2' => '',
-                                        'akaun3' => ['','',''],
-                                        'bank3' => '',
-                                        'akaun4' => ['','',''],
-                                        'bank4' => '',
-                                        'jumlah' => '799,063.89',
-                                    ],
-                                    [
-                                        'ruj' => '30/53',
-                                        'bulan' => ['Aug 2024','Sep 2024','Oct 2024'],
-                                        'akaun1' => ['201,333.02','206,385.75','96,802.35'],
-                                        'bank1' => "RHB BANK",
-                                        'akaun2' => ['','',''],
-                                        'bank2' => '',
-                                        'akaun3' => ['','',''],
-                                        'bank3' => '',
-                                        'akaun4' => ['','',''],
-                                        'bank4' => '',
-                                        'jumlah' => '515,221.12',
-                                    ],
-                                    [
-                                        'ruj' => '32/53',
-                                        'bulan' => ['Aug 2024','Sep 2024','Oct 2024'],
-                                        'akaun1' => ['86,226.19','206,385.75','96,802.35'],
-                                        'bank1' => "RHB BANK",
-                                        'akaun2' => ['','',''],
-                                        'bank2' => '',
-                                        'akaun3' => ['','',''],
-                                        'bank3' => '',
-                                        'akaun4' => ['','',''],
-                                        'bank4' => '',
-                                        'jumlah' => '232,771.76',
-                                    ],
-                                    [
-                                        'ruj' => '2/53',
-                                        'bulan' => ['Aug 2024','Sep 2024','Oct 2024'],
-                                        'akaun1' => ['78,297.64','67,647.93','1,000,667.93'],
-                                        'bank1' => "CIMB\nPUTRAJAYA",
-                                        'akaun2' => ['','',''],
-                                        'bank2' => '',
-                                        'akaun3' => ['','',''],
-                                        'bank3' => '',
-                                        'akaun4' => ['','',''],
-                                        'bank4' => '',
-                                        'jumlah' => '2,860,443.50',
-                                    ],
-                                    [
-                                        'ruj' => '48/53',
-                                        'bulan' => ['Aug 2024','Sep 2024','Oct 2024'],
-                                        'akaun1' => ['700,667.80','795,239.82','1,063,535.73'],
-                                        'bank1' => "CIMB BANK",
-                                        'akaun2' => ['','',''],
-                                        'bank2' => '',
-                                        'akaun3' => ['','',''],
-                                        'bank3' => '',
-                                        'akaun4' => ['','',''],
-                                        'bank4' => '',
-                                        'jumlah' => '195,177.26',
-                                    ],
-                                    [
-                                        'ruj' => '7/53',
-                                        'bulan' => ['Aug 2024','Sep 2024','Oct 2024'],
-                                        'akaun1' => ['319,282.93','325,213.36','313,853.39'],
-                                        'bank1' => "UOB BANK",
-                                        'akaun2' => ['','',''],
-                                        'bank2' => '',
-                                        'akaun3' => ['','',''],
-                                        'bank3' => '',
-                                        'akaun4' => ['','',''],
-                                        'bank4' => '',
-                                        'jumlah' => '958,203.98',
-                                    ],
-                                ];
+                                $b3DataMap = $b3VendorData ?? [];
+                                $mLabels = $b3MonthsLabels ?? ['Bulan 1', 'Bulan 2', 'Bulan 3'];
                             @endphp
 
-                            @foreach($rows as $row)
+                            @forelse($participants as $idx => $p)
+                                @php
+                                    $vId = $p->vendor_id;
+                                    $vData = $b3DataMap[$vId] ?? [];
+                                    $ruj = $p->kod_pembekal ?: ($loop->iteration . '/' . count($participants));
+                                    $pbAccs = $vData['pb_accounts'] ?? [];
+                                    $totalAccs = count($pbAccs);
+                                    $pbGrandTotal = $vData['pb_grand_total'] ?? 0;
+                                @endphp
                                 <tr>
-                                    <td class="text-center font-monospace fw-bold" style="background-color: #efeff0ff;">{{ $row['ruj'] }}</td>
+                                    <td class="text-center font-monospace fw-bold" style="background-color: #efeff0ff;">
+                                        {{ $ruj }}
+                                        @if($totalAccs > 4)
+                                            <div class="mt-1">
+                                                <button type="button" class="btn btn-xs btn-outline-danger px-2 py-0.5 rounded-pill fw-semibold" style="font-size: 0.68rem;" onclick="openAllAkaunBankModal({{ $vId }})">
+                                                    <i class="bi bi-eye me-1"></i>Papar Semua ({{ $totalAccs }})
+                                                </button>
+                                            </div>
+                                        @endif
+                                    </td>
 
                                     <td class="text-center small text-muted font-monospace">
                                         <div class="lh-sm">
-                                            {{ $row['bulan'][0] }}<br>
-                                            {{ $row['bulan'][1] }}<br>
-                                            {{ $row['bulan'][2] }}
+                                            {{ $mLabels[0] ?? 'Bulan 1' }}<br>
+                                            {{ $mLabels[1] ?? 'Bulan 2' }}<br>
+                                            {{ $mLabels[2] ?? 'Bulan 3' }}
                                         </div>
                                     </td>
 
-                                    <td class="text-end font-monospace">
-                                        <div class="lh-sm">
-                                            {!! implode('<br>', array_filter($row['akaun1'])) ?: '-' !!}
-                                        </div>
-                                    </td>
-                                    <td class="text-center small fw-semibold text-secondary">{!! nl2br(e($row['bank1'])) ?: '-' !!}</td>
+                                    @for($slot = 0; $slot < 4; $slot++)
+                                        @php
+                                            $acc = $pbAccs[$slot] ?? null;
+                                        @endphp
+                                        <td class="text-end font-monospace">
+                                            @if($acc)
+                                                <div class="lh-sm">
+                                                    {{ number_format($acc['monthly_amounts'][0] ?? 0, 2) }}<br>
+                                                    {{ number_format($acc['monthly_amounts'][1] ?? 0, 2) }}<br>
+                                                    {{ number_format($acc['monthly_amounts'][2] ?? 0, 2) }}
+                                                </div>
+                                            @else
+                                                -
+                                            @endif
+                                        </td>
+                                        <td class="text-center small fw-semibold text-secondary">
+                                            @if($acc)
+                                                {!! nl2br(e($acc['bank_name'])) !!}
+                                            @else
+                                                -
+                                            @endif
+                                        </td>
+                                    @endfor
 
-                                    <td class="text-end font-monospace">
-                                        <div class="lh-sm">
-                                            {!! implode('<br>', array_filter($row['akaun2'])) ?: '-' !!}
-                                        </div>
+                                    <td class="text-end font-monospace fw-bold text-dark">
+                                        {{ number_format($pbGrandTotal, 2) }}
                                     </td>
-                                    <td class="text-center small fw-semibold text-secondary">{!! nl2br(e($row['bank2'])) ?: '-' !!}</td>
-
-                                    <td class="text-end font-monospace">
-                                        <div class="lh-sm">
-                                            {!! implode('<br>', array_filter($row['akaun3'])) ?: '-' !!}
-                                        </div>
-                                    </td>
-                                    <td class="text-center small fw-semibold text-secondary">{!! nl2br(e($row['bank3'])) ?: '-' !!}</td>
-
-                                    <td class="text-end font-monospace">
-                                        <div class="lh-sm">
-                                            {!! implode('<br>', array_filter($row['akaun4'])) ?: '-' !!}
-                                        </div>
-                                    </td>
-                                    <td class="text-center small fw-semibold text-secondary">{!! nl2br(e($row['bank4'])) ?: '-' !!}</td>
-
-                                    <td class="text-end font-monospace fw-bold text-dark">{{ $row['jumlah'] }}</td>
                                 </tr>
-                            @endforeach
+                            @empty
+                                <tr>
+                                    <td colspan="11" class="text-center text-muted py-4">Tiada petender ditemui.</td>
+                                </tr>
+                            @endforelse
                         </tbody>
                     </table>
                 </div>
@@ -814,39 +760,51 @@
 
                         <tbody>
                             @php
-                                $rows = [
-                                    ['ruj'=>'45/53','akaun1'=>'157,694.95','bank1'=>'RHB BANK','akaun2'=>'','bank2'=>'','akaun3'=>'','bank3'=>'','akaun4'=>'','bank4'=>'','jumlah'=>'157,694.95'],
-                                    ['ruj'=>'27/53','akaun1'=>'287,753.15','bank1'=>"HONG LEONG\nBANK",'akaun2'=>'','bank2'=>'','akaun3'=>'','bank3'=>'','akaun4'=>'','bank4'=>'','jumlah'=>'287,753.15'],
-                                    ['ruj'=>'34/53','akaun1'=>'63,607.87','bank1'=>'ALLIANCE BANK','akaun2'=>'','bank2'=>'','akaun3'=>'','bank3'=>'','akaun4'=>'','bank4'=>'','jumlah'=>'63,607.87'],
-                                    ['ruj'=>'24/53','akaun1'=>'305,994.23','bank1'=>"MAYBANK\nBERHAD",'akaun2'=>'','bank2'=>'','akaun3'=>'','bank3'=>'','akaun4'=>'','bank4'=>'','jumlah'=>'305,994.23'],
-                                    ['ruj'=>'37/53','akaun1'=>'118,201.90','bank1'=>"CIMB ISLAMIC\nBANK",'akaun2'=>'','bank2'=>'','akaun3'=>'','bank3'=>'','akaun4'=>'','bank4'=>'','jumlah'=>'118,201.90'],
-                                    ['ruj'=>'30/53','akaun1'=>'211,333.02','bank1'=>'RHB BANK','akaun2'=>'','bank2'=>'','akaun3'=>'','bank3'=>'','akaun4'=>'','bank4'=>'','jumlah'=>'211,333.02'],
-                                    ['ruj'=>'32/53','akaun1'=>'86,226.19','bank1'=>'RHB BANK','akaun2'=>'','bank2'=>'','akaun3'=>'','bank3'=>'','akaun4'=>'','bank4'=>'','jumlah'=>'86,226.19'],
-                                    ['ruj'=>'2/53','akaun1'=>'86,226.19','bank1'=>"CIMB\nPUTRAJAYA",'akaun2'=>'','bank2'=>'','akaun3'=>'','bank3'=>'','akaun4'=>'','bank4'=>'','jumlah'=>'86,226.19'],
-                                    ['ruj'=>'48/53','akaun1'=>'1,001,667.90','bank1'=>'CIMB BANK','akaun2'=>'','bank2'=>'','akaun3'=>'','bank3'=>'','akaun4'=>'','bank4'=>'','jumlah'=>'1,001,667.90'],
-                                    ['ruj'=>'7/53','akaun1'=>'319,229.23','bank1'=>'UOB BANK','akaun2'=>'','bank2'=>'','akaun3'=>'','bank3'=>'','akaun4'=>'','bank4'=>'','jumlah'=>'319,229.23'],
-                                ];
+                                $b3DataMap = $b3VendorData ?? [];
                             @endphp
 
-                            @foreach($rows as $row)
+                            @forelse($participants as $idx => $p)
+                                @php
+                                    $vId = $p->vendor_id;
+                                    $vData = $b3DataMap[$vId] ?? [];
+                                    $ruj = $p->kod_pembekal ?: ($loop->iteration . '/' . count($participants));
+                                    $bsAccs = $vData['bs_accounts'] ?? [];
+                                    $totalBs = count($bsAccs);
+                                    $bsGrandTotal = $vData['bs_grand_total'] ?? 0;
+                                @endphp
                                 <tr>
-                                    <td class="text-center font-monospace fw-bold" style="background-color: #efeff0ff;">{{ $row['ruj'] }}</td>
+                                    <td class="text-center font-monospace fw-bold" style="background-color: #efeff0ff;">
+                                        {{ $ruj }}
+                                        @if($totalBs > 4)
+                                            <div class="mt-1">
+                                                <button type="button" class="btn btn-xs btn-outline-danger px-2 py-0.5 rounded-pill fw-semibold" style="font-size: 0.68rem;" onclick="openAllBonSahamModal({{ $vId }})">
+                                                    <i class="bi bi-eye me-1"></i>Papar Semua ({{ $totalBs }})
+                                                </button>
+                                            </div>
+                                        @endif
+                                    </td>
 
-                                    <td class="text-end font-monospace">{{ $row['akaun1'] ?: '-' }}</td>
-                                    <td class="text-center small fw-semibold text-secondary">{!! nl2br(e($row['bank1'])) ?: '-' !!}</td>
+                                    @for($slot = 0; $slot < 4; $slot++)
+                                        @php
+                                            $acc = $bsAccs[$slot] ?? null;
+                                        @endphp
+                                        <td class="text-end font-monospace">
+                                            {{ $acc ? number_format($acc['jumlah_deposit'], 2) : '-' }}
+                                        </td>
+                                        <td class="text-center small fw-semibold text-secondary">
+                                            {!! $acc ? nl2br(e($acc['bank_institusi'])) : '-' !!}
+                                        </td>
+                                    @endfor
 
-                                    <td class="text-end font-monospace">{{ $row['akaun2'] ?: '-' }}</td>
-                                    <td class="text-center small fw-semibold text-secondary">{!! nl2br(e($row['bank2'])) ?: '-' !!}</td>
-
-                                    <td class="text-end font-monospace">{{ $row['akaun3'] ?: '-' }}</td>
-                                    <td class="text-center small fw-semibold text-secondary">{!! nl2br(e($row['bank3'])) ?: '-' !!}</td>
-
-                                    <td class="text-end font-monospace">{{ $row['akaun4'] ?: '-' }}</td>
-                                    <td class="text-center small fw-semibold text-secondary">{!! nl2br(e($row['bank4'])) ?: '-' !!}</td>
-
-                                    <td class="text-end font-monospace fw-bold text-dark">{{ $row['jumlah'] }}</td>
+                                    <td class="text-end font-monospace fw-bold text-dark">
+                                        {{ number_format($bsGrandTotal, 2) }}
+                                    </td>
                                 </tr>
-                            @endforeach
+                            @empty
+                                <tr>
+                                    <td colspan="10" class="text-center text-muted py-4">Tiada petender ditemui.</td>
+                                </tr>
+                            @endforelse
                         </tbody>
                     </table>
                 </div>
@@ -856,29 +814,93 @@
 
 </div>
 
-{{-- =========================
-    MODAL: SIMPAN SUCCESS
-========================== --}}
-<div class="modal fade" id="successModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" style="max-width:440px;">
-        <div class="modal-content modal-card p-4 text-center">
 
-            <div class="my-3">
-                <div class="bg-success bg-opacity-10 text-success rounded-circle d-inline-flex align-items-center justify-content-center p-3 mb-2" style="width: 72px; height: 72px;">
-                    <i class="bi bi-check-circle-fill display-5"></i>
+{{-- =========================
+    MODAL: AKAUN BANK (LIHAT SEMUA)
+========================== --}}
+<div class="modal fade" id="allAkaunBankModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content modal-card p-3">
+            <div class="modal-header border-bottom pb-2">
+                <h6 class="modal-title fw-bold text-dark" id="allAkaunBankModalTitle">
+                    <i class="bi bi-bank me-2 text-primary"></i>Kesemua Akaun Bank Petender
+                </h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body py-3">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-sm align-middle small mb-0">
+                        <thead class="table-dark text-center">
+                            <tr>
+                                <th style="width: 40px;">No.</th>
+                                <th>Bank / Institusi</th>
+                                <th><span id="mLabel1">Bulan 1</span> (RM)</th>
+                                <th><span id="mLabel2">Bulan 2</span> (RM)</th>
+                                <th><span id="mLabel3">Bulan 3</span> (RM)</th>
+                                <th>Jumlah Akaun (RM)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="allAkaunBankTableBody">
+                            {{-- Dynamically populated via JS --}}
+                        </tbody>
+                        <tfoot class="table-light fw-bold">
+                            <tr>
+                                <td colspan="5" class="text-end">Jumlah Besar (RM):</td>
+                                <td class="text-end font-monospace text-dark" id="allAkaunBankGrandTotal">0.00</td>
+                            </tr>
+                        </tfoot>
+                    </table>
                 </div>
             </div>
-
-            <h5 class="fw-bold text-dark mb-1">Berjaya Disimpan!</h5>
-            <p class="text-muted small mb-4">Maklumat analisa kecukupan modal telah berjaya disimpan ke dalam sistem.</p>
-
-            <button type="button" class="btn btn-submit-danger px-4 py-2 rounded-3 w-100" data-bs-dismiss="modal">
-                Faham & Tutup
-            </button>
+            <div class="modal-footer border-top pt-2">
+                <button type="button" class="btn btn-sm btn-secondary px-4 rounded-3" data-bs-dismiss="modal">Tutup</button>
+            </div>
         </div>
     </div>
 </div>
 
+{{-- =========================
+    MODAL: BON & SAHAM (LIHAT SEMUA)
+========================== --}}
+<div class="modal fade" id="allBonSahamModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-md">
+        <div class="modal-content modal-card p-3">
+            <div class="modal-header border-bottom pb-2">
+                <h6 class="modal-title fw-bold text-dark" id="allBonSahamModalTitle">
+                    <i class="bi bi-cash-coin me-2 text-primary"></i>Kesemua Rekod Bon & Saham Petender
+                </h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body py-3">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-sm align-middle small mb-0">
+                        <thead class="table-dark text-center">
+                            <tr>
+                                <th style="width: 40px;">No.</th>
+                                <th>Bank / Institusi</th>
+                                <th>Jumlah Deposit / Saham (RM)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="allBonSahamTableBody">
+                            {{-- Dynamically populated via JS --}}
+                        </tbody>
+                        <tfoot class="table-light fw-bold">
+                            <tr>
+                                <td colspan="2" class="text-end">Jumlah Besar (RM):</td>
+                                <td class="text-end font-monospace text-dark" id="allBonSahamGrandTotal">0.00</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer border-top pt-2">
+                <button type="button" class="btn btn-sm btn-secondary px-4 rounded-3" data-bs-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
     function switchBorang3Tab(tabId, btn) {
         document.querySelectorAll('.sub-nav-btn').forEach(b => b.classList.remove('active'));
@@ -891,8 +913,184 @@
     window.switchBorang3Tab = switchBorang3Tab;
 
     function showSuccessModal(){
-        const modal = new bootstrap.Modal(document.getElementById('successModal'));
+        const chk = document.getElementById('sahPenilaian');
+        if (!chk || !chk.checked) {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Pengesahan Diperlukan',
+                    html: '<p class="mb-1 text-secondary fs-6">Sila tandakan <strong>kotak pengesahan</strong> terlebih dahulu sebelum meneruskan ke borang seterusnya dan melengkapkan Borang 3.</p>',
+                    confirmButtonText: 'Faham',
+                    confirmButtonColor: '#dc2626',
+                    customClass: {
+                        popup: 'rounded-4 shadow',
+                        confirmButton: 'px-4 py-2 rounded-3 fw-semibold'
+                    }
+                });
+            } else {
+                alert('Sila tandakan kotak pengesahan terlebih dahulu sebelum meneruskan ke borang seterusnya dan melengkapkan Borang 3.');
+            }
+            return;
+        }
+
+        const btn = document.getElementById('btnSimpanMuktamad');
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Menyimpan...';
+        }
+
+        fetch('{{ route('penilaianKewanganKerja.borang3.simpanMuktamad', $tenderIdentifier) }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ confirm: true })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-floppy me-1"></i>Simpan Keputusan';
+            }
+
+            if (data.success) {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Borang 3 Disahkan!',
+                        text: data.message || 'Borang 3 telah berjaya disimpan dan Borang 4 kini dibuka!',
+                        confirmButtonText: 'Seterusnya (Papan Pemuka)',
+                        confirmButtonColor: '#047857',
+                        customClass: {
+                            popup: 'rounded-4 shadow',
+                            confirmButton: 'px-4 py-2 rounded-3 fw-semibold'
+                        }
+                    }).then(() => {
+                        window.location.href = data.redirect || '{{ $backToTenderUrl }}';
+                    });
+                } else {
+                    alert('Borang 3 Disahkan!');
+                    window.location.href = data.redirect || '{{ $backToTenderUrl }}';
+                }
+            } else {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Ralat!',
+                        text: data.message || 'Gagal mengesahkan Borang 3.',
+                        confirmButtonColor: '#dc2626'
+                    });
+                } else {
+                    alert(data.message || 'Gagal mengesahkan Borang 3.');
+                }
+            }
+        })
+        .catch(err => {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-floppy me-1"></i>Simpan Keputusan';
+            }
+            console.error(err);
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Ralat Sistem!',
+                    text: 'Berlaku masalah semasa berhubung dengan pelayan.',
+                    confirmButtonColor: '#dc2626'
+                });
+            } else {
+                alert('Berlaku masalah semasa berhubung dengan pelayan.');
+            }
+        });
+    }
+
+    window.b3VendorData = @json($b3VendorData ?? []);
+    window.b3MonthsLabels = @json($b3MonthsLabels ?? ['Bulan 1', 'Bulan 2', 'Bulan 3']);
+
+    function openAllAkaunBankModal(vendorId) {
+        const vData = window.b3VendorData[vendorId];
+        if (!vData) return;
+
+        const title = document.getElementById('allAkaunBankModalTitle');
+        if (title) {
+            title.innerHTML = `<i class="bi bi-bank me-2 text-primary"></i>Kesemua Akaun Bank - Ruj: ${vData.kod_pembekal} (${vData.vendor_name})`;
+        }
+
+        const m1 = document.getElementById('mLabel1');
+        const m2 = document.getElementById('mLabel2');
+        const m3 = document.getElementById('mLabel3');
+        if (m1 && window.b3MonthsLabels[0]) m1.innerText = window.b3MonthsLabels[0];
+        if (m2 && window.b3MonthsLabels[1]) m2.innerText = window.b3MonthsLabels[1];
+        if (m3 && window.b3MonthsLabels[2]) m3.innerText = window.b3MonthsLabels[2];
+
+        const tbody = document.getElementById('allAkaunBankTableBody');
+        tbody.innerHTML = '';
+
+        const accs = vData.pb_accounts || [];
+        let grandTotal = 0;
+
+        accs.forEach((acc, idx) => {
+            const m1Amt = parseFloat(acc.monthly_amounts[0] || 0);
+            const m2Amt = parseFloat(acc.monthly_amounts[1] || 0);
+            const m3Amt = parseFloat(acc.monthly_amounts[2] || 0);
+            const accTot = parseFloat(acc.total || (m1Amt + m2Amt + m3Amt));
+            grandTotal += accTot;
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td class="text-center font-monospace">${idx + 1}</td>
+                <td class="fw-semibold text-dark">${acc.bank_name || '-'}</td>
+                <td class="text-end font-monospace">${m1Amt.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                <td class="text-end font-monospace">${m2Amt.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                <td class="text-end font-monospace">${m3Amt.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                <td class="text-end font-monospace fw-bold text-dark">${accTot.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        document.getElementById('allAkaunBankGrandTotal').innerText = grandTotal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+        const modal = new bootstrap.Modal(document.getElementById('allAkaunBankModal'));
         modal.show();
     }
+
+    function openAllBonSahamModal(vendorId) {
+        const vData = window.b3VendorData[vendorId];
+        if (!vData) return;
+
+        const title = document.getElementById('allBonSahamModalTitle');
+        if (title) {
+            title.innerHTML = `<i class="bi bi-cash-coin me-2 text-primary"></i>Kesemua Rekod Bon & Saham - Ruj: ${vData.kod_pembekal} (${vData.vendor_name})`;
+        }
+
+        const tbody = document.getElementById('allBonSahamTableBody');
+        tbody.innerHTML = '';
+
+        const accs = vData.bs_accounts || [];
+        let grandTotal = 0;
+
+        accs.forEach((acc, idx) => {
+            const dep = parseFloat(acc.jumlah_deposit || 0);
+            grandTotal += dep;
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td class="text-center font-monospace">${idx + 1}</td>
+                <td class="fw-semibold text-dark">${acc.bank_institusi || '-'}</td>
+                <td class="text-end font-monospace fw-bold text-dark">${dep.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        document.getElementById('allBonSahamGrandTotal').innerText = grandTotal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+        const modal = new bootstrap.Modal(document.getElementById('allBonSahamModal'));
+        modal.show();
+    }
+
+    window.openAllAkaunBankModal = openAllAkaunBankModal;
+    window.openAllBonSahamModal = openAllBonSahamModal;
 </script>
 @endsection

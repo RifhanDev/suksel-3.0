@@ -8,7 +8,7 @@
         --sg-red-light: #fef2f2;
     }
 
-    .b8-card {
+    .b7-card {
         border: 1px solid #e2e8f0;
         border-radius: 16px;
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
@@ -16,7 +16,7 @@
         overflow: hidden;
     }
 
-    .b8-header-banner {
+    .b7-header-banner {
         background: linear-gradient(135deg, var(--sg-red) 0%, var(--sg-red-dark) 100%);
         padding: 1.5rem 1.75rem;
         color: #ffffff;
@@ -74,7 +74,7 @@
         box-shadow: 0 2px 4px rgba(29, 78, 216, 0.05);
     }
 
-    /* Table Styling from Borang 3 */
+    /* Table Styling */
     .table-modern-wrapper {
         border: 1px solid #e2e8f0;
         border-radius: 14px;
@@ -102,18 +102,20 @@
         padding: 0.75rem 0.6rem;
     }
 
+    .table-borang3-modern th.compact-th {
+        font-size: 0.68rem;
+        padding: 0.5rem 0.2rem;
+        line-height: 1.2;
+        white-space: normal;
+        word-break: break-word;
+        background: #d7d7d9;
+        color: #3f3f3f;
+    }
+
     .table-borang3-modern th.subhead-main {
         background: #6d6d79ff;
         color: #ffffff;
         font-size: 0.75rem;
-    }
-
-    .table-borang3-modern th.subhead-level2 {
-        background: #d7d7d9;
-        color: #3f3f3f;
-        font-size: 0.725rem;
-        font-weight: 700;
-        border-color: #cbd5e1;
     }
 
     .table-borang3-modern td {
@@ -130,28 +132,14 @@
 
     .formula-tag {
         display: inline-block;
-        background: #e2e8f0;
-        color: #334155;
+        background: rgba(0, 0, 0, 0.08);
+        color: #3f3f3f;
         font-size: 0.675rem;
         font-weight: 600;
         padding: 0.1rem 0.4rem;
         border-radius: 4px;
-        margin-left: 0.3rem;
+        margin-top: 0.2rem;
         font-family: monospace;
-    }
-
-    .notes-box {
-        background: #fffbeb;
-        border: 1px solid #fde68a;
-        border-radius: 12px;
-        padding: 1.25rem;
-    }
-
-    .formula-box {
-        background: #f8fafc;
-        border: 1px solid #e2e8f0;
-        border-radius: 12px;
-        padding: 1.25rem;
     }
 
     .confirmation-box {
@@ -224,7 +212,7 @@
         ? route('penilaianKewanganKerja.show', $tenderParam) 
         : (str_contains(url()->previous(), '/penilaian-kewangan') ? url()->previous() : route('penilaianKewangan'));
 
-    $vendorsData = $b8VendorSummary ?? [];
+    $vendorsData = $b7VendorSummary ?? [];
 @endphp
 
 <div class="container-fluid px-0 py-2">
@@ -236,7 +224,7 @@
                 <li class="breadcrumb-item"><a href="#" class="text-muted text-decoration-none"><i class="bi bi-house-door me-1"></i>STOS</a></li>
                 <li class="breadcrumb-item"><a href="{{ route('penilaianKewangan') }}" class="text-muted text-decoration-none">Penilaian Kewangan</a></li>
                 <li class="breadcrumb-item"><a href="{{ $backToTenderUrl }}" class="text-muted text-decoration-none">Penilaian Kewangan (Kerja)</a></li>
-                <li class="breadcrumb-item active fw-medium text-danger" aria-current="page">Borang 8</li>
+                <li class="breadcrumb-item active fw-medium text-danger" aria-current="page">Borang 7</li>
             </ol>
         </nav>
         <a href="{{ $backToTenderUrl }}" class="btn btn-sm btn-sebelumnya d-inline-flex align-items-center gap-1">
@@ -246,8 +234,8 @@
     </div>
 
     {{-- Header Banner Card --}}
-    <div class="b8-card mb-4">
-        <div class="b8-header-banner d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+    <div class="b7-card mb-4">
+        <div class="b7-header-banner d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
             <div>
                 <div class="d-flex align-items-center gap-2 mb-2">
                     <span class="badge bg-warning text-white px-2.5 py-1 rounded-pill small fw-semibold">Peringkat Kedua</span>
@@ -255,8 +243,8 @@
                         <span class="badge bg-light text-dark px-2.5 py-1 rounded-pill small fw-semibold"><i class="bi bi-lock-fill me-1"></i>Mod Paparan Sahaja</span>
                     @endif
                 </div>
-                <h3 class="fw-bold mb-1 text-white" style="letter-spacing: -0.5px;">BORANG 8 - Analisa Data-Data Penilaian Keupayaan Petender</h3>
-                <p class="text-white-50 mb-0 small">Analisa kedudukan kewangan, modal pusingan, aset, liabiliti, dan keupayaan biayawan petender.</p>
+                <h3 class="fw-bold mb-1 text-white" style="letter-spacing: -0.5px;">BORANG 7 - Analisa Nilai Baki Kerja Dalam Tangan</h3>
+                <p class="text-white-50 mb-0 small">Analisis data-data penilaian keupayaan petender bagi nilai baki kerja dalam tangan.</p>
             </div>
         </div>
     </div>
@@ -318,16 +306,16 @@
         </div>
     </div>
 
-    {{-- Main Section Card: Vendor Participant List Table --}}
-    <div class="b8-card p-4 mb-4">
+    {{-- Main Section Card: Vendor List Table --}}
+    <div class="b7-card p-4 mb-4">
         <div class="d-flex align-items-center justify-content-between mb-4">
             <div class="d-flex align-items-center">
                 <div class="bg-primary-subtle p-2 rounded-2 me-3">
                     <i class="bi bi-bar-chart-steps text-primary fs-4"></i>
                 </div>
                 <div>
-                    <h5 class="fw-bold mb-0">Senarai Petender Bagi Analisa Kedudukan Kewangan</h5>
-                    <p class="text-secondary small mb-0">Sila klik <strong>Papar &amp; Semak</strong> untuk menyemak jadual perincian analisa kedudukan kewangan petender.</p>
+                    <h5 class="fw-bold mb-0">Senarai Petender Bagi Analisa Nilai Baki Kerja</h5>
+                    <p class="text-secondary small mb-0">Sila klik <strong>Papar & Semak</strong> untuk menyemak jadual perincian analisa baki kerja petender.</p>
                 </div>
             </div>
             <span class="section-badge-pill-primary ms-auto">
@@ -343,8 +331,10 @@
                         <tr>
                             <th style="width: 60px;" class="text-center">BIL</th>
                             <th><i class="bi bi-person-vcard text-danger me-1"></i> KOD PEMBEKAL</th>
-                            <th class="text-end"><i class="bi bi-cash-stack text-danger me-1"></i> MODAL PUSINGAN (RM)</th>
-                            <th style="width: 180px;" class="text-center"><i class="bi bi-sliders text-danger me-1"></i> TINDAKAN</th>
+                            <th class="text-end"><i class="bi bi-check-circle text-danger me-1"></i> JUMLAH KERJA DISIAPKAN (RM)</th>
+                            <th class="text-end"><i class="bi bi-calendar-check text-danger me-1"></i> JUMLAH TAHUNAN BAKI KERJA (NTBK) (RM)</th>
+                            <th class="text-end"><i class="bi bi-cash-stack text-danger me-1"></i> NILAI BAKI KERJA (NBK) (RM)</th>
+                            <th style="width: 160px;" class="text-center"><i class="bi bi-sliders text-danger me-1"></i> TINDAKAN</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -365,20 +355,26 @@
                                     </div>
                                 </td>
                                 <td class="text-end font-monospace text-dark fw-semibold">
-                                    {{ $v['modal_pusingan_disp'] }}
+                                    {{ $v['jumlah_disiapkan_disp'] }}
+                                </td>
+                                <td class="text-end font-monospace text-danger fw-bold">
+                                    0.00
+                                </td>
+                                <td class="text-end font-monospace text-dark fw-semibold">
+                                    {{ $v['jumlah_nbk_disp'] }}
                                 </td>
                                 <td class="text-center">
-                                    <button type="button" class="btn-action-papar" onclick="openB8DetailModal('{{ $vId }}')">
-                                        <i class="bi bi-eye me-1"></i>Papar &amp; Semak
+                                    <button type="button" class="btn-action-papar" onclick="openB7DetailModal('{{ $vId }}')">
+                                        <i class="bi bi-eye me-1"></i>Papar & Semak
                                     </button>
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="4" class="text-center py-4 text-muted">
+                                <td colspan="6" class="text-center py-4 text-muted">
                                     <div class="d-flex flex-column align-items-center gap-2">
                                         <i class="bi bi-exclamation-circle text-warning display-6"></i>
-                                        <span class="fw-semibold">Tiada petender yang lulus Peringkat Pertama untuk analisa Borang 8.</span>
+                                        <span class="fw-semibold">Tiada petender yang lulus Peringkat Pertama untuk analisa Borang 7.</span>
                                     </div>
                                 </td>
                             </tr>
@@ -390,12 +386,12 @@
 
         {{-- Form Actions & Confirmation Box --}}
         <div class="confirmation-box">
-            <div class="row g-3 align-items-center">
+            <div class="row g-3 align-items-center mb-0">
                 <div class="col-12 col-md-8">
-                    <div class="form-check p-3 bg-white rounded-3 border mb-0">
+                    <div class="form-check p-3 bg-white rounded-3 border">
                         <input class="form-check-input ms-0 me-2" type="checkbox" id="chkSah" {{ $readOnly ? 'disabled checked' : '' }}>
                         <label class="form-check-label fw-semibold text-dark small" for="chkSah">
-                            Saya mengesahkan petender di atas telah dinilai kedudukan kewangan secara teliti.
+                            Saya mengesahkan maklumat analisa nilai baki kerja dalam tangan telah diisi dengan lengkap dan betul.
                         </label>
                     </div>
                 </div>
@@ -417,21 +413,21 @@
 </div>
 
 {{-- =========================
-    MODAL: PERINCIAN KEDUDUKAN KEWANGAN (b8DetailModal)
+    MODAL: PERINCIAN ANALISA BAKI KERJA (b7DetailModal)
 ========================== --}}
-<div class="modal fade" id="b8DetailModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-xl" style="max-width: 90%; width: 90%;">
+<div class="modal fade" id="b7DetailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 95%; width: 95%;">
         <div class="modal-content modal-card">
 
             {{-- Modal Header --}}
             <div class="modal-header border-0 pb-0 pt-4 px-4 align-items-center">
                 <div class="d-flex align-items-center gap-3">
-                    <div class="rounded-3 p-2.5 d-flex align-items-center justify-content-center text-danger" style="width: 44px; height: 44px; background: #fef2f2;">
-                        <i class="bi bi-calculator-fill fs-4"></i>
+                    <div class="rounded-3 p-2.5 d-flex align-items-center justify-content-center" style="width: 44px; height: 44px; background: #fef2f2; color: #dc2626;">
+                        <i class="bi bi-bar-chart-steps fs-4"></i>
                     </div>
                     <div>
-                        <h5 class="modal-title fw-bold text-dark mb-0">BORANG 8 - ANALISA DATA-DATA PENILAIAN KEUPAYAAN PETENDER</h5>
-                        <p class="text-secondary small mb-0">Analisa kedudukan kewangan, modal pusingan, aset, liabiliti, dan keupayaan biayawan petender.</p>
+                        <h5 class="modal-title fw-bold text-dark mb-0">JADUAL ANALISA NILAI BAKI KERJA DALAM TANGAN</h5>
+                        <p class="text-secondary small mb-0">Paparan Analisa Data-Data Penilaian Keupayaan Petender Bagi Nilai Baki Kerja Dalam Tangan.</p>
                     </div>
                 </div>
                 <div class="d-flex align-items-center gap-2 ms-auto">
@@ -445,160 +441,161 @@
             {{-- Modal Body --}}
             <div class="modal-body px-4 py-3">
 
-                {{-- Modern Table Wrapper --}}
+                {{-- Table Modern Wrapper --}}
                 <div class="table-modern-wrapper mb-4">
-                    <div class="table-responsive">
-                        <table class="table-borang3-modern">
+                    <div class="table-responsive" style="overflow-x: auto;">
+                        <table class="table-borang3-modern" style="table-layout: fixed; width: 100%; min-width: 100%;">
+                            <colgroup>
+                                <col style="width: 3.5%;">
+                                <col style="width: 16%;">
+                                <col style="width: 8.5%;">
+                                <col style="width: 9.5%;">
+                                <col style="width: 8.5%;">
+                                <col style="width: 6.5%;">
+                                <col style="width: 6.5%;">
+                                <col style="width: 8.5%;">
+                                <col style="width: 7%;">
+                                <col style="width: 8.5%;">
+                                <col style="width: 8.5%;">
+                                <col style="width: 9.5%;">
+                            </colgroup>
                             <thead>
                                 <tr>
-                                    <th colspan="3" class="subhead-main text-start ps-3 py-2.5">
-                                        <i class="bi bi-person-badge me-1"></i> <span id="modalRefHeaderTitle">NO. RUJUKAN PETENDER : -</span>
+                                    <th colspan="12" class="subhead-main text-start ps-3 py-2.5" style="background: #6d6d79ff;">
+                                        <i class="bi bi-file-earmark-text me-1"></i> <span id="modalRefHeaderTitle">NO. RUJUKAN PETENDER : -</span>
                                     </th>
                                 </tr>
                                 <tr>
-                                    <th class="text-center subhead-level2" style="width: 80px;">Bil.</th>
-                                    <th class="text-start subhead-level2 ps-3">Butiran</th>
-                                    <th class="text-end subhead-level2 pe-3" style="width: 280px;">Nilai (RM)</th>
+                                    <th class="compact-th">BIL</th>
+                                    <th class="compact-th">NAMA KONTRAK SEMASA</th>
+                                    <th class="compact-th">NILAI KONTRAK<br><span class="formula-tag">(RM)</span></th>
+                                    <th class="compact-th">NILAI WKP &amp; WPS<br><span class="formula-tag">(RM)</span></th>
+                                    <th class="compact-th">NILAI KERJA PEMBINA<br><span class="formula-tag">(RM)</span></th>
+                                    <th class="compact-th">PERATUS SIAP<br><span class="formula-tag">(%)</span></th>
+                                    <th class="compact-th">PERATUS BELUM SIAP<br><span class="formula-tag">(%)</span></th>
+                                    <th class="compact-th">TARIKH JANGKA SIAP SEBENAR</th>
+                                    <th class="compact-th">BAKI TEMPOH PENYIAPAN<br><span class="formula-tag">(Bulan)</span></th>
+                                    <th class="compact-th">NILAI KERJA DISIAPKAN<br><span class="formula-tag">(RM)</span></th>
+                                    <th class="compact-th">NILAI TAHUNAN BAKI KERJA (NTBK)<br><span class="formula-tag">(RM)</span></th>
+                                    <th class="compact-th">NILAI BAKI KERJA (NBK)<br><span class="formula-tag">(RM)</span></th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                <tr>
-                                    <td class="text-center font-monospace fw-bold">1</td>
-                                    <td class="fw-medium">Modal Pusingan <span class="formula-tag">MP *</span></td>
-                                    <td class="text-end pe-3 font-monospace" id="b8_val_mp">0.00</td>
-                                </tr>
-                                <tr>
-                                    <td class="text-center font-monospace fw-bold">2</td>
-                                    <td class="fw-medium">Jumlah Asset <span class="formula-tag">JA **</span></td>
-                                    <td class="text-end pe-3 font-monospace" id="b8_val_ja">0.00</td>
-                                </tr>
-                                <tr>
-                                    <td class="text-center font-monospace fw-bold">3</td>
-                                    <td class="fw-medium">Jumlah Liabiliti <span class="formula-tag">JL **</span></td>
-                                    <td class="text-end pe-3 font-monospace" id="b8_val_jl">0.00</td>
-                                </tr>
-                                <tr>
-                                    <td class="text-center font-monospace fw-bold">4</td>
-                                    <td class="fw-medium">Nett Worth <span class="formula-tag">NW = (JA - JL)</span></td>
-                                    <td class="text-end pe-3 font-monospace" id="b8_val_nw">0.00</td>
-                                </tr>
-                                <tr>
-                                    <td class="text-center font-monospace fw-bold">5</td>
-                                    <td class="fw-medium">Jumlah Baki Nilai Kemudahan Kredit yang telah diperolehi <span class="formula-tag">KK ***</span></td>
-                                    <td class="text-end pe-3 font-monospace" id="b8_val_kk">0.00</td>
-                                </tr>
-                                <tr>
-                                    <td class="text-center font-monospace fw-bold">6</td>
-                                    <td class="fw-medium">Wang Dalam Tangan Semasa <span class="formula-tag">WDTS</span></td>
-                                    <td class="text-end pe-3 font-monospace" id="b8_val_wdts">0.00</td>
-                                </tr>
-                                <tr>
-                                    <td class="text-center font-monospace fw-bold">7</td>
-                                    <td class="fw-medium">Harga Tender <span class="formula-tag">T</span></td>
-                                    <td class="text-end pe-3 font-monospace" id="b8_val_t">0.00</td>
-                                </tr>
-                                <tr>
-                                    <td class="text-center font-monospace fw-bold">8</td>
-                                    <td class="fw-medium">Harga Tender mengikut Anggaran Jabatan <span class="formula-tag">AJ</span></td>
-                                    <td class="text-end pe-3 font-monospace" id="b8_val_aj">0.00</td>
-                                </tr>
-                                <tr>
-                                    <td class="text-center font-monospace fw-bold">9</td>
-                                    <td class="fw-medium">Nilai Wang Kos Prima <span class="formula-tag">WKP</span></td>
-                                    <td class="text-end pe-3 font-monospace text-danger fw-bold" id="b8_val_wkp">0.00</td>
-                                </tr>
-                                <tr>
-                                    <td class="text-center font-monospace fw-bold">10</td>
-                                    <td class="fw-medium">Wang Peruntukan Sementara <span class="formula-tag">WPS</span></td>
-                                    <td class="text-end pe-3 font-monospace text-danger fw-bold" id="b8_val_wps">0.00</td>
-                                </tr>
-                                <tr>
-                                    <td class="text-center font-monospace fw-bold">11</td>
-                                    <td class="fw-medium">Tempoh Siap Penengah <span class="formula-tag">TSP</span></td>
-                                    <td class="text-end pe-3 font-monospace" id="b8_val_tsp">0.00</td>
-                                </tr>
-                                <tr>
-                                    <td class="text-center font-monospace fw-bold">12</td>
-                                    <td class="fw-medium">Tempoh Penyiapan yang di Tender <span class="formula-tag">TS</span></td>
-                                    <td class="text-end pe-3 font-monospace" id="b8_val_ts">0.00</td>
-                                </tr>
-                                <tr>
-                                    <td class="text-center font-monospace fw-bold">13</td>
-                                    <td class="fw-medium">Jumlah Nilai Tahunan Baki Kerja Dalam Tangan <span class="formula-tag">NTBK (Borang 7)</span></td>
-                                    <td class="text-end pe-3 font-monospace text-danger fw-bold" id="b8_val_ntbk">0.00</td>
-                                </tr>
-                                <tr>
-                                    <td class="text-center font-monospace fw-bold">14</td>
-                                    <td class="fw-medium text-danger">Nilai Keupayaan Biayawan <span class="formula-tag">KB +</span></td>
-                                    <td class="text-end pe-3 font-monospace fw-bold text-danger" id="b8_val_kb">0.00</td>
-                                </tr>
-                                <tr>
-                                    <td class="text-center font-monospace fw-bold">15</td>
-                                    <td class="fw-medium">Nilai Tahunan Projek <span class="formula-tag">NTP = [ AJ - (WKP + WPS) / TSP ]</span></td>
-                                    <td class="text-end pe-3 font-monospace" id="b8_val_ntp">0.00</td>
-                                </tr>
-                                <tr>
-                                    <td class="text-center font-monospace fw-bold">16</td>
-                                    <td class="fw-medium">Peratus Nilai Keupayaan Biayawan berbanding Nilai Tahunan Projek <span class="formula-tag">[ (KB) x 100 / (NTP) ]</span></td>
-                                    <td class="text-end pe-3 font-monospace" id="b8_val_peratus">0.00 %</td>
-                                </tr>
+
+                            <tbody id="b7ModalItemsTableBody">
+                                {{-- Populated by JavaScript --}}
                             </tbody>
+                            <tfoot>
+                                <tr class="fw-bold" style="background-color: #f8fafc; border-top: 2px solid #cbd5e1;">
+                                    <td colspan="9" class="text-end font-monospace fw-bold text-dark pe-3 py-2.5">
+                                        JUMLAH
+                                    </td>
+                                    <td class="text-end font-monospace fw-bold text-dark py-2.5" id="modalFootJumlahDisiapkan">
+                                        0.00
+                                    </td>
+                                    <td class="text-end font-monospace fw-bold text-danger py-2.5" id="modalFootJumlahNtbk">
+                                        0.00
+                                    </td>
+                                    <td class="text-end font-monospace fw-bold text-dark py-2.5" id="modalFootJumlahNbk">
+                                        0.00
+                                    </td>
+                                </tr>
+                            </tfoot>
                         </table>
                     </div>
                 </div>
 
-                {{-- Notes & Formula Section --}}
-                <div class="row g-3 mb-4">
-                    <div class="col-12 col-lg-7">
-                        <div class="notes-box h-100">
-                            <div class="d-flex align-items-center gap-2 fw-bold text-amber-900 mb-2" style="color: #92400e;">
-                                <i class="bi bi-exclamation-triangle-fill text-warning fs-5"></i>
-                                <span>Catatan : (Semua tempoh hendaklah dalam dua titik perpuluhan)</span>
+                {{-- Rumusan Jumlah Section --}}
+                <div class="mb-2">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="rounded-3 p-2 d-flex align-items-center justify-content-center" style="width: 36px; height: 36px; background: #fef2f2; color: #dc2626;">
+                                <i class="bi bi-calculator-fill fs-5"></i>
                             </div>
-                            <ul class="list-unstyled mb-0 small text-secondary">
-                                <li class="d-flex gap-2 mb-2">
-                                    <span class="fw-bold text-dark">*</span>
-                                    <span>Modal Pusingan (MP) adalah perbezaan antara Asset Semasa dan Liabiliti Semasa petender seperti yang dinyatakan dalam Lembaran Imbangan dan dicontohi nilai positif perbezaan antara WDTS (Penyata Akaun) dengan WDT (Lembaran Imbangan) [MP = (Aset Semasa - Liabiliti Semasa) + Nilai positif (WDTS - WDT)].</span>
-                                </li>
-                                <li class="d-flex gap-2 mb-2">
-                                    <span class="fw-bold text-dark">**</span>
-                                    <span>Nilai ini hendaklah seperti yang dinyatakan dalam Lembaran Imbangan seperti yang terdapat dalam Akaun Syarikat yang diaudit oleh Juru Audit bertauliah bagi tahun kewangan terakhir atau sekiranya tiada, bagi tahun kewangan setahun sebelumnya.</span>
-                                </li>
-                                <li class="d-flex gap-2">
-                                    <span class="fw-bold text-dark">***</span>
-                                    <span>Nilai-nilai ini hendaklah seperti yang dinyatakan dalam Laporan Bank mengenai kedudukan kewangan petender.</span>
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
-
-                    <div class="col-12 col-lg-5">
-                        <div class="formula-box h-100">
-                            <div class="d-flex align-items-center gap-2 fw-bold text-dark mb-2">
-                                <i class="bi bi-calculator me-1 text-danger"></i>
-                                <span>Formula Keupayaan Biayawan (KB)</span>
-                            </div>
-                            <div class="bg-white p-3 rounded-3 border font-monospace small text-dark mb-2 shadow-sm">
-                                <div class="mb-1"><span class="badge bg-secondary me-1">1</span> (KB) = [ (10 &times; MP) + (5 &times; (NW - MP)) ] - [0.5 &times; NTBK]</div>
-                                <div class="mb-1"><span class="badge bg-secondary me-1">2</span> (KB) = [ (10 &times; MP) + (9 &times; KK) ] - [0.5 &times; NTBK]</div>
-                                <div><span class="badge bg-secondary me-1">3</span> (KB) = [ (10 &times; WDTS) + (9 &times; KK) ] - (0.5 &times; NTBK)</div>
-                            </div>
-                            <div class="small text-muted fst-italic">
-                                <i class="bi bi-info-circle me-1"></i>* Yang mana lebih tinggi.
+                            <div>
+                                <h6 class="fw-bold text-dark mb-0">Rumusan Nilai Kerja &amp; Baki Kerja</h6>
+                                <span class="text-muted small" style="font-size: 0.75rem;">Pengaliran data rumusan ke borang penilaian seterusnya</span>
                             </div>
                         </div>
+                        <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 px-2.5 py-1 rounded-pill fw-semibold small">
+                            3 Rumusan Data
+                        </span>
                     </div>
-                </div>
 
-                {{-- Final RM Value Input Box --}}
-                <div class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3 p-3 bg-light rounded-3 border">
-                    <div class="d-flex align-items-center gap-2">
-                        <i class="bi bi-cash-stack text-danger fs-5"></i>
-                        <span class="fw-bold text-dark">Modal Pusingan (MP):</span>
-                    </div>
-                    <div class="input-group" style="max-width: 280px;">
-                        <span class="input-group-text fw-bold bg-white text-muted">RM</span>
-                        <input type="text" class="form-control font-monospace fw-bold text-end fs-6" id="b8_input_mp" placeholder="0.00" readonly>
+                    <div class="row g-3">
+                        {{-- Item 1: Nilai Kerja Disiapkan --}}
+                        <div class="col-12 col-md-4">
+                            <div class="p-3 rounded-3 border bg-white shadow-sm h-100 d-flex flex-column justify-content-between">
+                                <div>
+                                    <div class="d-flex align-items-center justify-content-between mb-2">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="rounded-2 p-1 d-flex align-items-center justify-content-center" style="width: 26px; height: 26px; background: #eff6ff; color: #2563eb;">
+                                                <i class="bi bi-check-circle-fill small"></i>
+                                            </div>
+                                            <span class="text-muted fw-bold text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.5px;">JUMLAH NILAI KERJA YANG TELAH DISIAPKAN</span>
+                                        </div>
+                                    </div>
+                                    <h6 class="fw-bold text-dark mb-3 font-monospace" style="font-size: 0.95rem; line-height: 1.4;" id="cardRumusanDisiapkan">
+                                        RM 0.00
+                                    </h6>
+                                </div>
+                                <div class="pt-2 border-top d-flex align-items-center justify-content-between mt-auto">
+                                    <span class="text-muted extra-small" style="font-size: 0.725rem;">Bawa ke:</span>
+                                    <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-2.5 py-1 rounded-2 fw-semibold" style="font-size: 0.725rem;">
+                                        <i class="bi bi-arrow-right-short me-0.5"></i>Butiran 3 Borang 9
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Item 2: NTBK --}}
+                        <div class="col-12 col-md-4">
+                            <div class="p-3 rounded-3 border bg-white shadow-sm h-100 d-flex flex-column justify-content-between">
+                                <div>
+                                    <div class="d-flex align-items-center justify-content-between mb-2">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="rounded-2 p-1 d-flex align-items-center justify-content-center" style="width: 26px; height: 26px; background: #fffbeb; color: #d97706;">
+                                                <i class="bi bi-calendar-check-fill small"></i>
+                                            </div>
+                                            <span class="text-muted fw-bold text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.5px;">JUMLAH NILAI TAHUNAN BAKI KERJA (NTBK)</span>
+                                        </div>
+                                    </div>
+                                    <h6 class="fw-bold text-danger mb-3 font-monospace" style="font-size: 0.95rem; line-height: 1.4;" id="cardRumusanNtbk">
+                                        RM 0.00
+                                    </h6>
+                                </div>
+                                <div class="pt-2 border-top d-flex align-items-center justify-content-between mt-auto">
+                                    <span class="text-muted extra-small" style="font-size: 0.725rem;">Bawa ke:</span>
+                                    <span class="badge bg-warning bg-opacity-10 text-warning-emphasis border border-warning border-opacity-25 px-2.5 py-1 rounded-2 fw-semibold" style="font-size: 0.725rem;">
+                                        <i class="bi bi-arrow-right-short me-0.5"></i>Butiran 12 Borang 8
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Item 3: NBK --}}
+                        <div class="col-12 col-md-4">
+                            <div class="p-3 rounded-3 border bg-white shadow-sm h-100 d-flex flex-column justify-content-between">
+                                <div>
+                                    <div class="d-flex align-items-center justify-content-between mb-2">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="rounded-2 p-1 d-flex align-items-center justify-content-center" style="width: 26px; height: 26px; background: #f0fdf4; color: #16a34a;">
+                                                <i class="bi bi-cash-stack small"></i>
+                                            </div>
+                                            <span class="text-muted fw-bold text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.5px;">JUMLAH NILAI BAKI KERJA (NBK)</span>
+                                        </div>
+                                    </div>
+                                    <h6 class="fw-bold text-dark mb-3 font-monospace" style="font-size: 0.95rem; line-height: 1.4;" id="cardRumusanNbk">
+                                        RM 0.00
+                                    </h6>
+                                </div>
+                                <div class="pt-2 border-top d-flex align-items-center justify-content-between mt-auto">
+                                    <span class="text-muted extra-small" style="font-size: 0.725rem;">Bawa ke:</span>
+                                    <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2.5 py-1 rounded-2 fw-semibold" style="font-size: 0.725rem;">
+                                        <i class="bi bi-arrow-right-short me-0.5"></i>Borang 14
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -615,55 +612,58 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
     const tenderNo = "{{ $tenderParam }}";
-    const b8VendorDataMap = @json($b8VendorSummary ?? []);
+    const b7VendorDataMap = @json($b7VendorSummary ?? []);
 
-    function openB8DetailModal(vId) {
-        const vData = b8VendorDataMap[vId];
-        const kodPembekal = vData ? vData.kod_pembekal : vId;
+    function openB7DetailModal(vId) {
+        const vData = b7VendorDataMap[vId];
+        if (!vData) return;
 
-        document.getElementById('modalKodPetenderBadge').innerText = 'NO. RUJUKAN PETENDER : ' + kodPembekal;
-        document.getElementById('modalRefHeaderTitle').innerText = 'NO. RUJUKAN PETENDER : ' + kodPembekal;
+        const kodLabel = 'NO. RUJUKAN PETENDER : ' + vData.kod_pembekal;
+        document.getElementById('modalKodPetenderBadge').innerText = kodLabel;
+        document.getElementById('modalRefHeaderTitle').innerText = kodLabel;
 
-        if (vData && vData.b8_items) {
-            const items = vData.b8_items;
+        const tbody = document.getElementById('b7ModalItemsTableBody');
+        tbody.innerHTML = '';
 
-            const fieldsMap = [
-                { id: 'b8_val_mp', item: items.item1_mp },
-                { id: 'b8_val_ja', item: items.item2_ja },
-                { id: 'b8_val_jl', item: items.item3_jl },
-                { id: 'b8_val_nw', item: items.item4_nw },
-                { id: 'b8_val_kk', item: items.item5_kk },
-                { id: 'b8_val_wdts', item: items.item6_wdts },
-                { id: 'b8_val_t', item: items.item7_t },
-                { id: 'b8_val_aj', item: items.item8_aj },
-                { id: 'b8_val_wkp', item: items.item9_wkp },
-                { id: 'b8_val_wps', item: items.item10_wps },
-                { id: 'b8_val_tsp', item: items.item11_tsp },
-                { id: 'b8_val_ts', item: items.item12_ts },
-                { id: 'b8_val_ntbk', item: items.item13_ntbk },
-                { id: 'b8_val_kb', item: items.item14_kb },
-                { id: 'b8_val_ntp', item: items.item15_ntp },
-                { id: 'b8_val_peratus', item: items.item16_peratus },
-            ];
-
-            fieldsMap.forEach(f => {
-                const el = document.getElementById(f.id);
-                if (el && f.item) {
-                    if (f.item.is_null) {
-                        el.innerHTML = '<span class="text-danger fw-bold">' + f.item.disp + '</span>';
-                    } else {
-                        el.innerText = f.item.disp;
-                    }
-                }
+        const items = vData.items || [];
+        if (items.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="12" class="text-center py-4 text-muted">
+                        <span class="fw-semibold">Tiada rekod Kerja Semasa dikemukakan oleh petender ini.</span>
+                    </td>
+                </tr>
+            `;
+        } else {
+            items.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="text-center font-monospace fw-bold">${item.bil}</td>
+                    <td><span class="fw-bold text-dark d-block">${item.nama}</span></td>
+                    <td class="text-end font-monospace">${item.nilai_kontrak_display}</td>
+                    <td class="text-end font-monospace text-danger fw-bold">0.00</td>
+                    <td class="text-end font-monospace text-danger fw-bold">0.00</td>
+                    <td class="text-center font-monospace">${item.peratus_siap_display || '<span class="text-danger fw-bold">0.00%</span>'}</td>
+                    <td class="text-center font-monospace">${item.peratus_belum_display || '<span class="text-danger fw-bold">0.00%</span>'}</td>
+                    <td class="text-center font-monospace">${item.tarikh_siap || '-'}</td>
+                    <td class="text-center font-monospace">${item.baki_bulan !== null ? item.baki_bulan : '<span class="text-danger fw-bold">0</span>'}</td>
+                    <td class="text-end font-monospace">${item.nilai_disiapkan_display}</td>
+                    <td class="text-end font-monospace text-danger fw-bold">0.00</td>
+                    <td class="text-end font-monospace">${item.nbk_display}</td>
+                `;
+                tbody.appendChild(tr);
             });
-
-            const inputMp = document.getElementById('b8_input_mp');
-            if (inputMp && items.item1_mp) {
-                inputMp.value = items.item1_mp.disp;
-            }
         }
 
-        const modal = new bootstrap.Modal(document.getElementById('b8DetailModal'));
+        document.getElementById('modalFootJumlahDisiapkan').innerText = vData.jumlah_disiapkan_disp;
+        document.getElementById('modalFootJumlahNtbk').innerHTML = '<span class="text-danger fw-bold">0.00</span>';
+        document.getElementById('modalFootJumlahNbk').innerText = vData.jumlah_nbk_disp;
+
+        document.getElementById('cardRumusanDisiapkan').innerText = 'RM ' + vData.jumlah_disiapkan_disp;
+        document.getElementById('cardRumusanNtbk').innerHTML = '<span class="text-danger fw-bold">RM 0.00</span>';
+        document.getElementById('cardRumusanNbk').innerText = 'RM ' + vData.jumlah_nbk_disp;
+
+        const modal = new bootstrap.Modal(document.getElementById('b7DetailModal'));
         modal.show();
     }
 
@@ -690,7 +690,7 @@
                 btnSimpanMuktamad.disabled = true;
                 btnSimpanMuktamad.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Menyimpan...';
 
-                fetch(`/penilaian-kewangan-kerja/${encodeURIComponent(tenderNo)}/borang/borang8/simpan-muktamad`, {
+                fetch(`/penilaian-kewangan-kerja/${encodeURIComponent(tenderNo)}/borang/borang7/simpan-muktamad`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -710,7 +710,7 @@
                         Swal.fire({
                             icon: 'success',
                             title: 'Berjaya Disimpan!',
-                            text: data.message || 'Maklumat Borang 8 telah berjaya disahkan dan disimpan!',
+                            text: data.message || 'Maklumat Borang 7 telah berjaya disahkan dan disimpan!',
                             confirmButtonText: 'OK',
                             confirmButtonColor: '#047857'
                         }).then(() => {
@@ -724,7 +724,7 @@
                         Swal.fire({
                             icon: 'error',
                             title: 'Ralat!',
-                            text: data.message || 'Gagal mengesahkan keputusan Borang 8.',
+                            text: data.message || 'Gagal mengesahkan keputusan Borang 7.',
                             confirmButtonColor: '#dc2626'
                         });
                     }

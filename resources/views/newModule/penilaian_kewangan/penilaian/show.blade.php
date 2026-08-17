@@ -130,24 +130,6 @@
         margin-bottom: 2rem;
     }
 
-    .stage-header-p1 {
-        background: linear-gradient(135deg, #7f1d1d 0%, #b91c1c 100%);
-        color: #ffffff;
-        padding: 1.25rem 1.75rem;
-    }
-
-    .stage-header-p2 {
-        background: linear-gradient(135deg, #991b1b 0%, #dc2626 100%);
-        color: #ffffff;
-        padding: 1.25rem 1.75rem;
-    }
-
-    .stage-header-p3 {
-        background: linear-gradient(135deg, #881337 0%, #e11d48 100%);
-        color: #ffffff;
-        padding: 1.25rem 1.75rem;
-    }
-
     /* Borang Action Cards */
     .borang-card {
         background: #ffffff;
@@ -183,6 +165,20 @@
         border-color: #f43f5e;
     }
 
+    /* Locked Borang Card Styling */
+    .borang-card-locked {
+        background: #f8fafc !important;
+        border-color: #e2e8f0 !important;
+        opacity: 0.72;
+        cursor: pointer;
+    }
+
+    .borang-card-locked:hover {
+        transform: none !important;
+        box-shadow: none !important;
+        border-color: #cbd5e1 !important;
+    }
+
     .icon-avatar {
         width: 48px;
         height: 48px;
@@ -209,6 +205,11 @@
         color: #f43f5e;
     }
 
+    .icon-avatar-locked {
+        background: #e2e8f0 !important;
+        color: #94a3b8 !important;
+    }
+
     .borang-badge {
         font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
         font-weight: 700;
@@ -232,24 +233,6 @@
         padding: 0.35rem 0.65rem;
         text-decoration: none;
         transition: all 0.2s ease;
-    }
-
-    a.sub-link-pill:hover {
-        background: #dc2626;
-        color: #ffffff;
-        border-color: #dc2626;
-    }
-
-    .sub-link-pill-p2:hover {
-        background: #ef4444;
-        color: #ffffff;
-        border-color: #ef4444;
-    }
-
-    .sub-link-pill-p3:hover {
-        background: #f43f5e;
-        color: #ffffff;
-        border-color: #f43f5e;
     }
 
     /* ========================
@@ -311,6 +294,70 @@
     }
 </style>
 @endsection
+
+@php
+    $tenderIdentifier = isset($tender) ? ($tender->uuid ?: $tender->id ?: $no_tender_display) : $no_tender_display;
+
+    // Helper closure to render Borang card with sequential access control
+    $renderBorangCard = function ($code, $stageClass, $iconClass, $badgeLabel, $title, $description, $subPills = []) use ($borangAccess, $tenderIdentifier) {
+        $acc = $borangAccess[$code] ?? ['is_unlocked' => ($code === 'borang1'), 'is_completed' => false, 'prev_title' => 'Borang Terdahulu'];
+        $unlocked = $acc['is_unlocked'];
+        $completed = $acc['is_completed'];
+        $prevTitle = $acc['prev_title'] ?? 'Borang Terdahulu';
+
+        $href = $unlocked 
+            ? route('penilaianKewanganKerja.borang.show', ['tender_no' => $tenderIdentifier, 'borang_code' => $code]) 
+            : 'javascript:void(0);';
+
+        $cardClass = 'borang-card ' . ($unlocked ? 'borang-card-' . $stageClass : 'borang-card-locked js-locked-borang');
+        $avatarClass = $unlocked ? 'icon-avatar-' . $stageClass : 'icon-avatar-locked';
+        $textColor = $unlocked ? 'text-dark' : 'text-secondary';
+        $btnColor = $unlocked ? 'text-danger' : 'text-muted';
+
+        echo '<div class="col-12 col-md-6 col-lg-4">';
+        echo '  <a href="' . $href . '" class="' . $cardClass . '" data-borang-title="' . e($badgeLabel . ' - ' . $title) . '" data-prev-title="' . e($prevTitle) . '">';
+        echo '    <div>';
+        echo '      <div class="d-flex align-items-center justify-content-between mb-3">';
+        echo '        <div class="icon-avatar ' . $avatarClass . '">';
+        echo '          <i class="bi ' . ($unlocked ? $iconClass : 'bi-lock-fill') . '"></i>';
+        echo '        </div>';
+
+        if ($completed) {
+            echo '        <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2 py-1"><i class="bi bi-check-circle-fill me-1"></i>SELESAI</span>';
+        } elseif ($unlocked) {
+            echo '        <span class="borang-badge bg-danger bg-opacity-10 text-danger">' . e($badgeLabel) . '</span>';
+        } else {
+            echo '        <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 px-2 py-1"><i class="bi bi-lock-fill me-1"></i>TERKUNCI</span>';
+        }
+
+        echo '      </div>';
+        echo '      <h6 class="fw-bold ' . $textColor . ' mb-1">' . e($title) . '</h6>';
+        echo '      <p class="text-muted extra-small mb-3">' . e($description) . '</p>';
+
+        if (! empty($subPills)) {
+            echo '      <div class="d-flex flex-wrap gap-1.5 mb-3">';
+            foreach ($subPills as $pill) {
+                echo '        <span class="sub-link-pill ' . (! $unlocked ? 'opacity-50' : '') . '">';
+                echo '          <i class="bi ' . e($pill['icon']) . ' me-1"></i>' . e($pill['label']);
+                echo '        </span>';
+            }
+            echo '      </div>';
+        }
+
+        echo '    </div>';
+        echo '    <div class="pt-2 border-top d-flex align-items-center justify-content-between ' . $btnColor . ' small fw-semibold">';
+        if ($unlocked) {
+            echo '      <span>Buka Borang</span>';
+            echo '      <i class="bi bi-arrow-right-short fs-5"></i>';
+        } else {
+            echo '      <span class="text-muted fw-normal">Terkunci</span>';
+            echo '      <i class="bi bi-lock-fill small text-muted"></i>';
+        }
+        echo '    </div>';
+        echo '  </a>';
+        echo '</div>';
+    };
+@endphp
 
 @section('content')
 <div class="container-fluid px-0 py-2">
@@ -431,7 +478,6 @@
             {{-- ========================================================================= --}}
             {{-- STAGE NAV TAB SWITCHER --}}
             {{-- ========================================================================= --}}
-            {{-- Simplified Stage Nav Tab Switcher --}}
             <ul class="nav nav-pills stage-tab-simple" id="peringkat-tabs" role="tablist">
                 <li class="nav-item" role="presentation">
                     <button class="nav-link active" id="tab-p1" data-bs-toggle="pill" data-bs-target="#pane-p1" type="button" role="tab" aria-controls="pane-p1" aria-selected="true">
@@ -476,141 +522,19 @@
                     </div>
             
                     <div class="row g-3">
-
-                        <!-- Borang 1 -->
-                        <div class="col-12 col-md-6 col-lg-4">
-                            <a href="{{ route('borang1', ['tender' => $no_tender_display]) }}" class="borang-card borang-card-p1">
-                                <div>
-                                    <div class="d-flex align-items-center justify-content-between mb-3">
-                                        <div class="icon-avatar icon-avatar-p1">
-                                            <i class="bi bi-file-earmark-spreadsheet"></i>
-                                        </div>
-                                        <span class="borang-badge bg-danger bg-opacity-10 text-danger">BORANG 1</span>
-                                    </div>
-                                    <h6 class="fw-bold text-dark mb-1">Jadual Penyata Tender</h6>
-                                    <p class="text-muted extra-small mb-3">Jadual penyerahan tender, maklumat asas petender & harga tawaran.</p>
-                                </div>
-                                <div class="pt-2 border-top d-flex align-items-center justify-content-between text-danger small fw-semibold">
-                                    <span>Buka Borang</span>
-                                    <i class="bi bi-arrow-right-short fs-5"></i>
-                                </div>
-                            </a>
-                        </div>
-
-                        <!-- Borang 2 -->
-                        <div class="col-12 col-md-6 col-lg-4">
-                            <a href="{{ route('borang2', ['tender' => $no_tender_display]) }}" class="borang-card borang-card-p1">
-                                <div>
-                                    <div class="d-flex align-items-center justify-content-between mb-3">
-                                        <div class="icon-avatar icon-avatar-p1">
-                                            <i class="bi bi-shield-check"></i>
-                                        </div>
-                                        <span class="borang-badge bg-danger bg-opacity-10 text-danger">BORANG 2</span>
-                                    </div>
-                                    <h6 class="fw-bold text-dark mb-1">Semakan Dokumen Wajib</h6>
-                                    <p class="text-muted extra-small mb-3">Semakan kecukupan & kelayakan dokumen kewangan wajib petender.</p>
-                                </div>
-                                <div class="pt-2 border-top d-flex align-items-center justify-content-between text-danger small fw-semibold">
-                                    <span>Buka Borang</span>
-                                    <i class="bi bi-arrow-right-short fs-5"></i>
-                                </div>
-                            </a>
-                        </div>
-
-                        <!-- Borang 3 -->
-                        <div class="col-12 col-md-6 col-lg-4">
-                            <a href="{{ route('borang3', ['tender' => $no_tender_display]) }}" class="borang-card borang-card-p1">
-                                <div>
-                                    <div class="d-flex align-items-center justify-content-between mb-3">
-                                        <div class="icon-avatar icon-avatar-p1">
-                                            <i class="bi bi-shield-check"></i>
-                                        </div>
-                                        <span class="borang-badge bg-danger bg-opacity-10 text-danger">BORANG 3</span>
-                                    </div>
-                                    <h6 class="fw-bold text-dark mb-1">Nisbah Asas Kewangan</h6>
-                                    <p class="text-muted extra-small mb-3">Penilaian nisbah kewangan, penyata bank & lembaran imbangan.</p>
-                                    <div class="d-flex flex-wrap gap-1.5 mb-3">
-                                        <span class="sub-link-pill">
-                                            <i class="bi bi-file-earmark-text"></i>Borang 3
-                                        </span>
-                                        <span class="sub-link-pill">
-                                            <i class="bi bi-journal-text"></i>Lembaran
-                                        </span>
-                                        <span class="sub-link-pill">
-                                            <i class="bi bi-bank"></i>Akaun Bank
-                                        </span>
-                                        <span class="sub-link-pill">
-                                            <i class="bi bi-cash-coin"></i>Bon / Saham
-                                        </span>
-                                    </div>
-                                </div>
-                                <div class="pt-2 border-top d-flex align-items-center justify-content-between text-danger small fw-semibold">
-                                    <span>Buka Borang</span>
-                                    <i class="bi bi-arrow-right-short fs-5"></i>
-                                </div>
-                            </a>
-                        </div>
-
-                        <!-- Borang 4 -->
-                        <div class="col-12 col-md-6 col-lg-4">
-                            <a href="{{ route('borang4', ['tender' => $no_tender_display]) }}" class="borang-card borang-card-p1">
-                                <div>
-                                    <div class="d-flex align-items-center justify-content-between mb-3">
-                                        <div class="icon-avatar icon-avatar-p1">
-                                            <i class="bi bi-graph-up-arrow"></i>
-                                        </div>
-                                        <span class="borang-badge bg-danger bg-opacity-10 text-danger">BORANG 4</span>
-                                    </div>
-                                    <h6 class="fw-bold text-dark mb-1">Keupayaan Kewangan</h6>
-                                    <p class="text-muted extra-small mb-3">Penilaian modal pusingan & had kelayakan kewangan petender.</p>
-                                </div>
-                                <div class="pt-2 border-top d-flex align-items-center justify-content-between text-danger small fw-semibold">
-                                    <span>Buka Borang</span>
-                                    <i class="bi bi-arrow-right-short fs-5"></i>
-                                </div>
-                            </a>
-                        </div>
-
-                        <!-- Borang 5 -->
-                        <div class="col-12 col-md-6 col-lg-4">
-                            <a href="{{ route('borang5', ['tender' => $no_tender_display]) }}" class="borang-card borang-card-p1">
-                                <div>
-                                    <div class="d-flex align-items-center justify-content-between mb-3">
-                                        <div class="icon-avatar icon-avatar-p1">
-                                            <i class="bi bi-card-checklist"></i>
-                                        </div>
-                                        <span class="borang-badge bg-danger bg-opacity-10 text-danger">BORANG 5</span>
-                                    </div>
-                                    <h6 class="fw-bold text-dark mb-1">Keputusan Peringkat Pertama</h6>
-                                    <p class="text-muted extra-small mb-3">Jadual keputusan & rumusan kelayakan peringkat pertama.</p>
-                                </div>
-                                <div class="pt-2 border-top d-flex align-items-center justify-content-between text-danger small fw-semibold">
-                                    <span>Buka Borang</span>
-                                    <i class="bi bi-arrow-right-short fs-5"></i>
-                                </div>
-                            </a>
-                        </div>
-
-                        <!-- Borang 6 -->
-                        <div class="col-12 col-md-6 col-lg-4">
-                            <a href="{{ route('borang6', ['tender' => $no_tender_display]) }}" class="borang-card borang-card-p1">
-                                <div>
-                                    <div class="d-flex align-items-center justify-content-between mb-3">
-                                        <div class="icon-avatar icon-avatar-p1">
-                                            <i class="bi bi-list-stars"></i>
-                                        </div>
-                                        <span class="borang-badge bg-danger bg-opacity-10 text-danger">BORANG 6</span>
-                                    </div>
-                                    <h6 class="fw-bold text-dark mb-1">Petender Lulus Peringkat 1</h6>
-                                    <p class="text-muted extra-small mb-3">Senarai petender lulus disusun mengikut turutan harga tender.</p>
-                                </div>
-                                <div class="pt-2 border-top d-flex align-items-center justify-content-between text-danger small fw-semibold">
-                                    <span>Buka Borang</span>
-                                    <i class="bi bi-arrow-right-short fs-5"></i>
-                                </div>
-                            </a>
-                        </div>
-
+                        @php
+                            $renderBorangCard('borang1', 'p1', 'bi-file-earmark-spreadsheet', 'BORANG 1', 'Jadual Penyata Tender', 'Jadual penyerahan tender, maklumat asas petender & harga tawaran.');
+                            $renderBorangCard('borang2', 'p1', 'bi-shield-check', 'BORANG 2', 'Semakan Dokumen Wajib', 'Semakan kecukupan & kelayakan dokumen kewangan wajib petender.');
+                            $renderBorangCard('borang3', 'p1', 'bi-shield-check', 'BORANG 3', 'Nisbah Asas Kewangan', 'Penilaian nisbah kewangan, penyata bank & lembaran imbangan.', [
+                                ['icon' => 'bi-file-earmark-text', 'label' => 'Borang 3'],
+                                ['icon' => 'bi-journal-text', 'label' => 'Lembaran'],
+                                ['icon' => 'bi-bank', 'label' => 'Akaun Bank'],
+                                ['icon' => 'bi-cash-coin', 'label' => 'Bon / Saham']
+                            ]);
+                            $renderBorangCard('borang4', 'p1', 'bi-graph-up-arrow', 'BORANG 4', 'Keupayaan Kewangan', 'Penilaian modal pusingan & had kelayakan kewangan petender.');
+                            $renderBorangCard('borang5', 'p1', 'bi-card-checklist', 'BORANG 5', 'Keputusan Peringkat Pertama', 'Jadual keputusan & rumusan kelayakan peringkat pertama.');
+                            $renderBorangCard('borang6', 'p1', 'bi-list-stars', 'BORANG 6', 'Petender Lulus Peringkat 1', 'Senarai petender lulus disusun mengikut turutan harga tender.');
+                        @endphp
                     </div>
                 </div>
 
@@ -629,150 +553,18 @@
                     </div>
 
                     <div class="row g-3">
-
-                        <!-- Borang 7 -->
-                        <div class="col-12 col-md-6 col-lg-4">
-                            <div class="borang-card borang-card-p2">
-                                <div>
-                                    <div class="d-flex align-items-center justify-content-between mb-3">
-                                        <div class="icon-avatar icon-avatar-p2">
-                                            <i class="bi bi-bar-chart-steps"></i>
-                                        </div>
-                                        <span class="borang-badge bg-danger bg-opacity-10 text-danger">BORANG 7</span>
-                                    </div>
-                                    <h6 class="fw-bold text-dark mb-1">Analisa Keupayaan Petender</h6>
-                                    <p class="text-muted extra-small mb-2">Analisis data penilaian keupayaan petender (Serupa / Sebanding).</p>
-                                    <div class="d-flex flex-wrap gap-1.5 mb-3">
-                                        <a href="{{ route('serupa', ['tender' => $no_tender_display]) }}" class="sub-link-pill sub-link-pill-p2" title="Kerja Serupa">
-                                            <i class="bi bi-diagram-2"></i>Serupa
-                                        </a>
-                                        <a href="{{ route('sebanding', ['tender' => $no_tender_display]) }}" class="sub-link-pill sub-link-pill-p2" title="Kerja Sebanding">
-                                            <i class="bi bi-diagram-3"></i>Sebanding
-                                        </a>
-                                    </div>
-                                </div>
-                                <div class="pt-2 border-top d-flex align-items-center justify-content-between text-danger small fw-semibold">
-                                    <a href="{{ route('serupa', ['tender' => $no_tender_display]) }}" class="text-decoration-none text-danger d-flex align-items-center justify-content-between w-100">
-                                        <span>Papar Borang 7</span>
-                                        <i class="bi bi-arrow-right-short fs-5"></i>
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Borang 8 -->
-                        <div class="col-12 col-md-6 col-lg-4">
-                            <a href="{{ route('borang8', ['tender' => $no_tender_display]) }}" class="borang-card borang-card-p2">
-                                <div>
-                                    <div class="d-flex align-items-center justify-content-between mb-3">
-                                        <div class="icon-avatar icon-avatar-p2">
-                                            <i class="bi bi-pie-chart-fill"></i>
-                                        </div>
-                                        <span class="borang-badge bg-danger bg-opacity-10 text-danger">BORANG 8</span>
-                                    </div>
-                                    <h6 class="fw-bold text-dark mb-1">Analisa Data Keupayaan</h6>
-                                    <p class="text-muted extra-small mb-3">Jadual analisa data-data penilaian keupayaan petender.</p>
-                                </div>
-                                <div class="pt-2 border-top d-flex align-items-center justify-content-between text-danger small fw-semibold">
-                                    <span>Buka Borang</span>
-                                    <i class="bi bi-arrow-right-short fs-5"></i>
-                                </div>
-                            </a>
-                        </div>
-
-                        <!-- Borang 9 -->
-                        <div class="col-12 col-md-6 col-lg-4">
-                            <div class="borang-card borang-card-p2">
-                                <div>
-                                    <div class="d-flex align-items-center justify-content-between mb-3">
-                                        <div class="icon-avatar icon-avatar-p2">
-                                            <i class="bi bi-gear-wide-connected"></i>
-                                        </div>
-                                        <span class="borang-badge bg-danger bg-opacity-10 text-danger">BORANG 9</span>
-                                    </div>
-                                    <h6 class="fw-bold text-dark mb-1">Analisa Keupayaan Teknikal</h6>
-                                    <p class="text-muted extra-small mb-2">Analisis data penilaian keupayaan teknikal petender.</p>
-                                    <div class="d-flex flex-wrap gap-1.5 mb-3">
-                                        <a href="{{ route('borang9', ['tender' => $no_tender_display]) }}" class="sub-link-pill sub-link-pill-p2" title="Ringkasan Borang 9">
-                                            <i class="bi bi-file-earmark-text"></i>Utama
-                                        </a>
-                                        <a href="{{ route('kerjaSerupa', ['tender' => $no_tender_display]) }}" class="sub-link-pill sub-link-pill-p2" title="Kerja Serupa">
-                                            <i class="bi bi-layers"></i>Serupa
-                                        </a>
-                                        <a href="{{ route('kerjaSebanding', ['tender' => $no_tender_display]) }}" class="sub-link-pill sub-link-pill-p2" title="Kerja Sebanding">
-                                            <i class="bi bi-stack"></i>Sebanding
-                                        </a>
-                                    </div>
-                                </div>
-                                <div class="pt-2 border-top d-flex align-items-center justify-content-between text-danger small fw-semibold">
-                                    <a href="{{ route('borang9', ['tender' => $no_tender_display]) }}" class="text-decoration-none text-danger d-flex align-items-center justify-content-between w-100">
-                                        <span>Papar Borang 9</span>
-                                        <i class="bi bi-arrow-right-short fs-5"></i>
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Borang 10 -->
-                        <div class="col-12 col-md-6 col-lg-4">
-                            <a href="{{ route('borang10', ['tender' => $no_tender_display]) }}" class="borang-card borang-card-p2">
-                                <div>
-                                    <div class="d-flex align-items-center justify-content-between mb-3">
-                                        <div class="icon-avatar icon-avatar-p2">
-                                            <i class="bi bi-person-workspace"></i>
-                                        </div>
-                                        <span class="borang-badge bg-danger bg-opacity-10 text-danger">BORANG 10</span>
-                                    </div>
-                                    <h6 class="fw-bold text-dark mb-1">Prestasi Kerja Semasa</h6>
-                                    <p class="text-muted extra-small mb-3">Penilaian rekod & prestasi kerja semasa petender di tapak.</p>
-                                </div>
-                                <div class="pt-2 border-top d-flex align-items-center justify-content-between text-danger small fw-semibold">
-                                    <span>Buka Borang</span>
-                                    <i class="bi bi-arrow-right-short fs-5"></i>
-                                </div>
-                            </a>
-                        </div>
-
-                        <!-- Borang 11 -->
-                        <div class="col-12 col-md-6 col-lg-4">
-                            <a href="{{ route('borang11', ['tender' => $no_tender_display]) }}" class="borang-card borang-card-p2">
-                                <div>
-                                    <div class="d-flex align-items-center justify-content-between mb-3">
-                                        <div class="icon-avatar icon-avatar-p2">
-                                            <i class="bi bi-cpu"></i>
-                                        </div>
-                                        <span class="borang-badge bg-danger bg-opacity-10 text-danger">BORANG 11</span>
-                                    </div>
-                                    <h6 class="fw-bold text-dark mb-1">Penilaian Keupayaan Teknikal</h6>
-                                    <p class="text-muted extra-small mb-3">Penilaian kakitangan teknikal, loji & peralatan petender.</p>
-                                </div>
-                                <div class="pt-2 border-top d-flex align-items-center justify-content-between text-danger small fw-semibold">
-                                    <span>Buka Borang</span>
-                                    <i class="bi bi-arrow-right-short fs-5"></i>
-                                </div>
-                            </a>
-                        </div>
-
-                        <!-- Borang 12 -->
-                        <div class="col-12 col-md-6 col-lg-4">
-                            <a href="{{ route('borang12', ['tender' => $no_tender_display]) }}" class="borang-card borang-card-p2">
-                                <div>
-                                    <div class="d-flex align-items-center justify-content-between mb-3">
-                                        <div class="icon-avatar icon-avatar-p2">
-                                            <i class="bi bi-patch-check"></i>
-                                        </div>
-                                        <span class="borang-badge bg-danger bg-opacity-10 text-danger">BORANG 12</span>
-                                    </div>
-                                    <h6 class="fw-bold text-dark mb-1">Keupayaan Keseluruhan</h6>
-                                    <p class="text-muted extra-small mb-3">Penilaian skor gabungan keupayaan kewangan & teknikal.</p>
-                                </div>
-                                <div class="pt-2 border-top d-flex align-items-center justify-content-between text-danger small fw-semibold">
-                                    <span>Buka Borang</span>
-                                    <i class="bi bi-arrow-right-short fs-5"></i>
-                                </div>
-                            </a>
-                        </div>
-
+                        @php
+                            $renderBorangCard('borang7', 'p2', 'bi-bar-chart-steps', 'BORANG 7', 'Analisa Keupayaan Petender', 'Analisis data penilaian keupayaan petender.');
+                            $renderBorangCard('borang8', 'p2', 'bi-pie-chart-fill', 'BORANG 8', 'Analisa Data Keupayaan', 'Jadual analisa data-data penilaian keupayaan petender.');
+                            $renderBorangCard('borang9', 'p2', 'bi-gear-wide-connected', 'BORANG 9', 'Analisa Keupayaan Teknikal', 'Analisis data penilaian keupayaan teknikal petender.', [
+                                ['icon' => 'bi-file-earmark-text', 'label' => 'Utama'],
+                                ['icon' => 'bi-layers', 'label' => 'Serupa'],
+                                ['icon' => 'bi-stack', 'label' => 'Sebanding']
+                            ]);
+                            $renderBorangCard('borang10', 'p2', 'bi-person-workspace', 'BORANG 10', 'Prestasi Kerja Semasa', 'Penilaian rekod & prestasi kerja semasa petender di tapak.');
+                            $renderBorangCard('borang11', 'p2', 'bi-cpu', 'BORANG 11', 'Penilaian Keupayaan Teknikal', 'Penilaian kakitangan teknikal, loji & peralatan petender.');
+                            $renderBorangCard('borang12', 'p2', 'bi-patch-check', 'BORANG 12', 'Keupayaan Keseluruhan', 'Penilaian skor gabungan keupayaan kewangan & teknikal.');
+                        @endphp
                     </div>
                 </div>
 
@@ -791,67 +583,11 @@
                     </div>
 
                     <div class="row g-3">
-
-                        <!-- Borang 13 -->
-                        <div class="col-12 col-md-4">
-                            <a href="{{ route('borang13', ['tender' => $no_tender_display]) }}" class="borang-card borang-card-p3">
-                                <div>
-                                    <div class="d-flex align-items-center justify-content-between mb-3">
-                                        <div class="icon-avatar icon-avatar-p3">
-                                            <i class="bi bi-file-earmark-bar-graph"></i>
-                                        </div>
-                                        <span class="borang-badge bg-danger bg-opacity-10 text-danger">BORANG 13</span>
-                                    </div>
-                                    <h6 class="fw-bold text-dark mb-1">Laporan Penilaian Kewangan & Teknikal</h6>
-                                    <p class="text-muted extra-small mb-3">Laporan rasmi lengkap gabungan penilaian kewangan & teknikal perolehan kerja.</p>
-                                </div>
-                                <div class="pt-2 border-top d-flex align-items-center justify-content-between text-danger small fw-semibold">
-                                    <span>Buka Borang</span>
-                                    <i class="bi bi-arrow-right-short fs-5"></i>
-                                </div>
-                            </a>
-                        </div>
-
-                        <!-- Borang 14 -->
-                        <div class="col-12 col-md-4">
-                            <a href="{{ route('borang14', ['tender' => $no_tender_display]) }}" class="borang-card borang-card-p3">
-                                <div>
-                                    <div class="d-flex align-items-center justify-content-between mb-3">
-                                        <div class="icon-avatar icon-avatar-p3">
-                                            <i class="bi bi-journal-check"></i>
-                                        </div>
-                                        <span class="borang-badge bg-danger bg-opacity-10 text-danger">BORANG 14</span>
-                                    </div>
-                                    <h6 class="fw-bold text-dark mb-1">Perakuan Jawatankuasa Penilaian</h6>
-                                    <p class="text-muted extra-small mb-3">Perakuan & pengesyoran rasmi oleh ahli jawatankuasa penilaian perolehan.</p>
-                                </div>
-                                <div class="pt-2 border-top d-flex align-items-center justify-content-between text-danger small fw-semibold">
-                                    <span>Buka Borang</span>
-                                    <i class="bi bi-arrow-right-short fs-5"></i>
-                                </div>
-                            </a>
-                        </div>
-
-                        <!-- Borang 15 -->
-                        <div class="col-12 col-md-4">
-                            <a href="{{ route('borang15', ['tender' => $no_tender_display]) }}" class="borang-card borang-card-p3">
-                                <div>
-                                    <div class="d-flex align-items-center justify-content-between mb-3">
-                                        <div class="icon-avatar icon-avatar-p3">
-                                            <i class="bi bi-award"></i>
-                                        </div>
-                                        <span class="borang-badge bg-danger bg-opacity-10 text-danger">BORANG 15</span>
-                                    </div>
-                                    <h6 class="fw-bold text-dark mb-1">Ringkasan Keputusan & Syor</h6>
-                                    <p class="text-muted extra-small mb-3">Ringkasan syor muktamad jawatankuasa untuk pertimbangan Lembaga Perolehan.</p>
-                                </div>
-                                <div class="pt-2 border-top d-flex align-items-center justify-content-between text-danger small fw-semibold">
-                                    <span>Buka Borang</span>
-                                    <i class="bi bi-arrow-right-short fs-5"></i>
-                                </div>
-                            </a>
-                        </div>
-
+                        @php
+                            $renderBorangCard('borang13', 'p3', 'bi-file-earmark-bar-graph', 'BORANG 13', 'Laporan Penilaian Kewangan & Teknikal', 'Laporan rasmi lengkap gabungan penilaian kewangan & teknikal perolehan kerja.');
+                            $renderBorangCard('borang14', 'p3', 'bi-journal-check', 'BORANG 14', 'Perakuan Jawatankuasa Penilaian', 'Perakuan & pengesyoran rasmi oleh ahli jawatankuasa penilaian perolehan.');
+                            $renderBorangCard('borang15', 'p3', 'bi-award', 'BORANG 15', 'Ringkasan Keputusan & Syor', 'Ringkasan syor muktamad jawatankuasa untuk pertimbangan Lembaga Perolehan.');
+                        @endphp
                     </div>
                 </div>
 
@@ -860,4 +596,50 @@
     </div>
 
 </div>
+
+{{-- SweetAlert2 JS inclusion & Trigger Script --}}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.js-locked-borang').forEach(function(card) {
+            card.addEventListener('click', function(e) {
+                e.preventDefault();
+                var borangTitle = this.getAttribute('data-borang-title') || 'Borang ini';
+                var prevTitle = this.getAttribute('data-prev-title') || 'Borang terdahulu';
+
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: borangTitle + ' Belum Boleh Diakses',
+                        html: '<p class="mb-1 text-secondary fs-6">Sila selesaikan <strong>' + prevTitle + '</strong> terlebih dahulu sebelum meneruskan ke borang ini.</p>',
+                        confirmButtonText: 'Faham',
+                        confirmButtonColor: '#dc2626',
+                        customClass: {
+                            popup: 'rounded-4 shadow',
+                            confirmButton: 'px-4 py-2 rounded-3 fw-semibold'
+                        }
+                    });
+                } else {
+                    alert(borangTitle + ' belum boleh diakses.\nSila selesaikan ' + prevTitle + ' terlebih dahulu.');
+                }
+            });
+        });
+
+        @if(session('error_locked'))
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Akses Dihalang',
+                    text: '{{ session('error_locked') }}',
+                    confirmButtonText: 'Faham',
+                    confirmButtonColor: '#dc2626',
+                    customClass: {
+                        popup: 'rounded-4 shadow',
+                        confirmButton: 'px-4 py-2 rounded-3 fw-semibold'
+                    }
+                });
+            }
+        @endif
+    });
+</script>
 @endsection

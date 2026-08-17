@@ -151,35 +151,17 @@
         box-shadow: 0 6px 16px rgba(220, 38, 38, 0.3);
         transform: translateY(-1px);
     }
-
-    /* Modal Styling */
-    .modal-card {
-        border-radius: 16px;
-        border: none;
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
-        overflow: hidden;
-    }
 </style>
 @endsection
 
 @section('content')
 @php
-    $tenderParam = request('tender') ?: request('tender_no');
+    $tenderParam = request('tender') ?: request('tender_no') ?: ($tender_no ?? '');
     $backToTenderUrl = $tenderParam 
-        ? route('penilaianKewangan.show', $tenderParam) 
+        ? route('penilaianKewanganKerja.show', $tenderParam) 
         : (str_contains(url()->previous(), '/penilaian-kewangan') ? url()->previous() : route('penilaianKewangan'));
 
-    $rows = [
-        ['bil'=>1, 'ruj'=>'45/53', 'harga'=>'4,438,243.50'],
-        ['bil'=>2, 'ruj'=>'27/53', 'harga'=>'4,799,852.00'],
-        ['bil'=>3, 'ruj'=>'34/53', 'harga'=>'4,830,689.40'],
-        ['bil'=>4, 'ruj'=>'24/53', 'harga'=>'4,864,594.40'],
-        ['bil'=>5, 'ruj'=>'37/53', 'harga'=>'4,966,328.00'],
-        ['bil'=>6, 'ruj'=>'30/53', 'harga'=>'4,980,824.00'],
-        ['bil'=>7, 'ruj'=>'32/53', 'harga'=>'5,010,773.00'],
-        ['bil'=>8, 'ruj'=>'2/53', 'harga'=>'5,018,400.10'],
-        ['bil'=>9, 'ruj'=>'7/53', 'harga'=>'5,050,444.00'],
-    ];
+    $passingVendors = $b6PassingVendors ?? [];
 @endphp
 
 <div class="container-fluid px-0 py-2">
@@ -206,6 +188,9 @@
             <div>
                 <div class="d-flex align-items-center gap-2 mb-2">
                     <span class="badge bg-warning text-white px-2.5 py-1 rounded-pill small fw-semibold">Peringkat Pertama</span>
+                    @if($readOnly)
+                        <span class="badge bg-light text-dark px-2.5 py-1 rounded-pill small fw-semibold"><i class="bi bi-lock-fill me-1"></i>Mod Paparan Sahaja</span>
+                    @endif
                 </div>
                 <h3 class="fw-bold mb-1 text-white" style="letter-spacing: -0.5px;">BORANG 6 - Senarai Petender Yang Lulus Penilaian Peringkat Pertama</h3>
                 <p class="text-white-50 mb-0 small">Senarai turutan harga tender bagi petender yang lulus penilaian peringkat pertama.</p>
@@ -214,7 +199,7 @@
     </div>
 
     {{-- Top Info Grid Card --}}
-    <div class="info-top-card p-3.5 mb-4" style="border: 1px solid #e2e8f0; border-radius: 16px; background: #ffffff; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);">
+    <div class="info-top-card p-3.5 mb-4">
         <div class="row g-3 align-items-center">
             <div class="col-12 col-sm-6 col-md-3 border-end">
                 <div class="d-flex align-items-center gap-3">
@@ -222,8 +207,8 @@
                         <i class="bi bi-archive fs-5"></i>
                     </div>
                     <div>
-                        <div class="info-item-label text-muted fw-bold text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em;">No. Sebut Harga / Tender</div>
-                        <div class="info-item-value text-danger font-monospace fw-bold" style="font-size: 0.95rem;">QT210000000023741</div>
+                        <div class="info-item-label">No. Sebut Harga / Tender</div>
+                        <div class="info-item-value text-danger font-monospace">{{ $no_tender_display ?? '-' }}</div>
                     </div>
                 </div>
             </div>
@@ -234,8 +219,8 @@
                         <i class="bi bi-building fs-5"></i>
                     </div>
                     <div>
-                        <div class="info-item-label text-muted fw-bold text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em;">PTJ Perolehan</div>
-                        <div class="info-item-value text-dark fw-bold" style="font-size: 0.88rem;">JABATAN PENGAIRAN DAN SALIRAN</div>
+                        <div class="info-item-label">PTJ Perolehan</div>
+                        <div class="info-item-value text-dark">{{ $ptj_display ?? '-' }}</div>
                     </div>
                 </div>
             </div>
@@ -246,10 +231,10 @@
                         <i class="bi bi-hourglass-split fs-5"></i>
                     </div>
                     <div>
-                        <div class="info-item-label text-muted fw-bold text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em;">Status Proses</div>
+                        <div class="info-item-label">Status Proses</div>
                         <div class="mt-1">
                             <span class="badge bg-warning bg-opacity-10 text-warning-emphasis border border-warning border-opacity-25 px-2.5 py-1 rounded-pill fw-semibold" style="font-size: 0.72rem;">
-                                Menunggu Pengesahan
+                                {{ $status_label ?? 'Menunggu Penilaian' }}
                             </span>
                         </div>
                     </div>
@@ -262,8 +247,8 @@
                         <i class="bi bi-calendar-event fs-5"></i>
                     </div>
                     <div>
-                        <div class="info-item-label text-muted fw-bold text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em;">Sah Laku Tamat</div>
-                        <div class="info-item-value text-dark font-monospace fw-bold" style="font-size: 0.95rem;">17/01/2022</div>
+                        <div class="info-item-label">Sah Laku Tamat</div>
+                        <div class="info-item-value text-dark font-monospace">{{ $sah_laku_tamat ?? '-' }}</div>
                     </div>
                 </div>
             </div>
@@ -283,7 +268,7 @@
                 </div>
             </div>
             <span class="section-badge-pill-success ms-auto">
-                <i class="bi bi-trophy me-1"></i>9 Petender Lulus
+                <i class="bi bi-trophy me-1"></i>{{ count($passingVendors) }} Petender Lulus
             </span>
         </div>
 
@@ -294,15 +279,15 @@
                     <thead>
                         <tr>
                             <th style="width: 80px;" class="text-center">Bil</th>
-                            <th style="width: 260px;"><i class="bi bi-person-vcard text-danger me-1"></i> Rujukan Petender</th>
+                            <th style="width: 320px;"><i class="bi bi-person-vcard text-danger me-1"></i> Rujukan Petender (Kod Pembekal)</th>
                             <th class="text-end pe-4"><i class="bi bi-currency-dollar text-danger me-1"></i> Harga Tender Asal (RM)</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach($rows as $r)
+                        @forelse($passingVendors as $r)
                             <tr>
                                 <td class="text-center font-monospace fw-bold" style="background-color: #efeff0ff; color: #3f3f3fff;">
-                                    {{ $r['bil'] }}
+                                    {{ $loop->iteration }}
                                 </td>
                                 <td>
                                     <div class="d-flex align-items-center gap-2.5">
@@ -310,57 +295,133 @@
                                             <i class="bi bi-building"></i>
                                         </div>
                                         <div>
-                                            <span class="fw-bold font-monospace text-dark d-block" style="font-size: 0.9rem;">{{ $r['ruj'] }}</span>
+                                            <span class="fw-bold font-monospace text-dark d-block" style="font-size: 0.9rem;">{{ $r['kod_pembekal'] }}</span>
+                                            @if(!empty($r['vendor_name']))
+                                                <span class="small text-muted">{{ $r['vendor_name'] }}</span>
+                                            @endif
                                         </div>
                                     </div>
                                 </td>
                                 <td class="text-end pe-4 font-monospace fw-bold text-dark" style="font-size: 0.925rem;">
-                                    {{ $r['harga'] }}
+                                    {{ $r['harga_display'] }}
                                 </td>
                             </tr>
-                        @endforeach
+                        @empty
+                            <tr>
+                                <td colspan="3" class="text-center py-4 text-muted">
+                                    <div class="d-flex flex-column align-items-center gap-2">
+                                        <i class="bi bi-exclamation-circle text-warning display-6"></i>
+                                        <span class="fw-semibold">Tiada petender yang lulus Penilaian Peringkat Pertama (Borang 5).</span>
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforelse
                     </tbody>
                 </table>
             </div>
         </div>
 
-        <div class="d-flex justify-content-end align-items-center gap-2 mt-4 pt-3 border-top">
-            <button type="button" class="btn btn-submit-danger px-4 rounded-3" onclick="openSuccessModal()">
-                <i class="bi bi-floppy me-1"></i>Simpan Keputusan
-            </button>
-        </div>
-
-    </div>
-
-</div>
-
-{{-- =========================
-    MODAL: SIMPAN SUCCESS
-========================== --}}
-<div class="modal fade" id="successModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" style="max-width:440px;">
-        <div class="modal-content modal-card p-4 text-center">
-
-            <div class="my-3">
-                <div class="bg-success bg-opacity-10 text-success rounded-circle d-inline-flex align-items-center justify-content-center p-3 mb-2" style="width: 72px; height: 72px;">
-                    <i class="bi bi-check-circle-fill display-5"></i>
-                </div>
+        {{-- Form Actions & Confirmation Box --}}
+        <div class="confirmation-box">
+            <div class="form-check p-3 bg-white rounded-3 border mb-3">
+                <input class="form-check-input ms-0 me-2" type="checkbox" id="chkSah" {{ $readOnly ? 'disabled checked' : '' }}>
+                <label class="form-check-label fw-semibold text-dark small" for="chkSah">
+                    Saya mengesahkan petender di atas layak untuk penilaian peringkat seterusnya.
+                </label>
             </div>
-
-            <h5 class="fw-bold text-dark mb-1">Berjaya Disimpan!</h5>
-            <p class="text-muted small mb-4">Maklumat senarai petender yang lulus penilaian peringkat pertama telah berjaya disimpan ke dalam sistem.</p>
-
-            <button type="button" class="btn btn-submit-danger px-4 py-2 rounded-3 w-100" data-bs-dismiss="modal">
-                Faham & Tutup
-            </button>
+            <div class="d-flex justify-content-end gap-2 pt-2 border-top">
+                <a href="{{ $backToTenderUrl }}" class="btn btn-outline-secondary px-3 rounded-3 fw-semibold">
+                    <i class="bi bi-x-circle me-1"></i>Batal
+                </a>
+                <button type="button" class="btn btn-submit-danger px-4 rounded-3" id="btnSimpanMuktamad" {{ $readOnly ? 'disabled' : '' }}>
+                    <i class="bi bi-floppy me-1"></i>Simpan Keputusan
+                </button>
+            </div>
         </div>
+
     </div>
+
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-    function openSuccessModal(){
-        const modal = new bootstrap.Modal(document.getElementById('successModal'));
-        modal.show();
-    }
+    const tenderNo = "{{ $tenderParam }}";
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const btnSimpanMuktamad = document.getElementById('btnSimpanMuktamad');
+        if (btnSimpanMuktamad) {
+            btnSimpanMuktamad.addEventListener('click', function () {
+                const chkSah = document.getElementById('chkSah');
+                if (chkSah && !chkSah.checked) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Pengesahan Diperlukan',
+                        html: '<p class="mb-1 text-secondary fs-6">Sila tandakan <strong>kotak pengesahan</strong> terlebih dahulu sebelum menyimpan keputusan.</p>',
+                        confirmButtonText: 'Faham',
+                        confirmButtonColor: '#dc2626',
+                        customClass: {
+                            popup: 'rounded-4 shadow',
+                            confirmButton: 'px-4 py-2 rounded-3 fw-semibold'
+                        }
+                    });
+                    return;
+                }
+
+                btnSimpanMuktamad.disabled = true;
+                btnSimpanMuktamad.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Menyimpan...';
+
+                fetch(`/penilaian-kewangan-kerja/${encodeURIComponent(tenderNo)}/borang/borang6/simpan-muktamad`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        chk_sah: 1
+                    })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    btnSimpanMuktamad.disabled = false;
+                    btnSimpanMuktamad.innerHTML = '<i class="bi bi-floppy me-1"></i>Simpan Keputusan';
+
+                    if (data.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Berjaya Disimpan!',
+                            text: data.message || 'Maklumat Borang 6 telah berjaya disahkan dan disimpan!',
+                            confirmButtonText: 'OK',
+                            confirmButtonColor: '#047857'
+                        }).then(() => {
+                            if (data.redirect) {
+                                window.location.href = data.redirect;
+                            } else {
+                                window.location.reload();
+                            }
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Ralat!',
+                            text: data.message || 'Gagal mengesahkan keputusan Borang 6.',
+                            confirmButtonColor: '#dc2626'
+                        });
+                    }
+                })
+                .catch(err => {
+                    btnSimpanMuktamad.disabled = false;
+                    btnSimpanMuktamad.innerHTML = '<i class="bi bi-floppy me-1"></i>Simpan Keputusan';
+                    console.error(err);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Ralat Sistem!',
+                        text: 'Berlaku masalah semasa berhubung dengan pelayan.',
+                        confirmButtonColor: '#dc2626'
+                    });
+                });
+            });
+        }
+    });
 </script>
 @endsection
