@@ -126,7 +126,7 @@ Route::post('/cut-off/simpan', [CutOffController::class, 'simpan'])->middleware(
 Route::post('/cut-off/hantar', [CutOffController::class, 'hantar'])->middleware(['auth'])->name('cutOff.hantar');
 
 Route::get('/perakuan-jabatan', [PerakuanJabatanController::class, 'index'])->middleware(['auth'])->name('perakuanjabatan.index');
-Route::get('/perakuan-jabatan/{tender_no}', [PerakuanJabatanController::class, 'show'])->middleware(['auth'])->name('perakuanjabatan.show');
+// Route::get('/perakuan-jabatan/{tender_no}', [PerakuanJabatanController::class, 'show'])->middleware(['auth'])->name('perakuanjabatan.show');
 Route::view('/perakuan-jabatan/form', 'newModule.perakuanJabatan.form')->name('perakuanJabatan.form');
 Route::view('/perakuan-jabatan/kertas-taklimat', 'newModule.perakuanJabatan.kertas_taklimat')->name('perakuanJabatan.kertasTaklimat');
 Route::view('/perakuan-jabatan/pengesyoran-pembekal', 'newModule.perakuanJabatan.pengesyoran_pembekal')->name('perakuanJabatan.pengesyoranPembekal');
@@ -453,8 +453,7 @@ Route::get('/tender/bekalan', [DummyController::class, 'bekalan'])->name('tender
 Route::get('/tender/kerja', [DummyController::class, 'kerja'])->name('tender.kerja');
 Route::get('/tender/status/{status}', [DummyController::class, 'viewByStatus'])->name('tender.status');
 // Protected routes
-Route::middleware(['auth'])->group(function () 
-{
+Route::middleware(['auth'])->group(function () {
 	Route::get('/senarai-teknikal/{tenderUuid}', [TechnicalChecklistController::class, 'index'])->name('senaraiTeknikal');
 	Route::post('/senarai-teknikal/{tenderUuid}', [TechnicalChecklistController::class, 'store'])->name('senaraiTeknikal.store');
 	Route::post('/senarai-teknikal/{tenderUuid}/hantar', [TechnicalChecklistController::class, 'submit'])->name('senaraiTeknikal.submit');
@@ -470,7 +469,7 @@ Route::middleware(['auth'])->group(function ()
 	Route::delete('/spesifikasi-teknikal/{uuid}', [TechnicalSpecificationController::class, 'destroy'])->name('spesifikasiTeknikal.destroy');
 	Route::get('/senarai-teknikal/{tenderUuid}/pengalaman-kerja', [PengalamanKerjaController::class, 'create'])->name('senaraiTeknikal.pengalamanKerja.tender');
 	Route::post('/senarai-teknikal/{tenderUuid}/pengalaman-kerja', [PengalamanKerjaController::class, 'store'])->name('senaraiTeknikal.pengalamanKerja.store');
-	
+
 	//check blade location///
 	Route::delete('/pengalaman-kerja-files/{fileUuid}', [PengalamanKerjaController::class, 'deleteFile'])->name('pengalamanKerja.deleteFile');
 	Route::get('/senarai-teknikal/{tenderUuid}/kerja-dalam-tangan', [KerjaDalamTanganController::class, 'create'])->name('senaraiTeknikal.kerjaDalamTangan');
@@ -876,12 +875,6 @@ Route::middleware(['auth'])->group(function ()
 		Route::get('reports/user/login', [ReportUserLoginController::class, 'index']);
 		Route::post('reports/user/login', [ReportUserLoginController::class, 'view']);
 		Route::get('reports/user/login/excel', [ReportUserLoginController::class, 'excel']);
-
-		// Exception
-		Route::post('tenders/exception/store', [TendersController::class, 'storeException'])->name('tender.store.exception');
-		Route::get('tenders/{id}/exceptions', [TendersController::class, 'exceptions'])->name('tender.exceptions');
-		Route::get('tenders/{id}/approve', [TendersController::class, 'approve_exception'])->name('tender.approve.exception');
-		Route::post('tenders/{id}/reject/{exception_id}', [TendersController::class, 'reject_exception'])->name('tender.reject.exception');
 
 		// Circular
 		Route::resource('circulars', CircularController::class)->except(['show', 'destroy']);
