@@ -11,8 +11,8 @@ return new class extends Migration
         Schema::create('tender_ssts', function (Blueprint $table) {
             $table->id();
             $table->uuid('uuid')->unique();
-            $table->unsignedBigInteger('tender_id');
-            $table->unsignedBigInteger('vendor_id');
+            $table->unsignedInteger('tender_id');
+            $table->unsignedInteger('vendor_id');
 
             // System-generated running number, shown as No. Dokumen.
             $table->string('document_no', 60)->unique();
