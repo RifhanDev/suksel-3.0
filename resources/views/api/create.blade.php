@@ -5,18 +5,10 @@
 @endsection
 
 @section('content')
-	<!-- Page Header -->
 	<div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center mb-4">
 		<div class="mb-3 mb-lg-0">
-			<h3 class="fw-bold text-dark m-0" style="letter-spacing: -0.5px;">Masukkan Token Agensi Baru</h3>
-			<p class="text-muted small m-0">Sistem Tender Online Selangor</p>
-		</div>
-		<div class="d-flex flex-wrap align-items-center gap-3 bg-white px-3 py-2 rounded-2 shadow-sm border">
-			<div class="d-flex align-items-center gap-2">
-				<span class="badge bg-light text-dark border">TARIKH</span>
-				<span class="small text-muted fw-bold">{{ date('d/m/Y') }}</span>
-			</div>
-			<p class="text-muted small m-0">Jana dan daftarkan token API baharu untuk agensi.</p>
+			<h3 class="fw-bold text-dark m-0" style="letter-spacing: -0.5px;">Klien &amp; Token Baharu</h3>
+			<p class="text-muted small m-0">Token Sanctum dijana automatik selepas simpan, dan boleh dilihat semula dalam senarai.</p>
 		</div>
 	</div>
 
@@ -30,45 +22,37 @@
 					<rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
 					<path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
 				</svg>
-				<span class="fw-bold text-dark text-uppercase small">Maklumat Token</span>
+				<span class="fw-bold text-dark text-uppercase small">Maklumat Klien</span>
 			</div>
 
 			<div class="p-4">
 				<div class="row g-3">
-					<!-- Agensi -->
 					<div class="col-12">
-						<label for="organization_unit_id" class="form-label fw-medium small">
-							Agensi <span class="text-danger">*</span>
+						<label for="name" class="form-label fw-medium small">
+							Nama Klien <span class="text-danger">*</span>
 						</label>
-						<select name="organization_unit_id" id="organization_unit_id" class="form-select" required>
-							@foreach ($agencies as $agency)
-								<option value="{{ $agency->id }}">{{ $agency->name }}</option>
-							@endforeach
-						</select>
+						<input type="text" name="name" id="name" class="form-control" required
+							placeholder="cth. AUFA, MBSA, Client A"
+							value="{{ old('name') }}">
+						<div class="form-text">Nama mesti unik. Klien A dan Klien B tidak boleh berkongsi token.</div>
 					</div>
 
-					<!-- Token -->
 					<div class="col-12">
-						<label for="token" class="form-label fw-medium small">
-							Token <span class="text-danger">*</span>
-						</label>
-						<div class="d-flex gap-2">
-							<input type="text" name="token" id="token" class="form-control" readonly>
-							<button type="button" class="btn btn-sm px-3 flex-shrink-0 generate d-flex align-items-center gap-1"
-								style="background:#1d6f42;color:#fff;border-color:#1d6f42;">
-								<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24">
-									<path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-										d="m16.555 3.843l3.602 3.602a2.877 2.877 0 0 1 0 4.069l-2.643 2.643a2.877 2.877 0 0 1-4.069 0l-.301-.301l-6.558 6.558a2 2 0 0 1-1.239.578L5.172 21H4a1 1 0 0 1-.993-.883L3 20v-1.172a2 2 0 0 1 .467-1.284l.119-.13L4 17h2v-2h2v-2l2.144-2.144l-.301-.301a2.877 2.877 0 0 1 0-4.069l2.643-2.643a2.877 2.877 0 0 1 4.069 0M15 9h.01" />
-								</svg>
-								Jana Token
-							</button>
-						</div>
+						<label for="organization_unit_id" class="form-label fw-medium small">Agensi</label>
+						<select name="organization_unit_id" id="organization_unit_id" class="form-select">
+							<option value="">— Tiada —</option>
+							@foreach ($agencies as $agency)
+								<option value="{{ $agency->id }}" @selected(old('organization_unit_id') == $agency->id)>
+									{{ $agency->name }}
+								</option>
+							@endforeach
+						</select>
 					</div>
 				</div>
 			</div>
 
 			<div class="d-flex justify-content-between align-items-center p-4 border-top bg-light">
-				<a href="{{ asset('apitoken') }}" class="btn-form btn-form-secondary">
+				<a href="{{ route('apitoken.index') }}" class="btn-form btn-form-secondary">
 					<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
 						stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 						<line x1="19" y1="12" x2="5" y2="12"></line>
@@ -83,40 +67,9 @@
 						<polyline points="17 21 17 13 7 13 7 21"></polyline>
 						<polyline points="7 3 7 8 15 8"></polyline>
 					</svg>
-					Tambah Token
+					Jana Token Sanctum
 				</button>
 			</div>
 		</div>
-
 	</form>
-@endsection
-
-@section('scripts')
-	<script type="text/javascript">
-		$(document).ready(function() {
-			$('.generate').on('click', function(e) {
-				e.preventDefault();
-				var orgId = $('#organization_unit_id').val();
-				if (!orgId) {
-					alert('Sila pilih agensi terlebih dahulu.');
-					return;
-				}
-				$.ajax({
-					type: "POST",
-					url: "{{ route('apitoken.generate') }}",
-					data: {
-						'_token': '{{ csrf_token() }}',
-						'id': orgId
-					},
-					dataType: "json",
-					success: function(response) {
-						$('#token').val(response);
-					},
-					error: function() {
-						alert('Ralat semasa menjana token. Sila cuba lagi.');
-					}
-				});
-			});
-		});
-	</script>
 @endsection
