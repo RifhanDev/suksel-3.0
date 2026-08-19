@@ -948,6 +948,8 @@ Route::middleware(['auth'])->group(function ()
 		Route::get('apitoken/create', [ApiTokenController::class, 'create'])->name('apitoken.create');
 		Route::post('apitoken/store', [ApiTokenController::class, 'store'])->name('apitoken.store');
 		Route::post('apitoken/generate', [ApiTokenController::class, 'generateToken'])->name('apitoken.generate');
+		Route::post('apitoken/{client}/regenerate', [ApiTokenController::class, 'regenerate'])->name('apitoken.regenerate');
+		Route::post('apitoken/{client}/revoke', [ApiTokenController::class, 'revoke'])->name('apitoken.revoke');
 
 		// Email SMTP Manager
 		Route::group(['as' => 'mail-manager.', 'prefix' => 'mail-manager'], function () {
