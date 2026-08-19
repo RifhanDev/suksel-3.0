@@ -26,7 +26,7 @@
 					$isTenderMenuActive =
 					    request()->routeIs('ciptaTender') ||
 					    request()->is('tender*') ||
-					    request()->is('agencies/*') ||
+					    request()->is('agency/*') ||
 					    request()->is('vendors*') ||
 					    request()->is('blacklists*') ||
 					    request()->is('news*') ||
@@ -35,8 +35,7 @@
 					    request()->routeIs('penyediaanIklan.*') ||
 					    request()->routeIs('lawatanTapakUrusetia') ||
 					    request()->is('perakuan-jabatan*') ||
-					    request()->is('eBidding*') ||
-					    request()->is('keputusan-mesyuarat*') ||
+					    request()->is('jawatankuasa-perolehan*') ||
 					    request()->routeIs('indexPenyediaanSuratNiat') ||
 					    request()->is('penyediaan-surat-niat*') ||
 					    request()->routeIs('indexPenyediaanSST') ||
@@ -255,11 +254,15 @@
 
 				<!-- Menu : Penilaian Perolehan -->
 				@php
+					$isPenilaianPembukaActive = request()->routeIs('indexJawatankuasaPembuka', 'jawatankuasaPembuka', 'jawatankuasaPembuka.*');
+					$isCutOffPerolehanActive = request()->is('cut-off', 'cut-off/*');
+					$isPenilaianTeknikalActive = request()->is('penilaian-teknikal*');
+					$isPenilaianKewanganActive = request()->is('penilaian-kewangan*');
 					$isPenilaianPerolehanMenuActive =
-					    request()->is('jawatankuasa-pembuka*') ||
-					    request()->is('cut-off*') ||
-					    request()->is('penilaian-teknikal*') ||
-					    request()->routeIs('penilaianKewangan');
+					    $isPenilaianPembukaActive ||
+					    $isCutOffPerolehanActive ||
+					    $isPenilaianTeknikalActive ||
+					    $isPenilaianKewanganActive;
 				@endphp
 				<li class="nav-item">
 					<a class="sidebar-link {{ $isPenilaianPerolehanMenuActive ? 'active' : 'collapsed' }}" data-bs-toggle="collapse"
@@ -282,26 +285,26 @@
 						<ul class="sidebar-submenu">
 							<li>
 								<a class="submenu-item" href="{{ route('indexJawatankuasaPembuka') }}">
-									<div class="submenu-icon" style="{{ request()->is('jawatankuasa-pembuka*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}"></div>
-									<span class="{{ request()->is('jawatankuasa-pembuka*') ? 'text-white' : '' }}">Penilaian Pembuka</span>
+									<div class="submenu-icon" style="{{ $isPenilaianPembukaActive ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}"></div>
+									<span class="{{ $isPenilaianPembukaActive ? 'text-white' : '' }}">Penilaian Pembuka</span>
 								</a>
 							</li>
 							<li>
 								<a class="submenu-item" href="{{ route('cutOff.index') }}">
-									<div class="submenu-icon" style="{{ request()->is('cut-off*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}"></div>
-									<span class="{{ request()->is('cut-off*') ? 'text-white' : '' }}">Cut Off</span>
+									<div class="submenu-icon" style="{{ $isCutOffPerolehanActive ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}"></div>
+									<span class="{{ $isCutOffPerolehanActive ? 'text-white' : '' }}">Cut Off</span>
 								</a>
 							</li>
 							<li>
 								<a class="submenu-item" href="{{ route('penilaianTeknikal') }}">
-									<div class="submenu-icon" style="{{ request()->is('penilaian-teknikal*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}"></div>
-									<span class="{{ request()->is('penilaian-teknikal*') ? 'text-white' : '' }}">Penilaian Teknikal</span>
+									<div class="submenu-icon" style="{{ $isPenilaianTeknikalActive ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}"></div>
+									<span class="{{ $isPenilaianTeknikalActive ? 'text-white' : '' }}">Penilaian Teknikal</span>
 								</a>
 							</li>
 							<li>
 								<a class="submenu-item" href="{{ route('penilaianKewangan') }}">
-									<div class="submenu-icon" style="{{ request()->routeIs('penilaianKewangan') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}"></div>
-									<span class="{{ request()->routeIs('penilaianKewangan') ? 'text-white' : '' }}">Penilaian Kewangan</span>
+									<div class="submenu-icon" style="{{ $isPenilaianKewanganActive ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}"></div>
+									<span class="{{ $isPenilaianKewanganActive ? 'text-white' : '' }}">Penilaian Kewangan</span>
 								</a>
 							</li>
 						</ul>
@@ -345,8 +348,10 @@
 								<div class="collapse {{ $isCiptaProjekActive ? 'show' : '' }}" id="menuCiptaProjek">
 									<ul class="sidebar-submenu sub-submenu">
 										<li>
-											<a class="submenu-item {{ $isCiptaProjekActive ? 'active' : '' }}"
-												href="{{ route('pembelianTerus.createProject') }}">Senarai Projek</a>
+											<a class="submenu-item" href="{{ route('pembelianTerus.createProject') }}">
+												<div class="submenu-icon" style="{{ $isCiptaProjekActive ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}"></div>
+												<span class="{{ $isCiptaProjekActive ? 'text-white' : '' }}">Senarai Projek</span>
+											</a>
 										</li>
 									</ul>
 								</div>
@@ -445,8 +450,10 @@
 								<div class="collapse {{ $isLantikanCiptaProjekActive ? 'show' : '' }}" id="menuLantikanCiptaProjek">
 									<ul class="sidebar-submenu sub-submenu">
 										<li>
-											<a class="submenu-item {{ $isLantikanCiptaProjekActive ? 'active' : '' }}"
-												href="{{ route('lantikan.index') }}">Senarai Projek</a>
+											<a class="submenu-item" href="{{ route('lantikan.index') }}">
+												<div class="submenu-icon" style="{{ $isLantikanCiptaProjekActive ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}"></div>
+												<span class="{{ $isLantikanCiptaProjekActive ? 'text-white' : '' }}">Senarai Projek</span>
+											</a>
 										</li>
 									</ul>
 								</div>

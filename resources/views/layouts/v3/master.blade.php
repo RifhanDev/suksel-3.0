@@ -428,13 +428,16 @@
             opacity: 0.9;
         }
 
-        /* Level 2 submenu — Penilaian Kewangan (Kerja) list */
+        /* Level 2 submenu — single nested item (e.g. Cipta Projek -> Senarai Projek) */
         .sub-submenu {
-            margin: 2px 0.5rem 4px 0.5rem;
-            padding: 4px 0;
-            border-radius: 8px;
-            background: rgba(0, 0, 0, 0.18);
-            border-left: 2px solid rgba(255, 255, 255, 0.1);
+            margin: 2px 0.5rem 4px 1.5rem;
+            padding-left: 0.5rem;
+            border-left: 2px solid rgba(255, 255, 255, 0.15);
+        }
+
+        .sub-submenu .submenu-item {
+            padding-top: 0.55rem;
+            padding-bottom: 0.55rem;
         }
 
         /* Level 3 submenu — Borang children */
