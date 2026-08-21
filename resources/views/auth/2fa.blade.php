@@ -197,32 +197,42 @@
                 @endif
 
                 <!-- INFO MESSAGE -->
-                <div class="info-text">
-                    <p class="mb-2">Kod pengesahan 6 digit telah dihantar.</p>
-                    <p class="mb-0">Sila masukkan kod untuk meneruskan log masuk.</p>
+                <div class="info-text" id="info-totp">
+                    <p class="mb-2">Buka aplikasi pengesah (Google Authenticator / Microsoft Authenticator).</p>
+                    <p class="mb-0">Masukkan kod 6 digit yang dipaparkan untuk meneruskan log masuk.</p>
+                </div>
+                <div class="info-text d-none" id="info-recovery">
+                    <p class="mb-2">Masukkan salah satu kod pemulihan yang diberikan semasa pendaftaran 2FA.</p>
+                    <p class="mb-0">Setiap kod hanya boleh digunakan sekali sahaja.</p>
                 </div>
 
                 <!-- FORM -->
                 <form method="POST" action="{{ action('AuthController@verify2FA') }}" autocomplete="off" id="2fa-form">
                     @csrf
-                    
-                    <div class="mb-4">
-                        <label class="form-label">Kod Pengesahan</label>
-                        <input type="text" 
-                               class="form-control @error('code') is-invalid @enderror" 
+
+                    <div class="mb-3">
+                        <label class="form-label" id="code-label">Kod Pengesahan</label>
+                        <input type="text"
+                               class="form-control @error('code') is-invalid @enderror"
                                name="code"
                                id="code"
-                               placeholder="000000" 
-                               value="{{ old('code') }}" 
-                               required 
-                               autocomplete="off" 
+                               placeholder="000000"
+                               value="{{ old('code') }}"
+                               required
+                               autocomplete="off"
                                autofocus
                                maxlength="6"
-                               pattern="[0-9]{6}"
                                inputmode="numeric">
                         @error('code')
                             <div class="invalid-feedback d-block small mt-1">{{ $message }}</div>
                         @enderror
+                    </div>
+
+                    <div class="form-check mb-3 text-start">
+                        <input class="form-check-input" type="checkbox" name="remember_device" value="1" id="remember_device">
+                        <label class="form-check-label small text-muted" for="remember_device">
+                            Ingat peranti ini
+                        </label>
                     </div>
 
                     <div class="mt-2 mb-3">
@@ -230,6 +240,13 @@
                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4" /><path d="M21 12c-1 0-3-1-3-3s2-3 3-3 3 1 3 3-2 3-3 3" /><path d="M3 12c1 0 3-1 3-3s-2-3-3-3-3 1-3 3 2 3 3 3" /><path d="M12 3c0 1-1 3-3 3s-3-2-3-3 1-3 3-3 3 2 3 3" /><path d="M12 21c0-1 1-3 3-3s3 2 3 3-1 3-3 3-3-2-3-3" /></svg>
                             Sahkan
                         </button>
+                    </div>
+
+                    <div class="text-center mb-3">
+                        <a href="#" class="back-link" id="toggle-mode">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3" /><path d="M8 12h8" /></svg>
+                            <span id="toggle-mode-text">Guna kod pemulihan</span>
+                        </a>
                     </div>
 
                     <div class="text-center">
@@ -248,23 +265,57 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const codeInput = document.getElementById('code');
-    
-    // Only allow numbers
-    codeInput.addEventListener('input', function(e) {
-        this.value = this.value.replace(/[^0-9]/g, '');
-    });
+    const form = document.getElementById('2fa-form');
+    const toggle = document.getElementById('toggle-mode');
+    const toggleText = document.getElementById('toggle-mode-text');
+    const codeLabel = document.getElementById('code-label');
+    const infoTotp = document.getElementById('info-totp');
+    const infoRecovery = document.getElementById('info-recovery');
 
-    // Auto-submit when 6 digits are entered
-    codeInput.addEventListener('input', function(e) {
+    let recoveryMode = false;
+
+    codeInput.addEventListener('input', function() {
+        if (recoveryMode) {
+            // Recovery codes are alphanumeric and entered manually.
+            this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+            return;
+        }
+
+        this.value = this.value.replace(/[^0-9]/g, '');
+
+        // Auto-submit once the full TOTP code is typed.
         if (this.value.length === 6) {
-            // Small delay to allow user to see the complete code
-            setTimeout(() => {
-                document.getElementById('2fa-form').submit();
-            }, 300);
+            setTimeout(() => form.submit(), 300);
         }
     });
 
-    // Focus on input when page loads
+    toggle.addEventListener('click', function(e) {
+        e.preventDefault();
+        recoveryMode = !recoveryMode;
+
+        codeInput.value = '';
+
+        if (recoveryMode) {
+            codeInput.setAttribute('maxlength', '32');
+            codeInput.setAttribute('placeholder', 'XXXX-XXXX');
+            codeInput.setAttribute('inputmode', 'text');
+            codeLabel.textContent = 'Kod Pemulihan';
+            toggleText.textContent = 'Guna kod aplikasi pengesah';
+            infoTotp.classList.add('d-none');
+            infoRecovery.classList.remove('d-none');
+        } else {
+            codeInput.setAttribute('maxlength', '6');
+            codeInput.setAttribute('placeholder', '000000');
+            codeInput.setAttribute('inputmode', 'numeric');
+            codeLabel.textContent = 'Kod Pengesahan';
+            toggleText.textContent = 'Guna kod pemulihan';
+            infoRecovery.classList.add('d-none');
+            infoTotp.classList.remove('d-none');
+        }
+
+        codeInput.focus();
+    });
+
     codeInput.focus();
 });
 </script>

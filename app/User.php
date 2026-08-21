@@ -64,9 +64,7 @@ class User extends Authenticatable
 		'approved',
 		'role_applied',
 		'approver_id',
-		'remark',
-		'two_factor_code',
-		'two_factor_expires_at'
+		'remark'
 	];
 
 	/**
@@ -170,6 +168,41 @@ class User extends Authenticatable
 	public function organizationunit()
 	{
 		return $this->belongsTo('App\OrganizationUnit', 'organization_unit_id');
+	}
+
+	public function twoFactorAuth()
+	{
+		return $this->hasOne('App\TwoFactorAuth', 'user_id');
+	}
+
+	public function recoveryCodes()
+	{
+		return $this->hasMany('App\TwoFactorRecoveryCode', 'user_id');
+	}
+
+	/**
+	 * True when any of this user's roles has been flagged as requiring 2FA
+	 * on the admin management page.
+	 */
+	public function requiresTwoFactor(): bool
+	{
+		$requiredRoleIds = \App\TwoFactorRoleSetting::requiredRoleIds();
+
+		if (empty($requiredRoleIds)) {
+			return false;
+		}
+
+		return $this->roles()->whereIn('roles.id', $requiredRoleIds)->exists();
+	}
+
+	/**
+	 * Enrolled AND confirmed — a pending, never-confirmed secret does not count.
+	 */
+	public function hasTwoFactorEnabled(): bool
+	{
+		$twoFactor = $this->twoFactorAuth;
+
+		return $twoFactor && $twoFactor->isConfirmed();
 	}
 
 	public function getAuthorizedUserids($authorization_flag)

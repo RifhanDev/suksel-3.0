@@ -746,6 +746,13 @@
 											</div><span class="{{ request()->is('permissions*') ? 'text-white' : '' }}">Tetapan Kebenaran</span>
 										</a></li>
 								@endif
+								@if (Auth::user()->hasRole('Admin'))
+									<li><a class="submenu-item" href="{{ asset('two-factor') }}">
+											<div class="submenu-icon"
+												style="{{ request()->is('two-factor*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}">
+											</div><span class="{{ request()->is('two-factor*') ? 'text-white' : '' }}">Pengurusan 2FA</span>
+										</a></li>
+								@endif
 							</ul>
 						</div>
 					</li>

@@ -51,6 +51,8 @@ use App\Http\Controllers\AssetsController;
 use App\Http\Controllers\RemarksController;
 use App\Http\Controllers\OrganizationTypesController;
 use App\Http\Controllers\RolesController;
+use App\Http\Controllers\TwoFactorController;
+use App\Http\Controllers\TwoFactorAdminController;
 use App\Http\Controllers\PermissionsController;
 use App\Http\Controllers\CertificationCodesController;
 use App\Http\Controllers\GatewaysController;
@@ -656,6 +658,13 @@ Route::middleware(['auth'])->group(function () {
 	Route::put('profile/force_password_change', [ProfileController::class, 'doForceChangePassword']);
 	Route::get('profile/release', [ProfileController::class, 'releaseUser'])->name('release_user');
 
+	// Two-factor authentication (user's own enrolment / self-service)
+	Route::get('profile/2fa', [TwoFactorController::class, 'manage'])->name('2fa.manage');
+	Route::get('profile/2fa/setup', [TwoFactorController::class, 'setup'])->name('2fa.setup');
+	Route::post('profile/2fa/confirm', [TwoFactorController::class, 'confirm'])->name('2fa.confirm');
+	Route::post('profile/2fa/regenerate', [TwoFactorController::class, 'regenerate'])->name('2fa.regenerate');
+	Route::delete('profile/2fa', [TwoFactorController::class, 'disable'])->name('2fa.disable');
+
 	// User's own complaints (Aduan)
 	Route::get('my-aduan', [ComplaintController::class, 'myComplaints'])->name('my.aduan.index');
 	Route::get('my-aduan/{id}', [ComplaintController::class, 'myComplaintShow'])->name('my.aduan.show');
@@ -697,6 +706,15 @@ Route::middleware(['auth'])->group(function () {
 	// Admin routes
 	Route::middleware(['role:Admin'])->group(function () {
 		Route::get('dashboard/hq', [HomeController::class, 'managementDashboard'])->name('dashboard.hq');
+
+		// Two-factor authentication management
+		Route::prefix('two-factor')->name('two-factor.')->group(function () {
+			Route::get('/', [TwoFactorAdminController::class, 'index'])->name('index');
+			Route::get('audit', [TwoFactorAdminController::class, 'audit'])->name('audit');
+			Route::put('roles', [TwoFactorAdminController::class, 'updateRoleSettings'])->name('roles.update');
+			Route::put('settings', [TwoFactorAdminController::class, 'updateSettings'])->name('settings.update');
+			Route::put('users/{user}/reset', [TwoFactorAdminController::class, 'resetUser'])->name('users.reset');
+		});
 
 		Route::get('users/pending-approval', [UsersController::class, 'pendingApproval'])->name('users.pending-approval');
 		Route::get('users/{user}/approval', [UsersController::class, 'approval'])->name('users.approval');

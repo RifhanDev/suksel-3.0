@@ -83,6 +83,12 @@
 					</a>
 				</li>
 				<li>
+					<a class="dropdown-item" href="{{ route('2fa.manage') }}">
+						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+						Keselamatan Akaun (2FA)
+					</a>
+				</li>
+				<li>
 					<a class="dropdown-item" href="{{ route('manuals.show', 'pendaftaran') }}" target="_blank">
 						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"></rect><path d="M12 8v4M12 16h.01"></path></svg>
 						Panduan Pengguna

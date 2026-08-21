@@ -8,6 +8,11 @@ use App\Mail\ForgotPassword;
 use App\User;
 use App\UserHistory;
 use App\PasswordReminder;
+use App\TwoFactorAuth;
+use App\TwoFactorAuditLog;
+use App\TwoFactorRecoveryCode;
+use App\TwoFactorSetting;
+use PragmaRX\Google2FA\Google2FA;
 use Hash;
 use Auth;
 use Mail;
@@ -83,26 +88,18 @@ class AuthController extends Controller
 
                session()->forget('attempt');
 
-               // === 2FA COMMENTED ===
-               // // Generate 2FA code
-               // $twoFactorCode = str_pad(rand(0, 999999), 6, '0', STR_PAD_LEFT);
-               // $user->two_factor_code = $twoFactorCode;
-               // $user->two_factor_expires_at = now()->addMinutes(10);
-               // $user->save();
+               // GATE A - already-enrolled users get challenged before the session
+               // is established. Only the pending user id goes into the session;
+               // the code itself is derived from the stored TOTP secret at verify time.
+               if ($user->hasTwoFactorEnabled() && !$this->hasValidRememberDeviceCookie($request, $user)) {
+                  auth()->logout();
 
-               // // Store user ID in session for 2FA verification
-               // session()->put('2fa_user_id', $user->id);
-               // session()->put('2fa_code', $twoFactorCode);
+                  session()->put('2fa_pending_user_id', $user->id);
+                  session()->put('2fa_pending_remember', (bool) $request->input('remember'));
+                  session()->save();
 
-               // // Logout before 2FA verification
-               // auth()->logout();
-
-               // // Save session before redirect
-               // session()->save();
-
-               // // Redirect to 2FA verification page
-               // return redirect('/auth/2fa/verify');
-               // =====================
+                  return redirect()->route('2fa.verify');
+               }
 
                session()->save();
 
@@ -123,27 +120,36 @@ class AuthController extends Controller
                   return redirect()->route('profile.force-password-change');
                }
 
-               // Redirect based on user role
-               if ($user->hasRole('Vendor')) {
-                  if (is_null($user->vendor)) {
-                     auth()->logout();
-                     session()->flash('error', 'Akaun anda mempunyai masalah.<br>Sila berhubung dengan Bahagian Teknologi Maklumat di <u>tenderadmin@selangor.gov.my</u> dan nyatakan alamat emel <b>(' . $user->email . '</b>) yang digunakan.');
-                     return redirect('/auth/login');
+               // GATE B - role requires 2FA but the user has not enrolled yet.
+               // Same tier as the forced-password-change above: the user is logged in,
+               // but is nagged (or blocked, past the grace period) until they enrol.
+               if ($user->requiresTwoFactor() && !$user->hasTwoFactorEnabled()) {
+                  $twoFactor = TwoFactorAuth::firstOrCreate(
+                     ['user_id' => $user->id],
+                     ['required_since' => now()]
+                  );
+
+                  // Backfill for rows created before the role requirement was switched on.
+                  if (is_null($twoFactor->required_since)) {
+                     $twoFactor->required_since = now();
+                     $twoFactor->save();
                   }
 
-                  if (!$user->vendor->completed)
-                     return redirect('register/company');
-                  elseif (!$user->vendor->registration_paid)
-                     return redirect('register/payment');
-                  else
-                     return redirect('dashboard');
-               } elseif ($user->can('Vendor:list')) {
-                  return redirect('vendors');
-               } else if ($user->hasRole('Admin')) {
-                  return redirect()->route('dashboard.hq');
-               } else {
-                  return redirect()->route('dashboard', ['id' => $user->organization_unit_id]);
+                  $graceDays = TwoFactorSetting::current()->grace_period_days;
+                  $deadline  = $twoFactor->required_since->copy()->addDays($graceDays);
+
+                  if (now()->greaterThan($deadline)) {
+                     session()->flash('warning', 'Tempoh tangguh pengesahan dua faktor telah tamat. Sila sediakan sekarang.');
+                     return redirect()->route('2fa.setup');
+                  }
+
+                  // No flash message here — the reminder is rendered live on every page
+                  // (see layouts.v3.master) by re-checking hasTwoFactorEnabled() directly,
+                  // so it disappears the instant enrolment completes instead of lingering
+                  // for a stale request or two after a session-flash would have expired.
                }
+
+               return $this->redirectForUser($user);
             } else {
                $attempt = session('attempt');
                session()->put('attempt', $attempt += 1);
@@ -355,7 +361,7 @@ class AuthController extends Controller
     */
    public function show2FA()
    {
-      if (!session('2fa_user_id')) {
+      if (!session('2fa_pending_user_id')) {
          return redirect('/auth/login')->with('error', 'Sila log masuk terlebih dahulu.');
       }
 
@@ -363,15 +369,15 @@ class AuthController extends Controller
    }
 
    /**
-    * Verify 2FA code and complete login
+    * Verify the TOTP code (or a recovery code) and complete login.
     */
    public function verify2FA(Request $request)
    {
       $request->validate([
-         'code' => 'required|string|size:6'
+         'code' => 'required|string|max:64',
       ]);
 
-      $userId = session('2fa_user_id');
+      $userId = session('2fa_pending_user_id');
 
       if (empty($userId)) {
          return redirect('/auth/login')->with('error', 'Sesi telah tamat. Sila log masuk semula.');
@@ -379,55 +385,141 @@ class AuthController extends Controller
 
       $user = User::find($userId);
 
-      $testCode = 123456;
-      if ($request->code === $testCode) {
-         $user = User::find($userId);
-         $user->two_factor_code = null;
-         $user->two_factor_expires_at = null;
-         $user->save();
-         session()->forget('2fa_user_id');
-         session()->forget('2fa_code');
-         return redirect('/auth/login')->with('error', 'Kod pengesahan telah tamat tempoh. Sila log masuk semula.');
+      if (!$user) {
+         session()->forget(['2fa_pending_user_id', '2fa_pending_remember']);
+         return redirect('/auth/login')->with('error', 'Pengguna tidak dijumpai.');
       }
 
-      // if (!$user) {
-      //    session()->forget('2fa_user_id');
-      //    session()->forget('2fa_code');
-      //    return redirect('/auth/login')->with('error', 'Pengguna tidak dijumpai.');
-      // }
+      $twoFactor = $user->twoFactorAuth;
 
-      // // Check if code matches and hasn't expired
-      // if ($user->two_factor_code !== $request->code) {
-      //    return redirect('/auth/2fa/verify')->with('error', 'Kod pengesahan tidak betul.')->withInput();
-      // }
+      if (!$twoFactor || !$twoFactor->isConfirmed()) {
+         session()->forget(['2fa_pending_user_id', '2fa_pending_remember']);
+         return redirect('/auth/login')->with('error', 'Pengesahan dua faktor tidak aktif untuk akaun ini.');
+      }
 
-      // if (now()->gt($user->two_factor_expires_at)) {
-      //    $user->two_factor_code = null;
-      //    $user->two_factor_expires_at = null;
-      //    $user->save();
-      //    session()->forget('2fa_user_id');
-      //    session()->forget('2fa_code');
-      //    return redirect('/auth/login')->with('error', 'Kod pengesahan telah tamat tempoh. Sila log masuk semula.');
-      // }
+      // Rate limiting is persisted on the row, not the session: the session resets
+      // every time credentials are re-submitted, which would hand an attacker a
+      // fresh attempt budget against the same secret.
+      if ($twoFactor->isLocked()) {
+         $minutesLeft = max(1, now()->diffInMinutes($twoFactor->locked_until));
+         return redirect()->route('2fa.verify')
+            ->with('error', 'Terlalu banyak percubaan. Sila cuba lagi dalam ' . $minutesLeft . ' minit.');
+      }
 
-      // Clear 2FA code
-      $user->two_factor_code = null;
-      $user->two_factor_expires_at = null;
-      $user->save();
+      $submitted = trim($request->input('code'));
+      $isRecoveryCode = !preg_match('/^\d{6}$/', $submitted);
+      $verified = false;
+      $usedRecoveryCode = false;
 
-      // Clear session
-      session()->forget('2fa_user_id');
-      session()->forget('2fa_code');
+      if ($isRecoveryCode) {
+         $candidates = TwoFactorRecoveryCode::where('user_id', $user->id)->unused()->get();
 
-      // Login the user
-      auth()->login($user);
+         foreach ($candidates as $candidate) {
+            if (Hash::check(strtoupper($submitted), $candidate->code_hash)) {
+               $candidate->used_at = now();
+               $candidate->save();
+               $verified = true;
+               $usedRecoveryCode = true;
+               break;
+            }
+         }
+      } else {
+         $verified = (new Google2FA())->verifyKey($twoFactor->secret, $submitted);
+      }
 
-      // Save session before redirect
+      if (!$verified) {
+         $settings = TwoFactorSetting::current();
+         $twoFactor->failed_attempts = $twoFactor->failed_attempts + 1;
+
+         if ($twoFactor->failed_attempts >= $settings->max_failed_attempts) {
+            $twoFactor->failed_attempts = 0;
+            $twoFactor->locked_until = now()->addMinutes($settings->lockout_minutes);
+            $twoFactor->save();
+
+            TwoFactorAuditLog::record($user->id, TwoFactorAuditLog::EVENT_LOCKED_OUT, null, [
+               'locked_until' => $twoFactor->locked_until->toDateTimeString(),
+            ]);
+
+            return redirect()->route('2fa.verify')
+               ->with('error', 'Terlalu banyak percubaan. Akaun dikunci selama ' . $settings->lockout_minutes . ' minit.');
+         }
+
+         $twoFactor->save();
+
+         return redirect()->route('2fa.verify')->with('error', 'Kod pengesahan tidak betul.');
+      }
+
+      // Verified - clear the counters and establish the real session.
+      $twoFactor->failed_attempts = 0;
+      $twoFactor->locked_until = null;
+
+      $remember = (bool) session('2fa_pending_remember');
+      session()->forget(['2fa_pending_user_id', '2fa_pending_remember']);
+
+      auth()->login($user, $remember);
       session()->save();
 
       UserHistory::log($user->id, 'sign-in');
 
-      // Redirect based on user role
+      if ($usedRecoveryCode) {
+         $remaining = TwoFactorRecoveryCode::where('user_id', $user->id)->unused()->count();
+         TwoFactorAuditLog::record($user->id, TwoFactorAuditLog::EVENT_RECOVERY_USED, null, [
+            'remaining' => $remaining,
+         ]);
+         session()->flash('warning', 'Anda telah menggunakan kod pemulihan. Baki kod: ' . $remaining . '.');
+      }
+
+      $response = $this->redirectForUser($user);
+
+      // "Remember this device" skips the challenge on this browser until it expires.
+      if ($request->boolean('remember_device')) {
+         $plainToken = \Illuminate\Support\Str::random(60);
+         $days = TwoFactorSetting::current()->remember_device_days;
+
+         $twoFactor->remember_token = hash('sha256', $plainToken);
+         $twoFactor->remember_expires_at = now()->addDays($days);
+         $twoFactor->save();
+
+         return $response->withCookie(
+            cookie('2fa_remember', $plainToken, $days * 24 * 60, null, null, null, true)
+         );
+      }
+
+      $twoFactor->save();
+
+      return $response;
+   }
+
+   /**
+    * Checks the "remember this device" cookie against the stored token hash.
+    */
+   protected function hasValidRememberDeviceCookie(Request $request, User $user): bool
+   {
+      $plainToken = $request->cookie('2fa_remember');
+
+      if (empty($plainToken)) {
+         return false;
+      }
+
+      $twoFactor = $user->twoFactorAuth;
+
+      if (!$twoFactor || empty($twoFactor->remember_token) || is_null($twoFactor->remember_expires_at)) {
+         return false;
+      }
+
+      if ($twoFactor->remember_expires_at->isPast()) {
+         return false;
+      }
+
+      return hash_equals($twoFactor->remember_token, hash('sha256', $plainToken));
+   }
+
+   /**
+    * Post-login destination. Shared by doLogin() and verify2FA() so the two
+    * paths cannot drift apart.
+    */
+   protected function redirectForUser(User $user)
+   {
       if ($user->hasRole('Vendor')) {
          if (is_null($user->vendor)) {
             auth()->logout();

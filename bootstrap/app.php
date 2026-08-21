@@ -31,6 +31,7 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\VerifyCsrfToken::class,
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
             \App\Http\Middleware\CheckUser::class,
+            \App\Http\Middleware\RequireTwoFactorSetup::class,
         ]);
 
         // API middleware group

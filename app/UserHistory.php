@@ -37,9 +37,6 @@ class UserHistory extends Model
 
      	if(array_key_exists($action, self::$types)) {
 
-     		$third_party_id=null;
-
-
          $history = new self([
              	'action' => $action,
              	'user_id' => $user_id,
