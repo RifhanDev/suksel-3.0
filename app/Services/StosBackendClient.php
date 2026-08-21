@@ -100,6 +100,17 @@ class StosBackendClient
         return $this->post('/api/tenders/' . $tenderId . '/penyediaan-mesyuarat/submit', $payload);
     }
 
+    public function submitJawatankuasaSpesifikasiPemakluman(int $tenderId, array $payload): Response
+    {
+        if (! $this->isConfigured()) {
+            throw new \RuntimeException('STOS backend is not configured. Set STOS_BACKEND_URL and STOS_BACKEND_API_KEY in .env');
+        }
+
+        $url = $this->baseUrl . '/api/tenders/' . $tenderId . '/jawatankuasa-spesifikasi-mesyuarat/pemakluman';
+
+        return self::http()->timeout(120)->post($url, $payload);
+    }
+
     public function getKehadiranMesyuarat(int $tenderId, ?int $meetingId = null): Response
     {
         $query = $meetingId ? ['meeting_id' => $meetingId] : [];

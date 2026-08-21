@@ -22,6 +22,9 @@ return new class extends Migration
             $table->enum('peranan', ['1', '2', '3'])->index();
             $table->unsignedBigInteger('user_id')->nullable();
             $table->text('catatan')->nullable();
+            $table->date('tarikh_mesyuarat')->nullable();
+            $table->string('masa_mesyuarat', 10)->nullable();
+            $table->string('lokasi_mesyuarat')->nullable();
             $table->string('dokumen_sokongan_nama')->nullable();
             $table->string('dokumen_sokongan_path')->nullable();
             $table->timestamp('dihantar_pemakluman_pada')->nullable();
