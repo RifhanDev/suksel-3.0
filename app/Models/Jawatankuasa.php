@@ -17,9 +17,17 @@ class Jawatankuasa extends Model
         'peranan',
         'user_id',
         'catatan',
+        'tarikh_mesyuarat',
+        'masa_mesyuarat',
+        'lokasi_mesyuarat',
         'dokumen_sokongan_nama',
         'dokumen_sokongan_path',
         'dihantar_pemakluman_pada',
+    ];
+
+    protected $casts = [
+        'tarikh_mesyuarat' => 'date',
+        'dihantar_pemakluman_pada' => 'datetime',
     ];
 
     public function tender()

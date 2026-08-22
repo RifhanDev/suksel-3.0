@@ -19,5 +19,9 @@ public/uploads/
 composer.lock
 storage
 
+# macOS Finder metadata — never useful to track, causes recurring merge conflicts
+.DS_Store
+**/.DS_Store
+
 # Claude Code local settings
 .claude/settings.local.json

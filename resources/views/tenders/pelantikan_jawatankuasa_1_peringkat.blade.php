@@ -210,6 +210,10 @@
 							</div>
 						</div>
 
+						@if ($tab === 'spec')
+							@include('tenders.partials.perincian_mesyuarat_spec')
+						@endif
+
 						<!-- CATATAN & DOKUMEN CARD -->
 						<div class="content-card mb-4 p-0">
 							<div class="content-card-header p-4 pb-3 border-bottom">
@@ -480,6 +484,15 @@
 						saveButton.title = 'Tab ini belum disokong untuk simpan draf.';
 					}
 				}
+
+				if (jenis === 'spec') {
+					const tarikhEl = tabPane.querySelector('.committee-tarikh-mesyuarat');
+					const masaEl = tabPane.querySelector('.committee-masa-mesyuarat');
+					const lokasiEl = tabPane.querySelector('.committee-lokasi-mesyuarat');
+					if (tarikhEl) tarikhEl.value = draftData.tarikh_mesyuarat || '';
+					if (masaEl) masaEl.value = draftData.masa_mesyuarat || '';
+					if (lokasiEl) lokasiEl.value = draftData.lokasi_mesyuarat || '';
+				}
 			});
 		}
 
@@ -503,6 +516,26 @@
 			});
 
 			return rows;
+		}
+
+		function collectSpecMeeting() {
+			const specPane = document.getElementById('tab-spec');
+			if (!specPane) {
+				return { tarikh_mesyuarat: '', masa_mesyuarat: '', lokasi_mesyuarat: '' };
+			}
+
+			return {
+				tarikh_mesyuarat: (specPane.querySelector('.committee-tarikh-mesyuarat') && specPane.querySelector('.committee-tarikh-mesyuarat').value) || '',
+				masa_mesyuarat: (specPane.querySelector('.committee-masa-mesyuarat') && specPane.querySelector('.committee-masa-mesyuarat').value) || '',
+				lokasi_mesyuarat: (specPane.querySelector('.committee-lokasi-mesyuarat') && specPane.querySelector('.committee-lokasi-mesyuarat').value.trim()) || '',
+			};
+		}
+
+		function appendSpecMeeting(formData) {
+			const meeting = collectSpecMeeting();
+			formData.append('tabs[spec][tarikh_mesyuarat]', meeting.tarikh_mesyuarat);
+			formData.append('tabs[spec][masa_mesyuarat]', meeting.masa_mesyuarat);
+			formData.append('tabs[spec][lokasi_mesyuarat]', meeting.lokasi_mesyuarat);
 		}
 
 		function buildDraftFormDataAll() {
@@ -534,6 +567,8 @@
 					formData.append(`tabs[${jenis}][dokumen_sokongan]`, fileInput.files[0]);
 				}
 			});
+
+			appendSpecMeeting(formData);
 
 			return formData;
 		}
@@ -678,6 +713,12 @@
 						}
 					}
 
+					const meeting = collectSpecMeeting();
+					if (!meeting.tarikh_mesyuarat || !meeting.masa_mesyuarat || !meeting.lokasi_mesyuarat) {
+						alert('Sila lengkapkan tarikh, masa dan lokasi mesyuarat Jawatankuasa Spesifikasi.');
+						return;
+					}
+
 					if (!confirm(
 							'Adakah anda pasti untuk menghantar pemakluman kepada semua ahli jawatankuasa?'
 							)) {
@@ -697,6 +738,9 @@
 						data: {
 							_token: $('meta[name=_token]').attr('content'),
 							tender_uuid: tenderUuid,
+							tarikh_mesyuarat: meeting.tarikh_mesyuarat,
+							masa_mesyuarat: meeting.masa_mesyuarat,
+							lokasi_mesyuarat: meeting.lokasi_mesyuarat,
 						},
 						dataType: 'json',
 						success: function(res) {
