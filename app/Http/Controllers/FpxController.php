@@ -109,7 +109,12 @@ class FpxController extends Controller
 		}
 	
 		$data = $request->except('_method', '_token');
-	
+
+		Log::channel('fpx-respond')->info('FPX respond received', $data);
+
+		// Must run before the switch below — never let an unverified payload reach 'success'.
+		if($this->rejectOnBadSignature($data, 'fpx-respond')) return $this->_access_denied();
+
 		switch(true) {
 			case $data['fpx_debitAuthCode'] == '00' && $data['fpx_creditAuthCode'] == '00':
 				$transaction->status            = 'success';
@@ -162,7 +167,7 @@ class FpxController extends Controller
 	
 	public function listen(Request $request) {
 
-		// Log::channel('fpx-listen')->info($request->all());
+		Log::channel('fpx-listen')->info('FPX listen received', $request->all());
 
 		$fpx_sellerExOrderNo = $request->fpx_sellerExOrderNo;
 		$merchant_code       = implode('|', [$request->fpx_sellerExId, $request->fpx_sellerId]);
@@ -176,7 +181,11 @@ class FpxController extends Controller
 		if(empty($transaction_number) || empty($transaction)) return $this->_access_denied();
 	
 		$data = $request->except('_method', '_token');
-	
+
+		// Verify before anything else — do NOT echo 'OK' for a payload that fails, so
+		// PayNet's daemon does not record it as acknowledged.
+		if($this->rejectOnBadSignature($data, 'fpx-listen')) return $this->_access_denied();
+
 		if($transaction->status == 'success') {
 				echo 'OK';
 			return;
@@ -214,17 +223,44 @@ class FpxController extends Controller
 		// parent::__construct();
 	}
 	
-	private function verifyFpxSignature($data, $exchange_id) {
-		$checksum           = $data['fpx_checkSum'];
-		unset($data['fpx_checkSum']);
-		ksort($data);
-		$string             = implode('|', array_values($data));
-		$certificate_path   = base_path() . "/fpx/FPX.cer";
-		$file               = fopen($certifcate, 'r');
-		$certificate        = fread($certifcate_path, 8192);
-		fclose($file);
-		$certificate_data   = openssl_pkey_get_public($certificate);
-		$signature_data     = hex2bin($signature);
-		return openssl_verify($checksum, $string, $certificate_data);
+	/**
+	 * Check a PayNet callback's signature and log the outcome.
+	 *
+	 * Returns true when the caller should REJECT the payload. While
+	 * services.fpx.verify_signature is false we only log (never reject), so the
+	 * exact field set can be confirmed against real traffic before enforcement is
+	 * switched on — see config/services.php for the rollout steps.
+	 */
+	private function rejectOnBadSignature(array $data, string $channel): bool {
+		$result   = Fpx::verifyResponseSignature($data);
+		$enforced = (bool) config('services.fpx.verify_signature');
+
+		if ($result['valid']) {
+			Log::channel($channel)->info('FPX signature verified', [
+				'order_no' => $data['fpx_sellerExOrderNo'] ?? null,
+				'txn_id'   => $data['fpx_fpxTxnId'] ?? null,
+			]);
+
+			return false;
+		}
+
+		// Log the computed source string: when this fails it is almost always an
+		// unexpected extra/missing field rather than a forgery, and the string is
+		// what shows which.
+		Log::channel($channel)->warning('FPX signature verification FAILED', [
+			'enforced'      => $enforced,
+			'reason'        => $result['reason'],
+			'order_no'      => $data['fpx_sellerExOrderNo'] ?? null,
+			'txn_id'        => $data['fpx_fpxTxnId'] ?? null,
+			'source_string' => $result['source_string'],
+			'received_sum'  => $data['fpx_checkSum'] ?? null,
+			'payload_keys'  => array_keys($data),
+		]);
+
+		// Deliberately do NOT touch the transaction here. An unverified payload must have
+		// no effect on stored state at all — marking it 'failed' would hand an attacker a
+		// way to kill a legitimate, already-paid transaction by replaying junk at this
+		// endpoint. Reject it and leave the record for the requery job to settle.
+		return $enforced;
 	}
 }

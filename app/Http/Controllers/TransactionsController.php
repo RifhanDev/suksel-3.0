@@ -439,6 +439,34 @@ class TransactionsController extends Controller
 		return redirect('transactions/' . $id)->with('success', $this->updated_message);
 	}
 
+	/**
+	 * Verify an FPX AE (status enquiry) response and log the outcome.
+	 *
+	 * Returns true when the caller should refuse to act on the payload. While
+	 * services.fpx.verify_signature is false this only logs and always returns false,
+	 * so the field set can be confirmed against real traffic before enforcing —
+	 * see config/services.php for the rollout steps.
+	 */
+	private function rejectOnBadFpxSignature(array $data, $transaction): bool
+	{
+		$result = \App\Models\Fpx::verifyResponseSignature($data);
+
+		if ($result['valid']) {
+			return false;
+		}
+
+		\Log::channel('fpx-respond')->warning('FPX requery signature verification FAILED', [
+			'enforced'      => (bool) config('services.fpx.verify_signature'),
+			'reason'        => $result['reason'],
+			'transaction'   => $transaction->number ?? null,
+			'source_string' => $result['source_string'],
+			'received_sum'  => $data['fpx_checkSum'] ?? null,
+			'payload_keys'  => array_keys($data),
+		]);
+
+		return (bool) config('services.fpx.verify_signature');
+	}
+
 	public function fpx_query($id)
 	{
 
@@ -480,7 +508,7 @@ class TransactionsController extends Controller
 
 		try {
 
-			$client   = new Client(['verify' => false]);
+			$client   = new Client(['verify' => config('services.fpx.verify_tls', true)]);
 			$response = $client->post($url, ['form_params' => $params, 'debug' => false ]);
 		} catch (\Exception $e) {
 			return view('transactions.fpx_query', ['error' => 'Gagal untuk berhubung dengan sistem FPX.']);
@@ -504,7 +532,11 @@ class TransactionsController extends Controller
 		$ac_responses 	= $data;
 		$ae_requests	= $params;
 
-		return view('transactions.fpx_query', compact('transaction', 'ac_responses', 'ae_requests'));
+		// Diagnostic screen only — this method never changes transaction status, so a
+		// failed signature is surfaced to the admin rather than blocking the view.
+		$signature_check = \App\Models\Fpx::verifyResponseSignature($data);
+
+		return view('transactions.fpx_query', compact('transaction', 'ac_responses', 'ae_requests', 'signature_check'));
 	}
 
 	public function fpx_requery($id)
@@ -546,7 +578,7 @@ class TransactionsController extends Controller
 		$params = $fpx->request_keys;
 
 		try {
-			$client = new Client(['verify' => false]);			
+			$client = new Client(['verify' => config('services.fpx.verify_tls', true)]);
 			$response = $client->post($url, ['form_params' => $params, 'debug' => false ]);
 		} catch (\Exception $e) {
 			return redirect('transactions/' . $id)->with('error', 'Gagal untuk berhubung dengan sistem FPX.');
@@ -566,6 +598,10 @@ class TransactionsController extends Controller
 		}
 
 		ksort($data);
+
+		if ($this->rejectOnBadFpxSignature($data, $transaction)) {
+			return redirect('transactions/' . $id)->with('error', 'Respons FPX gagal pengesahan tandatangan. Status transaksi tidak diubah.');
+		}
 
 		switch (true) {
 			case $data['fpx_debitAuthCode'] == '00' && $data['fpx_creditAuthCode'] == '00':
@@ -677,7 +713,7 @@ class TransactionsController extends Controller
 		$params = $fpx->request_keys;
 
 		try {
-			$client = new Client(['verify' => false]);
+			$client = new Client(['verify' => config('services.fpx.verify_tls', true)]);
 			$response = $client->post($url, ['form_params' => $params, 'debug' => false ]);
 		} catch (\Exception $e) {
 			return response()->json( array('status' => 'Gagal untuk berhubung dengan sistem FPX.', 'e' => $e->getMessage()) );
@@ -703,6 +739,10 @@ class TransactionsController extends Controller
 		}
 
 		ksort($data);
+
+		if ($this->rejectOnBadFpxSignature($data, $transaction)) {
+			return response()->json(['status' => 'Respons FPX gagal pengesahan tandatangan. Status transaksi tidak diubah.']);
+		}
 
 		switch (true) {
 			case $data['fpx_debitAuthCode'] == '00' && $data['fpx_creditAuthCode'] == '00':

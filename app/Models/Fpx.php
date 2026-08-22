@@ -115,6 +115,68 @@ class Fpx
 			$this->request_keys[$key] = trim($value);
 		}
 	}
+
+	/**
+	 * Verify that a response really came from PayNet, by checking its fpx_checkSum
+	 * against PayNet's public certificate.
+	 *
+	 * This is the exact inverse of sign() above: same field ordering (ksort by key,
+	 * values joined with '|') and same algorithm (RSA-SHA1), except we verify with
+	 * PayNet's public key instead of signing with our private one.
+	 *
+	 * Returns the raw source string alongside the result so callers can log what was
+	 * actually hashed — essential while rolling this out, because a mismatch is
+	 * usually caused by an unexpected extra field in the payload rather than a
+	 * genuinely forged message.
+	 *
+	 * @return array{valid: bool, source_string: string, reason: string|null}
+	 */
+	public static function verifyResponseSignature(array $data, ?string $certificatePath = null): array {
+		$fail = function ($reason, $source = '') {
+			return ['valid' => false, 'source_string' => $source, 'reason' => $reason];
+		};
+
+		if (empty($data['fpx_checkSum'])) {
+			return $fail('fpx_checkSum missing from payload');
+		}
+
+		$checksum = $data['fpx_checkSum'];
+		unset($data['fpx_checkSum']);
+
+		$data = array_map(function ($value) {
+			return is_scalar($value) ? trim((string) $value) : '';
+		}, $data);
+
+		ksort($data);
+		$source_string = implode('|', array_values($data));
+
+		$certificatePath = $certificatePath ?: base_path() . '/fpx/FPX.cer';
+
+		if (!is_readable($certificatePath)) {
+			return $fail("certificate not readable at {$certificatePath}", $source_string);
+		}
+
+		$publicKey = openssl_pkey_get_public(file_get_contents($certificatePath));
+
+		if ($publicKey === false) {
+			return $fail('could not parse certificate: ' . openssl_error_string(), $source_string);
+		}
+
+		$signature = @hex2bin($checksum);
+
+		if ($signature === false) {
+			return $fail('fpx_checkSum is not valid hex', $source_string);
+		}
+
+		// openssl_verify() returns 1 (valid), 0 (invalid) or -1 (error) — only 1 is a pass.
+		$result = openssl_verify($source_string, $signature, $publicKey, OPENSSL_ALGO_SHA1);
+
+		return [
+			'valid'         => $result === 1,
+			'source_string' => $source_string,
+			'reason'        => $result === 1 ? null : ($result === -1 ? 'openssl error: ' . openssl_error_string() : 'signature mismatch'),
+		];
+	}
 	
 	public function bankList() {
 		// $params = array_only($this->request_keys, ['fpx_msgType', 'fpx_msgToken', 'fpx_version', 'fpx_sellerExId']);
@@ -123,18 +185,26 @@ class Fpx
 		ksort($params);
 		$source_string = implode('|', $params);
 		
-		$file = fopen(base_path() . '/fpx/EX00005821.key', 'r');
+		// Use the key path already resolved in the constructor from this gateway's
+		// exchange_id, rather than re-hardcoding one merchant's filename here.
+		$file = fopen($this->private_key, 'r');
 		$private_key = fread($file, 8192);
 		fclose($file);
-		
+
 		$key = openssl_get_privatekey($private_key);
 		openssl_sign($source_string, $signature, $key, OPENSSL_ALGO_SHA1);
-		
+
 		$signature = $params['fpx_checkSum'] = strtoupper(bin2hex($signature));
 		ksort($params);
-		
+
+		// NOTE: this is deliberately NOT gateway->daemon_url — that column points at the
+		// AE/status-enquiry endpoint, which is a different path on the FPX host. Kept as
+		// config so a UAT host can be substituted without a code change; the default is
+		// the production URL this has always used, so behaviour is unchanged by default.
+		$bankListUrl = config('services.fpx.bank_list_url');
+
 		$client = new \GuzzleHttp\Client();
-		$response = $client->post('https://www.mepsfpx.com.my/FPXMain/RetrieveBankList', ['form_params' => $params, 'verify' => false]);
+		$response = $client->post($bankListUrl, ['form_params' => $params, 'verify' => config('services.fpx.verify_tls', true)]);
 		
 		$bodyRaw = $response->getBody();
 		$bodyArr = explode('&', $bodyRaw);
