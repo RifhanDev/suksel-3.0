@@ -25,7 +25,7 @@
 
 	<div class="row">
 		<div class="col-lg-6 col-lg-offset-3">
-			@if ($fpx || $ebpg || $duitnow)
+			@if ($fpx || $ebpg)
 				{!! Former::open(action('HomeController@storeRenewal'))->class('disabled-submit') !!}
 				<center>Silih Pilih Cara Pembayaran</center>
 				<br>
@@ -46,11 +46,6 @@
 									<li><a href="#" class="method-ob" data-value="fpx-2">Perbankan Korporat</a></li>
 								@endunless
 							</ul>
-						</div>
-					@endif
-					@if ($duitnow)
-						<div class="btn-group">
-							<button name="method" id="method-duitnow" value="duitnow" class="btn btn-lg btn-success">DuitNow</button>
 						</div>
 					@endif
 				</div>

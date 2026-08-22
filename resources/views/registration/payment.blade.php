@@ -293,7 +293,7 @@
 					<hr class="my-3">
 				@endif
 
-				@if ($fpx || $ebpg || $duitnow)
+				@if ($fpx || $ebpg)
 					{!! Former::open(action('RegistrationController@storePayment'))->class('disabled-submit') !!}
 					<input type="hidden" name="method">
 
@@ -377,28 +377,6 @@
 							</div>
 						@endif
 
-						{{-- DUITNOW --}}
-						@if ($duitnow)
-							<button type="button" id="method-duitnow" class="payment-option-btn text-dark shadow-none"
-								onclick="$('input[name=method]').val('duitnow'); this.form.submit();">
-								<div class="d-flex align-items-center gap-3">
-									<div class="payment-icon-box text-success">
-										<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"
-											stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-											<path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path>
-										</svg>
-									</div>
-									<div>
-										<div class="fw-bold">DuitNow QR / Transfer</div>
-										<div class="small text-muted">Pembayaran Pantas & Mudah</div>
-									</div>
-								</div>
-								<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-									stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-muted">
-									<polyline points="9 18 15 12 9 6"></polyline>
-								</svg>
-							</button>
-						@endif
 					</div>
 					{!! Former::close() !!}
 				@else

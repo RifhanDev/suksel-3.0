@@ -749,9 +749,8 @@ class HomeController extends Controller
 
 		$fpx    = Gateway::whereType('fpx')->whereDefault(1)->whereActive(1)->first();
 		$ebpg   = config('services.ebpg.enabled') ? Gateway::whereType('ebpg')->whereDefault(1)->whereActive(1)->first() : null;
-		$duitnow = Gateway::whereType('duitnow')->whereDefault(1)->whereActive(1)->first();
 
-		return view('home.renewal', compact('start_date', 'end_date', 'fpx', 'ebpg', 'duitnow'));
+		return view('home.renewal', compact('start_date', 'end_date', 'fpx', 'ebpg'));
 	}
 
 	public function storeRenewal(Request $request)
@@ -760,7 +759,7 @@ class HomeController extends Controller
 		$user   = auth()->user();
 		$vendor = $user->vendor;
 
-		$validMethods = ['fpx-1', 'fpx-2', 'duitnow'];
+		$validMethods = ['fpx-1', 'fpx-2'];
 		if (config('services.ebpg.enabled')) $validMethods[] = 'ebpg';
 		if (!in_array($request->method, $validMethods))
 			return redirect()->back()->with('error', 'Sila pilih saluran pembayaran yang sah.');

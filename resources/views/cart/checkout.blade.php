@@ -95,11 +95,6 @@
 									<a href="#" class="btn bg-blue-steel method-ob" data-value="ebpg">Kad Kredit</a>
 								</div>
 							@endif
-							@if ($duitnow)
-								<div class="btn-group">
-									<a href="#" class="btn btn-success method-ob" data-value="duitnow">DuitNow</a>
-								</div>
-							@endif
 						@else
 							<div class="btn-group">
 								<a href="#" class="btn btn-block bg-primary method-ob" data-value="direct">Teruskan</a>
