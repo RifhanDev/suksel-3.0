@@ -44,6 +44,13 @@ return [
         ],
     ],
 
+    // Client requirement (Aug 2026): only FPX is used in suksel-3.0. eBPG code stays
+    // in place (do not remove) but is switched off everywhere via this single flag —
+    // set EBPG_ENABLED=true to bring it back without touching any controller/view.
+    'ebpg' => [
+        'enabled' => env('EBPG_ENABLED', false),
+    ],
+
     'stos_backend' => [
         'url' => env('STOS_BACKEND_URL', 'https://stos-epenilaian-web.test'),
         'api_key' => env('STOS_BACKEND_API_KEY'),

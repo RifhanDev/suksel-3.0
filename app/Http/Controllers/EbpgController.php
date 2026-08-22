@@ -10,6 +10,11 @@ use Log;
 class EbpgController extends Controller
 {
 	public function connect() {
+		// Client requirement (Aug 2026): eBPG is switched off, FPX only. See config/services.php.
+		if (!config('services.ebpg.enabled')) {
+			return $this->_access_denied();
+		}
+
 		$transaction = Transaction::with('gateway')->find(session('txn_id'));
 		
 		if( empty($transaction) || empty($transaction->gateway) || $transaction->gateway->type != 'ebpg' || $transaction->method != $transaction->gateway->type )
@@ -40,6 +45,10 @@ class EbpgController extends Controller
 	public function respond(Request $request) {
 
         // Log::channel('ebpg-respond')->info($request->all());
+
+		if (!config('services.ebpg.enabled')) {
+			return $this->_access_denied();
+		}
 
 		$transaction = Transaction::with('gateway')->find(session('txn_id'));
 

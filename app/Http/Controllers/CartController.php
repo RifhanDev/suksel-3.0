@@ -23,11 +23,11 @@ class CartController extends Controller
 
 		if (session('cart_ou')) {
 			$fpx  = Gateway::whereType('fpx')->where('organization_unit_id', session('cart_ou'))->whereActive(1)->first();
-			$ebpg = Gateway::whereType('ebpg')->where('organization_unit_id', session('cart_ou'))->whereActive(1)->first();
+			$ebpg = config('services.ebpg.enabled') ? Gateway::whereType('ebpg')->where('organization_unit_id', session('cart_ou'))->whereActive(1)->first() : null;
 			$duitnow = Gateway::whereType('duitnow')->where('organization_unit_id', session('cart_ou'))->whereActive(1)->first();
 		} else {
 			$fpx  = Gateway::whereType('fpx')->whereDefault(1)->whereActive(1)->first();
-			$ebpg = Gateway::whereType('ebpg')->whereDefault(1)->whereActive(1)->first();
+			$ebpg = config('services.ebpg.enabled') ? Gateway::whereType('ebpg')->whereDefault(1)->whereActive(1)->first() : null;
 			$duitnow = Gateway::whereType('duitnow')->whereDefault(1)->whereActive(1)->first();
 		}
 
@@ -73,11 +73,11 @@ class CartController extends Controller
 
 		if (session('cart_ou')) {
 			$fpx  = Gateway::whereType('fpx')->where('organization_unit_id', session('cart_ou'))->whereActive(1)->first();
-			$ebpg = Gateway::whereType('ebpg')->where('organization_unit_id', session('cart_ou'))->whereActive(1)->first();
+			$ebpg = config('services.ebpg.enabled') ? Gateway::whereType('ebpg')->where('organization_unit_id', session('cart_ou'))->whereActive(1)->first() : null;
 			$duitnow = Gateway::whereType('duitnow')->where('organization_unit_id', session('cart_ou'))->whereActive(1)->first();
 		} else {
 			$fpx  = Gateway::whereType('fpx')->whereDefault(1)->whereActive(1)->first();
-			$ebpg = Gateway::whereType('ebpg')->whereDefault(1)->whereActive(1)->first();
+			$ebpg = config('services.ebpg.enabled') ? Gateway::whereType('ebpg')->whereDefault(1)->whereActive(1)->first() : null;
 			$duitnow = Gateway::whereType('duitnow')->whereDefault(1)->whereActive(1)->first();
 		}
 
@@ -124,8 +124,10 @@ class CartController extends Controller
 
 		if ($amount > 0.00) {
 			// ORIGINAL: if (!in_array($method, ['fpx-1', 'fpx-2', 'ebpg', 'duitnow'])) {
-			// MODIFIED: allow 'direct' bypass in non-production for testing purposes
-			$validMethods = ['fpx-1', 'fpx-2', 'ebpg', 'duitnow'];
+			// MODIFIED: allow 'direct' bypass in non-production for testing purposes;
+			// 'ebpg' only included while the feature flag is on (see config/services.php)
+			$validMethods = ['fpx-1', 'fpx-2', 'duitnow'];
+			if (config('services.ebpg.enabled')) $validMethods[] = 'ebpg';
 			if (config('app.env') !== 'production') $validMethods[] = 'direct';
 			if (!in_array($method, $validMethods)) {
 				return redirect()->back()->with('error', 'Sila pilih saluran pembayaran yang sah.');
@@ -220,11 +222,11 @@ class CartController extends Controller
 		} else {
 			if (session('cart_ou')) {
 				$fpx    = Gateway::whereType('fpx')->where('organization_unit_id', session('cart_ou'))->whereActive(1)->first();
-				$ebpg   = Gateway::whereType('ebpg')->where('organization_unit_id', session('cart_ou'))->whereActive(1)->first();
+				$ebpg   = config('services.ebpg.enabled') ? Gateway::whereType('ebpg')->where('organization_unit_id', session('cart_ou'))->whereActive(1)->first() : null;
 				$duitnow = Gateway::whereType('duitnow')->where('organization_unit_id', session('cart_ou'))->whereActive(1)->first();
 			} else {
 				$fpx    = Gateway::whereType('fpx')->whereDefault(1)->whereActive(1)->first();
-				$ebpg   = Gateway::whereType('ebpg')->whereDefault(1)->whereActive(1)->first();
+				$ebpg   = config('services.ebpg.enabled') ? Gateway::whereType('ebpg')->whereDefault(1)->whereActive(1)->first() : null;
 				$duitnow = Gateway::whereType('duitnow')->whereDefault(1)->whereActive(1)->first();
 			}
 		}
