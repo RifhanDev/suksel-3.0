@@ -14,14 +14,14 @@ return new class extends Migration
 
         Schema::create('tender_kewangan_kerja_evaluations', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('tender_id')->index();
-            $table->unsignedBigInteger('vendor_id')->index();
+            $table->unsignedInteger('tender_id')->index();
+            $table->unsignedInteger('vendor_id')->index();
             $table->string('borang_code', 50)->index();
             $table->tinyInteger('status_pematuhan')->nullable()->comment('1=Lulus, 0=Gagal, null=Belum Dinilai');
             $table->json('payload')->nullable()->comment('Custom figures and calculated financial attributes');
             $table->text('catatan')->nullable();
-            $table->unsignedBigInteger('created_by')->nullable();
-            $table->unsignedBigInteger('updated_by')->nullable();
+            $table->unsignedInteger('created_by')->nullable();
+            $table->unsignedInteger('updated_by')->nullable();
             $table->timestamps();
 
             $table->unique(
