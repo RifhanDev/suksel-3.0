@@ -23,18 +23,16 @@ class CartController extends Controller
 
 		if (session('cart_ou')) {
 			$fpx  = Gateway::whereType('fpx')->where('organization_unit_id', session('cart_ou'))->whereActive(1)->first();
-			$ebpg = Gateway::whereType('ebpg')->where('organization_unit_id', session('cart_ou'))->whereActive(1)->first();
-			$duitnow = Gateway::whereType('duitnow')->where('organization_unit_id', session('cart_ou'))->whereActive(1)->first();
+			$ebpg = config('services.ebpg.enabled') ? Gateway::whereType('ebpg')->where('organization_unit_id', session('cart_ou'))->whereActive(1)->first() : null;
 		} else {
 			$fpx  = Gateway::whereType('fpx')->whereDefault(1)->whereActive(1)->first();
-			$ebpg = Gateway::whereType('ebpg')->whereDefault(1)->whereActive(1)->first();
-			$duitnow = Gateway::whereType('duitnow')->whereDefault(1)->whereActive(1)->first();
+			$ebpg = config('services.ebpg.enabled') ? Gateway::whereType('ebpg')->whereDefault(1)->whereActive(1)->first() : null;
 		}
 
 		if (auth()->check() && auth()->user()->hasRole('Vendor')) {
-			return view('cart.vendor.index', compact('tenders', 'amount', 'fpx', 'ebpg', 'duitnow'));
+			return view('cart.vendor.index', compact('tenders', 'amount', 'fpx', 'ebpg'));
 		}
-		return view('cart.index', compact('tenders', 'amount', 'fpx', 'ebpg', 'duitnow'));
+		return view('cart.index', compact('tenders', 'amount', 'fpx', 'ebpg'));
 	}
 
 	public function clear()
@@ -73,22 +71,20 @@ class CartController extends Controller
 
 		if (session('cart_ou')) {
 			$fpx  = Gateway::whereType('fpx')->where('organization_unit_id', session('cart_ou'))->whereActive(1)->first();
-			$ebpg = Gateway::whereType('ebpg')->where('organization_unit_id', session('cart_ou'))->whereActive(1)->first();
-			$duitnow = Gateway::whereType('duitnow')->where('organization_unit_id', session('cart_ou'))->whereActive(1)->first();
+			$ebpg = config('services.ebpg.enabled') ? Gateway::whereType('ebpg')->where('organization_unit_id', session('cart_ou'))->whereActive(1)->first() : null;
 		} else {
 			$fpx  = Gateway::whereType('fpx')->whereDefault(1)->whereActive(1)->first();
-			$ebpg = Gateway::whereType('ebpg')->whereDefault(1)->whereActive(1)->first();
-			$duitnow = Gateway::whereType('duitnow')->whereDefault(1)->whereActive(1)->first();
+			$ebpg = config('services.ebpg.enabled') ? Gateway::whereType('ebpg')->whereDefault(1)->whereActive(1)->first() : null;
 		}
 
 		$items  = array_diff($items, TenderVendor::whereVendorId(auth()->user()->vendor_id)->whereParticipate(1)->pluck('tender_id')->toArray());
 		session()->put('cart_items', $items);
 
 		if (auth()->user()->hasRole('Vendor')) {
-			return view('cart.vendor.checkout', compact('tenders', 'amount', 'fpx', 'ebpg', 'duitnow'));
+			return view('cart.vendor.checkout', compact('tenders', 'amount', 'fpx', 'ebpg'));
 		}
 
-		return view('cart.checkout', compact('tenders', 'amount', 'fpx', 'ebpg', 'duitnow'));
+		return view('cart.checkout', compact('tenders', 'amount', 'fpx', 'ebpg'));
 	}
 
 	public function process(Request $request)
@@ -110,22 +106,12 @@ class CartController extends Controller
 		$method = $request->method;
 		$type   = in_array($method, ['fpx-1', 'fpx-2']) ? 'fpx' : $method;
 
-		// Validate DuitNow amount limits (if applicable)
-		if ($method == 'duitnow') {
-			// DuitNow typically has limits - adjust based on PayNet specifications
-			if ((float) $amount > 50000.00) {
-				return redirect()->back()->with('error', 'Had transaksi maksimum bagi DuitNow adalah RM 50,000.00');
-			}
-
-			if ((float) $amount < 1.00) {
-				return redirect()->back()->with('error', 'Had transaksi minimum bagi DuitNow adalah RM 1.00');
-			}
-		}
-
 		if ($amount > 0.00) {
-			// ORIGINAL: if (!in_array($method, ['fpx-1', 'fpx-2', 'ebpg', 'duitnow'])) {
-			// MODIFIED: allow 'direct' bypass in non-production for testing purposes
-			$validMethods = ['fpx-1', 'fpx-2', 'ebpg', 'duitnow'];
+			// Client requirement (Aug 2026): only FPX is used. eBPG code stays in place
+			// but only included while its feature flag is on (see config/services.php);
+			// 'direct' is allowed as a bypass outside production for testing.
+			$validMethods = ['fpx-1', 'fpx-2'];
+			if (config('services.ebpg.enabled')) $validMethods[] = 'ebpg';
 			if (config('app.env') !== 'production') $validMethods[] = 'direct';
 			if (!in_array($method, $validMethods)) {
 				return redirect()->back()->with('error', 'Sila pilih saluran pembayaran yang sah.');
@@ -206,10 +192,8 @@ class CartController extends Controller
 		$items       = unserialize($transaction->cached_data);
 		$tenders     = Tender::whereIn('id', $items)->get();
 
-		// ORIGINAL: $fpx = null; $ebpg = null; — $duitnow was missing, causing undefined variable error on success
 		$fpx = null;
 		$ebpg = null;
-		$duitnow = null;
 
 		if ($transaction->status != 'failed') {
 			session()->forget('cart_items');
@@ -220,12 +204,10 @@ class CartController extends Controller
 		} else {
 			if (session('cart_ou')) {
 				$fpx    = Gateway::whereType('fpx')->where('organization_unit_id', session('cart_ou'))->whereActive(1)->first();
-				$ebpg   = Gateway::whereType('ebpg')->where('organization_unit_id', session('cart_ou'))->whereActive(1)->first();
-				$duitnow = Gateway::whereType('duitnow')->where('organization_unit_id', session('cart_ou'))->whereActive(1)->first();
+				$ebpg   = config('services.ebpg.enabled') ? Gateway::whereType('ebpg')->where('organization_unit_id', session('cart_ou'))->whereActive(1)->first() : null;
 			} else {
 				$fpx    = Gateway::whereType('fpx')->whereDefault(1)->whereActive(1)->first();
-				$ebpg   = Gateway::whereType('ebpg')->whereDefault(1)->whereActive(1)->first();
-				$duitnow = Gateway::whereType('duitnow')->whereDefault(1)->whereActive(1)->first();
+				$ebpg   = config('services.ebpg.enabled') ? Gateway::whereType('ebpg')->whereDefault(1)->whereActive(1)->first() : null;
 			}
 		}
 
@@ -235,10 +217,10 @@ class CartController extends Controller
 		$amount = $transaction->amount;
 
 		if (auth()->user()->hasRole('Vendor')) {
-			return view('cart.vendor.callback', compact('transaction', 'tenders', 'amount', 'fpx', 'ebpg', 'duitnow'));
+			return view('cart.vendor.callback', compact('transaction', 'tenders', 'amount', 'fpx', 'ebpg'));
 		}
 
-		return view('cart.callback', compact('transaction', 'tenders', 'amount', 'fpx', 'ebpg', 'duitnow'));
+		return view('cart.callback', compact('transaction', 'tenders', 'amount', 'fpx', 'ebpg'));
 	}
 
 	public function receipt($id)

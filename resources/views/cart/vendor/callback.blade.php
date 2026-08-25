@@ -223,9 +223,6 @@
                         @if ($ebpg)
                             <button type="button" class="btn-form btn-form-secondary method-ob" data-value="ebpg">Kad Kredit</button>
                         @endif
-                        @if ($duitnow)
-                            <button type="button" class="btn-form btn-form-success method-ob" data-value="duitnow">DuitNow</button>
-                        @endif
                     @else
                         <button type="button" class="btn-form btn-form-primary method-ob" data-value="direct">Teruskan</button>
                     @endif

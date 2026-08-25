@@ -51,7 +51,7 @@
         </a>
     </div>
 
-    @if (!$fpx && !$ebpg && !$duitnow)
+    @if (!$fpx && !$ebpg)
         <div class="d-flex align-items-center gap-3 p-4 rounded-2 mb-4" style="background:#fef2f2;border:1px solid #fecaca;">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#b91c1c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
             <span style="font-size:0.85rem;font-weight:600;color:#991b1b;">Harap Maaf! Pembayaran tidak dapat dilakukan buat masa ini.</span>
@@ -158,12 +158,6 @@
                                 <button type="button" class="btn-form btn-form-secondary method-ob" data-value="ebpg">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
                                     Kad Kredit
-                                </button>
-                            @endif
-                            @if ($duitnow)
-                                <button type="button" class="btn-form btn-form-success method-ob" data-value="duitnow">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>
-                                    DuitNow
                                 </button>
                             @endif
                         </div>

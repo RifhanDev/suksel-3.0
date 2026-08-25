@@ -224,10 +224,9 @@ class RegistrationController extends Controller
         }
 
         $fpx = Gateway::whereType('fpx')->whereDefault(1)->whereActive(1)->first();
-        $ebpg = Gateway::whereType('ebpg')->whereDefault(1)->whereActive(1)->first();
-        $duitnow = Gateway::whereType('duitnow')->whereDefault(1)->whereActive(1)->first();
+        $ebpg = config('services.ebpg.enabled') ? Gateway::whereType('ebpg')->whereDefault(1)->whereActive(1)->first() : null;
 
-        return view('registration.payment', compact('fpx', 'ebpg', 'duitnow'));
+        return view('registration.payment', compact('fpx', 'ebpg'));
     }
 
     public function storePayment(Request $request)
@@ -265,7 +264,9 @@ class RegistrationController extends Controller
             return redirect('dashboard')->with('success', 'Pembayaran berjaya (dev bypass). Akaun anda kini aktif.');
         }
 
-        if (!in_array($request->method, ['fpx-1', 'fpx-2', 'ebpg', 'duitnow'])) {
+        $validMethods = ['fpx-1', 'fpx-2'];
+        if (config('services.ebpg.enabled')) $validMethods[] = 'ebpg';
+        if (!in_array($request->method, $validMethods)) {
             return redirect()->back()->with('error', 'Sila pilih saluran pembayaran yang sah.');
         }
 
