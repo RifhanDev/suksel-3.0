@@ -120,6 +120,7 @@ class JawatankuasaPembukaController extends Controller
         // Load existing evaluations and merge into semakPayload for pre-filling dropdowns
         $evaluations  = $this->service->loadEvaluations($tender);
         $semakPayload = $this->mergeEvaluationsIntoPayload($semakPayload, $evaluations);
+        $semakPayload = $this->attachStatusPenilaian($semakPayload);
 
         return view('newModule.jawatankuasaPembuka.jawatankuasa_pembuka', [
             'tender'        => $tender,
@@ -133,24 +134,26 @@ class JawatankuasaPembukaController extends Controller
     }
 
     // ─────────────────────────────────────────────────────────────────
-    // AJAX: Save compliance evaluation for a single item
+    // AJAX: Save compliance evaluations for every filled-in row of one
+    // checklist item in a single batch, and return that item's fresh
+    // Status Penilaian so the outer table badge can be patched live.
     // ─────────────────────────────────────────────────────────────────
 
     public function simpanPematuhan(Request $request): JsonResponse
     {
         $request->validate([
-            'tender'               => 'required|string',
-            'vendor_id'            => 'required|integer',
-            'checklist_item_uuid'  => 'required|uuid',
-            'status_pematuhan'     => 'required|in:0,1',
-            'catatan'              => 'nullable|string|max:2000',
+            'tender'                   => 'required|string',
+            'checklist_item_uuid'      => 'required|uuid',
+            'rows'                     => 'required|array|min:1',
+            'rows.*.vendor_id'         => 'required|integer',
+            'rows.*.status_pematuhan'  => 'required|in:0,1',
+            'rows.*.catatan'           => 'nullable|string|max:2000',
         ]);
 
-        // When status_pematuhan = 0 (Tiada), catatan is required
-        if ((int) $request->input('status_pematuhan') === 0) {
-            $request->validate([
-                'catatan' => 'required|string|min:1|max:2000',
-            ]);
+        foreach ($request->input('rows') as $row) {
+            if ((int) ($row['status_pematuhan'] ?? null) === 0 && trim((string) ($row['catatan'] ?? '')) === '') {
+                return response()->json(['message' => 'Catatan wajib diisi apabila Status Pematuhan = Tiada.'], 422);
+            }
         }
 
         $tender = $this->resolveTenderByIdentifier($request->input('tender'));
@@ -159,17 +162,15 @@ class JawatankuasaPembukaController extends Controller
             return response()->json(['message' => 'Tender tidak ditemui.'], 404);
         }
 
-        $record = $this->service->saveEvaluation(
+        $result = $this->service->saveEvaluationsBatch(
             $tender,
-            (int)    $request->input('vendor_id'),
             (string) $request->input('checklist_item_uuid'),
-            (int)    $request->input('status_pematuhan'),
-            $request->input('catatan')
+            $request->input('rows')
         );
 
         return response()->json([
-            'message'          => 'Penilaian pematuhan telah disimpan.',
-            'status_pematuhan' => $record->status_pematuhan,
+            'message'     => 'Penilaian pematuhan telah disimpan.',
+            'item_status' => $this->resolveStatusPenilaian($result['evaluated_count'], $result['total_vendors']),
         ]);
     }
 
@@ -417,6 +418,44 @@ class JawatankuasaPembukaController extends Controller
         unset($payload);
 
         return $semakPayload;
+    }
+
+    /**
+     * Attach each item's Status Penilaian (evaluation progress, not submission
+     * status) using vendor evaluation data already loaded into semakPayload.
+     *
+     * @param  array<string, array<string, mixed>>  $semakPayload
+     * @return array<string, array<string, mixed>>
+     */
+    protected function attachStatusPenilaian(array $semakPayload): array
+    {
+        foreach ($semakPayload as &$payload) {
+            $evaluatedCount = collect($payload['vendors'])->whereNotNull('status_pematuhan')->count();
+            $payload['status_penilaian'] = $this->resolveStatusPenilaian($evaluatedCount, (int) ($payload['vendor_count'] ?? 0));
+        }
+        unset($payload);
+
+        return $semakPayload;
+    }
+
+    /**
+     * 3-state Status Penilaian: Tiada Petender (no vendors bought this document),
+     * Menunggu Penilaian (none evaluated yet), Sedang Menilai (partial),
+     * Telah Dinilai (every vendor evaluated).
+     */
+    protected function resolveStatusPenilaian(int $evaluatedCount, int $totalVendors): array
+    {
+        if ($totalVendors === 0) {
+            return ['label' => 'Tiada Petender', 'badge' => 'badge-status-neutral'];
+        }
+        if ($evaluatedCount === 0) {
+            return ['label' => 'Menunggu Penilaian', 'badge' => 'badge-status-neutral'];
+        }
+        if ($evaluatedCount < $totalVendors) {
+            return ['label' => 'Sedang Menilai', 'badge' => 'badge-status-warning'];
+        }
+
+        return ['label' => 'Telah Dinilai', 'badge' => 'badge-status-success'];
     }
 
     /**

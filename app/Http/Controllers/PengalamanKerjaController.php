@@ -272,6 +272,21 @@ class PengalamanKerjaController extends Controller
         return response()->json($response->json(), $response->status());
     }
 
+    /** Read-only admin review of one vendor's Pengalaman Kerja submission (shared by Penilaian Teknikal + Jawatankuasa Pembuka). */
+    public function review(\App\Tender $tender, Request $request)
+    {
+        $this->ensureTenderFormAccess($tender);
+
+        $local = $this->loadVendorFormPayload($tender, 'pengalaman_kerja');
+        $remote = $this->fetchOnlineFormData('pengalaman-kerja', $tender->uuid, (int) $request->query('vendor_id'));
+        $resolved = $this->resolveVendorFormDisplayData($tender, 'pengalaman_kerja', $remote ?: null);
+
+        return view('tenders.dokumen.review.pengalaman_kerja_review', array_merge([
+            'items'    => $resolved['items'] ?? ($local['items'] ?? []),
+            'dokumens' => $resolved['dokumens'] ?? [],
+        ], $this->formViewVars($tender)));
+    }
+
     private function findTender(string $uuid): ?Tender
     {
         return Tender::with('tenderer')

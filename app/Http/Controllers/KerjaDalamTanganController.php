@@ -277,6 +277,21 @@ class KerjaDalamTanganController extends Controller
         return response()->json($response->json(), $response->status());
     }
 
+    /** Read-only admin review of one vendor's Kerja Dalam Tangan submission (shared by Penilaian Teknikal + Jawatankuasa Pembuka). */
+    public function review(\App\Tender $tender, Request $request)
+    {
+        $this->ensureTenderFormAccess($tender);
+
+        $local = $this->loadVendorFormPayload($tender, 'kerja_dalam_tangan');
+        $remote = $this->fetchOnlineFormData('kerja-dalam-tangan', $tender->uuid, (int) $request->query('vendor_id'));
+        $resolved = $this->resolveVendorFormDisplayData($tender, 'kerja_dalam_tangan', $remote ?: null);
+
+        return view('tenders.dokumen.review.kerja_dalam_tangan_review', array_merge([
+            'items'    => $resolved['items'] ?? ($local['items'] ?? []),
+            'dokumens' => $resolved['dokumens'] ?? [],
+        ], $this->formViewVars($tender)));
+    }
+
     private function findTender(string $uuid): ?Tender
     {
         return Tender::with('tenderer')

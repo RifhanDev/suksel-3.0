@@ -213,6 +213,56 @@ class StosBackendClient
         return $this->post('/api/penilaian-teknikal-kerja/hantar', $payload);
     }
 
+    // ─────────────────────────────────────────────────────────────────
+    // Sesi penilaian langsung (akuan, tempahan baris, log aktiviti).
+    // $jenis: open = Jawatankuasa Pembuka, tech = Teknikal, fin = Kewangan.
+    // ─────────────────────────────────────────────────────────────────
+
+    public function getEvaluationSession(int $tenderId, string $jenis, int $actingUserId): Response
+    {
+        return $this->get($this->evaluationPath($tenderId, $jenis, 'session'), [
+            'acting_user_id' => $actingUserId,
+        ]);
+    }
+
+    public function storeEvaluationDeclaration(int $tenderId, string $jenis, array $payload): Response
+    {
+        return $this->post($this->evaluationPath($tenderId, $jenis, 'declaration'), $payload);
+    }
+
+    public function acquireEvaluationLock(int $tenderId, string $jenis, array $payload): Response
+    {
+        return $this->post($this->evaluationPath($tenderId, $jenis, 'lock'), $payload);
+    }
+
+    public function releaseEvaluationLock(int $tenderId, string $jenis, array $payload): Response
+    {
+        return $this->post($this->evaluationPath($tenderId, $jenis, 'lock/release'), $payload);
+    }
+
+    public function completeEvaluationRows(int $tenderId, string $jenis, array $payload): Response
+    {
+        return $this->post($this->evaluationPath($tenderId, $jenis, 'rows/complete'), $payload);
+    }
+
+    public function getEvaluationLocks(int $tenderId, string $jenis, ?string $checklistItemUuid = null): Response
+    {
+        return $this->get(
+            $this->evaluationPath($tenderId, $jenis, 'locks'),
+            $checklistItemUuid ? ['checklist_item_uuid' => $checklistItemUuid] : []
+        );
+    }
+
+    public function storeEvaluationLog(int $tenderId, string $jenis, array $payload): Response
+    {
+        return $this->post($this->evaluationPath($tenderId, $jenis, 'log'), $payload);
+    }
+
+    protected function evaluationPath(int $tenderId, string $jenis, string $suffix): string
+    {
+        return '/api/tenders/' . $tenderId . '/evaluation/' . $jenis . '/' . $suffix;
+    }
+
     public function getSstPembekal(int $tenderId): Response
     {
         return $this->get('/api/tenders/' . $tenderId . '/sst/pembekal');

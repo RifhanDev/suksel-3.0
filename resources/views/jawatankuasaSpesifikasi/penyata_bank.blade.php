@@ -112,6 +112,7 @@
         $showScoringConfig = $showScoringConfig ?? true;
     @endphp
 
+    @unless ($modalEmbed ?? false)
     <!-- HEADER -->
     <div class="d-flex flex-column flex-lg-row justify-content-start align-items-start align-items-lg-center mb-4">
         <div>
@@ -165,6 +166,7 @@
 
         </div>
     </div>
+    @endunless
 
     <!-- Loading overlay -->
     <div id="loading-overlay">

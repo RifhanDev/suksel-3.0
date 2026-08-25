@@ -453,8 +453,8 @@ class PenilaianTeknikalController extends Controller
         }
 
         return match ($item->vendor_action) {
-            'pengalaman-kerja'   => route('penilaianTeknikal.pengalamanKerjaReview', ['tender' => $tender->id]),
-            'kerja-dalam-tangan' => route('penilaianTeknikal.kerjaDalamTanganReview', ['tender' => $tender->id]),
+            'pengalaman-kerja'   => route('tenderDokumen.pengalamanKerjaReview', ['tender' => $tender->id]),
+            'kerja-dalam-tangan' => route('tenderDokumen.kerjaDalamTanganReview', ['tender' => $tender->id]),
             default              => null,
         };
     }
@@ -802,79 +802,6 @@ class PenilaianTeknikalController extends Controller
         return response()->json($result['body']['data'] ?? [
             'layak' => [], 'tidak_layak' => [], 'passing_percentage' => 0, 'max_score' => 0,
         ]);
-    }
-
-    public function pengalamanKerjaReview(Tender $tender, Request $request)
-    {
-        $this->ensureTenderFormAccess($tender);
-
-        $local = $this->loadVendorFormPayload($tender, 'pengalaman_kerja');
-        $remote = $this->fetchOnlineFormData('pengalaman-kerja', $tender->uuid, (int) $request->query('vendor_id'));
-        $resolved = $this->resolveVendorFormDisplayData($tender, 'pengalaman_kerja', $remote ?: null);
-
-        return view('newModule.penilaian_teknikal.review.pengalaman_kerja_review', array_merge([
-            'items'    => $resolved['items'] ?? ($local['items'] ?? []),
-            'dokumens' => $resolved['dokumens'] ?? [],
-        ], $this->formViewVars($tender)));
-    }
-
-    public function kerjaDalamTanganReview(Tender $tender, Request $request)
-    {
-        $this->ensureTenderFormAccess($tender);
-
-        $local = $this->loadVendorFormPayload($tender, 'kerja_dalam_tangan');
-        $remote = $this->fetchOnlineFormData('kerja-dalam-tangan', $tender->uuid, (int) $request->query('vendor_id'));
-        $resolved = $this->resolveVendorFormDisplayData($tender, 'kerja_dalam_tangan', $remote ?: null);
-
-        return view('newModule.penilaian_teknikal.review.kerja_dalam_tangan_review', array_merge([
-            'items'    => $resolved['items'] ?? ($local['items'] ?? []),
-            'dokumens' => $resolved['dokumens'] ?? [],
-        ], $this->formViewVars($tender)));
-    }
-
-    /**
-     * @return array{items?: array, dokumens?: array}
-     */
-    private function fetchOnlineFormData(string $apiSlug, string $tenderUuid, ?int $vendorId): array
-    {
-        $url = StosBackendClient::apiUrl($apiSlug . '/' . $tenderUuid);
-        if ($vendorId) {
-            $url .= '?vendor_id=' . $vendorId;
-        }
-
-        $response = StosBackendClient::http()->get($url);
-
-        return $response->successful()
-            ? $this->rewriteOnlineFormDokumens($apiSlug, $tenderUuid, (array) $response->json('data'))
-            : [];
-    }
-
-    /**
-     * @param  array<string, mixed>  $data
-     * @return array<string, mixed>
-     */
-    private function rewriteOnlineFormDokumens(string $apiSlug, string $tenderUuid, array $data): array
-    {
-        if (empty($data['dokumens']) || ! is_array($data['dokumens'])) {
-            return $data;
-        }
-
-        $tender = Tender::query()->where('uuid', $tenderUuid)->first();
-        if (! $tender) {
-            return $data;
-        }
-
-        $type = match ($apiSlug) {
-            'pengalaman-kerja' => 'pengalaman-kerja',
-            'kerja-dalam-tangan' => 'kerja-dalam-tangan',
-            default => null,
-        };
-
-        if ($type) {
-            $data['dokumens'] = StosFormFileController::rewriteDokumenUrls($tender, $type, $data['dokumens']);
-        }
-
-        return $data;
     }
 
     /** Resolves a tender from the index-page link's uuid. */

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Concerns;
 
 use App\Models\Tender;
 use App\Services\OnlineFormStatusService;
+use App\Services\StosBackendClient;
 use App\Services\VendorFormPayloadService;
 use App\Tender as LegacyTender;
 use Illuminate\Http\RedirectResponse;
@@ -445,6 +446,51 @@ trait HandlesTenderFormAccess
             'items' => is_array($local) ? ($local['items'] ?? []) : [],
             'dokumens' => is_array($local) ? ($local['dokumens'] ?? []) : [],
         ];
+    }
+
+    /**
+     * @return array{items?: array, dokumens?: array}
+     */
+    protected function fetchOnlineFormData(string $apiSlug, string $tenderUuid, ?int $vendorId): array
+    {
+        $url = StosBackendClient::apiUrl($apiSlug . '/' . $tenderUuid);
+        if ($vendorId) {
+            $url .= '?vendor_id=' . $vendorId;
+        }
+
+        $response = StosBackendClient::http()->get($url);
+
+        return $response->successful()
+            ? $this->rewriteOnlineFormDokumens($apiSlug, $tenderUuid, (array) $response->json('data'))
+            : [];
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    protected function rewriteOnlineFormDokumens(string $apiSlug, string $tenderUuid, array $data): array
+    {
+        if (empty($data['dokumens']) || ! is_array($data['dokumens'])) {
+            return $data;
+        }
+
+        $tender = LegacyTender::query()->where('uuid', $tenderUuid)->first();
+        if (! $tender) {
+            return $data;
+        }
+
+        $type = match ($apiSlug) {
+            'pengalaman-kerja' => 'pengalaman-kerja',
+            'kerja-dalam-tangan' => 'kerja-dalam-tangan',
+            default => null,
+        };
+
+        if ($type) {
+            $data['dokumens'] = \App\Http\Controllers\StosFormFileController::rewriteDokumenUrls($tender, $type, $data['dokumens']);
+        }
+
+        return $data;
     }
 
     /**

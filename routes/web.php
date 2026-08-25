@@ -215,6 +215,8 @@ Route::middleware(['auth'])->group(function () {
 	Route::get('tenders/{tender}/vendor-submission/readiness', [\App\Http\Controllers\VendorTenderSubmissionController::class, 'readiness'])->name('tenders.vendorSubmission.readiness');
 	Route::post('tenders/{tender}/vendor-submission', [\App\Http\Controllers\VendorTenderSubmissionController::class, 'submit'])->name('tenders.vendorSubmission.submit');
 	Route::get('tenders/{tender}/dokumen/{itemUuid}/specification', [\App\Http\Controllers\VendorTenderDokumenController::class, 'specificationForm'])->name('tenderDokumen.specificationForm');
+	Route::get('tenders/{tender}/dokumen/pengalaman-kerja-review', [\App\Http\Controllers\PengalamanKerjaController::class, 'review'])->name('tenderDokumen.pengalamanKerjaReview');
+	Route::get('tenders/{tender}/dokumen/kerja-dalam-tangan-review', [\App\Http\Controllers\KerjaDalamTanganController::class, 'review'])->name('tenderDokumen.kerjaDalamTanganReview');
 	Route::get('tenders/{tender}/spesifikasi-kerja-files/{fileUuid}/download', [\App\Http\Controllers\VendorTenderDokumenController::class, 'downloadSpesifikasiKerjaFile'])->name('tenderDokumen.spesifikasiKerjaFile');
 	Route::post('tenders/{tender}/dokumen/{itemUuid}/upload', [\App\Http\Controllers\VendorTenderDokumenController::class, 'upload'])->name('tenderDokumen.upload');
 	Route::get('tenders/{tender}/checklist-files/{section}/{fileUuid}/download', [\App\Http\Controllers\TenderChecklistFileController::class, 'download'])->name('tenderChecklist.download');
@@ -347,7 +349,26 @@ Route::middleware(['auth'])->group(function () {
 	Route::get('/jawatankuasa-pembuka', [JawatankuasaPembukaController::class, 'show'])->name('jawatankuasaPembuka');
 	Route::post('/jawatankuasa-pembuka/simpan-pematuhan', [JawatankuasaPembukaController::class, 'simpanPematuhan'])->name('jawatankuasaPembuka.simpanPematuhan');
 	Route::get('/jawatankuasa-pembuka/rumusan-data', [JawatankuasaPembukaController::class, 'getRumusanData'])->name('jawatankuasaPembuka.rumusanData');
-	Route::post('/jawatankuasa-pembuka/hantar', [JawatankuasaPembukaController::class, 'hantar'])->name('jawatankuasaPembuka.hantar');
+
+	Route::post('/jawatankuasa-pembuka/hantar', [JawatankuasaPembukaController::class, 'hantar'])
+		->middleware('committee.pengerusi:open')
+		->name('jawatankuasaPembuka.hantar');
+	Route::get('/jawatankuasa-pembuka/penilaian-semasa', [\App\Http\Controllers\JawatankuasaPembukaSesiController::class, 'evaluations'])
+		->name('jawatankuasaPembuka.penilaianSemasa');
+	Route::get('/jawatankuasa-pembuka/status-penilaian', [\App\Http\Controllers\JawatankuasaPembukaSesiController::class, 'itemStatuses'])
+		->name('jawatankuasaPembuka.statusPenilaian');
+	Route::get('/jawatankuasa-pembuka/taraf-bumiputera', [\App\Http\Controllers\JawatankuasaPembukaSesiController::class, 'bumiputeraStatuses'])
+		->name('jawatankuasaPembuka.tarafBumiputera');
+	// {jenis}: open = Pembuka, tech = Teknikal, fin = Kewangan.
+	Route::prefix('/penilaian-sesi/{jenis}')->name('penilaianSesi.')->group(function () {
+		Route::get('/session', [\App\Http\Controllers\EvaluationSessionController::class, 'session'])->name('session');
+		Route::post('/declaration', [\App\Http\Controllers\EvaluationSessionController::class, 'storeDeclaration'])->name('declaration');
+		Route::post('/lock', [\App\Http\Controllers\EvaluationSessionController::class, 'acquireLock'])->name('lock');
+		Route::post('/lock/release', [\App\Http\Controllers\EvaluationSessionController::class, 'releaseLock'])->name('lock.release');
+		Route::post('/rows/complete', [\App\Http\Controllers\EvaluationSessionController::class, 'completeRows'])->name('rows.complete');
+		Route::get('/locks', [\App\Http\Controllers\EvaluationSessionController::class, 'locks'])->name('locks');
+		Route::post('/log', [\App\Http\Controllers\EvaluationSessionController::class, 'storeLog'])->name('log');
+	});
 
 	// Demo: reference page for loading vendor checklist submissions
 	Route::get('/demo/penyerahan-petender', [VendorSubmissionsDemoController::class, 'index'])->name('demo.vendorSubmissions.index');
@@ -361,8 +382,6 @@ Route::middleware(['auth'])->group(function () {
 	Route::get('/penilaian-teknikal/{uuid}', [PenilaianTeknikalController::class, 'show'])->name('penilaianTeknikal.show');
 	Route::get('/penilaian-teknikal-kerja/{uuid}', [PenilaianTeknikalController::class, 'showTeknikalKerja'])->name('penilaianTeknikalKerja.show');
 	Route::post('/penilaian-teknikal/hantar', [PenilaianTeknikalController::class, 'hantar'])->name('penilaianTeknikal.hantar');
-	Route::get('/penilaian-teknikal/{tender}/pengalaman-kerja-review', [PenilaianTeknikalController::class, 'pengalamanKerjaReview'])->name('penilaianTeknikal.pengalamanKerjaReview');
-	Route::get('/penilaian-teknikal/{tender}/kerja-dalam-tangan-review', [PenilaianTeknikalController::class, 'kerjaDalamTanganReview'])->name('penilaianTeknikal.kerjaDalamTanganReview');
 	Route::post('/penilaian-teknikal/pematuhan/simpan', [PenilaianTeknikalController::class, 'simpanPematuhan'])->name('penilaianTeknikal.simpanPematuhan');
 	Route::get('/penilaian-teknikal/{tender}/rumusan-pematuhan', [PenilaianTeknikalController::class, 'rumusanPematuhan'])->name('penilaianTeknikal.rumusanPematuhan');
 	Route::post('/penilaian-teknikal/{tender}/hantar-pematuhan', [PenilaianTeknikalController::class, 'hantarPematuhan'])->name('penilaianTeknikal.hantarPematuhan');

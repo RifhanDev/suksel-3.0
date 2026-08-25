@@ -8,6 +8,7 @@ use App\Tender;
 use App\TenderVendor;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class JawatankuasaPembukaService
 {
@@ -35,7 +36,7 @@ class JawatankuasaPembukaService
 
         $record->fill([
             'status_pematuhan' => $statusPematuhan,
-            'catatan'          => ($statusPematuhan === 0) ? trim((string) ($catatan ?? '')) : null,
+            'catatan'          => trim((string) ($catatan ?? '')) ?: null,
             'updated_by'       => Auth::id(),
         ]);
 
@@ -61,6 +62,37 @@ class JawatankuasaPembukaService
             ->get()
             ->keyBy(fn (TenderPembukaEvaluation $e) => "{$e->vendor_id}:{$e->checklist_item_uuid}")
             ->all();
+    }
+
+    /**
+     * Save every row for one checklist item in a single transaction, then return
+     * the fresh aggregate counts needed to compute that item's Status Penilaian.
+     *
+     * @param  array<int, array{vendor_id: int, status_pematuhan: int, catatan: ?string}>  $rows
+     * @return array{evaluated_count: int, total_vendors: int}
+     */
+    public function saveEvaluationsBatch(Tender $tender, string $checklistItemUuid, array $rows): array
+    {
+        DB::transaction(function () use ($tender, $checklistItemUuid, $rows) {
+            foreach ($rows as $row) {
+                $this->saveEvaluation(
+                    $tender,
+                    (int) $row['vendor_id'],
+                    $checklistItemUuid,
+                    (int) $row['status_pematuhan'],
+                    $row['catatan'] ?? null
+                );
+            }
+        });
+
+        $evaluatedCount = TenderPembukaEvaluation::query()
+            ->where('tender_id', $tender->id)
+            ->where('checklist_item_uuid', $checklistItemUuid)
+            ->count();
+
+        $totalVendors = $tender->participants()->where('participate', 1)->count();
+
+        return ['evaluated_count' => $evaluatedCount, 'total_vendors' => $totalVendors];
     }
 
     // ─────────────────────────────────────────────────────────────────

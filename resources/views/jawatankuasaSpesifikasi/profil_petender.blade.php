@@ -182,6 +182,7 @@
             ? route('senaraiKewanganKerja', $tender->uuid)
             : route('senaraiKewanganBekalan', $tender->uuid));
     @endphp
+    @unless ($modalEmbed ?? false)
     <!-- HEADER -->
     <div class="d-flex flex-column flex-lg-row justify-content-start align-items-start align-items-lg-center mb-4">
         <div>
@@ -195,6 +196,7 @@
             </p>
         </div>
     </div>
+    @endunless
 
     <form id="form-profil-petender" action="{{ route('profilPetender.store', $tender->uuid) }}" method="POST">
     @csrf
@@ -202,6 +204,7 @@
         <input type="hidden" name="modal" value="1">
     @endif
 
+        @unless ($modalEmbed ?? false)
         <!-- TENDER INFO CARD -->
         <div class="content-card mb-4 p-0">
             <div class="content-card-body p-4">
@@ -242,6 +245,7 @@
 
             </div>
         </div>
+        @endunless
 
         <!-- ===================== SECTION 1: MAKLUMAT PROFIL PETENDER ===================== -->
         @if ($showVendorForm)
