@@ -39,9 +39,12 @@ class FpxController extends Controller
 
 			$modelFB = FpxBank::whereCode($id)->first();
 
-			if(!empty($modelFB)) {
-				$banks[$id] = $modelFB->display_name . ' ' . $statusCode;
-			}
+			// Fall back to the raw bank code (e.g. "TEST0021") rather than
+			// leaving the option showing just the bare online/offline status
+			// character — happens for any code PayNet returns that has no
+			// matching fpx_banks row (UAT's TEST0021/22/23 simulator banks,
+			// or a newly-onboarded real bank not seeded here yet).
+			$banks[$id] = !empty($modelFB) ? $modelFB->display_name . ' ' . $statusCode : $id . ' ' . $statusCode;
 		}
 		
 		return view('payment.fpx.bank-list', compact('banks', 'fpx'));
