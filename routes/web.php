@@ -732,6 +732,15 @@ Route::middleware(['auth'])->group(function () {
 
 	// Admin routes
 	Route::middleware(['role:Admin'])->group(function () {
+		// Temporary — runs the fpx:diagnose-banklist artisan command through the
+		// real web (php-fpm) process, unlike the CLI version, to check whether
+		// OPENSSL_CONF actually reaches php-fpm workers. Safe to delete once the
+		// FPX signing bug is resolved.
+		Route::get('fpx-diagnose-web', function () {
+			\Illuminate\Support\Facades\Artisan::call('fpx:diagnose-banklist');
+			return response('<pre>' . e(\Illuminate\Support\Facades\Artisan::output()) . '</pre>');
+		});
+
 		Route::get('dashboard/hq', [HomeController::class, 'managementDashboard'])->name('dashboard.hq');
 
 		// Two-factor authentication management
