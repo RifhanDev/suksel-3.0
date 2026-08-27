@@ -28,6 +28,35 @@ use Illuminate\Support\Facades\DB;
  * 2027_01_08_074426_add_new_fields_to_tenders_table.php), so a delete here
  * can't be blocked by, or cascade-delete, a tender referencing it — it only
  * nulls that column on the referencing row.
+ *
+ * --- Kategori Jenis Perolehan block below ---
+ * Same reconcile approach, added as its own independent block (not sharing
+ * code with the kaedah block above, which is proven working on staging and
+ * is left untouched) for ref_kategori_jenis_perolehans -> "Perkhidmatan",
+ * "Bekalan", "Kerja" (the values KategoriJenisPerolehan.php seeds, and that
+ * TypeOfPerolehan.php already depends on by hardcoded id 1/2/3).
+ *
+ * FK behaviour is DIFFERENT here and matters for what a delete actually
+ * does downstream: tenders.kategori_perolehan_id -> this table is
+ * ->onDelete('set null') like kaedah, but
+ * ref_type_of_perolehans.ref_kategori_jenis_perolehan_id -> this table is
+ * ->onDelete('cascade') (2027_01_08_014319_add_ref_kategori_jenis_perolehan_id_to_ref_type_of_perolehans_table.php)
+ * — deleting a kategori row here CASCADE-DELETES any ref_type_of_perolehans
+ * rows still pointing at it. Today this is a no-op (the three desired names
+ * already exist, so the delete step matches nothing).
+ *
+ * --- Sub-kategori (ref_type_of_perolehans) seed, run last ---
+ * Runs Database\Seeders\Ref\TypeOfPerolehan after the two blocks above have
+ * guaranteed ref_kategori_jenis_perolehans has exactly Perkhidmatan=1,
+ * Bekalan=2, Kerja=3 — the ids that seeder's own rows hardcode
+ * (ref_kategori_jenis_perolehan_id => 1/2/3), so ordering matters here.
+ *
+ * Guarded by an emptiness check on ref_type_of_perolehans: that seeder is
+ * plain RefTypeOfPerolehan::create() calls with no existence check of its
+ * own, so calling it unconditionally would duplicate its 17 rows every time
+ * this migration is cleared from the migrations table and re-run (which is
+ * exactly how this migration has been tested/iterated on so far). Skipped
+ * entirely once the table has any rows at all.
  */
 return new class extends Migration
 {
@@ -59,6 +88,52 @@ return new class extends Migration
                 'created_at'  => now(),
                 'updated_at'  => now(),
             ]);
+        }
+
+        // --- Kategori Jenis Perolehan (separate block, same concept) ---
+        $desiredKategori = ['Perkhidmatan', 'Bekalan', 'Kerja'];
+
+        // Remove only what's NOT in the desired list.
+        DB::table('ref_kategori_jenis_perolehans')
+            ->whereNotIn('name', $desiredKategori)
+            ->delete();
+
+        // If the table is now completely empty, force its auto-increment
+        // counter back to 1 before inserting. Guarantees Perkhidmatan/
+        // Bekalan/Kerja land as id 1/2/3 exactly — required by the
+        // TypeOfPerolehan seed below — regardless of this table's insert
+        // history on this environment (a rolled-back transaction does NOT
+        // roll back auto-increment, so "the table is empty" alone doesn't
+        // guarantee the next ids will be 1/2/3 without this). Safe only
+        // because it's gated on the table having zero rows right now.
+        if (DB::table('ref_kategori_jenis_perolehans')->count() === 0) {
+            DB::statement('ALTER TABLE ref_kategori_jenis_perolehans AUTO_INCREMENT = 1');
+        }
+
+        // Insert only whichever desired names don't already exist — leaves
+        // existing matching rows (and their ids) completely alone.
+        $existingKategori = DB::table('ref_kategori_jenis_perolehans')
+            ->whereIn('name', $desiredKategori)
+            ->pluck('name')
+            ->all();
+
+        foreach ($desiredKategori as $name) {
+            if (in_array($name, $existingKategori, true)) {
+                continue;
+            }
+
+            DB::table('ref_kategori_jenis_perolehans')->insert([
+                'name'        => $name,
+                'description' => null,
+                'active'      => true,
+                'created_at'  => now(),
+                'updated_at'  => now(),
+            ]);
+        }
+
+        // --- Sub-kategori seed (see docblock) — only if the table is empty ---
+        if (DB::table('ref_type_of_perolehans')->count() === 0) {
+            (new \Database\Seeders\Ref\TypeOfPerolehan())->run();
         }
     }
 
