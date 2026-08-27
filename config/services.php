@@ -64,12 +64,6 @@ return [
         // only so an environment behind a TLS-intercepting proxy can opt out explicitly
         // instead of the old behaviour of hardcoding 'verify' => false in every call.
         'verify_tls' => env('FPX_VERIFY_TLS', true),
-
-        // Bank-list endpoint. Separate from the gateway's endpoint_url/daemon_url
-        // columns, which point at the AR (browser redirect) and AE (status enquiry)
-        // paths respectively. Default matches the URL previously hardcoded in
-        // Fpx::bankList(), so behaviour is unchanged unless explicitly overridden.
-        'bank_list_url' => env('FPX_BANK_LIST_URL', 'https://www.mepsfpx.com.my/FPXMain/RetrieveBankList'),
     ],
 
     'stos_backend' => [

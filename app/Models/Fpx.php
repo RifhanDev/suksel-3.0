@@ -21,7 +21,13 @@ class Fpx
 	public $msg_token     = '01';
 	public $version       = '5.0';
 	public $source_string = '';
-	
+
+	// Optional: a gateway URL (endpoint_url or daemon_url) from the same row this
+	// merchant_id came from. bankList() derives its request host from this — same
+	// host the admin already set in the gateways screen, just a different path —
+	// instead of a separate config value that could drift out of sync with it.
+	public $reference_url;
+
 	public $private_key;
 	
 	public $request_keys = [
@@ -197,11 +203,15 @@ class Fpx
 		$signature = $params['fpx_checkSum'] = strtoupper(bin2hex($signature));
 		ksort($params);
 
-		// NOTE: this is deliberately NOT gateway->daemon_url — that column points at the
-		// AE/status-enquiry endpoint, which is a different path on the FPX host. Kept as
-		// config so a UAT host can be substituted without a code change; the default is
-		// the production URL this has always used, so behaviour is unchanged by default.
-		$bankListUrl = config('services.fpx.bank_list_url');
+		// Derive the bank-list host from reference_url (the gateway's own endpoint_url
+		// or daemon_url, whichever the caller passed in) — same host an admin already
+		// set for this gateway row in the /gateways screen, just swapped to the
+		// RetrieveBankList path. Falls back to the production URL 2.0 always hardcoded
+		// here, so behaviour is unchanged when no reference_url is given.
+		$parts       = $this->reference_url ? parse_url($this->reference_url) : null;
+		$bankListUrl = !empty($parts['scheme']) && !empty($parts['host'])
+			? "{$parts['scheme']}://{$parts['host']}/FPXMain/RetrieveBankList"
+			: 'https://www.mepsfpx.com.my/FPXMain/RetrieveBankList';
 
 		$client = new \GuzzleHttp\Client();
 		$response = $client->post($bankListUrl, ['form_params' => $params, 'verify' => config('services.fpx.verify_tls', true)]);

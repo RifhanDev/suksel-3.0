@@ -16,10 +16,11 @@ class FpxController extends Controller
 		$type = session('fpx_type', null);
 		
 		$fpx = new Fpx([
-			'request_type' => 'BE',
-			'msg_token'    => $type == 'fpx-2' ? '02' : '01',
-			'merchant_id'  => $transaction->gateway->merchant_code,
-			'version'      => $transaction->gateway->version,
+			'request_type'  => 'BE',
+			'msg_token'     => $type == 'fpx-2' ? '02' : '01',
+			'merchant_id'   => $transaction->gateway->merchant_code,
+			'version'       => $transaction->gateway->version,
+			'reference_url' => $transaction->gateway->endpoint_url,
 		]);
 		
 		$banks = $fpx->bankList();
@@ -83,7 +84,7 @@ class FpxController extends Controller
 	
 		$transaction->gateway_message = implode(' | ', $messages);
 		$transaction->save();
-	
+
 		return view('payment.fpx.connect', compact('fpx', 'transaction'));
 	}
 	

@@ -930,8 +930,16 @@ class Vendor extends Model
 
 	public function hasFile($name)
 	{
+		// Must match createUploads()'s naming exactly (see below, ~line 740): it
+		// sanitizes the registration number (e.g. "1157773-U" -> "1157773_U")
+		// before building the stored filename. Checking against the raw,
+		// unsanitized registration here caused hasFile() to report false for
+		// vendors whose registration contains a dash, even though the file was
+		// genuinely uploaded and exists.
+		$sanitizedRegistration = preg_replace('/[^a-zA-Z0-9]+/', '_', $this->registration);
+
 		$files = [
-			$this->registration . '_' . $name  . '.pdf',
+			$sanitizedRegistration . '_' . $name  . '.pdf',
 			'cr_' . $this->registration . '_' . $name . '.pdf'
 		];
 
