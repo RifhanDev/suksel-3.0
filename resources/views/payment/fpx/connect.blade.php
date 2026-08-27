@@ -1,4 +1,4 @@
-@extends('layouts.v3.master')
+@extends('layouts.modernLanding')
 @section('content')
 	<div class="alert alert-danger">Transaksi Perbankan FPX sedang dalam proses. Harap bersabar.</div>
 	<table class="table table-bordered">

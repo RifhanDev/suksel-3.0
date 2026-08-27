@@ -1,4 +1,4 @@
-@extends('layouts.v3.master')
+@extends('layouts.modernLanding')
 @section('content')
 	<h2>Pembaharuan Langganan</h2>
 	<br>

@@ -1,4 +1,4 @@
-@extends('layouts.v3.master')
+@extends('layouts.modernLanding')
 
 @section('content')
 	<h4 class="pull-left">Senarai Tempahan</h4>

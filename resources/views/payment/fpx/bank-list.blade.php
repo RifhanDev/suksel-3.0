@@ -1,4 +1,4 @@
-@extends('layouts.v3.master')
+@extends('layouts.modernLanding')
 @section('content')
 	<form id="fpx_connect" action="{{ route('fpx.connect') }}">
 		<div class="form-group">
