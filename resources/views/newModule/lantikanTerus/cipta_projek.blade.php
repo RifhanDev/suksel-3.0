@@ -459,15 +459,15 @@
                             </div>
                             <!-- Kategori Perolehan -->
                             <div class="mb-0">
-                                @php $kategoriPerolehan = old('kategori_perolehan', optional($p)->kategori_perolehan); @endphp
+                                @php $kategoriSelected = old('kategori_perolehan', optional($p)->kategori_perolehan); @endphp
                                 <label class="form-label">Kategori Perolehan <span class="text-danger">*</span></label>
                                 <select class="form-select" name="kategori_perolehan" required>
                                     <option value="" selected disabled>Pilih...</option>
-                                    {{-- TODO: populate from controller ($kategoriPerolehan) --}}
-                                    <option value="ict" {{ $kategoriPerolehan == 'ict' ? 'selected' : '' }}>ICT</option>
-                                    <option value="bekalan" {{ $kategoriPerolehan == 'bekalan' ? 'selected' : '' }}>Bekalan</option>
-                                    <option value="perkhidmatan" {{ $kategoriPerolehan == 'perkhidmatan' ? 'selected' : '' }}>Perkhidmatan</option>
-                                    <option value="kerja" {{ $kategoriPerolehan == 'kerja' ? 'selected' : '' }}>Kerja</option>
+                                    @foreach (($kategoriPerolehan ?? \App\Models\Ref\RefKategoriJenisPerolehan::where('active', true)->get()) as $kategori)
+                                        <option value="{{ $kategori->id }}" {{ (string) $kategoriSelected === (string) $kategori->id ? 'selected' : '' }}>
+                                            {{ $kategori->name }}
+                                        </option>
+                                    @endforeach
                                 </select>
                             </div>
                         </div>
