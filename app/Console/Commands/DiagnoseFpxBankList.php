@@ -63,9 +63,19 @@ class DiagnoseFpxBankList extends Command
         ksort($params);
         $sourceString = implode('|', $params);
 
+        $this->line('OPENSSL_CONF env: ' . var_export(getenv('OPENSSL_CONF'), true));
+
         $ok = openssl_sign($sourceString, $signature, $key, OPENSSL_ALGO_SHA1);
         $this->line('source_string: ' . $sourceString);
         $this->info('openssl_sign() berjaya: ' . var_export($ok, true));
+
+        if (!$ok) {
+            $this->error('openssl_sign() gagal, sebab:');
+            while ($e = openssl_error_string()) {
+                $this->error("  $e");
+            }
+            return 1;
+        }
 
         $params['fpx_checkSum'] = strtoupper(bin2hex($signature));
         ksort($params);
