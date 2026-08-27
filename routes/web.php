@@ -721,6 +721,15 @@ Route::middleware(['auth'])->group(function () {
 	Route::get('vendor/{vendor}/requests/{requests}', [CodeRequestsController::class, 'show'])->name('vendor.requests.show');
 	Route::delete('vendor/{vendor}/requests/{requests}', [CodeRequestsController::class, 'destroy'])->name('vendor.requests.destroy');
 
+	// Payment routes — vendor-initiated (buying tender docs, renewing subscription),
+	// must NOT be role:Admin-only. Moved out of that group: it was blocking every
+	// vendor from ever reaching FPX/eBPG connect/bank-list with a 403.
+	Route::get('payment/fpx/connect', [FpxController::class, 'connect'])->name('fpx.connect');
+	Route::post('payment/fpx/respond', [FpxController::class, 'respond'])->name('fpx.respond');
+	Route::get('payment/fpx/bank-list', [FpxController::class, 'bankList'])->name('fpx.bank-list');
+	Route::get('payment/ebpg/connect', [EbpgController::class, 'connect'])->name('ebpg.connect');
+	Route::post('payment/ebpg/respond', [EbpgController::class, 'respond'])->name('ebpg.respond');
+
 	// Admin routes
 	Route::middleware(['role:Admin'])->group(function () {
 		Route::get('dashboard/hq', [HomeController::class, 'managementDashboard'])->name('dashboard.hq');
@@ -816,13 +825,6 @@ Route::middleware(['auth'])->group(function () {
 
 		// News
 		Route::get('news/{id}/publish', [NewsController::class, 'publish'])->name('news.publish');
-
-		// Payment routes
-		Route::get('payment/fpx/connect', [FpxController::class, 'connect'])->name('fpx.connect');
-		Route::post('payment/fpx/respond', [FpxController::class, 'respond'])->name('fpx.respond');
-		Route::get('payment/fpx/bank-list', [FpxController::class, 'bankList'])->name('fpx.bank-list');
-		Route::get('payment/ebpg/connect', [EbpgController::class, 'connect'])->name('ebpg.connect');
-		Route::post('payment/ebpg/respond', [EbpgController::class, 'respond'])->name('ebpg.respond');
 
 		// Reports - Individual Report Controllers
 		Route::get('reports/revenue', [ReportRevenueController::class, 'index']);
