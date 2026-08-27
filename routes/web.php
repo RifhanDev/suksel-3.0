@@ -238,8 +238,15 @@ Route::resource('news', NewsController::class);
 // Contact
 Route::get('contact', [HomeController::class, 'contact']);
 
-// Payment
+// Payment — respond/listen are landing points PayNet (or the bank) posts back
+// to directly. They must stay outside 'auth': the caller has no session/login
+// of ours, and even the user's own browser can arrive here with no valid
+// session cookie after a cross-site POST from the bank's domain (SameSite
+// cookie policy). respond() already handles both a present and an absent
+// session (see its $returning fallback lookup by transaction number).
 Route::post('payment/fpx/listen', [FpxController::class, 'listen'])->name('fpx.listen');
+Route::post('payment/fpx/respond', [FpxController::class, 'respond'])->name('fpx.respond');
+Route::post('payment/ebpg/respond', [EbpgController::class, 'respond'])->name('ebpg.respond');
 
 // Transactions
 Route::post('transactions/{id}/ebpg_requery', [TransactionsController::class, 'ebpg_requery'])->name('transactions.ebpg_requery');
@@ -724,11 +731,11 @@ Route::middleware(['auth'])->group(function () {
 	// Payment routes — vendor-initiated (buying tender docs, renewing subscription),
 	// must NOT be role:Admin-only. Moved out of that group: it was blocking every
 	// vendor from ever reaching FPX/eBPG connect/bank-list with a 403.
+	// (fpx.respond/ebpg.respond live at the top of this file, outside auth —
+	// see the comment there for why.)
 	Route::get('payment/fpx/connect', [FpxController::class, 'connect'])->name('fpx.connect');
-	Route::post('payment/fpx/respond', [FpxController::class, 'respond'])->name('fpx.respond');
 	Route::get('payment/fpx/bank-list', [FpxController::class, 'bankList'])->name('fpx.bank-list');
 	Route::get('payment/ebpg/connect', [EbpgController::class, 'connect'])->name('ebpg.connect');
-	Route::post('payment/ebpg/respond', [EbpgController::class, 'respond'])->name('ebpg.respond');
 
 	// Admin routes
 	Route::middleware(['role:Admin'])->group(function () {
