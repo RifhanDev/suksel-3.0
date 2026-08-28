@@ -112,7 +112,9 @@ function html_attributes($attributes)
 function link_to($url, $title = null, $attributes = [])
 {
 	$title = $title ?? $url;
-	return '<a href="' . htmlspecialchars($url, ENT_QUOTES, 'UTF-8') . '"' . html_attributes($attributes) . '>' . $title . '</a>';
+	$html  = '<a href="' . htmlspecialchars($url, ENT_QUOTES, 'UTF-8') . '"' . html_attributes($attributes) . '>' . $title . '</a>';
+
+	return new \Illuminate\Support\HtmlString($html);
 }
 
 
@@ -134,7 +136,9 @@ function link_to_route($name, $title = null, $parameters = [], $attributes = [])
 	}
 
 	$title = $title ?? $href;
-	return '<a href="' . htmlspecialchars($href, ENT_QUOTES, 'UTF-8') . '"' . html_attributes($attributes) . '>' . $title . '</a>';
+	$html  = '<a href="' . htmlspecialchars($href, ENT_QUOTES, 'UTF-8') . '"' . html_attributes($attributes) . '>' . $title . '</a>';
+
+	return new \Illuminate\Support\HtmlString($html);
 }
 
 
@@ -155,7 +159,9 @@ function link_to_action($action, $title = null, $parameters = [], $attributes = 
 	}
 
 	$title = $title ?? $href;
-	return '<a href="' . htmlspecialchars($href, ENT_QUOTES, 'UTF-8') . '"' . html_attributes($attributes) . '>' . $title . '</a>';
+	$html  = '<a href="' . htmlspecialchars($href, ENT_QUOTES, 'UTF-8') . '"' . html_attributes($attributes) . '>' . $title . '</a>';
+
+	return new \Illuminate\Support\HtmlString($html);
 }
 
 
