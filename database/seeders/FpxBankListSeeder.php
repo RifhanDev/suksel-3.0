@@ -22,11 +22,17 @@ use Illuminate\Support\Facades\DB;
  * B2C is used below for all three, since msg_token '01' (B2C) is this
  * app's default mode.
  *
- * Deliberately a SEEDER, not a migration — run explicitly, safe on any
- * environment (idempotent: skips any code that already has a row, so it
- * only fills in what's missing without touching/renaming existing rows —
- * e.g. it won't collide with FpxUatTestBanksSeeder's earlier TEST0021/22/23
- * rows if those still exist from before this seeder replaced it):
+ * Safe to run repeatedly on any environment, including production, as part
+ * of every deploy (see 2027_08_28_000002_run_fpx_bank_list_seeder.php, which
+ * just calls this class — no data duplicated between the two files):
+ *   - A code already present with IDENTICAL name/display_name/type/status
+ *     is left completely untouched (no unnecessary write).
+ *   - A code present with DIFFERENT data is updated in place (same id).
+ *   - A code missing entirely is inserted.
+ *   - A row whose code is NOT in this list is DEACTIVATED (status set to
+ *     'inactive'), not deleted — fpx_banks already supports this via its
+ *     'active' scope (status = 'active'), so it's reversible and doesn't
+ *     destroy history for a bank PayNet removes and later re-adds.
  *   php artisan db:seed --class=FpxBankListSeeder
  */
 class FpxBankListSeeder extends Seeder
@@ -76,31 +82,51 @@ class FpxBankListSeeder extends Seeder
             ['code' => 'UOB0229',  'name' => 'United Overseas Bank - Test',                     'display_name' => 'UOB Bank - Test ID'],
         ];
 
-        $existing = DB::table('fpx_banks')
-            ->whereIn('code', array_column($banks, 'code'))
-            ->pluck('code')
-            ->all();
+        $desiredCodes = array_column($banks, 'code');
+        $existingRows = DB::table('fpx_banks')->get()->keyBy('code');
 
         $created = 0;
+        $updated = 0;
 
         foreach ($banks as $bank) {
-            if (in_array($bank['code'], $existing, true)) {
+            $row = $existingRows->get($bank['code']);
+
+            if (!$row) {
+                DB::table('fpx_banks')->insert([
+                    'code'         => $bank['code'],
+                    'name'         => $bank['name'],
+                    'display_name' => $bank['display_name'],
+                    'type'         => 'fpx',
+                    'status'       => 'active',
+                    'created_at'   => now(),
+                    'updated_at'   => now(),
+                ]);
+                $created++;
                 continue;
             }
 
-            DB::table('fpx_banks')->insert([
-                'code'         => $bank['code'],
-                'name'         => $bank['name'],
-                'display_name' => $bank['display_name'],
-                'type'         => 'fpx',
-                'status'       => 'active',
-                'created_at'   => now(),
-                'updated_at'   => now(),
-            ]);
+            $needsUpdate = $row->name !== $bank['name']
+                || $row->display_name !== $bank['display_name']
+                || $row->type !== 'fpx'
+                || $row->status !== 'active';
 
-            $created++;
+            if ($needsUpdate) {
+                DB::table('fpx_banks')->where('id', $row->id)->update([
+                    'name'         => $bank['name'],
+                    'display_name' => $bank['display_name'],
+                    'type'         => 'fpx',
+                    'status'       => 'active',
+                    'updated_at'   => now(),
+                ]);
+                $updated++;
+            }
         }
 
-        $this->command?->info("FpxBankListSeeder: {$created} bank(s) dicipta, " . (count($banks) - $created) . ' sudah wujud (tiada tindakan).');
+        $deactivated = DB::table('fpx_banks')
+            ->whereNotIn('code', $desiredCodes)
+            ->where('status', '!=', 'inactive')
+            ->update(['status' => 'inactive', 'updated_at' => now()]);
+
+        $this->command?->info("FpxBankListSeeder: {$created} dicipta, {$updated} dikemaskini, {$deactivated} dinyahaktifkan (tiada dalam senarai rasmi).");
     }
 }
