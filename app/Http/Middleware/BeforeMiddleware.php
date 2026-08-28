@@ -18,17 +18,6 @@ class BeforeMiddleware
     */
    public function handle($request, Closure $next)
    {
-      // Temporary — proves whether a request for this path reaches Laravel's
-      // kernel at all, before any session/CSRF/routing middleware runs. Safe
-      // to remove once the fpx/respond 419 is resolved.
-      if (str_contains($request->path(), 'payment/fpx/respond')) {
-         logger()->warning('BeforeMiddleware: fpx/respond REACHED KERNEL', [
-            'method' => $request->method(),
-            'path'   => $request->path(),
-            'ip'     => $request->ip(),
-         ]);
-      }
-
       // Protect view sharing from fatal DB errors (e.g., local dev DB down)
       try {
          view()->share('global_ou', OrganizationUnit::find(config('app.global_ou')));
