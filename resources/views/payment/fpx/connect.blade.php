@@ -149,7 +149,7 @@
 				</div>
 				<div class="connect-info-row">
 					<dt>Bank</dt>
-					<dd>{{ App\FpxBank::active()->where('code', Request::get('bank_code'))->first()->display_name }}</dd>
+					<dd>{{ optional(App\FpxBank::active()->where('code', Request::get('bank_code'))->first())->display_name ?? Request::get('bank_code') }}</dd>
 				</div>
 				<div class="connect-info-row">
 					<dt>Status</dt>
