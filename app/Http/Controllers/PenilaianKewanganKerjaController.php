@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\AdvancesTenderProcessStatus;
 use App\Http\Controllers\Concerns\ResolvesTenderForProcess;
+use App\Http\Controllers\Concerns\RestrictsTenderByRole;
 use App\Models\TenderKewanganKerjaEvaluation;
 use App\Models\TenderKewanganLaporan;
 use App\Models\TenderKewanganProgress;
@@ -19,6 +20,14 @@ class PenilaianKewanganKerjaController extends Controller
 {
     use AdvancesTenderProcessStatus;
     use ResolvesTenderForProcess;
+    use RestrictsTenderByRole;
+
+    protected string $committeeJenisForResolvedTenders = 'fin';
+
+    public function __construct()
+    {
+        $this->menuMiddleware('FinancialEvaluation:list');
+    }
 
     /**
      * Display Penilaian Kewangan (Kerja) Dashboard Overview.

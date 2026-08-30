@@ -66,7 +66,13 @@ class Role extends EntrustRole
 	public function scopeAvailableRoles($q)
 	{
 		if (auth()->user()->hasRole('Agency Admin')) {
-			return $q->whereIn('name', ['Agency User', 'Agency Finance']);
+			return $q->whereIn('name', [
+				'Agency User',
+				'Agency Finance',
+				'Agency Urusetia',
+				'Agency Jawatankuasa',
+				'Agency Lembaga Perolehan',
+			]);
 		} else {
 			return $q;
 		}

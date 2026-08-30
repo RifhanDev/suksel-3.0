@@ -28,6 +28,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use App\Services\StosBackendClient;
 use App\Support\TenderProcessStatus;
+use App\Http\Controllers\Concerns\RestrictsTenderByRole;
 use Illuminate\Support\Facades\Queue;
 use Mail;
 use PDF;
@@ -37,6 +38,7 @@ use Log;
 class TendersController extends Controller
 {
 	use Helper;
+	use RestrictsTenderByRole;
 	/**
 	 * Display a listing of tenders
 	 *
@@ -591,7 +593,7 @@ class TendersController extends Controller
 
 		$user = auth()->user();
 
-		if (!$user->hasRole('Admin') && !$user->can('tender:specification-management')) {
+		if (!$user->hasRole('Admin') && !$user->can('Tender:specification-management') && !$user->can('tender:specification-management')) {
 			return $this->_access_denied();
 		}
 
@@ -713,7 +715,7 @@ class TendersController extends Controller
 			->select('tender_id')
 			->groupBy('tender_id');
 
-		return Tender::query()
+		$query = Tender::query()
 			->joinSub($completedCommitteeTenders, 'completed_committees', function ($join) {
 				$join->on('tenders.id', '=', 'completed_committees.tender_id');
 			})
@@ -792,6 +794,8 @@ class TendersController extends Controller
 			})
 			->orderBy('tenders.document_stop_date', 'desc')
 			->orderBy('tenders.id', 'desc');
+
+		return $this->applyCommitteeAppointment($query, 'spec');
 	}
 
 	private function manageSpecificationActionButtons($tender): string

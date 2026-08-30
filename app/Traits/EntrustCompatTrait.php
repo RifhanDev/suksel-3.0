@@ -110,4 +110,28 @@ trait EntrustCompatTrait
 
         return false;
     }
+
+    /**
+     * Menu visibility for STOS 3.0 RBAC.
+     * Grants the permission, and also preserves current access for Agency Admin,
+     * Admin UPEN, and Admin PWN (Excel columns were empty for those roles).
+     */
+    public function canAccessMenu(string $permission): bool
+    {
+        if ($this->can($permission)) {
+            return true;
+        }
+
+        if (!method_exists($this, 'hasRole')) {
+            return false;
+        }
+
+        foreach (['Agency Admin', 'Admin UPEN', 'Admin PWN'] as $role) {
+            if ($this->hasRole($role)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
 }

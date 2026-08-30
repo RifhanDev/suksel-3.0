@@ -19,6 +19,11 @@ class PerakuanJabatanController extends Controller
 {
     use AdvancesTenderProcessStatus;
 
+    public function __construct()
+    {
+        $this->menuMiddleware('DepartmentCertification:list');
+    }
+
     /**
      * Display a listing of the resource.
      */

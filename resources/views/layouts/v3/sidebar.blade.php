@@ -74,7 +74,7 @@
 								</li>
 							@endif
 
-							@if (App\Tender::canList())
+							@if ($user->canAccessMenu('Tender:list'))
 								@if (Auth::user()->ability(['Admin', 'Registration Assesor', 'Front Desk'], []))
 									<li><a class="submenu-item" href="{{ asset('tender') }}">
 											<div class="submenu-icon"
@@ -94,7 +94,7 @@
 								@endif
 							@endif
 
-							@if ($user->can('tender:specification-management'))
+							@if ($user->can('Tender:specification-management') || $user->can('tender:specification-management'))
 								<!-- new permission -->
 								<li>
 									<a class="submenu-item" href="{{ route('pengurusanSpesifikasi') }}">
@@ -106,7 +106,7 @@
 								</li>
 							@endif
 
-							{{-- @if ($user->can('tender:specification-management')) --}}
+							@if ($user->canAccessMenu('Advertisement:list'))
 								<li>
 									<a class="submenu-item" href="{{ route('penyediaanIklan.index') }}">
 										<div class="submenu-icon"
@@ -115,8 +115,9 @@
 										<span class="{{ request()->routeIs('penyediaanIklan.*') ? 'text-white' : '' }}">Penyediaan Iklan</span>
 									</a>
 								</li>
-							{{-- @endif --}}
+							@endif
 
+							@if ($user->canAccessMenu('SiteVisit:list'))
 							<li>
 								<a class="submenu-item" href="{{ route('lawatanTapakUrusetia') }}">
 									<div class="submenu-icon"
@@ -125,7 +126,9 @@
 									<span class="{{ request()->routeIs('lawatanTapakUrusetia') ? 'text-white' : '' }}">Lawatan Tapak</span>
 								</a>
 							</li>
+							@endif
 
+							@if ($user->canAccessMenu('DepartmentCertification:list'))
 							<li>
 								<a class="submenu-item" href="{{ route('perakuanjabatan.index') }}">
 									<div class="submenu-icon"
@@ -134,7 +137,9 @@
 									<span class="{{ request()->is('perakuan-jabatan*') ? 'text-white' : '' }}">Perakuan Jabatan</span>
 								</a>
 							</li>
+							@endif
 
+							@if ($user->canAccessMenu('MeetingDecision:list'))
 							<li>
 								<a class="submenu-item" href="{{ route('jawatankuasa.perolehan.index') }}">
 									<div class="submenu-icon"
@@ -143,7 +148,9 @@
 									<span class="{{ request()->is('jawatankuasa-perolehan*') ? 'text-white' : '' }}">Keputusan Mesyuarat</span>
 								</a>
 							</li>
+							@endif
 
+							@if ($user->canAccessMenu('LetterOfIntent:list'))
 							<li>
 								<a class="submenu-item" href="{{ route('indexPenyediaanSuratNiat') }}">
 									<div class="submenu-icon"
@@ -152,7 +159,9 @@
 									<span class="{{ request()->routeIs('indexPenyediaanSuratNiat') || request()->is('penyediaan-surat-niat*') ? 'text-white' : '' }}">Penyediaan Surat Niat</span>
 								</a>
 							</li>
+							@endif
 
+							@if ($user->canAccessMenu('SST:list'))
 							<li>
 								<a class="submenu-item" href="{{ route('indexPenyediaanSST') }}">
 									<div class="submenu-icon"
@@ -161,6 +170,7 @@
 									<span class="{{ request()->routeIs('indexPenyediaanSST') || request()->routeIs('penyediaanSST') || request()->routeIs('penyediaanSST.*') ? 'text-white' : '' }}">Penyediaan Surat Setuju Terima</span>
 								</a>
 							</li>
+							@endif
 
 							@if (App\Vendor::canList())
 								<li><a class="submenu-item" href="{{ asset('vendors') }}">
@@ -202,6 +212,7 @@
 					</div>
 				</li>
 
+				@if ($user->canAccessMenu('Meeting:list') || $user->canAccessMenu('MeetingAttendance:list'))
 				<!-- Menu : Penyediaan Mesyuarat -->
 				@php
 					$isPenyediaanMesyuaratMenuActive = request()->routeIs(
@@ -240,18 +251,24 @@
 					</a>
 					<div class="collapse {{ $isPenyediaanMesyuaratMenuActive ? 'show' : '' }}" id="menuPenyediaanMesyuarat">
 						<ul class="sidebar-submenu">
+							@if ($user->canAccessMenu('Meeting:list'))
 							<li><a class="submenu-item {{ $isPerincianMesyuaratActive ? 'active' : '' }}" href="{{ route('perincianMesyuarat') }}">
 									<div class="submenu-icon" style="{{ $isPerincianMesyuaratActive ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}"></div>
 									<span class="{{ $isPerincianMesyuaratActive ? 'text-white' : '' }}">Perincian Mesyuarat</span>
 								</a></li>
+							@endif
+							@if ($user->canAccessMenu('MeetingAttendance:list'))
 							<li><a class="submenu-item {{ $isKehadiranMesyuaratActive ? 'active' : '' }}" href="{{ route('jawatankuasaMesyuarat') }}">
 									<div class="submenu-icon" style="{{ $isKehadiranMesyuaratActive ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}"></div>
 									<span class="{{ $isKehadiranMesyuaratActive ? 'text-white' : '' }}">Kehadiran Mesyuarat</span>
 								</a></li>
+							@endif
 						</ul>
 					</div>
 				</li>
+				@endif
 
+				@if ($user->canAccessMenu('OpenerEvaluation:list') || $user->canAccessMenu('CutOff:list') || $user->canAccessMenu('TechnicalEvaluation:list') || $user->canAccessMenu('FinancialEvaluation:list'))
 				<!-- Menu : Penilaian Perolehan -->
 				@php
 					$isPenilaianPembukaActive = request()->routeIs('indexJawatankuasaPembuka', 'jawatankuasaPembuka', 'jawatankuasaPembuka.*');
@@ -283,34 +300,44 @@
 					</a>
 					<div class="collapse {{ $isPenilaianPerolehanMenuActive ? 'show' : '' }}" id="menuPenilaianPerolehan">
 						<ul class="sidebar-submenu">
+							@if ($user->canAccessMenu('OpenerEvaluation:list'))
 							<li>
 								<a class="submenu-item" href="{{ route('indexJawatankuasaPembuka') }}">
 									<div class="submenu-icon" style="{{ $isPenilaianPembukaActive ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}"></div>
 									<span class="{{ $isPenilaianPembukaActive ? 'text-white' : '' }}">Penilaian Pembuka</span>
 								</a>
 							</li>
+							@endif
+							@if ($user->canAccessMenu('CutOff:list'))
 							<li>
 								<a class="submenu-item" href="{{ route('cutOff.index') }}">
 									<div class="submenu-icon" style="{{ $isCutOffPerolehanActive ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}"></div>
 									<span class="{{ $isCutOffPerolehanActive ? 'text-white' : '' }}">Cut Off</span>
 								</a>
 							</li>
+							@endif
+							@if ($user->canAccessMenu('TechnicalEvaluation:list'))
 							<li>
 								<a class="submenu-item" href="{{ route('penilaianTeknikal') }}">
 									<div class="submenu-icon" style="{{ $isPenilaianTeknikalActive ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}"></div>
 									<span class="{{ $isPenilaianTeknikalActive ? 'text-white' : '' }}">Penilaian Teknikal</span>
 								</a>
 							</li>
+							@endif
+							@if ($user->canAccessMenu('FinancialEvaluation:list'))
 							<li>
 								<a class="submenu-item" href="{{ route('penilaianKewangan') }}">
 									<div class="submenu-icon" style="{{ $isPenilaianKewanganActive ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}"></div>
 									<span class="{{ $isPenilaianKewanganActive ? 'text-white' : '' }}">Penilaian Kewangan</span>
 								</a>
 							</li>
+							@endif
 						</ul>
 					</div>
 				</li>
+				@endif
 
+				@if ($user->canAccessMenu('DirectPurchase:list'))
 				<!-- Menu: Pembelian Terus -->
 				<li class="nav-item">
 					<a class="sidebar-link {{ request()->is('pembelian-terus*') ? '' : 'collapsed' }}" data-bs-toggle="collapse"
@@ -405,6 +432,9 @@
 					</div>
 				</li>
 
+				@endif
+
+				@if ($user->canAccessMenu('DirectAppointment:list'))
 				<!-- Menu: Lantikan Terus -->
 				@php
 					$isLantikanTerusMenuActive =
@@ -507,6 +537,9 @@
 					</div>
 				</li>
 
+				@endif
+
+				@if ($user->canAccessMenu('Bidding:list'))
 				<!-- Menu: Bidaan -->
 				@php
 					$isBidaanMenuActive = request()->is('eBidding*') || request()->is('keputusan-mesyuarat*');
@@ -546,6 +579,8 @@
 						</ul>
 					</div>
 				</li>
+
+				@endif
 
 				<!-- 2. PERMINTAAN KEMASKINI -->
 				@if (App\CodeRequest::canList())

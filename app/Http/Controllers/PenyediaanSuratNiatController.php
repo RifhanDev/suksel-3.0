@@ -13,6 +13,11 @@ class PenyediaanSuratNiatController extends Controller
     use AdvancesTenderProcessStatus;
     use ResolvesTenderForProcess;
 
+    public function __construct()
+    {
+        $this->menuMiddleware('LetterOfIntent:list');
+    }
+
     public function index()
     {
         $tenders = Tender::query()

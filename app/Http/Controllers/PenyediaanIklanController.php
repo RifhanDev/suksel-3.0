@@ -25,7 +25,9 @@ class PenyediaanIklanController extends Controller
         protected StosBackendClient $stos,
         protected PenyediaanIklanService $penyediaanIklanService,
         protected StosTenderChecklistSync $checklistSync
-    ) {}
+    ) {
+        $this->menuMiddleware('Advertisement:list');
+    }
 
     public function index()
     {

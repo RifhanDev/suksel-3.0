@@ -20,11 +20,27 @@ trait HandlesTenderFormAccess
             abort(403);
         }
 
-        if ($user->hasRole('Admin') || $user->can('tender:specification-management')) {
+        if ($user->hasRole('Admin')) {
             return;
         }
 
-        // PTJ / Jawatankuasa / agency staff reviewing tender documents
+        if ($user->hasRole('Agency Jawatankuasa') || $user->hasRole('Jawatankuasa')) {
+            $legacy = $tender instanceof \App\Tender
+                ? $tender
+                : \App\Tender::query()->find($tender->id);
+
+            if (! $legacy || ! $legacy->isAppointedTo($user, 'spec')) {
+                abort(403, 'Anda tidak dilantik pada tender ini.');
+            }
+
+            return;
+        }
+
+        if ($user->can('tender:specification-management') || $user->can('Tender:specification-management')) {
+            return;
+        }
+
+        // PTJ / agency staff reviewing tender documents
         if (! $user->vendor_id) {
             return;
         }
