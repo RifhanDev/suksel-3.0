@@ -13,13 +13,13 @@ use Illuminate\Support\Facades\DB;
 
 class LawatanTapakUrusetiaController extends Controller
 {
+    public function __construct()
+    {
+        $this->menuMiddleware('SiteVisit:list');
+    }
+
     public function index(Request $request)
     {
-        $user = auth()->user();
-        if (!$user || !$user->ability(['Admin', 'Agency Admin', 'Agency User'], [])) {
-            return $this->_access_denied();
-        }
-
         $query = Tender::query()
             ->whereHas('siteVisits')
             ->where(function ($q) {

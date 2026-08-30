@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\AdvancesTenderProcessStatus;
+use App\Http\Controllers\Concerns\RestrictsTenderByRole;
 use App\Models\JawatankuasaPerolehanKertasKeputusan;
 use App\Models\JawatankuasaPerolehanMeeting;
 use App\Models\JawatankuasaPerolehanPemilihanHeader;
@@ -23,14 +24,21 @@ use Illuminate\Validation\ValidationException;
 class JawatankuasaPerolehanController extends Controller
 {
     use AdvancesTenderProcessStatus;
+    use RestrictsTenderByRole;
+
+    public function __construct()
+    {
+        $this->menuMiddleware('MeetingDecision:list');
+    }
 
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
-        $tenders = Tender::query()
-            ->where('status_process_id', TenderProcessStatus::jawatankuasaPerolehanListStatus())
+        $tenders = $this->applyLembagaDecisionScope(
+                Tender::query()->where('status_process_id', TenderProcessStatus::jawatankuasaPerolehanListStatus())
+            )
             ->orderByDesc('id')
             ->get([
                 'id',
@@ -728,10 +736,16 @@ class JawatankuasaPerolehanController extends Controller
         }
 
         if (is_numeric($identifier)) {
-            return Tender::query()->where('id', (int) $identifier)->first();
+            $tender = Tender::query()->where('id', (int) $identifier)->first();
+        } else {
+            $tender = Tender::query()->where('uuid', $identifier)->first();
         }
 
-        return Tender::query()->where('uuid', $identifier)->first();
+        if ($tender) {
+            $this->assertLembagaDecisionAccess($tender);
+        }
+
+        return $tender;
     }
 
     private function applyKertasKeputusanData(

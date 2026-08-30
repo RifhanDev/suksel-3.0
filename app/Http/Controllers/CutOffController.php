@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\AdvancesTenderProcessStatus;
 use App\Http\Controllers\Concerns\ResolvesTenderForProcess;
+use App\Http\Controllers\Concerns\RestrictsTenderByRole;
 use App\Services\StosBackendClient;
 use App\Support\TenderProcessStatus;
 use App\Tender;
@@ -14,8 +15,14 @@ class CutOffController extends Controller
 {
     use AdvancesTenderProcessStatus;
     use ResolvesTenderForProcess;
+    use RestrictsTenderByRole;
 
-    public function __construct(protected StosBackendClient $stos) {}
+    protected string $committeeJenisForResolvedTenders = 'open';
+
+    public function __construct(protected StosBackendClient $stos)
+    {
+        $this->menuMiddleware('CutOff:list');
+    }
 
     public function index(Request $request)
     {
@@ -58,7 +65,7 @@ class CutOffController extends Controller
             $rows = $response->json('data') ?? [];
 
             return $this->mapTendersForProcessList(
-                Tender::hydrate($rows),
+                $this->filterTendersByAppointment(Tender::hydrate($rows), 'open'),
                 fn (Tender $tender) => route('cutOff.show', $tender->uuid)
             );
         } catch (\Throwable $e) {
@@ -97,6 +104,9 @@ class CutOffController extends Controller
 
             abort(502, 'Ralat menghubungi STOS.');
         }
+
+        $localTender = $this->resolveTenderByIdentifier($row['uuid'] ?? $uuid);
+        $this->assertCommitteeAppointment($localTender, 'open');
 
         $tender_no = $row['no_tender'] ?: $row['ref_number'] ?: (string) ($row['id'] ?? $uuid);
         $hargaCutOff = $row['harga_cutoff'] ?? [];

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Concerns\AdvancesTenderProcessStatus;
 use App\Http\Controllers\Concerns\HandlesTenderFormAccess;
 use App\Http\Controllers\Concerns\ResolvesTenderForProcess;
+use App\Http\Controllers\Concerns\RestrictsTenderByRole;
 use App\Models\Jawatankuasa;
 use App\Models\PenyediaanIklan;
 use App\Models\PenyediaanMesyuaratMeeting;
@@ -35,12 +36,15 @@ class PenilaianTeknikalController extends Controller
     use AdvancesTenderProcessStatus;
     use HandlesTenderFormAccess;
     use ResolvesTenderForProcess;
+    use RestrictsTenderByRole;
 
     public function __construct(
         protected TeknikalEvaluationService $service,
         protected TeknikalKerjaEvaluationService $kerjaService,
         protected StosBackendClient $stos
-    ){}
+    ) {
+        $this->menuMiddleware('TechnicalEvaluation:list');
+    }
 
     // Bekalan/perkhidmatan flow — methods below serve the active 'penilaianTeknikal*' routes.
 
@@ -56,7 +60,8 @@ class PenilaianTeknikalController extends Controller
 
     protected function indexAjax(Request $request)
     {
-        $tenders = Tender::query()
+        $tenders = $this->applyCommitteeAppointment(
+            Tender::query()
             // CUT_OFF = pending; PENILAIAN_TEKNIKAL = just submitted — kept so evaluators can
             // still reopen a completed review instead of it vanishing from the list.
             ->whereIn('status_process_id', [
@@ -66,7 +71,9 @@ class PenilaianTeknikalController extends Controller
             ->where(function ($query) {
                 $query->where('is_ebidding', false)
                     ->orWhereNull('is_ebidding');
-            }); // e-bidding tenders use a different legacy stage mapping — excluded.
+            }),
+            'tech'
+        ); // e-bidding tenders use a different legacy stage mapping — excluded.
 
         // Only when the user hasn't clicked a column header — otherwise this would
         // out-rank whatever column DataTables just asked to sort by. Request::filled()
@@ -807,7 +814,10 @@ class PenilaianTeknikalController extends Controller
     /** Resolves a tender from the index-page link's uuid. */
     private function resolveTender(string $uuid): Tender
     {
-        return Tender::query()->where('uuid', $uuid)->firstOrFail();
+        $tender = Tender::query()->where('uuid', $uuid)->firstOrFail();
+        $this->assertCommitteeAppointment($tender, 'tech');
+
+        return $tender;
     }
 
     /** catatan_pematuhan/catatan_spesifikasi/pengesyoran_intro are rich text now (contenteditable) —
@@ -1104,8 +1114,10 @@ class PenilaianTeknikalController extends Controller
     public function index()
     {
         $tenders = $this->mapTendersForProcessList(
-            Tender::query()
-                ->where('status_process_id', TenderProcessStatus::penilaianTeknikalListStatus())
+            $this->applyCommitteeAppointment(
+                Tender::query()->where('status_process_id', TenderProcessStatus::penilaianTeknikalListStatus()),
+                'tech'
+            )
                 ->orderByDesc('id')
                 ->get(['id', 'uuid', 'no_tender', 'ref_number', 'name', 'submission_datetime', 'kategori_perolehan_id']),
             function (Tender $tender, string $noTender) {
@@ -1123,6 +1135,7 @@ class PenilaianTeknikalController extends Controller
     public function showTeknikalKerja(string $uuid)
     {
         $tender = Tender::with('tenderer')->where('uuid', $uuid)->firstOrFail();
+        $this->assertCommitteeAppointment($tender, 'tech');
         $tender_no = $tender->no_tender ?: $tender->ref_number ?: (string) $tender->id;
 
         $vendors = $this->kerjaService->loadShortlistedVendors($tender);

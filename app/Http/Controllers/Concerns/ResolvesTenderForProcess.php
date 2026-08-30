@@ -14,16 +14,22 @@ trait ResolvesTenderForProcess
         }
 
         if (is_numeric($identifier)) {
-            return Tender::query()->where('id', (int) $identifier)->first();
+            $tender = Tender::query()->where('id', (int) $identifier)->first();
+        } else {
+            $tender = Tender::query()
+                ->where(function ($q) use ($identifier) {
+                    $q->where('uuid', $identifier)
+                      ->orWhere('no_tender', $identifier)
+                      ->orWhere('ref_number', $identifier);
+                })
+                ->first();
         }
 
-        return Tender::query()
-            ->where(function ($q) use ($identifier) {
-                $q->where('uuid', $identifier)
-                  ->orWhere('no_tender', $identifier)
-                  ->orWhere('ref_number', $identifier);
-            })
-            ->first();
+        if ($tender && method_exists($this, 'assertCommitteeAppointment') && !empty($this->committeeJenisForResolvedTenders ?? null)) {
+            $this->assertCommitteeAppointment($tender, $this->committeeJenisForResolvedTenders);
+        }
+
+        return $tender;
     }
 
     /** @return list<array<string, mixed>> */

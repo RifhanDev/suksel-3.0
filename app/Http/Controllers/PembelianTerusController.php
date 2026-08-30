@@ -12,6 +12,7 @@ class PembelianTerusController extends Controller
 {
     public function __construct(private StosBackendClient $stos)
     {
+        $this->menuMiddleware('DirectPurchase:list');
     }
 
     public function index()

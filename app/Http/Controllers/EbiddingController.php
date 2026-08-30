@@ -47,6 +47,25 @@ class EbiddingController extends Controller
         7 => self::STAGE_ADMIN_SULP,
     ];
 
+    public function __construct()
+    {
+        $this->middleware(function ($request, $next) {
+            $user = auth()->user();
+            $method = $request->route()?->getActionMethod();
+            $vendorMethods = ['show', 'hantarVendorBidaan'];
+
+            if ($user && $user->hasRole('Vendor') && in_array($method, $vendorMethods, true)) {
+                return $next($request);
+            }
+
+            if ($denied = $this->denyUnlessMenu('Bidding:list')) {
+                return $denied;
+            }
+
+            return $next($request);
+        });
+    }
+
     /**
      * Senarai tender yang telah melengkapkan Jawatankuasa Perolehan (status 4)
      dan ditandakan untuk proses e-bidding.
