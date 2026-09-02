@@ -5,8 +5,8 @@
 
 	<style>
 		/* =====================
-														SECTION BAR
-														===================== */
+															SECTION BAR
+															===================== */
 		.section-title-bar {
 			background: #f3f5f8;
 			border: 1px solid #e9edf3;
@@ -20,8 +20,8 @@
 
 
 		/* =====================
-														TABLE STYLE
-														===================== */
+															TABLE STYLE
+															===================== */
 		.table thead th {
 			text-align: center;
 			vertical-align: middle;
@@ -37,8 +37,8 @@
 		}
 
 		/* =====================
-														RED TABLE HEADER
-														===================== */
+															RED TABLE HEADER
+															===================== */
 		.table thead th {
 			background-color: #B11217 !important;
 			color: #ffffff !important;
@@ -59,7 +59,7 @@
 @section('content')
 	@php
 		$visibleTabs = $visibleTabs ?? ['penyediaan', 'taklimat', 'pemilihan', 'pengesyoran', 'jadual-bidaan', 'keputusan'];
-		// Default buka tab Pengesyoran Pembekal dahulu.
+		// Default buka tab Pemilihan Pembekal dahulu.
 		$tabOrder = ['pengesyoran', 'penyediaan', 'taklimat', 'pemilihan', 'jadual-bidaan', 'keputusan'];
 		$activeTab =
 		    collect($tabOrder)->first(function ($tabKey) use ($visibleTabs) {
@@ -163,7 +163,7 @@
 						<li class="nav-item" role="presentation">
 							<button class="nav-link {{ $activeTab === 'pengesyoran' ? 'active' : '' }}" id="tab-pengesyoran-btn"
 								data-bs-toggle="tab" data-bs-target="#tab-pengesyoran" type="button" role="tab">
-								Pengesyoran Pembekal
+								Pemilihan Pembekal
 							</button>
 						</li>
 					@endif
@@ -172,7 +172,7 @@
 						<li class="nav-item" role="presentation">
 							<button class="nav-link {{ $activeTab === 'taklimat' ? 'active' : '' }}" id="tab-taklimat-btn"
 								data-bs-toggle="tab" data-bs-target="#tab-taklimat" type="button" role="tab">
-								{{ !empty($isRestrictedEbidding) ? 'Penyediaan Kertas Taklimat' : 'Penyediaan Kertas Taklimat' }}
+								{{ !empty($isRestrictedEbidding) ? 'Paparan Kertas Taklimat' : 'Paparan Kertas Taklimat' }}
 							</button>
 						</li>
 					@endif
@@ -224,12 +224,13 @@
 								<thead class="text-white text-center" style="background-color:#2d3e84;">
 									<tr>
 										<th style="width:42px;"></th>
-										<th>Bil Mesyuarat <span class="text-danger">*</span></th>
-										<th>Tarikh Mesyuarat <span class="text-danger">*</span></th>
-										<th>Tajuk Agenda <span class="text-danger">*</span></th>
-										<th>Tempat <span class="text-danger">*</span></th>
-										<th>No. Kod Kertas <span class="text-danger">*</span></th>
-										<th>Status <span class="text-danger">*</span></th>
+										<th style="width:110px;">Bil. Mesyuarat <span class="text-danger">*</span></th>
+										<th style="width:130px;">Tarikh Mesyuarat <span class="text-danger">*</span></th>
+										<th style="width:100px;">Masa <span class="text-danger">*</span></th>
+										<th style="width:160px;">Tempat <span class="text-danger">*</span></th>
+										<th style="width:120px;">No. Kod Kertas <span class="text-danger">*</span></th>
+										<th style="min-width:240px;">Agenda <span class="text-danger">*</span></th>
+										<th style="width:130px;">Status <span class="text-danger">*</span></th>
 										<th>Catatan</th>
 									</tr>
 								</thead>
@@ -241,8 +242,9 @@
 										<td><input type="text" class="form-control form-control-sm" placeholder=""></td>
 										<td><input type="date" class="form-control form-control-sm" value="2021-10-18">
 										</td>
-										<td><input type="text" class="form-control form-control-sm" placeholder=""></td>
+										<td><input type="time" class="form-control form-control-sm" value="09:00"></td>
 										<td><input type="text" class="form-control form-control-sm" value="Bilik Mesyuarat Tingkat 3"></td>
+										<td><input type="text" class="form-control form-control-sm" placeholder=""></td>
 										<td><input type="text" class="form-control form-control-sm" placeholder=""></td>
 										<td>
 											<select class="form-select form-select-sm">
@@ -269,7 +271,7 @@
 				</div>
 			@endif
 
-			{{-- ============ TAB 2: Penyediaan Kertas Taklimat ============ --}}
+			{{-- ============ TAB 2: Paparan Kertas Taklimat ============ --}}
 			@if (in_array('taklimat', $visibleTabs, true))
 				<div class="tab-pane fade {{ $activeTab === 'taklimat' ? 'show active' : '' }}" id="tab-taklimat"
 					role="tabpanel">
@@ -321,7 +323,7 @@
 							<div class="col-md-4">
 								<label class="form-label">Keputusan Mesyuarat</label>
 								<select class="form-select">
-									<option selected>Pengesyoran Pembekal</option>
+									<option selected>Pemilihan Pembekal</option>
 									<option>Penilaian Semula</option>
 									<option>Iklan Semula</option>
 									<option>Kemukakan kepada Pihak Berkuasa Yang Lebih Tinggi</option>
@@ -433,7 +435,7 @@
 				</div>
 			@endif
 
-			{{-- ============ TAB: Pengesyoran Pembekal ============ --}}
+			{{-- ============ TAB: Pemilihan Pembekal ============ --}}
 			@if (in_array('pengesyoran', $visibleTabs, true))
 				<div class="tab-pane fade {{ $activeTab === 'pengesyoran' ? 'show active' : '' }}" id="tab-pengesyoran"
 					role="tabpanel">
@@ -1030,11 +1032,11 @@
 			}
 
 			$('#eb_btn_pengesyoran_simpan').on('click', function() {
-				submitPengesyoran(saveUrl, 'Pengesyoran pembekal berjaya disimpan.');
+				submitPengesyoran(saveUrl, 'Pemilihan Pembekal berjaya disimpan.');
 			});
 
 			$('#eb_btn_pengesyoran_hantar').on('click', function() {
-				submitPengesyoran(submitUrl, 'Pengesyoran pembekal berjaya dihantar.');
+				submitPengesyoran(submitUrl, 'Pemilihan Pembekal berjaya dihantar.');
 			});
 		});
 	</script>

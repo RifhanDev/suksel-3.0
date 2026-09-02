@@ -161,7 +161,7 @@
 							<line x1="16" y1="13" x2="8" y2="13"></line>
 							<line x1="16" y1="17" x2="8" y2="17"></line>
 						</svg>
-						Penyediaan Kertas Taklimat
+						Paparan Kertas Taklimat
 					</a>
 				</li>
 
@@ -209,12 +209,13 @@
 						<thead class="text-white text-center" style="background-color:#2d3e84;">
 							<tr>
 								<th style="width:42px;"></th>
-								<th>Bil Mesyuarat <span class="text-danger">*</span></th>
-								<th>Tarikh Mesyuarat <span class="text-danger">*</span></th>
-								<th>Tajuk Agenda <span class="text-danger">*</span></th>
-								<th>Tempat <span class="text-danger">*</span></th>
-								<th>No. Kod Kertas <span class="text-danger">*</span></th>
-								<th>Status <span class="text-danger">*</span></th>
+								<th style="width:110px;">Bil. Mesyuarat <span class="text-danger">*</span></th>
+								<th style="width:130px;">Tarikh Mesyuarat <span class="text-danger">*</span></th>
+								<th style="width:100px;">Masa <span class="text-danger">*</span></th>
+								<th style="width:160px;">Tempat <span class="text-danger">*</span></th>
+								<th style="width:120px;">No. Kod Kertas <span class="text-danger">*</span></th>
+								<th style="min-width:240px;">Agenda <span class="text-danger">*</span></th>
+								<th style="width:130px;">Status <span class="text-danger">*</span></th>
 								<th>Catatan</th>
 							</tr>
 						</thead>
@@ -234,7 +235,7 @@
 			</div>
 		</div>
 
-		<!-- Tab 2: Penyediaan Kertas Taklimat -->
+		<!-- Tab 2: Paparan Kertas Taklimat -->
 		<div class="tab-pane" id="tab-kertas-taklimat" role="tabpanel">
 			<div class="content-card p-4">
 				<h6 class="fw-bold text-dark mb-1">Seksyen Laporan</h6>
@@ -250,7 +251,7 @@
 							<line x1="12" y1="8" x2="12" y2="12"></line>
 							<line x1="12" y1="16" x2="12.01" y2="16"></line>
 						</svg>
-						Tiada lampiran ditemui daripada Penyediaan Kertas Taklimat.
+						Tiada lampiran ditemui daripada Paparan Kertas Taklimat.
 					</div>
 				@else
 					<div class="table-responsive">
@@ -347,8 +348,7 @@
 								</div>
 								<div class="form-check mb-0">
 									<input class="form-check-input" type="radio" name="mp_loi_loa_oleh" id="mp_loi_loa_lembaga"
-										value="Lembaga Perolehan"
-										{{ $mpLoiLoaOleh === 'Lembaga Perolehan' ? 'checked' : '' }}>
+										value="Lembaga Perolehan" {{ $mpLoiLoaOleh === 'Lembaga Perolehan' ? 'checked' : '' }}>
 									<label class="form-check-label small" for="mp_loi_loa_lembaga">Lembaga Perolehan</label>
 								</div>
 							</div>
@@ -403,10 +403,10 @@
 									<th>Kedudukan Penilaian Teknikal Kewangan</th>
 									<th>Status Pendaftaran MOF</th>
 									<th colspan="3">Maklumat Tambahan</th>
-									<th id="mp-th-selection" class="d-none">Selection</th>
-									<th>Keputusan oleh Urusetia</th>
-									<th id="mp-th-catatan-zon" class="d-none" style="min-width:180px;">Catatan Mengikut Zon</th>
+									<th>Keputusan Urusetia</th>
 									<th style="min-width:180px;">Catatan Urusetia</th>
+									<th id="mp-th-selection" class="d-none">Pemilihan</th>
+									<th id="mp-th-catatan-zon" class="d-none" style="min-width:180px;">Catatan Mengikut Zon</th>
 								</tr>
 								<tr>
 									<th colspan="6"></th>
@@ -597,12 +597,14 @@
 						row.bil_mesyuarat || '') + '"></td>' +
 					'<td><input type="date" class="form-control form-control-sm tarikh_mesyuarat" value="' +
 					escapeHtml(row.tarikh_mesyuarat || '') + '"></td>' +
-					'<td><input type="text" class="form-control form-control-sm tajuk_agenda" value="' + escapeHtml(row
-						.tajuk_agenda || '') + '"></td>' +
+					'<td><input type="time" class="form-control form-control-sm masa" value="' +
+					escapeHtml(row.masa || '') + '"></td>' +
 					'<td><input type="text" class="form-control form-control-sm tempat" value="' + escapeHtml(row
 						.tempat || '') + '"></td>' +
 					'<td><input type="text" class="form-control form-control-sm no_kod_kertas" value="' + escapeHtml(
 						row.no_kod_kertas || '') + '"></td>' +
+					'<td><input type="text" class="form-control form-control-sm tajuk_agenda" value="' + escapeHtml(row
+						.tajuk_agenda || '') + '"></td>' +
 					'<td><select class="form-select form-select-sm status"><option value="Belum Selesai"' + (status ===
 						'Belum Selesai' ? ' selected' : '') + '>Belum Selesai</option><option value="Selesai"' + (
 						status === 'Selesai' ? ' selected' : '') + '>Selesai</option></select></td>' +
@@ -624,6 +626,7 @@
 					rows.push({
 						bil_mesyuarat: $tr.find('.bil_mesyuarat').val().trim(),
 						tarikh_mesyuarat: $tr.find('.tarikh_mesyuarat').val(),
+						masa: $tr.find('.masa').val(),
 						tajuk_agenda: $tr.find('.tajuk_agenda').val().trim(),
 						tempat: $tr.find('.tempat').val().trim(),
 						no_kod_kertas: $tr.find('.no_kod_kertas').val().trim(),
@@ -645,7 +648,7 @@
 
 				for (let i = 0; i < rows.length; i++) {
 					const row = rows[i];
-					if (!row.bil_mesyuarat || !row.tarikh_mesyuarat || !row.tajuk_agenda || !row.tempat || !row
+					if (!row.bil_mesyuarat || !row.tarikh_mesyuarat || !row.masa || !row.tajuk_agenda || !row.tempat || !row
 						.no_kod_kertas || !row.status) {
 						return 'Sila lengkapkan medan wajib pada baris ' + (i + 1) + '.';
 					}
@@ -830,7 +833,8 @@
 					return {
 						keputusan_mesyuarat: ($('#mp_keputusan_mesyuarat').val() || '').toString(),
 						kaedah_memuktamadkan_pembekal: ($('#mp_kaedah_memuktamadkan').val() || '').toString(),
-						pemilihan_berdasarkan: ($('input[name="mp_pemilihan_berdasarkan"]:checked').val() || '').toString(),
+						pemilihan_berdasarkan: ($('input[name="mp_pemilihan_berdasarkan"]:checked').val() || '')
+							.toString(),
 						loi_loa_disediakan_oleh: ($('input[name="mp_loi_loa_oleh"]:checked').val() || '').toString(),
 						bil_mesyuarat: ($('#mp_bil_mesyuarat').val() || '').toString(),
 						no_kod: ($('#mp_no_kod').val() || '').toString(),
@@ -899,7 +903,8 @@
 
 					return '<td class="text-center">' +
 						'<button type="button" class="btn btn-sm btn-outline-primary py-0 px-2 d-inline-flex align-items-center justify-content-center" ' +
-						'data-bs-toggle="modal" data-bs-target="#cidbMetaModal-' + escapeHtml(String(p.vendor_id)) + '" title="Maklumat CIDB">' +
+						'data-bs-toggle="modal" data-bs-target="#cidbMetaModal-' + escapeHtml(String(p.vendor_id)) +
+						'" title="Maklumat CIDB">' +
 						'<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
 						'<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>' +
 						'</button></td>';
@@ -923,7 +928,8 @@
 							'<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg></a>' :
 							'<span class="text-muted small">—</span>';
 						const selectionCell = showSelection ?
-							'<td class="text-center"><input type="checkbox" class="form-check-input mp-pet-selection"' + (p
+							'<td class="text-center"><input type="checkbox" class="form-check-input mp-pet-selection"' +
+							(p
 								.selected_for_selection ? ' checked' : '') + '></td>' : '';
 						const catatanZonCell = showCatatanZon ?
 							'<td><textarea class="form-control form-control-sm mp-pet-catatan-zon" rows="2">' +
@@ -941,10 +947,10 @@
 								.tindakan_disiplin || '') + '</textarea></td>' +
 							'<td class="text-center">' + lp + '</td>' +
 							mpCidbCell(p) +
-							selectionCell +
 							'<td class="small">' + escapeHtml(p.keputusan_urusetia || '') + '</td>' +
-							catatanZonCell +
 							'<td class="small">' + escapeHtml(p.catatan_urusetia || '') + '</td>' +
+							selectionCell +
+							catatanZonCell +
 							'</tr>';
 						$b.append(row);
 					});

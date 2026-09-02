@@ -35,7 +35,7 @@ class ProcurementFlowTest extends TestCase
         // Step 2: Jawatankuasa select "Bidaan" and submit Kertas Keputusan.
         DB::table('jawatankuasa_perolehan_pemilihan_headers')->insert([
             'tender_id' => $tender->id,
-            'keputusan_mesyuarat' => 'Pengesyoran Pembekal',
+            'keputusan_mesyuarat' => 'Pemilihan Pembekal',
             'kaedah_memuktamadkan_pembekal' => 'Bidaan',
             'pemilihan_berdasarkan' => '1 item',
             'loi_loa_disediakan_oleh' => 'Urusetia atau Setiausaha Sebut Harga',
@@ -141,7 +141,7 @@ class ProcurementFlowTest extends TestCase
 
         DB::table('jawatankuasa_perolehan_pemilihan_headers')->insert([
             'tender_id' => $tender->id,
-            'keputusan_mesyuarat' => 'Pengesyoran Pembekal',
+            'keputusan_mesyuarat' => 'Pemilihan Pembekal',
             'kaedah_memuktamadkan_pembekal' => 'Pemilihan Terus',
             'pemilihan_berdasarkan' => '1 item',
             'loi_loa_disediakan_oleh' => 'Urusetia atau Setiausaha Sebut Harga',

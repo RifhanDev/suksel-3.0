@@ -150,12 +150,7 @@
 			}
 
 			const tableData = backendData.map(function(row) {
-				const statusLabel = row.status_label || 'Dalam Proses';
-				const statusMap = {
-					'Dalam Proses': 'Bidaan',
-					'Selesai': 'Selesai'
-				};
-				const statusText = statusMap[statusLabel] || statusLabel;
+				const statusText = row.status_label || 'Dalam Proses';
 
 				return {
 					id: row.id || '-',
@@ -256,8 +251,7 @@
 				DT.column(2).search(filterTarikh, false, true);
 
 				if (filterStatus) {
-					const statusSearch = filterStatus === 'Dalam Proses' ? 'Bidaan' : filterStatus;
-					DT.column(3).search(escapeRegex(statusSearch), true, false);
+					DT.column(3).search(escapeRegex(filterStatus), true, false);
 				} else {
 					DT.column(3).search('');
 				}

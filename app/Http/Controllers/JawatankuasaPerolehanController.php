@@ -37,8 +37,8 @@ class JawatankuasaPerolehanController extends Controller
     public function index()
     {
         $tenders = $this->applyLembagaDecisionScope(
-                Tender::query()->where('status_process_id', TenderProcessStatus::jawatankuasaPerolehanListStatus())
-            )
+            Tender::query()->where('status_process_id', TenderProcessStatus::jawatankuasaPerolehanListStatus())
+        )
             ->orderByDesc('id')
             ->get([
                 'id',
@@ -97,6 +97,7 @@ class JawatankuasaPerolehanController extends Controller
                         'id' => $meeting->id,
                         'bil_mesyuarat' => $meeting->bil_mesyuarat ?? '',
                         'tarikh_mesyuarat' => optional($meeting->tarikh_mesyuarat)->format('Y-m-d'),
+                        'masa' => $meeting->masa ?? '',
                         'tajuk_agenda' => $meeting->tajuk_agenda ?? '',
                         'tempat' => $meeting->tempat ?? '',
                         'no_kod_kertas' => $meeting->no_kod_kertas ?? '',
@@ -190,7 +191,7 @@ class JawatankuasaPerolehanController extends Controller
                 ->values();
 
             $vendorIds = $pemilihanItems
-                ->flatMap(fn (array $item) => collect($item['petenders'])->pluck('vendor_id'))
+                ->flatMap(fn(array $item) => collect($item['petenders'])->pluck('vendor_id'))
                 ->filter()
                 ->unique()
                 ->values();
@@ -235,6 +236,7 @@ class JawatankuasaPerolehanController extends Controller
             'rows' => ['required', 'array', 'min:1'],
             'rows.*.bil_mesyuarat' => ['required', 'string', 'max:100'],
             'rows.*.tarikh_mesyuarat' => ['required', 'date'],
+            'rows.*.masa' => ['required', 'string', 'max:10'],
             'rows.*.tajuk_agenda' => ['required', 'string', 'max:255'],
             'rows.*.tempat' => ['required', 'string', 'max:255'],
             'rows.*.no_kod_kertas' => ['required', 'string', 'max:100'],
@@ -252,6 +254,7 @@ class JawatankuasaPerolehanController extends Controller
                     'tender_id' => $tender->id,
                     'bil_mesyuarat' => trim($row['bil_mesyuarat']),
                     'tarikh_mesyuarat' => $row['tarikh_mesyuarat'],
+                    'masa' => trim($row['masa']),
                     'tajuk_agenda' => trim($row['tajuk_agenda']),
                     'tempat' => trim($row['tempat']),
                     'no_kod_kertas' => trim($row['no_kod_kertas']),
@@ -279,6 +282,7 @@ class JawatankuasaPerolehanController extends Controller
             'rows' => ['required', 'array', 'min:1'],
             'rows.*.bil_mesyuarat' => ['required', 'string', 'max:100'],
             'rows.*.tarikh_mesyuarat' => ['required', 'date'],
+            'rows.*.masa' => ['required', 'string', 'max:10'],
             'rows.*.tajuk_agenda' => ['required', 'string', 'max:255'],
             'rows.*.tempat' => ['required', 'string', 'max:255'],
             'rows.*.no_kod_kertas' => ['required', 'string', 'max:100'],
@@ -297,6 +301,7 @@ class JawatankuasaPerolehanController extends Controller
                     'tender_id' => $tender->id,
                     'bil_mesyuarat' => trim($row['bil_mesyuarat']),
                     'tarikh_mesyuarat' => $row['tarikh_mesyuarat'],
+                    'masa' => trim($row['masa']),
                     'tajuk_agenda' => trim($row['tajuk_agenda']),
                     'tempat' => trim($row['tempat']),
                     'no_kod_kertas' => trim($row['no_kod_kertas']),
@@ -471,7 +476,7 @@ class JawatankuasaPerolehanController extends Controller
     {
         return [
             'keputusan_mesyuarat' => [
-                'Pengesyoran Pembekal',
+                'Pemilihan Pembekal',
                 'Penilaian Semula',
                 'Iklan Semula',
                 'Kemukakan kepada Pihak Berkuasa Yang Lebih Tinggi',
@@ -517,7 +522,7 @@ class JawatankuasaPerolehanController extends Controller
             JawatankuasaPerolehanPemilihanHeader::query()->firstOrCreate(
                 ['tender_id' => $tender->id],
                 [
-                    'keputusan_mesyuarat' => 'Pengesyoran Pembekal',
+                    'keputusan_mesyuarat' => 'Pemilihan Pembekal',
                     'kaedah_memuktamadkan_pembekal' => 'Bidaan',
                 ]
             );

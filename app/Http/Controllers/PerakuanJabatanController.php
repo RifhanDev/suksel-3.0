@@ -126,7 +126,7 @@ class PerakuanJabatanController extends Controller
         $record->sahkan_petender_layak = $request->boolean('sahkan_petender_layak');
         $record->save();
 
-        return response()->json(['message' => 'Catatan pengesyoran pembekal berjaya disimpan.']);
+        return response()->json(['message' => 'Catatan Pemilihan Pembekal berjaya disimpan.']);
     }
 
     public function pengesyoranPembekalHantar(Request $request, Tender $tender)
@@ -156,7 +156,7 @@ class PerakuanJabatanController extends Controller
             app(TenderProcessStatusService::class)->syncPerakuanJabatanCompletion($tender->fresh());
         });
 
-        return response()->json(['message' => 'Pengesyoran pembekal berjaya dihantar. Status proses tender dikemas kini.']);
+        return response()->json(['message' => 'Pemilihan Pembekal berjaya dihantar. Status proses tender dikemas kini.']);
     }
 
     public function kertasTaklimatDownload(PerakuanJabatanKertasTaklimatItemFile $file)
