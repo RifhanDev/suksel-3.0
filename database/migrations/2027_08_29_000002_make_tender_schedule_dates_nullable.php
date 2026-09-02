@@ -131,6 +131,12 @@ return new class extends Migration
 
         $sql = sprintf('ALTER TABLE `%s` %s', $table, implode(', ', $clauses));
 
+        // Jangan menunggu metadata lock tanpa had. ALTER yang tersekat turut
+        // menyekat SETIAP pertanyaan lain pada jadual yang sama, jadi deploy
+        // yang tergantung bererti tapak tergantung. Gagal cepat dengan ralat
+        // yang jelas jauh lebih baik daripada menggantung senyap berjam-jam.
+        DB::statement('SET SESSION lock_wait_timeout = 60');
+
         // INPLACE dengan LOCK=NONE membiarkan bacaan dan tulisan diteruskan
         // sepanjang pembinaan semula, jadi tapak kekal berfungsi semasa deploy.
         // Tidak semua versi atau varian server menyokongnya untuk perubahan ini,
@@ -138,8 +144,24 @@ return new class extends Migration
         try {
             DB::statement($sql . ', ALGORITHM=INPLACE, LOCK=NONE');
         } catch (\Throwable $e) {
+            // Tamat masa kunci bukan tanda INPLACE tidak disokong — mencuba
+            // semula hanya menunggu 60 saat lagi untuk kunci yang sama. Lepaskan
+            // ralat itu supaya deploy berhenti dengan sebab yang jelas.
+            if ($this->isLockTimeout($e)) {
+                throw $e;
+            }
+
             DB::statement($sql);
         }
+    }
+
+    /**
+     * MySQL 1205 = Lock wait timeout exceeded, 3572 = Statement aborted because
+     * it was waiting for a metadata lock.
+     */
+    private function isLockTimeout(\Throwable $e): bool
+    {
+        return (bool) preg_match('/(1205|3572)|lock wait timeout|metadata lock/i', $e->getMessage());
     }
 
     private function isExpressionDefault(string $default): bool
