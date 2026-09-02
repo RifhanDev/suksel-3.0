@@ -57,6 +57,7 @@ class DatabaseSeeder extends Seeder
             PermissionSeeder::class,
             PermissionSeeder2027::class,
             PermissionRoleSeeder::class,
+            StosRolePermissionSeeder::class,
             CodesSeeder::class,
             StandardChecklistItemSeeder::class,
         ]);

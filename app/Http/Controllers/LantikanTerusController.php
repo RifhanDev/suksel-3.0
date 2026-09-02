@@ -12,6 +12,7 @@ class LantikanTerusController extends Controller
 {
     public function __construct(private StosBackendClient $stos)
     {
+        $this->menuMiddleware('DirectAppointment:list');
     }
 
     public function index()

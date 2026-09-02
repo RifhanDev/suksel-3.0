@@ -66,6 +66,30 @@ class RoleSeeder extends Seeder
                 'created_at' => '2020-10-06 02:13:36',
                 'updated_at' => '2021-10-28 04:40:19',
             ],
+            [
+                'id' => 11,
+                'name' => 'Agency Urusetia',
+                'created_at' => '2026-08-27 00:00:00',
+                'updated_at' => '2026-08-27 00:00:00',
+            ],
+            [
+                'id' => 12,
+                'name' => 'Agency Jawatankuasa',
+                'created_at' => '2026-08-27 00:00:00',
+                'updated_at' => '2026-08-27 00:00:00',
+            ],
+            [
+                'id' => 13,
+                'name' => 'Agency Lembaga Perolehan',
+                'created_at' => '2026-08-27 00:00:00',
+                'updated_at' => '2026-08-27 00:00:00',
+            ],
+            [
+                'id' => 14,
+                'name' => 'Lembaga Perolehan Negeri Selangor',
+                'created_at' => '2026-08-27 00:00:00',
+                'updated_at' => '2026-08-27 00:00:00',
+            ],
         ];
 
         DB::table('roles')->insert($rows);

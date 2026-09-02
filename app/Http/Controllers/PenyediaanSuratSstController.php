@@ -24,10 +24,13 @@ class PenyediaanSuratSstController extends Controller
 
     public function __construct(
         private StosBackendClient $stos,
-    ) {}
+    ) {
+        $this->menuMiddleware('SST:list');
+    }
 
     public function index()
     {
+
         // Tenders that have been sent on stay listed so their status is still visible.
         $pending = TenderProcessStatus::penyediaanSuratSstListStatus();
         $sent = TenderProcessStatus::PENYEDIAAN_SURAT_SST;

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\AdvancesTenderProcessStatus;
 use App\Http\Controllers\Concerns\ResolvesTenderForProcess;
+use App\Http\Controllers\Concerns\RestrictsTenderByRole;
 use App\Models\TenderKewanganEvaluation;
 use App\Models\TenderKewanganLaporan;
 use App\Models\TenderKewanganProgress;
@@ -19,11 +20,19 @@ class PenilaianKewanganController extends Controller
 {
     use AdvancesTenderProcessStatus;
     use ResolvesTenderForProcess;
+    use RestrictsTenderByRole;
+
+    public function __construct()
+    {
+        $this->menuMiddleware('FinancialEvaluation:list');
+    }
 
     public function index(Request $request)
     {
-        $query = Tender::query()
-            ->where('status_process_id', TenderProcessStatus::penilaianKewanganListStatus());
+        $query = $this->applyCommitteeAppointment(
+            Tender::query()->where('status_process_id', TenderProcessStatus::penilaianKewanganListStatus()),
+            'fin'
+        );
 
         if ($request->filled('no_tender')) {
             $noTender = trim($request->input('no_tender'));
@@ -72,6 +81,8 @@ class PenilaianKewanganController extends Controller
                 }
             })
             ->first();
+
+        $this->assertCommitteeAppointment($tender, 'fin');
 
         if ($tender && (int) ($tender->kategori_perolehan_id ?? 0) === 3) {
             return redirect()->route('penilaianKewanganKerja.show', $tender->uuid ?: $tender->id);

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\AdvancesTenderProcessStatus;
 use App\Http\Controllers\Concerns\ResolvesTenderForProcess;
+use App\Http\Controllers\Concerns\RestrictsTenderByRole;
 use App\Models\TenderVendorDokumenResponse;
 use App\Services\JawatankuasaPembukaService;
 use App\Services\VendorDokumenResponseService;
@@ -18,8 +19,14 @@ class JawatankuasaPembukaController extends Controller
 {
     use AdvancesTenderProcessStatus;
     use ResolvesTenderForProcess;
+    use RestrictsTenderByRole;
 
-    public function __construct(protected JawatankuasaPembukaService $service) {}
+    protected string $committeeJenisForResolvedTenders = 'open';
+
+    public function __construct(protected JawatankuasaPembukaService $service)
+    {
+        $this->menuMiddleware('OpenerEvaluation:list');
+    }
 
     // ─────────────────────────────────────────────────────────────────
     // Index – list tenders awaiting Pembuka evaluation
@@ -27,9 +34,12 @@ class JawatankuasaPembukaController extends Controller
 
     public function index()
     {
-        $tenders = Tender::query()
-            ->with('tenderer')
-            ->where('status_process_id', TenderProcessStatus::penilaianPembukaListStatus())
+        $tenders = $this->applyCommitteeAppointment(
+                Tender::query()
+                    ->with('tenderer')
+                    ->where('status_process_id', TenderProcessStatus::penilaianPembukaListStatus()),
+                'open'
+            )
             ->orderByDesc('id')
             ->get()
             ->map(function (Tender $tender) {
@@ -65,6 +75,8 @@ class JawatankuasaPembukaController extends Controller
                 ->route('indexJawatankuasaPembuka')
                 ->with('error', 'Tender tidak ditemui.');
         }
+
+        $this->assertCommitteeAppointment($tender, 'open');
 
         $tender->loadMissing('tenderer');
 

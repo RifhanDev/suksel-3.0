@@ -398,6 +398,107 @@ class Tender extends Model
 		return $this->hasMany(\App\Models\Jawatankuasa::class, 'tender_id');
 	}
 
+	public function kaedahPerolehan()
+	{
+		return $this->belongsTo(\App\Models\Ref\RefKaedahPerolehan::class, 'kaedah_perolehan_id');
+	}
+
+	public const LEMBAGA_ANGGARAN_THRESHOLD = 5000000.0;
+
+	public function scopeAppointedTo($query, $user, string|array $jenis)
+	{
+		$jenis = (array) $jenis;
+		$table = $query->getModel()->getTable();
+		$committeeTable = \Illuminate\Support\Facades\Schema::hasTable('jawatankuasas')
+			? 'jawatankuasas'
+			: 'jawatankuasa';
+
+		return $query->whereIn("{$table}.id", function ($sub) use ($user, $jenis, $committeeTable) {
+			$sub->from($committeeTable)
+				->select('tender_id')
+				->where('user_id', $user->id)
+				->whereIn('jenis_jawatankuasa', $jenis);
+		});
+	}
+
+	public function isAppointedTo($user, string|array $jenis): bool
+	{
+		if (!$user) {
+			return false;
+		}
+
+		return $this->jawatankuasas()
+			->where('user_id', $user->id)
+			->whereIn('jenis_jawatankuasa', (array) $jenis)
+			->exists();
+	}
+
+	public function scopeForLembagaDecision($query, $user)
+	{
+		$threshold = self::LEMBAGA_ANGGARAN_THRESHOLD;
+		$isAgency = $user && $user->hasRole('Agency Lembaga Perolehan');
+		$isNegeri = $user && $user->hasRole('Lembaga Perolehan Negeri Selangor');
+
+		if ($isAgency && $isNegeri) {
+			return $query;
+		}
+
+		if ($isAgency) {
+			return $query->where(function ($q) use ($threshold) {
+				$q->where(function ($q2) {
+					$q2->whereHas('kaedahPerolehan', fn ($k) => $k->where('name', 'Sebut Harga'))
+						->orWhere(function ($q3) {
+							$q3->whereNull('kaedah_perolehan_id')->where('type', 'quotation');
+						});
+				})->orWhere(function ($q2) use ($threshold) {
+					$q2->where(function ($q3) {
+						$q3->whereHas('kaedahPerolehan', fn ($k) => $k->where('name', 'Tender'))
+							->orWhere(function ($q4) {
+								$q4->whereNull('kaedah_perolehan_id')->where('type', 'tender');
+							});
+					})->where('anggaran_jabatan', '<', $threshold);
+				});
+			});
+		}
+
+		if ($isNegeri) {
+			return $query->where(function ($q) {
+				$q->whereHas('kaedahPerolehan', fn ($k) => $k->where('name', 'Tender'))
+					->orWhere(function ($q2) {
+						$q2->whereNull('kaedah_perolehan_id')->where('type', 'tender');
+					});
+			})->where('anggaran_jabatan', '>=', $threshold);
+		}
+
+		return $query;
+	}
+
+	public function isVisibleToLembaga($user): bool
+	{
+		if (!$user) {
+			return false;
+		}
+
+		$threshold = self::LEMBAGA_ANGGARAN_THRESHOLD;
+		$isSebutHarga = $this->isSebutHargaKaedah();
+		$isTender = $this->isTenderKaedah();
+		$anggaran = (float) ($this->anggaran_jabatan ?? 0);
+
+		if ($user->hasRole('Agency Lembaga Perolehan') && $user->hasRole('Lembaga Perolehan Negeri Selangor')) {
+			return true;
+		}
+
+		if ($user->hasRole('Agency Lembaga Perolehan')) {
+			return $isSebutHarga || ($isTender && $anggaran < $threshold);
+		}
+
+		if ($user->hasRole('Lembaga Perolehan Negeri Selangor')) {
+			return $isTender && $anggaran >= $threshold;
+		}
+
+		return true;
+	}
+
 	public function news()
 	{
 		return $this->hasMany('App\News');
