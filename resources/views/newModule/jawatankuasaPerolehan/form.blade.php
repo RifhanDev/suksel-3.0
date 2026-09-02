@@ -161,7 +161,7 @@
 							<line x1="16" y1="13" x2="8" y2="13"></line>
 							<line x1="16" y1="17" x2="8" y2="17"></line>
 						</svg>
-						Penyediaan Kertas Taklimat
+						Paparan Kertas Taklimat
 					</a>
 				</li>
 
@@ -234,7 +234,7 @@
 			</div>
 		</div>
 
-		<!-- Tab 2: Penyediaan Kertas Taklimat -->
+		<!-- Tab 2: Paparan Kertas Taklimat -->
 		<div class="tab-pane" id="tab-kertas-taklimat" role="tabpanel">
 			<div class="content-card p-4">
 				<h6 class="fw-bold text-dark mb-1">Seksyen Laporan</h6>
@@ -250,7 +250,7 @@
 							<line x1="12" y1="8" x2="12" y2="12"></line>
 							<line x1="12" y1="16" x2="12.01" y2="16"></line>
 						</svg>
-						Tiada lampiran ditemui daripada Penyediaan Kertas Taklimat.
+						Tiada lampiran ditemui daripada Paparan Kertas Taklimat.
 					</div>
 				@else
 					<div class="table-responsive">
@@ -347,8 +347,7 @@
 								</div>
 								<div class="form-check mb-0">
 									<input class="form-check-input" type="radio" name="mp_loi_loa_oleh" id="mp_loi_loa_lembaga"
-										value="Lembaga Perolehan"
-										{{ $mpLoiLoaOleh === 'Lembaga Perolehan' ? 'checked' : '' }}>
+										value="Lembaga Perolehan" {{ $mpLoiLoaOleh === 'Lembaga Perolehan' ? 'checked' : '' }}>
 									<label class="form-check-label small" for="mp_loi_loa_lembaga">Lembaga Perolehan</label>
 								</div>
 							</div>
@@ -830,7 +829,8 @@
 					return {
 						keputusan_mesyuarat: ($('#mp_keputusan_mesyuarat').val() || '').toString(),
 						kaedah_memuktamadkan_pembekal: ($('#mp_kaedah_memuktamadkan').val() || '').toString(),
-						pemilihan_berdasarkan: ($('input[name="mp_pemilihan_berdasarkan"]:checked').val() || '').toString(),
+						pemilihan_berdasarkan: ($('input[name="mp_pemilihan_berdasarkan"]:checked').val() || '')
+							.toString(),
 						loi_loa_disediakan_oleh: ($('input[name="mp_loi_loa_oleh"]:checked').val() || '').toString(),
 						bil_mesyuarat: ($('#mp_bil_mesyuarat').val() || '').toString(),
 						no_kod: ($('#mp_no_kod').val() || '').toString(),
@@ -899,7 +899,8 @@
 
 					return '<td class="text-center">' +
 						'<button type="button" class="btn btn-sm btn-outline-primary py-0 px-2 d-inline-flex align-items-center justify-content-center" ' +
-						'data-bs-toggle="modal" data-bs-target="#cidbMetaModal-' + escapeHtml(String(p.vendor_id)) + '" title="Maklumat CIDB">' +
+						'data-bs-toggle="modal" data-bs-target="#cidbMetaModal-' + escapeHtml(String(p.vendor_id)) +
+						'" title="Maklumat CIDB">' +
 						'<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
 						'<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>' +
 						'</button></td>';
@@ -923,7 +924,8 @@
 							'<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg></a>' :
 							'<span class="text-muted small">—</span>';
 						const selectionCell = showSelection ?
-							'<td class="text-center"><input type="checkbox" class="form-check-input mp-pet-selection"' + (p
+							'<td class="text-center"><input type="checkbox" class="form-check-input mp-pet-selection"' +
+							(p
 								.selected_for_selection ? ' checked' : '') + '></td>' : '';
 						const catatanZonCell = showCatatanZon ?
 							'<td><textarea class="form-control form-control-sm mp-pet-catatan-zon" rows="2">' +

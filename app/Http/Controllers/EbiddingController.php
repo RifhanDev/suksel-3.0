@@ -146,7 +146,7 @@ class EbiddingController extends Controller
             ->with(['items.files'])
             ->first();
         $perakuanItems = $perakuanTaklimat
-            ? $perakuanTaklimat->items->keyBy(fn ($i) => (string) ($i->slot_key ?? ''))
+            ? $perakuanTaklimat->items->keyBy(fn($i) => (string) ($i->slot_key ?? ''))
             : collect();
 
         $ebTaklimatRows = $ebTaklimat->items()
@@ -439,7 +439,7 @@ class EbiddingController extends Controller
             ]
         );
 
-        return response()->json(['message' => 'Pengesyoran pembekal berjaya disimpan.']);
+        return response()->json(['message' => 'Pemilihan Pembekal berjaya disimpan.']);
     }
 
     public function simpanJadualBidaan(Request $request, $id)
@@ -538,7 +538,7 @@ class EbiddingController extends Controller
         });
 
         return response()->json([
-            'message' => 'Pengesyoran pembekal berjaya dihantar.',
+            'message' => 'Pemilihan Pembekal berjaya dihantar.',
             'next_status_label' => $this->statusLabel($nextStage),
         ]);
     }
@@ -790,8 +790,10 @@ class EbiddingController extends Controller
             'masa_bidaan_tamat.required' => 'Masa Bidaan Tamat wajib diisi.',
         ]);
 
-        if (!empty($payload['tarikh_bidaan_mula']) && !empty($payload['masa_bidaan_mula']) &&
-            !empty($payload['tarikh_bidaan_tamat']) && !empty($payload['masa_bidaan_tamat'])) {
+        if (
+            !empty($payload['tarikh_bidaan_mula']) && !empty($payload['masa_bidaan_mula']) &&
+            !empty($payload['tarikh_bidaan_tamat']) && !empty($payload['masa_bidaan_tamat'])
+        ) {
             $mula = Carbon::parse($payload['tarikh_bidaan_mula'] . ' ' . $payload['masa_bidaan_mula']);
             $tamat = Carbon::parse($payload['tarikh_bidaan_tamat'] . ' ' . $payload['masa_bidaan_tamat']);
             if ($tamat->lessThanOrEqualTo($mula)) {

@@ -37,8 +37,8 @@ class JawatankuasaPerolehanController extends Controller
     public function index()
     {
         $tenders = $this->applyLembagaDecisionScope(
-                Tender::query()->where('status_process_id', TenderProcessStatus::jawatankuasaPerolehanListStatus())
-            )
+            Tender::query()->where('status_process_id', TenderProcessStatus::jawatankuasaPerolehanListStatus())
+        )
             ->orderByDesc('id')
             ->get([
                 'id',
@@ -190,7 +190,7 @@ class JawatankuasaPerolehanController extends Controller
                 ->values();
 
             $vendorIds = $pemilihanItems
-                ->flatMap(fn (array $item) => collect($item['petenders'])->pluck('vendor_id'))
+                ->flatMap(fn(array $item) => collect($item['petenders'])->pluck('vendor_id'))
                 ->filter()
                 ->unique()
                 ->values();
@@ -471,7 +471,7 @@ class JawatankuasaPerolehanController extends Controller
     {
         return [
             'keputusan_mesyuarat' => [
-                'Pengesyoran Pembekal',
+                'Pemilihan Pembekal',
                 'Penilaian Semula',
                 'Iklan Semula',
                 'Kemukakan kepada Pihak Berkuasa Yang Lebih Tinggi',
@@ -517,7 +517,7 @@ class JawatankuasaPerolehanController extends Controller
             JawatankuasaPerolehanPemilihanHeader::query()->firstOrCreate(
                 ['tender_id' => $tender->id],
                 [
-                    'keputusan_mesyuarat' => 'Pengesyoran Pembekal',
+                    'keputusan_mesyuarat' => 'Pemilihan Pembekal',
                     'kaedah_memuktamadkan_pembekal' => 'Bidaan',
                 ]
             );
