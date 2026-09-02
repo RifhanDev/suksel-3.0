@@ -403,10 +403,10 @@
 									<th>Kedudukan Penilaian Teknikal Kewangan</th>
 									<th>Status Pendaftaran MOF</th>
 									<th colspan="3">Maklumat Tambahan</th>
-									<th id="mp-th-selection" class="d-none">Selection</th>
-									<th>Keputusan oleh Urusetia</th>
-									<th id="mp-th-catatan-zon" class="d-none" style="min-width:180px;">Catatan Mengikut Zon</th>
+									<th>Keputusan Urusetia</th>
 									<th style="min-width:180px;">Catatan Urusetia</th>
+									<th id="mp-th-selection" class="d-none">Pemilihan</th>
+									<th id="mp-th-catatan-zon" class="d-none" style="min-width:180px;">Catatan Mengikut Zon</th>
 								</tr>
 								<tr>
 									<th colspan="6"></th>
@@ -947,10 +947,10 @@
 								.tindakan_disiplin || '') + '</textarea></td>' +
 							'<td class="text-center">' + lp + '</td>' +
 							mpCidbCell(p) +
-							selectionCell +
 							'<td class="small">' + escapeHtml(p.keputusan_urusetia || '') + '</td>' +
-							catatanZonCell +
 							'<td class="small">' + escapeHtml(p.catatan_urusetia || '') + '</td>' +
+							selectionCell +
+							catatanZonCell +
 							'</tr>';
 						$b.append(row);
 					});
