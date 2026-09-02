@@ -388,6 +388,46 @@ class StosBackendClient
         return $this->post('/api/lantikan-terus/' . $tenderId . '/company-decision', $payload);
     }
 
+    public function getSuratNiatPembekals(int $tenderId): Response
+    {
+        return $this->get('/api/surat-niat/' . $tenderId . '/pembekals');
+    }
+
+    public function saveSuratNiatPembekals(int $tenderId, array $payload): Response
+    {
+        return $this->post('/api/surat-niat/' . $tenderId . '/pembekals', $payload);
+    }
+
+    public function listSuratNiat(int $tenderId): Response
+    {
+        return $this->get('/api/surat-niat/' . $tenderId . '/surat');
+    }
+
+    public function generateSuratNiat(int $tenderId, array $payload): Response
+    {
+        return $this->post('/api/surat-niat/' . $tenderId . '/surat', $payload);
+    }
+
+    public function updateSuratNiat(int $suratId, array $payload): Response
+    {
+        return $this->request('put', '/api/surat-niat/surat/' . $suratId, ['json' => $payload]);
+    }
+
+    public function deleteSuratNiat(int $suratId): Response
+    {
+        return self::http()->delete($this->baseUrl . '/api/surat-niat/surat/' . $suratId);
+    }
+
+    public function downloadSuratNiat(int $suratId): Response
+    {
+        return self::http()->get($this->baseUrl . '/api/surat-niat/surat/' . $suratId . '/download');
+    }
+
+    public function hantarSuratNiat(int $tenderId): Response
+    {
+        return $this->post('/api/surat-niat/' . $tenderId . '/hantar');
+    }
+
     protected function request(string $method, string $path, array $options = []): Response
     {
         if (! $this->isConfigured()) {

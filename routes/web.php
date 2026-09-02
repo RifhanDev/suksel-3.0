@@ -58,6 +58,7 @@ use App\Http\Controllers\GatewaysController;
 use App\Http\Controllers\PaymentsController;
 use App\Http\Controllers\HelpCategoriesController;
 use App\Http\Controllers\PembelianTerusController;
+use App\Http\Controllers\SuratNiatController;
 use App\Http\Controllers\ReportRevenueController;
 use App\Http\Controllers\ReportAgencyActiveController;
 use App\Http\Controllers\ReportAgencyAllController;
@@ -336,9 +337,10 @@ Route::middleware('auth')->group(function () {
 	Route::get('/kelulusan-lawatan-tapak-urusetia/{tender}', [LawatanTapakUrusetiaController::class, 'kelulusan'])->name('kelulusanLawatanTapak');
 });
 Route::middleware(['auth'])->group(function () {
+	// Surat Niat: senarai sahaja di sini. Halaman butiran + semua tindakan surat
+	// dikendalikan SuratNiatController (kumpulan di bawah blok ini) — dua-dua
+	// branch membina modul ini secara berasingan, dan versi itu yang lengkap.
 	Route::get('/index-penyediaan-surat-niat', [PenyediaanSuratNiatController::class, 'index'])->name('indexPenyediaanSuratNiat');
-	Route::get('/penyediaan-surat-niat', [PenyediaanSuratNiatController::class, 'show'])->name('penyediaanSuratNiat');
-	Route::post('/penyediaan-surat-niat/hantar', [PenyediaanSuratNiatController::class, 'hantar'])->name('penyediaanSuratNiat.hantar');
 	Route::get('/index-penyediaan-sst', [PenyediaanSuratSstController::class, 'index'])->name('indexPenyediaanSST');
 	Route::get('/penyediaan-sst', [PenyediaanSuratSstController::class, 'show'])->name('penyediaanSST');
 	Route::post('/penyediaan-sst/hantar', [PenyediaanSuratSstController::class, 'hantar'])->name('penyediaanSST.hantar');
@@ -379,6 +381,23 @@ Route::middleware(['auth'])->group(function () {
 	// Demo: reference page for loading vendor checklist submissions
 	Route::get('/demo/penyerahan-petender', [VendorSubmissionsDemoController::class, 'index'])->name('demo.vendorSubmissions.index');
 	Route::get('/demo/penyerahan-petender/{tender}', [VendorSubmissionsDemoController::class, 'show'])->name('demo.vendorSubmissions.show');
+});
+
+// Surat Niat — butiran & tindakan. Sengaja di luar kumpulan di atas: laluan ini
+// menerima id tender (int), bukan uuid, jadi PenyediaanSuratNiatController::index()
+// menjana show_url dengan $tender->id supaya padan.
+Route::prefix('penyediaan-surat-niat')->controller(SuratNiatController::class)->middleware(['auth'])->group(function () {
+	Route::get('/{tender}', 'show')->name('penyediaanSuratNiat');
+	Route::get('/{tender}/pembekals', 'pembekals')->name('suratNiat.pembekals');
+	Route::post('/{tender}/pembekals', 'savePembekals')->name('suratNiat.savePembekals');
+	Route::get('/{tender}/surat', 'suratList')->name('suratNiat.suratList');
+	Route::post('/{tender}/surat', 'generateSurat')->name('suratNiat.generateSurat');
+	Route::post('/{tender}/hantar', 'hantar')->name('suratNiat.hantar');
+});
+Route::middleware(['auth'])->controller(SuratNiatController::class)->group(function () {
+	Route::put('/surat-niat/surat/{id}', 'updateSurat')->name('suratNiat.updateSurat');
+	Route::delete('/surat-niat/surat/{id}', 'deleteSurat')->name('suratNiat.deleteSurat');
+	Route::get('/surat-niat/surat/{id}/download', 'download')->name('suratNiat.download');
 });
 Route::view('/show-soalan-lazim', 'helps.show')->name('showSoalanLazim');
 
