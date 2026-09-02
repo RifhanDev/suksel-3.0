@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Controllers\MailManagerController;
+use App\Http\Controllers\TendersController;
+use App\Http\Controllers\TransactionsController;
 use Illuminate\Http\Request;
 
 /*
@@ -17,8 +20,8 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-Route::get('fpx_queue', 'TransactionsController@queue_fpx_requery')->name('fpx_queue');
-Route::post('api_fpx_requery', 'TransactionsController@api_fpx_requery')->name('api_fpx_requery');
+Route::get('fpx_queue', [TransactionsController::class, 'queue_fpx_requery'])->name('fpx_queue');
+Route::post('api_fpx_requery', [TransactionsController::class, 'api_fpx_requery'])->name('api_fpx_requery');
 
 // SEARCH USERS FOR SELECTIZE AUTOCOMPLETE (JAWATANKUASA PELANTIKAN)
 Route::get('search-users', function(Request $request) {
@@ -53,11 +56,11 @@ Route::middleware('stos.api')->group(function () {
     Route::post('tenders/{tender}/penyediaan-iklan/submit', 'App\Http\Controllers\API\PenyediaanIklanApiController@submit');
 });
 
-Route::get('/mail-manager/test', 'MailManagerController@test');
-Route::get('/mail-manager/unsend-today-email', 'MailManagerController@resend_unsend_daily_email');
-Route::get('/mail-manager/unsend-weekly-email', 'MailManagerController@resend_unsend_this_week_email');
-Route::get('/mail-manager/unsend-monthly-email', 'MailManagerController@resend_unsend_this_month_email');
-Route::get('/decrypt/{string}', 'MailManagerController@decrypt');
-Route::get('/encrypt/{id}', 'MailManagerController@encrypt');
-Route::get('/test-email', 'MailManagerController@test_email');
-Route::post('regen-tender-eligible', 'TendersController@regen_tender_eligible');
+Route::get('/mail-manager/test', [MailManagerController::class, 'test']);
+Route::get('/mail-manager/unsend-today-email', [MailManagerController::class, 'resend_unsend_daily_email']);
+Route::get('/mail-manager/unsend-weekly-email', [MailManagerController::class, 'resend_unsend_this_week_email']);
+Route::get('/mail-manager/unsend-monthly-email', [MailManagerController::class, 'resend_unsend_this_month_email']);
+Route::get('/decrypt/{string}', [MailManagerController::class, 'decrypt']);
+Route::get('/encrypt/{id}', [MailManagerController::class, 'encrypt']);
+Route::get('/test-email', [MailManagerController::class, 'test_email']);
+Route::post('regen-tender-eligible', [TendersController::class, 'regen_tender_eligible']);
