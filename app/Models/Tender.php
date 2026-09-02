@@ -216,6 +216,58 @@ class Tender extends Model
 		}
 	}
 
+	/**
+	 * Peranan yang terikat kepada sesebuah agensi, bukan kepada umum atau
+	 * pembekal. Diambil daripada Role::scopeAvailableRoles() berserta
+	 * 'Agency Admin' yang memberikannya.
+	 */
+	public const INTERNAL_AGENCY_ROLES = [
+		'Agency Admin',
+		'Agency User',
+		'Agency Finance',
+		'Agency Urusetia',
+		'Agency Jawatankuasa',
+		'Agency Lembaga Perolehan',
+	];
+
+	/**
+	 * Kakitangan dalaman agensi yang berhak melihat tender agensi sendiri,
+	 * termasuk yang belum diiklankan.
+	 *
+	 * Sengaja berasingan daripada canShowUpdate(). Kaedah itu tentang hak
+	 * MENGEMAS KINI dan digunakan di lebih 20 tempat untuk mengawal butang
+	 * sunting; menambah peranan ke dalamnya akan memberi kuasa yang tidak
+	 * diminta. Melihat bukan mengemas kini, jadi ia diasingkan.
+	 *
+	 * Dalam 2.0 mencipta tender bermakna terus mengiklankannya, jadi
+	 * advertise_start_date sentiasa berisi dan senarai agensi sentiasa
+	 * memaparkannya. Dalam 3.0 pengiklanan ialah peringkat kelima, jadi tender
+	 * yang baru dicipta mempunyai advertise_start_date NULL dan tersingkir
+	 * daripada penapis awam — menjadikan kakitangan agensi tidak nampak kerja
+	 * mereka sendiri.
+	 */
+	public static function canViewInternal($organization_unit_id)
+	{
+		if (!auth()->check()) {
+			return false;
+		}
+
+		$user = auth()->user();
+
+		if ($user->hasRole('Admin')) {
+			return true;
+		}
+
+		if (empty($user->organization_unit_id)) {
+			return false;
+		}
+
+		// Bandingkan sebagai integer: id daripada laluan URL boleh jadi rentetan,
+		// dan perbandingan ketat pada jenis bercampur gagal secara senyap.
+		return (int) $organization_unit_id === (int) $user->organization_unit_id
+			&& $user->hasRole(self::INTERNAL_AGENCY_ROLES);
+	}
+
 	public static function canShowUpdate($organization_unit_id)
 	{
 		if (auth()->check()) {

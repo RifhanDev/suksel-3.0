@@ -162,7 +162,7 @@ class OrganizationUnitsController extends Controller
 		$organizationunit = OrganizationUnit::findOrFail($id);
 		$tenders          = Tender::where('organization_unit_id', $organizationunit->id)->orderBy('created_at', 'desc')->orderBy('name', 'asc');
 
-		if (!auth()->check() || auth()->user()->hasRole('Vendor') || !Tender::canShowUpdate($organizationunit->id))
+		if (!auth()->check() || auth()->user()->hasRole('Vendor') || !Tender::canViewInternal($organizationunit->id))
 		{
 			$tenders = $tenders->where(function ($query)
 			{
