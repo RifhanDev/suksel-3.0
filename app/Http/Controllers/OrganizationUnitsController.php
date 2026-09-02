@@ -280,12 +280,12 @@ class OrganizationUnitsController extends Controller
 			{
 				return sprintf('RM %.2f', $tender->price);
 			})
+			// Teks status sahaja, sepadan dengan senarai admin. Butang Lantik
+			// dahulunya dipaparkan di sini tanpa logik peringkat dan tanpa modal;
+			// ia kini berada dalam kolum 'actions' melalui CommitteeAction.
 			->addColumn('status', function ($tender)
 			{
-				if ($tender->status === 'Tiada Jawatan Kuasa' && auth()->check() && auth()->user()->ability([], ['committee:create'])) {
-				                    return '<a href="/pelantikan-jawatankuasa?tender=' . $tender->uuid . '" class="btn btn-xs btn-warning">Lantik Jawatan Kuasa</a>';
-				                }
-				                return '';
+				return $tender->status;
 			})
 			->addColumn('codes', function ($tender)
 			{
@@ -356,20 +356,14 @@ class OrganizationUnitsController extends Controller
 				return $string;
 			});
 
+			// Syarat sama dengan senarai admin /tender, dari sumber yang sama.
+			$datatable = $datatable->addColumn('actions', function ($tender)
+			{
+				return \App\Support\CommitteeAction::button($tender);
+			});
+
 			if (Tender::canShowUpdate($organizationunit->id))
 			{
-				$datatable = $datatable->addColumn('actions', function ($tender)
-				{
-					$str   = [];
-					$str[] = '<div class="btn-group btn-group-vertical">';
-					if (empty($tender->approver_id)) $str[] = link_to_route('tender.edit', 'Kemaskini', $tender->id, ['class' => 'btn btn-xs btn-primary']);
-					if ($tender->canCancel() && $tender->approver_id > 0)
-						$str[] = link_to_action('TendersController@cancel', 'Batal Siar', $tender->id, ['class' => 'btn btn-xs btn-danger']);
-					if ($tender->canUpdate() && empty($tender->approver_id))
-						$str[] = link_to_action('TendersController@publish', 'Siar', $tender->id, ['class' => 'btn btn-xs btn-warning']);
-					return implode('', $str);
-				});
-
 				$datatable = $datatable->addColumn('report', function ($tender) use ($id)
 				{
 					$str   = [];
@@ -379,10 +373,6 @@ class OrganizationUnitsController extends Controller
 
 					return implode('', $str);
 				});
-			}
-			else
-			{
-				$datatable = $datatable->removeColumn('actions');
 			}
 
 			return $datatable
