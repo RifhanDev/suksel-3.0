@@ -244,6 +244,11 @@ class StosRolePermissionSeeder extends Seeder
     {
         $urusetia = [
             'Tender:list',
+            // Urusetia yang menjalankan proses pelantikan jawatankuasa, jadi
+            // butang "Lantik Jawatan Kuasa" pada senarai tender mesti terbuka
+            // kepada mereka. Tanpa ini kolum Tindakan kekal kosong dan aliran
+            // kerja tersekat pada peringkat kedua.
+            'committee:create',
             'Advertisement:list',
             'SiteVisit:list',
             'DepartmentCertification:list',
