@@ -209,12 +209,13 @@
 						<thead class="text-white text-center" style="background-color:#2d3e84;">
 							<tr>
 								<th style="width:42px;"></th>
-								<th>Bil Mesyuarat <span class="text-danger">*</span></th>
-								<th>Tarikh Mesyuarat <span class="text-danger">*</span></th>
-								<th>Tajuk Agenda <span class="text-danger">*</span></th>
-								<th>Tempat <span class="text-danger">*</span></th>
-								<th>No. Kod Kertas <span class="text-danger">*</span></th>
-								<th>Status <span class="text-danger">*</span></th>
+								<th style="width:110px;">Bil. Mesyuarat <span class="text-danger">*</span></th>
+								<th style="width:130px;">Tarikh Mesyuarat <span class="text-danger">*</span></th>
+								<th style="width:100px;">Masa <span class="text-danger">*</span></th>
+								<th style="width:160px;">Tempat <span class="text-danger">*</span></th>
+								<th style="width:120px;">No. Kod Kertas <span class="text-danger">*</span></th>
+								<th style="min-width:240px;">Agenda <span class="text-danger">*</span></th>
+								<th style="width:130px;">Status <span class="text-danger">*</span></th>
 								<th>Catatan</th>
 							</tr>
 						</thead>
@@ -596,12 +597,14 @@
 						row.bil_mesyuarat || '') + '"></td>' +
 					'<td><input type="date" class="form-control form-control-sm tarikh_mesyuarat" value="' +
 					escapeHtml(row.tarikh_mesyuarat || '') + '"></td>' +
-					'<td><input type="text" class="form-control form-control-sm tajuk_agenda" value="' + escapeHtml(row
-						.tajuk_agenda || '') + '"></td>' +
+					'<td><input type="time" class="form-control form-control-sm masa" value="' +
+					escapeHtml(row.masa || '') + '"></td>' +
 					'<td><input type="text" class="form-control form-control-sm tempat" value="' + escapeHtml(row
 						.tempat || '') + '"></td>' +
 					'<td><input type="text" class="form-control form-control-sm no_kod_kertas" value="' + escapeHtml(
 						row.no_kod_kertas || '') + '"></td>' +
+					'<td><input type="text" class="form-control form-control-sm tajuk_agenda" value="' + escapeHtml(row
+						.tajuk_agenda || '') + '"></td>' +
 					'<td><select class="form-select form-select-sm status"><option value="Belum Selesai"' + (status ===
 						'Belum Selesai' ? ' selected' : '') + '>Belum Selesai</option><option value="Selesai"' + (
 						status === 'Selesai' ? ' selected' : '') + '>Selesai</option></select></td>' +
@@ -623,6 +626,7 @@
 					rows.push({
 						bil_mesyuarat: $tr.find('.bil_mesyuarat').val().trim(),
 						tarikh_mesyuarat: $tr.find('.tarikh_mesyuarat').val(),
+						masa: $tr.find('.masa').val(),
 						tajuk_agenda: $tr.find('.tajuk_agenda').val().trim(),
 						tempat: $tr.find('.tempat').val().trim(),
 						no_kod_kertas: $tr.find('.no_kod_kertas').val().trim(),
@@ -644,7 +648,7 @@
 
 				for (let i = 0; i < rows.length; i++) {
 					const row = rows[i];
-					if (!row.bil_mesyuarat || !row.tarikh_mesyuarat || !row.tajuk_agenda || !row.tempat || !row
+					if (!row.bil_mesyuarat || !row.tarikh_mesyuarat || !row.masa || !row.tajuk_agenda || !row.tempat || !row
 						.no_kod_kertas || !row.status) {
 						return 'Sila lengkapkan medan wajib pada baris ' + (i + 1) + '.';
 					}

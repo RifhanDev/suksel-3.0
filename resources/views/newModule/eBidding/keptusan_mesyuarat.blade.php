@@ -224,12 +224,13 @@
 								<thead class="text-white text-center" style="background-color:#2d3e84;">
 									<tr>
 										<th style="width:42px;"></th>
-										<th>Bil Mesyuarat <span class="text-danger">*</span></th>
-										<th>Tarikh Mesyuarat <span class="text-danger">*</span></th>
-										<th>Tajuk Agenda <span class="text-danger">*</span></th>
-										<th>Tempat <span class="text-danger">*</span></th>
-										<th>No. Kod Kertas <span class="text-danger">*</span></th>
-										<th>Status <span class="text-danger">*</span></th>
+										<th style="width:110px;">Bil. Mesyuarat <span class="text-danger">*</span></th>
+										<th style="width:130px;">Tarikh Mesyuarat <span class="text-danger">*</span></th>
+										<th style="width:100px;">Masa <span class="text-danger">*</span></th>
+										<th style="width:160px;">Tempat <span class="text-danger">*</span></th>
+										<th style="width:120px;">No. Kod Kertas <span class="text-danger">*</span></th>
+										<th style="min-width:240px;">Agenda <span class="text-danger">*</span></th>
+										<th style="width:130px;">Status <span class="text-danger">*</span></th>
 										<th>Catatan</th>
 									</tr>
 								</thead>
@@ -241,8 +242,9 @@
 										<td><input type="text" class="form-control form-control-sm" placeholder=""></td>
 										<td><input type="date" class="form-control form-control-sm" value="2021-10-18">
 										</td>
-										<td><input type="text" class="form-control form-control-sm" placeholder=""></td>
+										<td><input type="time" class="form-control form-control-sm" value="09:00"></td>
 										<td><input type="text" class="form-control form-control-sm" value="Bilik Mesyuarat Tingkat 3"></td>
+										<td><input type="text" class="form-control form-control-sm" placeholder=""></td>
 										<td><input type="text" class="form-control form-control-sm" placeholder=""></td>
 										<td>
 											<select class="form-select form-select-sm">
