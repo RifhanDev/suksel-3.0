@@ -160,6 +160,11 @@ class Tender extends Model
 					return true;
 				} elseif ($user->hasRole('Vendor') && $this->invites()->where('vendor_id', $user->vendor_id)->first()) {
 					return true;
+				} elseif (self::canViewInternal($this->organization_unit_id)) {
+					// Kakitangan dalaman agensi pemilik. Senarai agensi memaparkan
+					// tender ini kepada mereka, jadi menolak halaman butirannya
+					// hanya menghasilkan 403 selepas satu klik.
+					return true;
 				} else {
 					return false;
 				}
@@ -170,6 +175,11 @@ class Tender extends Model
 			if (auth()->check() && $user->hasRole('Admin')) {
 				return true;
 			} elseif (auth()->check() && $user->ability(['Agency Admin', 'Agency User'], ['Tender:edit']) && $this->organization_unit_id == $user->organization_unit_id) {
+				return true;
+			} elseif (self::canViewInternal($this->organization_unit_id)) {
+				// Tender belum diluluskan. Sebelum ini hanya Agency Admin/User
+				// dibenarkan, jadi Urusetia yang perlu menggerakkannya melalui
+				// aliran kerja dihalang daripada membuka tendernya sendiri.
 				return true;
 			} else {
 				return false;
