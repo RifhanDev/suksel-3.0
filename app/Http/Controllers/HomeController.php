@@ -1016,27 +1016,54 @@ class HomeController extends Controller
 		return redirect('/')->with('success', 'Alamat Emel anda telah disahkan.');
 	}
 
+	/**
+	 * Selang dan had semakan bagi halaman "menunggu respons bayaran".
+	 *
+	 * Satu sumber sahaja: teks pada halaman dan pemasa JS kedua-duanya membaca
+	 * nilai ini. Sebelum ini ketiga-tiga angka berlainan — teks kata 3 minit
+	 * sebanyak 5 kali, JS muat semula setiap 10 saat, kod menyerah pada 3.
+	 *
+	 * 10 saat x 30 = 5 minit. requery:fpx berjalan setiap minit, jadi tempoh ini
+	 * memberi rekonsiliasi sekurang-kurangnya lima peluang menjawab.
+	 */
+	private const TXN_STATUS_INTERVAL_SECONDS = 10;
+	private const TXN_STATUS_MAX_CHECKS = 30;
+
 	public function txnStatus($id)
 	{
-		$refresh = session('txn_status_' . $id, 0);
-		if ($refresh == 3) {
-			return redirect('/')->with('error', 'Transaksi anda masih belum berjaya.');
+		$refresh = (int) session('txn_status_' . $id, 0);
+
+		if ($refresh >= self::TXN_STATUS_MAX_CHECKS) {
+			session()->forget('txn_status_' . $id);
+
+			return redirect('/')->with('error', 'Bayaran anda masih dalam pengesahan. Statusnya akan dikemas kini secara automatik sebaik sahaja bank mengesahkan — sila semak semula sebentar lagi.');
 		}
-		session()->put('txn_status_' . $id, $refresh++);
+
+		// $refresh + 1, bukan $refresh++: post-increment memulangkan nilai lama,
+		// jadi kaunter kekal 0 dan halaman ini memuat semula tanpa henti.
+		session()->put('txn_status_' . $id, $refresh + 1);
 
 		$transaction = Transaction::whereUserId(auth()->user()->id)->findOrFail($id);
 
 		if ($transaction->status != 'pending') {
 			if ($transaction->type == 'purchase') {
+				session()->forget('txn_status_' . $id);
+
 				return redirect('cart/callback/' . $transaction->id);
 			}
 
 			if ($transaction->type == 'subscription') {
+				session()->forget('txn_status_' . $id);
+
 				return redirect('renewal_callback/' . $transaction->id);
 			}
 		}
 
-		return view('home.txn_status', compact('transaction'));
+		return view('home.txn_status', [
+			'transaction'     => $transaction,
+			'intervalSeconds' => self::TXN_STATUS_INTERVAL_SECONDS,
+			'maxChecks'       => self::TXN_STATUS_MAX_CHECKS,
+		]);
 	}
 
 	public function versionHistories()

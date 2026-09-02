@@ -5,8 +5,10 @@
 		<div class="col-xs-12 col-sm-6 col-sm-offset-3">
 			<h1>Status Transaksi</h1>
 			<div style="width: 50px; height: 50px; float: right;"><img src="{{ asset('images/loading.svg') }}"></div>
-			<p>Laman ini akan menyemak status transaksi anda setiap 3 minit sebanyak 5 kali. Sekiranya transaksi anda gagal sila
-				berhubung dengan Bahagian Teknologi Maklumat, Pejabat Setiausaha Kerajaan Negeri Selangor</p>
+			<p>Laman ini menyemak status transaksi anda setiap {{ $intervalSeconds }} saat, sehingga {{ $maxChecks }} kali
+				(lebih kurang {{ (int) ceil($intervalSeconds * $maxChecks / 60) }} minit). Anda tidak perlu menutup atau memuat
+				semula halaman ini secara manual. Sekiranya transaksi anda gagal sila berhubung dengan Bahagian Teknologi
+				Maklumat, Pejabat Setiausaha Kerajaan Negeri Selangor</p>
 
 			<table class="table table-bordered">
 				<tr>
@@ -35,7 +37,7 @@
 		$(document).ready(function() {
 			setTimeout(function() {
 				window.location.reload();
-			}, 10000);
+			}, {{ $intervalSeconds * 1000 }});
 		});
 	</script>
 @endsection
