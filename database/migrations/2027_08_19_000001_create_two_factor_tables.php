@@ -14,7 +14,7 @@ return new class extends Migration
         if (!Schema::hasTable('two_factor_auths')) {
             Schema::create('two_factor_auths', function (Blueprint $table) {
                 $table->id();
-                $table->unsignedInteger('user_id')->unique(); // users.id is increments(), not bigIncrements()
+                $table->unsignedBigInteger('user_id')->unique();
                 $table->text('secret')->nullable(); // encrypted cast on the model
                 $table->timestamp('confirmed_at')->nullable(); // null = enrolment started but never confirmed
                 $table->timestamp('required_since')->nullable(); // anchors the grace-period countdown
@@ -31,7 +31,7 @@ return new class extends Migration
         if (!Schema::hasTable('two_factor_recovery_codes')) {
             Schema::create('two_factor_recovery_codes', function (Blueprint $table) {
                 $table->id();
-                $table->unsignedInteger('user_id'); // users.id is increments(), not bigIncrements()
+                $table->unsignedBigInteger('user_id');
                 $table->string('code_hash');
                 $table->timestamp('used_at')->nullable();
                 $table->timestamp('created_at')->nullable();
@@ -45,9 +45,9 @@ return new class extends Migration
         if (!Schema::hasTable('two_factor_role_settings')) {
             Schema::create('two_factor_role_settings', function (Blueprint $table) {
                 $table->id();
-                $table->unsignedInteger('role_id')->unique(); // roles.id is increments(), not bigIncrements()
+                $table->unsignedInteger('role_id')->unique(); // roles.id is int unsigned
                 $table->boolean('required')->default(false);
-                $table->unsignedInteger('updated_by')->nullable(); // users.id is increments(), not bigIncrements()
+                $table->unsignedBigInteger('updated_by')->nullable();
                 $table->timestamps();
 
                 $table->foreign('role_id')->references('id')->on('roles')->onDelete('cascade');
@@ -64,7 +64,7 @@ return new class extends Migration
                 $table->unsignedTinyInteger('max_failed_attempts')->default(5);
                 $table->unsignedSmallInteger('lockout_minutes')->default(5);
                 $table->unsignedSmallInteger('remember_device_days')->default(30);
-                $table->unsignedInteger('updated_by')->nullable(); // users.id is increments(), not bigIncrements()
+                $table->unsignedBigInteger('updated_by')->nullable();
                 $table->timestamps();
 
                 $table->foreign('updated_by')->references('id')->on('users')->onDelete('set null');
@@ -87,8 +87,8 @@ return new class extends Migration
         if (!Schema::hasTable('two_factor_audit_logs')) {
             Schema::create('two_factor_audit_logs', function (Blueprint $table) {
                 $table->id();
-                $table->unsignedInteger('user_id'); // account the event is about; users.id is increments(), not bigIncrements()
-                $table->unsignedInteger('actor_id')->nullable(); // who did it; null = system/self
+                $table->unsignedBigInteger('user_id');
+                $table->unsignedBigInteger('actor_id')->nullable();
                 $table->string('event'); // enrolled|disabled|admin_reset|recovery_used|locked_out|role_requirement_toggled
                 $table->json('meta')->nullable();
                 $table->timestamp('created_at')->nullable();

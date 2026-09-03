@@ -649,13 +649,23 @@
                                                     @endif
                                                 </td>
                                                 <td class="text-center px-3">
-                                                    <button type="button" class="btn btn-sm btn-success btn-papar-semakan-kewangan px-3 py-1.5 d-inline-flex align-items-center gap-1"
-                                                        data-bs-toggle="modal" data-bs-target="#modalSemakanKetepatanDokumenKewangan"
-                                                        data-dokumen="{{ $itemTitle }}"
-                                                        data-uuid="{{ $itemUuid }}">
-                                                        <i class="bi bi-pencil-square"></i>
-                                                        <span>Menilai</span>
-                                                    </button>
+                                                    @if($isItemSelesai)
+                                                        <button type="button" class="btn btn-sm btn-primary btn-papar-semakan-kewangan px-3 py-1.5 d-inline-flex align-items-center gap-1"
+                                                            data-bs-toggle="modal" data-bs-target="#modalSemakanKetepatanDokumenKewangan"
+                                                            data-dokumen="{{ $itemTitle }}"
+                                                            data-uuid="{{ $itemUuid }}">
+                                                            <i class="bi bi-eye"></i>
+                                                            <span>Papar</span>
+                                                        </button>
+                                                    @else
+                                                        <button type="button" class="btn btn-sm btn-success btn-papar-semakan-kewangan px-3 py-1.5 d-inline-flex align-items-center gap-1"
+                                                            data-bs-toggle="modal" data-bs-target="#modalSemakanKetepatanDokumenKewangan"
+                                                            data-dokumen="{{ $itemTitle }}"
+                                                            data-uuid="{{ $itemUuid }}">
+                                                            <i class="bi bi-pencil-square"></i>
+                                                            <span>Menilai</span>
+                                                        </button>
+                                                    @endif
                                                 </td>
                                             </tr>
                                         @empty
@@ -1152,6 +1162,8 @@
     const SEMAK_PAYLOAD = @json($semakPayload ?? []);
     const PENYATA_BANK_UUIDS = @json(collect($penyataBankItems ?? [])->pluck('uuid')->filter()->values()->all());
     const PENYATA_BANK_CONFIG = @json($penyataBankConfig ?? []);
+    const VENDOR_FORM_PAYLOADS = @json($vendorFormPayloads ?? []);
+    const DOKUMEN_BY_VENDOR = @json($dokumenByVendor ?? []);
 
     let activeStep2Uuid = PENYATA_BANK_UUIDS[0] || null;
     let activeStep2VendorId = null;
@@ -1874,6 +1886,111 @@
             $('#modalStep2NamaPembekal').text(nama || '-');
             $('#modalButiranCadanganKewanganTajukStep2').text($('#modalCadanganKewanganTajukStep2').text() || $('#modalDocTitle').text() || 'Penyata Bank Terkini (3 Bulan Terakhir) Syarikat');
 
+            // Retrieve vendor's submitted online form payload during status_process_id = 5
+            const vFormPayloadObj = VENDOR_FORM_PAYLOADS[activeStep2VendorId] || VENDOR_FORM_PAYLOADS[String(activeStep2VendorId)] || {};
+            const vPayloadData = vFormPayloadObj.payload || vFormPayloadObj || {};
+
+            const itemObj = SEMAK_PAYLOAD[activeStep2Uuid];
+            const vRow = itemObj?.vendors?.find(v => parseInt(v.vendor_id) === parseInt(activeStep2VendorId));
+
+            // Render Section 1: Dokumen Sokongan Dari Petender (uploaded by this vendor for Penyata Bank during status_process_id = 5)
+            const $dokTbody = $('#modalStep2DokumenSemakSilangTableBody');
+            if ($dokTbody.length) {
+                $dokTbody.empty();
+                let vendorFiles = [];
+
+                // A. Collect files from vRow (activeStep2Uuid in SEMAK_PAYLOAD)
+                if (vRow && Array.isArray(vRow.files) && vRow.files.length > 0) {
+                    vRow.files.forEach(f => {
+                        const fileUrl = f.url || f.file_url || (f.path ? ('/storage/' + f.path) : '#');
+                        const fileName = f.original_name || f.name || f.title || 'Dokumen Sokongan';
+                        if (!vendorFiles.some(vf => vf.url === fileUrl || vf.name === fileName)) {
+                            vendorFiles.push({ name: fileName, url: fileUrl });
+                        }
+                    });
+                }
+
+                // B. Collect files from DOKUMEN_BY_VENDOR matching activeStep2Uuid or penyata-bank
+                if (typeof DOKUMEN_BY_VENDOR !== 'undefined' && DOKUMEN_BY_VENDOR) {
+                    const vDocsList = DOKUMEN_BY_VENDOR[activeStep2VendorId] || DOKUMEN_BY_VENDOR[String(activeStep2VendorId)] || [];
+                    const specificDocs = vDocsList.filter(d => 
+                        d.uuid === activeStep2Uuid || 
+                        d.item_uuid === activeStep2Uuid || 
+                        (d.action_url || '').includes('penyata-bank') ||
+                        (d.title || '').toLowerCase().includes('penyata bank')
+                    );
+
+                    specificDocs.forEach(doc => {
+                        const filesList = doc.files || doc.vendor_content?.files || [];
+                        if (Array.isArray(filesList) && filesList.length > 0) {
+                            filesList.forEach(f => {
+                                const fileUrl = f.url || f.file_url || (f.path ? ('/storage/' + f.path) : '#');
+                                const fileName = f.original_name || f.name || f.title || 'Dokumen Sokongan';
+                                if (!vendorFiles.some(vf => vf.url === fileUrl || vf.name === fileName)) {
+                                    vendorFiles.push({ name: fileName, url: fileUrl });
+                                }
+                            });
+                        }
+                    });
+                }
+
+                // C. Collect files from VENDOR_FORM_PAYLOADS for penyata_bank (dokumen_sokongan, files, dokumen, attachments)
+                if (vPayloadData) {
+                    const payloadFiles = vPayloadData.dokumen_sokongan || vPayloadData.files || vPayloadData.dokumen || vPayloadData.attachments || [];
+                    if (Array.isArray(payloadFiles) && payloadFiles.length > 0) {
+                        payloadFiles.forEach(f => {
+                            const fileUrl = f.url || f.file_url || (f.path ? ('/storage/' + f.path) : '#');
+                            const fileName = f.original_name || f.name || f.title || 'Dokumen Sokongan';
+                            if (!vendorFiles.some(vf => vf.url === fileUrl || vf.name === fileName)) {
+                                vendorFiles.push({ name: fileName, url: fileUrl });
+                            }
+                        });
+                    }
+                }
+
+                // D. Collect files from PENYATA_BANK_CONFIG.files (from penyata_bank_files table)
+                if (PENYATA_BANK_CONFIG.files && Array.isArray(PENYATA_BANK_CONFIG.files) && PENYATA_BANK_CONFIG.files.length > 0) {
+                    PENYATA_BANK_CONFIG.files.forEach(f => {
+                        const fileUrl = f.url || (f.path ? ('/storage/' + f.path) : '#');
+                        const fileName = f.original_name || f.name || 'Dokumen Sokongan';
+                        if (!vendorFiles.some(vf => vf.url === fileUrl || vf.name === fileName)) {
+                            vendorFiles.push({ name: fileName, url: fileUrl });
+                        }
+                    });
+                }
+
+                if (vendorFiles.length > 0) {
+                    vendorFiles.forEach(f => {
+                        const fileName = f.name || 'Dokumen Sokongan';
+                        const fileUrl = f.url || '#';
+                        const ext = (fileName.split('.').pop() || '').toLowerCase();
+                        const isPdf = (ext === 'pdf');
+
+                        const actionBtn = isPdf
+                            ? '<a href="' + escapeHtml(fileUrl) + '" target="_blank" rel="noopener noreferrer" data-name="' + escapeHtml(fileName) + '" class="btn btn-sm btn-outline-primary px-3 py-1 d-inline-flex align-items-center gap-1 font-monospace">' +
+                                '<i class="bi bi-eye me-1"></i><span>Papar Dokumen</span>' +
+                              '</a>'
+                            : '<a href="' + escapeHtml(fileUrl) + '" download="' + escapeHtml(fileName) + '" class="btn btn-sm btn-outline-primary px-3 py-1 d-inline-flex align-items-center gap-1 font-monospace">' +
+                                '<i class="bi bi-download me-1"></i><span>Papar Dokumen</span>' +
+                              '</a>';
+
+                        $dokTbody.append(
+                            '<tr>' +
+                                '<td class="px-3 py-2.5">' +
+                                    '<div class="d-flex align-items-center gap-2">' +
+                                        '<i class="bi ' + (isPdf ? 'bi-file-earmark-pdf text-danger' : 'bi-file-earmark-text text-primary') + ' fs-6 me-1"></i>' +
+                                        '<span class="fw-medium text-dark">' + escapeHtml(fileName) + '</span>' +
+                                    '</div>' +
+                                '</td>' +
+                                '<td class="text-center px-3 py-2.5">' + actionBtn + '</td>' +
+                            '</tr>'
+                        );
+                    });
+                } else {
+                    $dokTbody.append('<tr><td colspan="2" class="text-center text-muted py-3 fst-italic"><i class="bi bi-info-circle me-1"></i>Tiada Dokumen Dimuatnaik</td></tr>');
+                }
+            }
+
             // Render dynamic month rows matching PENYATA_BANK_CONFIG.bulans
             const $bulanTbody = $('#modalStep2BulanTableBody');
             $bulanTbody.empty();
@@ -1881,16 +1998,58 @@
             const bulansArr = (PENYATA_BANK_CONFIG.bulans && PENYATA_BANK_CONFIG.bulans.length)
                 ? PENYATA_BANK_CONFIG.bulans
                 : [
-                    { bulan: 6, tahun: 2025, nama: 'Bulan 6 (Jun 2025)', jumlah: 500000 },
-                    { bulan: 7, tahun: 2025, nama: 'Bulan 7 (Julai 2025)', jumlah: 300000 },
-                    { bulan: 8, tahun: 2025, nama: 'Bulan 8 (Ogos 2025)', jumlah: 200000 }
+                    { bulan: 6, tahun: 2025, nama: 'Bulan 6 (Jun 2025)', jumlah: 0 },
+                    { bulan: 7, tahun: 2025, nama: 'Bulan 7 (Julai 2025)', jumlah: 0 },
+                    { bulan: 8, tahun: 2025, nama: 'Bulan 8 (Ogos 2025)', jumlah: 0 }
                 ];
 
             bulansArr.forEach((b, idx) => {
                 const rowId = 'step2-bulan-' + (b.bulan || (idx + 6));
-                const amtVal = (typeof b.jumlah === 'number')
-                    ? b.jumlah.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-                    : (b.jumlah || '0.00');
+                
+                // Retrieve vendor's submitted amount for this month
+                let vendorAmtVal = null;
+                const mNum = parseInt(b.bulan);
+
+                // 1. Check multi-account array in vendor payload
+                if (vPayloadData.accounts && Array.isArray(vPayloadData.accounts) && vPayloadData.accounts.length > 0) {
+                    let totalMonthFromAccounts = 0;
+                    let foundAnyInAccounts = false;
+                    vPayloadData.accounts.forEach(acc => {
+                        if (acc.bulans && Array.isArray(acc.bulans)) {
+                            const mb = acc.bulans.find(m => parseInt(m.bulan) === mNum);
+                            if (mb && mb.jumlah !== undefined && mb.jumlah !== null) {
+                                totalMonthFromAccounts += (parseFloat(mb.jumlah) || 0);
+                                foundAnyInAccounts = true;
+                            }
+                        }
+                    });
+                    if (foundAnyInAccounts) {
+                        vendorAmtVal = totalMonthFromAccounts;
+                    }
+                }
+
+                // 2. Check top-level bulans array in vendor payload
+                if (vendorAmtVal === null && vPayloadData.bulans && Array.isArray(vPayloadData.bulans)) {
+                    const matchB = vPayloadData.bulans.find(mb => parseInt(mb.bulan) === mNum);
+                    if (matchB && matchB.jumlah !== undefined && matchB.jumlah !== null) {
+                        vendorAmtVal = parseFloat(matchB.jumlah);
+                    }
+                }
+
+                // 3. Fallback direct property matches
+                if (vendorAmtVal === null && vPayloadData['bulan_' + mNum] !== undefined) {
+                    vendorAmtVal = parseFloat(vPayloadData['bulan_' + mNum]);
+                } else if (vendorAmtVal === null && vPayloadData['bulan' + mNum] !== undefined) {
+                    vendorAmtVal = parseFloat(vPayloadData['bulan' + mNum]);
+                } else if (vendorAmtVal === null && vRow && vRow.bulans && vRow.bulans[mNum] !== undefined) {
+                    vendorAmtVal = parseFloat(vRow.bulans[mNum]);
+                }
+
+                if (vendorAmtVal === null || isNaN(vendorAmtVal)) {
+                    vendorAmtVal = (typeof b.jumlah === 'number' && b.jumlah > 0) ? b.jumlah : (parseFloat(b.jumlah) || 0);
+                }
+
+                const amtVal = vendorAmtVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
                 $bulanTbody.append(
                     '<tr>' +
@@ -1936,11 +2095,10 @@
                 );
             });
 
-            const itemObj = SEMAK_PAYLOAD[activeStep2Uuid];
-            const vRow = itemObj?.vendors?.find(v => v.vendor_id == activeStep2VendorId);
+            const vRowSaved = itemObj?.vendors?.find(v => v.vendor_id == activeStep2VendorId);
 
-            const savedStatus  = vRow ? vRow.status_pematuhan : null;
-            const savedCatatan = vRow ? (vRow.catatan || '') : '';
+            const savedStatus  = vRowSaved ? vRowSaved.status_pematuhan : null;
+            const savedCatatan = vRowSaved ? (vRowSaved.catatan || '') : '';
 
             const $kelayakan = $('#step2-status-kelayakan');
             const $catatan   = $('#step2-catatan-penyata');
@@ -2047,12 +2205,19 @@
 
                 const $outerTr = $('tr[data-item-uuid="' + activeStep2Uuid + '"]');
                 const $statusCell = $outerTr.find('.status-penilaian');
+                const $actionBtn = $outerTr.find('.btn-papar-cadangan-kewangan-step2');
 
                 if ($statusCell.length) {
                     if (isAllReviewed) {
                         $statusCell.html('<span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-20 px-2.5 py-1.5 rounded-pill"><i class="bi bi-check-circle me-1"></i>Selesai</span>');
+                        if ($actionBtn.length) {
+                            $actionBtn.removeClass('btn-success').addClass('btn-primary').html('<i class="bi bi-eye"></i><span>Papar</span>');
+                        }
                     } else {
                         $statusCell.html('<span class="badge bg-warning bg-opacity-10 text-warning-emphasis border border-warning border-opacity-20 px-2.5 py-1.5 rounded-pill"><i class="bi bi-clock me-1"></i>Menunggu Penilaian</span>');
+                        if ($actionBtn.length) {
+                            $actionBtn.removeClass('btn-primary').addClass('btn-success').html('<i class="bi bi-pencil-square"></i><span>Menilai</span>');
+                        }
                     }
                 }
 
