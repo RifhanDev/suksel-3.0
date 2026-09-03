@@ -48,7 +48,8 @@ class LawatanTapakUrusetiaController extends Controller
                 },
             ]);
 
-        if (!$user->hasRole('Admin') && $user->organization_unit_id) {
+        $user = auth()->user();
+        if ($user && !$user->hasRole('Admin') && $user->organization_unit_id) {
             $query->where('organization_unit_id', $user->organization_unit_id);
         }
 
