@@ -24,7 +24,7 @@ class VendorTenderDokumenController extends Controller
 
     public function upload(Request $request, Tender $tender, string $itemUuid)
     {
-        $vendorId = $this->vendorId();
+        $vendorId = $this->requireVendorId();
         $this->submissions->assertEditable($tender, $vendorId);
         $item = $this->findChecklistItem($tender, $itemUuid, 'vendor', $vendorId);
 
@@ -67,7 +67,7 @@ class VendorTenderDokumenController extends Controller
 
     public function deleteFile(string $fileUuid)
     {
-        $vendorId = $this->vendorId();
+        $vendorId = $this->requireVendorId();
         $file = TenderVendorDokumenFile::query()->where('uuid', $fileUuid)->firstOrFail();
         $tender = \App\Tender::query()->findOrFail($file->tender_id);
         $this->submissions->assertEditable($tender, $vendorId);
@@ -103,7 +103,7 @@ class VendorTenderDokumenController extends Controller
 
     public function saveKeyIn(Request $request, Tender $tender, string $itemUuid)
     {
-        $vendorId = $this->vendorId();
+        $vendorId = $this->requireVendorId();
         $this->submissions->assertEditable($tender, $vendorId);
         $item = $this->findChecklistItem($tender, $itemUuid, 'vendor', $vendorId);
 
@@ -146,11 +146,16 @@ class VendorTenderDokumenController extends Controller
     {
         $this->ensureTenderFormAccess($tender);
 
+        $queryVendorId = (int) $request->query('vendor_id');
         $isVendor = $this->isVendorFormMode();
-        if ($isVendor && $this->vendorId()) {
-            $this->submissions->assertEditable($tender, $this->vendorId());
+
+        if ($isVendor) {
+            $vendorId = $this->requireVendorId();
+            $this->submissions->assertEditable($tender, $vendorId);
+        } else {
+            // Staff / jawatankuasa review of a specific petender.
+            $vendorId = $queryVendorId > 0 ? $queryVendorId : null;
         }
-        $vendorId = $isVendor ? $this->vendorId() : ((int) $request->query('vendor_id') ?: null);
 
         $item = $this->findChecklistItem($tender, $itemUuid, $vendorId ? 'vendor' : 'admin', $vendorId);
 
@@ -196,7 +201,7 @@ class VendorTenderDokumenController extends Controller
                 ]);
             }
         } else {
-            $vendorId = $this->vendorId();
+            $vendorId = $this->requireVendorId();
             $this->submissions->assertEditable($tender, $vendorId);
         }
 
@@ -297,15 +302,14 @@ class VendorTenderDokumenController extends Controller
         ]);
     }
 
-    protected function vendorId(): int
+    protected function requireVendorId(): int
     {
-        $user = Auth::user();
-
-        if (! $user || ! $user->vendor_id) {
+        $vendorId = $this->vendorId();
+        if (! $vendorId) {
             abort(403, 'Akses vendor diperlukan.');
         }
 
-        return (int) $user->vendor_id;
+        return $vendorId;
     }
 
     /**
@@ -317,8 +321,15 @@ class VendorTenderDokumenController extends Controller
         string $mode = 'admin',
         ?int $vendorId = null
     ): array {
-        $item = collect(TenderDokumenPresenter::for($tender)->items($mode, $vendorId))
+        $presenter = TenderDokumenPresenter::for($tender);
+        $item = collect($presenter->items($mode, $vendorId))
             ->first(fn (array $row) => ($row['uuid'] ?? '') === $itemUuid);
+
+        // Staff review: vendor-scoped list can miss the PTJ checklist row; fall back to admin.
+        if (! $item && $mode === 'vendor') {
+            $item = collect($presenter->items('admin'))
+                ->first(fn (array $row) => ($row['uuid'] ?? '') === $itemUuid);
+        }
 
         if (! $item) {
             abort(404, 'Item dokumen tidak dijumpai.');
