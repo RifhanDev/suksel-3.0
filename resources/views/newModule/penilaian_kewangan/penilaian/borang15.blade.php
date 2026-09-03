@@ -171,12 +171,15 @@
 @section('content')
 @php
     $tenderParam = request('tender') ?: request('tender_no') ?: ($tender_no ?? '');
+    $tenderIdentifier = isset($tender) ? ($tender->uuid ?: $tender->id ?: $tenderParam) : $tenderParam;
     $backToTenderUrl = $tenderParam 
         ? route('penilaianKewanganKerja.show', $tenderParam) 
         : (str_contains(url()->previous(), '/penilaian-kewangan') ? url()->previous() : route('penilaianKewangan'));
 
-    $displayVendors = !empty($b6PassingVendors) ? $b6PassingVendors : (
-        !empty($b8VendorSummary) ? array_values($b8VendorSummary) : []
+    $displayVendors = !empty($b15VendorSummary) ? array_values($b15VendorSummary) : (
+        !empty($b6PassingVendors) ? $b6PassingVendors : (
+            !empty($b8VendorSummary) ? array_values($b8VendorSummary) : []
+        )
     );
 
     $fallbackRows = [
@@ -428,7 +431,8 @@
                                 $vId = $r['vendor_id'] ?? ($r['id'] ?? ($idx + 1));
                                 $kodPembekal = $r['kod_pembekal'] ?? ($r['ruj'] ?? ('45/' . str_pad($idx+1, 2, '0', STR_PAD_LEFT)));
                                 $vendorName = $r['vendor_name'] ?? ($r['nama'] ?? 'SYARIKAT PETENDER');
-                                $hargaDisp = $r['harga_display'] ?? ($r['harga'] ?? (isset($r['harga_tawaran']) ? number_format($r['harga_tawaran'], 2) : '0.00'));
+                                $hargaDisp = $r['harga_display'] ?? ($r['harga'] ?? (isset($r['harga_tawaran']) ? 'RM ' . number_format($r['harga_tawaran'], 2) : 'RM 0.00'));
+                                $isChecked = !empty($r['is_recommended']);
                             @endphp
                             <tr>
                                 <td class="text-center font-monospace fw-bold" style="background-color: #f8fafc; color: #475569; font-size: 0.75rem;">
@@ -451,7 +455,7 @@
                                     {{ $hargaDisp }}
                                 </td>
                                 <td class="text-center font-monospace" style="font-size: 0.75rem;">
-                                    {{ $r['bwam'] ?? '-15.50%' }}
+                                    -
                                 </td>
                                 <td class="text-center font-monospace" style="font-size: 0.75rem;">
                                     {{ $r['tempoh'] ?? '104' }}
@@ -469,10 +473,14 @@
                                     {{ $r['kerja'] ?? 'Memuaskan' }}
                                 </td>
                                 <td class="text-center">
-                                    <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2 py-0.5 rounded-pill fw-bold" style="font-size: 0.7rem;">Lulus</span>
+                                    @php
+                                        $kepText = trim($r['keputusan'] ?? 'Lulus');
+                                        $isLulusVal = in_array(strtoupper($kepText), ['LULUS', 'PASS', 'SEMPURNA', 'MEMATUHI']);
+                                    @endphp
+                                    <span class="badge {{ $isLulusVal ? 'bg-success text-white' : 'bg-danger text-white' }} px-2.5 py-1 rounded-pill fw-bold" style="font-size: 0.725rem;">{{ $kepText }}</span>
                                 </td>
                                 <td class="text-center">
-                                    <input class="form-check-input chk-pengesyoran" type="checkbox" name="selected_vendors[]" value="{{ $vId }}" style="cursor: pointer; transform: scale(1.2);" {{ !empty($readOnly) ? 'disabled' : '' }}>
+                                    <input class="form-check-input chk-pengesyoran" type="checkbox" name="selected_vendors[]" value="{{ $vId }}" style="cursor: pointer; transform: scale(1.2);" {{ !empty($readOnly) ? 'disabled' : '' }} {{ $isChecked ? 'checked' : '' }}>
                                 </td>
                             </tr>
                         @endforeach

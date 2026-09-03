@@ -556,11 +556,7 @@
                         @php
                             $renderBorangCard('borang7', 'p2', 'bi-bar-chart-steps', 'BORANG 7', 'Analisa Keupayaan Petender', 'Analisis data penilaian keupayaan petender.');
                             $renderBorangCard('borang8', 'p2', 'bi-pie-chart-fill', 'BORANG 8', 'Analisa Data Keupayaan', 'Jadual analisa data-data penilaian keupayaan petender.');
-                            $renderBorangCard('borang9', 'p2', 'bi-gear-wide-connected', 'BORANG 9', 'Analisa Keupayaan Teknikal', 'Analisis data penilaian keupayaan teknikal petender.', [
-                                ['icon' => 'bi-file-earmark-text', 'label' => 'Utama'],
-                                ['icon' => 'bi-layers', 'label' => 'Serupa'],
-                                ['icon' => 'bi-stack', 'label' => 'Sebanding']
-                            ]);
+                            $renderBorangCard('borang9', 'p2', 'bi-gear-wide-connected', 'BORANG 9', 'Analisa Keupayaan Teknikal', 'Analisis data penilaian keupayaan teknikal petender.');
                             $renderBorangCard('borang10', 'p2', 'bi-person-workspace', 'BORANG 10', 'Prestasi Kerja Semasa', 'Penilaian rekod & prestasi kerja semasa petender di tapak.');
                             $renderBorangCard('borang11', 'p2', 'bi-cpu', 'BORANG 11', 'Penilaian Keupayaan Teknikal', 'Penilaian kakitangan teknikal, loji & peralatan petender.');
                             $renderBorangCard('borang12', 'p2', 'bi-patch-check', 'BORANG 12', 'Keupayaan Keseluruhan', 'Penilaian skor gabungan keupayaan kewangan & teknikal.');

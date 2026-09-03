@@ -163,6 +163,111 @@
         </div>
     </div>
 
+    @php
+        $tenderTempohVal = $tender->tempoh_siap_val ?? $tender->tempoh_kontrak_bulan ?? null;
+        $tenderTempohUnitRaw = $tender->tempoh_siap_unit ?? null;
+        $unitMap = [
+            '1' => 'Minggu',
+            '2' => 'Bulan',
+            '3' => 'Hari',
+            'minggu' => 'Minggu',
+            'bulan' => 'Bulan',
+            'hari' => 'Hari',
+        ];
+        $tenderTempohUnit = $unitMap[strtolower((string)$tenderTempohUnitRaw)] ?? ($tenderTempohUnitRaw ?: ($tender->tempoh_kontrak_bulan ? 'Bulan' : '-'));
+        $tenderTempohDisplay = ($tenderTempohVal !== null && $tenderTempohVal !== '') ? ($tenderTempohVal . ' ' . $tenderTempohUnit) : 'Tiada Maklumat';
+    @endphp
+
+    {{-- Tempoh Siap Section (UI Only) --}}
+    <div class="content-card mb-4 p-0">
+        <div class="content-card-header p-4 pb-3 border-bottom">
+            <div class="d-flex align-items-center gap-3">
+                <div class="content-card-icon" style="width:38px;height:38px;background:#eff6ff;color:#2563eb;border-radius:10px;display:flex;align-items:center;justify-content:center;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="content-card-title mb-0" style="font-size:1rem;font-weight:700;">Tempoh Siap</h3>
+                    <p class="text-muted mb-0" style="font-size:0.78rem;">Maklumat tempoh siap asal tender dan tawaran tempoh siap daripada petender.</p>
+                </div>
+            </div>
+        </div>
+        <div class="content-card-body p-4">
+            <div class="row g-4">
+                {{-- 1. Tempoh Siap Tender (Asal) --}}
+                <div class="col-12 col-md-6">
+                    <div class="p-3 rounded-3 border bg-light h-100 d-flex flex-column justify-content-center">
+                        <span class="text-muted fw-semibold text-uppercase d-block mb-1" style="font-size:0.68rem;letter-spacing:0.5px;">
+                            Tempoh Siap Tender (Asal)
+                        </span>
+                        <div class="d-flex align-items-center gap-2 mt-1">
+                            <span class="fw-bold text-dark font-monospace" style="font-size:1.1rem;">
+                                {{ $tenderTempohDisplay }}
+                            </span>
+                            <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 px-2.5 py-1 rounded-2" style="font-size:0.725rem;">
+                                Paparan Sahaja
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- 2. Tempoh Siap Yang Ditawarkan --}}
+                <div class="col-12 col-md-6">
+                    <div class="p-3 rounded-3 border bg-white h-100">
+                        <label for="vendor_tempoh_siap_val" class="fw-bold text-dark d-block mb-2" style="font-size:0.85rem;">
+                            Tempoh Siap Yang Ditawarkan <span class="text-danger">*</span>
+                        </label>
+                        <div class="input-group">
+                            <input type="number" 
+                                   id="vendor_tempoh_siap_val" 
+                                   name="vendor_tempoh_siap_val" 
+                                   class="form-control" 
+                                   min="1" 
+                                   placeholder="Masukkan tempoh" 
+                                   value="{{ $savedResponses['vendor_tempoh_siap_val'] ?? '' }}"
+                                   @if($viewOnly) disabled @endif>
+                            <select id="vendor_tempoh_siap_unit_select" 
+                                    class="form-select bg-light" 
+                                    style="max-width: 120px; pointer-events: none;" 
+                                    tabindex="-1"
+                                    disabled>
+                                <option value="Hari" {{ $tenderTempohUnit === 'Hari' ? 'selected' : '' }}>Hari</option>
+                                <option value="Minggu" {{ $tenderTempohUnit === 'Minggu' ? 'selected' : '' }}>Minggu</option>
+                                <option value="Bulan" {{ $tenderTempohUnit === 'Bulan' ? 'selected' : '' }}>Bulan</option>
+                            </select>
+                            <input type="hidden" id="vendor_tempoh_siap_unit" name="vendor_tempoh_siap_unit" value="{{ $tenderTempohUnit }}">
+                        </div>
+                        <span class="text-muted extra-small d-block mt-1.5" style="font-size:0.725rem;">
+                            Nyatakan jumlah tempoh dan unit penyiapan yang ditawarkan oleh pihak anda.
+                            @php
+                                $rawSubmittedVal = $savedResponses['vendor_tempoh_siap_val'] ?? null;
+                                $rawSubmittedUnit = $savedResponses['vendor_tempoh_siap_unit'] ?? $tenderTempohUnit;
+                                $convertedWeeksDisplay = null;
+                                if ($rawSubmittedVal !== null && $rawSubmittedVal !== '') {
+                                    $valNum = (float) $rawSubmittedVal;
+                                    $unitNorm = strtolower(trim((string)$rawSubmittedUnit));
+                                    if (in_array($unitNorm, ['bulan', '2'], true)) {
+                                        $weeksVal = $valNum * 4;
+                                    } elseif (in_array($unitNorm, ['hari', '3'], true)) {
+                                        $weeksVal = ($valNum % 7 === 0) ? ($valNum / 7) : round($valNum / 7, 2);
+                                    } else {
+                                        $weeksVal = $valNum;
+                                    }
+                                    $convertedWeeksDisplay = (floor($weeksVal) == $weeksVal ? number_format($weeksVal, 0) : number_format($weeksVal, 2)) . ' Minggu';
+                                }
+                            @endphp
+                            @if($convertedWeeksDisplay)
+                                <strong class="text-primary d-block mt-1"><i class="bi bi-clock-history me-1"></i>Tempoh Siap Yang Ditawarkan: {{ $convertedWeeksDisplay }}</strong>
+                            @endif
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="content-card mb-4 p-0">
         @if ($isKerjaSpec)
             <div class="content-card-header p-4 pb-3 border-bottom">
@@ -290,7 +395,12 @@ $(document).ready(function () {
     }
 
     function collectResponses() {
-        var data = { item_prices: {}, details: {} };
+        var data = { 
+            item_prices: {}, 
+            details: {},
+            vendor_tempoh_siap_val: $('#vendor_tempoh_siap_val').val() || null,
+            vendor_tempoh_siap_unit: $('#vendor_tempoh_siap_unit').val() || null
+        };
 
         if (IS_KERJA) {
             $('.dokumen-spec-kadar').each(function () {

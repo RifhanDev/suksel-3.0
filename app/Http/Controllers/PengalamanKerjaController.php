@@ -64,9 +64,12 @@ class PengalamanKerjaController extends Controller
             );
         }
 
+        $isKerja = (int) ($tender->kategori_perolehan_id ?? 0) === 3 || strtolower($tender->kategori_perolehan_name ?? '') === 'kerja';
+
         return view('tenderPengalamanKerja.form_pengalaman_kerja', array_merge([
-            'tender' => $tender,
+            'tender'       => $tender,
             'existingData' => $existingData,
+            'isKerja'      => $isKerja,
         ], $this->formViewVars($tender)));
     }
 
@@ -79,23 +82,35 @@ class PengalamanKerjaController extends Controller
         $this->ensureTenderFormAccess($tender);
         $this->ensureFormEditable();
 
-        $tajukList   = $request->input('pengalaman_tajuk', []);
-        $picList     = $request->input('pengalaman_pic', []);
-        $telefonList = $request->input('pengalaman_telefon', []);
-        $nilaiList   = $request->input('pengalaman_nilai', []);
+        $isKerja = (int) ($tender->kategori_perolehan_id ?? 0) === 3 || strtolower($tender->kategori_perolehan_name ?? '') === 'kerja';
+
+        $tajukList      = $request->input('pengalaman_tajuk', []);
+        $picList        = $request->input('pengalaman_pic', []);
+        $telefonList    = $request->input('pengalaman_telefon', []);
+        $kosPrimaList   = $request->input('pengalaman_wang_kos_prima', []);
+        $peruntukanList = $request->input('pengalaman_wang_peruntukan_semasa', []);
+        $nilaiList      = $request->input('pengalaman_nilai', []);
 
         $items = [];
         foreach ($tajukList as $i => $tajuk) {
             if (empty(trim($tajuk))) {
                 continue;
             }
-            $nilaiRaw = str_replace(',', '', $nilaiList[$i] ?? '0');
+            $nilaiRaw      = str_replace(',', '', $nilaiList[$i] ?? '0');
+            $kosPrimaRaw   = str_replace(',', '', $kosPrimaList[$i] ?? '');
+            $peruntukanRaw = str_replace(',', '', $peruntukanList[$i] ?? '');
+
+            $wangKosPrima = ($isKerja && $kosPrimaRaw !== '' && is_numeric($kosPrimaRaw)) ? (float) $kosPrimaRaw : null;
+            $wangPeruntukanSemasa = ($isKerja && $peruntukanRaw !== '' && is_numeric($peruntukanRaw)) ? (float) $peruntukanRaw : null;
+
             $items[]  = [
-                'tajuk'       => trim($tajuk),
-                'pic'         => trim($picList[$i] ?? ''),
-                'telefon_pic' => trim($telefonList[$i] ?? ''),
-                'nilai_kerja' => is_numeric($nilaiRaw) ? (float) $nilaiRaw : 0,
-                'sort_order'  => $i,
+                'tajuk'                  => trim($tajuk),
+                'pic'                    => trim($picList[$i] ?? ''),
+                'telefon_pic'            => trim($telefonList[$i] ?? ''),
+                'wang_kos_prima'        => $wangKosPrima,
+                'wang_peruntukan_semasa' => $wangPeruntukanSemasa,
+                'nilai_kerja'            => is_numeric($nilaiRaw) ? (float) $nilaiRaw : 0,
+                'sort_order'             => $i,
             ];
         }
 

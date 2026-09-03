@@ -25,6 +25,7 @@ class TenderDokumenFormRoutes
             '/bon-atau-saham' => route('bonAtauSaham', ['tenderUuid' => $uuid], false),
             '/prestasi-kerja-semasa-petender' => route('prestasiKerjaSemasa', ['tenderUuid' => $uuid], false),
             '/pengalaman-kerja' => route('senaraiTeknikal.pengalamanKerja.tender', ['tenderUuid' => $uuid], false),
+            '/kakitangan-teknikal' => route('senaraiTeknikal.kakitanganTeknikal.tender', ['tenderUuid' => $uuid], false),
             '/kerja-dalam-tangan' => route('senaraiTeknikal.kerjaDalamTangan', ['tenderUuid' => $uuid], false),
             '/profil-petender' => route('profilPetender', ['tenderUuid' => $uuid], false),
             default => null,

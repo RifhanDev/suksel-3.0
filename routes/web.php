@@ -88,6 +88,7 @@ use App\Http\Controllers\StandardChecklistItemController;
 use App\Http\Controllers\TechnicalSpecificationController;
 use App\Http\Controllers\KerjaDalamTanganController;
 use App\Http\Controllers\PengalamanKerjaController;
+use App\Http\Controllers\KakitanganTeknikalController;
 use App\Http\Controllers\FinancialChecklistController;
 use App\Http\Controllers\SpecificationPricingController;
 use App\Http\Controllers\ProfilPetenderController;
@@ -446,7 +447,14 @@ Route::middleware(['auth'])->group(function () {
 	Route::post('/penilaian-kewangan-kerja/{tender_no}/borang/borang5/simpan-muktamad', [PenilaianKewanganKerjaController::class, 'simpanBorang5Muktamad'])->name('penilaianKewanganKerja.borang5.simpanMuktamad')->where('tender_no', '.*');
 	Route::post('/penilaian-kewangan-kerja/{tender_no}/borang/borang6/simpan-muktamad', [PenilaianKewanganKerjaController::class, 'simpanBorang6Muktamad'])->name('penilaianKewanganKerja.borang6.simpanMuktamad')->where('tender_no', '.*');
 	Route::post('/penilaian-kewangan-kerja/{tender_no}/borang/borang7/simpan-muktamad', [PenilaianKewanganKerjaController::class, 'simpanBorang7Muktamad'])->name('penilaianKewanganKerja.borang7.simpanMuktamad')->where('tender_no', '.*');
+	Route::post('/penilaian-kewangan-kerja/{tender_no}/borang/borang7/simpan-penilaian', [PenilaianKewanganKerjaController::class, 'simpanPenilaianBorang7'])->name('penilaianKewanganKerja.borang7.simpanPenilaian')->where('tender_no', '.*');
+	Route::post('/penilaian-kewangan-kerja/{tender_no}/borang/borang9/simpan-penilaian', [PenilaianKewanganKerjaController::class, 'simpanPenilaianBorang9'])->name('penilaianKewanganKerja.borang9.simpanPenilaian')->where('tender_no', '.*');
 	Route::post('/penilaian-kewangan-kerja/{tender_no}/borang/borang8/simpan-muktamad', [PenilaianKewanganKerjaController::class, 'simpanBorang8Muktamad'])->name('penilaianKewanganKerja.borang8.simpanMuktamad')->where('tender_no', '.*');
+	Route::post('/penilaian-kewangan-kerja/{tender_no}/borang/borang9/simpan-muktamad', [PenilaianKewanganKerjaController::class, 'simpanBorang9Muktamad'])->name('penilaianKewanganKerja.borang9.simpanMuktamad')->where('tender_no', '.*');
+	Route::post('/penilaian-kewangan-kerja/{tender_no}/borang/borang10/simpan-muktamad', [PenilaianKewanganKerjaController::class, 'simpanBorang10Muktamad'])->name('penilaianKewanganKerja.borang10.simpanMuktamad')->where('tender_no', '.*');
+	Route::post('/penilaian-kewangan-kerja/{tender_no}/borang/borang11/simpan-muktamad', [PenilaianKewanganKerjaController::class, 'simpanBorang11Muktamad'])->name('penilaianKewanganKerja.borang11.simpanMuktamad')->where('tender_no', '.*');
+	Route::post('/penilaian-kewangan-kerja/{tender_no}/borang/borang12/simpan-muktamad', [PenilaianKewanganKerjaController::class, 'simpanBorang12Muktamad'])->name('penilaianKewanganKerja.borang12.simpanMuktamad')->where('tender_no', '.*');
+	Route::post('/penilaian-kewangan-kerja/{tender_no}/borang/borang13/simpan-muktamad', [PenilaianKewanganKerjaController::class, 'simpanBorang13Muktamad'])->name('penilaianKewanganKerja.borang13.simpanMuktamad')->where('tender_no', '.*');
 	Route::post('/penilaian-kewangan-kerja/{tender_no}/borang/borang14/simpan-muktamad', [PenilaianKewanganKerjaController::class, 'simpanBorang14Muktamad'])->name('penilaianKewanganKerja.borang14.simpanMuktamad')->where('tender_no', '.*');
 	Route::post('/penilaian-kewangan-kerja/{tender_no}/borang/borang15/simpan-muktamad', [PenilaianKewanganKerjaController::class, 'simpanBorang15Muktamad'])->name('penilaianKewanganKerja.borang15.simpanMuktamad')->where('tender_no', '.*');
 	Route::get('/penilaian-kewangan-kerja/{tender_no}/borang/{borang_code}', [PenilaianKewanganKerjaController::class, 'getBorang'])->name('penilaianKewanganKerja.borang.show')->where('tender_no', '.*');
@@ -518,6 +526,13 @@ Route::middleware(['auth'])->group(function () {
 
 	//check blade location///
 	Route::delete('/pengalaman-kerja-files/{fileUuid}', [PengalamanKerjaController::class, 'deleteFile'])->name('pengalamanKerja.deleteFile');
+	Route::get('/senarai-teknikal/{tenderUuid}/kakitangan-teknikal', [KakitanganTeknikalController::class, 'create'])->name('senaraiTeknikal.kakitanganTeknikal.tender');
+	Route::get('/kakitangan-teknikal/{tenderUuid}', [KakitanganTeknikalController::class, 'create'])->name('kakitanganTeknikal');
+	Route::post('/senarai-teknikal/{tenderUuid}/kakitangan-teknikal', [KakitanganTeknikalController::class, 'store'])->name('senaraiTeknikal.kakitanganTeknikal.store');
+	Route::put('/kakitangan-teknikal/{uuid}', [KakitanganTeknikalController::class, 'update'])->name('kakitanganTeknikal.update');
+	Route::delete('/kakitangan-teknikal/{uuid}', [KakitanganTeknikalController::class, 'destroy'])->name('kakitanganTeknikal.destroy');
+	Route::delete('/kakitangan-teknikal-dokumen/{uuid}', [KakitanganTeknikalController::class, 'destroyDokumen'])->name('kakitanganTeknikal.dokumen.destroy');
+	Route::post('/senarai-teknikal/{tenderUuid}/kakitangan-teknikal-dokumen-umum', [KakitanganTeknikalController::class, 'uploadGeneralDokumen'])->name('senaraiTeknikal.kakitanganTeknikal.uploadGeneralDokumen');
 	Route::get('/senarai-teknikal/{tenderUuid}/kerja-dalam-tangan', [KerjaDalamTanganController::class, 'create'])->name('senaraiTeknikal.kerjaDalamTangan');
 	Route::post('/senarai-teknikal/{tenderUuid}/kerja-dalam-tangan', [KerjaDalamTanganController::class, 'store'])->name('senaraiTeknikal.kerjaDalamTangan.store');
 	Route::delete('/kerja-dalam-tangan-files/{fileUuid}', [KerjaDalamTanganController::class, 'deleteFile'])->name('kerjaDalamTangan.deleteFile');

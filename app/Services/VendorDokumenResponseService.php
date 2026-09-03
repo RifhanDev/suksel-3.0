@@ -147,7 +147,7 @@ class VendorDokumenResponseService
             return ['item_prices' => [], 'details' => []];
         }
 
-        if (isset($payload['item_prices']) || isset($payload['details'])) {
+        if (isset($payload['item_prices']) || isset($payload['details']) || isset($payload['vendor_tempoh_siap_val'])) {
             return [
                 'item_prices' => collect($payload['item_prices'] ?? [])
                     ->mapWithKeys(fn ($value, $key) => [trim((string) $key) => is_string($value) ? trim($value) : (string) $value])
@@ -165,6 +165,8 @@ class VendorDokumenResponseService
                         ]];
                     })
                     ->all(),
+                'vendor_tempoh_siap_val'  => isset($payload['vendor_tempoh_siap_val']) && $payload['vendor_tempoh_siap_val'] !== '' && $payload['vendor_tempoh_siap_val'] !== null ? (int) $payload['vendor_tempoh_siap_val'] : null,
+                'vendor_tempoh_siap_unit' => isset($payload['vendor_tempoh_siap_unit']) && $payload['vendor_tempoh_siap_unit'] !== '' ? trim((string) $payload['vendor_tempoh_siap_unit']) : null,
             ];
         }
 
@@ -261,23 +263,44 @@ class VendorDokumenResponseService
             $details = $mergedDetails;
         }
 
+        $tempohVal = isset($data['vendor_tempoh_siap_val']) && $data['vendor_tempoh_siap_val'] !== '' && $data['vendor_tempoh_siap_val'] !== null ? (int) $data['vendor_tempoh_siap_val'] : ($existing['vendor_tempoh_siap_val'] ?? null);
+        $tempohUnit = isset($data['vendor_tempoh_siap_unit']) && $data['vendor_tempoh_siap_unit'] !== '' ? trim((string) $data['vendor_tempoh_siap_unit']) : ($existing['vendor_tempoh_siap_unit'] ?? null);
+
         if (! $record->exists) {
             $record->uuid = (string) Str::uuid();
         }
 
         $hasValue = collect($itemPrices)->contains(fn ($value) => $value !== '')
-            || collect($details)->contains(fn ($fields) => ($fields['pematuhan'] ?? '') !== '' || ($fields['cadangan'] ?? '') !== '');
+            || collect($details)->contains(fn ($fields) => ($fields['pematuhan'] ?? '') !== '' || ($fields['cadangan'] ?? '') !== '')
+            || ($tempohVal !== null);
+
+        $payloadToSave = [
+            'item_prices'             => $itemPrices,
+            'details'                 => $details,
+            'vendor_tempoh_siap_val'  => $tempohVal,
+            'vendor_tempoh_siap_unit' => $tempohUnit,
+        ];
 
         $record->fill([
             'section' => $section,
             'response_type' => 'specification',
-            'payload' => [
-                'item_prices' => $itemPrices,
-                'details' => $details,
-            ],
+            'payload' => $payloadToSave,
             'status' => $hasValue ? 'submitted' : 'draft',
             'updated_by' => Auth::id(),
         ])->save();
+
+        if (! $adminSave && $tempohVal !== null) {
+            $participant = $tender->participants()->where('vendor_id', $vendorId)->first();
+            if ($participant) {
+                if (\Illuminate\Support\Facades\Schema::hasColumn('tender_vendors', 'tempoh')) {
+                    $participant->tempoh = $tempohVal;
+                    $participant->save();
+                } elseif (\Illuminate\Support\Facades\Schema::hasColumn('tender_vendors', 'project_timeline')) {
+                    $participant->project_timeline = (string) $tempohVal;
+                    $participant->save();
+                }
+            }
+        }
 
         return $record;
     }

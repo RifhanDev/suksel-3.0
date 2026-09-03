@@ -15,6 +15,8 @@ class TenderPrestasiKerjaItem extends Model
         'nama',
         'no_kontrak',
         'harga',
+        'wang_kos_prima',
+        'wang_peruntukan_semasa',
         'tarikh_tapak',
         'tempoh',
         'tarikh_siap',
@@ -23,12 +25,16 @@ class TenderPrestasiKerjaItem extends Model
         'kemajuan_sebenar',
         'kemajuan_jadual',
         'sort_order',
+        'jenis',
     ];
 
     protected $casts = [
-        'harga'            => 'decimal:2',
-        'kemajuan_sebenar' => 'decimal:2',
-        'kemajuan_jadual'  => 'decimal:2',
+        'harga'                  => 'decimal:2',
+        'wang_kos_prima'         => 'decimal:2',
+        'wang_peruntukan_semasa' => 'decimal:2',
+        'kemajuan_sebenar'       => 'decimal:2',
+        'kemajuan_jadual'        => 'decimal:2',
+        'jenis'                  => 'integer',
     ];
 
     public function parent()

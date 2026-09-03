@@ -502,6 +502,7 @@ class TenderDokumenContentBuilder
 
         return match (true) {
             str_contains($normalized, 'pengalaman kerja') => '/pengalaman-kerja',
+            str_contains($normalized, 'kakitangan teknikal') => '/kakitangan-teknikal',
             str_contains($normalized, 'kerja dalam tangan') => '/kerja-dalam-tangan',
             str_contains($normalized, 'profil petender') => '/profil-petender',
             str_contains($normalized, 'penyata bank') => '/penyata-bank',

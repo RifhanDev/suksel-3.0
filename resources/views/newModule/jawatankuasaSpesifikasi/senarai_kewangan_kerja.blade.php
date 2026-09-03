@@ -403,7 +403,7 @@
                                         </td>
                                     </tr>
                                 @empty
-                                    <tr><td colspan="2" class="text-center text-muted small py-3">Tiada item standard.</td></tr>
+                                    <tr class="empty-row"><td colspan="2" class="text-center text-muted small py-3">Tiada item standard.</td></tr>
                                 @endforelse
                             </tbody>
                         </table>
@@ -487,13 +487,15 @@ $(document).ready(function () {
 
         var kemaskiniButton = '-';
 
-        if (data.tajuk === 'Penyata Bulanan / Akaun Bank') {
+        var allowedTitles = ['Penyata Bulanan / Akaun Bank'];
+
+        if (data.tindakanUrl && data.tindakanUrl.trim() !== '' && data.tindakanUrl !== '-' && allowedTitles.includes(data.tajuk ? data.tajuk.trim() : '')) {
             kemaskiniButton =
                 '<a href="' + data.tindakanUrl + '" class="btn btn-sm btn-warning d-inline-flex align-items-center justify-content-center p-1" style="width:30px;height:30px;" title="Kemaskini">' +
                 EDIT_ICON +
                 '</a>';
         }
-
+        
         var formUpdatedAttr = (data.form_updated !== undefined) ? ' data-form-updated="' + data.form_updated + '"' : '';
 
         return $(
@@ -799,6 +801,17 @@ $(document).ready(function () {
         else            $('#tbl-empty-row').addClass('d-none');
     }
 
+    function syncStandardTableEmpty() {
+        var realCount = $('#tbl-standard-body tr').not('.empty-row').length;
+        if (realCount === 0) {
+            if ($('#tbl-standard-body .empty-row').length === 0) {
+                $('#tbl-standard-body').html('<tr class="empty-row"><td colspan="2" class="text-center text-muted small py-3">Tiada item standard.</td></tr>');
+            }
+        } else {
+            $('#tbl-standard-body .empty-row').remove();
+        }
+    }
+
     function updateStatusBadge(status) {
         if (status !== 'submitted') return;
         $('#status-badge')
@@ -855,8 +868,31 @@ $(document).ready(function () {
     $('.btn-hapus-kewangan').on('click', function () {
         var $checked = $('#tbl-kewangan .row-check-kewangan:checked');
         if ($checked.length === 0) { alert('Sila pilih sekurang-kurangnya satu rekod untuk dihapus.'); return; }
-        $checked.closest('tr').remove();
+        $checked.each(function () {
+            var $tr     = $(this).closest('tr');
+            var stdUuid = $tr.data('standard-item-uuid') || $tr.attr('data-standard-item-uuid');
+            var source  = $tr.data('source') || $tr.attr('data-source');
+            var tajuk   = $tr.find('[name="tajuk_dokumen[]"]').val() || $tr.find('td:eq(1) span').text().trim();
+
+            if (stdUuid || source === 'standard') {
+                if (stdUuid) {
+                    var existsInStandard = $('#tbl-standard-body tr[data-uuid="' + stdUuid + '"]').length > 0;
+                    if (!existsInStandard) {
+                        $('#tbl-standard-body .empty-row').remove();
+                        var newStdRow = $(
+                            '<tr data-tajuk="' + htmlEscape(tajuk) + '" data-uuid="' + htmlEscape(stdUuid) + '" data-type="standard" data-action-url="">' +
+                            '<td class="text-center"><input type="checkbox" class="form-check-input row-check-standard"></td>' +
+                            '<td>' + htmlEscape(tajuk) + '</td>' +
+                            '</tr>'
+                        );
+                        $('#tbl-standard-body').append(newStdRow);
+                    }
+                }
+            }
+            $tr.remove();
+        });
         $('#tbl-kewangan .check-all-kewangan').prop('checked', false);
+        syncStandardTableEmpty();
         syncTableEmpty();
         updateSkemaMaksima();
     });
@@ -963,8 +999,9 @@ $(document).ready(function () {
             var tajuk = $tr.data('tajuk') || $tr.find('td:last-child').text().trim();
             var uuid  = $tr.data('uuid') || '';
             $('#tbl-kewangan-body').append(buildStandardRow(tajuk, uuid));
-            $tr.hide();
+            $tr.remove();
         });
+        syncStandardTableEmpty();
         updateSkemaMaksima();
         syncTableEmpty();
         $('#tbl-standard .row-check-standard, #tbl-standard .check-all-standard').prop('checked', false);
