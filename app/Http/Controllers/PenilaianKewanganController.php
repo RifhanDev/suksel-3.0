@@ -1101,11 +1101,8 @@ class PenilaianKewanganController extends Controller
                 if ($eval) {
                     if ($isProfilPetender) {
                         $step3Evaluated = ($vendorRow['skor_modal_berbayar'] !== null && $vendorRow['skor_modal_berbayar'] !== '');
-                    } elseif ($isSpesifikasi) {
-                        $step3Evaluated = ($vendorRow['skor'] !== null && (float) $vendorRow['skor'] > 0);
                     } else {
-                        // Muat Naik: Step 1 saves skor=0. Step 3 saves skor=max_score (>0).
-                        $step3Evaluated = ($vendorRow['skor'] !== null && (float) $vendorRow['skor'] > 0);
+                        $step3Evaluated = ($vendorRow['skor'] !== null && $vendorRow['skor'] !== '');
                     }
                 }
                 $vendorRow['step3_evaluated'] = $step3Evaluated;
