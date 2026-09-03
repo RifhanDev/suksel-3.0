@@ -29,7 +29,11 @@ trait HandlesTenderFormAccess
                 ? $tender
                 : \App\Tender::query()->find($tender->id);
 
-            if (! $legacy || ! $legacy->isAppointedTo($user, 'spec')) {
+            // Any appointed committee member (pembuka/teknikal/kewangan/spesifikasi/etc.)
+            // may review vendor documents during evaluation — not only Spesifikasi.
+            $reviewJenis = ['spec', 'open', 'tech', 'fin', 'eval', 'harga'];
+
+            if (! $legacy || ! $legacy->isAppointedTo($user, $reviewJenis)) {
                 abort(403, 'Anda tidak dilantik pada tender ini.');
             }
 
