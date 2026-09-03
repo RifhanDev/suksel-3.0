@@ -781,28 +781,30 @@
 										</div>
 									</div>
 								</div>
-								@if (count($tender->cidb_grades) > 0)
-									<div class="text-center my-2">
-										<span class="badge bg-success">{{ $tender->mof_cidb_rule == 'or' ? 'ATAU' : 'DAN' }}</span>
+								@if (count($tender->cidb_grades) > 0 || count($tender->cidb_codes) > 0)
+									<div class="tender-code-divider">
+										<span>{{ $tender->mof_cidb_rule == 'and' ? 'DAN' : 'ATAU' }}</span>
 									</div>
 								@endif
 							@endif
 
-							@if (count($tender->cidb_grades) > 0)
+							@if (count($tender->cidb_grades) > 0 || count($tender->cidb_codes) > 0)
 								<div class="tender-tab-card mb-3">
 									<div class="card-body p-0">
 										<div class="table-responsive">
 											<table class="table tender-info-table mb-0">
-												<tr>
-													<th>Gred CIDB</th>
-													<td>
-														<ul class="mb-0">
-															@foreach ($tender->cidb_grades as $code)
-																<li>{!! tender_cidb_grade($code->code, Auth::user()) !!}</li>
-															@endforeach
-														</ul>
-													</td>
-												</tr>
+												@if (count($tender->cidb_grades) > 0)
+													<tr>
+														<th>Gred CIDB</th>
+														<td>
+															<ul class="mb-0">
+																@foreach ($tender->cidb_grades as $code)
+																	<li>{!! tender_cidb_grade($code->code, Auth::user()) !!}</li>
+																@endforeach
+															</ul>
+														</td>
+													</tr>
+												@endif
 
 												@if (count($tender->cidb_codes) > 0)
 													<?php $max_count = count($tender->cidb_code_groups); ?>

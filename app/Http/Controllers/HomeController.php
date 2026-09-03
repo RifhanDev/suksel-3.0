@@ -649,8 +649,8 @@ class HomeController extends Controller
 						$str   = [];
 						$str[] = '<div class="btn-group btn-group-vertical">';
 						if (empty($tender->approver_id)) $str[] = link_to_route('tenders.edit', 'Kemaskini', $tender->id, ['class' => 'btn btn-xs btn-primary']);
-						if ($tender->canCancel() && $tender->approver_id > 0)
-							$str[] = link_to_action('TendersController@cancel', 'Batal Siar', $tender->id, ['class' => 'btn btn-xs btn-danger']);
+						if ($tender->canCancelSiar() && $tender->approver_id > 0)
+							$str[] = link_to_action('TendersController@cancel', 'Batal Siar', $tender->id, ['class' => 'btn btn-xs btn-danger', 'onclick' => 'return confirm(\'Batal siar tender ini? Status akan kembali ke peringkat Penyediaan Iklan.\')']);
 						if ($tender->canUpdate() && empty($tender->approver_id))
 							$str[] = link_to_action('TendersController@publish', 'Siar', $tender->id, ['class' => 'btn btn-xs btn-warning']);
 						return implode('', $str);

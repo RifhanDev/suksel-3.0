@@ -71,6 +71,34 @@
 			font-weight: 500;
 		}
 
+		.tender-code-divider {
+			display: flex;
+			align-items: center;
+			gap: 0.75rem;
+			margin: 0 0 1.25rem;
+		}
+
+		.tender-code-divider::before,
+		.tender-code-divider::after {
+			content: '';
+			flex: 1;
+			height: 1px;
+			background: #e5e7eb;
+		}
+
+		.tender-code-divider span {
+			flex: none;
+			padding: 0.25rem 0.85rem;
+			background: #f8fafc;
+			border: 1px solid #e5e7eb;
+			border-radius: 999px;
+			color: #6b7280;
+			font-size: 0.7rem;
+			font-weight: 700;
+			text-transform: uppercase;
+			letter-spacing: 0.8px;
+		}
+
 		/* Side nav */
 		.vendor-side-nav .nav-link {
 			color: #475569;
@@ -960,13 +988,13 @@
 									</tr>
 								</table>
 							</div>
-							@if (count($tender->cidb_grades) > 0)
-								<div class="text-center my-2">
-									<span class="badge bg-success">{{ $tender->mof_cidb_rule == 'or' ? 'ATAU' : 'DAN' }}</span>
+							@if (count($tender->cidb_grades) > 0 || count($tender->cidb_codes) > 0)
+								<div class="tender-code-divider">
+									<span>{{ $tender->mof_cidb_rule == 'and' ? 'DAN' : 'ATAU' }}</span>
 								</div>
 							@endif
 						@endif
-						@if (count($tender->cidb_grades) > 0)
+						@if (count($tender->cidb_grades) > 0 || count($tender->cidb_codes) > 0)
 							<div class="vendor-tender-card">
 								<div class="vendor-tender-card-header">
 									<div class="header-icon"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
@@ -978,16 +1006,18 @@
 									<h6>Kod Bidang CIDB</h6>
 								</div>
 								<table class="info-table">
-									<tr>
-										<th>Gred CIDB</th>
-										<td>
-											<ul class="mb-0 ps-3">
-												@foreach ($tender->cidb_grades as $code)
-													<li>{!! tender_cidb_grade($code->code, Auth::user()) !!}</li>
-												@endforeach
-											</ul>
-										</td>
-									</tr>
+									@if (count($tender->cidb_grades) > 0)
+										<tr>
+											<th>Gred CIDB</th>
+											<td>
+												<ul class="mb-0 ps-3">
+													@foreach ($tender->cidb_grades as $code)
+														<li>{!! tender_cidb_grade($code->code, Auth::user()) !!}</li>
+													@endforeach
+												</ul>
+											</td>
+										</tr>
+									@endif
 									@if (count($tender->cidb_codes) > 0)
 										@php $max_count = count($tender->cidb_code_groups); @endphp
 										<tr>
