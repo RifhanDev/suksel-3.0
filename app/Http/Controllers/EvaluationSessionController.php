@@ -274,7 +274,8 @@ class EvaluationSessionController extends Controller
     {
         $user = Auth::user();
 
-        return (bool) ($user && ($user->hasRole('Admin') || $user->can('tender:specification-management')));
+        // Only Admin overrides — spec-management is granted to every committee member.
+        return (bool) ($user && $user->hasRole('Admin'));
     }
 
     // ─────────────────────────────────────────────────────────────────
