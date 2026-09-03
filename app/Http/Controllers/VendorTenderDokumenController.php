@@ -105,18 +105,24 @@ class VendorTenderDokumenController extends Controller
                         break;
                     }
                 }
-                if (! $absolutePath) {
-                    abort(404, 'Fail tidak dijumpai pada sistem.');
-                }
-                $downloadName = $pbFile->original_name ?: $pbFile->stored_name;
-                $mime = $pbFile->mime_type ?: (function_exists('mime_content_type') ? mime_content_type($absolutePath) : null) ?: 'application/pdf';
-                $ext = strtolower(pathinfo($downloadName, PATHINFO_EXTENSION));
-                $isPdf = ($ext === 'pdf' || str_contains(strtolower($mime), 'pdf'));
-                $disposition = $isPdf ? 'inline' : 'attachment';
+                if ($absolutePath && is_file($absolutePath)) {
+                    $downloadName = $pbFile->original_name ?: $pbFile->stored_name;
+                    $mime = $pbFile->mime_type ?: (function_exists('mime_content_type') ? mime_content_type($absolutePath) : null) ?: 'application/pdf';
+                    $ext = strtolower(pathinfo($downloadName, PATHINFO_EXTENSION));
+                    $isPdf = ($ext === 'pdf' || str_contains(strtolower($mime), 'pdf'));
+                    $disposition = $isPdf ? 'inline' : 'attachment';
 
-                return response()->file($absolutePath, [
-                    'Content-Type' => $mime,
-                    'Content-Disposition' => $disposition . '; filename="' . addslashes($downloadName) . '"',
+                    return response()->file($absolutePath, [
+                        'Content-Type' => $mime,
+                        'Content-Disposition' => $disposition . '; filename="' . addslashes($downloadName) . '"',
+                    ]);
+                }
+
+                return \App\Support\StosStoredFile::response([
+                    'uuid'          => $pbFile->uuid,
+                    'original_name' => $pbFile->original_name ?: $pbFile->stored_name,
+                    'path'          => $pbFile->path,
+                    'mime_type'     => $pbFile->mime_type ?: 'application/pdf',
                 ]);
             }
             abort(404, 'Fail tidak dijumpai.');
@@ -146,19 +152,24 @@ class VendorTenderDokumenController extends Controller
             }
         }
 
-        if (! $absolutePath || ! is_file($absolutePath)) {
-            abort(404, 'Fail tidak dijumpai.');
+        if ($absolutePath && is_file($absolutePath)) {
+            $downloadName = $file->original_name ?: $file->stored_name;
+            $mime = $file->mime_type ?: (function_exists('mime_content_type') ? mime_content_type($absolutePath) : null) ?: 'application/octet-stream';
+            $ext = strtolower(pathinfo($downloadName, PATHINFO_EXTENSION));
+            $isPdf = ($ext === 'pdf' || str_contains(strtolower($mime), 'pdf'));
+            $disposition = $isPdf ? 'inline' : 'attachment';
+
+            return response()->file($absolutePath, [
+                'Content-Type' => $mime,
+                'Content-Disposition' => $disposition . '; filename="' . addslashes($downloadName) . '"',
+            ]);
         }
 
-        $downloadName = $file->original_name ?: $file->stored_name;
-        $mime = $file->mime_type ?: (function_exists('mime_content_type') ? mime_content_type($absolutePath) : null) ?: 'application/octet-stream';
-        $ext = strtolower(pathinfo($downloadName, PATHINFO_EXTENSION));
-        $isPdf = ($ext === 'pdf' || str_contains(strtolower($mime), 'pdf'));
-        $disposition = $isPdf ? 'inline' : 'attachment';
-
-        return response()->file($absolutePath, [
-            'Content-Type' => $mime,
-            'Content-Disposition' => $disposition . '; filename="' . addslashes($downloadName) . '"',
+        return \App\Support\StosStoredFile::response([
+            'uuid'          => $file->uuid,
+            'original_name' => $file->original_name ?: $file->stored_name,
+            'path'          => $file->path,
+            'mime_type'     => $file->mime_type ?: 'application/octet-stream',
         ]);
     }
 

@@ -102,6 +102,10 @@
                                     <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-20 px-2.5 py-1.5 rounded-pill">
                                         <i class="bi bi-check-circle me-1"></i>Selesai
                                     </span>
+                                @elseif($reviewedCount > 0)
+                                    <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-20 px-2.5 py-1.5 rounded-pill">
+                                        <i class="bi bi-hourglass-split me-1"></i>Dalam Proses ({{ $reviewedCount }}/{{ $totalEligible }})
+                                    </span>
                                 @else
                                     <span class="badge bg-warning bg-opacity-10 text-warning-emphasis border border-warning border-opacity-20 px-2.5 py-1.5 rounded-pill">
                                         <i class="bi bi-clock me-1"></i>Menunggu Penilaian
@@ -742,8 +746,9 @@
 
                     <div class="row align-items-center g-2">
                         <div class="col-md-4">
-                            <label for="step3ModalBerbayarSkorInput" class="form-label fw-bold text-dark mb-1" style="font-size: 0.83rem;">
-                                Skor Modal Berbayar <span class="text-danger">*</span>
+                            <label for="step3ModalBerbayarSkorInput" class="form-label fw-bold text-dark mb-1 d-flex align-items-center gap-1" style="font-size: 0.83rem;">
+                                <span>Skor Modal Berbayar</span> <span class="text-danger">*</span>
+                                <span id="step3ModalBerbayarAutoBadge" class="badge bg-success-subtle text-success border border-success-subtle ms-1 font-monospace fw-normal" style="font-size: 0.65rem; display: none;" title="Skor dikira secara automatik mengikut julat modal"><i class="bi bi-magic me-1"></i>Auto</span>
                             </label>
                             <div class="input-group input-group-sm">
                                 <input type="number" step="0.01" min="0" id="step3ModalBerbayarSkorInput" class="form-control fw-bold text-center" placeholder="0.00">
@@ -777,8 +782,9 @@
 
                     <div class="row align-items-center g-2">
                         <div class="col-md-4">
-                            <label for="step3ModalDibenarkanSkorInput" class="form-label fw-bold text-dark mb-1" style="font-size: 0.83rem;">
-                                Skor Modal Dibenarkan <span class="text-danger">*</span>
+                            <label for="step3ModalDibenarkanSkorInput" class="form-label fw-bold text-dark mb-1 d-flex align-items-center gap-1" style="font-size: 0.83rem;">
+                                <span>Skor Modal Dibenarkan</span> <span class="text-danger">*</span>
+                                <span id="step3ModalDibenarkanAutoBadge" class="badge bg-info-subtle text-info border border-info-subtle ms-1 font-monospace fw-normal" style="font-size: 0.65rem; display: none;" title="Skor dikira secara automatik mengikut julat modal"><i class="bi bi-magic me-1"></i>Auto</span>
                             </label>
                             <div class="input-group input-group-sm">
                                 <input type="number" step="0.01" min="0" id="step3ModalDibenarkanSkorInput" class="form-control fw-bold text-center" placeholder="0.00">
@@ -1116,6 +1122,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     tdStatus.innerHTML = `
                         <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-20 px-2.5 py-1.5 rounded-pill">
                             <i class="bi bi-check-circle me-1"></i>Selesai
+                        </span>
+                    `;
+                } else if (evaluatedCount > 0) {
+                    tdStatus.innerHTML = `
+                        <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-20 px-2.5 py-1.5 rounded-pill">
+                            <i class="bi bi-hourglass-split me-1"></i>Dalam Proses (${evaluatedCount}/${totalEligible})
                         </span>
                     `;
                 } else {
@@ -1663,11 +1675,23 @@ document.addEventListener('DOMContentLoaded', function() {
         setVal('viewProfilModalBerbayar', mBerbayar > 0 ? 'RM ' + mBerbayar.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : 'RM 0.00');
         setVal('viewProfilModalDibenarkan', mDibenarkan > 0 ? 'RM ' + mDibenarkan.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : 'RM 0.00');
 
-        // 3. Render Modal Berbayar Scoring Reference Table
+        // 3. Render Modal Berbayar Scoring Reference Table & Auto Calculation
         const tbodyBerbayar = document.getElementById('step3ModalBerbayarScoringTbody');
         const berbayarItems = profilDetail.modal_berbayar_items || [];
         const maxBerbayar = parseFloat(profilDetail.max_modal_berbayar || 0);
         const fmtMaxBerbayar = (maxBerbayar % 1 === 0) ? maxBerbayar.toFixed(0) : maxBerbayar.toFixed(2);
+
+        let autoSkorBerbayar = null;
+        if (berbayarItems.length > 0) {
+            for (const item of berbayarItems) {
+                const dari = parseFloat(item.dari || 0);
+                const hingga = (item.hingga !== null && item.hingga !== undefined && item.hingga !== '') ? parseFloat(item.hingga) : null;
+                if (mBerbayar >= dari && (hingga === null || mBerbayar <= hingga)) {
+                    autoSkorBerbayar = parseFloat(item.skema || 0);
+                    break;
+                }
+            }
+        }
 
         if (tbodyBerbayar) {
             if (!berbayarItems.length) {
@@ -1693,23 +1717,42 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const elBerbayarInput = document.getElementById('step3ModalBerbayarSkorInput');
         const elBerbayarMaxLabel = document.getElementById('step3ModalBerbayarMaxLabel');
+        const elBerbayarBadge = document.getElementById('step3ModalBerbayarAutoBadge');
         if (elBerbayarMaxLabel) elBerbayarMaxLabel.textContent = '/ ' + fmtMaxBerbayar;
         if (elBerbayarInput) {
             elBerbayarInput.setAttribute('max', maxBerbayar);
-            elBerbayarInput.value = (vendorObj.skor_modal_berbayar !== null && vendorObj.skor_modal_berbayar !== undefined && vendorObj.skor_modal_berbayar !== '') ? vendorObj.skor_modal_berbayar : '';
+            const hasSavedBerbayar = (vendorObj.skor_modal_berbayar !== null && vendorObj.skor_modal_berbayar !== undefined && vendorObj.skor_modal_berbayar !== '');
+            let valToSet = hasSavedBerbayar ? vendorObj.skor_modal_berbayar : (autoSkorBerbayar !== null ? autoSkorBerbayar : '');
+            elBerbayarInput.value = valToSet;
+            if (elBerbayarBadge) {
+                elBerbayarBadge.style.display = (!hasSavedBerbayar && autoSkorBerbayar !== null) ? 'inline-block' : 'none';
+            }
             elBerbayarInput.oninput = function() {
                 let val = parseFloat(this.value);
                 if (!isNaN(val) && val > maxBerbayar) {
                     this.value = maxBerbayar;
                 }
+                if (elBerbayarBadge) elBerbayarBadge.style.display = 'none';
             };
         }
 
-        // 4. Render Modal Dibenarkan Scoring Reference Table
+        // 4. Render Modal Dibenarkan Scoring Reference Table & Auto Calculation
         const tbodyDibenarkan = document.getElementById('step3ModalDibenarkanScoringTbody');
         const dibenarkanItems = profilDetail.modal_dibenarkan_items || [];
         const maxDibenarkan = parseFloat(profilDetail.max_modal_dibenarkan || 0);
         const fmtMaxDibenarkan = (maxDibenarkan % 1 === 0) ? maxDibenarkan.toFixed(0) : maxDibenarkan.toFixed(2);
+
+        let autoSkorDibenarkan = null;
+        if (dibenarkanItems.length > 0) {
+            for (const item of dibenarkanItems) {
+                const dari = parseFloat(item.dari || 0);
+                const hingga = (item.hingga !== null && item.hingga !== undefined && item.hingga !== '') ? parseFloat(item.hingga) : null;
+                if (mDibenarkan >= dari && (hingga === null || mDibenarkan <= hingga)) {
+                    autoSkorDibenarkan = parseFloat(item.skema || 0);
+                    break;
+                }
+            }
+        }
 
         if (tbodyDibenarkan) {
             if (!dibenarkanItems.length) {
@@ -1735,15 +1778,22 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const elDibenarkanInput = document.getElementById('step3ModalDibenarkanSkorInput');
         const elDibenarkanMaxLabel = document.getElementById('step3ModalDibenarkanMaxLabel');
+        const elDibenarkanBadge = document.getElementById('step3ModalDibenarkanAutoBadge');
         if (elDibenarkanMaxLabel) elDibenarkanMaxLabel.textContent = '/ ' + fmtMaxDibenarkan;
         if (elDibenarkanInput) {
             elDibenarkanInput.setAttribute('max', maxDibenarkan);
-            elDibenarkanInput.value = (vendorObj.skor_modal_dibenarkan !== null && vendorObj.skor_modal_dibenarkan !== undefined && vendorObj.skor_modal_dibenarkan !== '') ? vendorObj.skor_modal_dibenarkan : '';
+            const hasSavedDibenarkan = (vendorObj.skor_modal_dibenarkan !== null && vendorObj.skor_modal_dibenarkan !== undefined && vendorObj.skor_modal_dibenarkan !== '');
+            let valToSet = hasSavedDibenarkan ? vendorObj.skor_modal_dibenarkan : (autoSkorDibenarkan !== null ? autoSkorDibenarkan : '');
+            elDibenarkanInput.value = valToSet;
+            if (elDibenarkanBadge) {
+                elDibenarkanBadge.style.display = (!hasSavedDibenarkan && autoSkorDibenarkan !== null) ? 'inline-block' : 'none';
+            }
             elDibenarkanInput.oninput = function() {
                 let val = parseFloat(this.value);
                 if (!isNaN(val) && val > maxDibenarkan) {
                     this.value = maxDibenarkan;
                 }
+                if (elDibenarkanBadge) elDibenarkanBadge.style.display = 'none';
             };
         }
 
