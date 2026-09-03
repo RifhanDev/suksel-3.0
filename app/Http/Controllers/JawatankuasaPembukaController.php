@@ -524,11 +524,15 @@ class JawatankuasaPembukaController extends Controller
 
                 $formUrl = $vendorItem['admin_content']['form']['url'] ?? ($item['admin_content']['form']['url'] ?? null);
                 if ($formUrl && ($item['action'] ?? '') === 'online_form') {
-                    $separator = str_contains($formUrl, '?') ? '&' : '?';
-                    if (! str_contains($formUrl, 'vendor_id=')) {
+                    // Always bind this row's vendor — never reuse another vendor_id already on the URL.
+                    if (preg_match('/([?&])vendor_id=\d+/', $formUrl)) {
+                        $formUrl = preg_replace('/([?&])vendor_id=\d+/', '${1}vendor_id=' . $vendorId, $formUrl, 1);
+                    } else {
+                        $separator = str_contains($formUrl, '?') ? '&' : '?';
                         $formUrl .= $separator . 'vendor_id=' . $vendorId;
-                        $separator = '&';
                     }
+
+                    $separator = str_contains($formUrl, '?') ? '&' : '?';
                     if (! str_contains($formUrl, 'modal=1')) {
                         $formUrl .= $separator . 'modal=1';
                         $separator = '&';

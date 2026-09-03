@@ -1177,6 +1177,19 @@
 						? modalEl.dataset.pengalamanKerjaUrlTemplate
 						: modalEl.dataset.kerjaDalamTanganUrlTemplate;
 					formUrl = template + '?vendor_id=' + vendor.vendor_id + '&modal=1&mode=view';
+				} else {
+					// Force this row's vendor_id so every "Lihat Borang" opens the correct petender.
+					if (/([?&])vendor_id=\d+/.test(formUrl)) {
+						formUrl = formUrl.replace(/([?&])vendor_id=\d+/, '$1vendor_id=' + vendor.vendor_id);
+					} else {
+						formUrl += (formUrl.indexOf('?') === -1 ? '?' : '&') + 'vendor_id=' + vendor.vendor_id;
+					}
+					if (formUrl.indexOf('modal=1') === -1) {
+						formUrl += (formUrl.indexOf('?') === -1 ? '?' : '&') + 'modal=1';
+					}
+					if (formUrl.indexOf('mode=view') === -1) {
+						formUrl += (formUrl.indexOf('?') === -1 ? '?' : '&') + 'mode=view';
+					}
 				}
 				docHtml = '<a href="#" data-url="' + escapeHtml(formUrl) + '" data-name="' + (isSpec ? 'Spesifikasi ' : 'Borang ') + escapeHtml(vendor.kod || vendor.name) + '" data-vendor-id="' + vendor.vendor_id + '" class="' + LIHAT_LINK_CLASS + '"><i class="bi bi-file-earmark-pdf-fill"></i>' + label + '</a>';
 			}
@@ -1942,7 +1955,9 @@
 			$('#previewIframe').attr('src', url);
 		} else if (isProbablyPage) {
 			$icon.addClass('bi bi-window text-success fs-5');
-			$('#previewIframe').attr('src', url);
+			// Bust cache so switching petender always reloads the correct vendor form.
+			const bust = (url.indexOf('?') === -1 ? '?' : '&') + '_ts=' + Date.now();
+			$('#previewIframe').attr('src', url + bust);
 		} else {
 			$icon.addClass('bi bi-file-earmark-zip text-warning fs-5');
 			$('#previewSpinner').addClass('d-none');
