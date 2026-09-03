@@ -395,6 +395,32 @@ class PenilaianKewanganController extends Controller
             ];
         }
 
+        $penyataBankFiles = \Illuminate\Support\Facades\DB::table('penyata_bank_files')
+            ->join('penyata_banks', 'penyata_banks.id', '=', 'penyata_bank_files.penyata_bank_id')
+            ->where('penyata_banks.tender_id', $tender->id)
+            ->select('penyata_bank_files.*')
+            ->get()
+            ->map(function ($f) {
+                $path = $f->path ?? '';
+                $cleanPath = ltrim(str_replace('public/', '', $path), '/');
+                return [
+                    'uuid'          => $f->uuid,
+                    'name'          => $f->original_name,
+                    'original_name' => $f->original_name,
+                    'path'          => $cleanPath,
+                    'file_path'     => $cleanPath,
+                    'url'           => ! empty($f->uuid) ? route('tenderDokumen.download', $f->uuid) : asset('storage/' . $cleanPath),
+                    'size'          => $f->size,
+                    'uploaded_by'   => $f->uploaded_by,
+                ];
+            })
+            ->all();
+
+        if (! isset($penyataBankConfig['files']) || ! is_array($penyataBankConfig['files'])) {
+            $penyataBankConfig['files'] = [];
+        }
+        $penyataBankConfig['files'] = array_merge($penyataBankConfig['files'], $penyataBankFiles);
+
         $vendorFormPayloads = \Illuminate\Support\Facades\DB::table('tender_vendor_form_payloads')
             ->where('tender_id', $tender->id)
             ->where('form_key', 'penyata_bank')
