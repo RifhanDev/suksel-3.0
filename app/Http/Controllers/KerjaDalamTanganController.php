@@ -286,9 +286,12 @@ class KerjaDalamTanganController extends Controller
         $remote = $this->fetchOnlineFormData('kerja-dalam-tangan', $tender->uuid, (int) $request->query('vendor_id'));
         $resolved = $this->resolveVendorFormDisplayData($tender, 'kerja_dalam_tangan', $remote ?: null);
 
+        $dokumens = is_array($resolved['dokumens'] ?? null) ? $resolved['dokumens'] : [];
+        $dokumens = StosFormFileController::rewriteDokumenUrls($tender, 'kerja-dalam-tangan', $dokumens);
+
         return view('tenders.dokumen.review.kerja_dalam_tangan_review', array_merge([
             'items'    => $resolved['items'] ?? ($local['items'] ?? []),
-            'dokumens' => $resolved['dokumens'] ?? [],
+            'dokumens' => $dokumens,
         ], $this->formViewVars($tender)));
     }
 

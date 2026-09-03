@@ -281,9 +281,12 @@ class PengalamanKerjaController extends Controller
         $remote = $this->fetchOnlineFormData('pengalaman-kerja', $tender->uuid, (int) $request->query('vendor_id'));
         $resolved = $this->resolveVendorFormDisplayData($tender, 'pengalaman_kerja', $remote ?: null);
 
+        $dokumens = is_array($resolved['dokumens'] ?? null) ? $resolved['dokumens'] : [];
+        $dokumens = StosFormFileController::rewriteDokumenUrls($tender, 'pengalaman-kerja', $dokumens);
+
         return view('tenders.dokumen.review.pengalaman_kerja_review', array_merge([
             'items'    => $resolved['items'] ?? ($local['items'] ?? []),
-            'dokumens' => $resolved['dokumens'] ?? [],
+            'dokumens' => $dokumens,
         ], $this->formViewVars($tender)));
     }
 
