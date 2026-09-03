@@ -82,22 +82,83 @@ class VendorTenderDokumenController extends Controller
 
     public function download(string $fileUuid)
     {
-        $file = TenderVendorDokumenFile::query()->where('uuid', $fileUuid)->firstOrFail();
-        $tender = Tender::query()->findOrFail($file->tender_id);
+        $file = TenderVendorDokumenFile::query()->where('uuid', $fileUuid)->first();
 
+        if (! $file) {
+            $pbFile = \App\Models\PenyataBankFile::query()->where('uuid', $fileUuid)->first();
+            if ($pbFile) {
+                $rawPath = ltrim(str_replace('public/', '', (string) $pbFile->path), '/');
+                $candidates = [
+                    storage_path('app/private/' . $rawPath),
+                    storage_path('app/public/' . $rawPath),
+                    storage_path('app/' . $rawPath),
+                    public_path('storage/' . $rawPath),
+                    public_path($rawPath),
+                    base_path('../STOS-EPENILAIAN-WEB/storage/app/private/' . $rawPath),
+                    base_path('../STOS-EPENILAIAN-WEB/storage/app/public/' . $rawPath),
+                    base_path('../STOS-EPENILAIAN-WEB/storage/app/' . $rawPath),
+                ];
+                $absolutePath = null;
+                foreach ($candidates as $cand) {
+                    if (is_file($cand)) {
+                        $absolutePath = $cand;
+                        break;
+                    }
+                }
+                if (! $absolutePath) {
+                    abort(404, 'Fail tidak dijumpai pada sistem.');
+                }
+                $downloadName = $pbFile->original_name ?: $pbFile->stored_name;
+                $mime = $pbFile->mime_type ?: (function_exists('mime_content_type') ? mime_content_type($absolutePath) : null) ?: 'application/pdf';
+                $ext = strtolower(pathinfo($downloadName, PATHINFO_EXTENSION));
+                $isPdf = ($ext === 'pdf' || str_contains(strtolower($mime), 'pdf'));
+                $disposition = $isPdf ? 'inline' : 'attachment';
+
+                return response()->file($absolutePath, [
+                    'Content-Type' => $mime,
+                    'Content-Disposition' => $disposition . '; filename="' . addslashes($downloadName) . '"',
+                ]);
+            }
+            abort(404, 'Fail tidak dijumpai.');
+        }
+
+        $tender = Tender::query()->findOrFail($file->tender_id);
         $this->assertCanAccessTenderFile($tender, (int) $file->vendor_id);
 
         $absolutePath = $file->absolutePath();
+        if (! $absolutePath || ! is_file($absolutePath)) {
+            $rawPath = ltrim(str_replace('public/', '', (string) $file->path), '/');
+            $candidates = [
+                storage_path('app/private/' . $rawPath),
+                storage_path('app/public/' . $rawPath),
+                storage_path('app/' . $rawPath),
+                public_path('storage/' . $rawPath),
+                public_path($rawPath),
+                base_path('../STOS-EPENILAIAN-WEB/storage/app/private/' . $rawPath),
+                base_path('../STOS-EPENILAIAN-WEB/storage/app/public/' . $rawPath),
+                base_path('../STOS-EPENILAIAN-WEB/storage/app/' . $rawPath),
+            ];
+            foreach ($candidates as $cand) {
+                if (is_file($cand)) {
+                    $absolutePath = $cand;
+                    break;
+                }
+            }
+        }
+
         if (! $absolutePath || ! is_file($absolutePath)) {
             abort(404, 'Fail tidak dijumpai.');
         }
 
         $downloadName = $file->original_name ?: $file->stored_name;
-        $mime = $file->mime_type ?: mime_content_type($absolutePath) ?: 'application/octet-stream';
+        $mime = $file->mime_type ?: (function_exists('mime_content_type') ? mime_content_type($absolutePath) : null) ?: 'application/octet-stream';
+        $ext = strtolower(pathinfo($downloadName, PATHINFO_EXTENSION));
+        $isPdf = ($ext === 'pdf' || str_contains(strtolower($mime), 'pdf'));
+        $disposition = $isPdf ? 'inline' : 'attachment';
 
         return response()->file($absolutePath, [
             'Content-Type' => $mime,
-            'Content-Disposition' => 'inline; filename="' . addslashes($downloadName) . '"',
+            'Content-Disposition' => $disposition . '; filename="' . addslashes($downloadName) . '"',
         ]);
     }
 
