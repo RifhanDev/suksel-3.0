@@ -250,7 +250,9 @@
         <!-- ===================== SECTION 1: MAKLUMAT PROFIL PETENDER ===================== -->
         @if ($showVendorForm)
         @php
-            $lockVendorProfile = ($vendorFormMode ?? false);
+            // Lock identity fields whenever reviewing a specific vendor (vendor fill OR staff mode=view).
+            $lockVendorProfile = ($vendorFormMode ?? false)
+                || (($viewOnly ?? false) && ! empty($vendorProfilDefaults));
             $vp = $vendorProfilDefaults ?? [];
         @endphp
         <div class="content-card mb-4 p-0">
@@ -764,7 +766,7 @@ $(document).ready(function () {
 
     var profilData = @json($profilData ?? null);
     var vendorProfilDefaults = @json($vendorProfilDefaults ?? null);
-    var LOCK_VENDOR_PROFILE = @json($vendorFormMode ?? false);
+    var LOCK_VENDOR_PROFILE = @json($lockVendorProfile ?? false);
     var STORE_URL  = '{{ route("profilPetender.store", $tender->uuid) }}';
     var CSRF_TOKEN = '{{ csrf_token() }}';
     var KEMBALI_URL = @json($kembaliUrl);
