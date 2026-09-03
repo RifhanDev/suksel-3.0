@@ -532,6 +532,7 @@ Route::middleware(['auth'])->group(function () {
 	Route::put('/kakitangan-teknikal/{uuid}', [KakitanganTeknikalController::class, 'update'])->name('kakitanganTeknikal.update');
 	Route::delete('/kakitangan-teknikal/{uuid}', [KakitanganTeknikalController::class, 'destroy'])->name('kakitanganTeknikal.destroy');
 	Route::delete('/kakitangan-teknikal-dokumen/{uuid}', [KakitanganTeknikalController::class, 'destroyDokumen'])->name('kakitanganTeknikal.dokumen.destroy');
+	Route::get('/kakitangan-teknikal-dokumen/{uuid}/download', [KakitanganTeknikalController::class, 'downloadDokumen'])->name('kakitanganTeknikal.dokumen.download');
 	Route::post('/senarai-teknikal/{tenderUuid}/kakitangan-teknikal-dokumen-umum', [KakitanganTeknikalController::class, 'uploadGeneralDokumen'])->name('senaraiTeknikal.kakitanganTeknikal.uploadGeneralDokumen');
 	Route::get('/senarai-teknikal/{tenderUuid}/kerja-dalam-tangan', [KerjaDalamTanganController::class, 'create'])->name('senaraiTeknikal.kerjaDalamTangan');
 	Route::post('/senarai-teknikal/{tenderUuid}/kerja-dalam-tangan', [KerjaDalamTanganController::class, 'store'])->name('senaraiTeknikal.kerjaDalamTangan.store');
