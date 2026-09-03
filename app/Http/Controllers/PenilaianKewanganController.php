@@ -329,20 +329,6 @@ class PenilaianKewanganController extends Controller
             ->where('tender_id', $tender->id)
             ->first();
 
-        $vendorFormPayloads = \App\Models\TenderVendorFormPayload::query()
-            ->where('tender_id', $tender->id)
-            ->whereIn('form_key', ['penyata_bank', 'penyata-bank'])
-            ->get()
-            ->keyBy('vendor_id')
-            ->map(function ($item) {
-                return [
-                    'vendor_id' => (int) $item->vendor_id,
-                    'payload'   => $item->payload ?? [],
-                    'status'    => $item->status,
-                ];
-            })
-            ->all();
-
         $penyataBankConfig = [
             'dari_bulan'    => $penyataBankRecord?->dari_bulan,
             'dari_tahun'    => $penyataBankRecord?->dari_tahun,
@@ -409,16 +395,6 @@ class PenilaianKewanganController extends Controller
             ];
         }
 
-        $penyataBankConfig['files'] = $penyataBankRecord?->files?->map(function ($file) {
-            return [
-                'id'            => $file->id,
-                'original_name' => $file->original_name,
-                'name'          => $file->original_name,
-                'path'          => $file->path,
-                'url'           => asset('storage/' . $file->path),
-            ];
-        })->values()->all() ?? [];
-
         $progress = null;
         if ($tender) {
             $progress = TenderKewanganProgress::query()->firstOrCreate(
@@ -461,7 +437,6 @@ class PenilaianKewanganController extends Controller
             'pembekalTidakMelepasi',
             'pembekalBelumDinilai',
             'penyataBankConfig',
-            'vendorFormPayloads',
             'rumusanStep3Data',
             'rumusanLaporanData',
             'laporanRecord',
