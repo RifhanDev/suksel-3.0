@@ -235,13 +235,33 @@ class StandardChecklistItemSeeder extends Seeder
             ],
             [
                 'category'              => 'kewangan_kerja',
+                'type'                  => 'borang_atas_talian',
+                'title'                 => 'Senarai Pengalaman Kerja',
+                'mechanism_default'     => null,
+                'vendor_action_default' => null,
+                'action_url'            => '/pengalaman-kerja',
+                'is_active'             => true,
+                'sort_order'            => 5,
+            ],
+            [
+                'category'              => 'kewangan_kerja',
+                'type'                  => 'borang_atas_talian',
+                'title'                 => 'Senarai Kakitangan Teknikal',
+                'mechanism_default'     => null,
+                'vendor_action_default' => null,
+                'action_url'            => '/kakitangan-teknikal',
+                'is_active'             => true,
+                'sort_order'            => 6,
+            ],
+            [
+                'category'              => 'kewangan_kerja',
                 'type'                  => 'standard',
                 'title'                 => 'Laporan Bank atau Borang CA',
                 'mechanism_default'     => null,
                 'vendor_action_default' => null,
                 'action_url'            => null,
                 'is_active'             => true,
-                'sort_order'            => 5,
+                'sort_order'            => 7,
             ],
             [
                 'category'              => 'kewangan_kerja',
@@ -251,7 +271,7 @@ class StandardChecklistItemSeeder extends Seeder
                 'vendor_action_default' => null,
                 'action_url'            => null,
                 'is_active'             => true,
-                'sort_order'            => 6,
+                'sort_order'            => 8,
             ],
         ];
 

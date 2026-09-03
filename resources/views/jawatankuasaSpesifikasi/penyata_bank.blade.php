@@ -216,11 +216,30 @@
             <div class="row mb-3">
                 <div class="col-12 col-md-4">
                     <label class="form-label fw-semibold small">Jenis Skor <span class="text-danger">*</span></label>
-                    <select name="jenis_skor_purata" class="form-select form-select-sm jenis-skor-select" data-target="#panel-purata-penyata">
+                    <select name="jenis_skor_purata" class="form-select form-select-sm jenis-skor-select-purata">
                         <option value="">— Sila pilih —</option>
                         <option value="manual">Manual</option>
-                        <option value="automatik" disabled>Automatik</option>
+                        <option value="automatik">Automatik</option>
                     </select>
+                </div>
+            </div>
+
+            <!-- Automatik panel — calculated read-only rows -->
+            <div id="panel-purata-automatik" class="d-none">
+                <div class="table-responsive">
+                    <table class="table table-modern align-middle mb-0 w-100" style="border:1px solid #e2e8f0;">
+                        <thead>
+                            <tr>
+                                <th class="text-center py-3" style="width:55px;">Bil</th>
+                                <th class="py-3">Dari (RM)</th>
+                                <th class="py-3">Hingga (RM)</th>
+                                <th class="py-3 text-center" style="width:120px;">Skema</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbl-purata-auto-body">
+                            <!-- rendered by JS -->
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
@@ -691,6 +710,54 @@ $(document).ready(function () {
     }
 
     // ── Purata scoring table (PTJ) ────────────────────────────────────────────
+    var AUTOMATIK_ROWS_PURATA = @json($automatikRowsPurata ?? []);
+
+    var keAtasBadge =
+        '<span class="d-inline-flex align-items-center gap-1 px-2 py-1 rounded-2 fw-semibold" ' +
+        'style="background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;font-size:0.78rem;">' +
+            '<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'11\' height=\'11\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2.5\' stroke-linecap=\'round\' stroke-linejoin=\'round\'>' +
+                '<line x1=\'12\' y1=\'19\' x2=\'12\' y2=\'5\'></line>' +
+                '<polyline points=\'5 12 12 5 19 12\'></polyline>' +
+            '</svg>' +
+            'Ke Atas' +
+        '</span>';
+
+    function renderAutomatikRows(tbodyId, namePrefix, rows) {
+        var $tbody = $('#' + tbodyId);
+        var html   = '';
+        $.each(rows, function (i, row) {
+            var hinggaDisplay = row.hingga !== null ? '<span class="fw-semibold" style="font-size:0.85rem;">' + formatRm(row.hingga) + '</span>' : keAtasBadge;
+            var hinggaValue   = row.hingga !== null ? parseFloat(row.hingga).toFixed(2) : '';
+            html +=
+                '<tr>' +
+                '<td class="text-center fw-semibold text-muted" style="font-size:0.8rem;">' + (i + 1) + '</td>' +
+                '<td class="fw-semibold" style="font-size:0.85rem;">' + formatRm(row.dari) + '<input type="hidden" name="' + namePrefix + '_dari[]" value="' + parseFloat(row.dari).toFixed(2) + '"></td>' +
+                '<td>' + hinggaDisplay + '<input type="hidden" name="' + namePrefix + '_hingga[]" value="' + hinggaValue + '"></td>' +
+                '<td class="text-center fw-semibold" style="font-size:0.85rem;">' + row.skema + '<input type="hidden" name="' + namePrefix + '_skema[]" value="' + row.skema + '"></td>' +
+                '</tr>';
+        });
+        $tbody.html(html);
+    }
+
+    function handleJenisSkor(val, manualPanelId, autoPanelId, autoTbodyId, namePrefix, automatikRows) {
+        var $manual = $('#' + manualPanelId);
+        var $auto   = $('#' + autoPanelId);
+
+        $manual.addClass('d-none');
+        $auto.addClass('d-none');
+        $manual.find('input, select').prop('disabled', true);
+        $auto.find('input').prop('disabled', true);
+
+        if (val === 'manual') {
+            $manual.removeClass('d-none');
+            $manual.find('input, select').prop('disabled', false);
+        } else if (val === 'automatik') {
+            renderAutomatikRows(autoTbodyId, namePrefix, automatikRows);
+            $auto.removeClass('d-none');
+            $auto.find('input').prop('disabled', false);
+        }
+    }
+
     var DELETE_ROW_BTN =
         '<button type="button" class="btn btn-sm btn-hapus-row d-inline-flex align-items-center justify-content-center p-0" ' +
         'style="width:28px;height:28px;border-radius:6px;background:#fee2e2;color:#ef4444;border:none;" title="Buang baris">' +
@@ -749,13 +816,14 @@ $(document).ready(function () {
             }
         });
 
-        $('.jenis-skor-select').on('change', function () {
-            var $panel = $($(this).data('target'));
-            $(this).val() === 'manual' ? $panel.removeClass('d-none') : $panel.addClass('d-none');
+        $('.jenis-skor-select-purata').on('change', function () {
+            handleJenisSkor($(this).val(), 'panel-purata-penyata', 'panel-purata-automatik', 'tbl-purata-auto-body', 'purata', AUTOMATIK_ROWS_PURATA);
         });
 
         if (penyataData && penyataData.jenis_skor_purata) {
-            $('[name="jenis_skor_purata"]').val(penyataData.jenis_skor_purata).trigger('change');
+            $('[name="jenis_skor_purata"]').val(penyataData.jenis_skor_purata);
+            handleJenisSkor(penyataData.jenis_skor_purata, 'panel-purata-penyata', 'panel-purata-automatik', 'tbl-purata-auto-body', 'purata', AUTOMATIK_ROWS_PURATA);
+
             if (penyataData.jenis_skor_purata === 'manual' && penyataData.scoring_items && penyataData.scoring_items.length) {
                 $('#tbl-purata-body').empty();
                 penyataData.scoring_items.forEach(function (s, i) {
@@ -774,15 +842,15 @@ $(document).ready(function () {
     }
 
     // ── Amount input formatting ───────────────────────────────────────────────
-    $(document).on('focus',  '.amount-input', function () {
+    $(document).on('focus',  '.amount-input:not(.vendor-profile-locked)', function () {
         var raw = $(this).val().replace(/,/g, '');
         $(this).val(parseFloat(raw) === 0 ? '' : raw);
     });
-    $(document).on('blur',   '.amount-input', function () {
+    $(document).on('blur',   '.amount-input:not(.vendor-profile-locked)', function () {
         var val = $(this).val();
         if (val !== '') $(this).val(formatRm(parseRm(val)));
     });
-    $(document).on('input',  '.amount-input', function () {
+    $(document).on('input',  '.amount-input:not(.vendor-profile-locked)', function () {
         $(this).val($(this).val().replace(/[^\d.]/g, ''));
     });
 
@@ -867,6 +935,15 @@ $(document).ready(function () {
                         dari:   parseRm($(this).find('[name="purata_dari[]"]').val()),
                         hingga: hinggaVal !== '' ? parseRm(hinggaVal) : null,
                         skema:  $(this).find('[name="purata_skema[]"]').val() || null,
+                    });
+                });
+            } else if (jenisSkor === 'automatik') {
+                $('#tbl-purata-auto-body tr').each(function () {
+                    var h = $(this).find('[name="purata_hingga[]"]').val();
+                    scoringItems.push({
+                        dari:   parseFloat($(this).find('[name="purata_dari[]"]').val()) || 0,
+                        hingga: h !== '' ? parseFloat(h) : null,
+                        skema:  $(this).find('[name="purata_skema[]"]').val() || '',
                     });
                 });
             }

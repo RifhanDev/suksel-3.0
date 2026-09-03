@@ -224,7 +224,11 @@
 
                 <p class="borang-subtitle mb-3">Pengalaman Kerja Dalam Lima (5) Tahun Lepas.</p>
 
-                <!-- Table -->
+    @php
+        $isKerja = $isKerja ?? ((int) ($tender->kategori_perolehan_id ?? 0) === 3 || strtolower($tender->kategori_perolehan_name ?? '') === 'kerja');
+    @endphp
+
+    <!-- Table -->
                 <div class="table-responsive">
                     <table id="tbl-pengalaman" class="table table-modern align-middle mb-0 w-100">
                         <thead>
@@ -233,6 +237,10 @@
                                 <th class="py-3" style="min-width:220px;">Senarai Kerja Yang Disiapkan</th>
                                 <th class="py-3" style="min-width:140px;">PIC</th>
                                 <th class="py-3" style="width:160px;">Nombor Telefon PIC</th>
+                                @if($isKerja)
+                                <th class="text-end py-3" style="width:150px;">Wang Kos Prima (RM)</th>
+                                <th class="text-end py-3" style="width:160px;">Wang Peruntukan Semasa (RM)</th>
+                                @endif
                                 <th class="text-end py-3" style="width:150px;">Nilai Kerja (RM)</th>
                                 <th class="text-center py-3" style="width:80px;"></th>
                             </tr>
@@ -242,7 +250,7 @@
                         </tbody>
                         <tfoot>
                             <tr style="border-top: 2px solid #e2e8f0;">
-                                <th colspan="4" class="text-end text-uppercase text-muted" style="font-size:0.75rem;">Jumlah</th>
+                                <th colspan="{{ $isKerja ? '6' : '4' }}" class="text-end text-uppercase text-muted" style="font-size:0.75rem;">Jumlah</th>
                                 <th class="text-end fw-bold" id="total-nilai" style="font-size:0.875rem; color:#1e293b;">0.00</th>
                                 <th></th>
                             </tr>
@@ -347,8 +355,9 @@ function showPkToast(type, message) {
 
 $(document).ready(function () {
 
-    // ── Existing data from PHP ────────────────────────────────────────
+    // ── Existing data & Category flag from PHP ───────────────────────
     var existingData = @json($existingData);
+    var isKerja = @json($isKerja);
 
     // ── Row template ─────────────────────────────────────────────────
     var ADD_BTN =
@@ -362,19 +371,34 @@ $(document).ready(function () {
 
     function buildRow(bil, data) {
         data = data || {};
+        var kosPrimaFormatted = (data.wang_kos_prima !== null && data.wang_kos_prima !== undefined && data.wang_kos_prima !== '')
+            ? parseFloat(data.wang_kos_prima).toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+            : '';
+        var peruntukanSemasaFormatted = (data.wang_peruntukan_semasa !== null && data.wang_peruntukan_semasa !== undefined && data.wang_peruntukan_semasa !== '')
+            ? parseFloat(data.wang_peruntukan_semasa).toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+            : '';
         var nilaiFormatted = data.nilai_kerja
             ? parseFloat(data.nilai_kerja).toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
             : '';
-        return $('<tr class="pengalaman-row">' +
+
+        var html = '<tr class="pengalaman-row">' +
             '<td class="text-center row-bil fw-semibold text-muted" style="font-size:0.8rem;">' + bil + '</td>' +
             '<td><input type="text" name="pengalaman_tajuk[]" class="form-control form-control-sm" placeholder="Senarai kerja yang disiapkan..." value="' + $('<div/>').text(data.tajuk || '').html() + '"></td>' +
             '<td><input type="text" name="pengalaman_pic[]" class="form-control form-control-sm" placeholder="PIC..." value="' + $('<div/>').text(data.pic || '').html() + '"></td>' +
-            '<td><input type="text" name="pengalaman_telefon[]" class="form-control form-control-sm" placeholder="Nombor telefon PIC" value="' + $('<div/>').text(data.telefon_pic || '').html() + '"></td>' +
-            '<td><input type="text" name="pengalaman_nilai[]" class="form-control form-control-sm text-end nilai-kerja" placeholder="0.00" value="' + nilaiFormatted + '"></td>' +
+            '<td><input type="text" name="pengalaman_telefon[]" class="form-control form-control-sm" placeholder="Nombor telefon PIC" value="' + $('<div/>').text(data.telefon_pic || '').html() + '"></td>';
+
+        if (isKerja) {
+            html += '<td><input type="text" name="pengalaman_wang_kos_prima[]" class="form-control form-control-sm text-end wang-kos-prima" placeholder="0.00" value="' + kosPrimaFormatted + '"></td>' +
+                    '<td><input type="text" name="pengalaman_wang_peruntukan_semasa[]" class="form-control form-control-sm text-end wang-peruntukan-semasa" placeholder="0.00" value="' + peruntukanSemasaFormatted + '"></td>';
+        }
+
+        html += '<td><input type="text" name="pengalaman_nilai[]" class="form-control form-control-sm text-end nilai-kerja" placeholder="0.00" value="' + nilaiFormatted + '"></td>' +
             '<td class="text-center">' +
                 '<div class="d-inline-flex align-items-center gap-1">' + ADD_BTN + DELETE_BTN + '</div>' +
             '</td>' +
-        '</tr>');
+        '</tr>';
+
+        return $(html);
     }
 
     // ── Populate from existing data or seed two blank rows ────────────
@@ -419,6 +443,20 @@ $(document).ready(function () {
         $(this).closest('tr').remove();
         reNumber();
         updateTotal();
+    });
+
+    // ── Wang Kos Prima & Wang Peruntukan Semasa: numeric only + format on blur ────
+    $('#tbl-pengalaman-body').on('input', '.wang-kos-prima, .wang-peruntukan-semasa', function () {
+        $(this).val($(this).val().replace(/[^\d.]/g, ''));
+    });
+    $('#tbl-pengalaman-body').on('blur', '.wang-kos-prima, .wang-peruntukan-semasa', function () {
+        var raw = $(this).val().replace(/,/g, '');
+        if (raw === '' || isNaN(raw)) {
+            $(this).val('');
+        } else {
+            var v = parseFloat(raw);
+            $(this).val(v.toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+        }
     });
 
     // ── Nilai kerja: numeric only + format on blur ───────────────────

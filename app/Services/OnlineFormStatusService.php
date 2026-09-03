@@ -6,6 +6,7 @@ use App\Models\BonSaham;
 use App\Models\LembaranImbangan;
 use App\Models\PenyataBank;
 use App\Models\ProfilPetender;
+use App\Models\TenderKakitanganTeknikal;
 use App\Models\TenderPrestasiKerja;
 use App\Models\TenderVendorOnlineFormStatus;
 use App\Support\OnlineFormRegistry;
@@ -55,6 +56,15 @@ class OnlineFormStatusService
             ),
             'pengalaman_kerja' => $this->stosCollectionStatus($tender, 'pengalaman-kerja', 'items', 'dokumens'),
             'kerja_dalam_tangan' => $this->stosCollectionStatus($tender, 'kerja-dalam-tangan', 'items'),
+            'kakitangan_teknikal' => $this->fromRecordStatus(
+                TenderKakitanganTeknikal::query()->where('tender_uuid', $tender->uuid)->exists() ? 'submitted' : 'draft',
+                function () use ($tender) {
+                    $count = TenderKakitanganTeknikal::query()->where('tender_uuid', $tender->uuid)->count();
+
+                    return $count > 0 ? "{$count} kakitangan teknikal" : null;
+                },
+                TenderKakitanganTeknikal::query()->where('tender_uuid', $tender->uuid)->first()
+            ),
             default => $this->formatStatus('draft'),
         };
     }
@@ -150,6 +160,12 @@ class OnlineFormStatusService
                 ->where('status', 'submitted')
                 ->exists()
                 ? 'Prestasi kerja disimpan'
+                : null,
+            'kakitangan_teknikal' => TenderKakitanganTeknikal::query()
+                ->where('tender_uuid', $tender->uuid)
+                ->where('vendor_id', $vendorId)
+                ->exists()
+                ? 'Senarai kakitangan teknikal disimpan'
                 : null,
             default => null,
         };

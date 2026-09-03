@@ -173,13 +173,29 @@
 @section('content')
 @php
     $tenderParam = request('tender') ?: request('tender_no') ?: ($tender_no ?? '');
+    $tenderIdentifier = isset($tender) ? ($tender->uuid ?: $tender->id ?: $tenderParam) : $tenderParam;
     $backToTenderUrl = $tenderParam 
         ? route('penilaianKewanganKerja.show', $tenderParam) 
         : (str_contains(url()->previous(), '/penilaian-kewangan') ? url()->previous() : route('penilaianKewangan'));
 
-    $displayVendors = !empty($b6PassingVendors) ? $b6PassingVendors : (
-        !empty($b8VendorSummary) ? array_values($b8VendorSummary) : []
+    $displayVendors = !empty($b14VendorSummary) ? array_values($b14VendorSummary) : (
+        !empty($b6PassingVendors) ? $b6PassingVendors : (
+            !empty($b8VendorSummary) ? array_values($b8VendorSummary) : []
+        )
     );
+
+    // Compute rank by price ascending as fallback
+    $vendorPrices = [];
+    foreach ($displayVendors as $k => $v) {
+        $rawPrice = $v['harga_asal_num'] ?? (float) preg_replace('/[^0-9.]/', '', $v['harga_display'] ?? ($v['harga_asal'] ?? (isset($v['harga_tawaran']) ? $v['harga_tawaran'] : 0)));
+        $vendorPrices[$k] = $rawPrice;
+    }
+    asort($vendorPrices);
+    $priceRanks = [];
+    $rankCounter = 1;
+    foreach ($vendorPrices as $k => $priceVal) {
+        $priceRanks[$k] = $rankCounter++;
+    }
 @endphp
 
 <div class="container-fluid px-0 py-2">
@@ -326,24 +342,38 @@
                     </thead>
                     <tbody>
                         @forelse($displayVendors as $idx => $v)
+                            @php
+                                $vId = $v['vendor_id'] ?? ($v['id'] ?? ($idx + 1));
+                                $statusBumi = $v['status_bumi'] ?? ($b12VendorSummary[$vId]['status_bumi'] ?? ($b8VendorSummary[$vId]['status_bumi'] ?? (($vId % 2 != 0) ? 'Bumiputera' : 'Bukan Bumiputera')));
+                                $markahTerlaras = $v['markah_terlaras'] ?? ($b13VendorSummary[$vId]['markah_terlaras'] ?? '0.00');
+                                $kodPembekal = $v['kod_pembekal'] ?? ('45/' . str_pad($idx+1, 2, '0', STR_PAD_LEFT));
+                                $hargaDisplay = $v['harga_display'] ?? ($v['harga_asal'] ?? (isset($v['harga_tawaran']) ? 'RM ' . number_format($v['harga_tawaran'], 2) : 'RM 0.00'));
+                                $kedudukan = (!empty($v['kedudukan']) && $v['kedudukan'] !== '-') ? $v['kedudukan'] : ($priceRanks[$idx] ?? ($idx + 1));
+                            @endphp
                             <tr>
                                 <td class="text-center font-monospace fw-bold text-dark">
-                                    {{ $v['kod_pembekal'] ?? ('45/' . str_pad($idx+1, 2, '0', STR_PAD_LEFT)) }}
+                                    {{ $kodPembekal }}
                                 </td>
                                 <td class="text-end font-monospace text-dark fw-semibold">
-                                    {{ $v['harga_display'] ?? (isset($v['harga_tawaran']) ? number_format($v['harga_tawaran'], 2) : '0.00') }}
+                                    {{ $hargaDisplay }}
                                 </td>
-                                <td class="text-center text-muted fst-italic">
-                                    <i>(Tiada data)</i>
+                                <td class="text-center fw-semibold {{ $statusBumi === 'Bumiputera' ? 'text-success' : 'text-primary' }}">
+                                    {{ $statusBumi }}
                                 </td>
                                 <td class="text-center font-monospace text-danger fw-bold">
-                                    0.00
+                                    {{ $markahTerlaras }}
                                 </td>
-                                <td class="text-center text-muted fst-italic">
-                                    <i>(Tiada data)</i>
+                                <td class="text-center font-monospace fw-bold text-dark">
+                                    {{ $kedudukan }}
                                 </td>
-                                <td class="text-center text-muted fst-italic">
-                                    <i>(Tiada data)</i>
+                                <td class="text-center px-2" style="width: 140px;">
+                                    <input type="text"
+                                           class="form-control form-control-sm text-center font-monospace fw-semibold score-cidb-input"
+                                           data-vendor-id="{{ $vId }}"
+                                           name="score_cidb[{{ $vId }}]"
+                                           placeholder="Sila isi"
+                                           value="{{ $v['score_cidb'] ?? '' }}"
+                                           {{ !empty($readOnly) ? 'readonly' : '' }}>
                                 </td>
                             </tr>
                         @empty
@@ -432,6 +462,15 @@
         btnSimpan.disabled = true;
         btnSimpan.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Menyimpan...';
 
+        const scoreInputs = document.querySelectorAll('.score-cidb-input');
+        const scoreCidbData = {};
+        scoreInputs.forEach(input => {
+            const vId = input.dataset.vendorId;
+            if (vId) {
+                scoreCidbData[vId] = input.value.trim();
+            }
+        });
+
         fetch(`/penilaian-kewangan-kerja/${encodeURIComponent(tenderNo)}/borang/borang14/simpan-muktamad`, {
             method: 'POST',
             headers: {
@@ -440,7 +479,8 @@
                 'Accept': 'application/json'
             },
             body: JSON.stringify({
-                chk_sah: 1
+                chk_sah: 1,
+                score_cidb: scoreCidbData
             })
         })
         .then(res => res.json())

@@ -52,9 +52,13 @@ class PenyataBankController extends Controller
 
         $isAdminForm = ! $this->isVendorFormMode() && ! $this->isFormViewOnly();
 
+        $aj = (float) ($tender->anggaran_jabatan ?? 0);
+        $automatikRowsPurata = $this->calcAutomatikRowsPurata($aj);
+
         return view('jawatankuasaSpesifikasi.penyata_bank', array_merge([
             'tender' => $tender,
             'penyataData' => $penyataData,
+            'automatikRowsPurata' => $automatikRowsPurata,
             'showVendorForm' => $this->isVendorFormMode() || $this->isFormViewOnly(),
             'showPeriodConfig' => $isAdminForm,
             'showScoringConfig' => $isAdminForm,
@@ -172,6 +176,24 @@ class PenyataBankController extends Controller
     private function api()
     {
         return StosBackendClient::http();
+    }
+
+    private function calcAutomatikRowsPurata(float $aj): array
+    {
+        if ($aj > 50 && $aj <= 500000) {
+            $hingga1 = round((0.015 * $aj) - 0.01, 2);
+        } elseif ($aj > 500000) {
+            $hingga1 = round((0.030 * $aj) - 0.01, 2);
+        } else {
+            $hingga1 = 0.00;
+        }
+
+        $dari2 = round($hingga1 + 0.01, 2);
+
+        return [
+            ['dari' => 0.00,   'hingga' => $hingga1, 'skema' => '0'],
+            ['dari' => $dari2, 'hingga' => null,      'skema' => '10'],
+        ];
     }
 
     private function url(string $path): string

@@ -191,6 +191,27 @@
         box-shadow: 0 4px 12px rgba(29, 78, 216, 0.25);
     }
 
+    .btn-action-checked {
+        background: #f0fdf4;
+        color: #16a34a;
+        border: 1px solid #bbf7d0;
+        font-weight: 600;
+        font-size: 0.825rem;
+        padding: 0.45rem 0.95rem;
+        border-radius: 10px;
+        transition: all 0.2s ease-in-out;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+    }
+
+    .btn-action-checked:hover {
+        background: #16a34a;
+        color: #ffffff;
+        border-color: #16a34a;
+        box-shadow: 0 4px 12px rgba(22, 163, 74, 0.25);
+    }
+
     .table-modern-b1 th {
         background: #1e293b;
         color: #ffffff;
@@ -208,6 +229,7 @@
 @section('content')
 @php
     $tenderParam = request('tender') ?: request('tender_no') ?: ($tender_no ?? '');
+    $tenderIdentifier = isset($tender) ? ($tender->uuid ?: $tender->id ?: $tenderParam) : $tenderParam;
     $backToTenderUrl = $tenderParam 
         ? route('penilaianKewanganKerja.show', $tenderParam) 
         : (str_contains(url()->previous(), '/penilaian-kewangan') ? url()->previous() : route('penilaianKewangan'));
@@ -357,16 +379,30 @@
                                 <td class="text-end font-monospace text-dark fw-semibold">
                                     {{ $v['jumlah_disiapkan_disp'] }}
                                 </td>
-                                <td class="text-end font-monospace text-danger fw-bold">
-                                    0.00
+                                <td class="text-end font-monospace text-dark fw-semibold">
+                                    {{ $v['jumlah_ntbk_disp'] }}
                                 </td>
                                 <td class="text-end font-monospace text-dark fw-semibold">
                                     {{ $v['jumlah_nbk_disp'] }}
                                 </td>
+                                @php
+                                    $isVendorEvaluated = false;
+                                    if (!empty($v['items']) && count($v['items']) > 0) {
+                                        $isVendorEvaluated = collect($v['items'])->every(function($it) {
+                                            return !is_null($it['jenis']) && $it['jenis'] !== '';
+                                        });
+                                    }
+                                @endphp
                                 <td class="text-center">
-                                    <button type="button" class="btn-action-papar" onclick="openB7DetailModal('{{ $vId }}')">
-                                        <i class="bi bi-eye me-1"></i>Papar & Semak
-                                    </button>
+                                    @if($isVendorEvaluated)
+                                        <button type="button" class="btn-action-checked" id="btnVendorStatus_{{ $vId }}" onclick="openB7DetailModal('{{ $vId }}')">
+                                            <i class="bi bi-check-circle-fill me-1"></i>Telah Disemak
+                                        </button>
+                                    @else
+                                        <button type="button" class="btn-action-papar" id="btnVendorStatus_{{ $vId }}" onclick="openB7DetailModal('{{ $vId }}')">
+                                            <i class="bi bi-eye me-1"></i>Papar & Semak
+                                        </button>
+                                    @endif
                                 </td>
                             </tr>
                         @empty
@@ -447,21 +483,22 @@
                         <table class="table-borang3-modern" style="table-layout: fixed; width: 100%; min-width: 100%;">
                             <colgroup>
                                 <col style="width: 3.5%;">
-                                <col style="width: 16%;">
+                                <col style="width: 14%;">
+                                <col style="width: 8%;">
                                 <col style="width: 8.5%;">
-                                <col style="width: 9.5%;">
-                                <col style="width: 8.5%;">
+                                <col style="width: 8%;">
+                                <col style="width: 5.5%;">
+                                <col style="width: 5.5%;">
+                                <col style="width: 8%;">
                                 <col style="width: 6.5%;">
-                                <col style="width: 6.5%;">
+                                <col style="width: 8%;">
+                                <col style="width: 8%;">
                                 <col style="width: 8.5%;">
-                                <col style="width: 7%;">
-                                <col style="width: 8.5%;">
-                                <col style="width: 8.5%;">
-                                <col style="width: 9.5%;">
+                                <col style="width: 8%;">
                             </colgroup>
                             <thead>
                                 <tr>
-                                    <th colspan="12" class="subhead-main text-start ps-3 py-2.5" style="background: #6d6d79ff;">
+                                    <th colspan="13" class="subhead-main text-start ps-3 py-2.5" style="background: #6d6d79ff;">
                                         <i class="bi bi-file-earmark-text me-1"></i> <span id="modalRefHeaderTitle">NO. RUJUKAN PETENDER : -</span>
                                     </th>
                                 </tr>
@@ -478,6 +515,7 @@
                                     <th class="compact-th">NILAI KERJA DISIAPKAN<br><span class="formula-tag">(RM)</span></th>
                                     <th class="compact-th">NILAI TAHUNAN BAKI KERJA (NTBK)<br><span class="formula-tag">(RM)</span></th>
                                     <th class="compact-th">NILAI BAKI KERJA (NBK)<br><span class="formula-tag">(RM)</span></th>
+                                    <th class="compact-th">JENIS</th>
                                 </tr>
                             </thead>
 
@@ -492,12 +530,13 @@
                                     <td class="text-end font-monospace fw-bold text-dark py-2.5" id="modalFootJumlahDisiapkan">
                                         0.00
                                     </td>
-                                    <td class="text-end font-monospace fw-bold text-danger py-2.5" id="modalFootJumlahNtbk">
+                                    <td class="text-end font-monospace fw-bold text-dark py-2.5" id="modalFootJumlahNtbk">
                                         0.00
                                     </td>
                                     <td class="text-end font-monospace fw-bold text-dark py-2.5" id="modalFootJumlahNbk">
                                         0.00
                                     </td>
+                                    <td></td>
                                 </tr>
                             </tfoot>
                         </table>
@@ -526,17 +565,27 @@
                         <div class="col-12 col-md-4">
                             <div class="p-3 rounded-3 border bg-white shadow-sm h-100 d-flex flex-column justify-content-between">
                                 <div>
-                                    <div class="d-flex align-items-center justify-content-between mb-2">
-                                        <div class="d-flex align-items-center gap-2">
-                                            <div class="rounded-2 p-1 d-flex align-items-center justify-content-center" style="width: 26px; height: 26px; background: #eff6ff; color: #2563eb;">
-                                                <i class="bi bi-check-circle-fill small"></i>
-                                            </div>
-                                            <span class="text-muted fw-bold text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.5px;">JUMLAH NILAI KERJA YANG TELAH DISIAPKAN</span>
+                                    <div class="d-flex align-items-center gap-2 mb-2">
+                                        <div class="rounded-2 p-1 d-flex align-items-center justify-content-center" style="width: 26px; height: 26px; background: #eff6ff; color: #2563eb;">
+                                            <i class="bi bi-check-circle-fill small"></i>
+                                        </div>
+                                        <span class="text-muted fw-bold text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.5px;">NILAI KERJA YANG TELAH DISIAPKAN</span>
+                                    </div>
+
+                                    <div class="ps-1 my-2">
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <span class="text-muted small" style="font-size: 0.75rem;">(a) Serupa:</span>
+                                            <span class="fw-bold text-dark font-monospace" style="font-size: 0.85rem;" id="cardRumusanDisiapkanSerupa">RM 0.00</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+                                            <span class="text-muted small" style="font-size: 0.75rem;">(b) Sebanding:</span>
+                                            <span class="fw-bold text-dark font-monospace" style="font-size: 0.85rem;" id="cardRumusanDisiapkanSebanding">RM 0.00</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span class="fw-bold text-dark small" style="font-size: 0.75rem;">JUMLAH:</span>
+                                            <h6 class="fw-bold text-primary font-monospace mb-0" style="font-size: 0.95rem;" id="cardRumusanDisiapkan">RM 0.00</h6>
                                         </div>
                                     </div>
-                                    <h6 class="fw-bold text-dark mb-3 font-monospace" style="font-size: 0.95rem; line-height: 1.4;" id="cardRumusanDisiapkan">
-                                        RM 0.00
-                                    </h6>
                                 </div>
                                 <div class="pt-2 border-top d-flex align-items-center justify-content-between mt-auto">
                                     <span class="text-muted extra-small" style="font-size: 0.725rem;">Bawa ke:</span>
@@ -559,7 +608,7 @@
                                             <span class="text-muted fw-bold text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.5px;">JUMLAH NILAI TAHUNAN BAKI KERJA (NTBK)</span>
                                         </div>
                                     </div>
-                                    <h6 class="fw-bold text-danger mb-3 font-monospace" style="font-size: 0.95rem; line-height: 1.4;" id="cardRumusanNtbk">
+                                    <h6 class="fw-bold text-dark mb-3 font-monospace" style="font-size: 0.95rem; line-height: 1.4;" id="cardRumusanNtbk">
                                         RM 0.00
                                     </h6>
                                 </div>
@@ -602,8 +651,11 @@
             </div>
 
             {{-- Modal Footer --}}
-            <div class="modal-footer border-0 pt-0 px-4 pb-4">
+            <div class="modal-footer border-0 pt-0 px-4 pb-4 d-flex justify-content-between align-items-center">
                 <button type="button" class="btn btn-secondary px-4 rounded-3" data-bs-dismiss="modal">Tutup</button>
+                <button type="button" class="btn btn-success px-4 rounded-3" id="btnSimpanPenilaianB7">
+                    <i class="bi bi-floppy me-1"></i>Simpan Penilaian
+                </button>
             </div>
         </div>
     </div>
@@ -613,8 +665,40 @@
 <script>
     const tenderNo = "{{ $tenderParam }}";
     const b7VendorDataMap = @json($b7VendorSummary ?? []);
+    let currentModalVendorId = null;
+
+    function recalculateB7ModalTotals() {
+        let sumSerupa = 0;
+        let sumSebanding = 0;
+        let sumTotalDisiapkan = 0;
+
+        $('#b7ModalItemsTableBody tr').each(function () {
+            const $row = $(this);
+            const valDisiapkanText = $row.find('td:nth-child(10)').text().replace(/,/g, '');
+            const valDisiapkan = parseFloat(valDisiapkanText) || 0;
+            const jenisVal = $row.find('.field-jenis').val();
+
+            sumTotalDisiapkan += valDisiapkan;
+            if (jenisVal === '1') {
+                sumSerupa += valDisiapkan;
+            } else if (jenisVal === '2') {
+                sumSebanding += valDisiapkan;
+            }
+        });
+
+        const fmt = n => n.toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+        const elSerupa = document.getElementById('cardRumusanDisiapkanSerupa');
+        const elSebanding = document.getElementById('cardRumusanDisiapkanSebanding');
+        const elTotal = document.getElementById('cardRumusanDisiapkan');
+
+        if (elSerupa) elSerupa.innerText = 'RM ' + fmt(sumSerupa);
+        if (elSebanding) elSebanding.innerText = 'RM ' + fmt(sumSebanding);
+        if (elTotal) elTotal.innerText = 'RM ' + fmt(sumTotalDisiapkan);
+    }
 
     function openB7DetailModal(vId) {
+        currentModalVendorId = vId;
         const vData = b7VendorDataMap[vId];
         if (!vData) return;
 
@@ -629,45 +713,170 @@
         if (items.length === 0) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="12" class="text-center py-4 text-muted">
+                    <td colspan="13" class="text-center py-4 text-muted">
                         <span class="fw-semibold">Tiada rekod Kerja Semasa dikemukakan oleh petender ini.</span>
                     </td>
                 </tr>
             `;
         } else {
             items.forEach(item => {
+                const wkpWpsHtml = item.wkp_wps_display !== null ? item.wkp_wps_display : '<span class="text-danger fw-bold">0.00</span>';
+                const kerjaPembinaHtml = item.kerja_pembina_display !== null ? item.kerja_pembina_display : '<span class="text-danger fw-bold">0.00</span>';
+                const jVal = item.jenis !== null && item.jenis !== undefined ? String(item.jenis) : '';
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td class="text-center font-monospace fw-bold">${item.bil}</td>
                     <td><span class="fw-bold text-dark d-block">${item.nama}</span></td>
                     <td class="text-end font-monospace">${item.nilai_kontrak_display}</td>
-                    <td class="text-end font-monospace text-danger fw-bold">0.00</td>
-                    <td class="text-end font-monospace text-danger fw-bold">0.00</td>
+                    <td class="text-end font-monospace">${wkpWpsHtml}</td>
+                    <td class="text-end font-monospace">${kerjaPembinaHtml}</td>
                     <td class="text-center font-monospace">${item.peratus_siap_display || '<span class="text-danger fw-bold">0.00%</span>'}</td>
                     <td class="text-center font-monospace">${item.peratus_belum_display || '<span class="text-danger fw-bold">0.00%</span>'}</td>
                     <td class="text-center font-monospace">${item.tarikh_siap || '-'}</td>
                     <td class="text-center font-monospace">${item.baki_bulan !== null ? item.baki_bulan : '<span class="text-danger fw-bold">0</span>'}</td>
                     <td class="text-end font-monospace">${item.nilai_disiapkan_display}</td>
-                    <td class="text-end font-monospace text-danger fw-bold">0.00</td>
+                    <td class="text-end font-monospace">${item.ntbk_display}</td>
                     <td class="text-end font-monospace">${item.nbk_display}</td>
+                    <td>
+                        <select class="form-select form-select-sm field-jenis" data-item-id="${item.id || ''}" style="font-size: 0.75rem;">
+                            <option value="" ${jVal === '' ? 'selected' : ''}>Sila Pilih</option>
+                            <option value="1" ${jVal === '1' ? 'selected' : ''}>Serupa</option>
+                            <option value="2" ${jVal === '2' ? 'selected' : ''}>Sebanding</option>
+                        </select>
+                    </td>
                 `;
                 tbody.appendChild(tr);
             });
         }
 
         document.getElementById('modalFootJumlahDisiapkan').innerText = vData.jumlah_disiapkan_disp;
-        document.getElementById('modalFootJumlahNtbk').innerHTML = '<span class="text-danger fw-bold">0.00</span>';
+        document.getElementById('modalFootJumlahNtbk').innerText = vData.jumlah_ntbk_disp;
         document.getElementById('modalFootJumlahNbk').innerText = vData.jumlah_nbk_disp;
 
-        document.getElementById('cardRumusanDisiapkan').innerText = 'RM ' + vData.jumlah_disiapkan_disp;
-        document.getElementById('cardRumusanNtbk').innerHTML = '<span class="text-danger fw-bold">RM 0.00</span>';
+        document.getElementById('cardRumusanNtbk').innerText = 'RM ' + vData.jumlah_ntbk_disp;
         document.getElementById('cardRumusanNbk').innerText = 'RM ' + vData.jumlah_nbk_disp;
+
+        recalculateB7ModalTotals();
 
         const modal = new bootstrap.Modal(document.getElementById('b7DetailModal'));
         modal.show();
     }
 
     document.addEventListener('DOMContentLoaded', function () {
+        $(document).on('change', '.field-jenis', function () {
+            if ($(this).val()) {
+                $(this).removeClass('border-danger');
+            }
+            recalculateB7ModalTotals();
+        });
+        const btnSimpanPenilaianB7 = document.getElementById('btnSimpanPenilaianB7');
+        if (btnSimpanPenilaianB7) {
+            btnSimpanPenilaianB7.addEventListener('click', function () {
+                if (!currentModalVendorId) return;
+
+                let hasEmptyJenis = false;
+                const itemsData = [];
+                $('#b7ModalItemsTableBody .field-jenis').each(function () {
+                    const itemId = $(this).data('item-id');
+                    const val = $(this).val();
+                    if (!val) {
+                        hasEmptyJenis = true;
+                        $(this).addClass('border-danger');
+                    } else {
+                        $(this).removeClass('border-danger');
+                    }
+                    itemsData.push({
+                        id: itemId ? parseInt(itemId) : null,
+                        jenis: val ? parseInt(val) : null
+                    });
+                });
+
+                if (hasEmptyJenis) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Maklumat Tidak Lengkap',
+                        html: '<p class="mb-1 text-secondary fs-6">Sila pilih <strong>Jenis (Serupa / Sebanding)</strong> bagi kesemua senarai kerja semasa petender sebelum menyimpan penilaian.</p>',
+                        confirmButtonText: 'Faham',
+                        confirmButtonColor: '#dc2626',
+                        customClass: {
+                            popup: 'rounded-4 shadow',
+                            confirmButton: 'px-4 py-2 rounded-3 fw-semibold'
+                        }
+                    });
+                    return;
+                }
+
+                btnSimpanPenilaianB7.disabled = true;
+                btnSimpanPenilaianB7.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Menyimpan...';
+
+                fetch(`/penilaian-kewangan-kerja/${encodeURIComponent(tenderNo)}/borang/borang7/simpan-penilaian`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        vendor_id: currentModalVendorId,
+                        items: itemsData
+                    })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    btnSimpanPenilaianB7.disabled = false;
+                    btnSimpanPenilaianB7.innerHTML = '<i class="bi bi-floppy me-1"></i>Simpan Penilaian';
+
+                    if (data.success) {
+                        // Update local vendor data map
+                        if (b7VendorDataMap[currentModalVendorId] && b7VendorDataMap[currentModalVendorId].items) {
+                            b7VendorDataMap[currentModalVendorId].items.forEach(item => {
+                                const matched = itemsData.find(i => i.id === item.id);
+                                if (matched) {
+                                    item.jenis = matched.jenis;
+                                }
+                            });
+                        }
+
+                        // Update main table button to Telah Disemak
+                        const btnVendor = document.getElementById('btnVendorStatus_' + currentModalVendorId);
+                        if (btnVendor) {
+                            btnVendor.className = 'btn-action-checked';
+                            btnVendor.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i>Telah Disemak';
+                        }
+
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Berjaya Disimpan!',
+                            text: data.message || 'Penilaian Borang 7 telah berjaya disimpan!',
+                            timer: 1500,
+                            showConfirmButton: false
+                        });
+
+                        const modalEl = document.getElementById('b7DetailModal');
+                        const modalObj = bootstrap.Modal.getInstance(modalEl);
+                        if (modalObj) modalObj.hide();
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Ralat!',
+                            text: data.message || 'Gagal menyimpan penilaian Borang 7.',
+                            confirmButtonColor: '#dc2626'
+                        });
+                    }
+                })
+                .catch(err => {
+                    btnSimpanPenilaianB7.disabled = false;
+                    btnSimpanPenilaianB7.innerHTML = '<i class="bi bi-floppy me-1"></i>Simpan Penilaian';
+                    console.error(err);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Ralat Sistem!',
+                        text: 'Berlaku masalah semasa berhubung dengan pelayan.',
+                        confirmButtonColor: '#dc2626'
+                    });
+                });
+            });
+        }
         const btnSimpanMuktamad = document.getElementById('btnSimpanMuktamad');
         if (btnSimpanMuktamad) {
             btnSimpanMuktamad.addEventListener('click', function () {

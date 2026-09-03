@@ -222,6 +222,28 @@ trait HandlesTenderFormAccess
         );
     }
 
+    /**
+     * @param  array<string, mixed>  $summary
+     */
+    protected function trackVendorFormDraft(Tender|LegacyTender $tender, string $formKey, array $summary = []): void
+    {
+        if (! $this->isVendorFormMode() || ! $this->vendorId()) {
+            return;
+        }
+
+        $resolved = \App\Tender::query()->find($tender->id);
+        if (! $resolved) {
+            return;
+        }
+
+        app(OnlineFormStatusService::class)->markDraft(
+            $resolved,
+            $this->vendorId(),
+            $formKey,
+            $summary
+        );
+    }
+
     protected function vendorFormReturnUrl(Tender|LegacyTender $tender): string
     {
         return route('tenders.show', $tender->id) . '#vt-dokumen-tawaran';

@@ -220,6 +220,7 @@
 @section('content')
 @php
     $tenderParam = request('tender') ?: request('tender_no') ?: ($tender_no ?? '');
+    $tenderIdentifier = isset($tender) ? ($tender->uuid ?: $tender->id ?: $tenderParam) : $tenderParam;
     $backToTenderUrl = $tenderParam 
         ? route('penilaianKewanganKerja.show', $tenderParam) 
         : (str_contains(url()->previous(), '/penilaian-kewangan') ? url()->previous() : route('penilaianKewangan'));
@@ -505,12 +506,12 @@
                                 <tr>
                                     <td class="text-center font-monospace fw-bold">9</td>
                                     <td class="fw-medium">Nilai Wang Kos Prima <span class="formula-tag">WKP</span></td>
-                                    <td class="text-end pe-3 font-monospace text-danger fw-bold" id="b8_val_wkp">0.00</td>
+                                    <td class="text-end pe-3 font-monospace" id="b8_val_wkp">0.00</td>
                                 </tr>
                                 <tr>
                                     <td class="text-center font-monospace fw-bold">10</td>
                                     <td class="fw-medium">Wang Peruntukan Sementara <span class="formula-tag">WPS</span></td>
-                                    <td class="text-end pe-3 font-monospace text-danger fw-bold" id="b8_val_wps">0.00</td>
+                                    <td class="text-end pe-3 font-monospace" id="b8_val_wps">0.00</td>
                                 </tr>
                                 <tr>
                                     <td class="text-center font-monospace fw-bold">11</td>
@@ -525,7 +526,7 @@
                                 <tr>
                                     <td class="text-center font-monospace fw-bold">13</td>
                                     <td class="fw-medium">Jumlah Nilai Tahunan Baki Kerja Dalam Tangan <span class="formula-tag">NTBK (Borang 7)</span></td>
-                                    <td class="text-end pe-3 font-monospace text-danger fw-bold" id="b8_val_ntbk">0.00</td>
+                                    <td class="text-end pe-3 font-monospace" id="b8_val_ntbk">0.00</td>
                                 </tr>
                                 <tr>
                                     <td class="text-center font-monospace fw-bold">14</td>
@@ -594,11 +595,11 @@
                 <div class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3 p-3 bg-light rounded-3 border">
                     <div class="d-flex align-items-center gap-2">
                         <i class="bi bi-cash-stack text-danger fs-5"></i>
-                        <span class="fw-bold text-dark">Modal Pusingan (MP):</span>
+                        <span class="fw-bold text-dark">Nilai Keupayaan Biayawan (KB):</span>
                     </div>
                     <div class="input-group" style="max-width: 280px;">
                         <span class="input-group-text fw-bold bg-white text-muted">RM</span>
-                        <input type="text" class="form-control font-monospace fw-bold text-end fs-6" id="b8_input_mp" placeholder="0.00" readonly>
+                        <input type="text" class="form-control font-monospace fw-bold text-end fs-6" id="b8_input_kb" placeholder="0.00" readonly>
                     </div>
                 </div>
 
@@ -657,9 +658,9 @@
                 }
             });
 
-            const inputMp = document.getElementById('b8_input_mp');
-            if (inputMp && items.item1_mp) {
-                inputMp.value = items.item1_mp.disp;
+            const inputKb = document.getElementById('b8_input_kb');
+            if (inputKb && items.item14_kb) {
+                inputKb.value = items.item14_kb.disp;
             }
         }
 
