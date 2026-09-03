@@ -331,13 +331,8 @@ class PenilaianTeknikalController extends Controller
     /** Uploaded documents per vendor per checklist item, via the shared VendorDokumenResponseService. */
     private function loadVendorDokumenResponses(Tender $tender, Collection $vendors): array
     {
-        $service = app(VendorDokumenResponseService::class);
-
-        return $vendors
-            ->mapWithKeys(fn (TenderVendor $vendor) => [
-                $vendor->vendor_id => $service->responsesByItemUuid($tender, $vendor->vendor_id),
-            ])
-            ->all();
+        return app(VendorDokumenResponseService::class)
+            ->responsesByItemUuidForVendors($tender, $vendors->pluck('vendor_id'));
     }
 
     /** Maps checklist items to Langkah 1 table rows. */
@@ -835,18 +830,16 @@ class PenilaianTeknikalController extends Controller
     }
 
     /** Saved Langkah 3 report text, if any — reloaded each time the report step is shown. */
+    /** Read-only: served from the shared DB, not proxied — an HTTP hop here would hold a php worker. */
     public function laporanPenilaianTeknikal(Tender $tender): JsonResponse
     {
-        $result = $this->callStos('load laporan', ['tender_id' => $tender->id],
-            fn () => $this->stos->getLaporanTeknikal($tender->id));
-
-        $data = $result['ok'] ? ($result['body']['data'] ?? []) : [];
+        $laporan = $this->service->loadLaporan($tender);
 
         return response()->json([
-            'catatan_pematuhan' => $data['catatan_pematuhan'] ?? null,
-            'catatan_spesifikasi' => $data['catatan_spesifikasi'] ?? null,
-            'pengesyoran_intro' => $data['pengesyoran_intro'] ?? null,
-            'pengesyoran_justifikasi' => $data['pengesyoran_justifikasi'] ?? [],
+            'catatan_pematuhan' => $laporan->catatan_pematuhan ?? null,
+            'catatan_spesifikasi' => $laporan->catatan_spesifikasi ?? null,
+            'pengesyoran_intro' => $laporan->pengesyoran_intro ?? null,
+            'pengesyoran_justifikasi' => $laporan->pengesyoran_justifikasi ?? [],
         ]);
     }
 

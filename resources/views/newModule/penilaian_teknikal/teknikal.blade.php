@@ -7,6 +7,8 @@
     <link href="{{ asset('css/components/guideline-card.css') }}" rel="stylesheet">
     <link href="{{ asset('css/components/modal-confirm.css') }}" rel="stylesheet">
     <link href="{{ asset('css/components/stepper.css') }}" rel="stylesheet">
+    <link href="{{ asset('css/components/modal-declaration.css') }}" rel="stylesheet">
+    <link href="{{ asset('css/components/evaluation-row-lock.css') }}" rel="stylesheet">
 
     <style>
         /* =========================
@@ -249,13 +251,13 @@
             <span class="tender-ref-sep">&middot;</span>
             <span class="tender-ref-no">{{ $tender_no ?? 'Belum Dijana' }}</span>
         </div>
-        <h2 class="tender-title-main mb-3">Tender Perkhidmatan Penilaian Forensik Keatas Sistem XXXX</h2>
+        <h2 class="tender-title-main mb-3">{{ $tender->name ?? '-' }}</h2>
 
         <div class="row g-3 pb-3">
             <div class="col-12 col-sm-6 col-lg-3">
                 <div class="d-flex flex-column gap-1">
                     <span class="text-muted fw-semibold text-uppercase" style="font-size:0.67rem; letter-spacing:0.5px;">PTJ</span>
-                    <span class="fw-semibold text-dark" style="font-size:0.88rem;">BAHAGIAN PENTADBIRAN - CAWANGAN KEWANGAN - KEMENTERIAN KEWANGAN</span>
+                    <span class="fw-semibold text-dark" style="font-size:0.88rem;">{{ $tender->tenderer->name ?? '-' }}</span>
                 </div>
             </div>
             <div class="col-12 col-sm-6 col-lg-3">
@@ -541,9 +543,15 @@
                                     </table>
                                 </div>
 
+                                {{-- Shown to members who may evaluate but not finalise; toggled once the session loads. --}}
+                                <div class="pengerusi-only-note d-none" id="pengerusiOnlyNoteStep1">
+                                    <i class="bi bi-info-circle-fill"></i>
+                                    <span>Pengesahan dan penghantaran hanya boleh dilakukan oleh <strong>Pengerusi Jawatankuasa</strong>. Anda masih boleh menyemak rumusan di halaman ini.</span>
+                                </div>
+
                                 <!-- Declaration gate -->
                                 <label for="confirmLayak"
-                                    class="d-flex align-items-center gap-3 p-3 rounded-3 mb-4"
+                                    class="pengesahan-card d-flex align-items-center gap-3 p-3 rounded-3 mb-4"
                                     style="background: #ffffff; border: 1px solid #e5e7eb; border-left: 3px solid var(--sg-red, #c41e3a); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); cursor: {{ $pematuhanConfirmed ? 'default' : 'pointer' }};">
                                     <input class="form-check-input flex-shrink-0" type="checkbox" id="confirmLayak"
                                         style="width: 1.3rem; height: 1.3rem; cursor: {{ $pematuhanConfirmed ? 'default' : 'pointer' }};" @checked($pematuhanConfirmed) @disabled($pematuhanConfirmed)>
@@ -617,7 +625,17 @@
         </div>
     </div>
 
+@push('scripts')
+    <script src="{{ asset('js/evaluation-session.js') }}"></script>
+@endpush
+
 @push('modals')
+    @include('components.evaluation-declaration-modal', [
+        'committeeLabel' => 'Jawatankuasa Penilaian Teknikal',
+        'tenderNo' => $tender->no_tender ?: ($tender->ref_number ?: '-'),
+    ])
+    @include('components.confirm-dialog-modal')
+
     {{-- Confirms before submitting Pematuhan Dokumentasi — eliminates failing vendors, irreversible. --}}
     <div class="modal fade" id="modalKonfirmasiHantarPematuhan" tabindex="-1" aria-labelledby="modalKonfirmasiHantarPematuhanLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-confirm">
@@ -721,9 +739,13 @@
                             </thead>
                             <tbody>
                                 @forelse ($shortlistedVendors as $vendor)
-                                    <tr>
+                                    <tr data-vendor-id="{{ $vendor->vendor_id }}">
                                         <td class="text-center">{{ $vendor->kod_pembekal ?? '-' }}</td>
                                         <td>
+                                            <a href="javascript:void(0);" class="pematuhan-mula-menilai text-primary text-decoration-none d-inline-flex align-items-center gap-1 d-none" data-vendor-id="{{ $vendor->vendor_id }}">
+                                                <i class="bi bi-eye" aria-hidden="true"></i>
+                                                Mula Menilai
+                                            </a>
                                             <div class="dokumen-file-list d-flex flex-column align-items-start gap-1" data-vendor-id="{{ $vendor->vendor_id }}">
                                                 <span class="text-muted small">-</span>
                                             </div>
@@ -734,9 +756,12 @@
                                                 <option value="1">Mematuhi</option>
                                                 <option value="0">Tidak Mematuhi</option>
                                             </select>
+                                            <span class="badge-status pematuhan-badge d-none" data-vendor-id="{{ $vendor->vendor_id }}"></span>
                                         </td>
                                         <td>
                                             <input type="text" class="form-control pematuhan-catatan" name="catatan_{{ $vendor->vendor_id }}" data-vendor-id="{{ $vendor->vendor_id }}" placeholder="Catatan">
+                                            <div class="pematuhan-catatan-text d-none" data-vendor-id="{{ $vendor->vendor_id }}"></div>
+                                            <div class="pematuhan-lock-note" data-vendor-id="{{ $vendor->vendor_id }}"></div>
                                         </td>
                                     </tr>
                                 @empty
@@ -837,7 +862,7 @@
                             </thead>
                             <tbody>
                                 @forelse ($shortlistedVendors as $vendor)
-                                    <tr>
+                                    <tr data-vendor-id="{{ $vendor->vendor_id }}">
                                         <td class="text-center">{{ $vendor->kod_pembekal ?? '-' }}</td>
                                         <td class="text-center">
                                             <a href="javascript:void(0);"
@@ -854,9 +879,12 @@
                                                 <option value="1">Mematuhi</option>
                                                 <option value="0">Tidak Mematuhi</option>
                                             </select>
+                                            <span class="badge-status pematuhan-badge d-none" data-vendor-id="{{ $vendor->vendor_id }}"></span>
                                         </td>
                                         <td>
                                             <input type="text" class="form-control pematuhan-catatan" name="catatan_{{ $vendor->vendor_id }}" data-vendor-id="{{ $vendor->vendor_id }}" placeholder="Catatan">
+                                            <div class="pematuhan-catatan-text d-none" data-vendor-id="{{ $vendor->vendor_id }}"></div>
+                                            <div class="pematuhan-lock-note" data-vendor-id="{{ $vendor->vendor_id }}"></div>
                                         </td>
                                     </tr>
                                 @empty
@@ -924,7 +952,7 @@
                             </thead>
                             <tbody>
                                 @forelse ($shortlistedVendors as $vendor)
-                                    <tr>
+                                    <tr data-vendor-id="{{ $vendor->vendor_id }}">
                                         <td class="text-center">{{ $vendor->kod_pembekal ?? '-' }}</td>
                                         <td class="text-center">
                                             <a href="javascript:void(0);"
@@ -941,9 +969,12 @@
                                                 <option value="1">Mematuhi</option>
                                                 <option value="0">Tidak Mematuhi</option>
                                             </select>
+                                            <span class="badge-status pematuhan-badge d-none" data-vendor-id="{{ $vendor->vendor_id }}"></span>
                                         </td>
                                         <td>
                                             <input type="text" class="form-control pematuhan-catatan" name="catatan_borang_{{ $vendor->vendor_id }}" data-vendor-id="{{ $vendor->vendor_id }}" placeholder="Catatan">
+                                            <div class="pematuhan-catatan-text d-none" data-vendor-id="{{ $vendor->vendor_id }}"></div>
+                                            <div class="pematuhan-lock-note" data-vendor-id="{{ $vendor->vendor_id }}"></div>
                                         </td>
                                     </tr>
                                 @empty
@@ -1085,14 +1116,29 @@
     const FULLY_SUBMITTED = {{ $fullySubmitted ? 'true' : 'false' }};
     const SAHKAN_SPESIFIKASI_URL = '{{ route('penilaianTeknikal.confirmSpesifikasi') }}';
     const CETAK_LAPORAN_URL = '{{ route('penilaianTeknikal.cetakLaporan', $tender->id) }}';
+
+    // Live evaluation session — shared endpoints, 'tech' selects Penilaian Teknikal.
+    const SESI_URLS = {
+        session:      '{{ route('penilaianSesi.session', ['jenis' => 'tech']) }}',
+        declaration:  '{{ route('penilaianSesi.declaration', ['jenis' => 'tech']) }}',
+        lock:         '{{ route('penilaianSesi.lock', ['jenis' => 'tech']) }}',
+        lockRelease:  '{{ route('penilaianSesi.lock.release', ['jenis' => 'tech']) }}',
+        rowsComplete: '{{ route('penilaianSesi.rows.complete', ['jenis' => 'tech']) }}',
+        locks:        '{{ route('penilaianSesi.locks', ['jenis' => 'tech']) }}',
+        log:          '{{ route('penilaianSesi.log', ['jenis' => 'tech']) }}',
+    };
+    const SESI_EVALUASI_URL = '{{ route('penilaianTeknikal.penilaianSemasa') }}';
+    const SESI_STATUS_URL = '{{ route('penilaianTeknikal.statusPenilaian') }}';
     // let, not const — flipped true in memory right after confirmation, so gates stay
     // correct within the same session without a page reload.
     let PEMATUHAN_CONFIRMED = {{ $pematuhanConfirmed ? 'true' : 'false' }};
     let SPESIFIKASI_CONFIRMED = {{ $spesifikasiConfirmed ? 'true' : 'false' }};
 
     function cetakLaporanTeknikal() {
-        // Nothing to flush once submitted — the fields are locked and already saved.
-        if (FULLY_SUBMITTED || typeof window.simpanDrafLaporanSebelumCetak !== 'function') {
+        // Nothing to flush once submitted, or for a non-Pengerusi viewer — their fields are
+        // read-only, so there's nothing of theirs to save, and the save route is Pengerusi-only.
+        const canSaveDraft = typeof EvaluationSession !== 'undefined' && EvaluationSession.state().can_submit;
+        if (FULLY_SUBMITTED || !canSaveDraft || typeof window.simpanDrafLaporanSebelumCetak !== 'function') {
             window.open(CETAK_LAPORAN_URL, '_blank');
             return;
         }
@@ -1179,6 +1225,21 @@
 
     document.addEventListener('DOMContentLoaded', () => {
 
+        EvaluationSession.configure({
+            jenis: 'tech',
+            tender: TENDER_IDENTIFIER,
+            csrfToken: CSRF_TOKEN,
+            exitUrl: '{{ route('penilaianTeknikal') }}',
+            committeeLabel: 'Ahli Jawatankuasa',
+            urls: SESI_URLS,
+        }).start(function(sesi) {
+            applyPerananRestrictions();
+            if (typeof window.applyStep3PerananRestrictions === 'function') window.applyStep3PerananRestrictions();
+            // Keep polling until both are confirmed — Langkah 2's confirm unlocks Langkah 3 for idle members.
+            if (!sesi.is_committee_member || (PEMATUHAN_CONFIRMED && SPESIFIKASI_CONFIRMED)) return;
+            EvaluationSession.startPolling('outerStatus', refreshOuterStatuses, 20000);
+        });
+
         const steps = document.querySelectorAll('.progress-step');
         const tabs = document.querySelectorAll('.step-number');
 
@@ -1229,6 +1290,7 @@
                 const elTajuk = document.getElementById('modalSemakanTajukDokumen');
                 if (elTajuk && tajuk) elTajuk.textContent = tajuk;
                 prefillPematuhanRows(modalSemakanStep1, itemUuid, 'btnStep1SimpanDokTeknikal');
+                refreshLocksAndPaint(modalSemakanStep1, itemUuid);
 
                 modalSemakanStep1.querySelectorAll('.dokumen-file-list').forEach(function(container) {
                     const vendorId = container.getAttribute('data-vendor-id');
@@ -1263,6 +1325,63 @@
                     });
                 });
             });
+
+            // Vendor has no single "Lihat" link to gate — reserving the row is its own action.
+            modalSemakanStep1.addEventListener('click', function(event) {
+                const link = event.target.closest('.pematuhan-mula-menilai');
+                if (!link) return;
+
+                const vendorId = link.getAttribute('data-vendor-id');
+                const itemUuid = modalSemakanStep1.getAttribute('data-active-item-uuid') || '';
+                if (!itemUuid || !EvaluationSession.lockingActive()) return;
+
+                const itemTitle = modalSemakanStep1.querySelector('.spesifikasi-tajuk-value')?.textContent || '';
+
+                // Bootstrap does not support two open modals at once — hide this one
+                // first, run the confirm dialog, then always reopen it.
+                modalSemakanStep1.addEventListener('hidden.bs.modal', function onHiddenForConfirm() {
+                    modalSemakanStep1.removeEventListener('hidden.bs.modal', onHiddenForConfirm);
+
+                    EvaluationSession.confirmDialog({
+                        title: 'Nilai Pembekal Ini?',
+                        html: 'Anda akan mula menilai pembekal ini. Ahli jawatankuasa lain tidak akan dapat menilai pembekal yang sama sehingga anda selesai.',
+                        confirmText: 'Ya, Mula Menilai',
+                        icon: 'warning',
+                    }).then(function(confirmed) {
+                        if (!confirmed) {
+                            showModalEl(modalSemakanStep1);
+                            return;
+                        }
+
+                        EvaluationSession.acquireLock(itemUuid, vendorId, itemTitle)
+                            .done(function() {
+                                EvaluationSession.addLocalLock(itemUuid, vendorId);
+                                paintPematuhanLockState(modalSemakanStep1, itemUuid);
+                                showModalEl(modalSemakanStep1);
+                            })
+                            .fail(function(xhr) {
+                                if (xhr.status === 409) {
+                                    const holder = xhr.responseJSON?.data?.held_by_name || 'ahli lain';
+                                    EvaluationSession.confirmDialog({
+                                        title: 'Pembekal Ini Baru Sahaja Diambil',
+                                        html: 'Dokumen ini baru sahaja diambil oleh ' + EvaluationSession.escapeHtml(holder) + '. Sila pilih petender lain.',
+                                        icon: 'danger',
+                                        confirmText: 'OK',
+                                        showCancel: false,
+                                    }).then(function() {
+                                        refreshLocksAndPaint(modalSemakanStep1, itemUuid);
+                                        showModalEl(modalSemakanStep1);
+                                    });
+                                    return;
+                                }
+                                showToast('error', xhr.responseJSON?.message || 'Gagal memulakan penilaian pembekal ini.');
+                                showModalEl(modalSemakanStep1);
+                            });
+                    });
+                }, { once: true });
+
+                bootstrap.Modal.getInstance(modalSemakanStep1)?.hide();
+            });
         }
 
         // Each vendor's "Dokumen" link is built from data-item-uuid + data-spec-form-url-template.
@@ -1277,6 +1396,7 @@
                 const elTajuk = document.getElementById('modalSemakanSpesifikasiTajukDokumen');
                 if (elTajuk && tajuk) elTajuk.textContent = tajuk;
                 prefillPematuhanRows(modalSemakanSpesifikasi, itemUuid, 'btnSimpanSemakanSpesifikasiTeknikal');
+                refreshLocksAndPaint(modalSemakanSpesifikasi, itemUuid);
 
                 const urlTemplate = modalSemakanSpesifikasi.getAttribute('data-spec-form-url-template') || '';
                 modalSemakanSpesifikasi.querySelectorAll('.btn-lihat-spesifikasi-vendor').forEach(function(link) {
@@ -1304,6 +1424,7 @@
                 const elTajuk = document.getElementById('modalSemakanBorangTajukDokumen');
                 if (elTajuk && tajuk) elTajuk.textContent = tajuk;
                 prefillPematuhanRows(modalSemakanBorang, itemUuid, 'btnSimpanSemakanBorangAtasTalian');
+                refreshLocksAndPaint(modalSemakanBorang, itemUuid);
 
                 modalSemakanBorang.querySelectorAll('.btn-lihat-borang-vendor').forEach(function(link) {
                     const vendorId = link.getAttribute('data-vendor-id');
@@ -1330,18 +1451,20 @@
         }
 
         // Shared by Semakan Spesifikasi & Semakan Borang Atas Talian's "Lihat" links.
+        // Opening the document is what reserves the row — lock first, then open.
         function wireLihatDokumen(sourceModal, linkClass) {
             if (!sourceModal || !modalViewDoc) return;
 
             sourceModal.addEventListener('click', function(event) {
                 const link = event.target.closest('.' + linkClass);
-                if (!link) return;
+                if (!link || link.classList.contains('disabled')) return;
 
+                const vendorId = link.getAttribute('data-vendor-id');
+                const itemUuid = sourceModal.getAttribute('data-active-item-uuid') || '';
                 const url = link.getAttribute('data-doc-url');
                 const docTitle = link.getAttribute('data-doc-title') || 'Dokumen';
 
-                const openDocViewer = function() {
-                    sourceModal.removeEventListener('hidden.bs.modal', openDocViewer);
+                const openDocViewerNow = function() {
                     if (titleViewDoc) titleViewDoc.textContent = docTitle;
                     if (iframeViewDoc) {
                         iframeViewDoc.style.height = '300px';
@@ -1350,13 +1473,122 @@
                     docViewerReturnModal = sourceModal;
                     showModalEl(modalViewDoc);
                 };
-                sourceModal.addEventListener('hidden.bs.modal', openDocViewer);
+
+                const proceedToOpen = function() {
+                    sourceModal.addEventListener('hidden.bs.modal', openDocViewerNow, { once: true });
+                    bootstrap.Modal.getInstance(sourceModal)?.hide();
+                };
+
+                if (PEMATUHAN_CONFIRMED || !EvaluationSession.lockingActive()) {
+                    proceedToOpen();
+                    return;
+                }
+
+                const state = EvaluationSession.lockState(itemUuid, vendorId);
+
+                if (state === 'mine') {
+                    proceedToOpen();
+                    return;
+                }
+
+                // Bootstrap does not support two open modals at once — hide this one
+                // first, run the confirm/info dialog, then reopen unless moving on.
+                sourceModal.addEventListener('hidden.bs.modal', function onHiddenForDialog() {
+                    sourceModal.removeEventListener('hidden.bs.modal', onHiddenForDialog);
+
+                    if (state === 'other') {
+                        const lock = EvaluationSession.findLock(itemUuid, vendorId);
+                        EvaluationSession.confirmDialog({
+                            title: 'Sedang Dinilai',
+                            html: 'Dokumen petender ini sedang dinilai oleh <strong>' +
+                                EvaluationSession.escapeHtml(lock ? lock.user_name : 'ahli lain') +
+                                '</strong>. Sila pilih petender lain atau tunggu sehingga selesai.',
+                            icon: 'info',
+                            confirmText: 'OK',
+                            showCancel: false,
+                        }).then(function() {
+                            refreshLocksAndPaint(sourceModal, itemUuid);
+                            showModalEl(sourceModal);
+                        });
+                        return;
+                    }
+
+                    const itemTitle = sourceModal.querySelector('.spesifikasi-tajuk-value')?.textContent || '';
+                    const evaluation = PEMATUHAN_EVALUATIONS[vendorId + ':' + itemUuid];
+                    const alreadyEvaluated = !!evaluation;
+
+                    const dialog = alreadyEvaluated
+                        ? {
+                            title: 'Petender Ini Telah Disemak',
+                            html: 'Dokumen petender ini telah disemak dengan status <strong>' +
+                                (evaluation.status_pematuhan === 1 ? 'Mematuhi' : 'Tidak Mematuhi') +
+                                '</strong>.<br><br>Adakah anda mahu membuka semula dokumen ini untuk <strong>mengemas kini</strong> penilaian tersebut?',
+                            confirmText: 'Ya, Kemas Kini',
+                            icon: 'warning',
+                        }
+                        : {
+                            title: 'Nilai Dokumen Petender Ini?',
+                            html: 'Anda akan mula menilai pembekal ini. Ahli jawatankuasa lain tidak akan dapat menilai pembekal yang sama sehingga anda selesai.',
+                            confirmText: 'Ya, Mula Menilai',
+                            icon: 'warning',
+                        };
+
+                    EvaluationSession.confirmDialog(dialog).then(function(confirmed) {
+                        if (!confirmed) {
+                            showModalEl(sourceModal);
+                            return;
+                        }
+
+                        EvaluationSession.acquireLock(itemUuid, vendorId, itemTitle)
+                            .done(function() {
+                                EvaluationSession.addLocalLock(itemUuid, vendorId);
+                                paintPematuhanLockState(sourceModal, itemUuid);
+                                openDocViewerNow(); // sourceModal is already hidden
+                            })
+                            .fail(function(xhr) {
+                                if (xhr.status === 409) {
+                                    const holder = xhr.responseJSON?.data?.held_by_name || 'ahli lain';
+                                    EvaluationSession.confirmDialog({
+                                        title: 'Pembekal Ini Baru Sahaja Diambil',
+                                        html: 'Dokumen ini baru sahaja diambil oleh ' + EvaluationSession.escapeHtml(holder) + '. Sila pilih petender lain.',
+                                        icon: 'danger',
+                                        confirmText: 'OK',
+                                        showCancel: false,
+                                    }).then(function() {
+                                        refreshLocksAndPaint(sourceModal, itemUuid);
+                                        showModalEl(sourceModal);
+                                    });
+                                    return;
+                                }
+                                showToast('error', xhr.responseJSON?.message || 'Gagal memulakan penilaian pembekal ini.');
+                                showModalEl(sourceModal);
+                            });
+                    });
+                }, { once: true });
+
                 bootstrap.Modal.getInstance(sourceModal)?.hide();
             });
         }
 
         wireLihatDokumen(modalSemakanSpesifikasi, 'btn-lihat-spesifikasi-vendor');
         wireLihatDokumen(modalSemakanBorang, 'btn-lihat-borang-vendor');
+
+        // Polls locks AND colleagues' saved results while a Langkah 1 modal is open.
+        [modalSemakanStep1, modalSemakanSpesifikasi, modalSemakanBorang].forEach(function(modalEl) {
+            if (!modalEl) return;
+
+            modalEl.addEventListener('shown.bs.modal', function() {
+                if (PEMATUHAN_CONFIRMED || !EvaluationSession.lockingActive()) return;
+                EvaluationSession.startPolling('rowLocks', function() {
+                    return refreshLocksAndPaint(modalEl, modalEl.getAttribute('data-active-item-uuid'));
+                }, 5000);
+            });
+
+            modalEl.addEventListener('hidden.bs.modal', function() {
+                EvaluationSession.stopPolling('rowLocks');
+                refreshOuterStatuses();
+            });
+        });
 
         // Refills previously-saved Status Pematuhan/Catatan and tags the modal with the active item uuid.
         function prefillPematuhanRows(modalEl, itemUuid, saveBtnId) {
@@ -1368,7 +1600,6 @@
                 const saved = PEMATUHAN_EVALUATIONS[vendorId + ':' + itemUuid];
                 select.value = saved ? String(saved.status_pematuhan) : '';
                 select.classList.remove('is-invalid');
-                select.disabled = PEMATUHAN_CONFIRMED;
             });
 
             modalEl.querySelectorAll('.pematuhan-catatan').forEach(function(input) {
@@ -1376,7 +1607,6 @@
                 const saved = PEMATUHAN_EVALUATIONS[vendorId + ':' + itemUuid];
                 input.value = saved ? (saved.catatan || '') : '';
                 input.classList.remove('is-invalid');
-                input.disabled = PEMATUHAN_CONFIRMED;
             });
 
             // Read-only once confirmed — the elimination it triggered already used this data.
@@ -1392,6 +1622,121 @@
                     saveBtn.textContent = hasAnyEvaluation ? 'Kemaskini' : 'Simpan';
                 }
             }
+
+            paintPematuhanLockState(modalEl, itemUuid);
+        }
+
+        /** Paints each row's controls from the current (possibly cached) lock/evaluation state. */
+        function paintPematuhanLockState(modalEl, itemUuid) {
+            if (!modalEl || !itemUuid) return;
+
+            modalEl.querySelectorAll('tr[data-vendor-id]').forEach(function(row) {
+                const vendorId = row.getAttribute('data-vendor-id');
+                const state = PEMATUHAN_CONFIRMED ? 'confirmed' : EvaluationSession.lockState(itemUuid, vendorId);
+                const evaluation = PEMATUHAN_EVALUATIONS[vendorId + ':' + itemUuid];
+                const isEvaluated = !!evaluation;
+                const lock = EvaluationSession.findLock(itemUuid, vendorId);
+
+                const $row          = $(row);
+                const $select       = $row.find('.pematuhan-status');
+                const $catatan      = $row.find('.pematuhan-catatan');
+                const $badge        = $row.find('.pematuhan-badge');
+                const $catatanText  = $row.find('.pematuhan-catatan-text');
+                const $note         = $row.find('.pematuhan-lock-note');
+                const $lihatLink    = $row.find('.btn-lihat-spesifikasi-vendor, .btn-lihat-borang-vendor');
+                const $mulaMenilai  = $row.find('.pematuhan-mula-menilai');
+                const $fileList     = $row.find('.dokumen-file-list');
+
+                if (state === 'confirmed') {
+                    $select.prop('disabled', true).removeClass('d-none');
+                    $catatan.prop('disabled', true).removeClass('d-none');
+                    $badge.addClass('d-none');
+                    $catatanText.addClass('d-none');
+                    $lihatLink.removeClass('disabled');
+                    $mulaMenilai.addClass('d-none');
+                    $fileList.removeClass('d-none');
+                    $note.empty();
+                    return;
+                }
+
+                if (state === 'mine') {
+                    $select.prop('disabled', false).removeClass('d-none');
+                    $catatan.prop('disabled', false).removeClass('d-none');
+                    $badge.addClass('d-none');
+                    $catatanText.addClass('d-none');
+                    $lihatLink.removeClass('disabled').attr('aria-disabled', 'false');
+                    $mulaMenilai.addClass('d-none');
+                    $fileList.removeClass('d-none');
+                    $note.html(lock ? '<span class="lock-note lock-note-mine"><i class="bi bi-unlock-fill"></i>Sedang dinilai oleh anda</span>' : '');
+                } else if (state === 'other') {
+                    $select.addClass('d-none');
+                    $catatan.addClass('d-none');
+                    $badge.removeClass('d-none')
+                        .attr('class', 'badge-status pematuhan-badge badge-status-warning')
+                        .text('Sedang Dinilai');
+                    $catatanText.removeClass('d-none').text('—');
+                    $lihatLink.addClass('disabled').attr('aria-disabled', 'true');
+                    $mulaMenilai.addClass('d-none');
+                    $fileList.addClass('d-none');
+                    $note.html('<span class="lock-note lock-note-other"><i class="bi bi-lock-fill"></i>Sedang dinilai oleh ' +
+                        EvaluationSession.escapeHtml(lock ? lock.user_name : 'ahli lain') + '</span>');
+                } else if (isEvaluated) {
+                    $select.addClass('d-none');
+                    $catatan.addClass('d-none');
+                    $badge.removeClass('d-none')
+                        .attr('class', 'badge-status pematuhan-badge ' +
+                            (evaluation.status_pematuhan === 1 ? 'badge-status-success' : 'badge-status-danger'))
+                        .text(evaluation.status_pematuhan === 1 ? 'Mematuhi' : 'Tidak Mematuhi');
+                    $catatanText.removeClass('d-none')
+                        .text(evaluation.catatan || '—')
+                        .toggleClass('text-muted', !evaluation.catatan);
+                    $lihatLink.removeClass('disabled').attr('aria-disabled', 'false');
+                    $mulaMenilai.addClass('d-none');
+                    $fileList.removeClass('d-none');
+                    if (evaluation.evaluator_name) {
+                        $note.html('<span class="lock-note lock-note-done"><i class="bi bi-check-circle-fill"></i>Disemak oleh ' +
+                            EvaluationSession.escapeHtml(evaluation.evaluator_name) + '</span>');
+                    } else {
+                        $note.empty();
+                    }
+                } else {
+                    // free, not yet evaluated — must claim the row before judging it
+                    $select.prop('disabled', true).removeClass('d-none');
+                    $catatan.prop('disabled', true).removeClass('d-none');
+                    $badge.addClass('d-none');
+                    $catatanText.addClass('d-none');
+                    $lihatLink.removeClass('disabled').attr('aria-disabled', 'false');
+                    if ($mulaMenilai.length) {
+                        $mulaMenilai.removeClass('d-none');
+                        $fileList.addClass('d-none');
+                    }
+                    $note.empty();
+                }
+            });
+        }
+
+        /** Re-fetches this item's locks then repaints — used on modal open and each poll tick. */
+        function refreshLocksAndPaint(modalEl, itemUuid) {
+            if (!modalEl || !itemUuid) return;
+
+            return $.when(
+                EvaluationSession.fetchLocks(itemUuid),
+                $.get(SESI_EVALUASI_URL, { tender: TENDER_IDENTIFIER, checklist_item_uuid: itemUuid })
+            ).done(function(lockRes, evalRes) {
+                EvaluationSession.setItemLocks(itemUuid, (lockRes[0].data && lockRes[0].data.locks) || []);
+
+                (evalRes[0].data.evaluations || []).forEach(function(row) {
+                    const vendorId = String(row.vendor_id);
+                    if (EvaluationSession.lockState(itemUuid, vendorId) === 'mine') return;
+                    PEMATUHAN_EVALUATIONS[vendorId + ':' + itemUuid] = {
+                        status_pematuhan: row.status_pematuhan,
+                        catatan: row.catatan,
+                        evaluator_name: row.evaluator_name,
+                    };
+                });
+
+                paintPematuhanLockState(modalEl, itemUuid);
+            });
         }
 
         // itemStatus comes straight from the server response, never recomputed client-side.
@@ -1413,6 +1758,66 @@
             }
         }
 
+        /**
+         * Only the Pengerusi may confirm a step. Applied only while a step is still
+         * unconfirmed — once confirmed, every member may move on. Route middleware
+         * enforces the same rule server-side.
+         */
+        function applyPerananRestrictions() {
+            if (EvaluationSession.state().can_submit) return;
+
+            if (!PEMATUHAN_CONFIRMED) {
+                $('#pengerusiOnlyNoteStep1').removeClass('d-none');
+                $('#confirmLayak').prop('checked', false).prop('disabled', true)
+                    .closest('.pengesahan-card').addClass('is-readonly');
+            }
+
+            if (!SPESIFIKASI_CONFIRMED) {
+                $('#pengerusiOnlyNoteStep2').removeClass('d-none');
+                $('#confirmLayakStep2').prop('checked', false).prop('disabled', true)
+                    .closest('.pengesahan-card').addClass('is-readonly');
+            }
+        }
+
+        // Keeps the Langkah 1 table's Status Penilaian current while colleagues evaluate.
+        function refreshOuterStatuses() {
+            const uuids = Array.from(document.querySelectorAll('#teknikal-1 tr[data-item-uuid]'))
+                .map(function(row) { return row.getAttribute('data-item-uuid'); })
+                .filter(Boolean);
+
+            if (!uuids.length) return;
+
+            return $.get(SESI_STATUS_URL, { tender: TENDER_IDENTIFIER, items: uuids })
+                .done(function(res) {
+                    const statuses = (res.data && res.data.statuses) || {};
+                    Object.keys(statuses).forEach(function(uuid) {
+                        updateStatusPenilaianBadge(uuid, statuses[uuid]);
+                    });
+
+                    // The Pengerusi may have confirmed elsewhere — unlock the next step.
+                    const confirmed = (res.data && res.data.confirmed) || {};
+                    if (confirmed.pematuhan && !PEMATUHAN_CONFIRMED) {
+                        PEMATUHAN_CONFIRMED = true;
+                        $('#pengerusiOnlyNoteStep1').addClass('d-none');
+                        $('#confirmLayak').closest('.pengesahan-card').removeClass('is-readonly');
+                        lockPengesahanCheckbox('confirmLayak');
+                        showToast('success', 'Pengerusi telah mengesahkan Langkah 1. Anda kini boleh meneruskan ke Langkah 2.');
+                    }
+                    if (confirmed.spesifikasi && !SPESIFIKASI_CONFIRMED) {
+                        SPESIFIKASI_CONFIRMED = true;
+                        $('#pengerusiOnlyNoteStep2').addClass('d-none');
+                        $('#confirmLayakStep2').closest('.pengesahan-card').removeClass('is-readonly');
+                        lockPengesahanCheckbox('confirmLayakStep2');
+                        showToast('success', 'Pengerusi telah mengesahkan Langkah 2. Anda kini boleh meneruskan ke Langkah 3.');
+                    }
+
+                    // Nothing left to watch for once both are confirmed.
+                    if (PEMATUHAN_CONFIRMED && SPESIFIKASI_CONFIRMED) {
+                        EvaluationSession.stopPolling('outerStatus');
+                    }
+                });
+        }
+
         // Shared Simpan handler for all three Langkah 1 modals.
         function wireSimpanPematuhan(modalEl, saveBtnId) {
             if (!modalEl) return;
@@ -1423,11 +1828,17 @@
                 const itemUuid = modalEl.getAttribute('data-active-item-uuid') || '';
                 if (!itemUuid) return;
 
+                const locking = EvaluationSession.lockingActive() && !PEMATUHAN_CONFIRMED;
                 const rows = [];
                 let hasError = false;
 
                 modalEl.querySelectorAll('.pematuhan-status').forEach(function(select) {
                     const vendorId = select.getAttribute('data-vendor-id');
+
+                    if (locking && EvaluationSession.lockState(itemUuid, vendorId) !== 'mine') {
+                        return;
+                    }
+
                     const statusPematuhan = select.value;
                     const catatanInput = modalEl.querySelector('.pematuhan-catatan[data-vendor-id="' + vendorId + '"]');
                     const catatan = catatanInput ? catatanInput.value.trim() : '';
@@ -1453,7 +1864,12 @@
                     showToast('warning', 'Sila lengkapkan semua Status Pematuhan. Catatan wajib diisi jika Status Pematuhan ialah Tidak Mematuhi.');
                     return;
                 }
-                if (!rows.length) return;
+                if (!rows.length) {
+                    showToast('warning', locking
+                        ? 'Tiada penilaian untuk disimpan. Klik Lihat pada pembekal yang ingin dinilai.'
+                        : 'Sila lengkapkan sekurang-kurangnya satu penilaian.');
+                    return;
+                }
 
                 setButtonBusy(saveBtn, 'Menyimpan...');
 
@@ -1480,10 +1896,21 @@
                         };
                     });
 
-                    bootstrap.Modal.getInstance(modalEl)?.hide();
-                    showToast('success', res.message || 'Penilaian pematuhan telah disimpan.');
-                    if (res.item_status) {
-                        updateStatusPenilaianBadge(itemUuid, res.item_status);
+                    const finish = function() {
+                        bootstrap.Modal.getInstance(modalEl)?.hide();
+                        showToast('success', res.message || 'Penilaian pematuhan telah disimpan.');
+                        if (res.item_status) {
+                            updateStatusPenilaianBadge(itemUuid, res.item_status);
+                        }
+                    };
+
+                    if (locking) {
+                        const itemTitle = modalEl.querySelector('.spesifikasi-tajuk-value')?.textContent || '';
+                        EvaluationSession.completeRows(itemUuid, rows.map(function(row) {
+                            return { vendor_id: row.vendorId, status_pematuhan: row.statusPematuhan };
+                        }), itemTitle).always(finish);
+                    } else {
+                        finish();
                     }
                 }).fail(function(xhr) {
                     showToast('error', xhr.responseJSON?.message || 'Ralat semasa menyimpan penilaian pematuhan.');
@@ -1620,6 +2047,8 @@
     });
 
     const msgTandakanPengesahan = 'Sila tandakan kotak pengesahan terlebih dahulu sebelum meneruskan.';
+    // Non-Pengerusi cannot tick that box, so telling them to tick it is a dead end.
+    const msgTungguPengerusi = 'Sila tunggu Pengerusi Jawatankuasa mengesahkan langkah ini sebelum meneruskan.';
     document.querySelectorAll('.btn-seterusnya').forEach(btn => {
         btn.addEventListener('click', () => {
             // Which inner sub-pane is this Seterusnya in? (teknikal-1/rumusan-1/teknikal-2/rumusan-2)
@@ -1653,7 +2082,9 @@
             ];
             const stepCheck = checks.find(c => c.id === currentId);
             if (stepCheck?.el && !stepCheck.el.checked) {
-                showToast('warning', msgTandakanPengesahan);
+                showToast('warning', EvaluationSession.state().can_submit
+                    ? msgTandakanPengesahan
+                    : msgTungguPengerusi);
                 return;
             }
 
