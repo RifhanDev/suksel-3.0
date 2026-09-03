@@ -243,10 +243,14 @@ class TenderDokumenContentBuilder
         TechnicalChecklistItem|FinancialChecklistItem|KewanganKerjaItem $item,
         array $apiOverlay = []
     ): array {
-        if (! empty($apiOverlay['specification_rows']) && is_array($apiOverlay['specification_rows'])) {
+        if (
+            ! empty($apiOverlay['specification_rows'])
+            && is_array($apiOverlay['specification_rows'])
+            && count(array_filter($apiOverlay['specification_rows'])) > 0
+        ) {
             return [
                 'document_title' => $apiOverlay['document_title'] ?? $item->title,
-                'rows' => $apiOverlay['specification_rows'],
+                'rows' => array_values($apiOverlay['specification_rows']),
             ];
         }
 

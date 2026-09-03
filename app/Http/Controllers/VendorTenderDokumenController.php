@@ -157,10 +157,17 @@ class VendorTenderDokumenController extends Controller
             $vendorId = $queryVendorId > 0 ? $queryVendorId : null;
         }
 
-        $item = $this->findChecklistItem($tender, $itemUuid, $vendorId ? 'vendor' : 'admin', $vendorId);
+        // Always resolve the checklist definition from admin mode so financial
+        // specification mirrors (excluded from vendor-mode lists) still get rows.
+        $item = $this->findChecklistItem($tender, $itemUuid, 'admin');
+        $item = $this->ensureSpecificationRows($tender, $item);
 
         if (($item['action'] ?? '') !== 'view_specification') {
             abort(404, 'Item dokumen spesifikasi tidak dijumpai.');
+        }
+
+        if ($vendorId) {
+            $item = $this->attachVendorSpecificationContent($tender, $item, $vendorId);
         }
 
         $viewName = (! $isVendor && $vendorId) ? 'tenders.dokumen.specification_review' : 'tenders.dokumen.specification_form';
@@ -175,15 +182,18 @@ class VendorTenderDokumenController extends Controller
             ];
         }
 
+        // Match Jawatankuasa Pembuka: staff modal review uses dokumentasi layout.
+        $summary = $request->query('summary');
+        if (! $isVendor && $summary === null && $request->boolean('modal')) {
+            $summary = 'dokumentasi';
+        }
+
         return view($viewName, array_merge([
             'tender' => $tender,
             'item' => $item,
             'vendor' => $vendorInfo,
             'isReadOnly' => ! $isVendor,
-            // Pilihan paparan ringkasan khusus panggilan (cth. 'dokumentasi' untuk
-            // Langkah 1 Penilaian Teknikal). Kosong = paparan penuh sedia ada
-            // (digunakan oleh Jawatankuasa Pembuka & lain-lain, tidak berubah).
-            'summary' => $request->query('summary'),
+            'summary' => $summary,
         ], $this->formViewVars($tender)));
     }
 
@@ -310,6 +320,186 @@ class VendorTenderDokumenController extends Controller
         }
 
         return $vendorId;
+    }
+
+    /**
+     * Rebuild specification rows when admin_content is empty / placeholder-only.
+     *
+     * @param  array<string, mixed>  $item
+     * @return array<string, mixed>
+     */
+    protected function ensureSpecificationRows(Tender $tender, array $item): array
+    {
+        if (($item['action'] ?? '') !== 'view_specification') {
+            return $item;
+        }
+
+        $rows = $item['admin_content']['rows'] ?? [];
+        $hasRealRows = collect($rows)->contains(function ($row) {
+            return is_array($row) && (
+                ! empty($row['item_uuid'])
+                || ! empty($row['detail_uuid'])
+                || (($row['kind'] ?? '') === 'spec')
+            );
+        });
+
+        if ($hasRealRows) {
+            return $item;
+        }
+
+        $uuid = (string) ($item['uuid'] ?? '');
+        $related = \Illuminate\Support\Facades\DB::table('financial_checklist_items as fci')
+            ->leftJoin('technical_checklist_items as tci', 'tci.id', '=', 'fci.technical_item_id')
+            ->leftJoin('specification_pricings as sp', 'sp.technical_checklist_item_id', '=', 'tci.id')
+            ->leftJoin('technical_specification_documents as tsd', 'tsd.id', '=', 'tci.specification_document_id')
+            ->where(function ($q) use ($uuid) {
+                $q->where('fci.uuid', $uuid)
+                    ->orWhere('tci.uuid', $uuid)
+                    ->orWhere('sp.uuid', $uuid)
+                    ->orWhere('tsd.uuid', $uuid);
+            })
+            ->select('tci.id as tci_id', 'tci.specification_document_id', 'tsd.id as tsd_id')
+            ->first();
+
+        $techItem = null;
+        if ($related?->tci_id) {
+            $techItem = \App\Models\TechnicalChecklistItem::query()->find($related->tci_id);
+        }
+
+        if (! $techItem) {
+            $techItem = \App\Models\TechnicalChecklistItem::query()
+                ->whereHas('header', fn ($q) => $q->where('tender_id', $tender->id))
+                ->whereNotNull('specification_document_id')
+                ->orderBy('sort_order')
+                ->orderBy('id')
+                ->first();
+        }
+
+        if (! $techItem && (int) ($tender->kategori_perolehan_id ?? 0) === 3) {
+            $header = \App\Models\SpesifikasiKerjaHeader::query()
+                ->where('tender_id', $tender->id)
+                ->with(['items' => fn ($q) => $q->orderBy('sort_order')->orderBy('id'), 'items.specs.files'])
+                ->first();
+            if ($header && $header->items->isNotEmpty()) {
+                $built = (new \App\Support\TenderDokumenContentBuilder($tender))
+                    ->buildForSpesifikasiKerjaHeader($header, $header->items);
+                $item['admin_content'] = $built['admin_content'] ?? $item['admin_content'];
+                $item['section'] = $built['section'] ?? $item['section'];
+                $item['uuid'] = $built['uuid'] ?? $item['uuid'];
+
+                return $item;
+            }
+        }
+
+        if ($techItem) {
+            $built = (new \App\Support\TenderDokumenContentBuilder($tender))
+                ->buildForChecklistItem($techItem, 'technical');
+            $item['admin_content'] = $built['admin_content'] ?? $item['admin_content'];
+            if (empty($item['section']) || $item['section'] === 'financial') {
+                // Keep original section for saves, but ensure rows come from technical doc.
+            }
+        }
+
+        return $item;
+    }
+
+    /**
+     * Attach vendor-submitted specification answers, searching related checklist UUIDs.
+     *
+     * @param  array<string, mixed>  $item
+     * @return array<string, mixed>
+     */
+    protected function attachVendorSpecificationContent(Tender $tender, array $item, int $vendorId): array
+    {
+        $candidateUuids = $this->specificationResponseCandidateUuids($tender, (string) ($item['uuid'] ?? ''));
+
+        $response = \App\Models\TenderVendorDokumenResponse::query()
+            ->where('tender_id', $tender->id)
+            ->where('vendor_id', $vendorId)
+            ->where('response_type', 'specification')
+            ->when($candidateUuids !== [], fn ($q) => $q->whereIn('checklist_item_uuid', $candidateUuids))
+            ->orderByDesc('id')
+            ->first();
+
+        if (! $response) {
+            $response = \App\Models\TenderVendorDokumenResponse::query()
+                ->where('tender_id', $tender->id)
+                ->where('vendor_id', $vendorId)
+                ->where('response_type', 'specification')
+                ->orderByDesc('id')
+                ->first();
+        }
+
+        $files = \App\Models\TenderVendorDokumenFile::query()
+            ->where('tender_id', $tender->id)
+            ->where('vendor_id', $vendorId)
+            ->when($candidateUuids !== [], fn ($q) => $q->whereIn('checklist_item_uuid', $candidateUuids))
+            ->orderBy('id')
+            ->get();
+
+        $item['vendor_content'] = [
+            'key_in' => null,
+            'specification' => $response
+                ? $this->responses->normalizeSpecificationPayload(
+                    is_array($response->payload) ? $response->payload : null
+                )
+                : ['item_prices' => [], 'details' => []],
+            'files' => $files->map(fn ($file) => [
+                'uuid' => $file->uuid,
+                'name' => $file->original_name,
+                'url' => $file->url(),
+                'size' => $file->size,
+            ])->values()->all(),
+            'status' => $response?->status ?? ($files->isNotEmpty() ? 'submitted' : 'draft'),
+        ];
+
+        return $item;
+    }
+
+    /**
+     * @return list<string>
+     */
+    protected function specificationResponseCandidateUuids(Tender $tender, string $itemUuid): array
+    {
+        $uuids = array_filter([$itemUuid]);
+
+        $related = \Illuminate\Support\Facades\DB::table('financial_checklist_items as fci')
+            ->leftJoin('technical_checklist_items as tci', 'tci.id', '=', 'fci.technical_item_id')
+            ->leftJoin('specification_pricings as sp', 'sp.technical_checklist_item_id', '=', 'tci.id')
+            ->leftJoin('technical_specification_documents as tsd', 'tsd.id', '=', 'tci.specification_document_id')
+            ->where(function ($q) use ($itemUuid) {
+                $q->where('fci.uuid', $itemUuid)
+                    ->orWhere('tci.uuid', $itemUuid)
+                    ->orWhere('sp.uuid', $itemUuid)
+                    ->orWhere('tsd.uuid', $itemUuid);
+            })
+            ->select('fci.uuid as fci_uuid', 'tci.uuid as tci_uuid', 'sp.uuid as sp_uuid', 'tsd.uuid as tsd_uuid')
+            ->first();
+
+        if ($related) {
+            $uuids = array_merge($uuids, array_filter([
+                $related->fci_uuid,
+                $related->tci_uuid,
+                $related->sp_uuid,
+                $related->tsd_uuid,
+            ]));
+        }
+
+        $techUuids = \Illuminate\Support\Facades\DB::table('technical_checklist_headers as tch')
+            ->join('technical_checklist_items as tci', 'tci.technical_checklist_header_id', '=', 'tch.id')
+            ->leftJoin('technical_specification_documents as tsd', 'tsd.id', '=', 'tci.specification_document_id')
+            ->leftJoin('specification_pricings as sp', 'sp.technical_checklist_item_id', '=', 'tci.id')
+            ->where('tch.tender_id', $tender->id)
+            ->select('tci.uuid as tci_uuid', 'tsd.uuid as tsd_uuid', 'sp.uuid as sp_uuid')
+            ->get();
+
+        foreach ($techUuids as $row) {
+            $uuids[] = $row->tci_uuid;
+            $uuids[] = $row->tsd_uuid;
+            $uuids[] = $row->sp_uuid;
+        }
+
+        return array_values(array_unique(array_filter($uuids)));
     }
 
     /**
