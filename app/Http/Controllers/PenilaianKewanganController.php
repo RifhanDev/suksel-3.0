@@ -22,6 +22,13 @@ class PenilaianKewanganController extends Controller
     use ResolvesTenderForProcess;
     use RestrictsTenderByRole;
 
+    /**
+     * 2-peringkat = 'fin'; 1-peringkat = 'eval'/'harga' (same committee handles kewangan).
+     *
+     * @var list<string>
+     */
+    protected array $financialCommitteeJenis = ['fin', 'eval', 'harga'];
+
     public function __construct()
     {
         $this->menuMiddleware('FinancialEvaluation:list');
@@ -31,7 +38,7 @@ class PenilaianKewanganController extends Controller
     {
         $query = $this->applyCommitteeAppointment(
             Tender::query()->where('status_process_id', TenderProcessStatus::penilaianKewanganListStatus()),
-            'fin'
+            $this->financialCommitteeJenis
         );
 
         if ($request->filled('no_tender')) {
@@ -82,7 +89,7 @@ class PenilaianKewanganController extends Controller
             })
             ->first();
 
-        $this->assertCommitteeAppointment($tender, 'fin');
+        $this->assertCommitteeAppointment($tender, $this->financialCommitteeJenis);
 
         if ($tender && (int) ($tender->kategori_perolehan_id ?? 0) === 3) {
             return redirect()->route('penilaianKewanganKerja.show', $tender->uuid ?: $tender->id);
