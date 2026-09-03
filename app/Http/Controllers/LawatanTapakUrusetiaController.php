@@ -235,7 +235,7 @@ class LawatanTapakUrusetiaController extends Controller
     protected function findTenderForUrusetia($tenderId): Tender
     {
         $user = auth()->user();
-        if (!$user || !$user->ability(['Admin', 'Agency Admin', 'Agency User'], [])) {
+        if (!$user || !$user->ability(['Admin', 'Agency Admin', 'Agency User', 'Agency Urusetia'], [])) {
             abort(403);
         }
 
