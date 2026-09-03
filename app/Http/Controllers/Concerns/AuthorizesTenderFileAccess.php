@@ -46,7 +46,6 @@ trait AuthorizesTenderFileAccess
         if (
             $user->hasRole('Agency Admin')
             || $user->hasRole('Agency User')
-            || $user->hasRole('Front Desk')
         ) {
             return true;
         }

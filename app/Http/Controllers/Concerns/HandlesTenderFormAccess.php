@@ -49,7 +49,7 @@ trait HandlesTenderFormAccess
             return;
         }
 
-        if ($user->hasRole('Jawatankuasa') || $user->hasRole('Agency Admin') || $user->hasRole('Agency User') || $user->hasRole('Front Desk')) {
+        if ($user->hasRole('Jawatankuasa') || $user->hasRole('Agency Admin') || $user->hasRole('Agency User')) {
             return;
         }
 
@@ -71,12 +71,25 @@ trait HandlesTenderFormAccess
         $isStaff = $user->hasRole('Admin')
             || $user->can('tender:specification-management')
             || $user->hasRole('Jawatankuasa')
+            || $user->hasRole('Agency Jawatankuasa')
             || $user->hasRole('Agency Admin')
             || $user->hasRole('Agency User');
 
-        // Staff/committee review (mode=view) must not run as vendor save/edit mode,
-        // even for dual-role Vendor + Jawatankuasa accounts.
-        if ($isStaff && (request('mode') === 'view' || request()->boolean('view'))) {
+        // Staff/committee review must not run as vendor save/edit mode,
+        // even for dual-role Vendor + Jawatankuasa/Admin accounts.
+        $queryVendorId = (int) request('vendor_id');
+        $isReviewingVendor = $queryVendorId > 0
+            && (int) ($user->vendor_id ?? 0) !== $queryVendorId;
+        $isModalReview = $queryVendorId > 0 && request()->boolean('modal');
+
+        if (
+            $isStaff && (
+                request('mode') === 'view'
+                || request()->boolean('view')
+                || $isReviewingVendor
+                || $isModalReview
+            )
+        ) {
             return false;
         }
 

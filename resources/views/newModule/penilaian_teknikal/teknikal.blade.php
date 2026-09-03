@@ -1285,7 +1285,7 @@
                     if (!itemUuid || !vendorId || !urlTemplate) return;
                     const baseUrl = urlTemplate.replace('__ITEM_UUID__', encodeURIComponent(itemUuid));
                     const separator = baseUrl.includes('?') ? '&' : '?';
-                    link.setAttribute('data-doc-url', baseUrl + separator + 'vendor_id=' + encodeURIComponent(vendorId) + '&modal=1');
+                    link.setAttribute('data-doc-url', baseUrl + separator + 'vendor_id=' + encodeURIComponent(vendorId) + '&modal=1&mode=view');
                     link.setAttribute('data-doc-title', (tajuk ? tajuk + ' — ' : '') + 'Pembekal ' + kodPembekal);
                 });
             });
@@ -1310,7 +1310,7 @@
                     const kodPembekal = link.getAttribute('data-kod-pembekal') || '';
                     if (!vendorId || !formUrl) return;
                     const separator = formUrl.includes('?') ? '&' : '?';
-                    link.setAttribute('data-doc-url', formUrl + separator + 'vendor_id=' + encodeURIComponent(vendorId) + '&modal=1');
+                    link.setAttribute('data-doc-url', formUrl + separator + 'vendor_id=' + encodeURIComponent(vendorId) + '&modal=1&mode=view');
                     link.setAttribute('data-doc-title', (tajuk ? tajuk + ' — ' : '') + 'Pembekal ' + kodPembekal);
                 });
             });
