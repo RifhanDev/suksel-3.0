@@ -1882,38 +1882,71 @@
                 $dokTbody.empty();
 
                 let vendorFiles = [];
+                const vIdStr = String(activeStep2VendorId || '');
+                const vIdNum = parseInt(activeStep2VendorId, 10);
 
-                // 1. From VENDOR_FORM_PAYLOADS (Penyata Bank Form submitted files)
-                const vPayloadDataForDocs = (typeof VENDOR_FORM_PAYLOADS !== 'undefined' && VENDOR_FORM_PAYLOADS[activeStep2VendorId]) ? VENDOR_FORM_PAYLOADS[activeStep2VendorId] : {};
-                if (vPayloadDataForDocs) {
-                    if (Array.isArray(vPayloadDataForDocs.dokumen_sokongan)) {
-                        vendorFiles = vendorFiles.concat(vPayloadDataForDocs.dokumen_sokongan);
+                // 1. From VENDOR_FORM_PAYLOADS (Penyata Bank / Profil Petender submitted files)
+                const vPayloadDataForDocs = (typeof VENDOR_FORM_PAYLOADS !== 'undefined')
+                    ? (VENDOR_FORM_PAYLOADS[vIdStr] || VENDOR_FORM_PAYLOADS[vIdNum] || {})
+                    : {};
+
+                if (vPayloadDataForDocs && typeof vPayloadDataForDocs === 'object') {
+                    const keysToCheck = ['dokumen_sokongan', 'files', 'attachments', 'dokumen', 'lampiran', 'penyata_bank_files', 'dokumen_penyata_bank'];
+                    keysToCheck.forEach(k => {
+                        const val = vPayloadDataForDocs[k];
+                        if (Array.isArray(val)) {
+                            vendorFiles = vendorFiles.concat(val);
+                        } else if (val && typeof val === 'object' && (val.url || val.path || val.file_path || val.name)) {
+                            vendorFiles.push(val);
+                        }
+                    });
+                    if (Array.isArray(vPayloadDataForDocs.accounts)) {
+                        vPayloadDataForDocs.accounts.forEach(acc => {
+                            if (Array.isArray(acc.files)) {
+                                vendorFiles = vendorFiles.concat(acc.files);
+                            }
+                        });
                     }
-                    if (Array.isArray(vPayloadDataForDocs.files)) {
-                        vendorFiles = vendorFiles.concat(vPayloadDataForDocs.files);
-                    }
-                    if (Array.isArray(vPayloadDataForDocs.attachments)) {
-                        vendorFiles = vendorFiles.concat(vPayloadDataForDocs.attachments);
+                    if (vPayloadDataForDocs.path || vPayloadDataForDocs.file_path || vPayloadDataForDocs.url) {
+                        vendorFiles.push(vPayloadDataForDocs);
                     }
                 }
 
                 // 2. From PENYATA_BANK_CONFIG.files
-                if (PENYATA_BANK_CONFIG.files && Array.isArray(PENYATA_BANK_CONFIG.files)) {
-                    const pFiles = PENYATA_BANK_CONFIG.files.filter(f => !f.vendor_id || f.vendor_id == activeStep2VendorId);
+                if (typeof PENYATA_BANK_CONFIG !== 'undefined' && PENYATA_BANK_CONFIG.files && Array.isArray(PENYATA_BANK_CONFIG.files)) {
+                    const pFiles = PENYATA_BANK_CONFIG.files.filter(f => !f.vendor_id || f.vendor_id == activeStep2VendorId || !f.uploaded_by || f.uploaded_by == activeStep2VendorId);
                     vendorFiles = vendorFiles.concat(pFiles);
                 }
 
-                // 3. From DOKUMEN_BY_VENDOR for penyata_bank
-                if (typeof DOKUMEN_BY_VENDOR !== 'undefined' && DOKUMEN_BY_VENDOR[activeStep2VendorId]) {
-                    const vDocs = DOKUMEN_BY_VENDOR[activeStep2VendorId];
-                    if (Array.isArray(vDocs)) {
-                        vDocs.forEach(d => {
+                // 3. From DOKUMEN_BY_VENDOR
+                if (typeof DOKUMEN_BY_VENDOR !== 'undefined') {
+                    const vDocs = DOKUMEN_BY_VENDOR[vIdStr] || DOKUMEN_BY_VENDOR[vIdNum];
+                    if (vDocs) {
+                        const docsList = Array.isArray(vDocs) ? vDocs : Object.values(vDocs);
+                        docsList.forEach(d => {
                             const files = d.vendor_content?.files || d.files || [];
                             if (Array.isArray(files) && files.length > 0) {
                                 vendorFiles = vendorFiles.concat(files);
+                            } else if (d.vendor_content?.url || d.vendor_content?.path || d.vendor_content?.file_path) {
+                                vendorFiles.push(d.vendor_content);
+                            } else if (d.url || d.path || d.file_path) {
+                                vendorFiles.push(d);
                             }
                         });
                     }
+                }
+
+                // 4. From SEMAK_PAYLOAD items
+                if (typeof SEMAK_PAYLOAD !== 'undefined' && SEMAK_PAYLOAD && typeof SEMAK_PAYLOAD === 'object') {
+                    Object.values(SEMAK_PAYLOAD).forEach(item => {
+                        const vendorData = item?.vendors?.[vIdStr] || item?.vendors?.[vIdNum];
+                        if (vendorData) {
+                            const files = vendorData.content?.files || vendorData.files || [];
+                            if (Array.isArray(files) && files.length > 0) {
+                                vendorFiles = vendorFiles.concat(files);
+                            }
+                        }
+                    });
                 }
 
                 // Deduplicate files by URL/path/name
@@ -1931,27 +1964,39 @@
                 if (uniqueFiles.length > 0) {
                     uniqueFiles.forEach(f => {
                         const fileName = f.name || f.filename || f.original_name || f.title || 'Dokumen Sokongan';
-                        let rawUrl = f.url || f.path || f.file_path || f.filepath || '#';
                         let fileUrl = '#';
-                        if (rawUrl && rawUrl !== '#') {
-                            if (/^(https?:|\/\/|data:)/i.test(rawUrl)) {
-                                fileUrl = rawUrl;
-                            } else {
-                                rawUrl = rawUrl.replace(/\\/g, '/').replace(/^public\//, '');
-                                if (!rawUrl.startsWith('/')) rawUrl = '/' + rawUrl;
-                                if (!rawUrl.startsWith('/storage/')) rawUrl = '/storage' + rawUrl;
-                                fileUrl = rawUrl;
+                        if (f.uuid) {
+                            fileUrl = '/tenders/dokumen-files/' + f.uuid + '/download';
+                        } else {
+                            let rawUrl = f.url || f.path || f.file_path || f.filepath || '#';
+                            if (rawUrl && rawUrl !== '#') {
+                                if (/^(https?:|\/\/|data:)/i.test(rawUrl)) {
+                                    fileUrl = rawUrl;
+                                } else {
+                                    rawUrl = rawUrl.replace(/\\/g, '/');
+                                    if (rawUrl.startsWith('public/')) {
+                                        rawUrl = rawUrl.replace(/^public\//, '');
+                                    }
+                                    if (!rawUrl.startsWith('/')) {
+                                        rawUrl = '/' + rawUrl;
+                                    }
+                                    if (!rawUrl.startsWith('/tenders/') && !rawUrl.startsWith('/storage/') && !rawUrl.startsWith('/api/')) {
+                                        rawUrl = '/storage' + rawUrl;
+                                    }
+                                    fileUrl = rawUrl;
+                                }
                             }
                         }
+
                         const ext = (fileName.split('.').pop() || '').toLowerCase();
-                        const isPdf = (ext === 'pdf');
+                        const isPdf = (ext === 'pdf' || (f.mime_type && f.mime_type.toLowerCase().includes('pdf')));
 
                         const actionBtn = isPdf
                             ? '<a href="' + escapeHtml(fileUrl) + '" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-primary px-3 py-1 d-inline-flex align-items-center gap-1 font-monospace">' +
                                 '<i class="bi bi-eye me-1"></i><span>Papar Dokumen</span>' +
                               '</a>'
                             : '<a href="' + escapeHtml(fileUrl) + '" download="' + escapeHtml(fileName) + '" class="btn btn-sm btn-outline-primary px-3 py-1 d-inline-flex align-items-center gap-1 font-monospace">' +
-                                '<i class="bi bi-download me-1"></i><span>Papar Dokumen</span>' +
+                                '<i class="bi bi-download me-1"></i><span>Muat Naik Dokumen</span>' +
                               '</a>';
 
                         $dokTbody.append(

@@ -144,11 +144,19 @@ class PenyataBankPersistenceService
                 ])->values()->all(),
                 'jumlah_keseluruhan' => (float) $record->jumlah_keseluruhan,
                 'purata' => (float) $record->purata,
-                'files' => $record->files->map(fn ($f) => [
-                    'uuid' => $f->uuid,
-                    'original_name' => $f->original_name,
-                    'size' => $f->size,
-                ])->values()->all(),
+                'files' => $record->files->map(function ($f) {
+                    $cleanPath = ltrim(str_replace('public/', '', $f->path ?? ''), '/');
+                    return [
+                        'uuid'          => $f->uuid,
+                        'name'          => $f->original_name,
+                        'original_name' => $f->original_name,
+                        'path'          => $cleanPath,
+                        'file_path'     => $cleanPath,
+                        'url'           => ! empty($f->uuid) ? route('tenderDokumen.download', $f->uuid) : asset('storage/' . $cleanPath),
+                        'size'          => $f->size,
+                        'uploaded_by'   => $f->uploaded_by,
+                    ];
+                })->values()->all(),
             ]];
         }
 
