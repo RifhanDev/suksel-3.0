@@ -22,7 +22,8 @@ class PenilaianKewanganKerjaController extends Controller
     use ResolvesTenderForProcess;
     use RestrictsTenderByRole;
 
-    protected string $committeeJenisForResolvedTenders = 'fin';
+    /** 2-peringkat = 'fin'; 1-peringkat = 'eval'/'harga'. */
+    protected array $committeeJenisForResolvedTenders = ['fin', 'eval', 'harga'];
 
     public function __construct()
     {
