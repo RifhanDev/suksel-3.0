@@ -460,9 +460,10 @@ class PenilaianTeknikalController extends Controller
         }
 
         return match ($item->vendor_action) {
-            'pengalaman-kerja'   => route('tenderDokumen.pengalamanKerjaReview', ['tender' => $tender->id]),
-            'kerja-dalam-tangan' => route('tenderDokumen.kerjaDalamTanganReview', ['tender' => $tender->id]),
-            default              => null,
+            'pengalaman-kerja'    => route('tenderDokumen.pengalamanKerjaReview', ['tender' => $tender->id]),
+            'kerja-dalam-tangan'  => route('tenderDokumen.kerjaDalamTanganReview', ['tender' => $tender->id]),
+            'kakitangan-teknikal' => route('kakitanganTeknikal', ['tenderUuid' => $tender->uuid]),
+            default               => null,
         };
     }
 

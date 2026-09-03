@@ -27,7 +27,8 @@ class KakitanganTeknikalController extends Controller
         }
         $this->ensureTenderFormAccess($tender);
 
-        $vendorId = $this->resolveVendorId();
+        // Staff review (?vendor_id=&mode=view) and vendor mode both need per-vendor isolation.
+        $vendorId = $this->vendorId();
 
         $query = TenderKakitanganTeknikal::with('dokumens')
             ->where('tender_uuid', $tender->uuid)

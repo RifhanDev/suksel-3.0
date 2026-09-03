@@ -132,6 +132,7 @@
 
     <div id="kt-toast-container"></div>
 
+    @unless ($modalEmbed ?? false)
     <!-- HEADER -->
     <div class="d-flex flex-column flex-lg-row justify-content-start align-items-start align-items-lg-center mb-4">
         <div>
@@ -177,6 +178,7 @@
 
         </div>
     </div>
+    @endunless
 
     <!-- SECTION: SENARAI KAKITANGAN TEKNIKAL -->
     <div class="content-card mb-4 p-0">
@@ -208,7 +210,9 @@
                             <th class="py-3" style="min-width:140px;">Kategori</th>
                             <th class="py-3" style="min-width:200px;">Tahap Pendidikan Tertinggi</th>
                             <th class="py-3" style="width:160px;">Jumlah Pengalaman</th>
+                            @if (!($viewOnly ?? false))
                             <th class="text-center py-3" style="width:80px;">Tindakan</th>
+                            @endif
                         </tr>
                     </thead>
                     <tbody id="tbl-kakitangan-body">
@@ -223,22 +227,22 @@
                                 </td>
                                 <td class="text-muted cell-pendidikan">{{ $item->tahap_pendidikan }}</td>
                                 <td class="text-muted cell-pengalaman">{{ $item->jumlah_pengalaman }} Tahun</td>
+                                @if (!($viewOnly ?? false))
                                 <td class="text-center">
                                     <div class="d-inline-flex align-items-center gap-1">
-                                        @if (!($viewOnly ?? false))
                                         <button type="button" class="row-action-btn btn-edit-row" title="Kemaskini">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                                         </button>
                                         <button type="button" class="row-action-btn btn-hapus-row" title="Buang">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></svg>
                                         </button>
-                                        @endif
                                     </div>
                                 </td>
+                                @endif
                             </tr>
                         @empty
                             <tr id="tr-empty-state">
-                                <td colspan="6" class="text-center text-muted py-4 small">Tiada rekod kakitangan teknikal dimasukkan lagi. Klik "Tambah Kakitangan" di atas untuk menambah.</td>
+                                <td colspan="{{ ($viewOnly ?? false) ? 5 : 6 }}" class="text-center text-muted py-4 small">Tiada rekod kakitangan teknikal dimasukkan lagi. Klik "Tambah Kakitangan" di atas untuk menambah.</td>
                             </tr>
                         @endforelse
                     </tbody>
