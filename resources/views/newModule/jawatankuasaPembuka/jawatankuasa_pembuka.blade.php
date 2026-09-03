@@ -5,6 +5,8 @@
 	<link href="{{ asset('css/components/custom-table.css') }}" rel="stylesheet">
 	<link href="{{ asset('css/components/guideline-card.css') }}" rel="stylesheet">
 	<link href="{{ asset('css/components/stepper.css') }}" rel="stylesheet">
+	<link href="{{ asset('css/components/modal-declaration.css') }}" rel="stylesheet">
+	<link href="{{ asset('css/components/evaluation-row-lock.css') }}" rel="stylesheet">
 
 	<style>
 		.step-content-item {
@@ -96,25 +98,6 @@
 		/* =========================
 		PERANAN — Pengerusi-only notice on Langkah 3
 		========================= */
-		.pengerusi-only-note {
-			display: flex;
-			align-items: flex-start;
-			gap: 9px;
-			padding: 11px 14px;
-			margin-bottom: 12px;
-			background: #eff6ff;
-			border: 1px solid #bfdbfe;
-			border-radius: 8px;
-			font-size: 0.79rem;
-			line-height: 1.5;
-			color: #1e40af;
-		}
-
-		.pengerusi-only-note i {
-			flex-shrink: 0;
-			margin-top: 1px;
-		}
-
 		.declaration-box.is-readonly {
 			opacity: 0.6;
 		}
@@ -170,135 +153,6 @@
 
 		.semak-lock-note {
 			margin-top: 5px;
-		}
-
-		.lock-note {
-			display: inline-flex;
-			align-items: center;
-			gap: 5px;
-			font-size: 0.7rem;
-			font-weight: 600;
-			line-height: 1.3;
-		}
-
-		.lock-note-other { color: #b45309; }
-		.lock-note-mine  { color: #15803d; }
-		.lock-note-free  { color: #94a3b8; }
-		.lock-note-done  { color: #0369a1; }
-
-		.btn-semak-lihat.disabled {
-			pointer-events: none;
-			opacity: 0.5;
-		}
-
-		/* =========================
-		AKUAN PENGAKUAN — pre-evaluation modal (distinct from the
-		.declaration-* classes used by Pengesahan Akhir in Langkah 3)
-		========================= */
-		.akuan-eyebrow {
-			display: block;
-			font-size: 0.62rem;
-			font-weight: 700;
-			letter-spacing: 1.5px;
-			text-transform: uppercase;
-			color: #94a3b8;
-			margin-bottom: 2px;
-		}
-
-		.akuan-meta {
-			display: flex;
-			flex-wrap: wrap;
-			gap: 2rem;
-			padding: 12px 16px;
-			background: #f8fafc;
-			border: 1px solid #e2e8f0;
-			border-radius: 8px;
-		}
-
-		.akuan-meta-label {
-			display: block;
-			font-size: 0.62rem;
-			font-weight: 700;
-			letter-spacing: 1px;
-			text-transform: uppercase;
-			color: #94a3b8;
-		}
-
-		.akuan-meta-value {
-			display: block;
-			font-size: 0.85rem;
-			font-weight: 700;
-			color: #1e293b;
-		}
-
-		.akuan-scroll {
-			max-height: 46vh;
-			overflow-y: auto;
-			padding: 18px 20px;
-			border: 1px solid #e2e8f0;
-			border-radius: 8px;
-			background: #fff;
-			font-size: 0.84rem;
-			line-height: 1.65;
-			color: #334155;
-		}
-
-		.akuan-scroll:focus-visible {
-			outline: none;
-			border-color: #cbd5e1;
-			box-shadow: 0 0 0 3px rgba(148, 163, 184, 0.18);
-		}
-
-		.akuan-scroll h6 {
-			font-size: 0.8rem;
-			font-weight: 700;
-			color: #0f172a;
-			margin: 18px 0 6px;
-		}
-
-		.akuan-scroll h6:first-of-type {
-			margin-top: 14px;
-		}
-
-		.akuan-scroll p {
-			margin-bottom: 10px;
-		}
-
-		.akuan-closing {
-			margin-top: 18px;
-			padding-top: 14px;
-			border-top: 1px dashed #e2e8f0;
-			font-weight: 600;
-			color: #0f172a;
-		}
-
-		/* Sentinel the scroll observer watches; also guarantees the last line
-		   can clear the fade at the bottom of the box. */
-		.akuan-end {
-			height: 1px;
-		}
-
-		.akuan-hint {
-			display: flex;
-			align-items: center;
-			gap: 7px;
-			margin-top: 10px;
-			font-size: 0.76rem;
-			font-weight: 600;
-			color: #b45309;
-		}
-
-		.akuan-hint.is-complete {
-			color: #15803d;
-		}
-
-		.akuan-hint svg {
-			flex-shrink: 0;
-		}
-
-		#btnAkuanSetuju:disabled {
-			opacity: 0.5;
-			cursor: not-allowed;
 		}
 
 		/* =========================
@@ -733,87 +587,10 @@
 	</div>
 </div>
 
-{{-- ========================================
-     MODAL: Akuan Pengakuan — shown once per member per tender before evaluating.
-     Blocking (static backdrop); the agree button unlocks only after the text is
-     scrolled to the end.
-======================================== --}}
-<div class="modal fade" id="modalAkuan" tabindex="-1" aria-labelledby="modalAkuanLabel" aria-hidden="true">
-	<div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-		<div class="modal-content border-0 shadow-lg rounded-3">
-			<div class="modal-header px-4 pt-4 border-0">
-				<div class="d-flex align-items-center gap-3">
-					<div class="content-card-icon flex-shrink-0" style="width: 42px; height: 42px;">
-						<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-							<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-						</svg>
-					</div>
-					<div>
-						<span class="akuan-eyebrow">Sebelum Penilaian Bermula</span>
-						<h5 class="modal-title fw-bold text-dark mb-0" id="modalAkuanLabel" style="font-size: 1.05rem; letter-spacing: -0.2px;">Akuan Pengakuan Ahli Jawatankuasa Pembuka</h5>
-					</div>
-				</div>
-			</div>
-
-			<div class="modal-body px-4 pb-0">
-				<div class="akuan-meta mb-3">
-					<div>
-						<span class="akuan-meta-label">Tender</span>
-						<span class="akuan-meta-value">{{ $tender->no_tender ?: ($tender->ref_number ?: '-') }}</span>
-					</div>
-					<div>
-						<span class="akuan-meta-label">Peranan Anda</span>
-						<span class="akuan-meta-value" id="akuanPeranan">&mdash;</span>
-					</div>
-				</div>
-
-				<div class="akuan-scroll" id="akuanScroll" tabindex="0">
-					<p>Saya, sebagai ahli Jawatankuasa Pembuka yang dilantik bagi tender/sebut harga di atas, dengan ini mengaku dan berjanji seperti berikut:</p>
-
-					<h6>1. Kerahsiaan Maklumat</h6>
-					<p>Saya akan merahsiakan segala maklumat, dokumen, harga tawaran, dan apa-apa butiran petender yang saya perolehi sepanjang proses pembukaan dan penilaian ini. Saya tidak akan mendedahkan maklumat tersebut kepada mana-mana pihak yang tidak berkenaan, sama ada secara lisan, bertulis, elektronik atau apa-apa cara lain, semasa mahupun selepas proses ini selesai.</p>
-
-					<h6>2. Percanggahan Kepentingan</h6>
-					<p>Saya mengesahkan bahawa saya tidak mempunyai apa-apa kepentingan peribadi, keluarga, kewangan atau perniagaan dengan mana-mana petender yang terlibat dalam tender/sebut harga ini. Sekiranya wujud apa-apa percanggahan kepentingan, sama ada sedia ada atau yang timbul kemudian, saya akan segera memaklumkan kepada Pengerusi Jawatankuasa dan menarik diri daripada penilaian berkaitan.</p>
-
-					<h6>3. Ketelusan dan Kesaksamaan</h6>
-					<p>Saya akan menjalankan penilaian dengan adil, telus dan saksama berdasarkan semata-mata kepada dokumen yang dikemukakan oleh petender serta kriteria penilaian yang telah ditetapkan. Saya tidak akan memihak kepada mana-mana petender atas apa-apa sebab selain daripada merit tawaran mereka.</p>
-
-					<h6>4. Larangan Menerima Sebarang Bentuk Suapan</h6>
-					<p>Saya tidak akan meminta, menerima atau bersetuju untuk menerima apa-apa bentuk suapan, hadiah, keraian, komisen atau apa-apa manfaat daripada mana-mana petender atau wakil mereka. Saya faham bahawa perbuatan sedemikian adalah satu kesalahan di bawah Akta Suruhanjaya Pencegahan Rasuah Malaysia 2009.</p>
-
-					<h6>5. Integriti Rekod Penilaian</h6>
-					<p>Saya mengaku bahawa setiap penilaian yang saya rekodkan dalam sistem ini adalah hasil pertimbangan saya sendiri terhadap dokumen yang telah saya semak. Saya tidak akan merekodkan sebarang keputusan penilaian bagi dokumen yang tidak saya semak, dan tidak akan membenarkan mana-mana pihak lain merekodkan penilaian bagi pihak saya.</p>
-
-					<h6>6. Penggunaan Akaun Sendiri</h6>
-					<p>Saya bertanggungjawab sepenuhnya ke atas akaun pengguna saya. Saya tidak akan berkongsi kata laluan atau membenarkan mana-mana individu lain mengakses sistem ini menggunakan akaun saya. Saya faham bahawa segala tindakan yang direkodkan melalui akaun saya akan dianggap sebagai tindakan saya sendiri.</p>
-
-					<h6>7. Rekod Aktiviti</h6>
-					<p>Saya memahami dan bersetuju bahawa setiap tindakan saya dalam proses penilaian ini &mdash; termasuk masa akuan ini diterima, dokumen yang saya buka, penilaian yang saya rekodkan, dan penghantaran akhir &mdash; akan direkodkan secara automatik oleh sistem untuk tujuan audit dan boleh dirujuk pada bila-bila masa oleh pihak berkuasa yang berkenaan.</p>
-
-					<h6>8. Tanggungjawab</h6>
-					<p>Saya faham bahawa keputusan Jawatankuasa Pembuka memberi kesan langsung kepada kelayakan petender untuk meneruskan ke peringkat penilaian seterusnya. Saya menerima tanggungjawab tersebut dengan penuh amanah.</p>
-
-					<p class="akuan-closing">Saya mengaku bahawa segala maklumat dan pengakuan di atas adalah benar. Saya faham bahawa sekiranya saya melanggar mana-mana pengakuan ini, tindakan tatatertib dan/atau tindakan undang-undang boleh diambil terhadap saya.</p>
-
-					<div class="akuan-end" id="akuanEnd" aria-hidden="true"></div>
-				</div>
-
-				<div class="akuan-hint" id="akuanHint">
-					<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-						<path d="M12 5v14"></path><path d="m19 12-7 7-7-7"></path>
-					</svg>
-					<span>Sila tatal sehingga ke penghujung teks untuk meneruskan.</span>
-				</div>
-			</div>
-
-			<div class="modal-footer px-4 pb-4 pt-3 border-0">
-				<button type="button" class="btn-form btn-form-secondary" id="btnAkuanTolak">Keluar</button>
-				<button type="button" class="btn-form btn-form-success" id="btnAkuanSetuju" disabled>Saya Faham dan Bersetuju</button>
-			</div>
-		</div>
-	</div>
-</div>
+@include('components.evaluation-declaration-modal', [
+	'committeeLabel' => 'Jawatankuasa Pembuka',
+	'tenderNo' => $tender->no_tender ?: ($tender->ref_number ?: '-'),
+])
 
 {{-- ========================================
      MODAL: Semak Pematuhan
@@ -926,6 +703,7 @@
 
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="{{ asset('js/evaluation-session.js') }}"></script>
 <script>
 	// ─────────────────────────────────────────────────────────────────
 	// CONSTANTS (from Blade)
@@ -939,13 +717,20 @@
 
 	// Live evaluation session (akuan, tempahan baris, log) — shared endpoints,
 	// 'open' selects Jawatankuasa Pembuka.
-	const SESI_SESSION_URL     = '{{ route('penilaianSesi.session', ['jenis' => 'open']) }}';
-	const SESI_DECLARATION_URL = '{{ route('penilaianSesi.declaration', ['jenis' => 'open']) }}';
-	const SESI_LOCK_URL        = '{{ route('penilaianSesi.lock', ['jenis' => 'open']) }}';
-	const SESI_UNLOCK_URL      = '{{ route('penilaianSesi.lock.release', ['jenis' => 'open']) }}';
-	const SESI_COMPLETE_URL    = '{{ route('penilaianSesi.rows.complete', ['jenis' => 'open']) }}';
-	const SESI_LOCKS_URL       = '{{ route('penilaianSesi.locks', ['jenis' => 'open']) }}';
-	const SESI_LOG_URL         = '{{ route('penilaianSesi.log', ['jenis' => 'open']) }}';
+	const SESI_URLS = {
+		session:      '{{ route('penilaianSesi.session', ['jenis' => 'open']) }}',
+		declaration:  '{{ route('penilaianSesi.declaration', ['jenis' => 'open']) }}',
+		lock:         '{{ route('penilaianSesi.lock', ['jenis' => 'open']) }}',
+		lockRelease:  '{{ route('penilaianSesi.lock.release', ['jenis' => 'open']) }}',
+		rowsComplete: '{{ route('penilaianSesi.rows.complete', ['jenis' => 'open']) }}',
+		locks:        '{{ route('penilaianSesi.locks', ['jenis' => 'open']) }}',
+		log:          '{{ route('penilaianSesi.log', ['jenis' => 'open']) }}',
+	};
+	const SESI_LOCK_URL     = SESI_URLS.lock;
+	const SESI_UNLOCK_URL   = SESI_URLS.lockRelease;
+	const SESI_COMPLETE_URL = SESI_URLS.rowsComplete;
+	const SESI_LOCKS_URL    = SESI_URLS.locks;
+	const SESI_LOG_URL      = SESI_URLS.log;
 	const SESI_EVALUASI_URL    = '{{ route('jawatankuasaPembuka.penilaianSemasa') }}';
 	const SESI_STATUS_URL      = '{{ route('jawatankuasaPembuka.statusPenilaian') }}';
 	const SESI_BUMIPUTERA_URL  = '{{ route('jawatankuasaPembuka.tarafBumiputera') }}';
@@ -956,17 +741,8 @@
 	// Latest saved evaluation per vendor for the open item, keyed by vendor_id.
 	let ROW_EVALUATIONS = {};
 
-	// Populated from the session endpoint on load.
-	let SESI = {
-		user_id: null,
-		peranan: null,
-		peranan_label: null,
-		is_committee_member: false,
-		is_admin: false,
-		can_submit: false,
-		has_declared: false,
-		locks: []
-	};
+	// Live reference to the shared session state; filled by EvaluationSession.start().
+	const SESI = EvaluationSession.state();
 
 	// ─────────────────────────────────────────────────────────────────
 	// STEPPER STATE
@@ -1990,75 +1766,6 @@
 		}, extra || {}));
 	}
 
-	function loadSesi() {
-		return $.get(SESI_SESSION_URL, { tender: TENDER_IDENTIFIER })
-			.done(function (res) {
-				SESI = Object.assign(SESI, res.data || {});
-			});
-	}
-
-	/**
-	 * Enables the agree button once the text has been read to the end.
-	 * Uses IntersectionObserver against a sentinel at the bottom of the text, so it
-	 * stays correct at any zoom level or viewport height where a scrollTop maths
-	 * check would drift. Falls back to a scroll listener where unsupported.
-	 */
-	function wireAkuanScrollGate() {
-		const box    = document.getElementById('akuanScroll');
-		const end    = document.getElementById('akuanEnd');
-		const $btn   = $('#btnAkuanSetuju');
-		const $hint  = $('#akuanHint');
-
-		if (!box || !end) return;
-
-		function unlock() {
-			$btn.prop('disabled', false);
-			$hint.addClass('is-complete')
-				.find('span').text('Terima kasih. Anda kini boleh menerima akuan ini.');
-		}
-
-		// Text short enough to need no scrolling at all — nothing to gate on.
-		if (box.scrollHeight <= box.clientHeight + 2) {
-			unlock();
-			return;
-		}
-
-		if ('IntersectionObserver' in window) {
-			const observer = new IntersectionObserver(function (entries) {
-				if (entries.some(function (e) { return e.isIntersecting; })) {
-					unlock();
-					observer.disconnect();
-				}
-			}, { root: box, threshold: 1.0 });
-			observer.observe(end);
-			return;
-		}
-
-		box.addEventListener('scroll', function onScroll() {
-			if (box.scrollTop + box.clientHeight >= box.scrollHeight - 8) {
-				unlock();
-				box.removeEventListener('scroll', onScroll);
-			}
-		});
-	}
-
-	function showAkuanModal() {
-		$('#akuanPeranan').text(SESI.peranan_label || 'Ahli Jawatankuasa');
-
-		const modal = new bootstrap.Modal(document.getElementById('modalAkuan'), {
-			backdrop: 'static',
-			keyboard: false
-		});
-
-		// Gate is wired after the modal is visible so the scroll box has real dimensions.
-		document.getElementById('modalAkuan').addEventListener('shown.bs.modal', function () {
-			wireAkuanScrollGate();
-			document.getElementById('akuanScroll').focus();
-		}, { once: true });
-
-		modal.show();
-	}
-
 	// Pengerusi-only finalisation. Route middleware enforces the same rule server-side.
 	function applyPerananRestrictions() {
 		if (SESI.can_submit) return;
@@ -2085,43 +1792,17 @@
 	}
 
 	function initSesiPenilaian() {
-		loadSesi()
-			.done(function () {
-				applyPerananRestrictions();
-				resumeLatestStep();
-
-				// Admins overseeing the process are not committee members and have no
-				// akuan to give; members must accept once per tender before evaluating.
-				if (!SESI.is_committee_member || SESI.has_declared) {
-					return;
-				}
-				showAkuanModal();
-			})
-			.fail(function () {
-				showToast('error', 'Gagal memuatkan sesi penilaian. Sila muat semula halaman.');
-			});
+		EvaluationSession.configure({
+			jenis: 'open',
+			tender: TENDER_IDENTIFIER,
+			csrfToken: CSRF_TOKEN,
+			exitUrl: '{{ route('indexJawatankuasaPembuka') }}',
+			urls: SESI_URLS,
+		}).start(function () {
+			applyPerananRestrictions();
+			resumeLatestStep();
+		});
 	}
-
-	$('#btnAkuanSetuju').on('click', function () {
-		const $btn = $(this);
-		$btn.prop('disabled', true).text('Merekod...');
-
-		$.post(SESI_DECLARATION_URL, { _token: CSRF_TOKEN, tender: TENDER_IDENTIFIER })
-			.done(function (res) {
-				SESI.has_declared = true;
-				bootstrap.Modal.getInstance(document.getElementById('modalAkuan')).hide();
-				showToast('success', res.message || 'Akuan telah direkodkan.');
-			})
-			.fail(function (xhr) {
-				$btn.prop('disabled', false).text('Saya Faham dan Bersetuju');
-				showToast('error', xhr.responseJSON?.message || 'Gagal merekod akuan.');
-			});
-	});
-
-	// Declining means leaving — evaluation cannot proceed without the akuan.
-	$('#btnAkuanTolak').on('click', function () {
-		window.location.href = '{{ route('indexJawatankuasaPembuka') }}';
-	});
 
 	// ─────────────────────────────────────────────────────────────────
 	// INIT

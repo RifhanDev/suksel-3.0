@@ -22,6 +22,13 @@ class PenilaianKewanganController extends Controller
     use ResolvesTenderForProcess;
     use RestrictsTenderByRole;
 
+    /**
+     * 2-peringkat = 'fin'; 1-peringkat = 'eval'/'harga' (same committee handles kewangan).
+     *
+     * @var list<string>
+     */
+    protected array $financialCommitteeJenis = ['fin', 'eval', 'harga'];
+
     public function __construct()
     {
         $this->menuMiddleware('FinancialEvaluation:list');
@@ -31,7 +38,7 @@ class PenilaianKewanganController extends Controller
     {
         $query = $this->applyCommitteeAppointment(
             Tender::query()->where('status_process_id', TenderProcessStatus::penilaianKewanganListStatus()),
-            'fin'
+            $this->financialCommitteeJenis
         );
 
         if ($request->filled('no_tender')) {
@@ -82,7 +89,7 @@ class PenilaianKewanganController extends Controller
             })
             ->first();
 
-        $this->assertCommitteeAppointment($tender, 'fin');
+        $this->assertCommitteeAppointment($tender, $this->financialCommitteeJenis);
 
         if ($tender && (int) ($tender->kategori_perolehan_id ?? 0) === 3) {
             return redirect()->route('penilaianKewanganKerja.show', $tender->uuid ?: $tender->id);
@@ -395,6 +402,40 @@ class PenilaianKewanganController extends Controller
             ];
         }
 
+        $penyataBankFiles = \Illuminate\Support\Facades\DB::table('penyata_bank_files')
+            ->join('penyata_banks', 'penyata_banks.id', '=', 'penyata_bank_files.penyata_bank_id')
+            ->where('penyata_banks.tender_id', $tender->id)
+            ->select('penyata_bank_files.*')
+            ->get()
+            ->map(function ($f) {
+                $path = $f->path ?? '';
+                $cleanPath = ltrim(str_replace('public/', '', $path), '/');
+                return [
+                    'uuid'          => $f->uuid,
+                    'name'          => $f->original_name,
+                    'original_name' => $f->original_name,
+                    'path'          => $cleanPath,
+                    'file_path'     => $cleanPath,
+                    'url'           => ! empty($f->uuid) ? route('tenderDokumen.download', $f->uuid) : asset('storage/' . $cleanPath),
+                    'size'          => $f->size,
+                    'uploaded_by'   => $f->uploaded_by,
+                ];
+            })
+            ->all();
+
+        if (! isset($penyataBankConfig['files']) || ! is_array($penyataBankConfig['files'])) {
+            $penyataBankConfig['files'] = [];
+        }
+        $penyataBankConfig['files'] = array_merge($penyataBankConfig['files'], $penyataBankFiles);
+
+        $vendorFormPayloads = \Illuminate\Support\Facades\DB::table('tender_vendor_form_payloads')
+            ->where('tender_id', $tender->id)
+            ->where('form_key', 'penyata_bank')
+            ->get()
+            ->keyBy('vendor_id')
+            ->map(fn ($r) => json_decode($r->payload, true))
+            ->all();
+
         $progress = null;
         if ($tender) {
             $progress = TenderKewanganProgress::query()->firstOrCreate(
@@ -432,6 +473,7 @@ class PenilaianKewanganController extends Controller
             'penyataBankItems',
             'vendors',
             'dokumenByVendor',
+            'vendorFormPayloads',
             'semakPayload',
             'pembekalMelepasi',
             'pembekalTidakMelepasi',
@@ -1066,11 +1108,8 @@ class PenilaianKewanganController extends Controller
                 if ($eval) {
                     if ($isProfilPetender) {
                         $step3Evaluated = ($vendorRow['skor_modal_berbayar'] !== null && $vendorRow['skor_modal_berbayar'] !== '');
-                    } elseif ($isSpesifikasi) {
-                        $step3Evaluated = ($vendorRow['skor'] !== null && (float) $vendorRow['skor'] > 0);
                     } else {
-                        // Muat Naik: Step 1 saves skor=0. Step 3 saves skor=max_score (>0).
-                        $step3Evaluated = ($vendorRow['skor'] !== null && (float) $vendorRow['skor'] > 0);
+                        $step3Evaluated = ($vendorRow['skor'] !== null && $vendorRow['skor'] !== '');
                     }
                 }
                 $vendorRow['step3_evaluated'] = $step3Evaluated;

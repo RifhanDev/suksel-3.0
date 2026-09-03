@@ -116,9 +116,10 @@
 									</a>
 								</li>
 							@endif
-							@if ($tender->canCancel() && $tender->approver_id)
+							@if ($tender->canCancelSiar() && $tender->approver_id)
 								<li>
-									<a class="dropdown-item text-danger" href="{{ asset('tenders/' . $tender->id . '/cancel') }}">
+									<a class="dropdown-item text-danger" href="{{ asset('tenders/' . $tender->id . '/cancel') }}"
+										onclick="return confirm('Batal siar tender ini? Status akan kembali ke peringkat Penyediaan Iklan.')">
 										<svg xmlns="http://www.w3.org/2000/svg" class="me-2" width="15" height="15" viewBox="0 0 24 24">
 											<path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
 												stroke-width="2" d="M18 6l-12 12M6 6l12 12" />

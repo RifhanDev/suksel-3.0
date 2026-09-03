@@ -6,6 +6,7 @@ use App\Models\TenderVendorDokumenFile;
 use App\Models\TenderVendorDokumenResponse;
 use App\Tender;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -40,6 +41,37 @@ class VendorDokumenResponseService
             ->get()
             ->groupBy('checklist_item_uuid');
 
+        return $this->buildResponseMap($keyIns, $files);
+    }
+
+    // Batches responsesByItemUuid() across vendors: 2 queries total instead of 2 per vendor.
+    public function responsesByItemUuidForVendors(Tender $tender, Collection $vendorIds): array
+    {
+        $keyInsByVendor = TenderVendorDokumenResponse::query()
+            ->where('tender_id', $tender->id)
+            ->whereIn('vendor_id', $vendorIds)
+            ->get()
+            ->groupBy('vendor_id');
+
+        $filesByVendor = TenderVendorDokumenFile::query()
+            ->where('tender_id', $tender->id)
+            ->whereIn('vendor_id', $vendorIds)
+            ->orderBy('id')
+            ->get()
+            ->groupBy('vendor_id');
+
+        $result = [];
+        foreach ($vendorIds as $vendorId) {
+            $keyIns = ($keyInsByVendor->get($vendorId) ?? collect())->keyBy('checklist_item_uuid');
+            $files = ($filesByVendor->get($vendorId) ?? collect())->groupBy('checklist_item_uuid');
+            $result[$vendorId] = $this->buildResponseMap($keyIns, $files);
+        }
+
+        return $result;
+    }
+
+    protected function buildResponseMap(Collection $keyIns, Collection $files): array
+    {
         $uuids = $keyIns->keys()->merge($files->keys())->unique();
 
         $result = [];

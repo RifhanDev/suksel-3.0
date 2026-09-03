@@ -6,6 +6,7 @@ use App\Http\Controllers\Concerns\HandlesTenderFormAccess;
 use App\Models\Tender;
 use App\Models\TenderKakitanganTeknikal;
 use App\Models\TenderKakitanganTeknikalDokumen;
+use App\Support\StosStoredFile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -27,7 +28,8 @@ class KakitanganTeknikalController extends Controller
         }
         $this->ensureTenderFormAccess($tender);
 
-        $vendorId = $this->resolveVendorId();
+        // Staff review (?vendor_id=&mode=view) and vendor mode both need per-vendor isolation.
+        $vendorId = $this->vendorId();
 
         $query = TenderKakitanganTeknikal::with('dokumens')
             ->where('tender_uuid', $tender->uuid)
@@ -341,6 +343,28 @@ class KakitanganTeknikalController extends Controller
         }
     }
 
+    // Streams through the app instead of a plain /storage/ URL — same helper
+    // TenderChecklistFileController uses, so it doesn't depend on the public disk symlink.
+    public function downloadDokumen(string $uuid)
+    {
+        $dokumen = TenderKakitanganTeknikalDokumen::where('uuid', $uuid)->first();
+        if (! $dokumen) {
+            abort(404, 'Dokumen tidak dijumpai.');
+        }
+
+        $tender = $this->findTender($dokumen->tender_uuid);
+        if (! $tender) {
+            abort(404, 'Tender tidak dijumpai.');
+        }
+        $this->ensureTenderFormAccess($tender);
+
+        return StosStoredFile::response([
+            'path' => $dokumen->path,
+            'original_name' => $dokumen->original_name,
+            'mime_type' => $dokumen->mime_type,
+        ]);
+    }
+
     public function uploadGeneralDokumen(Request $request, string $tenderUuid)
     {
         $tender = $this->findTender($tenderUuid);
@@ -389,7 +413,7 @@ class KakitanganTeknikalController extends Controller
                         'uuid'          => $doc->uuid,
                         'original_name' => $doc->original_name,
                         'path'          => $doc->path,
-                        'url'           => Storage::disk('public')->url($doc->path),
+                        'url'           => $doc->url,
                     ];
                 }
             }

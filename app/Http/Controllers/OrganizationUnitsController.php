@@ -588,7 +588,7 @@ class OrganizationUnitsController extends Controller
 				$datatable = $datatable->addColumn('actions', function ($tender) {
 					$str = [];
 					if (empty($tender->approver_id)) $str[] = link_to_route('tender.edit', 'Kemaskini', $tender->id, ['class' => 'btn btn-sm btn-warning rounded-8 px-3 text-nowrap']);
-					if ($tender->canCancel() && $tender->approver_id > 0) $str[] = link_to_action('TendersController@cancel', 'Batal Siar', $tender->id, ['class' => 'btn btn-sm btn-danger rounded-8 px-3 text-nowrap']);
+					if ($tender->canCancelSiar() && $tender->approver_id > 0) $str[] = link_to_action('TendersController@cancel', 'Batal Siar', $tender->id, ['class' => 'btn btn-sm btn-danger rounded-8 px-3 text-nowrap', 'onclick' => 'return confirm(\'Batal siar tender ini? Status akan kembali ke peringkat Penyediaan Iklan.\')']);
 					if ($tender->canUpdate() && empty($tender->approver_id)) $str[] = link_to_action('TendersController@publish', 'Siar', $tender->id, ['class' => 'btn btn-sm btn-success rounded-8 px-3 text-nowrap']);
 					return '<div class="d-flex gap-1 justify-content-center flex-nowrap">' . implode('', $str) . '</div>';
 				});

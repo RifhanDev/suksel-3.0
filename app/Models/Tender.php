@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\TenderProcessStatus;
 use Illuminate\Database\Eloquent\Model;
 use Carbon\Carbon;
 use DB;
@@ -366,6 +367,16 @@ class Tender extends Model
 		} else {
 			return false;
 		}
+	}
+
+	// Batal Siar rewinds the tender to Penyediaan Iklan, so block it once vendor documents are in.
+	public function canCancelSiar()
+	{
+		if (!$this->canCancel()) {
+			return false;
+		}
+
+		return (int) ($this->status_process_id ?? 0) < TenderProcessStatus::HANTAR_DOKUMEN_SYARIKAT;
 	}
 
 	public function canApprove()

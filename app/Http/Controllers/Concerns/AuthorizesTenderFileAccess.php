@@ -51,7 +51,14 @@ trait AuthorizesTenderFileAccess
         }
 
         // Committee members (including Agency Jawatankuasa / dual-role accounts).
-        if ($user->hasRole('Jawatankuasa') || $user->hasRole('Agency Jawatankuasa')) {
+        if (
+            $user->hasRole('Jawatankuasa')
+            || $user->hasRole('Agency Jawatankuasa')
+            || $user->hasRole('Urus Setia')
+            || $user->hasRole('Agency Urus Setia')
+            || $user->hasRole('Penilai')
+            || $user->hasRole('Agency Penilai')
+        ) {
             if ($tender === null) {
                 return true;
             }
@@ -59,8 +66,8 @@ trait AuthorizesTenderFileAccess
             return $tender->isAppointedTo($user, ['spec', 'open', 'tech', 'fin', 'eval', 'harga']);
         }
 
-        // Non-vendor staff (e.g. PTJ) may review tender files.
-        if (! $user->vendor_id) {
+        // Non-vendor staff (e.g. PTJ, Agency staff, government evaluators) may review tender files.
+        if (empty($user->vendor_id)) {
             return true;
         }
 

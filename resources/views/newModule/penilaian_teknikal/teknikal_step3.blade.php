@@ -295,6 +295,13 @@
         </div>
     </div>
 
+    @if (!($fullySubmitted ?? false))
+        <div class="pengerusi-only-note d-none" id="pengerusiOnlyNoteStep3">
+            <i class="bi bi-info-circle-fill"></i>
+            <span>Laporan ini hanya boleh dikemaskini dan dihantar oleh <strong>Pengerusi Jawatankuasa</strong>. Ahli lain boleh menyemak kandungan di halaman ini.</span>
+        </div>
+    @endif
+
     {{-- PERINGKAT PERTAMA — Pematuhan Dokumentasi --}}
     <div class="laporan-section laporan-section--first">
         <div class="laporan-phase">
@@ -821,21 +828,72 @@
             });
         }
 
+        // Only the Pengerusi may draft or submit this report; everyone else views it
+        // read-only. Route middleware enforces the same rule server-side. Exposed on
+        // window so teknikal.blade.php's EvaluationSession.start() callback can call it
+        // once the session (and can_submit) is actually known — this script's own
+        // DOMContentLoaded runs before that, so it can't check EvaluationSession here.
+        window.applyStep3PerananRestrictions = function() {
+            if (typeof EvaluationSession === 'undefined' || EvaluationSession.state().can_submit) return;
+
+            const note = document.getElementById('pengerusiOnlyNoteStep3');
+            if (note) note.classList.remove('d-none');
+
+            ['laporan3CatatanPematuhan', 'laporan3CatatanSpesifikasi', 'laporan3PengesyoranIntro'].forEach(function(id) {
+                const el = document.getElementById(id);
+                if (el) el.contentEditable = 'false';
+            });
+
+            if (pengesyoranList) {
+                pengesyoranList.querySelectorAll('textarea').forEach(function(el) {
+                    el.disabled = true;
+                });
+                pengesyoranList.querySelectorAll('.btn-hapus-justifikasi').forEach(function(el) {
+                    el.style.display = 'none';
+                });
+            }
+
+            [btnTambahPengesyoran, document.getElementById('btnSimpanDrafLaporan'), btnHantar].forEach(function(el) {
+                if (el) el.style.display = 'none';
+            });
+        };
+
+        // Only Pengerusi can ever change this draft, so it's always safe to overwrite a
+        // non-Pengerusi viewer's (read-only) display with the latest save. Skipped entirely
+        // for Pengerusi — refreshing under them mid-edit would wipe unsaved typing.
+        function refreshLaporanContent() {
+            if (typeof EvaluationSession === 'undefined' || EvaluationSession.state().can_submit) {
+                return $.Deferred().resolve().promise();
+            }
+
+            return $.get(LAPORAN_URL_STEP3).done(function(data) {
+                renderLaporanDraft(data);
+            });
+        }
+
         const laporanTabLink = document.getElementById('laporan-tab');
         if (laporanTabLink) {
             laporanTabLink.addEventListener('shown.bs.tab', function() {
-                // Rumusan calls fill the catatan fields with a predefined default first, so the
-                // draft fetch below can reliably overwrite it with a real saved value if one
-                // exists — .always(), not .done(), so a rumusan failure still lets the draft load.
-                $.when(
-                    $.get(RUMUSAN_PEMATUHAN_URL_STEP3).done(renderLaporanPematuhan),
-                    $.get(RUMUSAN_SPESIFIKASI_URL_STEP3).done(renderLaporanSpesifikasi)
-                ).always(function() {
-                    $.get(LAPORAN_URL_STEP3).done(function(data) {
-                        renderLaporanDraft(data);
-                        applyStep3Lock();
+                const canSubmit = typeof EvaluationSession !== 'undefined' && EvaluationSession.state().can_submit;
+
+                const finish = function() {
+                    applyStep3Lock();
+                    if (typeof EvaluationSession !== 'undefined') {
+                        EvaluationSession.startPolling('step3Laporan', refreshLaporanContent, 10000);
+                    }
+                };
+
+                // Strictly serial: each call proxies to STOS, holding a php worker at both ends.
+                $.get(RUMUSAN_PEMATUHAN_URL_STEP3).done(renderLaporanPematuhan).always(function() {
+                    $.get(RUMUSAN_SPESIFIKASI_URL_STEP3).done(renderLaporanSpesifikasi).always(function() {
+                        if (!canSubmit) return finish();
+                        $.get(LAPORAN_URL_STEP3).done(renderLaporanDraft).always(finish);
                     });
                 });
+            });
+
+            laporanTabLink.addEventListener('hidden.bs.tab', function() {
+                if (typeof EvaluationSession !== 'undefined') EvaluationSession.stopPolling('step3Laporan');
             });
         }
 

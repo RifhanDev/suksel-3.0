@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Storage;
 
 class TenderKakitanganTeknikalDokumen extends Model
 {
@@ -33,6 +32,6 @@ class TenderKakitanganTeknikalDokumen extends Model
 
     public function getUrlAttribute(): string
     {
-        return Storage::disk('public')->url($this->path);
+        return route('kakitanganTeknikal.dokumen.download', $this->uuid);
     }
 }

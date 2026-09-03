@@ -1429,9 +1429,13 @@ class TendersController extends Controller
 		$tender = Tender::findOrFail($id);
 
 		if (!$tender->canUpdate())
-			$this->_access_denied();
+			return $this->_access_denied();
 		if (empty($tender->approver_id))
 			return redirect('tenders/' . $tender->id)->with('error', 'Tender / Sebut Harga belum disiarkan.');
+
+		// Rewinding to Penyediaan Iklan is only safe before vendor documents are in.
+		if ((int) ($tender->status_process_id ?? 0) >= TenderProcessStatus::HANTAR_DOKUMEN_SYARIKAT)
+			return redirect('tenders/' . $tender->id)->with('error', 'Tender / Sebut Harga tidak boleh dibatal siar kerana proses telah melepasi peringkat penghantaran dokumen syarikat.');
 
 		$tender->approver_id = null;
 

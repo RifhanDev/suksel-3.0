@@ -132,6 +132,7 @@
 
     <div id="kt-toast-container"></div>
 
+    @unless ($modalEmbed ?? false)
     <!-- HEADER -->
     <div class="d-flex flex-column flex-lg-row justify-content-start align-items-start align-items-lg-center mb-4">
         <div>
@@ -177,6 +178,7 @@
 
         </div>
     </div>
+    @endunless
 
     <!-- SECTION: SENARAI KAKITANGAN TEKNIKAL -->
     <div class="content-card mb-4 p-0">
@@ -208,7 +210,10 @@
                             <th class="py-3" style="min-width:140px;">Kategori</th>
                             <th class="py-3" style="min-width:200px;">Tahap Pendidikan Tertinggi</th>
                             <th class="py-3" style="width:160px;">Jumlah Pengalaman</th>
+                            <th class="py-3" style="min-width:180px;">Dokumen</th>
+                            @if (!($viewOnly ?? false))
                             <th class="text-center py-3" style="width:80px;">Tindakan</th>
+                            @endif
                         </tr>
                     </thead>
                     <tbody id="tbl-kakitangan-body">
@@ -223,22 +228,31 @@
                                 </td>
                                 <td class="text-muted cell-pendidikan">{{ $item->tahap_pendidikan }}</td>
                                 <td class="text-muted cell-pengalaman">{{ $item->jumlah_pengalaman }} Tahun</td>
+                                <td class="cell-dokumen">
+                                    @forelse ($item->dokumens as $doc)
+                                        <a href="{{ $doc->url }}" target="_blank" class="existing-file-chip text-decoration-none text-dark" title="{{ $doc->original_name }}">
+                                            <i class="bi bi-paperclip me-1"></i>{{ $doc->original_name }}
+                                        </a>
+                                    @empty
+                                        <span class="text-muted small">&mdash;</span>
+                                    @endforelse
+                                </td>
+                                @if (!($viewOnly ?? false))
                                 <td class="text-center">
                                     <div class="d-inline-flex align-items-center gap-1">
-                                        @if (!($viewOnly ?? false))
                                         <button type="button" class="row-action-btn btn-edit-row" title="Kemaskini">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                                         </button>
                                         <button type="button" class="row-action-btn btn-hapus-row" title="Buang">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></svg>
                                         </button>
-                                        @endif
                                     </div>
                                 </td>
+                                @endif
                             </tr>
                         @empty
                             <tr id="tr-empty-state">
-                                <td colspan="6" class="text-center text-muted py-4 small">Tiada rekod kakitangan teknikal dimasukkan lagi. Klik "Tambah Kakitangan" di atas untuk menambah.</td>
+                                <td colspan="{{ ($viewOnly ?? false) ? 6 : 7 }}" class="text-center text-muted py-4 small">Tiada rekod kakitangan teknikal dimasukkan lagi. Klik "Tambah Kakitangan" di atas untuk menambah.</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -252,15 +266,25 @@
     <div class="content-card mb-4 p-0">
         <div class="borang-title-bar">Dokumen Sokongan Keseluruhan</div>
         <div class="content-card-body p-4 pt-3">
-            <p class="borang-subtitle mb-3">Muat naik dokumen sokongan tambahan berkaitan senarai kakitangan teknikal secara keseluruhan (cth: Carta Organisasi, Ringkasan Kakitangan, atau dokumen sokongan lain).</p>
+            @if ($viewOnly ?? false)
+                @if(!empty($generalDokumens) && count($generalDokumens) > 0)
+                    <p class="borang-subtitle mb-2">Dokumen dimuat naik:</p>
+                @else
+                    <p class="borang-subtitle mb-0">Tiada dokumen dimuat naik.</p>
+                @endif
+            @else
+                <p class="borang-subtitle mb-3">Muat naik dokumen sokongan tambahan berkaitan senarai kakitangan teknikal secara keseluruhan (cth: Carta Organisasi, Ringkasan Kakitangan, atau dokumen sokongan lain).</p>
+            @endif
 
             <!-- Container for existing overall uploaded document chips -->
             <div id="general-existing-files" class="mb-3">
                 @if(!empty($generalDokumens) && count($generalDokumens) > 0)
+                    @unless ($viewOnly ?? false)
                     <label class="form-label text-muted small d-block mb-1" style="font-size:0.75rem;">Dokumen Keseluruhan Sedia Ada:</label>
+                    @endunless
                     @foreach($generalDokumens as $doc)
                         <span class="existing-file-chip" data-doc-uuid="{{ $doc->uuid }}">
-                            <a href="{{ $doc->url }}" target="_blank" class="text-decoration-none text-dark fw-medium me-1">{{ $doc->original_name }}</a>
+                            <a href="{{ $doc->url }}" target="_blank" class="text-decoration-none text-dark fw-medium me-1"><i class="bi bi-paperclip me-1"></i>{{ $doc->original_name }}</a>
                             @if (!($viewOnly ?? false))
                             <span class="chip-del btn-del-general-file" title="Padam Dokumen">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
@@ -499,7 +523,7 @@ $(document).ready(function () {
                     }
                     res.files.forEach(function(doc) {
                         var chipHtml = '<span class="existing-file-chip" data-doc-uuid="' + doc.uuid + '">' +
-                            '<a href="' + doc.url + '" target="_blank" class="text-decoration-none text-dark fw-medium me-1">' + $('<div/>').text(doc.original_name).html() + '</a>' +
+                            '<a href="' + doc.url + '" target="_blank" class="text-decoration-none text-dark fw-medium me-1"><i class="bi bi-paperclip me-1"></i>' + $('<div/>').text(doc.original_name).html() + '</a>' +
                             '<span class="chip-del btn-del-general-file" title="Padam Dokumen">' +
                                 '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>' +
                             '</span>' +
@@ -593,7 +617,7 @@ $(document).ready(function () {
             var html = '<label class="form-label text-muted small d-block mb-1" style="font-size:0.75rem;">Dokumen Sedia Ada:</label>';
             itemData.dokumens.forEach(function(doc) {
                 html += '<span class="existing-file-chip" data-doc-uuid="' + doc.uuid + '">' +
-                    '<a href="/storage/' + doc.path + '" target="_blank" class="text-decoration-none text-dark fw-medium me-1">' + doc.original_name + '</a>' +
+                    '<a href="/kakitangan-teknikal-dokumen/' + doc.uuid + '/download" target="_blank" class="text-decoration-none text-dark fw-medium me-1"><i class="bi bi-paperclip me-1"></i>' + doc.original_name + '</a>' +
                     '<span class="chip-del btn-del-existing-file" title="Padam Dokumen">' +
                         '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>' +
                     '</span>' +
@@ -757,9 +781,21 @@ $(document).ready(function () {
     function checkEmptyState() {
         if ($('#tbl-kakitangan-body .kakitangan-row').length === 0) {
             if ($('#tr-empty-state').length === 0) {
-                $('#tbl-kakitangan-body').append('<tr id="tr-empty-state"><td colspan="6" class="text-center text-muted py-4 small">Tiada rekod kakitangan teknikal dimasukkan lagi. Klik "Tambah Kakitangan" di atas untuk menambah.</td></tr>');
+                $('#tbl-kakitangan-body').append('<tr id="tr-empty-state"><td colspan="7" class="text-center text-muted py-4 small">Tiada rekod kakitangan teknikal dimasukkan lagi. Klik "Tambah Kakitangan" di atas untuk menambah.</td></tr>');
             }
         }
+    }
+
+    function buildDokumenCellHtml(dokumens) {
+        if (!dokumens || dokumens.length === 0) {
+            return '<span class="text-muted small">&mdash;</span>';
+        }
+        return dokumens.map(function(doc) {
+            var name = $('<div/>').text(doc.original_name).html();
+            return '<a href="/kakitangan-teknikal-dokumen/' + doc.uuid + '/download" target="_blank" class="existing-file-chip text-decoration-none text-dark" title="' + name + '">' +
+                '<i class="bi bi-paperclip me-1"></i>' + name +
+            '</a>';
+        }).join('');
     }
 
     function renderOrUpdateRow(item) {
@@ -784,6 +820,7 @@ $(document).ready(function () {
             $existingTr.find('.cell-kategori').html(badgeHtml);
             $existingTr.find('.cell-pendidikan').text(item.tahap_pendidikan);
             $existingTr.find('.cell-pengalaman').text(item.jumlah_pengalaman + ' Tahun');
+            $existingTr.find('.cell-dokumen').html(buildDokumenCellHtml(item.dokumens));
         } else {
             var bil = $('#tbl-kakitangan-body .kakitangan-row').length + 1;
             var $newTr = $('<tr class="kakitangan-row" data-uuid="' + item.uuid + '">' +
@@ -792,6 +829,7 @@ $(document).ready(function () {
                 '<td class="cell-kategori">' + badgeHtml + '</td>' +
                 '<td class="text-muted cell-pendidikan">' + $('<div/>').text(item.tahap_pendidikan).html() + '</td>' +
                 '<td class="text-muted cell-pengalaman">' + item.jumlah_pengalaman + ' Tahun</td>' +
+                '<td class="cell-dokumen">' + buildDokumenCellHtml(item.dokumens) + '</td>' +
                 '<td class="text-center">' +
                     '<div class="d-inline-flex align-items-center gap-1">' + EDIT_BTN + DELETE_BTN + '</div>' +
                 '</td>' +

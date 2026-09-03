@@ -1,0 +1,66 @@
+/* =========================
+   Row-lock visual language — shared across every jawatankuasa flow's
+   Status Pematuhan tables (who holds a row, what was recorded).
+   ========================= */
+
+/* Live reservation status label, e.g. "Sedang dinilai oleh X". */
+.lock-note {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+.lock-note-other { color: #b45309; }
+.lock-note-mine  { color: #15803d; }
+.lock-note-free  { color: #94a3b8; }
+.lock-note-done  { color: #0369a1; }
+
+.btn-semak-lihat.disabled,
+.btn-lihat-spesifikasi-vendor.disabled,
+.btn-lihat-borang-vendor.disabled,
+.btn-lihat-borang-teknikal2.disabled,
+.pematuhan-mula-menilai.disabled {
+    pointer-events: none;
+    opacity: 0.5;
+}
+
+/* Shown to members who may evaluate but not finalise. */
+.pengerusi-only-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+    padding: 11px 14px;
+    margin-bottom: 12px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 8px;
+    font-size: 0.79rem;
+    line-height: 1.5;
+    color: #1e40af;
+}
+
+.pengerusi-only-note i {
+    flex-shrink: 0;
+    margin-top: 1px;
+}
+
+/* cursor is set inline on the card, so it needs !important to be overridden. */
+.pengesahan-card.is-readonly {
+    opacity: 0.6;
+    cursor: not-allowed !important;
+}
+
+/* Recorded Status Pematuhan value shown read-only, once a row has an answer. */
+.pematuhan-catatan-text {
+    font-size: 0.8rem;
+    color: #334155;
+    line-height: 1.4;
+    padding: 0.3rem 0;
+}
+
+.pematuhan-lock-note {
+    margin-top: 5px;
+}

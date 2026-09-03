@@ -1152,6 +1152,8 @@
     const SEMAK_PAYLOAD = @json($semakPayload ?? []);
     const PENYATA_BANK_UUIDS = @json(collect($penyataBankItems ?? [])->pluck('uuid')->filter()->values()->all());
     const PENYATA_BANK_CONFIG = @json($penyataBankConfig ?? []);
+    const VENDOR_FORM_PAYLOADS = @json($vendorFormPayloads ?? []);
+    const DOKUMEN_BY_VENDOR = @json($dokumenByVendor ?? []);
 
     let activeStep2Uuid = PENYATA_BANK_UUIDS[0] || null;
     let activeStep2VendorId = null;
@@ -1874,6 +1876,146 @@
             $('#modalStep2NamaPembekal').text(nama || '-');
             $('#modalButiranCadanganKewanganTajukStep2').text($('#modalCadanganKewanganTajukStep2').text() || $('#modalDocTitle').text() || 'Penyata Bank Terkini (3 Bulan Terakhir) Syarikat');
 
+            // Render Section 1: Dokumen Sokongan Petender
+            const $dokTbody = $('#modalStep2DokumenSemakSilangTableBody');
+            if ($dokTbody.length) {
+                $dokTbody.empty();
+
+                let vendorFiles = [];
+                const vIdStr = String(activeStep2VendorId || '');
+                const vIdNum = parseInt(activeStep2VendorId, 10);
+
+                // 1. From VENDOR_FORM_PAYLOADS (Penyata Bank / Profil Petender submitted files)
+                const vPayloadDataForDocs = (typeof VENDOR_FORM_PAYLOADS !== 'undefined')
+                    ? (VENDOR_FORM_PAYLOADS[vIdStr] || VENDOR_FORM_PAYLOADS[vIdNum] || {})
+                    : {};
+
+                if (vPayloadDataForDocs && typeof vPayloadDataForDocs === 'object') {
+                    const keysToCheck = ['dokumen_sokongan', 'files', 'attachments', 'dokumen', 'lampiran', 'penyata_bank_files', 'dokumen_penyata_bank'];
+                    keysToCheck.forEach(k => {
+                        const val = vPayloadDataForDocs[k];
+                        if (Array.isArray(val)) {
+                            vendorFiles = vendorFiles.concat(val);
+                        } else if (val && typeof val === 'object' && (val.url || val.path || val.file_path || val.name)) {
+                            vendorFiles.push(val);
+                        }
+                    });
+                    if (Array.isArray(vPayloadDataForDocs.accounts)) {
+                        vPayloadDataForDocs.accounts.forEach(acc => {
+                            if (Array.isArray(acc.files)) {
+                                vendorFiles = vendorFiles.concat(acc.files);
+                            }
+                        });
+                    }
+                    if (vPayloadDataForDocs.path || vPayloadDataForDocs.file_path || vPayloadDataForDocs.url) {
+                        vendorFiles.push(vPayloadDataForDocs);
+                    }
+                }
+
+                // 2. From PENYATA_BANK_CONFIG.files
+                if (typeof PENYATA_BANK_CONFIG !== 'undefined' && PENYATA_BANK_CONFIG.files && Array.isArray(PENYATA_BANK_CONFIG.files)) {
+                    const pFiles = PENYATA_BANK_CONFIG.files.filter(f => !f.vendor_id || f.vendor_id == activeStep2VendorId || !f.uploaded_by || f.uploaded_by == activeStep2VendorId);
+                    vendorFiles = vendorFiles.concat(pFiles);
+                }
+
+                // 3. From DOKUMEN_BY_VENDOR
+                if (typeof DOKUMEN_BY_VENDOR !== 'undefined') {
+                    const vDocs = DOKUMEN_BY_VENDOR[vIdStr] || DOKUMEN_BY_VENDOR[vIdNum];
+                    if (vDocs) {
+                        const docsList = Array.isArray(vDocs) ? vDocs : Object.values(vDocs);
+                        docsList.forEach(d => {
+                            const files = d.vendor_content?.files || d.files || [];
+                            if (Array.isArray(files) && files.length > 0) {
+                                vendorFiles = vendorFiles.concat(files);
+                            } else if (d.vendor_content?.url || d.vendor_content?.path || d.vendor_content?.file_path) {
+                                vendorFiles.push(d.vendor_content);
+                            } else if (d.url || d.path || d.file_path) {
+                                vendorFiles.push(d);
+                            }
+                        });
+                    }
+                }
+
+                // 4. From SEMAK_PAYLOAD items
+                if (typeof SEMAK_PAYLOAD !== 'undefined' && SEMAK_PAYLOAD && typeof SEMAK_PAYLOAD === 'object') {
+                    Object.values(SEMAK_PAYLOAD).forEach(item => {
+                        const vendorData = item?.vendors?.[vIdStr] || item?.vendors?.[vIdNum];
+                        if (vendorData) {
+                            const files = vendorData.content?.files || vendorData.files || [];
+                            if (Array.isArray(files) && files.length > 0) {
+                                vendorFiles = vendorFiles.concat(files);
+                            }
+                        }
+                    });
+                }
+
+                // Deduplicate files by URL/path/name
+                const seen = new Set();
+                const uniqueFiles = [];
+                vendorFiles.forEach(f => {
+                    if (!f) return;
+                    const key = f.url || f.path || f.name || f.filename || JSON.stringify(f);
+                    if (!seen.has(key)) {
+                        seen.add(key);
+                        uniqueFiles.push(f);
+                    }
+                });
+
+                if (uniqueFiles.length > 0) {
+                    uniqueFiles.forEach(f => {
+                        const fileName = f.name || f.filename || f.original_name || f.title || 'Dokumen Sokongan';
+                        let fileUrl = '#';
+                        if (f.uuid) {
+                            fileUrl = '/tenders/dokumen-files/' + f.uuid + '/download';
+                        } else {
+                            let rawUrl = f.url || f.path || f.file_path || f.filepath || '#';
+                            if (rawUrl && rawUrl !== '#') {
+                                if (/^(https?:|\/\/|data:)/i.test(rawUrl)) {
+                                    fileUrl = rawUrl;
+                                } else {
+                                    rawUrl = rawUrl.replace(/\\/g, '/');
+                                    if (rawUrl.startsWith('public/')) {
+                                        rawUrl = rawUrl.replace(/^public\//, '');
+                                    }
+                                    if (!rawUrl.startsWith('/')) {
+                                        rawUrl = '/' + rawUrl;
+                                    }
+                                    if (!rawUrl.startsWith('/tenders/') && !rawUrl.startsWith('/storage/') && !rawUrl.startsWith('/api/')) {
+                                        rawUrl = '/storage' + rawUrl;
+                                    }
+                                    fileUrl = rawUrl;
+                                }
+                            }
+                        }
+
+                        const ext = (fileName.split('.').pop() || '').toLowerCase();
+                        const isPdf = (ext === 'pdf' || (f.mime_type && f.mime_type.toLowerCase().includes('pdf')));
+
+                        const actionBtn = isPdf
+                            ? '<a href="' + escapeHtml(fileUrl) + '" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-primary px-3 py-1 d-inline-flex align-items-center gap-1 font-monospace">' +
+                                '<i class="bi bi-eye me-1"></i><span>Papar Dokumen</span>' +
+                              '</a>'
+                            : '<a href="' + escapeHtml(fileUrl) + '" download="' + escapeHtml(fileName) + '" class="btn btn-sm btn-outline-primary px-3 py-1 d-inline-flex align-items-center gap-1 font-monospace">' +
+                                '<i class="bi bi-download me-1"></i><span>Muat Naik Dokumen</span>' +
+                              '</a>';
+
+                        $dokTbody.append(
+                            '<tr>' +
+                                '<td class="px-3 py-2.5">' +
+                                    '<div class="d-flex align-items-center gap-2">' +
+                                        '<i class="bi ' + (isPdf ? 'bi-file-earmark-pdf text-danger' : 'bi-file-earmark-text text-primary') + ' fs-6 me-1"></i>' +
+                                        '<span class="fw-medium text-dark">' + escapeHtml(fileName) + '</span>' +
+                                    '</div>' +
+                                '</td>' +
+                                '<td class="text-center px-3 py-2.5">' + actionBtn + '</td>' +
+                            '</tr>'
+                        );
+                    });
+                } else {
+                    $dokTbody.append('<tr><td colspan="2" class="text-center text-muted py-3 fst-italic"><i class="bi bi-info-circle me-1"></i>Tiada Dokumen Dimuatnaik</td></tr>');
+                }
+            }
+
             // Render dynamic month rows matching PENYATA_BANK_CONFIG.bulans
             const $bulanTbody = $('#modalStep2BulanTableBody');
             $bulanTbody.empty();
@@ -1886,11 +2028,59 @@
                     { bulan: 8, tahun: 2025, nama: 'Bulan 8 (Ogos 2025)', jumlah: 200000 }
                 ];
 
+            const vPayloadData = (typeof VENDOR_FORM_PAYLOADS !== 'undefined' && VENDOR_FORM_PAYLOADS[activeStep2VendorId])
+                ? VENDOR_FORM_PAYLOADS[activeStep2VendorId]
+                : {};
+
+            const itemObj = SEMAK_PAYLOAD[activeStep2Uuid];
+            const vRow = itemObj?.vendors?.find(v => v.vendor_id == activeStep2VendorId);
+
             bulansArr.forEach((b, idx) => {
                 const rowId = 'step2-bulan-' + (b.bulan || (idx + 6));
-                const amtVal = (typeof b.jumlah === 'number')
-                    ? b.jumlah.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-                    : (b.jumlah || '0.00');
+                
+                let vendorAmtVal = null;
+                const mNum = parseInt(b.bulan);
+
+                // 1. Check multi-account array in vendor payload
+                if (vPayloadData.accounts && Array.isArray(vPayloadData.accounts) && vPayloadData.accounts.length > 0) {
+                    let totalMonthFromAccounts = 0;
+                    let foundAnyInAccounts = false;
+                    vPayloadData.accounts.forEach(acc => {
+                        if (acc.bulans && Array.isArray(acc.bulans)) {
+                            const mb = acc.bulans.find(m => parseInt(m.bulan) === mNum);
+                            if (mb && mb.jumlah !== undefined && mb.jumlah !== null) {
+                                totalMonthFromAccounts += (parseFloat(mb.jumlah) || 0);
+                                foundAnyInAccounts = true;
+                            }
+                        }
+                    });
+                    if (foundAnyInAccounts) {
+                        vendorAmtVal = totalMonthFromAccounts;
+                    }
+                }
+
+                // 2. Check top-level bulans array in vendor payload
+                if (vendorAmtVal === null && vPayloadData.bulans && Array.isArray(vPayloadData.bulans)) {
+                    const matchB = vPayloadData.bulans.find(mb => parseInt(mb.bulan) === mNum);
+                    if (matchB && matchB.jumlah !== undefined && matchB.jumlah !== null) {
+                        vendorAmtVal = parseFloat(matchB.jumlah);
+                    }
+                }
+
+                // 3. Fallback direct property matches
+                if (vendorAmtVal === null && vPayloadData['bulan_' + mNum] !== undefined) {
+                    vendorAmtVal = parseFloat(vPayloadData['bulan_' + mNum]);
+                } else if (vendorAmtVal === null && vPayloadData['bulan' + mNum] !== undefined) {
+                    vendorAmtVal = parseFloat(vPayloadData['bulan' + mNum]);
+                } else if (vendorAmtVal === null && vRow && vRow.bulans && vRow.bulans[mNum] !== undefined) {
+                    vendorAmtVal = parseFloat(vRow.bulans[mNum]);
+                }
+
+                if (vendorAmtVal === null || isNaN(vendorAmtVal)) {
+                    vendorAmtVal = (typeof b.jumlah === 'number' && b.jumlah > 0) ? b.jumlah : (parseFloat(b.jumlah) || 0);
+                }
+
+                const amtVal = vendorAmtVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
                 $bulanTbody.append(
                     '<tr>' +
@@ -1935,9 +2125,6 @@
                     '</tr>'
                 );
             });
-
-            const itemObj = SEMAK_PAYLOAD[activeStep2Uuid];
-            const vRow = itemObj?.vendors?.find(v => v.vendor_id == activeStep2VendorId);
 
             const savedStatus  = vRow ? vRow.status_pematuhan : null;
             const savedCatatan = vRow ? (vRow.catatan || '') : '';
