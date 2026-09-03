@@ -108,23 +108,13 @@
                                 @endif
                             </td>
                             <td class="text-center px-3">
-                                @if($isItemSelesai)
-                                    <button type="button" class="btn btn-sm btn-primary btn-papar-cadangan-kewangan-step2 px-3 py-1.5 d-inline-flex align-items-center gap-1"
-                                        data-bs-toggle="modal" data-bs-target="#modalPenilaianCadanganKewanganStep2"
-                                        data-dokumen="{{ $itemTitle }}"
-                                        data-uuid="{{ $itemUuid }}">
-                                        <i class="bi bi-eye"></i>
-                                        <span>Papar</span>
-                                    </button>
-                                @else
-                                    <button type="button" class="btn btn-sm btn-success btn-papar-cadangan-kewangan-step2 px-3 py-1.5 d-inline-flex align-items-center gap-1"
-                                        data-bs-toggle="modal" data-bs-target="#modalPenilaianCadanganKewanganStep2"
-                                        data-dokumen="{{ $itemTitle }}"
-                                        data-uuid="{{ $itemUuid }}">
-                                        <i class="bi bi-pencil-square"></i>
-                                        <span>Menilai</span>
-                                    </button>
-                                @endif
+                                <button type="button" class="btn btn-sm btn-success btn-papar-cadangan-kewangan-step2 px-3 py-1.5 d-inline-flex align-items-center gap-1"
+                                    data-bs-toggle="modal" data-bs-target="#modalPenilaianCadanganKewanganStep2"
+                                    data-dokumen="{{ $itemTitle }}"
+                                    data-uuid="{{ $itemUuid }}">
+                                    <i class="bi bi-eye"></i>
+                                    <span>Papar</span>
+                                </button>
                             </td>
                         </tr>
                     @empty
@@ -333,11 +323,11 @@
                     </div>
                 </div>
 
-                {{-- Section 1: Dokumen Sokongan Dari Petender --}}
+                {{-- Section 1: Dokumen Semak Silang --}}
                 <div class="mb-4">
                     <div class="d-flex align-items-center mb-2">
                         <i class="bi bi-file-earmark-check text-primary me-2 fs-5"></i>
-                        <h6 class="fw-bold text-dark mb-0 text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.03em;">Dokumen Sokongan Dari Petender</h6>
+                        <h6 class="fw-bold text-dark mb-0 text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.03em;">Dokumen Semak Silang</h6>
                     </div>
                     <div class="table-responsive rounded-3 border bg-white">
                         <table class="table table-hover align-middle mb-0" style="font-size: 0.85rem;">
@@ -347,9 +337,34 @@
                                     <th class="py-2.5 px-3 text-center fw-bold text-secondary text-uppercase" style="width: 30%; font-size: 0.7rem; letter-spacing: 0.05em;">Tindakan Dokumen</th>
                                 </tr>
                             </thead>
-                            <tbody id="modalStep2DokumenSemakSilangTableBody">
+                            <tbody>
                                 <tr>
-                                    <td colspan="2" class="text-center text-muted py-3 fst-italic"><i class="bi bi-info-circle me-1"></i>Tiada Dokumen Dimuatnaik</td>
+                                    <td class="px-3 py-2.5">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <i class="bi bi-file-earmark-pdf text-danger fs-6 me-1"></i>
+                                            <span class="fw-medium text-dark">Kunci Kira-kira Tahunan <span class="text-muted small">(Salinan telah diaudit bagi syarikat ROC)</span></span>
+                                        </div>
+                                    </td>
+                                    <td class="text-center px-3 py-2.5">
+                                        <button type="button" class="btn btn-sm btn-outline-primary px-3 py-1 d-inline-flex align-items-center gap-1 font-monospace">
+                                            <i class="bi bi-eye"></i>
+                                            <span>Papar Dokumen</span>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="px-3 py-2.5">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <i class="bi bi-file-earmark-pdf text-danger fs-6 me-1"></i>
+                                            <span class="fw-medium text-dark">Pengesahan Institusi Kewangan <span class="text-muted small">(Tiga bulan penyata bank)</span></span>
+                                        </div>
+                                    </td>
+                                    <td class="text-center px-3 py-2.5">
+                                        <button type="button" class="btn btn-sm btn-outline-primary px-3 py-1 d-inline-flex align-items-center gap-1 font-monospace">
+                                            <i class="bi bi-eye"></i>
+                                            <span>Papar Dokumen</span>
+                                        </button>
+                                    </td>
                                 </tr>
                             </tbody>
                         </table>
@@ -380,29 +395,29 @@
                             </thead>
                             <tbody id="modalStep2BulanTableBody">
                                 <tr>
-                                    <td class="text-center font-monospace fw-semibold px-3 py-2.5 bg-light-subtle">Bulan 1</td>
+                                    <td class="text-center font-monospace fw-semibold px-3 py-2.5 bg-light-subtle">Bulan 6</td>
                                     <td class="px-3 py-2">
                                         <div class="input-group input-group-sm">
                                             <span class="input-group-text bg-light text-muted fw-bold">RM</span>
-                                            <input type="text" class="form-control text-end font-monospace fw-semibold step2-bulan-input" id="step2-bulan-1" inputmode="decimal" value="0.00" aria-label="Amaun bulan 1">
+                                            <input type="text" class="form-control text-end font-monospace fw-semibold step2-bulan-input" id="step2-bulan-6" inputmode="decimal" value="500,000.00" aria-label="Amaun bulan 6">
                                         </div>
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td class="text-center font-monospace fw-semibold px-3 py-2.5 bg-light-subtle">Bulan 2</td>
+                                    <td class="text-center font-monospace fw-semibold px-3 py-2.5 bg-light-subtle">Bulan 7</td>
                                     <td class="px-3 py-2">
                                         <div class="input-group input-group-sm">
                                             <span class="input-group-text bg-light text-muted fw-bold">RM</span>
-                                            <input type="text" class="form-control text-end font-monospace fw-semibold step2-bulan-input" id="step2-bulan-2" inputmode="decimal" value="0.00" aria-label="Amaun bulan 2">
+                                            <input type="text" class="form-control text-end font-monospace fw-semibold step2-bulan-input" id="step2-bulan-7" inputmode="decimal" value="300,000.00" aria-label="Amaun bulan 7">
                                         </div>
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td class="text-center font-monospace fw-semibold px-3 py-2.5 bg-light-subtle">Bulan 3</td>
+                                    <td class="text-center font-monospace fw-semibold px-3 py-2.5 bg-light-subtle">Bulan 8</td>
                                     <td class="px-3 py-2">
                                         <div class="input-group input-group-sm">
                                             <span class="input-group-text bg-light text-muted fw-bold">RM</span>
-                                            <input type="text" class="form-control text-end font-monospace fw-semibold step2-bulan-input" id="step2-bulan-3" inputmode="decimal" value="0.00" aria-label="Amaun bulan 3">
+                                            <input type="text" class="form-control text-end font-monospace fw-semibold step2-bulan-input" id="step2-bulan-8" inputmode="decimal" value="200,000.00" aria-label="Amaun bulan 8">
                                         </div>
                                     </td>
                                 </tr>
@@ -415,19 +430,19 @@
                         <div class="col-md-4">
                             <div class="rounded-3 p-3 border" style="background: #f0fdf4; border-color: #bbf7d0 !important;">
                                 <label class="form-label fw-bold text-success text-uppercase d-block mb-1" for="step2-jumlah-amaun" style="font-size: 0.68rem; letter-spacing: 0.05em;">Jumlah Amaun (RM)</label>
-                                <input type="text" class="form-control form-control-sm text-end font-monospace fw-bold fs-6 text-success bg-white border-success border-opacity-25" id="step2-jumlah-amaun" readonly value="0.00" aria-live="polite">
+                                <input type="text" class="form-control form-control-sm text-end font-monospace fw-bold fs-6 text-success bg-white border-success border-opacity-25" id="step2-jumlah-amaun" readonly value="1,000,000.00" aria-live="polite">
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="rounded-3 p-3 border" style="background: #eff6ff; border-color: #bfdbfe !important;">
                                 <label class="form-label fw-bold text-primary text-uppercase d-block mb-1" for="step2-purata" style="font-size: 0.68rem; letter-spacing: 0.05em;">Purata Bulanan (RM)</label>
-                                <input type="text" class="form-control form-control-sm text-end font-monospace fw-bold fs-6 text-primary bg-white border-primary border-opacity-25" id="step2-purata" readonly value="0.00" aria-live="polite">
+                                <input type="text" class="form-control form-control-sm text-end font-monospace fw-bold fs-6 text-primary bg-white border-primary border-opacity-25" id="step2-purata" readonly value="333,333.33" aria-live="polite">
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="rounded-3 p-3 border" style="background: #fefce8; border-color: #fef08a !important;">
                                 <label class="form-label fw-bold text-warning-emphasis text-uppercase d-block mb-1" for="step2-skor-automatik" style="font-size: 0.68rem; letter-spacing: 0.05em;">Skor Automatik</label>
-                                <input type="text" class="form-control form-control-sm text-center font-monospace fw-bold fs-6 text-warning-emphasis bg-white border-warning border-opacity-25" id="step2-skor-automatik" readonly value="0" aria-live="polite">
+                                <input type="text" class="form-control form-control-sm text-center font-monospace fw-bold fs-6 text-warning-emphasis bg-white border-warning border-opacity-25" id="step2-skor-automatik" readonly value="10" aria-live="polite">
                             </div>
                         </div>
                     </div>

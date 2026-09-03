@@ -109,34 +109,29 @@
                                 @endif
                             </td>
                             <td class="text-center px-3">
-                                @php
-                                    $btnClass = $isItemSelesai ? 'btn-primary' : 'btn-success';
-                                    $btnIcon  = $isItemSelesai ? 'bi-eye' : 'bi-pencil-square';
-                                    $btnText  = $isItemSelesai ? 'Papar' : 'Menilai';
-                                @endphp
                                 @if(strtolower(trim($itemMekanisma)) === 'spesifikasi')
-                                    <button type="button" class="btn btn-sm {{ $btnClass }} btn-papar-cadangan-kewangan-step3 px-3 py-1.5 d-inline-flex align-items-center gap-1"
+                                    <button type="button" class="btn btn-sm btn-success btn-papar-cadangan-kewangan-step3 px-3 py-1.5 d-inline-flex align-items-center gap-1"
                                         data-bs-toggle="modal" data-bs-target="#modalPaparCadanganKewanganStep3"
                                         data-dokumen="{{ $itemTitle }}"
                                         data-uuid="{{ $itemUuid }}">
-                                        <i class="bi {{ $btnIcon }}"></i>
-                                        <span>{{ $btnText }}</span>
+                                        <i class="bi bi-pencil-square"></i>
+                                        <span>Menilai</span>
                                     </button>
                                 @elseif(str_contains(strtolower($itemTitle), 'profil') || strtolower(trim($itemMekanisma)) === 'borang atas talian' || strtolower(trim($itemMekanisma)) === 'online_form')
-                                    <button type="button" class="btn btn-sm {{ $btnClass }} btn-papar-profil-petender-step3 px-3 py-1.5 d-inline-flex align-items-center gap-1"
+                                    <button type="button" class="btn btn-sm btn-success btn-papar-profil-petender-step3 px-3 py-1.5 d-inline-flex align-items-center gap-1"
                                         data-bs-toggle="modal" data-bs-target="#modalPaparProfilPetenderStep3"
                                         data-dokumen="{{ $itemTitle }}"
                                         data-uuid="{{ $itemUuid }}">
-                                        <i class="bi {{ $btnIcon }}"></i>
-                                        <span>{{ $btnText }}</span>
+                                        <i class="bi bi-pencil-square"></i>
+                                        <span>Menilai</span>
                                     </button>
                                 @else
-                                    <button type="button" class="btn btn-sm {{ $btnClass }} btn-papar-muat-naik-step3 px-3 py-1.5 d-inline-flex align-items-center gap-1"
+                                    <button type="button" class="btn btn-sm btn-success btn-papar-muat-naik-step3 px-3 py-1.5 d-inline-flex align-items-center gap-1"
                                         data-bs-toggle="modal" data-bs-target="#modalMuatNaikStep3"
                                         data-dokumen="{{ $itemTitle }}"
                                         data-uuid="{{ $itemUuid }}">
-                                        <i class="bi {{ $btnIcon }}"></i>
-                                        <span>{{ $btnText }}</span>
+                                        <i class="bi bi-pencil-square"></i>
+                                        <span>Menilai</span>
                                     </button>
                                 @endif
                             </td>
@@ -1216,51 +1211,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         bindStep3VendorDetailButtons();
-    }
-
-    function updateMainTableStatusPenilaian(itemUuid) {
-        if (!itemUuid || typeof SEMAK_PAYLOAD === 'undefined') return;
-
-        const itemObj = SEMAK_PAYLOAD[itemUuid];
-        if (!itemObj) return;
-
-        const rawVendors = itemObj.vendors || [];
-        const failedVendorIds = getFailedVendorIdsStep3();
-        const eligibleVendors = rawVendors.filter(v => !failedVendorIds.includes(parseInt(v.vendor_id)));
-
-        const totalEligible = eligibleVendors.length;
-        const reviewedCount = eligibleVendors.filter(v => 
-            Boolean(v.step3_evaluated) || 
-            (v.status_pematuhan !== null && v.status_pematuhan !== '' && v.status_pematuhan !== undefined)
-        ).length;
-
-        const isAllReviewed = (totalEligible > 0 && reviewedCount === totalEligible);
-
-        const tr = document.querySelector(`tr[data-item-uuid="${itemUuid}"]`);
-        if (!tr) return;
-
-        const statusCell = tr.querySelector('.status-penilaian');
-        const actionBtn = tr.querySelector('.btn-papar-cadangan-kewangan-step3, .btn-papar-profil-petender-step3, .btn-papar-muat-naik-step3');
-
-        if (statusCell) {
-            if (isAllReviewed) {
-                statusCell.innerHTML = '<span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-20 px-2.5 py-1.5 rounded-pill"><i class="bi bi-check-circle me-1"></i>Selesai</span>';
-            } else {
-                statusCell.innerHTML = '<span class="badge bg-warning bg-opacity-10 text-warning-emphasis border border-warning border-opacity-20 px-2.5 py-1.5 rounded-pill"><i class="bi bi-clock me-1"></i>Menunggu Penilaian</span>';
-            }
-        }
-
-        if (actionBtn) {
-            if (isAllReviewed) {
-                actionBtn.classList.remove('btn-success');
-                actionBtn.classList.add('btn-primary');
-                actionBtn.innerHTML = '<i class="bi bi-eye"></i><span>Papar</span>';
-            } else {
-                actionBtn.classList.remove('btn-primary');
-                actionBtn.classList.add('btn-success');
-                actionBtn.innerHTML = '<i class="bi bi-pencil-square"></i><span>Menilai</span>';
-            }
-        }
     }
 
     document.querySelectorAll('.btn-papar-cadangan-kewangan-step3').forEach(function(btn) {
