@@ -395,6 +395,14 @@ class PenilaianKewanganController extends Controller
             ];
         }
 
+        $vendorFormPayloads = \Illuminate\Support\Facades\DB::table('tender_vendor_form_payloads')
+            ->where('tender_id', $tender->id)
+            ->where('form_key', 'penyata_bank')
+            ->get()
+            ->keyBy('vendor_id')
+            ->map(fn ($r) => json_decode($r->payload, true))
+            ->all();
+
         $progress = null;
         if ($tender) {
             $progress = TenderKewanganProgress::query()->firstOrCreate(
@@ -432,6 +440,7 @@ class PenilaianKewanganController extends Controller
             'penyataBankItems',
             'vendors',
             'dokumenByVendor',
+            'vendorFormPayloads',
             'semakPayload',
             'pembekalMelepasi',
             'pembekalTidakMelepasi',
