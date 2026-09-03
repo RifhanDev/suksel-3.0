@@ -19,7 +19,7 @@ trait AuthorizesTenderFileAccess
             abort(403, 'Sila log masuk untuk memuat turun fail.');
         }
 
-        if ($this->userCanReviewTenderFiles($user)) {
+        if ($this->userCanReviewTenderFiles($user, $tender)) {
             return;
         }
 
@@ -37,19 +37,34 @@ trait AuthorizesTenderFileAccess
         }
     }
 
-    protected function userCanReviewTenderFiles($user): bool
+    protected function userCanReviewTenderFiles($user, ?Tender $tender = null): bool
     {
-        if (! $user->vendor_id) {
-            return true;
-        }
-
         if ($user->hasRole('Admin') || $user->can('tender:specification-management')) {
             return true;
         }
 
-        return $user->hasRole('Jawatankuasa')
-            || $user->hasRole('Agency Admin')
+        if (
+            $user->hasRole('Agency Admin')
             || $user->hasRole('Agency User')
-            || $user->hasRole('Front Desk');
+            || $user->hasRole('Front Desk')
+        ) {
+            return true;
+        }
+
+        // Committee members (including Agency Jawatankuasa / dual-role accounts).
+        if ($user->hasRole('Jawatankuasa') || $user->hasRole('Agency Jawatankuasa')) {
+            if ($tender === null) {
+                return true;
+            }
+
+            return $tender->isAppointedTo($user, ['spec', 'open', 'tech', 'fin', 'eval', 'harga']);
+        }
+
+        // Non-vendor staff (e.g. PTJ) may review tender files.
+        if (! $user->vendor_id) {
+            return true;
+        }
+
+        return false;
     }
 }
