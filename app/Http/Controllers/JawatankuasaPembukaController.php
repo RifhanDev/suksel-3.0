@@ -548,6 +548,7 @@ class JawatankuasaPembukaController extends Controller
                         'vendor_id' => $vendorId,
                         'modal'     => 1,
                         'mode'      => 'view',
+                        'summary'   => 'dokumentasi',
                     ]);
                 }
 
