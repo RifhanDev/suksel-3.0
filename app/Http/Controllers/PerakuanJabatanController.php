@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\AdvancesTenderProcessStatus;
+use App\Models\EbiddingJadualBidaan;
 use App\Models\PerakuanJabatanKertasTaklimat;
 use App\Models\PerakuanJabatanKertasTaklimatItem;
 use App\Models\PerakuanJabatanKertasTaklimatItemFile;
@@ -76,6 +77,11 @@ class PerakuanJabatanController extends Controller
     {
         $tender = Tender::with('tenderer')->findOrFail($id);
 
+        $this->promoteEbiddingReviewIfWindowEnded($tender);
+        $tender->refresh();
+
+        $pjMode = $this->resolvePerakuanMode($tender);
+
         $header = PerakuanJabatanKertasTaklimat::firstOrCreate(
             ['tender_id' => $tender->id],
             ['catatan' => null, 'submitted_at' => null]
@@ -83,8 +89,15 @@ class PerakuanJabatanController extends Controller
 
         $this->seedDefaultKertasTaklimatItems($header);
         $this->pruneRemovedKertasTaklimatSlots($header);
+        if (in_array($pjMode, ['jadual', 'laporan'], true)) {
+            $this->ensureLaporanBidaanSlot($header);
+        }
 
         $kertasItems = $header->items()->with('files')->orderBy('sort_order')->get();
+        if ($pjMode === 'normal') {
+            $kertasItems = $kertasItems->reject(fn ($item) => $item->slot_key === 'laporan_bidaan')->values();
+        }
+
         $kertasSourceLinks = $this->buildKertasTaklimatSourceLinks($tender);
 
         $pengesyoranPembekal = PerakuanJabatanPengesyoranPembekal::firstOrCreate(
@@ -92,6 +105,7 @@ class PerakuanJabatanController extends Controller
             [
                 'catatan' => null,
                 'sahkan_petender_layak' => false,
+                'pengesahan_bidaan' => false,
                 'submitted_at' => null,
             ]
         );
@@ -104,6 +118,17 @@ class PerakuanJabatanController extends Controller
         ];
         $pembekalRows = $this->buildPengesyoranPembekalRows($tender, $pengesyoranPembekal);
 
+        $jadualBidaan = null;
+        $jadualReadOnly = false;
+        if (in_array($pjMode, ['jadual', 'laporan'], true)) {
+            $jadualBidaan = EbiddingJadualBidaan::query()->firstOrCreate(['tender_id' => $tender->id]);
+            $jadualReadOnly = $pjMode === 'laporan'
+                || (int) ($tender->ebidding_process_stage_id ?? 0) >= 2
+                || ! empty($jadualBidaan->started_at);
+        }
+
+        $tabsReadOnly = in_array($pjMode, ['jadual', 'laporan'], true);
+
         return view(
             'newModule.perakuanJabatan.show',
             compact(
@@ -113,13 +138,86 @@ class PerakuanJabatanController extends Controller
                 'kertasSourceLinks',
                 'pengesyoranPembekal',
                 'senaraiItem',
-                'pembekalRows'
+                'pembekalRows',
+                'pjMode',
+                'jadualBidaan',
+                'jadualReadOnly',
+                'tabsReadOnly'
             )
         );
     }
 
+    public function jadualBidaanSimpan(Request $request, Tender $tender)
+    {
+        return app(EbiddingController::class)->simpanJadualBidaan($request, $tender->id);
+    }
+
+    public function jadualBidaanMula(Request $request, Tender $tender)
+    {
+        return app(EbiddingController::class)->mulaBidaan($request, $tender->id);
+    }
+
+    public function semakanBidaanHantar(Request $request, Tender $tender)
+    {
+        if (! (bool) $tender->is_ebidding || (int) ($tender->ebidding_process_stage_id ?? 0) < 3) {
+            return response()->json(['message' => 'Semakan bidaan hanya selepas tempoh bidaan tamat.'], 422);
+        }
+
+        $header = PerakuanJabatanKertasTaklimat::firstOrCreate(
+            ['tender_id' => $tender->id],
+            ['catatan' => null, 'submitted_at' => null]
+        );
+        $this->ensureLaporanBidaanSlot($header);
+        $laporanItem = $header->items()->where('slot_key', 'laporan_bidaan')->with('files')->first();
+        $hasExistingLaporan = $laporanItem && $laporanItem->files->isNotEmpty();
+
+        $request->validate([
+            'pengesahan_bidaan' => ['required', 'accepted'],
+            'laporan_bidaan' => [$hasExistingLaporan ? 'nullable' : 'required', 'file', 'max:10240'],
+        ], [
+            'pengesahan_bidaan.accepted' => 'Sila tandakan pengesahan bidaan.',
+            'laporan_bidaan.required' => 'Sila muat naik Laporan Bidaan sebelum menghantar.',
+        ]);
+
+        if ($request->hasFile('laporan_bidaan') && $laporanItem) {
+            $upload = $request->file('laporan_bidaan');
+            if ($upload instanceof UploadedFile && $upload->isValid()) {
+                $this->storeItemFile($laporanItem, $upload, (int) $tender->id);
+            }
+        }
+
+        $laporanItem?->load('files');
+        if (! $laporanItem || $laporanItem->files->isEmpty()) {
+            throw ValidationException::withMessages([
+                'laporan_bidaan' => 'Sila muat naik Laporan Bidaan sebelum menghantar.',
+            ]);
+        }
+
+        $record = PerakuanJabatanPengesyoranPembekal::firstOrCreate(
+            ['tender_id' => $tender->id],
+            [
+                'catatan' => null,
+                'sahkan_petender_layak' => false,
+                'pengesahan_bidaan' => false,
+                'submitted_at' => null,
+            ]
+        );
+        $record->pengesahan_bidaan = true;
+        $record->save();
+
+        app(TenderProcessStatusService::class)->syncPerakuanJabatanCompletion($tender->fresh());
+
+        return response()->json([
+            'message' => 'Semakan bidaan berjaya dihantar. Proses kembali ke Jawatankuasa Perolehan.',
+        ]);
+    }
+
     public function kertasTaklimatSimpan(Request $request, Tender $tender)
     {
+        if ($this->resolvePerakuanMode($tender) !== 'normal') {
+            return response()->json(['message' => 'Kertas taklimat tidak boleh diubah pada peringkat ini.'], 422);
+        }
+
         $this->persistKertasTaklimat($request, $tender, false);
 
         return response()->json(['message' => 'Kertas taklimat berjaya disimpan.']);
@@ -127,6 +225,10 @@ class PerakuanJabatanController extends Controller
 
     public function kertasTaklimatHantar(Request $request, Tender $tender)
     {
+        if ($this->resolvePerakuanMode($tender) !== 'normal') {
+            return response()->json(['message' => 'Kertas taklimat tidak boleh dihantar pada peringkat ini.'], 422);
+        }
+
         $this->persistKertasTaklimat($request, $tender, true);
 
         return response()->json(['message' => 'Kertas taklimat berjaya dihantar.']);
@@ -134,6 +236,10 @@ class PerakuanJabatanController extends Controller
 
     public function pengesyoranPembekalSimpan(Request $request, Tender $tender)
     {
+        if ($this->resolvePerakuanMode($tender) !== 'normal') {
+            return response()->json(['message' => 'Pengesyoran pembekal tidak boleh diubah pada peringkat ini.'], 422);
+        }
+
         $this->persistPengesyoranPembekal($request, $tender, false);
 
         return response()->json(['message' => 'Pengesyoran Pembekal berjaya disimpan.']);
@@ -141,6 +247,10 @@ class PerakuanJabatanController extends Controller
 
     public function pengesyoranPembekalHantar(Request $request, Tender $tender)
     {
+        if ($this->resolvePerakuanMode($tender) !== 'normal') {
+            return response()->json(['message' => 'Pengesyoran pembekal tidak boleh dihantar pada peringkat ini.'], 422);
+        }
+
         $this->persistPengesyoranPembekal($request, $tender, true);
 
         return response()->json(['message' => 'Pengesyoran Pembekal berjaya dihantar. Status proses tender dikemas kini.']);
@@ -235,6 +345,73 @@ class PerakuanJabatanController extends Controller
         foreach ($defaults as $row) {
             $header->items()->create($row);
         }
+    }
+
+    private function ensureLaporanBidaanSlot(PerakuanJabatanKertasTaklimat $header): void
+    {
+        if ($header->items()->where('slot_key', 'laporan_bidaan')->exists()) {
+            return;
+        }
+
+        $maxSort = (int) $header->items()->max('sort_order');
+        $header->items()->create([
+            'slot_key' => 'laporan_bidaan',
+            'kandungan' => 'Laporan Bidaan',
+            'sort_order' => $maxSort + 1,
+        ]);
+    }
+
+    /**
+     * @return 'normal'|'jadual'|'laporan'
+     */
+    private function resolvePerakuanMode(Tender $tender): string
+    {
+        if (! (bool) ($tender->is_ebidding ?? false)) {
+            return 'normal';
+        }
+
+        $stage = (int) ($tender->ebidding_process_stage_id ?? 0);
+        if ($stage >= 3) {
+            return 'laporan';
+        }
+
+        return 'jadual';
+    }
+
+    private function promoteEbiddingReviewIfWindowEnded(Tender $tender): void
+    {
+        if (! (bool) ($tender->is_ebidding ?? false)) {
+            return;
+        }
+
+        $stage = (int) ($tender->ebidding_process_stage_id ?? 0);
+        if ($stage !== 2) {
+            return;
+        }
+
+        $schedule = EbiddingJadualBidaan::query()->where('tender_id', $tender->id)->first();
+        if (
+            ! $schedule
+            || ! $schedule->tarikh_bidaan_mula
+            || ! $schedule->masa_bidaan_mula
+            || ! $schedule->tarikh_bidaan_tamat
+            || ! $schedule->masa_bidaan_tamat
+        ) {
+            return;
+        }
+
+        $endAt = Carbon::parse(
+            $schedule->tarikh_bidaan_tamat->format('Y-m-d') . ' ' . $schedule->masa_bidaan_tamat
+        );
+
+        if (Carbon::now()->lessThanOrEqualTo($endAt)) {
+            return;
+        }
+
+        Tender::query()->where('id', $tender->id)->update([
+            'ebidding_process_stage_id' => 3,
+            'status_process_id' => TenderProcessStatus::PENILAIAN_KEWANGAN,
+        ]);
     }
 
     /** Drop retired slots (e.g. Laporan Jawatankuasa Pembuka) from existing headers. */
@@ -355,18 +532,15 @@ class PerakuanJabatanController extends Controller
 
         $rules = [
             'catatan' => ['nullable', 'string', 'max:65535'],
-            'sahkan_petender_layak' => [$submit ? 'accepted' : 'nullable', 'boolean'],
+            // First-pass "layak bidaan" checkbox is optional; mandatory pengesahan is post-bidaan.
+            'sahkan_petender_layak' => ['nullable', 'boolean'],
             'rows' => ['nullable', 'array'],
             'rows.*.vendor_id' => ['required', 'integer'],
             'rows.*.syor_urusetia' => ['nullable', 'string', Rule::in($syorOptions)],
             'rows.*.catatan_urusetia' => ['nullable', 'string', 'max:65535'],
         ];
 
-        $messages = [
-            'sahkan_petender_layak.accepted' => 'Sila tandakan pengesahan bahawa petender layak untuk menyertai bidaan.',
-        ];
-
-        $validated = $request->validate($rules, $messages);
+        $validated = $request->validate($rules);
         $rows = collect($validated['rows'] ?? []);
 
         $allowedVendorIds = $tender->participants()
@@ -415,9 +589,7 @@ class PerakuanJabatanController extends Controller
             );
 
             $record->catatan = $validated['catatan'] ?? null;
-            $record->sahkan_petender_layak = $submit
-                ? true
-                : (bool) ($validated['sahkan_petender_layak'] ?? false);
+            $record->sahkan_petender_layak = (bool) ($validated['sahkan_petender_layak'] ?? false);
 
             if ($submit) {
                 $record->submitted_at = now();

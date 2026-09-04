@@ -420,7 +420,7 @@
 						</table>
 					</div>
 
-					<div class="form-check mb-4">
+					<div class="form-check mb-4" id="mp_sahkan_wrap">
 						<input class="form-check-input" type="checkbox" id="mp_sahkan_layak" value="1"
 							{{ !empty($pemilihanHeader['sahkan_layak_bidaan']) ? 'checked' : '' }}>
 						<label class="form-check-label small" for="mp_sahkan_layak">Saya mengesahkan petender diatas layak untuk
@@ -1036,11 +1036,22 @@
 					mpFlushSuppliersToState();
 					mpSyncSupplierTableColumns();
 					mpRenderSuppliers();
+					mpSyncSahkanBidaanVisibility();
 				});
+
+				function mpSyncSahkanBidaanVisibility() {
+					const kaedah = ($('#mp_kaedah_memuktamadkan').val() || '').toString();
+					const isBidaan = kaedah === 'Bidaan';
+					$('#mp_sahkan_wrap').toggleClass('d-none', !isBidaan);
+					if (!isBidaan) {
+						$('#mp_sahkan_layak').prop('checked', false);
+					}
+				}
 
 				mpSyncSupplierTableColumns();
 				mpRenderItems();
 				mpRenderSuppliers();
+				mpSyncSahkanBidaanVisibility();
 			@endif
 		});
 	</script>

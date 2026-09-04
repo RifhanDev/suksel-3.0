@@ -25,6 +25,7 @@ class PerakuanJabatanKertasTaklimatItem extends Model
             'kewangan' => 'upload_download',
             'ringkasan' => 'upload_only',
             'kertas_perakuan', null => 'upload_download',
+            'laporan_bidaan' => 'upload_only',
             default => 'upload_download',
         };
     }
