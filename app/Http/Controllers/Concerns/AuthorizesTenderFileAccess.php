@@ -56,6 +56,7 @@ trait AuthorizesTenderFileAccess
             || $user->hasRole('Agency Jawatankuasa')
             || $user->hasRole('Urus Setia')
             || $user->hasRole('Agency Urus Setia')
+            || $user->hasRole('Agency Urusetia')
             || $user->hasRole('Penilai')
             || $user->hasRole('Agency Penilai')
         ) {

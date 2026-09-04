@@ -1154,6 +1154,7 @@
     const PENYATA_BANK_CONFIG = @json($penyataBankConfig ?? []);
     const VENDOR_FORM_PAYLOADS = @json($vendorFormPayloads ?? []);
     const DOKUMEN_BY_VENDOR = @json($dokumenByVendor ?? []);
+    const PENYATA_DOKUMEN_BY_VENDOR = @json($penyataDokumenByVendor ?? []);
 
     let activeStep2Uuid = PENYATA_BANK_UUIDS[0] || null;
     let activeStep2VendorId = null;
@@ -1876,145 +1877,59 @@
             $('#modalStep2NamaPembekal').text(nama || '-');
             $('#modalButiranCadanganKewanganTajukStep2').text($('#modalCadanganKewanganTajukStep2').text() || $('#modalDocTitle').text() || 'Penyata Bank Terkini (3 Bulan Terakhir) Syarikat');
 
-            // Render Section 1: Dokumen Sokongan Petender
+            // Render Section 1: Dokumen Sokongan Petender (STRICTLY this vendor only)
             const $dokTbody = $('#modalStep2DokumenSemakSilangTableBody');
             if ($dokTbody.length) {
                 $dokTbody.empty();
 
-                let vendorFiles = [];
                 const vIdStr = String(activeStep2VendorId || '');
                 const vIdNum = parseInt(activeStep2VendorId, 10);
+                let vendorFiles = [];
 
-                // 1. From VENDOR_FORM_PAYLOADS (Penyata Bank / Profil Petender submitted files)
-                const vPayloadDataForDocs = (typeof VENDOR_FORM_PAYLOADS !== 'undefined')
-                    ? (VENDOR_FORM_PAYLOADS[vIdStr] || VENDOR_FORM_PAYLOADS[vIdNum] || {})
-                    : {};
-
-                if (vPayloadDataForDocs && typeof vPayloadDataForDocs === 'object') {
-                    const keysToCheck = ['dokumen_sokongan', 'files', 'attachments', 'dokumen', 'lampiran', 'penyata_bank_files', 'dokumen_penyata_bank'];
-                    keysToCheck.forEach(k => {
-                        const val = vPayloadDataForDocs[k];
-                        if (Array.isArray(val)) {
-                            vendorFiles = vendorFiles.concat(val);
-                        } else if (val && typeof val === 'object' && (val.url || val.path || val.file_path || val.name)) {
-                            vendorFiles.push(val);
-                        }
-                    });
-                    if (Array.isArray(vPayloadDataForDocs.accounts)) {
-                        vPayloadDataForDocs.accounts.forEach(acc => {
-                            if (Array.isArray(acc.files)) {
-                                vendorFiles = vendorFiles.concat(acc.files);
-                            }
-                        });
-                    }
-                    if (vPayloadDataForDocs.path || vPayloadDataForDocs.file_path || vPayloadDataForDocs.url) {
-                        vendorFiles.push(vPayloadDataForDocs);
+                if (typeof PENYATA_DOKUMEN_BY_VENDOR !== 'undefined') {
+                    const scoped = PENYATA_DOKUMEN_BY_VENDOR[vIdStr]
+                        || PENYATA_DOKUMEN_BY_VENDOR[vIdNum]
+                        || [];
+                    if (Array.isArray(scoped)) {
+                        vendorFiles = scoped.slice();
                     }
                 }
 
-                // 2. From PENYATA_BANK_CONFIG.files
-                if (typeof PENYATA_BANK_CONFIG !== 'undefined' && PENYATA_BANK_CONFIG.files && Array.isArray(PENYATA_BANK_CONFIG.files)) {
-                    const pFiles = PENYATA_BANK_CONFIG.files.filter(f => !f.vendor_id || f.vendor_id == activeStep2VendorId || !f.uploaded_by || f.uploaded_by == activeStep2VendorId);
-                    vendorFiles = vendorFiles.concat(pFiles);
-                }
-
-                // 3. From DOKUMEN_BY_VENDOR
-                if (typeof DOKUMEN_BY_VENDOR !== 'undefined') {
-                    const vDocs = DOKUMEN_BY_VENDOR[vIdStr] || DOKUMEN_BY_VENDOR[vIdNum];
-                    if (vDocs) {
-                        const docsList = Array.isArray(vDocs) ? vDocs : Object.values(vDocs);
-                        docsList.forEach(d => {
-                            const files = d.vendor_content?.files || d.files || [];
-                            if (Array.isArray(files) && files.length > 0) {
-                                vendorFiles = vendorFiles.concat(files);
-                            } else if (d.vendor_content?.url || d.vendor_content?.path || d.vendor_content?.file_path) {
-                                vendorFiles.push(d.vendor_content);
-                            } else if (d.url || d.path || d.file_path) {
-                                vendorFiles.push(d);
-                            }
-                        });
-                    }
-                }
-
-                // 4. From SEMAK_PAYLOAD items
-                if (typeof SEMAK_PAYLOAD !== 'undefined' && SEMAK_PAYLOAD && typeof SEMAK_PAYLOAD === 'object') {
-                    Object.values(SEMAK_PAYLOAD).forEach(item => {
-                        const vendorData = item?.vendors?.[vIdStr] || item?.vendors?.[vIdNum];
-                        if (vendorData) {
-                            const files = vendorData.content?.files || vendorData.files || [];
-                            if (Array.isArray(files) && files.length > 0) {
-                                vendorFiles = vendorFiles.concat(files);
-                            }
-                        }
-                    });
-                }
-
-                // Deduplicate files by URL/path/name
-                const seen = new Set();
-                const uniqueFiles = [];
-                vendorFiles.forEach(f => {
-                    if (!f) return;
-                    const key = f.url || f.path || f.name || f.filename || JSON.stringify(f);
-                    if (!seen.has(key)) {
-                        seen.add(key);
-                        uniqueFiles.push(f);
-                    }
-                });
-
-                if (uniqueFiles.length > 0) {
-                    uniqueFiles.forEach(f => {
+                if (vendorFiles.length > 0) {
+                    vendorFiles.forEach(f => {
+                        if (!f) return;
                         const fileName = f.name || f.filename || f.original_name || f.title || 'Dokumen Sokongan';
-                        let fileUrl = '#';
-                        if (f.uuid) {
-                            fileUrl = '/tenders/dokumen-files/' + f.uuid + '/download';
-                        } else {
-                            let matchedUuid = null;
-                            let cleanFPath = (f.path || f.file_path || f.filepath || '').replace(/\\/g, '/').replace(/^public\//, '').replace(/^\//, '');
-                            if (typeof PENYATA_BANK_CONFIG !== 'undefined' && Array.isArray(PENYATA_BANK_CONFIG.files)) {
-                                const found = PENYATA_BANK_CONFIG.files.find(pf => {
-                                    let pPath = (pf.path || pf.file_path || '').replace(/\\/g, '/').replace(/^public\//, '').replace(/^\//, '');
-                                    return (pf.uuid && (pPath === cleanFPath || (pf.original_name && pf.original_name === fileName)));
-                                });
-                                if (found && found.uuid) {
-                                    matchedUuid = found.uuid;
-                                }
-                            }
+                        let fileUrl = f.url || '';
 
-                            if (matchedUuid) {
-                                fileUrl = '/tenders/dokumen-files/' + matchedUuid + '/download';
-                            } else if (cleanFPath !== '') {
-                                fileUrl = '/tenders/dokumen-files/stream?path=' + encodeURIComponent(cleanFPath) + '&name=' + encodeURIComponent(fileName);
+                        if (!fileUrl || fileUrl === '#') {
+                            if (f.uuid) {
+                                fileUrl = '{{ url('/tenders/dokumen-files') }}/' + encodeURIComponent(f.uuid) + '/download';
                             } else {
-                                let rawUrl = f.url || f.path || f.file_path || f.filepath || '#';
-                                if (rawUrl && rawUrl !== '#') {
-                                    if (/^(https?:|\/\/|data:)/i.test(rawUrl)) {
-                                        fileUrl = rawUrl;
-                                    } else {
-                                        rawUrl = rawUrl.replace(/\\/g, '/');
-                                        if (rawUrl.startsWith('public/')) {
-                                            rawUrl = rawUrl.replace(/^public\//, '');
-                                        }
-                                        if (!rawUrl.startsWith('/')) {
-                                            rawUrl = '/' + rawUrl;
-                                        }
-                                        if (!rawUrl.startsWith('/tenders/') && !rawUrl.startsWith('/storage/') && !rawUrl.startsWith('/api/')) {
-                                            rawUrl = '/storage' + rawUrl;
-                                        }
-                                        fileUrl = rawUrl;
-                                    }
+                                const cleanFPath = String(f.path || f.file_path || f.filepath || '')
+                                    .replace(/\\/g, '/')
+                                    .replace(/^public\//, '')
+                                    .replace(/^\//, '');
+                                if (cleanFPath !== '') {
+                                    fileUrl = '{{ route('tenderDokumen.streamByPath') }}'
+                                        + '?path=' + encodeURIComponent(cleanFPath)
+                                        + '&name=' + encodeURIComponent(fileName);
                                 }
                             }
+                        }
+
+                        if (!fileUrl || fileUrl === '#') {
+                            return;
                         }
 
                         const ext = (fileName.split('.').pop() || '').toLowerCase();
-                        const isPdf = (ext === 'pdf' || (f.mime_type && f.mime_type.toLowerCase().includes('pdf')));
+                        const isPdf = (ext === 'pdf' || (f.mime_type && String(f.mime_type).toLowerCase().includes('pdf')));
 
                         const actionBtn = isPdf
                             ? '<a href="' + escapeHtml(fileUrl) + '" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-primary px-3 py-1 d-inline-flex align-items-center gap-1 font-monospace">' +
                                 '<i class="bi bi-eye me-1"></i><span>Papar Dokumen</span>' +
                               '</a>'
-                            : '<a href="' + escapeHtml(fileUrl) + '" download="' + escapeHtml(fileName) + '" class="btn btn-sm btn-outline-primary px-3 py-1 d-inline-flex align-items-center gap-1 font-monospace">' +
-                                '<i class="bi bi-download me-1"></i><span>Muat Naik Dokumen</span>' +
+                            : '<a href="' + escapeHtml(fileUrl) + '" target="_blank" rel="noopener noreferrer" download="' + escapeHtml(fileName) + '" class="btn btn-sm btn-outline-primary px-3 py-1 d-inline-flex align-items-center gap-1 font-monospace">' +
+                                '<i class="bi bi-download me-1"></i><span>Muat Turun Dokumen</span>' +
                               '</a>';
 
                         $dokTbody.append(
@@ -2029,6 +1944,10 @@
                             '</tr>'
                         );
                     });
+
+                    if ($dokTbody.children().length === 0) {
+                        $dokTbody.append('<tr><td colspan="2" class="text-center text-muted py-3 fst-italic"><i class="bi bi-info-circle me-1"></i>Tiada Dokumen Dimuatnaik</td></tr>');
+                    }
                 } else {
                     $dokTbody.append('<tr><td colspan="2" class="text-center text-muted py-3 fst-italic"><i class="bi bi-info-circle me-1"></i>Tiada Dokumen Dimuatnaik</td></tr>');
                 }
