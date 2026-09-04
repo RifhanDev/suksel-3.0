@@ -1003,7 +1003,12 @@
                                             <div class="cidb-row-top">
                                                 <div class="field-grade-full">
                                                     <label class="form-label">Gred CIDB</label>
-                                                    <select class="selectize" name="cidb[0][grade]" multiple>
+                                                    {{-- name mesti berakhir dengan [] sebab ini select berbilang.
+                                                         Tanpa itu PHP hanya menyimpan gred terakhir sebagai rentetan,
+                                                         bukan array — lalu TendersController::storeNew() menggugurkannya
+                                                         (ia menyemak is_array) dan old() di bawah tidak memilih semula
+                                                         apa-apa. Bandingkan mof[0][code][] dan cidb[0][spec][]. --}}
+                                                    <select class="selectize" name="cidb[0][grade][]" multiple>
                                                         <option value="" selected disabled>Pilih Gred...</option>
                                                         @foreach (App\Code::where('type', 'cidb-g')->orderBy('code')->get() as $code)
                                                             <option value="{{ $code->id }}"
