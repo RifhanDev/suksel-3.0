@@ -14,6 +14,7 @@ use App\Models\Gateway;
 use App\Models\Fpx;
 use GuzzleHttp\Client;
 use GuzzleHttp\Psr7\Response;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
@@ -631,7 +632,36 @@ class TransactionsController extends Controller
 		return redirect('transactions/' . $id)->with('success', 'Status FPX dikemaskini.');
 	}
 
+	/**
+	 * Dipanggil setiap minit oleh cron melalui api/fpx_queue.
+	 *
+	 * Kunci diperlukan kerana cron menembak mengikut jam, bukan mengikut sama ada
+	 * larian sebelumnya sudah tamat. Apabila satu larian mengambil masa lebih
+	 * seminit, larian bertindih dan setiap satu mengulangi pertanyaan yang sama
+	 * pada jadual sejuta baris. Tujuh salinan serentak pernah diperhatikan di
+	 * staging, cukup untuk menepukan pangkalan data sehingga halaman lain 504.
+	 *
+	 * Larian pertama memegang kunci; yang lain keluar serta-merta. TTL 5 minit
+	 * memastikan larian yang tersembam tidak menahan kunci selama-lamanya.
+	 */
 	public function queue_fpx_requery()
+	{
+		$lock = Cache::lock('fpx-queue-requery', 300);
+
+		if (! $lock->get()) {
+			echo 'FPX requery already running, skipped.';
+
+			return;
+		}
+
+		try {
+			$this->dispatch_fpx_requery_jobs();
+		} finally {
+			$lock->release();
+		}
+	}
+
+	private function dispatch_fpx_requery_jobs()
 	{
 		$queueLimit = env('FPX_JOBS_LIMIT') ?? 50;
 
