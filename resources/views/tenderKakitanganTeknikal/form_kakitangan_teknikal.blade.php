@@ -210,7 +210,6 @@
                             <th class="py-3" style="min-width:140px;">Kategori</th>
                             <th class="py-3" style="min-width:200px;">Tahap Pendidikan Tertinggi</th>
                             <th class="py-3" style="width:160px;">Jumlah Pengalaman</th>
-                            <th class="py-3" style="min-width:180px;">Dokumen</th>
                             @if (!($viewOnly ?? false))
                             <th class="text-center py-3" style="width:80px;">Tindakan</th>
                             @endif
@@ -228,15 +227,6 @@
                                 </td>
                                 <td class="text-muted cell-pendidikan">{{ $item->tahap_pendidikan }}</td>
                                 <td class="text-muted cell-pengalaman">{{ $item->jumlah_pengalaman }} Tahun</td>
-                                <td class="cell-dokumen">
-                                    @forelse ($item->dokumens as $doc)
-                                        <a href="{{ $doc->url }}" target="_blank" class="existing-file-chip text-decoration-none text-dark" title="{{ $doc->original_name }}">
-                                            <i class="bi bi-paperclip me-1"></i>{{ $doc->original_name }}
-                                        </a>
-                                    @empty
-                                        <span class="text-muted small">&mdash;</span>
-                                    @endforelse
-                                </td>
                                 @if (!($viewOnly ?? false))
                                 <td class="text-center">
                                     <div class="d-inline-flex align-items-center gap-1">
@@ -252,7 +242,7 @@
                             </tr>
                         @empty
                             <tr id="tr-empty-state">
-                                <td colspan="{{ ($viewOnly ?? false) ? 6 : 7 }}" class="text-center text-muted py-4 small">Tiada rekod kakitangan teknikal dimasukkan lagi. Klik "Tambah Kakitangan" di atas untuk menambah.</td>
+                                <td colspan="{{ ($viewOnly ?? false) ? 5 : 6 }}" class="text-center text-muted py-4 small">Tiada rekod kakitangan teknikal dimasukkan lagi. Klik "Tambah Kakitangan" di atas untuk menambah.</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -591,6 +581,9 @@ $(document).ready(function () {
         $('#btn-simpan-text').text('Simpan');
         $('#input-kakitangan-uuid').val('');
         $('#form-modal-kakitangan')[0].reset();
+        if (typeof FileUpload !== 'undefined') {
+            FileUpload.reset('modal-input-dokumen');
+        }
         $('#sijil-professional-note').addClass('d-none').removeClass('d-flex');
         $('#modal-existing-files').empty();
         $('#modal-file-chip-list').empty();
@@ -610,6 +603,9 @@ $(document).ready(function () {
         $('#select-tahap-pendidikan').val(itemData.tahap_pendidikan);
         $('#input-jumlah-pengalaman').val(itemData.jumlah_pengalaman);
         $('#input-sijil-professional').val(itemData.sijil_professional || '').trigger('input');
+        if (typeof FileUpload !== 'undefined') {
+            FileUpload.reset('modal-input-dokumen');
+        }
 
         // Render existing files
         $('#modal-existing-files').empty();
@@ -781,21 +777,9 @@ $(document).ready(function () {
     function checkEmptyState() {
         if ($('#tbl-kakitangan-body .kakitangan-row').length === 0) {
             if ($('#tr-empty-state').length === 0) {
-                $('#tbl-kakitangan-body').append('<tr id="tr-empty-state"><td colspan="7" class="text-center text-muted py-4 small">Tiada rekod kakitangan teknikal dimasukkan lagi. Klik "Tambah Kakitangan" di atas untuk menambah.</td></tr>');
+                $('#tbl-kakitangan-body').append('<tr id="tr-empty-state"><td colspan="6" class="text-center text-muted py-4 small">Tiada rekod kakitangan teknikal dimasukkan lagi. Klik "Tambah Kakitangan" di atas untuk menambah.</td></tr>');
             }
         }
-    }
-
-    function buildDokumenCellHtml(dokumens) {
-        if (!dokumens || dokumens.length === 0) {
-            return '<span class="text-muted small">&mdash;</span>';
-        }
-        return dokumens.map(function(doc) {
-            var name = $('<div/>').text(doc.original_name).html();
-            return '<a href="/kakitangan-teknikal-dokumen/' + doc.uuid + '/download" target="_blank" class="existing-file-chip text-decoration-none text-dark" title="' + name + '">' +
-                '<i class="bi bi-paperclip me-1"></i>' + name +
-            '</a>';
-        }).join('');
     }
 
     function renderOrUpdateRow(item) {
@@ -820,7 +804,6 @@ $(document).ready(function () {
             $existingTr.find('.cell-kategori').html(badgeHtml);
             $existingTr.find('.cell-pendidikan').text(item.tahap_pendidikan);
             $existingTr.find('.cell-pengalaman').text(item.jumlah_pengalaman + ' Tahun');
-            $existingTr.find('.cell-dokumen').html(buildDokumenCellHtml(item.dokumens));
         } else {
             var bil = $('#tbl-kakitangan-body .kakitangan-row').length + 1;
             var $newTr = $('<tr class="kakitangan-row" data-uuid="' + item.uuid + '">' +
@@ -829,7 +812,6 @@ $(document).ready(function () {
                 '<td class="cell-kategori">' + badgeHtml + '</td>' +
                 '<td class="text-muted cell-pendidikan">' + $('<div/>').text(item.tahap_pendidikan).html() + '</td>' +
                 '<td class="text-muted cell-pengalaman">' + item.jumlah_pengalaman + ' Tahun</td>' +
-                '<td class="cell-dokumen">' + buildDokumenCellHtml(item.dokumens) + '</td>' +
                 '<td class="text-center">' +
                     '<div class="d-inline-flex align-items-center gap-1">' + EDIT_BTN + DELETE_BTN + '</div>' +
                 '</td>' +
