@@ -1,6 +1,9 @@
 @php
 	$ppSimpanUrl = route('perakuanjabatan.pengesyoranPembekal.simpan', ['tender' => $tender->id]);
 	$ppHantarUrl = route('perakuanjabatan.pengesyoranPembekal.hantar', ['tender' => $tender->id]);
+	$ppSubmitted = !empty($pengesyoranPembekal->submitted_at);
+	$ppSyorOptions = \App\Models\PerakuanJabatanPengesyoranPembekalItem::SYOR_OPTIONS;
+	$ppHasSyor = collect($pembekalRows ?? [])->contains(fn ($r) => filled($r['syor_urusetia'] ?? null));
 @endphp
 <div class="tab-pane fade pengesyoran-pembekal-tab" id="tab-pengesyoran-pembekal" role="tabpanel">
 	<style>
@@ -59,9 +62,20 @@
 			border-color: #0d9488;
 			color: #fff;
 		}
+
+		.pengesyoran-pembekal-tab .pp-syor-select {
+			min-width: 140px;
+		}
+
+		.pengesyoran-pembekal-tab .pp-catatan-input {
+			min-width: 160px;
+			min-height: 60px;
+			resize: vertical;
+		}
 	</style>
 
-	<div class="content-card p-4" id="pp-root">
+	<div class="content-card p-4" id="pp-root"
+		data-submitted="{{ $ppSubmitted ? '1' : '0' }}">
 		<div class="alert d-none py-2 px-3 mb-3" id="ppAlert" role="alert"></div>
 
 		<div class="pp-section-bar rounded-top">SENARAI ITEM</div>
@@ -100,7 +114,7 @@
 		<div class="border border-top-0 border-secondary-subtle p-3 rounded-bottom mb-4"
 			style="border-color:#dde2ea!important;">
 			<div class="table-responsive pp-table-wrap">
-				<table class="table table-bordered align-middle mb-0 text-center">
+				<table class="table table-bordered align-middle mb-0 text-center" id="ppPembekalTable">
 					<thead>
 						<tr>
 							<th rowspan="2">Bil</th>
@@ -110,8 +124,8 @@
 							<th colspan="2">Kedudukan Penilaian</th>
 							<th rowspan="2">Status Pendaftaran MOF</th>
 							<th colspan="2">Maklumat Tambahan</th>
-							<th rowspan="2">Keputusan Urusetia</th>
-							<th rowspan="2">Catatan Urusetia</th>
+							<th rowspan="2" style="min-width:150px;">Syor Urusetia</th>
+							<th rowspan="2" style="min-width:180px;">Catatan Urusetia</th>
 						</tr>
 						<tr>
 							<th>Teknikal</th>
@@ -122,7 +136,7 @@
 					</thead>
 					<tbody>
 						@forelse ($pembekalRows ?? [] as $row)
-							<tr>
+							<tr data-vendor-id="{{ $row['vendor_id'] }}">
 								<td>{{ $row['bil'] }}</td>
 								<td>{{ $row['status_bumiputra'] }}</td>
 								<td>
@@ -143,8 +157,23 @@
 										—
 									@endif
 								</td>
-								<td>{{ $row['keputusan_urusetia'] ?? '—' }}</td>
-								<td>{{ $row['catatan_urusetia'] ?? '—' }}</td>
+								<td>
+									<select class="form-select form-select-sm pp-syor-select"
+										{{ $ppSubmitted ? 'disabled' : '' }}>
+										<option value="">-- Pilih --</option>
+										@foreach ($ppSyorOptions as $opt)
+											<option value="{{ $opt }}"
+												{{ ($row['syor_urusetia'] ?? '') === $opt ? 'selected' : '' }}>
+												{{ $opt }}
+											</option>
+										@endforeach
+									</select>
+								</td>
+								<td>
+									<textarea class="form-control form-control-sm pp-catatan-input"
+										rows="2" placeholder="Catatan..."
+										{{ $ppSubmitted ? 'disabled' : '' }}>{{ $row['catatan_urusetia'] ?? '' }}</textarea>
+								</td>
 							</tr>
 						@empty
 							<tr>
@@ -157,19 +186,23 @@
 		</div>
 
 		<div class="pp-section-bar rounded-top">CATATAN</div>
-		<textarea class="form-control pp-textarea-catatan mb-4" id="ppCatatan" name="catatan" rows="4" placeholder="">{{ old('catatan', $pengesyoranPembekal->catatan) }}</textarea>
+		<textarea class="form-control pp-textarea-catatan mb-4" id="ppCatatan" name="catatan" rows="4"
+			placeholder="" {{ $ppSubmitted ? 'disabled' : '' }}>{{ old('catatan', $pengesyoranPembekal->catatan) }}</textarea>
 
-		<div class="form-check mb-3">
+		<div class="form-check mb-3 {{ $ppHasSyor ? '' : 'd-none' }}" id="ppPengakuanWrap">
 			<input class="form-check-input" type="checkbox" name="sahkan_petender_layak" id="ppPengakuan" value="1"
-				{{ old('sahkan_petender_layak', $pengesyoranPembekal->sahkan_petender_layak) ? 'checked' : '' }}>
+				{{ old('sahkan_petender_layak', $pengesyoranPembekal->sahkan_petender_layak) ? 'checked' : '' }}
+				{{ $ppSubmitted ? 'disabled' : '' }}>
 			<label class="form-check-label" for="ppPengakuan">Saya mengesahkan petender diatas layak untuk
 				menyertai Bidaan.</label>
 		</div>
 
-		<div class="d-flex justify-content-end gap-2">
-			<button type="button" class="btn pp-btn-teal" id="ppSimpan">Simpan</button>
-			<button type="button" class="btn btn-selangor" id="ppHantar">Hantar</button>
-		</div>
+		@unless ($ppSubmitted)
+			<div class="d-flex justify-content-end gap-2">
+				<button type="button" class="btn pp-btn-teal" id="ppSimpan">Simpan</button>
+				<button type="button" class="btn btn-selangor" id="ppHantar">Hantar</button>
+			</div>
+		@endunless
 	</div>
 </div>
 
@@ -179,12 +212,15 @@
 			const root = document.getElementById('pp-root');
 			if (!root) return;
 
+			const submitted = root.getAttribute('data-submitted') === '1';
 			const simpanUrl = @json($ppSimpanUrl);
 			const hantarUrl = @json($ppHantarUrl);
 			const token = document.querySelector('meta[name="_token"]')?.getAttribute('content');
 			const catatanEl = document.getElementById('ppCatatan');
 			const pengakuanEl = document.getElementById('ppPengakuan');
+			const pengakuanWrap = document.getElementById('ppPengakuanWrap');
 			const alertEl = document.getElementById('ppAlert');
+			const SYOR_DISYORKAN = 'Disyorkan';
 
 			function showAlert(msg, ok) {
 				if (!alertEl) return;
@@ -193,13 +229,58 @@
 				alertEl.classList.add(ok ? 'alert-success' : 'alert-danger');
 			}
 
+			function getSyorSelects() {
+				return Array.from(document.querySelectorAll('#ppPembekalTable .pp-syor-select'));
+			}
+
+			function syncPengakuanVisibility() {
+				if (!pengakuanWrap) return;
+				const hasSyor = getSyorSelects().some(sel => (sel.value || '').trim() !== '');
+				pengakuanWrap.classList.toggle('d-none', !hasSyor);
+				if (!hasSyor && pengakuanEl) {
+					pengakuanEl.checked = false;
+				}
+			}
+
+			function enforceDisyorkanRule(changedSelect) {
+				if (!changedSelect || changedSelect.value !== SYOR_DISYORKAN) return;
+
+				getSyorSelects().forEach(sel => {
+					if (sel === changedSelect) return;
+					if (sel.value === SYOR_DISYORKAN) {
+						sel.value = '';
+					}
+				});
+			}
+
+			document.querySelectorAll('#ppPembekalTable .pp-syor-select').forEach(sel => {
+				sel.addEventListener('change', function() {
+					enforceDisyorkanRule(this);
+					syncPengakuanVisibility();
+				});
+			});
+
+			syncPengakuanVisibility();
+
+			if (submitted) return;
+
 			function buildFormData() {
 				const fd = new FormData();
 				fd.append('_token', token);
 				fd.append('catatan', catatanEl ? catatanEl.value : '');
-				if (pengakuanEl && pengakuanEl.checked) {
+				if (pengakuanEl && !pengakuanWrap?.classList.contains('d-none') && pengakuanEl.checked) {
 					fd.append('sahkan_petender_layak', '1');
 				}
+
+				document.querySelectorAll('#ppPembekalTable tbody tr[data-vendor-id]').forEach((tr, idx) => {
+					const vendorId = tr.getAttribute('data-vendor-id');
+					const syor = tr.querySelector('.pp-syor-select')?.value || '';
+					const catatan = tr.querySelector('.pp-catatan-input')?.value || '';
+					fd.append(`rows[${idx}][vendor_id]`, vendorId);
+					fd.append(`rows[${idx}][syor_urusetia]`, syor);
+					fd.append(`rows[${idx}][catatan_urusetia]`, catatan);
+				});
+
 				return fd;
 			}
 
@@ -240,6 +321,15 @@
 				post(simpanUrl);
 			});
 			document.getElementById('ppHantar')?.addEventListener('click', function() {
+				const hasSyor = getSyorSelects().some(sel => (sel.value || '').trim() !== '');
+				if (!hasSyor) {
+					showAlert('Sila pilih Syor Urusetia untuk sekurang-kurangnya satu pembekal sebelum menghantar.', false);
+					return;
+				}
+				if (!pengakuanEl || !pengakuanEl.checked) {
+					showAlert('Sila tandakan pengesahan bahawa petender layak untuk menyertai bidaan.', false);
+					return;
+				}
 				post(hantarUrl);
 			});
 		})();

@@ -8,13 +8,16 @@ use App\Http\Controllers\Concerns\RestrictsTenderByRole;
 use App\Models\TenderKewanganEvaluation;
 use App\Models\TenderKewanganLaporan;
 use App\Models\TenderKewanganProgress;
+use App\Services\StosBackendClient;
 use App\Support\TenderDokumenPresenter;
 use App\Support\TenderProcessStatus;
 use App\Tender;
+use App\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class PenilaianKewanganController extends Controller
 {
@@ -113,12 +116,14 @@ class PenilaianKewanganController extends Controller
         }
 
         $kewanganItems = [];
+        $penyataBankItems = [];
         $vendors = [];
         $dokumenByVendor = [];
         $semakPayload = [];
         $pembekalMelepasi = [];
         $pembekalTidakMelepasi = [];
         $pembekalBelumDinilai = [];
+        $penyataDokumenByVendor = [];
 
         if ($tender) {
             $tenderDokumen = TenderDokumenPresenter::for($tender);
@@ -423,10 +428,8 @@ class PenilaianKewanganController extends Controller
             })
             ->all();
 
-        if (! isset($penyataBankConfig['files']) || ! is_array($penyataBankConfig['files'])) {
-            $penyataBankConfig['files'] = [];
-        }
-        $penyataBankConfig['files'] = array_merge($penyataBankConfig['files'], $penyataBankFiles);
+        // Tender-level template files stay on config for scoring/bulan only — NOT for petender dokumen.
+        $penyataBankConfig['files'] = [];
 
         $vendorFormPayloads = \Illuminate\Support\Facades\DB::table('tender_vendor_form_payloads')
             ->where('tender_id', $tender->id)
@@ -435,6 +438,15 @@ class PenilaianKewanganController extends Controller
             ->keyBy('vendor_id')
             ->map(fn ($r) => json_decode($r->payload, true))
             ->all();
+
+        $penyataDokumenByVendor = $this->buildPenyataDokumenByVendor(
+            $tender,
+            $vendors ?? [],
+            $vendorFormPayloads,
+            $dokumenByVendor ?? [],
+            collect($penyataBankItems ?? [])->pluck('uuid')->filter()->all(),
+            $penyataBankFiles
+        );
 
         $progress = null;
         if ($tender) {
@@ -479,6 +491,7 @@ class PenilaianKewanganController extends Controller
             'pembekalTidakMelepasi',
             'pembekalBelumDinilai',
             'penyataBankConfig',
+            'penyataDokumenByVendor',
             'rumusanStep3Data',
             'rumusanLaporanData',
             'laporanRecord',
@@ -1119,6 +1132,239 @@ class PenilaianKewanganController extends Controller
         unset($payload);
 
         return $semakPayload;
+    }
+
+    /**
+     * Dokumen sokongan penyata bank, keyed by vendor_id — never mix across syarikat.
+     *
+     * @param  array<int, array<string, mixed>>  $vendors
+     * @param  array<int|string, mixed>  $vendorFormPayloads
+     * @param  array<int, array<int, array<string, mixed>>>  $dokumenByVendor
+     * @param  list<string>  $penyataUuids
+     * @param  list<array<string, mixed>>  $legacyPenyataFiles
+     * @return array<int, list<array<string, mixed>>>
+     */
+    protected function buildPenyataDokumenByVendor(
+        Tender $tender,
+        array $vendors,
+        array $vendorFormPayloads,
+        array $dokumenByVendor,
+        array $penyataUuids,
+        array $legacyPenyataFiles = []
+    ): array {
+        $byVendor = [];
+        $uploaderVendorMap = $this->mapUploaderUserIdToVendorId($legacyPenyataFiles);
+
+        foreach ($vendors as $vendor) {
+            $vendorId = (int) ($vendor['vendor_id'] ?? 0);
+            if ($vendorId <= 0) {
+                continue;
+            }
+
+            $files = [];
+
+            $payload = $vendorFormPayloads[$vendorId]
+                ?? $vendorFormPayloads[(string) $vendorId]
+                ?? null;
+            if (is_array($payload)) {
+                $files = array_merge($files, $this->extractFilesFromPenyataPayload($payload));
+            }
+
+            // Checklist uploads for penyata items only (vendor_content — never admin template files).
+            foreach ($dokumenByVendor[$vendorId] ?? [] as $item) {
+                $itemUuid = (string) ($item['uuid'] ?? '');
+                if ($penyataUuids !== [] && ! in_array($itemUuid, $penyataUuids, true)) {
+                    continue;
+                }
+                $itemFiles = $item['vendor_content']['files'] ?? [];
+                if (is_array($itemFiles)) {
+                    $files = array_merge($files, $itemFiles);
+                }
+            }
+
+            // STOS may hold per-vendor files even when local payload has none.
+            $files = array_merge($files, $this->fetchPenyataFilesFromStos($tender, $vendorId));
+
+            // Legacy local penyata_bank_files: only if uploaded_by maps to this vendor.
+            foreach ($legacyPenyataFiles as $file) {
+                $uploaderId = (int) ($file['uploaded_by'] ?? 0);
+                if ($uploaderId > 0 && ($uploaderVendorMap[$uploaderId] ?? null) === $vendorId) {
+                    $files[] = $file;
+                }
+            }
+
+            $byVendor[$vendorId] = $this->normalizePenyataDokumenFiles($files);
+        }
+
+        return $byVendor;
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $legacyPenyataFiles
+     * @return array<int, int> user_id => vendor_id
+     */
+    protected function mapUploaderUserIdToVendorId(array $legacyPenyataFiles): array
+    {
+        $userIds = collect($legacyPenyataFiles)
+            ->pluck('uploaded_by')
+            ->filter()
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values()
+            ->all();
+
+        if ($userIds === []) {
+            return [];
+        }
+
+        return User::query()
+            ->whereIn('id', $userIds)
+            ->whereNotNull('vendor_id')
+            ->pluck('vendor_id', 'id')
+            ->map(fn ($vid) => (int) $vid)
+            ->all();
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     * @return list<array<string, mixed>>
+     */
+    protected function extractFilesFromPenyataPayload(array $payload): array
+    {
+        $files = [];
+        $keys = ['dokumen_sokongan', 'files', 'attachments', 'dokumen', 'lampiran', 'penyata_bank_files', 'dokumen_penyata_bank', 'dokumens'];
+
+        foreach ($keys as $key) {
+            $val = $payload[$key] ?? null;
+            if (is_array($val)) {
+                if ($this->isFileMeta($val)) {
+                    $files[] = $val;
+                } else {
+                    foreach ($val as $row) {
+                        if (is_array($row) && $this->isFileMeta($row)) {
+                            $files[] = $row;
+                        }
+                    }
+                }
+            }
+        }
+
+        foreach ($payload['accounts'] ?? [] as $account) {
+            if (! is_array($account)) {
+                continue;
+            }
+            foreach ($account['files'] ?? [] as $file) {
+                if (is_array($file) && $this->isFileMeta($file)) {
+                    $files[] = $file;
+                }
+            }
+        }
+
+        return $files;
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    protected function fetchPenyataFilesFromStos(Tender $tender, int $vendorId): array
+    {
+        $stos = app(StosBackendClient::class);
+        if (! $stos->isConfigured() || empty($tender->uuid)) {
+            return [];
+        }
+
+        try {
+            $path = 'penyata-banks/' . $tender->uuid;
+            $url = StosBackendClient::apiUrl($path) . '?vendor_id=' . $vendorId;
+
+            $response = StosBackendClient::http()->get($url);
+            if (! $response->successful()) {
+                return [];
+            }
+
+            $data = $response->json('data') ?? [];
+            if (! is_array($data)) {
+                return [];
+            }
+
+            // Reject payloads that belong to another vendor.
+            $payloadVendor = (int) ($data['vendor_id'] ?? $data['vendorId'] ?? 0);
+            if ($payloadVendor > 0 && $payloadVendor !== $vendorId) {
+                return [];
+            }
+
+            return $this->extractFilesFromPenyataPayload($data);
+        } catch (\Throwable $e) {
+            Log::warning('Gagal ambil dokumen penyata bank dari STOS.', [
+                'tender_id' => $tender->id,
+                'vendor_id' => $vendorId,
+                'error' => $e->getMessage(),
+            ]);
+
+            return [];
+        }
+    }
+
+    protected function isFileMeta(array $row): bool
+    {
+        return isset($row['uuid'])
+            || isset($row['url'])
+            || isset($row['path'])
+            || isset($row['file_path'])
+            || isset($row['original_name'])
+            || isset($row['name'])
+            || isset($row['filename']);
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $files
+     * @return list<array<string, mixed>>
+     */
+    protected function normalizePenyataDokumenFiles(array $files): array
+    {
+        $seen = [];
+        $normalized = [];
+
+        foreach ($files as $file) {
+            if (! is_array($file) || ! $this->isFileMeta($file)) {
+                continue;
+            }
+
+            $uuid = (string) ($file['uuid'] ?? '');
+            $name = (string) ($file['name'] ?? $file['original_name'] ?? $file['filename'] ?? $file['title'] ?? 'Dokumen Sokongan');
+            $path = ltrim(str_replace(['\\', 'public/'], ['/', ''], (string) ($file['path'] ?? $file['file_path'] ?? $file['filepath'] ?? '')), '/');
+            $url = (string) ($file['url'] ?? '');
+
+            if ($uuid !== '') {
+                $url = route('tenderDokumen.download', $uuid);
+            } elseif ($url === '' && $path !== '') {
+                $url = route('tenderDokumen.streamByPath', [
+                    'path' => $path,
+                    'name' => $name,
+                ]);
+            }
+
+            if ($url === '' || $url === '#') {
+                continue;
+            }
+
+            $key = $uuid !== '' ? 'u:' . $uuid : 'p:' . $url . '|' . $name;
+            if (isset($seen[$key])) {
+                continue;
+            }
+            $seen[$key] = true;
+
+            $normalized[] = [
+                'uuid' => $uuid !== '' ? $uuid : null,
+                'name' => $name,
+                'original_name' => $name,
+                'path' => $path !== '' ? $path : null,
+                'url' => $url,
+                'mime_type' => $file['mime_type'] ?? null,
+            ];
+        }
+
+        return array_values($normalized);
     }
 
     /**
