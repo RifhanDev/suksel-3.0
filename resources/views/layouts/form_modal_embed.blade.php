@@ -1,3 +1,12 @@
+@if (request()->ajax() || request()->header('X-Requested-With') === 'XMLHttpRequest')
+    @yield('styles')
+    @stack('styles')
+    <div class="form-embed-wrap">
+        @yield('content')
+    </div>
+    @yield('scripts')
+    @stack('scripts')
+@else
 <!DOCTYPE html>
 <html lang="ms">
 
@@ -62,3 +71,4 @@
 </body>
 
 </html>
+@endif

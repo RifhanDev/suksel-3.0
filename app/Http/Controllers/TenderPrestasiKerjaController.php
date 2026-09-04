@@ -22,7 +22,10 @@ class TenderPrestasiKerjaController extends Controller
         $tender = Tender::with('tenderer')
             ->leftJoin('ref_kategori_jenis_perolehans as k', 'k.id', '=', 'tenders.kategori_perolehan_id')
             ->select('tenders.*', 'k.name as kategori_perolehan_name')
-            ->where('tenders.uuid', $tenderUuid)
+            ->where(function ($q) use ($tenderUuid) {
+                $q->where('tenders.uuid', $tenderUuid)
+                  ->orWhere('tenders.id', $tenderUuid);
+            })
             ->firstOrFail();
 
         $this->ensureTenderFormAccess($tender);

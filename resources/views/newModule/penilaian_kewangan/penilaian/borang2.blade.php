@@ -565,8 +565,8 @@
                                                 </div>
                                                 <div>
                                                     <div class="fw-bold text-dark mb-0.5" style="font-size: 0.88rem;">{{ $p->vendor->name ?? $p->vendor->company_name ?? ('Syarikat Petender ' . $vId) }}</div>
-                                                    <a href="javascript:void(0)" onclick="openPenyataBankDetail()" class="d-inline-flex align-items-center gap-1.5 text-primary text-decoration-none small fw-medium btn-link-doc" style="font-size: 0.78rem;">
-                                                        <span>Dokumen Sokongan.pdf</span>
+                                                    <a href="javascript:void(0)" class="d-inline-flex align-items-center gap-1.5 text-primary text-decoration-none small fw-medium btn-link-doc" data-vendor-id="{{ $vId }}">
+                                                        <i class="bi bi-box-arrow-up-right me-1 icon-link-doc"></i><span class="text-link-doc">Buka Borang</span>
                                                     </a>
                                                 </div>
                                             </div>
@@ -690,6 +690,36 @@
     </div>
 </div>
 
+{{-- =========================
+    MODAL: PAPAR BORANG ATAS TALIAN (READ-ONLY)
+========================== --}}
+<div class="modal fade" id="borangModal" tabindex="-1" aria-hidden="true" style="z-index: 1060;">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content rounded-4 shadow-lg border-0">
+            <div class="modal-header px-4 pt-3 pb-2 border-bottom bg-light">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="bg-primary bg-opacity-10 text-primary p-2 rounded-2 d-inline-flex align-items-center justify-content-center" style="width:32px; height:32px;">
+                        <i class="bi bi-eye-fill"></i>
+                    </div>
+                    <div>
+                        <span class="d-block text-uppercase fw-bold text-muted" style="font-size: 0.65rem; letter-spacing: 0.05em;">Paparan Semakan Borang (Mod Paparan Sahaja)</span>
+                        <h6 id="borangModalTitle" class="fw-bold text-dark mb-0" style="font-size: 0.95rem;">Borang Atas Talian</h6>
+                    </div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4 position-relative" style="background: #f8fafc; min-height: 350px;">
+               
+                <div id="borangModalContent" style="display:none;"></div>
+            </div>
+            <div class="modal-footer bg-light px-4 py-2 border-top justify-content-between">
+                <span class="text-muted extra-small"><i class="bi bi-shield-lock me-1 text-primary"></i>Mod Paparan Sahaja — Data petender dilindungi daripada sebarang pengemaskinian.</span>
+                <button type="button" class="btn btn-sm btn-secondary px-4 fw-bold rounded-3" data-bs-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
@@ -732,6 +762,28 @@
                     const tdDiaudit = tr.querySelector('.td-diaudit');
                     const inputCatatan = tr.querySelector('.input-catatan');
 
+                    // Update Buka Borang / Dokumen link appearance per vendor
+                    const textLinkDoc = tr.querySelector('.text-link-doc');
+                    const iconLinkDoc = tr.querySelector('.icon-link-doc');
+                    const docActions = vSum.doc_actions || {};
+                    const action = docActions[currentDocId] || {};
+
+                    if (action.type === 'borang_atas_talian') {
+                        if (textLinkDoc) textLinkDoc.textContent = 'Buka Borang';
+                        if (iconLinkDoc) iconLinkDoc.className = 'bi bi-box-arrow-up-right me-1 icon-link-doc';
+                    } else {
+                        if (action.has_file && action.is_pdf) {
+                            if (textLinkDoc) textLinkDoc.textContent = 'Lihat PDF';
+                            if (iconLinkDoc) iconLinkDoc.className = 'bi bi-file-earmark-pdf me-1 icon-link-doc';
+                        } else if (action.has_file) {
+                            if (textLinkDoc) textLinkDoc.textContent = 'Muat Turun Dokumen';
+                            if (iconLinkDoc) iconLinkDoc.className = 'bi bi-file-earmark-arrow-down me-1 icon-link-doc';
+                        } else {
+                            if (textLinkDoc) textLinkDoc.textContent = 'Tiada Dokumen';
+                            if (iconLinkDoc) iconLinkDoc.className = 'bi bi-exclamation-triangle me-1 icon-link-doc text-warning';
+                        }
+                    }
+
                     if (selectDikemukakan) {
                         selectDikemukakan.value = item.dikemukakan || 'Ya';
                     }
@@ -750,6 +802,124 @@
                 });
             });
         });
+
+        // Dynamic Buka Borang / Dokumen click handler
+        document.querySelectorAll('.btn-link-doc').forEach(function (btn) {
+            btn.addEventListener('click', function (e) {
+                e.preventDefault();
+                const tr = this.closest('tr');
+                const vendorId = tr ? tr.getAttribute('data-vendor-id') : this.getAttribute('data-vendor-id');
+                const vSum = b2VendorSummaryData[vendorId] || {};
+                const docActions = vSum.doc_actions || {};
+                const action = docActions[currentDocId] || {};
+
+                if (action.type === 'borang_atas_talian') {
+                    if (action.url) {
+                        const loader = document.getElementById('borangLoader');
+                        const content = document.getElementById('borangModalContent');
+                        const modalTitle = document.getElementById('borangModalTitle');
+
+                        if (loader) loader.style.display = 'flex';
+                        if (content) { content.style.display = 'none'; content.innerHTML = ''; }
+                        if (modalTitle) modalTitle.textContent = (action.original_name || 'Borang Atas Talian') + ' — ' + (vSum.vendor_name || '');
+
+                        const borangModalEl = document.getElementById('borangModal');
+                        if (borangModalEl) {
+                            const borangModal = bootstrap.Modal.getOrCreateInstance(borangModalEl);
+                            borangModal.show();
+                        }
+
+                        fetch(action.url, {
+                            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                        })
+                        .then(response => {
+                            if (!response.ok) throw new Error('HTTP error ' + response.status);
+                            return response.text();
+                        })
+                        .then(html => {
+                            if (loader) loader.style.display = 'none';
+                            if (content) {
+                                content.innerHTML = html;
+                                content.style.display = 'block';
+
+                                // Dynamically execute ONLY inline script elements inside injected HTML (ignoring external library src scripts)
+                                const scripts = Array.from(content.querySelectorAll('script'));
+                                scripts.forEach(oldScript => {
+                                    if (!oldScript.src) {
+                                        const newScript = document.createElement('script');
+                                        Array.from(oldScript.attributes).forEach(attr => {
+                                            newScript.setAttribute(attr.name, attr.value);
+                                        });
+                                        newScript.text = oldScript.text || oldScript.textContent;
+                                        oldScript.parentNode.replaceChild(newScript, oldScript);
+                                    }
+                                });
+
+                                // Lock all inputs/buttons inside modal to read-only
+                                const lockInputs = function () {
+                                    content.querySelectorAll('input, select, textarea, button[type="submit"]').forEach(el => {
+                                        el.disabled = true;
+                                    });
+                                };
+                                lockInputs();
+                                setTimeout(lockInputs, 100);
+                            }
+                        })
+                        .catch(err => {
+                            console.error('AJAX Fetch Borang Error:', err);
+                            if (loader) loader.style.display = 'none';
+                            if (content) {
+                                content.innerHTML = '<div class="alert alert-danger bg-danger bg-opacity-10 text-danger border-danger border-opacity-25 rounded-3 p-3"><i class="bi bi-exclamation-octagon-fill me-2"></i>Gagal memuatkan borang petender. Sila cuba lagi.</div>';
+                                content.style.display = 'block';
+                            }
+                        });
+                    } else {
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire({
+                                icon: 'info',
+                                title: 'Pautan Borang Tidak Dijumpai',
+                                text: 'Pautan ke borang atas talian ini belum dikonfigurasi.',
+                                confirmButtonColor: '#dc2626'
+                            });
+                        } else {
+                            alert('Pautan ke borang atas talian ini belum dikonfigurasi.');
+                        }
+                    }
+                } else if (action.type === 'standard') {
+                    if (!action.has_file || !action.url) {
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Tiada Dokumen',
+                                text: 'Petender belum mengemukakan dokumen sokongan bagi item ini.',
+                                confirmButtonColor: '#dc2626'
+                            });
+                        } else {
+                            alert('Petender belum mengemukakan dokumen sokongan bagi item ini.');
+                        }
+                    } else if (action.is_pdf) {
+                        window.open(action.url, '_blank');
+                    } else {
+                        window.location.href = action.url;
+                    }
+                }
+            });
+        });
+
+        // Cleanup modal DOM and event handlers when modal is hidden to maintain high performance
+        const borangModalEl = document.getElementById('borangModal');
+        if (borangModalEl) {
+            borangModalEl.addEventListener('hidden.bs.modal', function () {
+                const content = document.getElementById('borangModalContent');
+                if (content) {
+                    content.innerHTML = '';
+                    content.style.display = 'none';
+                }
+                if (typeof jQuery !== 'undefined') {
+                    jQuery(document).off('focus blur input change', '.amount-input, .field-harga, .wang-kos-prima, .wang-peruntukan-semasa, .nilai-kerja, .penyata-bank-bulan-input, .jumlah-deposit');
+                }
+            });
+        }
 
         // AJAX Save Modal Evaluations for Borang 2 Document Item
         document.getElementById('btnSimpanSemakanModal').addEventListener('click', function () {

@@ -314,7 +314,7 @@
     $tenderParam = request('tender') ?: request('tender_no') ?: ($tender_no ?? '');
     $tenderIdentifier = isset($tender) ? ($tender->uuid ?: $tender->id ?: $tenderParam) : $tenderParam;
     $backToTenderUrl = $tenderParam 
-        ? route('penilaianKewanganKerja.show', $tenderParam) 
+        ? route('penilaianKewanganKerja.show', ['tender_no' => $tenderParam, 'tab' => 'p2']) 
         : (str_contains(url()->previous(), '/penilaian-kewangan') ? url()->previous() : route('penilaianKewangan'));
 
     $vendorsData = $b9VendorSummary ?? $b8VendorSummary ?? [];

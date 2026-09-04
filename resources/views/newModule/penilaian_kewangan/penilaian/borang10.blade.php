@@ -367,7 +367,7 @@
     $tenderParam = request('tender') ?: request('tender_no') ?: ($tender_no ?? '');
     $tenderIdentifier = isset($tender) ? ($tender->uuid ?: $tender->id ?: $tenderParam) : $tenderParam;
     $backToTenderUrl = $tenderParam 
-        ? route('penilaianKewanganKerja.show', $tenderParam) 
+        ? route('penilaianKewanganKerja.show', ['tender_no' => $tenderParam, 'tab' => 'p2']) 
         : (str_contains(url()->previous(), '/penilaian-kewangan') ? url()->previous() : route('penilaianKewangan'));
 
     $vendorsData = $b10VendorSummary ?? $b9VendorSummary ?? $b8VendorSummary ?? [];
@@ -708,64 +708,12 @@
                                                 </div>
                                             </div>
                                             <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 px-3 py-1.5 rounded-pill fw-semibold" id="b10DocsCountBadge">
-                                                <i class="bi bi-paperclip me-1"></i>3 Dokumen Dimuat Naik
+                                                <i class="bi bi-paperclip me-1"></i>1 Dokumen Dimuat Naik
                                             </span>
                                         </div>
 
                                         <div class="row g-3" id="b10DocsGrid">
-                                            {{-- Doc 1 --}}
-                                            <div class="col-12 col-md-4">
-                                                <div class="p-3 rounded-3 border bg-light bg-opacity-50 h-100 d-flex flex-column justify-content-between">
-                                                    <div class="d-flex align-items-start gap-3 mb-3">
-                                                        <div class="rounded-3 p-2.5 bg-danger bg-opacity-10 text-danger flex-shrink-0 d-flex align-items-center justify-content-center" style="width: 44px; height: 44px;">
-                                                            <i class="bi bi-file-earmark-pdf fs-4"></i>
-                                                        </div>
-                                                        <div class="overflow-hidden">
-                                                            <h6 class="fw-bold text-dark mb-1 text-truncate" style="font-size: 0.85rem;" title="Sijil_Pendaftaran_BEM_Ir_Ahmad.pdf">Sijil_Pendaftaran_BEM_Ir_Ahmad.pdf</h6>
-                                                            <div class="small text-muted font-monospace">1.4 MB &bull; PDF</div>
-                                                        </div>
-                                                    </div>
-                                                    <div class="d-flex align-items-center justify-content-between pt-2 border-top">
-                                                        <span class="text-muted font-monospace" style="font-size:0.75rem;"><i class="bi bi-clock me-1"></i>12/08/2026</span>
-                                                        <div class="d-flex gap-1.5">
-                                                            <button type="button" class="btn btn-sm btn-outline-primary rounded-2 px-2.5 py-1 text-nowrap fw-semibold" onclick="viewKakitanganDoc('#')">
-                                                                <i class="bi bi-eye me-1"></i>Papar
-                                                            </button>
-                                                            <button type="button" class="btn btn-sm btn-light border text-secondary rounded-2 px-2 py-1" title="Muat Turun">
-                                                                <i class="bi bi-download"></i>
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            {{-- Doc 2 --}}
-                                            <div class="col-12 col-md-4">
-                                                <div class="p-3 rounded-3 border bg-light bg-opacity-50 h-100 d-flex flex-column justify-content-between">
-                                                    <div class="d-flex align-items-start gap-3 mb-3">
-                                                        <div class="rounded-3 p-2.5 bg-primary bg-opacity-10 text-primary flex-shrink-0 d-flex align-items-center justify-content-center" style="width: 44px; height: 44px;">
-                                                            <i class="bi bi-file-earmark-pdf fs-4"></i>
-                                                        </div>
-                                                        <div class="overflow-hidden">
-                                                            <h6 class="fw-bold text-dark mb-1 text-truncate" style="font-size: 0.85rem;" title="Diploma_Kejuruteraan_Hafiz.pdf">Diploma_Kejuruteraan_Hafiz.pdf</h6>
-                                                            <div class="small text-muted font-monospace">890 KB &bull; PDF</div>
-                                                        </div>
-                                                    </div>
-                                                    <div class="d-flex align-items-center justify-content-between pt-2 border-top">
-                                                        <span class="text-muted font-monospace" style="font-size:0.75rem;"><i class="bi bi-clock me-1"></i>14/08/2026</span>
-                                                        <div class="d-flex gap-1.5">
-                                                            <button type="button" class="btn btn-sm btn-outline-primary rounded-2 px-2.5 py-1 text-nowrap fw-semibold" onclick="viewKakitanganDoc('#')">
-                                                                <i class="bi bi-eye me-1"></i>Papar
-                                                            </button>
-                                                            <button type="button" class="btn btn-sm btn-light border text-secondary rounded-2 px-2 py-1" title="Muat Turun">
-                                                                <i class="bi bi-download"></i>
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            {{-- Doc 3 --}}
+                                            {{-- Doc 1 (General Company Doc) --}}
                                             <div class="col-12 col-md-4">
                                                 <div class="p-3 rounded-3 border bg-light bg-opacity-50 h-100 d-flex flex-column justify-content-between">
                                                     <div class="d-flex align-items-start gap-3 mb-3">
@@ -1201,38 +1149,48 @@
             docsCountBadge.innerHTML = `<i class="bi bi-paperclip me-1"></i>${docList.length} Dokumen Dimuat Naik`;
         }
 
-        if (docsGrid && docList.length > 0) {
-            docsGrid.innerHTML = docList.map((doc, idx) => {
-                const badgeColors = ['bg-danger text-danger', 'bg-primary text-primary', 'bg-success text-success'];
-                const colorClass = badgeColors[idx % badgeColors.length];
-                const isPdf = doc.original_name && doc.original_name.toLowerCase().endsWith('.pdf');
-                return `
-                    <div class="col-12 col-md-4">
-                        <div class="p-3 rounded-3 border bg-light bg-opacity-50 h-100 d-flex flex-column justify-content-between">
-                            <div class="d-flex align-items-start gap-3 mb-3">
-                                <div class="rounded-3 p-2.5 ${colorClass} bg-opacity-10 flex-shrink-0 d-flex align-items-center justify-content-center" style="width: 44px; height: 44px;">
-                                    <i class="bi ${isPdf ? 'bi-file-earmark-pdf' : 'bi-file-earmark-text'} fs-4"></i>
+        if (docsGrid) {
+            if (docList.length > 0) {
+                docsGrid.innerHTML = docList.map((doc, idx) => {
+                    const badgeColors = ['bg-danger text-danger', 'bg-primary text-primary', 'bg-success text-success'];
+                    const colorClass = badgeColors[idx % badgeColors.length];
+                    const isPdf = doc.original_name && doc.original_name.toLowerCase().endsWith('.pdf');
+                    return `
+                        <div class="col-12 col-md-4">
+                            <div class="p-3 rounded-3 border bg-light bg-opacity-50 h-100 d-flex flex-column justify-content-between">
+                                <div class="d-flex align-items-start gap-3 mb-3">
+                                    <div class="rounded-3 p-2.5 ${colorClass} bg-opacity-10 flex-shrink-0 d-flex align-items-center justify-content-center" style="width: 44px; height: 44px;">
+                                        <i class="bi ${isPdf ? 'bi-file-earmark-pdf' : 'bi-file-earmark-text'} fs-4"></i>
+                                    </div>
+                                    <div class="overflow-hidden">
+                                        <h6 class="fw-bold text-dark mb-1 text-truncate" style="font-size: 0.85rem;" title="${escapeHtml(doc.original_name || 'Dokumen')}">${escapeHtml(doc.original_name || 'Dokumen')}</h6>
+                                        <div class="small text-muted font-monospace">${escapeHtml(doc.size_formatted || '1.2 MB')} &bull; ${isPdf ? 'PDF' : 'Dokumen'}</div>
+                                    </div>
                                 </div>
-                                <div class="overflow-hidden">
-                                    <h6 class="fw-bold text-dark mb-1 text-truncate" style="font-size: 0.85rem;" title="${escapeHtml(doc.original_name || 'Dokumen')}">${escapeHtml(doc.original_name || 'Dokumen')}</h6>
-                                    <div class="small text-muted font-monospace">${escapeHtml(doc.size_formatted || '1.2 MB')} &bull; ${isPdf ? 'PDF' : 'Dokumen'}</div>
-                                </div>
-                            </div>
-                            <div class="d-flex align-items-center justify-content-between pt-2 border-top">
-                                <span class="text-muted font-monospace" style="font-size:0.75rem;"><i class="bi bi-clock me-1"></i>${escapeHtml(doc.created_at || '-')}</span>
-                                <div class="d-flex gap-1.5">
-                                    <a href="${escapeHtml(doc.file_url || '#')}" target="_blank" class="btn btn-sm btn-outline-primary rounded-2 px-2.5 py-1 text-nowrap fw-semibold">
-                                        <i class="bi bi-eye me-1"></i>Papar
-                                    </a>
-                                    <a href="${escapeHtml(doc.file_url || '#')}" download class="btn btn-sm btn-light border text-secondary rounded-2 px-2 py-1" title="Muat Turun">
-                                        <i class="bi bi-download"></i>
-                                    </a>
+                                <div class="d-flex align-items-center justify-content-between pt-2 border-top">
+                                    <span class="text-muted font-monospace" style="font-size:0.75rem;"><i class="bi bi-clock me-1"></i>${escapeHtml(doc.created_at || '-')}</span>
+                                    <div class="d-flex gap-1.5">
+                                        <a href="${escapeHtml(doc.file_url || '#')}" target="_blank" class="btn btn-sm btn-outline-primary rounded-2 px-2.5 py-1 text-nowrap fw-semibold">
+                                            <i class="bi bi-eye me-1"></i>Papar
+                                        </a>
+                                        <a href="${escapeHtml(doc.file_url || '#')}" download class="btn btn-sm btn-light border text-secondary rounded-2 px-2 py-1" title="Muat Turun">
+                                            <i class="bi bi-download"></i>
+                                        </a>
+                                    </div>
                                 </div>
                             </div>
                         </div>
+                    `;
+                }).join('');
+            } else {
+                docsGrid.innerHTML = `
+                    <div class="col-12">
+                        <div class="p-3 bg-light rounded-3 border text-center text-muted small">
+                            <i class="bi bi-info-circle me-1"></i>Tiada dokumen sokongan umum dimuat naik oleh petender.
+                        </div>
                     </div>
                 `;
-            }).join('');
+            }
         }
 
         const firstTab = document.getElementById('kakitangan-tab');
