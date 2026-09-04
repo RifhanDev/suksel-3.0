@@ -336,10 +336,10 @@ class PenilaianKewanganController extends Controller
             }
         }
 
-        $penyataBankRecord = \App\Models\PenyataBank::query()
+        $penyataBankRecord = $tender ? \App\Models\PenyataBank::query()
             ->with(['bulans', 'scoringItems', 'files'])
             ->where('tender_id', $tender->id)
-            ->first();
+            ->first() : null;
 
         $penyataBankConfig = [
             'dari_bulan'    => $penyataBankRecord?->dari_bulan,
@@ -407,7 +407,7 @@ class PenilaianKewanganController extends Controller
             ];
         }
 
-        $penyataBankFiles = \Illuminate\Support\Facades\DB::table('penyata_bank_files')
+        $penyataBankFiles = $tender ? \Illuminate\Support\Facades\DB::table('penyata_bank_files')
             ->join('penyata_banks', 'penyata_banks.id', '=', 'penyata_bank_files.penyata_bank_id')
             ->where('penyata_banks.tender_id', $tender->id)
             ->select('penyata_bank_files.*')
@@ -426,18 +426,18 @@ class PenilaianKewanganController extends Controller
                     'uploaded_by'   => $f->uploaded_by,
                 ];
             })
-            ->all();
+            ->all() : [];
 
         // Tender-level template files stay on config for scoring/bulan only — NOT for petender dokumen.
         $penyataBankConfig['files'] = [];
 
-        $vendorFormPayloads = \Illuminate\Support\Facades\DB::table('tender_vendor_form_payloads')
+        $vendorFormPayloads = $tender ? \Illuminate\Support\Facades\DB::table('tender_vendor_form_payloads')
             ->where('tender_id', $tender->id)
             ->where('form_key', 'penyata_bank')
             ->get()
             ->keyBy('vendor_id')
             ->map(fn ($r) => json_decode($r->payload, true))
-            ->all();
+            ->all() : [];
 
         $penyataDokumenByVendor = $this->buildPenyataDokumenByVendor(
             $tender,
@@ -676,11 +676,48 @@ class PenilaianKewanganController extends Controller
 
         $record->save();
 
+        $isItemSelesai = false;
+        if ($tender) {
+            $allVendors = $tender->participants()
+                ->pluck('vendor_id')
+                ->map(fn ($id) => (int) $id)
+                ->toArray();
+
+            $failedStep1VendorIds = \App\Models\TenderKewanganEvaluation::query()
+                ->where('tender_id', $tender->id)
+                ->where('status_pematuhan', 0)
+                ->whereNotIn('checklist_item_uuid', function ($q) {
+                    $q->select('uuid')->from('standard_checklist_items')->where('action_url', 'like', '%penyata-bank%')
+                        ->orWhere('title', 'like', '%penyata bank%')->orWhere('title', 'like', '%penyata bulanan%');
+                })
+                ->whereNotIn('checklist_item_uuid', function ($q) {
+                    $q->select('uuid')->from('financial_checklist_items')->where('title', 'like', '%penyata bank%')
+                        ->orWhere('title', 'like', '%penyata bulanan%');
+                })
+                ->pluck('vendor_id')
+                ->unique()
+                ->toArray();
+
+            $eligibleVendorIds = array_diff($allVendors, $failedStep1VendorIds);
+            $totalEligible = count($eligibleVendorIds);
+
+            if ($totalEligible > 0) {
+                $evaluatedCount = \App\Models\TenderKewanganEvaluation::query()
+                    ->where('tender_id', $tender->id)
+                    ->where('checklist_item_uuid', $checkUuid)
+                    ->whereIn('vendor_id', $eligibleVendorIds)
+                    ->whereNotNull('skor')
+                    ->count();
+                $isItemSelesai = ($evaluatedCount === $totalEligible);
+            }
+        }
+
         return response()->json([
             'message'          => 'Penilaian pematuhan kewangan telah disimpan.',
             'status_pematuhan' => $record->status_pematuhan,
             'catatan'          => $record->catatan,
             'skor'             => $record->skor,
+            'is_item_selesai'  => $isItemSelesai,
         ]);
     }
 
@@ -1120,7 +1157,7 @@ class PenilaianKewanganController extends Controller
                 $step3Evaluated = false;
                 if ($eval) {
                     if ($isProfilPetender) {
-                        $step3Evaluated = ($vendorRow['skor_modal_berbayar'] !== null && $vendorRow['skor_modal_berbayar'] !== '');
+                        $step3Evaluated = ($vendorRow['skor_modal_berbayar'] !== null && $vendorRow['skor_modal_berbayar'] !== '') || ($eval->skor !== null);
                     } else {
                         $step3Evaluated = ($vendorRow['skor'] !== null && $vendorRow['skor'] !== '');
                     }
