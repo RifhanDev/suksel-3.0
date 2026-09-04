@@ -77,8 +77,8 @@
 
                             $totalEligible = $eligibleVendors->count();
 
-                            $reviewedCount = $eligibleVendors->filter(function($v) use ($item) {
-                                return !empty($v['step3_evaluated']);
+                            $reviewedCount = $eligibleVendors->filter(function($v) {
+                                return !empty($v['step3_evaluated']) || (isset($v['skor_modal_berbayar']) && $v['skor_modal_berbayar'] !== null);
                             })->count();
 
                             $isItemSelesai = ($totalEligible > 0 && $reviewedCount === $totalEligible);
@@ -101,10 +101,6 @@
                                 @if($isItemSelesai)
                                     <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-20 px-2.5 py-1.5 rounded-pill">
                                         <i class="bi bi-check-circle me-1"></i>Selesai
-                                    </span>
-                                @elseif($reviewedCount > 0)
-                                    <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-20 px-2.5 py-1.5 rounded-pill">
-                                        <i class="bi bi-hourglass-split me-1"></i>Dalam Proses ({{ $reviewedCount }}/{{ $totalEligible }})
                                     </span>
                                 @else
                                     <span class="badge bg-warning bg-opacity-10 text-warning-emphasis border border-warning border-opacity-20 px-2.5 py-1.5 rounded-pill">
@@ -394,13 +390,23 @@
                                     $hargaDisplay = isset($v['harga_tawaran']) && $v['harga_tawaran'] > 0
                                         ? number_format((float)$v['harga_tawaran'], 2)
                                         : ($v['harga_tawaran_fmt'] ?? '-');
+
+                                    $hargaVal = isset($v['harga_tawaran']) ? (float)$v['harga_tawaran'] : 0;
+                                    $anggaranVal = isset($tender->anggaran_jabatan) ? (float)$tender->anggaran_jabatan : 0;
+                                    $perbezaanDisplay = '-';
+                                    if ($hargaVal > 0 && $anggaranVal > 0) {
+                                        $diffRM = $hargaVal - $anggaranVal;
+                                        $diffPct = (($hargaVal - $anggaranVal) / $anggaranVal) * 100;
+                                        $sign = $diffRM > 0 ? '+' : '';
+                                        $perbezaanDisplay = sprintf('%sRM %s (%s%.2f%%)', $diffRM < 0 ? '-' : $sign, number_format(abs($diffRM), 2), $sign, $diffPct);
+                                    }
                                 @endphp
                                 <tr>
                                     <td class="text-center font-monospace fw-medium">{{ $kodDisplay }}</td>
                                     <td class="text-center">{{ $bumiStatus }}</td>
                                     <td class="text-end fw-medium px-3">{{ $hargaDisplay }}</td>
                                     <td class="text-center">-</td>
-                                    <td class="text-center">-</td>
+                                    <td class="text-center font-monospace small">{{ $perbezaanDisplay }}</td>
                                     <td class="text-center">
                                         <button type="button" class="btn btn-sm btn-success btn-step3-papar-vendor px-3 py-1 font-monospace d-inline-flex align-items-center gap-1"
                                             data-vendor-id="{{ $v['vendor_id'] }}"
@@ -522,7 +528,7 @@
                                 Skor Penilaian <span class="text-danger">*</span>
                             </label>
                             <div class="input-group input-group-sm">
-                                <input type="number" step="0.01" min="0" max="100" id="step3VendorSkorInput" class="form-control fw-bold text-center" placeholder="0.00" aria-label="Skor">
+                                <input type="number" step="0.01" min="0" max="100" id="step3VendorSkorInput" class="form-control fw-bold text-center" placeholder="Masukkan skor..." aria-label="Skor">
                                 <span id="step3VendorMaxSkorLabel" class="input-group-text font-monospace bg-white">/ 100</span>
                             </div>
                             <div class="form-text text-muted" style="font-size: 0.75rem;">Masukkan skor penilaian bagi petender ini.</div>
@@ -1100,8 +1106,56 @@ document.addEventListener('DOMContentLoaded', function() {
         return Array.from(failedSet);
     }
 
-    function updateMainTableStatusPenilaian(itemUuid) {
-        if (!itemUuid || typeof SEMAK_PAYLOAD === 'undefined' || !SEMAK_PAYLOAD[itemUuid]) return;
+    function reloadStep3ChecklistTable(callback) {
+        console.log('[TABLE RELOAD] Re-fetching checklist table HTML from backend...');
+        $.ajax({
+            url: window.location.href,
+            type: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            success: function(htmlText) {
+                var $parsed = $('<div>').html(htmlText);
+                var $newTable = $parsed.find('.step3-kewangan-table');
+                var $currentTable = $('.step3-kewangan-table');
+
+                if ($newTable.length && $currentTable.length) {
+                    $currentTable.replaceWith($newTable);
+                    console.log('[TABLE RELOAD] Successfully reloaded checklist table HTML from backend.');
+                }
+
+                var match = htmlText.match(/const\s+SEMAK_PAYLOAD\s*=\s*(\{[\s\S]*?\});/);
+                if (match && match[1]) {
+                    try {
+                        var updatedPayload = JSON.parse(match[1]);
+                        if (typeof SEMAK_PAYLOAD !== 'undefined') {
+                            Object.assign(SEMAK_PAYLOAD, updatedPayload);
+                            console.log('[TABLE RELOAD] SEMAK_PAYLOAD synchronized with backend state.');
+                        }
+                    } catch(e) {
+                        console.error('[TABLE RELOAD] Error parsing updated SEMAK_PAYLOAD:', e);
+                    }
+                }
+
+                if (typeof callback === 'function') {
+                    callback();
+                }
+            },
+            error: function(xhr, status, err) {
+                console.error('[TABLE RELOAD] Failed to reload checklist table:', err);
+                if (typeof callback === 'function') {
+                    callback();
+                }
+            }
+        });
+    }
+
+    function updateMainTableStatusPenilaian(itemUuid, isSelesaiOverride) {
+        console.log('[updateMainTableStatus] Called with itemUuid:', itemUuid, 'isSelesaiOverride:', isSelesaiOverride, 'type:', typeof isSelesaiOverride);
+        if (!itemUuid || typeof SEMAK_PAYLOAD === 'undefined' || !SEMAK_PAYLOAD[itemUuid]) {
+            console.log('[updateMainTableStatus] EARLY RETURN - missing data. itemUuid:', itemUuid, 'SEMAK_PAYLOAD exists:', typeof SEMAK_PAYLOAD !== 'undefined', 'item exists:', !!(typeof SEMAK_PAYLOAD !== 'undefined' && SEMAK_PAYLOAD[itemUuid]));
+            return;
+        }
 
         const failedVendorIds = getFailedVendorIdsStep3();
         const rawVendors = SEMAK_PAYLOAD[itemUuid].vendors || [];
@@ -1109,12 +1163,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const totalEligible = eligibleVendors.length;
         const evaluatedCount = eligibleVendors.filter(v => {
-            return !!v.step3_evaluated;
+            return !!(v.step3_evaluated || (v.skor_modal_berbayar !== null && v.skor_modal_berbayar !== undefined && v.skor_modal_berbayar !== '') || (v.skor !== null && v.skor !== undefined && v.skor !== ''));
         }).length;
 
-        const isSelesai = totalEligible > 0 && evaluatedCount === totalEligible;
+        let isSelesai = (totalEligible > 0 && evaluatedCount === totalEligible);
+        console.log('[updateMainTableStatus] totalEligible:', totalEligible, 'evaluatedCount:', evaluatedCount, 'localCalc:', isSelesai);
+        if (typeof isSelesaiOverride === 'boolean') {
+            isSelesai = isSelesaiOverride;
+            console.log('[updateMainTableStatus] Using override:', isSelesaiOverride);
+        }
 
         const tr = document.querySelector(`tr[data-item-uuid="${itemUuid}"]`);
+        console.log('[updateMainTableStatus] Found TR:', !!tr);
         if (tr) {
             const tdStatus = tr.querySelector('.status-penilaian');
             if (tdStatus) {
@@ -1122,12 +1182,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     tdStatus.innerHTML = `
                         <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-20 px-2.5 py-1.5 rounded-pill">
                             <i class="bi bi-check-circle me-1"></i>Selesai
-                        </span>
-                    `;
-                } else if (evaluatedCount > 0) {
-                    tdStatus.innerHTML = `
-                        <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-20 px-2.5 py-1.5 rounded-pill">
-                            <i class="bi bi-hourglass-split me-1"></i>Dalam Proses (${evaluatedCount}/${totalEligible})
                         </span>
                     `;
                 } else {
@@ -1162,6 +1216,15 @@ document.addEventListener('DOMContentLoaded', function() {
         const maxScore = parseFloat(specDetail.max_score || itemObj?.max_score || 100);
         const fmtMax = (maxScore % 1 === 0) ? maxScore.toFixed(0) : maxScore.toFixed(2);
 
+        const tenderAnggaranInput = document.querySelector('#modalPaparCadanganKewanganStep3 input[readonly]');
+        let rawAnggaran = specDetail.anggaran_jabatan;
+        if (!rawAnggaran || parseFloat(rawAnggaran) <= 0) {
+            if (tenderAnggaranInput && tenderAnggaranInput.value) {
+                rawAnggaran = tenderAnggaranInput.value.replace(/,/g, '');
+            }
+        }
+        const anggaranJabatan = parseFloat(rawAnggaran || 0);
+
         const eligibleVendors = rawVendors.filter(v => !failedVendorIds.includes(parseInt(v.vendor_id)));
 
         if (!eligibleVendors.length) {
@@ -1175,12 +1238,29 @@ document.addEventListener('DOMContentLoaded', function() {
             const bumiStatus = v.bumiputera_status || (v.is_bumiputera ? 'Bumiputera' : 'Bukan Bumiputera');
             const hargaFmt = v.harga_tawaran_fmt || (v.harga_tawaran ? parseFloat(v.harga_tawaran).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '-');
 
-            const isEvaluated = (v.skor !== null && v.skor !== undefined && v.skor !== '');
+            let actualSkor = null;
+            if (v.skor !== null && v.skor !== undefined && v.skor !== '') {
+                actualSkor = parseFloat(v.skor);
+            } else if (v.skor_modal_berbayar !== null && v.skor_modal_berbayar !== undefined && v.skor_modal_berbayar !== '') {
+                actualSkor = parseFloat(v.skor_modal_berbayar || 0) + parseFloat(v.skor_modal_dibenarkan || 0);
+            }
+
+            const isEvaluated = !!(v.step3_evaluated);
+
             let skorDisplay = '-';
-            if (isEvaluated) {
-                const numericSkor = parseFloat(v.skor);
-                const fmtSkor = (numericSkor % 1 === 0) ? numericSkor.toFixed(0) : numericSkor.toFixed(2);
+            if (isEvaluated && actualSkor !== null) {
+                const fmtSkor = (actualSkor % 1 === 0) ? actualSkor.toFixed(0) : actualSkor.toFixed(2);
                 skorDisplay = `${fmtSkor}/${fmtMax}`;
+            }
+
+            const hargaVal = parseFloat(v.harga_tawaran || 0);
+            let perbezaanDisplay = '-';
+            if (hargaVal > 0 && anggaranJabatan > 0) {
+                const diffRM = hargaVal - anggaranJabatan;
+                const diffPct = ((hargaVal - anggaranJabatan) / anggaranJabatan) * 100;
+                const sign = diffRM > 0 ? '+' : '';
+                const formattedRM = Math.abs(diffRM).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                perbezaanDisplay = `${diffRM < 0 ? '-' : sign}RM ${formattedRM} (${sign}${diffPct.toFixed(2)}%)`;
             }
 
             let actionBtnHtml = '';
@@ -1214,7 +1294,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <td class="text-center">${escapeHtml(bumiStatus)}</td>
                 <td class="text-end fw-medium px-3">${escapeHtml(hargaFmt)}</td>
                 <td class="text-center font-monospace fw-bold ${isEvaluated ? 'text-primary' : 'text-muted'}">${escapeHtml(skorDisplay)}</td>
-                <td class="text-center">-</td>
+                <td class="text-center font-monospace small">${escapeHtml(perbezaanDisplay)}</td>
                 <td class="text-center">
                     ${actionBtnHtml}
                 </td>
@@ -1225,17 +1305,15 @@ document.addEventListener('DOMContentLoaded', function() {
         bindStep3VendorDetailButtons();
     }
 
-    document.querySelectorAll('.btn-papar-cadangan-kewangan-step3').forEach(function(btn) {
-        btn.addEventListener('click', function() {
-            const dokumen = btn.getAttribute('data-dokumen') || '';
-            const uuid = btn.getAttribute('data-uuid') || '';
-            currentStep3ItemUuid = uuid;
-            const titleEl = document.getElementById('step3ModalDokumenTitle');
-            if (titleEl && dokumen) {
-                titleEl.textContent = `${dokumen}.`;
-            }
-            renderStep3VendorTableModal(uuid);
-        });
+    $(document).on('click', '.btn-papar-cadangan-kewangan-step3', function() {
+        const dokumen = this.getAttribute('data-dokumen') || '';
+        const uuid = this.getAttribute('data-uuid') || '';
+        currentStep3ItemUuid = uuid;
+        const titleEl = document.getElementById('step3ModalDokumenTitle');
+        if (titleEl && dokumen) {
+            titleEl.textContent = `${dokumen}.`;
+        }
+        renderStep3VendorTableModal(uuid);
     });
 
     const firstModalEl = document.getElementById('modalPaparCadanganKewanganStep3');
@@ -1476,17 +1554,18 @@ document.addEventListener('DOMContentLoaded', function() {
                             }
                         }
 
+                        const savedItemUuid = currentStep3ItemUuid;
+
                         if (secondModal) {
                             secondModal.hide();
                         }
 
-                        setTimeout(function() {
+                        reloadStep3ChecklistTable(function() {
                             if (firstModal) {
                                 firstModal.show();
                             }
-                            renderStep3VendorTableModal(currentStep3ItemUuid);
-                            updateMainTableStatusPenilaian(currentStep3ItemUuid);
-                        }, 300);
+                            renderStep3VendorTableModal(savedItemUuid);
+                        });
 
                         if (typeof Swal !== 'undefined') {
                             Swal.fire({
@@ -1526,17 +1605,23 @@ document.addEventListener('DOMContentLoaded', function() {
     const profilModal1 = profilModal1El ? bootstrap.Modal.getOrCreateInstance(profilModal1El) : null;
     const profilModal2 = profilModal2El ? bootstrap.Modal.getOrCreateInstance(profilModal2El) : null;
 
-    document.querySelectorAll('.btn-papar-profil-petender-step3').forEach(function(btn) {
-        btn.addEventListener('click', function() {
-            const dokumen = btn.getAttribute('data-dokumen') || 'Maklumat Profil Petender';
-            const uuid = btn.getAttribute('data-uuid') || '';
-            currentStep3ItemUuid = uuid;
-            const titleEl = document.getElementById('step3ProfilPetenderModalDokumenTitle');
-            if (titleEl) {
-                titleEl.textContent = dokumen;
+    if (profilModal1El) {
+        profilModal1El.addEventListener('hidden.bs.modal', function() {
+            if (currentStep3ItemUuid) {
+                updateMainTableStatusPenilaian(currentStep3ItemUuid);
             }
-            renderStep3ProfilPetenderVendorTableModal(uuid);
         });
+    }
+
+    $(document).on('click', '.btn-papar-profil-petender-step3', function() {
+        const dokumen = this.getAttribute('data-dokumen') || 'Maklumat Profil Petender';
+        const uuid = this.getAttribute('data-uuid') || '';
+        currentStep3ItemUuid = uuid;
+        const titleEl = document.getElementById('step3ProfilPetenderModalDokumenTitle');
+        if (titleEl) {
+            titleEl.textContent = dokumen;
+        }
+        renderStep3ProfilPetenderVendorTableModal(uuid);
     });
 
     function renderStep3ProfilPetenderVendorTableModal(itemUuid) {
@@ -1574,13 +1659,13 @@ document.addEventListener('DOMContentLoaded', function() {
         eligibleVendors.forEach((v, idx) => {
             const kodDisplay = v.kod ? v.kod : ((idx + 1) + '/' + eligibleVendors.length);
 
-            const isEvaluated = (v.skor !== null && v.skor !== undefined && v.skor !== '');
+            const isEvaluated = !!(v.step3_evaluated || (v.skor_modal_berbayar !== null && v.skor_modal_berbayar !== undefined && v.skor_modal_berbayar !== ''));
             let skorBerbayarDisplay = '-';
             let skorDibenarkanDisplay = '-';
 
             if (isEvaluated) {
-                const sBerbayar = parseFloat(v.skor_modal_berbayar ?? 0);
-                const sDibenarkan = parseFloat(v.skor_modal_dibenarkan ?? 0);
+                const sBerbayar = (v.skor_modal_berbayar !== null && v.skor_modal_berbayar !== undefined && v.skor_modal_berbayar !== '') ? parseFloat(v.skor_modal_berbayar) : 0;
+                const sDibenarkan = (v.skor_modal_dibenarkan !== null && v.skor_modal_dibenarkan !== undefined && v.skor_modal_dibenarkan !== '') ? parseFloat(v.skor_modal_dibenarkan) : 0;
                 const fmtSB = (sBerbayar % 1 === 0) ? sBerbayar.toFixed(0) : sBerbayar.toFixed(2);
                 const fmtSD = (sDibenarkan % 1 === 0) ? sDibenarkan.toFixed(0) : sDibenarkan.toFixed(2);
                 skorBerbayarDisplay = `${fmtSB}/${fmtMaxBerbayar}`;
@@ -1879,6 +1964,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         step: 3
                     },
                     success: function(resp) {
+                        console.log('[PROFIL SAVE] AJAX success. resp:', JSON.stringify(resp));
+
                         if (typeof SEMAK_PAYLOAD !== 'undefined' && SEMAK_PAYLOAD[currentStep3ItemUuid]) {
                             const vRow = SEMAK_PAYLOAD[currentStep3ItemUuid].vendors.find(v => parseInt(v.vendor_id) === currentStep3VendorId);
                             if (vRow) {
@@ -1891,17 +1978,18 @@ document.addEventListener('DOMContentLoaded', function() {
                             }
                         }
 
+                        const savedItemUuid = currentStep3ItemUuid;
+
                         if (profilModal2) {
                             profilModal2.hide();
                         }
 
-                        setTimeout(function() {
+                        reloadStep3ChecklistTable(function() {
                             if (profilModal1) {
                                 profilModal1.show();
                             }
-                            renderStep3ProfilPetenderVendorTableModal(currentStep3ItemUuid);
-                            updateMainTableStatusPenilaian(currentStep3ItemUuid);
-                        }, 300);
+                            renderStep3ProfilPetenderVendorTableModal(savedItemUuid);
+                        });
 
                         if (typeof Swal !== 'undefined') {
                             Swal.fire({
@@ -1939,17 +2027,15 @@ document.addEventListener('DOMContentLoaded', function() {
     const muatNaikModalEl = document.getElementById('modalMuatNaikStep3');
     const muatNaikModal = muatNaikModalEl ? bootstrap.Modal.getOrCreateInstance(muatNaikModalEl) : null;
 
-    document.querySelectorAll('.btn-papar-muat-naik-step3').forEach(function(btn) {
-        btn.addEventListener('click', function() {
-            const dokumen = btn.getAttribute('data-dokumen') || 'Item Kewangan (Muat Naik)';
-            const uuid = btn.getAttribute('data-uuid') || '';
-            currentStep3ItemUuid = uuid;
-            const titleEl = document.getElementById('step3MuatNaikModalDokumenTitle');
-            if (titleEl) {
-                titleEl.textContent = dokumen;
-            }
-            renderStep3MuatNaikVendorTableModal(uuid);
-        });
+    $(document).on('click', '.btn-papar-muat-naik-step3', function() {
+        const dokumen = this.getAttribute('data-dokumen') || 'Item Kewangan (Muat Naik)';
+        const uuid = this.getAttribute('data-uuid') || '';
+        currentStep3ItemUuid = uuid;
+        const titleEl = document.getElementById('step3MuatNaikModalDokumenTitle');
+        if (titleEl) {
+            titleEl.textContent = dokumen;
+        }
+        renderStep3MuatNaikVendorTableModal(uuid);
     });
 
     function renderStep3MuatNaikVendorTableModal(itemUuid) {
@@ -2099,8 +2185,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (muatNaikModal) {
                     muatNaikModal.hide();
                 }
-                updateMainTableStatusPenilaian(currentStep3ItemUuid);
-                renderStep3MuatNaikVendorTableModal(currentStep3ItemUuid);
+                const savedItemUuid = currentStep3ItemUuid;
+                reloadStep3ChecklistTable(function() {
+                    renderStep3MuatNaikVendorTableModal(savedItemUuid);
+                });
 
                 if (!hasError && typeof Swal !== 'undefined') {
                     Swal.fire({
