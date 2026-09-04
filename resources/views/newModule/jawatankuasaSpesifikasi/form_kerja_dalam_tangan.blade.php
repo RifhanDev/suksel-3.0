@@ -279,12 +279,13 @@ $(document).ready(function () {
     });
 
     // ── File Upload Zone ─────────────────────────────────────────────
-    FileUpload.init({
-        zoneId     : 'upload-zone-kdt',
-        inputId    : 'input-dokumen-kdt',
-        chipListId : 'file-chip-list-kdt'
-    });
-
+    if (typeof FileUpload !== 'undefined' && typeof FileUpload.init === 'function') {
+        FileUpload.init({
+            zoneId     : 'upload-zone-kdt',
+            inputId    : 'input-dokumen-kdt',
+            chipListId : 'file-chip-list-kdt'
+        });
+    }
 });
 </script>
 @endsection

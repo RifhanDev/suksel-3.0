@@ -551,11 +551,13 @@ $(document).ready(function () {
     // ══════════════════════════════════════════════════════════════════════════
     // DOKUMEN SOKONGAN — use file-upload.js
     // ══════════════════════════════════════════════════════════════════════════
-    FileUpload.init({
-        zoneId     : 'upload-zone-penyata',
-        inputId    : 'input-dokumen-penyata',
-        chipListId : 'file-chip-list-penyata'
-    });
+    if (typeof FileUpload !== 'undefined' && typeof FileUpload.init === 'function') {
+        FileUpload.init({
+            zoneId     : 'upload-zone-penyata',
+            inputId    : 'input-dokumen-penyata',
+            chipListId : 'file-chip-list-penyata'
+        });
+    }
 
     // ══════════════════════════════════════════════════════════════════════════
     // FORM SUBMIT — strip commas from amount fields

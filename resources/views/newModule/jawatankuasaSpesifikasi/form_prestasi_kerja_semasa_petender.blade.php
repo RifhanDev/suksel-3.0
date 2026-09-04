@@ -429,13 +429,14 @@ $(document).ready(function () {
     });
 
     if (!VIEW_ONLY) {
-        FileUpload.init({
-            zoneId     : 'upload-zone-prestasi',
-            inputId    : 'input-dokumen-prestasi',
-            chipListId : 'file-chip-list-prestasi'
-        });
+        if (typeof FileUpload !== 'undefined' && typeof FileUpload.init === 'function') {
+            FileUpload.init({
+                zoneId     : 'upload-zone-prestasi',
+                inputId    : 'input-dokumen-prestasi',
+                chipListId : 'file-chip-list-prestasi'
+            });
+        }
     }
-
 });
 </script>
 @endsection

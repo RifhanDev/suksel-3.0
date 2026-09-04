@@ -512,12 +512,13 @@ $(document).ready(function () {
     });
 
     // ── File Upload Zone ─────────────────────────────────────────────
-    FileUpload.init({
-        zoneId     : 'upload-zone',
-        inputId    : 'input-dokumen',
-        chipListId : 'file-chip-list'
-    });
-
+    if (typeof FileUpload !== 'undefined' && typeof FileUpload.init === 'function') {
+        FileUpload.init({
+            zoneId     : 'upload-zone',
+            inputId    : 'input-dokumen',
+            chipListId : 'file-chip-list'
+        });
+    }
 });
 </script>
 @endsection
