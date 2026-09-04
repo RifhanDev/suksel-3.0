@@ -11,10 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('tender_pengalaman_kerjas', function (Blueprint $table) {
-            $table->decimal('wang_kos_prima', 15, 2)->nullable()->after('telefon_pic');
-            $table->decimal('wang_peruntukan_semasa', 15, 2)->nullable()->after('wang_kos_prima');
-        });
+        if (Schema::hasTable('tender_pengalaman_kerjas')) {
+            Schema::table('tender_pengalaman_kerjas', function (Blueprint $table) {
+                if (! Schema::hasColumn('tender_pengalaman_kerjas', 'wang_kos_prima')) {
+                    $table->decimal('wang_kos_prima', 15, 2)->nullable()->after('telefon_pic');
+                }
+                if (! Schema::hasColumn('tender_pengalaman_kerjas', 'wang_peruntukan_semasa')) {
+                    $table->decimal('wang_peruntukan_semasa', 15, 2)->nullable()->after('wang_kos_prima');
+                }
+            });
+        }
     }
 
     /**
@@ -22,8 +28,10 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('tender_pengalaman_kerjas', function (Blueprint $table) {
-            $table->dropColumn(['wang_kos_prima', 'wang_peruntukan_semasa']);
-        });
+        if (Schema::hasTable('tender_pengalaman_kerjas')) {
+            Schema::table('tender_pengalaman_kerjas', function (Blueprint $table) {
+                $table->dropColumn(['wang_kos_prima', 'wang_peruntukan_semasa']);
+            });
+        }
     }
 };
