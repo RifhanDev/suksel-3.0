@@ -440,7 +440,7 @@
 @endsection
 
 @section('scripts')
-<script src="{{ asset('js/components/file-upload.js') }}"></script>
+<script src="{{ asset('js/components/file-upload.js') }}?v={{ file_exists(public_path('js/components/file-upload.js')) ? filemtime(public_path('js/components/file-upload.js')) : '2.0' }}"></script>
 <script>
 $(document).ready(function () {
 
@@ -650,6 +650,19 @@ $(document).ready(function () {
             success: function (res) {
                 if (res.success) {
                     $chip.remove();
+                    var staffUuid = $('#input-kakitangan-uuid').val();
+                    if (staffUuid) {
+                        var $tr = $('#tbl-kakitangan-body tr[data-uuid="' + staffUuid + '"]');
+                        if ($tr.length) {
+                            var itemData = $tr.data('item');
+                            if (itemData && itemData.dokumens) {
+                                itemData.dokumens = itemData.dokumens.filter(function(d) {
+                                    return d.uuid !== docUuid;
+                                });
+                                $tr.data('item', itemData);
+                            }
+                        }
+                    }
                     showToast(res.message, 'success');
                 } else {
                     showToast(res.message || 'Gagal memadam dokumen.', 'error');
