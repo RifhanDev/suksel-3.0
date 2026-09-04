@@ -1477,12 +1477,16 @@ class PenilaianKewanganKerjaController extends Controller
                 ];
             }
 
-            // Fetch vendor supporting documents uploaded in status_process_id = 5 phase
+            // Fetch general vendor supporting documents uploaded in status_process_id = 5 phase (where kakitangan_uuid is null)
             $allDocsQuery = \App\Models\TenderKakitanganTeknikalDokumen::query()
                 ->where('vendor_id', $vId)
                 ->where(function ($q) use ($tender) {
                     $q->where('tender_uuid', $tender->uuid)
                       ->orWhere('tender_uuid', (string) $tender->id);
+                })
+                ->where(function ($q) {
+                    $q->whereNull('kakitangan_uuid')
+                      ->orWhere('kakitangan_uuid', '');
                 });
             $allDocRecords = $allDocsQuery->get();
 
@@ -1498,20 +1502,6 @@ class PenilaianKewanganKerjaController extends Controller
 
             if (empty($generalDocItems)) {
                 $generalDocItems = [
-                    [
-                        'original_name'  => 'Sijil_Pendaftaran_BEM_Ir_Ahmad.pdf',
-                        'file_url'       => '#',
-                        'size_formatted' => '1.4 MB',
-                        'mime_type'      => 'application/pdf',
-                        'created_at'     => '12/08/2026',
-                    ],
-                    [
-                        'original_name'  => 'Diploma_Kejuruteraan_Hafiz.pdf',
-                        'file_url'       => '#',
-                        'size_formatted' => '890 KB',
-                        'mime_type'      => 'application/pdf',
-                        'created_at'     => '14/08/2026',
-                    ],
                     [
                         'original_name'  => 'Penyata_KWSP_SOCSO_Kakitangan.pdf',
                         'file_url'       => '#',
@@ -1982,7 +1972,7 @@ class PenilaianKewanganKerjaController extends Controller
         return response()->json([
             'success'  => true,
             'message'  => 'Maklumat Borang 14 telah berjaya disahkan dan disimpan!',
-            'redirect' => route('penilaianKewanganKerja.show', $tender_no),
+            'redirect' => route('penilaianKewanganKerja.show', ['tender_no' => $tender_no, 'tab' => 'p3']),
         ]);
     }
 
@@ -2132,7 +2122,7 @@ class PenilaianKewanganKerjaController extends Controller
         return response()->json([
             'success'  => true,
             'message'  => 'Maklumat Borang 1 (Analisa Kesempurnaan Tender) telah berjaya disahkan dan disimpan!',
-            'redirect' => route('penilaianKewanganKerja.show', $tender_no),
+            'redirect' => route('penilaianKewanganKerja.show', ['tender_no' => $tender_no, 'tab' => 'p1']),
         ]);
     }
 
@@ -2296,7 +2286,7 @@ class PenilaianKewanganKerjaController extends Controller
         return response()->json([
             'success'  => true,
             'message'  => 'Maklumat Borang 2 (Analisa Kecukupan Dokumen) telah berjaya disahkan dan disimpan!',
-            'redirect' => route('penilaianKewanganKerja.show', $tender_no),
+            'redirect' => route('penilaianKewanganKerja.show', ['tender_no' => $tender_no, 'tab' => 'p1']),
         ]);
     }
 
@@ -2338,7 +2328,7 @@ class PenilaianKewanganKerjaController extends Controller
         return response()->json([
             'success'  => true,
             'message'  => 'Maklumat Borang 3 (Analisa Kecukupan Modal) telah berjaya disahkan dan disimpan!',
-            'redirect' => route('penilaianKewanganKerja.show', $tender_no),
+            'redirect' => route('penilaianKewanganKerja.show', ['tender_no' => $tender_no, 'tab' => 'p1']),
         ]);
     }
 
@@ -2445,7 +2435,7 @@ class PenilaianKewanganKerjaController extends Controller
         return response()->json([
             'success'  => true,
             'message'  => 'Maklumat Borang 4 (Analisa Data-Data Penilaian Prestasi Petender) telah berjaya disahkan dan disimpan!',
-            'redirect' => route('penilaianKewanganKerja.show', $tender_no),
+            'redirect' => route('penilaianKewanganKerja.show', ['tender_no' => $tender_no, 'tab' => 'p1']),
         ]);
     }
 
@@ -2632,7 +2622,7 @@ class PenilaianKewanganKerjaController extends Controller
         return response()->json([
             'success'  => true,
             'message'  => 'Maklumat Borang 5 (Jadual Keputusan Penilaian Peringkat Pertama) telah berjaya disahkan dan disimpan!',
-            'redirect' => route('penilaianKewanganKerja.show', $tender_no),
+            'redirect' => route('penilaianKewanganKerja.show', ['tender_no' => $tender_no, 'tab' => 'p1']),
         ]);
     }
 
@@ -2681,7 +2671,7 @@ class PenilaianKewanganKerjaController extends Controller
         return response()->json([
             'success'  => true,
             'message'  => 'Maklumat Borang 6 (Senarai Petender Yang Lulus Penilaian Peringkat Pertama) telah berjaya disahkan dan disimpan!',
-            'redirect' => route('penilaianKewanganKerja.show', $tender_no),
+            'redirect' => route('penilaianKewanganKerja.show', ['tender_no' => $tender_no, 'tab' => 'p2']),
         ]);
     }
 
@@ -2730,7 +2720,7 @@ class PenilaianKewanganKerjaController extends Controller
         return response()->json([
             'success'  => true,
             'message'  => 'Maklumat Borang 7 (Analisa Nilai Baki Kerja Dalam Tangan) telah berjaya disahkan dan disimpan!',
-            'redirect' => route('penilaianKewanganKerja.show', $tender_no),
+            'redirect' => route('penilaianKewanganKerja.show', ['tender_no' => $tender_no, 'tab' => 'p2']),
         ]);
     }
 
@@ -2779,7 +2769,7 @@ class PenilaianKewanganKerjaController extends Controller
         return response()->json([
             'success'  => true,
             'message'  => 'Maklumat Borang 8 (Analisa Kedudukan Kewangan) telah berjaya disahkan dan disimpan!',
-            'redirect' => route('penilaianKewanganKerja.show', $tender_no),
+            'redirect' => route('penilaianKewanganKerja.show', ['tender_no' => $tender_no, 'tab' => 'p2']),
         ]);
     }
 
@@ -2868,7 +2858,7 @@ class PenilaianKewanganKerjaController extends Controller
         return response()->json([
             'success'  => true,
             'message'  => 'Maklumat Borang 9 (Analisa Keupayaan Teknikal) telah berjaya disahkan dan disimpan!',
-            'redirect' => route('penilaianKewanganKerja.show', $tender_no),
+            'redirect' => route('penilaianKewanganKerja.show', ['tender_no' => $tender_no, 'tab' => 'p2']),
         ]);
     }
 
@@ -2917,7 +2907,7 @@ class PenilaianKewanganKerjaController extends Controller
         return response()->json([
             'success'  => true,
             'message'  => 'Maklumat Borang 10 (Analisa Data-Data Penilaian Keupayaan Teknikal) telah berjaya disahkan dan disimpan!',
-            'redirect' => route('penilaianKewanganKerja.show', $tender_no),
+            'redirect' => route('penilaianKewanganKerja.show', ['tender_no' => $tender_no, 'tab' => 'p2']),
         ]);
     }
 
@@ -2966,7 +2956,7 @@ class PenilaianKewanganKerjaController extends Controller
         return response()->json([
             'success'  => true,
             'message'  => 'Maklumat Borang 11 (Penilaian Keupayaan Teknikal & Keseluruhan) telah berjaya disahkan dan disimpan!',
-            'redirect' => route('penilaianKewanganKerja.show', $tender_no),
+            'redirect' => route('penilaianKewanganKerja.show', ['tender_no' => $tender_no, 'tab' => 'p2']),
         ]);
     }
 
@@ -3017,7 +3007,7 @@ class PenilaianKewanganKerjaController extends Controller
         return response()->json([
             'success'  => true,
             'message'  => 'Maklumat Borang 12 (Jadual Keputusan Penilaian Peringkat Kedua) telah berjaya disahkan dan disimpan!',
-            'redirect' => route('penilaianKewanganKerja.show', $tender_no),
+            'redirect' => route('penilaianKewanganKerja.show', ['tender_no' => $tender_no, 'tab' => 'p3']),
         ]);
     }
 
@@ -3066,7 +3056,7 @@ class PenilaianKewanganKerjaController extends Controller
         return response()->json([
             'success'  => true,
             'message'  => 'Maklumat Borang 13 (Penilaian Peringkat Ketiga - FRPK) telah berjaya disahkan dan disimpan!',
-            'redirect' => route('penilaianKewanganKerja.show', $tender_no),
+            'redirect' => route('penilaianKewanganKerja.show', ['tender_no' => $tender_no, 'tab' => 'p3']),
         ]);
     }
 

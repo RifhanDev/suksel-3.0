@@ -147,7 +147,7 @@
 @php
     $tenderParam = request('tender') ?: request('tender_no') ?: ($tender_no ?? '');
     $backToTenderUrl = $tenderParam 
-        ? route('penilaianKewanganKerja.show', $tenderParam) 
+        ? route('penilaianKewanganKerja.show', ['tender_no' => $tenderParam, 'tab' => 'p3']) 
         : (str_contains(url()->previous(), '/penilaian-kewangan') ? url()->previous() : route('penilaianKewangan'));
     $readOnly = $readOnly ?? false;
 

@@ -297,6 +297,10 @@
 
 @php
     $tenderIdentifier = isset($tender) ? ($tender->uuid ?: $tender->id ?: $no_tender_display) : $no_tender_display;
+    $activeTab = request('tab') ?: request('stage') ?: 'p1';
+    if (! in_array($activeTab, ['p1', 'p2', 'p3'], true)) {
+        $activeTab = 'p1';
+    }
 
     // Helper closure to render Borang card with sequential access control
     $renderBorangCard = function ($code, $stageClass, $iconClass, $badgeLabel, $title, $description, $subPills = []) use ($borangAccess, $tenderIdentifier) {
@@ -480,21 +484,21 @@
             {{-- ========================================================================= --}}
             <ul class="nav nav-pills stage-tab-simple" id="peringkat-tabs" role="tablist">
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link active" id="tab-p1" data-bs-toggle="pill" data-bs-target="#pane-p1" type="button" role="tab" aria-controls="pane-p1" aria-selected="true">
+                    <button class="nav-link {{ $activeTab === 'p1' ? 'active' : '' }}" id="tab-p1" data-bs-toggle="pill" data-bs-target="#pane-p1" type="button" role="tab" aria-controls="pane-p1" aria-selected="{{ $activeTab === 'p1' ? 'true' : 'false' }}">
                         <i class="bi bi-layers me-1 text-danger"></i>
                         <span>Peringkat 1</span>
                         <span class="badge bg-light text-secondary border ms-1">Borang 1 – 6</span>
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="tab-p2" data-bs-toggle="pill" data-bs-target="#pane-p2" type="button" role="tab" aria-controls="pane-p2" aria-selected="false">
+                    <button class="nav-link {{ $activeTab === 'p2' ? 'active' : '' }}" id="tab-p2" data-bs-toggle="pill" data-bs-target="#pane-p2" type="button" role="tab" aria-controls="pane-p2" aria-selected="{{ $activeTab === 'p2' ? 'true' : 'false' }}">
                         <i class="bi bi-cpu me-1 text-danger"></i>
                         <span>Peringkat 2</span>
                         <span class="badge bg-light text-secondary border ms-1">Borang 7 – 12</span>
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="tab-p3" data-bs-toggle="pill" data-bs-target="#pane-p3" type="button" role="tab" aria-controls="pane-p3" aria-selected="false">
+                    <button class="nav-link {{ $activeTab === 'p3' ? 'active' : '' }}" id="tab-p3" data-bs-toggle="pill" data-bs-target="#pane-p3" type="button" role="tab" aria-controls="pane-p3" aria-selected="{{ $activeTab === 'p3' ? 'true' : 'false' }}">
                         <i class="bi bi-award me-1 text-danger"></i>
                         <span>Peringkat 3</span>
                         <span class="badge bg-light text-secondary border ms-1">Borang 13 – 15</span>
@@ -508,7 +512,7 @@
             <div class="tab-content" id="peringkat-tab-content">
 
                 {{-- PANE 1: PERINGKAT PERTAMA (BORANG 1 - 6) --}}
-                <div class="tab-pane fade show active mt-4" id="pane-p1" role="tabpanel" aria-labelledby="tab-p1">
+                <div class="tab-pane fade {{ $activeTab === 'p1' ? 'show active' : '' }} mt-4" id="pane-p1" role="tabpanel" aria-labelledby="tab-p1">
                     <div class="d-flex align-items-center mb-4">
                         <div class="bg-danger-subtle p-2 rounded-2 me-3">
                             <i class="bi bi-layers text-danger fs-4"></i>
@@ -525,13 +529,13 @@
                         @php
                             $renderBorangCard('borang1', 'p1', 'bi-file-earmark-spreadsheet', 'BORANG 1', 'Analisa Kesempurnaan Tender', 'Jadual penyerahan tender, maklumat asas petender & harga tawaran.');
                             $renderBorangCard('borang2', 'p1', 'bi-shield-check', 'BORANG 2', 'Analisa Kecukupan Dokumen', 'Semakan kecukupan & kelayakan dokumen kewangan wajib petender.');
-                            $renderBorangCard('borang3', 'p1', 'bi-shield-check', 'BORANG 3', 'Nisbah Asas Kewangan', 'Penilaian nisbah kewangan, penyata bank & lembaran imbangan.', [
+                            $renderBorangCard('borang3', 'p1', 'bi-shield-check', 'BORANG 3', 'Analisa Kecukupan Modal', 'Penilaian nisbah kewangan, penyata bank & lembaran imbangan.', [
                                 ['icon' => 'bi-file-earmark-text', 'label' => 'Borang 3'],
                                 ['icon' => 'bi-journal-text', 'label' => 'Lembaran'],
                                 ['icon' => 'bi-bank', 'label' => 'Akaun Bank'],
                                 ['icon' => 'bi-cash-coin', 'label' => 'Bon / Saham']
                             ]);
-                            $renderBorangCard('borang4', 'p1', 'bi-graph-up-arrow', 'BORANG 4', 'Keupayaan Kewangan', 'Penilaian modal pusingan & had kelayakan kewangan petender.');
+                            $renderBorangCard('borang4', 'p1', 'bi-graph-up-arrow', 'BORANG 4', 'Analisa Data-Data Penilaian Prestasi Petender', 'Penilaian modal pusingan & had kelayakan kewangan petender.');
                             $renderBorangCard('borang5', 'p1', 'bi-card-checklist', 'BORANG 5', 'Keputusan Peringkat Pertama', 'Jadual keputusan & rumusan kelayakan peringkat pertama.');
                             $renderBorangCard('borang6', 'p1', 'bi-list-stars', 'BORANG 6', 'Petender Lulus Peringkat 1', 'Senarai petender lulus disusun mengikut turutan harga tender.');
                         @endphp
@@ -539,7 +543,7 @@
                 </div>
 
                 {{-- PANE 2: PERINGKAT KEDUA (BORANG 7 - 12) --}}
-                <div class="tab-pane fade mt-4" id="pane-p2" role="tabpanel" aria-labelledby="tab-p2">
+                <div class="tab-pane fade {{ $activeTab === 'p2' ? 'show active' : '' }} mt-4" id="pane-p2" role="tabpanel" aria-labelledby="tab-p2">
                     <div class="d-flex align-items-center mb-4">
                         <div class="bg-danger-subtle p-2 rounded-2 me-3">
                             <i class="bi bi-cpu text-danger fs-4"></i>
@@ -554,18 +558,18 @@
 
                     <div class="row g-3">
                         @php
-                            $renderBorangCard('borang7', 'p2', 'bi-bar-chart-steps', 'BORANG 7', 'Analisa Keupayaan Petender', 'Analisis data penilaian keupayaan petender.');
-                            $renderBorangCard('borang8', 'p2', 'bi-pie-chart-fill', 'BORANG 8', 'Analisa Data Keupayaan', 'Jadual analisa data-data penilaian keupayaan petender.');
-                            $renderBorangCard('borang9', 'p2', 'bi-gear-wide-connected', 'BORANG 9', 'Analisa Keupayaan Teknikal', 'Analisis data penilaian keupayaan teknikal petender.');
-                            $renderBorangCard('borang10', 'p2', 'bi-person-workspace', 'BORANG 10', 'Prestasi Kerja Semasa', 'Penilaian rekod & prestasi kerja semasa petender di tapak.');
+                            $renderBorangCard('borang7', 'p2', 'bi-bar-chart-steps', 'BORANG 7', 'Analisa Baki Kerja Dalam Tangan', 'Analisis data penilaian keupayaan petender.');
+                            $renderBorangCard('borang8', 'p2', 'bi-pie-chart-fill', 'BORANG 8', 'Analisa Data-Data Penilaian Keupayaan Petender', 'Jadual analisa data-data penilaian keupayaan petender.');
+                            $renderBorangCard('borang9', 'p2', 'bi-gear-wide-connected', 'BORANG 9', 'Analisa Data-Data Penilaian Keupayaan Teknikal Petender', 'Analisis data penilaian keupayaan teknikal petender.');
+                            $renderBorangCard('borang10', 'p2', 'bi-person-workspace', 'BORANG 10', 'Analisa Data-Data Penilaian Keupayaan Teknikal Petender', 'Penilaian rekod & prestasi kerja semasa petender di tapak.');
                             $renderBorangCard('borang11', 'p2', 'bi-cpu', 'BORANG 11', 'Penilaian Keupayaan Teknikal', 'Penilaian kakitangan teknikal, loji & peralatan petender.');
-                            $renderBorangCard('borang12', 'p2', 'bi-patch-check', 'BORANG 12', 'Keupayaan Keseluruhan', 'Penilaian skor gabungan keupayaan kewangan & teknikal.');
+                            $renderBorangCard('borang12', 'p2', 'bi-patch-check', 'BORANG 12', 'Jadual Keputusan Peringkat Kedua', 'Penilaian skor gabungan keupayaan kewangan & teknikal.');
                         @endphp
                     </div>
                 </div>
 
                 {{-- PANE 3: PERINGKAT KETIGA (BORANG 13 - 15) --}}
-                <div class="tab-pane fade mt-4" id="pane-p3" role="tabpanel" aria-labelledby="tab-p3">
+                <div class="tab-pane fade {{ $activeTab === 'p3' ? 'show active' : '' }} mt-4" id="pane-p3" role="tabpanel" aria-labelledby="tab-p3">
                     <div class="d-flex align-items-center mb-4">
                         <div class="bg-danger-subtle p-2 rounded-2 me-3">
                             <i class="bi bi-award text-danger fs-4"></i>
@@ -580,9 +584,9 @@
 
                     <div class="row g-3">
                         @php
-                            $renderBorangCard('borang13', 'p3', 'bi-file-earmark-bar-graph', 'BORANG 13', 'Laporan Penilaian Kewangan & Teknikal', 'Laporan rasmi lengkap gabungan penilaian kewangan & teknikal perolehan kerja.');
-                            $renderBorangCard('borang14', 'p3', 'bi-journal-check', 'BORANG 14', 'Perakuan Jawatankuasa Penilaian', 'Perakuan & pengesyoran rasmi oleh ahli jawatankuasa penilaian perolehan.');
-                            $renderBorangCard('borang15', 'p3', 'bi-award', 'BORANG 15', 'Ringkasan Keputusan & Syor', 'Ringkasan syor muktamad jawatankuasa untuk pertimbangan Lembaga Perolehan.');
+                            $renderBorangCard('borang13', 'p3', 'bi-file-earmark-bar-graph', 'BORANG 13', 'Penilaian Keupayaan Petender Berdasarkan Faktor Pelarasan Baki Kerja (FRPK)', 'Laporan rasmi lengkap gabungan penilaian kewangan & teknikal perolehan kerja.');
+                            $renderBorangCard('borang14', 'p3', 'bi-journal-check', 'BORANG 14', 'Jadual Keputusan Penilaian Peringkat Ketiga', 'Perakuan & pengesyoran rasmi oleh ahli jawatankuasa penilaian perolehan.');
+                            $renderBorangCard('borang15', 'p3', 'bi-award', 'BORANG 15', 'Ringkasan Laporan Tender', 'Ringkasan syor muktamad jawatankuasa untuk pertimbangan Lembaga Perolehan.');
                         @endphp
                     </div>
                 </div>
@@ -597,6 +601,23 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Activate stage tab from URL query param (?tab=p2) or hash (#p2)
+        const urlParams = new URLSearchParams(window.location.search);
+        let targetTab = urlParams.get('tab') || urlParams.get('stage') || (window.location.hash ? window.location.hash.replace('#', '') : null);
+        if (targetTab) {
+            if (targetTab === 'peringkat1' || targetTab === '1') targetTab = 'p1';
+            if (targetTab === 'peringkat2' || targetTab === '2') targetTab = 'p2';
+            if (targetTab === 'peringkat3' || targetTab === '3') targetTab = 'p3';
+
+            if (['p1', 'p2', 'p3'].includes(targetTab)) {
+                const tabBtn = document.getElementById('tab-' + targetTab);
+                if (tabBtn && typeof bootstrap !== 'undefined' && bootstrap.Tab) {
+                    const tabInstance = bootstrap.Tab.getOrCreateInstance(tabBtn);
+                    tabInstance.show();
+                }
+            }
+        }
+
         document.querySelectorAll('.js-locked-borang').forEach(function(card) {
             card.addEventListener('click', function(e) {
                 e.preventDefault();
