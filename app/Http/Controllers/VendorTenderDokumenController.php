@@ -173,6 +173,46 @@ class VendorTenderDokumenController extends Controller
         ]);
     }
 
+    public function streamByPath(Request $request)
+    {
+        $path = (string) $request->query('path', '');
+        $name = (string) $request->query('name', 'Dokumen Sokongan');
+        $uuid = (string) $request->query('uuid', '');
+
+        if ($uuid !== '') {
+            $pbFile = \App\Models\PenyataBankFile::where('uuid', $uuid)->first();
+            if ($pbFile) {
+                return \App\Support\StosStoredFile::response([
+                    'uuid'          => $pbFile->uuid,
+                    'original_name' => $pbFile->original_name ?: $name,
+                    'path'          => $pbFile->path,
+                    'mime_type'     => $pbFile->mime_type ?: 'application/pdf',
+                ]);
+            }
+            $vFile = \App\Models\TenderVendorDokumenFile::where('uuid', $uuid)->first();
+            if ($vFile) {
+                return \App\Support\StosStoredFile::response([
+                    'uuid'          => $vFile->uuid,
+                    'original_name' => $vFile->original_name ?: $name,
+                    'path'          => $vFile->path,
+                    'mime_type'     => $vFile->mime_type ?: 'application/octet-stream',
+                ]);
+            }
+        }
+
+        if ($path === '') {
+            abort(404, 'Fail tidak dijumpai.');
+        }
+
+        $cleanPath = ltrim(str_replace('public/', '', $path), '/');
+
+        return \App\Support\StosStoredFile::response([
+            'path'          => $cleanPath,
+            'original_name' => $name,
+            'mime_type'     => 'application/pdf',
+        ]);
+    }
+
     public function saveKeyIn(Request $request, Tender $tender, string $itemUuid)
     {
         $vendorId = $this->requireVendorId();
