@@ -4,12 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\AdvancesTenderProcessStatus;
 use App\Http\Controllers\Concerns\RestrictsTenderByRole;
+use App\Models\EbiddingJadualBidaan;
 use App\Models\JawatankuasaPerolehanKertasKeputusan;
 use App\Models\JawatankuasaPerolehanMeeting;
 use App\Models\JawatankuasaPerolehanPemilihanHeader;
 use App\Models\JawatankuasaPerolehanPemilihanItem;
 use App\Models\JawatankuasaPerolehanPemilihanPetender;
 use App\Models\PerakuanJabatanKertasTaklimatItem;
+use App\Services\TenderProcessStatusService;
 use App\Support\TenderProcessStatus;
 use App\Support\VendorCidbMeta;
 use App\Tender;
@@ -84,7 +86,7 @@ class JawatankuasaPerolehanController extends Controller
         $kertasKeputusan = null;
         $pemilihanHeader = $this->blankPemilihanHeader();
         $pemilihanItems = collect();
-        $pemilihanOpts = $this->pemilihanDropdownOptions();
+        $pemilihanOpts = $this->pemilihanDropdownOptions(null);
         $pemilihanVendors = collect();
 
         if ($tender) {
@@ -132,6 +134,7 @@ class JawatankuasaPerolehanController extends Controller
 
             $this->ensurePemilihanDefaults($tender);
             $this->syncPemilihanPetenderVendors($tender);
+            $pemilihanOpts = $this->pemilihanDropdownOptions($tender);
             $headerModel = JawatankuasaPerolehanPemilihanHeader::query()
                 ->where('tender_id', $tender->id)
                 ->first();
@@ -145,6 +148,14 @@ class JawatankuasaPerolehanController extends Controller
                     'no_kod' => (string) ($headerModel->no_kod ?? ''),
                     'sahkan_layak_bidaan' => (bool) $headerModel->sahkan_layak_bidaan,
                 ];
+
+                // If Bidaan was already run, clear stale selection so urusetia picks Terus/Lebih.
+                if (
+                    $this->bidaanAlreadyRun($tender)
+                    && ($pemilihanHeader['kaedah_memuktamadkan_pembekal'] ?? '') === 'Bidaan'
+                ) {
+                    $pemilihanHeader['kaedah_memuktamadkan_pembekal'] = '';
+                }
             }
 
             $pemilihanItems = JawatankuasaPerolehanPemilihanItem::query()
@@ -396,8 +407,11 @@ class JawatankuasaPerolehanController extends Controller
             Tender::query()
                 ->where('id', $tender->id)
                 ->update([
-                    'is_ebidding' => $isEbidding,
-                    'ebidding_process_stage_id' => $isEbidding ? 1 : null,
+                    // is_ebidding is set when Memuktamadkan Pemilihan chooses Bidaan.
+                    'is_ebidding' => $isEbidding ? true : (bool) $tender->is_ebidding,
+                    'ebidding_process_stage_id' => $isEbidding
+                        ? ((int) ($tender->ebidding_process_stage_id ?? 0) ?: 1)
+                        : $tender->ebidding_process_stage_id,
                 ]);
         });
 
@@ -411,7 +425,7 @@ class JawatankuasaPerolehanController extends Controller
             return response()->json(['message' => 'Tender tidak ditemui.'], 404);
         }
 
-        $payload = $this->validatePemilihanPayload($request, false);
+        $payload = $this->validatePemilihanPayload($request, false, $tender);
         DB::transaction(function () use ($tender, $payload) {
             $this->applyPemilihanPayload($tender, $payload, false);
         });
@@ -426,18 +440,42 @@ class JawatankuasaPerolehanController extends Controller
             return response()->json(['message' => 'Tender tidak ditemui.'], 404);
         }
 
-        $payload = $this->validatePemilihanPayload($request, true);
-        DB::transaction(function () use ($tender, $payload) {
+        $payload = $this->validatePemilihanPayload($request, true, $tender);
+        $kaedah = trim((string) ($payload['header']['kaedah_memuktamadkan_pembekal'] ?? ''));
+
+        DB::transaction(function () use ($tender, $payload, $kaedah) {
             $this->applyPemilihanPayload($tender, $payload, true);
+
+            if ($kaedah === 'Bidaan') {
+                if (! TenderProcessStatus::allowsBidaanKaedah($tender->kategori_perolehan_id)) {
+                    throw ValidationException::withMessages([
+                        'header.kaedah_memuktamadkan_pembekal' => 'Kaedah Bidaan hanya untuk Bekalan atau Perkhidmatan.',
+                    ]);
+                }
+                if ($this->bidaanAlreadyRun($tender)) {
+                    throw ValidationException::withMessages([
+                        'header.kaedah_memuktamadkan_pembekal' => 'Bidaan telah dijalankan. Sila pilih Pemilihan Terus atau Pemilihan Lebih Daripada Satu Syarikat.',
+                    ]);
+                }
+
+                Tender::query()->where('id', $tender->id)->update([
+                    'is_ebidding' => true,
+                    'ebidding_process_stage_id' => 1,
+                    'status_process_id' => TenderProcessStatus::PENILAIAN_KEWANGAN,
+                ]);
+            } else {
+                app(TenderProcessStatusService::class)->setStatus(
+                    $tender->fresh(),
+                    TenderProcessStatus::JAWATANKUASA_PEROLEHAN
+                );
+            }
         });
 
-        $this->advanceTenderProcess(
-            $tender->fresh(),
-            TenderProcessStatus::JAWATANKUASA_PEROLEHAN,
-            TenderProcessStatus::jawatankuasaPerolehanListStatus()
-        );
+        $message = $kaedah === 'Bidaan'
+            ? 'Pemilihan Bidaan berjaya dihantar. Proses kembali ke Perakuan Jabatan untuk Penyediaan Jadual Bidaan.'
+            : 'Memuktamadkan pemilihan pembekal berjaya dihantar.';
 
-        return response()->json(['message' => 'Memuktamadkan pemilihan pembekal berjaya dihantar.']);
+        return response()->json(['message' => $message]);
     }
 
     /**
@@ -472,8 +510,21 @@ class JawatankuasaPerolehanController extends Controller
         //
     }
 
-    private function pemilihanDropdownOptions(): array
+    private function pemilihanDropdownOptions(?Tender $tender = null): array
     {
+        $kaedah = [
+            'Pemilihan Terus',
+            'Pemilihan Lebih Daripada Satu Syarikat',
+        ];
+
+        $allowBidaan = $tender
+            && TenderProcessStatus::allowsBidaanKaedah($tender->kategori_perolehan_id)
+            && ! $this->bidaanAlreadyRun($tender);
+
+        if ($allowBidaan) {
+            $kaedah[] = 'Bidaan';
+        }
+
         return [
             'keputusan_mesyuarat' => [
                 'Pemilihan Pembekal',
@@ -482,11 +533,7 @@ class JawatankuasaPerolehanController extends Controller
                 'Kemukakan kepada Pihak Berkuasa Yang Lebih Tinggi',
                 'Batal',
             ],
-            'kaedah_memuktamadkan_pembekal' => [
-                'Pemilihan Terus',
-                'Pemilihan Lebih Daripada Satu Syarikat',
-                'Bidaan',
-            ],
+            'kaedah_memuktamadkan_pembekal' => $kaedah,
             'pemilihan_berdasarkan' => [
                 '1 item',
                 'Pakej',
@@ -501,6 +548,18 @@ class JawatankuasaPerolehanController extends Controller
                 'Tangguh',
             ],
         ];
+    }
+
+    private function bidaanAlreadyRun(Tender $tender): bool
+    {
+        if ((int) ($tender->ebidding_process_stage_id ?? 0) >= 3) {
+            return true;
+        }
+
+        return EbiddingJadualBidaan::query()
+            ->where('tender_id', $tender->id)
+            ->whereNotNull('started_at')
+            ->exists();
     }
 
     private function blankPemilihanHeader(): array
@@ -523,7 +582,9 @@ class JawatankuasaPerolehanController extends Controller
                 ['tender_id' => $tender->id],
                 [
                     'keputusan_mesyuarat' => 'Pemilihan Pembekal',
-                    'kaedah_memuktamadkan_pembekal' => 'Bidaan',
+                    'kaedah_memuktamadkan_pembekal' => TenderProcessStatus::allowsBidaanKaedah($tender->kategori_perolehan_id)
+                        ? null
+                        : 'Pemilihan Terus',
                 ]
             );
 
@@ -574,9 +635,9 @@ class JawatankuasaPerolehanController extends Controller
         });
     }
 
-    private function validatePemilihanPayload(Request $request, bool $forSubmit): array
+    private function validatePemilihanPayload(Request $request, bool $forSubmit, ?Tender $tender = null): array
     {
-        $opts = $this->pemilihanDropdownOptions();
+        $opts = $this->pemilihanDropdownOptions($tender);
         $emptyPad = $forSubmit ? [] : [''];
 
         $headerRules = [
@@ -637,8 +698,9 @@ class JawatankuasaPerolehanController extends Controller
             'tender' => ['required'],
         ], $headerRules, $itemRules));
 
+        $kaedah = trim((string) ($validated['header']['kaedah_memuktamadkan_pembekal'] ?? ''));
         $sahkan = $validated['header']['sahkan_layak_bidaan'] ?? false;
-        if ($forSubmit && !filter_var($sahkan, FILTER_VALIDATE_BOOLEAN)) {
+        if ($forSubmit && $kaedah === 'Bidaan' && ! filter_var($sahkan, FILTER_VALIDATE_BOOLEAN)) {
             throw ValidationException::withMessages([
                 'header.sahkan_layak_bidaan' => 'Sila tandakan pengesahan petender layak untuk menyertai Bidaan.',
             ]);

@@ -15,11 +15,13 @@ class PerakuanJabatanPengesyoranPembekal extends Model
         'tender_id',
         'catatan',
         'sahkan_petender_layak',
+        'pengesahan_bidaan',
         'submitted_at',
     ];
 
     protected $casts = [
         'sahkan_petender_layak' => 'boolean',
+        'pengesahan_bidaan' => 'boolean',
         'submitted_at' => 'datetime',
     ];
 

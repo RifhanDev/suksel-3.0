@@ -2,8 +2,12 @@
 
 namespace Tests\Feature;
 
+use App\Models\EbiddingJadualBidaan;
+use App\Models\PerakuanJabatanKertasTaklimat;
+use App\Models\PerakuanJabatanPengesyoranPembekal;
+use App\Services\TenderProcessStatusService;
+use App\Support\TenderProcessStatus;
 use App\Tender;
-use App\User;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\DB;
@@ -14,239 +18,100 @@ class ProcurementFlowTest extends TestCase
 {
     use DatabaseTransactions;
 
-    public function test_bidding_flow_returns_to_perakuan_then_back_to_jawatankuasa(): void
+    public function test_bidaan_status_loop_uses_eleven_twelve_thirteen(): void
     {
         $this->skipIfWorkflowSchemaMissing();
 
-        $agencyUser = $this->createAgencyUser();
-        $tender = $this->createTender(statusProcessId: 2);
+        $service = app(TenderProcessStatusService::class);
+        $tender = $this->createTender(TenderProcessStatus::PENILAIAN_KEWANGAN, 1);
 
-        // Step 1: Perakuan Jabatan submit -> Jawatankuasa Perolehan (status 3).
-        $this->actingAs($agencyUser)
-            ->post(route('perakuanjabatan.pengesyoranPembekal.hantar', ['tender' => $tender->id]), [
-                'catatan' => 'Layak',
-                'sahkan_petender_layak' => '1',
-            ])
-            ->assertOk();
-
-        $tender->refresh();
-        $this->assertSame(3, (int) $tender->status_process_id);
-
-        // Step 2: Jawatankuasa select "Bidaan" and submit Kertas Keputusan.
-        DB::table('jawatankuasa_perolehan_pemilihan_headers')->insert([
+        // First pass PJ complete -> 12
+        PerakuanJabatanKertasTaklimat::query()->create([
             'tender_id' => $tender->id,
-            'keputusan_mesyuarat' => 'Pemilihan Pembekal',
-            'kaedah_memuktamadkan_pembekal' => 'Bidaan',
-            'pemilihan_berdasarkan' => '1 item',
-            'loi_loa_disediakan_oleh' => 'Urusetia atau Setiausaha Sebut Harga',
-            'bil_mesyuarat' => '1/2026',
-            'no_kod' => 'JP-001',
-            'sahkan_layak_bidaan' => 1,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
-        $this->actingAs($agencyUser)
-            ->post(route('jawatankuasa.perolehan.kertas_keputusan.hantar'), [
-                'tender' => $tender->id,
-                'dengan_syarat' => '0',
-                'pengesyoran_catatan' => 'Disyorkan',
-                'justifikasi_pemilihan_pembekal' => 'Harga dalam lingkungan harga indikatif jabatan',
-                'keputusan' => 'Lulus',
-            ])
-            ->assertOk();
-
-        $tender->refresh();
-        $this->assertSame(4, (int) $tender->status_process_id);
-        $this->assertSame(1, (int) $tender->is_ebidding);
-        $this->assertSame(1, (int) $tender->ebidding_process_stage_id);
-
-        // Prepare vendor bidding prerequisites and move to vendor stage.
-        $pemilihanItemId = DB::table('jawatankuasa_perolehan_pemilihan_items')->insertGetId([
-            'tender_id' => $tender->id,
-            'sort_order' => 1,
-            'perihal_item' => 'Item A',
-            'jenis_item' => 'Perkhidmatan',
-            'unit_ukuran' => 'Unit',
-            'jenis_harga' => 'Biasa',
-            'dibatalkan' => 'Tidak',
-            'pembekal_dipilih' => 1,
-            'kuantiti' => 1,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
-        $vendorUser = $this->createVendorUser();
-        DB::table('tender_vendors')->insert([
-            'transaction_id' => 1,
-            'vendor_id' => $vendorUser->vendor_id,
-            'tender_id' => $tender->id,
-            'amount' => 1500.00,
-            'price' => 1500.00,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
-        DB::table('ebidding_jadual_bidaans')->insert([
-            'tender_id' => $tender->id,
-            'tarikh_bidaan_mula' => Carbon::now()->subHour()->toDateString(),
-            'masa_bidaan_mula' => Carbon::now()->subHour()->format('H:i'),
-            'tarikh_bidaan_tamat' => Carbon::now()->addHour()->toDateString(),
-            'masa_bidaan_tamat' => Carbon::now()->addHour()->format('H:i'),
-            'started_at' => now(),
+            'catatan' => 'OK',
             'submitted_at' => now(),
-            'created_at' => now(),
-            'updated_at' => now(),
         ]);
+        PerakuanJabatanPengesyoranPembekal::query()->create([
+            'tender_id' => $tender->id,
+            'catatan' => 'Layak',
+            'sahkan_petender_layak' => true,
+            'pengesahan_bidaan' => false,
+            'submitted_at' => now(),
+        ]);
+        $service->syncPerakuanJabatanCompletion($tender->fresh());
+        $tender->refresh();
+        $this->assertSame(TenderProcessStatus::PERAKUAN_JABATAN, (int) $tender->status_process_id);
+
+        // JP chooses Bidaan -> back to 11 / stage 1
+        $this->assertTrue(TenderProcessStatus::allowsBidaanKaedah(1));
+        $this->assertFalse(TenderProcessStatus::allowsBidaanKaedah(3));
 
         Tender::query()->where('id', $tender->id)->update([
-            'ebidding_process_stage_id' => 2,
-            'is_ebidding' => 1,
+            'is_ebidding' => true,
+            'ebidding_process_stage_id' => 1,
+            'status_process_id' => TenderProcessStatus::PENILAIAN_KEWANGAN,
         ]);
-
-        // Step 3 + 4: Vendor submit new bid -> back to Perakuan Jabatan (status 2).
-        $this->actingAs($vendorUser)
-            ->post(route('eBidding.vendorBidaan.hantar', ['id' => $tender->id]), [
-                'items' => [
-                    [
-                        'pemilihan_item_id' => $pemilihanItemId,
-                        'bid_price' => 1200.00,
-                    ],
-                ],
-            ])
-            ->assertOk();
-
         $tender->refresh();
-        $this->assertSame(2, (int) $tender->status_process_id);
-        $this->assertSame(3, (int) $tender->ebidding_process_stage_id);
+        $this->assertSame(TenderProcessStatus::PENILAIAN_KEWANGAN, (int) $tender->status_process_id);
+        $this->assertSame(1, (int) $tender->ebidding_process_stage_id);
 
-        // Step 5: Perakuan Jabatan submit again -> Jawatankuasa Perolehan (status 3).
-        $this->actingAs($agencyUser)
-            ->post(route('perakuanjabatan.pengesyoranPembekal.hantar', ['tender' => $tender->id]), [
-                'catatan' => 'Pusingan semula',
-                'sahkan_petender_layak' => '1',
-            ])
-            ->assertOk();
-
+        // While stage < 3, first-pass submitted_at must NOT push back to 12
+        $service->syncPerakuanJabatanCompletion($tender->fresh());
         $tender->refresh();
-        $this->assertSame(3, (int) $tender->status_process_id);
-    }
+        $this->assertSame(TenderProcessStatus::PENILAIAN_KEWANGAN, (int) $tender->status_process_id);
 
-    public function test_non_bidding_flow_stops_without_enabling_ebidding(): void
-    {
-        $this->skipIfWorkflowSchemaMissing();
-
-        $agencyUser = $this->createAgencyUser();
-        $tender = $this->createTender(statusProcessId: 3);
-
-        DB::table('jawatankuasa_perolehan_pemilihan_headers')->insert([
+        // After bidding window / review stage, laporan + pengesahan required
+        Tender::query()->where('id', $tender->id)->update([
+            'ebidding_process_stage_id' => 3,
+            'status_process_id' => TenderProcessStatus::PENILAIAN_KEWANGAN,
+        ]);
+        EbiddingJadualBidaan::query()->create([
             'tender_id' => $tender->id,
-            'keputusan_mesyuarat' => 'Pemilihan Pembekal',
-            'kaedah_memuktamadkan_pembekal' => 'Pemilihan Terus',
-            'pemilihan_berdasarkan' => '1 item',
-            'loi_loa_disediakan_oleh' => 'Urusetia atau Setiausaha Sebut Harga',
-            'bil_mesyuarat' => '2/2026',
-            'no_kod' => 'JP-002',
-            'sahkan_layak_bidaan' => 1,
-            'created_at' => now(),
-            'updated_at' => now(),
+            'tarikh_bidaan_mula' => Carbon::yesterday()->toDateString(),
+            'masa_bidaan_mula' => '09:00',
+            'tarikh_bidaan_tamat' => Carbon::yesterday()->toDateString(),
+            'masa_bidaan_tamat' => '17:00',
+            'started_at' => now()->subDay(),
+            'submitted_at' => now()->subDay(),
         ]);
 
-        $this->actingAs($agencyUser)
-            ->post(route('jawatankuasa.perolehan.kertas_keputusan.hantar'), [
-                'tender' => $tender->id,
-                'dengan_syarat' => '0',
-                'pengesyoran_catatan' => 'Disyorkan',
-                'justifikasi_pemilihan_pembekal' => 'Harga dalam lingkungan harga indikatif jabatan',
-                'keputusan' => 'Lulus',
-            ])
-            ->assertOk();
-
+        $service->syncPerakuanJabatanCompletion($tender->fresh());
         $tender->refresh();
-        $this->assertSame(4, (int) $tender->status_process_id);
-        $this->assertSame(0, (int) $tender->is_ebidding);
-        $this->assertNull($tender->ebidding_process_stage_id);
+        $this->assertSame(TenderProcessStatus::PENILAIAN_KEWANGAN, (int) $tender->status_process_id);
+
+        $header = PerakuanJabatanKertasTaklimat::query()->where('tender_id', $tender->id)->first();
+        $laporan = $header->items()->create([
+            'slot_key' => 'laporan_bidaan',
+            'kandungan' => 'Laporan Bidaan',
+            'sort_order' => 99,
+        ]);
+        $laporan->files()->create([
+            'file_path' => 'uploads/test/laporan.pdf',
+            'file_original_name' => 'laporan.pdf',
+        ]);
+
+        PerakuanJabatanPengesyoranPembekal::query()
+            ->where('tender_id', $tender->id)
+            ->update(['pengesahan_bidaan' => true]);
+
+        $service->syncPerakuanJabatanCompletion($tender->fresh());
+        $tender->refresh();
+        $this->assertSame(TenderProcessStatus::PERAKUAN_JABATAN, (int) $tender->status_process_id);
+
+        // Non-bidaan JP path -> 13
+        $service->setStatus($tender, TenderProcessStatus::JAWATANKUASA_PEROLEHAN);
+        $tender->refresh();
+        $this->assertSame(TenderProcessStatus::JAWATANKUASA_PEROLEHAN, (int) $tender->status_process_id);
     }
 
-    private function createAgencyUser(): User
+    public function test_kerja_does_not_allow_bidaan_kaedah(): void
     {
-        $orgId = DB::table('organization_units')->insertGetId([
-            'name' => 'Unit Ujian',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
-        $userId = DB::table('users')->insertGetId([
-            'username' => 'agency_' . uniqid(),
-            'email' => 'agency_' . uniqid() . '@example.test',
-            'name' => 'Agency User',
-            'password' => bcrypt('password'),
-            'organization_unit_id' => $orgId,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
-        return User::query()->findOrFail($userId);
+        $this->assertFalse(TenderProcessStatus::allowsBidaanKaedah(3));
+        $this->assertTrue(TenderProcessStatus::allowsBidaanKaedah(1));
+        $this->assertTrue(TenderProcessStatus::allowsBidaanKaedah(2));
     }
 
-    private function createVendorUser(): User
-    {
-        $orgId = DB::table('organization_units')->insertGetId([
-            'name' => 'Unit Vendor',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
-        $vendorId = DB::table('vendors')->insertGetId([
-            'registration' => 'REG-' . uniqid(),
-            'name' => 'Vendor Test',
-            'officer_name' => 'Officer',
-            'officer_designation' => 'Manager',
-            'officer_email' => 'vendor_officer_' . uniqid() . '@example.test',
-            'officer_tel' => '0123456789',
-            'organization_unit_id' => $orgId,
-            'expiry_date' => '2099-12-31',
-            'blacklisted_until' => '1970-01-01',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
-        $userId = DB::table('users')->insertGetId([
-            'username' => 'vendor_' . uniqid(),
-            'email' => 'vendor_user_' . uniqid() . '@example.test',
-            'name' => 'Vendor User',
-            'password' => bcrypt('password'),
-            'vendor_id' => $vendorId,
-            'organization_unit_id' => $orgId,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
-        $role = DB::table('roles')->where('name', 'Vendor')->first();
-        $roleId = $role ? (int) $role->id : DB::table('roles')->insertGetId([
-            'name' => 'Vendor',
-            'guard_name' => 'web',
-            'display_name' => 'Vendor',
-            'description' => 'Vendor role for testing',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
-        $roleUserExists = DB::table('role_user')
-            ->where('user_id', $userId)
-            ->where('role_id', $roleId)
-            ->exists();
-        if (!$roleUserExists) {
-            DB::table('role_user')->insert([
-                'user_id' => $userId,
-                'role_id' => $roleId,
-            ]);
-        }
-
-        return User::query()->findOrFail($userId);
-    }
-
-    private function createTender(int $statusProcessId): Tender
+    private function createTender(int $statusProcessId, int $kategoriPerolehanId = 1): Tender
     {
         $orgId = DB::table('organization_units')->insertGetId([
             'name' => 'Unit Tender',
@@ -254,14 +119,20 @@ class ProcurementFlowTest extends TestCase
             'updated_at' => now(),
         ]);
 
-        $tenderId = DB::table('tenders')->insertGetId([
+        $payload = [
             'name' => 'Tender Ujian Flow',
             'organization_unit_id' => $orgId,
             'status_process_id' => $statusProcessId,
             'is_ebidding' => 0,
             'created_at' => now(),
             'updated_at' => now(),
-        ]);
+        ];
+
+        if (Schema::hasColumn('tenders', 'kategori_perolehan_id')) {
+            $payload['kategori_perolehan_id'] = $kategoriPerolehanId;
+        }
+
+        $tenderId = DB::table('tenders')->insertGetId($payload);
 
         return Tender::query()->findOrFail($tenderId);
     }
@@ -275,21 +146,16 @@ class ProcurementFlowTest extends TestCase
         ]);
 
         $requiredTables = [
-            'jawatankuasa_perolehan_pemilihan_headers',
-            'jawatankuasa_perolehan_pemilihan_items',
+            'perakuan_jabatan_kertas_taklimats',
+            'perakuan_jabatan_kertas_taklimat_items',
+            'perakuan_jabatan_kertas_taklimat_item_files',
+            'perakuan_jabatan_pengesyoran_pembekals',
             'ebidding_jadual_bidaans',
-            'ebidding_vendor_bid_items',
-            'role_user',
-            'roles',
-            'vendors',
-            'tender_vendors',
         ];
 
-        $missingTable = collect($requiredTables)->first(function (string $table): bool {
-            return !Schema::hasTable($table);
-        });
+        $missingTable = collect($requiredTables)->first(fn (string $table) => ! Schema::hasTable($table));
 
-        if (!$hasTenderColumns || $missingTable) {
+        if (! $hasTenderColumns || $missingTable) {
             $this->markTestSkipped(
                 'Workflow schema not available in current DB. Run latest migrations before executing this test.'
             );
