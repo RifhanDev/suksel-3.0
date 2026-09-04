@@ -103,7 +103,7 @@
 							<line x1="16" y1="13" x2="8" y2="13"></line>
 							<line x1="16" y1="17" x2="8" y2="17"></line>
 						</svg>
-						Paparan Kertas Taklimat
+						Penyediaan Kertas Taklimat
 					</a>
 				</li>
 
@@ -116,7 +116,7 @@
 							<circle cx="9" cy="7" r="4"></circle>
 							<polyline points="23 11 17 17 14 14"></polyline>
 						</svg>
-						Pemilihan Pembekal
+						Pengesyoran Pembekal
 					</a>
 				</li>
 			</ul>
@@ -130,7 +130,7 @@
 		<!-- Tab 1: Seksyen Laporan -->
 		@include('newModule.perakuanJabatan.kertas_taklimat')
 
-		<!-- Tab 2: Pemilihan Pembekal -->
+		<!-- Tab 2: Pengesyoran Pembekal -->
 		@include('newModule.perakuanJabatan.pengesyoran_pembekal')
 	</div>
 @endsection

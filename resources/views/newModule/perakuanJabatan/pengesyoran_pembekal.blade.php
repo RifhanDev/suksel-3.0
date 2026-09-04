@@ -84,12 +84,12 @@
 					<tbody>
 						<tr>
 							<td class="text-center">
-								<input type="checkbox" class="form-check-input m-0" aria-label="Pilih item" disabled>
+								<input type="checkbox" class="form-check-input m-0" aria-label="Pilih item" checked disabled>
 							</td>
-							<td>{{ $tender->name }}</td>
-							<td class="text-center">—</td>
-							<td class="text-center">—</td>
-							<td class="text-center">—</td>
+							<td>{{ $senaraiItem['item'] ?? ($tender->name ?: '-') }}</td>
+							<td class="text-center">{{ $senaraiItem['jenis_item'] ?? '—' }}</td>
+							<td class="text-center">{{ $senaraiItem['unit_ukuran'] ?? '—' }}</td>
+							<td class="text-center">{{ $senaraiItem['jenis_harga'] ?? '—' }}</td>
 						</tr>
 					</tbody>
 				</table>
@@ -99,7 +99,6 @@
 		<div class="pp-section-bar rounded-top">SENARAI PEMBEKAL</div>
 		<div class="border border-top-0 border-secondary-subtle p-3 rounded-bottom mb-4"
 			style="border-color:#dde2ea!important;">
-			<p class="text-muted small mb-3">Paparan senarai pembekal akan disambungkan dalam kemaskini akan datang.</p>
 			<div class="table-responsive pp-table-wrap">
 				<table class="table table-bordered align-middle mb-0 text-center">
 					<thead>
@@ -122,9 +121,36 @@
 						</tr>
 					</thead>
 					<tbody>
-						<tr>
-							<td colspan="11" class="text-muted py-4">Tiada data (dummy)</td>
-						</tr>
+						@forelse ($pembekalRows ?? [] as $row)
+							<tr>
+								<td>{{ $row['bil'] }}</td>
+								<td>{{ $row['status_bumiputra'] }}</td>
+								<td>
+									{{ $row['harga_tawaran'] !== null ? number_format((float) $row['harga_tawaran'], 2) : '—' }}
+								</td>
+								<td>
+									{{ $row['skor_teknikal'] !== null ? number_format((float) $row['skor_teknikal'], 2) : '—' }}
+								</td>
+								<td>{{ $row['kedudukan_teknikal'] ?? '—' }}</td>
+								<td>{{ $row['kedudukan_kewangan'] ?? '—' }}</td>
+								<td>{{ $row['status_mof'] ?? '—' }}</td>
+								<td>{{ $row['prestasi_pembekal'] ?? '—' }}</td>
+								<td>
+									@if (!empty($row['lembaga_pengarah_url']))
+										<a href="{{ $row['lembaga_pengarah_url'] }}" target="_blank" rel="noopener noreferrer"
+											class="btn btn-light btn-sm">Lihat</a>
+									@else
+										—
+									@endif
+								</td>
+								<td>{{ $row['keputusan_urusetia'] ?? '—' }}</td>
+								<td>{{ $row['catatan_urusetia'] ?? '—' }}</td>
+							</tr>
+						@empty
+							<tr>
+								<td colspan="11" class="text-muted py-4">Tiada pembekal layak untuk dipaparkan.</td>
+							</tr>
+						@endforelse
 					</tbody>
 				</table>
 			</div>

@@ -1968,22 +1968,40 @@
                         if (f.uuid) {
                             fileUrl = '/tenders/dokumen-files/' + f.uuid + '/download';
                         } else {
-                            let rawUrl = f.url || f.path || f.file_path || f.filepath || '#';
-                            if (rawUrl && rawUrl !== '#') {
-                                if (/^(https?:|\/\/|data:)/i.test(rawUrl)) {
-                                    fileUrl = rawUrl;
-                                } else {
-                                    rawUrl = rawUrl.replace(/\\/g, '/');
-                                    if (rawUrl.startsWith('public/')) {
-                                        rawUrl = rawUrl.replace(/^public\//, '');
+                            let matchedUuid = null;
+                            let cleanFPath = (f.path || f.file_path || f.filepath || '').replace(/\\/g, '/').replace(/^public\//, '').replace(/^\//, '');
+                            if (typeof PENYATA_BANK_CONFIG !== 'undefined' && Array.isArray(PENYATA_BANK_CONFIG.files)) {
+                                const found = PENYATA_BANK_CONFIG.files.find(pf => {
+                                    let pPath = (pf.path || pf.file_path || '').replace(/\\/g, '/').replace(/^public\//, '').replace(/^\//, '');
+                                    return (pf.uuid && (pPath === cleanFPath || (pf.original_name && pf.original_name === fileName)));
+                                });
+                                if (found && found.uuid) {
+                                    matchedUuid = found.uuid;
+                                }
+                            }
+
+                            if (matchedUuid) {
+                                fileUrl = '/tenders/dokumen-files/' + matchedUuid + '/download';
+                            } else if (cleanFPath !== '') {
+                                fileUrl = '/tenders/dokumen-files/stream?path=' + encodeURIComponent(cleanFPath) + '&name=' + encodeURIComponent(fileName);
+                            } else {
+                                let rawUrl = f.url || f.path || f.file_path || f.filepath || '#';
+                                if (rawUrl && rawUrl !== '#') {
+                                    if (/^(https?:|\/\/|data:)/i.test(rawUrl)) {
+                                        fileUrl = rawUrl;
+                                    } else {
+                                        rawUrl = rawUrl.replace(/\\/g, '/');
+                                        if (rawUrl.startsWith('public/')) {
+                                            rawUrl = rawUrl.replace(/^public\//, '');
+                                        }
+                                        if (!rawUrl.startsWith('/')) {
+                                            rawUrl = '/' + rawUrl;
+                                        }
+                                        if (!rawUrl.startsWith('/tenders/') && !rawUrl.startsWith('/storage/') && !rawUrl.startsWith('/api/')) {
+                                            rawUrl = '/storage' + rawUrl;
+                                        }
+                                        fileUrl = rawUrl;
                                     }
-                                    if (!rawUrl.startsWith('/')) {
-                                        rawUrl = '/' + rawUrl;
-                                    }
-                                    if (!rawUrl.startsWith('/tenders/') && !rawUrl.startsWith('/storage/') && !rawUrl.startsWith('/api/')) {
-                                        rawUrl = '/storage' + rawUrl;
-                                    }
-                                    fileUrl = rawUrl;
                                 }
                             }
                         }
