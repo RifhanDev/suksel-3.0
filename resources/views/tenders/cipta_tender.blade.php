@@ -620,13 +620,17 @@
                             <div id="jenis_kontrak_group" class="d-none">
                                 <label class="form-label">Jenis Kontrak<span class="text-danger">*</span></label>
                                 <select class="form-select" name="jenis_kontrak" id="jenis_kontrak">
+                                    {{-- Pilihan mesti datang dari ref_type_of_contracts: tenders.jenis_kontrak_id
+                                         ada foreign key ke jadual itu. Senarai yang dikodkan tegar dahulunya
+                                         menawarkan 1/2/3 (Kementerian/Jabatan/Agensi) sedangkan jadual itu hanya
+                                         mengandungi dua baris, jadi penyimpanan gagal dengan ralat 1452.
+                                         Medan jirannya, jenis_tender, sudah menggunakan cara ini. --}}
                                     <option selected disabled>Pilih...</option>
-                                    <option value="1" {{ old('jenis_kontrak') == '1' ? 'selected' : '' }}>Kementerian
-                                    </option>
-                                    <option value="2" {{ old('jenis_kontrak') == '2' ? 'selected' : '' }}>Jabatan
-                                    </option>
-                                    <option value="3" {{ old('jenis_kontrak') == '3' ? 'selected' : '' }}>Agensi
-                                    </option>
+                                    @foreach ($jenisKontrak as $jk)
+                                        <option value="{{ $jk->id }}"
+                                            {{ old('jenis_kontrak') == $jk->id ? 'selected' : '' }}>{{ $jk->name }}
+                                        </option>
+                                    @endforeach
                                 </select>
                             </div>
                         </div>
