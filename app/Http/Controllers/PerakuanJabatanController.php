@@ -7,6 +7,7 @@ use App\Models\PerakuanJabatanKertasTaklimat;
 use App\Models\PerakuanJabatanKertasTaklimatItem;
 use App\Models\PerakuanJabatanKertasTaklimatItemFile;
 use App\Models\PerakuanJabatanPengesyoranPembekal;
+use App\Models\PerakuanJabatanPengesyoranPembekalItem;
 use App\Models\TenderTeknikalSpesifikasiEvaluation;
 use App\Services\StosBackendClient;
 use App\Services\TenderProcessStatusService;
@@ -16,6 +17,8 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class PerakuanJabatanController extends Controller
 {
@@ -99,7 +102,7 @@ class PerakuanJabatanController extends Controller
             'unit_ukuran' => 'Unit',
             'jenis_harga' => 'Biasa Standard',
         ];
-        $pembekalRows = $this->buildPengesyoranPembekalRows($tender);
+        $pembekalRows = $this->buildPengesyoranPembekalRows($tender, $pengesyoranPembekal);
 
         return view(
             'newModule.perakuanJabatan.show',
@@ -131,53 +134,14 @@ class PerakuanJabatanController extends Controller
 
     public function pengesyoranPembekalSimpan(Request $request, Tender $tender)
     {
-        $validated = $request->validate([
-            'catatan' => ['nullable', 'string', 'max:65535'],
-            'sahkan_petender_layak' => ['nullable', 'boolean'],
-        ]);
+        $this->persistPengesyoranPembekal($request, $tender, false);
 
-        $record = PerakuanJabatanPengesyoranPembekal::firstOrCreate(
-            ['tender_id' => $tender->id],
-            [
-                'catatan' => null,
-                'sahkan_petender_layak' => false,
-                'submitted_at' => null,
-            ]
-        );
-
-        $record->catatan = $validated['catatan'] ?? null;
-        $record->sahkan_petender_layak = $request->boolean('sahkan_petender_layak');
-        $record->save();
-
-        return response()->json(['message' => 'Catatan Pengesyoran Pembekal berjaya disimpan.']);
+        return response()->json(['message' => 'Pengesyoran Pembekal berjaya disimpan.']);
     }
 
     public function pengesyoranPembekalHantar(Request $request, Tender $tender)
     {
-        $validated = $request->validate([
-            'catatan' => ['nullable', 'string', 'max:65535'],
-            'sahkan_petender_layak' => ['required', 'accepted'],
-        ], [
-            'sahkan_petender_layak.accepted' => 'Sila tandakan pengesahan bahawa petender layak untuk menyertai bidaan.',
-        ]);
-
-        DB::transaction(function () use ($tender, $validated) {
-            $record = PerakuanJabatanPengesyoranPembekal::firstOrCreate(
-                ['tender_id' => $tender->id],
-                [
-                    'catatan' => null,
-                    'sahkan_petender_layak' => false,
-                    'submitted_at' => null,
-                ]
-            );
-
-            $record->catatan = $validated['catatan'] ?? null;
-            $record->sahkan_petender_layak = true;
-            $record->submitted_at = now();
-            $record->save();
-
-            app(TenderProcessStatusService::class)->syncPerakuanJabatanCompletion($tender->fresh());
-        });
+        $this->persistPengesyoranPembekal($request, $tender, true);
 
         return response()->json(['message' => 'Pengesyoran Pembekal berjaya dihantar. Status proses tender dikemas kini.']);
     }
@@ -319,7 +283,7 @@ class PerakuanJabatanController extends Controller
      *
      * @return list<array<string, mixed>>
      */
-    private function buildPengesyoranPembekalRows(Tender $tender): array
+    private function buildPengesyoranPembekalRows(Tender $tender, ?PerakuanJabatanPengesyoranPembekal $pengesyoran = null): array
     {
         $participants = $tender->participants()
             ->with('vendor')
@@ -330,6 +294,14 @@ class PerakuanJabatanController extends Controller
 
         if ($participants->isEmpty()) {
             return [];
+        }
+
+        $savedByVendor = [];
+        if ($pengesyoran) {
+            $savedByVendor = $pengesyoran->items()
+                ->get()
+                ->keyBy(fn ($item) => (int) $item->vendor_id)
+                ->all();
         }
 
         $teknikalScores = $this->loadTeknikalScoresByVendor($tender);
@@ -343,10 +315,11 @@ class PerakuanJabatanController extends Controller
             $kedudukanKewangan[(int) $p->vendor_id] = $idx + 1;
         }
 
-        return $participants->values()->map(function ($p, $idx) use ($total, $teknikalScores, $kedudukanKewangan) {
+        return $participants->values()->map(function ($p, $idx) use ($total, $teknikalScores, $kedudukanKewangan, $savedByVendor) {
             $vendorId = (int) $p->vendor_id;
             $vendor = $p->vendor;
             $score = $teknikalScores[$vendorId] ?? null;
+            $saved = $savedByVendor[$vendorId] ?? null;
             $bumi = (bool) ($p->is_bumiputera ?? false)
                 || (bool) ($vendor?->mof_bumi ?? false)
                 || (bool) ($vendor?->cidb_bumi ?? false);
@@ -360,6 +333,7 @@ class PerakuanJabatanController extends Controller
             }
 
             return [
+                'vendor_id' => $vendorId,
                 'bil' => ($idx + 1) . '/' . $total,
                 'status_bumiputra' => $bumi ? 'Ya' : 'Tidak',
                 'harga_tawaran' => $harga !== null ? (float) $harga : null,
@@ -369,10 +343,134 @@ class PerakuanJabatanController extends Controller
                 'status_mof' => $mofStatus,
                 'prestasi_pembekal' => '—',
                 'lembaga_pengarah_url' => null,
-                'keputusan_urusetia' => '—',
-                'catatan_urusetia' => '—',
+                'syor_urusetia' => $saved?->syor_urusetia,
+                'catatan_urusetia' => $saved?->catatan_urusetia,
             ];
         })->all();
+    }
+
+    private function persistPengesyoranPembekal(Request $request, Tender $tender, bool $submit): void
+    {
+        $syorOptions = PerakuanJabatanPengesyoranPembekalItem::SYOR_OPTIONS;
+
+        $rules = [
+            'catatan' => ['nullable', 'string', 'max:65535'],
+            'sahkan_petender_layak' => [$submit ? 'accepted' : 'nullable', 'boolean'],
+            'rows' => ['nullable', 'array'],
+            'rows.*.vendor_id' => ['required', 'integer'],
+            'rows.*.syor_urusetia' => ['nullable', 'string', Rule::in($syorOptions)],
+            'rows.*.catatan_urusetia' => ['nullable', 'string', 'max:65535'],
+        ];
+
+        $messages = [
+            'sahkan_petender_layak.accepted' => 'Sila tandakan pengesahan bahawa petender layak untuk menyertai bidaan.',
+        ];
+
+        $validated = $request->validate($rules, $messages);
+        $rows = collect($validated['rows'] ?? []);
+
+        $allowedVendorIds = $tender->participants()
+            ->where('participate', 1)
+            ->whereNull('eliminated_at')
+            ->pluck('vendor_id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        $disyorkanCount = $rows
+            ->filter(fn ($row) => ($row['syor_urusetia'] ?? null) === PerakuanJabatanPengesyoranPembekalItem::SYOR_DISYORKAN)
+            ->count();
+
+        if ($disyorkanCount > 1) {
+            throw ValidationException::withMessages([
+                'rows' => 'Hanya satu syarikat boleh dipilih sebagai Disyorkan.',
+            ]);
+        }
+
+        if ($submit) {
+            $hasSyor = $rows->contains(fn ($row) => filled($row['syor_urusetia'] ?? null));
+            if (! $hasSyor) {
+                throw ValidationException::withMessages([
+                    'rows' => 'Sila pilih Syor Urusetia untuk sekurang-kurangnya satu pembekal sebelum menghantar.',
+                ]);
+            }
+        }
+
+        foreach ($rows as $idx => $row) {
+            $vendorId = (int) ($row['vendor_id'] ?? 0);
+            if (! in_array($vendorId, $allowedVendorIds, true)) {
+                throw ValidationException::withMessages([
+                    "rows.$idx.vendor_id" => 'Pembekal tidak sah untuk tender ini.',
+                ]);
+            }
+        }
+
+        DB::transaction(function () use ($tender, $validated, $rows, $submit, $allowedVendorIds) {
+            $record = PerakuanJabatanPengesyoranPembekal::firstOrCreate(
+                ['tender_id' => $tender->id],
+                [
+                    'catatan' => null,
+                    'sahkan_petender_layak' => false,
+                    'submitted_at' => null,
+                ]
+            );
+
+            $record->catatan = $validated['catatan'] ?? null;
+            $record->sahkan_petender_layak = $submit
+                ? true
+                : (bool) ($validated['sahkan_petender_layak'] ?? false);
+
+            if ($submit) {
+                $record->submitted_at = now();
+            }
+            $record->save();
+
+            foreach ($rows as $row) {
+                $vendorId = (int) $row['vendor_id'];
+
+                $syor = $row['syor_urusetia'] ?? null;
+                $catatan = $this->nullableTrim($row['catatan_urusetia'] ?? null);
+
+                if ($syor === null && $catatan === null) {
+                    PerakuanJabatanPengesyoranPembekalItem::query()
+                        ->where('pengesyoran_pembekal_id', $record->id)
+                        ->where('vendor_id', $vendorId)
+                        ->delete();
+                    continue;
+                }
+
+                PerakuanJabatanPengesyoranPembekalItem::query()->updateOrCreate(
+                    [
+                        'pengesyoran_pembekal_id' => $record->id,
+                        'vendor_id' => $vendorId,
+                    ],
+                    [
+                        'syor_urusetia' => $syor,
+                        'catatan_urusetia' => $catatan,
+                    ]
+                );
+            }
+
+            // Drop stale rows for vendors no longer in the eligible list.
+            PerakuanJabatanPengesyoranPembekalItem::query()
+                ->where('pengesyoran_pembekal_id', $record->id)
+                ->whereNotIn('vendor_id', $allowedVendorIds)
+                ->delete();
+
+            if ($submit) {
+                app(TenderProcessStatusService::class)->syncPerakuanJabatanCompletion($tender->fresh());
+            }
+        });
+    }
+
+    private function nullableTrim(?string $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $trimmed = trim($value);
+
+        return $trimmed === '' ? null : $trimmed;
     }
 
     /**

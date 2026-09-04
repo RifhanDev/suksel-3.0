@@ -87,6 +87,15 @@ class VendorTenderDokumenController extends Controller
         if (! $file) {
             $pbFile = \App\Models\PenyataBankFile::query()->where('uuid', $fileUuid)->first();
             if ($pbFile) {
+                $pbFile->loadMissing('penyataBank');
+                $tenderId = (int) ($pbFile->penyataBank?->tender_id ?? 0);
+                if ($tenderId > 0) {
+                    $tender = Tender::query()->find($tenderId);
+                    if ($tender) {
+                        $this->assertCanAccessTenderFile($tender, null);
+                    }
+                }
+
                 $rawPath = ltrim(str_replace('public/', '', (string) $pbFile->path), '/');
                 $candidates = [
                     storage_path('app/private/' . $rawPath),
@@ -123,6 +132,7 @@ class VendorTenderDokumenController extends Controller
                     'original_name' => $pbFile->original_name ?: $pbFile->stored_name,
                     'path'          => $pbFile->path,
                     'mime_type'     => $pbFile->mime_type ?: 'application/pdf',
+                    'download_api'  => 'penyata-bank-files/' . $pbFile->uuid . '/download',
                 ]);
             }
             abort(404, 'Fail tidak dijumpai.');
@@ -175,6 +185,10 @@ class VendorTenderDokumenController extends Controller
 
     public function streamByPath(Request $request)
     {
+        if (! Auth::check()) {
+            abort(403, 'Sila log masuk untuk memuat turun fail.');
+        }
+
         $path = (string) $request->query('path', '');
         $name = (string) $request->query('name', 'Dokumen Sokongan');
         $uuid = (string) $request->query('uuid', '');
@@ -182,15 +196,28 @@ class VendorTenderDokumenController extends Controller
         if ($uuid !== '') {
             $pbFile = \App\Models\PenyataBankFile::where('uuid', $uuid)->first();
             if ($pbFile) {
+                $pbFile->loadMissing('penyataBank');
+                $tenderId = (int) ($pbFile->penyataBank?->tender_id ?? 0);
+                if ($tenderId > 0) {
+                    $tender = Tender::query()->find($tenderId);
+                    if ($tender) {
+                        $this->assertCanAccessTenderFile($tender, null);
+                    }
+                }
+
                 return \App\Support\StosStoredFile::response([
                     'uuid'          => $pbFile->uuid,
                     'original_name' => $pbFile->original_name ?: $name,
                     'path'          => $pbFile->path,
                     'mime_type'     => $pbFile->mime_type ?: 'application/pdf',
+                    'download_api'  => 'penyata-bank-files/' . $pbFile->uuid . '/download',
                 ]);
             }
             $vFile = \App\Models\TenderVendorDokumenFile::where('uuid', $uuid)->first();
             if ($vFile) {
+                $tender = Tender::query()->findOrFail($vFile->tender_id);
+                $this->assertCanAccessTenderFile($tender, (int) $vFile->vendor_id);
+
                 return \App\Support\StosStoredFile::response([
                     'uuid'          => $vFile->uuid,
                     'original_name' => $vFile->original_name ?: $name,
