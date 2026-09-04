@@ -289,44 +289,105 @@ class PenilaianKewanganKerjaController extends Controller
             }
         }
 
-        $b2DocsList = [
-            'imbangan' => [
-                'id'          => 'imbangan',
-                'name'        => 'Lembaran Imbangan',
-                'icon'        => 'bi-journal-bookmark',
-                'showDiaudit' => true,
-            ],
-            'penyata_bank' => [
-                'id'          => 'penyata_bank',
-                'name'        => 'Penyata Bulanan / Akaun Bank',
-                'icon'        => 'bi-bank',
-                'showDiaudit' => false,
-            ],
-            'bon_saham' => [
-                'id'          => 'bon_saham',
-                'name'        => 'Bon atau Saham',
-                'icon'        => 'bi-cash-stack',
-                'showDiaudit' => false,
-            ],
-            'prestasi' => [
-                'id'          => 'prestasi',
-                'name'        => 'Prestasi Kerja Semasa Petender',
-                'icon'        => 'bi-briefcase',
-                'showDiaudit' => false,
-            ],
-            'laporan_ca' => [
-                'id'          => 'laporan_ca',
-                'name'        => 'Laporan Bank atau Borang CA',
-                'icon'        => 'bi-file-earmark-text',
-                'showDiaudit' => false,
-            ],
-            'laporan_penyelia' => [
-                'id'          => 'laporan_penyelia',
-                'name'        => 'Laporan Penyelia Projek Bagi Kerja Semasa (Borang GA)',
-                'icon'        => 'bi-person-badge',
-                'showDiaudit' => false,
-            ],
-        ];
+        $b2DocsList = [];
+
+        // Dynamic retrieval of Kewangan Kerja items (header items or standard items)
+        $kewanganHeader = \App\Models\KewanganKerjaHeader::with(['items' => function ($q) {
+            $q->orderBy('sort_order');
+        }])->where('tender_id', $tender->id)->first();
+
+        $itemsSource = [];
+        if ($kewanganHeader && $kewanganHeader->items && $kewanganHeader->items->count() > 0) {
+            foreach ($kewanganHeader->items as $item) {
+                $itemsSource[] = [
+                    'id'    => $item->id,
+                    'title' => $item->title,
+                    'uuid'  => $item->uuid ?? null,
+                    'type'  => $item->source_type ?? 'standard',
+                    'action_url' => null,
+                ];
+            }
+        } else {
+            $standardItems = \Illuminate\Support\Facades\DB::table('standard_checklist_items')
+                ->where('category', 'kewangan_kerja')
+                ->where('is_active', 1)
+                ->orderBy('sort_order')
+                ->get();
+
+            foreach ($standardItems as $item) {
+                $itemsSource[] = [
+                    'id'         => $item->id,
+                    'uuid'       => $item->uuid ?? null,
+                    'title'      => $item->title,
+                    'type'       => $item->type ?? 'standard',
+                    'action_url' => $item->action_url ?? null,
+                ];
+            }
+        }
+
+        foreach ($itemsSource as $src) {
+            $title = trim($src['title']);
+            $normTitle = strtolower($title);
+            $type = $src['type'] ?? 'standard';
+            $actionUrl = $src['action_url'] ?? null;
+            $itemUuid = $src['uuid'] ?? null;
+
+            if (str_contains($normTitle, 'lembaran imbangan')) {
+                $dId = 'imbangan';
+                $icon = 'bi-journal-bookmark';
+                $showDiaudit = true;
+                $type = 'borang_atas_talian';
+            } elseif (str_contains($normTitle, 'penyata') || str_contains($normTitle, 'akaun bank')) {
+                $dId = 'penyata_bank';
+                $icon = 'bi-bank';
+                $showDiaudit = false;
+                $type = 'borang_atas_talian';
+            } elseif (str_contains($normTitle, 'bon') || str_contains($normTitle, 'saham')) {
+                $dId = 'bon_saham';
+                $icon = 'bi-cash-stack';
+                $showDiaudit = false;
+                $type = 'borang_atas_talian';
+            } elseif (str_contains($normTitle, 'prestasi kerja')) {
+                $dId = 'prestasi';
+                $icon = 'bi-briefcase';
+                $showDiaudit = false;
+                $type = 'borang_atas_talian';
+            } elseif (str_contains($normTitle, 'pengalaman kerja')) {
+                $dId = 'pengalaman_kerja';
+                $icon = 'bi-clock-history';
+                $showDiaudit = false;
+                $type = 'borang_atas_talian';
+            } elseif (str_contains($normTitle, 'kakitangan teknikal')) {
+                $dId = 'kakitangan_teknikal';
+                $icon = 'bi-people';
+                $showDiaudit = false;
+                $type = 'borang_atas_talian';
+            } elseif (str_contains($normTitle, 'borang ca') || str_contains($normTitle, 'laporan bank')) {
+                $dId = 'laporan_ca';
+                $icon = 'bi-file-earmark-text';
+                $showDiaudit = false;
+            } elseif (str_contains($normTitle, 'laporan penyelia') || str_contains($normTitle, 'borang ga')) {
+                $dId = 'laporan_penyelia';
+                $icon = 'bi-person-badge';
+                $showDiaudit = false;
+            } else {
+                $dId = \Illuminate\Support\Str::slug($title, '_');
+                $icon = 'bi-file-earmark-check';
+                $showDiaudit = false;
+            }
+
+            if (!isset($b2DocsList[$dId])) {
+                $b2DocsList[$dId] = [
+                    'id'          => $dId,
+                    'name'        => $title,
+                    'icon'        => $icon,
+                    'showDiaudit' => $showDiaudit,
+                    'type'        => $type,
+                    'action_url'  => $actionUrl,
+                    'uuid'        => $itemUuid,
+                ];
+            }
+        }
 
         $b2Evaluations = TenderKewanganKerjaEvaluation::query()
             ->where('tender_id', $tender->id)
@@ -345,8 +406,16 @@ class PenilaianKewanganKerjaController extends Controller
             ];
         }
 
+        $vendorIds = $participants->pluck('vendor_id')->filter()->all();
+        $uploadedFilesGroup = \App\Models\TenderVendorDokumenFile::query()
+            ->where('tender_id', $tender->id)
+            ->whereIn('vendor_id', $vendorIds)
+            ->get()
+            ->groupBy('vendor_id');
+
         foreach ($participants as $p) {
             $vId = $p->vendor_id;
+            $vUploaded = $uploadedFilesGroup->get($vId, collect());
             $evalRecord = $b2Evaluations->get($vId);
             $payload = $evalRecord ? ($evalRecord->payload ?? []) : [];
             if (is_string($payload)) {
@@ -359,6 +428,7 @@ class PenilaianKewanganKerjaController extends Controller
             $isOverallCukup = true;
             $tanpaBorangGA = false;
 
+            $docActions = [];
             foreach ($b2DocsList as $dId => $dDef) {
                 $item = $docsData[$dId] ?? null;
                 if ($item && isset($item['dikemukakan']) && $item['dikemukakan'] !== '') {
@@ -387,6 +457,68 @@ class PenilaianKewanganKerjaController extends Controller
                     $allEvaluated = false;
                     $isOverallCukup = false;
                 }
+
+                // Resolve Buka Borang / Document URL action
+                if ($dDef['type'] === 'borang_atas_talian') {
+                    $formUrl = null;
+                    $tenderKey = !empty($tender->uuid) ? $tender->uuid : $tender->id;
+                    if ($dId === 'imbangan') {
+                        $formUrl = route('lembaranImbangan', [$tenderKey, 'vendor_id' => $vId, 'mode' => 'view', 'modal' => 1]);
+                    } elseif ($dId === 'penyata_bank') {
+                        $formUrl = route('penyataBank', [$tenderKey, 'vendor_id' => $vId, 'mode' => 'view', 'modal' => 1]);
+                    } elseif ($dId === 'bon_saham') {
+                        $formUrl = route('bonAtauSaham', [$tenderKey, 'vendor_id' => $vId, 'mode' => 'view', 'modal' => 1]);
+                    } elseif ($dId === 'prestasi') {
+                        $formUrl = route('prestasiKerjaSemasa', [$tenderKey, 'vendor_id' => $vId, 'mode' => 'view', 'modal' => 1]);
+                    } elseif ($dId === 'pengalaman_kerja') {
+                        $formUrl = route('senaraiTeknikal.pengalamanKerja.tender', [$tenderKey, 'vendor_id' => $vId, 'mode' => 'view', 'modal' => 1]);
+                    } elseif ($dId === 'kakitangan_teknikal') {
+                        $formUrl = route('kakitanganTeknikal', [$tenderKey, 'vendor_id' => $vId, 'mode' => 'view', 'modal' => 1]);
+                    } elseif (!empty($dDef['action_url'])) {
+                        $formUrl = url(trim($dDef['action_url'], '/') . '/' . $tenderKey . '?vendor_id=' . $vId . '&mode=view&modal=1');
+                    }
+
+                    $docActions[$dId] = [
+                        'type'          => 'borang_atas_talian',
+                        'has_file'      => true,
+                        'is_pdf'        => false,
+                        'url'           => $formUrl,
+                        'original_name' => $dDef['name'],
+                    ];
+                } else {
+                    // Standard uploaded document
+                    $matchedFile = null;
+                    if (!empty($dDef['uuid'])) {
+                        $matchedFile = $vUploaded->firstWhere('checklist_item_uuid', $dDef['uuid']);
+                    }
+                    if (!$matchedFile) {
+                        $matchedFile = $vUploaded->first(function ($f) use ($dDef) {
+                            return str_contains(strtolower($f->original_name), strtolower($dDef['id']));
+                        });
+                    }
+
+                    if ($matchedFile) {
+                        $origName = $matchedFile->original_name;
+                        $mimeType = strtolower($matchedFile->mime_type ?? '');
+                        $isPdf = str_contains(strtolower($origName), '.pdf') || $mimeType === 'application/pdf';
+
+                        $docActions[$dId] = [
+                            'type'          => 'standard',
+                            'has_file'      => true,
+                            'is_pdf'        => $isPdf,
+                            'url'           => route('tenderDokumen.download', $matchedFile->uuid),
+                            'original_name' => $origName,
+                        ];
+                    } else {
+                        $docActions[$dId] = [
+                            'type'          => 'standard',
+                            'has_file'      => false,
+                            'is_pdf'        => false,
+                            'url'           => null,
+                            'original_name' => null,
+                        ];
+                    }
+                }
             }
 
             $finalStatus = 'Belum Selesai';
@@ -407,6 +539,7 @@ class PenilaianKewanganKerjaController extends Controller
                 'failed_reasons' => $failedReasons,
                 'catatan'        => $evalRecord ? $evalRecord->catatan : null,
                 'docs_data'      => $docsData,
+                'doc_actions'    => $docActions,
             ];
         }
 

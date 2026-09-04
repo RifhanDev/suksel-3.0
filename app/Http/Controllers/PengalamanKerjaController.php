@@ -310,7 +310,10 @@ class PengalamanKerjaController extends Controller
         return Tender::with('tenderer')
             ->leftJoin('ref_kategori_jenis_perolehans as k', 'k.id', '=', 'tenders.kategori_perolehan_id')
             ->select('tenders.*', 'k.name as kategori_perolehan_name')
-            ->where('tenders.uuid', $uuid)
+            ->where(function ($q) use ($uuid) {
+                $q->where('tenders.uuid', $uuid)
+                  ->orWhere('tenders.id', $uuid);
+            })
             ->first();
     }
 

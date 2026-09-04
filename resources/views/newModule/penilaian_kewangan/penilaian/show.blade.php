@@ -517,14 +517,14 @@
                             <h5 class="fw-bold mb-0">Penilaian Peringkat Pertama
                                 <span class="badge bg-warning text-white border border-white rounded-pill px-3 py-1 text-uppercase small" style="font-size: 0.7rem;">6 Komponen Borang</span>
                             </h5>
-                            <p class="text-secondary small mb-0">Semakan Dokumen Wajib, Jadual Penyata Tender, Nisbah Kewangan & Kelayakan Peringkat 1 (Borang 1 – 6)</p>
+                            <p class="text-secondary small mb-0">Analisa Kecukupan Dokumen, Analisa Kesempurnaan Tender, Nisbah Kewangan & Kelayakan Peringkat 1 (Borang 1 – 6)</p>
                         </div>
                     </div>
             
                     <div class="row g-3">
                         @php
-                            $renderBorangCard('borang1', 'p1', 'bi-file-earmark-spreadsheet', 'BORANG 1', 'Jadual Penyata Tender', 'Jadual penyerahan tender, maklumat asas petender & harga tawaran.');
-                            $renderBorangCard('borang2', 'p1', 'bi-shield-check', 'BORANG 2', 'Semakan Dokumen Wajib', 'Semakan kecukupan & kelayakan dokumen kewangan wajib petender.');
+                            $renderBorangCard('borang1', 'p1', 'bi-file-earmark-spreadsheet', 'BORANG 1', 'Analisa Kesempurnaan Tender', 'Jadual penyerahan tender, maklumat asas petender & harga tawaran.');
+                            $renderBorangCard('borang2', 'p1', 'bi-shield-check', 'BORANG 2', 'Analisa Kecukupan Dokumen', 'Semakan kecukupan & kelayakan dokumen kewangan wajib petender.');
                             $renderBorangCard('borang3', 'p1', 'bi-shield-check', 'BORANG 3', 'Nisbah Asas Kewangan', 'Penilaian nisbah kewangan, penyata bank & lembaran imbangan.', [
                                 ['icon' => 'bi-file-earmark-text', 'label' => 'Borang 3'],
                                 ['icon' => 'bi-journal-text', 'label' => 'Lembaran'],

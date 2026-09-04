@@ -108,7 +108,7 @@ class PenyataBankPersistenceService
             $merged['accounts'] = $vendorAccounts;
         }
 
-        foreach (['jumlah_keseluruhan', 'purata', 'jumlah_keseluruhan_grand'] as $key) {
+        foreach (['dari_bulan', 'dari_tahun', 'hingga_bulan', 'hingga_tahun', 'jumlah_keseluruhan', 'purata', 'jumlah_keseluruhan_grand'] as $key) {
             if (array_key_exists($key, $vendorPayload)) {
                 $merged[$key] = $vendorPayload[$key];
             }

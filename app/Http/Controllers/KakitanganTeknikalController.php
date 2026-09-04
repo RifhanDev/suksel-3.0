@@ -32,7 +32,10 @@ class KakitanganTeknikalController extends Controller
         $vendorId = $this->vendorId();
 
         $query = TenderKakitanganTeknikal::with('dokumens')
-            ->where('tender_uuid', $tender->uuid)
+            ->where(function ($q) use ($tender) {
+                $q->where('tender_uuid', $tender->uuid)
+                  ->orWhere('tender_uuid', (string) $tender->id);
+            })
             ->orderBy('sort_order', 'asc');
 
         if ($vendorId) {
@@ -42,7 +45,10 @@ class KakitanganTeknikalController extends Controller
         $kakitanganList = $query->get();
 
         $generalDokumensQuery = TenderKakitanganTeknikalDokumen::query()
-            ->where('tender_uuid', $tender->uuid)
+            ->where(function ($q) use ($tender) {
+                $q->where('tender_uuid', $tender->uuid)
+                  ->orWhere('tender_uuid', (string) $tender->id);
+            })
             ->where(function ($q) {
                 $q->whereNull('kakitangan_uuid')->orWhere('kakitangan_uuid', '');
             });
@@ -444,7 +450,10 @@ class KakitanganTeknikalController extends Controller
         return Tender::with('tenderer')
             ->leftJoin('ref_kategori_jenis_perolehans as k', 'k.id', '=', 'tenders.kategori_perolehan_id')
             ->select('tenders.*', 'k.name as kategori_perolehan_name')
-            ->where('tenders.uuid', $uuid)
+            ->where(function ($q) use ($uuid) {
+                $q->where('tenders.uuid', $uuid)
+                  ->orWhere('tenders.id', $uuid);
+            })
             ->first();
     }
 }
