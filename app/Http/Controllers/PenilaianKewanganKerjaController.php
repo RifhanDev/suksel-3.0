@@ -1438,7 +1438,7 @@ class PenilaianKewanganKerjaController extends Controller
             $isEvaluated = $evalRecord ? true : false;
 
             $a1PctVal = (float)($vB8['b8_items']['item16_peratus']['val'] ?? 250.00);
-            $a1PctDisp = ($vB8['b8_items']['item16_peratus']['val'] !== null) ? (number_format($a1PctVal, 2) . '%') : '0.00%';
+            $a1PctDisp = (isset($vB8['b8_items']['item16_peratus']['val']) && $vB8['b8_items']['item16_peratus']['val'] !== null) ? (number_format($a1PctVal, 2) . '%') : '0.00%';
 
             if ($a1PctVal <= 0) {
                 $a1Markah = 0.00;

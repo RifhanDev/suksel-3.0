@@ -440,7 +440,7 @@
 @endsection
 
 @section('scripts')
-<script src="{{ asset('js/components/file-upload.js') }}"></script>
+<script src="{{ asset('js/components/file-upload.js') }}?v={{ file_exists(public_path('js/components/file-upload.js')) ? filemtime(public_path('js/components/file-upload.js')) : '2.0' }}"></script>
 <script>
 $(document).ready(function () {
 
@@ -464,7 +464,7 @@ $(document).ready(function () {
     const GENERAL_UPLOAD_URL = "{{ route('senaraiTeknikal.kakitanganTeknikal.uploadGeneralDokumen', $tender->uuid) }}";
 
     // Initialize multi-file upload for modal and general section
-    if (typeof FileUpload !== 'undefined') {
+    if (typeof FileUpload !== 'undefined' && typeof FileUpload.init === 'function') {
         FileUpload.init({
             zoneId     : 'modal-upload-zone',
             inputId    : 'modal-input-dokumen',
@@ -581,8 +581,11 @@ $(document).ready(function () {
         $('#btn-simpan-text').text('Simpan');
         $('#input-kakitangan-uuid').val('');
         $('#form-modal-kakitangan')[0].reset();
-        if (typeof FileUpload !== 'undefined') {
+        if (typeof FileUpload !== 'undefined' && typeof FileUpload.reset === 'function') {
             FileUpload.reset('modal-input-dokumen');
+        } else {
+            $('#modal-input-dokumen').val('');
+            $('#modal-file-chip-list').empty();
         }
         $('#sijil-professional-note').addClass('d-none').removeClass('d-flex');
         $('#modal-existing-files').empty();
@@ -603,8 +606,11 @@ $(document).ready(function () {
         $('#select-tahap-pendidikan').val(itemData.tahap_pendidikan);
         $('#input-jumlah-pengalaman').val(itemData.jumlah_pengalaman);
         $('#input-sijil-professional').val(itemData.sijil_professional || '').trigger('input');
-        if (typeof FileUpload !== 'undefined') {
+        if (typeof FileUpload !== 'undefined' && typeof FileUpload.reset === 'function') {
             FileUpload.reset('modal-input-dokumen');
+        } else {
+            $('#modal-input-dokumen').val('');
+            $('#modal-file-chip-list').empty();
         }
 
         // Render existing files
@@ -644,6 +650,19 @@ $(document).ready(function () {
             success: function (res) {
                 if (res.success) {
                     $chip.remove();
+                    var staffUuid = $('#input-kakitangan-uuid').val();
+                    if (staffUuid) {
+                        var $tr = $('#tbl-kakitangan-body tr[data-uuid="' + staffUuid + '"]');
+                        if ($tr.length) {
+                            var itemData = $tr.data('item');
+                            if (itemData && itemData.dokumens) {
+                                itemData.dokumens = itemData.dokumens.filter(function(d) {
+                                    return d.uuid !== docUuid;
+                                });
+                                $tr.data('item', itemData);
+                            }
+                        }
+                    }
                     showToast(res.message, 'success');
                 } else {
                     showToast(res.message || 'Gagal memadam dokumen.', 'error');
