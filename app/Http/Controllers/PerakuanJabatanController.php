@@ -7,6 +7,8 @@ use App\Models\PerakuanJabatanKertasTaklimat;
 use App\Models\PerakuanJabatanKertasTaklimatItem;
 use App\Models\PerakuanJabatanKertasTaklimatItemFile;
 use App\Models\PerakuanJabatanPengesyoranPembekal;
+use App\Models\TenderTeknikalSpesifikasiEvaluation;
+use App\Services\StosBackendClient;
 use App\Services\TenderProcessStatusService;
 use App\Support\TenderProcessStatus;
 use App\Tender;
@@ -77,8 +79,10 @@ class PerakuanJabatanController extends Controller
         );
 
         $this->seedDefaultKertasTaklimatItems($header);
+        $this->pruneRemovedKertasTaklimatSlots($header);
 
         $kertasItems = $header->items()->with('files')->orderBy('sort_order')->get();
+        $kertasSourceLinks = $this->buildKertasTaklimatSourceLinks($tender);
 
         $pengesyoranPembekal = PerakuanJabatanPengesyoranPembekal::firstOrCreate(
             ['tender_id' => $tender->id],
@@ -89,7 +93,26 @@ class PerakuanJabatanController extends Controller
             ]
         );
 
-        return view('newModule.perakuanJabatan.show', compact('tender', 'header', 'kertasItems', 'pengesyoranPembekal'));
+        $senaraiItem = [
+            'item' => $tender->name ?: '-',
+            'jenis_item' => $this->resolveJenisItem($tender),
+            'unit_ukuran' => 'Unit',
+            'jenis_harga' => 'Biasa Standard',
+        ];
+        $pembekalRows = $this->buildPengesyoranPembekalRows($tender);
+
+        return view(
+            'newModule.perakuanJabatan.show',
+            compact(
+                'tender',
+                'header',
+                'kertasItems',
+                'kertasSourceLinks',
+                'pengesyoranPembekal',
+                'senaraiItem',
+                'pembekalRows'
+            )
+        );
     }
 
     public function kertasTaklimatSimpan(Request $request, Tender $tender)
@@ -126,7 +149,7 @@ class PerakuanJabatanController extends Controller
         $record->sahkan_petender_layak = $request->boolean('sahkan_petender_layak');
         $record->save();
 
-        return response()->json(['message' => 'Catatan Pemilihan Pembekal berjaya disimpan.']);
+        return response()->json(['message' => 'Catatan Pengesyoran Pembekal berjaya disimpan.']);
     }
 
     public function pengesyoranPembekalHantar(Request $request, Tender $tender)
@@ -156,7 +179,7 @@ class PerakuanJabatanController extends Controller
             app(TenderProcessStatusService::class)->syncPerakuanJabatanCompletion($tender->fresh());
         });
 
-        return response()->json(['message' => 'Pemilihan Pembekal berjaya dihantar. Status proses tender dikemas kini.']);
+        return response()->json(['message' => 'Pengesyoran Pembekal berjaya dihantar. Status proses tender dikemas kini.']);
     }
 
     public function kertasTaklimatDownload(PerakuanJabatanKertasTaklimatItemFile $file)
@@ -169,6 +192,12 @@ class PerakuanJabatanController extends Controller
         abort_unless(is_file($path), 404);
 
         return response()->download($path, $file->file_original_name);
+    }
+
+    /** Proxy printable teknikal report so Urusetia can open it without TechnicalEvaluation menu. */
+    public function muatTurunLaporanTeknikal(Tender $tender)
+    {
+        return app(PenilaianTeknikalController::class)->cetakLaporan($tender);
     }
 
     /**
@@ -233,16 +262,168 @@ class PerakuanJabatanController extends Controller
         }
 
         $defaults = [
-            ['slot_key' => 'pembuka', 'kandungan' => 'Laporan Jawatankuasa Pembuka', 'sort_order' => 1],
-            ['slot_key' => 'teknikal', 'kandungan' => 'Laporan Jawatankuasa Teknikal', 'sort_order' => 2],
-            ['slot_key' => 'kewangan', 'kandungan' => 'Laporan Jawatankuasa Kewangan', 'sort_order' => 3],
-            ['slot_key' => 'kertas_perakuan', 'kandungan' => 'Kertas Taklimat (Perakuan Jabatan)', 'sort_order' => 4],
-            ['slot_key' => 'ringkasan', 'kandungan' => 'Ringkasan Kertas Taklimat (wajib untuk tender)', 'sort_order' => 5],
+            ['slot_key' => 'teknikal', 'kandungan' => 'Laporan Jawatankuasa Teknikal', 'sort_order' => 1],
+            ['slot_key' => 'kewangan', 'kandungan' => 'Laporan Jawatankuasa Kewangan', 'sort_order' => 2],
+            ['slot_key' => 'kertas_perakuan', 'kandungan' => 'Kertas Taklimat (Perakuan Jabatan)', 'sort_order' => 3],
+            ['slot_key' => 'ringkasan', 'kandungan' => 'Ringkasan Kertas Taklimat (wajib untuk tender)', 'sort_order' => 4],
         ];
 
         foreach ($defaults as $row) {
             $header->items()->create($row);
         }
+    }
+
+    /** Drop retired slots (e.g. Laporan Jawatankuasa Pembuka) from existing headers. */
+    private function pruneRemovedKertasTaklimatSlots(PerakuanJabatanKertasTaklimat $header): void
+    {
+        $retired = ['pembuka'];
+
+        $items = $header->items()->whereIn('slot_key', $retired)->with('files')->get();
+        foreach ($items as $item) {
+            foreach ($item->files as $file) {
+                $this->deleteStoredFile($file->file_path);
+                $file->delete();
+            }
+            $item->delete();
+        }
+    }
+
+    /**
+     * Module-sourced download URLs for download_only slots (not user uploads).
+     * Perakuan Jabatan only opens after teknikal + kewangan are done, so links are always available.
+     *
+     * @return array<string, array{label: string, url: string}|null>
+     */
+    private function buildKertasTaklimatSourceLinks(Tender $tender): array
+    {
+        return [
+            'teknikal' => [
+                'label' => 'Laporan Jawatankuasa Penilaian Teknikal',
+                'url' => route('perakuanjabatan.laporanTeknikal', $tender),
+            ],
+        ];
+    }
+
+    private function resolveJenisItem(Tender $tender): string
+    {
+        return match ((int) ($tender->kategori_perolehan_id ?? 0)) {
+            1 => 'Bekalan',
+            2 => 'Perkhidmatan',
+            3 => 'Kerja',
+            default => '—',
+        };
+    }
+
+    /**
+     * Pembekal that reached Perakuan Jabatan (participated, not eliminated).
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function buildPengesyoranPembekalRows(Tender $tender): array
+    {
+        $participants = $tender->participants()
+            ->with('vendor')
+            ->where('participate', 1)
+            ->whereNull('eliminated_at')
+            ->orderBy('id')
+            ->get();
+
+        if ($participants->isEmpty()) {
+            return [];
+        }
+
+        $teknikalScores = $this->loadTeknikalScoresByVendor($tender);
+        $total = $participants->count();
+
+        $sortedByHarga = $participants
+            ->sortBy(fn ($p) => (float) ($p->harga_tawaran ?? $p->price ?? $p->amount ?? 0))
+            ->values();
+        $kedudukanKewangan = [];
+        foreach ($sortedByHarga as $idx => $p) {
+            $kedudukanKewangan[(int) $p->vendor_id] = $idx + 1;
+        }
+
+        return $participants->values()->map(function ($p, $idx) use ($total, $teknikalScores, $kedudukanKewangan) {
+            $vendorId = (int) $p->vendor_id;
+            $vendor = $p->vendor;
+            $score = $teknikalScores[$vendorId] ?? null;
+            $bumi = (bool) ($p->is_bumiputera ?? false)
+                || (bool) ($vendor?->mof_bumi ?? false)
+                || (bool) ($vendor?->cidb_bumi ?? false);
+
+            $harga = $p->harga_tawaran ?? $p->price ?? $p->amount ?? null;
+            $mofStatus = '—';
+            if ($vendor && method_exists($vendor, 'mofValid')) {
+                $mofStatus = $vendor->mofValid() ? 'Aktif' : 'Tamat Tempoh';
+            } elseif (! empty($vendor?->mof_ref_no)) {
+                $mofStatus = 'Aktif';
+            }
+
+            return [
+                'bil' => ($idx + 1) . '/' . $total,
+                'status_bumiputra' => $bumi ? 'Ya' : 'Tidak',
+                'harga_tawaran' => $harga !== null ? (float) $harga : null,
+                'skor_teknikal' => $score['skor'] ?? null,
+                'kedudukan_teknikal' => $score['kedudukan'] ?? null,
+                'kedudukan_kewangan' => $kedudukanKewangan[$vendorId] ?? null,
+                'status_mof' => $mofStatus,
+                'prestasi_pembekal' => '—',
+                'lembaga_pengarah_url' => null,
+                'keputusan_urusetia' => '—',
+                'catatan_urusetia' => '—',
+            ];
+        })->all();
+    }
+
+    /**
+     * @return array<int, array{skor: float|null, kedudukan: int|null}>
+     */
+    private function loadTeknikalScoresByVendor(Tender $tender): array
+    {
+        $scores = [];
+
+        try {
+            $stos = app(StosBackendClient::class);
+            if ($stos->isConfigured()) {
+                $response = $stos->getRumusanPenilaianTeknikal($tender->id);
+                if ($response->successful()) {
+                    $data = $response->json('data') ?? [];
+                    foreach (array_merge($data['layak'] ?? [], $data['tidak_layak'] ?? []) as $row) {
+                        $vid = (int) ($row['vendor_id'] ?? 0);
+                        if ($vid <= 0) {
+                            continue;
+                        }
+                        $scores[$vid] = [
+                            'skor' => isset($row['peratus']) ? (float) $row['peratus'] : null,
+                            'kedudukan' => isset($row['kedudukan']) ? (int) $row['kedudukan'] : null,
+                        ];
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            // Local fallback below.
+        }
+
+        if (! empty($scores)) {
+            return $scores;
+        }
+
+        $rows = TenderTeknikalSpesifikasiEvaluation::query()
+            ->where('tender_id', $tender->id)
+            ->selectRaw('vendor_id, SUM(COALESCE(skor_automatik,0) + COALESCE(skor_manual,0)) as jumlah')
+            ->groupBy('vendor_id')
+            ->orderByDesc('jumlah')
+            ->get();
+
+        $rank = 1;
+        foreach ($rows as $row) {
+            $scores[(int) $row->vendor_id] = [
+                'skor' => round((float) $row->jumlah, 2),
+                'kedudukan' => $rank++,
+            ];
+        }
+
+        return $scores;
     }
 
     private function persistKertasTaklimat(Request $request, Tender $tender, bool $submit): void
@@ -252,6 +433,7 @@ class PerakuanJabatanController extends Controller
             ['catatan' => null, 'submitted_at' => null]
         );
         $this->seedDefaultKertasTaklimatItems($header);
+        $this->pruneRemovedKertasTaklimatSlots($header);
 
         $validated = $request->validate([
             'catatan' => ['nullable', 'string', 'max:65535'],
