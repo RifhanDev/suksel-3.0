@@ -337,7 +337,17 @@
 				</li>
 				@endif
 
-				@if ($user->canAccessMenu('DirectPurchase:list'))
+				@php
+					$isVendorUser = $user->hasRole('Vendor') && $user->vendor_id;
+					$canPtCreate = $user->canAccessMenu('DirectPurchase:create');
+					$canPtCutoff = $user->canAccessMenu('DirectPurchase:cutoff');
+					$canPtSelect = $user->canAccessMenu('DirectPurchase:select');
+					$canPtQuote = $isVendorUser || $user->canAccessMenu('DirectPurchase:quote');
+					$canPtDecision = $isVendorUser || $user->canAccessMenu('DirectPurchase:decision');
+					$showPembelianTerus = $canPtCreate || $canPtCutoff || $canPtSelect || $canPtQuote || $canPtDecision
+						|| $user->canAccessMenu('DirectPurchase:list');
+				@endphp
+				@if ($showPembelianTerus)
 				<!-- Menu: Pembelian Terus -->
 				<li class="nav-item">
 					<a class="sidebar-link {{ request()->is('pembelian-terus*') ? '' : 'collapsed' }}" data-bs-toggle="collapse"
@@ -359,6 +369,7 @@
 							@php
 								$isCiptaProjekActive = request()->routeIs('pembelianTerus.createProject') || request()->routeIs('pembelianTerus.create') || request()->routeIs('pembelianTerus.edit') || request()->is('pembelian-terus/cipta-projek*');
 							@endphp
+							@if ($canPtCreate)
 							<li>
 								<a class="submenu-item d-flex justify-content-between align-items-center"
 									data-bs-toggle="collapse" href="#menuCiptaProjek" role="button"
@@ -383,6 +394,8 @@
 									</ul>
 								</div>
 							</li>
+							@endif
+							@if ($canPtQuote)
 							<li>
 								<a
 									class="submenu-item {{ request()->routeIs('pembelianTerus.quoteProject') || request()->is('pembelian-terus/sebut-harga*') ? 'active' : '' }}"
@@ -394,6 +407,8 @@
 										Harga</span>
 								</a>
 							</li>
+							@endif
+							@if ($canPtCutoff)
 							<li>
 								<a
 									class="submenu-item {{ request()->routeIs('pembelianTerus.cutOffProject') || request()->routeIs('pembelianTerus.cutOffDetails') || request()->is('pembelian-terus/cut-off-projek*') || request()->is('pembelian-terus/cut-off-details*') ? 'active' : '' }}"
@@ -406,6 +421,8 @@
 									</span>
 								</a>
 							</li>
+							@endif
+							@if ($canPtSelect)
 							<li>
 								<a
 									class="submenu-item {{ request()->routeIs('pembelianTerus.pemilihanSyarikat') || request()->routeIs('pembelianTerus.pemilihanSyarikatDetails') || request()->is('pembelian-terus/pemilihan-syarikat*') ? 'active' : '' }}"
@@ -417,6 +434,8 @@
 										Syarikat</span>
 								</a>
 							</li>
+							@endif
+							@if ($canPtDecision)
 							<li>
 								<a
 									class="submenu-item {{ request()->routeIs('pembelianTerus.keputusanSyarikat') || request()->routeIs('pembelianTerus.keputusanSyarikatDetails') || request()->is('pembelian-terus/keputusan-syarikat*') ? 'active' : '' }}"
@@ -428,6 +447,7 @@
 										Syarikat</span>
 								</a>
 							</li>
+							@endif
 						</ul>
 					</div>
 				</li>

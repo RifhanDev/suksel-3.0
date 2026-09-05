@@ -230,6 +230,11 @@ class StosRolePermissionSeeder extends Seeder
             ['name' => 'TechnicalEvaluation:list', 'group_name' => 'Evaluation', 'display_name' => 'Penilaian Teknikal'],
             ['name' => 'FinancialEvaluation:list', 'group_name' => 'Evaluation', 'display_name' => 'Penilaian Kewangan'],
             ['name' => 'DirectPurchase:list', 'group_name' => 'DirectPurchase', 'display_name' => 'Pembelian Terus'],
+            ['name' => 'DirectPurchase:create', 'group_name' => 'DirectPurchase', 'display_name' => 'Cipta Projek (Pemilik Projek)'],
+            ['name' => 'DirectPurchase:cutoff', 'group_name' => 'DirectPurchase', 'display_name' => 'Cut Off (Pemilik Projek)'],
+            ['name' => 'DirectPurchase:select', 'group_name' => 'DirectPurchase', 'display_name' => 'Pemilihan Syarikat (Ketua Jabatan)'],
+            ['name' => 'DirectPurchase:quote', 'group_name' => 'DirectPurchase', 'display_name' => 'Sebut Harga (Syarikat)'],
+            ['name' => 'DirectPurchase:decision', 'group_name' => 'DirectPurchase', 'display_name' => 'Keputusan Syarikat (Syarikat)'],
             ['name' => 'DirectAppointment:list', 'group_name' => 'DirectAppointment', 'display_name' => 'Lantikan Terus'],
             ['name' => 'Bidding:list', 'group_name' => 'Bidding', 'display_name' => 'Bidaan'],
         ];
@@ -242,6 +247,26 @@ class StosRolePermissionSeeder extends Seeder
 
     private function rolePermissions(): array
     {
+        // Pembelian Terus step permissions (aligned to process):
+        // 1 Cipta Projek + 3 Cut Off  → Pemilik Projek (Agency User / Urusetia)
+        // 4 Pemilihan Syarikat        → Ketua Jabatan (Agency Admin; also Admin)
+        // 2 Sebut Harga + 5 Keputusan → Syarikat (Vendor role; optional perms below)
+        $pemilikProjek = [
+            'DirectPurchase:list',
+            'DirectPurchase:create',
+            'DirectPurchase:cutoff',
+        ];
+
+        $ketuaJabatan = [
+            'DirectPurchase:list',
+            'DirectPurchase:select',
+        ];
+
+        $syarikat = [
+            'DirectPurchase:quote',
+            'DirectPurchase:decision',
+        ];
+
         $urusetia = [
             'Tender:list',
             // Urusetia yang menjalankan proses pelantikan jawatankuasa, jadi
@@ -257,6 +282,7 @@ class StosRolePermissionSeeder extends Seeder
             'Meeting:list',
             'MeetingAttendance:list',
             'CutOff:list',
+            ...$pemilikProjek,
         ];
 
         $jawatankuasa = [
@@ -283,10 +309,20 @@ class StosRolePermissionSeeder extends Seeder
             ],
             [
                 'role' => 'Agency User',
-                'permissions' => [
-                    'Tender:execute',
-                    'Tender:list',
-                ],
+                'permissions' => array_values(array_unique(array_merge(
+                    [
+                        'Tender:execute',
+                        'Tender:list',
+                    ],
+                    $pemilikProjek
+                ))),
+            ],
+            [
+                'role' => 'Agency Admin',
+                'permissions' => array_values(array_unique(array_merge(
+                    $pemilikProjek,
+                    $ketuaJabatan
+                ))),
             ],
             [
                 'role' => 'Agency Urusetia',
@@ -311,6 +347,10 @@ class StosRolePermissionSeeder extends Seeder
             [
                 'role' => 'Lembaga Perolehan Negeri Selangor',
                 'permissions' => $lembaga,
+            ],
+            [
+                'role' => 'Vendor',
+                'permissions' => $syarikat,
             ],
         ];
     }
