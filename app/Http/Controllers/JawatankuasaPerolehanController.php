@@ -4,12 +4,18 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\AdvancesTenderProcessStatus;
 use App\Http\Controllers\Concerns\RestrictsTenderByRole;
+use App\Models\EbiddingJadualBidaan;
 use App\Models\JawatankuasaPerolehanKertasKeputusan;
 use App\Models\JawatankuasaPerolehanMeeting;
 use App\Models\JawatankuasaPerolehanPemilihanHeader;
 use App\Models\JawatankuasaPerolehanPemilihanItem;
 use App\Models\JawatankuasaPerolehanPemilihanPetender;
 use App\Models\PerakuanJabatanKertasTaklimatItem;
+use App\Models\PerakuanJabatanPengesyoranPembekal;
+use App\Models\PerakuanJabatanPengesyoranPembekalItem;
+use App\Models\TenderTeknikalSpesifikasiEvaluation;
+use App\Services\StosBackendClient;
+use App\Services\TenderProcessStatusService;
 use App\Support\TenderProcessStatus;
 use App\Support\VendorCidbMeta;
 use App\Tender;
@@ -84,7 +90,7 @@ class JawatankuasaPerolehanController extends Controller
         $kertasKeputusan = null;
         $pemilihanHeader = $this->blankPemilihanHeader();
         $pemilihanItems = collect();
-        $pemilihanOpts = $this->pemilihanDropdownOptions();
+        $pemilihanOpts = $this->pemilihanDropdownOptions(null);
         $pemilihanVendors = collect();
 
         if ($tender) {
@@ -131,7 +137,8 @@ class JawatankuasaPerolehanController extends Controller
                 ->first();
 
             $this->ensurePemilihanDefaults($tender);
-            $this->syncPemilihanPetenderVendors($tender);
+            $this->syncPemilihanFromSources($tender);
+            $pemilihanOpts = $this->pemilihanDropdownOptions($tender);
             $headerModel = JawatankuasaPerolehanPemilihanHeader::query()
                 ->where('tender_id', $tender->id)
                 ->first();
@@ -145,6 +152,14 @@ class JawatankuasaPerolehanController extends Controller
                     'no_kod' => (string) ($headerModel->no_kod ?? ''),
                     'sahkan_layak_bidaan' => (bool) $headerModel->sahkan_layak_bidaan,
                 ];
+
+                // If Bidaan was already run, clear stale selection so urusetia picks Terus/Lebih.
+                if (
+                    $this->bidaanAlreadyRun($tender)
+                    && ($pemilihanHeader['kaedah_memuktamadkan_pembekal'] ?? '') === 'Bidaan'
+                ) {
+                    $pemilihanHeader['kaedah_memuktamadkan_pembekal'] = '';
+                }
             }
 
             $pemilihanItems = JawatankuasaPerolehanPemilihanItem::query()
@@ -173,17 +188,15 @@ class JawatankuasaPerolehanController extends Controller
                                 'vendor_id' => $p->vendor_id,
                                 'cidb_has_meta' => $hasCidbMeta,
                                 'bil_label' => $p->bil_label,
-                                'status_bumiputra' => $p->status_bumiputra,
-                                'harga_tawaran' => (string) $p->harga_tawaran,
-                                'jumlah_skor' => (string) $p->jumlah_skor,
+                                'status_bumiputra' => $p->status_bumiputra ?: '',
+                                'harga_tawaran' => (string) ($p->harga_tawaran ?? 0),
+                                'jumlah_skor' => $p->jumlah_skor !== null ? (string) $p->jumlah_skor : '',
                                 'kedudukan_penilaian' => $p->kedudukan_penilaian,
-                                'status_mof' => $p->status_mof,
-                                'tindakan_disiplin' => $p->tindakan_disiplin,
-                                'lembaga_pengarah_papar_url' => $p->lembaga_pengarah_file_path
-                                    ? asset($p->lembaga_pengarah_file_path)
-                                    : null,
-                                'keputusan_urusetia' => $p->keputusan_urusetia,
-                                'catatan_urusetia' => $p->catatan_urusetia,
+                                'status_mof' => $p->status_mof ?: '',
+                                'tindakan_disiplin' => null,
+                                'lembaga_pengarah_papar_url' => null,
+                                'keputusan_urusetia' => $p->keputusan_urusetia ?: '',
+                                'catatan_urusetia' => $p->catatan_urusetia ?: '',
                             ];
                         })->values(),
                     ];
@@ -396,8 +409,11 @@ class JawatankuasaPerolehanController extends Controller
             Tender::query()
                 ->where('id', $tender->id)
                 ->update([
-                    'is_ebidding' => $isEbidding,
-                    'ebidding_process_stage_id' => $isEbidding ? 1 : null,
+                    // is_ebidding is set when Memuktamadkan Pemilihan chooses Bidaan.
+                    'is_ebidding' => $isEbidding ? true : (bool) $tender->is_ebidding,
+                    'ebidding_process_stage_id' => $isEbidding
+                        ? ((int) ($tender->ebidding_process_stage_id ?? 0) ?: 1)
+                        : $tender->ebidding_process_stage_id,
                 ]);
         });
 
@@ -411,7 +427,7 @@ class JawatankuasaPerolehanController extends Controller
             return response()->json(['message' => 'Tender tidak ditemui.'], 404);
         }
 
-        $payload = $this->validatePemilihanPayload($request, false);
+        $payload = $this->validatePemilihanPayload($request, false, $tender);
         DB::transaction(function () use ($tender, $payload) {
             $this->applyPemilihanPayload($tender, $payload, false);
         });
@@ -426,18 +442,42 @@ class JawatankuasaPerolehanController extends Controller
             return response()->json(['message' => 'Tender tidak ditemui.'], 404);
         }
 
-        $payload = $this->validatePemilihanPayload($request, true);
-        DB::transaction(function () use ($tender, $payload) {
+        $payload = $this->validatePemilihanPayload($request, true, $tender);
+        $kaedah = trim((string) ($payload['header']['kaedah_memuktamadkan_pembekal'] ?? ''));
+
+        DB::transaction(function () use ($tender, $payload, $kaedah) {
             $this->applyPemilihanPayload($tender, $payload, true);
+
+            if ($kaedah === 'Bidaan') {
+                if (! TenderProcessStatus::allowsBidaanKaedah($tender->kategori_perolehan_id)) {
+                    throw ValidationException::withMessages([
+                        'header.kaedah_memuktamadkan_pembekal' => 'Kaedah Bidaan hanya untuk Bekalan atau Perkhidmatan.',
+                    ]);
+                }
+                if ($this->bidaanAlreadyRun($tender)) {
+                    throw ValidationException::withMessages([
+                        'header.kaedah_memuktamadkan_pembekal' => 'Bidaan telah dijalankan. Sila pilih Pemilihan Terus atau Pemilihan Lebih Daripada Satu Syarikat.',
+                    ]);
+                }
+
+                Tender::query()->where('id', $tender->id)->update([
+                    'is_ebidding' => true,
+                    'ebidding_process_stage_id' => 1,
+                    'status_process_id' => TenderProcessStatus::PENILAIAN_KEWANGAN,
+                ]);
+            } else {
+                app(TenderProcessStatusService::class)->setStatus(
+                    $tender->fresh(),
+                    TenderProcessStatus::JAWATANKUASA_PEROLEHAN
+                );
+            }
         });
 
-        $this->advanceTenderProcess(
-            $tender->fresh(),
-            TenderProcessStatus::JAWATANKUASA_PEROLEHAN,
-            TenderProcessStatus::jawatankuasaPerolehanListStatus()
-        );
+        $message = $kaedah === 'Bidaan'
+            ? 'Pemilihan Bidaan berjaya dihantar. Proses kembali ke Perakuan Jabatan untuk Penyediaan Jadual Bidaan.'
+            : 'Memuktamadkan pemilihan pembekal berjaya dihantar.';
 
-        return response()->json(['message' => 'Memuktamadkan pemilihan pembekal berjaya dihantar.']);
+        return response()->json(['message' => $message]);
     }
 
     /**
@@ -472,8 +512,21 @@ class JawatankuasaPerolehanController extends Controller
         //
     }
 
-    private function pemilihanDropdownOptions(): array
+    private function pemilihanDropdownOptions(?Tender $tender = null): array
     {
+        $kaedah = [
+            'Pemilihan Terus',
+            'Pemilihan Lebih Daripada Satu Syarikat',
+        ];
+
+        $allowBidaan = $tender
+            && TenderProcessStatus::allowsBidaanKaedah($tender->kategori_perolehan_id)
+            && ! $this->bidaanAlreadyRun($tender);
+
+        if ($allowBidaan) {
+            $kaedah[] = 'Bidaan';
+        }
+
         return [
             'keputusan_mesyuarat' => [
                 'Pemilihan Pembekal',
@@ -482,11 +535,7 @@ class JawatankuasaPerolehanController extends Controller
                 'Kemukakan kepada Pihak Berkuasa Yang Lebih Tinggi',
                 'Batal',
             ],
-            'kaedah_memuktamadkan_pembekal' => [
-                'Pemilihan Terus',
-                'Pemilihan Lebih Daripada Satu Syarikat',
-                'Bidaan',
-            ],
+            'kaedah_memuktamadkan_pembekal' => $kaedah,
             'pemilihan_berdasarkan' => [
                 '1 item',
                 'Pakej',
@@ -497,10 +546,22 @@ class JawatankuasaPerolehanController extends Controller
             ],
             'keputusan_urusetia' => [
                 'Disyorkan',
-                'Tidak Disyorkan',
-                'Tangguh',
+                'Ditolak',
+                'Dipertimbang',
             ],
         ];
+    }
+
+    private function bidaanAlreadyRun(Tender $tender): bool
+    {
+        if ((int) ($tender->ebidding_process_stage_id ?? 0) >= 3) {
+            return true;
+        }
+
+        return EbiddingJadualBidaan::query()
+            ->where('tender_id', $tender->id)
+            ->whereNotNull('started_at')
+            ->exists();
     }
 
     private function blankPemilihanHeader(): array
@@ -518,65 +579,216 @@ class JawatankuasaPerolehanController extends Controller
 
     private function ensurePemilihanDefaults(Tender $tender): void
     {
-        DB::transaction(function () use ($tender) {
-            JawatankuasaPerolehanPemilihanHeader::query()->firstOrCreate(
-                ['tender_id' => $tender->id],
-                [
-                    'keputusan_mesyuarat' => 'Pemilihan Pembekal',
-                    'kaedah_memuktamadkan_pembekal' => 'Bidaan',
-                ]
-            );
+        JawatankuasaPerolehanPemilihanHeader::query()->firstOrCreate(
+            ['tender_id' => $tender->id],
+            [
+                'keputusan_mesyuarat' => 'Pemilihan Pembekal',
+                'kaedah_memuktamadkan_pembekal' => TenderProcessStatus::allowsBidaanKaedah($tender->kategori_perolehan_id)
+                    ? null
+                    : 'Pemilihan Terus',
+            ]
+        );
+    }
 
-            if (JawatankuasaPerolehanPemilihanItem::query()->where('tender_id', $tender->id)->exists()) {
-                return;
+    /**
+     * Sync Senarai Item + Senarai Pembekal from tender participants, vendors, skor, and Perakuan Jabatan.
+     */
+    private function syncPemilihanFromSources(Tender $tender): void
+    {
+        DB::transaction(function () use ($tender) {
+            $participants = $tender->participants()
+                ->with('vendor')
+                ->where('participate', 1)
+                ->whereNull('eliminated_at')
+                ->orderBy('id')
+                ->get();
+
+            $jenisItem = $this->resolveJenisItem($tender);
+            $eligibleCount = $participants->count();
+            $scores = $this->loadTeknikalScoresByVendor($tender);
+            $syorByVendor = $this->loadPerakuanSyorByVendor($tender);
+
+            $item = JawatankuasaPerolehanPemilihanItem::query()
+                ->where('tender_id', $tender->id)
+                ->orderBy('sort_order')
+                ->first();
+
+            if (! $item) {
+                $item = JawatankuasaPerolehanPemilihanItem::query()->create([
+                    'tender_id' => $tender->id,
+                    'sort_order' => 1,
+                    'perihal_item' => $tender->name ?: 'Item',
+                    'jenis_item' => $jenisItem,
+                    'unit_ukuran' => 'Unit',
+                    'jenis_harga' => 'Biasa Standard',
+                    'dibatalkan' => 'Tidak',
+                    'pembekal_dipilih' => $eligibleCount,
+                    'kuantiti' => 1,
+                ]);
+            } else {
+                $item->perihal_item = $tender->name ?: ($item->perihal_item ?: 'Item');
+                $item->jenis_item = $jenisItem;
+                $item->pembekal_dipilih = $eligibleCount;
+                if (empty($item->unit_ukuran)) {
+                    $item->unit_ukuran = 'Unit';
+                }
+                if (empty($item->jenis_harga)) {
+                    $item->jenis_harga = 'Biasa Standard';
+                }
+                $item->save();
             }
 
-            $item = JawatankuasaPerolehanPemilihanItem::query()->create([
-                'tender_id' => $tender->id,
-                'sort_order' => 1,
-                'perihal_item' => $tender->name ?: 'Item',
-                'jenis_item' => 'Perkhidmatan',
-                'unit_ukuran' => 'Activity Unit',
-                'jenis_harga' => 'Biasa Standard',
-                'dibatalkan' => 'Tidak',
-                'pembekal_dipilih' => 2,
-                'kuantiti' => 1,
-            ]);
+            $keepVendorIds = [];
+            $total = max($eligibleCount, 1);
 
-            $defaults = [
-                [
-                    'sort_order' => 1,
-                    'bil_label' => '2/2',
-                    'status_bumiputra' => 'Tidak',
-                    'harga_tawaran' => 360000,
-                    'jumlah_skor' => 96.43,
-                    'kedudukan_penilaian' => 1,
-                    'status_mof' => 'Aktif',
-                    'keputusan_urusetia' => 'Disyorkan',
-                ],
-                [
-                    'sort_order' => 2,
-                    'bil_label' => '1/2',
-                    'status_bumiputra' => 'Ya',
-                    'harga_tawaran' => 360000,
-                    'jumlah_skor' => 96.43,
-                    'kedudukan_penilaian' => 2,
-                    'status_mof' => 'Aktif',
-                    'keputusan_urusetia' => 'Disyorkan',
-                ],
-            ];
+            foreach ($participants->values() as $idx => $participant) {
+                $vendorId = (int) $participant->vendor_id;
+                if ($vendorId <= 0) {
+                    continue;
+                }
+                $keepVendorIds[] = $vendorId;
 
-            foreach ($defaults as $row) {
-                JawatankuasaPerolehanPemilihanPetender::query()->create(array_merge($row, [
-                    'pemilihan_item_id' => $item->id,
-                ]));
+                $vendor = $participant->vendor;
+                $score = $scores[$vendorId] ?? null;
+                $syor = $syorByVendor[$vendorId] ?? null;
+
+                $bumi = (bool) ($participant->is_bumiputera ?? false)
+                    || (bool) ($vendor?->mof_bumi ?? false)
+                    || (bool) ($vendor?->cidb_bumi ?? false);
+
+                $harga = $participant->harga_tawaran ?? $participant->price ?? $participant->amount ?? 0;
+
+                $mofStatus = '—';
+                if ($vendor && method_exists($vendor, 'mofValid')) {
+                    $mofStatus = $vendor->mofValid() ? 'Aktif' : 'Tamat Tempoh';
+                } elseif (! empty($vendor?->mof_ref_no)) {
+                    $mofStatus = 'Aktif';
+                }
+
+                JawatankuasaPerolehanPemilihanPetender::query()->updateOrCreate(
+                    [
+                        'pemilihan_item_id' => $item->id,
+                        'vendor_id' => $vendorId,
+                    ],
+                    [
+                        'sort_order' => $idx + 1,
+                        'bil_label' => ($idx + 1) . '/' . $total,
+                        'status_bumiputra' => $bumi ? 'Ya' : 'Tidak',
+                        'harga_tawaran' => (float) $harga,
+                        'jumlah_skor' => $score['skor'] ?? 0,
+                        'kedudukan_penilaian' => $score['kedudukan'] ?? ($idx + 1),
+                        'status_mof' => $mofStatus,
+                        'tindakan_disiplin' => null,
+                        'lembaga_pengarah_file_path' => null,
+                        'keputusan_urusetia' => $syor['syor_urusetia'] ?? null,
+                        'catatan_urusetia' => $syor['catatan_urusetia'] ?? null,
+                    ]
+                );
+            }
+
+            // Drop dummy / stale petenders not in the eligible participant set.
+            $query = JawatankuasaPerolehanPemilihanPetender::query()
+                ->where('pemilihan_item_id', $item->id);
+
+            if ($keepVendorIds === []) {
+                $query->delete();
+            } else {
+                $query->where(function ($q) use ($keepVendorIds) {
+                    $q->whereNull('vendor_id')
+                        ->orWhereNotIn('vendor_id', $keepVendorIds);
+                })->delete();
             }
         });
     }
 
-    private function validatePemilihanPayload(Request $request, bool $forSubmit): array
+    private function resolveJenisItem(Tender $tender): string
     {
-        $opts = $this->pemilihanDropdownOptions();
+        return match ((int) ($tender->kategori_perolehan_id ?? 0)) {
+            1 => 'Bekalan',
+            2 => 'Perkhidmatan',
+            3 => 'Kerja',
+            default => '—',
+        };
+    }
+
+    /**
+     * @return array<int, array{syor_urusetia: ?string, catatan_urusetia: ?string}>
+     */
+    private function loadPerakuanSyorByVendor(Tender $tender): array
+    {
+        $pengesyoran = PerakuanJabatanPengesyoranPembekal::query()
+            ->where('tender_id', $tender->id)
+            ->first();
+
+        if (! $pengesyoran) {
+            return [];
+        }
+
+        $map = [];
+        foreach ($pengesyoran->items()->get() as $item) {
+            $map[(int) $item->vendor_id] = [
+                'syor_urusetia' => $item->syor_urusetia,
+                'catatan_urusetia' => $item->catatan_urusetia,
+            ];
+        }
+
+        return $map;
+    }
+
+    /**
+     * @return array<int, array{skor: float|null, kedudukan: int|null}>
+     */
+    private function loadTeknikalScoresByVendor(Tender $tender): array
+    {
+        $scores = [];
+
+        try {
+            $stos = app(StosBackendClient::class);
+            if ($stos->isConfigured()) {
+                $response = $stos->getRumusanPenilaianTeknikal($tender->id);
+                if ($response->successful()) {
+                    $data = $response->json('data') ?? [];
+                    foreach (array_merge($data['layak'] ?? [], $data['tidak_layak'] ?? []) as $row) {
+                        $vid = (int) ($row['vendor_id'] ?? 0);
+                        if ($vid <= 0) {
+                            continue;
+                        }
+                        $scores[$vid] = [
+                            'skor' => isset($row['peratus']) ? (float) $row['peratus'] : null,
+                            'kedudukan' => isset($row['kedudukan']) ? (int) $row['kedudukan'] : null,
+                        ];
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            // Local fallback below.
+        }
+
+        if (! empty($scores)) {
+            return $scores;
+        }
+
+        $rows = TenderTeknikalSpesifikasiEvaluation::query()
+            ->where('tender_id', $tender->id)
+            ->selectRaw('vendor_id, SUM(COALESCE(skor_automatik,0) + COALESCE(skor_manual,0)) as jumlah')
+            ->groupBy('vendor_id')
+            ->orderByDesc('jumlah')
+            ->get();
+
+        $rank = 1;
+        foreach ($rows as $row) {
+            $scores[(int) $row->vendor_id] = [
+                'skor' => round((float) $row->jumlah, 2),
+                'kedudukan' => $rank++,
+            ];
+        }
+
+        return $scores;
+    }
+
+    private function validatePemilihanPayload(Request $request, bool $forSubmit, ?Tender $tender = null): array
+    {
+        $opts = $this->pemilihanDropdownOptions($tender);
         $emptyPad = $forSubmit ? [] : [''];
 
         $headerRules = [
@@ -625,7 +837,7 @@ class JawatankuasaPerolehanController extends Controller
             'items.*.petenders.*.status_mof' => ['nullable', 'string', 'max:100'],
             'items.*.petenders.*.tindakan_disiplin' => ['nullable', 'string', 'max:65535'],
             'items.*.petenders.*.keputusan_urusetia' => [
-                $forSubmit ? 'required' : 'nullable',
+                'nullable',
                 'string',
                 'max:100',
                 Rule::in(array_merge($emptyPad, $opts['keputusan_urusetia'])),
@@ -637,8 +849,9 @@ class JawatankuasaPerolehanController extends Controller
             'tender' => ['required'],
         ], $headerRules, $itemRules));
 
+        $kaedah = trim((string) ($validated['header']['kaedah_memuktamadkan_pembekal'] ?? ''));
         $sahkan = $validated['header']['sahkan_layak_bidaan'] ?? false;
-        if ($forSubmit && !filter_var($sahkan, FILTER_VALIDATE_BOOLEAN)) {
+        if ($forSubmit && $kaedah === 'Bidaan' && ! filter_var($sahkan, FILTER_VALIDATE_BOOLEAN)) {
             throw ValidationException::withMessages([
                 'header.sahkan_layak_bidaan' => 'Sila tandakan pengesahan petender layak untuk menyertai Bidaan.',
             ]);
@@ -696,41 +909,16 @@ class JawatankuasaPerolehanController extends Controller
                 $pet->jumlah_skor = $p['jumlah_skor'] ?? $pet->jumlah_skor;
                 $pet->kedudukan_penilaian = $p['kedudukan_penilaian'] ?? $pet->kedudukan_penilaian;
                 $pet->status_mof = $this->nullableTrim($p['status_mof'] ?? null) ?? $pet->status_mof;
-                $pet->tindakan_disiplin = $this->nullableTrim($p['tindakan_disiplin'] ?? null);
-                $pet->keputusan_urusetia = $this->nullableTrim($p['keputusan_urusetia'] ?? null);
-                $pet->catatan_urusetia = $this->nullableTrim($p['catatan_urusetia'] ?? null);
+                // Prestasi / Lembaga left blank ("—") for now; Keputusan/Catatan come from Perakuan Jabatan sync.
+                $pet->tindakan_disiplin = null;
+                if (array_key_exists('keputusan_urusetia', $p)) {
+                    $pet->keputusan_urusetia = $this->nullableTrim($p['keputusan_urusetia'] ?? null);
+                }
+                if (array_key_exists('catatan_urusetia', $p)) {
+                    $pet->catatan_urusetia = $this->nullableTrim($p['catatan_urusetia'] ?? null);
+                }
                 $pet->save();
             }
-        }
-    }
-
-    private function syncPemilihanPetenderVendors(Tender $tender): void
-    {
-        $vendorIds = Vendor::query()
-            ->whereNotNull('meta')
-            ->orderBy('id')
-            ->pluck('id')
-            ->values();
-
-        if ($vendorIds->isEmpty()) {
-            return;
-        }
-
-        $petenders = JawatankuasaPerolehanPemilihanPetender::query()
-            ->whereHas('item', function ($query) use ($tender) {
-                $query->where('tender_id', $tender->id);
-            })
-            ->orderBy('pemilihan_item_id')
-            ->orderBy('sort_order')
-            ->get();
-
-        foreach ($petenders as $index => $petender) {
-            if ($petender->vendor_id || ! isset($vendorIds[$index])) {
-                continue;
-            }
-
-            $petender->vendor_id = $vendorIds[$index];
-            $petender->save();
         }
     }
 

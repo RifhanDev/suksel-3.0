@@ -10,6 +10,7 @@ use App\Models\EbiddingPengesyoranPembekal;
 use App\Models\EbiddingVendorBidItem;
 use App\Models\JawatankuasaPerolehanPemilihanItem;
 use App\Models\PerakuanJabatanKertasTaklimat;
+use App\Support\TenderProcessStatus;
 use App\TenderEligible;
 use App\Tender;
 use App\TenderVendor;
@@ -128,10 +129,10 @@ class EbiddingController extends Controller
         if (!$isVendorUser && $currentStage === self::STAGE_VENDOR && $window['has_ended']) {
             Tender::query()->where('id', $tender->id)->update([
                 'ebidding_process_stage_id' => self::STAGE_AGENCY_ADMIN_REVIEW,
-                'status_process_id' => 2,
+                'status_process_id' => TenderProcessStatus::PENILAIAN_KEWANGAN,
             ]);
             $tender->ebidding_process_stage_id = self::STAGE_AGENCY_ADMIN_REVIEW;
-            $tender->status_process_id = 2;
+            $tender->status_process_id = TenderProcessStatus::PENILAIAN_KEWANGAN;
             $currentStage = self::STAGE_AGENCY_ADMIN_REVIEW;
         }
         $pengesyoran = EbiddingPengesyoranPembekal::query()
@@ -340,8 +341,7 @@ class EbiddingController extends Controller
             'items.*.bid_price' => ['nullable', 'numeric', 'min:0.01'],
         ]);
 
-        $nextStage = self::EBIDDING_TRANSITIONS[$currentStage] ?? self::STAGE_AGENCY_ADMIN_REVIEW;
-        DB::transaction(function () use ($payload, $tender, $vendorId, $nextStage) {
+        DB::transaction(function () use ($payload, $tender, $vendorId) {
             $tenderVendor = TenderVendor::query()
                 ->where('tender_id', $tender->id)
                 ->where('vendor_id', $vendorId)
@@ -382,18 +382,11 @@ class EbiddingController extends Controller
                     ]
                 );
             }
-
-            Tender::query()
-                ->where('id', $tender->id)
-                ->update([
-                    'ebidding_process_stage_id' => $nextStage,
-                    'status_process_id' => 2,
-                ]);
         });
 
         return response()->json([
-            'message' => 'Harga bidaan berjaya dihantar. Status eBidding dikemas kini ke Agency Admin (Semakan) dan proses kembali ke Perakuan Jabatan.',
-            'next_status_label' => $this->statusLabel($nextStage, (int) $tender->id),
+            'message' => 'Harga bidaan berjaya dihantar.',
+            'next_status_label' => $this->statusLabel($currentStage, (int) $tender->id),
             'redirect_url' => route('eBidding.index'),
         ]);
     }
@@ -492,7 +485,10 @@ class EbiddingController extends Controller
 
             Tender::query()
                 ->where('id', $tender->id)
-                ->update(['ebidding_process_stage_id' => $nextStage]);
+                ->update([
+                    'ebidding_process_stage_id' => $nextStage,
+                    'status_process_id' => TenderProcessStatus::PENILAIAN_KEWANGAN,
+                ]);
         });
 
         $emailsSent = $this->notifyEligibleVendorsBidaanStarted($tender->id);
@@ -570,7 +566,7 @@ class EbiddingController extends Controller
 
         $updateData = ['ebidding_process_stage_id' => $nextStage];
         if ($currentStage === self::STAGE_VENDOR && $nextStage === self::STAGE_AGENCY_ADMIN_REVIEW) {
-            $updateData['status_process_id'] = 2;
+            $updateData['status_process_id'] = TenderProcessStatus::PENILAIAN_KEWANGAN;
         }
 
         Tender::query()
