@@ -2,45 +2,27 @@
 
 namespace Database\Seeders\Ref;
 
-use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
-
 /**
- * Senarai rujukan "Jenis Kontrak" pada borang cipta tender.
+ * Senarai rujukan Jenis Kontrak.
  *
- * Selamat dijalankan berulang kali, termasuk di produksi: baris dipadankan
- * mengikut `name`, yang tiada disisipkan, dan yang sudah wujud dibiarkan
- * sepenuhnya. Versi asal menggunakan create() tanpa semakan, jadi menjalankannya
- * dua kali menghasilkan pendua — itu menghalangnya daripada dipanggil dari
- * migration.
- *
- * Sengaja TIDAK memadam atau menyahaktifkan baris di luar senarai ini.
- * `tenders.jenis_kontrak_id` mempunyai foreign key ke jadual ini dengan
- * onDelete('set null'), jadi membuang satu baris akan mengosongkan jenis kontrak
- * pada setiap tender yang merujuknya.
+ * Lihat RefListSeeder untuk kelakuan dan sebab ia selamat dijalankan berulang.
+ * Jadual ini dirujuk oleh tenders.jenis_kontrak_id dengan onDelete('set null'),
+ * jadi tiada baris pernah dipadam di sini.
  */
-class TypeOfContract extends Seeder
+class TypeOfContract extends RefListSeeder
 {
-    public const CONTRACTS = [
-        'Kementerian',
-        'Bukan Kementerian',
+    public const ROWS = [
+        ['name' => 'Kementerian'],
+        ['name' => 'Bukan Kementerian'],
     ];
 
-    public function run(): void
+    protected function table(): string
     {
-        $existing = DB::table('ref_type_of_contracts')->pluck('name')->all();
+        return 'ref_type_of_contracts';
+    }
 
-        foreach (self::CONTRACTS as $name) {
-            if (in_array($name, $existing, true)) {
-                continue;
-            }
-
-            DB::table('ref_type_of_contracts')->insert([
-                'name'       => $name,
-                'active'     => 1,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-        }
+    protected function rows(): array
+    {
+        return self::ROWS;
     }
 }

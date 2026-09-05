@@ -2,38 +2,26 @@
 
 namespace Database\Seeders\Ref;
 
-use App\Models\Ref\RefSumberPeruntukan;
-use Carbon\Carbon;
-use Illuminate\Database\Seeder;
-
-class SumberPeruntukan extends Seeder
+/**
+ * Senarai rujukan Sumber Peruntukan.
+ *
+ * Lihat RefListSeeder untuk kelakuan dan sebab ia selamat dijalankan berulang.
+ */
+class SumberPeruntukan extends RefListSeeder
 {
-    /**
-     * Run the database seeds.
-     */
-    public function run(): void
+    public const ROWS = [
+        ['name' => 'Pembangunan'],
+        ['name' => 'Mengurus'],
+        ['name' => 'Lain-lain'],
+    ];
+
+    protected function table(): string
     {
+        return 'ref_sumber_peruntukans';
+    }
 
-        // Create Admin User
-        RefSumberPeruntukan::create([
-            'name' => 'Pembangunan',
-            'active' => '1',
-            'created_at' => Carbon::now(),
-            'updated_at' => Carbon::now(),
-        ]);
-
-        RefSumberPeruntukan::create([
-            'name' => 'Mengurus',
-            'active' => '1',
-            'created_at' => Carbon::now(),
-            'updated_at' => Carbon::now(),
-        ]);
-
-        RefSumberPeruntukan::create([
-            'name' => 'Lain-lain',
-            'active' => '1',
-            'created_at' => Carbon::now(),
-            'updated_at' => Carbon::now(),
-        ]);
+    protected function rows(): array
+    {
+        return self::ROWS;
     }
 }
