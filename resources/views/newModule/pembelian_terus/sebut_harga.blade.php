@@ -253,6 +253,12 @@
         </div>
     </div>
 
+    @if (!empty($eligibilityMessage))
+        <div class="alert alert-warning border-0 shadow-sm mb-3" role="alert">
+            {{ $eligibilityMessage }}
+        </div>
+    @endif
+
     {{-- Submit tawaran harga --}}
     <form id="sebutHargaForm" action="{{ route('pembelianTerus.submitOffer', $p->id) }}" method="POST" enctype="multipart/form-data">
         @csrf
@@ -511,7 +517,8 @@
                         </svg>
                     </button>
 
-                    <button type="submit" class="btn-form btn-form-success d-none" id="btn-submit">
+                    <button type="submit" class="btn-form btn-form-success d-none" id="btn-submit"
+                        @if (isset($vendorEligible) && ! $vendorEligible) disabled title="Syarikat tidak layak" @endif>
                         <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <polyline points="20 6 9 17 4 12"></polyline>
                         </svg>
