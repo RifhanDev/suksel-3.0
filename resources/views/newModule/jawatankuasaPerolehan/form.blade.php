@@ -810,7 +810,6 @@
 						if (!p) {
 							return;
 						}
-						p.tindakan_disiplin = ($(this).find('.mp-pet-disiplin').val() || '').toString();
 						p.selected_for_selection = $(this).find('.mp-pet-selection').is(':checked');
 						p.catatan_mengikut_zon = ($(this).find('.mp-pet-catatan-zon').val() || '').toString();
 					});
@@ -922,11 +921,6 @@
 						'Pemilihan Lebih Daripada Satu Syarikat';
 					const showCatatanZon = kaedah === 'Pemilihan Lebih Daripada Satu Syarikat';
 					item.petenders.forEach(function(p, i) {
-						const lp = p.lembaga_pengarah_papar_url ?
-							'<a href="' + escapeHtml(p.lembaga_pengarah_papar_url) +
-							'" class="btn btn-sm btn-outline-primary py-0 px-2" target="_blank" rel="noopener noreferrer" title="Papar">' +
-							'<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg></a>' :
-							'<span class="text-muted small">—</span>';
 						const selectionCell = showSelection ?
 							'<td class="text-center"><input type="checkbox" class="form-check-input mp-pet-selection"' +
 							(p
@@ -936,19 +930,17 @@
 							escapeHtml(p.catatan_mengikut_zon || '') + '</textarea></td>' : '';
 						const row = '<tr data-pet-idx="' + i + '">' +
 							'<td class="text-center">' + escapeHtml(p.bil_label || '') + '</td>' +
-							'<td class="text-center">' + escapeHtml(p.status_bumiputra || '') + '</td>' +
+							'<td class="text-center">' + escapeHtml(p.status_bumiputra || '—') + '</td>' +
 							'<td class="text-end">' + escapeHtml(mpFormatMoney(p.harga_tawaran)) + '</td>' +
-							'<td class="text-end">' + escapeHtml(String(p.jumlah_skor ?? '')) + '</td>' +
-							'<td class="text-center">' + escapeHtml(String(p.kedudukan_penilaian ?? '')) +
+							'<td class="text-end">' + escapeHtml(String(p.jumlah_skor || '—')) + '</td>' +
+							'<td class="text-center">' + escapeHtml(String(p.kedudukan_penilaian ?? '—')) +
 							'</td>' +
-							'<td class="text-center small">' + escapeHtml(p.status_mof || '') + '</td>' +
-							'<td><textarea class="form-control form-control-sm mp-pet-disiplin" rows="2">' +
-							escapeHtml(p
-								.tindakan_disiplin || '') + '</textarea></td>' +
-							'<td class="text-center">' + lp + '</td>' +
+							'<td class="text-center small">' + escapeHtml(p.status_mof || '—') + '</td>' +
+							'<td class="text-center text-muted small">—</td>' +
+							'<td class="text-center text-muted small">—</td>' +
 							mpCidbCell(p) +
-							'<td class="small">' + escapeHtml(p.keputusan_urusetia || '') + '</td>' +
-							'<td class="small">' + escapeHtml(p.catatan_urusetia || '') + '</td>' +
+							'<td class="small">' + escapeHtml(p.keputusan_urusetia || '—') + '</td>' +
+							'<td class="small">' + escapeHtml(p.catatan_urusetia || '—') + '</td>' +
 							selectionCell +
 							catatanZonCell +
 							'</tr>';
