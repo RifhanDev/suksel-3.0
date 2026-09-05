@@ -12,7 +12,11 @@ class LantikanTerusController extends Controller
 {
     public function __construct(private StosBackendClient $stos)
     {
-        $this->menuMiddleware('DirectAppointment:list');
+        // Keep staff menus gated; vendor sebut-harga view/submit must stay open
+        // so Syarikat can use the Lantikan Terus BQ UI.
+        $this->menuMiddleware('DirectAppointment:list', [
+            'except' => ['sebutHargaShow', 'submitOffer', 'sebutHargaIndex'],
+        ]);
     }
 
     public function index()
@@ -100,11 +104,21 @@ class LantikanTerusController extends Controller
             return redirect()->back()->with('error', 'Hanya pengguna syarikat boleh menghantar tawaran.');
         }
 
-        $payload = $request->all();
-        $payload['vendor_id'] = auth()->user()->vendor->id;
+        $vendorId = (int) auth()->user()->vendor->id;
+        $payload = [
+            'vendor_id' => $vendorId,
+            'harga_tawaran' => str_replace(',', '', (string) $request->input('harga_tawaran', 0)),
+        ];
+
+        $files = [];
+        if ($request->hasFile('muat_naik_bq')) {
+            $files['muat_naik_bq'] = $request->file('muat_naik_bq');
+        } elseif ($request->hasFile('bq')) {
+            $files['bq'] = $request->file('bq');
+        }
 
         try {
-            $response = $this->stos->submitLantikanTerusOffer((int) $id, $payload);
+            $response = $this->stos->submitLantikanTerusOffer((int) $id, $payload, $files);
             if ($response->successful()) {
                 return redirect()->route('sebutHargaTerus.index')
                     ->with('success', 'Tawaran berjaya dihantar.');

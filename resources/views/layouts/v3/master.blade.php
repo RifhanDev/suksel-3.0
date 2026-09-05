@@ -461,6 +461,12 @@
             transition: margin-left var(--transition-speed) ease-in-out;
         }
 
+        /* Vendor (and any layout without sidebar) — no left gap */
+        .page-container.no-sidebar .main-wrapper {
+            margin-left: 0;
+            width: 100%;
+        }
+
         /* ===== TOPBAR ===== */
         .topbar {
             height: var(--topbar-height);
@@ -807,7 +813,10 @@
 </head>
 
 <body>
-    <div class="page-container">
+    @php
+        $hideSidebar = ! auth()->check() || auth()->user()->hasRole('Vendor');
+    @endphp
+    <div class="page-container {{ $hideSidebar ? 'no-sidebar' : '' }}">
 
         @include('layouts.v3.sidebar')
 
