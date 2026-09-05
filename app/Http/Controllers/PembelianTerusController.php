@@ -118,27 +118,84 @@ class PembelianTerusController extends Controller
             $lokalitiName = optional(\App\Models\Ref\RefLokaliti::find($project->lokaliti_id))->name ?? '-';
             $kategoriName = optional(\App\Models\Ref\RefKategoriJenisPerolehan::find($project->kategori_perolehan))->name ?? '-';
 
+            // Enrich MOF / CIDB labels for Paparan Projek (vendor-facing PT UI).
+            $tender = Tender::with(['codes.code'])->find((int) $id);
+            $mofLabels = [];
+            $cidbGradeLabels = [];
+            if ($tender) {
+                $mofLabels = $tender->mof_codes
+                    ->map(function ($row) {
+                        $code = $row->code;
+                        if (! $code) {
+                            return null;
+                        }
+
+                        return $code->label2 ?? trim(($code->code ?? '') . ' - ' . ($code->name ?? ''));
+                    })
+                    ->filter()
+                    ->values()
+                    ->all();
+                $cidbGradeLabels = $tender->cidb_grades
+                    ->map(function ($row) {
+                        $code = $row->code;
+                        if (! $code) {
+                            return null;
+                        }
+
+                        return $code->label2 ?? trim(($code->code ?? '') . ' - ' . ($code->name ?? ''));
+                    })
+                    ->filter()
+                    ->values()
+                    ->all();
+            }
+
+            $specifications = $items->values()->map(function ($item, $index) {
+                $item = (array) $item;
+
+                return [
+                    'id' => $item['id'] ?? ($index + 1),
+                    'item' => $item['nama_item'] ?? ($item['name'] ?? '-'),
+                    'kuantiti' => $item['kuantiti'] ?? 0,
+                    'sst' => (bool) ($item['sst'] ?? true),
+                    'brand' => '',
+                    'harga_seunit' => '',
+                    'harga_keseluruhan' => '',
+                    'harga_sst' => '',
+                ];
+            })->all();
+
             $vendorEligible = true;
             $eligibilityMessage = null;
+            $canSubmitOffer = false;
             if (auth()->check() && auth()->user()->vendor_id) {
                 $vendorEligible = $this->vendorEligibleForProject((int) $id, (int) auth()->user()->vendor_id);
+                $canSubmitOffer = $this->isVendorActor() && $vendorEligible;
                 if (! $vendorEligible) {
                     $eligibilityMessage = 'Syarikat anda tidak menepati syarat kelayakan (MOF/CIDB/daerah) bagi projek ini.';
                 }
             }
 
-            return view('newModule.pembelian_terus.sebut_harga', compact(
+            // Correct PT vendor UI (3 steps + item modal) — not the Lantikan-style sebut_harga.
+            return view('newModule.pembelian_terus.details', compact(
                 'project',
                 'items',
+                'specifications',
                 'isPublic',
                 'p',
                 'ptjName',
                 'lokalitiName',
                 'kategoriName',
+                'mofLabels',
+                'cidbGradeLabels',
                 'vendorEligible',
-                'eligibilityMessage'
+                'eligibilityMessage',
+                'canSubmitOffer'
             ));
         } catch (\Throwable $e) {
+            Log::error('Pembelian Terus detail failed', [
+                'id' => $id,
+                'error' => $e->getMessage(),
+            ]);
             abort(404);
         }
     }
@@ -161,11 +218,52 @@ class PembelianTerusController extends Controller
             );
         }
 
-        $payload = $request->all();
-        $payload['vendor_id'] = $vendorId;
+        // Backend expects:
+        // - offer_items[{item_id, brand, harga_seunit}]
+        // - quotation (file, optional)
+        // - offer_items[i][dokumen_sokongan] (file per item, optional)
+        $rawItems = $request->input('offer_items', $request->input('items', []));
+        $offerItems = [];
+        foreach ((array) $rawItems as $row) {
+            $row = (array) $row;
+            $itemId = (int) ($row['item_id'] ?? 0);
+            if ($itemId <= 0) {
+                continue;
+            }
+
+            $offerItems[] = [
+                'item_id' => $itemId,
+                'brand' => $row['brand'] ?? null,
+                'harga_seunit' => (float) str_replace(',', '', (string) ($row['harga_seunit'] ?? 0)),
+            ];
+        }
+
+        if (count($offerItems) === 0) {
+            return redirect()->back()->with('error', 'Sila lengkapkan harga bagi setiap item sebelum menghantar.');
+        }
+
+        $payload = [
+            'vendor_id' => $vendorId,
+            'offer_items' => $offerItems,
+        ];
+
+        $files = [];
+        if ($request->hasFile('quotation')) {
+            $files['quotation'] = $request->file('quotation');
+        }
+
+        foreach ((array) $request->file('offer_items', []) as $index => $itemFiles) {
+            if (! is_array($itemFiles)) {
+                continue;
+            }
+            $dokumen = $itemFiles['dokumen_sokongan'] ?? $itemFiles['dokumen'] ?? null;
+            if ($dokumen) {
+                $files['offer_items[' . $index . '][dokumen_sokongan]'] = $dokumen;
+            }
+        }
 
         try {
-            $response = $this->stos->submitPembelianTerusOffer((int) $id, $payload);
+            $response = $this->stos->submitPembelianTerusOffer((int) $id, $payload, $files);
             if ($response->successful()) {
                 return redirect()->route('pembelianTerus.quoteProject')
                     ->with('success', 'Tawaran berjaya dihantar.');
