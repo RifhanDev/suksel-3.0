@@ -14,6 +14,11 @@ use Venturecraft\Revisionable\RevisionableTrait;
 
 class Tender extends Model
 {
+	/** Cache per-instance: blade memanggil showDokumenSenaraiTab() beberapa kali. */
+	private ?string $kaedahPerolehanKindCache = null;
+
+	private bool $kaedahPerolehanKindResolved = false;
+
 	use Helper;
 	use RevisionableTrait;
 
@@ -830,19 +835,61 @@ class Tender extends Model
 		};
 	}
 
+	/**
+	 * Kaedah perolehan tender ini, dinormalkan kepada 'tender' atau 'quotation'.
+	 *
+	 * Dahulunya ketiga-tiga predikat di bawah membandingkan id mentah dengan 1
+	 * dan 2. Nilai itu bukan pengecam yang stabil — `ref_kaedah_perolehans`
+	 * disemai semula oleh migration, jadi id sebenarnya bergantung pada
+	 * AUTO_INCREMENT jadual pada masa itu (35 dan 36 pada pangkalan data ini).
+	 * Setiap tender yang dicipta dengan kaedah_perolehan_id sebenar gagal
+	 * padanan itu: tab Dokumen tersembunyi, dan setiap Sebut Harga dilabel
+	 * sebagai Tender pada Surat SST serta laporan penilaian.
+	 *
+	 * Padanan kini dibuat mengikut nama baris rujukan, yang kekal walaupun id
+	 * berubah.
+	 */
+	public function kaedahPerolehanKind(): ?string
+	{
+		if (! $this->kaedahPerolehanKindResolved) {
+			$this->kaedahPerolehanKindResolved = true;
+			$this->kaedahPerolehanKindCache = $this->resolveKaedahPerolehanKind();
+		}
+
+		return $this->kaedahPerolehanKindCache;
+	}
+
+	private function resolveKaedahPerolehanKind(): ?string
+	{
+		if ($this->kaedah_perolehan_id !== null) {
+			$name = DB::table('ref_kaedah_perolehans')
+				->where('id', $this->kaedah_perolehan_id)
+				->value('name');
+
+			return match (mb_strtolower(trim((string) $name))) {
+				'tender'      => 'tender',
+				'sebut harga' => 'quotation',
+				default       => null,
+			};
+		}
+
+		// Tender lama tiada kaedah_perolehan_id; `type` ialah sumber asalnya.
+		return in_array($this->type, ['tender', 'quotation'], true) ? $this->type : null;
+	}
+
 	public function isTenderKaedah(): bool
 	{
-		return $this->resolvedKaedahPerolehanId() === 1;
+		return $this->kaedahPerolehanKind() === 'tender';
 	}
 
 	public function isSebutHargaKaedah(): bool
 	{
-		return $this->resolvedKaedahPerolehanId() === 2;
+		return $this->kaedahPerolehanKind() === 'quotation';
 	}
 
 	public function showDokumenSenaraiTab(): bool
 	{
-		return in_array($this->resolvedKaedahPerolehanId(), [1, 2], true);
+		return $this->kaedahPerolehanKind() !== null;
 	}
 
 	public function canShowDokumenSenaraiTab($vendor_id = null): bool
