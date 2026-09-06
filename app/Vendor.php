@@ -1093,13 +1093,28 @@ class Vendor extends Model
 		});
 
 		self::updating(function ($vendor) {
+			// Vendor boleh disimpan sebelum pengguna pegawainya wujud — seeder
+			// mencipta vendor dahulu, dan hook Subscription::created menyimpan
+			// vendor semula sebelum pautan itu terbentuk. Dua semakan di bawah
+			// sudah menjangka $vendor->user boleh null; panggilan save() di
+			// hujung tidak, dan itu memfatalkan seeder dengan
+			// "Call to a member function save() on null".
+			if (! $vendor->user) {
+				return;
+			}
+
 			$data = request()->all();
-			if (isset($data['officer_name']) && $vendor->user) {
+
+			if (isset($data['officer_name'])) {
 				$vendor->user->name = $data['officer_name'];
 			}
-			if (isset($data['email']) && auth()->user()->hasRole('Admin')) {
+
+			// auth()->user() adalah null dalam konteks CLI dan kerja beratur,
+			// jadi ia mesti disemak sebelum hasRole() dipanggil.
+			if (isset($data['email']) && auth()->check() && auth()->user()->hasRole('Admin')) {
 				$vendor->user->email = $vendor->user->username = trim($data['email']);
 			}
+
 			$vendor->user->save();
 		});
 
