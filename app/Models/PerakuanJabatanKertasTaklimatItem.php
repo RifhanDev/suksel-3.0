@@ -21,8 +21,7 @@ class PerakuanJabatanKertasTaklimatItem extends Model
     public static function actionUi(?string $slotKey): string
     {
         return match ($slotKey) {
-            'teknikal' => 'download_only',
-            'kewangan' => 'upload_download',
+            'teknikal', 'kewangan' => 'download_only',
             'ringkasan' => 'upload_only',
             'kertas_perakuan', null => 'upload_download',
             'laporan_bidaan' => 'upload_only',

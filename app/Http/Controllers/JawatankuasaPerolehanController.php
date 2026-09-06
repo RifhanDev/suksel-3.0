@@ -144,16 +144,32 @@ class JawatankuasaPerolehanController extends Controller
                         ];
                     }
 
+                    if ($item->slot_key === 'kewangan') {
+                        $rows[] = [
+                            'kandungan' => $item->kandungan ?: 'Laporan Jawatankuasa Kewangan',
+                            'file_name' => 'Laporan Jawatankuasa Penilaian Kewangan',
+                            'papar_url' => route('jawatankuasa.perolehan.laporanKewangan', $tender),
+                        ];
+                    }
+
                     return $rows;
                 })
                 ->values();
 
-            // Fallback if PJ header/items were never seeded but teknikal report still exists.
+            // Fallback if PJ header/items were never seeded but reports still exist.
             if (! $taklimatItems->contains(fn ($item) => $item->slot_key === 'teknikal')) {
                 $taklimatAttachments->prepend([
                     'kandungan' => 'Laporan Jawatankuasa Teknikal',
                     'file_name' => 'Laporan Jawatankuasa Penilaian Teknikal',
                     'papar_url' => route('jawatankuasa.perolehan.laporanTeknikal', $tender),
+                ]);
+            }
+
+            if (! $taklimatItems->contains(fn ($item) => $item->slot_key === 'kewangan')) {
+                $taklimatAttachments->push([
+                    'kandungan' => 'Laporan Jawatankuasa Kewangan',
+                    'file_name' => 'Laporan Jawatankuasa Penilaian Kewangan',
+                    'papar_url' => route('jawatankuasa.perolehan.laporanKewangan', $tender),
                 ]);
             }
 
@@ -256,6 +272,14 @@ class JawatankuasaPerolehanController extends Controller
     public function muatTurunLaporanTeknikal(Tender $tender)
     {
         return app(PenilaianTeknikalController::class)->cetakLaporan($tender);
+    }
+
+    /** Proxy printable kewangan report for JP Paparan Kertas Taklimat (MeetingDecision role). */
+    public function muatTurunLaporanKewangan(Tender $tender)
+    {
+        $identifier = $tender->uuid ?: ($tender->no_tender ?: ($tender->ref_number ?: (string) $tender->id));
+
+        return app(PenilaianKewanganController::class)->cetakLaporan($identifier);
     }
 
     /**
@@ -533,12 +557,7 @@ class JawatankuasaPerolehanController extends Controller
             ? 'Pemilihan Bidaan berjaya dihantar. Proses kembali ke Perakuan Jabatan untuk Penyediaan Jadual Bidaan.'
             : 'Memuktamadkan pemilihan pembekal berjaya dihantar.';
 
-        return response()->json([
-            'message' => $message,
-            'redirect' => $kaedah === 'Bidaan'
-                ? route('perakuanjabatan.index')
-                : route('jawatankuasa.perolehan.index'),
-        ]);
+        return response()->json(['message' => $message]);
     }
 
     /**
