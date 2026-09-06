@@ -1485,7 +1485,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             };
         }
-        if (elCatatanInput) elCatatanInput.value = vendorObj.catatan || '';
+        if (elCatatanInput) elCatatanInput.value = vendorObj.catatan_skor || '';
 
         // Show Second Modal
         if (firstModal && secondModal) {
@@ -1548,7 +1548,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             const vRow = SEMAK_PAYLOAD[currentStep3ItemUuid].vendors.find(v => parseInt(v.vendor_id) === currentStep3VendorId);
                             if (vRow) {
                                 vRow.skor = skorVal;
-                                vRow.catatan = catatanVal;
+                                vRow.catatan_skor = catatanVal;
                                 vRow.status_pematuhan = 'mematuhi';
                                 vRow.step3_evaluated = true;
                             }
@@ -1884,7 +1884,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // 5. Catatan Penilai
         const elProfilCatatan = document.getElementById('step3VendorProfilCatatanInput');
-        if (elProfilCatatan) elProfilCatatan.value = vendorObj.catatan || '';
+        if (elProfilCatatan) elProfilCatatan.value = vendorObj.catatan_skor || '';
 
         // Transition from Modal 1 to Modal 2
         if (profilModal1 && profilModal2) {
@@ -1972,7 +1972,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 vRow.skor_modal_berbayar = skorBerbayarVal;
                                 vRow.skor_modal_dibenarkan = skorDibenarkanVal;
                                 vRow.skor = skorBerbayarVal + skorDibenarkanVal;
-                                vRow.catatan = catatanVal;
+                                vRow.catatan_skor = catatanVal;
                                 vRow.status_pematuhan = 'mematuhi';
                                 vRow.step3_evaluated = true;
                             }

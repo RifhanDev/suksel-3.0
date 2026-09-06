@@ -318,9 +318,9 @@ class StosBackendClient
         return $this->get('/api/pembelian-terus/' . $tenderId . '/offers');
     }
 
-    public function submitPembelianTerusOffer(int $tenderId, array $payload): Response
+    public function submitPembelianTerusOffer(int $tenderId, array $payload, array $files = []): Response
     {
-        return $this->post('/api/pembelian-terus/' . $tenderId . '/offers', $payload);
+        return $this->postMultipart('/api/pembelian-terus/' . $tenderId . '/offers', $payload, $files);
     }
 
     public function cutoffPembelianTerus(int $tenderId, array $payload): Response
@@ -368,9 +368,9 @@ class StosBackendClient
         return $this->get('/api/lantikan-terus/' . $tenderId . '/offers');
     }
 
-    public function submitLantikanTerusOffer(int $tenderId, array $payload): Response
+    public function submitLantikanTerusOffer(int $tenderId, array $payload, array $files = []): Response
     {
-        return $this->post('/api/lantikan-terus/' . $tenderId . '/offers', $payload);
+        return $this->postMultipart('/api/lantikan-terus/' . $tenderId . '/offers', $payload, $files);
     }
 
     public function cutoffLantikanTerus(int $tenderId, array $payload): Response
@@ -426,6 +426,79 @@ class StosBackendClient
     public function hantarSuratNiat(int $tenderId): Response
     {
         return $this->post('/api/surat-niat/' . $tenderId . '/hantar');
+    }
+
+    /**
+     * POST with multipart/form-data (fields + uploaded files).
+     *
+     * @param  array<string, mixed>  $fields
+     * @param  array<string, \Illuminate\Http\UploadedFile|null>  $files
+     */
+    public function postMultipart(string $path, array $fields = [], array $files = []): Response
+    {
+        if (! $this->isConfigured()) {
+            throw new \RuntimeException('STOS backend is not configured. Set STOS_BACKEND_URL and STOS_BACKEND_API_KEY in .env');
+        }
+
+        $url = $this->baseUrl . '/' . ltrim($path, '/');
+        $client = self::http();
+
+        foreach ($files as $name => $file) {
+            if (! $file) {
+                continue;
+            }
+
+            $client = $client->attach(
+                $name,
+                fopen($file->getRealPath(), 'r'),
+                $file->getClientOriginalName()
+            );
+        }
+
+        try {
+            return $client->asMultipart()->post($url, $this->flattenMultipartFields($fields));
+        } catch (\Throwable $e) {
+            Log::error('STOS API multipart request failed', [
+                'url' => $url,
+                'error' => $e->getMessage(),
+            ]);
+
+            throw $e;
+        }
+    }
+
+    /**
+     * Flatten nested arrays into PHP multipart field names:
+     * offer_items[0][item_id] => 1
+     *
+     * @param  array<string, mixed>  $fields
+     * @return array<string, string>
+     */
+    protected function flattenMultipartFields(array $fields, string $prefix = ''): array
+    {
+        $flat = [];
+
+        foreach ($fields as $key => $value) {
+            $name = $prefix === '' ? (string) $key : $prefix . '[' . $key . ']';
+
+            if (is_array($value)) {
+                $flat = array_merge($flat, $this->flattenMultipartFields($value, $name));
+                continue;
+            }
+
+            if ($value === null) {
+                continue;
+            }
+
+            if (is_bool($value)) {
+                $flat[$name] = $value ? '1' : '0';
+                continue;
+            }
+
+            $flat[$name] = (string) $value;
+        }
+
+        return $flat;
     }
 
     protected function request(string $method, string $path, array $options = []): Response

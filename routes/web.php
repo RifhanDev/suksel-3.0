@@ -355,6 +355,7 @@ Route::middleware(['auth'])->group(function () {
 	Route::get('/penyediaan-sst/{tender}/vendor/{vendorId}/surat-akuan-pembida-berjaya', [PenyediaanSuratSstController::class, 'suratAkuanPembidaBerjaya'])->name('penyediaanSST.suratAkuanPembidaBerjaya');
 	Route::get('/penyediaan-sst/{tender}/vendor/{vendorId}/surat-akuan-sumpah-syarikat', [PenyediaanSuratSstController::class, 'suratAkuanSumpahSyarikat'])->name('penyediaanSST.suratAkuanSumpahSyarikat');
 	Route::post('/penyediaan-sst/{tender}/dokumen', [PenyediaanSuratSstController::class, 'muatNaikDokumen'])->name('penyediaanSST.muatNaikDokumen');
+	Route::get('/penyediaan-sst/{tender}/dokumen/{storedName}', [PenyediaanSuratSstController::class, 'muatTurunDokumen'])->name('penyediaanSST.muatTurunDokumen');
 	Route::get('/index-jawatankuasa-pembuka', [JawatankuasaPembukaController::class, 'index'])->name('indexJawatankuasaPembuka');
 	Route::get('/jawatankuasa-pembuka', [JawatankuasaPembukaController::class, 'show'])->name('jawatankuasaPembuka');
 	Route::post('/jawatankuasa-pembuka/simpan-pematuhan', [JawatankuasaPembukaController::class, 'simpanPematuhan'])->name('jawatankuasaPembuka.simpanPematuhan');
@@ -440,6 +441,7 @@ Route::middleware(['auth'])->group(function () {
 
 	// new penilaian kewangan
 	Route::get('/penilaian-kewangan', [PenilaianKewanganController::class, 'index'])->name('penilaianKewangan');
+	Route::get('/penilaian-kewangan/{tender_no}/laporan/cetak', [PenilaianKewanganController::class, 'cetakLaporan'])->name('penilaianKewangan.cetakLaporan');
 	Route::get('/penilaian-kewangan/{tender_no}', [PenilaianKewanganController::class, 'show'])->name('penilaianKewangan.show')->where('tender_no', '.*');
 	Route::post('/penilaian-kewangan/simpan-pematuhan', [PenilaianKewanganController::class, 'simpanPematuhan'])->name('penilaianKewangan.simpanPematuhan');
 	Route::post('/penilaian-kewangan/kemaskini-langkah', [PenilaianKewanganController::class, 'kemaskiniLangkah'])->name('penilaianKewangan.kemaskiniLangkah');

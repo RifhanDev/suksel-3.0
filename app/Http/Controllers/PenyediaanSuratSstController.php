@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\AdvancesTenderProcessStatus;
 use App\Http\Controllers\Concerns\ResolvesTenderForProcess;
+use App\Models\Ref\RefTypeOfContract;
 use App\Services\StosBackendClient;
 use App\Support\TenderProcessStatus;
 use App\Tender;
@@ -60,11 +61,25 @@ class PenyediaanSuratSstController extends Controller
         return view('newModule.penyediaanSST.penyediaanSST', [
             'tender' => $tender,
             'noTender' => $tender->no_tender ?: $tender->ref_number ?: '-',
+            'rujukanFail' => $tender->ref_number ?: '-',
             'jenisPerolehanLabel' => $tender->isSebutHargaKaedah() ? 'Sebut Harga' : 'Tender',
+            'kategoriPerolehanLabel' => $this->kategoriPerolehanLabel($tender),
+            'jenisKontrakLabel' => RefTypeOfContract::query()->find($tender->jenis_kontrak_id)?->name ?? '-',
+            'agensi' => $tender->tenderer?->name ?? '-',
             'tunjukPemilihanItem' => (int) $tender->kategori_perolehan_id !== self::KATEGORI_KERJA,
             'tempohSahLaku' => $this->tempohSahLaku($tender),
             'tempohKontrak' => $tender->tempoh_kontrak_bulan,
         ]);
+    }
+
+    private function kategoriPerolehanLabel(Tender $tender): string
+    {
+        return match ((int) $tender->kategori_perolehan_id) {
+            1 => 'Bekalan',
+            2 => 'Perkhidmatan',
+            self::KATEGORI_KERJA => 'Kerja',
+            default => '-',
+        };
     }
 
     /** Winning vendors plus each one's SST status. */
@@ -491,6 +506,19 @@ class PenyediaanSuratSstController extends Controller
         ]);
     }
 
+    public function muatTurunDokumen(Request $request, Tender $tender, string $storedName)
+    {
+        abort_unless(preg_match('/^[A-Za-z0-9._-]+$/', $storedName) === 1, 404, 'Fail tidak dijumpai.');
+
+        $absolutePath = storage_path("app/public/uploads/sst/{$tender->id}/{$storedName}");
+
+        abort_unless(is_file($absolutePath), 404, 'Fail tidak dijumpai.');
+
+        $namaFail = basename((string) $request->query('nama', $storedName));
+
+        return response()->download($absolutePath, $namaFail);
+    }
+
     private function validatePayload(Request $request): array
     {
         $validated = $request->validate([
@@ -509,6 +537,10 @@ class PenyediaanSuratSstController extends Controller
             'documents' => 'nullable|array',
             'documents.*.document_name' => 'nullable|string|max:255',
             'documents.*.original_name' => 'nullable|string|max:255',
+            'documents.*.stored_name' => 'nullable|string|max:255',
+            'documents.*.path' => 'nullable|string|max:255',
+            'documents.*.mime_type' => 'nullable|string|max:255',
+            'documents.*.size' => 'nullable|integer|min:0',
         ]);
 
         return array_merge($validated, ['acting_user_id' => Auth::id()]);
