@@ -2,31 +2,25 @@
 
 namespace Database\Seeders\Ref;
 
-use App\Models\Ref\RefTypeOfPemenuhan;
-use Carbon\Carbon;
-use Illuminate\Database\Seeder;
-
-class TypeOfPemenuhan extends Seeder
+/**
+ * Senarai rujukan Jenis Pemenuhan.
+ *
+ * Lihat RefListSeeder untuk kelakuan dan sebab ia selamat dijalankan berulang.
+ */
+class TypeOfPemenuhan extends RefListSeeder
 {
-    /**
-     * Run the database seeds.
-     */
-    public function run(): void
+    public const ROWS = [
+        ['name' => 'Bermasa (Bila Perlu)'],
+        ['name' => 'Sepenuh Masa'],
+    ];
+
+    protected function table(): string
     {
+        return 'ref_type_of_pemenuhans';
+    }
 
-        // Create Admin User
-        RefTypeOfPemenuhan::create([
-            'name' => 'Bermasa (Bila Perlu)',
-            'active' => '1',
-            'created_at' => Carbon::now(),
-            'updated_at' => Carbon::now(),
-        ]);
-
-        RefTypeOfPemenuhan::create([
-            'name' => 'Sepenuh Masa',
-            'active' => '1',
-            'created_at' => Carbon::now(),
-            'updated_at' => Carbon::now(),
-        ]);
+    protected function rows(): array
+    {
+        return self::ROWS;
     }
 }

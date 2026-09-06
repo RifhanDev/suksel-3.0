@@ -2,31 +2,25 @@
 
 namespace Database\Seeders\Ref;
 
-use App\Models\Ref\RefYesNo;
-use Carbon\Carbon;
-use Illuminate\Database\Seeder;
-
-class YesNo extends Seeder
+/**
+ * Senarai rujukan pilihan Ya/Tidak.
+ *
+ * Lihat RefListSeeder untuk kelakuan dan sebab ia selamat dijalankan berulang.
+ */
+class YesNo extends RefListSeeder
 {
-    /**
-     * Run the database seeds.
-     */
-    public function run(): void
+    public const ROWS = [
+        ['name' => 'Ya'],
+        ['name' => 'Tidak'],
+    ];
+
+    protected function table(): string
     {
+        return 'ref_yes_nos';
+    }
 
-        // Create Admin User
-        RefYesNo::create([
-            'name' => 'Ya',
-            'active' => '1',
-            'created_at' => Carbon::now(),
-            'updated_at' => Carbon::now(),
-        ]);
-
-        RefYesNo::create([
-            'name' => 'Tidak',
-            'active' => '1',
-            'created_at' => Carbon::now(),
-            'updated_at' => Carbon::now(),
-        ]);
+    protected function rows(): array
+    {
+        return self::ROWS;
     }
 }

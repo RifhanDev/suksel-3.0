@@ -2,8 +2,12 @@
 	$tenderId = $tender->id;
 	$simpanUrl = route('perakuanjabatan.kertasTaklimat.simpan', ['tender' => $tenderId]);
 	$hantarUrl = route('perakuanjabatan.kertasTaklimat.hantar', ['tender' => $tenderId]);
+	$tabsReadOnly = $tabsReadOnly ?? false;
+	$pjMode = $pjMode ?? 'normal';
+	$ktActive = $pjMode === 'normal';
+	$ktLocked = $tabsReadOnly || !empty($header->submitted_at);
 @endphp
-<div class="tab-pane fade show active kertas-taklimat-tab" id="tab-kertas-taklimat" role="tabpanel">
+<div class="tab-pane fade {{ $ktActive ? 'show active' : '' }} kertas-taklimat-tab" id="tab-kertas-taklimat" role="tabpanel">
 	<style>
 		.kertas-taklimat-tab .kt-table-wrap .table thead th {
 			background-color: #2d3e84 !important;
@@ -95,8 +99,11 @@
 		}
 	</style>
 
-	<div class="content-card p-4" id="kt-root" data-tender-id="{{ $tenderId }}">
+	<div class="content-card p-4" id="kt-root" data-tender-id="{{ $tenderId }}" data-locked="{{ $ktLocked ? '1' : '0' }}">
 		<h6 class="fw-bold text-dark mb-3">Seksyen Laporan</h6>
+		@if ($tabsReadOnly)
+			<div class="alert alert-info py-2 px-3 mb-3">Maklumat kertas taklimat adalah read-only pada peringkat ini.</div>
+		@endif
 		<div class="alert d-none py-2 px-3 mb-3" id="ktAlert" role="alert"></div>
 
 		<div class="table-responsive kt-table-wrap">
@@ -138,7 +145,7 @@
 										<a href="{{ route('perakuanjabatan.kertasTaklimat.download', $f) }}" class="kt-action-link kt-muat-turun">Muat
 											Turun</a>
 										<span class="small text-muted text-break">{{ $f->file_original_name }}</span>
-										<button type="button" class="btn btn-link btn-sm p-0 kt-remove-file text-danger">Buang</button>
+										<button type="button" class="btn btn-link btn-sm p-0 kt-remove-file text-danger {{ $ktLocked ? 'd-none' : '' }}">Buang</button>
 									</div>
 								@endforeach
 								@if ($sourceLink)
@@ -154,7 +161,7 @@
 											<span class="text-muted small">Tiada dokumen untuk dimuat turun</span>
 										@endif
 									@endif
-									@if (in_array($ui, ['upload_only', 'upload_download'], true))
+									@if (!$ktLocked && in_array($ui, ['upload_only', 'upload_download'], true))
 										<a href="#" class="kt-action-link kt-muat-naik">Muat Naik</a>
 										<input type="file" class="d-none kt-file-input" multiple aria-label="Fail muat naik (boleh berbilang)">
 									@endif
@@ -169,21 +176,25 @@
 
 		<div class="d-flex flex-wrap justify-content-end gap-2 mt-3">
 			<button type="button" class="btn btn-sm btn-kt-teal" id="ktMuatTurunSemua">Muat Turun Semua</button>
-			<button type="button" class="btn btn-sm btn-kt-navy" id="ktTambahBaris">Tambah</button>
-			<button type="button" class="btn btn-sm btn-kt-coral" id="ktHapusBaris">Hapus</button>
+			@unless ($ktLocked)
+				<button type="button" class="btn btn-sm btn-kt-navy" id="ktTambahBaris">Tambah</button>
+				<button type="button" class="btn btn-sm btn-kt-coral" id="ktHapusBaris">Hapus</button>
+			@endunless
 		</div>
 
 		<div class="mt-4">
 			<div class="kt-bar-catatan rounded-top">CATATAN</div>
 			<label class="visually-hidden" for="ktCatatan">Catatan</label>
 			<textarea class="form-control kt-textarea-catatan" id="ktCatatan" name="catatan" rows="4"
-			 placeholder="Masukkan catatan…">{{ old('catatan', $header->catatan) }}</textarea>
+			 placeholder="Masukkan catatan…" {{ $ktLocked ? 'disabled' : '' }}>{{ old('catatan', $header->catatan) }}</textarea>
 		</div>
 
-		<div class="d-flex justify-content-end gap-2 mt-4">
-			<button type="button" class="btn btn-kt-teal" id="ktSimpan">Simpan</button>
-			<button type="button" class="btn btn-kt-navy" id="ktHantar">Hantar</button>
-		</div>
+		@unless ($ktLocked)
+			<div class="d-flex justify-content-end gap-2 mt-4">
+				<button type="button" class="btn btn-kt-teal" id="ktSimpan">Simpan</button>
+				<button type="button" class="btn btn-kt-navy" id="ktHantar">Hantar</button>
+			</div>
+		@endunless
 	</div>
 </div>
 
@@ -192,6 +203,7 @@
 		(function() {
 			const root = document.getElementById('kt-root');
 			if (!root) return;
+			if (root.getAttribute('data-locked') === '1') return;
 
 			const simpanUrl = @json($simpanUrl);
 			const hantarUrl = @json($hantarUrl);

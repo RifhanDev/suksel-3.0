@@ -610,6 +610,9 @@ Route::middleware(['auth'])->group(function () {
 	Route::get('/perakuan-jabatan/{tender}/laporan-teknikal', [PerakuanJabatanController::class, 'muatTurunLaporanTeknikal'])->name('perakuanjabatan.laporanTeknikal');
 	Route::post('/perakuan-jabatan/{tender}/pengesyoran-pembekal/simpan', [PerakuanJabatanController::class, 'pengesyoranPembekalSimpan'])->name('perakuanjabatan.pengesyoranPembekal.simpan');
 	Route::post('/perakuan-jabatan/{tender}/pengesyoran-pembekal/hantar', [PerakuanJabatanController::class, 'pengesyoranPembekalHantar'])->name('perakuanjabatan.pengesyoranPembekal.hantar');
+	Route::post('/perakuan-jabatan/{tender}/jadual-bidaan/simpan', [PerakuanJabatanController::class, 'jadualBidaanSimpan'])->name('perakuanjabatan.jadualBidaan.simpan');
+	Route::post('/perakuan-jabatan/{tender}/jadual-bidaan/mula', [PerakuanJabatanController::class, 'jadualBidaanMula'])->name('perakuanjabatan.jadualBidaan.mula');
+	Route::post('/perakuan-jabatan/{tender}/semakan-bidaan/hantar', [PerakuanJabatanController::class, 'semakanBidaanHantar'])->name('perakuanjabatan.semakanBidaan.hantar');
 	Route::get('/perakuan-jabatan/{id}', [PerakuanJabatanController::class, 'show'])->middleware(['auth'])->name('perakuanjabatan.show');
 	Route::get('/perakuan-jabatan/form', [PerakuanJabatanController::class, 'form'])->middleware(['auth'])->name('perakuanJabatan.form');
 	Route::get('/perakuan-jabatan/kertas-taklimat', [PerakuanJabatanController::class, 'kertasTaklimat'])->middleware(['auth'])->name('perakuanJabatan.kertasTaklimat');

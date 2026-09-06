@@ -1,621 +1,528 @@
 @extends('layouts.v3.master')
 
+@section('styles')
+    <link href="{{ asset('css/components/button-components.css') }}" rel="stylesheet">
+    <link href="{{ asset('css/components/file-upload.css') }}" rel="stylesheet">
+    <style>
+        /* --- TIMELINE (3 steps) --- */
+        .stepper-wrapper {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 2rem;
+            position: relative;
+            padding: 0 40px;
+        }
+
+        .stepper-track {
+            position: absolute;
+            top: 15px;
+            left: 40px;
+            right: 40px;
+            height: 4px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .stepper-progress {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 0%;
+            background: var(--sg-red);
+            border-radius: 4px;
+            transition: width 0.4s ease;
+        }
+
+        .stepper-wrapper[data-step="1"] .stepper-progress { width: 0%; }
+        .stepper-wrapper[data-step="2"] .stepper-progress { width: 50%; }
+        .stepper-wrapper[data-step="3"] .stepper-progress { width: 100%; }
+
+        .stepper-item {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex: 1;
+        }
+
+        .step-counter {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background: #fff;
+            border: 3px solid #cbd5e1;
+            color: #94a3b8;
+            font-weight: 700;
+            font-size: 0.85rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .step-name {
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #94a3b8;
+            transition: color 0.3s ease;
+            text-align: center;
+        }
+
+        .stepper-item.active .step-counter {
+            border-color: var(--sg-red);
+            background: var(--sg-red);
+            color: #fff;
+            box-shadow: 0 0 0 5px var(--sg-red-soft), 0 2px 8px rgba(196, 30, 58, 0.3);
+            transform: scale(1.05);
+        }
+
+        .stepper-item.active .step-name { color: var(--sg-red); }
+
+        .stepper-item.completed .step-counter {
+            border-color: #10b981;
+            background: #10b981;
+            color: #fff;
+            box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3);
+        }
+
+        .stepper-item.completed .step-counter::after { content: '✓'; font-size: 0.9rem; }
+        .stepper-item.completed .step-counter span { display: none; }
+        .stepper-item.completed .step-name { color: #10b981; }
+
+        /* --- PROJECT SUMMARY --- */
+        .project-summary {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: stretch;
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-left: 4px solid var(--sg-red);
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+            overflow: hidden;
+        }
+
+        .project-summary-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 16px 22px;
+            flex: 1;
+            min-width: 240px;
+        }
+
+        .project-summary-item .ps-icon {
+            width: 42px;
+            height: 42px;
+            flex-shrink: 0;
+            border-radius: 10px;
+            background: rgba(196, 30, 58, 0.08);
+            color: var(--sg-red);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .project-summary-item .ps-text {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            min-width: 0;
+        }
+
+        .project-summary-item .ps-label {
+            font-size: 0.62rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #94a3b8;
+        }
+
+        .project-summary-item .ps-value {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: #1f2937;
+            line-height: 1.35;
+        }
+
+        .project-summary .ps-divider {
+            width: 1px;
+            background: #f1f5f9;
+            align-self: stretch;
+            margin: 12px 0;
+        }
+
+        .spec-table thead th {
+            background: #f8fafc;
+            font-size: 0.68rem;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            color: #6b7280;
+            border-color: #e5e7eb;
+        }
+
+        .spec-table .summary-row {
+            background: #f8fafc !important;
+            font-weight: 600;
+        }
+
+        .item-filled {
+            color: #059669;
+            font-size: 0.72rem;
+            font-weight: 600;
+            margin-top: 2px;
+        }
+
+        .form-label.required::after { content: " *"; color: #dc3545; }
+
+        .upload-area {
+            border: 2px dashed #e5e7eb;
+            border-radius: 10px;
+            padding: 28px 20px;
+            text-align: center;
+            background: #f8fafc;
+            cursor: pointer;
+        }
+
+        .upload-area.disabled { cursor: not-allowed; opacity: .65; }
+        .upload-area svg { color: #94a3b8; margin-bottom: 12px; }
+
+        .modal-title { color: var(--sg-red-dark); }
+
+        @media (max-width: 767px) {
+            .project-summary .ps-divider { display: none; }
+            .project-summary-item {
+                flex: 1 1 100%;
+                border-bottom: 1px solid #f1f5f9;
+            }
+            .project-summary-item:last-child { border-bottom: none; }
+        }
+
+        @media (max-width: 991px) {
+            .stepper-wrapper { padding: 0 20px; }
+            .stepper-track { left: 40px; right: 40px; }
+            .step-name { font-size: 0.65rem; }
+            .step-counter { width: 30px; height: 30px; font-size: 0.75rem; }
+        }
+    </style>
+@endsection
+
 @section('content')
+    @php
+        $p = $p ?? $project ?? (object) [];
+        $specifications = $specifications ?? [];
+        $mofLabels = $mofLabels ?? [];
+        $cidbGradeLabels = $cidbGradeLabels ?? [];
+        $kategoriName = $kategoriName ?? '-';
+        $ptjName = $ptjName ?? '-';
+        $canSubmitOffer = $canSubmitOffer ?? false;
+    @endphp
 
-<style>
-    /* Progress Bar Styles */
-    .progress-wrapper {
-        position: relative;
-    }
-
-    .progress-step {
-        position: relative;
-        z-index: 1;
-        flex: 1;
-    }
-
-    /* Connector line */
-    .progress-step:not(:last-child)::after {
-        content: '';
-        position: absolute;
-        top: 18px;
-        /* center of circle (36px / 2) */
-        left: 50%;
-        width: 100%;
-        height: 3px;
-        background: var(--topbar-border, #e5e7eb);
-        z-index: 0;
-    }
-
-    /* Active / done line */
-    .progress-step.active:not(:last-child)::after,
-    .progress-step.done:not(:last-child)::after {
-        background: var(--sg-red);
-    }
-
-    /* Reset future steps */
-    .progress-step.active~.progress-step:not(:last-child)::after {
-        background: var(--topbar-border, #e5e7eb);
-    }
-
-    /* Step circle */
-    .step-number {
-        width: 36px;
-        height: 36px;
-        border-radius: 50%;
-        background: var(--topbar-border, #e5e7eb);
-        color: var(--topbar-text, #374151);
-        position: relative;
-        z-index: 2;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    /* Active & done states */
-    .progress-step.active .step-number,
-    .progress-step.done .step-number {
-        background: var(--sg-red);
-        color: #fff;
-    }
-
-    .step-label {
-        font-size: 13px;
-        color: var(--topbar-text, #374151);
-    }
-
-    .progress-step.active .step-label,
-    .progress-step.done .step-label {
-        color: var(--sg-red-dark);
-    }
-
-    /* Form Styles */
-    .form-title {
-        font-size: 18px;
-        font-weight: bold;
-        color: var(--sg-red-dark);
-        margin-bottom: 25px;
-        padding-bottom: 10px;
-        border-bottom: 2px solid var(--topbar-border, #e5e7eb);
-    }
-
-    .form-label.required::after {
-        content: " *";
-        color: #dc3545;
-    }
-
-    .form-control:read-only,
-    .form-select:disabled,
-    textarea:read-only {
-        background-color: #f9fafb;
-        cursor: not-allowed;
-        /* light grey */
-        color: #6b7280;
-        font-weight: 500;
-    }
-
-    .form-control:read-only:focus,
-    textarea:read-only:focus {
-        border-color: #d1d5db;
-        box-shadow: none;
-    }
-
-    /* Button Styles */
-    .btn-kembali {
-        background: var(--sg-red);
-        color: white;
-        border: none;
-    }
-
-    .btn-kembali:hover {
-        background: var(--sg-red-deep);
-        color: white;
-    }
-
-    .btn-papar {
-        background: #10b981;
-        color: white;
-        border: none;
-        padding: 6px 16px;
-        border-radius: 4px;
-        font-size: 14px;
-        font-weight: 500;
-        cursor: pointer;
-    }
-
-    .btn-papar:hover {
-        background: #059669;
-        color: white;
-    }
-
-    .btn-sebelumnya {
-        background: var(--topbar-text, #374151);
-        color: white;
-        border: none;
-    }
-
-    .btn-sebelumnya:hover {
-        background: var(--sg-black);
-        color: white;
-    }
-
-    .btn-simpan {
-        background: var(--sg-bg);
-        color: var(--sg-black);
-        border: 1px solid var(--sg-black);
-    }
-
-    .btn-simpan:hover {
-        background: var(--sg-black);
-        color: var(--sg-bg);
-        border-color: var(--sg-black);
-    }
-
-    .btn-seterusnya {
-        background: var(--sg-red);
-        color: white;
-        border: none;
-    }
-
-    .btn-seterusnya:hover {
-        background: var(--sg-red-deep);
-        color: white;
-    }
-
-    .btn-or-dan {
-        background: var(--sg-red);
-        color: white;
-        border: none;
-        padding: 6px 16px;
-        border-radius: 4px;
-        font-size: 14px;
-        font-weight: 500;
-        cursor: not-allowed;
-    }
-
-    .btn-or-dan:hover {
-        background: var(--sg-red);
-        color: white;
-    }
-
-    .spec-table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-bottom: 20px;
-    }
-
-    .spec-table thead {
-        background: var(--sg-red);
-        color: white;
-    }
-
-    .spec-table th,
-    .spec-table td {
-        padding: 12px;
-        text-align: left;
-        border: 1px solid var(--topbar-border, #e5e7eb);
-    }
-
-    .spec-table th {
-        font-weight: bold;
-        text-align: center;
-        color: white;
-    }
-
-    .spec-table tbody tr {
-        background: white;
-    }
-
-    .spec-table tbody tr:hover {
-        background: var(--sg-bg);
-    }
-
-    .spec-table td {
-        color: var(--sg-black);
-    }
-
-    .summary-row {
-        background: var(--sg-bg) !important;
-        font-weight: 600;
-    }
-
-    .btn-muat-naik {
-        background: #ffcc00 !important;
-        color: #000 !important;
-        border: none !important;
-    }
-
-    .btn-muat-naik:hover,
-    .btn-muat-naik:focus,
-    .btn-muat-naik:active {
-        background: #e6b800 !important;
-        color: #000 !important;
-    }
-
-    .btn-muat-naik:disabled,
-    .btn-muat-naik.disabled {
-        background: #ffcc00 !important;
-        color: #000 !important;
-        opacity: 0.65;
-    }
-
-    .btn-muat-naik-dokumen {
-        background: var(--sg-yellow, #ffcc00);
-        color: var(--sg-black, #000);
-        border: none;
-    }
-
-    .btn-muat-naik-dokumen:hover {
-        background: #e6b800;
-        color: var(--sg-black, #000);
-    }
-
-    .btn-selesai {
-        background: var(--sg-red);
-        color: white;
-        border: none;
-    }
-
-    .btn-selesai:hover {
-        background: var(--sg-red-deep);
-        color: white;
-    }
-
-    .document-link {
-        color: var(--sg-red);
-        text-decoration: underline;
-        cursor: pointer;
-    }
-
-    .document-link:hover {
-        color: var(--sg-red-deep);
-    }
-
-    .modal-title {
-        color: var(--sg-red-dark);
-    }
-
-    .upload-area {
-        border: 2px dashed var(--topbar-border, #e5e7eb);
-        border-radius: 8px;
-        padding: 40px 20px;
-        text-align: center;
-        background: var(--sg-bg);
-        cursor: not-allowed;
-    }
-
-    .upload-area svg {
-        width: 48px;
-        height: 48px;
-        color: var(--topbar-text, #374151);
-        margin-bottom: 16px;
-    }
-
-    /* Success Modal Styles */
-    .success-modal .modal-content {
-        border-radius: 8px;
-        border: none;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    }
-
-    .success-modal .modal-body {
-        padding: 40px 30px;
-        text-align: center;
-    }
-
-    .success-icon {
-        width: 80px;
-        height: 80px;
-        margin: 0 auto 24px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .success-message {
-        font-size: 20px;
-        font-weight: bold;
-        color: #000;
-        margin-bottom: 30px;
-    }
-
-    .btn-tutup {
-        background: var(--sg-black);
-        color: var(--sg-bg);
-        border: none;
-        padding: 10px 30px;
-        border-radius: 4px;
-        font-weight: 500;
-        font-size: 16px;
-    }
-
-    .btn-tutup:hover {
-        background: var(--sg-black);
-        color: var(--sg-bg);
-    }
-</style>
-
-<div class="card">
-    <div class="card-body p-4">
-
-        {{-- Breadcrumb Navigation --}}
-        <nav class="py-2 mb-4">
-            <ol class="breadcrumb mb-0">
-                <li class="breadcrumb-item"><a href="#" class="text-muted text-decoration-none">STOS</a></li>
-                <li class="breadcrumb-item active fw-semibold">Butiran Projek Pembelian Terus</li>
-            </ol>
-        </nav>
-
-        {{-- Progress Bar - Step 1 Active --}}
-        
-
-        <div class="progress-wrapper d-flex align-items-center my-4 my-md-5 px-3 px-md-4">
-            <div class="progress-step text-center active" id="step1Indicator">
-                <div class="step-number mx-auto mb-2 fw-bold">1</div>
-                <div class="step-label fw-semibold">Paparan Projek</div>
-            </div>
-
-            <div class="progress-step text-center" id="step2Indicator">
-                <div class="step-number mx-auto mb-2 fw-bold">2</div>
-                <div class="step-label fw-semibold">Maklumat Spesifikasi</div>
-            </div>
-
-            <div class="progress-step text-center" id="step3Indicator">
-                <div class="step-number mx-auto mb-2 fw-bold">3</div>
-                <div class="step-label fw-semibold">Harga SST</div>
-            </div>
+    <!-- HEADER -->
+    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center mb-3">
+        <div class="mb-3 mb-lg-0">
+            <h3 class="fw-bold text-dark m-0" style="letter-spacing: -0.5px;">Sebut Harga Pembelian Terus</h3>
+            <p class="text-muted small m-0">Paparan maklumat projek dan penghantaran sebut harga pembelian terus.</p>
         </div>
-
-        {{-- STEP 1: Paparan Projek --}}
-        <div id="step1Content">
-            <h4 class="form-title">PAPARAN PROJEK UNTUK PEMBELIAN TERUS</h4>
-
-            <form>
-
-                <div class="d-flex align-items-center mb-3">
-                    <label class="form-label required w-25 me-3 text-end mb-0">Tajuk Perolehan</label>
-                    <div class="flex-fill">
-                        <textarea class="form-control" rows="3" placeholder="Masukkan tajuk perolehan" readonly>{{ $project->tajuk_perolehan ?? 'BEKALAN BARANGAN PERSEKOLAHAN' }}</textarea>
-                    </div>
-                </div>
-
-
-
-                <div class="d-flex align-items-center mb-3">
-                    <label class="form-label required w-25 me-3 text-end mb-0">No. Rujukan Fail</label>
-                    <div class="flex-fill">
-                        <input type="text" class="form-control" value="{{ $project->no_rujukan_fail ?? 'SH/DF/TRG' }}" readonly>
-                    </div>
-                </div>
-
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <div class="d-flex align-items-center">
-                            <label class="form-label w-50 me-4 text-end mb-0">Tarikh Buka</label>
-                            <div class="flex-fill">
-                                <input type="text" class="form-control" value="{{ $project->tarikh_buka ?? '17/09/2021' }}" placeholder="DD/MM/YYYY" readonly>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="d-flex align-items-center">
-                            <label class="form-label w-50 me-4 text-end mb-0">Tarikh Tutup</label>
-                            <div class="flex-fill">
-                                <input type="text" class="form-control" value="{{ $project->tarikh_tutup ?? '17/10/2021' }}" placeholder="DD/MM/YYYY" readonly>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="row mb-4">
-                    <div class="col-md-6">
-                        <div class="d-flex align-items-center">
-                            <label class="form-label required w-50 me-4 text-end mb-0">Kategori Perolehan</label>
-                            <div class="flex-fill">
-                                <select class="form-select" disabled>
-                                    <option value="{{ $project->kategori_perolehan ?? 'ICT' }}" selected>{{ $project->kategori_perolehan ?? 'ICT' }}</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        {{-- Empty column for alignment --}}
-                    </div>
-                </div>
-
-                {{-- KOD BIDANG Section --}}
-                <h4 class="form-title mt-5">KOD BIDANG</h4>
-
-                <div class="row mb-3">
-                    <div class="col-md-12">
-                        <div class="d-flex align-items-center mb-3">
-                            <label class="form-label w-25 me-3 text-end mb-0">Kod Bidang MOF</label>
-                            <div class="flex-fill">
-                                <div class="d-flex flex-column gap-2">
-                                    <div class="d-flex align-items-center gap-2">
-                                        <input type="text" class="form-control" value="{{ $project->kod_bidang_mof_1 ?? '' }}" readonly>
-                                        <button type="button" class="btn btn-or-dan" disabled>Atau</button>
-                                    </div>
-                                    <div class="d-flex align-items-center gap-2">
-                                        <input type="text" class="form-control" value="{{ $project->kod_bidang_mof_2 ?? '' }}" readonly>
-                                        <button type="button" class="btn btn-or-dan" disabled>Dan</button>
-                                    </div>
-                                    <div>
-                                        <input type="text" class="form-control" value="{{ $project->kod_bidang_mof_3 ?? '' }}" readonly>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="row mb-4">
-                    <div class="col-md-6">
-                        <div class="d-flex align-items-center">
-                            <label class="form-label w-50 me-3 text-end mb-0">Gred CIDB</label>
-                            <div class="flex-fill">
-                                <input type="text" class="form-control" value="{{ $project->gred_cidb ?? '' }}" readonly>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        {{-- Empty column for alignment --}}
-                    </div>
-                </div>
-
-                {{-- Action Buttons --}}
-                <div class="d-flex justify-content-end gap-2 mt-4">
-                    <button type="button" class="btn btn-seterusnya px-4 py-2 rounded fw-bold" onclick="showStep(2)">Seterusnya</button>
-                </div>
-            </form>
-        </div>
-
-        {{-- STEP 2: Maklumat Spesifikasi --}}
-        <div class="d-none" id="step2Content">
-            <h4 class="form-title">MAKLUMAT SPESIFIKASI KAJIAN</h4>
-
-            <table class="spec-table">
-                <thead>
-                    <tr>
-                        <th style="width: 80px;">Bil.</th>
-                        <th>item</th>
-                        <th style="width: 150px;">Kuantiti</th>
-                        <th style="width: 120px;">Tindakan</th>
-                    </tr>
-                </thead>
-                <tbody id="specTableBody">
-                    @php
-                    $specifications = $specifications ?? [
-                    ['item' => 'MONITOR', 'kuantiti' => '10', 'brand' => 'Acer', 'harga_seunit' => '10,000.00', 'harga_keseluruhan' => '100,000.00', 'harga_sst' => '100,0008.00'],
-                    ['item' => 'PRINTER', 'kuantiti' => '10', 'brand' => 'HP', 'harga_seunit' => '5,000.00', 'harga_keseluruhan' => '50,000.00', 'harga_sst' => '50,0004.00'],
-                    ['item' => 'PROJECTOR', 'kuantiti' => '10', 'brand' => 'Epson', 'harga_seunit' => '8,000.00', 'harga_keseluruhan' => '80,000.00', 'harga_sst' => '80,0006.40']
-                    ];
-                    @endphp
-                    @foreach($specifications as $index => $spec)
-                    <tr>
-                        <td style="text-align: center;">{{ $index + 1 }}</td>
-                        <td>{{ $spec['item'] ?? '-' }}</td>
-                        <td>{{ $spec['kuantiti'] ?? '-' }}</td>
-                        <td style="text-align: center;">
-                            <button type="button" class="btn btn-papar px-3 py-1 rounded fw-bold" data-item-index="{{ $index }}" onclick="openItemModal(this)">Papar</button>
-                        </td>
-                    </tr>
-                    @endforeach
-                </tbody>
-            </table>
-
-            {{-- Navigation Buttons --}}
-            <div class="d-flex justify-content-between mt-4">
-                <button type="button" class="btn btn-sebelumnya px-4 py-2 rounded fw-bold" onclick="showStep(1)">Sebelumnya</button>
-                <div class="d-flex gap-2">
-                    <button type="button" class="btn btn-simpan px-4 py-2 rounded fw-bold">Simpan</button>
-                    <button type="button" class="btn btn-seterusnya px-4 py-2 rounded fw-bold" onclick="showStep(3)">Seterusnya</button>
-                </div>
-            </div>
-        </div>
-
-        {{-- STEP 3: Harga SST --}}
-        <div class="d-none" id="step3Content">
-            <h4 class="form-title">JUMLAH SEBUT HARGA TERMASUK SST</h4>
-
-            <table class="spec-table">
-                <thead>
-                    <tr>
-                        <th style="width: 80px;">Bil.</th>
-                        <th>Item</th>
-                        <th style="width: 150px;">Kuantiti</th>
-                        <th style="width: 200px;">Harga Keseluruhan (RM)</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @php
-                        $sstItems = $sstItems ?? [
-                            ['item' => 'MONITOR', 'kuantiti' => '10', 'harga_keseluruhan' => '100,000.00'],
-                            ['item' => 'PRINTER', 'kuantiti' => '10', 'harga_keseluruhan' => '190,000.00'],
-                            ['item' => 'PROJECTOR', 'kuantiti' => '10', 'harga_keseluruhan' => '90,000.00']
-                        ];
-                        $totalHarga = 380000.00;
-                        $totalHargaSST = 410400.00;
-                    @endphp
-                    @foreach($sstItems as $index => $item)
-                        <tr>
-                            <td style="text-align: center;">{{ $index + 1 }}</td>
-                            <td>{{ $item['item'] ?? '-' }}</td>
-                            <td>{{ $item['kuantiti'] ?? '-' }}</td>
-                            <td style="text-align: right;">{{ $item['harga_keseluruhan'] ?? '0.00' }}</td>
-                        </tr>
-                    @endforeach
-                    <tr class="summary-row">
-                        <td colspan="3" style="text-align: right; padding-right: 20px;">Harga Keseluruhan bagi semua Item</td>
-                        <td style="text-align: right; font-weight: bold;">{{ number_format($totalHarga, 2, '.', ',') }}</td>
-                    </tr>
-                    <tr class="summary-row">
-                        <td colspan="3" style="text-align: right; padding-right: 20px;">Harga Termasuk SST bagi semua Item</td>
-                        <td style="text-align: right; font-weight: bold;">{{ number_format($totalHargaSST, 2, '.', ',') }}</td>
-                    </tr>
-                </tbody>
-            </table>
-
-            {{-- Document Upload Section --}}
-            <div class="d-flex align-items-center justify-content-end gap-3 mt-4 mb-4">
-                <a href="#" class="document-link">DokumenQuotation.pdf</a>
-                <button type="button" class="btn btn-muat-naik px-4 py-2 rounded fw-bold">Muat Naik Quotation</button>
-            </div>
-
-            {{-- Navigation Buttons --}}
-            <div class="d-flex justify-content-between mt-4">
-                <button type="button" class="btn btn-sebelumnya px-4 py-2 rounded fw-bold" onclick="showStep(2)">Sebelumnya</button>
-                <button type="button" class="btn btn-selesai px-4 py-2 rounded fw-bold" onclick="showSuccessModal()">Selesai</button>
-            </div>
-        </div>
-
     </div>
-</div>
 
-{{-- Modal: Success --}}
-<div class="modal fade success-modal" id="successModal" tabindex="-1" aria-labelledby="successModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-body">
-                <div class="success-icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100" fill="none">
-                        <!-- Party Popper Cone (Green) -->
-                        <path d="M50 15 L35 45 L50 40 L65 45 Z" fill="#10b981"/>
-                        <path d="M50 15 L45 30 L50 25 L55 30 Z" fill="#0d9488"/>
-                        <!-- Confetti Stream (Blue) -->
-                        <path d="M50 15 Q45 20 42 30 Q40 40 38 50" stroke="#3b82f6" stroke-width="3" fill="none" stroke-linecap="round"/>
-                        <path d="M50 15 Q55 20 58 30 Q60 40 62 50" stroke="#3b82f6" stroke-width="3" fill="none" stroke-linecap="round"/>
-                        <path d="M50 15 Q50 20 50 30 Q50 40 50 50" stroke="#3b82f6" stroke-width="3" fill="none" stroke-linecap="round"/>
-                        <!-- Scattered Confetti Pieces -->
-                        <circle cx="25" cy="35" r="4" fill="#10b981"/>
-                        <circle cx="75" cy="40" r="4" fill="#3b82f6"/>
-                        <circle cx="30" cy="55" r="3" fill="#3b82f6"/>
-                        <circle cx="70" cy="50" r="3" fill="#10b981"/>
-                        <rect x="20" y="45" width="5" height="5" fill="#10b981" transform="rotate(45 22.5 47.5)"/>
-                        <rect x="75" y="55" width="5" height="5" fill="#3b82f6" transform="rotate(45 77.5 57.5)"/>
-                        <circle cx="40" cy="25" r="3" fill="#3b82f6"/>
-                        <circle cx="60" cy="28" r="3" fill="#10b981"/>
+    @if (!empty($eligibilityMessage))
+        <div class="alert alert-warning border-0 shadow-sm mb-3" role="alert">{{ $eligibilityMessage }}</div>
+    @endif
+    @if (session('error'))
+        <div class="alert alert-danger border-0 shadow-sm mb-3" role="alert">{{ session('error') }}</div>
+    @endif
+    @if (session('success'))
+        <div class="alert alert-success border-0 shadow-sm mb-3" role="alert">{{ session('success') }}</div>
+    @endif
+
+    <!-- PROJECT SUMMARY -->
+    <div class="project-summary mb-4">
+        <div class="project-summary-item">
+            <div class="ps-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                </svg>
+            </div>
+            <div class="ps-text">
+                <span class="ps-label">No. Sebut Harga / Tender</span>
+                <span class="ps-value">{{ $p->no_tender ?: ($p->ref_number ?? '-') }}</span>
+            </div>
+        </div>
+        <div class="ps-divider"></div>
+        <div class="project-summary-item" style="flex: 2;">
+            <div class="ps-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
+                    <line x1="7" y1="7" x2="7.01" y2="7"></line>
+                </svg>
+            </div>
+            <div class="ps-text">
+                <span class="ps-label">Tajuk Perolehan</span>
+                <span class="ps-value">{{ $p->name ?? '-' }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- TIMELINE -->
+    <div class="stepper-wrapper" data-step="1" id="stepper-wrapper">
+        <div class="stepper-track">
+            <div class="stepper-progress" id="stepper-progress"></div>
+        </div>
+        <div class="stepper-item active" id="step1-indicator">
+            <div class="step-counter"><span>1</span></div>
+            <div class="step-name">Paparan Projek</div>
+        </div>
+        <div class="stepper-item" id="step2-indicator">
+            <div class="step-counter"><span>2</span></div>
+            <div class="step-name">Maklumat Spesifikasi</div>
+        </div>
+        <div class="stepper-item" id="step3-indicator">
+            <div class="step-counter"><span>3</span></div>
+            <div class="step-name">Harga SST</div>
+        </div>
+    </div>
+
+    <form id="offerForm" action="{{ route('pembelianTerus.submitOffer', $p->id) }}" method="POST" enctype="multipart/form-data">
+        @csrf
+        <div id="offerItemsContainer"></div>
+
+        <div class="modern-card">
+
+            {{-- STEP 1 --}}
+            <div id="step1-content">
+                <div class="bg-light px-4 py-3 border-bottom d-flex align-items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="var(--sg-red)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
                     </svg>
+                    <span class="fw-bold text-dark text-uppercase small">Maklumat Projek</span>
                 </div>
-                <div class="success-message">
-                    Sebut Harga Pembelian Terus telah Selesai
+
+                <div class="p-4">
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <label class="form-label">Tajuk Perolehan</label>
+                            <textarea class="form-control" rows="2" disabled>{{ $p->name ?? '-' }}</textarea>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <label class="form-label">Disediakan Untuk PTJ</label>
+                            <input type="text" class="form-control" value="{{ strtoupper($ptjName) }}" disabled>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">No. Rujukan Fail</label>
+                            <input type="text" class="form-control" value="{{ $p->ref_number ?: ($p->no_tender ?? '-') }}" disabled>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Harga Indikatif Jabatan</label>
+                            <div class="input-group">
+                                <span class="input-group-text">RM</span>
+                                <input type="text" class="form-control text-end"
+                                    value="{{ !empty($p->harga_indikatif) ? number_format((float) $p->harga_indikatif, 2) : '' }}" disabled>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Tarikh Buka</label>
+                            <input type="text" class="form-control" value="{{ $p->tarikh_buka ?? '-' }}" disabled>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Tarikh Tutup</label>
+                            <input type="text" class="form-control" value="{{ $p->tarikh_tutup ?? '-' }}" disabled>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Kategori Perolehan</label>
+                            <input type="text" class="form-control" value="{{ $kategoriName }}" disabled>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Gred CIDB</label>
+                            <input type="text" class="form-control"
+                                value="{{ count($cidbGradeLabels) ? implode(', ', $cidbGradeLabels) : '-' }}" disabled>
+                        </div>
+                    </div>
+
+                    <div class="mb-0">
+                        <label class="form-label">Kod Bidang MOF</label>
+                        @forelse ($mofLabels as $label)
+                            <input type="text" class="form-control mb-2" value="{{ $label }}" disabled>
+                        @empty
+                            <input type="text" class="form-control" value="-" disabled>
+                        @endforelse
+                    </div>
                 </div>
-                <button type="button" class="btn btn-tutup" data-bs-dismiss="modal">Tutup</button>
+            </div>
+
+            {{-- STEP 2 --}}
+            <div id="step2-content" class="d-none">
+                <div class="bg-light px-4 py-3 border-bottom d-flex align-items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="var(--sg-red)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                    </svg>
+                    <span class="fw-bold text-dark text-uppercase small">Maklumat Spesifikasi Kajian</span>
+                </div>
+
+                <div class="p-4">
+                    <div class="alert-selangor mb-4">
+                        <div class="alert-selangor-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="8" x2="12" y2="12"></line>
+                                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                            </svg>
+                        </div>
+                        <div class="small mt-1">
+                            Klik <strong>Papar</strong> bagi setiap item untuk mengisi brand, harga seunit dan dokumen sokongan.
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table spec-table align-middle mb-0 w-100">
+                            <thead>
+                                <tr>
+                                    <th class="py-3 ps-4 fw-bold" width="70px">Bil.</th>
+                                    <th class="py-3 fw-bold">Item</th>
+                                    <th class="py-3 fw-bold text-center" width="120px">Kuantiti</th>
+                                    <th class="py-3 pe-4 fw-bold text-center" width="140px">Tindakan</th>
+                                </tr>
+                            </thead>
+                            <tbody id="specTableBody">
+                                @forelse ($specifications as $index => $spec)
+                                    <tr data-index="{{ $index }}">
+                                        <td class="ps-4 fw-semibold">{{ $index + 1 }}</td>
+                                        <td>
+                                            {{ $spec['item'] ?? '-' }}
+                                            <div class="item-filled d-none" id="filled-badge-{{ $index }}">✓ Dilengkapkan</div>
+                                        </td>
+                                        <td class="text-center">{{ $spec['kuantiti'] ?? '-' }}</td>
+                                        <td class="pe-4 text-center">
+                                            <button type="button" class="btn-form btn-form-success"
+                                                data-item-index="{{ $index }}" onclick="openItemModal(this)">Papar</button>
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="4" class="text-center text-muted py-4">Tiada item spesifikasi untuk projek ini.</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            {{-- STEP 3 --}}
+            <div id="step3-content" class="d-none">
+                <div class="bg-light px-4 py-3 border-bottom d-flex align-items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="var(--sg-red)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="1" x2="12" y2="23"></line>
+                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                    </svg>
+                    <span class="fw-bold text-dark text-uppercase small">Jumlah Sebut Harga Termasuk SST</span>
+                </div>
+
+                <div class="p-4">
+                    <div class="table-responsive mb-4">
+                        <table class="table spec-table align-middle mb-0 w-100">
+                            <thead>
+                                <tr>
+                                    <th class="py-3 ps-4 fw-bold" width="70px">Bil.</th>
+                                    <th class="py-3 fw-bold">Item</th>
+                                    <th class="py-3 fw-bold text-center" width="120px">Kuantiti</th>
+                                    <th class="py-3 pe-4 fw-bold text-end" width="200px">Harga Keseluruhan (RM)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="sstTableBody"></tbody>
+                        </table>
+                    </div>
+
+                    <div class="d-flex align-items-center justify-content-end gap-3 mb-2">
+                        <span id="quotationFileName" class="small fw-semibold text-primary d-none"></span>
+                        <label class="btn-form btn-form-create mb-0 {{ $canSubmitOffer ? '' : 'disabled' }}"
+                            for="quotationInput" style="cursor: {{ $canSubmitOffer ? 'pointer' : 'not-allowed' }};">
+                            Muat Naik Quotation
+                        </label>
+                        <input type="file" id="quotationInput" name="quotation" class="d-none"
+                            accept=".pdf,.doc,.docx,.xls,.xlsx" {{ $canSubmitOffer ? '' : 'disabled' }}>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FOOTER -->
+            <div class="bg-light p-4 border-top d-flex justify-content-between align-items-center">
+                <button type="button" class="btn-form btn-form-secondary d-none" id="btn-back">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="19" y1="12" x2="5" y2="12"></line>
+                        <polyline points="12 19 5 12 12 5"></polyline>
+                    </svg>
+                    Sebelumnya
+                </button>
+
+                <div class="ms-auto d-flex gap-2">
+                    <button type="button" class="btn-form btn-form-primary" id="btn-next">
+                        Seterusnya
+                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                            <polyline points="12 5 19 12 12 19"></polyline>
+                        </svg>
+                    </button>
+
+                    <button type="submit" class="btn-form btn-form-success d-none" id="btn-submit"
+                        {{ $canSubmitOffer ? '' : 'disabled' }}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        Selesai
+                    </button>
+                </div>
             </div>
         </div>
-    </div>
-</div>
+    </form>
 
-{{-- Modal: Butiran Item --}}
-<div class="modal fade" id="itemModal" tabindex="-1" aria-labelledby="itemModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="itemModalLabel">Butiran Item</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <form id="itemForm">
+    {{-- Modal: Butiran Item --}}
+    <div class="modal fade" id="itemModal" tabindex="-1" aria-labelledby="itemModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header border-bottom">
+                    <h5 class="modal-title fw-bold" id="itemModalLabel">Butiran Item</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <input type="hidden" id="modalItemIndex">
                     <div class="mb-3">
                         <label class="form-label">Nama Item</label>
                         <input type="text" class="form-control" id="modalItemName" readonly>
@@ -626,139 +533,267 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label required">Brand</label>
-                        <input type="text" class="form-control" id="modalBrand" value="Acer" readonly>
+                        <input type="text" class="form-control" id="modalBrand" {{ $canSubmitOffer ? '' : 'readonly' }}>
                     </div>
                     <div class="mb-3">
                         <label class="form-label required">Harga Seunit (RM)</label>
-                        <input type="text" class="form-control" id="modalHargaSeunit" value="10,000.00" readonly>
+                        <input type="text" class="form-control" id="modalHargaSeunit" inputmode="decimal"
+                            {{ $canSubmitOffer ? '' : 'readonly' }}>
                     </div>
                     <div class="mb-3">
                         <label class="form-label required">Harga Keseluruhan (RM)</label>
-                        <input type="text" class="form-control" id="modalHargaKeseluruhan" value="100,000.00" readonly>
+                        <input type="text" class="form-control" id="modalHargaKeseluruhan" readonly>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Harga termasuk SST</label>
-                        <input type="text" class="form-control" id="modalHargaSST" value="100,0008.00" readonly>
+                        <input type="text" class="form-control" id="modalHargaSST" readonly>
                     </div>
 
-                    <div class="mb-4">
+                    <div class="mb-1">
                         <h6 class="fw-bold mb-2">Muat Naik Dokumen Sokongan</h6>
-                        <p class="text-muted small mb-3">Sila Muat Naik Dokumen Sokongan di ruangan bawah.</p>
-                        <div class="upload-area">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="d-block mx-auto">
+                        <p class="text-muted small mb-3">Sila muat naik dokumen sokongan di ruangan bawah.</p>
+                        <label class="upload-area d-block {{ $canSubmitOffer ? '' : 'disabled' }}" for="modalDokumenInput">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="d-block mx-auto">
                                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                                 <polyline points="17 8 12 3 7 8"></polyline>
                                 <line x1="12" y1="3" x2="12" y2="15"></line>
                             </svg>
-                            <button type="button" class="btn btn-muat-naik-dokumen" disabled>Muat Naik Dokumen</button>
-                        </div>
+                            <span class="btn-form btn-form-create">Muat Naik Dokumen</span>
+                            <div id="modalDokumenName" class="small text-muted mt-2"></div>
+                        </label>
+                        <input type="file" id="modalDokumenInput" class="d-none" accept=".pdf,.doc,.docx,.xls,.xlsx"
+                            {{ $canSubmitOffer ? '' : 'disabled' }}>
                     </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-papar px-4 py-2 rounded fw-bold" data-bs-dismiss="modal">Simpan</button>
+                </div>
+                <div class="modal-footer border-top">
+                    <button type="button" class="btn-form btn-form-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn-form btn-form-success" id="btnSaveItem"
+                        {{ $canSubmitOffer ? '' : 'disabled' }}>Simpan</button>
+                </div>
             </div>
         </div>
     </div>
-</div>
+@endsection
 
+@section('scripts')
 <script>
+(function () {
+    const specs = @json($specifications);
+    const canSubmit = @json((bool) $canSubmitOffer);
+    const SST_RATE = 0.05;
+    const TOTAL_STEPS = 3;
     let currentStep = 1;
+    let offerData = specs.map(function (s) {
+        return {
+            id: s.id,
+            item: s.item,
+            kuantiti: parseFloat(s.kuantiti) || 0,
+            sst: !!s.sst,
+            brand: s.brand || '',
+            harga_seunit: '',
+            harga_keseluruhan: '',
+            harga_sst: '',
+            dokumen: null,
+            filled: false
+        };
+    });
 
-    function showStep(step) {
-        // Hide all steps
-        document.querySelectorAll('[id$="Content"]').forEach(content => {
-            content.classList.add('d-none');
-            content.classList.remove('d-block');
-        });
-
-        // Remove active and done classes from all step indicators
-        document.querySelectorAll('.progress-step').forEach(indicator => {
-            indicator.classList.remove('active', 'done');
-        });
-
-        // Mark previous steps as done - only for steps 1-3
-        for (let i = 1; i < step && i <= 3; i++) {
-            const prevIndicator = document.getElementById('step' + i + 'Indicator');
-            if (prevIndicator) prevIndicator.classList.add('done');
-        }
-
-        // Mark current step as active - only for steps 1-3
-        if (step <= 3) {
-            const stepIndicator = document.getElementById('step' + step + 'Indicator');
-            if (stepIndicator) stepIndicator.classList.add('active');
-        }
-
-        // Show selected step content
-        const stepContent = document.getElementById('step' + step + 'Content');
-        if (stepContent) {
-            stepContent.classList.remove('d-none');
-            stepContent.classList.add('d-block');
-        }
-
-        currentStep = step;
+    function money(n) {
+        return (parseFloat(n) || 0).toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
-    // Make showStep available globally
-    window.showStep = showStep;
+    function parseMoney(v) {
+        return parseFloat(String(v || '').replace(/,/g, '')) || 0;
+    }
 
-    function openItemModal(button) {
-        const index = parseInt(button.getAttribute('data-item-index')) || 0;
+    function showStep(step) {
+        currentStep = step;
+        $('#stepper-wrapper').attr('data-step', currentStep);
 
-        // Get data from PHP array (passed via data attributes or use default)
-        const itemData = [{
-                item: 'MONITOR',
-                kuantiti: '10',
-                brand: 'Acer',
-                hargaSeunit: '10,000.00',
-                hargaKeseluruhan: '100,000.00',
-                hargaSST: '100,0008.00'
-            },
-            {
-                item: 'PRINTER',
-                kuantiti: '10',
-                brand: 'HP',
-                hargaSeunit: '5,000.00',
-                hargaKeseluruhan: '50,000.00',
-                hargaSST: '50,0004.00'
-            },
-            {
-                item: 'PROJECTOR',
-                kuantiti: '10',
-                brand: 'Epson',
-                hargaSeunit: '8,000.00',
-                hargaKeseluruhan: '80,000.00',
-                hargaSST: '80,0006.40'
-            }
-        ];
+        for (var i = 1; i <= TOTAL_STEPS; i++) {
+            $('#step' + i + '-content').toggleClass('d-none', i !== currentStep);
+        }
 
-        const data = itemData[index] || {};
+        $('#step1-indicator, #step2-indicator, #step3-indicator').removeClass('active completed');
+        for (var j = 1; j < currentStep; j++) {
+            $('#step' + j + '-indicator').addClass('completed');
+        }
+        $('#step' + currentStep + '-indicator').addClass('active');
 
+        $('#btn-back').toggleClass('d-none', currentStep === 1);
+        $('#btn-next').toggleClass('d-none', currentStep === TOTAL_STEPS);
+        $('#btn-submit').toggleClass('d-none', currentStep !== TOTAL_STEPS);
+
+        if (currentStep === 3) {
+            renderSstTable();
+        }
+
+        $('html, body').animate({ scrollTop: $('#stepper-wrapper').offset().top - 20 }, 400);
+    }
+
+    window.openItemModal = function (button) {
+        var index = parseInt(button.getAttribute('data-item-index'), 10) || 0;
+        var data = offerData[index] || {};
+        document.getElementById('modalItemIndex').value = index;
         document.getElementById('modalItemName').value = data.item || '';
         document.getElementById('modalKuantiti').value = data.kuantiti || '';
         document.getElementById('modalBrand').value = data.brand || '';
-        document.getElementById('modalHargaSeunit').value = data.hargaSeunit || '';
-        document.getElementById('modalHargaKeseluruhan').value = data.hargaKeseluruhan || '';
-        document.getElementById('modalHargaSST').value = data.hargaSST || '';
+        document.getElementById('modalHargaSeunit').value = data.harga_seunit ? money(data.harga_seunit) : '';
+        document.getElementById('modalHargaKeseluruhan').value = data.harga_keseluruhan ? money(data.harga_keseluruhan) : '';
+        document.getElementById('modalHargaSST').value = data.harga_sst ? money(data.harga_sst) : '';
+        document.getElementById('modalDokumenName').textContent = data.dokumen ? data.dokumen.name : '';
+        new bootstrap.Modal(document.getElementById('itemModal')).show();
+    };
 
-        const modalElement = document.getElementById('itemModal');
-        if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
-            new bootstrap.Modal(modalElement).show();
-        }
+    function recalcModal() {
+        var index = parseInt(document.getElementById('modalItemIndex').value, 10) || 0;
+        var qty = offerData[index] ? offerData[index].kuantiti : 0;
+        var unit = parseMoney(document.getElementById('modalHargaSeunit').value);
+        var total = unit * qty;
+        var withSst = offerData[index] && offerData[index].sst ? total * (1 + SST_RATE) : total;
+        document.getElementById('modalHargaKeseluruhan').value = money(total);
+        document.getElementById('modalHargaSST').value = money(withSst);
     }
 
-    function showSuccessModal() {
-        const modalElement = document.getElementById('successModal');
-        if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
-            const modal = new bootstrap.Modal(modalElement);
-            modal.show();
-        }
+    function renderSstTable() {
+        var body = document.getElementById('sstTableBody');
+        var rows = '';
+        var total = 0;
+        var totalSst = 0;
+        offerData.forEach(function (row, i) {
+            var keseluruhan = parseFloat(row.harga_keseluruhan) || 0;
+            var sst = parseFloat(row.harga_sst) || keseluruhan;
+            total += keseluruhan;
+            totalSst += sst;
+            rows += '<tr>' +
+                '<td class="ps-4 fw-semibold">' + (i + 1) + '</td>' +
+                '<td>' + (row.item || '-') + '</td>' +
+                '<td class="text-center">' + row.kuantiti + '</td>' +
+                '<td class="pe-4 text-end">' + money(keseluruhan) + '</td>' +
+                '</tr>';
+        });
+        rows += '<tr class="summary-row"><td colspan="3" class="text-end pe-3">Harga Keseluruhan bagi semua Item</td>' +
+            '<td class="pe-4 text-end fw-bold">' + money(total) + '</td></tr>';
+        rows += '<tr class="summary-row"><td colspan="3" class="text-end pe-3">Harga Termasuk SST bagi semua Item</td>' +
+            '<td class="pe-4 text-end fw-bold">' + money(totalSst) + '</td></tr>';
+        body.innerHTML = rows || '<tr><td colspan="4" class="text-center text-muted">Tiada data</td></tr>';
     }
 
-    // Initialize step 1 as active when page loads
-    document.addEventListener('DOMContentLoaded', function() {
-        showStep(1);
+    function syncHiddenInputs() {
+        var box = document.getElementById('offerItemsContainer');
+        box.innerHTML = '';
+        var total = 0;
+        var totalSst = 0;
+        offerData.forEach(function (row, i) {
+            total += parseFloat(row.harga_keseluruhan) || 0;
+            totalSst += parseFloat(row.harga_sst) || 0;
+            ['id', 'brand', 'harga_seunit', 'harga_keseluruhan', 'harga_sst'].forEach(function (key) {
+                var input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'offer_items[' + i + '][' + (key === 'id' ? 'item_id' : key) + ']';
+                input.value = row[key] || '';
+                box.appendChild(input);
+            });
+
+            if (row.dokumen instanceof File) {
+                var fileInput = document.createElement('input');
+                fileInput.type = 'file';
+                fileInput.name = 'offer_items[' + i + '][dokumen_sokongan]';
+                fileInput.className = 'd-none';
+                var dt = new DataTransfer();
+                dt.items.add(row.dokumen);
+                fileInput.files = dt.files;
+                box.appendChild(fileInput);
+            }
+        });
+        var t1 = document.createElement('input');
+        t1.type = 'hidden'; t1.name = 'total_harga'; t1.value = total.toFixed(2);
+        box.appendChild(t1);
+        var t2 = document.createElement('input');
+        t2.type = 'hidden'; t2.name = 'total_harga_sst'; t2.value = totalSst.toFixed(2);
+        box.appendChild(t2);
+        var t3 = document.createElement('input');
+        t3.type = 'hidden'; t3.name = 'harga_tawaran'; t3.value = totalSst.toFixed(2);
+        box.appendChild(t3);
+    }
+
+    document.getElementById('modalHargaSeunit').addEventListener('input', recalcModal);
+
+    document.getElementById('btnSaveItem').addEventListener('click', function () {
+        if (!canSubmit) return;
+        var index = parseInt(document.getElementById('modalItemIndex').value, 10) || 0;
+        var brand = document.getElementById('modalBrand').value.trim();
+        var unit = parseMoney(document.getElementById('modalHargaSeunit').value);
+        if (!brand || unit <= 0) {
+            alert('Sila isi Brand dan Harga Seunit.');
+            return;
+        }
+        recalcModal();
+        offerData[index].brand = brand;
+        offerData[index].harga_seunit = unit;
+        offerData[index].harga_keseluruhan = parseMoney(document.getElementById('modalHargaKeseluruhan').value);
+        offerData[index].harga_sst = parseMoney(document.getElementById('modalHargaSST').value);
+        offerData[index].filled = true;
+        var badge = document.getElementById('filled-badge-' + index);
+        if (badge) badge.classList.remove('d-none');
+        bootstrap.Modal.getInstance(document.getElementById('itemModal')).hide();
     });
-</script>
 
+    document.getElementById('modalDokumenInput').addEventListener('change', function (e) {
+        var index = parseInt(document.getElementById('modalItemIndex').value, 10) || 0;
+        var file = e.target.files[0] || null;
+        offerData[index].dokumen = file;
+        document.getElementById('modalDokumenName').textContent = file ? file.name : '';
+    });
+
+    document.getElementById('quotationInput').addEventListener('change', function (e) {
+        var file = e.target.files[0];
+        var label = document.getElementById('quotationFileName');
+        if (file) {
+            label.textContent = file.name;
+            label.classList.remove('d-none');
+        } else {
+            label.classList.add('d-none');
+        }
+    });
+
+    $('#btn-next').on('click', function () {
+        if (currentStep === 2) {
+            var incomplete = offerData.some(function (r) { return !r.filled; });
+            if (offerData.length > 0 && incomplete) {
+                alert('Sila lengkapkan butiran setiap item terlebih dahulu.');
+                return;
+            }
+        }
+        if (currentStep < TOTAL_STEPS) {
+            showStep(currentStep + 1);
+        }
+    });
+
+    $('#btn-back').on('click', function () {
+        if (currentStep > 1) {
+            showStep(currentStep - 1);
+        }
+    });
+
+    document.getElementById('offerForm').addEventListener('submit', function (e) {
+        if (!canSubmit) {
+            e.preventDefault();
+            alert('Akaun syarikat tidak layak menghantar tawaran.');
+            return;
+        }
+        var incomplete = offerData.some(function (r) { return !r.filled; });
+        if (incomplete) {
+            e.preventDefault();
+            alert('Sila lengkapkan butiran setiap item terlebih dahulu.');
+            showStep(2);
+            return;
+        }
+        syncHiddenInputs();
+    });
+
+    showStep(1);
+})();
+</script>
 @endsection

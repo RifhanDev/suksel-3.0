@@ -102,6 +102,12 @@ final class TenderProcessStatus
         return self::PERAKUAN_JABATAN;
     }
 
+    /** Bidaan is only allowed for Bekalan (1) and Perkhidmatan (2). */
+    public static function allowsBidaanKaedah(?int $kategoriPerolehanId): bool
+    {
+        return in_array((int) $kategoriPerolehanId, [1, 2], true);
+    }
+
     public static function penyediaanSuratNiatListStatus(): int
     {
         return self::JAWATANKUASA_PEROLEHAN;

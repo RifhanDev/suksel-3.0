@@ -37,7 +37,7 @@ return new class extends Migration
             return;
         }
 
-        $query = DB::table('ref_type_of_contracts')->whereIn('name', TypeOfContract::CONTRACTS);
+        $query = DB::table('ref_type_of_contracts')->whereIn('name', array_column(TypeOfContract::ROWS, 'name'));
 
         // Jangan buang baris yang masih dirujuk. FK menggunakan onDelete('set null'),
         // jadi memadamnya akan mengosongkan jenis kontrak pada tender sedia ada —

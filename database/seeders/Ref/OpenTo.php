@@ -2,30 +2,25 @@
 
 namespace Database\Seeders\Ref;
 
-use App\Models\Ref\RefOpenTo;
-use Carbon\Carbon;
-use Illuminate\Database\Seeder;
-
-class OpenTo extends Seeder
+/**
+ * Senarai rujukan Terbuka Kepada.
+ *
+ * Lihat RefListSeeder untuk kelakuan dan sebab ia selamat dijalankan berulang.
+ */
+class OpenTo extends RefListSeeder
 {
-    /**
-     * Run the database seeds.
-     */
-    public function run(): void
-    {
-        // Create Admin User
-        RefOpenTo::create([
-            'name' => 'Bumiputera',
-            'active' => '1',
-            'created_at' => Carbon::now(),
-            'updated_at' => Carbon::now(),
-        ]);
+    public const ROWS = [
+        ['name' => 'Bumiputera'],
+        ['name' => 'Semua'],
+    ];
 
-        RefOpenTo::create([
-            'name' => 'Semua',
-            'active' => '1',
-            'created_at' => Carbon::now(),
-            'updated_at' => Carbon::now(),
-        ]);
+    protected function table(): string
+    {
+        return 'ref_open_tos';
+    }
+
+    protected function rows(): array
+    {
+        return self::ROWS;
     }
 }

@@ -1356,6 +1356,13 @@ class Tender extends Model
 			return true;
 		}
 
+		// Grade-only filter: if no specialization groups were set on the tender,
+		// matching the CIDB grade (already checked via matchCidbGrade) is enough.
+		// Previously an empty group list always returned false and blocked every vendor.
+		if (count($this->cidb_code_groups) === 0) {
+			return true;
+		}
+
 		// Get parent cidb-g based on $grades in table code_vendor
 		$parent_cidbg = $vendor->vendorCodes()->where('code_type', 'cidb-g')->whereIn('code_id', $grades->toArray())->pluck('id');
 

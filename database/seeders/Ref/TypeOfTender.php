@@ -2,38 +2,26 @@
 
 namespace Database\Seeders\Ref;
 
-use App\Models\Ref\RefTypeOfTender;
-use Carbon\Carbon;
-use Illuminate\Database\Seeder;
-
-class TypeOfTender extends Seeder
+/**
+ * Senarai rujukan Jenis Tender / Sebut Harga.
+ *
+ * Lihat RefListSeeder untuk kelakuan dan sebab ia selamat dijalankan berulang.
+ */
+class TypeOfTender extends RefListSeeder
 {
-    /**
-     * Run the database seeds.
-     */
-    public function run(): void
+    public const ROWS = [
+        ['name' => 'Konvensional'],
+        ['name' => 'Reka & Bina'],
+        ['name' => 'Terhad'],
+    ];
+
+    protected function table(): string
     {
+        return 'ref_type_of_tenders';
+    }
 
-        // Create Admin User
-        RefTypeOfTender::create([
-            'name' => 'Konvensional',
-            'active' => '1',
-            'created_at' => Carbon::now(),
-            'updated_at' => Carbon::now(),
-        ]);
-
-        RefTypeOfTender::create([
-            'name' => 'Reka & Bina',
-            'active' => '1',
-            'created_at' => Carbon::now(),
-            'updated_at' => Carbon::now(),
-        ]);
-
-        RefTypeOfTender::create([
-            'name' => 'Terhad',
-            'active' => '1',
-            'created_at' => Carbon::now(),
-            'updated_at' => Carbon::now(),
-        ]);
+    protected function rows(): array
+    {
+        return self::ROWS;
     }
 }
