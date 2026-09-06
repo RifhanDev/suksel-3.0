@@ -215,27 +215,65 @@ class Fpx
 
 		$client = new \GuzzleHttp\Client();
 		$response = $client->post($bankListUrl, ['form_params' => $params, 'verify' => config('services.fpx.verify_tls', true)]);
-		
-		$bodyRaw = $response->getBody();
-		$bodyArr = explode('&', $bodyRaw);
-		
-		if (is_array($bodyArr)) {
-			foreach ($bodyArr as $body) {
-				$body = explode('=', $body);
-				$data["$body[0]"] = $body[1];
-			}
-		
-			$data = explode(',', urldecode($data['fpx_bankList']));
-			// return urldecode($data['fpx_bankList']);
-			
-			foreach ($data as $bankRaw) {
-				$bankRaw = explode('~', $bankRaw);
-				$bank["$bankRaw[0]"] = $bankRaw[1];
-			}
-		
-			return $bank;
+
+		$bodyRaw = (string) $response->getBody();
+		$params  = self::explodeToPairs($bodyRaw, '&');
+
+		// PayNet's response may be an error body with no fpx_bankList key at
+		// all (wrong exchange id, bad checksum, upstream error) — a hard
+		// index lookup on $data['fpx_bankList'] fatals with "Undefined array
+		// key" instead of surfacing that as a normal failure.
+		if (! isset($params['fpx_bankList'])) {
+			return false;
 		}
-		
-		return false;
+
+		return self::explodeToPairs(urldecode($params['fpx_bankList']), ',', '~');
+	}
+
+	/**
+	 * Splits a delimited string into key => value pairs.
+	 *
+	 * Used for both layers of PayNet's RetrieveBankList response: the outer
+	 * query-string-like body ('&'-separated, '=' inner delimiter) and the
+	 * embedded bank list (','-separated, '~' inner delimiter — "TEST0021~A").
+	 *
+	 * The original code did `explode($delim, $body)` with no limit and no
+	 * length check, then indexed `[0]` and `[1]` directly. Two failure modes
+	 * followed from that:
+	 *
+	 *   - An empty segment (a body ending in the outer delimiter, or two
+	 *     delimiters in a row) produces a one-element array, and `[1]`
+	 *     throws "Undefined array key 1" — this is what crashed
+	 *     fpx:debug-banklist on the first real signed request that ever
+	 *     reached this code path, once OPENSSL_CONF was fixed for CLI use.
+	 *   - A value that itself contains the inner delimiter (e.g. a
+	 *     base64-padded checksum containing '=') got silently truncated at
+	 *     the first occurrence instead of keeping the rest of the value.
+	 *
+	 * Malformed segments (no inner delimiter at all) are skipped rather than
+	 * inserted with a missing value, since a partial key with no value is
+	 * not usable data either way.
+	 *
+	 * @return array<string, string>
+	 */
+	private static function explodeToPairs(string $raw, string $outerDelimiter, string $innerDelimiter = '='): array
+	{
+		$pairs = [];
+
+		foreach (explode($outerDelimiter, $raw) as $segment) {
+			if ($segment === '') {
+				continue;
+			}
+
+			$parts = explode($innerDelimiter, $segment, 2);
+
+			if (count($parts) !== 2) {
+				continue;
+			}
+
+			$pairs[$parts[0]] = $parts[1];
+		}
+
+		return $pairs;
 	}
 }
