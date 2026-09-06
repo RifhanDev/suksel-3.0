@@ -187,8 +187,16 @@ class DummyVendorSeeder extends Seeder
                         'organization_unit_id' => null,
                         'confirmation_code' => null,
                     ]);
-                    $user->two_factor_code = null;
-                    $user->two_factor_expires_at = null;
+                    // two_factor_code / two_factor_expires_at sengaja tidak
+                    // ditetapkan di sini. Lajur itu tidak wujud pada pangkalan
+                    // data yang dipulihkan daripada 2.0 — migration yang
+                    // sepatutnya menambahnya (2025_12_24_195304) dikomen
+                    // sepenuhnya, jadi ia tidak pernah dicipta di mana-mana
+                    // pelayan. Tiada apa dalam aplikasi membacanya pula; ciri
+                    // 2FA sebenar menggunakan jadual two_factor_* berasingan.
+                    // Menetapkannya kepada null hanyalah nilai lalai, jadi dua
+                    // baris itu tidak melakukan apa-apa selain menggagalkan
+                    // seeder dengan ralat 1054.
                     $user->save();
 
                     return $user;
