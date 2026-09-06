@@ -378,26 +378,37 @@
             var target = $(this);
             var path = target.data('path');
 
+            // name: mesti dikelayakkan dengan awalan jadual (code_requests./
+            // vendors.) untuk lajur yang wujud di kedua-dua jadual yang di-JOIN
+            // dalam controller — id, approval_1_id, created_at, updated_at,
+            // rejection_reason, rejection_template_id. yajra DataTables
+            // menggunakan string 'name' ini terus dalam WHERE carian global,
+            // jadi lajur tak dikelayakkan menghasilkan ralat SQL 1052
+            // "ambiguous column" sebaik pengguna menaip apa-apa dalam kotak
+            // carian. vendors.name pada cabang bawah sudah mengikut corak ini;
+            // created_at dan approval_1_id sahaja yang tercicir. Laluan
+            // /vendor/{id} turut terjejas kerana JOIN berlaku tanpa syarat
+            // dalam controller — penapis vendor_id tidak mengelakkan ini.
             if (path.includes('/vendor')) {
                 var columns = [{
                         data: 'type',
-                        name: 'type'
+                        name: 'code_requests.type'
                     },
                     {
                         data: 'created_at',
-                        name: 'created_at'
+                        name: 'code_requests.created_at'
                     },
                     {
                         data: 'ssm_expiry',
-                        name: 'ssm_expiry'
+                        name: 'vendors.ssm_expiry'
                     },
                     {
                         data: 'approval_1_id',
-                        name: 'approval_1_id'
+                        name: 'code_requests.approval_1_id'
                     },
                     {
                         data: 'status',
-                        name: 'status'
+                        name: 'code_requests.status'
                     },
                     {
                         data: 'actions',
@@ -413,23 +424,23 @@
                     },
                     {
                         data: 'type',
-                        name: 'type'
+                        name: 'code_requests.type'
                     },
                     {
                         data: 'created_at',
-                        name: 'created_at'
+                        name: 'code_requests.created_at'
                     },
                     {
                         data: 'ssm_expiry',
-                        name: 'ssm_expiry'
+                        name: 'vendors.ssm_expiry'
                     },
                     {
                         data: 'approval_1_id',
-                        name: 'approval_1_id'
+                        name: 'code_requests.approval_1_id'
                     },
                     {
                         data: 'status',
-                        name: 'status'
+                        name: 'code_requests.status'
                     },
                     {
                         data: 'actions',
