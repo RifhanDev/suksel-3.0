@@ -70,6 +70,7 @@ class PenyediaanSuratSstController extends Controller
             'tunjukPemilihanItem' => (int) $tender->kategori_perolehan_id !== self::KATEGORI_KERJA,
             'tempohSahLaku' => $this->tempohSahLaku($tender),
             'tempohKontrak' => $tender->tempoh_kontrak_bulan,
+            'tenderDihantar' => (int) $tender->status_process_id === TenderProcessStatus::PENYEDIAAN_SURAT_SST,
         ]);
     }
 

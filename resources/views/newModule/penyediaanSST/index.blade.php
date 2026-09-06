@@ -98,8 +98,8 @@
                                     @endif
                                 </td>
                                 <td class="text-center pe-4">
-                                    <a href="{{ $item['show_url'] }}" class="btn btn-sm btn-info text-white" title="Kemaskini">
-                                        Kemaskini
+                                    <a href="{{ $item['show_url'] }}" class="btn btn-sm btn-info text-white" title="{{ ($item['dihantar'] ?? false) ? 'Lihat' : 'Kemaskini' }}">
+                                        {{ ($item['dihantar'] ?? false) ? 'Lihat' : 'Kemaskini' }}
                                     </a>
                                 </td>
                             </tr>

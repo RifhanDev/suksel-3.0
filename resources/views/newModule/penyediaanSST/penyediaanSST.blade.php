@@ -146,7 +146,7 @@
                     </svg>
                 </div>
                 <div>
-                    <h3 class="content-card-title mb-0">Senarai Surat Niat / Surat Setuju Terima</h3>
+                    <h3 class="content-card-title mb-0">Senarai Surat Setuju Terima</h3>
                     <p class="text-muted mb-0" style="font-size: 0.78rem;">Surat yang telah dijana bagi pembekal di atas.</p>
                 </div>
             </div>
@@ -175,7 +175,11 @@
 
     <!-- ACTION BUTTONS -->
     <div class="d-flex justify-content-end gap-2 mb-4">
-        <button type="button" class="btn-form btn-form-success" id="btn-hantar">Hantar</button>
+        @if ($tenderDihantar ?? false)
+            <a href="{{ route('indexPenyediaanSST') }}" class="btn-form btn-form-secondary">Kembali ke Senarai</a>
+        @else
+            <button type="button" class="btn-form btn-form-success" id="btn-hantar">Hantar</button>
+        @endif
     </div>
 
 @endsection
@@ -558,7 +562,6 @@
                             </div>
 
                             <div class="d-flex justify-content-end gap-2 mb-3">
-                                <button type="button" class="btn-form btn-form-secondary" id="btn-muat-turun-semua">Muat Turun Semua</button>
                                 <button type="button" class="btn-form btn-form-success" id="btn-tambah-dokumen">Tambah</button>
                             </div>
 
@@ -642,6 +645,7 @@
             const URL_SENARAI = '{{ route('indexPenyediaanSST') }}';
 
             let vendorAktif = null;
+            let sstTerkunci = false;
 
             // Same helpers as teknikal.blade.php — they are page-local there, not global.
             function setButtonBusy(button, busyLabel) {
@@ -685,17 +689,18 @@
                         const td = document.createElement('td');
                         td.className = 'text-center';
 
-                        // Once the letter is generated the row moves to Senarai Surat, so
-                        // there is nothing left to do here.
+                        // Once the letter is generated the row moves to Senarai Surat too,
+                        // but the modal stays reachable here, read-only, for reference.
+                        const btn = document.createElement('button');
+                        btn.type = 'button';
+                        btn.className = 'btn-form btn-sedia-sst ' + (row.status === 'submitted' ? 'btn-form-secondary' : 'btn-form-primary');
+                        btn.dataset.vendorId = row.vendor_id;
+                        btn.textContent = row.status === 'submitted' ? 'Lihat' : 'Sedia Surat Setuju Terima';
+                        td.appendChild(btn);
+
                         if (row.status === 'submitted') {
+                            td.appendChild(document.createTextNode(' '));
                             td.appendChild(selDom('span', 'Telah dijana', 'badge-status badge-status-success'));
-                        } else {
-                            const btn = document.createElement('button');
-                            btn.type = 'button';
-                            btn.className = 'btn-form btn-form-primary btn-sedia-sst';
-                            btn.dataset.vendorId = row.vendor_id;
-                            btn.textContent = 'Sedia Surat Setuju Terima';
-                            td.appendChild(btn);
                         }
 
                         tr.appendChild(td);
@@ -779,6 +784,16 @@
                 $('#tbl_dokumen_sst tbody tr[data-jenis="pengguna"]').remove();
             }
 
+            // Nothing left to submit once a letter already exists — view only.
+            function kunciBorangSST(kunci) {
+                sstTerkunci = kunci;
+                $('#sst_tajuk, #sst_cukai, #kontrak_mula').prop('disabled', kunci);
+                $('#insurans_ya, #insurans_tidak, #semakan_ya, #semakan_tidak, #protege_ya, #protege_tidak, #perjanjian_ya, #perjanjian_tidak').prop('disabled', kunci);
+                $('#tbl_dokumen_sst input[type="text"], #tbl_dokumen_sst input[type="file"]').prop('disabled', kunci);
+                $('#btn-tambah-dokumen, .btn-hapus-baris').toggle(! kunci);
+                syncSstFooter();
+            }
+
             function isiBorang(pembekal, sst) {
                 kosongkanBorang();
 
@@ -841,6 +856,7 @@
 
                 kiraAmaunKontrak();
                 kiraTarikhTamat();
+                kunciBorangSST(!! sst);
             }
 
             $('#tbody_pembekal').on('click', '.btn-sedia-sst', function () {
@@ -1191,8 +1207,8 @@
             function syncSstFooter() {
                 const i = currentSstTab();
                 $('#btn-sst-kembali').toggle(i > 0);
-                $('#btn-sst-seterusnya').toggle(i < sstTabs.length - 1);
-                $('#btn-sst-simpan').toggle(i === sstTabs.length - 1);
+                $('#btn-sst-seterusnya').toggle(! sstTerkunci && i < sstTabs.length - 1);
+                $('#btn-sst-simpan').toggle(! sstTerkunci && i === sstTabs.length - 1);
             }
 
             function showSstTab(index) {
