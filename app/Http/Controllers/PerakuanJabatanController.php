@@ -9,6 +9,7 @@ use App\Models\PerakuanJabatanKertasTaklimatItem;
 use App\Models\PerakuanJabatanKertasTaklimatItemFile;
 use App\Models\PerakuanJabatanPengesyoranPembekal;
 use App\Models\PerakuanJabatanPengesyoranPembekalItem;
+use App\Models\TenderKewanganKerjaEvaluation;
 use App\Models\TenderTeknikalSpesifikasiEvaluation;
 use App\Services\StosBackendClient;
 use App\Services\TenderProcessStatusService;
@@ -117,6 +118,7 @@ class PerakuanJabatanController extends Controller
             'jenis_harga' => 'Biasa Standard',
         ];
         $pembekalRows = $this->buildPengesyoranPembekalRows($tender, $pengesyoranPembekal);
+        $isKerja = (int) ($tender->kategori_perolehan_id ?? 0) === 3;
 
         $jadualBidaan = null;
         $jadualReadOnly = false;
@@ -142,7 +144,8 @@ class PerakuanJabatanController extends Controller
                 'pjMode',
                 'jadualBidaan',
                 'jadualReadOnly',
-                'tabsReadOnly'
+                'tabsReadOnly',
+                'isKerja'
             )
         );
     }
@@ -481,7 +484,9 @@ class PerakuanJabatanController extends Controller
                 ->all();
         }
 
-        $teknikalScores = $this->loadTeknikalScoresByVendor($tender);
+        $isKerja = (int) ($tender->kategori_perolehan_id ?? 0) === 3;
+        $teknikalScores = $isKerja ? [] : $this->loadTeknikalScoresByVendor($tender);
+        $kerjaScores = $isKerja ? $this->loadKerjaBorang14ScoresByVendor($tender, $participants) : [];
         $total = $participants->count();
 
         $sortedByHarga = $participants
@@ -492,10 +497,19 @@ class PerakuanJabatanController extends Controller
             $kedudukanKewangan[(int) $p->vendor_id] = $idx + 1;
         }
 
-        return $participants->values()->map(function ($p, $idx) use ($total, $teknikalScores, $kedudukanKewangan, $savedByVendor) {
+        return $participants->values()->map(function ($p, $idx) use (
+            $total,
+            $teknikalScores,
+            $kerjaScores,
+            $kedudukanKewangan,
+            $savedByVendor,
+            $isKerja
+        ) {
             $vendorId = (int) $p->vendor_id;
             $vendor = $p->vendor;
-            $score = $teknikalScores[$vendorId] ?? null;
+            $score = $isKerja
+                ? ($kerjaScores[$vendorId] ?? null)
+                : ($teknikalScores[$vendorId] ?? null);
             $saved = $savedByVendor[$vendorId] ?? null;
             $bumi = (bool) ($p->is_bumiputera ?? false)
                 || (bool) ($vendor?->mof_bumi ?? false)
@@ -515,8 +529,10 @@ class PerakuanJabatanController extends Controller
                 'status_bumiputra' => $bumi ? 'Ya' : 'Tidak',
                 'harga_tawaran' => $harga !== null ? (float) $harga : null,
                 'skor_teknikal' => $score['skor'] ?? null,
-                'kedudukan_teknikal' => $score['kedudukan'] ?? null,
-                'kedudukan_kewangan' => $kedudukanKewangan[$vendorId] ?? null,
+                'skor_keseluruhan' => $isKerja ? ($score['skor'] ?? null) : null,
+                'kedudukan_teknikal' => $isKerja ? null : ($score['kedudukan'] ?? null),
+                'kedudukan_kewangan' => $isKerja ? null : ($kedudukanKewangan[$vendorId] ?? null),
+                'kedudukan_keseluruhan' => $isKerja ? ($score['kedudukan'] ?? null) : null,
                 'status_mof' => $mofStatus,
                 'prestasi_pembekal' => '—',
                 'lembaga_pengarah_url' => null,
@@ -524,6 +540,66 @@ class PerakuanJabatanController extends Controller
                 'catatan_urusetia' => $saved?->catatan_urusetia,
             ];
         })->all();
+    }
+
+    /**
+     * Skor keseluruhan + kedudukan from Borang 14 (Kerja).
+     *
+     * @param  \Illuminate\Support\Collection<int, mixed>  $participants
+     * @return array<int, array{skor: float|null, kedudukan: int|null}>
+     */
+    private function loadKerjaBorang14ScoresByVendor(Tender $tender, $participants): array
+    {
+        $scores = [];
+
+        $evals = TenderKewanganKerjaEvaluation::query()
+            ->where('tender_id', $tender->id)
+            ->where('borang_code', 'borang14')
+            ->get()
+            ->keyBy(fn ($row) => (int) $row->vendor_id);
+
+        foreach ($participants as $p) {
+            $vendorId = (int) $p->vendor_id;
+            $payload = $evals->get($vendorId)?->payload ?? [];
+            if (is_string($payload)) {
+                $payload = json_decode($payload, true) ?: [];
+            }
+
+            $skorRaw = $payload['skor_keseluruhan']
+                ?? $payload['markah_terlaras']
+                ?? null;
+
+            $skor = null;
+            if ($skorRaw !== null && $skorRaw !== '' && $skorRaw !== '-') {
+                $skor = round((float) str_replace(',', '', (string) $skorRaw), 2);
+            }
+
+            $kedudukan = null;
+            if (isset($payload['kedudukan']) && $payload['kedudukan'] !== '' && $payload['kedudukan'] !== '-') {
+                $kedudukan = (int) $payload['kedudukan'];
+            }
+
+            $scores[$vendorId] = [
+                'skor' => $skor,
+                'kedudukan' => $kedudukan,
+            ];
+        }
+
+        // Fallback kedudukan: lowest harga tender = rank 1 (same as Borang 14).
+        $missingKedudukan = collect($scores)->contains(fn ($s) => ($s['kedudukan'] ?? null) === null);
+        if ($missingKedudukan) {
+            $ranked = $participants
+                ->sortBy(fn ($p) => (float) ($p->harga_tawaran ?? $p->price ?? $p->amount ?? $p->tawaran_harga ?? 0))
+                ->values();
+            foreach ($ranked as $idx => $p) {
+                $vendorId = (int) $p->vendor_id;
+                if (($scores[$vendorId]['kedudukan'] ?? null) === null) {
+                    $scores[$vendorId]['kedudukan'] = $idx + 1;
+                }
+            }
+        }
+
+        return $scores;
     }
 
     private function persistPengesyoranPembekal(Request $request, Tender $tender, bool $submit): void

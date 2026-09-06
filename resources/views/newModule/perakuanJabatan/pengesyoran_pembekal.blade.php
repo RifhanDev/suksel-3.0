@@ -124,16 +124,23 @@
 							<th rowspan="2">Bil</th>
 							<th rowspan="2">Status Bumiputra</th>
 							<th rowspan="2">Harga Tawaran (RM)</th>
-							<th rowspan="2">Skor Teknikal</th>
-							<th colspan="2">Kedudukan Penilaian</th>
+							@if (!empty($isKerja))
+								<th rowspan="2">Skor Keseluruhan</th>
+								<th rowspan="2">Kedudukan</th>
+							@else
+								<th rowspan="2">Skor Teknikal</th>
+								<th colspan="2">Kedudukan Penilaian</th>
+							@endif
 							<th rowspan="2">Status Pendaftaran MOF</th>
 							<th colspan="2">Maklumat Tambahan</th>
 							<th rowspan="2" style="min-width:150px;">Syor Urusetia</th>
 							<th rowspan="2" style="min-width:180px;">Catatan Urusetia</th>
 						</tr>
 						<tr>
-							<th>Teknikal</th>
-							<th>Kewangan</th>
+							@if (empty($isKerja))
+								<th>Teknikal</th>
+								<th>Kewangan</th>
+							@endif
 							<th>Prestasi Pembekal</th>
 							<th>Lembaga Pengarah</th>
 						</tr>
@@ -146,11 +153,19 @@
 								<td>
 									{{ $row['harga_tawaran'] !== null ? number_format((float) $row['harga_tawaran'], 2) : '—' }}
 								</td>
-								<td>
-									{{ $row['skor_teknikal'] !== null ? number_format((float) $row['skor_teknikal'], 2) : '—' }}
-								</td>
-								<td>{{ $row['kedudukan_teknikal'] ?? '—' }}</td>
-								<td>{{ $row['kedudukan_kewangan'] ?? '—' }}</td>
+								@if (!empty($isKerja))
+									<td>
+										@php $skorKes = $row['skor_keseluruhan'] ?? $row['skor_teknikal'] ?? null; @endphp
+										{{ $skorKes !== null ? number_format((float) $skorKes, 2) : '—' }}
+									</td>
+									<td>{{ $row['kedudukan_keseluruhan'] ?? '—' }}</td>
+								@else
+									<td>
+										{{ $row['skor_teknikal'] !== null ? number_format((float) $row['skor_teknikal'], 2) : '—' }}
+									</td>
+									<td>{{ $row['kedudukan_teknikal'] ?? '—' }}</td>
+									<td>{{ $row['kedudukan_kewangan'] ?? '—' }}</td>
+								@endif
 								<td>{{ $row['status_mof'] ?? '—' }}</td>
 								<td>{{ $row['prestasi_pembekal'] ?? '—' }}</td>
 								<td>
@@ -181,7 +196,7 @@
 							</tr>
 						@empty
 							<tr>
-								<td colspan="11" class="text-muted py-4">Tiada pembekal layak untuk dipaparkan.</td>
+								<td colspan="{{ !empty($isKerja) ? 10 : 11 }}" class="text-muted py-4">Tiada pembekal layak untuk dipaparkan.</td>
 							</tr>
 						@endforelse
 					</tbody>

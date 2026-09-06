@@ -2001,12 +2001,18 @@ class PenilaianKewanganKerjaController extends Controller
             'chk_sah'      => 'required|accepted',
             'score_cidb'   => 'nullable|array',
             'score_cidb.*' => 'nullable|string|max:50',
+            'skor_keseluruhan' => 'nullable|array',
+            'skor_keseluruhan.*' => 'nullable|string|max:50',
+            'kedudukan' => 'nullable|array',
+            'kedudukan.*' => 'nullable|string|max:50',
         ], [
             'chk_sah.required' => 'Sila tandakan kotak pengesahan sebelum menyimpan keputusan.',
             'chk_sah.accepted' => 'Sila tandakan kotak pengesahan sebelum menyimpan keputusan.',
         ]);
 
         $scores = $request->input('score_cidb', []);
+        $skorKeseluruhan = $request->input('skor_keseluruhan', []);
+        $kedudukanMap = $request->input('kedudukan', []);
         $participants = \App\TenderVendor::query()
             ->where('tender_id', $tender->id)
             ->get();
@@ -2014,6 +2020,8 @@ class PenilaianKewanganKerjaController extends Controller
         foreach ($participants as $p) {
             $vId = $p->vendor_id;
             $vendorScore = isset($scores[$vId]) ? trim((string) $scores[$vId]) : null;
+            $skorRaw = isset($skorKeseluruhan[$vId]) ? trim((string) $skorKeseluruhan[$vId]) : null;
+            $kedudukanRaw = isset($kedudukanMap[$vId]) ? trim((string) $kedudukanMap[$vId]) : null;
 
             $evalRecord = TenderKewanganKerjaEvaluation::firstOrNew([
                 'tender_id'   => $tender->id,
@@ -2027,6 +2035,13 @@ class PenilaianKewanganKerjaController extends Controller
             }
 
             $payload['score_cidb'] = $vendorScore;
+            if ($skorRaw !== null && $skorRaw !== '') {
+                $payload['skor_keseluruhan'] = (float) str_replace(',', '', $skorRaw);
+                $payload['markah_terlaras'] = $payload['skor_keseluruhan'];
+            }
+            if ($kedudukanRaw !== null && $kedudukanRaw !== '' && $kedudukanRaw !== '-') {
+                $payload['kedudukan'] = (int) $kedudukanRaw;
+            }
             $evalRecord->payload = $payload;
             $evalRecord->status_pematuhan = 1;
             $evalRecord->updated_by = Auth::id();
