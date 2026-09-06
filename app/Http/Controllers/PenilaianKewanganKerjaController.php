@@ -1500,17 +1500,6 @@ class PenilaianKewanganKerjaController extends Controller
                 ];
             })->toArray();
 
-            if (empty($generalDocItems)) {
-                $generalDocItems = [
-                    [
-                        'original_name'  => 'Penyata_KWSP_SOCSO_Kakitangan.pdf',
-                        'file_url'       => '#',
-                        'size_formatted' => '2.1 MB',
-                        'mime_type'      => 'application/pdf',
-                        'created_at'     => '15/08/2026',
-                    ],
-                ];
-            }
 
             $countKatA = collect($staffItems)->filter(fn($st) => str_contains(strtoupper($st['kategori'] ?? ''), 'A'))->count();
             $countKatB = collect($staffItems)->filter(fn($st) => str_contains(strtoupper($st['kategori'] ?? ''), 'B'))->count();
@@ -1807,7 +1796,7 @@ class PenilaianKewanganKerjaController extends Controller
         unset($vItem);
 
         // ---------------------------------------------------------
-        // BORANG 15: Jadual Keputusan & Pengesyoran Penilaian Tender
+        // BORANG 15: Header & Ringkasan Information & Cut-Off BWAM
         // ---------------------------------------------------------
         $laporanRecord = TenderKewanganLaporan::query()
             ->where('tender_id', $tender->id)
@@ -1818,9 +1807,54 @@ class PenilaianKewanganKerjaController extends Controller
             $recommendedVendorIds = json_decode($recommendedVendorIds, true) ?: [];
         }
 
+        $b15HargaCutOff = null;
+        $b15HargaAdjustedMean = null;
+        $b15ModalBawahCutOff = null;
+        $b15ModalAtasCutOff = null;
+        $coVendorMap = [];
+        $coVendorsList = [];
+
+        try {
+            $stosClient = app(\App\Services\StosBackendClient::class);
+            if ($stosClient->isConfigured()) {
+                $coRes = $stosClient->getCutOffTender($tender->uuid);
+                if ($coRes->successful()) {
+                    $coData = $coRes->json('data') ?? [];
+                    $coPenentuan = $coData['penentuan'] ?? [];
+                    $coStats = $coData['statistical_attribute'] ?? [];
+                    $coVendorsList = $coData['vendors_cutoff'] ?? ($coData['selection']['payload']['vendors'] ?? []);
+
+                    if (is_array($coVendorsList)) {
+                        foreach ($coVendorsList as $coItem) {
+                            if (! empty($coItem['ruj'])) {
+                                $coVendorMap[(string) $coItem['ruj']] = $coItem;
+                            }
+                        }
+                    }
+
+                    if (isset($coPenentuan['harga_cutoff']) && is_numeric($coPenentuan['harga_cutoff'])) {
+                        $b15HargaCutOff = (float) $coPenentuan['harga_cutoff'];
+                    }
+
+                    if (isset($coStats['overall_mean']) && is_numeric($coStats['overall_mean'])) {
+                        $b15HargaAdjustedMean = (float) $coStats['overall_mean'];
+                    } elseif (isset($coPenentuan['norco']) && is_numeric($coPenentuan['norco'])) {
+                        $b15HargaAdjustedMean = (float) $coPenentuan['norco'];
+                    }
+
+                    if ($b15HargaCutOff !== null && $b15HargaCutOff > 0) {
+                        $b15ModalBawahCutOff = $b15HargaCutOff * 0.05;
+                        $b15ModalAtasCutOff = $b15HargaCutOff * 0.03;
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            // Silently fall back to null / '-' if STOS is not reachable or cut-off is skipped
+        }
+
         $b15VendorSummary = [];
 
-        foreach ($participants as $p) {
+        foreach ($participants as $idx => $p) {
             $vId = $p->vendor_id;
             $vB8 = $b8VendorSummary[$vId] ?? [];
             $vB12 = $b12VendorSummary[$vId] ?? [];
@@ -1829,20 +1863,32 @@ class PenilaianKewanganKerjaController extends Controller
             $vB3 = $b3VendorData[$vId] ?? [];
             $vB7 = $b7VendorSummary[$vId] ?? [];
 
+            $kodPembekal = $vB8['kod_pembekal'] ?? ($p->kod_pembekal ?: ('V' . str_pad($p->id, 3, '0', STR_PAD_LEFT)));
             $hargaNum = (float) ($p->tawaran_harga ?? ($p->harga_tawaran ?? (1200000 + ($vId * 150000))));
             $statusBumi = $vB12['status_bumi'] ?? ($vB8['status_bumi'] ?? (($p->vendor->status_bumiputera ?? '') === 'Bumiputera' ? 'BUMIPUTERA' : (($vId % 2 != 0) ? 'BUMIPUTERA' : 'BUKAN BUMIPUTERA')));
 
             $hasOngoing = ! empty($vB7['items']) && count($vB7['items']) > 0;
             $kerjaSemasaStatus = $hasOngoing ? 'Memuaskan' : 'T.K.S';
 
+            // Resolve % BWAM for vendor from cut-off results
+            $coVendorItem = $coVendorMap[(string) $kodPembekal] ?? ($coVendorMap[(string) ($p->kod_pembekal ?? '')] ?? ($coVendorsList[$idx] ?? null));
+            $bwamDisp = '-';
+            if ($coVendorItem && isset($coVendorItem['pct_bwam']) && $coVendorItem['pct_bwam'] !== null) {
+                if ($coVendorItem['pct_bwam'] === 'FREAK') {
+                    $bwamDisp = 'FREAK';
+                } elseif (is_numeric($coVendorItem['pct_bwam'])) {
+                    $bwamDisp = number_format((float) $coVendorItem['pct_bwam'] * 100, 2);
+                }
+            }
+
             $b15VendorSummary[$vId] = [
                 'vendor_id'      => $vId,
-                'kod_pembekal'   => $vB8['kod_pembekal'] ?? ($p->kod_pembekal ?: ('V' . str_pad($p->id, 3, '0', STR_PAD_LEFT))),
+                'kod_pembekal'   => $kodPembekal,
                 'vendor_name'    => $vB8['vendor_name'] ?? ($p->vendor->name ?? $p->vendor->company_name ?? ('Syarikat Petender ' . $vId)),
                 'gred'           => $p->vendor->gred ?? 'G6',
                 'taraf'          => strtoupper($statusBumi),
                 'harga_display'  => 'RM ' . number_format($hargaNum, 2),
-                'bwam'           => '-',
+                'bwam'           => $bwamDisp,
                 'tempoh'         => (string) ($p->tempoh_tawaran ?? $p->tempoh ?? $tender->tempoh_siap ?? 104),
                 'sempurna'       => ($vB5['keputusan_akhir'] ?? '') === 'Sempurna' ? '✓ Sempurna' : '✓ Sempurna',
                 'dok'            => 'Cukup',
@@ -1852,6 +1898,45 @@ class PenilaianKewanganKerjaController extends Controller
                 'is_recommended' => in_array($vId, (array) $recommendedVendorIds, true),
             ];
         }
+
+        $unitMap = [
+            '1'      => 'Minggu',
+            '2'      => 'Bulan',
+            '3'      => 'Tahun',
+            'week'   => 'Minggu',
+            'weeks'  => 'Minggu',
+            'minggu' => 'Minggu',
+            'month'  => 'Bulan',
+            'months' => 'Bulan',
+            'bulan'  => 'Bulan',
+            'year'   => 'Tahun',
+            'years'  => 'Tahun',
+            'tahun'  => 'Tahun',
+        ];
+        $rawUnitKey = strtolower(trim((string) ($tender->tempoh_siap_unit ?? '')));
+        $resolvedUnit = $unitMap[$rawUnitKey] ?? ($tender->tempoh_siap_unit ?: 'Minggu');
+
+        $tempohSiapMaks = '-';
+        if (! empty($tender->tempoh_siap_val)) {
+            $tempohSiapMaks = $tender->tempoh_siap_val . ' ' . $resolvedUnit;
+        } elseif (! empty($tender->tempoh_kontrak_bulan)) {
+            $tempohSiapMaks = $tender->tempoh_kontrak_bulan . ' Bulan';
+        }
+
+        $b15HeaderSummary = [
+            'jenis_tender'         => $tender->jenisTender->name ?? ($tender->type === 'quotation' ? 'Sebut Harga' : ($tender->type === 'tender' ? 'Tender Konvensional' : 'Konvensional')),
+            'tarikh_iklan'         => $tender->advertise_start_date ? \Carbon\Carbon::parse($tender->advertise_start_date)->format('d/m/Y') : '-',
+            'tarikh_tutup'         => $tender->submission_datetime ? \Carbon\Carbon::parse($tender->submission_datetime)->format('d/m/Y') : ($tender->advertise_stop_date ? \Carbon\Carbon::parse($tender->advertise_stop_date)->format('d/m/Y') : '-'),
+            'tarikh_luput_sahlaku' => $sah_laku_tamat ?? ($tender->submission_datetime ? \Carbon\Carbon::parse($tender->submission_datetime)->addDays(90)->format('d/m/Y') : '-'),
+            'tarikh_lawatan_tapak' => $tender->briefing_datetime ? \Carbon\Carbon::parse($tender->briefing_datetime)->format('d/m/Y') : '-',
+            'tempoh_siap_maks'     => $tempohSiapMaks,
+            'peruntukan_pda'       => $tender->sumber_peruntukan ?: ($tender->sumber_lain_text ?: '-'),
+            'anggaran_jabatan'     => (float) ($tender->anggaran_jabatan ?? $tender->harga_indikatif ?? $tender->price ?? 0) > 0 ? ('RM ' . number_format((float) ($tender->anggaran_jabatan ?? $tender->harga_indikatif ?? $tender->price), 2)) : '-',
+            'harga_cutoff'         => $b15HargaCutOff !== null ? ('RM ' . number_format($b15HargaCutOff, 2)) : '-',
+            'harga_adjusted_mean'  => $b15HargaAdjustedMean !== null ? ('RM ' . number_format($b15HargaAdjustedMean, 2)) : '-',
+            'modal_bawah_cutoff'   => $b15ModalBawahCutOff !== null ? ('RM ' . number_format($b15ModalBawahCutOff, 2)) : '-',
+            'modal_atas_cutoff'    => $b15ModalAtasCutOff !== null ? ('RM ' . number_format($b15ModalAtasCutOff, 2)) : '-',
+        ];
 
         return view($viewName, compact(
             'tender',
@@ -1891,7 +1976,8 @@ class PenilaianKewanganKerjaController extends Controller
             'b12VendorSummary',
             'b13VendorSummary',
             'b14VendorSummary',
-            'b15VendorSummary'
+            'b15VendorSummary',
+            'b15HeaderSummary'
         ));
     }
 

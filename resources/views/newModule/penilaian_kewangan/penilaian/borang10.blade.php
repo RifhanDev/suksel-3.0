@@ -728,10 +728,10 @@
                                                     <div class="d-flex align-items-center justify-content-between pt-2 border-top">
                                                         <span class="text-muted font-monospace" style="font-size:0.75rem;"><i class="bi bi-clock me-1"></i>15/08/2026</span>
                                                         <div class="d-flex gap-1.5">
-                                                            <button type="button" class="btn btn-sm btn-outline-primary rounded-2 px-2.5 py-1 text-nowrap fw-semibold" onclick="viewKakitanganDoc('#')">
+                                                            <button type="button" class="btn btn-sm btn-outline-primary rounded-2 px-2.5 py-1 text-nowrap fw-semibold" onclick="Swal.fire({icon:'info', title:'Maklumat', text:'Sila pilih petender dari senarai di atas untuk melihat dokumen.', confirmButtonColor:'#dc2626'})">
                                                                 <i class="bi bi-eye me-1"></i>Papar
                                                             </button>
-                                                            <button type="button" class="btn btn-sm btn-light border text-secondary rounded-2 px-2 py-1" title="Muat Turun">
+                                                            <button type="button" class="btn btn-sm btn-light border text-secondary rounded-2 px-2 py-1" title="Muat Turun" onclick="Swal.fire({icon:'info', title:'Maklumat', text:'Sila pilih petender dari senarai di atas untuk memuat turun dokumen.', confirmButtonColor:'#dc2626'})">
                                                                 <i class="bi bi-download"></i>
                                                             </button>
                                                         </div>
@@ -937,7 +937,7 @@
                 <div class="p-3 bg-light rounded-3 border mb-3">
                     <div class="d-flex align-items-center justify-content-between">
                         <span class="small fw-semibold text-dark"><i class="bi bi-info-circle text-primary me-1.5"></i>Jumlah Dokumen Dimuat Naik</span>
-                        <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-2.5 py-1 rounded-pill fw-bold">2 Dokumen</span>
+                        <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-2.5 py-1 rounded-pill fw-bold" id="personDocModalCount">2 Dokumen</span>
                     </div>
                 </div>
 
@@ -1155,6 +1155,10 @@
                     const badgeColors = ['bg-danger text-danger', 'bg-primary text-primary', 'bg-success text-success'];
                     const colorClass = badgeColors[idx % badgeColors.length];
                     const isPdf = doc.original_name && doc.original_name.toLowerCase().endsWith('.pdf');
+                    const hasValidUrl = doc.file_url && doc.file_url !== '#';
+                    const viewUrl = hasValidUrl ? escapeHtml(doc.file_url) : 'javascript:void(0)';
+                    const targetAttr = hasValidUrl ? 'target="_blank"' : '';
+                    const noUrlClick = hasValidUrl ? '' : 'onclick="event.preventDefault(); Swal.fire({icon:\'warning\', title:\'Perhatian\', text:\'Fail dokumen tidak ditemui atau URL tidak sah.\', confirmButtonColor:\'#dc2626\'});"';
                     return `
                         <div class="col-12 col-md-4">
                             <div class="p-3 rounded-3 border bg-light bg-opacity-50 h-100 d-flex flex-column justify-content-between">
@@ -1170,10 +1174,10 @@
                                 <div class="d-flex align-items-center justify-content-between pt-2 border-top">
                                     <span class="text-muted font-monospace" style="font-size:0.75rem;"><i class="bi bi-clock me-1"></i>${escapeHtml(doc.created_at || '-')}</span>
                                     <div class="d-flex gap-1.5">
-                                        <a href="${escapeHtml(doc.file_url || '#')}" target="_blank" class="btn btn-sm btn-outline-primary rounded-2 px-2.5 py-1 text-nowrap fw-semibold">
+                                        <a href="${viewUrl}" ${targetAttr} ${noUrlClick} class="btn btn-sm btn-outline-primary rounded-2 px-2.5 py-1 text-nowrap fw-semibold">
                                             <i class="bi bi-eye me-1"></i>Papar
                                         </a>
-                                        <a href="${escapeHtml(doc.file_url || '#')}" download class="btn btn-sm btn-light border text-secondary rounded-2 px-2 py-1" title="Muat Turun">
+                                        <a href="${viewUrl}" ${hasValidUrl ? 'download' : ''} ${noUrlClick} class="btn btn-sm btn-light border text-secondary rounded-2 px-2 py-1" title="Muat Turun">
                                             <i class="bi bi-download"></i>
                                         </a>
                                     </div>
@@ -1207,6 +1211,8 @@
     function viewKakitanganDoc(nama, kat, docs) {
         const modalName = document.getElementById('personDocModalName');
         const modalBadge = document.getElementById('personDocModalBadge');
+        const modalCount = document.getElementById('personDocModalCount');
+
         if (modalName) modalName.innerText = (typeof nama === 'string' && nama !== '#' && nama.trim() !== '') ? nama : 'Ir. Ahmad Razali Bin Hassan';
         if (modalBadge) {
             const katStr = typeof kat === 'string' ? kat : 'Kat. A';
@@ -1218,8 +1224,11 @@
         }
 
         const tbodyDocs = document.getElementById('tblPersonDocsBody');
+        let docCount = 0;
+
         if (tbodyDocs) {
             if (Array.isArray(docs) && docs.length > 0) {
+                docCount = docs.length;
                 tbodyDocs.innerHTML = docs.map((doc, idx) => `
                     <tr>
                         <td class="text-center font-monospace fw-bold">${idx + 1}</td>
@@ -1241,7 +1250,17 @@
                         </td>
                     </tr>
                 `).join('');
+            } else if (Array.isArray(docs) && docs.length === 0) {
+                docCount = 0;
+                tbodyDocs.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="text-center py-4 text-muted">
+                            <i class="bi bi-folder-x me-1"></i>Tiada dokumen sokongan dimuat naik bagi pegawai ini.
+                        </td>
+                    </tr>
+                `;
             } else {
+                docCount = 2;
                 tbodyDocs.innerHTML = `
                     <tr>
                         <td class="text-center font-monospace fw-bold">1</td>
@@ -1283,6 +1302,10 @@
                     </tr>
                 `;
             }
+        }
+
+        if (modalCount) {
+            modalCount.innerText = `${docCount} Dokumen`;
         }
 
         const modalEl = document.getElementById('personDocsModal');
