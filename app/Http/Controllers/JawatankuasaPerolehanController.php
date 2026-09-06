@@ -13,6 +13,7 @@ use App\Models\JawatankuasaPerolehanPemilihanPetender;
 use App\Models\PerakuanJabatanKertasTaklimatItem;
 use App\Models\PerakuanJabatanPengesyoranPembekal;
 use App\Models\PerakuanJabatanPengesyoranPembekalItem;
+use App\Models\Ref\RefJustifikasiPemilihanPembekal;
 use App\Models\TenderTeknikalSpesifikasiEvaluation;
 use App\Services\StosBackendClient;
 use App\Services\TenderProcessStatusService;
@@ -92,6 +93,7 @@ class JawatankuasaPerolehanController extends Controller
         $pemilihanItems = collect();
         $pemilihanOpts = $this->pemilihanDropdownOptions(null);
         $pemilihanVendors = collect();
+        $kkJustifikasiOptions = $this->justifikasiPemilihanPembekalOptions();
 
         if ($tender) {
             $meetings = JawatankuasaPerolehanMeeting::query()
@@ -245,6 +247,7 @@ class JawatankuasaPerolehanController extends Controller
             'pemilihanItems',
             'pemilihanOpts',
             'pemilihanVendors',
+            'kkJustifikasiOptions',
         ));
     }
 
@@ -369,7 +372,12 @@ class JawatankuasaPerolehanController extends Controller
             'dengan_syarat' => ['nullable', 'in:0,1'],
             'syarat_nyatakan' => ['nullable', 'string', 'max:65535'],
             'pengesyoran_catatan' => ['nullable', 'string', 'max:65535'],
-            'justifikasi_pemilihan_pembekal' => ['nullable', 'string', 'max:255'],
+            'justifikasi_pemilihan_pembekal' => [
+                'nullable',
+                'string',
+                'max:255',
+                Rule::in(array_merge([''], $this->justifikasiPemilihanPembekalOptions())),
+            ],
             'keputusan' => ['nullable', 'in:Lulus,Tawaran Semula,Batal,Tangguh'],
             'catatan' => ['nullable', 'string', 'max:65535'],
             'lampiran' => ['nullable', 'file', 'max:10240'],
@@ -400,7 +408,12 @@ class JawatankuasaPerolehanController extends Controller
             'dengan_syarat' => ['required', 'in:0,1'],
             'syarat_nyatakan' => ['nullable', 'string', 'max:65535'],
             'pengesyoran_catatan' => ['required', 'string', 'max:65535'],
-            'justifikasi_pemilihan_pembekal' => ['required', 'string', 'max:255'],
+            'justifikasi_pemilihan_pembekal' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::in($this->justifikasiPemilihanPembekalOptions()),
+            ],
             'keputusan' => ['required', 'in:Lulus,Tawaran Semula,Batal,Tangguh'],
             'catatan' => ['nullable', 'string', 'max:65535'],
             'lampiran' => ['nullable', 'file', 'max:10240'],
@@ -408,6 +421,7 @@ class JawatankuasaPerolehanController extends Controller
         ], [
             'pengesyoran_catatan.required' => 'Ruangan Pengesyoran adalah wajib.',
             'justifikasi_pemilihan_pembekal.required' => 'Justifikasi Pemilihan Pembekal adalah wajib.',
+            'justifikasi_pemilihan_pembekal.in' => 'Justifikasi Pemilihan Pembekal tidak sah.',
             'keputusan.required' => 'Sila pilih Keputusan.',
         ]);
 
@@ -590,6 +604,31 @@ class JawatankuasaPerolehanController extends Controller
             ->where('tender_id', $tender->id)
             ->whereNotNull('started_at')
             ->exists();
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function justifikasiPemilihanPembekalOptions(): array
+    {
+        try {
+            $rows = RefJustifikasiPemilihanPembekal::query()
+                ->where('active', 1)
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->pluck('name')
+                ->filter()
+                ->values()
+                ->all();
+
+            if (! empty($rows)) {
+                return $rows;
+            }
+        } catch (\Throwable $e) {
+            // Table may not be migrated yet; fall back to seeder constants.
+        }
+
+        return array_column(\Database\Seeders\Ref\JustifikasiPemilihanPembekal::ROWS, 'name');
     }
 
     private function blankPemilihanHeader(): array

@@ -476,12 +476,10 @@
 							    'justifikasi_pemilihan_pembekal',
 							    optional($kertasKeputusan)->justifikasi_pemilihan_pembekal,
 							);
-							$kkJustifikasiOptions = [
-							    'Harga dalam lingkungan harga indikatif jabatan',
-							    'Spesifikasi teknikal memenuhi keperluan',
-							    'Tempoh penghantaran menepati keperluan projek',
-							    'Prestasi dan rekod pembekal memuaskan',
-							];
+							$kkJustifikasiOptions = $kkJustifikasiOptions ?? [];
+							if (filled($kkJustifikasi) && ! in_array($kkJustifikasi, $kkJustifikasiOptions, true)) {
+							    $kkJustifikasiOptions[] = $kkJustifikasi;
+							}
 						@endphp
 						@foreach ($kkJustifikasiOptions as $option)
 							<option value="{{ $option }}" {{ $kkJustifikasi === $option ? 'selected' : '' }}>{{ $option }}
