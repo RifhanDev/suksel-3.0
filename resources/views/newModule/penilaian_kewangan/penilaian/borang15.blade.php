@@ -310,27 +310,27 @@
                 <div class="d-flex flex-column gap-2.5">
                     <div class="d-flex align-items-center justify-content-between p-2 rounded-2 bg-light">
                         <span class="text-muted small fw-semibold">Jenis Tender</span>
-                        <span class="fw-bold text-dark font-monospace small">Konvensional</span>
+                        <span class="fw-bold text-dark font-monospace small">{{ $b15HeaderSummary['jenis_tender'] ?? ($tender->jenisTender->name ?? '-') }}</span>
                     </div>
                     <div class="d-flex align-items-center justify-content-between p-2 rounded-2 bg-light">
                         <span class="text-muted small fw-semibold">Tarikh Tender Diiklankan</span>
-                        <span class="fw-bold text-dark font-monospace small">07/10/2024</span>
+                        <span class="fw-bold text-dark font-monospace small">{{ $b15HeaderSummary['tarikh_iklan'] ?? '-' }}</span>
                     </div>
                     <div class="d-flex align-items-center justify-content-between p-2 rounded-2 bg-light">
                         <span class="text-muted small fw-semibold">Tarikh Tender Ditutup</span>
-                        <span class="fw-bold text-dark font-monospace small">28/10/2024</span>
+                        <span class="fw-bold text-dark font-monospace small">{{ $b15HeaderSummary['tarikh_tutup'] ?? '-' }}</span>
                     </div>
                     <div class="d-flex align-items-center justify-content-between p-2 rounded-2 bg-light">
                         <span class="text-muted small fw-semibold">Tarikh Luput Sahlaku Tender</span>
-                        <span class="fw-bold text-dark font-monospace small">26/01/2025</span>
+                        <span class="fw-bold text-dark font-monospace small">{{ $b15HeaderSummary['tarikh_luput_sahlaku'] ?? ($sah_laku_tamat ?? '-') }}</span>
                     </div>
                     <div class="d-flex align-items-center justify-content-between p-2 rounded-2 bg-light">
                         <span class="text-muted small fw-semibold">Tarikh Lawatan Tapak</span>
-                        <span class="fw-bold text-dark font-monospace small">07/11/2024</span>
+                        <span class="fw-bold text-dark font-monospace small">{{ $b15HeaderSummary['tarikh_lawatan_tapak'] ?? '-' }}</span>
                     </div>
                     <div class="d-flex align-items-center justify-content-between p-2 rounded-2 bg-light">
                         <span class="text-muted small fw-semibold">Tempoh Siap Maksimum</span>
-                        <span class="fw-bold text-dark font-monospace small">104 Minggu</span>
+                        <span class="fw-bold text-dark font-monospace small">{{ $b15HeaderSummary['tempoh_siap_maks'] ?? '-' }}</span>
                     </div>
                 </div>
             </div>
@@ -340,29 +340,29 @@
                 <div class="d-flex flex-column gap-2.5">
                     <div class="d-flex align-items-center justify-content-between p-2 rounded-2 bg-light">
                         <span class="text-muted small fw-semibold">Peruntukan (PDA)</span>
-                        <span class="fw-bold text-dark font-monospace small">-</span>
+                        <span class="fw-bold text-dark font-monospace small">{{ $b15HeaderSummary['peruntukan_pda'] ?? '-' }}</span>
                     </div>
                     <div class="d-flex align-items-center justify-content-between p-2 rounded-2 bg-light">
                         <span class="text-muted small fw-semibold">Anggaran Jabatan</span>
-                        <span class="fw-bold text-primary font-monospace small">RM 6,120,000.00</span>
+                        <span class="fw-bold text-primary font-monospace small">{{ $b15HeaderSummary['anggaran_jabatan'] ?? '-' }}</span>
                     </div>
                     <div class="d-flex align-items-center justify-content-between p-2 rounded-2 bg-light">
                         <span class="text-muted small fw-semibold">Harga Cut-Off</span>
-                        <span class="fw-bold text-dark font-monospace small">RM 5,279,000.00</span>
+                        <span class="fw-bold text-dark font-monospace small">{{ $b15HeaderSummary['harga_cutoff'] ?? '-' }}</span>
                     </div>
                     <div class="d-flex align-items-center justify-content-between p-2 rounded-2 bg-light">
                         <span class="text-muted small fw-semibold">Harga Adjusted Mean</span>
-                        <span class="fw-bold text-dark font-monospace small">RM 5,321,181.14</span>
+                        <span class="fw-bold text-dark font-monospace small">{{ $b15HeaderSummary['harga_adjusted_mean'] ?? '-' }}</span>
                     </div>
                     <div class="p-2 rounded-2 bg-light border">
                         <div class="text-muted small fw-bold text-uppercase mb-2" style="font-size: 0.7rem; letter-spacing: 0.5px;">Modal Mudah Cair Terlaras</div>
                         <div class="d-flex align-items-center justify-content-between mb-1.5">
                             <span class="text-secondary extra-small" style="font-size: 0.775rem;">i) Bawah Cut-Off (5%)</span>
-                            <span class="fw-bold text-dark font-monospace small">RM 283,600.00</span>
+                            <span class="fw-bold text-dark font-monospace small">{{ $b15HeaderSummary['modal_bawah_cutoff'] ?? '-' }}</span>
                         </div>
                         <div class="d-flex align-items-center justify-content-between">
                             <span class="text-secondary extra-small" style="font-size: 0.775rem;">ii) Atas Cut-Off (3%)</span>
-                            <span class="fw-bold text-dark font-monospace small">RM 170,160.00</span>
+                            <span class="fw-bold text-dark font-monospace small">{{ $b15HeaderSummary['modal_atas_cutoff'] ?? '-' }}</span>
                         </div>
                     </div>
                 </div>
@@ -455,7 +455,7 @@
                                     {{ $hargaDisp }}
                                 </td>
                                 <td class="text-center font-monospace" style="font-size: 0.75rem;">
-                                    -
+                                    {{ $r['bwam'] ?? '-' }}
                                 </td>
                                 <td class="text-center font-monospace" style="font-size: 0.75rem;">
                                     {{ $r['tempoh'] ?? '104' }}
