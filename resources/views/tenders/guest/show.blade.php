@@ -466,7 +466,7 @@
 							</div>
 							@if (count($tender->cidb_grades) > 0 || count($tender->cidb_codes) > 0)
 								<div class="tender-code-divider">
-									<span>{{ $tender->mof_cidb_rule == 'and' ? 'DAN' : 'ATAU' }}</span>
+									<span>{{ strtoupper((string) ($tender->mof_cidb_rule ?: 'or')) === 'AND' ? 'DAN' : 'ATAU' }}</span>
 								</div>
 							@endif
 						@endif

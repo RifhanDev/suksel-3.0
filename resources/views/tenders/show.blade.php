@@ -522,7 +522,7 @@
 									</tr>
 								</table>
 								@if (count($tender->cidb_grades) > 0 || count($tender->cidb_codes) > 0)
-									<br><span class="label label-success">{{ $tender->mof_cidb_rule == 'and' ? 'DAN' : 'ATAU' }}</span><br><br>
+									<br><span class="label label-success">{{ strtoupper((string) ($tender->mof_cidb_rule ?: 'or')) === 'AND' ? 'DAN' : 'ATAU' }}</span><br><br>
 								@endif
 							@endif
 
