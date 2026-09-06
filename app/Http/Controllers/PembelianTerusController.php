@@ -535,6 +535,20 @@ class PembelianTerusController extends Controller
                     ? 'Projek berjaya diterbitkan.'
                     : 'Projek berjaya disimpan sebagai draf.';
 
+                // Terbitkan → senarai. Simpan → kekal di halaman kemaskini/cipta.
+                if ($action === 'publish') {
+                    return redirect()->route('pembelianTerus.createProject')
+                        ->with('success', $message);
+                }
+
+                $savedId = $id
+                    ?: (int) ($response->json('tender_id') ?? $response->json('data.id') ?? 0);
+
+                if ($savedId > 0) {
+                    return redirect()->route('pembelianTerus.edit', $savedId)
+                        ->with('success', $message);
+                }
+
                 return redirect()->route('pembelianTerus.createProject')
                     ->with('success', $message);
             }
