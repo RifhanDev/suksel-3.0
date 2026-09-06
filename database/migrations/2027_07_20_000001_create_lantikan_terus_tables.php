@@ -1,5 +1,6 @@
 <?php
 
+use App\Support\SchemaCompat;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
@@ -11,13 +12,13 @@ return new class extends Migration
     {
         Schema::create('lantikan_terus_documents', function (Blueprint $table) {
             $table->id();
-            $table->unsignedInteger('tender_id')->index();
+            SchemaCompat::referenceColumn($table, 'tender_id', 'tenders');
             // bq = dokumen BQ pemilik projek; jpict/minit_bebas = cut-off; surat_setuju_terima = keputusan
             $table->enum('doc_type', ['bq', 'jpict', 'minit_bebas', 'surat_setuju_terima', 'lain']);
             $table->string('file_path');
             $table->string('original_name')->nullable();
             $table->string('display_name')->nullable();
-            $table->unsignedBigInteger('uploaded_by')->nullable();
+            SchemaCompat::referenceColumn($table, 'uploaded_by', 'users', true);
             $table->timestamps();
 
             $table->foreign('tender_id')->references('id')->on('tenders')->onDelete('cascade');
@@ -25,8 +26,8 @@ return new class extends Migration
 
         Schema::create('lantikan_terus_offers', function (Blueprint $table) {
             $table->id();
-            $table->unsignedInteger('tender_id')->index();
-            $table->unsignedBigInteger('vendor_id')->index();
+            SchemaCompat::referenceColumn($table, 'tender_id', 'tenders');
+            SchemaCompat::referenceColumn($table, 'vendor_id', 'vendors');
             $table->decimal('harga_tawaran', 15, 2)->default(0);
             $table->string('bq_path')->nullable();
             $table->string('bq_original_name')->nullable();
