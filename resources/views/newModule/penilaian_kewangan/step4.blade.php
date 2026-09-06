@@ -416,6 +416,13 @@
                     <span>Sebelumnya</span>
                 </button>
                 <div class="d-flex gap-2">
+                    @if($tender)
+                        <button type="button" id="btnStep4Laporan" class="btn btn-outline-secondary px-4 fw-semibold d-inline-flex align-items-center gap-2"
+                            data-url="{{ route('penilaianKewangan.cetakLaporan', $tender->uuid ?: $tender->id) }}">
+                            <i class="bi bi-printer"></i>
+                            <span>Laporan</span>
+                        </button>
+                    @endif
                     @if(!$isSubmitted)
                         <button type="button" id="btnStep4SimpanDraft" class="btn btn-outline-secondary px-4 fw-semibold d-inline-flex align-items-center gap-2">
                             <i class="bi bi-save"></i>
@@ -468,6 +475,13 @@ document.addEventListener('DOMContentLoaded', function () {
     const btnClose = document.getElementById('btnStep4CloseSuccess');
     const btnTambahPengesyoran = document.getElementById('btnTambahPengesyoran4');
     const pengesyoranList = document.getElementById('pengesyoran-list-4');
+    const btnLaporan = document.getElementById('btnStep4Laporan');
+
+    if (btnLaporan) {
+        btnLaporan.addEventListener('click', function () {
+            window.open(btnLaporan.dataset.url, '_blank');
+        });
+    }
 
     if (btnClose) {
         btnClose.addEventListener('click', function () {
