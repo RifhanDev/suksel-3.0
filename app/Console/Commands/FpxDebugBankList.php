@@ -20,7 +20,10 @@ use Illuminate\Support\Facades\DB;
  */
 class FpxDebugBankList extends Command
 {
-    protected $signature = 'fpx:debug-banklist';
+    protected $signature = 'fpx:debug-banklist'
+        . ' {--fpx-version= : Paksa fpx_version tertentu (lalai: nilai dalam baris gateway)}'
+        . ' {--msg-token= : Paksa fpx_msgToken tertentu (lalai: 01)}'
+        . ' {--sweep : Cuba setiap gabungan versi x msgToken dan laporkan mana yang diterima}';
 
     protected $description = 'Panggil RetrieveBankList PayNet terus dan semak sama ada SBI Bank A/B/C wujud';
 
@@ -74,36 +77,114 @@ class FpxDebugBankList extends Command
 
         $this->line('');
 
-        try {
-            $banks = $fpx->bankList();
-        } catch (\Throwable $e) {
-            $this->error('Panggilan gagal: ' . get_class($e) . ': ' . $e->getMessage());
-            $this->line('Badan mentah PayNet: ' . var_export($fpx->last_response_body, true));
+        // PayNet membalas 'ERROR' tanpa menyatakan medan mana yang ditolak, jadi
+        // meneka satu-satu bermakna satu larian penuh bagi setiap tekaan — mahal
+        // pada konsol VNC tanpa copy-paste. Sweep mencuba setiap gabungan dan
+        // melaporkan mana yang diterima dalam satu larian.
+        if ($this->option('sweep')) {
+            $this->line('Menguji setiap gabungan versi x msgToken:');
+            $this->line('');
+            $berjaya = [];
 
-            return self::FAILURE;
+            foreach (['5.0', '6.0', '7.0'] as $version) {
+                foreach (['01', '02'] as $token) {
+                    $hasil = $this->attempt($gateway, $version, $token);
+                    $this->line(sprintf('  versi %-4s msgToken %-3s -> %s', $version, $token, $hasil['ringkas']));
+
+                    if ($hasil['banks'] !== null) {
+                        $berjaya["{$version}|{$token}"] = $hasil['banks'];
+                    }
+                }
+            }
+
+            $this->line('');
+
+            if ($berjaya === []) {
+                $this->error('Tiada gabungan diterima PayNet — puncanya bukan versi/msgToken.');
+
+                return self::FAILURE;
+            }
+
+            foreach ($berjaya as $combo => $banks) {
+                [$version, $token] = explode('|', $combo);
+                $this->info("DITERIMA: versi {$version}, msgToken {$token} — " . count($banks) . ' bank');
+                $this->reportBanks($banks);
+                $this->line('');
+            }
+
+            $this->line('Jika versi yang diterima berbeza daripada baris gateway, itulah puncanya.');
+
+            return self::SUCCESS;
         }
 
-        $this->line('source string  = ' . $fpx->source_string);
+        $version = $this->option('fpx-version') ?: $gateway->version;
+        $token   = $this->option('msg-token') ?: '01';
+        $hasil   = $this->attempt($gateway, $version, $token);
+
+        $this->line('source string  = ' . $hasil['source_string']);
         $this->line('');
 
-        if (! is_array($banks) || $banks === []) {
+        if ($hasil['banks'] === null) {
             $this->error('PayNet tidak memulangkan senarai bank.');
             $this->line('Badan mentah yang PayNet balas:');
-            $this->line(var_export($fpx->last_response_body, true));
+            $this->line(var_export($hasil['raw'], true));
+            $this->line('');
+            $this->line('Cuba: php artisan fpx:debug-banklist --sweep');
 
             return self::FAILURE;
         }
 
-        $this->info('Jumlah bank dipulangkan PayNet: ' . count($banks));
-
-        foreach (['TEST0021', 'TEST0022', 'TEST0023'] as $code) {
-            $this->line($code . ' -> ' . (array_key_exists($code, $banks) ? 'ADA (status=' . $banks[$code] . ')' : 'TIADA'));
-        }
-
-        $this->line('');
-        $this->line('Semua kod yang dipulangkan:');
-        $this->line(implode(', ', array_keys($banks)));
+        $this->info('Jumlah bank dipulangkan PayNet: ' . count($hasil['banks']));
+        $this->reportBanks($hasil['banks']);
 
         return self::SUCCESS;
     }
+
+    /**
+     * Satu panggilan RetrieveBankList. Memulangkan senarai bank apabila PayNet
+     * menerimanya, atau null berserta badan mentah apabila ditolak — supaya
+     * pemanggil boleh melaporkan penolakan tanpa menghentikan sweep.
+     */
+    private function attempt($gateway, string $version, string $token): array
+    {
+        $fpx = new Fpx([
+            'request_type'  => 'BE',
+            'msg_token'     => $token,
+            'merchant_id'   => $gateway->merchant_code,
+            'version'       => $version,
+            'reference_url' => $gateway->endpoint_url,
+        ]);
+
+        try {
+            $banks = $fpx->bankList();
+        } catch (\Throwable $e) {
+            return [
+                'banks'         => null,
+                'raw'           => $fpx->last_response_body,
+                'source_string' => $fpx->source_string,
+                'ringkas'       => 'gagal: ' . get_class($e) . ': ' . $e->getMessage(),
+            ];
+        }
+
+        $diterima = is_array($banks) && $banks !== [];
+
+        return [
+            'banks'         => $diterima ? $banks : null,
+            'raw'           => $fpx->last_response_body,
+            'source_string' => $fpx->source_string,
+            'ringkas'       => $diterima
+                ? 'OK, ' . count($banks) . ' bank'
+                : 'ditolak, balasan = ' . var_export($fpx->last_response_body, true),
+        ];
+    }
+
+    private function reportBanks(array $banks): void
+    {
+        foreach (['TEST0021', 'TEST0022', 'TEST0023'] as $code) {
+            $this->line('  ' . $code . ' -> ' . (array_key_exists($code, $banks) ? 'ADA (status=' . $banks[$code] . ')' : 'TIADA'));
+        }
+
+        $this->line('  semua kod: ' . implode(', ', array_keys($banks)));
+    }
+
 }

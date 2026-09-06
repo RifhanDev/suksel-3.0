@@ -24,6 +24,25 @@ class FpxController extends Controller
 		]);
 		
 		$banks = $fpx->bankList();
+
+		// PayNet menolak RetrieveBankList dengan badan 'ERROR' sahaja apabila mana-mana
+		// medan yang ditandatangani tidak diterima (versi, exchange id, checksum).
+		// bankList() memulangkan false dalam keadaan itu, dan ksort(false) melontar
+		// TypeError — pengguna dapat 500 kosong tanpa apa-apa petunjuk. Log balasan
+		// mentah PayNet dan tunjukkan mesej yang boleh difahami sebaliknya.
+		if (! is_array($banks) || $banks === []) {
+			Log::error('FPX RetrieveBankList ditolak PayNet', [
+				'gateway_id'    => $transaction->gateway->id,
+				'exchange_id'   => $fpx->exchange_id,
+				'fpx_version'   => $transaction->gateway->version,
+				'url'           => Fpx::bankListUrl($transaction->gateway->endpoint_url),
+				'source_string' => $fpx->source_string,
+				'response_body' => $fpx->last_response_body,
+			]);
+
+			return redirect()->back()->with('error', 'Senarai bank tidak dapat dimuatkan daripada FPX buat masa ini. Sila cuba sebentar lagi.');
+		}
+
 		ksort ($banks);
 
 		// if($_SERVER['REMOTE_ADDR'] == '202.185.133.20') {
