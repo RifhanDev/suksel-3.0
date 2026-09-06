@@ -360,10 +360,14 @@
                                 <td class="text-center fw-semibold {{ $statusBumi === 'Bumiputera' ? 'text-success' : 'text-primary' }}">
                                     {{ $statusBumi }}
                                 </td>
-                                <td class="text-center font-monospace text-danger fw-bold">
+                                <td class="text-center font-monospace text-danger fw-bold b14-markah-terlaras"
+                                    data-vendor-id="{{ $vId }}"
+                                    data-skor="{{ (float) str_replace(',', '', (string) $markahTerlaras) }}">
                                     {{ $markahTerlaras }}
                                 </td>
-                                <td class="text-center font-monospace fw-bold text-dark">
+                                <td class="text-center font-monospace fw-bold text-dark b14-kedudukan"
+                                    data-vendor-id="{{ $vId }}"
+                                    data-kedudukan="{{ $kedudukan }}">
                                     {{ $kedudukan }}
                                 </td>
                                 <td class="text-center px-2" style="width: 140px;">
@@ -471,6 +475,22 @@
             }
         });
 
+        const skorKeseluruhan = {};
+        document.querySelectorAll('.b14-markah-terlaras').forEach(el => {
+            const vId = el.dataset.vendorId;
+            if (vId) {
+                skorKeseluruhan[vId] = el.dataset.skor || el.textContent.trim();
+            }
+        });
+
+        const kedudukanData = {};
+        document.querySelectorAll('.b14-kedudukan').forEach(el => {
+            const vId = el.dataset.vendorId;
+            if (vId) {
+                kedudukanData[vId] = el.dataset.kedudukan || el.textContent.trim();
+            }
+        });
+
         fetch(`/penilaian-kewangan-kerja/${encodeURIComponent(tenderNo)}/borang/borang14/simpan-muktamad`, {
             method: 'POST',
             headers: {
@@ -480,7 +500,9 @@
             },
             body: JSON.stringify({
                 chk_sah: 1,
-                score_cidb: scoreCidbData
+                score_cidb: scoreCidbData,
+                skor_keseluruhan: skorKeseluruhan,
+                kedudukan: kedudukanData
             })
         })
         .then(res => res.json())

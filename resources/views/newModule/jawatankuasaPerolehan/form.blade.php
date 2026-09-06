@@ -239,8 +239,8 @@
 		<div class="tab-pane" id="tab-kertas-taklimat" role="tabpanel">
 			<div class="content-card p-4">
 				<h6 class="fw-bold text-dark mb-1">Seksyen Laporan</h6>
-				<p class="text-muted small mb-3">Senarai lampiran yang dimuat naik dalam modul Perakuan Jabatan. Di sini anda hanya
-					boleh <strong>papar</strong> (tiada muat naik / padam).</p>
+				<p class="text-muted small mb-3">Senarai lampiran daripada modul Perakuan Jabatan (termasuk laporan yang dijana
+					secara automatik). Di sini anda hanya boleh <strong>papar</strong> (tiada muat naik / padam).</p>
 
 				@if (($taklimatAttachments ?? collect())->isEmpty())
 					<div class="alert d-flex align-items-center gap-2 mb-0"
@@ -402,7 +402,7 @@
 									<th>Jumlah Skor</th>
 									<th>Kedudukan Penilaian Teknikal Kewangan</th>
 									<th>Status Pendaftaran MOF</th>
-									<th colspan="3">Maklumat Tambahan</th>
+									<th colspan="2">Maklumat Tambahan</th>
 									<th>Keputusan Urusetia</th>
 									<th style="min-width:180px;">Catatan Urusetia</th>
 									<th id="mp-th-selection" class="d-none">Pemilihan</th>
@@ -412,7 +412,6 @@
 									<th colspan="6"></th>
 									<th class="small">Prestasi Pembekal</th>
 									<th class="small">Lembaga Pengarah</th>
-									<th class="small">CIDB</th>
 									<th id="mp-th-empty-right" colspan="2"></th>
 								</tr>
 							</thead>
@@ -477,12 +476,10 @@
 							    'justifikasi_pemilihan_pembekal',
 							    optional($kertasKeputusan)->justifikasi_pemilihan_pembekal,
 							);
-							$kkJustifikasiOptions = [
-							    'Harga dalam lingkungan harga indikatif jabatan',
-							    'Spesifikasi teknikal memenuhi keperluan',
-							    'Tempoh penghantaran menepati keperluan projek',
-							    'Prestasi dan rekod pembekal memuaskan',
-							];
+							$kkJustifikasiOptions = $kkJustifikasiOptions ?? [];
+							if (filled($kkJustifikasi) && ! in_array($kkJustifikasi, $kkJustifikasiOptions, true)) {
+							    $kkJustifikasiOptions[] = $kkJustifikasi;
+							}
 						@endphp
 						@foreach ($kkJustifikasiOptions as $option)
 							<option value="{{ $option }}" {{ $kkJustifikasi === $option ? 'selected' : '' }}>{{ $option }}
@@ -546,15 +543,6 @@
 		</div>
 
 	</div>
-
-	@if ($tender && ($pemilihanVendors ?? collect())->isNotEmpty())
-		@foreach ($pemilihanVendors as $vendor)
-			@include('components.vendor-cidb-meta', [
-				'vendor' => $vendor,
-				'trigger' => 'none',
-			])
-		@endforeach
-	@endif
 @endsection
 
 @section('scripts')
@@ -762,6 +750,10 @@
 					processData: false,
 					contentType: false,
 					success: function(resp) {
+						if (resp.redirect) {
+							window.location.href = resp.redirect;
+							return;
+						}
 						showKertasKeputusanAlert(resp.message || successMessage, 'success');
 					},
 					error: function(xhr) {
@@ -895,20 +887,6 @@
 					});
 				}
 
-				function mpCidbCell(p) {
-					if (!p.vendor_id || !p.cidb_has_meta) {
-						return '<td class="text-center"><span class="text-muted small">—</span></td>';
-					}
-
-					return '<td class="text-center">' +
-						'<button type="button" class="btn btn-sm btn-outline-primary py-0 px-2 d-inline-flex align-items-center justify-content-center" ' +
-						'data-bs-toggle="modal" data-bs-target="#cidbMetaModal-' + escapeHtml(String(p.vendor_id)) +
-						'" title="Maklumat CIDB">' +
-						'<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-						'<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>' +
-						'</button></td>';
-				}
-
 				function mpRenderSuppliers() {
 					const item = pemilihanState.items[mpSelectedItemIndex];
 					const $b = $('#mp-pembekal-body');
@@ -938,7 +916,6 @@
 							'<td class="text-center small">' + escapeHtml(p.status_mof || '—') + '</td>' +
 							'<td class="text-center text-muted small">—</td>' +
 							'<td class="text-center text-muted small">—</td>' +
-							mpCidbCell(p) +
 							'<td class="small">' + escapeHtml(p.keputusan_urusetia || '—') + '</td>' +
 							'<td class="small">' + escapeHtml(p.catatan_urusetia || '—') + '</td>' +
 							selectionCell +
@@ -1005,6 +982,10 @@
 						},
 						data: JSON.stringify(body),
 						success: function(resp) {
+							if (resp.redirect) {
+								window.location.href = resp.redirect;
+								return;
+							}
 							mpShowAlert(resp.message || successMessage, 'success');
 						},
 						error: function(xhr) {
