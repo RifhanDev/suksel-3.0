@@ -41,6 +41,17 @@ class Fpx
 	// — selalunya badan ralat yang menerangkan PUNCA penolakan — hilang terus.
 	// Fasa log-only dalam pelan go-live juga perlukan badan mentah ini.
 	public $last_response_body;
+
+	// Status HTTP dan pengepala respons PayNet daripada panggilan terakhir.
+	// PayNet membalas badan 'ERROR' generik untuk apa-apa permintaan yang
+	// ditolak — POST kosong pun sama — jadi badan itu tiada nilai diagnostik.
+	// Pengepala x-oracle-dms-ecid pula ialah ID korelasi log Oracle mereka:
+	// ia membolehkan PayNet mencari permintaan tepat ini dalam log sendiri
+	// dan menyatakan sebab penolakan yang badan respons sembunyikan.
+	public $last_response_status;
+
+	/** @var array<string, array<int, string>> */
+	public $last_response_headers = [];
 	
 	public $request_keys = [
 	'fpx_buyerAccNo'      => '',
@@ -224,6 +235,9 @@ class Fpx
 
 		$client = new \GuzzleHttp\Client();
 		$response = $client->post($bankListUrl, ['form_params' => $params, 'verify' => config('services.fpx.verify_tls', true)]);
+
+		$this->last_response_status  = $response->getStatusCode();
+		$this->last_response_headers = $response->getHeaders();
 
 		$bodyRaw = $this->last_response_body = (string) $response->getBody();
 		$params  = self::explodeToPairs($bodyRaw, '&');

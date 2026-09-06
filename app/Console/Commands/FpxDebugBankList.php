@@ -108,10 +108,20 @@ class FpxDebugBankList extends Command
 
         if ($hasil['banks'] === null) {
             $this->error('PayNet tidak memulangkan senarai bank.');
-            $this->line('Badan mentah yang PayNet balas:');
-            $this->line(var_export($hasil['raw'], true));
+            $this->line('status HTTP    = ' . var_export($hasil['status'], true));
+            $this->line('badan mentah   = ' . var_export($hasil['raw'], true));
             $this->line('');
-            $this->line('Cuba: php artisan fpx:debug-banklist --sweep');
+
+            // Badan 'ERROR' adalah generik — POST kosong tanpa parameter langsung
+            // menghasilkan balasan yang sama — jadi ia tidak memberitahu APA yang
+            // ditolak. ECID ialah satu-satunya pengenal yang membolehkan PayNet
+            // menjejaki permintaan ini dalam log mereka dan menyatakan sebabnya.
+            $this->line('Berikan ID berikut kepada PayNet untuk mereka semak log:');
+
+            foreach (['x-oracle-dms-ecid', 'cf-ray', 'date'] as $h) {
+                $v = $hasil['headers'][$h] ?? $hasil['headers'][ucfirst($h)] ?? null;
+                $this->line('  ' . str_pad($h, 20) . (is_array($v) ? implode(', ', $v) : var_export($v, true)));
+            }
 
             return self::FAILURE;
         }
@@ -188,6 +198,8 @@ class FpxDebugBankList extends Command
             return [
                 'banks'         => null,
                 'raw'           => $fpx->last_response_body,
+                'status'        => $fpx->last_response_status,
+                'headers'       => $fpx->last_response_headers,
                 'source_string' => (string) $fpx->source_string,
                 'ringkas'       => 'gagal: ' . get_class($e) . ': ' . $e->getMessage(),
             ];
@@ -198,6 +210,8 @@ class FpxDebugBankList extends Command
         return [
             'banks'         => $diterima ? $banks : null,
             'raw'           => $fpx->last_response_body,
+            'status'        => $fpx->last_response_status,
+            'headers'       => $fpx->last_response_headers,
             'source_string' => (string) $fpx->source_string,
             'ringkas'       => $diterima
                 ? 'OK, ' . count($banks) . ' bank'
