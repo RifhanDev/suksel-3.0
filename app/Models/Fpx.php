@@ -29,6 +29,12 @@ class Fpx
 	public $reference_url;
 
 	public $private_key;
+
+	// Badan respons mentah PayNet daripada panggilan bankList() terakhir.
+	// Tanpa ini bankList() hanya memulangkan false dan balasan sebenar PayNet
+	// — selalunya badan ralat yang menerangkan PUNCA penolakan — hilang terus.
+	// Fasa log-only dalam pelan go-live juga perlukan badan mentah ini.
+	public $last_response_body;
 	
 	public $request_keys = [
 	'fpx_buyerAccNo'      => '',
@@ -189,7 +195,7 @@ class Fpx
 		$params = Arr::only($this->request_keys, ['fpx_msgType', 'fpx_msgToken', 'fpx_version', 'fpx_sellerExId']);
 		
 		ksort($params);
-		$source_string = implode('|', $params);
+		$source_string = $this->source_string = implode('|', $params);
 		
 		// Use the key path already resolved in the constructor from this gateway's
 		// exchange_id, rather than re-hardcoding one merchant's filename here.
@@ -208,15 +214,12 @@ class Fpx
 		// set for this gateway row in the /gateways screen, just swapped to the
 		// RetrieveBankList path. Falls back to the production URL 2.0 always hardcoded
 		// here, so behaviour is unchanged when no reference_url is given.
-		$parts       = $this->reference_url ? parse_url($this->reference_url) : null;
-		$bankListUrl = !empty($parts['scheme']) && !empty($parts['host'])
-			? "{$parts['scheme']}://{$parts['host']}/FPXMain/RetrieveBankList"
-			: 'https://www.mepsfpx.com.my/FPXMain/RetrieveBankList';
+		$bankListUrl = self::bankListUrl($this->reference_url);
 
 		$client = new \GuzzleHttp\Client();
 		$response = $client->post($bankListUrl, ['form_params' => $params, 'verify' => config('services.fpx.verify_tls', true)]);
 
-		$bodyRaw = (string) $response->getBody();
+		$bodyRaw = $this->last_response_body = (string) $response->getBody();
 		$params  = self::explodeToPairs($bodyRaw, '&');
 
 		// PayNet's response may be an error body with no fpx_bankList key at
@@ -228,6 +231,27 @@ class Fpx
 		}
 
 		return self::explodeToPairs(urldecode($params['fpx_bankList']), ',', '~');
+	}
+
+	/**
+	 * Endpoint RetrieveBankList bagi satu gateway.
+	 *
+	 * PayNet menyajikan UAT dan produksi sebagai dua hos berasingan dengan
+	 * laluan yang sama, jadi hos diambil daripada endpoint_url gateway itu
+	 * sendiri — hos yang admin sudah tetapkan dalam skrin /gateways — dan
+	 * hanya laluannya ditukar. Diasingkan daripada bankList() supaya alat
+	 * diagnostik boleh melaporkan URL yang BENAR-BENAR dipanggil tanpa
+	 * menyalin semula logik ini dan berisiko ia terpesong.
+	 */
+	public static function bankListUrl(?string $referenceUrl): string
+	{
+		$parts = $referenceUrl ? parse_url($referenceUrl) : null;
+
+		if (!empty($parts['scheme']) && !empty($parts['host'])) {
+			return "{$parts['scheme']}://{$parts['host']}/FPXMain/RetrieveBankList";
+		}
+
+		return 'https://www.mepsfpx.com.my/FPXMain/RetrieveBankList';
 	}
 
 	/**
