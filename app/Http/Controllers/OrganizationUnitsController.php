@@ -160,7 +160,10 @@ class OrganizationUnitsController extends Controller
 	public function agency(Request $request, $id)
 	{
 		$organizationunit = OrganizationUnit::findOrFail($id);
-		$tenders          = Tender::where('organization_unit_id', $organizationunit->id)->orderBy('created_at', 'desc')->orderBy('name', 'asc');
+		$tenders          = Tender::where('organization_unit_id', $organizationunit->id)
+			->whereNotIn('type', ['pembelian_terus', 'lantikan_terus'])
+			->orderBy('created_at', 'desc')
+			->orderBy('name', 'asc');
 
 		if (!auth()->check() || auth()->user()->hasRole('Vendor') || !Tender::canViewInternal($organizationunit->id))
 		{
@@ -393,10 +396,10 @@ class OrganizationUnitsController extends Controller
 				->make();
 		}
 
-		$count_1     = $organizationunit->tenders()->whereNull('approver_id')->count();
+		$count_1     = $organizationunit->tenders()->whereNotIn('type', ['pembelian_terus', 'lantikan_terus'])->whereNull('approver_id')->count();
 		// Temporarily commented out to fix column issue
-		$count_2     = $organizationunit->tenders()->whereNotNull('approver_id')->where('publish_prices', 0)->where('publish_winner', 0)->count();
-		$count_3     = $organizationunit->tenders()->whereNotNull('approver_id')->where('publish_prices', '>', 0)->where('publish_winner', 0)->count();
+		$count_2     = $organizationunit->tenders()->whereNotIn('type', ['pembelian_terus', 'lantikan_terus'])->whereNotNull('approver_id')->where('publish_prices', 0)->where('publish_winner', 0)->count();
+		$count_3     = $organizationunit->tenders()->whereNotIn('type', ['pembelian_terus', 'lantikan_terus'])->whereNotNull('approver_id')->where('publish_prices', '>', 0)->where('publish_winner', 0)->count();
 		// $count_2     = $organizationunit->tenders()->where('publish_prices', 0)->where('publish_winner', 0)->count();
 		// $count_3     = $organizationunit->tenders()->where('publish_prices', '>', 0)->where('publish_winner', 0)->count();
 		$global_news = $organizationunit->news()->where('publish', 1)->orderBy('published_at', 'desc')->take(10)->get();
@@ -408,7 +411,10 @@ class OrganizationUnitsController extends Controller
 	{
 
 		$organizationunit = OrganizationUnit::findOrFail($id);
-		$tenders          = Tender::where('organization_unit_id', $organizationunit->id)->orderBy('created_at', 'desc')->orderBy('name', 'asc');
+		$tenders          = Tender::where('organization_unit_id', $organizationunit->id)
+			->whereNotIn('type', ['pembelian_terus', 'lantikan_terus'])
+			->orderBy('created_at', 'desc')
+			->orderBy('name', 'asc');
 
 		if (!auth()->check() || auth()->user()->hasRole('Vendor') || !Tender::canShowUpdate($organizationunit->id)) {
 			$tenders = $tenders->where(function ($query) {
@@ -619,12 +625,12 @@ class OrganizationUnitsController extends Controller
 				->make();
 		}
 
-		$count_1     = $organizationunit->tenders()->whereNull('approver_id')->count();
+		$count_1     = $organizationunit->tenders()->whereNotIn('type', ['pembelian_terus', 'lantikan_terus'])->whereNull('approver_id')->count();
 		// Temporarily commented out to fix column issue
 		// $count_2     = $organizationunit->tenders()->whereNotNull('approver_id')->where('publish_prices', 0)->where('publish_winner', 0)->count();
 		// $count_3     = $organizationunit->tenders()->whereNotNull('approver_id')->where('publish_prices', '>', 0)->where('publish_winner', 0)->count();
-		$count_2     = $organizationunit->tenders()->where('publish_prices', 0)->where('publish_winner', 0)->count();
-		$count_3     = $organizationunit->tenders()->where('publish_prices', '>', 0)->where('publish_winner', 0)->count();
+		$count_2     = $organizationunit->tenders()->whereNotIn('type', ['pembelian_terus', 'lantikan_terus'])->where('publish_prices', 0)->where('publish_winner', 0)->count();
+		$count_3     = $organizationunit->tenders()->whereNotIn('type', ['pembelian_terus', 'lantikan_terus'])->where('publish_prices', '>', 0)->where('publish_winner', 0)->count();
 		$global_news = $organizationunit->news()->where('publish', 1)->orderBy('published_at', 'desc')->take(10)->get();
 		view()->share('global_ou', $organizationunit);
 		// [OLD CODE] return view('organizationunits.show', compact('organizationunit', 'tenders', 'count_1', 'count_2', 'count_3', 'global_news', 'path'));
