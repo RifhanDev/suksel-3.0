@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\AdvancesTenderProcessStatus;
+use App\Models\JawatankuasaPerolehanPemilihanPetender;
+use App\Models\PerakuanJabatanPengesyoranPembekal;
+use App\Models\PerakuanJabatanPengesyoranPembekalItem;
 use App\Services\StosBackendClient;
 use App\Support\TenderProcessStatus;
 use App\Tender;
@@ -162,29 +165,92 @@ class SuratNiatController extends Controller
 
     private function fetchPembekals(int $tender): array
     {
-        try {
-            $response = $this->stos->getSuratNiatPembekals($tender);
-            $saved = collect($response->successful() ? $response->json('data') : []);
+        $winners = TenderVendor::query()
+            ->where('tender_id', $tender)
+            ->where('winner', 1)
+            ->with('vendor')
+            ->orderBy('id')
+            ->get();
 
-            if ($saved->isNotEmpty()) {
-                return $saved->all();
+        // Fallback when winner flag belum diisi (data JP lama): Disyorkan dari Keputusan Mesyuarat.
+        if ($winners->isEmpty()) {
+            $winnerVendorIds = $this->winnerVendorIdsFromKeputusanMesyuarat($tender);
+            if ($winnerVendorIds !== []) {
+                $winners = TenderVendor::query()
+                    ->where('tender_id', $tender)
+                    ->whereIn('vendor_id', $winnerVendorIds)
+                    ->with('vendor')
+                    ->orderBy('id')
+                    ->get();
             }
-        } catch (\Throwable $e) {
-            Log::warning('Surat Niat pembekal fetch failed, falling back to local candidates', ['error' => $e->getMessage()]);
         }
 
-        return TenderVendor::where('tender_id', $tender)
-            ->where('submitted', 1)
-            ->with('vendor')
-            ->get()
-            ->map(fn ($participation) => [
-                'id' => $participation->id,
-                'vendor_id' => $participation->vendor_id,
-                'vendor_name' => $participation->vendor?->name,
-                'vendor_address' => $participation->vendor?->address,
-                'diperlukan' => $participation->surat_niat_diperlukan ?? true,
-                'catatan' => $participation->surat_niat_catatan,
-            ])
+        $savedByVendor = [];
+        try {
+            $response = $this->stos->getSuratNiatPembekals($tender);
+            if ($response->successful()) {
+                $savedByVendor = collect($response->json('data') ?? [])
+                    ->keyBy(fn ($row) => (int) ($row['vendor_id'] ?? 0))
+                    ->all();
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Surat Niat pembekal fetch failed, using local winners only', [
+                'tender_id' => $tender,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        return $winners->map(function (TenderVendor $participation) use ($savedByVendor) {
+            $vendorId = (int) $participation->vendor_id;
+            $saved = $savedByVendor[$vendorId] ?? null;
+
+            return [
+                'id' => $saved['id'] ?? $participation->id,
+                'vendor_id' => $vendorId,
+                'vendor_name' => $saved['vendor_name'] ?? $participation->vendor?->name,
+                'vendor_address' => $saved['vendor_address'] ?? $participation->vendor?->address,
+                'diperlukan' => array_key_exists('diperlukan', (array) $saved)
+                    ? (bool) $saved['diperlukan']
+                    : (bool) ($participation->surat_niat_diperlukan ?? true),
+                'catatan' => $saved['catatan'] ?? $participation->surat_niat_catatan,
+            ];
+        })->values()->all();
+    }
+
+    /**
+     * Vendor IDs selected as winners in Jawatankuasa Perolehan (Keputusan Mesyuarat).
+     *
+     * @return list<int>
+     */
+    private function winnerVendorIdsFromKeputusanMesyuarat(int $tenderId): array
+    {
+        $fromJp = JawatankuasaPerolehanPemilihanPetender::query()
+            ->whereHas('item', fn ($q) => $q->where('tender_id', $tenderId))
+            ->where('keputusan_urusetia', PerakuanJabatanPengesyoranPembekalItem::SYOR_DISYORKAN)
+            ->whereNotNull('vendor_id')
+            ->pluck('vendor_id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        if ($fromJp !== []) {
+            return array_values(array_unique($fromJp));
+        }
+
+        $pengesyoran = PerakuanJabatanPengesyoranPembekal::query()
+            ->where('tender_id', $tenderId)
+            ->first();
+
+        if (! $pengesyoran) {
+            return [];
+        }
+
+        return PerakuanJabatanPengesyoranPembekalItem::query()
+            ->where('pengesyoran_pembekal_id', $pengesyoran->id)
+            ->where('syor_urusetia', PerakuanJabatanPengesyoranPembekalItem::SYOR_DISYORKAN)
+            ->pluck('vendor_id')
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values()
             ->all();
     }
 
