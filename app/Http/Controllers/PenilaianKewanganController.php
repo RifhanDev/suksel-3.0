@@ -1983,10 +1983,11 @@ class PenilaianKewanganController extends Controller
             if ($uuid !== '') {
                 $url = route('tenderDokumen.download', $uuid);
             } elseif ($url === '' && $path !== '') {
-                $url = route('tenderDokumen.streamByPath', [
+                $url = route('tenderDokumen.streamByPath', array_filter([
                     'path' => $path,
                     'name' => $name,
-                ]);
+                    'uuid' => $uuid !== '' ? $uuid : null,
+                ]));
             }
 
             if ($url === '' || $url === '#') {
