@@ -113,24 +113,46 @@ class JawatankuasaPerolehanController extends Controller
                 })
                 ->values();
 
-            $taklimatAttachments = PerakuanJabatanKertasTaklimatItem::query()
+            $taklimatItems = PerakuanJabatanKertasTaklimatItem::query()
                 ->whereHas('header', function ($query) use ($tender) {
                     $query->where('tender_id', $tender->id);
                 })
                 ->with('files')
                 ->orderBy('sort_order')
-                ->get()
-                ->flatMap(function ($item) {
-                    return $item->files->map(function ($file) use ($item) {
+                ->get();
+
+            $taklimatAttachments = $taklimatItems
+                ->flatMap(function ($item) use ($tender) {
+                    $rows = $item->files->map(function ($file) use ($item) {
                         return [
                             'kandungan' => $item->kandungan,
                             'file_name' => $file->file_original_name,
                             // Papar sahaja: buka fail terus (bukan muat turun paksa)
                             'papar_url' => $file->file_path ? asset($file->file_path) : '#',
                         ];
-                    });
+                    })->all();
+
+                    // Generated at Perakuan Jabatan (not an uploaded file).
+                    if ($item->slot_key === 'teknikal') {
+                        $rows[] = [
+                            'kandungan' => $item->kandungan ?: 'Laporan Jawatankuasa Teknikal',
+                            'file_name' => 'Laporan Jawatankuasa Penilaian Teknikal',
+                            'papar_url' => route('jawatankuasa.perolehan.laporanTeknikal', $tender),
+                        ];
+                    }
+
+                    return $rows;
                 })
                 ->values();
+
+            // Fallback if PJ header/items were never seeded but teknikal report still exists.
+            if (! $taklimatItems->contains(fn ($item) => $item->slot_key === 'teknikal')) {
+                $taklimatAttachments->prepend([
+                    'kandungan' => 'Laporan Jawatankuasa Teknikal',
+                    'file_name' => 'Laporan Jawatankuasa Penilaian Teknikal',
+                    'papar_url' => route('jawatankuasa.perolehan.laporanTeknikal', $tender),
+                ]);
+            }
 
             $kertasKeputusan = JawatankuasaPerolehanKertasKeputusan::query()
                 ->where('tender_id', $tender->id)
@@ -224,6 +246,12 @@ class JawatankuasaPerolehanController extends Controller
             'pemilihanOpts',
             'pemilihanVendors',
         ));
+    }
+
+    /** Proxy printable teknikal report for JP Paparan Kertas Taklimat (MeetingDecision role). */
+    public function muatTurunLaporanTeknikal(Tender $tender)
+    {
+        return app(PenilaianTeknikalController::class)->cetakLaporan($tender);
     }
 
     /**

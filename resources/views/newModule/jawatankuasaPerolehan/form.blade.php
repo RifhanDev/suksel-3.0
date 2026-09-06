@@ -239,8 +239,8 @@
 		<div class="tab-pane" id="tab-kertas-taklimat" role="tabpanel">
 			<div class="content-card p-4">
 				<h6 class="fw-bold text-dark mb-1">Seksyen Laporan</h6>
-				<p class="text-muted small mb-3">Senarai lampiran yang dimuat naik dalam modul Perakuan Jabatan. Di sini anda hanya
-					boleh <strong>papar</strong> (tiada muat naik / padam).</p>
+				<p class="text-muted small mb-3">Senarai lampiran daripada modul Perakuan Jabatan (termasuk laporan yang dijana
+					secara automatik). Di sini anda hanya boleh <strong>papar</strong> (tiada muat naik / padam).</p>
 
 				@if (($taklimatAttachments ?? collect())->isEmpty())
 					<div class="alert d-flex align-items-center gap-2 mb-0"
