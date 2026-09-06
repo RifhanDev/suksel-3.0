@@ -30,6 +30,12 @@ class Fpx
 
 	public $private_key;
 
+	// Algoritma hash untuk menandatangan dan mengesahkan. FPX versi lama
+	// menggunakan SHA-1; versi terkini PayNet menggunakan SHA-256. Dijadikan
+	// property supaya boleh diuji tanpa mengubah kelakuan lalai — nilai lalai
+	// kekal SHA-1, sama seperti sebelum ini.
+	public $signature_algo = OPENSSL_ALGO_SHA1;
+
 	// Badan respons mentah PayNet daripada panggilan bankList() terakhir.
 	// Tanpa ini bankList() hanya memulangkan false dan balasan sebenar PayNet
 	// — selalunya badan ralat yang menerangkan PUNCA penolakan — hilang terus.
@@ -117,7 +123,7 @@ class Fpx
 		$private_key = fread($file, 8192);
 		fclose($file);
 		$key = openssl_get_privatekey($private_key);
-		openssl_sign($this->source_string, $signature, $key, OPENSSL_ALGO_SHA1);
+		openssl_sign($this->source_string, $signature, $key, $this->signature_algo);
 		$this->signature = $this->request_keys['fpx_checkSum'] = strtoupper(bin2hex($signature));
 		ksort($this->request_keys);
 	}
@@ -181,7 +187,7 @@ class Fpx
 		}
 
 		// openssl_verify() returns 1 (valid), 0 (invalid) or -1 (error) — only 1 is a pass.
-		$result = openssl_verify($source_string, $signature, $publicKey, OPENSSL_ALGO_SHA1);
+		$result = openssl_verify($source_string, $signature, $publicKey, $this->signature_algo);
 
 		return [
 			'valid'         => $result === 1,
@@ -204,7 +210,7 @@ class Fpx
 		fclose($file);
 
 		$key = openssl_get_privatekey($private_key);
-		openssl_sign($source_string, $signature, $key, OPENSSL_ALGO_SHA1);
+		openssl_sign($source_string, $signature, $key, $this->signature_algo);
 
 		$signature = $params['fpx_checkSum'] = strtoupper(bin2hex($signature));
 		ksort($params);
