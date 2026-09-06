@@ -130,7 +130,9 @@ class PembelianTerusController extends Controller
                             return null;
                         }
 
-                        return $code->label2 ?? trim(($code->code ?? '') . ' - ' . ($code->name ?? ''));
+                        // label2 contains HTML (<b>); use plain text for disabled inputs.
+                        return trim(($code->code ?? '') . ' - ' . ($code->name ?? ''))
+                            ?: strip_tags((string) ($code->label2 ?? $code->label ?? ''));
                     })
                     ->filter()
                     ->values()
@@ -142,7 +144,8 @@ class PembelianTerusController extends Controller
                             return null;
                         }
 
-                        return $code->label2 ?? trim(($code->code ?? '') . ' - ' . ($code->name ?? ''));
+                        return trim(($code->code ?? '') . ' - ' . ($code->name ?? ''))
+                            ?: strip_tags((string) ($code->label2 ?? $code->label ?? ''));
                     })
                     ->filter()
                     ->values()
