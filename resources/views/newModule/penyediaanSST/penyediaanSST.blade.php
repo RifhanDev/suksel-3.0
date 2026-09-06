@@ -795,7 +795,7 @@
                 $('#pembekal_email').val(pembekal.email);
 
                 $('#sst_harga_tawaran').val(formatWang(Number(sst?.offer_price ?? pembekal.harga_tawaran ?? 0)));
-                $('#kontrak_tempoh').val(SST_TEMPOH_KONTRAK ?? '');
+                $('#kontrak_tempoh').val(pembekal.tempoh_kontrak_bulan ?? SST_TEMPOH_KONTRAK ?? '');
 
                 // Tender-level facts — same for every vendor/letter under this tender.
                 $('#sst_no_dokumen').val(SST_NO_DOKUMEN);
