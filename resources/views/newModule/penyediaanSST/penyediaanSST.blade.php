@@ -178,7 +178,7 @@
         @if ($tenderDihantar ?? false)
             <a href="{{ route('indexPenyediaanSST') }}" class="btn-form btn-form-secondary">Kembali ke Senarai</a>
         @else
-            <button type="button" class="btn-form btn-form-success" id="btn-hantar">Hantar</button>
+            <button type="button" class="btn-form btn-form-success" id="btn-hantar">Simpan</button>
         @endif
     </div>
 
