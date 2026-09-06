@@ -165,30 +165,42 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach ($suppliers as $index => $supplier)
+                            @forelse ($suppliers as $index => $supplier)
                                 <tr>
                                     <td class="ps-4 fw-semibold">{{ $index + 1 }}</td>
-                                    <td>{{ $supplier->name }}</td>
+                                    <td>
+                                        <a href="javascript:void(0)"
+                                            class="fw-semibold text-decoration-none js-view-offer"
+                                            style="color: var(--sg-red);"
+                                            data-offer-id="{{ $supplier->id }}"
+                                            data-vendor-name="{{ e($supplier->name) }}"
+                                            data-total="{{ number_format($supplier->harga_tawaran, 2) }}"
+                                            data-items='@json($supplier->items ?? [])'>
+                                            {{ $supplier->name }}
+                                        </a>
+                                    </td>
                                     <td class="text-center fw-semibold">{{ number_format($supplier->harga_tawaran, 2) }}</td>
                                     <td class="text-center">
-                                        <a href="#" download
-                                            class="fw-semibold text-decoration-none d-inline-flex align-items-center gap-2">
+                                        <span class="fw-semibold d-inline-flex align-items-center gap-2 text-muted">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
                                                 fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                                                 stroke-linejoin="round">
-                                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                                <polyline points="7 10 12 15 17 10"></polyline>
-                                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                                <polyline points="14 2 14 8 20 8"></polyline>
                                             </svg>
                                             {{ $supplier->bq_filename }}
-                                        </a>
+                                        </span>
                                     </td>
                                     <td class="text-center pe-4">
                                         <input type="checkbox" class="form-check-input supplier-check"
                                             name="offer_ids[]" value="{{ $supplier->id }}">
                                     </td>
                                 </tr>
-                            @endforeach
+                            @empty
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted py-4">Tiada tawaran diterima.</td>
+                                </tr>
+                            @endforelse
                         </tbody>
                     </table>
                 </div>
@@ -270,6 +282,50 @@
 
         </div>
     </form>
+
+    {{-- Modal: Tawaran Harga Syarikat --}}
+    <div class="modal fade" id="modalTawaranSyarikat" tabindex="-1" aria-labelledby="modalTawaranSyarikatLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content border-0" style="border-radius: 12px; overflow: hidden;">
+                <div class="modal-header border-0" style="background: var(--sg-red); color: #fff;">
+                    <div>
+                        <h5 class="modal-title fw-bold mb-0" id="modalTawaranSyarikatLabel">Tawaran Harga Syarikat</h5>
+                        <div class="small opacity-75" id="modal-vendor-name">-</div>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="table-responsive">
+                        <table class="table table-bordered align-middle mb-3">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="text-center" width="50">Bil.</th>
+                                    <th>Item</th>
+                                    <th class="text-center" width="90">Kuantiti</th>
+                                    <th>Brand</th>
+                                    <th class="text-end" width="120">Harga Seunit (RM)</th>
+                                    <th class="text-end" width="140">Harga Keseluruhan (RM)</th>
+                                    <th class="text-end" width="130">Harga SST (RM)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="modal-offer-items">
+                                <tr>
+                                    <td colspan="7" class="text-center text-muted">Tiada butiran item.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center bg-light rounded px-3 py-2">
+                        <span class="fw-semibold text-muted small text-uppercase">Jumlah Tawaran Termasuk SST</span>
+                        <span class="fw-bold fs-5" style="color: var(--sg-red);" id="modal-offer-total">RM 0.00</span>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn-form btn-form-secondary" data-bs-dismiss="modal">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
 @endsection
 
 @section('scripts')
@@ -277,19 +333,21 @@
         $(document).ready(function() {
 
             // --- SORTABLE TABLE (Nama Pembekal & Jumlah Harga Tawaran only) ---
-            $('#tbl-cutoff').DataTable({
-                paging: false,
-                searching: false,
-                info: false,
-                ordering: true,
-                columnDefs: [
-                    { targets: [0, 3, 4], orderable: false } // Bil, Dokumen BQ, Pilih
-                ],
-                order: [],
-                language: {
-                    sEmptyTable: "Tiada data"
-                }
-            });
+            if ($('#tbl-cutoff tbody tr').length && !$('#tbl-cutoff tbody td[colspan]').length) {
+                $('#tbl-cutoff').DataTable({
+                    paging: false,
+                    searching: false,
+                    info: false,
+                    ordering: true,
+                    columnDefs: [
+                        { targets: [0, 3, 4], orderable: false } // Bil, Dokumen BQ, Pilih
+                    ],
+                    order: [],
+                    language: {
+                        sEmptyTable: "Tiada data"
+                    }
+                });
+            }
 
             // --- SELECT ALL SUPPLIERS ---
             $('#check-all-supplier').on('change', function() {
@@ -300,6 +358,53 @@
                 var total   = $('.supplier-check').length;
                 var checked = $('.supplier-check:checked').length;
                 $('#check-all-supplier').prop('checked', total === checked);
+            });
+
+            function formatMoney(value) {
+                var num = parseFloat(value || 0);
+                if (isNaN(num)) num = 0;
+                return num.toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            }
+
+            $(document).on('click', '.js-view-offer', function(e) {
+                e.preventDefault();
+                var $btn = $(this);
+                var vendorName = $btn.data('vendor-name') || '-';
+                var total = $btn.data('total') || '0.00';
+                var items = $btn.data('items') || [];
+
+                if (typeof items === 'string') {
+                    try { items = JSON.parse(items); } catch (err) { items = []; }
+                }
+
+                $('#modal-vendor-name').text(vendorName);
+                $('#modal-offer-total').text('RM ' + total);
+
+                var $tbody = $('#modal-offer-items').empty();
+                if (!items.length) {
+                    $tbody.append('<tr><td colspan="7" class="text-center text-muted">Tiada butiran item.</td></tr>');
+                } else {
+                    items.forEach(function(item, idx) {
+                        $tbody.append(
+                            '<tr>' +
+                                '<td class="text-center">' + (idx + 1) + '</td>' +
+                                '<td>' + $('<div>').text(item.nama_item || '-').html() + '</td>' +
+                                '<td class="text-center">' + $('<div>').text(item.kuantiti || 0).html() + '</td>' +
+                                '<td>' + $('<div>').text(item.brand || '-').html() + '</td>' +
+                                '<td class="text-end">' + formatMoney(item.harga_seunit) + '</td>' +
+                                '<td class="text-end">' + formatMoney(item.harga_keseluruhan) + '</td>' +
+                                '<td class="text-end fw-semibold">' + formatMoney(item.harga_sst) + '</td>' +
+                            '</tr>'
+                        );
+                    });
+                }
+
+                var modalEl = document.getElementById('modalTawaranSyarikat');
+                if (window.bootstrap && bootstrap.Modal) {
+                    bootstrap.Modal.getOrCreateInstance(modalEl).show();
+                } else {
+                    $(modalEl).modal('show');
+                }
             });
 
             // --- SINGLE-FILE UPLOAD (reusable) ---

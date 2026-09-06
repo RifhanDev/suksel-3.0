@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Services\StosBackendClient;
 use App\Tender;
+use App\Vendor;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 
 class PembelianTerusController extends Controller
@@ -130,7 +132,9 @@ class PembelianTerusController extends Controller
                             return null;
                         }
 
-                        return $code->label2 ?? trim(($code->code ?? '') . ' - ' . ($code->name ?? ''));
+                        // label2 contains HTML (<b>); use plain text for disabled inputs.
+                        return trim(($code->code ?? '') . ' - ' . ($code->name ?? ''))
+                            ?: strip_tags((string) ($code->label2 ?? $code->label ?? ''));
                     })
                     ->filter()
                     ->values()
@@ -142,7 +146,8 @@ class PembelianTerusController extends Controller
                             return null;
                         }
 
-                        return $code->label2 ?? trim(($code->code ?? '') . ' - ' . ($code->name ?? ''));
+                        return trim(($code->code ?? '') . ' - ' . ($code->name ?? ''))
+                            ?: strip_tags((string) ($code->label2 ?? $code->label ?? ''));
                     })
                     ->filter()
                     ->values()
@@ -301,17 +306,7 @@ class PembelianTerusController extends Controller
 
         $offersResponse = $this->stos->getPembelianTerusOffers((int) $id);
         $offers = collect($offersResponse->json('data') ?? []);
-
-        $suppliers = $offers->map(function ($offer) {
-            $offer = (array) $offer;
-
-            return (object) [
-                'id' => $offer['id'] ?? null,
-                'name' => 'Vendor #' . ($offer['vendor_id'] ?? '-'),
-                'harga_tawaran' => $offer['total_harga_sst'] ?? 0,
-                'bq_filename' => $offer['quotation_original_name'] ?? 'Quotation',
-            ];
-        });
+        $suppliers = $this->mapOfferSuppliers($offers);
 
         return view('newModule.pembelian_terus.cut_off', compact('project', 'offers', 'suppliers', 'p'));
     }
@@ -535,6 +530,20 @@ class PembelianTerusController extends Controller
                     ? 'Projek berjaya diterbitkan.'
                     : 'Projek berjaya disimpan sebagai draf.';
 
+                // Terbitkan → senarai. Simpan → kekal di halaman kemaskini/cipta.
+                if ($action === 'publish') {
+                    return redirect()->route('pembelianTerus.createProject')
+                        ->with('success', $message);
+                }
+
+                $savedId = $id
+                    ?: (int) ($response->json('tender_id') ?? $response->json('data.id') ?? 0);
+
+                if ($savedId > 0) {
+                    return redirect()->route('pembelianTerus.edit', $savedId)
+                        ->with('success', $message);
+                }
+
                 return redirect()->route('pembelianTerus.createProject')
                     ->with('success', $message);
             }
@@ -660,6 +669,50 @@ class PembelianTerusController extends Controller
 
             return $q->get()->map(fn ($t) => $this->mapProject($t->toArray()));
         }
+    }
+
+    private function mapOfferSuppliers(Collection $offers): Collection
+    {
+        $vendorIds = $offers
+            ->map(fn ($offer) => (int) (((array) $offer)['vendor_id'] ?? 0))
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+
+        $vendorNames = $vendorIds
+            ? Vendor::query()->whereIn('id', $vendorIds)->pluck('name', 'id')
+            : collect();
+
+        return $offers->map(function ($offer) use ($vendorNames) {
+            $offer = (array) $offer;
+            $vendorId = (int) ($offer['vendor_id'] ?? 0);
+            $items = collect($offer['items'] ?? [])->map(function ($row) {
+                $row = (array) $row;
+                $item = (array) ($row['item'] ?? []);
+
+                return [
+                    'nama_item' => $item['nama_item'] ?? ($item['name'] ?? '-'),
+                    'kuantiti' => $item['kuantiti'] ?? 0,
+                    'brand' => $row['brand'] ?? '-',
+                    'harga_seunit' => (float) ($row['harga_seunit'] ?? 0),
+                    'harga_keseluruhan' => (float) ($row['harga_keseluruhan'] ?? 0),
+                    'harga_sst' => (float) ($row['harga_sst'] ?? 0),
+                    'dokumen' => $row['dokumen_sokongan_name'] ?? null,
+                ];
+            })->values()->all();
+
+            return (object) [
+                'id' => $offer['id'] ?? null,
+                'vendor_id' => $vendorId ?: null,
+                'name' => $vendorNames[$vendorId]
+                    ?? ($vendorId ? 'Vendor #' . $vendorId : '-'),
+                'harga_tawaran' => (float) ($offer['total_harga_sst'] ?? 0),
+                'harga_tanpa_sst' => (float) ($offer['total_harga'] ?? 0),
+                'bq_filename' => $offer['quotation_original_name'] ?? 'Quotation',
+                'items' => $items,
+            ];
+        })->values();
     }
 
     private function mapProject($data, array $items = []): object
