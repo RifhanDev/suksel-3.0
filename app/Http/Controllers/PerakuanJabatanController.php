@@ -277,6 +277,14 @@ class PerakuanJabatanController extends Controller
         return app(PenilaianTeknikalController::class)->cetakLaporan($tender);
     }
 
+    /** Proxy printable kewangan report so Urusetia can open it without FinancialEvaluation menu. */
+    public function muatTurunLaporanKewangan(Tender $tender)
+    {
+        $identifier = $tender->uuid ?: ($tender->no_tender ?: ($tender->ref_number ?: (string) $tender->id));
+
+        return app(PenilaianKewanganController::class)->cetakLaporan($identifier);
+    }
+
     /**
      * Store a newly created resource in storage.
      */
@@ -444,6 +452,10 @@ class PerakuanJabatanController extends Controller
             'teknikal' => [
                 'label' => 'Laporan Jawatankuasa Penilaian Teknikal',
                 'url' => route('perakuanjabatan.laporanTeknikal', $tender),
+            ],
+            'kewangan' => [
+                'label' => 'Laporan Jawatankuasa Penilaian Kewangan',
+                'url' => route('perakuanjabatan.laporanKewangan', $tender),
             ],
         ];
     }

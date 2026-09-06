@@ -609,6 +609,7 @@ Route::middleware(['auth'])->group(function () {
 	Route::post('/perakuan-jabatan/{tender}/kertas-taklimat/hantar', [PerakuanJabatanController::class, 'kertasTaklimatHantar'])->name('perakuanjabatan.kertasTaklimat.hantar');
 	Route::get('/perakuan-jabatan/kertas-taklimat/file/{file}', [PerakuanJabatanController::class, 'kertasTaklimatDownload'])->name('perakuanjabatan.kertasTaklimat.download');
 	Route::get('/perakuan-jabatan/{tender}/laporan-teknikal', [PerakuanJabatanController::class, 'muatTurunLaporanTeknikal'])->name('perakuanjabatan.laporanTeknikal');
+	Route::get('/perakuan-jabatan/{tender}/laporan-kewangan', [PerakuanJabatanController::class, 'muatTurunLaporanKewangan'])->name('perakuanjabatan.laporanKewangan');
 	Route::post('/perakuan-jabatan/{tender}/pengesyoran-pembekal/simpan', [PerakuanJabatanController::class, 'pengesyoranPembekalSimpan'])->name('perakuanjabatan.pengesyoranPembekal.simpan');
 	Route::post('/perakuan-jabatan/{tender}/pengesyoran-pembekal/hantar', [PerakuanJabatanController::class, 'pengesyoranPembekalHantar'])->name('perakuanjabatan.pengesyoranPembekal.hantar');
 	Route::post('/perakuan-jabatan/{tender}/jadual-bidaan/simpan', [PerakuanJabatanController::class, 'jadualBidaanSimpan'])->name('perakuanjabatan.jadualBidaan.simpan');
@@ -623,6 +624,7 @@ Route::middleware(['auth'])->group(function () {
 	Route::get('jawatankuasa-perolehan', [JawatankuasaPerolehanController::class, 'index'])->name('jawatankuasa.perolehan.index');
 	Route::get('jawatankuasa-perolehan/form', [JawatankuasaPerolehanController::class, 'form'])->name('jawatankuasa.perolehan.form');
 	Route::get('jawatankuasa-perolehan/{tender}/laporan-teknikal', [JawatankuasaPerolehanController::class, 'muatTurunLaporanTeknikal'])->name('jawatankuasa.perolehan.laporanTeknikal');
+	Route::get('jawatankuasa-perolehan/{tender}/laporan-kewangan', [JawatankuasaPerolehanController::class, 'muatTurunLaporanKewangan'])->name('jawatankuasa.perolehan.laporanKewangan');
 	Route::post('jawatankuasa-perolehan/mesyuarat/simpan', [JawatankuasaPerolehanController::class, 'store'])->name('jawatankuasa.perolehan.mesyuarat.simpan');
 	Route::post('jawatankuasa-perolehan/mesyuarat/hantar', [JawatankuasaPerolehanController::class, 'hantar'])->name('jawatankuasa.perolehan.mesyuarat.hantar');
 	Route::post('jawatankuasa-perolehan/kertas-keputusan/simpan', [JawatankuasaPerolehanController::class, 'simpanKertasKeputusan'])->name('jawatankuasa.perolehan.kertas_keputusan.simpan');
