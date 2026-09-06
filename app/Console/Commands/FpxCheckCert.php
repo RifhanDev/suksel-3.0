@@ -6,23 +6,26 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Semak sama ada kunci privat FPX benar-benar sepadan dengan sijil dalam fpx/.
+ * Semak bahan kripto FPX di cakera.
  *
- * PayNet mengesahkan setiap permintaan bertandatangan menggunakan sijil merchant
- * yang mereka daftarkan. Jika kunci privat di cakera bukan pasangan kepada sijil
- * itu, SETIAP permintaan ditolak dengan badan 'ERROR' sahaja — tiada kod, tiada
- * nama medan. Gejalanya nampak sama seperti medan salah, jadi ia mudah disalah
- * diagnos (sweep versi x msgToken menolak kesemua enam gabungan sebelum ini).
+ * Folder fpx/ mengandungi DUA jenis fail yang mudah dikelirukan:
  *
- * Pasangan RSA dibuktikan dengan membandingkan modulus: kunci privat dan sijil
- * yang sepadan mesti berkongsi modulus yang sama. Tarikh sah sijil turut
- * diperiksa, kerana sijil luput juga menghasilkan penolakan yang serupa.
+ *   - FPX.cer — sijil PayNet SENDIRI (CN=FPX SMI, O=Payments Network Malaysia).
+ *     Ia digunakan untuk MENGESAHKAN respons PayNet. Ia tidak ada kaitan dengan
+ *     kunci privat kita dan tidak sepatutnya sepadan dengannya.
+ *   - EX000#####.key + .csr — identiti merchant KITA (CN=STOS, O=PEJABAT SUK
+ *     SELANGOR). PayNet mendaftarkan kunci awam daripada CSR ini dan mengesahkan
+ *     setiap permintaan bertandatangan kita terhadapnya.
+ *
+ * Oleh itu satu-satunya pemeriksaan pasangan yang bermakna secara tempatan ialah
+ * kunci privat lawan CSR — bukan lawan FPX.cer. Membandingkannya dengan FPX.cer
+ * sentiasa melaporkan "tidak sepadan" dan menuding kepada punca yang salah.
  */
 class FpxCheckCert extends Command
 {
     protected $signature = 'fpx:check-cert';
 
-    protected $description = 'Sahkan kunci privat FPX sepadan dengan sijil dalam fpx/, dan sijil belum luput';
+    protected $description = 'Sahkan kunci privat FPX sepadan dengan CSR merchant, dan laporkan status sijil PayNet';
 
     public function handle(): int
     {
@@ -52,102 +55,137 @@ class FpxCheckCert extends Command
             return self::FAILURE;
         }
 
-        $privateModulus = $this->modulusOfPrivateKey($keyPath);
+        $keyModulus = $this->modulusOfPrivateKey($keyPath);
 
-        if ($privateModulus === null) {
+        if ($keyModulus === null) {
             $this->error('Kunci privat gagal dihuraikan — fail rosak atau bukan kunci RSA.');
 
             return self::FAILURE;
         }
 
-        $this->line('modulus kunci = ' . $this->shorten($privateModulus));
+        $this->line('modulus      = ' . $this->shorten($keyModulus));
         $this->line('');
 
-        $certs = glob(base_path() . '/fpx/*.{cer,crt,pem}', GLOB_BRACE) ?: [];
+        // --- Pasangan merchant: kunci privat lawan CSR ------------------------
+        $this->line('== Identiti merchant kita (kunci privat lawan CSR) ==');
 
-        if ($certs === []) {
-            $this->error('Tiada fail sijil (.cer/.crt/.pem) dalam fpx/.');
+        $csrs   = glob(base_path() . '/fpx/*.csr') ?: [];
+        $padan  = false;
+        $adaCsr = false;
 
-            return self::FAILURE;
+        foreach ($csrs as $csrPath) {
+            $raw     = file_get_contents($csrPath);
+            $modulus = $this->modulusOfCsr($raw);
+
+            if ($modulus === null) {
+                continue;
+            }
+
+            $adaCsr = true;
+            $sama   = hash_equals($keyModulus, $modulus);
+            $padan  = $padan || $sama;
+
+            $this->line('  ' . basename($csrPath) . ' -> ' . ($sama ? 'SEPADAN' : 'tidak sepadan'));
+            $this->line('    subjek: ' . $this->subjectOfCsr($raw));
         }
 
-        $adaPadanan = false;
+        if (! $adaCsr) {
+            $this->line('  Tiada CSR dalam fpx/ untuk dibandingkan.');
+        }
 
-        foreach ($certs as $certPath) {
-            $this->line('sijil: ' . basename($certPath));
+        $this->line('');
 
-            $raw  = file_get_contents($certPath);
-            $info = @openssl_x509_parse($raw);
+        // --- Sijil PayNet: untuk mengesahkan respons mereka -------------------
+        $this->line('== Sijil PayNet (untuk mengesahkan respons PayNet) ==');
+
+        $adaSijilSah = false;
+
+        foreach (glob(base_path() . '/fpx/*.{cer,crt,pem}', GLOB_BRACE) ?: [] as $certPath) {
+            $info = @openssl_x509_parse(file_get_contents($certPath));
 
             if ($info === false) {
-                $this->line('  BUKAN sijil X.509 yang sah (mungkin kunci awam mentah atau fail lain)');
-                $this->line('');
+                $this->line('  ' . basename($certPath) . ' -> bukan sijil X.509 yang sah');
                 continue;
             }
 
-            $this->line('  subjek     : ' . ($info['name'] ?? '?'));
-            $this->line('  pengeluar  : ' . ($info['issuer']['CN'] ?? ($info['issuer']['O'] ?? '?')));
+            $to    = $info['validTo_time_t'] ?? 0;
+            $luput = $to > 0 && $to < time();
+            $adaSijilSah = $adaSijilSah || ! $luput;
 
-            $from = isset($info['validFrom_time_t']) ? date('Y-m-d', $info['validFrom_time_t']) : '?';
-            $to   = isset($info['validTo_time_t']) ? date('Y-m-d', $info['validTo_time_t']) : '?';
-            $luput = isset($info['validTo_time_t']) && $info['validTo_time_t'] < time();
-
-            $this->line("  sah        : {$from} hingga {$to}" . ($luput ? '  <-- SUDAH LUPUT' : ''));
-
-            $certModulus = $this->modulusOfCertificate($raw);
-
-            if ($certModulus === null) {
-                $this->line('  modulus    : gagal dibaca');
-                $this->line('');
-                continue;
-            }
-
-            $padan = hash_equals($privateModulus, $certModulus);
-            $this->line('  modulus    : ' . $this->shorten($certModulus));
-            $this->line('  SEPADAN dengan kunci privat? ' . ($padan ? 'YA' : 'TIDAK'));
-            $this->line('');
-
-            if ($padan && ! $luput) {
-                $adaPadanan = true;
-            }
+            $this->line('  ' . basename($certPath) . ' -> sah hingga ' . ($to ? date('Y-m-d', $to) : '?')
+                . ($luput ? '  <-- SUDAH LUPUT' : ''));
         }
 
-        if ($adaPadanan) {
-            $this->info('Ada sijil sah yang sepadan dengan kunci privat — puncanya bukan pasangan kunci/sijil.');
+        if (! $adaSijilSah) {
+            $this->line('');
+            $this->warn('Semua sijil PayNet sudah luput. Ini TIDAK menyebabkan permintaan kita ditolak');
+            $this->warn('(kita menandatangan dengan kunci privat), tetapi pengesahan tandatangan');
+            $this->warn('respons PayNet akan gagal apabila ia dihidupkan. Minta sijil terkini PayNet.');
+        }
+
+        $this->line('');
+
+        // --- Kesimpulan -------------------------------------------------------
+        if ($padan) {
+            $this->info('Kunci privat sepadan dengan CSR merchant — bahan kripto tempatan konsisten.');
+            $this->line("Jika PayNet masih membalas 'ERROR', puncanya di pihak PayNet: kunci awam");
+            $this->line("daripada CSR ini belum didaftarkan/diaktifkan untuk {$exchangeId} di UAT.");
 
             return self::SUCCESS;
         }
 
-        $this->error('TIADA sijil sah yang sepadan dengan kunci privat.');
-        $this->line('PayNet mengesahkan tandatangan kita menggunakan sijil yang mereka daftarkan,');
-        $this->line("jadi setiap permintaan akan ditolak dengan 'ERROR' selagi ini tidak sepadan.");
-        $this->line('Kunci privat yang menjana CSR itulah yang mesti berada di ' . basename($keyPath) . '.');
+        if ($adaCsr) {
+            $this->error('Kunci privat TIDAK sepadan dengan mana-mana CSR dalam fpx/.');
+            $this->line('Kunci yang menjana CSR itulah yang mesti berada di ' . basename($keyPath) . '.');
 
-        return self::FAILURE;
+            return self::FAILURE;
+        }
+
+        $this->warn("TIDAK DAPAT DISAHKAN: tiada CSR untuk {$exchangeId} di cakera.");
+        $this->line('PayNet menyimpan kunci awam kita; kita hanya menyimpan kunci privat, jadi');
+        $this->line('pasangan itu tidak dapat dibuktikan secara tempatan tanpa CSR asal.');
+        $this->line("Cari EX*.csr yang dijana bersama {$exchangeId}.key, atau minta PayNet sahkan");
+        $this->line('cap jari kunci awam yang mereka daftarkan untuk exchange id ini.');
+
+        return self::SUCCESS;
     }
 
     private function modulusOfPrivateKey(string $path): ?string
     {
         $key = @openssl_pkey_get_private(file_get_contents($path));
 
-        if ($key === false) {
-            return null;
-        }
-
-        $details = @openssl_pkey_get_details($key);
-
-        return isset($details['rsa']['n']) ? bin2hex($details['rsa']['n']) : null;
+        return $key === false ? null : $this->modulusOf($key);
     }
 
-    private function modulusOfCertificate(string $raw): ?string
+    private function modulusOfCsr(string $raw): ?string
     {
-        $pub = @openssl_pkey_get_public($raw);
+        $pub = @openssl_csr_get_public_key($raw);
 
-        if ($pub === false) {
-            return null;
+        return $pub === false ? null : $this->modulusOf($pub);
+    }
+
+    private function subjectOfCsr(string $raw): string
+    {
+        $subject = @openssl_csr_get_subject($raw);
+
+        if (! is_array($subject)) {
+            return '?';
         }
 
-        $details = @openssl_pkey_get_details($pub);
+        $parts = [];
+
+        foreach (['CN', 'O', 'OU'] as $field) {
+            if (! empty($subject[$field])) {
+                $parts[] = $field . '=' . (is_array($subject[$field]) ? reset($subject[$field]) : $subject[$field]);
+            }
+        }
+
+        return $parts === [] ? '?' : implode(', ', $parts);
+    }
+
+    private function modulusOf($key): ?string
+    {
+        $details = @openssl_pkey_get_details($key);
 
         return isset($details['rsa']['n']) ? bin2hex($details['rsa']['n']) : null;
     }
