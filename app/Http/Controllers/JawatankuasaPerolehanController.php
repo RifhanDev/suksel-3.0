@@ -20,6 +20,7 @@ use App\Services\TenderProcessStatusService;
 use App\Support\TenderProcessStatus;
 use App\Support\VendorCidbMeta;
 use App\Tender;
+use App\TenderVendor;
 use App\Vendor;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -457,9 +458,21 @@ class JawatankuasaPerolehanController extends Controller
                         ? ((int) ($tender->ebidding_process_stage_id ?? 0) ?: 1)
                         : $tender->ebidding_process_stage_id,
                 ]);
+
+            // Final Lulus (non-bidaan): mark winners and close JP.
+            if (! $isEbidding && ($payload['keputusan'] ?? null) === 'Lulus') {
+                $this->markWinningVendors($tender);
+                app(TenderProcessStatusService::class)->setStatus(
+                    $tender->fresh(),
+                    TenderProcessStatus::JAWATANKUASA_PEROLEHAN
+                );
+            }
         });
 
-        return response()->json(['message' => 'Kertas keputusan berjaya dihantar.']);
+        return response()->json([
+            'message' => 'Kertas keputusan berjaya dihantar.',
+            'redirect' => route('jawatankuasa.perolehan.index'),
+        ]);
     }
 
     public function simpanPemilihanPembekal(Request $request)
@@ -508,6 +521,7 @@ class JawatankuasaPerolehanController extends Controller
                     'status_process_id' => TenderProcessStatus::PENILAIAN_KEWANGAN,
                 ]);
             } else {
+                $this->markWinningVendors($tender, $payload);
                 app(TenderProcessStatusService::class)->setStatus(
                     $tender->fresh(),
                     TenderProcessStatus::JAWATANKUASA_PEROLEHAN
@@ -519,7 +533,12 @@ class JawatankuasaPerolehanController extends Controller
             ? 'Pemilihan Bidaan berjaya dihantar. Proses kembali ke Perakuan Jabatan untuk Penyediaan Jadual Bidaan.'
             : 'Memuktamadkan pemilihan pembekal berjaya dihantar.';
 
-        return response()->json(['message' => $message]);
+        return response()->json([
+            'message' => $message,
+            'redirect' => $kaedah === 'Bidaan'
+                ? route('perakuanjabatan.index')
+                : route('jawatankuasa.perolehan.index'),
+        ]);
     }
 
     /**
@@ -897,6 +916,8 @@ class JawatankuasaPerolehanController extends Controller
             'items.*.kuantiti' => ['nullable', 'numeric', 'min:0'],
             'items.*.petenders' => ['required', 'array'],
             'items.*.petenders.*.id' => ['required', 'integer'],
+            'items.*.petenders.*.vendor_id' => ['nullable', 'integer'],
+            'items.*.petenders.*.selected_for_selection' => ['nullable', 'boolean'],
             'items.*.petenders.*.status_bumiputra' => ['nullable', Rule::in(['Ya', 'Tidak'])],
             'items.*.petenders.*.harga_tawaran' => ['nullable', 'numeric'],
             'items.*.petenders.*.jumlah_skor' => ['nullable', 'numeric'],
@@ -924,7 +945,102 @@ class JawatankuasaPerolehanController extends Controller
             ]);
         }
 
+        if (
+            $forSubmit
+            && in_array($kaedah, ['Pemilihan Terus', 'Pemilihan Lebih Daripada Satu Syarikat'], true)
+            && $this->resolveWinnerVendorIds($tender, $validated) === []
+        ) {
+            throw ValidationException::withMessages([
+                'items' => 'Sila pilih sekurang-kurangnya satu pembekal pemenang (kotak Pemilihan) atau pastikan ada pembekal Disyorkan.',
+            ]);
+        }
+
         return $validated;
+    }
+
+    /**
+     * Set tender_vendors.winner for selected / Disyorkan pembekal.
+     *
+     * @param  array<string, mixed>|null  $pemilihanPayload
+     */
+    private function markWinningVendors(Tender $tender, ?array $pemilihanPayload = null): void
+    {
+        $winnerVendorIds = $this->resolveWinnerVendorIds($tender, $pemilihanPayload);
+
+        TenderVendor::query()
+            ->where('tender_id', $tender->id)
+            ->update(['winner' => 0]);
+
+        if ($winnerVendorIds === []) {
+            return;
+        }
+
+        TenderVendor::query()
+            ->where('tender_id', $tender->id)
+            ->whereIn('vendor_id', $winnerVendorIds)
+            ->update(['winner' => 1]);
+    }
+
+    /**
+     * @param  array<string, mixed>|null  $pemilihanPayload
+     * @return list<int>
+     */
+    private function resolveWinnerVendorIds(Tender $tender, ?array $pemilihanPayload = null): array
+    {
+        $winnerVendorIds = [];
+
+        if (is_array($pemilihanPayload)) {
+            $petenderIds = [];
+            foreach ($pemilihanPayload['items'] ?? [] as $item) {
+                foreach ($item['petenders'] ?? [] as $p) {
+                    if (filter_var($p['selected_for_selection'] ?? false, FILTER_VALIDATE_BOOLEAN)) {
+                        $vendorId = (int) ($p['vendor_id'] ?? 0);
+                        if ($vendorId > 0) {
+                            $winnerVendorIds[] = $vendorId;
+                        } else {
+                            $petenderIds[] = (int) ($p['id'] ?? 0);
+                        }
+                    }
+                }
+            }
+
+            if ($petenderIds !== []) {
+                $fromPets = JawatankuasaPerolehanPemilihanPetender::query()
+                    ->whereIn('id', array_filter($petenderIds))
+                    ->whereNotNull('vendor_id')
+                    ->pluck('vendor_id')
+                    ->map(fn ($id) => (int) $id)
+                    ->all();
+                $winnerVendorIds = array_merge($winnerVendorIds, $fromPets);
+            }
+        }
+
+        if ($winnerVendorIds === []) {
+            $winnerVendorIds = JawatankuasaPerolehanPemilihanPetender::query()
+                ->whereHas('item', fn ($q) => $q->where('tender_id', $tender->id))
+                ->where('keputusan_urusetia', PerakuanJabatanPengesyoranPembekalItem::SYOR_DISYORKAN)
+                ->whereNotNull('vendor_id')
+                ->pluck('vendor_id')
+                ->map(fn ($id) => (int) $id)
+                ->all();
+        }
+
+        if ($winnerVendorIds === []) {
+            $pengesyoran = PerakuanJabatanPengesyoranPembekal::query()
+                ->where('tender_id', $tender->id)
+                ->first();
+
+            if ($pengesyoran) {
+                $winnerVendorIds = PerakuanJabatanPengesyoranPembekalItem::query()
+                    ->where('pengesyoran_pembekal_id', $pengesyoran->id)
+                    ->where('syor_urusetia', PerakuanJabatanPengesyoranPembekalItem::SYOR_DISYORKAN)
+                    ->pluck('vendor_id')
+                    ->map(fn ($id) => (int) $id)
+                    ->all();
+            }
+        }
+
+        return array_values(array_unique(array_filter($winnerVendorIds)));
     }
 
     private function applyPemilihanPayload(Tender $tender, array $payload, bool $forSubmit): void

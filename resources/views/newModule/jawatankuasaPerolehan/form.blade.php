@@ -750,6 +750,10 @@
 					processData: false,
 					contentType: false,
 					success: function(resp) {
+						if (resp.redirect) {
+							window.location.href = resp.redirect;
+							return;
+						}
 						showKertasKeputusanAlert(resp.message || successMessage, 'success');
 					},
 					error: function(xhr) {
@@ -978,6 +982,10 @@
 						},
 						data: JSON.stringify(body),
 						success: function(resp) {
+							if (resp.redirect) {
+								window.location.href = resp.redirect;
+								return;
+							}
 							mpShowAlert(resp.message || successMessage, 'success');
 						},
 						error: function(xhr) {
