@@ -355,6 +355,7 @@ Route::middleware(['auth'])->group(function () {
 	Route::get('/penyediaan-sst/{tender}/vendor/{vendorId}/surat-akuan-pembida-berjaya', [PenyediaanSuratSstController::class, 'suratAkuanPembidaBerjaya'])->name('penyediaanSST.suratAkuanPembidaBerjaya');
 	Route::get('/penyediaan-sst/{tender}/vendor/{vendorId}/surat-akuan-sumpah-syarikat', [PenyediaanSuratSstController::class, 'suratAkuanSumpahSyarikat'])->name('penyediaanSST.suratAkuanSumpahSyarikat');
 	Route::post('/penyediaan-sst/{tender}/dokumen', [PenyediaanSuratSstController::class, 'muatNaikDokumen'])->name('penyediaanSST.muatNaikDokumen');
+	Route::get('/penyediaan-sst/{tender}/dokumen/{storedName}', [PenyediaanSuratSstController::class, 'muatTurunDokumen'])->name('penyediaanSST.muatTurunDokumen');
 	Route::get('/index-jawatankuasa-pembuka', [JawatankuasaPembukaController::class, 'index'])->name('indexJawatankuasaPembuka');
 	Route::get('/jawatankuasa-pembuka', [JawatankuasaPembukaController::class, 'show'])->name('jawatankuasaPembuka');
 	Route::post('/jawatankuasa-pembuka/simpan-pematuhan', [JawatankuasaPembukaController::class, 'simpanPematuhan'])->name('jawatankuasaPembuka.simpanPematuhan');
