@@ -1877,7 +1877,7 @@ class PenilaianKewanganKerjaController extends Controller
                 if ($coVendorItem['pct_bwam'] === 'FREAK') {
                     $bwamDisp = 'FREAK';
                 } elseif (is_numeric($coVendorItem['pct_bwam'])) {
-                    $bwamDisp = number_format((float) $coVendorItem['pct_bwam'] * 100, 2) . '%';
+                    $bwamDisp = number_format((float) $coVendorItem['pct_bwam'] * 100, 2);
                 }
             }
 
@@ -1899,13 +1899,37 @@ class PenilaianKewanganKerjaController extends Controller
             ];
         }
 
+        $unitMap = [
+            '1'      => 'Minggu',
+            '2'      => 'Bulan',
+            '3'      => 'Tahun',
+            'week'   => 'Minggu',
+            'weeks'  => 'Minggu',
+            'minggu' => 'Minggu',
+            'month'  => 'Bulan',
+            'months' => 'Bulan',
+            'bulan'  => 'Bulan',
+            'year'   => 'Tahun',
+            'years'  => 'Tahun',
+            'tahun'  => 'Tahun',
+        ];
+        $rawUnitKey = strtolower(trim((string) ($tender->tempoh_siap_unit ?? '')));
+        $resolvedUnit = $unitMap[$rawUnitKey] ?? ($tender->tempoh_siap_unit ?: 'Minggu');
+
+        $tempohSiapMaks = '-';
+        if (! empty($tender->tempoh_siap_val)) {
+            $tempohSiapMaks = $tender->tempoh_siap_val . ' ' . $resolvedUnit;
+        } elseif (! empty($tender->tempoh_kontrak_bulan)) {
+            $tempohSiapMaks = $tender->tempoh_kontrak_bulan . ' Bulan';
+        }
+
         $b15HeaderSummary = [
             'jenis_tender'         => $tender->jenisTender->name ?? ($tender->type === 'quotation' ? 'Sebut Harga' : ($tender->type === 'tender' ? 'Tender Konvensional' : 'Konvensional')),
             'tarikh_iklan'         => $tender->advertise_start_date ? \Carbon\Carbon::parse($tender->advertise_start_date)->format('d/m/Y') : '-',
             'tarikh_tutup'         => $tender->submission_datetime ? \Carbon\Carbon::parse($tender->submission_datetime)->format('d/m/Y') : ($tender->advertise_stop_date ? \Carbon\Carbon::parse($tender->advertise_stop_date)->format('d/m/Y') : '-'),
             'tarikh_luput_sahlaku' => $sah_laku_tamat ?? ($tender->submission_datetime ? \Carbon\Carbon::parse($tender->submission_datetime)->addDays(90)->format('d/m/Y') : '-'),
             'tarikh_lawatan_tapak' => $tender->briefing_datetime ? \Carbon\Carbon::parse($tender->briefing_datetime)->format('d/m/Y') : '-',
-            'tempoh_siap_maks'     => ! empty($tender->tempoh_siap_val) ? ($tender->tempoh_siap_val . ' ' . ($tender->tempoh_siap_unit ?? 'Minggu')) : (! empty($tender->tempoh_kontrak_bulan) ? ($tender->tempoh_kontrak_bulan . ' Bulan') : '-'),
+            'tempoh_siap_maks'     => $tempohSiapMaks,
             'peruntukan_pda'       => $tender->sumber_peruntukan ?: ($tender->sumber_lain_text ?: '-'),
             'anggaran_jabatan'     => (float) ($tender->anggaran_jabatan ?? $tender->harga_indikatif ?? $tender->price ?? 0) > 0 ? ('RM ' . number_format((float) ($tender->anggaran_jabatan ?? $tender->harga_indikatif ?? $tender->price), 2)) : '-',
             'harga_cutoff'         => $b15HargaCutOff !== null ? ('RM ' . number_format($b15HargaCutOff, 2)) : '-',
