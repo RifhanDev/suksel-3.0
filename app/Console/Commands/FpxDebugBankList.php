@@ -118,9 +118,25 @@ class FpxDebugBankList extends Command
             // menjejaki permintaan ini dalam log mereka dan menyatakan sebabnya.
             $this->line('Berikan ID berikut kepada PayNet untuk mereka semak log:');
 
+            $jumpa = false;
+
             foreach (['x-oracle-dms-ecid', 'cf-ray', 'date'] as $h) {
-                $v = $hasil['headers'][$h] ?? $hasil['headers'][ucfirst($h)] ?? null;
-                $this->line('  ' . str_pad($h, 20) . (is_array($v) ? implode(', ', $v) : var_export($v, true)));
+                $v = $this->header($hasil['headers'], $h);
+                $jumpa = $jumpa || ($v !== null && $h !== 'date');
+                $this->line('  ' . str_pad($h, 20) . ($v ?? 'TIADA'));
+            }
+
+            // Kalau ID korelasi tiada, senaraikan semua pengepala: ejaan atau
+            // set pengepala mungkin berbeza daripada yang dilihat melalui curl,
+            // dan tanpa senarai ini kegagalan carian kelihatan seperti PayNet
+            // tidak menghantarnya langsung.
+            if (! $jumpa) {
+                $this->line('');
+                $this->warn('ID korelasi tidak dijumpai. Semua pengepala respons:');
+
+                foreach ($hasil['headers'] as $nama => $nilai) {
+                    $this->line('  ' . str_pad((string) $nama, 26) . implode(', ', (array) $nilai));
+                }
             }
 
             return self::FAILURE;
@@ -217,6 +233,27 @@ class FpxDebugBankList extends Command
                 ? 'OK, ' . count($banks) . ' bank'
                 : 'ditolak, balasan = ' . var_export($fpx->last_response_body, true),
         ];
+    }
+
+    /**
+     * Ambil satu pengepala tanpa mengira huruf besar-kecil.
+     *
+     * Nama pengepala HTTP tidak sensitif huruf besar-kecil, dan Guzzle
+     * mengekalkan ejaan yang pelayan hantar — HTTP/2 menghantar huruf kecil,
+     * HTTP/1.1 selalunya tidak. Carian padanan tepat menyebabkan ECID
+     * kelihatan tiada sedangkan ia ada dalam respons.
+     *
+     * @param  array<string, array<int, string>|string>  $headers
+     */
+    private function header(array $headers, string $name): ?string
+    {
+        foreach ($headers as $key => $value) {
+            if (strcasecmp((string) $key, $name) === 0) {
+                return implode(', ', (array) $value);
+            }
+        }
+
+        return null;
     }
 
     /** @param  array<string, string>  $banks */
