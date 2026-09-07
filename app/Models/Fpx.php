@@ -30,11 +30,17 @@ class Fpx
 
 	public $private_key;
 
-	// Algoritma hash untuk menandatangan dan mengesahkan. FPX versi lama
+	// Algoritma tandatangan FPX: RSA-SHA1, mengikut Merchant Interface
+	// Specification v4.7 dan kod contoh rasmi PayNet. Pemalar, bukan hanya
+	// nilai lalai property, kerana verifyResponseSignature() adalah STATIK
+	// dan tidak boleh menyentuh $this.
+	public const DEFAULT_SIGNATURE_ALGO = OPENSSL_ALGO_SHA1;
+
+	// Algoritma hash untuk menandatangan. FPX versi lama
 	// menggunakan SHA-1; versi terkini PayNet menggunakan SHA-256. Dijadikan
 	// property supaya boleh diuji tanpa mengubah kelakuan lalai — nilai lalai
 	// kekal SHA-1, sama seperti sebelum ini.
-	public $signature_algo = OPENSSL_ALGO_SHA1;
+	public $signature_algo = self::DEFAULT_SIGNATURE_ALGO;
 
 	// Badan respons mentah PayNet daripada panggilan bankList() terakhir.
 	// Tanpa ini bankList() hanya memulangkan false dan balasan sebenar PayNet
@@ -198,7 +204,7 @@ class Fpx
 		}
 
 		// openssl_verify() returns 1 (valid), 0 (invalid) or -1 (error) — only 1 is a pass.
-		$result = openssl_verify($source_string, $signature, $publicKey, $this->signature_algo);
+		$result = openssl_verify($source_string, $signature, $publicKey, self::DEFAULT_SIGNATURE_ALGO);
 
 		return [
 			'valid'         => $result === 1,
