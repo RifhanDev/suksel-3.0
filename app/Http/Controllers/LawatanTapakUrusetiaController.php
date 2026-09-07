@@ -346,109 +346,138 @@ class LawatanTapakUrusetiaController extends Controller
     }
 
     /**
-     * Muatkan sekali sahaja, untuk semua tender, data yang diperlukan bagi
-     * mengira status lawatan.
+     * Ringkaskan status lawatan bagi semua tender dalam beberapa pertanyaan
+     * teragregat, satu baris hasil per tender.
      *
-     * Tiga pertanyaan menggantikan tiga yang berulang setiap tender, ditambah
-     * satu pertanyaan bagi setiap pasangan vendor x lawatan.
+     * Percubaan sebelum ini memuatkan setiap baris wakil dan pelawat ke dalam
+     * PHP dan menghabiskan memory_limit di staging. Pengiraan dibuat dalam SQL
+     * di sini, jadi penggunaan memori bergantung pada bilangan tender yang
+     * dipaparkan sahaja, bukan pada bilangan rekod kehadiran.
      *
      * @param  \Illuminate\Support\Collection  $tenders
-     * @return array{purchases: array, reps: array, visitors: array, visitorCounts: array}
+     * @return array{tracked: array, reps: array, pairs: array, required: array}
      */
     private function loadLawatanStatusIndex($tenders): array
     {
         $tenderIds = $tenders->pluck('id')->filter()->unique()->values()->all();
-        $visitIds  = $tenders->pluck('siteVisits')->flatten()->pluck('id')
-            ->filter()->unique()->values()->all();
 
-        $purchases = [];
+        // Lawatan "required" ditentukan per tender: yang bertanda required, atau
+        // semua lawatan apabila tiada satu pun ditanda. siteVisits sudah dimuat
+        // awal, jadi ini tidak menambah pertanyaan.
+        $required = [];
+
+        foreach ($tenders as $tender) {
+            $visits = $tender->siteVisits;
+            $chosen = $visits->where('required', 1);
+
+            if ($chosen->isEmpty()) {
+                $chosen = $visits;
+            }
+
+            $required[(int) $tender->id] = $chosen->pluck('id')->map(fn ($id) => (int) $id)->all();
+        }
+
+        $requiredVisitIds = collect($required)->flatten()->unique()->values()->all();
+
+        $tracked = [];
         $reps = [];
-        $visitors = [];
-        $visitorCounts = [];
+        $pairs = [];
 
         if ($tenderIds !== []) {
-            $rows = DB::table('tender_vendors')
+            // Vendor "tracked" ialah gabungan pembeli, wakil dan pelawat. Hanya
+            // bilangan unik diperlukan, jadi ia dikira dalam SQL.
+            $pembeli = DB::table('tender_vendors')
+                ->select('tender_id', 'vendor_id')
                 ->whereIn('tender_id', $tenderIds)
                 ->where('participate', 1)
                 ->whereNotNull('ref_number')
-                ->get(['tender_id', 'vendor_id']);
+                ->where('vendor_id', '>', 0);
 
-            foreach ($rows as $row) {
-                $purchases[(int) $row->tender_id][] = (int) $row->vendor_id;
-            }
+            $wakil = DB::table('tender_visit_representatives as tvr')
+                ->join('tender_visits as tv', 'tv.id', '=', 'tvr.visit_id')
+                ->select('tv.tender_id', 'tvr.vendor_id')
+                ->whereIn('tv.tender_id', $tenderIds)
+                ->where('tvr.vendor_id', '>', 0);
+
+            $pelawat = DB::table('tender_visitors as tvs')
+                ->join('tender_visits as tv', 'tv.id', '=', 'tvs.visit_id')
+                ->select('tv.tender_id', 'tvs.vendor_id')
+                ->whereIn('tv.tender_id', $tenderIds)
+                ->where('tvs.vendor_id', '>', 0);
+
+            $tracked = DB::query()
+                ->fromSub($pembeli->union($wakil)->union($pelawat), 'x')
+                ->select('tender_id', DB::raw('COUNT(DISTINCT vendor_id) as n'))
+                ->groupBy('tender_id')
+                ->pluck('n', 'tender_id')
+                ->map(fn ($n) => (int) $n)
+                ->all();
         }
 
-        if ($visitIds !== []) {
-            foreach (DB::table('tender_visit_representatives')
-                ->whereIn('visit_id', $visitIds)
-                ->get(['visit_id', 'vendor_id']) as $row) {
-                $reps[(int) $row->visit_id][] = (int) $row->vendor_id;
-            }
+        if ($requiredVisitIds !== []) {
+            // Setiap wakil pada lawatan required semestinya sudah termasuk dalam
+            // set tracked (tracked merangkumi wakil bagi semua lawatan tender
+            // itu), jadi penapis "vendor mesti tracked" dalam kod asal tidak
+            // pernah menyingkirkan apa-apa dan tidak diulang di sini.
+            $reps = DB::table('tender_visit_representatives as tvr')
+                ->join('tender_visits as tv', 'tv.id', '=', 'tvr.visit_id')
+                ->whereIn('tvr.visit_id', $requiredVisitIds)
+                ->select('tv.tender_id', DB::raw('COUNT(*) as n'))
+                ->groupBy('tv.tender_id')
+                ->pluck('n', 'tender_id')
+                ->map(fn ($n) => (int) $n)
+                ->all();
 
-            foreach (DB::table('tender_visitors')
-                ->whereIn('visit_id', $visitIds)
-                ->get(['visit_id', 'vendor_id']) as $row) {
-                $visitId  = (int) $row->visit_id;
-                $vendorId = (int) $row->vendor_id;
+            // Pasangan (vendor, lawatan) yang mempunyai TEPAT satu rekod hadir.
+            // Semakan asal TenderVisitor::hasVisit() menuntut tepat satu baris,
+            // jadi rekod pendua dikira belum disemak; HAVING mengekalkannya.
+            $sub = DB::table('tender_visitors as tvs')
+                ->join('tender_visits as tv', 'tv.id', '=', 'tvs.visit_id')
+                ->whereIn('tvs.visit_id', $requiredVisitIds)
+                ->where('tvs.vendor_id', '>', 0)
+                ->select('tv.tender_id as tender_id', 'tvs.visit_id', 'tvs.vendor_id', DB::raw('COUNT(*) as c'))
+                ->groupBy('tv.tender_id', 'tvs.visit_id', 'tvs.vendor_id')
+                ->having('c', '=', 1);
 
-                $visitors[$visitId][] = $vendorId;
-
-                // Kiraan disimpan, bukan sekadar kehadiran, kerana semakan asal
-                // TenderVisitor::hasVisit() menuntut TEPAT satu baris - baris
-                // pendua dikira belum disemak. Tingkah laku itu dikekalkan.
-                $key = $visitId . ':' . $vendorId;
-                $visitorCounts[$key] = ($visitorCounts[$key] ?? 0) + 1;
-            }
+            $pairs = DB::query()
+                ->fromSub($sub, 'y')
+                ->select('tender_id', DB::raw('COUNT(*) as n'))
+                ->groupBy('tender_id')
+                ->pluck('n', 'tender_id')
+                ->map(fn ($n) => (int) $n)
+                ->all();
         }
 
-        return compact('purchases', 'reps', 'visitors', 'visitorCounts');
+        return compact('tracked', 'reps', 'pairs', 'required');
     }
 
+    /**
+     * @param  array{tracked: array, reps: array, pairs: array, required: array}  $index
+     */
     protected function resolveTenderLawatanStatus(Tender $tender, array $index): array
     {
-        $visits   = $tender->siteVisits;
-        $visitIds = $visits->pluck('id')->map(fn ($id) => (int) $id)->all();
+        $tenderId = (int) $tender->id;
 
-        $trackedVendorIds = collect($index['purchases'][(int) $tender->id] ?? []);
+        $trackedCount = $index['tracked'][$tenderId] ?? 0;
 
-        foreach ($visitIds as $visitId) {
-            $trackedVendorIds = $trackedVendorIds
-                ->merge($index['reps'][$visitId] ?? [])
-                ->merge($index['visitors'][$visitId] ?? []);
-        }
-
-        $trackedVendorIds = $trackedVendorIds->filter()->unique()->values()->all();
-
-        if ($trackedVendorIds === []) {
+        if ($trackedCount === 0) {
             return ['key' => 'tiada_pembeli', 'label' => 'Tiada Rekod', 'class' => 'bg-secondary'];
         }
 
-        $requiredVisits = $visits->where('required', 1);
-        if ($requiredVisits->isEmpty()) {
-            $requiredVisits = $visits;
-        }
-
-        $requiredVisitIds = $requiredVisits->pluck('id')->map(fn ($id) => (int) $id)->all();
-
-        $hasReps = false;
-
-        foreach ($requiredVisitIds as $visitId) {
-            if (array_intersect($index['reps'][$visitId] ?? [], $trackedVendorIds) !== []) {
-                $hasReps = true;
-                break;
-            }
-        }
-
-        if (!$hasReps) {
+        if (($index['reps'][$tenderId] ?? 0) === 0) {
             return ['key' => 'menunggu_wakil', 'label' => 'Menunggu Wakil', 'class' => 'bg-warning text-dark'];
         }
 
-        foreach ($trackedVendorIds as $vendorId) {
-            foreach ($requiredVisitIds as $visitId) {
-                if (($index['visitorCounts'][$visitId . ':' . $vendorId] ?? 0) !== 1) {
-                    return ['key' => 'belum_disemak', 'label' => 'Belum Disemak', 'class' => 'bg-warning text-dark'];
-                }
-            }
+        // Selesai hanya apabila SETIAP vendor tracked mempunyai tepat satu rekod
+        // hadir pada SETIAP lawatan required — iaitu bilangan pasangan sah sama
+        // dengan bilangan vendor didarab bilangan lawatan. Vendor yang langsung
+        // tiada rekod menyumbang sifar pasangan, jadi ia gagal syarat ini sama
+        // seperti gelung bersarang yang asal.
+        $requiredCount = count($index['required'][$tenderId] ?? []);
+        $pairsOk       = $index['pairs'][$tenderId] ?? 0;
+
+        if ($pairsOk !== $trackedCount * $requiredCount) {
+            return ['key' => 'belum_disemak', 'label' => 'Belum Disemak', 'class' => 'bg-warning text-dark'];
         }
 
         return ['key' => 'selesai', 'label' => 'Selesai', 'class' => 'bg-success'];
