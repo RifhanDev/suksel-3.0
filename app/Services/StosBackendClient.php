@@ -53,14 +53,24 @@ class StosBackendClient
         return $this->request('post', $path, ['json' => $payload]);
     }
 
+    public function put(string $path, array $payload = []): Response
+    {
+        return $this->request('put', $path, ['json' => $payload]);
+    }
+
     public function createTender(array $payload): Response
     {
         return $this->post('/api/tenders', $payload);
     }
 
-    public function getTender(int $tenderId): Response
+    public function updateTender(int $tenderId, array $payload): Response
     {
-        return $this->get('/api/tenders/' . $tenderId);
+        return $this->put('/api/tenders/' . $tenderId, $payload);
+    }
+
+    public function getTender(int $tenderId): Response
+    {
+        return $this->get('/api/tenders/' . $tenderId);
     }
 
     public function dispatchProcess(string $process, array $payload): Response

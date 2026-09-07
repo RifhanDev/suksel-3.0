@@ -328,68 +328,11 @@ class TendersController extends Controller
 			$payload['organization_unit_id'] = $user->organizationunit->id;
 		}
 
-		if (isset($payload['mof']) && is_array($payload['mof'])) {
-			$mofCodes = [];
-			foreach ($payload['mof'] as $index => $mofGroup) {
-				if (isset($mofGroup['code']) && is_array($mofGroup['code'])) {
-					$joinRule = 'and';
-					if (isset($payload['mof_logic_' . $index])) {
-						$joinRule = strtolower($payload['mof_logic_' . $index]);
-					}
-
-					$mofCodes[] =
-						[
-							'codes' => $mofGroup['code'],
-							'inner_rule' => strtolower($mofGroup['logic_mid'] ?? 'or'),
-							'join_rule' => $joinRule
-						];
-				}
-			}
-			$payload['mof_codes'] = $mofCodes;
-			unset($payload['mof']);
-		}
-
-		if (isset($payload['cidb']) && is_array($payload['cidb'])) {
-			$cidbCodes = [];
-			$cidbGrades = [];
-
-			foreach ($payload['cidb'] as $index => $cidbGroup) {
-				if (isset($cidbGroup['grade']) && is_array($cidbGroup['grade'])) {
-					$cidbGrades = array_merge($cidbGrades, $cidbGroup['grade']);
-				}
-
-				if (isset($cidbGroup['spec']) && is_array($cidbGroup['spec'])) {
-					$joinRule = 'or';
-
-					if (isset($payload['cidb_logic_' . $index])) {
-						$joinRule = strtolower($payload['cidb_logic_' . $index]);
-					}
-
-					$cidbCodes[] =
-						[
-							'codes' => $cidbGroup['spec'],
-							'inner_rule' => strtolower($cidbGroup['logic_mid'] ?? 'and'),
-							'join_rule' => $joinRule
-						];
-				}
-			}
-
-			if (count($cidbCodes) > 0) {
-				$payload['cidb_codes'] = $cidbCodes;
-			}
-
-			if (count($cidbGrades) > 0) {
-				$payload['cidb_grade'] = array_unique($cidbGrades);
-			}
-
-			unset($payload['cidb']);
-		}
-
-		foreach ($payload as $key => $value) {
-			if (strpos($key, 'mof_logic_') === 0 || strpos($key, 'cidb_logic_') === 0) {
-				unset($payload[$key]);
-			}
-		}
+		// Dikongsi dengan update(): kedua-dua skrin menghantar borang yang sama, jadi
+		// penyusunan blok kod mesti identik. Dua salinan akan terpesong dan
+		// menyebabkan tender yang dikemaskini menyimpan syarat kelayakan yang
+		// berbeza daripada tender yang baru dicipta.
+		$payload = $this->buildTenderCodePayload($payload);
 
 		$errorCheck = false;
 		try {
@@ -791,10 +734,11 @@ class TendersController extends Controller
 	 */
 	public function edit(Request $request, $id)
 	{
+		if (!auth()->check()) {
+			return $this->_access_denied();
+		}
+
 		$tender = Tender::with('creator', 'officer')->findOrFail($id);
-		$visits = TenderVisit::where('tender_id', $tender->id)->get()->toArray();
-		$country_states = RefState::where('display_status', 1)->get();
-		$organizations = OrganizationUnit::all();
 
 		if ($request->ajax()) {
 			return $this->_ajax_denied();
@@ -802,7 +746,179 @@ class TendersController extends Controller
 		if (!$tender->canUpdate()) {
 			return $this->_access_denied();
 		}
-		return view('tenders.edit', compact('tender', 'visits', 'country_states', 'organizations'));
+
+		// Setiap medan dalam borang cipta membaca old(). Menyuntik nilai tender
+		// sebagai old input mengisi keseluruhan borang tanpa menduplikasi pemetaan
+		// medan ke dalam Blade, dan bermakna kegagalan pengesahan tetap
+		// mengutamakan input pengguna kerana redirect()->back()->withInput()
+		// menulis ganti kunci yang sama.
+		//
+		// now() digunakan dan bukan flash(): flash() akan mengekalkan nilai ini
+		// untuk SATU permintaan berikutnya juga, jadi membuka /cipta-tender sejurus
+		// selepas ini akan memaparkan borang kosong yang sudah terisi dengan tender
+		// yang baru disunting.
+		session()->now('_old_input', $this->tenderFormValues($tender));
+
+		// Data rujukan yang sama seperti createNew(); tanpanya dropdown akan kosong.
+		$organizations = OrganizationUnit::all();
+		$country_states = RefState::where('display_status', 1)->get();
+		$kaedahPerolehan = \App\Models\Ref\RefKaedahPerolehan::all();
+		$kategoriPerolehan = \App\Models\Ref\RefKategoriJenisPerolehan::all();
+		$jenisTender = \App\Models\Ref\RefTypeOfTender::all();
+		$jenisKontrak = \App\Models\Ref\RefTypeOfContract::all();
+		$typePerolehan = \App\Models\Ref\RefTypeOfPerolehan::all();
+		$lokalitis = \App\Models\Ref\RefLokaliti::where('active', true)->get();
+
+		return view('tenders.cipta_tender', compact(
+			'tender',
+			'country_states',
+			'organizations',
+			'kaedahPerolehan',
+			'kategoriPerolehan',
+			'jenisTender',
+			'jenisKontrak',
+			'typePerolehan',
+			'lokalitis'
+		));
+	}
+
+	/**
+	 * Petakan lajur tender kepada nama medan yang borang cipta gunakan.
+	 *
+	 * Nama borang dan nama lajur tidak sepadan satu-dengan-satu — borang
+	 * menghantar `type` untuk kaedah_perolehan_id, `ptj_id` untuk
+	 * organization_unit_id, `fizikal` untuk penilaian_fizikal, dan
+	 * `section_logic` untuk mof_cidb_rule. Pemetaan disimpan di sini, bukan
+	 * dalam Blade, supaya ia boleh diuji.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function tenderFormValues(Tender $tender): array
+	{
+		return [
+			'type'                      => $tender->kaedah_perolehan_id,
+			'kategori_perolehan'        => $tender->kategori_perolehan_id,
+			'kategori_perolehan_detail' => $tender->kategori_perolehan_detail_id,
+			'jenis_tender'              => $tender->jenis_tender_id,
+			'jenis_kontrak'             => $tender->jenis_kontrak_id,
+			'ptj_id'                    => $tender->organization_unit_id,
+			'fizikal'                   => $tender->penilaian_fizikal,
+			'section_logic'             => $tender->mof_cidb_rule,
+			'name'                      => $tender->name,
+			'ref_number'                => $tender->ref_number,
+			'no_tender'                 => $tender->no_tender,
+			'no_kontrak'                => $tender->no_kontrak,
+			'price'                     => $tender->price,
+			'harga_indikatif'           => $tender->harga_indikatif,
+			'anggaran_jabatan'          => $tender->anggaran_jabatan,
+			'wang_kos_prima'            => $tender->wang_kos_prima,
+			'wang_peruntukan_sementara' => $tender->wang_peruntukan_sementara,
+			'tarikh_dicipta'            => $tender->tarikh_dicipta,
+			'sumber_peruntukan'         => $tender->sumber_peruntukan,
+			'sumber_lain_text'          => $tender->sumber_lain_text,
+			'tempoh_siap_val'           => $tender->tempoh_siap_val,
+			'tempoh_siap_unit'          => $tender->tempoh_siap_unit,
+			'tempoh_kontrak_bulan'      => $tender->tempoh_kontrak_bulan,
+			'zon_lokasi'                => $tender->zon_lokasi,
+			'lokaliti_id'               => $tender->lokaliti_id,
+			'jawatankuasa'              => $tender->jawatankuasa,
+			'lawatan_tapak'             => $tender->lawatan_tapak,
+			'terbuka_kepada'            => $tender->terbuka_kepada,
+		] + $this->tenderCodeFormValues($tender);
+	}
+
+	/**
+	 * Blok kod MOF/CIDB dalam bentuk nama medan borang.
+	 *
+	 * Dihantar melalui old input yang sama seperti medan lain supaya satu sumber
+	 * sahaja mengisi borang. Ini penting apabila pengesahan gagal: withInput()
+	 * menulis ganti kunci yang sama, jadi pilihan pengguna dikekalkan dan bukan
+	 * ditimpa semula oleh nilai pangkalan data.
+	 *
+	 * logic_mid dan pemilih hubungan dihuruf-besarkan kerana borang menggunakan
+	 * nilai 'OR'/'AND', sedangkan pangkalan data menyimpannya huruf kecil.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function tenderCodeFormValues(Tender $tender): array
+	{
+		$values = [];
+
+		$mofGroups = $this->tenderCodeGroups($tender, 'mof');
+
+		foreach ($mofGroups as $index => $group) {
+			$values['mof'][$index] = [
+				'logic_mid' => strtoupper($group['inner_rule']),
+				'code'      => $group['codes'],
+			];
+
+			// Blok pertama tiada pemilih hubungan sebelumnya untuk disambung.
+			if ($index > 0) {
+				$values['mof_logic_' . $index] = strtoupper($group['join_rule']);
+			}
+		}
+
+		$cidbGroups = $this->tenderCodeGroups($tender, 'cidb');
+
+		foreach ($cidbGroups as $index => $group) {
+			$values['cidb'][$index] = [
+				'logic_mid' => strtoupper($group['inner_rule']),
+				'spec'      => $group['codes'],
+			];
+
+			if ($index > 0) {
+				$values['cidb_logic_' . $index] = strtoupper($group['join_rule']);
+			}
+		}
+
+		// Gred CIDB tidak berulang setiap blok — borang menyimpannya pada blok
+		// pertama sahaja, jadi ia diletakkan di situ walaupun tiada blok spec.
+		$grades = $tender->codes()->where('code_type', 'cidb-g')
+			->pluck('code_id')->map(fn ($id) => (int) $id)->all();
+
+		if ($grades !== []) {
+			$values['cidb'][0]['grade'] = $grades;
+		}
+
+		return $values;
+	}
+
+	/**
+	 * Kumpulkan semula kod tender kepada bentuk yang borang gunakan.
+	 *
+	 * Borang menyusun kod sebagai blok: setiap blok mempunyai senarai kod, satu
+	 * hubungan DALAM blok (logic_mid) dan satu hubungan ANTARA blok. Dalam
+	 * pangkalan data setiap kod ialah satu baris, dan lajur `order` yang menandakan
+	 * blok mana ia tergolong — jadi baris dikumpulkan semula mengikut lajur itu.
+	 *
+	 * @return list<array{codes: list<int>, inner_rule: string, join_rule: string}>
+	 */
+	private function tenderCodeGroups(Tender $tender, string $codeType): array
+	{
+		$rows = $tender->codes()
+			->where('code_type', $codeType)
+			->orderBy('order')
+			->get();
+
+		$groups = [];
+
+		foreach ($rows as $row) {
+			$order = (int) $row->order;
+
+			if (!isset($groups[$order])) {
+				$groups[$order] = [
+					'codes'      => [],
+					'inner_rule' => $row->inner_rule ?: ($codeType === 'mof' ? 'or' : 'and'),
+					'join_rule'  => $row->join_rule ?: ($codeType === 'mof' ? 'and' : 'or'),
+				];
+			}
+
+			$groups[$order]['codes'][] = (int) $row->code_id;
+		}
+
+		ksort($groups);
+
+		return array_values($groups);
 	}
 
 	/**
@@ -813,86 +929,138 @@ class TendersController extends Controller
 	 */
 	public function update(Request $request, $id)
 	{
+		if (!auth()->check()) {
+			return $this->_access_denied();
+		}
 
 		$tender = Tender::findOrFail($id);
-		Tender::setRules('update');
-		$data = $request->all();
-
-		$data['advertise_start_date'] = Carbon::parse($data['advertise_start_date'])->format('Y-m-d');
-		$data['advertise_stop_date']  = Carbon::parse($data['advertise_stop_date'])->format('Y-m-d');
-		$data['document_start_date']  = Carbon::parse($data['document_start_date'])->format('Y-m-d');
-		$data['document_stop_date']   = Carbon::parse($data['document_stop_date'])->format('Y-m-d');
-		$data['submission_datetime']  = Carbon::parse($data['submission_datetime'])->format('Y-m-d 12:00:00');
-
-		if (isset($data['briefing_datetime']) && !empty($data['briefing_datetime'])) {
-			$data['briefing_datetime'] = Carbon::parse($data['briefing_datetime'])->format('Y-m-d H:i:s');
-		} else {
-			$data['briefing_datetime'] = null;
-			$data['briefing_address']  = null;
-		}
-
-		if (isset($data['district_id']) && $data['district_id'] == 0) $data['district_id'] = null;
-		if (!isset($data['only_bumiputera'])) $data['only_bumiputera'] = 0;
-		if (!isset($data['only_selangor'])) $data['only_selangor'] = 0;
-		if (!isset($data['invitation'])) $data['invitation'] = 0;
-		if (!isset($data['briefing_required'])) $data['briefing_required'] = null;
-		if (!isset($data['allow_exception'])) $data['allow_exception'] = 0;
-		if (!isset($data['only_advertise'])) $data['only_advertise'] = 0;
-
-		$district_list = $request->district_id_new ?? [];
-		$state_list = $request->state_id_new ?? [];
-		$district_list_rule = [];
-
-
-		if (count($district_list) > 0) {
-			foreach ($district_list as $idx => $input_district_id) {
-				$state_id = isset($state_list[$idx]) ? $state_list[$idx] : "0";
-
-				$district_list_rule[] = array(
-					"district_id" => $input_district_id,
-					"state_id" => $state_id,
-				);
-			}
-		}
-
-		if ($data["only_selangor"] != 3) {
-			$data["district_list_rule"] = json_encode($district_list_rule);
-		} else {
-			$data["district_list_rule"] = json_encode(array());
-		}
 
 		if (!$tender->canUpdate()) {
 			return $this->_access_denied();
 		}
 
-		if (!$tender->update($data)) {
-			return $this->_validation_error($tender);
+		// Muatan disusun sama seperti storeNew(), kerana skrin kemaskini menghantar
+		// borang cipta tender yang sama. Penyusunan semula blok kod dikekalkan
+		// serupa supaya kedua-dua laluan menghasilkan bentuk yang backend jangka.
+		$payload = $this->buildTenderCodePayload($request->all());
+
+		if (isset($payload['ptj_id']) && auth()->user()->hasRole('Admin')) {
+			$payload['organization_unit_id'] = $payload['ptj_id'];
+		} else {
+			$payload['organization_unit_id'] = $tender->organization_unit_id;
 		}
 
-		/* update creator information */
-		$user_update = User::find(($data['default_creator_id']));
-		$user_update->tel = $data['default_tel'];
-		$user_update->department = $data['default_department'];
-		$user_update->save();
+		try {
+			$stosClient = app(StosBackendClient::class);
+			$response = $stosClient->updateTender((int) $tender->id, $payload);
 
-		if ($data['officer_id'] != '') {
-			/* update officer information */
-			$user_update = User::find($data['officer_id']);
-			$user_update->tel = $data['tel'];
-			$user_update->department = $data['department'];
-			$user_update->save();
+			if (!$response->successful()) {
+				Log::error('Tender update via backend API failed', [
+					'tender_id' => $tender->id,
+					'status'    => $response->status(),
+					'body'      => $response->body(),
+				]);
+
+				return redirect()->back()->withInput()
+					->with('error', 'Kemaskini tender gagal. Sila cuba sebentar lagi.');
+			}
+
+			Log::info('Tender updated via backend API', ['tender_id' => $tender->id]);
+		} catch (\Throwable $e) {
+			Log::error('Tender update threw', [
+				'tender_id' => $tender->id,
+				'error'     => $e->getMessage(),
+			]);
+
+			return redirect()->back()->withInput()
+				->with('error', 'Kemaskini tender gagal. Sila cuba sebentar lagi.');
 		}
-
-		$tender->updateTender();
-
-		// Log tender update (updateTender should handle this with audit=true, but adding explicit log as backup)
-		TenderHistory::log($tender->id, 'edit');
 
 		if ($request->ajax()) {
-			return $tender;
+			return $tender->fresh();
 		}
-		session()->forget('_old_input');
+
 		return redirect('tenders/' . $id)->with('success', $this->updated_message);
+	}
+
+	/**
+	 * Tukar blok mof[]/cidb[] borang kepada bentuk mof_codes/cidb_codes/cidb_grade
+	 * yang backend jangka.
+	 *
+	 * Diasingkan daripada storeNew() supaya laluan cipta dan kemaskini berkongsi
+	 * satu penyusunan; dua salinan akan terpesong dan menyebabkan tender yang
+	 * dikemaskini menyimpan syarat kelayakan yang berbeza daripada yang dicipta.
+	 *
+	 * @param  array<string, mixed>  $payload
+	 * @return array<string, mixed>
+	 */
+	private function buildTenderCodePayload(array $payload): array
+	{
+		if (isset($payload['mof']) && is_array($payload['mof'])) {
+			$mofCodes = [];
+
+			foreach ($payload['mof'] as $index => $mofGroup) {
+				if (isset($mofGroup['code']) && is_array($mofGroup['code'])) {
+					$joinRule = 'and';
+
+					if (isset($payload['mof_logic_' . $index])) {
+						$joinRule = strtolower($payload['mof_logic_' . $index]);
+					}
+
+					$mofCodes[] = [
+						'codes'      => $mofGroup['code'],
+						'inner_rule' => strtolower($mofGroup['logic_mid'] ?? 'or'),
+						'join_rule'  => $joinRule,
+					];
+				}
+			}
+
+			$payload['mof_codes'] = $mofCodes;
+			unset($payload['mof']);
+		}
+
+		if (isset($payload['cidb']) && is_array($payload['cidb'])) {
+			$cidbCodes = [];
+			$cidbGrades = [];
+
+			foreach ($payload['cidb'] as $index => $cidbGroup) {
+				if (isset($cidbGroup['grade']) && is_array($cidbGroup['grade'])) {
+					$cidbGrades = array_merge($cidbGrades, $cidbGroup['grade']);
+				}
+
+				if (isset($cidbGroup['spec']) && is_array($cidbGroup['spec'])) {
+					$joinRule = 'or';
+
+					if (isset($payload['cidb_logic_' . $index])) {
+						$joinRule = strtolower($payload['cidb_logic_' . $index]);
+					}
+
+					$cidbCodes[] = [
+						'codes'      => $cidbGroup['spec'],
+						'inner_rule' => strtolower($cidbGroup['logic_mid'] ?? 'and'),
+						'join_rule'  => $joinRule,
+					];
+				}
+			}
+
+			if (count($cidbCodes) > 0) {
+				$payload['cidb_codes'] = $cidbCodes;
+			}
+
+			if (count($cidbGrades) > 0) {
+				$payload['cidb_grade'] = array_values(array_unique($cidbGrades));
+			}
+
+			unset($payload['cidb']);
+		}
+
+		foreach ($payload as $key => $value) {
+			if (strpos($key, 'mof_logic_') === 0 || strpos($key, 'cidb_logic_') === 0) {
+				unset($payload[$key]);
+			}
+		}
+
+		return $payload;
 	}
 
 	/**

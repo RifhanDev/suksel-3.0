@@ -441,8 +441,16 @@
         </li>
     </ul>
 
-    <form id="createTenderForm" action="{{ route('storeCiptaTender') }}" method="POST">
+    {{-- Borang yang sama digunakan untuk cipta dan kemaskini, supaya kedua-dua skrin
+         mempunyai medan dan susun atur yang serupa. $tender hanya wujud pada laluan
+         kemaskini, dan kehadirannya yang menentukan ke mana borang dihantar. --}}
+    <form id="createTenderForm"
+        action="{{ isset($tender) ? route('tenders.update', $tender->id) : route('storeCiptaTender') }}"
+        method="POST">
         @csrf
+        @isset($tender)
+            @method('PUT')
+        @endisset
 
         <div class="modern-card">
 
@@ -1481,6 +1489,78 @@
                 $('#cidb-logic-' + index).remove();
                 updateCidbRowNumbers();
             };
+
+            // --- Pulihkan blok kod kedua dan seterusnya ---
+            // Blok pertama dirender oleh Blade melalui old(), tetapi blok tambahan
+            // dicipta oleh JS, jadi ia tiada semasa halaman dimuatkan. Nilai dibaca
+            // daripada old() dan bukan terus daripada tender: apabila pengesahan
+            // gagal, withInput() meletakkan pilihan PENGGUNA pada kunci yang sama,
+            // jadi membaca old() mengekalkan apa yang mereka taip dan bukan
+            // menimpanya semula dengan nilai pangkalan data.
+            const savedMof = @json(old('mof', []));
+            const savedCidb = @json(old('cidb', []));
+
+            function applyCodeValues(selector, values) {
+                if (!values || !values.length) return;
+
+                const $select = $(selector);
+                if (!$select.length) return;
+
+                const asText = values.map(String);
+                const el = $select.get(0);
+
+                // Selectize menggantikan elemen asal, jadi .val() sahaja tidak
+                // mengemas kini paparan.
+                if (el && el.selectize) {
+                    el.selectize.setValue(asText, true);
+                } else {
+                    $select.val(asText);
+                }
+            }
+
+            Object.keys(savedMof).forEach(function(key) {
+                const index = parseInt(key, 10);
+                if (isNaN(index) || index === 0) return;
+
+                $('#btn-add-mof').click();
+
+                const group = savedMof[key] || {};
+                if (group.logic_mid) {
+                    $('input[name="mof[' + index + '][logic_mid]"][value="' + group.logic_mid + '"]')
+                        .prop('checked', true);
+                }
+                applyCodeValues('select[name="mof[' + index + '][code][]"]', group.code);
+            });
+
+            Object.keys(savedCidb).forEach(function(key) {
+                const index = parseInt(key, 10);
+                if (isNaN(index) || index === 0) return;
+
+                $('#btn-add-cidb').click();
+
+                const group = savedCidb[key] || {};
+                if (group.logic_mid) {
+                    $('input[name="cidb[' + index + '][logic_mid]"][value="' + group.logic_mid + '"]')
+                        .prop('checked', true);
+                }
+                applyCodeValues('select[name="cidb[' + index + '][spec][]"]', group.spec);
+            });
+
+            // Pemilih hubungan antara blok dicipta bersama blok di atas, jadi ia
+            // hanya boleh ditetapkan selepas blok tersebut wujud.
+            @foreach (array_keys(old('mof', [])) as $mofIndex)
+                @if ((int) $mofIndex > 0)
+                    $('select[name="mof_logic_{{ (int) $mofIndex }}"]')
+                        .val('{{ strtoupper(old('mof_logic_' . (int) $mofIndex, 'AND')) }}');
+                @endif
+            @endforeach
+
+            @foreach (array_keys(old('cidb', [])) as $cidbIndex)
+                @if ((int) $cidbIndex > 0)
+                    $('select[name="cidb_logic_{{ (int) $cidbIndex }}"]')
+                        .val('{{ strtoupper(old('cidb_logic_' . (int) $cidbIndex, 'OR')) }}');
+                @endif
+            @endforeach
         });
 
         // ── Amount input — comma formatting ──────────────────────────────────────
