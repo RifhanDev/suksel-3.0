@@ -708,6 +708,15 @@ Route::middleware(['auth'])->group(function () {
 	Route::post('tenders/{id}/vendors', [TendersController::class, 'updateVendors']);
 	Route::post('tenders/{id}/invites', [TendersController::class, 'updateInvites']);
 	Route::post('tenders/{id}/vendor', [TendersController::class, 'addVendor'])->name('tenders.addVendor');
+	// TendersController::edit()/update() dan resources/views/tenders/edit.blade.php
+	// sudah lengkap, dan butang Kemaskini dalam tenders/_menu.blade.php memaparkan
+	// pautan ini di sebalik canAllowEdit(), tetapi route tidak pernah didaftarkan
+	// dalam 3.0 — jadi butang itu membawa ke 404. Borang edit menghantar PUT ke
+	// tenders/{id}, jadi kedua-duanya diperlukan. Kedua-dua kaedah menguatkuasakan
+	// Tender::canUpdate() sendiri sebelum memapar atau menyimpan.
+	Route::get('tenders/{id}/edit', [TendersController::class, 'edit'])->name('tenders.edit');
+	Route::put('tenders/{id}', [TendersController::class, 'update'])->name('tenders.update');
+
 	Route::get('tenders/{id}/publish', [TendersController::class, 'publish'])->name('tenders.publish');
 	Route::get('tenders/{id}/cancel', [TendersController::class, 'cancel'])->name('tenders.cancel');
 	Route::get('tenders/{id}/publishPrices', [TendersController::class, 'publishPrices'])->name('tenders.publishPrices');
