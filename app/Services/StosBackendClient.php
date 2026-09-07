@@ -348,13 +348,24 @@ class StosBackendClient
         return $this->get('/api/lantikan-terus/' . $tenderId);
     }
 
-    public function createLantikanTerus(array $payload): Response
+    public function createLantikanTerus(array $payload, array $files = []): Response
     {
+        $files = array_filter($files);
+        if (count($files) > 0) {
+            return $this->postMultipart('/api/lantikan-terus', $payload, $files);
+        }
+
         return $this->post('/api/lantikan-terus', $payload);
     }
 
-    public function updateLantikanTerus(int $tenderId, array $payload): Response
+    public function updateLantikanTerus(int $tenderId, array $payload, array $files = []): Response
     {
+        $files = array_filter($files);
+        if (count($files) > 0) {
+            // POST multipart — PHP does not populate uploaded files on raw PUT.
+            return $this->postMultipart('/api/lantikan-terus/' . $tenderId, $payload, $files);
+        }
+
         return $this->request('put', '/api/lantikan-terus/' . $tenderId, ['json' => $payload]);
     }
 

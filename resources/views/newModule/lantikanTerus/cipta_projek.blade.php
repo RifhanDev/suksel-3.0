@@ -540,7 +540,8 @@
                     </label>
 
                     <!-- Uploaded file — with editable name field -->
-                    <div id="bq-file-preview" class="d-none mt-3">
+                    @php $hasSavedBq = ! empty($p?->bq_filename); @endphp
+                    <div id="bq-file-preview" class="{{ $hasSavedBq ? '' : 'd-none' }} mt-3">
                         <div class="d-flex align-items-center gap-3 border rounded-3 bg-white p-3"
                             style="border-color:#e2e8f0 !important;">
                             <span class="file-chip-ext" id="bq-file-ext"
@@ -548,9 +549,11 @@
                             <div class="flex-grow-1" style="min-width:0;">
                                 <label class="form-label mb-1">Nama Dokumen <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control form-control-sm" name="dokumen_bq_nama"
-                                    id="bq-file-nama" placeholder="Masukkan nama dokumen...">
+                                    id="bq-file-nama" placeholder="Masukkan nama dokumen..."
+                                    value="{{ old('dokumen_bq_nama', $hasSavedBq ? $p->bq_filename : '') }}">
                                 <div class="small text-muted mt-1 text-truncate">
-                                    <span id="bq-file-original">-</span> · <span id="bq-file-size">-</span>
+                                    <span id="bq-file-original">{{ $hasSavedBq ? $p->bq_filename : '-' }}</span>
+                                    · <span id="bq-file-size">{{ $hasSavedBq ? 'Tersimpan' : '-' }}</span>
                                 </div>
                             </div>
                             <button type="button" class="file-chip-remove flex-shrink-0" id="bq-file-remove"
@@ -562,6 +565,9 @@
                                 </svg>
                             </button>
                         </div>
+                        @if ($hasSavedBq)
+                            <div class="small text-muted mt-2">Fail BQ sedia ada akan diganti jika anda muat naik fail baharu.</div>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -844,6 +850,7 @@
 @endsection
 
 @section('scripts')
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         // --- DROPDOWN OPTIONS FOR DYNAMIC ROWS (Kod Bidang) ---
         var mofOptions =
@@ -852,6 +859,23 @@
             `@foreach (App\Code::where('type', 'cidb-c')->orderBy('code')->get() as $code)<option value="{{ $code->id }}">{{ $code->label }}</option>@endforeach`;
 
         $(document).ready(function() {
+            @if (session('success'))
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Berjaya',
+                    text: @json(session('success')),
+                    confirmButtonColor: '#c41e3a'
+                });
+            @endif
+
+            @if (session('error'))
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Gagal',
+                    text: @json(session('error')),
+                    confirmButtonColor: '#c41e3a'
+                });
+            @endif
 
             // --- DOKUMEN BQ: single-file upload with editable name ---
             (function() {
