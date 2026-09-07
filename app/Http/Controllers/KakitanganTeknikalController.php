@@ -451,8 +451,16 @@ class KakitanganTeknikalController extends Controller
             ->leftJoin('ref_kategori_jenis_perolehans as k', 'k.id', '=', 'tenders.kategori_perolehan_id')
             ->select('tenders.*', 'k.name as kategori_perolehan_name')
             ->where(function ($q) use ($uuid) {
-                $q->where('tenders.uuid', $uuid)
-                  ->orWhere('tenders.id', $uuid);
+                $q->where('tenders.uuid', $uuid);
+
+                // Hanya jatuh balik kepada id apabila nilainya benar-benar
+                // angka. tenders.id ialah integer, jadi MySQL memaksa string
+                // UUID kepada nombor sebelum membandingkan — UUID seperti
+                // '26f653c1-...' menjadi 26 dan memadankan tender id 26 yang
+                // tiada kaitan, memuatkan tender yang salah sepenuhnya.
+                if (ctype_digit((string) $uuid)) {
+                    $q->orWhere('tenders.id', (int) $uuid);
+                }
             })
             ->first();
     }
