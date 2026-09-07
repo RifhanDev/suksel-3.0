@@ -1,6 +1,5 @@
 <?php
 
-use App\Support\SchemaCompat;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -9,16 +8,10 @@ return new class extends Migration
 {
     public function up(): void
     {
-        SchemaCompat::dropIfIncomplete('tender_teknikal_spesifikasi_evaluations');
-
-        if (Schema::hasTable('tender_teknikal_spesifikasi_evaluations')) {
-            return;
-        }
-
         Schema::create('tender_teknikal_spesifikasi_evaluations', function (Blueprint $table) {
             $table->id();
-            SchemaCompat::referenceColumn($table, 'tender_id', 'tenders');
-            SchemaCompat::referenceColumn($table, 'vendor_id', 'vendors');
+            $table->unsignedInteger('tender_id')->index('ttse_tender_idx');
+            $table->unsignedBigInteger('vendor_id')->index('ttse_vendor_idx');
             $table->uuid('checklist_item_uuid')->index('ttse_item_idx');
             $table->uuid('specification_detail_uuid')->index('ttse_detail_idx');
             // Raw entry as given: numeric string (text/number/yes_no+manual) or "yes"/"no" (yes_no+auto)
