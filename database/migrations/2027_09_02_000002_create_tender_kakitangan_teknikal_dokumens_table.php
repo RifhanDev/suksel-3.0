@@ -1,6 +1,5 @@
 <?php
 
-use App\Support\SchemaCompat;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -9,15 +8,11 @@ return new class extends Migration
 {
     public function up(): void
     {
-        if (Schema::hasTable('tender_kakitangan_teknikal_dokumens')) {
-            return;
-        }
-
         Schema::create('tender_kakitangan_teknikal_dokumens', function (Blueprint $table) {
             $table->id();
             $table->string('uuid', 36)->unique();
             $table->string('tender_uuid')->index();
-            SchemaCompat::referenceColumn($table, 'vendor_id', 'vendors', true);
+            $table->unsignedBigInteger('vendor_id')->nullable()->index();
             $table->string('kakitangan_uuid', 36)->nullable()->index();
 
             $table->string('original_name');

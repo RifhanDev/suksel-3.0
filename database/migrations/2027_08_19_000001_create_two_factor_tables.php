@@ -1,6 +1,5 @@
 <?php
 
-use App\Support\SchemaCompat;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
@@ -12,11 +11,10 @@ return new class extends Migration
     {
         // Per-user TOTP state. Kept off the `users` table so the secret stays out
         // of User's mass-assignment surface.
-        SchemaCompat::dropIfIncomplete('two_factor_auths');
-        if (! Schema::hasTable('two_factor_auths')) {
+        if (!Schema::hasTable('two_factor_auths')) {
             Schema::create('two_factor_auths', function (Blueprint $table) {
                 $table->id();
-                SchemaCompat::referenceColumn($table, 'user_id', 'users');
+                $table->unsignedInteger('user_id')->unique(); // users.id is increments(), not bigIncrements()
                 $table->text('secret')->nullable(); // encrypted cast on the model
                 $table->timestamp('confirmed_at')->nullable(); // null = enrolment started but never confirmed
                 $table->timestamp('required_since')->nullable(); // anchors the grace-period countdown
@@ -26,16 +24,14 @@ return new class extends Migration
                 $table->timestamp('remember_expires_at')->nullable();
                 $table->timestamps();
 
-                $table->unique('user_id');
                 $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
             });
         }
 
-        SchemaCompat::dropIfIncomplete('two_factor_recovery_codes');
-        if (! Schema::hasTable('two_factor_recovery_codes')) {
+        if (!Schema::hasTable('two_factor_recovery_codes')) {
             Schema::create('two_factor_recovery_codes', function (Blueprint $table) {
                 $table->id();
-                SchemaCompat::referenceColumn($table, 'user_id', 'users');
+                $table->unsignedInteger('user_id'); // users.id is increments(), not bigIncrements()
                 $table->string('code_hash');
                 $table->timestamp('used_at')->nullable();
                 $table->timestamp('created_at')->nullable();
@@ -46,24 +42,21 @@ return new class extends Migration
         }
 
         // One row per role that has ever been toggled. Absence of a row = not required.
-        SchemaCompat::dropIfIncomplete('two_factor_role_settings');
-        if (! Schema::hasTable('two_factor_role_settings')) {
+        if (!Schema::hasTable('two_factor_role_settings')) {
             Schema::create('two_factor_role_settings', function (Blueprint $table) {
                 $table->id();
-                SchemaCompat::referenceColumn($table, 'role_id', 'roles');
+                $table->unsignedInteger('role_id')->unique(); // roles.id is increments(), not bigIncrements()
                 $table->boolean('required')->default(false);
-                SchemaCompat::referenceColumn($table, 'updated_by', 'users', true);
+                $table->unsignedInteger('updated_by')->nullable(); // users.id is increments(), not bigIncrements()
                 $table->timestamps();
 
-                $table->unique('role_id');
                 $table->foreign('role_id')->references('id')->on('roles')->onDelete('cascade');
                 $table->foreign('updated_by')->references('id')->on('users')->onDelete('set null');
             });
         }
 
         // Global knobs. Singleton row (id = 1), seeded below.
-        SchemaCompat::dropIfIncomplete('two_factor_settings');
-        if (! Schema::hasTable('two_factor_settings')) {
+        if (!Schema::hasTable('two_factor_settings')) {
             Schema::create('two_factor_settings', function (Blueprint $table) {
                 $table->id();
                 $table->unsignedSmallInteger('grace_period_days')->default(7);
@@ -71,7 +64,7 @@ return new class extends Migration
                 $table->unsignedTinyInteger('max_failed_attempts')->default(5);
                 $table->unsignedSmallInteger('lockout_minutes')->default(5);
                 $table->unsignedSmallInteger('remember_device_days')->default(30);
-                SchemaCompat::referenceColumn($table, 'updated_by', 'users', true);
+                $table->unsignedInteger('updated_by')->nullable(); // users.id is increments(), not bigIncrements()
                 $table->timestamps();
 
                 $table->foreign('updated_by')->references('id')->on('users')->onDelete('set null');
@@ -91,12 +84,11 @@ return new class extends Migration
 
         // Dedicated audit trail. UserHistory::log() drops its actor id before saving,
         // so it cannot record who performed an admin reset.
-        SchemaCompat::dropIfIncomplete('two_factor_audit_logs');
-        if (! Schema::hasTable('two_factor_audit_logs')) {
+        if (!Schema::hasTable('two_factor_audit_logs')) {
             Schema::create('two_factor_audit_logs', function (Blueprint $table) {
                 $table->id();
-                SchemaCompat::referenceColumn($table, 'user_id', 'users');
-                SchemaCompat::referenceColumn($table, 'actor_id', 'users', true);
+                $table->unsignedInteger('user_id'); // account the event is about; users.id is increments(), not bigIncrements()
+                $table->unsignedInteger('actor_id')->nullable(); // who did it; null = system/self
                 $table->string('event'); // enrolled|disabled|admin_reset|recovery_used|locked_out|role_requirement_toggled
                 $table->json('meta')->nullable();
                 $table->timestamp('created_at')->nullable();

@@ -1,6 +1,5 @@
 <?php
 
-use App\Support\SchemaCompat;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -9,16 +8,10 @@ return new class extends Migration
 {
     public function up(): void
     {
-        SchemaCompat::dropIfIncomplete('tender_teknikal_borang_evaluations');
-
-        if (Schema::hasTable('tender_teknikal_borang_evaluations')) {
-            return;
-        }
-
         Schema::create('tender_teknikal_borang_evaluations', function (Blueprint $table) {
             $table->id();
-            SchemaCompat::referenceColumn($table, 'tender_id', 'tenders');
-            SchemaCompat::referenceColumn($table, 'vendor_id', 'vendors');
+            $table->unsignedInteger('tender_id')->index('ttbe_tender_idx');
+            $table->unsignedBigInteger('vendor_id')->index('ttbe_vendor_idx');
             $table->uuid('checklist_item_uuid')->index('ttbe_item_idx');
             // Dihadkan pada skema markah (technical_checklist_items.score) semasa disimpan.
             $table->decimal('skor_manual', 10, 2)->nullable();
