@@ -314,11 +314,17 @@ class LantikanTerusController extends Controller
         $action = $request->input('action', 'draft');
         $payload['action'] = $action;
 
+        $files = [];
+        if ($request->hasFile('dokumen_bq')) {
+            $files['dokumen_bq'] = $request->file('dokumen_bq');
+        }
+        unset($payload['dokumen_bq']);
+
         try {
             if ($id) {
-                $response = $this->stos->updateLantikanTerus($id, $payload);
+                $response = $this->stos->updateLantikanTerus($id, $payload, $files);
             } else {
-                $response = $this->stos->createLantikanTerus($payload);
+                $response = $this->stos->createLantikanTerus($payload, $files);
             }
 
             if ($response->successful()) {
@@ -326,7 +332,20 @@ class LantikanTerusController extends Controller
                     ? 'Projek berjaya diterbitkan.'
                     : 'Projek berjaya disimpan sebagai draf.';
 
-                return redirect()->route('lantikan.index')->with('success', $message);
+                // Terbitkan → senarai. Simpan → kekal di halaman kemaskini (atau cipta selepas id baharu).
+                if ($action === 'publish') {
+                    return redirect()->route('lantikan.index')->with('success', $message);
+                }
+
+                $savedId = $id
+                    ?: (int) ($response->json('tender_id') ?? $response->json('data.id') ?? 0);
+
+                if ($savedId > 0) {
+                    return redirect()->route('lantikan.edit', $savedId)
+                        ->with('success', $message);
+                }
+
+                return redirect()->route('lantikan.create')->with('success', $message);
             }
 
             Log::error('Lantikan Terus persist API error', [
@@ -344,7 +363,7 @@ class LantikanTerusController extends Controller
 
     private function buildPayload(Request $request): array
     {
-        $payload = $request->except(['_token', '_method']);
+        $payload = $request->except(['_token', '_method', 'dokumen_bq']);
         $user = auth()->user();
         $payload['creator_id'] = $user->id;
 
@@ -467,9 +486,10 @@ class LantikanTerusController extends Controller
         $tarikhTutup = $data['advertise_stop_date'] ?? null;
 
         $bqDoc = collect($documents)->firstWhere('doc_type', 'bq');
-        $bqFilename = is_array($bqDoc)
-            ? ($bqDoc['display_name'] ?? $bqDoc['original_name'] ?? 'Dokumen BQ.pdf')
-            : 'Dokumen BQ.pdf';
+        $bqFilename = null;
+        if (is_array($bqDoc)) {
+            $bqFilename = $bqDoc['display_name'] ?? $bqDoc['original_name'] ?? null;
+        }
 
         return (object) [
             'id' => $data['id'] ?? null,
