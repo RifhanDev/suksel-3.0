@@ -131,6 +131,20 @@ class PenyataBankPersistenceService
     {
         $accounts = $record->accounts;
 
+        $dbFiles = $record->files->map(function ($f) {
+            $cleanPath = ltrim(str_replace('public/', '', $f->path ?? ''), '/');
+            return [
+                'uuid'          => $f->uuid,
+                'name'          => $f->original_name,
+                'original_name' => $f->original_name,
+                'path'          => $cleanPath,
+                'file_path'     => $cleanPath,
+                'url'           => ! empty($f->uuid) ? route('tenderDokumen.download', $f->uuid) : asset('storage/' . $cleanPath),
+                'size'          => $f->size,
+                'uploaded_by'   => $f->uploaded_by,
+            ];
+        })->values()->all();
+
         if (! is_array($accounts) || $accounts === []) {
             $accounts = [[
                 'dari_bulan' => $record->dari_bulan,
@@ -144,20 +158,21 @@ class PenyataBankPersistenceService
                 ])->values()->all(),
                 'jumlah_keseluruhan' => (float) $record->jumlah_keseluruhan,
                 'purata' => (float) $record->purata,
-                'files' => $record->files->map(function ($f) {
-                    $cleanPath = ltrim(str_replace('public/', '', $f->path ?? ''), '/');
-                    return [
-                        'uuid'          => $f->uuid,
-                        'name'          => $f->original_name,
-                        'original_name' => $f->original_name,
-                        'path'          => $cleanPath,
-                        'file_path'     => $cleanPath,
-                        'url'           => ! empty($f->uuid) ? route('tenderDokumen.download', $f->uuid) : asset('storage/' . $cleanPath),
-                        'size'          => $f->size,
-                        'uploaded_by'   => $f->uploaded_by,
-                    ];
-                })->values()->all(),
+                'files' => $dbFiles,
             ]];
+        } else {
+            if (! empty($dbFiles)) {
+                $hasFiles = false;
+                foreach ($accounts as $acc) {
+                    if (! empty($acc['files']) && is_array($acc['files'])) {
+                        $hasFiles = true;
+                        break;
+                    }
+                }
+                if (! $hasFiles && isset($accounts[0])) {
+                    $accounts[0]['files'] = $dbFiles;
+                }
+            }
         }
 
         $first = $accounts[0] ?? [];
