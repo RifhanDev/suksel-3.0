@@ -1,5 +1,6 @@
 <?php
 
+use App\Support\SchemaCompat;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -8,9 +9,15 @@ return new class extends Migration
 {
     public function up(): void
     {
+        SchemaCompat::dropIfIncomplete('tender_teknikal_laporans');
+
+        if (Schema::hasTable('tender_teknikal_laporans')) {
+            return;
+        }
+
         Schema::create('tender_teknikal_laporans', function (Blueprint $table) {
             $table->id();
-            $table->unsignedInteger('tender_id')->unique();
+            SchemaCompat::referenceColumn($table, 'tender_id', 'tenders');
             // Bila Langkah 1 (Pematuhan) / Langkah 2 (Spesifikasi) disahkan hantar — boleh
             // null walaupun semua pembekal lulus (eliminateTidakLayak() singkir kosong dalam
             // kes itu, jadi bilangan disingkir bukan penanda dipercayai; ini penanda eksplisit).
@@ -23,7 +30,7 @@ return new class extends Migration
             $table->text('pengesyoran_intro')->nullable();
             $table->json('pengesyoran_justifikasi')->nullable();
             // Pembekal disyorkan (kedudukan #1 dalam rumusan Spesifikasi, jika ada).
-            $table->unsignedBigInteger('winning_vendor_id')->nullable();
+            SchemaCompat::referenceColumn($table, 'winning_vendor_id', 'vendors', true);
             $table->string('status', 50)->default('draft');
             $table->timestamp('submitted_at')->nullable();
             $table->unsignedBigInteger('submitted_by')->nullable();
@@ -31,6 +38,7 @@ return new class extends Migration
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->timestamps();
 
+            $table->unique('tender_id');
             $table->foreign('tender_id', 'ttl_tender_fk')
                 ->references('id')->on('tenders')->cascadeOnDelete();
         });

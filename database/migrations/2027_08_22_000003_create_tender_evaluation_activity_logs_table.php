@@ -1,5 +1,6 @@
 <?php
 
+use App\Support\SchemaCompat;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -16,15 +17,17 @@ return new class extends Migration
 {
     public function up(): void
     {
+        SchemaCompat::dropIfIncomplete('tender_evaluation_activity_logs');
+
         if (Schema::hasTable('tender_evaluation_activity_logs')) {
             return;
         }
 
         Schema::create('tender_evaluation_activity_logs', function (Blueprint $table) {
             $table->id();
-            $table->unsignedInteger('tender_id');
+            SchemaCompat::referenceColumn($table, 'tender_id', 'tenders');
             $table->string('jenis_jawatankuasa', 10);
-            $table->unsignedInteger('user_id')->nullable();
+            SchemaCompat::referenceColumn($table, 'user_id', 'users', true);
             // Snapshot — committee membership can change after the fact.
             $table->string('peranan', 5)->nullable();
             $table->string('action', 50);
@@ -32,14 +35,13 @@ return new class extends Migration
             // if a vendor or user is renamed later.
             $table->string('description', 500)->nullable();
             $table->uuid('checklist_item_uuid')->nullable();
-            $table->unsignedInteger('vendor_id')->nullable();
+            SchemaCompat::referenceColumn($table, 'vendor_id', 'vendors', true);
             $table->json('metadata')->nullable();
             $table->string('ip_address', 45)->nullable();
             // Immutable: no updated_at.
             $table->timestamp('created_at')->nullable();
 
             $table->index(['tender_id', 'jenis_jawatankuasa'], 'teal_tender_jenis_index');
-            $table->index('user_id', 'teal_user_index');
             $table->index('action', 'teal_action_index');
             $table->index('created_at', 'teal_created_index');
 

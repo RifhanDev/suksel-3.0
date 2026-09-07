@@ -1,5 +1,6 @@
 <?php
 
+use App\Support\SchemaCompat;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -8,11 +9,17 @@ return new class extends Migration
 {
     public function up(): void
     {
+        SchemaCompat::dropIfIncomplete('tender_ssts');
+
+        if (Schema::hasTable('tender_ssts')) {
+            return;
+        }
+
         Schema::create('tender_ssts', function (Blueprint $table) {
             $table->id();
             $table->uuid('uuid')->unique();
-            $table->unsignedInteger('tender_id');
-            $table->unsignedInteger('vendor_id');
+            SchemaCompat::referenceColumn($table, 'tender_id', 'tenders');
+            SchemaCompat::referenceColumn($table, 'vendor_id', 'vendors');
 
             // System-generated running number, shown as No. Dokumen.
             $table->string('document_no', 60)->unique();
