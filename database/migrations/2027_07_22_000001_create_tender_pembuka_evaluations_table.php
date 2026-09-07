@@ -1,17 +1,32 @@
 <?php
 
+use App\Support\SchemaCompat;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
+/**
+ * Pembuka checklist evaluations per tender/vendor/item.
+ *
+ * Error 3780 happens when `tender_id` width does not match `tenders.id`
+ * (INT on restored 2.0 DBs, BIGINT on fresh migrates). Same for vendors.id.
+ */
 return new class extends Migration
 {
     public function up(): void
     {
+        // Only drops if table is empty AND has no foreign keys — leftover from a
+        // failed FK step after CREATE. Never drops tables that have data or FKs.
+        SchemaCompat::dropIfIncomplete('tender_pembuka_evaluations');
+
+        if (Schema::hasTable('tender_pembuka_evaluations')) {
+            return;
+        }
+
         Schema::create('tender_pembuka_evaluations', function (Blueprint $table) {
             $table->id();
-            $table->unsignedInteger('tender_id')->index();
-            $table->unsignedBigInteger('vendor_id')->index();
+            SchemaCompat::referenceColumn($table, 'tender_id', 'tenders');
+            SchemaCompat::referenceColumn($table, 'vendor_id', 'vendors');
             $table->uuid('checklist_item_uuid')->index();
             // 1 = Ada (Passed), 0 = Tiada (Failed)
             $table->tinyInteger('status_pematuhan')->default(1);

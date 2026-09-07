@@ -1,5 +1,6 @@
 <?php
 
+use App\Support\SchemaCompat;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -8,10 +9,16 @@ return new class extends Migration
 {
     public function up(): void
     {
+        SchemaCompat::dropIfIncomplete('tender_teknikal_pematuhan_evaluations');
+
+        if (Schema::hasTable('tender_teknikal_pematuhan_evaluations')) {
+            return;
+        }
+
         Schema::create('tender_teknikal_pematuhan_evaluations', function (Blueprint $table) {
             $table->id();
-            $table->unsignedInteger('tender_id')->index();
-            $table->unsignedBigInteger('vendor_id')->index();
+            SchemaCompat::referenceColumn($table, 'tender_id', 'tenders');
+            SchemaCompat::referenceColumn($table, 'vendor_id', 'vendors');
             $table->uuid('checklist_item_uuid')->index();
             // 1 = Mematuhi (Passed), 0 = Tidak Mematuhi (Failed)
             $table->tinyInteger('status_pematuhan')->default(1);

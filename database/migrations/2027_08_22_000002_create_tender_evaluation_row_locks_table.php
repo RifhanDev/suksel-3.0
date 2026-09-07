@@ -1,5 +1,6 @@
 <?php
 
+use App\Support\SchemaCompat;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -18,17 +19,19 @@ return new class extends Migration
 {
     public function up(): void
     {
+        SchemaCompat::dropIfIncomplete('tender_evaluation_row_locks');
+
         if (Schema::hasTable('tender_evaluation_row_locks')) {
             return;
         }
 
         Schema::create('tender_evaluation_row_locks', function (Blueprint $table) {
             $table->id();
-            $table->unsignedInteger('tender_id');
+            SchemaCompat::referenceColumn($table, 'tender_id', 'tenders');
             $table->string('jenis_jawatankuasa', 10)->index();
             $table->uuid('checklist_item_uuid');
-            $table->unsignedInteger('vendor_id');
-            $table->unsignedInteger('user_id');
+            SchemaCompat::referenceColumn($table, 'vendor_id', 'vendors');
+            SchemaCompat::referenceColumn($table, 'user_id', 'users');
             $table->timestamp('locked_at');
             $table->timestamps();
 

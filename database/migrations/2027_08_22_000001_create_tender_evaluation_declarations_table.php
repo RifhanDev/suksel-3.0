@@ -1,5 +1,6 @@
 <?php
 
+use App\Support\SchemaCompat;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -13,15 +14,17 @@ return new class extends Migration
 {
     public function up(): void
     {
+        SchemaCompat::dropIfIncomplete('tender_evaluation_declarations');
+
         if (Schema::hasTable('tender_evaluation_declarations')) {
             return;
         }
 
         Schema::create('tender_evaluation_declarations', function (Blueprint $table) {
             $table->id();
-            $table->unsignedInteger('tender_id');
+            SchemaCompat::referenceColumn($table, 'tender_id', 'tenders');
             $table->string('jenis_jawatankuasa', 10)->index();
-            $table->unsignedInteger('user_id');
+            SchemaCompat::referenceColumn($table, 'user_id', 'users');
             // Snapshot of the member's role at the time of agreement (1=Pengerusi, 2=Setiausaha, 3=Ahli).
             $table->string('peranan', 5)->nullable();
             $table->timestamp('agreed_at');

@@ -1,5 +1,6 @@
 <?php
 
+use App\Support\SchemaCompat;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -8,10 +9,16 @@ return new class extends Migration
 {
     public function up(): void
     {
+        SchemaCompat::dropIfIncomplete('tender_teknikal_kerja_lampirans');
+
+        if (Schema::hasTable('tender_teknikal_kerja_lampirans')) {
+            return;
+        }
+
         Schema::create('tender_teknikal_kerja_lampirans', function (Blueprint $table) {
             $table->id();
             $table->uuid('uuid')->unique();
-            $table->unsignedInteger('tender_id')->index('ttkl_tender_idx');
+            SchemaCompat::referenceColumn($table, 'tender_id', 'tenders');
             // Nama paparan — boleh ditukar selepas muat naik (berasingan daripada nama fail asal).
             $table->string('display_name');
             $table->string('original_name');
