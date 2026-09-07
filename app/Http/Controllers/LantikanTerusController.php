@@ -326,7 +326,20 @@ class LantikanTerusController extends Controller
                     ? 'Projek berjaya diterbitkan.'
                     : 'Projek berjaya disimpan sebagai draf.';
 
-                return redirect()->route('lantikan.index')->with('success', $message);
+                // Terbitkan → senarai. Simpan → kekal di halaman kemaskini (atau cipta selepas id baharu).
+                if ($action === 'publish') {
+                    return redirect()->route('lantikan.index')->with('success', $message);
+                }
+
+                $savedId = $id
+                    ?: (int) ($response->json('tender_id') ?? $response->json('data.id') ?? 0);
+
+                if ($savedId > 0) {
+                    return redirect()->route('lantikan.edit', $savedId)
+                        ->with('success', $message);
+                }
+
+                return redirect()->route('lantikan.create')->with('success', $message);
             }
 
             Log::error('Lantikan Terus persist API error', [

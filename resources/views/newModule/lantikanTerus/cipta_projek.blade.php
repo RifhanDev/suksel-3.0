@@ -844,6 +844,7 @@
 @endsection
 
 @section('scripts')
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         // --- DROPDOWN OPTIONS FOR DYNAMIC ROWS (Kod Bidang) ---
         var mofOptions =
@@ -852,6 +853,23 @@
             `@foreach (App\Code::where('type', 'cidb-c')->orderBy('code')->get() as $code)<option value="{{ $code->id }}">{{ $code->label }}</option>@endforeach`;
 
         $(document).ready(function() {
+            @if (session('success'))
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Berjaya',
+                    text: @json(session('success')),
+                    confirmButtonColor: '#c41e3a'
+                });
+            @endif
+
+            @if (session('error'))
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Gagal',
+                    text: @json(session('error')),
+                    confirmButtonColor: '#c41e3a'
+                });
+            @endif
 
             // --- DOKUMEN BQ: single-file upload with editable name ---
             (function() {
