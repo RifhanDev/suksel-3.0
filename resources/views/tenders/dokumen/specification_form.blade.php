@@ -133,6 +133,9 @@
         );
         $isKerjaSpec = ($section === 'spesifikasi_kerja')
             || collect($rows)->contains(fn ($row) => ($row['kind'] ?? '') === 'spec');
+        $isKerjaCategory = (int) ($tender->kategori_perolehan_id ?? 0) === 3
+            || strtolower($tender->kategori_perolehan_name ?? '') === 'kerja';
+        $isKerja = $isKerjaSpec || $isKerjaCategory;
     @endphp
 
     @unless ($modalEmbed ?? false)
@@ -178,7 +181,8 @@
         $tenderTempohDisplay = ($tenderTempohVal !== null && $tenderTempohVal !== '') ? ($tenderTempohVal . ' ' . $tenderTempohUnit) : 'Tiada Maklumat';
     @endphp
 
-    {{-- Tempoh Siap Section (UI Only) --}}
+    @if ($isKerja)
+    {{-- Tempoh Siap Section (UI Only - Kerja Category) --}}
     <div class="content-card mb-4 p-0">
         <div class="content-card-header p-4 pb-3 border-bottom">
             <div class="d-flex align-items-center gap-3">
@@ -267,6 +271,7 @@
             </div>
         </div>
     </div>
+    @endif
 
     <div class="content-card mb-4 p-0">
         @if ($isKerjaSpec)
@@ -362,7 +367,7 @@ $(document).ready(function () {
     var SECTION = @json($section);
     var VIEW_ONLY = @json($viewOnly ?? false);
     var IS_ADMIN_MODE = @json($viewOnly ?? false);
-    var IS_KERJA = @json($isKerjaSpec);
+    var IS_KERJA = @json($isKerja);
 
     function parseMoney(value) {
         return parseFloat(String(value || '').replace(/,/g, '')) || 0;
@@ -444,6 +449,15 @@ $(document).ready(function () {
 
     $('#btn-simpan-spec').on('click', function () {
         if (VIEW_ONLY) return;
+
+        if (IS_KERJA && !IS_ADMIN_MODE) {
+            var tempohVal = $('#vendor_tempoh_siap_val').val();
+            if (!tempohVal || parseInt(tempohVal, 10) < 1) {
+                alert('Sila isi Tempoh Siap Yang Ditawarkan.');
+                $('#vendor_tempoh_siap_val').focus();
+                return;
+            }
+        }
 
         $('#loading-text').text('Menyimpan...');
         $('#loading-overlay').removeClass('success').addClass('active');
