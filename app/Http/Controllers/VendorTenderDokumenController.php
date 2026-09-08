@@ -381,6 +381,12 @@ class VendorTenderDokumenController extends Controller
             ]);
         }
 
+        $isKerjaCategory = ((int) ($tender->kategori_perolehan_id ?? 0) === 3)
+            || (strtolower($tender->kategori_perolehan_name ?? '') === 'kerja')
+            || ($request->input('section') === 'spesifikasi_kerja');
+
+        $tempohValRule = ($isKerjaCategory && ! $isAdmin) ? 'required|integer|min:1' : 'nullable|integer|min:1';
+
         $data = $request->validate([
             'section' => 'required|string|in:technical,financial,kewangan_kerja,spesifikasi_kerja',
             'vendor_id' => 'nullable|integer|min:1',
@@ -390,7 +396,7 @@ class VendorTenderDokumenController extends Controller
             'details.*' => 'nullable|array',
             'details.*.pematuhan' => 'nullable|string|max:10',
             'details.*.cadangan' => 'nullable|string|max:5000',
-            'vendor_tempoh_siap_val' => 'nullable|integer|min:1',
+            'vendor_tempoh_siap_val' => $tempohValRule,
             'vendor_tempoh_siap_unit' => 'nullable|string|max:50',
         ]);
 
