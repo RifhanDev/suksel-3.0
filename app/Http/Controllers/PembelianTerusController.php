@@ -356,22 +356,16 @@ class PembelianTerusController extends Controller
         $json = $response->json();
         $project = $this->mapProject($json['data'] ?? [], $json['items'] ?? []);
         $p = $project;
-        $documents = collect($json['documents'] ?? []);
+
+        $docs = collect($json['documents'] ?? []);
+        $documents = (object) [
+            'jpict' => optional($docs->firstWhere('doc_type', 'jpict'))['original_name'] ?? '-',
+            'minit_bebas' => optional($docs->firstWhere('doc_type', 'minit_bebas'))['original_name'] ?? '-',
+        ];
 
         $offersResponse = $this->stos->getPembelianTerusOffers((int) $id);
-        $suppliers = collect($offersResponse->json('data') ?? [])
-            ->where('shortlisted', true)
-            ->values()
-            ->map(function ($offer) {
-                $offer = (array) $offer;
-
-                return (object) [
-                    'id' => $offer['id'] ?? null,
-                    'name' => 'Vendor #' . ($offer['vendor_id'] ?? '-'),
-                    'harga_tawaran' => $offer['total_harga_sst'] ?? 0,
-                    'harga_sst' => $offer['total_harga_sst'] ?? 0,
-                ];
-            });
+        $offers = collect($offersResponse->json('data') ?? [])->where('shortlisted', true)->values();
+        $suppliers = $this->mapOfferSuppliers($offers);
 
         return view('newModule.pembelian_terus.pemilihan_syarikat_form', compact('project', 'suppliers', 'documents', 'p'));
     }
