@@ -473,6 +473,8 @@ $(document).ready(function () {
                     statusKey:             item.status || 'draft',
                     form_updated:          item.form_updated ?? true,
                 });
+            } else if (item.source_type === 'borang_atas_talian' && (item.mechanism === 'ptj_muat_naik' || item.vendor_action === 'muat_turun_naik' || !item.action_url)) {
+                $tr = buildInitialPtjRow(item);
             } else {
                 $tr = buildEditableRow(item);
             }
@@ -510,6 +512,38 @@ $(document).ready(function () {
             '<td class="text-center">' + kemaskiniButton + '</td>' +
             '</tr>'
         );
+    }
+
+    function buildInitialPtjRow(item) {
+        item = item || {};
+        var uuid        = item.uuid || '';
+        var score       = item.score || 0;
+        var statusVal   = item.status || 'draft';
+        var statusLabel = statusVal === 'submitted' ? 'Selesai' : 'Draf';
+        var statusClass = statusVal === 'submitted' ? 'badge-status-success' : 'badge-status-warning';
+        var standardItemUuid  = item.standard_item_uuid || '';
+        var spesifikasiItemUuid = item.spesifikasi_item_uuid || '';
+
+        var $tr = $(
+            '<tr class="initial-row row-kewangan-tambah" data-uuid="' + uuid + '" data-source="borang_atas_talian" data-standard-item-uuid="' + standardItemUuid + '" data-spesifikasi-item-uuid="' + spesifikasiItemUuid + '" data-status="' + statusVal + '" data-mechanism="ptj_muat_naik" data-vendor-action="muat_turun_naik">' +
+            '<td class="text-center"><span class="text-muted" style="font-size:0.75rem;" title="Item sistem">—</span></td>' +
+            '<td><span class="small fw-semibold">' + htmlEscape(item.title || '') + '</span></td>' +
+            '<td class="text-center"><span class="small fw-semibold text-muted">PTJ Muat Naik</span><input type="hidden" name="mekanisma[]" value="ptj_muat_naik"></td>' +
+            '<td class="text-center small">Muat Turun &amp; Muat Naik<input type="hidden" name="tindakan_pembekal[]" value="muat_turun_naik"></td>' +
+            '<td class="text-center"><input type="number" name="skema[]" class="form-control form-control-sm text-center skema-input fw-semibold" value="' + score + '" min="0" style="max-width:90px;margin:0 auto;"></td>' +
+            '<td class="text-center"><span class="badge-status ' + statusClass + '">' + statusLabel + '</span></td>' +
+            '<td class="text-center rujukan-cell">' + buildDokumenCell('ptj_muat_naik') + '</td>' +
+            '<td class="text-center tindakan-cell">' + buildTindakanCell('ptj_muat_naik') + '</td>' +
+            '</tr>'
+        );
+
+        if (item.files && item.files.length > 0) {
+            item.files.forEach(function (f) {
+                appendFileToDokumenCell($tr.find('.rujukan-cell'), f, uuid);
+            });
+        }
+
+        return $tr;
     }
 
     function buildEditableRow(item) {
@@ -612,7 +646,8 @@ $(document).ready(function () {
             var uuid   = $tr.data('uuid') || null;
             var source = $tr.data('source') || 'manual';
             var title  = $tr.find('[name="tajuk_dokumen[]"]').val() || $tr.find('td:eq(1) span').text().trim();
-            var mech   = $tr.find('[name="mekanisma[]"]').val() || (source === 'borang_atas_talian' ? 'borang_atas_talian' : null);
+            var mech   = $tr.find('[name="mekanisma[]"]').val() || $tr.data('mechanism') || (source === 'borang_atas_talian' ? 'borang_atas_talian' : null);
+            var vendorAct = $tr.find('[name="tindakan_pembekal[]"]').val() || $tr.data('vendor-action') || null;
             var score  = parseFloat($tr.find('.skema-input').val()) || 0;
             var standardItemUuid = $tr.data('standard-item-uuid') || null;
             var spesifikasiItemUuid = $tr.data('spesifikasi-item-uuid') || null;
@@ -625,6 +660,7 @@ $(document).ready(function () {
                 source_type:           source,
                 title:                 title,
                 mechanism:             mech,
+                vendor_action:         vendorAct,
                 score:                 score,
                 sort_order:            idx,
                 standard_item_uuid:    standardItemUuid,

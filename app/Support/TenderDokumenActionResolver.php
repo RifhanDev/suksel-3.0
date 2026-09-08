@@ -14,12 +14,12 @@ class TenderDokumenActionResolver
             return 'view_specification';
         }
 
-        if ($sourceType === 'borang_atas_talian' || $mechanism === 'borang_atas_talian') {
-            return 'online_form';
-        }
-
         if ($mechanism === 'ptj_muat_naik') {
             return $vendorAction === 'muat_turun' ? 'download_only' : 'download_upload';
+        }
+
+        if ($sourceType === 'borang_atas_talian' || $mechanism === 'borang_atas_talian') {
+            return 'online_form';
         }
 
         if ($vendorAction === 'kunci_masuk') {
