@@ -119,6 +119,16 @@
 			@endif
 
 			@if ($tender->hasRequiredSiteVisits() && !$tender->attendVisits(Auth::user()->vendor_id))
+				@php
+					$lawatanVendorId = (int) Auth::user()->vendor_id;
+					$requiredVisits = $tender->siteVisits->filter(fn ($visit) => (bool) $visit->required);
+					$hasWakilRegistered = $requiredVisits->isNotEmpty() && $requiredVisits->every(function ($visit) use ($lawatanVendorId) {
+						return \App\Models\TenderVisitRepresentative::query()
+							->where('visit_id', $visit->id)
+							->where('vendor_id', $lawatanVendorId)
+							->exists();
+					});
+				@endphp
 				<div class="alert alert-danger"><svg xmlns="http://www.w3.org/2000/svg" class="me-1" width="18"
 						height="18" viewBox="0 0 24 24">
 						<g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
@@ -126,8 +136,9 @@
 							<path d="M11 12h1v4h1" />
 						</g>
 					</svg>
-					@if ($tender->hasParticipate(Auth::user()->vendor_id))
-						Kehadiran lawatan tapak wajib belum disahkan urus setia.
+					@if ($tender->hasParticipate(Auth::user()->vendor_id) || $hasWakilRegistered)
+						Wakil syarikat telah didaftarkan. Kehadiran lawatan tapak wajib belum disahkan urus setia
+						sebelum anda boleh membeli dokumen tender / sebut harga ini.
 					@else
 						Sila daftar wakil syarikat di tab <strong>Lawatan Tapak</strong> (sebelum tarikh lawatan).
 						Kehadiran akan disahkan urus setia sebelum anda boleh membeli dokumen tender / sebut harga ini.
