@@ -264,6 +264,7 @@ class StosRolePermissionSeeder extends Seeder
         ];
 
         $ketuaJabatan = [
+            'Tender:list',
             'DirectPurchase:list',
             'DirectPurchase:select',
             'DirectAppointment:list',

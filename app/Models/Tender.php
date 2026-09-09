@@ -239,6 +239,7 @@ class Tender extends Model
 		'Agency Urusetia',
 		'Agency Jawatankuasa',
 		'Agency Lembaga Perolehan',
+		'Agency Ketua Jabatan',
 	];
 
 	/**
@@ -322,7 +323,7 @@ class Tender extends Model
 
 			if ($user->hasRole('Admin')) {
 				return true;
-			} elseif ($user->ability(['Agency Admin', 'Agency User'], []) && $this->organization_unit_id == $user->organization_unit_id) {
+			} elseif ($user->ability(['Agency Admin', 'Agency User', 'Agency Ketua Jabatan'], []) && $this->organization_unit_id == $user->organization_unit_id) {
 				return true;
 			} elseif ($user->hasRole('Vendor') && $this->hasParticipate($vendor_id)) {
 				return true;
