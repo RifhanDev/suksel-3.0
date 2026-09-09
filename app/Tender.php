@@ -282,6 +282,7 @@ class Tender extends Model
 		'Agency Urusetia',
 		'Agency Jawatankuasa',
 		'Agency Lembaga Perolehan',
+		'Agency Ketua Jabatan',
 	];
 
 	/**

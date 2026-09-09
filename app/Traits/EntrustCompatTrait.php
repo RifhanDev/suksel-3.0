@@ -146,6 +146,7 @@ trait EntrustCompatTrait
 
         if ($this->hasRole('Agency Ketua Jabatan')) {
             return in_array($permission, [
+                'Tender:list',
                 'DirectPurchase:list',
                 'DirectPurchase:select',
                 'DirectAppointment:list',
