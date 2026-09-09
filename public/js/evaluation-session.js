@@ -273,6 +273,10 @@ window.EvaluationSession = (function () {
      * options: { title, html, icon: 'warning'|'info'|'danger'|'success', confirmText, cancelText, showCancel }
      */
     function confirmDialog(options) {
+        if (typeof window.showConfirmModal === 'function') {
+            return window.showConfirmModal(options);
+        }
+
         const opts = Object.assign({
             title: 'Sahkan',
             html: '',

@@ -322,22 +322,6 @@
 
 			</div>
 
-			<!-- ===================== SUCCESS POPUP ====================== -->
-			<div id="successPopup" class="modal fade" tabindex="-1">
-				<div class="modal-dialog modal-dialog-centered">
-					<div class="modal-content text-center p-4">
-						<div class="mb-3">
-							<svg width="60" height="60" viewBox="0 0 24 24" fill="none">
-								<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" fill="#E6F7F3" />
-								<path d="M10 14.2l-2.2-2.2-1.4 1.4L10 17 18 9l-1.4-1.4z" fill="#19c1a7" />
-							</svg>
-						</div>
-						<h6 class="fw-bold mb-3">Maklumat telah berjaya disimpan</h6>
-						<button type="button" class="btn btn-primary px-4" data-bs-dismiss="modal">Tutup</button>
-					</div>
-				</div>
-			</div>
-
 		</div>
 	</div>
 
@@ -604,7 +588,11 @@
 				processData: false,
 				contentType: false,
 				success: function() {
-					successModal.show();
+					if (typeof showBerjayaModal === 'function') {
+						showBerjayaModal();
+					} else if (successModal) {
+						successModal.show();
+					}
 				},
 				error: function(xhr) {
 					const message = (xhr && xhr.responseJSON && xhr.responseJSON.message) ?
@@ -659,15 +647,12 @@
 		// SAVE POPUP
 		document.addEventListener('DOMContentLoaded', function() {
 
-			const successModal = new bootstrap.Modal(
-				document.getElementById('successPopup')
-			);
 			seedCommitteeRows();
 
 			// SIMPAN
 			document.querySelectorAll('.btn-simpan').forEach(btn => {
 				btn.addEventListener('click', function() {
-					saveAllDrafts(this, successModal);
+					saveAllDrafts(this, null);
 				});
 			});
 

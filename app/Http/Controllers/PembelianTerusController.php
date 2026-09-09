@@ -508,6 +508,20 @@ class PembelianTerusController extends Controller
             return $this->_access_denied();
         }
 
+        $request->validate([
+            'name' => 'required|string|max:500',
+            'ref_number' => 'required|string|max:255',
+            'ptj_id' => 'required',
+            'harga_indikatif' => 'required',
+            'sumber_peruntukan' => 'required|string',
+            'terbuka_kepada' => 'required|string',
+        ], [
+            'name.required' => 'Tajuk Perolehan wajib diisi.',
+            'ref_number.required' => 'No. Rujukan Fail wajib diisi.',
+            'ptj_id.required' => 'PTJ wajib dipilih.',
+            'harga_indikatif.required' => 'Harga Indikatif Jabatan wajib diisi.',
+        ]);
+
         $payload = $this->buildPayload($request);
         $action = $request->input('action', 'draft');
         $payload['action'] = $action;
@@ -547,7 +561,13 @@ class PembelianTerusController extends Controller
                 'body' => $response->body(),
             ]);
 
-            return redirect()->back()->withInput()->with('error', $response->json('message') ?? 'Gagal menyimpan projek');
+            $apiError = $response->json('error');
+            $message = $response->json('message') ?? 'Gagal menyimpan projek';
+            if (is_string($apiError) && $apiError !== '' && str_contains($apiError, "Column 'name' cannot be null")) {
+                $message = 'Tajuk Perolehan wajib diisi sebelum menyimpan projek.';
+            }
+
+            return redirect()->back()->withInput()->with('error', $message);
         } catch (\Throwable $e) {
             Log::error('Pembelian Terus persist failed', ['error' => $e->getMessage()]);
 

@@ -634,7 +634,7 @@
         'committeeLabel' => 'Jawatankuasa Penilaian Teknikal',
         'tenderNo' => $tender->no_tender ?: ($tender->ref_number ?: '-'),
     ])
-    @include('components.confirm-dialog-modal')
+    {{-- confirm-dialog-modal is included globally from layouts.v3.master --}}
 
     {{-- Confirms before submitting Pematuhan Dokumentasi — eliminates failing vendors, irreversible. --}}
     <div class="modal fade" id="modalKonfirmasiHantarPematuhan" tabindex="-1" aria-labelledby="modalKonfirmasiHantarPematuhanLabel" aria-hidden="true">

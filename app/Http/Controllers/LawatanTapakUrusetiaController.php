@@ -119,13 +119,25 @@ class LawatanTapakUrusetiaController extends Controller
     {
         $tender = $this->findTenderForUrusetia($tenderId);
 
+        $rowsInput = $request->input('rows', []);
+        if (is_array($rowsInput)) {
+            foreach ($rowsInput as $i => $row) {
+                if (!is_array($row) || !array_key_exists('ic_no', $row)) {
+                    continue;
+                }
+                $digits = preg_replace('/\D+/', '', (string) $row['ic_no']);
+                $rowsInput[$i]['ic_no'] = $digits === '' ? null : substr($digits, 0, 12);
+            }
+            $request->merge(['rows' => $rowsInput]);
+        }
+
         $data = $request->validate([
             'rows' => 'array',
             'rows.*.visit_id' => 'required|integer',
             'rows.*.vendor_id' => 'nullable|integer',
             'rows.*.vendor_registration' => 'nullable|string|max:64',
             'rows.*.rep_id' => 'nullable|integer',
-            'rows.*.ic_no' => 'nullable|string|max:32',
+            'rows.*.ic_no' => 'nullable|digits:12',
             'rows.*.name' => 'nullable|string|max:255',
             'rows.*.attended' => 'nullable|boolean',
         ]);

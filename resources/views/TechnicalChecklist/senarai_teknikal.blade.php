@@ -388,23 +388,6 @@
 @endsection
 
 @push('modals')
-    <!-- ===================== MODAL: SUCCESS ===================== -->
-    <div class="modal fade" id="successModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content text-center p-4">
-                <div class="mb-3">
-                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none">
-                        <circle cx="12" cy="12" r="10" fill="#E6F7F3" />
-                        <path d="M10 14.2L7.8 12l-1.4 1.4L10 17l8-8-1.4-1.4L10 14.2z" fill="#19c1a7" />
-                    </svg>
-                </div>
-                <h5 class="fw-bold mb-2" id="success-modal-title">Berjaya</h5>
-                <p class="text-muted mb-4" id="success-modal-message">Maklumat telah berjaya disimpan.</p>
-                <button type="button" class="btn-form btn-form-primary mx-auto" id="success-modal-close" data-bs-dismiss="modal">Tutup</button>
-            </div>
-        </div>
-    </div>
-
     <!-- ===================== MODAL: SENARAI SEMAK STANDARD ===================== -->
     <div class="modal fade" id="senaraiSemakStandard" tabindex="-1" aria-labelledby="senaraiSemakStandardLabel"
         aria-hidden="true">
@@ -1498,8 +1481,6 @@
 
             var $overlay     = $('#page-loading-overlay');
             var $overlayText = $('#overlay-label-text');
-            var successModal = new bootstrap.Modal(document.getElementById('successModal'));
-            var redirectAfterModal = false;
 
             function showOverlay(label) {
                 $overlayText.text(label || 'Menyimpan...');
@@ -1511,25 +1492,23 @@
             }
 
             function showSuccessModal(title, message, redirectOnClose) {
-                redirectAfterModal = !!redirectOnClose;
-                $('#success-modal-title').text(title);
-                $('#success-modal-message').text(message);
                 hideOverlay();
-                successModal.show();
-            }
-
-            $('#successModal').on('hidden.bs.modal', function() {
-                if (redirectAfterModal) {
-                    redirectAfterModal = false;
-                    showOverlay('Mengalih hala...');
-                    window.location.href = PENGURUSAN_URL;
+                if (typeof showBerjayaModal === 'function') {
+                    showBerjayaModal({
+                        title: title || 'Berjaya',
+                        message: message || 'Maklumat telah berjaya disimpan.',
+                        onClose: redirectOnClose ? function () {
+                            showOverlay('Mengalih hala...');
+                            window.location.href = PENGURUSAN_URL;
+                        } : null
+                    });
                 }
-            });
+            }
 
             $('.btn-simpan').on('click', function() {
                 showOverlay('Menyimpan...');
                 doSave(function() {
-                    showSuccessModal('Berjaya Disimpan', 'Maklumat telah berjaya disimpan sebagai draf.');
+                    showSuccessModal('Berjaya', 'Maklumat telah berjaya disimpan sebagai draf.');
                 }, function() {
                     hideOverlay();
                     alert('Ralat semasa menyimpan. Sila cuba lagi.');
@@ -1554,7 +1533,7 @@
                         contentType: 'application/json',
                         data: JSON.stringify({ passing_score: penilaian }),
                         success: function() {
-                            showSuccessModal('Berjaya Dihantar', 'Senarai teknikal telah berjaya dihantar dan dilengkapkan.', true);
+                            showSuccessModal('Berjaya', 'Senarai teknikal telah berjaya dihantar dan dilengkapkan.', true);
                         },
                         error: function(xhr) {
                             hideOverlay();

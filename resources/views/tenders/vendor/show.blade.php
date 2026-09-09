@@ -1391,7 +1391,7 @@
 
 				function emptyRow() {
 					return '<tr class="wakil-row">' +
-						'<td><input type="text" class="form-control form-control-sm rep-ic" maxlength="32" placeholder="No. IC"></td>' +
+						'<td><input type="text" class="form-control form-control-sm rep-ic js-ic-input" data-ic-input maxlength="12" inputmode="numeric" title="Masukkan 12 digit No. IC (sempang akan dibuang automatik)" placeholder="No. IC"></td>' +
 						'<td><input type="text" class="form-control form-control-sm rep-name" maxlength="255" placeholder="Nama"></td>' +
 						'<td class="text-center"><button type="button" class="btn btn-sm btn-link text-danger p-0 btn-remove-rep" title="Buang">&times;</button></td>' +
 						'</tr>';
@@ -1403,6 +1403,9 @@
 					if (!reps || !reps.length) {
 						$tbody.append(emptyRow());
 						$tbody.append(emptyRow());
+						if (typeof window.bindIcInputs === 'function') {
+							window.bindIcInputs($tbody[0]);
+						}
 						return;
 					}
 					reps.forEach(function(rep) {
@@ -1413,6 +1416,9 @@
 					});
 					if (reps.length < 2) {
 						$tbody.append(emptyRow());
+					}
+					if (typeof window.bindIcInputs === 'function') {
+						window.bindIcInputs($tbody[0]);
 					}
 				}
 
@@ -1430,6 +1436,9 @@
 
 				$('#wakilLawatanAddRow').on('click', function() {
 					$('#wakilLawatanRows').append(emptyRow());
+					if (typeof window.bindIcInputs === 'function') {
+						window.bindIcInputs(document.getElementById('wakilLawatanRows'));
+					}
 				});
 
 				$(document).on('click', '.btn-remove-rep', function() {
@@ -1443,7 +1452,9 @@
 
 					var reps = [];
 					$('#wakilLawatanRows .wakil-row').each(function() {
-						var ic = $(this).find('.rep-ic').val().trim();
+						var ic = (typeof window.normalizeIcNumber === 'function')
+							? window.normalizeIcNumber($(this).find('.rep-ic').val())
+							: $(this).find('.rep-ic').val().replace(/\D+/g, '').slice(0, 12);
 						var name = $(this).find('.rep-name').val().trim();
 						if (ic || name) {
 							reps.push({

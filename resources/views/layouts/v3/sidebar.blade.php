@@ -454,7 +454,12 @@
 
 				@endif
 
-				@if ($user->canAccessMenu('DirectAppointment:list'))
+				@php
+					$canLtList = $user->canAccessMenu('DirectAppointment:list');
+					$canLtSelect = $user->canAccessMenu('DirectAppointment:select');
+					$showLantikanTerus = $canLtList || $canLtSelect;
+				@endphp
+				@if ($showLantikanTerus)
 				<!-- Menu: Lantikan Terus -->
 				@php
 					$isLantikanTerusMenuActive =
@@ -484,6 +489,7 @@
 							@php
 								$isLantikanCiptaProjekActive = request()->routeIs('lantikan.index') || request()->routeIs('lantikan.create') || request()->routeIs('lantikan.edit');
 							@endphp
+							@if ($canLtList)
 							<li>
 								<a class="submenu-item d-flex justify-content-between align-items-center"
 									data-bs-toggle="collapse" href="#menuLantikanCiptaProjek" role="button"
@@ -531,6 +537,8 @@
 									</span>
 								</a>
 							</li>
+							@endif
+							@if ($canLtSelect)
 							<li>
 								<a
 									class="submenu-item {{ request()->routeIs('pemilihanTerus.index') || request()->routeIs('pemilihanTerus.show') ? 'active' : '' }}"
@@ -542,6 +550,8 @@
 										Syarikat</span>
 								</a>
 							</li>
+							@endif
+							@if ($canLtList)
 							<li>
 								<a
 									class="submenu-item {{ request()->routeIs('keputusanTerus.index') || request()->routeIs('keputusanTerus.show') ? 'active' : '' }}"
@@ -553,6 +563,7 @@
 										Syarikat</span>
 								</a>
 							</li>
+							@endif
 						</ul>
 					</div>
 				</li>

@@ -115,6 +115,9 @@ trait EntrustCompatTrait
      * Menu visibility for STOS 3.0 RBAC.
      * Grants the permission, and also preserves current access for Agency Admin,
      * Admin UPEN, and Admin PWN (Excel columns were empty for those roles).
+     *
+     * Pemilihan Syarikat (DirectPurchase:select / DirectAppointment:select) is
+     * restricted to explicit permission holders only (Admin + Ketua Jabatan).
      */
     public function canAccessMenu(string $permission): bool
     {
@@ -126,10 +129,28 @@ trait EntrustCompatTrait
             return false;
         }
 
+        // Do not grant pemilihan via the Agency Admin / UPEN / PWN blanket.
+        $pemilihanOnly = [
+            'DirectPurchase:select',
+            'DirectAppointment:select',
+        ];
+        if (in_array($permission, $pemilihanOnly, true)) {
+            return false;
+        }
+
         foreach (['Agency Admin', 'Admin UPEN', 'Admin PWN'] as $role) {
             if ($this->hasRole($role)) {
                 return true;
             }
+        }
+
+        if ($this->hasRole('Ketua Jabatan')) {
+            return in_array($permission, [
+                'DirectPurchase:list',
+                'DirectPurchase:select',
+                'DirectAppointment:list',
+                'DirectAppointment:select',
+            ], true);
         }
 
         return false;

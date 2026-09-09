@@ -157,43 +157,9 @@
 
 </div>
 
-{{-- =========================
-    MODAL: SIMPAN SUCCESS
-========================== --}}
-<div class="modal fade" id="successModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" style="max-width:480px;">
-        <div class="modal-content" style="border-radius:10px; padding:20px; text-align:center;">
-            
-            <svg width="48" height="48" viewBox="0 0 64 64" fill="none"
-                 xmlns="http://www.w3.org/2000/svg" style="margin-bottom:12px;">
-                <path d="M16 42 L34 28 L30 50 Z" stroke="#19c1a7" stroke-width="3" fill="none"/>
-                <path d="M38 16 C44 20, 48 24, 52 30" stroke="#19c1a7" stroke-width="3" fill="none"/>
-                <path d="M40 40 L52 46" stroke="#19c1a7" stroke-width="3"/>
-                <path d="M22 18 L18 12" stroke="#19c1a7" stroke-width="3"/>
-            </svg>
-
-            <div class="fw-bold mb-3" style="font-size:15px;">
-                Maklumat telah berjaya disimpan
-            </div>
-
-            <button type="button"
-                    class="btn"
-                    style="background:#3f5496;color:#fff;font-weight:700;"
-                    data-bs-dismiss="modal">
-                Tutup
-            </button>
-        </div>
-    </div>
-</div>
-
 <script>
     function showSuccessModal(){
-        // OPTIONAL: do validation here before showing modal
-
-        const modal = new bootstrap.Modal(
-            document.getElementById('successModal')
-        );
-        modal.show();
+        if (typeof showBerjayaModal === 'function') { showBerjayaModal(); }
     }
 </script>
 

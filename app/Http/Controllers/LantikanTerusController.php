@@ -14,8 +14,16 @@ class LantikanTerusController extends Controller
     {
         // Keep staff menus gated; vendor sebut-harga view/submit must stay open
         // so Syarikat can use the Lantikan Terus BQ UI.
+        // Pemilihan Syarikat is Admin + Ketua Jabatan only (DirectAppointment:select).
         $this->menuMiddleware('DirectAppointment:list', [
-            'except' => ['sebutHargaShow', 'submitOffer', 'sebutHargaIndex'],
+            'except' => [
+                'sebutHargaShow',
+                'submitOffer',
+                'sebutHargaIndex',
+                'pemilihanIndex',
+                'pemilihanShow',
+                'storePemilihan',
+            ],
         ]);
     }
 
@@ -181,6 +189,10 @@ class LantikanTerusController extends Controller
 
     public function pemilihanIndex()
     {
+        if ($denied = $this->denyUnlessMenu('DirectAppointment:select')) {
+            return $denied;
+        }
+
         $projects = $this->fetchProjects(['status_process_id' => 31]);
 
         return view('newModule.lantikanTerus.pemilihan_syarikat_list', compact('projects'));
@@ -188,6 +200,10 @@ class LantikanTerusController extends Controller
 
     public function pemilihanShow($id)
     {
+        if ($denied = $this->denyUnlessMenu('DirectAppointment:select')) {
+            return $denied;
+        }
+
         $response = $this->stos->getLantikanTerus((int) $id);
         abort_unless($response->successful(), 404);
 
@@ -221,6 +237,10 @@ class LantikanTerusController extends Controller
 
     public function storePemilihan(Request $request, $id)
     {
+        if ($denied = $this->denyUnlessMenu('DirectAppointment:select')) {
+            return $denied;
+        }
+
         try {
             $response = $this->stos->selectLantikanTerusWinner((int) $id, [
                 'offer_id' => $request->input('offer_id'),
@@ -310,6 +330,20 @@ class LantikanTerusController extends Controller
             return $this->_access_denied();
         }
 
+        $request->validate([
+            'name' => 'required|string|max:500',
+            'ref_number' => 'required|string|max:255',
+            'ptj_id' => 'required',
+            'harga_indikatif' => 'required',
+            'sumber_peruntukan' => 'required|string',
+            'terbuka_kepada' => 'required|string',
+        ], [
+            'name.required' => 'Tajuk Perolehan wajib diisi.',
+            'ref_number.required' => 'No. Rujukan Fail wajib diisi.',
+            'ptj_id.required' => 'PTJ wajib dipilih.',
+            'harga_indikatif.required' => 'Harga Indikatif Jabatan wajib diisi.',
+        ]);
+
         $payload = $this->buildPayload($request);
         $action = $request->input('action', 'draft');
         $payload['action'] = $action;
@@ -353,7 +387,13 @@ class LantikanTerusController extends Controller
                 'body' => $response->body(),
             ]);
 
-            return redirect()->back()->withInput()->with('error', $response->json('message') ?? 'Gagal menyimpan projek');
+            $apiError = $response->json('error');
+            $message = $response->json('message') ?? 'Gagal menyimpan projek';
+            if (is_string($apiError) && $apiError !== '' && str_contains($apiError, "Column 'name' cannot be null")) {
+                $message = 'Tajuk Perolehan wajib diisi sebelum menyimpan projek.';
+            }
+
+            return redirect()->back()->withInput()->with('error', $message);
         } catch (\Throwable $e) {
             Log::error('Lantikan Terus persist failed', ['error' => $e->getMessage()]);
 

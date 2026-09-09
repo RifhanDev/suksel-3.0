@@ -120,7 +120,9 @@
 					</td>
 					<td>
 						<div class="col-lg-12 col-sm-12">
-							<input class="form-control" type="text" id="ic" name="ic" value="{{ $refund->ic }}" required>
+							<input class="form-control" type="text" id="ic" name="ic" value="{{ $refund->ic }}" required
+								data-ic-input maxlength="12" inputmode="numeric"
+								title="Masukkan 12 digit No. Kad Pengenalan (sempang akan dibuang automatik)">
 						</div>
 					</td>
 				</tr>
