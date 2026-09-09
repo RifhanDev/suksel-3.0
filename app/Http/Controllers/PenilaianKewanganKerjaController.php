@@ -267,6 +267,92 @@ class PenilaianKewanganKerjaController extends Controller
             ];
         }
 
+        // Enrich vendorSummary with extra data for Borang 1 Kriteria modal
+        if ($borang_code === 'borang1') {
+            $borangTenderItem = \App\Models\KewanganKerjaItem::whereHas('header', fn ($q) => $q->where('tender_id', $tender->id))
+                ->where('title', 'like', '%Borang Tender%')->first();
+            $suratAkuanItem = \App\Models\KewanganKerjaItem::whereHas('header', fn ($q) => $q->where('tender_id', $tender->id))
+                ->where('title', 'like', '%Surat Akuan Pembida%')->first();
+
+            $vendorIds = $participants->pluck('vendor_id')->filter()->all();
+
+            $vFilesGroup = \App\Models\TenderVendorDokumenFile::query()
+                ->where('tender_id', $tender->id)
+                ->whereIn('vendor_id', $vendorIds)
+                ->get()
+                ->groupBy('vendor_id');
+
+            $vResponsesGroup = \App\Models\TenderVendorDokumenResponse::query()
+                ->where('tender_id', $tender->id)
+                ->whereIn('vendor_id', $vendorIds)
+                ->get()
+                ->groupBy('vendor_id');
+
+            $tarikhTutupTenderStr = $tender->submission_datetime ? \Carbon\Carbon::parse($tender->submission_datetime)->format('d/m/Y') : '-';
+
+            $rawTenderUnitKey = strtolower(trim((string) ($tender->tempoh_siap_unit ?? '')));
+            $unitMap = ['1' => 'Minggu', '2' => 'Bulan', '3' => 'Hari', 'minggu' => 'Minggu', 'bulan' => 'Bulan', 'hari' => 'Hari'];
+            $resolvedTenderUnit = $unitMap[$rawTenderUnitKey] ?? ($tender->tempoh_siap_unit ?: 'Minggu');
+            $tempohSiapTenderStr = ! empty($tender->tempoh_siap_val) ? ($tender->tempoh_siap_val . ' ' . $resolvedTenderUnit) : ($tender->tempoh_kontrak_bulan ? ($tender->tempoh_kontrak_bulan . ' Bulan') : '-');
+
+            foreach ($participants as $p) {
+                $vId = $p->vendor_id;
+                $vFiles = $vFilesGroup->get($vId, collect());
+                $vResps = $vResponsesGroup->get($vId, collect());
+
+                // 1 & 2. Borang Tender File
+                $btFile = $borangTenderItem ? $vFiles->firstWhere('checklist_item_uuid', $borangTenderItem->uuid) : null;
+                if (! $btFile) {
+                    $btFile = $vFiles->first(fn ($f) => str_contains(strtolower($f->original_name), 'borang_tender') || str_contains(strtolower($f->original_name), 'borang tender'));
+                }
+                $borangTenderUrl = $btFile ? route('tenderDokumen.download', $btFile->uuid) : null;
+
+                // 7. Surat Akuan Pembida File
+                $saFile = $suratAkuanItem ? $vFiles->firstWhere('checklist_item_uuid', $suratAkuanItem->uuid) : null;
+                if (! $saFile) {
+                    $saFile = $vFiles->first(fn ($f) => str_contains(strtolower($f->original_name), 'surat_akuan') || str_contains(strtolower($f->original_name), 'akuan'));
+                }
+                $suratAkuanUrl = $saFile ? route('tenderDokumen.download', $saFile->uuid) : null;
+
+                // 3 & 6. Harga Tawaran & Tempoh Siap Pembekal
+                $hargaTawaranVal = (float) ($p->harga_tawaran ?: 0);
+                if ($hargaTawaranVal <= 0 && $vResps->isNotEmpty()) {
+                    $specResp = $vResps->firstWhere('response_type', 'specification');
+                    if ($specResp && is_array($specResp->payload)) {
+                        $itemPrices = $specResp->payload['item_prices'] ?? [];
+                        if (! empty($itemPrices)) {
+                            $hargaTawaranVal = app(\App\Services\VendorDokumenResponseService::class)->calculateSpecificationTotal($tender, $itemPrices, 'spesifikasi_kerja');
+                        }
+                    }
+                }
+                $hargaTawaranFormatted = $hargaTawaranVal > 0 ? ('RM ' . number_format($hargaTawaranVal, 2)) : '-';
+
+                $tempohData = $this->getVendorTempohSiapInWeeks($tender, $vId, $p);
+                $tempohSiapPembekalStr = $tempohData['disp'] ?? '-';
+
+                // 4. CIDB Expiry & Status
+                $cidbEndDate = ($p->vendor && $p->vendor->cidb_end_date) ? \Carbon\Carbon::parse($p->vendor->cidb_end_date) : null;
+                $closingDate = $tender->submission_datetime ? \Carbon\Carbon::parse($tender->submission_datetime) : null;
+
+                $isCidbAktif = $cidbEndDate && $closingDate && $cidbEndDate->startOfDay()->greaterThanOrEqualTo($closingDate->startOfDay());
+                $cidbStatusLabel = $cidbEndDate ? ($isCidbAktif ? 'Aktif' : 'Tamat Tempoh') : 'Tiada Rekod';
+
+                if (isset($vendorSummary[$vId])) {
+                    $vendorSummary[$vId]['extra_kriteria'] = [
+                        'borang_tender_url'       => $borangTenderUrl,
+                        'surat_akuan_url'          => $suratAkuanUrl,
+                        'harga_tawaran_formatted'  => $hargaTawaranFormatted,
+                        'tempoh_siap_pembekal'     => $tempohSiapPembekalStr,
+                        'tempoh_siap_tender'       => $tempohSiapTenderStr,
+                        'cidb_end_date_formatted'  => $cidbEndDate ? $cidbEndDate->format('d/m/Y') : 'Tiada Rekod',
+                        'tarikh_tutup_tender'      => $tarikhTutupTenderStr,
+                        'cidb_status'              => $cidbStatusLabel,
+                    ];
+                }
+            }
+        }
+
+
         foreach ($kriteriaStatusMap as $kId => &$kStat) {
             $kStat['is_complete'] = ($kStat['total_count'] > 0 && $kStat['evaluated_count'] >= $kStat['total_count']);
         }

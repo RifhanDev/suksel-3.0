@@ -612,35 +612,155 @@
         let currentKriteriaId = 1;
         const vendorSummaryData = @json($vendorSummary);
 
+        function escapeHtml(text) {
+            if (!text) return '';
+            return String(text)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
         // Populate modal data when Papar & Semak button is clicked
         document.querySelectorAll('.btn-papar').forEach(function (btn) {
             btn.addEventListener('click', function () {
-                currentKriteriaId = this.dataset.kriteriaId || 1;
+                currentKriteriaId = parseInt(this.dataset.kriteriaId || 1);
                 const title = this.dataset.title || 'JENIS KRITERIA';
                 const titleEl = document.getElementById('modalDocTitle');
                 if (titleEl) {
                     titleEl.textContent = title;
                 }
 
-                // Populate form fields per vendor row
+                // Render dynamic table header
+                const theadTr = document.querySelector('#modalVendorTable thead tr');
+                if (theadTr) {
+                    let headerHtml = `
+                        <th class="text-center text-uppercase fw-bold py-2" style="width: 70px; font-size: 0.7rem; letter-spacing: 0.05em; background-color: #d7d7d9 !important; color: #3f3f3f !important;">Bil</th>
+                        <th class="text-uppercase fw-bold py-2" style="font-size: 0.7rem; letter-spacing: 0.05em; background-color: #d7d7d9 !important; color: #3f3f3f !important;">Maklumat Dokumen / Syarikat</th>
+                    `;
+
+                    if (currentKriteriaId === 1 || currentKriteriaId === 2) {
+                        headerHtml += `<th class="text-center text-uppercase fw-bold py-2" style="width: 190px; font-size: 0.7rem; letter-spacing: 0.05em; background-color: #d7d7d9 !important; color: #3f3f3f !important;">Dokumen Borang Tender</th>`;
+                    } else if (currentKriteriaId === 3) {
+                        headerHtml += `<th class="text-center text-uppercase fw-bold py-2" style="width: 150px; font-size: 0.7rem; letter-spacing: 0.05em; background-color: #d7d7d9 !important; color: #3f3f3f !important;">Harga Tawaran</th>`;
+                        headerHtml += `<th class="text-center text-uppercase fw-bold py-2" style="width: 130px; font-size: 0.7rem; letter-spacing: 0.05em; background-color: #d7d7d9 !important; color: #3f3f3f !important;">Tempoh Siap</th>`;
+                    } else if (currentKriteriaId === 4) {
+                        headerHtml += `<th class="text-center text-uppercase fw-bold py-2" style="width: 130px; font-size: 0.7rem; letter-spacing: 0.05em; background-color: #d7d7d9 !important; color: #3f3f3f !important;">Tamat Aktif CIDB</th>`;
+                        headerHtml += `<th class="text-center text-uppercase fw-bold py-2" style="width: 130px; font-size: 0.7rem; letter-spacing: 0.05em; background-color: #d7d7d9 !important; color: #3f3f3f !important;">Tutup Tender</th>`;
+                        headerHtml += `<th class="text-center text-uppercase fw-bold py-2" style="width: 120px; font-size: 0.7rem; letter-spacing: 0.05em; background-color: #d7d7d9 !important; color: #3f3f3f !important;">Status CIDB</th>`;
+                    } else if (currentKriteriaId === 6) {
+                        headerHtml += `<th class="text-center text-uppercase fw-bold py-2" style="width: 150px; font-size: 0.7rem; letter-spacing: 0.05em; background-color: #d7d7d9 !important; color: #3f3f3f !important;">Tempoh Tender</th>`;
+                        headerHtml += `<th class="text-center text-uppercase fw-bold py-2" style="width: 150px; font-size: 0.7rem; letter-spacing: 0.05em; background-color: #d7d7d9 !important; color: #3f3f3f !important;">Tempoh Pembekal</th>`;
+                    } else if (currentKriteriaId === 7) {
+                        headerHtml += `<th class="text-center text-uppercase fw-bold py-2" style="width: 190px; font-size: 0.7rem; letter-spacing: 0.05em; background-color: #d7d7d9 !important; color: #3f3f3f !important;">Dokumen Surat Akuan</th>`;
+                    }
+
+                    headerHtml += `
+                        <th class="text-center text-uppercase fw-bold py-2" style="width: 180px; font-size: 0.7rem; letter-spacing: 0.05em; background-color: #d7d7d9 !important; color: #3f3f3f !important;">Status Kesempurnaan</th>
+                        <th class="text-uppercase fw-bold py-2" style="width: 220px; font-size: 0.7rem; letter-spacing: 0.05em; background-color: #d7d7d9 !important; color: #3f3f3f !important;">Catatan</th>
+                    `;
+                    theadTr.innerHTML = headerHtml;
+                }
+
+                // Render dynamic table body cells
                 document.querySelectorAll('#modalVendorTable tbody tr').forEach(function (tr) {
                     const vendorId = tr.getAttribute('data-vendor-id');
                     const vSum = vendorSummaryData[vendorId] || {};
                     const kData = vSum.kriteria_data || {};
+                    const extra = vSum.extra_kriteria || {};
                     const item = kData[currentKriteriaId] || kData[String(currentKriteriaId)] || {};
 
-                    const selectEl = tr.querySelector('.select-status');
-                    const inputEl = tr.querySelector('.input-catatan');
+                    // Remove columns after Bil (0) and Syarikat (1)
+                    while (tr.children.length > 2) {
+                        tr.removeChild(tr.lastChild);
+                    }
 
-                    if (selectEl) {
-                        selectEl.value = (item.status === 'Tidak' || item.status === 'Tidak Sempurna') ? 'Tidak Sempurna' : 'Sempurna';
+                    // Insert extra middle columns based on currentKriteriaId
+                    if (currentKriteriaId === 1 || currentKriteriaId === 2) {
+                        const td = document.createElement('td');
+                        td.className = 'text-center';
+                        if (extra.borang_tender_url) {
+                            td.innerHTML = `<a href="${extra.borang_tender_url}" target="_blank" class="btn btn-sm btn-outline-primary fw-semibold px-2.5 py-1" style="font-size: 0.78rem;"><i class="bi bi-file-earmark-pdf me-1"></i>Papar Borang Tender</a>`;
+                        } else {
+                            td.innerHTML = `<span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 px-2 py-1" style="font-size: 0.72rem;">Tiada Dokumen</span>`;
+                        }
+                        tr.appendChild(td);
+                    } else if (currentKriteriaId === 3) {
+                        const tdHarga = document.createElement('td');
+                        tdHarga.className = 'text-center fw-bold text-dark font-monospace';
+                        tdHarga.textContent = extra.harga_tawaran_formatted || '-';
+                        tr.appendChild(tdHarga);
+
+                        const tdTempoh = document.createElement('td');
+                        tdTempoh.className = 'text-center fw-semibold text-dark';
+                        tdTempoh.textContent = extra.tempoh_siap_pembekal || '-';
+                        tr.appendChild(tdTempoh);
+                    } else if (currentKriteriaId === 4) {
+                        const tdEnd = document.createElement('td');
+                        tdEnd.className = 'text-center small text-muted';
+                        tdEnd.textContent = extra.cidb_end_date_formatted || '-';
+                        tr.appendChild(tdEnd);
+
+                        const tdTutup = document.createElement('td');
+                        tdTutup.className = 'text-center small text-muted';
+                        tdTutup.textContent = extra.tarikh_tutup_tender || '-';
+                        tr.appendChild(tdTutup);
+
+                        const tdStatus = document.createElement('td');
+                        tdStatus.className = 'text-center';
+                        if (extra.cidb_status === 'Aktif') {
+                            tdStatus.innerHTML = `<span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2 py-1 fw-bold" style="font-size: 0.72rem;"><i class="bi bi-check-circle me-1"></i>Aktif</span>`;
+                        } else if (extra.cidb_status === 'Tamat Tempoh') {
+                            tdStatus.innerHTML = `<span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 px-2 py-1 fw-bold" style="font-size: 0.72rem;"><i class="bi bi-x-circle me-1"></i>Tamat Tempoh</span>`;
+                        } else {
+                            tdStatus.innerHTML = `<span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 px-2 py-1 fw-bold" style="font-size: 0.72rem;"><i class="bi bi-exclamation-triangle me-1"></i>${extra.cidb_status || 'Tiada Rekod'}</span>`;
+                        }
+                        tr.appendChild(tdStatus);
+                    } else if (currentKriteriaId === 6) {
+                        const tdTenderTempoh = document.createElement('td');
+                        tdTenderTempoh.className = 'text-center fw-bold text-secondary';
+                        tdTenderTempoh.textContent = extra.tempoh_siap_tender || '-';
+                        tr.appendChild(tdTenderTempoh);
+
+                        const tdVendorTempoh = document.createElement('td');
+                        tdVendorTempoh.className = 'text-center fw-bold text-dark';
+                        tdVendorTempoh.textContent = extra.tempoh_siap_pembekal || '-';
+                        tr.appendChild(tdVendorTempoh);
+                    } else if (currentKriteriaId === 7) {
+                        const td = document.createElement('td');
+                        td.className = 'text-center';
+                        if (extra.surat_akuan_url) {
+                            td.innerHTML = `<a href="${extra.surat_akuan_url}" target="_blank" class="btn btn-sm btn-outline-primary fw-semibold px-2.5 py-1" style="font-size: 0.78rem;"><i class="bi bi-file-earmark-pdf me-1"></i>Papar Surat Akuan</a>`;
+                        } else {
+                            td.innerHTML = `<span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 px-2 py-1" style="font-size: 0.72rem;">Tiada Dokumen</span>`;
+                        }
+                        tr.appendChild(td);
                     }
-                    if (inputEl) {
-                        inputEl.value = item.catatan || '';
-                    }
+
+                    // Append Status Dropdown column
+                    const tdSelect = document.createElement('td');
+                    tdSelect.className = 'text-center';
+                    const statusVal = (item.status === 'Tidak' || item.status === 'Tidak Sempurna') ? 'Tidak Sempurna' : 'Sempurna';
+                    tdSelect.innerHTML = `
+                        <select class="form-select form-select-modern text-center fw-semibold select-status">
+                            <option value="Sempurna" ${statusVal === 'Sempurna' ? 'selected' : ''}>Sempurna</option>
+                            <option value="Tidak Sempurna" ${statusVal === 'Tidak Sempurna' ? 'selected' : ''}>Tidak Sempurna</option>
+                        </select>
+                    `;
+                    tr.appendChild(tdSelect);
+
+                    // Append Catatan Input column
+                    const tdCatatan = document.createElement('td');
+                    const notesVal = item.catatan || '';
+                    tdCatatan.innerHTML = `
+                        <input type="text" class="form-control form-control-modern input-catatan" value="${escapeHtml(notesVal)}" placeholder="Catatan jika ada...">
+                    `;
+                    tr.appendChild(tdCatatan);
                 });
             });
         });
+
 
         // AJAX Save Modal Evaluations for Criterion
         document.getElementById('btnSimpanDalamModal').addEventListener('click', function () {
