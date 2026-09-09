@@ -211,9 +211,9 @@ class StosRolePermissionSeeder extends Seeder
             ['name' => 'Agency Lembaga Perolehan', 'display_name' => 'Agency Lembaga Perolehan'],
             ['name' => 'Lembaga Perolehan Negeri Selangor', 'display_name' => 'Lembaga Perolehan Negeri Selangor'],
             [
-                'name' => 'Ketua Jabatan',
-                'display_name' => 'Ketua Jabatan',
-                'description' => 'Ketua Jabatan agensi — Pemilihan Syarikat (Pembelian Terus)',
+                'name' => 'Agency Ketua Jabatan',
+                'display_name' => 'Agency Ketua Jabatan',
+                'description' => 'Agency Ketua Jabatan — Pemilihan Syarikat (Pembelian Terus / Lantikan Terus)',
             ],
         ];
     }
@@ -237,11 +237,11 @@ class StosRolePermissionSeeder extends Seeder
             ['name' => 'DirectPurchase:list', 'group_name' => 'DirectPurchase', 'display_name' => 'Pembelian Terus'],
             ['name' => 'DirectPurchase:create', 'group_name' => 'DirectPurchase', 'display_name' => 'Cipta Projek (Pemilik Projek)'],
             ['name' => 'DirectPurchase:cutoff', 'group_name' => 'DirectPurchase', 'display_name' => 'Cut Off (Pemilik Projek)'],
-            ['name' => 'DirectPurchase:select', 'group_name' => 'DirectPurchase', 'display_name' => 'Pemilihan Syarikat (Ketua Jabatan)'],
+            ['name' => 'DirectPurchase:select', 'group_name' => 'DirectPurchase', 'display_name' => 'Pemilihan Syarikat (Agency Ketua Jabatan)'],
             ['name' => 'DirectPurchase:quote', 'group_name' => 'DirectPurchase', 'display_name' => 'Sebut Harga (Syarikat)'],
             ['name' => 'DirectPurchase:decision', 'group_name' => 'DirectPurchase', 'display_name' => 'Keputusan Syarikat (Syarikat)'],
             ['name' => 'DirectAppointment:list', 'group_name' => 'DirectAppointment', 'display_name' => 'Lantikan Terus'],
-            ['name' => 'DirectAppointment:select', 'group_name' => 'DirectAppointment', 'display_name' => 'Pemilihan Syarikat (Ketua Jabatan)'],
+            ['name' => 'DirectAppointment:select', 'group_name' => 'DirectAppointment', 'display_name' => 'Pemilihan Syarikat (Agency Ketua Jabatan)'],
             ['name' => 'Bidding:list', 'group_name' => 'Bidding', 'display_name' => 'Bidaan'],
         ];
     }
@@ -255,7 +255,7 @@ class StosRolePermissionSeeder extends Seeder
     {
         // Pembelian Terus / Lantikan Terus step permissions:
         // 1 Cipta Projek + 3 Cut Off  → Pemilik Projek (Agency User / Urusetia / Agency Admin)
-        // 4 Pemilihan Syarikat        → Admin + Ketua Jabatan only
+        // 4 Pemilihan Syarikat        → Admin + Agency Ketua Jabatan only
         // 2 Sebut Harga + 5 Keputusan → Syarikat (Vendor role; optional perms below)
         $pemilikProjek = [
             'DirectPurchase:list',
@@ -327,11 +327,11 @@ class StosRolePermissionSeeder extends Seeder
             ],
             [
                 'role' => 'Agency Admin',
-                // Pemilik projek steps only — Pemilihan Syarikat is Admin + Ketua Jabatan.
+                // Pemilik projek steps only — Pemilihan Syarikat is Admin + Agency Ketua Jabatan.
                 'permissions' => $pemilikProjek,
             ],
             [
-                'role' => 'Ketua Jabatan',
+                'role' => 'Agency Ketua Jabatan',
                 'permissions' => $ketuaJabatan,
             ],
             [
