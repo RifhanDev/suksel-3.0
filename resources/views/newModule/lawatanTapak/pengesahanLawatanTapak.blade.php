@@ -77,7 +77,9 @@
                                         <input type="hidden" name="rows[{{ $idx }}][rep_id]" value="{{ $row['rep']->id }}">
                                     @endif
                                     <input type="text" name="rows[{{ $idx }}][ic_no]" class="form-control form-control-sm"
-                                        value="{{ $row['rep']?->ic_no }}" placeholder="No. IC" maxlength="32">
+                                        value="{{ $row['rep']?->ic_no }}" placeholder="No. IC"
+                                        data-ic-input maxlength="12" inputmode="numeric"
+                                        title="Masukkan 12 digit No. IC (sempang akan dibuang automatik)">
                                 </td>
                                 <td>
                                     <input type="text" name="rows[{{ $idx }}][name]" class="form-control form-control-sm"
@@ -134,7 +136,9 @@
             </div>
             <div class="col-md-2">
                 <label class="form-label small">No. IC</label>
-                <input type="text" name="rows[999][ic_no]" class="form-control form-control-sm">
+                <input type="text" name="rows[999][ic_no]" class="form-control form-control-sm"
+                    data-ic-input maxlength="12" inputmode="numeric"
+                    title="Masukkan 12 digit No. IC (sempang akan dibuang automatik)">
             </div>
             <div class="col-md-2">
                 <label class="form-label small">Nama</label>

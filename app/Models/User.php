@@ -74,6 +74,7 @@ class User extends Authenticatable
 		'store' => [
 			'name'      => 'required',
 			'email'     => 'required|email|unique:users,email',
+			'ic_number' => 'nullable|digits:12',
 			'password'  => [
 				'required',
 				'min:8',
@@ -84,6 +85,7 @@ class User extends Authenticatable
 		],
 		'update' => [
 			'email' => 'required|email|unique:users,email',
+			'ic_number' => 'nullable|digits:12',
 		],
 		'setPassword' => [
 			'password'  => [

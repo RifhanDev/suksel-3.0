@@ -56,6 +56,24 @@
             background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;
             padding: 0.75rem 1rem; max-width: 360px; margin-left: auto;
         }
+        .item-pager {
+            display: flex; align-items: center; justify-content: space-between;
+            flex-wrap: wrap; gap: 0.75rem;
+            background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;
+            padding: 0.65rem 0.9rem;
+        }
+        .item-pager-meta {
+            display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1;
+        }
+        .item-pager-label {
+            font-size: 0.8rem; font-weight: 700; color: #0f172a;
+        }
+        .item-pager-preview {
+            font-size: 0.72rem; color: #64748b;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 420px;
+        }
+        .item-pager-actions { display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0; }
+        #tbl-spesifikasi-body tr.item-page-hidden { display: none !important; }
     </style>
 @endsection
 
@@ -161,6 +179,17 @@
                 </button>
             </div>
 
+            <div id="item-pager" class="item-pager mb-3" style="display:none;">
+                <div class="item-pager-meta">
+                    <span class="item-pager-label" id="item-pager-label">Item 0 / 0</span>
+                    <span class="item-pager-preview" id="item-pager-preview">—</span>
+                </div>
+                <div class="item-pager-actions">
+                    <button type="button" id="btn-item-sebelum" class="btn btn-sm btn-outline-secondary">Sebelum</button>
+                    <button type="button" id="btn-item-seterusnya" class="btn btn-sm btn-outline-secondary">Seterusnya</button>
+                </div>
+            </div>
+
             <div class="table-responsive">
                 <table id="tbl-spesifikasi" class="table table-modern align-middle mb-0 w-100">
                     <thead>
@@ -189,6 +218,17 @@
                         </tr>
                     </tbody>
                 </table>
+            </div>
+
+            <div id="item-pager-bottom" class="item-pager mt-3" style="display:none;">
+                <div class="item-pager-meta">
+                    <span class="item-pager-label" id="item-pager-label-bottom">Item 0 / 0</span>
+                    <span class="item-pager-preview" id="item-pager-preview-bottom">—</span>
+                </div>
+                <div class="item-pager-actions">
+                    <button type="button" id="btn-item-sebelum-bottom" class="btn btn-sm btn-outline-secondary">Sebelum</button>
+                    <button type="button" id="btn-item-seterusnya-bottom" class="btn btn-sm btn-outline-secondary">Seterusnya</button>
+                </div>
             </div>
 
             <div class="jumlah-total-bar mt-3 d-flex align-items-center justify-content-between">
@@ -234,18 +274,23 @@ $(document).ready(function () {
 
     var serverData = @json($checklistData ?? null);
     var rowSeq = 0;
+    var currentItemIndex = 0;
+    var isPagerSaving = false;
 
     if (serverData) {
         renderFromServer(serverData);
+    } else {
+        updateItemPager();
     }
 
-    function renderFromServer(data) {
+    function renderFromServer(data, preferredIndex) {
         var items = normalizeItems(data.items || []);
         $('#tbl-spesifikasi-body').empty();
 
         if (items.length === 0) {
             syncEmpty();
             updateJumlahKeseluruhan();
+            updateItemPager();
             return;
         }
 
@@ -261,6 +306,7 @@ $(document).ready(function () {
 
         reindexGroups();
         updateJumlahKeseluruhan();
+        showItemPage(typeof preferredIndex === 'number' ? preferredIndex : 0);
 
         $('#bq-chips').empty();
         (data.files || []).forEach(function (f) {
@@ -478,6 +524,111 @@ $(document).ready(function () {
         return $specs;
     }
 
+    function getItemRows() {
+        return $('#tbl-spesifikasi-body tr.item-row');
+    }
+
+    function showItemPage(index) {
+        var $items = getItemRows();
+        var total = $items.length;
+
+        if (total === 0) {
+            currentItemIndex = 0;
+            updateItemPager();
+            return;
+        }
+
+        if (index < 0) index = 0;
+        if (index >= total) index = total - 1;
+        currentItemIndex = index;
+
+        $items.each(function (i) {
+            var $item = $(this);
+            var $group = $item.add(getItemSpecs($item));
+            if (i === currentItemIndex) {
+                $group.removeClass('item-page-hidden');
+            } else {
+                $group.addClass('item-page-hidden');
+            }
+        });
+
+        updateItemPager();
+    }
+
+    function updateItemPager() {
+        var $items = getItemRows();
+        var total = $items.length;
+        var hasItems = total > 0;
+        var label = hasItems
+            ? ('Item ' + (currentItemIndex + 1) + ' / ' + total)
+            : 'Item 0 / 0';
+        var preview = '—';
+
+        if (isPagerSaving) {
+            label = 'Menyimpan draf...';
+        } else if (hasItems) {
+            var $current = $items.eq(currentItemIndex);
+            var nama = ($current.find('[name="nama_item"]').val() || '').trim();
+            preview = nama || '(Tiada tajuk item)';
+        }
+
+        $('#item-pager, #item-pager-bottom').toggle(hasItems);
+        $('#item-pager-label, #item-pager-label-bottom').text(label);
+        $('#item-pager-preview, #item-pager-preview-bottom').text(preview).attr('title', preview);
+
+        var atFirst = !hasItems || currentItemIndex <= 0;
+        var atLast = !hasItems || currentItemIndex >= total - 1;
+        $('#btn-item-sebelum, #btn-item-sebelum-bottom').prop('disabled', isPagerSaving || atFirst);
+        $('#btn-item-seterusnya, #btn-item-seterusnya-bottom').prop('disabled', isPagerSaving || atLast);
+    }
+
+    function navigateItemPage(targetIndex) {
+        var total = getItemRows().length;
+        if (!total || isPagerSaving) return;
+        if (targetIndex < 0 || targetIndex >= total || targetIndex === currentItemIndex) return;
+
+        if (IS_SUBMITTED) {
+            showItemPage(targetIndex);
+            return;
+        }
+
+        isPagerSaving = true;
+        updateItemPager();
+        setBusy('#btn-simpan', true, 'Menyimpan...');
+
+        $.ajax({
+            url: SAVE_URL,
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                items: collectPayload(),
+                status: 'draft',
+                user_id: USER_ID
+            }),
+            success: function (response) {
+                if (response && response.success && response.data) {
+                    renderFromServer(response.data, targetIndex);
+                    showToast('Draf auto-disimpan.', 'success');
+                } else {
+                    showToast('Gagal menyimpan draf. Sila cuba lagi.', 'danger');
+                    showItemPage(currentItemIndex);
+                }
+            },
+            error: function (xhr) {
+                var msg = (xhr.responseJSON && xhr.responseJSON.message)
+                    ? xhr.responseJSON.message
+                    : 'Gagal menyimpan draf.';
+                showToast(msg, 'danger');
+                showItemPage(currentItemIndex);
+            },
+            complete: function () {
+                isPagerSaving = false;
+                setBusy('#btn-simpan', false, 'Simpan');
+                updateItemPager();
+            }
+        });
+    }
+
     function reindexGroups() {
         $('#tbl-spesifikasi-body tr').removeClass('group-alt item-has-specs spec-last');
         var idx = 0;
@@ -504,6 +655,7 @@ $(document).ready(function () {
                 'Tiada item. Klik <strong>Tambah Item</strong> untuk mula.</td></tr>'
             );
         }
+        updateItemPager();
     }
 
     function parseAmount(val) {
@@ -585,8 +737,19 @@ $(document).ready(function () {
         '</div>');
 
         $chip.find('.chip-delete').on('click', function () {
-            if (!confirm('Padam fail ini?')) return;
-            deleteFile(fileData.uuid, $chip);
+            var ask = (typeof showConfirmModal === 'function')
+                ? showConfirmModal({
+                    title: 'Padam Fail',
+                    message: 'Padam fail ini?',
+                    confirmText: 'Ya, Padam',
+                    icon: 'danger'
+                })
+                : Promise.resolve(window.confirm('Padam fail ini?'));
+
+            ask.then(function (ok) {
+                if (!ok) return;
+                deleteFile(fileData.uuid, $chip);
+            });
         });
 
         $container.append($chip);
@@ -710,10 +873,12 @@ $(document).ready(function () {
                         return;
                     }
 
-                    showToast('Spesifikasi berjaya disimpan.', 'success');
-                    setTimeout(function () {
-                        window.location.href = LIST_URL;
-                    }, 600);
+                    showBerjayaModal({
+                        message: 'Spesifikasi berjaya disimpan.',
+                        onClose: function () {
+                            window.location.href = LIST_URL;
+                        }
+                    });
                 } else {
                     showToast('Gagal menyimpan. Sila cuba lagi.', 'danger');
                     setBusy('#btn-simpan', false, 'Simpan');
@@ -735,34 +900,49 @@ $(document).ready(function () {
 
     function submitSpesifikasi() {
         if (!validateBeforeSubmit()) return;
-        if (!confirm('Hantar spesifikasi ini?')) return;
 
-        saveDraft(function () {
-            setBusy('#btn-hantar', true, 'Menghantar...');
+        var ask = (typeof showConfirmModal === 'function')
+            ? showConfirmModal({
+                title: 'Sahkan Penghantaran',
+                message: 'Hantar spesifikasi ini?',
+                confirmText: 'Ya, Hantar',
+                cancelText: 'Batal',
+                icon: 'warning'
+            })
+            : Promise.resolve(window.confirm('Hantar spesifikasi ini?'));
 
-            $.ajax({
-                url: SUBMIT_URL,
-                method: 'POST',
-                contentType: 'application/json',
-                data: JSON.stringify({ user_id: USER_ID }),
-                success: function (response) {
-                    if (response && response.success) {
-                        showToast('Spesifikasi berjaya dihantar!', 'success');
-                        setTimeout(function () {
-                            window.location.href = LIST_URL;
-                        }, 800);
-                    } else {
-                        var msg = (response && response.message) ? response.message : 'Gagal menghantar.';
+        ask.then(function (ok) {
+            if (!ok) return;
+
+            saveDraft(function () {
+                setBusy('#btn-hantar', true, 'Menghantar...');
+
+                $.ajax({
+                    url: SUBMIT_URL,
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ user_id: USER_ID }),
+                    success: function (response) {
+                        if (response && response.success) {
+                            showBerjayaModal({
+                                message: 'Spesifikasi berjaya dihantar!',
+                                onClose: function () {
+                                    window.location.href = LIST_URL;
+                                }
+                            });
+                        } else {
+                            var msg = (response && response.message) ? response.message : 'Gagal menghantar.';
+                            showToast(msg, 'danger');
+                            setBusy('#btn-hantar', false, 'Hantar');
+                        }
+                    },
+                    error: function (xhr) {
+                        var errors = xhr.responseJSON && xhr.responseJSON.errors;
+                        var msg = errors && errors.items ? errors.items[0] : 'Gagal menghantar. Sila cuba lagi.';
                         showToast(msg, 'danger');
                         setBusy('#btn-hantar', false, 'Hantar');
                     }
-                },
-                error: function (xhr) {
-                    var errors = xhr.responseJSON && xhr.responseJSON.errors;
-                    var msg = errors && errors.items ? errors.items[0] : 'Gagal menghantar. Sila cuba lagi.';
-                    showToast(msg, 'danger');
-                    setBusy('#btn-hantar', false, 'Hantar');
-                }
+                });
             });
         });
     }
@@ -795,6 +975,7 @@ $(document).ready(function () {
         $('#tbl-spesifikasi-body').append(buildItemRow({}));
         reindexGroups();
         updateJumlahKeseluruhan();
+        showItemPage(getItemRows().length - 1);
     });
 
     $('#tbl-spesifikasi-body').on('click', '.btn-tambah-spec', function () {
@@ -803,27 +984,80 @@ $(document).ready(function () {
         var $after = $specs.length ? $specs.last() : $itemRow;
         $after.after(buildSpecRow({}));
         reindexGroups();
+        showItemPage(getItemRows().index($itemRow));
     });
 
     $('#tbl-spesifikasi-body').on('click', '.btn-hapus-item', function () {
         var $item = $(this).closest('tr');
+        var deletedIndex = getItemRows().index($item);
         var count = getItemSpecs($item).length;
         var msg = count > 0
             ? 'Hapus item ini beserta ' + count + ' spesifikasi di bawahnya?'
             : 'Hapus item ini?';
-        if (!confirm(msg)) return;
-        getItemSpecs($item).remove();
-        $item.remove();
-        reindexGroups();
-        syncEmpty();
-        updateJumlahKeseluruhan();
+
+        var ask = (typeof showConfirmModal === 'function')
+            ? showConfirmModal({
+                title: 'Hapus Item',
+                message: msg,
+                confirmText: 'Ya, Hapus',
+                icon: 'danger'
+            })
+            : Promise.resolve(window.confirm(msg));
+
+        ask.then(function (ok) {
+            if (!ok) return;
+            getItemSpecs($item).remove();
+            $item.remove();
+            reindexGroups();
+            syncEmpty();
+            updateJumlahKeseluruhan();
+            var remaining = getItemRows().length;
+            if (remaining === 0) {
+                currentItemIndex = 0;
+                updateItemPager();
+            } else {
+                showItemPage(Math.min(deletedIndex, remaining - 1));
+            }
+        });
     });
 
     $('#tbl-spesifikasi-body').on('click', '.btn-hapus-spec', function () {
-        if (!confirm('Hapus spesifikasi ini?')) return;
-        $(this).closest('tr').remove();
-        reindexGroups();
-        updateJumlahKeseluruhan();
+        var $row = $(this).closest('tr');
+        var ask = (typeof showConfirmModal === 'function')
+            ? showConfirmModal({
+                title: 'Hapus Spesifikasi',
+                message: 'Hapus spesifikasi ini?',
+                confirmText: 'Ya, Hapus',
+                icon: 'danger'
+            })
+            : Promise.resolve(window.confirm('Hapus spesifikasi ini?'));
+
+        ask.then(function (ok) {
+            if (!ok) return;
+            $row.remove();
+            reindexGroups();
+            updateJumlahKeseluruhan();
+            showItemPage(currentItemIndex);
+        });
+    });
+
+    $('#btn-item-sebelum, #btn-item-sebelum-bottom').on('click', function () {
+        navigateItemPage(currentItemIndex - 1);
+    });
+
+    $('#btn-item-seterusnya, #btn-item-seterusnya-bottom').on('click', function () {
+        navigateItemPage(currentItemIndex + 1);
+    });
+
+    $('#tbl-spesifikasi-body').on('input', '[name="nama_item"], [name="spesifikasi"]', function () {
+        $(this).removeClass('is-invalid');
+        if ($(this).attr('name') === 'nama_item') {
+            updateItemPager();
+        }
+    });
+
+    $('#tbl-spesifikasi-body').on('change', '[name="unit"]', function () {
+        $(this).removeClass('is-invalid');
     });
 
     $('#tbl-spesifikasi-body').on('change', '.unit-select', function () {
@@ -862,13 +1096,6 @@ $(document).ready(function () {
 
     $('#btn-simpan').on('click', function () { saveDraft(); });
     $('#btn-hantar').on('click', function () { submitSpesifikasi(); });
-
-    $('#tbl-spesifikasi-body').on('input', '[name="nama_item"], [name="spesifikasi"]', function () {
-        $(this).removeClass('is-invalid');
-    });
-    $('#tbl-spesifikasi-body').on('change', '[name="unit"]', function () {
-        $(this).removeClass('is-invalid');
-    });
 
     if (IS_SUBMITTED) {
         $('#btn-simpan, #btn-hantar, #btn-tambah-item').prop('disabled', true);

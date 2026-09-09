@@ -378,23 +378,6 @@
 @endsection
 
 @push('modals')
-    <!-- ===================== MODAL: SUCCESS ===================== -->
-    <div class="modal fade" id="successModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content text-center p-4">
-                <div class="mb-3">
-                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none">
-                        <circle cx="12" cy="12" r="10" fill="#E6F7F3" />
-                        <path d="M10 14.2L7.8 12l-1.4 1.4L10 17l8-8-1.4-1.4L10 14.2z" fill="#19c1a7" />
-                    </svg>
-                </div>
-                <h5 class="fw-bold mb-2">Berjaya</h5>
-                <p class="text-muted mb-4">Maklumat telah berjaya disimpan.</p>
-                <button type="button" class="btn-form btn-form-primary mx-auto" data-bs-dismiss="modal">Tutup</button>
-            </div>
-        </div>
-    </div>
-
     <!-- ===================== MODAL: VALIDASI HANTAR ===================== -->
     <div class="modal fade" id="validasiHantarModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
@@ -1352,14 +1335,14 @@
             }
 
             // ─── SIMPAN ───────────────────────────────────────────────────────────────
-            var successModal = new bootstrap.Modal(document.getElementById('successModal'));
-
             $('.btn-simpan').on('click', function() {
                 if (IS_SUBMITTED) return;
                 blockUI('Menyimpan...');
                 doSave(function() {
                     unblockUI();
-                    successModal.show();
+                    if (typeof showBerjayaModal === 'function') {
+                        showBerjayaModal();
+                    }
                 }, function() {
                     unblockUI();
                     alert('Ralat semasa menyimpan. Sila cuba lagi.');

@@ -60,24 +60,6 @@
         min-width:110px;
     }
 
-    /* success modal */
-    .modal-card{
-        border-radius:10px;
-        border:0;
-        box-shadow:0 10px 30px rgba(0,0,0,.15);
-        padding:18px 18px 14px;
-        text-align:center;
-    }
-    .confetti{ width:44px;height:44px;margin:6px auto 8px; }
-    .btn-modal{
-        background:var(--brand-red);
-        color:#fff;
-        border:0;
-        padding:10px 20px;
-        border-radius:6px;
-        font-weight:800;
-        min-width:110px;
-    }
 </style>
 
 <div class="container-fluid mt-3">
@@ -127,30 +109,9 @@
     </div>
 </div>
 
-{{-- SUCCESS MODAL --}}
-<div class="modal fade" id="successModalB9a" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" style="max-width:520px;">
-        <div class="modal-content modal-card">
-            <svg class="confetti" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M16 42 L34 28 L30 50 Z" stroke="#19c1a7" stroke-width="3" fill="none"/>
-                <path d="M38 16 C44 20, 48 24, 52 30" stroke="#19c1a7" stroke-width="3" fill="none"/>
-                <path d="M40 40 L52 46" stroke="#19c1a7" stroke-width="3"/>
-                <path d="M22 18 L18 12" stroke="#19c1a7" stroke-width="3"/>
-            </svg>
-
-            <div class="fw-bold" style="font-size:16px;margin-bottom:14px;">
-                Maklumat telah berjaya disimpan
-            </div>
-
-            <button type="button" class="btn-modal" data-bs-dismiss="modal">Tutup</button>
-        </div>
-    </div>
-</div>
-
 <script>
     function showSuccessModalB9a(){
-        const modal = new bootstrap.Modal(document.getElementById('successModalB9a'));
-        modal.show();
+        if (typeof showBerjayaModal === 'function') { showBerjayaModal(); }
     }
 
     // UI-only: add one editable row above JUMLAH

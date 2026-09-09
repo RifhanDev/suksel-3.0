@@ -727,23 +727,6 @@
 <!-- End Penyediaan Iklan -->
 
 @push('modals')
-	{{-- Success Modal --}}
-	<div class="modal fade" id="modalBerjayaIklan" tabindex="-1" aria-hidden="true">
-		<div class="modal-dialog modal-dialog-centered" style="max-width:360px;">
-			<div class="modal-content text-center p-4">
-				<div class="mb-3">
-					<svg width="64" height="64" viewBox="0 0 24 24" fill="none">
-						<circle cx="12" cy="12" r="10" fill="#E6F7F3" />
-						<path d="M10 14.2L7.8 12l-1.4 1.4L10 17l8-8-1.4-1.4L10 14.2z" fill="#19c1a7" />
-					</svg>
-				</div>
-				<h5 class="fw-bold mb-2">Berjaya</h5>
-				<p class="text-muted mb-4">Maklumat telah berjaya disimpan.</p>
-				<button type="button" class="btn-form btn-form-primary mx-auto" data-bs-dismiss="modal">Tutup</button>
-			</div>
-		</div>
-	</div>
-
 	<div class="modal fade" id="modalTaklimat" tabindex="-1" aria-labelledby="modalTaklimatLabel" aria-hidden="true">
 		<div class="modal-dialog modal-lg modal-dialog-centered">
 			<div class="modal-content">
@@ -1110,9 +1093,8 @@
 				}
 
 				savePenyediaanIklanDraft(function() {
-					var el = document.getElementById('modalBerjayaIklan');
-					if (el && typeof bootstrap !== 'undefined') {
-						bootstrap.Modal.getOrCreateInstance(el).show();
+					if (typeof showBerjayaModal === 'function') {
+						showBerjayaModal();
 					} else {
 						alert('Penyediaan iklan berjaya disimpan.');
 					}

@@ -416,17 +416,6 @@
             </div>
         </div>
     </div>
-
-    <!-- Success Modal -->
-    <div class="modal fade" id="successModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content lawatan-tapak-modal-card">
-                <h5 class="fw-bold mb-2" id="successModalTitle">Berjaya</h5>
-                <p class="text-muted mb-4" id="successModalMessage">Maklumat telah berjaya disimpan.</p>
-                <button type="button" class="btn-form btn-form-primary mx-auto" data-bs-dismiss="modal">Tutup</button>
-            </div>
-        </div>
-    </div>
 @endpush
 
 @section('scripts')
@@ -444,12 +433,14 @@
                 download: '{{ url('surat-niat/surat') }}'
             };
 
-            var successModal = new bootstrap.Modal(document.getElementById('successModal'));
             var editSuratModal = new bootstrap.Modal(document.getElementById('modalEditSurat'));
 
             function showSuccess(message) {
-                $('#successModalMessage').text(message);
-                successModal.show();
+                if (typeof showBerjayaModal === 'function') {
+                    showBerjayaModal({ message: message });
+                } else {
+                    alert(message || 'Maklumat telah berjaya disimpan.');
+                }
             }
 
             function showError(message) {

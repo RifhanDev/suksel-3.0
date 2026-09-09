@@ -138,6 +138,11 @@ class UsersController extends Controller
 			User::setRules('store');
 		}
 
+		if (isset($data['ic_number'])) {
+			$digits = preg_replace('/\D+/', '', (string) $data['ic_number']);
+			$data['ic_number'] = $digits === '' ? null : substr($digits, 0, 12);
+		}
+
 		// Validate the request
 		$validator = Validator::make($data, User::$rules);
 		if ($validator->fails()) {
@@ -152,12 +157,6 @@ class UsersController extends Controller
 
 		if (isset($data['organization_unit_id']) && empty($data['organization_unit_id'])) {
 			$data['organization_unit_id'] = null;
-		}
-		if (isset($data['ic_number'])) {
-			$data['ic_number'] = trim($data['ic_number']);
-			if ($data['ic_number'] === '') {
-				$data['ic_number'] = null;
-			}
 		}
 		if (isset($data['gred'])) {
 			$data['gred'] = trim($data['gred']);
@@ -275,17 +274,26 @@ class UsersController extends Controller
 			$user = User::findOrFail($id);
 			$data = $request->all();
 
+			if (isset($data['ic_number'])) {
+				$digits = preg_replace('/\D+/', '', (string) $data['ic_number']);
+				$data['ic_number'] = $digits === '' ? null : substr($digits, 0, 12);
+			}
+
+			$validator = Validator::make($data, [
+				'email' => 'required|email|unique:users,email,' . $id,
+				'ic_number' => 'nullable|digits:12',
+			], [
+				'ic_number.digits' => 'Nombor Kad Pengenalan mestilah 12 digit.',
+			]);
+			if ($validator->fails()) {
+				return redirect()->back()->withErrors($validator)->withInput();
+			}
+
 			if (!auth()->user()->hasRole('Admin')) {
 				$data['organization_unit_id'] = auth()->user()->organization_unit_id;
 			}
 			if (isset($data['organization_unit_id']) && empty($data['organization_unit_id'])) {
 				$data['organization_unit_id'] = null;
-			}
-			if (isset($data['ic_number'])) {
-				$data['ic_number'] = trim($data['ic_number']);
-				if ($data['ic_number'] === '') {
-					$data['ic_number'] = null;
-				}
 			}
 			if (isset($data['gred'])) {
 				$data['gred'] = trim($data['gred']);

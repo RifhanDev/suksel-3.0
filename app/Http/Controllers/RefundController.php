@@ -202,6 +202,15 @@ class RefundController extends Controller
         if (!Refund::canCreate())
             return $this->_access_denied();
 
+        $icDigits = preg_replace('/\D+/', '', (string) $request->input('ic', ''));
+        $request->merge(['ic' => substr($icDigits, 0, 12)]);
+
+        $request->validate([
+            'ic' => 'required|digits:12',
+        ], [
+            'ic.digits' => 'No. Kad Pengenalan mestilah 12 digit.',
+        ]);
+
         $user = auth()->user();
         $request['vendor_id'] = $user->vendor_id;
         $request['user_id'] = $user->id;
@@ -245,6 +254,15 @@ class RefundController extends Controller
     {
         if (!auth()->user()->hasRole('Vendor') && (auth()->user()->vendor_id == $request->vendor_id))
             return $this->_access_denied();
+
+        $icDigits = preg_replace('/\D+/', '', (string) $request->input('ic', ''));
+        $request->merge(['ic' => substr($icDigits, 0, 12)]);
+
+        $request->validate([
+            'ic' => 'required|digits:12',
+        ], [
+            'ic.digits' => 'No. Kad Pengenalan mestilah 12 digit.',
+        ]);
 
         $user = auth()->user();
         $request['vendor_id'] = $user->vendor_id;

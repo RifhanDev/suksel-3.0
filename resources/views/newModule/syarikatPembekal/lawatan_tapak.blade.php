@@ -153,7 +153,9 @@
                                 <td>
                                     <input type="text"
                                            class="form-control"
-                                           value="984356089032">
+                                           value="984356089032"
+                                           maxlength="12"
+                                           inputmode="numeric">
                                 </td>
                                 <td>
                                     <input type="text"
@@ -167,7 +169,7 @@
 
                             <tr>
                                 <td>
-                                    <input type="text" class="form-control">
+                                    <input type="text" class="form-control" maxlength="12" inputmode="numeric">
                                 </td>
                                 <td>
                                     <input type="text" class="form-control">
@@ -179,7 +181,7 @@
 
                             <tr>
                                 <td>
-                                    <input type="text" class="form-control">
+                                    <input type="text" class="form-control" maxlength="12" inputmode="numeric">
                                 </td>
                                 <td>
                                     <input type="text" class="form-control">
