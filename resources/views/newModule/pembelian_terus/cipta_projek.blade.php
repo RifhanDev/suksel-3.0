@@ -868,6 +868,7 @@
 @endsection
 
 @section('scripts')
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         // --- DROPDOWN OPTIONS FOR DYNAMIC ROWS (Kod Bidang) ---
         var mofOptions =
@@ -876,6 +877,32 @@
             `@foreach (App\Code::where('type', 'cidb-c')->orderBy('code')->get() as $code)<option value="{{ $code->id }}">{{ $code->label }}</option>@endforeach`;
 
         $(document).ready(function() {
+            @if (session('success'))
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Berjaya',
+                    text: @json(session('success')),
+                    confirmButtonColor: '#c41e3a'
+                });
+            @endif
+
+            @if (session('error'))
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Gagal',
+                    text: @json(session('error')),
+                    confirmButtonColor: '#c41e3a'
+                });
+            @endif
+
+            @if ($errors->any())
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Maklumat tidak lengkap',
+                    text: @json($errors->first()),
+                    confirmButtonColor: '#c41e3a'
+                });
+            @endif
 
             // --- SPEC ITEMS ---
             let specIndex = $('#spec-items-body .spec-item-row').length;
@@ -948,19 +975,6 @@
                 }
             });
 
-            // --- SAVE DRAFT / PUBLISH ---
-            $('#btn-save').on('click', function() {
-                $('#form-action').val('draft');
-                $('#createProjekForm').submit();
-            });
-
-            $('#btn-submit').on('click', function(e) {
-                e.preventDefault();
-                if (!validateCurrentStep()) return;
-                $('#form-action').val('publish');
-                $('#createProjekForm').submit();
-            });
-
             // --- WIZARD NAVIGATION (3 steps) ---
             let currentStep = 1;
             const TOTAL_STEPS = 3;
@@ -992,24 +1006,55 @@
                 }, 400);
             }
 
-            function validateCurrentStep() {
+            function validateStep(step) {
                 var isValid = true;
-                $('#step' + currentStep + '-content [required]').each(function() {
+                var $firstInvalid = null;
+                $('#step' + step + '-content [required]').each(function() {
                     if (!this.checkValidity()) {
                         $(this).addClass('is-invalid');
                         isValid = false;
+                        if (!$firstInvalid) $firstInvalid = $(this);
                     } else {
                         $(this).removeClass('is-invalid');
                     }
                 });
                 if (!isValid) {
-                    $('#step' + currentStep + '-content [required]:invalid').first().focus();
+                    currentStep = step;
+                    updateWizardUI();
+                    scrollToStepper();
+                    if ($firstInvalid) $firstInvalid.focus();
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Maklumat tidak lengkap',
+                        text: 'Sila lengkapkan medan bertanda * sebelum meneruskan.',
+                        confirmButtonColor: '#c41e3a'
+                    });
                 }
                 return isValid;
             }
 
+            function validateCurrentStep() {
+                return validateStep(currentStep);
+            }
+
             // expose for Terbitkan click
             window.validateCurrentStep = validateCurrentStep;
+
+            // jQuery .submit() skips HTML5 required checks — validate step 1 explicitly.
+            $('#btn-save').on('click', function() {
+                if (!validateStep(1)) return;
+                $('#form-action').val('draft');
+                $('#createProjekForm').submit();
+            });
+
+            $('#btn-submit').on('click', function(e) {
+                e.preventDefault();
+                for (var s = 1; s <= TOTAL_STEPS; s++) {
+                    if (!validateStep(s)) return;
+                }
+                $('#form-action').val('publish');
+                $('#createProjekForm').submit();
+            });
 
             $('#btn-next').click(function() {
                 if (!validateCurrentStep()) return;

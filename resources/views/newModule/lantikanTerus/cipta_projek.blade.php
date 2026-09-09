@@ -877,6 +877,15 @@
                 });
             @endif
 
+            @if ($errors->any())
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Maklumat tidak lengkap',
+                    text: @json($errors->first()),
+                    confirmButtonColor: '#c41e3a'
+                });
+            @endif
+
             // --- DOKUMEN BQ: single-file upload with editable name ---
             (function() {
                 var $zone   = $('#upload-zone-bq');
@@ -958,19 +967,6 @@
                 }
             });
 
-            // --- SAVE DRAFT / PUBLISH ---
-            $('#btn-save').on('click', function() {
-                $('#form-action').val('draft');
-                $('#createProjekForm').submit();
-            });
-
-            $('#btn-submit').on('click', function(e) {
-                e.preventDefault();
-                if (typeof validateCurrentStep === 'function' && !validateCurrentStep()) return;
-                $('#form-action').val('publish');
-                $('#createProjekForm').submit();
-            });
-
             // --- WIZARD NAVIGATION (3 steps) ---
             let currentStep = 1;
             const TOTAL_STEPS = 3;
@@ -1002,21 +998,53 @@
                 }, 400);
             }
 
-            function validateCurrentStep() {
+            function validateStep(step) {
                 var isValid = true;
-                $('#step' + currentStep + '-content [required]').each(function() {
+                var $firstInvalid = null;
+                $('#step' + step + '-content [required]').each(function() {
                     if (!this.checkValidity()) {
                         $(this).addClass('is-invalid');
                         isValid = false;
+                        if (!$firstInvalid) $firstInvalid = $(this);
                     } else {
                         $(this).removeClass('is-invalid');
                     }
                 });
                 if (!isValid) {
-                    $('#step' + currentStep + '-content [required]:invalid').first().focus();
+                    currentStep = step;
+                    updateWizardUI();
+                    scrollToStepper();
+                    if ($firstInvalid) $firstInvalid.focus();
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Maklumat tidak lengkap',
+                        text: 'Sila lengkapkan medan bertanda * sebelum meneruskan.',
+                        confirmButtonColor: '#c41e3a'
+                    });
                 }
                 return isValid;
             }
+
+            function validateCurrentStep() {
+                return validateStep(currentStep);
+            }
+
+            // --- SAVE DRAFT / PUBLISH ---
+            // jQuery .submit() skips HTML5 required checks — validate step 1 explicitly.
+            $('#btn-save').on('click', function() {
+                if (!validateStep(1)) return;
+                $('#form-action').val('draft');
+                $('#createProjekForm').submit();
+            });
+
+            $('#btn-submit').on('click', function(e) {
+                e.preventDefault();
+                for (var s = 1; s <= TOTAL_STEPS; s++) {
+                    if (!validateStep(s)) return;
+                }
+                $('#form-action').val('publish');
+                $('#createProjekForm').submit();
+            });
 
             $('#btn-next').click(function() {
                 if (!validateCurrentStep()) return;

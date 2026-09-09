@@ -72,6 +72,7 @@ class Role extends EntrustRole
 				'Agency Urusetia',
 				'Agency Jawatankuasa',
 				'Agency Lembaga Perolehan',
+				'Ketua Jabatan',
 			]);
 		} else {
 			return $q;
