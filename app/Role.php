@@ -72,7 +72,7 @@ class Role extends ModelsRole
 				'Agency Urusetia',
 				'Agency Jawatankuasa',
 				'Agency Lembaga Perolehan',
-				'Ketua Jabatan',
+				'Agency Ketua Jabatan',
 			]);
 		} else {
 			return $q;

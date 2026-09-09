@@ -365,8 +365,8 @@ class Tender extends Model
 
 			if ($user->hasRole('Admin')) {
 				return true;
-			} elseif ($user->ability(['Agency Admin', 'Agency User', 'Ketua Jabatan'], []) && $this->organization_unit_id == $user->organization_unit_id) {
-				// Ketua Jabatan dihadkan kepada agensinya sendiri, sama seperti
+			} elseif ($user->ability(['Agency Admin', 'Agency User', 'Agency Ketua Jabatan'], []) && $this->organization_unit_id == $user->organization_unit_id) {
+				// Agency Ketua Jabatan dihadkan kepada agensinya sendiri, sama seperti
 				// Agency Admin dan Agency User — hanya Admin melihat semua agensi.
 				return true;
 			} elseif ($user->hasRole('Vendor') && $this->hasParticipate($vendor_id)) {

@@ -117,7 +117,7 @@ trait EntrustCompatTrait
      * Admin UPEN, and Admin PWN (Excel columns were empty for those roles).
      *
      * Pemilihan Syarikat (DirectPurchase:select / DirectAppointment:select) is
-     * restricted to explicit permission holders only (Admin + Ketua Jabatan).
+     * restricted to explicit permission holders only (Admin + Agency Ketua Jabatan).
      */
     public function canAccessMenu(string $permission): bool
     {
@@ -144,7 +144,7 @@ trait EntrustCompatTrait
             }
         }
 
-        if ($this->hasRole('Ketua Jabatan')) {
+        if ($this->hasRole('Agency Ketua Jabatan')) {
             return in_array($permission, [
                 'DirectPurchase:list',
                 'DirectPurchase:select',

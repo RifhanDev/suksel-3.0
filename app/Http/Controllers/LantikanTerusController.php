@@ -14,7 +14,7 @@ class LantikanTerusController extends Controller
     {
         // Keep staff menus gated; vendor sebut-harga view/submit must stay open
         // so Syarikat can use the Lantikan Terus BQ UI.
-        // Pemilihan Syarikat is Admin + Ketua Jabatan only (DirectAppointment:select).
+        // Pemilihan Syarikat is Admin + Agency Ketua Jabatan only (DirectAppointment:select).
         $this->menuMiddleware('DirectAppointment:list', [
             'except' => [
                 'sebutHargaShow',
