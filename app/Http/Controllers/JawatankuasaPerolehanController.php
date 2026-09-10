@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Concerns\AdvancesTenderProcessStatus;
 use App\Http\Controllers\Concerns\RestrictsTenderByRole;
 use App\Models\EbiddingJadualBidaan;
+use App\Models\EbiddingVendorBidItem;
 use App\Models\JawatankuasaPerolehanKertasKeputusan;
 use App\Models\JawatankuasaPerolehanMeeting;
 use App\Models\JawatankuasaPerolehanPemilihanHeader;
@@ -209,8 +210,23 @@ class JawatankuasaPerolehanController extends Controller
                     $q->orderBy('sort_order')->with('vendor:id,name,meta');
                 }])
                 ->orderBy('sort_order')
-                ->get()
-                ->map(function (JawatankuasaPerolehanPemilihanItem $item) {
+                ->get();
+
+            $isEbidding = (bool) ($tender->is_ebidding ?? false);
+            $bidsByItemVendor = [];
+            if ($isEbidding && $pemilihanItems->isNotEmpty()) {
+                $bids = EbiddingVendorBidItem::query()
+                    ->where('tender_id', $tender->id)
+                    ->whereNotNull('submitted_at')
+                    ->get(['pemilihan_item_id', 'vendor_id', 'bid_price']);
+
+                foreach ($bids as $bid) {
+                    $bidsByItemVendor[(int) $bid->pemilihan_item_id][(int) $bid->vendor_id] = (float) $bid->bid_price;
+                }
+            }
+
+            $pemilihanItems = $pemilihanItems
+                ->map(function (JawatankuasaPerolehanPemilihanItem $item) use ($isEbidding, $bidsByItemVendor) {
                     return [
                         'id' => $item->id,
                         'perihal_item' => $item->perihal_item,
@@ -220,17 +236,27 @@ class JawatankuasaPerolehanController extends Controller
                         'dibatalkan' => $item->dibatalkan,
                         'pembekal_dipilih' => (int) $item->pembekal_dipilih,
                         'kuantiti' => (string) $item->kuantiti,
-                        'petenders' => $item->petenders->map(function (JawatankuasaPerolehanPemilihanPetender $p) {
+                        'petenders' => $item->petenders->map(function (JawatankuasaPerolehanPemilihanPetender $p) use ($item, $isEbidding, $bidsByItemVendor) {
                             $hasCidbMeta = $p->vendor_id
                                 && is_array(VendorCidbMeta::normalizeMeta(is_array($p->vendor?->meta) ? $p->vendor->meta : null));
+
+                            $hargaTawaran = (float) ($p->harga_tawaran ?? 0);
+                            $vendorId = (int) ($p->vendor_id ?? 0);
+                            $bidPrice = $bidsByItemVendor[(int) $item->id][$vendorId] ?? null;
+                            $hargaBidaan = null;
+                            if ($isEbidding) {
+                                $hargaBidaan = $bidPrice !== null ? (float) $bidPrice : $hargaTawaran;
+                            }
 
                             return [
                                 'id' => $p->id,
                                 'vendor_id' => $p->vendor_id,
+                                'vendor_name' => (string) ($p->vendor->name ?? '-'),
                                 'cidb_has_meta' => $hasCidbMeta,
                                 'bil_label' => $p->bil_label,
                                 'status_bumiputra' => $p->status_bumiputra ?: '',
-                                'harga_tawaran' => (string) ($p->harga_tawaran ?? 0),
+                                'harga_tawaran' => (string) $hargaTawaran,
+                                'harga_bidaan' => $hargaBidaan !== null ? (string) $hargaBidaan : null,
                                 'jumlah_skor' => $p->jumlah_skor !== null ? (string) $p->jumlah_skor : '',
                                 'kedudukan_penilaian' => $p->kedudukan_penilaian,
                                 'status_mof' => $p->status_mof ?: '',

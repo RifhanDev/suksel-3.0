@@ -392,13 +392,19 @@
 					<div class="mp-hint mb-2">Semua pembekal yang melepasi Markah Lulus Keseluruhan (teknikal dan kewangan) akan
 						dijemput
 						untuk menyertai bidaan.</div>
+					@php $showHargaBidaan = (bool) optional($tender)->is_ebidding; @endphp
 					<div class="table-responsive mb-3">
-						<table class="table table-bordered table-sm align-middle mb-0">
+						<table class="table table-bordered table-sm align-middle mb-0" id="mp-pembekal-table"
+							data-show-harga-bidaan="{{ $showHargaBidaan ? '1' : '0' }}">
 							<thead class="text-white text-center" style="background-color:#2d3e84;">
 								<tr>
 									<th>Bil</th>
+									<th style="min-width:160px;">Nama Vendor</th>
 									<th>Status Bumiputra</th>
 									<th>Harga Tawaran (RM)</th>
+									@if ($showHargaBidaan)
+										<th>Harga Bidaan (RM)</th>
+									@endif
 									<th>Jumlah Skor</th>
 									<th>Kedudukan Penilaian Teknikal Kewangan</th>
 									<th>Status Pendaftaran MOF</th>
@@ -409,7 +415,7 @@
 									<th id="mp-th-catatan-zon" class="d-none" style="min-width:180px;">Catatan Mengikut Zon</th>
 								</tr>
 								<tr>
-									<th colspan="6"></th>
+									<th colspan="{{ $showHargaBidaan ? 8 : 7 }}"></th>
 									<th class="small">Prestasi Pembekal</th>
 									<th class="small">Lembaga Pengarah</th>
 									<th id="mp-th-empty-right" colspan="2"></th>
@@ -894,6 +900,8 @@
 					if (!item || !item.petenders) {
 						return;
 					}
+					const showHargaBidaan = $('#mp-pembekal-table').data('show-harga-bidaan') == 1
+						|| $('#mp-pembekal-table').attr('data-show-harga-bidaan') === '1';
 					const kaedah = ($('#mp_kaedah_memuktamadkan').val() || '').toString();
 					const showSelection = kaedah === 'Pemilihan Terus' || kaedah ===
 						'Pemilihan Lebih Daripada Satu Syarikat';
@@ -906,10 +914,25 @@
 						const catatanZonCell = showCatatanZon ?
 							'<td><textarea class="form-control form-control-sm mp-pet-catatan-zon" rows="2">' +
 							escapeHtml(p.catatan_mengikut_zon || '') + '</textarea></td>' : '';
+						const vendorName = (p.vendor_name || '-').toString();
+						const vendorId = p.vendor_id ? String(p.vendor_id) : '';
+						const vendorCell = '<td class="text-start">' +
+							'<div class="fw-semibold small">' + escapeHtml(vendorName) + '</div>' +
+							(vendorId ? '<div class="text-muted" style="font-size:0.7rem;">ID: ' + escapeHtml(vendorId) + '</div>' : '') +
+							'</td>';
+						const hargaBidaanCell = showHargaBidaan
+							? ('<td class="text-end">' + escapeHtml(mpFormatMoney(
+								(p.harga_bidaan !== null && p.harga_bidaan !== undefined && p.harga_bidaan !== '')
+									? p.harga_bidaan
+									: p.harga_tawaran
+							)) + '</td>')
+							: '';
 						const row = '<tr data-pet-idx="' + i + '">' +
 							'<td class="text-center">' + escapeHtml(p.bil_label || '') + '</td>' +
+							vendorCell +
 							'<td class="text-center">' + escapeHtml(p.status_bumiputra || '—') + '</td>' +
 							'<td class="text-end">' + escapeHtml(mpFormatMoney(p.harga_tawaran)) + '</td>' +
+							hargaBidaanCell +
 							'<td class="text-end">' + escapeHtml(String(p.jumlah_skor || '—')) + '</td>' +
 							'<td class="text-center">' + escapeHtml(String(p.kedudukan_penilaian ?? '—')) +
 							'</td>' +

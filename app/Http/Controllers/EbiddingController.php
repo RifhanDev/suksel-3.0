@@ -14,11 +14,13 @@ use App\Support\TenderProcessStatus;
 use App\TenderEligible;
 use App\Tender;
 use App\TenderVendor;
+use App\Vendor;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
 
 class EbiddingController extends Controller
@@ -201,7 +203,7 @@ class EbiddingController extends Controller
         $agencyPemilihanItems = JawatankuasaPerolehanPemilihanItem::query()
             ->where('tender_id', $tender->id)
             ->with(['petenders' => function ($q) {
-                $q->orderBy('sort_order');
+                $q->orderBy('sort_order')->with('vendor');
             }])
             ->orderBy('sort_order')
             ->get();
@@ -214,13 +216,16 @@ class EbiddingController extends Controller
             ->groupBy('pemilihan_item_id');
 
         $agencyPemilihanItems = $agencyPemilihanItems->map(function ($item) use ($bidByItem) {
-            $prices = ($bidByItem->get($item->id, collect()))
-                ->pluck('bid_price')
-                ->values();
+            $bidsByVendor = ($bidByItem->get($item->id, collect()))->keyBy('vendor_id');
 
-            $petenders = $item->petenders->values()->map(function ($petender, $idx) use ($prices) {
-                $bidaan = $prices->get($idx);
+            $petenders = $item->petenders->values()->map(function ($petender) use ($bidsByVendor) {
+                $vendorId = (int) ($petender->vendor_id ?? 0);
+                $bid = $vendorId > 0 ? $bidsByVendor->get($vendorId) : null;
+                $bidaan = $bid ? (float) $bid->bid_price : null;
+
                 return [
+                    'vendor_id' => $vendorId,
+                    'vendor_name' => (string) ($petender->vendor->name ?? '-'),
                     'bil_label' => (string) ($petender->bil_label ?? ''),
                     'status_bumiputra' => (string) ($petender->status_bumiputra ?? ''),
                     'harga_tawaran' => (float) ($petender->harga_tawaran ?? 0),
@@ -230,7 +235,7 @@ class EbiddingController extends Controller
                     'tindakan_disiplin' => (string) ($petender->tindakan_disiplin ?? ''),
                     'lembaga_pengarah_url' => $petender->lembaga_pengarah_file_path ? asset($petender->lembaga_pengarah_file_path) : null,
                     'kaedah_sulp' => 'Bidaan',
-                    'harga_bidaan' => $bidaan !== null ? (float) $bidaan : (float) ($petender->harga_tawaran ?? 0),
+                    'harga_bidaan' => $bidaan !== null ? $bidaan : (float) ($petender->harga_tawaran ?? 0),
                 ];
             });
 
@@ -254,14 +259,29 @@ class EbiddingController extends Controller
                         ->where('vendor_id', $vendorId)
                         ->where('pemilihan_item_id', $item->id)
                         ->first();
-                    $tenderVendor = TenderVendor::query()
-                        ->where('tender_id', $tender->id)
+
+                    // Harga Sebelum Bidaan = harga tawaran from Senarai Pembekal (per item).
+                    $petender = DB::table('jawatankuasa_perolehan_pemilihan_petenders')
+                        ->where('pemilihan_item_id', $item->id)
                         ->where('vendor_id', $vendorId)
-                        ->orderByDesc('id')
+                        ->orderBy('sort_order')
                         ->first();
-                    $previousPrice = $tenderVendor ? (float) $tenderVendor->amount : null;
+
+                    $previousPrice = $petender && $petender->harga_tawaran !== null
+                        ? (float) $petender->harga_tawaran
+                        : null;
+
+                    // Fallback only if petender row missing vendor_id / harga.
+                    if ($previousPrice === null) {
+                        $tenderVendor = TenderVendor::query()
+                            ->where('tender_id', $tender->id)
+                            ->where('vendor_id', $vendorId)
+                            ->orderByDesc('id')
+                            ->first();
+                        $previousPrice = $tenderVendor ? (float) $tenderVendor->amount : null;
+                    }
+
                     // Harga Bidaan stays empty until vendor keys in / submits a bid.
-                    // Do not prefill from Harga Sebelum Bidaan.
                     $effectiveBid = $bid !== null ? (float) $bid->bid_price : null;
 
                     return [
@@ -361,7 +381,30 @@ class EbiddingController extends Controller
                     ? (float) $row['bid_price']
                     : null;
 
-                // Only save when vendor actually keyed a price — never fallback to Harga Sebelum Bidaan.
+                // Empty Harga Bidaan → keep old harga tawaran (track submission even with no change).
+                if ($inputPrice === null || $inputPrice <= 0) {
+                    $petender = DB::table('jawatankuasa_perolehan_pemilihan_petenders')
+                        ->where('pemilihan_item_id', $item->id)
+                        ->where('vendor_id', $vendorId)
+                        ->orderBy('sort_order')
+                        ->first();
+
+                    $fallback = $petender && $petender->harga_tawaran !== null
+                        ? (float) $petender->harga_tawaran
+                        : null;
+
+                    if ($fallback === null || $fallback <= 0) {
+                        $tenderVendor = TenderVendor::query()
+                            ->where('tender_id', $tender->id)
+                            ->where('vendor_id', $vendorId)
+                            ->orderByDesc('id')
+                            ->first();
+                        $fallback = $tenderVendor ? (float) $tenderVendor->amount : null;
+                    }
+
+                    $inputPrice = ($fallback !== null && $fallback > 0) ? $fallback : null;
+                }
+
                 if ($inputPrice === null || $inputPrice <= 0) {
                     continue;
                 }
@@ -824,6 +867,10 @@ class EbiddingController extends Controller
         ];
     }
 
+    /**
+     * Email jemputan bidaan to vendors listed under Pengesyoran Pembekal
+     * (jawatankuasa_perolehan_pemilihan_petenders), not tender_eligibles ads list.
+     */
     private function notifyEligibleVendorsBidaanStarted(int $tenderId): int
     {
         $tender = Tender::query()->find($tenderId);
@@ -831,17 +878,40 @@ class EbiddingController extends Controller
             return 0;
         }
 
-        $eligibles = TenderEligible::query()
-            ->with(['vendor.user'])
-            ->where('tender_id', $tenderId)
-            ->where(function ($q) {
-                $q->whereNull('email')->orWhere('email', 1)->orWhere('email', '1');
-            })
-            ->get();
+        $vendorIds = DB::table('jawatankuasa_perolehan_pemilihan_petenders as p')
+            ->join('jawatankuasa_perolehan_pemilihan_items as i', 'i.id', '=', 'p.pemilihan_item_id')
+            ->where('i.tender_id', $tenderId)
+            ->whereNotNull('p.vendor_id')
+            ->where('p.vendor_id', '>', 0)
+            ->when(
+                Schema::hasColumn('jawatankuasa_perolehan_pemilihan_items', 'dibatalkan'),
+                fn ($q) => $q->where(function ($inner) {
+                    $inner->whereNull('i.dibatalkan')
+                        ->orWhere('i.dibatalkan', 'Tidak')
+                        ->orWhere('i.dibatalkan', '0')
+                        ->orWhere('i.dibatalkan', 0);
+                })
+            )
+            ->distinct()
+            ->pluck('p.vendor_id')
+            ->map(fn ($id) => (int) $id)
+            ->filter()
+            ->unique()
+            ->values();
+
+        if ($vendorIds->isEmpty()) {
+            return 0;
+        }
+
+        $vendors = Vendor::query()
+            ->with('user')
+            ->whereIn('id', $vendorIds)
+            ->get()
+            ->keyBy('id');
 
         $count = 0;
-        foreach ($eligibles as $eligible) {
-            $vendor = $eligible->vendor;
+        foreach ($vendorIds as $vendorId) {
+            $vendor = $vendors->get($vendorId);
             $user = $vendor ? $vendor->user : null;
             $to = trim((string) ($user->email ?? ''));
             if (!$vendor || !$user || !filter_var($to, FILTER_VALIDATE_EMAIL)) {
@@ -858,7 +928,26 @@ class EbiddingController extends Controller
 
             if (is_string($status) && stripos($status, 'Email') !== false) {
                 $count++;
-                $eligible->update(['sent_at' => now()]);
+
+                // Keep tender_eligibles in sync so vendor dashboard Bidaan tab can see them too.
+                $eligible = TenderEligible::query()
+                    ->where('tender_id', $tenderId)
+                    ->where('vendor_id', $vendor->id)
+                    ->first();
+
+                if ($eligible) {
+                    $eligible->update([
+                        'email' => 1,
+                        'sent_at' => now(),
+                    ]);
+                } else {
+                    TenderEligible::query()->create([
+                        'tender_id' => $tenderId,
+                        'vendor_id' => $vendor->id,
+                        'email' => 1,
+                        'sent_at' => now(),
+                    ]);
+                }
             }
         }
 

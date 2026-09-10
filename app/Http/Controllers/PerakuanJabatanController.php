@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\AdvancesTenderProcessStatus;
 use App\Models\EbiddingJadualBidaan;
+use App\Models\EbiddingVendorBidItem;
 use App\Models\PerakuanJabatanKertasTaklimat;
 use App\Models\PerakuanJabatanKertasTaklimatItem;
 use App\Models\PerakuanJabatanKertasTaklimatItemFile;
@@ -497,9 +498,23 @@ class PerakuanJabatanController extends Controller
         }
 
         $isKerja = (int) ($tender->kategori_perolehan_id ?? 0) === 3;
+        $isEbidding = (bool) ($tender->is_ebidding ?? false);
         $teknikalScores = $isKerja ? [] : $this->loadTeknikalScoresByVendor($tender);
         $kerjaScores = $isKerja ? $this->loadKerjaBorang14ScoresByVendor($tender, $participants) : [];
         $total = $participants->count();
+
+        $bidTotalsByVendor = [];
+        if ($isEbidding) {
+            $bidTotalsByVendor = EbiddingVendorBidItem::query()
+                ->where('tender_id', $tender->id)
+                ->whereNotNull('submitted_at')
+                ->whereNotNull('bid_price')
+                ->selectRaw('vendor_id, SUM(bid_price) as total_bid')
+                ->groupBy('vendor_id')
+                ->pluck('total_bid', 'vendor_id')
+                ->map(fn ($v) => (float) $v)
+                ->all();
+        }
 
         $sortedByHarga = $participants
             ->sortBy(fn ($p) => (float) ($p->harga_tawaran ?? $p->price ?? $p->amount ?? 0))
@@ -515,7 +530,9 @@ class PerakuanJabatanController extends Controller
             $kerjaScores,
             $kedudukanKewangan,
             $savedByVendor,
-            $isKerja
+            $isKerja,
+            $isEbidding,
+            $bidTotalsByVendor
         ) {
             $vendorId = (int) $p->vendor_id;
             $vendor = $p->vendor;
@@ -535,11 +552,22 @@ class PerakuanJabatanController extends Controller
                 $mofStatus = 'Aktif';
             }
 
+            $hargaBidaan = null;
+            if ($isEbidding) {
+                if (array_key_exists($vendorId, $bidTotalsByVendor)) {
+                    $hargaBidaan = (float) $bidTotalsByVendor[$vendorId];
+                } elseif ($harga !== null) {
+                    // No submitted bid yet — show old harga tawaran for tracking/display.
+                    $hargaBidaan = (float) $harga;
+                }
+            }
+
             return [
                 'vendor_id' => $vendorId,
                 'bil' => ($idx + 1) . '/' . $total,
                 'status_bumiputra' => $bumi ? 'Ya' : 'Tidak',
                 'harga_tawaran' => $harga !== null ? (float) $harga : null,
+                'harga_bidaan' => $hargaBidaan,
                 'skor_teknikal' => $score['skor'] ?? null,
                 'skor_keseluruhan' => $isKerja ? ($score['skor'] ?? null) : null,
                 'kedudukan_teknikal' => $isKerja ? null : ($score['kedudukan'] ?? null),
