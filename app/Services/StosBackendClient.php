@@ -454,6 +454,20 @@ class StosBackendClient
         return $this->post('/api/lantikan-terus/' . $tenderId . '/cutoff', $payload);
     }
 
+    public function downloadLantikanTerusDocument(int $tenderId, string $docType): Response
+    {
+        return self::http()
+            ->withHeaders(['Accept' => '*/*'])
+            ->get($this->baseUrl . '/api/lantikan-terus/' . $tenderId . '/documents/' . $docType . '/download');
+    }
+
+    public function downloadLantikanTerusOfferBq(int $tenderId, int $offerId): Response
+    {
+        return self::http()
+            ->withHeaders(['Accept' => '*/*'])
+            ->get($this->baseUrl . '/api/lantikan-terus/' . $tenderId . '/offers/' . $offerId . '/bq/download');
+    }
+
     public function selectLantikanTerusWinner(int $tenderId, array $payload): Response
     {
         return $this->post('/api/lantikan-terus/' . $tenderId . '/select-winner', $payload);

@@ -300,13 +300,17 @@ Route::post('/sebut-harga-terus/{id}/tawaran', [LantikanTerusController::class, 
 Route::get('/cut-off-terus', [LantikanTerusController::class, 'cutOffIndex'])->middleware(['auth'])->name('cutOffTerus.index');
 Route::get('/cut-off-terus/{id}/lihat', [LantikanTerusController::class, 'cutOffShow'])->middleware(['auth'])->name('cutOffTerus.show');
 Route::post('/cut-off-terus/{id}', [LantikanTerusController::class, 'storeCutoff'])->middleware(['auth'])->name('cutOffTerus.store');
+Route::get('/cut-off-terus/{id}/bq/{offerId}', [LantikanTerusController::class, 'downloadOfferBq'])->middleware(['auth'])->name('cutOffTerus.downloadOfferBq');
 Route::get('/pemilihan-syarikat-terus', [LantikanTerusController::class, 'pemilihanIndex'])->middleware(['auth'])->name('pemilihanTerus.index');
 Route::get('/pemilihan-syarikat-terus/{id}/lihat', [LantikanTerusController::class, 'pemilihanShow'])->middleware(['auth'])->name('pemilihanTerus.show');
 Route::post('/pemilihan-syarikat-terus/{id}', [LantikanTerusController::class, 'storePemilihan'])->middleware(['auth'])->name('pemilihanTerus.store');
+Route::get('/pemilihan-syarikat-terus/{id}/bq/{offerId}', [LantikanTerusController::class, 'downloadOfferBq'])->middleware(['auth'])->name('pemilihanTerus.downloadOfferBq');
+Route::get('/pemilihan-syarikat-terus/{id}/dokumen/{docType}', [LantikanTerusController::class, 'downloadProjectDocument'])->middleware(['auth'])->name('pemilihanTerus.downloadDocument');
 Route::get('/keputusan-syarikat-terus', [LantikanTerusController::class, 'keputusanIndex'])->middleware(['auth'])->name('keputusanTerus.index');
 Route::get('/keputusan-syarikat-terus/{id}/lihat', [LantikanTerusController::class, 'keputusanShow'])->middleware(['auth'])->name('keputusanTerus.show');
 Route::post('/keputusan-syarikat-terus/{id}', [LantikanTerusController::class, 'storeKeputusan'])->middleware(['auth'])->name('keputusanTerus.store');
 Route::get('/lantikan-terus/surat-setuju-terima/{id}', [LantikanTerusController::class, 'downloadSuratSetujuTerima'])->middleware(['auth'])->name('lantikan.downloadSuratSetujuTerima');
+Route::get('/lantikan-terus/{id}/dokumen/{docType}', [LantikanTerusController::class, 'downloadProjectDocument'])->middleware(['auth'])->name('lantikan.downloadDocument');
 
 // senaraiKewanganKerja routes are auth-protected — defined inside middleware group below
 // penyediaanSpekTender routes are auth-protected — defined inside middleware group below

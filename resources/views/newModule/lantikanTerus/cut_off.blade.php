@@ -172,17 +172,22 @@
                                     <td>{{ $supplier->name }}</td>
                                     <td class="text-center fw-semibold">{{ number_format($supplier->harga_tawaran, 2) }}</td>
                                     <td class="text-center">
-                                        <a href="#" download
-                                            class="fw-semibold text-decoration-none d-inline-flex align-items-center gap-2">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
-                                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                                stroke-linejoin="round">
-                                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                                <polyline points="7 10 12 15 17 10"></polyline>
-                                                <line x1="12" y1="15" x2="12" y2="3"></line>
-                                            </svg>
-                                            {{ $supplier->bq_filename }}
-                                        </a>
+                                        @if (! empty($supplier->has_bq))
+                                            <a href="{{ route('cutOffTerus.downloadOfferBq', [$p->id, $supplier->id]) }}"
+                                                target="_blank" rel="noopener noreferrer"
+                                                class="fw-semibold text-decoration-none d-inline-flex align-items-center gap-2">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
+                                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                                    stroke-linejoin="round">
+                                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                                    <polyline points="7 10 12 15 17 10"></polyline>
+                                                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                                                </svg>
+                                                {{ $supplier->bq_filename }}
+                                            </a>
+                                        @else
+                                            <span class="text-muted">{{ $supplier->bq_filename ?? 'Tiada fail' }}</span>
+                                        @endif
                                     </td>
                                     <td class="text-center pe-4">
                                         <input type="checkbox" class="form-check-input supplier-check"

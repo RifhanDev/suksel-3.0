@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Services\StosBackendClient;
 use App\Tender;
+use App\Vendor;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -193,16 +195,7 @@ class LantikanTerusController extends Controller
         $p = $project;
 
         $offersResponse = $this->stos->getLantikanTerusOffers((int) $id);
-        $suppliers = collect($offersResponse->json('data') ?? [])->map(function ($offer) {
-            $offer = (array) $offer;
-
-            return (object) [
-                'id' => $offer['id'] ?? null,
-                'name' => 'Vendor #' . ($offer['vendor_id'] ?? '-'),
-                'harga_tawaran' => $offer['harga_tawaran'] ?? 0,
-                'bq_filename' => $offer['bq_original_name'] ?? 'Dokumen BQ.pdf',
-            ];
-        });
+        $suppliers = $this->mapOfferSuppliers(collect($offersResponse->json('data') ?? []));
 
         return view('newModule.lantikanTerus.cut_off', compact('project', 'suppliers', 'p'));
     }
@@ -265,25 +258,23 @@ class LantikanTerusController extends Controller
         $p = $project;
 
         $docs = collect($json['documents'] ?? []);
+        $jpict = $docs->firstWhere('doc_type', 'jpict');
+        $minit = $docs->firstWhere('doc_type', 'minit_bebas');
         $documents = (object) [
-            'jpict' => optional($docs->firstWhere('doc_type', 'jpict'))['original_name'] ?? null,
-            'minit_bebas' => optional($docs->firstWhere('doc_type', 'minit_bebas'))['original_name'] ?? null,
+            'jpict' => (object) [
+                'name' => is_array($jpict) ? ($jpict['original_name'] ?? $jpict['display_name'] ?? '-') : '-',
+                'has_file' => is_array($jpict) && ! empty($jpict['file_path']),
+            ],
+            'minit_bebas' => (object) [
+                'name' => is_array($minit) ? ($minit['original_name'] ?? $minit['display_name'] ?? '-') : '-',
+                'has_file' => is_array($minit) && ! empty($minit['file_path']),
+            ],
         ];
 
         $offersResponse = $this->stos->getLantikanTerusOffers((int) $id);
-        $suppliers = collect($offersResponse->json('data') ?? [])
-            ->where('shortlisted', true)
-            ->values()
-            ->map(function ($offer) {
-                $offer = (array) $offer;
-
-                return (object) [
-                    'id' => $offer['id'] ?? null,
-                    'name' => 'Vendor #' . ($offer['vendor_id'] ?? '-'),
-                    'harga_tawaran' => $offer['harga_tawaran'] ?? 0,
-                    'bq_filename' => $offer['bq_original_name'] ?? 'Dokumen BQ.pdf',
-                ];
-            });
+        $suppliers = $this->mapOfferSuppliers(
+            collect($offersResponse->json('data') ?? [])->where('shortlisted', true)->values()
+        );
 
         return view('newModule.lantikanTerus.pemilihan_syarikat', compact('project', 'suppliers', 'documents', 'p'));
     }
@@ -337,14 +328,92 @@ class LantikanTerusController extends Controller
         $offersResponse = $this->stos->getLantikanTerusOffers((int) $id);
         $selected = collect($offersResponse->json('data') ?? [])->firstWhere('selected', true);
         $selected = $selected ? (array) $selected : null;
+        $vendorId = (int) ($selected['vendor_id'] ?? 0);
 
         $decision = $selected ? (object) [
-            'company' => 'Vendor #' . ($selected['vendor_id'] ?? '-'),
+            'company' => $this->resolveVendorName($vendorId),
             'harga_sst' => $selected['harga_tawaran'] ?? 0,
             'status' => $selected['decision'] ?? 'pending',
         ] : null;
 
         return view('newModule.lantikanTerus.keputusan_syarikat', compact('project', 'decision', 'p'));
+    }
+
+    public function downloadProjectDocument($id, string $docType)
+    {
+        if (! in_array($docType, ['bq', 'jpict', 'minit_bebas'], true)) {
+            abort(404);
+        }
+
+        $allowed = $this->isVendorActor()
+            ? ($docType === 'bq')
+            : auth()->user()?->canAccessMenu('DirectAppointment:create')
+                || auth()->user()?->canAccessMenu('DirectAppointment:cutoff')
+                || auth()->user()?->canAccessMenu('DirectAppointment:select')
+                || auth()->user()?->canAccessMenu('DirectAppointment:quote')
+                || auth()->user()?->canAccessMenu('DirectAppointment:list');
+
+        if (! $allowed) {
+            return $this->_access_denied();
+        }
+
+        try {
+            $response = $this->stos->downloadLantikanTerusDocument((int) $id, $docType);
+            if (! $response->successful()) {
+                abort(404, 'Fail tidak dijumpai.');
+            }
+
+            $filename = $this->extractDownloadFilename(
+                $response->header('Content-Disposition'),
+                $docType . '.pdf'
+            );
+
+            return response($response->body(), 200, [
+                'Content-Type' => $response->header('Content-Type') ?: 'application/octet-stream',
+                'Content-Disposition' => 'inline; filename="' . $filename . '"',
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('Lantikan Terus document open failed', [
+                'id' => $id,
+                'doc_type' => $docType,
+                'error' => $e->getMessage(),
+            ]);
+            abort(404, 'Fail tidak dijumpai.');
+        }
+    }
+
+    public function downloadOfferBq($id, $offerId)
+    {
+        if ($denied = $this->denyUnlessMenuAny([
+            'DirectAppointment:cutoff',
+            'DirectAppointment:select',
+        ])) {
+            return $denied;
+        }
+
+        try {
+            $response = $this->stos->downloadLantikanTerusOfferBq((int) $id, (int) $offerId);
+            if (! $response->successful()) {
+                abort(404, 'Fail BQ tidak dijumpai.');
+            }
+
+            $filename = $this->extractDownloadFilename(
+                $response->header('Content-Disposition'),
+                'Dokumen_BQ.pdf'
+            );
+
+            return response($response->body(), 200, [
+                'Content-Type' => $response->header('Content-Type') ?: 'application/octet-stream',
+                'Content-Disposition' => 'inline; filename="' . $filename . '"',
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('Lantikan Terus offer BQ open failed', [
+                'id' => $id,
+                'offer_id' => $offerId,
+                'error' => $e->getMessage(),
+            ]);
+            abort(404, 'Fail BQ tidak dijumpai.');
+        }
     }
 
     public function storeKeputusan(Request $request, $id)
@@ -636,10 +705,100 @@ class LantikanTerusController extends Controller
             'status' => $status,
             'status_process_id' => $statusId,
             'bq_filename' => $bqFilename,
+            'has_bq' => is_array($bqDoc) && ! empty($bqDoc['file_path']),
             'documents' => $documents,
             'mof' => [],
             'cidb' => [],
         ];
+    }
+
+    private function mapOfferSuppliers(Collection $offers): Collection
+    {
+        $vendorIds = $offers
+            ->map(fn ($offer) => (int) (((array) $offer)['vendor_id'] ?? 0))
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+
+        $vendorNames = $this->vendorNameMap($vendorIds);
+
+        return $offers->map(function ($offer) use ($vendorNames) {
+            $offer = (array) $offer;
+            $vendorId = (int) ($offer['vendor_id'] ?? 0);
+
+            return (object) [
+                'id' => $offer['id'] ?? null,
+                'vendor_id' => $vendorId ?: null,
+                'name' => $vendorNames[$vendorId]
+                    ?? ($vendorId ? 'Vendor #' . $vendorId : '-'),
+                'harga_tawaran' => (float) ($offer['harga_tawaran'] ?? 0),
+                'bq_filename' => $offer['bq_original_name'] ?? 'Dokumen BQ.pdf',
+                'has_bq' => ! empty($offer['bq_path']),
+            ];
+        })->values();
+    }
+
+    /**
+     * @param  list<int>  $vendorIds
+     * @return array<int, string>
+     */
+    private function vendorNameMap(array $vendorIds): array
+    {
+        if ($vendorIds === []) {
+            return [];
+        }
+
+        return Vendor::query()
+            ->whereIn('id', $vendorIds)
+            ->get(['id', 'name'])
+            ->mapWithKeys(fn ($vendor) => [(int) $vendor->id => (string) $vendor->name])
+            ->all();
+    }
+
+    private function resolveVendorName(int $vendorId): string
+    {
+        if ($vendorId <= 0) {
+            return '-';
+        }
+
+        $name = Vendor::query()->where('id', $vendorId)->value('name');
+
+        return $name ? (string) $name : ('Vendor #' . $vendorId);
+    }
+
+    private function extractDownloadFilename(?string $contentDisposition, string $fallback): string
+    {
+        if (! $contentDisposition) {
+            return $fallback;
+        }
+
+        if (preg_match('/filename\*=UTF-8\'\'([^;]+)/i', $contentDisposition, $matches)) {
+            return rawurldecode(trim($matches[1], " \t\"'"));
+        }
+
+        if (preg_match('/filename=\"?([^\";]+)\"?/i', $contentDisposition, $matches)) {
+            return trim($matches[1], " \t\"'");
+        }
+
+        return $fallback;
+    }
+
+    /**
+     * @param  list<string>  $permissions
+     */
+    private function denyUnlessMenuAny(array $permissions)
+    {
+        $user = auth()->user();
+        if ($user) {
+            foreach ($permissions as $permission) {
+                if ($user->canAccessMenu($permission)) {
+                    return null;
+                }
+            }
+        }
+
+        return $this->_access_denied();
     }
 
     private function isVendorActor(): bool
