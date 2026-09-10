@@ -763,6 +763,12 @@
                                 Pembelian Terus
                             </a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link @if (Request::get('type') == 'lantikan_terus') active @endif"
+                                href="{{ action('HomeController@index', ['type' => 'lantikan_terus']) }}">
+                                Lantikan Terus
+                            </a>
+                        </li>
                     </ul>
 				</div>
 

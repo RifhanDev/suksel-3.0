@@ -241,7 +241,11 @@ class StosRolePermissionSeeder extends Seeder
             ['name' => 'DirectPurchase:quote', 'group_name' => 'DirectPurchase', 'display_name' => 'Sebut Harga (Syarikat)'],
             ['name' => 'DirectPurchase:decision', 'group_name' => 'DirectPurchase', 'display_name' => 'Keputusan Syarikat (Syarikat)'],
             ['name' => 'DirectAppointment:list', 'group_name' => 'DirectAppointment', 'display_name' => 'Lantikan Terus'],
+            ['name' => 'DirectAppointment:create', 'group_name' => 'DirectAppointment', 'display_name' => 'Cipta Projek (Pemilik Projek)'],
+            ['name' => 'DirectAppointment:cutoff', 'group_name' => 'DirectAppointment', 'display_name' => 'Cut Off (Pemilik Projek)'],
             ['name' => 'DirectAppointment:select', 'group_name' => 'DirectAppointment', 'display_name' => 'Pemilihan Syarikat (Agency Ketua Jabatan)'],
+            ['name' => 'DirectAppointment:quote', 'group_name' => 'DirectAppointment', 'display_name' => 'Sebut Harga (Syarikat)'],
+            ['name' => 'DirectAppointment:decision', 'group_name' => 'DirectAppointment', 'display_name' => 'Keputusan Syarikat (Syarikat)'],
             ['name' => 'Bidding:list', 'group_name' => 'Bidding', 'display_name' => 'Bidaan'],
         ];
     }
@@ -261,19 +265,22 @@ class StosRolePermissionSeeder extends Seeder
             'DirectPurchase:list',
             'DirectPurchase:create',
             'DirectPurchase:cutoff',
+            'DirectAppointment:list',
+            'DirectAppointment:create',
+            'DirectAppointment:cutoff',
         ];
 
         $ketuaJabatan = [
             'Tender:list',
-            'DirectPurchase:list',
             'DirectPurchase:select',
-            'DirectAppointment:list',
             'DirectAppointment:select',
         ];
 
         $syarikat = [
             'DirectPurchase:quote',
             'DirectPurchase:decision',
+            'DirectAppointment:quote',
+            'DirectAppointment:decision',
         ];
 
         $urusetia = [

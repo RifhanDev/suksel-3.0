@@ -12,23 +12,16 @@ class LantikanTerusController extends Controller
 {
     public function __construct(private StosBackendClient $stos)
     {
-        // Keep staff menus gated; vendor sebut-harga view/submit must stay open
-        // so Syarikat can use the Lantikan Terus BQ UI.
+        // Per-step permissions — no blanket DirectAppointment:list gate.
         // Pemilihan Syarikat is Admin + Agency Ketua Jabatan only (DirectAppointment:select).
-        $this->menuMiddleware('DirectAppointment:list', [
-            'except' => [
-                'sebutHargaShow',
-                'submitOffer',
-                'sebutHargaIndex',
-                'pemilihanIndex',
-                'pemilihanShow',
-                'storePemilihan',
-            ],
-        ]);
     }
 
     public function index()
     {
+        if ($denied = $this->denyUnlessMenu('DirectAppointment:create')) {
+            return $denied;
+        }
+
         $projects = $this->fetchProjects();
 
         return view('newModule.lantikanTerus.cipta_projek_list', compact('projects'));
@@ -36,6 +29,10 @@ class LantikanTerusController extends Controller
 
     public function create()
     {
+        if ($denied = $this->denyUnlessMenu('DirectAppointment:create')) {
+            return $denied;
+        }
+
         $project = null;
         $kategoriPerolehan = \App\Models\Ref\RefKategoriJenisPerolehan::where('active', true)->get();
 
@@ -44,6 +41,10 @@ class LantikanTerusController extends Controller
 
     public function edit($id)
     {
+        if ($denied = $this->denyUnlessMenu('DirectAppointment:create')) {
+            return $denied;
+        }
+
         try {
             $response = $this->stos->getLantikanTerus((int) $id);
             if (! $response->successful()) {
@@ -63,16 +64,28 @@ class LantikanTerusController extends Controller
 
     public function store(Request $request)
     {
+        if ($denied = $this->denyUnlessMenu('DirectAppointment:create')) {
+            return $denied;
+        }
+
         return $this->persist($request);
     }
 
     public function update(Request $request, $id)
     {
+        if ($denied = $this->denyUnlessMenu('DirectAppointment:create')) {
+            return $denied;
+        }
+
         return $this->persist($request, (int) $id);
     }
 
     public function sebutHargaIndex()
     {
+        if ($denied = $this->denyUnlessVendorOrMenu('DirectAppointment:quote')) {
+            return $denied;
+        }
+
         $projects = $this->fetchProjects(['published_only' => 1]);
 
         return view('newModule.lantikanTerus.sebut_harga_list', compact('projects'));
@@ -80,6 +93,10 @@ class LantikanTerusController extends Controller
 
     public function sebutHargaShow($id)
     {
+        if ($denied = $this->denyUnlessVendorOrMenu('DirectAppointment:quote')) {
+            return $denied;
+        }
+
         try {
             $response = $this->stos->getLantikanTerus((int) $id);
             abort_unless($response->successful(), 404);
@@ -140,6 +157,10 @@ class LantikanTerusController extends Controller
 
     public function cutOffIndex()
     {
+        if ($denied = $this->denyUnlessMenu('DirectAppointment:cutoff')) {
+            return $denied;
+        }
+
         $projects = $this->fetchProjects(['status_process_id' => 5]);
 
         return view('newModule.lantikanTerus.cut_off_list', compact('projects'));
@@ -147,6 +168,10 @@ class LantikanTerusController extends Controller
 
     public function cutOffShow($id)
     {
+        if ($denied = $this->denyUnlessMenu('DirectAppointment:cutoff')) {
+            return $denied;
+        }
+
         $response = $this->stos->getLantikanTerus((int) $id);
         abort_unless($response->successful(), 404);
 
@@ -171,6 +196,10 @@ class LantikanTerusController extends Controller
 
     public function storeCutoff(Request $request, $id)
     {
+        if ($denied = $this->denyUnlessMenu('DirectAppointment:cutoff')) {
+            return $denied;
+        }
+
         try {
             $payload = $request->all();
             $payload['uploaded_by'] = auth()->id();
@@ -259,6 +288,10 @@ class LantikanTerusController extends Controller
 
     public function keputusanIndex()
     {
+        if ($denied = $this->denyUnlessVendorOrMenu('DirectAppointment:decision')) {
+            return $denied;
+        }
+
         $projects = $this->fetchProjects(['status_process_id' => 32]);
 
         return view('newModule.lantikanTerus.keputusan_syarikat_list', compact('projects'));
@@ -266,6 +299,10 @@ class LantikanTerusController extends Controller
 
     public function keputusanShow($id)
     {
+        if ($denied = $this->denyUnlessVendorOrMenu('DirectAppointment:decision')) {
+            return $denied;
+        }
+
         $response = $this->stos->getLantikanTerus((int) $id);
         abort_unless($response->successful(), 404);
 
@@ -554,5 +591,21 @@ class LantikanTerusController extends Controller
             'mof' => [],
             'cidb' => [],
         ];
+    }
+
+    private function isVendorActor(): bool
+    {
+        $user = auth()->user();
+
+        return (bool) ($user && $user->vendor_id && $user->hasRole('Vendor'));
+    }
+
+    private function denyUnlessVendorOrMenu(string $permission)
+    {
+        if ($this->isVendorActor()) {
+            return null;
+        }
+
+        return $this->denyUnlessMenu($permission);
     }
 }
