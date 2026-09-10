@@ -186,6 +186,13 @@
                                 Penilaian Prestasi
                             </a>
                         </li>
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link" href="#db-direct-wins" data-bs-toggle="tab" role="tab"
+                                aria-controls="db-direct-wins" aria-selected="false">
+                                Pembelian Terus/Lantikan Terus
+                                <span class="badge ms-1">{{ count($directWins ?? []) }}</span>
+                            </a>
+                        </li>
                     </ul>
                 </div>
 
@@ -412,6 +419,61 @@
 
                         <div class="tab-pane" id="db-penilaian-prestasi">
                             @include('home.tab-contents.penilaian-prestasi')
+                        </div>
+
+                        <div class="tab-pane" id="db-direct-wins">
+                            @php $directWins = $directWins ?? collect(); @endphp
+                            @if (count($directWins) > 0)
+                                <div class="table-responsive">
+                                    <table class="DT2 table table-hover table-bordered align-middle mb-0">
+                                        <thead style="background: #f8fafc;">
+                                            <tr>
+                                                <th class="text-uppercase fw-bold py-3 ps-3" style="font-size:0.68rem; letter-spacing:0.5px; color:#6b7280; border-color:#e5e7eb;">Projek</th>
+                                                <th class="text-uppercase fw-bold py-3" style="font-size:0.68rem; letter-spacing:0.5px; color:#6b7280; border-color:#e5e7eb; width:140px;">Jenis</th>
+                                                <th class="text-uppercase fw-bold py-3 pe-3 text-end" style="font-size:0.68rem; letter-spacing:0.5px; color:#6b7280; border-color:#e5e7eb; width:160px;">Tarikh Tutup</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach ($directWins as $tender)
+                                                @php
+                                                    $isPembelian = $tender->type === 'pembelian_terus';
+                                                    $detailUrl = $isPembelian
+                                                        ? route('pembelianTerus.keputusanSyarikatDetails', $tender->id)
+                                                        : route('keputusanTerus.show', $tender->id);
+                                                    $jenisLabel = $isPembelian ? 'Pembelian Terus' : 'Lantikan Terus';
+                                                @endphp
+                                                <tr style="border-color:#e5e7eb;">
+                                                    <td class="py-3 ps-3" style="border-color:#e5e7eb;">
+                                                        <a href="{{ $detailUrl }}" class="fw-semibold mb-1 d-block" style="font-size:0.85rem;">{{ $tender->name }}</a>
+                                                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                                                            <span class="text-muted" style="font-size:0.72rem;">{{ optional($tender->tenderer)->name ?? '-' }}</span>
+                                                            @if($tender->ref_number)
+                                                                <span class="text-muted" style="font-size:0.72rem;">·</span>
+                                                                <span class="fw-semibold" style="font-size:0.72rem; color:#374151;">{{ $tender->ref_number }}</span>
+                                                            @endif
+                                                        </div>
+                                                    </td>
+                                                    <td class="py-3" style="border-color:#e5e7eb;">
+                                                        <span style="display:inline-block; font-size:0.68rem; font-weight:700; padding:3px 10px; border-radius:20px; background:{{ $isPembelian ? '#fef2f2' : '#eff6ff' }}; color:{{ $isPembelian ? '#b91c1c' : '#1d4ed8' }};">
+                                                            {{ $jenisLabel }}
+                                                        </span>
+                                                    </td>
+                                                    <td class="py-3 pe-3 text-end text-nowrap" style="border-color:#e5e7eb;">
+                                                        @if($tender->submission_datetime)
+                                                            <div class="fw-semibold" style="font-size:0.82rem; color:#1f2937;">{{ \Carbon\Carbon::parse($tender->submission_datetime)->format('j M Y') }}</div>
+                                                            <div class="text-muted" style="font-size:0.7rem;">{{ \Carbon\Carbon::parse($tender->submission_datetime)->format('g:i A') }}</div>
+                                                        @else
+                                                            <span class="text-muted" style="font-size:0.82rem;">-</span>
+                                                        @endif
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            @else
+                                <div class="alert alert-info mb-0">Tiada projek Pembelian Terus / Lantikan Terus yang dimenangi buat masa ini.</div>
+                            @endif
                         </div>
 
                     </div>{{-- /.tab-content --}}
