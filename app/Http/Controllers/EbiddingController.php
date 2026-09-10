@@ -260,7 +260,9 @@ class EbiddingController extends Controller
                         ->orderByDesc('id')
                         ->first();
                     $previousPrice = $tenderVendor ? (float) $tenderVendor->amount : null;
-                    $effectiveBid = $bid ? (float) $bid->bid_price : $previousPrice;
+                    // Harga Bidaan stays empty until vendor keys in / submits a bid.
+                    // Do not prefill from Harga Sebelum Bidaan.
+                    $effectiveBid = $bid !== null ? (float) $bid->bid_price : null;
 
                     return [
                         'pemilihan_item_id' => (int) $item->id,
@@ -854,6 +856,8 @@ class EbiddingController extends Controller
             $status = $this->sendMail('html', $to, $subject, '', 'tenders.emails.eligible', [
                 'tender_id' => $tender->id,
                 'vendor_id' => $vendor->id,
+                'action_url' => route('eBidding.show', $tender->id),
+                'action_label' => 'Pergi ke Bidaan',
             ]);
 
             if (is_string($status) && stripos($status, 'Email') !== false) {
