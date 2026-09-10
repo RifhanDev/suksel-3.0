@@ -145,11 +145,10 @@ trait EntrustCompatTrait
         }
 
         if ($this->hasRole('Agency Ketua Jabatan')) {
+            // PT/LT: Pemilihan Syarikat only. Tender:list is view-only senarai tender.
             return in_array($permission, [
                 'Tender:list',
-                'DirectPurchase:list',
                 'DirectPurchase:select',
-                'DirectAppointment:list',
                 'DirectAppointment:select',
             ], true);
         }

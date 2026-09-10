@@ -455,9 +455,13 @@
 				@endif
 
 				@php
-					$canLtList = $user->canAccessMenu('DirectAppointment:list');
+					$canLtCreate = $user->canAccessMenu('DirectAppointment:create');
+					$canLtCutoff = $user->canAccessMenu('DirectAppointment:cutoff');
 					$canLtSelect = $user->canAccessMenu('DirectAppointment:select');
-					$showLantikanTerus = $canLtList || $canLtSelect;
+					$canLtQuote = $isVendorUser || $user->canAccessMenu('DirectAppointment:quote');
+					$canLtDecision = $isVendorUser || $user->canAccessMenu('DirectAppointment:decision');
+					$showLantikanTerus = $canLtCreate || $canLtCutoff || $canLtSelect || $canLtQuote || $canLtDecision
+						|| $user->canAccessMenu('DirectAppointment:list');
 				@endphp
 				@if ($showLantikanTerus)
 				<!-- Menu: Lantikan Terus -->
@@ -489,7 +493,7 @@
 							@php
 								$isLantikanCiptaProjekActive = request()->routeIs('lantikan.index') || request()->routeIs('lantikan.create') || request()->routeIs('lantikan.edit');
 							@endphp
-							@if ($canLtList)
+							@if ($canLtCreate)
 							<li>
 								<a class="submenu-item d-flex justify-content-between align-items-center"
 									data-bs-toggle="collapse" href="#menuLantikanCiptaProjek" role="button"
@@ -514,6 +518,8 @@
 									</ul>
 								</div>
 							</li>
+							@endif
+							@if ($canLtQuote)
 							<li>
 								<a
 									class="submenu-item {{ request()->routeIs('sebutHargaTerus.index') || request()->routeIs('sebutHargaTerus.show') ? 'active' : '' }}"
@@ -525,6 +531,8 @@
 										Harga</span>
 								</a>
 							</li>
+							@endif
+							@if ($canLtCutoff)
 							<li>
 								<a
 									class="submenu-item {{ request()->routeIs('cutOffTerus.index') || request()->routeIs('cutOffTerus.show') ? 'active' : '' }}"
@@ -551,7 +559,7 @@
 								</a>
 							</li>
 							@endif
-							@if ($canLtList)
+							@if ($canLtDecision)
 							<li>
 								<a
 									class="submenu-item {{ request()->routeIs('keputusanTerus.index') || request()->routeIs('keputusanTerus.show') ? 'active' : '' }}"

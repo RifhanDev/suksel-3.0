@@ -73,8 +73,11 @@ class HomeController extends Controller
 				case 'pembelian_terus':
 					$tenders = $base->whereType('pembelian_terus')->where('status_process_id', '>=', 5);
 					break;
+				case 'lantikan_terus':
+					$tenders = $base->whereType('lantikan_terus')->where('status_process_id', '>=', 5);
+					break;
 				default:
-					$tenders = $base->whereIn('type', ['tender', 'quotation', 'pembelian_terus']);
+					$tenders = $base->whereIn('type', ['tender', 'quotation', 'pembelian_terus', 'lantikan_terus']);
 					break;
 			}
 
@@ -102,9 +105,11 @@ class HomeController extends Controller
 					$string   = [];
 					$string[] = '<strong><u>' . $tender->tenderer->name . '</u></strong>';
 					$string[] = '<small><strong>' . $tender->ref_number . '</strong></small>';
-					$detailUrl = $tender->type === 'pembelian_terus'
-						? route('pembelianTerus.detailProject', $tender->id)
-						: route('tenders.show', $tender->id);
+					$detailUrl = match ($tender->type) {
+						'pembelian_terus' => route('pembelianTerus.detailProject', $tender->id),
+						'lantikan_terus' => route('sebutHargaTerus.show', $tender->id),
+						default => route('tenders.show', $tender->id),
+					};
 					$string[] = '<a class="table-tender-title" href="' . $detailUrl . '">' . $tender->name . '</a>';
 
 					if ($tender->briefing_required) {
@@ -223,6 +228,9 @@ class HomeController extends Controller
 				break;
 			case 'pembelian_terus':
 				$path = '/?type=pembelian_terus';
+				break;
+			case 'lantikan_terus':
+				$path = '/?type=lantikan_terus';
 				break;
 			default:
 				$path = '/';

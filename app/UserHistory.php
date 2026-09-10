@@ -45,7 +45,15 @@ class UserHistory extends Model
 
          try {
              	return $history->save();   
-         } catch (Exception $e) {
+         } catch (\Throwable $e) {
+             	// Never block auth/profile flows on audit trail failures
+             	// (e.g. legacy FK pointing at users1).
+             	\Log::warning('UserHistory::log failed', [
+             		'user_id' => $user_id,
+             		'action' => $action,
+             		'error' => $e->getMessage(),
+             	]);
+
              	return false;
          }
      	}
