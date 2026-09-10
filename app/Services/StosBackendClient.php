@@ -371,9 +371,14 @@ class StosBackendClient
     public function updateLantikanTerus(int $tenderId, array $payload, array $files = []): Response
     {
         $files = array_filter($files);
-        if (count($files) > 0) {
-            // POST multipart — PHP does not populate uploaded files on raw PUT.
-            return $this->postMultipart('/api/lantikan-terus/' . $tenderId, $payload, $files);
+
+        // Deployed API only registers PUT for /lantikan-terus/{id} (not POST).
+        // PHP also does not populate uploaded files on raw PUT, so embed BQ as base64.
+        if (isset($files['dokumen_bq']) && $files['dokumen_bq']) {
+            $file = $files['dokumen_bq'];
+            $payload['dokumen_bq_base64'] = base64_encode((string) file_get_contents($file->getRealPath()));
+            $payload['dokumen_bq_filename'] = $file->getClientOriginalName();
+            $payload['dokumen_bq_mime'] = $file->getMimeType() ?: 'application/octet-stream';
         }
 
         return $this->request('put', '/api/lantikan-terus/' . $tenderId, ['json' => $payload]);
