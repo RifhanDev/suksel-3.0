@@ -630,10 +630,26 @@
             $(this).val(val);
         });
 
-        $('#sebutHargaForm').on('submit', function () {
+        $('#sebutHargaForm').on('submit', function (e) {
             $(this).find('.amount-input').each(function () {
                 $(this).val($(this).val().replace(/,/g, ''));
             });
+
+            var bqInput = document.getElementById('input-muatnaik-bq');
+            var hasBq = bqInput && bqInput.files && bqInput.files.length > 0;
+            var harga = parseFloat(String($('[name="harga_tawaran"]').val() || '0').replace(/,/g, ''));
+
+            if (!harga || harga <= 0) {
+                e.preventDefault();
+                alert('Sila masukkan harga tawaran sebelum menghantar.');
+                return false;
+            }
+
+            if (!hasBq) {
+                e.preventDefault();
+                alert('Sila muat naik Dokumen BQ yang telah dilengkapkan sebelum menghantar.');
+                return false;
+            }
         });
     </script>
 @endsection

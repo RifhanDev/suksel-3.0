@@ -6,6 +6,7 @@ use App\Services\StosBackendClient;
 use App\Tender;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class LantikanTerusController extends Controller
@@ -129,11 +130,23 @@ class LantikanTerusController extends Controller
             return redirect()->back()->with('error', 'Hanya pengguna syarikat boleh menghantar tawaran.');
         }
 
+        if (! $request->hasFile('muat_naik_bq') && ! $request->hasFile('bq')) {
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Sila muat naik Dokumen BQ yang telah dilengkapkan sebelum menghantar tawaran.');
+        }
+
         $vendorId = (int) auth()->user()->vendor->id;
         $payload = [
             'vendor_id' => $vendorId,
             'harga_tawaran' => str_replace(',', '', (string) $request->input('harga_tawaran', 0)),
         ];
+
+        if ((float) $payload['harga_tawaran'] <= 0) {
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Harga tawaran diperlukan sebelum menghantar.');
+        }
 
         $files = [];
         if ($request->hasFile('muat_naik_bq')) {
@@ -391,6 +404,22 @@ class LantikanTerusController extends Controller
         }
         unset($payload['dokumen_bq']);
 
+        if ($action === 'publish') {
+            $hasNewBq = isset($files['dokumen_bq']);
+            $hasExistingBq = $id
+                ? DB::table('lantikan_terus_documents')
+                    ->where('tender_id', $id)
+                    ->where('doc_type', 'bq')
+                    ->exists()
+                : false;
+
+            if (! $hasNewBq && ! $hasExistingBq) {
+                return redirect()->back()
+                    ->withInput()
+                    ->with('error', 'Dokumen BQ diperlukan sebelum diterbitkan. Sila muat naik BQ pada langkah Maklumat BQ.');
+            }
+        }
+
         try {
             if ($id) {
                 $response = $this->stos->updateLantikanTerus($id, $payload, $files);
@@ -426,8 +455,17 @@ class LantikanTerusController extends Controller
 
             $apiError = $response->json('error');
             $message = $response->json('message') ?? 'Gagal menyimpan projek';
-            if (is_string($apiError) && $apiError !== '' && str_contains($apiError, "Column 'name' cannot be null")) {
-                $message = 'Tajuk Perolehan wajib diisi sebelum menyimpan projek.';
+            if (is_string($apiError) && $apiError !== '') {
+                if (str_contains($apiError, "Column 'name' cannot be null")) {
+                    $message = 'Tajuk Perolehan wajib diisi sebelum menyimpan projek.';
+                } elseif (str_contains($apiError, 'Dokumen BQ diperlukan')) {
+                    $message = 'Dokumen BQ diperlukan sebelum diterbitkan. Sila muat naik BQ pada langkah Maklumat BQ.';
+                } else {
+                    $message = $apiError;
+                }
+            }
+            if (is_string($response->json('message')) && str_contains((string) $response->json('message'), 'Dokumen BQ')) {
+                $message = $response->json('message');
             }
 
             return redirect()->back()->withInput()->with('error', $message);

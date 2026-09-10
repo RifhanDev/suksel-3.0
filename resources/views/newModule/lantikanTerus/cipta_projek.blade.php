@@ -1031,6 +1031,13 @@
 
             // --- SAVE DRAFT / PUBLISH ---
             // jQuery .submit() skips HTML5 required checks — validate step 1 explicitly.
+            function hasBqDocument() {
+                var bqInput = document.getElementById('input-dokumen-bq');
+                var hasNewFile = bqInput && bqInput.files && bqInput.files.length > 0;
+                var hasSaved = @json($hasSavedBq ?? false);
+                return hasNewFile || hasSaved;
+            }
+
             $('#btn-save').on('click', function() {
                 if (!validateStep(1)) return;
                 $('#form-action').val('draft');
@@ -1042,12 +1049,33 @@
                 for (var s = 1; s <= TOTAL_STEPS; s++) {
                     if (!validateStep(s)) return;
                 }
+                if (!hasBqDocument()) {
+                    currentStep = 2;
+                    updateWizardUI();
+                    scrollToStepper();
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Dokumen BQ diperlukan',
+                        text: 'Sila muat naik Dokumen BQ sebelum menerbitkan projek.',
+                        confirmButtonColor: '#c41e3a'
+                    });
+                    return;
+                }
                 $('#form-action').val('publish');
                 $('#createProjekForm').submit();
             });
 
             $('#btn-next').click(function() {
                 if (!validateCurrentStep()) return;
+                if (currentStep === 2 && !hasBqDocument()) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Dokumen BQ diperlukan',
+                        text: 'Sila muat naik Dokumen BQ sebelum meneruskan.',
+                        confirmButtonColor: '#c41e3a'
+                    });
+                    return;
+                }
                 if (currentStep < TOTAL_STEPS) {
                     currentStep++;
                     updateWizardUI();

@@ -68,9 +68,9 @@ class StosBackendClient
         return $this->put('/api/tenders/' . $tenderId, $payload);
     }
 
-    public function getTender(int $tenderId): Response
-    {
-        return $this->get('/api/tenders/' . $tenderId);
+    public function getTender(int $tenderId): Response
+    {
+        return $this->get('/api/tenders/' . $tenderId);
     }
 
     public function dispatchProcess(string $process, array $payload): Response
@@ -452,6 +452,9 @@ class StosBackendClient
     /**
      * POST with multipart/form-data (fields + uploaded files).
      *
+     * Pass nested field arrays as-is (do not pre-flatten bracket keys) so Laravel/Guzzle
+     * encodes them once. Pre-flattening broke scalar fields like `name` on the STOS API.
+     *
      * @param  array<string, mixed>  $fields
      * @param  array<string, \Illuminate\Http\UploadedFile|null>  $files
      */
@@ -477,7 +480,9 @@ class StosBackendClient
         }
 
         try {
-            return $client->asMultipart()->post($url, $this->flattenMultipartFields($fields));
+            // attach() already switches the client to multipart — do not call asMultipart()
+            // with pre-flattened bracket keys (that dropped fields such as `name`).
+            return $client->post($url, $this->stringifyMultipartScalars($fields));
         } catch (\Throwable $e) {
             Log::error('STOS API multipart request failed', [
                 'url' => $url,
@@ -489,8 +494,39 @@ class StosBackendClient
     }
 
     /**
-     * Flatten nested arrays into PHP multipart field names:
-     * offer_items[0][item_id] => 1
+     * Keep nested arrays for Laravel multipart encoding, but cast scalars to string
+     * (and bools to 1/0) so PHP form parsing on the API side is consistent.
+     *
+     * @param  array<string, mixed>  $fields
+     * @return array<string, mixed>
+     */
+    protected function stringifyMultipartScalars(array $fields): array
+    {
+        $out = [];
+
+        foreach ($fields as $key => $value) {
+            if (is_array($value)) {
+                $out[$key] = $this->stringifyMultipartScalars($value);
+                continue;
+            }
+
+            if ($value === null) {
+                continue;
+            }
+
+            if (is_bool($value)) {
+                $out[$key] = $value ? '1' : '0';
+                continue;
+            }
+
+            $out[$key] = is_scalar($value) ? (string) $value : $value;
+        }
+
+        return $out;
+    }
+
+    /**
+     * @deprecated Prefer stringifyMultipartScalars — kept for any callers that still flatten.
      *
      * @param  array<string, mixed>  $fields
      * @return array<string, string>
