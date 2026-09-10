@@ -283,6 +283,10 @@ class EbiddingController extends Controller
                 ->where('vendor_id', $vendorId)
                 ->whereNotNull('submitted_at')
                 ->exists();
+            // After Hantar, lock the form even if the bidding window is still open.
+            if ($hasVendorSubmitted) {
+                $canVendorEditBid = false;
+            }
 
             return view('newModule.eBidding.vendor_bidding', [
                 'tender' => $tender,
@@ -344,13 +348,6 @@ class EbiddingController extends Controller
         ]);
 
         DB::transaction(function () use ($payload, $tender, $vendorId) {
-            $tenderVendor = TenderVendor::query()
-                ->where('tender_id', $tender->id)
-                ->where('vendor_id', $vendorId)
-                ->orderByDesc('id')
-                ->first();
-            $basePrice = $tenderVendor ? (float) $tenderVendor->amount : null;
-
             foreach ($payload['items'] as $row) {
                 $item = JawatankuasaPerolehanPemilihanItem::query()
                     ->where('id', (int) $row['pemilihan_item_id'])
@@ -360,15 +357,12 @@ class EbiddingController extends Controller
                     continue;
                 }
 
-                $existing = EbiddingVendorBidItem::query()
-                    ->where('tender_id', $tender->id)
-                    ->where('vendor_id', $vendorId)
-                    ->where('pemilihan_item_id', $item->id)
-                    ->first();
+                $inputPrice = isset($row['bid_price']) && $row['bid_price'] !== '' && $row['bid_price'] !== null
+                    ? (float) $row['bid_price']
+                    : null;
 
-                $inputPrice = isset($row['bid_price']) && $row['bid_price'] !== '' ? (float) $row['bid_price'] : null;
-                $finalPrice = $inputPrice ?? ($existing ? (float) $existing->bid_price : $basePrice);
-                if ($finalPrice === null || $finalPrice <= 0) {
+                // Only save when vendor actually keyed a price — never fallback to Harga Sebelum Bidaan.
+                if ($inputPrice === null || $inputPrice <= 0) {
                     continue;
                 }
 
@@ -379,17 +373,19 @@ class EbiddingController extends Controller
                         'pemilihan_item_id' => $item->id,
                     ],
                     [
-                        'bid_price' => $finalPrice,
+                        'bid_price' => $inputPrice,
                         'submitted_at' => now(),
                     ]
                 );
             }
         });
 
+        session()->flash('success', 'Harga bidaan berjaya dihantar.');
+
         return response()->json([
             'message' => 'Harga bidaan berjaya dihantar.',
             'next_status_label' => $this->statusLabel($currentStage, (int) $tender->id),
-            'redirect_url' => route('eBidding.index'),
+            'redirect_url' => route('eBidding.show', ['id' => $tender->id]),
         ]);
     }
 

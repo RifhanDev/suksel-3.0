@@ -1528,6 +1528,10 @@
                                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a5 5 0 1 1-5 5l.005-.217A5 5 0 0 1 12 2z"/><path d="M14 14a5 5 0 0 1 5 5v1a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-1a5 5 0 0 1 5-5h4z"/></svg>
                                         Akaun Saya
                                     </a>
+                                    <a class="dropdown-item" href="/dashboard?tab=ebidding">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M3 12h3v8H3zM9 5h3v15H9zM15 8h3v12h-3z"/></svg>
+                                        Bidaan
+                                    </a>
                                     <a class="dropdown-item" href="{{ action('VendorsController@certificate', Auth::user()->vendor->id) }}" target="_blank">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M19.496 3a1 1 0 0 1 .753.34l.042.052l2 2.5a1 1 0 0 1 0 1.216l-2 2.5a1 1 0 0 1-.753.392H18v8a3 3 0 0 1-2.824 2.995L15 21H7a3 3 0 0 1-2.995-2.824L4 18V6a3 3 0 0 1 2.824-2.995L7 3h12.496zM14 15H8a1 1 0 0 0 0 2h6a1 1 0 0 0 0-2zm0-4H8a1 1 0 0 0 0 2h6a1 1 0 0 0 0-2zm-2-4H8a1 1 0 0 0 0 2h4a1 1 0 0 0 0-2z"/></svg>
                                         Papar Sijil Pengesahan
