@@ -468,7 +468,41 @@ class HomeController extends Controller
 				$refund->receipt = $this->receiptNumGenerator($refund->transaction->number, date('d-m-Y', strtotime($refund->transaction->created_at)));
 			}
 
-			return view('home.dashboard', compact('purchases', 'eligibles', 'invites', 'refunds'));
+			// Projek Pembelian Terus / Lantikan Terus yang dimenangi oleh vendor.
+			$directWins = collect();
+			if ($user->vendor) {
+				$vendorId = (int) $user->vendor_id;
+
+				$ptWonIds = DB::table('pembelian_terus_offers')
+					->where('vendor_id', $vendorId)
+					->where('selected', 1)
+					->pluck('tender_id');
+
+				$ltWonIds = DB::table('lantikan_terus_offers')
+					->where('vendor_id', $vendorId)
+					->where('selected', 1)
+					->pluck('tender_id');
+
+				$tvWonIds = TenderVendor::query()
+					->where('vendor_id', $vendorId)
+					->where('winner', 1)
+					->whereHas('tender', function ($q) {
+						$q->whereIn('type', ['pembelian_terus', 'lantikan_terus']);
+					})
+					->pluck('tender_id');
+
+				$wonIds = $ptWonIds->merge($ltWonIds)->merge($tvWonIds)->unique()->filter()->values();
+
+				if ($wonIds->isNotEmpty()) {
+					$directWins = Tender::with('tenderer')
+						->whereIn('id', $wonIds)
+						->whereIn('type', ['pembelian_terus', 'lantikan_terus'])
+						->orderByDesc('submission_datetime')
+						->get();
+				}
+			}
+
+			return view('home.dashboard', compact('purchases', 'eligibles', 'invites', 'refunds', 'directWins'));
 		} else {
 			if (!$user->organization_unit_id) {
 				return $this->_access_denied();
