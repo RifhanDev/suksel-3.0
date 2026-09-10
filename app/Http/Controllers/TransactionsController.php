@@ -168,20 +168,23 @@ class TransactionsController extends Controller
 		// pembolehubah yang tidak wujud, iaitu 500.
 		$data = [];
 
-		// Kad statistik hanya perlukan bilangan, bukan lajur vendor. JOIN memaksa
-		// carian ke `vendors` bagi setiap baris yang dikira, dan orderBy tidak
-		// bermakna langsung untuk COUNT.
+		// Kad statistik dikira TANPA sebarang semakan vendor.
 		//
-		// EXISTS memberi bilangan yang IDENTIK dengan INNER JOIN di sini kerana
-		// vendors.id ialah kunci utama: padanan paling banyak satu baris, jadi
-		// tiada baris digandakan dan penapisan yang sama dikekalkan. Ini penting -
-		// transactions.vendor_id boleh null dan tiada FK, jadi join itu MEMANG
-		// menapis sebahagian baris dan tidak boleh dibuang begitu sahaja.
-		$m_transactions = Transaction::whereNotNull('transactions.id')
-			->whereExists(function ($q) {
-				$q->selectRaw('1')->from('vendors')
-					->whereColumn('vendors.id', 'transactions.vendor_id');
-			});
+		// Skop asal menyertai `vendors`, yang saya kekalkan sebagai EXISTS untuk
+		// menjaga bilangan tetap sama. Itu satu kesilapan: EXPLAIN menunjukkan
+		// semakan itu menghalang MySQL menjawab GROUP BY daripada indeks, memaksa
+		// bacaan jadual dan satu carian kunci utama bagi setiap baris. Di staging
+		// pertanyaan itu berjalan lebih 600 saat, tidak pernah selesai, tidak
+		// pernah mengisi cache, dan bertimbun sehingga lebih 50 salinan serentak
+		// menepukan pangkalan data dan menjatuhkan pelayan.
+		//
+		// Tanpa semakan itu GROUP BY dijawab terus daripada indeks. Kesannya:
+		// transaksi yang vendor_id-nya NULL atau menunjuk kepada vendor yang sudah
+		// tiada kini TERMASUK dalam kiraan kad, sedangkan sebelum ini ia
+		// dikecualikan. Untuk kiraan ringkasan itu boleh dipertahankan - dan
+		// nombor yang sedikit berbeza jauh lebih baik daripada nombor yang tidak
+		// pernah muncul.
+		$m_transactions = Transaction::query();
 
 		if (!auth()->user()->can('Transaction:all')) {
 			$m_transactions->where('transactions.organization_unit_id', auth()->user()->organization_unit_id);
