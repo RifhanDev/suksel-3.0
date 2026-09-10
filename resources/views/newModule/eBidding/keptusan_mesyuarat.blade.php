@@ -478,6 +478,7 @@
 								<thead>
 									<tr>
 										<th style="width:60px;">Bil</th>
+										<th style="min-width:180px;">Nama Vendor</th>
 										<th style="width:110px;">Status Bumiputra</th>
 										<th style="width:120px;">Harga Tawaran (RM)</th>
 										<th style="width:90px;">Jumlah Skor</th>
@@ -488,7 +489,7 @@
 										<th style="width:120px;">Harga Bidaan (RM)</th>
 									</tr>
 									<tr>
-										<th colspan="6"></th>
+										<th colspan="7"></th>
 										<th>Prestasi Pembekal</th>
 										<th>Lembaga Pengarah</th>
 										<th colspan="2"></th>
@@ -502,6 +503,12 @@
 									@foreach ($petenderRows as $row)
 										<tr>
 											<td>{{ $row['bil_label'] }}</td>
+											<td class="text-start">
+												<div class="fw-semibold">{{ $row['vendor_name'] ?? '-' }}</div>
+												@if (!empty($row['vendor_id']))
+													<div class="text-muted small">ID: {{ $row['vendor_id'] }}</div>
+												@endif
+											</td>
 											<td>{{ $row['status_bumiputra'] }}</td>
 											<td>{{ number_format((float) $row['harga_tawaran'], 2) }}</td>
 											<td>{{ $row['jumlah_skor'] }}</td>

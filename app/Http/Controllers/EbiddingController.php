@@ -203,7 +203,7 @@ class EbiddingController extends Controller
         $agencyPemilihanItems = JawatankuasaPerolehanPemilihanItem::query()
             ->where('tender_id', $tender->id)
             ->with(['petenders' => function ($q) {
-                $q->orderBy('sort_order');
+                $q->orderBy('sort_order')->with('vendor');
             }])
             ->orderBy('sort_order')
             ->get();
@@ -216,13 +216,16 @@ class EbiddingController extends Controller
             ->groupBy('pemilihan_item_id');
 
         $agencyPemilihanItems = $agencyPemilihanItems->map(function ($item) use ($bidByItem) {
-            $prices = ($bidByItem->get($item->id, collect()))
-                ->pluck('bid_price')
-                ->values();
+            $bidsByVendor = ($bidByItem->get($item->id, collect()))->keyBy('vendor_id');
 
-            $petenders = $item->petenders->values()->map(function ($petender, $idx) use ($prices) {
-                $bidaan = $prices->get($idx);
+            $petenders = $item->petenders->values()->map(function ($petender) use ($bidsByVendor) {
+                $vendorId = (int) ($petender->vendor_id ?? 0);
+                $bid = $vendorId > 0 ? $bidsByVendor->get($vendorId) : null;
+                $bidaan = $bid ? (float) $bid->bid_price : null;
+
                 return [
+                    'vendor_id' => $vendorId,
+                    'vendor_name' => (string) ($petender->vendor->name ?? '-'),
                     'bil_label' => (string) ($petender->bil_label ?? ''),
                     'status_bumiputra' => (string) ($petender->status_bumiputra ?? ''),
                     'harga_tawaran' => (float) ($petender->harga_tawaran ?? 0),
@@ -232,7 +235,7 @@ class EbiddingController extends Controller
                     'tindakan_disiplin' => (string) ($petender->tindakan_disiplin ?? ''),
                     'lembaga_pengarah_url' => $petender->lembaga_pengarah_file_path ? asset($petender->lembaga_pengarah_file_path) : null,
                     'kaedah_sulp' => 'Bidaan',
-                    'harga_bidaan' => $bidaan !== null ? (float) $bidaan : (float) ($petender->harga_tawaran ?? 0),
+                    'harga_bidaan' => $bidaan !== null ? $bidaan : (float) ($petender->harga_tawaran ?? 0),
                 ];
             });
 
@@ -256,14 +259,29 @@ class EbiddingController extends Controller
                         ->where('vendor_id', $vendorId)
                         ->where('pemilihan_item_id', $item->id)
                         ->first();
-                    $tenderVendor = TenderVendor::query()
-                        ->where('tender_id', $tender->id)
+
+                    // Harga Sebelum Bidaan = harga tawaran from Senarai Pembekal (per item).
+                    $petender = DB::table('jawatankuasa_perolehan_pemilihan_petenders')
+                        ->where('pemilihan_item_id', $item->id)
                         ->where('vendor_id', $vendorId)
-                        ->orderByDesc('id')
+                        ->orderBy('sort_order')
                         ->first();
-                    $previousPrice = $tenderVendor ? (float) $tenderVendor->amount : null;
+
+                    $previousPrice = $petender && $petender->harga_tawaran !== null
+                        ? (float) $petender->harga_tawaran
+                        : null;
+
+                    // Fallback only if petender row missing vendor_id / harga.
+                    if ($previousPrice === null) {
+                        $tenderVendor = TenderVendor::query()
+                            ->where('tender_id', $tender->id)
+                            ->where('vendor_id', $vendorId)
+                            ->orderByDesc('id')
+                            ->first();
+                        $previousPrice = $tenderVendor ? (float) $tenderVendor->amount : null;
+                    }
+
                     // Harga Bidaan stays empty until vendor keys in / submits a bid.
-                    // Do not prefill from Harga Sebelum Bidaan.
                     $effectiveBid = $bid !== null ? (float) $bid->bid_price : null;
 
                     return [
@@ -363,7 +381,30 @@ class EbiddingController extends Controller
                     ? (float) $row['bid_price']
                     : null;
 
-                // Only save when vendor actually keyed a price — never fallback to Harga Sebelum Bidaan.
+                // Empty Harga Bidaan → keep old harga tawaran (track submission even with no change).
+                if ($inputPrice === null || $inputPrice <= 0) {
+                    $petender = DB::table('jawatankuasa_perolehan_pemilihan_petenders')
+                        ->where('pemilihan_item_id', $item->id)
+                        ->where('vendor_id', $vendorId)
+                        ->orderBy('sort_order')
+                        ->first();
+
+                    $fallback = $petender && $petender->harga_tawaran !== null
+                        ? (float) $petender->harga_tawaran
+                        : null;
+
+                    if ($fallback === null || $fallback <= 0) {
+                        $tenderVendor = TenderVendor::query()
+                            ->where('tender_id', $tender->id)
+                            ->where('vendor_id', $vendorId)
+                            ->orderByDesc('id')
+                            ->first();
+                        $fallback = $tenderVendor ? (float) $tenderVendor->amount : null;
+                    }
+
+                    $inputPrice = ($fallback !== null && $fallback > 0) ? $fallback : null;
+                }
+
                 if ($inputPrice === null || $inputPrice <= 0) {
                     continue;
                 }

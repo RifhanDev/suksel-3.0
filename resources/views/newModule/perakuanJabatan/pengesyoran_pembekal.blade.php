@@ -5,6 +5,8 @@
 	$tabsReadOnly = $tabsReadOnly ?? false;
 	$ppLocked = $tabsReadOnly || $ppSubmitted;
 	$ppSyorOptions = \App\Models\PerakuanJabatanPengesyoranPembekalItem::SYOR_OPTIONS;
+	$showHargaBidaan = (bool) ($tender->is_ebidding ?? false);
+	$ppEmptyColspan = (!empty($isKerja) ? 10 : 11) + ($showHargaBidaan ? 1 : 0);
 @endphp
 <div class="tab-pane fade pengesyoran-pembekal-tab" id="tab-pengesyoran-pembekal" role="tabpanel">
 	<style>
@@ -124,6 +126,9 @@
 							<th rowspan="2">Bil</th>
 							<th rowspan="2">Status Bumiputra</th>
 							<th rowspan="2">Harga Tawaran (RM)</th>
+							@if ($showHargaBidaan)
+								<th rowspan="2">Harga Bidaan (RM)</th>
+							@endif
 							@if (!empty($isKerja))
 								<th rowspan="2">Skor Keseluruhan</th>
 								<th rowspan="2">Kedudukan</th>
@@ -153,6 +158,13 @@
 								<td>
 									{{ $row['harga_tawaran'] !== null ? number_format((float) $row['harga_tawaran'], 2) : '—' }}
 								</td>
+								@if ($showHargaBidaan)
+									<td>
+										{{ isset($row['harga_bidaan']) && $row['harga_bidaan'] !== null
+											? number_format((float) $row['harga_bidaan'], 2)
+											: '—' }}
+									</td>
+								@endif
 								@if (!empty($isKerja))
 									<td>
 										@php $skorKes = $row['skor_keseluruhan'] ?? $row['skor_teknikal'] ?? null; @endphp
@@ -196,7 +208,7 @@
 							</tr>
 						@empty
 							<tr>
-								<td colspan="{{ !empty($isKerja) ? 10 : 11 }}" class="text-muted py-4">Tiada pembekal layak untuk dipaparkan.</td>
+								<td colspan="{{ $ppEmptyColspan }}" class="text-muted py-4">Tiada pembekal layak untuk dipaparkan.</td>
 							</tr>
 						@endforelse
 					</tbody>

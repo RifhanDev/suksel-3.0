@@ -72,10 +72,14 @@ class TenderVendor extends Model
 
    public function getAmountAttribute($amount) {
        	
+       	if(!$this->transaction || !$this->transaction->created_at) {
+            return $amount;
+        	}
+
        	if(Carbon::parse($this->transaction->created_at)->timestamp > Carbon::parse('2015-06-08')->timestamp) {
             return $amount;
         	} else {
-            return $this->tender->price;
+            return optional($this->tender)->price ?? $amount;
         	}
    }
 
