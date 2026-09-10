@@ -2316,9 +2316,17 @@ class PenilaianKewanganController extends Controller
 
                 $spId = $techItem?->sp_id ?? null;
                 if (!$spId) {
+                    // specification_pricings tiada lajur tender_id - tidak pernah ada, dalam
+                    // mana-mana persekitaran. Jadual ini terpaut kepada tender hanya melalui
+                    // technical_checklist_item_id -> technical_checklist_items ->
+                    // technical_checklist_headers.tender_id, iaitu tepat apa yang subkueri
+                    // di bawah lakukan. Klausa where('tender_id', ...) yang dahulunya di sini
+                    // menjadikan keseluruhan pertanyaan gagal dengan "1054 Unknown column
+                    // 'tender_id'", jadi skrin penilaian kewangan 500 untuk setiap tender
+                    // bekalan dan perkhidmatan. Tender kerja tidak terjejas kerana ia
+                    // dialihkan ke pengawal lain lebih awal.
                     $spId = \Illuminate\Support\Facades\DB::table('specification_pricings')
-                        ->where('tender_id', $tender->id)
-                        ->orWhereIn('technical_checklist_item_id', function ($q) use ($tender) {
+                        ->whereIn('technical_checklist_item_id', function ($q) use ($tender) {
                             $q->select('tci.id')
                                 ->from('technical_checklist_items as tci')
                                 ->join('technical_checklist_headers as tch', 'tch.id', '=', 'tci.technical_checklist_header_id')
