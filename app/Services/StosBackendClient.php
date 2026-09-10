@@ -361,27 +361,53 @@ class StosBackendClient
     public function createLantikanTerus(array $payload, array $files = []): Response
     {
         $files = array_filter($files);
-        if (count($files) > 0) {
-            return $this->postMultipart('/api/lantikan-terus', $payload, $files);
-        }
+        $payload = $this->embedLantikanBqFile($payload, $files);
 
-        return $this->post('/api/lantikan-terus', $payload);
+        return $this->request('post', '/api/lantikan-terus', ['json' => $payload]);
     }
 
     public function updateLantikanTerus(int $tenderId, array $payload, array $files = []): Response
     {
         $files = array_filter($files);
+        $payload = $this->embedLantikanBqFile($payload, $files);
 
-        // Deployed API only registers PUT for /lantikan-terus/{id} (not POST).
-        // PHP also does not populate uploaded files on raw PUT, so embed BQ as base64.
-        if (isset($files['dokumen_bq']) && $files['dokumen_bq']) {
-            $file = $files['dokumen_bq'];
-            $payload['dokumen_bq_base64'] = base64_encode((string) file_get_contents($file->getRealPath()));
-            $payload['dokumen_bq_filename'] = $file->getClientOriginalName();
-            $payload['dokumen_bq_mime'] = $file->getMimeType() ?: 'application/octet-stream';
+        // Always PUT JSON — deployed STOS may not expose POST /lantikan-terus/{id}.
+        // BQ file (if any) is embedded as base64 in the JSON body.
+        $url = $this->baseUrl . '/api/lantikan-terus/' . $tenderId;
+
+        Log::info('STOS Lantikan Terus update', [
+            'method' => 'PUT',
+            'url' => $url,
+            'has_bq' => isset($payload['dokumen_bq_base64']),
+            'action' => $payload['action'] ?? null,
+        ]);
+
+        return self::http()
+            ->timeout(120)
+            ->asJson()
+            ->acceptJson()
+            ->put($url, $payload);
+    }
+
+    /**
+     * Embed uploaded BQ into JSON payload (works with PUT; avoids multipart POST).
+     *
+     * @param  array<string, mixed>  $payload
+     * @param  array<string, \Illuminate\Http\UploadedFile|null>  $files
+     * @return array<string, mixed>
+     */
+    protected function embedLantikanBqFile(array $payload, array $files): array
+    {
+        $file = $files['dokumen_bq'] ?? null;
+        if (! $file) {
+            return $payload;
         }
 
-        return $this->request('put', '/api/lantikan-terus/' . $tenderId, ['json' => $payload]);
+        $payload['dokumen_bq_base64'] = base64_encode((string) file_get_contents($file->getRealPath()));
+        $payload['dokumen_bq_filename'] = $file->getClientOriginalName();
+        $payload['dokumen_bq_mime'] = $file->getMimeType() ?: 'application/octet-stream';
+
+        return $payload;
     }
 
     public function publishLantikanTerus(int $tenderId): Response
@@ -575,14 +601,14 @@ class StosBackendClient
 
         try {
             if ($method === 'get') {
-                return $client->get($url, $options['query'] ?? []);
+                return $client->acceptJson()->get($url, $options['query'] ?? []);
             }
 
             if ($method === 'put') {
-                return $client->put($url, $options['json'] ?? []);
+                return $client->asJson()->acceptJson()->put($url, $options['json'] ?? []);
             }
 
-            return $client->post($url, $options['json'] ?? []);
+            return $client->asJson()->acceptJson()->post($url, $options['json'] ?? []);
         } catch (\Throwable $e) {
             Log::error('STOS API request failed', [
                 'method' => strtoupper($method),
