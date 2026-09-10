@@ -14,11 +14,13 @@ use App\Support\TenderProcessStatus;
 use App\TenderEligible;
 use App\Tender;
 use App\TenderVendor;
+use App\Vendor;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
 
 class EbiddingController extends Controller
@@ -824,6 +826,10 @@ class EbiddingController extends Controller
         ];
     }
 
+    /**
+     * Email jemputan bidaan to vendors listed under Pengesyoran Pembekal
+     * (jawatankuasa_perolehan_pemilihan_petenders), not tender_eligibles ads list.
+     */
     private function notifyEligibleVendorsBidaanStarted(int $tenderId): int
     {
         $tender = Tender::query()->find($tenderId);
@@ -831,17 +837,40 @@ class EbiddingController extends Controller
             return 0;
         }
 
-        $eligibles = TenderEligible::query()
-            ->with(['vendor.user'])
-            ->where('tender_id', $tenderId)
-            ->where(function ($q) {
-                $q->whereNull('email')->orWhere('email', 1)->orWhere('email', '1');
-            })
-            ->get();
+        $vendorIds = DB::table('jawatankuasa_perolehan_pemilihan_petenders as p')
+            ->join('jawatankuasa_perolehan_pemilihan_items as i', 'i.id', '=', 'p.pemilihan_item_id')
+            ->where('i.tender_id', $tenderId)
+            ->whereNotNull('p.vendor_id')
+            ->where('p.vendor_id', '>', 0)
+            ->when(
+                Schema::hasColumn('jawatankuasa_perolehan_pemilihan_items', 'dibatalkan'),
+                fn ($q) => $q->where(function ($inner) {
+                    $inner->whereNull('i.dibatalkan')
+                        ->orWhere('i.dibatalkan', 'Tidak')
+                        ->orWhere('i.dibatalkan', '0')
+                        ->orWhere('i.dibatalkan', 0);
+                })
+            )
+            ->distinct()
+            ->pluck('p.vendor_id')
+            ->map(fn ($id) => (int) $id)
+            ->filter()
+            ->unique()
+            ->values();
+
+        if ($vendorIds->isEmpty()) {
+            return 0;
+        }
+
+        $vendors = Vendor::query()
+            ->with('user')
+            ->whereIn('id', $vendorIds)
+            ->get()
+            ->keyBy('id');
 
         $count = 0;
-        foreach ($eligibles as $eligible) {
-            $vendor = $eligible->vendor;
+        foreach ($vendorIds as $vendorId) {
+            $vendor = $vendors->get($vendorId);
             $user = $vendor ? $vendor->user : null;
             $to = trim((string) ($user->email ?? ''));
             if (!$vendor || !$user || !filter_var($to, FILTER_VALIDATE_EMAIL)) {
@@ -858,7 +887,26 @@ class EbiddingController extends Controller
 
             if (is_string($status) && stripos($status, 'Email') !== false) {
                 $count++;
-                $eligible->update(['sent_at' => now()]);
+
+                // Keep tender_eligibles in sync so vendor dashboard Bidaan tab can see them too.
+                $eligible = TenderEligible::query()
+                    ->where('tender_id', $tenderId)
+                    ->where('vendor_id', $vendor->id)
+                    ->first();
+
+                if ($eligible) {
+                    $eligible->update([
+                        'email' => 1,
+                        'sent_at' => now(),
+                    ]);
+                } else {
+                    TenderEligible::query()->create([
+                        'tender_id' => $tenderId,
+                        'vendor_id' => $vendor->id,
+                        'email' => 1,
+                        'sent_at' => now(),
+                    ]);
+                }
             }
         }
 
