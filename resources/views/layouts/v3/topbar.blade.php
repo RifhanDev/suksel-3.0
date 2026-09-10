@@ -55,6 +55,12 @@
 						</a>
 					</li>
 					<li>
+						<a class="dropdown-item" href="{{ url('dashboard?tab=ebidding') }}">
+							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V10"></path><path d="M18 20V4"></path><path d="M6 20v-4"></path></svg>
+							Bidaan
+						</a>
+					</li>
+					<li>
 						<a class="dropdown-item" href="{{ action('VendorsController@certificate', $user->vendor->id) }}" target="_blank">
 							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"></rect><path d="M7 7h10M7 12h10M7 17h4"></path></svg>
 							Papar Sijil Pengesahan

@@ -470,6 +470,7 @@ class HomeController extends Controller
 
 			// Projek Pembelian Terus / Lantikan Terus yang dimenangi oleh vendor.
 			$directWins = collect();
+			$ebiddingInvites = collect();
 			if ($user->vendor) {
 				$vendorId = (int) $user->vendor_id;
 
@@ -500,9 +501,11 @@ class HomeController extends Controller
 						->orderByDesc('submission_datetime')
 						->get();
 				}
+
+				$ebiddingInvites = $this->vendorEbiddingInvites($vendorId);
 			}
 
-			return view('home.dashboard', compact('purchases', 'eligibles', 'invites', 'refunds', 'directWins'));
+			return view('home.dashboard', compact('purchases', 'eligibles', 'invites', 'refunds', 'directWins', 'ebiddingInvites'));
 		} else {
 			if (!$user->organization_unit_id) {
 				return $this->_access_denied();
@@ -1502,5 +1505,116 @@ class HomeController extends Controller
 	{
 		// Return chat widget view - you may need to create this view
 		return view('home.chat-widget');
+	}
+
+	/**
+	 * Vendor dashboard: jemputan / status bidaan (in-app, besides email).
+	 *
+	 * @return \Illuminate\Support\Collection<int, object>
+	 */
+	private function vendorEbiddingInvites(int $vendorId)
+	{
+		if ($vendorId <= 0
+			|| ! \Illuminate\Support\Facades\Schema::hasColumn('tenders', 'is_ebidding')
+			|| ! \Illuminate\Support\Facades\Schema::hasTable('ebidding_jadual_bidaans')) {
+			return collect();
+		}
+
+		$eligibleIds = TenderEligible::query()
+			->where('vendor_id', $vendorId)
+			->pluck('tender_id');
+
+		$petenderIds = collect();
+		if (\Illuminate\Support\Facades\Schema::hasTable('jawatankuasa_perolehan_pemilihan_petenders')
+			&& \Illuminate\Support\Facades\Schema::hasColumn('jawatankuasa_perolehan_pemilihan_petenders', 'vendor_id')) {
+			$petenderIds = DB::table('jawatankuasa_perolehan_pemilihan_petenders as p')
+				->join('jawatankuasa_perolehan_pemilihan_items as i', 'i.id', '=', 'p.pemilihan_item_id')
+				->where('p.vendor_id', $vendorId)
+				->pluck('i.tender_id');
+		}
+
+		$invitedIds = $eligibleIds->merge($petenderIds)->unique()->filter()->values();
+		if ($invitedIds->isEmpty()) {
+			return collect();
+		}
+
+		$tenders = Tender::query()
+			->with('tenderer')
+			->where('is_ebidding', 1)
+			->whereIn('id', $invitedIds)
+			->where(function ($q) {
+				$q->whereIn('ebidding_process_stage_id', [2, 3, 4])
+					->orWhereIn('status_process_id', [5, 6, 7]);
+			})
+			->orderByDesc('id')
+			->get();
+
+		if ($tenders->isEmpty()) {
+			return collect();
+		}
+
+		$tenderIds = $tenders->pluck('id');
+		$schedules = DB::table('ebidding_jadual_bidaans')
+			->whereIn('tender_id', $tenderIds)
+			->get()
+			->keyBy('tender_id');
+
+		$submittedIds = collect();
+		if (\Illuminate\Support\Facades\Schema::hasTable('ebidding_vendor_bid_items')) {
+			$submittedIds = DB::table('ebidding_vendor_bid_items')
+				->where('vendor_id', $vendorId)
+				->whereIn('tender_id', $tenderIds)
+				->whereNotNull('submitted_at')
+				->pluck('tender_id')
+				->unique();
+		}
+
+		$now = Carbon::now();
+
+		return $tenders->map(function (Tender $tender) use ($schedules, $submittedIds, $now) {
+			$schedule = $schedules->get($tender->id);
+			$startAt = null;
+			$endAt = null;
+			$isOpen = false;
+			$hasEnded = false;
+
+			if ($schedule
+				&& ! empty($schedule->tarikh_bidaan_mula)
+				&& ! empty($schedule->masa_bidaan_mula)
+				&& ! empty($schedule->tarikh_bidaan_tamat)
+				&& ! empty($schedule->masa_bidaan_tamat)) {
+				$startAt = Carbon::parse($schedule->tarikh_bidaan_mula . ' ' . $schedule->masa_bidaan_mula);
+				$endAt = Carbon::parse($schedule->tarikh_bidaan_tamat . ' ' . $schedule->masa_bidaan_tamat);
+				$isOpen = $now->betweenIncluded($startAt, $endAt);
+				$hasEnded = $now->greaterThan($endAt);
+			}
+
+			$hasSubmitted = $submittedIds->contains($tender->id);
+
+			if ($hasSubmitted) {
+				$statusKey = 'submitted';
+				$statusLabel = 'Sudah Dihantar';
+			} elseif ($isOpen) {
+				$statusKey = 'open';
+				$statusLabel = 'Bidaan Dibuka';
+			} elseif ($hasEnded) {
+				$statusKey = 'ended';
+				$statusLabel = 'Tempoh Tamat';
+			} else {
+				$statusKey = 'pending';
+				$statusLabel = 'Menunggu';
+			}
+
+			return (object) [
+				'tender' => $tender,
+				'start_at' => $startAt,
+				'end_at' => $endAt,
+				'is_open' => $isOpen,
+				'has_submitted' => $hasSubmitted,
+				'status_key' => $statusKey,
+				'status_label' => $statusLabel,
+				'url' => route('eBidding.show', ['id' => $tender->id]),
+			];
+		})->values();
 	}
 }

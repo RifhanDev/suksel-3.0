@@ -2,6 +2,9 @@
 
 @section('content')
     <div class="content-card p-4">
+        @if (session('success'))
+            <div class="alert alert-success py-2 px-3 mb-3">{{ session('success') }}</div>
+        @endif
         <div id="vendor-bid-alert" class="alert d-none py-2 px-3 mb-3"></div>
         <div class="d-flex justify-content-end mb-3">
             <span class="badge {{ !empty($hasVendorSubmitted) ? 'bg-success' : 'bg-warning text-dark' }}">
@@ -152,7 +155,7 @@
                     },
                     success: function(resp) {
                         showAlert(resp.message || 'Harga bidaan berjaya dihantar.', 'success');
-                        const nextUrl = resp?.redirect_url || "{{ route('eBidding.index') }}";
+                        const nextUrl = resp?.redirect_url || @json(route('eBidding.show', ['id' => $tender->id]));
                         setTimeout(function() {
                             window.location.href = nextUrl;
                         }, 900);

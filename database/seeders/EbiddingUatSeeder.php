@@ -73,7 +73,21 @@ class EbiddingUatSeeder extends Seeder
             $creator->save();
         }
 
-        $vendors = Vendor::query()->orderBy('id')->limit(3)->get();
+        $vendors = Vendor::query()
+            ->whereIn('id', function ($q) {
+                $q->select('vendor_id')
+                    ->from('users')
+                    ->whereNotNull('vendor_id')
+                    ->where('email', 'like', '%@dummy.stos.local');
+            })
+            ->orderBy('id')
+            ->limit(3)
+            ->get();
+
+        if ($vendors->isEmpty()) {
+            $vendors = Vendor::query()->orderBy('id')->limit(3)->get();
+        }
+
         if ($vendors->isEmpty()) {
             $this->command?->error('No vendors found. Run DummyVendorSeeder first.');
 
