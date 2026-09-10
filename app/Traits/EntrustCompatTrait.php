@@ -129,6 +129,11 @@ trait EntrustCompatTrait
             return false;
         }
 
+        // System Admin has full menu access (including Pemilihan Syarikat).
+        if ($this->hasRole('Admin')) {
+            return true;
+        }
+
         // Do not grant pemilihan via the Agency Admin / UPEN / PWN blanket.
         $pemilihanOnly = [
             'DirectPurchase:select',

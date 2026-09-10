@@ -563,8 +563,12 @@ class PembelianTerusController extends Controller
 
             $apiError = $response->json('error');
             $message = $response->json('message') ?? 'Gagal menyimpan projek';
-            if (is_string($apiError) && $apiError !== '' && str_contains($apiError, "Column 'name' cannot be null")) {
-                $message = 'Tajuk Perolehan wajib diisi sebelum menyimpan projek.';
+            if (is_string($apiError) && $apiError !== '') {
+                if (str_contains($apiError, "Column 'name' cannot be null")) {
+                    $message = 'Tajuk Perolehan wajib diisi sebelum menyimpan projek.';
+                } else {
+                    $message = $apiError;
+                }
             }
 
             return redirect()->back()->withInput()->with('error', $message);
