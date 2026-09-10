@@ -162,6 +162,12 @@ class TransactionsController extends Controller
 
 	public function updateFpxCount(Request $request)
 	{
+		// $data tidak pernah dimulakan sebelum ini - ia hanya wujud apabila salah
+		// satu cabang di bawah menetapkan kunci. Permintaan dengan type atau
+		// status yang tidak dikenali sampai ke response()->json($data) dengan
+		// pembolehubah yang tidak wujud, iaitu 500.
+		$data = [];
+
 		// Kad statistik hanya perlukan bilangan, bukan lajur vendor. JOIN memaksa
 		// carian ke `vendors` bagi setiap baris yang dikira, dan orderBy tidak
 		// bermakna langsung untuk COUNT.
@@ -231,34 +237,51 @@ class TransactionsController extends Controller
 
 		if($request->type == "custom_all")
 		{
-			// Lapan COUNT berasingan sebelum ini, setiap satu mengimbas jadual yang
-			// sama. Dua pertanyaan berkumpulan memberi jawapan yang sama: baris
-			// dilalui sekali bagi setiap pengumpulan, bukan sekali bagi setiap nilai.
-			$byStatus = (clone $m_transactions)
-				->select('transactions.status', DB::raw('COUNT(*) as aggregate'))
-				->groupBy('transactions.status')
-				->pluck('aggregate', 'status');
+			// Kiraan ini merentasi keseluruhan jadual transaksi - 1.4 juta baris di
+			// staging. EXPLAIN menunjukkan GROUP BY sahaja boleh dijawab daripada
+			// indeks, tetapi semakan EXISTS ke atas `vendors` memaksa MySQL membaca
+			// baris jadual untuk mendapatkan vendor_id dan melakukan satu carian
+			// kunci utama bagi SETIAP baris. Itulah kosnya, dan ia tidak boleh
+			// dibuang tanpa mengubah nombor: vendor_id boleh null dan tiada FK,
+			// jadi baris tanpa vendor sepadan memang dikecualikan hari ini.
+			//
+			// Jadi hasilnya di-cache. Kad menyegar setiap 20 dan 30 saat, jadi tanpa
+			// cache setiap pelawat membayar kos itu berulang kali. Satu minit dipilih
+			// supaya penyegaran berkala dilayan daripada cache sambil nombor kekal
+			// segar dalam lingkungan seminit - sesuai untuk kiraan ringkasan.
+			$scopeKey = auth()->user()->can('Transaction:all')
+				? 'all'
+				: 'ou:' . auth()->user()->organization_unit_id;
 
-			$byType = (clone $m_transactions)
-				->select('transactions.type', DB::raw('COUNT(*) as aggregate'))
-				->groupBy('transactions.type')
-				->pluck('aggregate', 'type');
+			$counts = Cache::remember('transactions:counts:' . $scopeKey, 60, function () use ($m_transactions) {
+				$byStatus = (clone $m_transactions)
+					->select('transactions.status', DB::raw('COUNT(*) as aggregate'))
+					->groupBy('transactions.status')
+					->pluck('aggregate', 'status');
 
-			$data["subscribe_trans_count"]	= (int) ($byType['subscription'] ?? 0);
-			$data["purchase_trans_count"]	= (int) ($byType['purchase'] ?? 0);
+				$byType = (clone $m_transactions)
+					->select('transactions.type', DB::raw('COUNT(*) as aggregate'))
+					->groupBy('transactions.type')
+					->pluck('aggregate', 'type');
 
-			// Jumlah kumpulan sentiasa sama dengan bilangan baris dalam skop -
-			// baris berstatus NULL menjadi kumpulannya sendiri dan tetap dikira -
-			// jadi jumlah keseluruhan tidak memerlukan pertanyaan tambahan.
-			$data["total_trans_count"]		= (int) $byStatus->sum();
+				return [
+					"subscribe_trans_count" => (int) ($byType['subscription'] ?? 0),
+					"purchase_trans_count"  => (int) ($byType['purchase'] ?? 0),
 
-			$data["success_trans_count"]	= (int) ($byStatus['success'] ?? 0);
-			$data["pending_trans_count"]	= (int) ($byStatus['pending'] ?? 0);
-			$data["failed_trans_count"]		= (int) ($byStatus['failed'] ?? 0);
-			$data["declined_trans_count"]	= (int) ($byStatus['declined'] ?? 0);
-			$data["pending_authorization_trans_count"] = (int) ($byStatus['pending_authorization'] ?? 0);
+					// Jumlah kumpulan sentiasa sama dengan bilangan baris dalam skop -
+					// baris berstatus NULL menjadi kumpulannya sendiri dan tetap dikira -
+					// jadi jumlah keseluruhan tidak memerlukan pertanyaan tambahan.
+					"total_trans_count"     => (int) $byStatus->sum(),
 
-			return response()->json($data);
+					"success_trans_count"   => (int) ($byStatus['success'] ?? 0),
+					"pending_trans_count"   => (int) ($byStatus['pending'] ?? 0),
+					"failed_trans_count"    => (int) ($byStatus['failed'] ?? 0),
+					"declined_trans_count"  => (int) ($byStatus['declined'] ?? 0),
+					"pending_authorization_trans_count" => (int) ($byStatus['pending_authorization'] ?? 0),
+				];
+			});
+
+			return response()->json(array_merge($data, $counts));
 		}
 
 		return response()->json($data);
