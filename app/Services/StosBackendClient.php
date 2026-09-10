@@ -328,6 +328,20 @@ class StosBackendClient
         return $this->get('/api/pembelian-terus/' . $tenderId . '/offers');
     }
 
+    public function downloadPembelianTerusDocument(int $tenderId, string $docType): Response
+    {
+        return self::http()
+            ->withHeaders(['Accept' => '*/*'])
+            ->get($this->baseUrl . '/api/pembelian-terus/' . $tenderId . '/documents/' . $docType . '/download');
+    }
+
+    public function downloadPembelianTerusOfferQuotation(int $tenderId, int $offerId): Response
+    {
+        return self::http()
+            ->withHeaders(['Accept' => '*/*'])
+            ->get($this->baseUrl . '/api/pembelian-terus/' . $tenderId . '/offers/' . $offerId . '/quotation/download');
+    }
+
     public function submitPembelianTerusOffer(int $tenderId, array $payload, array $files = []): Response
     {
         return $this->postMultipart('/api/pembelian-terus/' . $tenderId . '/offers', $payload, $files);
