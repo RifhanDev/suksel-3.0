@@ -522,11 +522,11 @@ class PembelianTerusController extends Controller
             'harga_indikatif.required' => 'Harga Indikatif Jabatan wajib diisi.',
         ]);
 
-        try {
-            $payload = $this->buildPayload($request);
-            $action = $request->input('action', 'draft');
-            $payload['action'] = $action;
+        $payload = $this->buildPayload($request);
+        $action = $request->input('action', 'draft');
+        $payload['action'] = $action;
 
+        try {
             if ($id) {
                 $response = $this->stos->updatePembelianTerus($id, $payload);
             } else {
@@ -563,14 +563,12 @@ class PembelianTerusController extends Controller
 
             $apiError = $response->json('error');
             $message = $response->json('message') ?? 'Gagal menyimpan projek';
-            if (is_string($apiError) && $apiError !== '' && $apiError !== 'Internal server error') {
+            if (is_string($apiError) && $apiError !== '') {
                 if (str_contains($apiError, "Column 'name' cannot be null")) {
                     $message = 'Tajuk Perolehan wajib diisi sebelum menyimpan projek.';
                 } else {
                     $message = $apiError;
                 }
-            } elseif (is_string($apiError) && $apiError === 'Internal server error') {
-                $message = 'Gagal menyimpan projek (ralat server API). Semak log STOS / migrasi pembelian_terus.';
             }
 
             return redirect()->back()->withInput()->with('error', $message);
