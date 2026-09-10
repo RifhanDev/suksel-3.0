@@ -173,6 +173,7 @@
                                     <td class="text-center">
                                         @if (! empty($supplier->has_quotation))
                                             <a href="{{ route('pembelianTerus.downloadOfferQuotation', [$p->id, $supplier->id]) }}"
+                                                target="_blank" rel="noopener noreferrer"
                                                 class="fw-semibold text-decoration-none d-inline-flex align-items-center gap-2">
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
                                                     fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
@@ -217,11 +218,12 @@
                         <label class="form-label">JPICT</label>
                         @if (! empty($documents->jpict->has_file))
                             <a href="{{ route('pembelianTerus.downloadDocument', [$p->id, 'jpict']) }}"
+                                target="_blank" rel="noopener noreferrer"
                                 class="file-chip text-decoration-none" style="max-width:none;">
                                 <span class="file-chip-ext ext-pdf">pdf</span>
                                 <div class="file-chip-body">
                                     <span class="file-chip-name">{{ $documents->jpict->name }}</span>
-                                    <span class="file-chip-size">Klik untuk muat turun</span>
+                                    <span class="file-chip-size">Klik untuk buka</span>
                                 </div>
                             </a>
                         @else
@@ -234,11 +236,12 @@
                         <label class="form-label">Minit Bebas</label>
                         @if (! empty($documents->minit_bebas->has_file))
                             <a href="{{ route('pembelianTerus.downloadDocument', [$p->id, 'minit_bebas']) }}"
+                                target="_blank" rel="noopener noreferrer"
                                 class="file-chip text-decoration-none" style="max-width:none;">
                                 <span class="file-chip-ext ext-pdf">pdf</span>
                                 <div class="file-chip-body">
                                     <span class="file-chip-name">{{ $documents->minit_bebas->name }}</span>
-                                    <span class="file-chip-size">Klik untuk muat turun</span>
+                                    <span class="file-chip-size">Klik untuk buka</span>
                                 </div>
                             </a>
                         @else

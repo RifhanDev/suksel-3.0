@@ -380,7 +380,7 @@ class PembelianTerusController extends Controller
 
     public function downloadDocument($id, string $docType)
     {
-        if ($denied = $this->denyUnlessMenu('DirectPurchase:select')) {
+        if ($denied = $this->denyUnlessMenuAny(['DirectPurchase:select', 'DirectPurchase:cutoff'])) {
             return $denied;
         }
 
@@ -401,7 +401,7 @@ class PembelianTerusController extends Controller
 
             return response($response->body(), 200, [
                 'Content-Type' => $response->header('Content-Type') ?: 'application/octet-stream',
-                'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+                'Content-Disposition' => 'inline; filename="' . $filename . '"',
             ]);
         } catch (\Throwable $e) {
             Log::error('Pembelian Terus document download failed', [
@@ -415,7 +415,7 @@ class PembelianTerusController extends Controller
 
     public function downloadOfferQuotation($id, $offerId)
     {
-        if ($denied = $this->denyUnlessMenu('DirectPurchase:select')) {
+        if ($denied = $this->denyUnlessMenuAny(['DirectPurchase:select', 'DirectPurchase:cutoff'])) {
             return $denied;
         }
 
@@ -432,7 +432,7 @@ class PembelianTerusController extends Controller
 
             return response($response->body(), 200, [
                 'Content-Type' => $response->header('Content-Type') ?: 'application/octet-stream',
-                'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+                'Content-Disposition' => 'inline; filename="' . $filename . '"',
             ]);
         } catch (\Throwable $e) {
             Log::error('Pembelian Terus quotation download failed', [
@@ -883,6 +883,23 @@ class PembelianTerusController extends Controller
         }
 
         return $this->denyUnlessMenu($permission);
+    }
+
+    /**
+     * @param  list<string>  $permissions
+     */
+    private function denyUnlessMenuAny(array $permissions)
+    {
+        $user = auth()->user();
+        if ($user) {
+            foreach ($permissions as $permission) {
+                if ($user->canAccessMenu($permission)) {
+                    return null;
+                }
+            }
+        }
+
+        return $this->_access_denied();
     }
 
     /**
