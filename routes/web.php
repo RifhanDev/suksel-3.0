@@ -151,6 +151,7 @@ Route::prefix('pembelian-terus')->controller(PembelianTerusController::class)->m
 	Route::get('/cut-off-projek', 'cutOffProject')->name('pembelianTerus.cutOffProject');
 	Route::get('/cut-off-details/{id}', 'cutOffDetails')->name('pembelianTerus.cutOffDetails');
 	Route::post('/cut-off-details/{id}', 'storeCutoff')->name('pembelianTerus.storeCutoff');
+	Route::get('/cut-off-details/{id}/quotation/{offerId}', 'downloadOfferQuotation')->name('pembelianTerus.downloadCutoffQuotation');
 	Route::get('/pemilihan-syarikat', 'pemilihanSyarikat')->name('pembelianTerus.pemilihanSyarikat');
 	Route::get('/pemilihan-syarikat-details/{id}', 'pemilihanSyarikatDetails')->name('pembelianTerus.pemilihanSyarikatDetails');
 	Route::post('/pemilihan-syarikat-details/{id}', 'storePemilihan')->name('pembelianTerus.storePemilihan');
