@@ -497,23 +497,42 @@ class StosBackendClient
 
         $url = $this->baseUrl . '/' . ltrim($path, '/');
         $client = self::http();
+        $hasFiles = false;
 
         foreach ($files as $name => $file) {
             if (! $file) {
                 continue;
             }
 
+            $pathOnDisk = $file->getRealPath();
+            if (! $pathOnDisk || ! is_readable($pathOnDisk)) {
+                continue;
+            }
+
+            $contents = file_get_contents($pathOnDisk);
+            if ($contents === false) {
+                continue;
+            }
+
+            $hasFiles = true;
             $client = $client->attach(
                 $name,
-                fopen($file->getRealPath(), 'r'),
-                $file->getClientOriginalName()
+                $contents,
+                $file->getClientOriginalName() ?: 'upload.bin'
             );
         }
 
+        $payload = $this->stringifyMultipartScalars($fields);
+
+        // attach() forces multipart. Nested arrays (e.g. offer_items[0][item_id]) are not
+        // valid multipart parts and trigger Guzzle "A content key is required".
+        // Flatten only when files are present; without files, form-urlencoded nested arrays work.
+        if ($hasFiles) {
+            $payload = $this->flattenMultipartFields($payload);
+        }
+
         try {
-            // attach() already switches the client to multipart — do not call asMultipart()
-            // with pre-flattened bracket keys (that dropped fields such as `name`).
-            return $client->post($url, $this->stringifyMultipartScalars($fields));
+            return $client->post($url, $payload);
         } catch (\Throwable $e) {
             Log::error('STOS API multipart request failed', [
                 'url' => $url,
