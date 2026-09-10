@@ -347,8 +347,13 @@ class StosBackendClient
         return $this->postMultipart('/api/pembelian-terus/' . $tenderId . '/offers', $payload, $files);
     }
 
-    public function cutoffPembelianTerus(int $tenderId, array $payload): Response
+    public function cutoffPembelianTerus(int $tenderId, array $payload, array $files = []): Response
     {
+        $files = array_filter($files);
+        if ($files !== []) {
+            return $this->postMultipart('/api/pembelian-terus/' . $tenderId . '/cutoff', $payload, $files);
+        }
+
         return $this->post('/api/pembelian-terus/' . $tenderId . '/cutoff', $payload);
     }
 
@@ -439,8 +444,13 @@ class StosBackendClient
         return $this->postMultipart('/api/lantikan-terus/' . $tenderId . '/offers', $payload, $files);
     }
 
-    public function cutoffLantikanTerus(int $tenderId, array $payload): Response
+    public function cutoffLantikanTerus(int $tenderId, array $payload, array $files = []): Response
     {
+        $files = array_filter($files);
+        if ($files !== []) {
+            return $this->postMultipart('/api/lantikan-terus/' . $tenderId . '/cutoff', $payload, $files);
+        }
+
         return $this->post('/api/lantikan-terus/' . $tenderId . '/cutoff', $payload);
     }
 

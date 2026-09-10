@@ -214,9 +214,20 @@ class LantikanTerusController extends Controller
         }
 
         try {
-            $payload = $request->all();
-            $payload['uploaded_by'] = auth()->id();
-            $response = $this->stos->cutoffLantikanTerus((int) $id, $payload);
+            $payload = [
+                'offer_ids' => array_values(array_map('intval', (array) $request->input('offer_ids', []))),
+                'uploaded_by' => auth()->id(),
+            ];
+
+            $files = [];
+            if ($request->hasFile('jpict')) {
+                $files['jpict'] = $request->file('jpict');
+            }
+            if ($request->hasFile('minit_bebas')) {
+                $files['minit_bebas'] = $request->file('minit_bebas');
+            }
+
+            $response = $this->stos->cutoffLantikanTerus((int) $id, $payload, $files);
 
             if ($response->successful()) {
                 return redirect()->route('cutOffTerus.index')
