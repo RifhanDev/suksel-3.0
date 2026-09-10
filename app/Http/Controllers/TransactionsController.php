@@ -87,18 +87,28 @@ class TransactionsController extends Controller
 			$recordsTotal = (clone $transactions)->count() ?? 0;
 
 
-			$transactions->where( function($q) use($keyword){
-				$q->whereRaw(" (case when transactions.status = 'pending' then 'belum diterima' when transactions.status = 'success' then 'berjaya' when transactions.status = 'declined' then 'ditolak' when transactions.status = 'failed' then 'gagal' when transactions.status = 'pending_authorization' then 'dalam proses pengesahan' end ) like ?", '%'.$keyword.'%')
-				->orWhereRaw(" (case when transactions.type = 'subscription' then 'langganan' when transactions.type = 'purchase' then 'pembelian dokumen' end ) like ?", '%'.$keyword.'%')
-				->orWhereRaw("transactions.vendor_id in (select id from vendors where name like ?)", '%'.$keyword.'%')
-				->orWhereRaw("transactions.number like ?", '%'.$keyword.'%')
-				->orWhereRaw("transactions.gateway_reference like ?", '%'.$keyword.'%');
-			});
+			// Penapis carian hanya dikenakan apabila pengguna benar-benar menaip
+			// sesuatu. Sebelum ini ia sentiasa dikenakan, jadi setiap muatan halaman
+			// menjalankan lima syarat LIKE dengan corak '%%' - termasuk subkueri ke
+			// atas `vendors` - yang tiada satu pun boleh menggunakan indeks. Pada
+			// jadual 1.4 juta baris itu memaksa imbasan penuh untuk kiraan DAN untuk
+			// pengambilan halaman, walaupun kotak carian kosong.
+			if ($keyword !== "") {
+				$transactions->where( function($q) use($keyword){
+					$q->whereRaw(" (case when transactions.status = 'pending' then 'belum diterima' when transactions.status = 'success' then 'berjaya' when transactions.status = 'declined' then 'ditolak' when transactions.status = 'failed' then 'gagal' when transactions.status = 'pending_authorization' then 'dalam proses pengesahan' end ) like ?", '%'.$keyword.'%')
+					->orWhereRaw(" (case when transactions.type = 'subscription' then 'langganan' when transactions.type = 'purchase' then 'pembelian dokumen' end ) like ?", '%'.$keyword.'%')
+					->orWhereRaw("transactions.vendor_id in (select id from vendors where name like ?)", '%'.$keyword.'%')
+					->orWhereRaw("transactions.number like ?", '%'.$keyword.'%')
+					->orWhereRaw("transactions.gateway_reference like ?", '%'.$keyword.'%');
+				});
 
-			// dd($transactions->toSql());
-			
-			$recordsFiltered = (clone $transactions)->count() ?? 0;
-			// dd( $request->all() );
+				$recordsFiltered = (clone $transactions)->count() ?? 0;
+			} else {
+				// Tiada penapis dikenakan, jadi bilangan yang ditapis semestinya sama
+				// dengan jumlah keseluruhan - mengiranya semula bermakna satu lagi
+				// imbasan penuh untuk jawapan yang sudah diketahui.
+				$recordsFiltered = $recordsTotal;
+			}
 
 			$results = $transactions->offset($start)->limit($length)->get();
 
@@ -152,8 +162,20 @@ class TransactionsController extends Controller
 
 	public function updateFpxCount(Request $request)
 	{
-		$m_transactions = Transaction::whereNotNull('transactions.id')->orderBy('transactions.created_at', 'desc');
-		$m_transactions->join('vendors', 'vendors.id', '=', 'transactions.vendor_id')->orderBy('transactions.created_at', 'desc');
+		// Kad statistik hanya perlukan bilangan, bukan lajur vendor. JOIN memaksa
+		// carian ke `vendors` bagi setiap baris yang dikira, dan orderBy tidak
+		// bermakna langsung untuk COUNT.
+		//
+		// EXISTS memberi bilangan yang IDENTIK dengan INNER JOIN di sini kerana
+		// vendors.id ialah kunci utama: padanan paling banyak satu baris, jadi
+		// tiada baris digandakan dan penapisan yang sama dikekalkan. Ini penting -
+		// transactions.vendor_id boleh null dan tiada FK, jadi join itu MEMANG
+		// menapis sebahagian baris dan tidak boleh dibuang begitu sahaja.
+		$m_transactions = Transaction::whereNotNull('transactions.id')
+			->whereExists(function ($q) {
+				$q->selectRaw('1')->from('vendors')
+					->whereColumn('vendors.id', 'transactions.vendor_id');
+			});
 
 		if (!auth()->user()->can('Transaction:all')) {
 			$m_transactions->where('transactions.organization_unit_id', auth()->user()->organization_unit_id);
@@ -209,15 +231,33 @@ class TransactionsController extends Controller
 
 		if($request->type == "custom_all")
 		{
-			$data["subscribe_trans_count"] 	= (clone $m_transactions)->where('type', 'subscription')->count();
-			$data["purchase_trans_count"] 	= (clone $m_transactions)->where('type', 'purchase')->count();
-			$data["total_trans_count"] 		= (clone $m_transactions)->count();
-			$data["success_trans_count"] 	= (clone $m_transactions)->where('status', 'success')->count();
-			$data["pending_trans_count"] 	= (clone $m_transactions)->where('status', 'pending')->count();
-			$data["failed_trans_count"] 	= (clone $m_transactions)->where('status', 'failed')->count();
-			$data["declined_trans_count"] 	= (clone $m_transactions)->where('status', 'declined')->count();
-			$data["pending_authorization_trans_count"] = (clone $m_transactions)->where('status', 'pending_authorization')->count();
-			
+			// Lapan COUNT berasingan sebelum ini, setiap satu mengimbas jadual yang
+			// sama. Dua pertanyaan berkumpulan memberi jawapan yang sama: baris
+			// dilalui sekali bagi setiap pengumpulan, bukan sekali bagi setiap nilai.
+			$byStatus = (clone $m_transactions)
+				->select('transactions.status', DB::raw('COUNT(*) as aggregate'))
+				->groupBy('transactions.status')
+				->pluck('aggregate', 'status');
+
+			$byType = (clone $m_transactions)
+				->select('transactions.type', DB::raw('COUNT(*) as aggregate'))
+				->groupBy('transactions.type')
+				->pluck('aggregate', 'type');
+
+			$data["subscribe_trans_count"]	= (int) ($byType['subscription'] ?? 0);
+			$data["purchase_trans_count"]	= (int) ($byType['purchase'] ?? 0);
+
+			// Jumlah kumpulan sentiasa sama dengan bilangan baris dalam skop -
+			// baris berstatus NULL menjadi kumpulannya sendiri dan tetap dikira -
+			// jadi jumlah keseluruhan tidak memerlukan pertanyaan tambahan.
+			$data["total_trans_count"]		= (int) $byStatus->sum();
+
+			$data["success_trans_count"]	= (int) ($byStatus['success'] ?? 0);
+			$data["pending_trans_count"]	= (int) ($byStatus['pending'] ?? 0);
+			$data["failed_trans_count"]		= (int) ($byStatus['failed'] ?? 0);
+			$data["declined_trans_count"]	= (int) ($byStatus['declined'] ?? 0);
+			$data["pending_authorization_trans_count"] = (int) ($byStatus['pending_authorization'] ?? 0);
+
 			return response()->json($data);
 		}
 
