@@ -154,6 +154,8 @@ Route::prefix('pembelian-terus')->controller(PembelianTerusController::class)->m
 	Route::get('/pemilihan-syarikat', 'pemilihanSyarikat')->name('pembelianTerus.pemilihanSyarikat');
 	Route::get('/pemilihan-syarikat-details/{id}', 'pemilihanSyarikatDetails')->name('pembelianTerus.pemilihanSyarikatDetails');
 	Route::post('/pemilihan-syarikat-details/{id}', 'storePemilihan')->name('pembelianTerus.storePemilihan');
+	Route::get('/pemilihan-syarikat-details/{id}/dokumen/{docType}', 'downloadDocument')->name('pembelianTerus.downloadDocument');
+	Route::get('/pemilihan-syarikat-details/{id}/quotation/{offerId}', 'downloadOfferQuotation')->name('pembelianTerus.downloadOfferQuotation');
 	Route::get('/keputusan-syarikat', 'keputusanSyarikat')->name('pembelianTerus.keputusanSyarikat');
 	Route::get('/keputusan-syarikat-details/{id}', 'keputusanSyarikatDetails')->name('pembelianTerus.keputusanSyarikatDetails');
 	Route::post('/keputusan-syarikat-details/{id}', 'storeKeputusan')->name('pembelianTerus.storeKeputusan');

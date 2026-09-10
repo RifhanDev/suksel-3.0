@@ -358,9 +358,17 @@ class PembelianTerusController extends Controller
         $p = $project;
 
         $docs = collect($json['documents'] ?? []);
+        $jpict = $docs->firstWhere('doc_type', 'jpict');
+        $minit = $docs->firstWhere('doc_type', 'minit_bebas');
         $documents = (object) [
-            'jpict' => optional($docs->firstWhere('doc_type', 'jpict'))['original_name'] ?? '-',
-            'minit_bebas' => optional($docs->firstWhere('doc_type', 'minit_bebas'))['original_name'] ?? '-',
+            'jpict' => (object) [
+                'name' => is_array($jpict) ? ($jpict['original_name'] ?? '-') : '-',
+                'has_file' => is_array($jpict) && ! empty($jpict['file_path']),
+            ],
+            'minit_bebas' => (object) [
+                'name' => is_array($minit) ? ($minit['original_name'] ?? '-') : '-',
+                'has_file' => is_array($minit) && ! empty($minit['file_path']),
+            ],
         ];
 
         $offersResponse = $this->stos->getPembelianTerusOffers((int) $id);
@@ -368,6 +376,72 @@ class PembelianTerusController extends Controller
         $suppliers = $this->mapOfferSuppliers($offers);
 
         return view('newModule.pembelian_terus.pemilihan_syarikat_form', compact('project', 'suppliers', 'documents', 'p'));
+    }
+
+    public function downloadDocument($id, string $docType)
+    {
+        if ($denied = $this->denyUnlessMenu('DirectPurchase:select')) {
+            return $denied;
+        }
+
+        if (! in_array($docType, ['jpict', 'minit_bebas'], true)) {
+            abort(404);
+        }
+
+        try {
+            $response = $this->stos->downloadPembelianTerusDocument((int) $id, $docType);
+            if (! $response->successful()) {
+                abort(404, 'Fail tidak dijumpai.');
+            }
+
+            $filename = $this->extractDownloadFilename(
+                $response->header('Content-Disposition'),
+                $docType . '.pdf'
+            );
+
+            return response($response->body(), 200, [
+                'Content-Type' => $response->header('Content-Type') ?: 'application/octet-stream',
+                'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('Pembelian Terus document download failed', [
+                'id' => $id,
+                'doc_type' => $docType,
+                'error' => $e->getMessage(),
+            ]);
+            abort(404, 'Fail tidak dijumpai.');
+        }
+    }
+
+    public function downloadOfferQuotation($id, $offerId)
+    {
+        if ($denied = $this->denyUnlessMenu('DirectPurchase:select')) {
+            return $denied;
+        }
+
+        try {
+            $response = $this->stos->downloadPembelianTerusOfferQuotation((int) $id, (int) $offerId);
+            if (! $response->successful()) {
+                abort(404, 'Fail quotation tidak dijumpai.');
+            }
+
+            $filename = $this->extractDownloadFilename(
+                $response->header('Content-Disposition'),
+                'quotation.pdf'
+            );
+
+            return response($response->body(), 200, [
+                'Content-Type' => $response->header('Content-Type') ?: 'application/octet-stream',
+                'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('Pembelian Terus quotation download failed', [
+                'id' => $id,
+                'offer_id' => $offerId,
+                'error' => $e->getMessage(),
+            ]);
+            abort(404, 'Fail quotation tidak dijumpai.');
+        }
     }
 
     public function storePemilihan(Request $request, $id)
@@ -728,9 +802,27 @@ class PembelianTerusController extends Controller
                 'harga_tawaran' => (float) ($offer['total_harga_sst'] ?? 0),
                 'harga_tanpa_sst' => (float) ($offer['total_harga'] ?? 0),
                 'bq_filename' => $offer['quotation_original_name'] ?? 'Quotation',
+                'has_quotation' => ! empty($offer['quotation_path']),
                 'items' => $items,
             ];
         })->values();
+    }
+
+    private function extractDownloadFilename(?string $contentDisposition, string $fallback): string
+    {
+        if (! $contentDisposition) {
+            return $fallback;
+        }
+
+        if (preg_match('/filename\*=UTF-8\'\'([^;]+)/i', $contentDisposition, $matches)) {
+            return rawurldecode(trim($matches[1], " \t\"'"));
+        }
+
+        if (preg_match('/filename=\"?([^\";]+)\"?/i', $contentDisposition, $matches)) {
+            return trim($matches[1], " \t\"'");
+        }
+
+        return $fallback;
     }
 
     private function mapProject($data, array $items = []): object
