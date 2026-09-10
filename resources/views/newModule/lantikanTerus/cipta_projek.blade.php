@@ -316,6 +316,8 @@
         $cidb0Logic = $cidb0['logic_mid'] ?? 'AND';
         $cidb0Grade = $cidb0['grade'] ?? [];
         $cidb0Spec  = $cidb0['spec'] ?? [];
+
+        $sectionLogic = strtoupper((string) old('section_logic', optional($p)->mof_cidb_rule ?? 'AND'));
     @endphp
     <!-- HEADER -->
     <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center mb-4">
@@ -353,6 +355,8 @@
             @method('PUT')
         @endif
         <input type="hidden" name="action" id="form-action" value="draft">
+        {{-- Kekalkan langkah semasa selepas Simpan. --}}
+        <input type="hidden" name="wizard_step" id="wizard-step" value="{{ min(3, max(1, (int) request('step', 1))) }}">
 
         <div class="modern-card">
 
@@ -694,8 +698,8 @@
                                             <select name="section_logic"
                                                 class="form-select form-select-sm fw-bold text-dark border-secondary bg-light"
                                                 style="cursor: pointer;">
-                                                <option value="AND" {{ old('section_logic', 'AND') == 'AND' ? 'selected' : '' }}>DAN</option>
-                                                <option value="OR" {{ old('section_logic') == 'OR' ? 'selected' : '' }}>ATAU</option>
+                                                <option value="AND" {{ $sectionLogic == 'AND' ? 'selected' : '' }}>DAN</option>
+                                                <option value="OR" {{ $sectionLogic == 'OR' ? 'selected' : '' }}>ATAU</option>
                                             </select>
                                         </div>
                                     </div>
@@ -968,7 +972,7 @@
             });
 
             // --- WIZARD NAVIGATION (3 steps) ---
-            let currentStep = 1;
+            let currentStep = {{ min(3, max(1, (int) request('step', 1))) }};
             const TOTAL_STEPS = 3;
 
             function updateWizardUI() {
@@ -991,6 +995,8 @@
                 $('#btn-next').toggleClass('d-none', currentStep === TOTAL_STEPS);
                 $('#btn-submit').toggleClass('d-none', currentStep !== TOTAL_STEPS);
             }
+
+            updateWizardUI();
 
             function scrollToStepper() {
                 $('html, body').animate({
@@ -1041,6 +1047,7 @@
             $('#btn-save').on('click', function() {
                 if (!validateStep(1)) return;
                 $('#form-action').val('draft');
+                $('#wizard-step').val(currentStep);
                 $('#createProjekForm').submit();
             });
 
@@ -1216,6 +1223,25 @@
                 $('#cidb-logic-' + index).remove();
                 updateCidbRowNumbers();
             };
+
+            // Baris pertama diisi oleh Blade; baris kedua ke atas dibina semula di sini.
+            function rehydrateRows(groups, prefix, valueKey) {
+                groups.forEach(function(group) {
+                    $('#btn-add-' + prefix).trigger('click');
+                    var index = $('#' + prefix + '-wrapper .condition-row').last().data('index');
+
+                    var $select = $('#' + prefix + '-row-' + index + ' select.selectize');
+                    if ($select.length && $select[0].selectize) {
+                        $select[0].selectize.setValue(group[valueKey] || [], true);
+                    }
+
+                    $('#' + prefix + index + '_' + (group.logic_mid === 'AND' ? 'and' : 'or')).prop('checked', true);
+                    $('select[name="' + prefix + '_logic_' + index + '"]').val(group.join_rule === 'AND' ? 'AND' : 'OR');
+                });
+            }
+
+            rehydrateRows(@json(array_slice((array) (old('mof', optional($p)->mof ?? [])), 1)), 'mof', 'code');
+            rehydrateRows(@json(array_slice((array) (old('cidb', optional($p)->cidb ?? [])), 1)), 'cidb', 'spec');
 
         });
 
