@@ -190,8 +190,6 @@
 								</td>
 								<td>
 									<select class="form-select form-select-sm pp-syor-select"
-										name="pp_syor_{{ $row['vendor_id'] }}"
-										data-vendor-id="{{ $row['vendor_id'] }}"
 										{{ $ppLocked ? 'disabled' : '' }}>
 										<option value="">-- Pilih --</option>
 										@foreach ($ppSyorOptions as $opt)
@@ -204,7 +202,6 @@
 								</td>
 								<td>
 									<textarea class="form-control form-control-sm pp-catatan-input"
-										name="pp_catatan_{{ $row['vendor_id'] }}"
 										rows="2" placeholder="Catatan..."
 										{{ $ppLocked ? 'disabled' : '' }}>{{ $row['catatan_urusetia'] ?? '' }}</textarea>
 								</td>
@@ -258,33 +255,19 @@
 			}
 
 			function enforceDisyorkanRule(changedSelect) {
-				if (!changedSelect || changedSelect.value !== SYOR_DISYORKAN) {
-					return true;
-				}
+				if (!changedSelect || changedSelect.value !== SYOR_DISYORKAN) return;
 
-				const anotherDisyorkan = getSyorSelects().some(sel =>
-					sel !== changedSelect && sel.value === SYOR_DISYORKAN
-				);
-
-				if (anotherDisyorkan) {
-					// Keep the existing Disyorkan; revert this new pick.
-					changedSelect.value = changedSelect.getAttribute('data-prev-syor') || '';
-					showAlert('Hanya satu syarikat boleh dipilih sebagai Disyorkan. Pilihan sebelumnya dikekalkan.', false);
-					return false;
-				}
-
-				return true;
+				getSyorSelects().forEach(sel => {
+					if (sel === changedSelect) return;
+					if (sel.value === SYOR_DISYORKAN) {
+						sel.value = '';
+					}
+				});
 			}
 
 			document.querySelectorAll('#ppPembekalTable .pp-syor-select').forEach(sel => {
-				sel.setAttribute('data-prev-syor', sel.value || '');
-				sel.addEventListener('focus', function() {
-					this.setAttribute('data-prev-syor', this.value || '');
-				});
 				sel.addEventListener('change', function() {
-					if (enforceDisyorkanRule(this)) {
-						this.setAttribute('data-prev-syor', this.value || '');
-					}
+					enforceDisyorkanRule(this);
 				});
 			});
 
