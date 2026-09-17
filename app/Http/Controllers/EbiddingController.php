@@ -228,21 +228,28 @@ class EbiddingController extends Controller
             $petenders = $item->petenders->values()->map(function ($petender) use ($bidsByVendor) {
                 $vendorId = (int) ($petender->vendor_id ?? 0);
                 $bid = $vendorId > 0 ? $bidsByVendor->get($vendorId) : null;
+                $hargaTawaran = (float) ($petender->harga_tawaran ?? 0);
                 $bidaan = $bid ? (float) $bid->bid_price : null;
+                $isCarriedForward = $bid
+                    ? (bool) ($bid->is_carried_forward ?? false)
+                    : true; // no new key-in yet → still showing old price
+                $isNewBid = $bid && ! $isCarriedForward;
 
                 return [
                     'vendor_id' => $vendorId,
                     'vendor_name' => (string) ($petender->vendor->name ?? '-'),
                     'bil_label' => (string) ($petender->bil_label ?? ''),
                     'status_bumiputra' => (string) ($petender->status_bumiputra ?? ''),
-                    'harga_tawaran' => (float) ($petender->harga_tawaran ?? 0),
+                    'harga_tawaran' => $hargaTawaran,
                     'jumlah_skor' => (string) ($petender->jumlah_skor ?? ''),
                     'kedudukan_penilaian' => (string) ($petender->kedudukan_penilaian ?? ''),
                     'status_mof' => (string) ($petender->status_mof ?? ''),
                     'tindakan_disiplin' => (string) ($petender->tindakan_disiplin ?? ''),
                     'lembaga_pengarah_url' => $petender->lembaga_pengarah_file_path ? asset($petender->lembaga_pengarah_file_path) : null,
                     'kaedah_sulp' => 'Bidaan',
-                    'harga_bidaan' => $bidaan !== null ? $bidaan : (float) ($petender->harga_tawaran ?? 0),
+                    'harga_bidaan' => $bidaan !== null ? $bidaan : $hargaTawaran,
+                    'is_new_bid' => $isNewBid,
+                    'is_carried_forward' => $isCarriedForward,
                 ];
             });
 
@@ -306,6 +313,12 @@ class EbiddingController extends Controller
             ? ['pengesyoran', 'taklimat', 'jadual-bidaan']
             : ['penyediaan', 'taklimat', 'pemilihan', 'pengesyoran', 'jadual-bidaan', 'keputusan'];
 
+        // Red/green harga baharu vs lama: only after Vendor bidding stage is finished
+        // (Agency Semakan / Admin SULP). Never on earlier statuses — Perakuan Jabatan
+        // and JP Keputusan Mesyuarat stay plain (no colour styling there).
+        $showBidPriceDiff = (bool) $tender->is_ebidding
+            && $currentStage >= self::STAGE_AGENCY_ADMIN_REVIEW;
+
         return view('newModule.eBidding.keptusan_mesyuarat', compact(
             'tender',
             'visibleTabs',
@@ -317,6 +330,7 @@ class EbiddingController extends Controller
             'currentStage',
             'agencyPemilihanItems',
             'window',
+            'showBidPriceDiff',
         ));
     }
 
@@ -361,9 +375,11 @@ class EbiddingController extends Controller
             'items.*.bid_price' => ['required', 'numeric', 'min:0.01'],
         ]);
 
-        $bidableIds = $this->buildVendorBidRows($tender, $vendorId)
+        $bidableRows = $this->buildVendorBidRows($tender, $vendorId)
             ->where('is_bidable', true)
-            ->pluck('pemilihan_item_id')
+            ->keyBy(fn ($row) => (int) ($row['pemilihan_item_id'] ?? 0));
+
+        $bidableIds = $bidableRows->keys()
             ->map(fn ($id) => (int) $id)
             ->filter()
             ->values()
@@ -384,6 +400,15 @@ class EbiddingController extends Controller
             if ($price <= 0) {
                 return response()->json([
                     'message' => 'Sila isi Harga Bidaan (harga baharu) bagi setiap item anak.',
+                ], 422);
+            }
+
+            $previousRaw = (string) ($bidableRows->get($itemId)['previous_price'] ?? '');
+            $previousPrice = $previousRaw !== '' ? (float) $previousRaw : null;
+            if ($previousPrice !== null && $previousPrice > 0 && $price > $previousPrice + 0.00001) {
+                return response()->json([
+                    'message' => 'Harga Bidaan tidak boleh melebihi Harga Sebelum Bidaan (RM '
+                        . number_format($previousPrice, 2) . ') bagi setiap item.',
                 ], 422);
             }
         }
@@ -408,6 +433,7 @@ class EbiddingController extends Controller
                     ],
                     [
                         'bid_price' => $inputPrice,
+                        'is_carried_forward' => false,
                         'submitted_at' => now(),
                     ]
                 );
@@ -1025,6 +1051,7 @@ class EbiddingController extends Controller
                         ],
                         [
                             'bid_price' => $oldPrice,
+                            'is_carried_forward' => true,
                             'submitted_at' => $submittedAt,
                         ]
                     );

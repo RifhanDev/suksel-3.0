@@ -18,6 +18,7 @@ return new class extends Migration
             $table->unsignedInteger('vendor_id')->index();
             $table->unsignedBigInteger('pemilihan_item_id')->index();
             $table->decimal('bid_price', 15, 2)->nullable();
+            $table->boolean('is_carried_forward')->default(false);
             $table->timestamp('submitted_at')->nullable();
             $table->timestamps();
 

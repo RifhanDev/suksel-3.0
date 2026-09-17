@@ -193,6 +193,7 @@ class JawatankuasaPerolehanController extends Controller
                     'bil_mesyuarat' => (string) ($headerModel->bil_mesyuarat ?? ''),
                     'no_kod' => (string) ($headerModel->no_kod ?? ''),
                     'sahkan_layak_bidaan' => (bool) $headerModel->sahkan_layak_bidaan,
+                    'catatan_bidaan' => (string) ($headerModel->catatan_bidaan ?? ''),
                 ];
 
                 // If Bidaan was already run, clear stale selection so urusetia picks Terus/Lebih.
@@ -705,6 +706,7 @@ class JawatankuasaPerolehanController extends Controller
             'bil_mesyuarat' => '',
             'no_kod' => '',
             'sahkan_layak_bidaan' => false,
+            'catatan_bidaan' => '',
         ];
     }
 
@@ -951,6 +953,7 @@ class JawatankuasaPerolehanController extends Controller
             'header.bil_mesyuarat' => [$forSubmit ? 'required' : 'nullable', 'string', 'max:100'],
             'header.no_kod' => [$forSubmit ? 'required' : 'nullable', 'string', 'max:100'],
             'header.sahkan_layak_bidaan' => ['nullable', 'boolean'],
+            'header.catatan_bidaan' => ['nullable', 'string', 'max:65535'],
         ];
 
         $itemRules = [
@@ -987,6 +990,13 @@ class JawatankuasaPerolehanController extends Controller
         if ($forSubmit && $kaedah === 'Bidaan' && ! filter_var($sahkan, FILTER_VALIDATE_BOOLEAN)) {
             throw ValidationException::withMessages([
                 'header.sahkan_layak_bidaan' => 'Sila tandakan pengesahan petender layak untuk menyertai Bidaan.',
+            ]);
+        }
+
+        $catatanBidaan = trim((string) ($validated['header']['catatan_bidaan'] ?? ''));
+        if ($forSubmit && $kaedah === 'Bidaan' && $catatanBidaan === '') {
+            throw ValidationException::withMessages([
+                'header.catatan_bidaan' => 'Sila isi Catatan mengapa perlu bidaan.',
             ]);
         }
 
@@ -1100,6 +1110,7 @@ class JawatankuasaPerolehanController extends Controller
         $header->bil_mesyuarat = $this->nullableTrim($h['bil_mesyuarat'] ?? null);
         $header->no_kod = $this->nullableTrim($h['no_kod'] ?? null);
         $header->sahkan_layak_bidaan = (bool) ($h['sahkan_layak_bidaan'] ?? false);
+        $header->catatan_bidaan = $this->nullableTrim($h['catatan_bidaan'] ?? null);
 
         if ($forSubmit) {
             $header->submitted_at = now();
