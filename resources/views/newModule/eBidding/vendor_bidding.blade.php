@@ -9,6 +9,7 @@
 		<div class="d-flex justify-content-between align-items-center mb-3 gap-2 flex-wrap">
 			<p class="text-muted small m-0">
 				Isi <strong>Harga Bidaan</strong> (harga baharu) pada setiap <strong>item anak</strong> sahaja.
+				Harga baharu mesti lebih daripada 0 dan <strong>tidak boleh melebihi Harga Sebelum Bidaan</strong>.
 				<strong>Jumlah Keseluruhan</strong> dikira automatik semasa menaip dan tidak boleh diedit.
 			</p>
 			<span class="badge {{ !empty($hasVendorSubmitted) ? 'bg-success' : 'bg-warning text-dark' }}">
@@ -83,9 +84,16 @@
 							</td>
 							<td>
 								@if ($isBidable)
+									@php
+										$prevMax = $row['previous_price'] !== '' ? (float) $row['previous_price'] : null;
+									@endphp
 									<input type="number" class="form-control form-control-sm vendor-bid-price"
-										data-item-id="{{ $row['pemilihan_item_id'] }}" data-group="{{ $groupKey }}" min="0.01" step="0.01"
-										required placeholder="0.00" value="{{ $row['bid_price'] }}" {{ $canVendorEditBid ? '' : 'readonly' }}>
+										data-item-id="{{ $row['pemilihan_item_id'] }}" data-group="{{ $groupKey }}"
+										data-max-price="{{ $prevMax !== null ? number_format($prevMax, 2, '.', '') : '' }}"
+										min="0.01"
+										@if ($prevMax !== null && $prevMax > 0) max="{{ number_format($prevMax, 2, '.', '') }}" @endif
+										step="0.01" required placeholder="0.00" value="{{ $row['bid_price'] }}"
+										{{ $canVendorEditBid ? '' : 'readonly' }}>
 								@else
 									<div class="text-center text-muted small">—</div>
 								@endif
@@ -189,8 +197,37 @@
 				$('#vendor-bid-total').text(formatMoney(grandTotal));
 			}
 
-			// Recalculate on every keypress / input in child Harga Bidaan fields.
-			$(document).on('input keyup change', '.vendor-bid-price', recalcOverallPrices);
+			function getMaxPrice($input) {
+				const raw = ($input.attr('data-max-price') || $input.attr('max') || '').toString().trim();
+				if (raw === '') {
+					return null;
+				}
+				const max = parseFloat(raw);
+				return Number.isNaN(max) || max <= 0 ? null : max;
+			}
+
+			// Cap typed value so it cannot exceed previous price.
+			$(document).on('input keyup change', '.vendor-bid-price', function() {
+				const $input = $(this);
+				const max = getMaxPrice($input);
+				const raw = ($input.val() || '').toString().trim();
+				if (raw === '' || max === null) {
+					recalcOverallPrices();
+					return;
+				}
+				const price = parseFloat(raw);
+				if (!Number.isNaN(price) && price > max) {
+					$input.val(max.toFixed(2));
+					$input.addClass('is-invalid');
+					showAlert(
+						'Harga Bidaan tidak boleh melebihi Harga Sebelum Bidaan (RM ' + formatMoney(max) + ').',
+						'error'
+					);
+				} else {
+					$input.removeClass('is-invalid');
+				}
+				recalcOverallPrices();
+			});
 			recalcOverallPrices();
 
 			$('#vendor-bid-submit').on('click', function() {
@@ -206,16 +243,23 @@
 				const items = [];
 				let hasInvalid = false;
 				let missing = false;
+				let overMax = false;
 
 				$('.vendor-bid-price').each(function() {
-					const itemId = parseInt($(this).data('item-id'), 10);
-					const raw = ($(this).val() || '').toString().trim();
+					const $input = $(this);
+					const itemId = parseInt($input.data('item-id'), 10);
+					const raw = ($input.val() || '').toString().trim();
 					const price = raw === '' ? null : parseFloat(raw);
+					const max = getMaxPrice($input);
+
 					if (raw === '' || price === null || Number.isNaN(price) || price <= 0) {
 						missing = true;
-						$(this).addClass('is-invalid');
+						$input.addClass('is-invalid');
+					} else if (max !== null && price > max) {
+						overMax = true;
+						$input.addClass('is-invalid');
 					} else {
-						$(this).removeClass('is-invalid');
+						$input.removeClass('is-invalid');
 					}
 					if (raw !== '' && (Number.isNaN(price) || price <= 0)) hasInvalid = true;
 					items.push({
@@ -224,9 +268,16 @@
 					});
 				});
 
+				if (overMax) {
+					showAlert(
+						'Harga Bidaan tidak boleh melebihi Harga Sebelum Bidaan bagi setiap item.',
+						'error');
+					return;
+				}
+
 				if (missing || hasInvalid) {
 					showAlert(
-						'Sila isi Harga Bidaan (harga baharu) bagi setiap item anak. Nilai mesti melebihi 0.',
+						'Sila isi Harga Bidaan (harga baharu) bagi setiap item anak. Nilai mesti melebihi 0 dan tidak melebihi harga sebelum bidaan.',
 						'error');
 					return;
 				}

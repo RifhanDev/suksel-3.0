@@ -375,9 +375,11 @@ class EbiddingController extends Controller
             'items.*.bid_price' => ['required', 'numeric', 'min:0.01'],
         ]);
 
-        $bidableIds = $this->buildVendorBidRows($tender, $vendorId)
+        $bidableRows = $this->buildVendorBidRows($tender, $vendorId)
             ->where('is_bidable', true)
-            ->pluck('pemilihan_item_id')
+            ->keyBy(fn ($row) => (int) ($row['pemilihan_item_id'] ?? 0));
+
+        $bidableIds = $bidableRows->keys()
             ->map(fn ($id) => (int) $id)
             ->filter()
             ->values()
@@ -398,6 +400,15 @@ class EbiddingController extends Controller
             if ($price <= 0) {
                 return response()->json([
                     'message' => 'Sila isi Harga Bidaan (harga baharu) bagi setiap item anak.',
+                ], 422);
+            }
+
+            $previousRaw = (string) ($bidableRows->get($itemId)['previous_price'] ?? '');
+            $previousPrice = $previousRaw !== '' ? (float) $previousRaw : null;
+            if ($previousPrice !== null && $previousPrice > 0 && $price > $previousPrice + 0.00001) {
+                return response()->json([
+                    'message' => 'Harga Bidaan tidak boleh melebihi Harga Sebelum Bidaan (RM '
+                        . number_format($previousPrice, 2) . ') bagi setiap item.',
                 ], 422);
             }
         }
