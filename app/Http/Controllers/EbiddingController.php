@@ -135,6 +135,7 @@ class EbiddingController extends Controller
         $isVendorUser = Auth::check() && $currentUser && $this->isVendorUserById((int) $currentUser->id);
         $vendorId = $isVendorUser ? (int) ($currentUser->vendor_id ?? 0) : 0;
         if (!$isVendorUser && $currentStage === self::STAGE_VENDOR && $window['has_ended']) {
+            $this->carryForwardUnbidPrices($tender);
             Tender::query()->where('id', $tender->id)->update([
                 'ebidding_process_stage_id' => self::STAGE_AGENCY_ADMIN_REVIEW,
                 'status_process_id' => TenderProcessStatus::PENILAIAN_KEWANGAN,
@@ -254,29 +255,49 @@ class EbiddingController extends Controller
             ];
         })->values();
 
-        if ($isVendorUser) {
-            $vendorItems = $this->buildVendorBidRows($tender, $vendorId);
+		if ($isVendorUser) {
+			// After bidding ends (or stage moved on), vendor must not open the form —
+			// even via hardcoded /eBidding/{id}.
+			$vendorBlocked = $window['has_ended']
+				|| $currentStage > self::STAGE_VENDOR
+				|| $currentStage < self::STAGE_VENDOR;
 
-            $canVendorEditBid = $currentStage === self::STAGE_VENDOR && $window['is_open'];
-            $hasVendorSubmitted = EbiddingVendorBidItem::query()
-                ->where('tender_id', $tender->id)
-                ->where('vendor_id', $vendorId)
-                ->whereNotNull('submitted_at')
-                ->exists();
-            // After Hantar, lock the form even if the bidding window is still open.
-            if ($hasVendorSubmitted) {
-                $canVendorEditBid = false;
-            }
+			if ($vendorBlocked) {
+				if ($window['has_ended'] || $currentStage > self::STAGE_VENDOR) {
+					$message = 'Tempoh bidaan untuk tender ini telah tamat. Harga baharu tidak lagi boleh dihantar.';
+				} else {
+					$message = 'Bidaan untuk tender ini belum dibuka kepada vendor.';
+				}
 
-            return view('newModule.eBidding.vendor_bidding', [
-                'tender' => $tender,
-                'jadualBidaan' => $jadualBidaan,
-                'vendorItems' => $vendorItems,
-                'canVendorEditBid' => $canVendorEditBid,
-                'hasVendorSubmitted' => $hasVendorSubmitted,
-                'window' => $window,
-            ]);
-        }
+				return response()
+					->view('newModule.eBidding.bidding_ended', [
+						'tender' => $tender,
+						'message' => $message,
+					], 403);
+			}
+
+			$vendorItems = $this->buildVendorBidRows($tender, $vendorId);
+
+			$canVendorEditBid = $currentStage === self::STAGE_VENDOR && $window['is_open'];
+			$hasVendorSubmitted = EbiddingVendorBidItem::query()
+				->where('tender_id', $tender->id)
+				->where('vendor_id', $vendorId)
+				->whereNotNull('submitted_at')
+				->exists();
+			// After Hantar, lock the form even if the bidding window is still open.
+			if ($hasVendorSubmitted) {
+				$canVendorEditBid = false;
+			}
+
+			return view('newModule.eBidding.vendor_bidding', [
+				'tender' => $tender,
+				'jadualBidaan' => $jadualBidaan,
+				'vendorItems' => $vendorItems,
+				'canVendorEditBid' => $canVendorEditBid,
+				'hasVendorSubmitted' => $hasVendorSubmitted,
+				'window' => $window,
+			]);
+		}
 
         $isRestrictedEbidding = (bool) $tender->is_ebidding
             && $currentStage === self::STAGE_AGENCY_ADMIN;
@@ -316,10 +337,22 @@ class EbiddingController extends Controller
             return response()->json(['message' => 'Profil vendor tidak sah.'], 422);
         }
 
-        $window = $this->biddingWindowState((int) $tender->id);
-        if (!$window['is_open']) {
-            return response()->json(['message' => 'Bidaan tidak berada dalam tempoh aktif.'], 422);
-        }
+		$window = $this->biddingWindowState((int) $tender->id);
+		if (!$window['is_open'] || $currentStage !== self::STAGE_VENDOR) {
+			$message = $window['has_ended']
+				? 'Tempoh bidaan telah tamat. Harga baharu tidak lagi boleh dihantar.'
+				: 'Bidaan tidak berada dalam tempoh aktif.';
+
+			if ($request->expectsJson()) {
+				return response()->json(['message' => $message], 403);
+			}
+
+			return response()
+				->view('newModule.eBidding.bidding_ended', [
+					'tender' => $tender,
+					'message' => $message,
+				], 403);
+		}
 
         $payload = $request->validate([
             'items' => ['required', 'array', 'min:1'],
@@ -564,6 +597,7 @@ class EbiddingController extends Controller
 
         $updateData = ['ebidding_process_stage_id' => $nextStage];
         if ($currentStage === self::STAGE_VENDOR && $nextStage === self::STAGE_AGENCY_ADMIN_REVIEW) {
+            $this->carryForwardUnbidPrices($tender);
             $updateData['status_process_id'] = TenderProcessStatus::PENILAIAN_KEWANGAN;
         }
 
@@ -922,6 +956,76 @@ class EbiddingController extends Controller
             ->where('role_user.user_id', $userId)
             ->where('roles.name', 'Vendor')
             ->exists();
+    }
+
+    /**
+     * When bidding ends: any vendor/item without a new Harga Bidaan keeps the old harga tawaran.
+     * Creates submitted bid rows so downstream screens use a stable final price.
+     */
+    private function carryForwardUnbidPrices(Tender $tender): void
+    {
+        $items = JawatankuasaPerolehanPemilihanItem::query()
+            ->where('tender_id', $tender->id)
+            ->with(['petenders' => fn ($q) => $q->orderBy('sort_order')])
+            ->orderBy('sort_order')
+            ->get();
+
+        if ($items->isEmpty()) {
+            return;
+        }
+
+        $tenderName = trim((string) ($tender->name ?? ''));
+        $submittedAt = now();
+
+        DB::transaction(function () use ($items, $tender, $tenderName, $submittedAt) {
+            foreach ($items as $item) {
+                // Skip overall tender-name row when line items also exist.
+                $isOverall = $tenderName !== ''
+                    && trim((string) $item->perihal_item) === $tenderName
+                    && $items->count() > 1;
+                if ($isOverall) {
+                    continue;
+                }
+
+                foreach ($item->petenders as $petender) {
+                    $vendorId = (int) ($petender->vendor_id ?? 0);
+                    if ($vendorId <= 0) {
+                        continue;
+                    }
+
+                    $oldPrice = $petender->harga_tawaran !== null
+                        ? (float) $petender->harga_tawaran
+                        : 0.0;
+                    if ($oldPrice <= 0) {
+                        continue;
+                    }
+
+                    $existing = EbiddingVendorBidItem::query()
+                        ->where('tender_id', $tender->id)
+                        ->where('vendor_id', $vendorId)
+                        ->where('pemilihan_item_id', $item->id)
+                        ->whereNotNull('submitted_at')
+                        ->first();
+
+                    // Vendor already keyed a new price — keep it.
+                    if ($existing) {
+                        continue;
+                    }
+
+                    EbiddingVendorBidItem::query()->updateOrCreate(
+                        [
+                            'tender_id' => $tender->id,
+                            'vendor_id' => $vendorId,
+                            'pemilihan_item_id' => $item->id,
+                        ],
+                        [
+                            'bid_price' => $oldPrice,
+                            'submitted_at' => $submittedAt,
+                        ]
+                    );
+                }
+            }
+        });
     }
 
     /**
