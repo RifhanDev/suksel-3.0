@@ -7,7 +7,11 @@
 		<div class="alert d-none py-2 px-3 mb-3" id="pjSemakanAlert" role="alert"></div>
 
 		<div class="alert alert-warning py-2 px-3 mb-3">
-			Tempoh bidaan telah tamat. Sila muat naik <strong>Laporan Bidaan</strong> dan tandakan pengesahan sebelum menghantar.
+			Tempoh bidaan telah tamat
+			@if (!empty($biddingEndedAt))
+				pada <strong>{{ $biddingEndedAt->format('d/m/Y H:i') }}</strong>
+			@endif.
+			Sila muat naik <strong>Laporan Bidaan</strong> dan tandakan pengesahan sebelum menghantar.
 			Tab Kertas Taklimat dan Pengesyoran Pembekal adalah untuk rujukan (read-only).
 		</div>
 
