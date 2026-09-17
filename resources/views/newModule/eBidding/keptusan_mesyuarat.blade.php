@@ -82,6 +82,12 @@
 		<span class="text-muted small fw-semibold text-dark">Keputusan Mesyuarat</span>
 	</div>
 
+	@include('newModule.eBidding.partials.bidding_countdown', [
+		'window' => $window ?? [],
+		'countdownId' => 'agency-bid-countdown',
+		'wrapExtraClass' => 'mb-3',
+	])
+
 	<div id="pageDetail">
 
 		{{-- HEADER --}}
@@ -723,8 +729,13 @@
 @endsection
 
 @section('scripts')
+	@include('newModule.eBidding.partials.bidding_countdown_script')
 	<script type="text/javascript">
 		$(document).ready(function() {
+			if (typeof window.initEbBidCountdowns === 'function') {
+				window.initEbBidCountdowns();
+			}
+
 			const isAgencyReadOnly = @json(((int) ($currentStage ?? 1)) === 2);
 			const tenderId = @json(optional($tender)->id);
 			const taklimatSaveUrl = @json(optional($tender)->id ? route('eBidding.kertasTaklimat.simpan', ['id' => $tender->id]) : '');

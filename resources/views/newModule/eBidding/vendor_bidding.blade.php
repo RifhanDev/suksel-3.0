@@ -16,6 +16,11 @@
 			</span>
 		</div>
 
+		@include('newModule.eBidding.partials.bidding_countdown', [
+			'window' => $window ?? [],
+			'countdownId' => 'vendor-bid-countdown',
+		])
+
 		<div class="row g-3 mb-4">
 			<div class="col-md-3">
 				<label class="form-label small">Tarikh Mula Bidaan</label>
@@ -121,9 +126,10 @@
 @endsection
 
 @section('scripts')
+	@include('newModule.eBidding.partials.bidding_countdown_script')
 	<script type="text/javascript">
 		$(document).ready(function() {
-			const canEdit = @json($canVendorEditBid);
+			let canEdit = @json($canVendorEditBid);
 			const hasVendorSubmitted = @json(!empty($hasVendorSubmitted));
 			const submitUrl = @json(route('eBidding.vendorBidaan.hantar', ['id' => $tender->id]));
 			const csrfToken = $('meta[name="csrf-token"]').attr('content') || $('meta[name="_token"]').attr('content');
@@ -140,6 +146,24 @@
 				$alert.removeClass('d-none alert-success alert-danger')
 					.addClass(type === 'success' ? 'alert-success' : 'alert-danger')
 					.text(message || '');
+			}
+
+			function lockBidFormEnded() {
+				canEdit = false;
+				$('#vendor-bid-submit').prop('disabled', true);
+				$('.vendor-bid-price').prop('readonly', true);
+				showAlert('Tempoh bidaan telah tamat. Harga baharu tidak lagi boleh dihantar.', 'error');
+			}
+
+			if (typeof window.initEbBidCountdowns === 'function') {
+				window.initEbBidCountdowns({
+					onEnded: function() {
+						lockBidFormEnded();
+						setTimeout(function() {
+							window.location.reload();
+						}, 1200);
+					}
+				});
 			}
 
 			function recalcOverallPrices() {

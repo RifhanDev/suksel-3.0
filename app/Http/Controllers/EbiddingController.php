@@ -316,6 +316,7 @@ class EbiddingController extends Controller
             'jadualBidaan',
             'currentStage',
             'agencyPemilihanItems',
+            'window',
         ));
     }
 
@@ -843,6 +844,8 @@ class EbiddingController extends Controller
                 'is_open' => false,
                 'has_started' => false,
                 'has_ended' => false,
+                'starts_at' => null,
+                'ends_at' => null,
             ];
         }
 
@@ -855,6 +858,8 @@ class EbiddingController extends Controller
             'is_open' => $now->betweenIncluded($startAt, $endAt),
             'has_started' => $now->greaterThanOrEqualTo($startAt),
             'has_ended' => $now->greaterThan($endAt),
+            'starts_at' => $startAt->toIso8601String(),
+            'ends_at' => $endAt->toIso8601String(),
         ];
     }
 
