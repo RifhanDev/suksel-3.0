@@ -1591,15 +1591,17 @@ class HomeController extends Controller
 
 			$hasSubmitted = $submittedIds->contains($tender->id);
 
+			// Hide from vendor list once bidding window has ended.
+			if ($hasEnded) {
+				return null;
+			}
+
 			if ($hasSubmitted) {
 				$statusKey = 'submitted';
 				$statusLabel = 'Sudah Dihantar';
 			} elseif ($isOpen) {
 				$statusKey = 'open';
 				$statusLabel = 'Bidaan Dibuka';
-			} elseif ($hasEnded) {
-				$statusKey = 'ended';
-				$statusLabel = 'Tempoh Tamat';
 			} else {
 				$statusKey = 'pending';
 				$statusLabel = 'Menunggu';
@@ -1615,6 +1617,6 @@ class HomeController extends Controller
 				'status_label' => $statusLabel,
 				'url' => route('eBidding.show', ['id' => $tender->id]),
 			];
-		})->values();
+		})->filter()->values();
 	}
 }
