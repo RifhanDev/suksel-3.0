@@ -131,6 +131,7 @@ class PerakuanJabatanController extends Controller
         }
 
         $tabsReadOnly = in_array($pjMode, ['jadual', 'laporan'], true);
+        $biddingEndedAt = $pjMode === 'laporan' ? $this->ebiddingWindowEndAt($tender) : null;
 
         return view(
             'newModule.perakuanJabatan.show',
@@ -146,7 +147,8 @@ class PerakuanJabatanController extends Controller
                 'jadualBidaan',
                 'jadualReadOnly',
                 'tabsReadOnly',
-                'isKerja'
+                'isKerja',
+                'biddingEndedAt'
             )
         );
     }
@@ -163,8 +165,26 @@ class PerakuanJabatanController extends Controller
 
     public function semakanBidaanHantar(Request $request, Tender $tender)
     {
-        if (! (bool) $tender->is_ebidding || (int) ($tender->ebidding_process_stage_id ?? 0) < 3) {
-            return response()->json(['message' => 'Semakan bidaan hanya selepas tempoh bidaan tamat.'], 422);
+        if (! (bool) $tender->is_ebidding) {
+            return response()->json(['message' => 'Tender ini bukan dalam aliran e-bidding.'], 422);
+        }
+
+        if (! $this->ebiddingWindowHasEnded($tender)) {
+            $endAt = $this->ebiddingWindowEndAt($tender);
+            $until = $endAt ? $endAt->format('d/m/Y H:i') : '-';
+
+            return response()->json([
+                'message' => 'Semakan bidaan hanya selepas tempoh bidaan tamat (sehingga ' . $until . ').',
+            ], 422);
+        }
+
+        // Ensure stage is promoted once window has ended.
+        if ((int) ($tender->ebidding_process_stage_id ?? 0) < 3) {
+            Tender::query()->where('id', $tender->id)->update([
+                'ebidding_process_stage_id' => 3,
+                'status_process_id' => TenderProcessStatus::PENILAIAN_KEWANGAN,
+            ]);
+            $tender->refresh();
         }
 
         $header = PerakuanJabatanKertasTaklimat::firstOrCreate(
@@ -382,12 +402,48 @@ class PerakuanJabatanController extends Controller
             return 'normal';
         }
 
-        $stage = (int) ($tender->ebidding_process_stage_id ?? 0);
-        if ($stage >= 3) {
+        // Laporan & Pengesahan Bidaan only after jadual end date/time (not stage alone).
+        if ($this->ebiddingWindowHasEnded($tender)) {
             return 'laporan';
         }
 
         return 'jadual';
+    }
+
+    private function ebiddingWindowHasEnded(Tender $tender): bool
+    {
+        $schedule = EbiddingJadualBidaan::query()->where('tender_id', $tender->id)->first();
+        if (
+            ! $schedule
+            || ! $schedule->tarikh_bidaan_mula
+            || ! $schedule->masa_bidaan_mula
+            || ! $schedule->tarikh_bidaan_tamat
+            || ! $schedule->masa_bidaan_tamat
+        ) {
+            return false;
+        }
+
+        $endAt = Carbon::parse(
+            $schedule->tarikh_bidaan_tamat->format('Y-m-d') . ' ' . $schedule->masa_bidaan_tamat
+        );
+
+        return Carbon::now()->greaterThan($endAt);
+    }
+
+    private function ebiddingWindowEndAt(Tender $tender): ?Carbon
+    {
+        $schedule = EbiddingJadualBidaan::query()->where('tender_id', $tender->id)->first();
+        if (
+            ! $schedule
+            || ! $schedule->tarikh_bidaan_tamat
+            || ! $schedule->masa_bidaan_tamat
+        ) {
+            return null;
+        }
+
+        return Carbon::parse(
+            $schedule->tarikh_bidaan_tamat->format('Y-m-d') . ' ' . $schedule->masa_bidaan_tamat
+        );
     }
 
     private function promoteEbiddingReviewIfWindowEnded(Tender $tender): void
@@ -401,22 +457,7 @@ class PerakuanJabatanController extends Controller
             return;
         }
 
-        $schedule = EbiddingJadualBidaan::query()->where('tender_id', $tender->id)->first();
-        if (
-            ! $schedule
-            || ! $schedule->tarikh_bidaan_mula
-            || ! $schedule->masa_bidaan_mula
-            || ! $schedule->tarikh_bidaan_tamat
-            || ! $schedule->masa_bidaan_tamat
-        ) {
-            return;
-        }
-
-        $endAt = Carbon::parse(
-            $schedule->tarikh_bidaan_tamat->format('Y-m-d') . ' ' . $schedule->masa_bidaan_tamat
-        );
-
-        if (Carbon::now()->lessThanOrEqualTo($endAt)) {
+        if (! $this->ebiddingWindowHasEnded($tender)) {
             return;
         }
 
