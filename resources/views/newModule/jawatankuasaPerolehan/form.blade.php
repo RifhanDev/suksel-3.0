@@ -425,12 +425,21 @@
 						</table>
 					</div>
 
-					<div class="form-check mb-4" id="mp_sahkan_wrap">
-						<input class="form-check-input" type="checkbox" id="mp_sahkan_layak" value="1"
-							{{ !empty($pemilihanHeader['sahkan_layak_bidaan']) ? 'checked' : '' }}>
-						<label class="form-check-label small" for="mp_sahkan_layak">Saya mengesahkan petender diatas layak untuk
-							menyertai
-							Bidaan.</label>
+					<div id="mp_bidaan_extra_wrap" class="d-none mb-4">
+						<div class="mb-3">
+							<label class="form-label small fw-semibold" for="mp_catatan_bidaan">
+								Catatan <span class="text-danger">*</span>
+							</label>
+							<textarea id="mp_catatan_bidaan" class="form-control form-control-sm" rows="3"
+								placeholder="Kenapa perlu biddan...">{{ $pemilihanHeader['catatan_bidaan'] ?? '' }}</textarea>
+						</div>
+						<div class="form-check" id="mp_sahkan_wrap">
+							<input class="form-check-input" type="checkbox" id="mp_sahkan_layak" value="1"
+								{{ !empty($pemilihanHeader['sahkan_layak_bidaan']) ? 'checked' : '' }}>
+							<label class="form-check-label small" for="mp_sahkan_layak">Saya mengesahkan petender diatas layak untuk
+								menyertai
+								Bidaan.</label>
+						</div>
 					</div>
 
 					<div class="d-flex justify-content-end gap-2">
@@ -836,6 +845,7 @@
 						bil_mesyuarat: ($('#mp_bil_mesyuarat').val() || '').toString(),
 						no_kod: ($('#mp_no_kod').val() || '').toString(),
 						sahkan_layak_bidaan: $('#mp_sahkan_layak').is(':checked'),
+						catatan_bidaan: ($('#mp_catatan_bidaan').val() || '').toString(),
 					};
 				}
 
@@ -1038,7 +1048,7 @@
 				function mpSyncSahkanBidaanVisibility() {
 					const kaedah = ($('#mp_kaedah_memuktamadkan').val() || '').toString();
 					const isBidaan = kaedah === 'Bidaan';
-					$('#mp_sahkan_wrap').toggleClass('d-none', !isBidaan);
+					$('#mp_bidaan_extra_wrap').toggleClass('d-none', !isBidaan);
 					if (!isBidaan) {
 						$('#mp_sahkan_layak').prop('checked', false);
 					}
