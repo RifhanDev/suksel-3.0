@@ -5,8 +5,8 @@
 
 	<style>
 		/* =====================
-															SECTION BAR
-															===================== */
+																SECTION BAR
+																===================== */
 		.section-title-bar {
 			background: #f3f5f8;
 			border: 1px solid #e9edf3;
@@ -20,8 +20,8 @@
 
 
 		/* =====================
-															TABLE STYLE
-															===================== */
+																TABLE STYLE
+																===================== */
 		.table thead th {
 			text-align: center;
 			vertical-align: middle;
@@ -37,8 +37,8 @@
 		}
 
 		/* =====================
-															RED TABLE HEADER
-															===================== */
+																RED TABLE HEADER
+																===================== */
 		.table thead th {
 			background-color: #B11217 !important;
 			color: #ffffff !important;
@@ -482,13 +482,11 @@
 						@if (!empty($showBidPriceDiff))
 							<div class="d-flex flex-wrap gap-3 small mb-2">
 								<span class="d-inline-flex align-items-center gap-1">
-									<span class="rounded-circle d-inline-block"
-										style="width:10px;height:10px;background:#198754;"></span>
+									<span class="rounded-circle d-inline-block" style="width:10px;height:10px;background:#198754;"></span>
 									<span class="text-success fw-semibold">Hijau</span> = harga baharu (vendor key-in)
 								</span>
 								<span class="d-inline-flex align-items-center gap-1">
-									<span class="rounded-circle d-inline-block"
-										style="width:10px;height:10px;background:#dc3545;"></span>
+									<span class="rounded-circle d-inline-block" style="width:10px;height:10px;background:#dc3545;"></span>
 									<span class="text-danger fw-semibold">Merah</span> = harga lama (tiada bidaan baharu)
 								</span>
 							</div>
@@ -550,11 +548,24 @@
 												@endif
 											</td>
 											<td>{{ $row['kaedah_sulp'] }}</td>
-											<td class="{{ $bidCellClass }}" @if ($bidCellBg) style="background:{{ $bidCellBg }};" @endif>
-												<div>{{ number_format((float) $row['harga_bidaan'], 2) }}</div>
-												@if ($bidLabel)
-													<div class="small fw-normal">{{ $bidLabel }}</div>
-												@endif
+											<td class="{{ $bidCellClass }}"
+												@if ($bidCellBg) style="background:{{ $bidCellBg }};" @endif>
+												<div class="d-flex align-items-center justify-content-center gap-1">
+													<div>
+														<div>{{ number_format((float) $row['harga_bidaan'], 2) }}</div>
+														@if ($bidLabel)
+															<div class="small fw-normal">{{ $bidLabel }}</div>
+														@endif
+													</div>
+													@include('components.bid-spec-breakdown', [
+														'items' => $row['spec_items'] ?? [],
+														'vendorName' => $row['vendor_name'] ?? null,
+														'vendorId' => $row['vendor_id'] ?? null,
+														'showPriceDiff' => $showBidPriceDiff,
+														'modalSuffix' => 'eb-' . ($row['vendor_id'] ?? uniqid()),
+														'title' => 'Item Spesifikasi',
+													])
+												</div>
 											</td>
 										</tr>
 									@endforeach
@@ -1036,7 +1047,11 @@
 
 			if (isAgencyReadOnly) {
 				$('#mainTabContent input, #mainTabContent select, #mainTabContent textarea').prop('disabled', true);
-				$('#mainTabContent button').prop('disabled', true).addClass('disabled');
+				// Keep spec breakdown info icons clickable (view-only).
+				$('#mainTabContent button')
+					.not('.bid-spec-breakdown-btn')
+					.prop('disabled', true)
+					.addClass('disabled');
 			}
 
 			renderTaklimatRows();

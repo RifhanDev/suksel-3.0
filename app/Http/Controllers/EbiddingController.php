@@ -15,6 +15,7 @@ use App\Models\SpesifikasiKerjaHeader;
 use App\Models\SpesifikasiKerjaItem;
 use App\Models\TenderVendorDokumenResponse;
 use App\Services\VendorDokumenResponseService;
+use App\Support\BidSpecBreakdown;
 use App\Support\TenderProcessStatus;
 use App\TenderEligible;
 use App\Tender;
@@ -260,6 +261,16 @@ class EbiddingController extends Controller
                 'jenis_harga' => (string) ($item->jenis_harga ?? ''),
                 'petenders' => $petenders,
             ];
+        })->values();
+
+        $specBreakdown = BidSpecBreakdown::forTender($tender);
+        $agencyPemilihanItems = $agencyPemilihanItems->map(function (array $item) use ($specBreakdown) {
+            $item['petenders'] = BidSpecBreakdown::attachToRows(
+                collect($item['petenders'] ?? []),
+                $specBreakdown
+            );
+
+            return $item;
         })->values();
 
 		if ($isVendorUser) {
