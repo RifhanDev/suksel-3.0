@@ -431,7 +431,7 @@
 								Catatan <span class="text-danger">*</span>
 							</label>
 							<textarea id="mp_catatan_bidaan" class="form-control form-control-sm" rows="3"
-								placeholder="Kenapa perlu biddan...">{{ $pemilihanHeader['catatan_bidaan'] ?? '' }}</textarea>
+							 placeholder="Kenapa perlu biddan...">{{ $pemilihanHeader['catatan_bidaan'] ?? '' }}</textarea>
 						</div>
 						<div class="form-check" id="mp_sahkan_wrap">
 							<input class="form-check-input" type="checkbox" id="mp_sahkan_layak" value="1"
@@ -446,6 +446,22 @@
 						<button type="button" class="btn btn-kt-teal" id="mp_btn_simpan">Simpan</button>
 						<button type="button" class="btn btn-selangor" id="mp_btn_hantar">Hantar</button>
 					</div>
+
+					@if (!empty($bidSpecBreakdown))
+						<div id="mp-bid-spec-modals">
+							@foreach ($bidSpecBreakdown as $vendorId => $pack)
+								@include('components.bid-spec-breakdown', [
+									'items' => $pack['items'] ?? [],
+									'vendorName' => $pack['vendor_name'] ?? null,
+									'vendorId' => $vendorId,
+									'showPriceDiff' => !empty($showBidPriceDiff),
+									'modalSuffix' => 'jp-' . $vendorId,
+									'title' => 'Item Spesifikasi',
+									'trigger' => 'none',
+								])
+							@endforeach
+						</div>
+					@endif
 				@endif
 			</div>
 		</div>
@@ -492,7 +508,7 @@
 							    optional($kertasKeputusan)->justifikasi_pemilihan_pembekal,
 							);
 							$kkJustifikasiOptions = $kkJustifikasiOptions ?? [];
-							if (filled($kkJustifikasi) && ! in_array($kkJustifikasi, $kkJustifikasiOptions, true)) {
+							if (filled($kkJustifikasi) && !in_array($kkJustifikasi, $kkJustifikasiOptions, true)) {
 							    $kkJustifikasiOptions[] = $kkJustifikasi;
 							}
 						@endphp
@@ -651,7 +667,8 @@
 
 				for (let i = 0; i < rows.length; i++) {
 					const row = rows[i];
-					if (!row.bil_mesyuarat || !row.tarikh_mesyuarat || !row.masa || !row.tajuk_agenda || !row.tempat || !row
+					if (!row.bil_mesyuarat || !row.tarikh_mesyuarat || !row.masa || !row.tajuk_agenda || !row.tempat ||
+						!row
 						.no_kod_kertas || !row.status) {
 						return 'Sila lengkapkan medan wajib pada baris ' + (i + 1) + '.';
 					}
@@ -910,8 +927,8 @@
 					if (!item || !item.petenders) {
 						return;
 					}
-					const showHargaBidaan = $('#mp-pembekal-table').data('show-harga-bidaan') == 1
-						|| $('#mp-pembekal-table').attr('data-show-harga-bidaan') === '1';
+					const showHargaBidaan = $('#mp-pembekal-table').data('show-harga-bidaan') == 1 ||
+						$('#mp-pembekal-table').attr('data-show-harga-bidaan') === '1';
 					const kaedah = ($('#mp_kaedah_memuktamadkan').val() || '').toString();
 					const showSelection = kaedah === 'Pemilihan Terus' || kaedah ===
 						'Pemilihan Lebih Daripada Satu Syarikat';
@@ -928,15 +945,31 @@
 						const vendorId = p.vendor_id ? String(p.vendor_id) : '';
 						const vendorCell = '<td class="text-start">' +
 							'<div class="fw-semibold small">' + escapeHtml(vendorName) + '</div>' +
-							(vendorId ? '<div class="text-muted" style="font-size:0.7rem;">ID: ' + escapeHtml(vendorId) + '</div>' : '') +
+							(vendorId ? '<div class="text-muted" style="font-size:0.7rem;">ID: ' + escapeHtml(
+								vendorId) + '</div>' : '') +
 							'</td>';
-						const hargaBidaanCell = showHargaBidaan
-							? ('<td class="text-end">' + escapeHtml(mpFormatMoney(
-								(p.harga_bidaan !== null && p.harga_bidaan !== undefined && p.harga_bidaan !== '')
-									? p.harga_bidaan
-									: p.harga_tawaran
-							)) + '</td>')
-							: '';
+						const hargaBidaanCell = showHargaBidaan ?
+							(function() {
+								const harga = (p.harga_bidaan !== null && p.harga_bidaan !== undefined && p
+										.harga_bidaan !== '') ?
+									p.harga_bidaan :
+									p.harga_tawaran;
+								const specCount = Array.isArray(p.spec_items) ? p.spec_items.length : 0;
+								const modalId = vendorId ? ('bidSpecBreakdownModal-jp-' + vendorId) : '';
+								const infoBtn = (vendorId && specCount > 0) ?
+									('<button type="button" class="btn btn-sm btn-outline-secondary bid-spec-breakdown-btn d-inline-flex align-items-center justify-content-center"' +
+										' data-bs-toggle="modal" data-bs-target="#' + modalId + '"' +
+										' title="Item Spesifikasi" aria-label="Item Spesifikasi">' +
+										'<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+										'<circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line>' +
+										'</svg></button>') :
+									'';
+								return '<td class="text-end"><div class="d-flex align-items-center justify-content-end gap-1">' +
+									'<span>' + escapeHtml(mpFormatMoney(harga)) + '</span>' +
+									infoBtn +
+									'</div></td>';
+							})() :
+							'';
 						const row = '<tr data-pet-idx="' + i + '">' +
 							'<td class="text-center">' + escapeHtml(p.bil_label || '') + '</td>' +
 							vendorCell +

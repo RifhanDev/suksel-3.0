@@ -77,8 +77,7 @@
 		}
 	</style>
 
-	<div class="content-card p-4" id="pp-root"
-		data-submitted="{{ $ppLocked ? '1' : '0' }}">
+	<div class="content-card p-4" id="pp-root" data-submitted="{{ $ppLocked ? '1' : '0' }}">
 		<div class="alert d-none py-2 px-3 mb-3" id="ppAlert" role="alert"></div>
 		@if ($tabsReadOnly)
 			<div class="alert alert-info py-2 px-3 mb-3">Maklumat pengesyoran pembekal adalah read-only pada peringkat ini.</div>
@@ -160,9 +159,21 @@
 								</td>
 								@if ($showHargaBidaan)
 									<td>
-										{{ isset($row['harga_bidaan']) && $row['harga_bidaan'] !== null
-											? number_format((float) $row['harga_bidaan'], 2)
-											: '—' }}
+										<div class="d-flex align-items-center justify-content-center gap-1">
+											<span>
+												{{ isset($row['harga_bidaan']) && $row['harga_bidaan'] !== null
+												    ? number_format((float) $row['harga_bidaan'], 2)
+												    : '—' }}
+											</span>
+											@include('components.bid-spec-breakdown', [
+												'items' => $row['spec_items'] ?? [],
+												'vendorName' => $row['vendor_name'] ?? null,
+												'vendorId' => $row['vendor_id'] ?? null,
+												'showPriceDiff' => (int) ($tender->ebidding_process_stage_id ?? 0) >= 3,
+												'modalSuffix' => 'pj-' . ($row['vendor_id'] ?? uniqid()),
+												'title' => 'Item Spesifikasi',
+											])
+										</div>
 									</td>
 								@endif
 								@if (!empty($isKerja))
@@ -189,21 +200,18 @@
 									@endif
 								</td>
 								<td>
-									<select class="form-select form-select-sm pp-syor-select"
-										{{ $ppLocked ? 'disabled' : '' }}>
+									<select class="form-select form-select-sm pp-syor-select" {{ $ppLocked ? 'disabled' : '' }}>
 										<option value="">-- Pilih --</option>
 										@foreach ($ppSyorOptions as $opt)
-											<option value="{{ $opt }}"
-												{{ ($row['syor_urusetia'] ?? '') === $opt ? 'selected' : '' }}>
+											<option value="{{ $opt }}" {{ ($row['syor_urusetia'] ?? '') === $opt ? 'selected' : '' }}>
 												{{ $opt }}
 											</option>
 										@endforeach
 									</select>
 								</td>
 								<td>
-									<textarea class="form-control form-control-sm pp-catatan-input"
-										rows="2" placeholder="Catatan..."
-										{{ $ppLocked ? 'disabled' : '' }}>{{ $row['catatan_urusetia'] ?? '' }}</textarea>
+									<textarea class="form-control form-control-sm pp-catatan-input" rows="2" placeholder="Catatan..."
+									 {{ $ppLocked ? 'disabled' : '' }}>{{ $row['catatan_urusetia'] ?? '' }}</textarea>
 								</td>
 							</tr>
 						@empty
@@ -217,8 +225,8 @@
 		</div>
 
 		<div class="pp-section-bar rounded-top">CATATAN</div>
-		<textarea class="form-control pp-textarea-catatan mb-4" id="ppCatatan" name="catatan" rows="4"
-			placeholder="" {{ $ppLocked ? 'disabled' : '' }}>{{ old('catatan', $pengesyoranPembekal->catatan) }}</textarea>
+		<textarea class="form-control pp-textarea-catatan mb-4" id="ppCatatan" name="catatan" rows="4" placeholder=""
+		 {{ $ppLocked ? 'disabled' : '' }}>{{ old('catatan', $pengesyoranPembekal->catatan) }}</textarea>
 
 		@unless ($ppLocked)
 			<div class="d-flex justify-content-end gap-2">
@@ -329,7 +337,9 @@
 			document.getElementById('ppHantar')?.addEventListener('click', function() {
 				const hasSyor = getSyorSelects().some(sel => (sel.value || '').trim() !== '');
 				if (!hasSyor) {
-					showAlert('Sila pilih Syor Urusetia untuk sekurang-kurangnya satu pembekal sebelum menghantar.', false);
+					showAlert(
+						'Sila pilih Syor Urusetia untuk sekurang-kurangnya satu pembekal sebelum menghantar.',
+						false);
 					return;
 				}
 				post(hantarUrl);
