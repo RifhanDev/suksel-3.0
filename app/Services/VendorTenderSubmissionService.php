@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Support\OnlineFormRegistry;
 use App\Support\TenderProcessStatus;
 use App\Support\TenderDokumenPresenter;
 use App\Tender;
@@ -206,6 +207,13 @@ class VendorTenderSubmissionService
 
         if ($action === 'download_only') {
             return true;
+        }
+
+        if ($action === 'online_form') {
+            $formKey = $item['admin_content']['form']['form_key'] ?? null;
+            if (OnlineFormRegistry::isOptionalForVendorSubmission($formKey)) {
+                return true;
+            }
         }
 
         return ($item['vendor_status'] ?? 'draft') === 'submitted';

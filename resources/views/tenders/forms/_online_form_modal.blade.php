@@ -51,26 +51,24 @@
     }
 
     function reloadParentPage(trigger) {
-        if (!trigger) {
-            window.location.reload();
-            return;
-        }
+        if (trigger) {
+            var hash = trigger.getAttribute('data-reload-hash');
+            var tab = trigger.getAttribute('data-reload-tab');
+            var next = new URL(window.location.href);
 
-        var hash = trigger.getAttribute('data-reload-hash');
-        var tab = trigger.getAttribute('data-reload-tab');
+            if (tab) {
+                next.searchParams.set('tab', tab);
+            }
+            if (hash) {
+                next.hash = hash.replace(/^#/, '');
+            }
 
-        if (hash) {
-            var hashUrl = new URL(window.location.href);
-            hashUrl.hash = hash;
-            window.location.assign(hashUrl.toString());
-            return;
-        }
-
-        if (tab) {
-            var tabUrl = new URL(window.location.href);
-            tabUrl.searchParams.set('tab', tab);
-            window.location.assign(tabUrl.toString());
-            return;
+            // Keep tab/hash for after reload, then always hard-reload so
+            // Borang Atas Talian status badges update (Belum Selesai → Selesai).
+            if (next.pathname + next.search !== window.location.pathname + window.location.search
+                || next.hash !== window.location.hash) {
+                history.replaceState(null, '', next.toString());
+            }
         }
 
         window.location.reload();
