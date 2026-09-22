@@ -116,21 +116,30 @@ class CutOffController extends Controller
         $frequency = $row['frequency'] ?? [];
         $selection = $row['selection'] ?? null;
 
-        // Jadual per-syarikat (No, Ruj, Tend Price, BW, Z, %Bwaj, %Bwam)
-        $rows = collect($vendorsCutOff)->map(function ($r) {
-            $isFreak = ($r['bw'] ?? null) === 'FREAK';
+        // Jadual per-syarikat (No, Ruj, Tend Price, BW, Z, %Bwaj, %Bwam, Status)
+        $rows = collect($vendorsCutOff)
+            ->reject(fn ($r) => ! empty($r['is_aj']))
+            ->map(function ($r) {
+                $isFreak = ($r['bw'] ?? null) === 'FREAK';
+                $failed = ! empty($r['failed']);
+                $tendPrice = $r['tend_price'] ?? null;
 
-            return [
-                'no' => $r['bil'] ?? '-',
-                'ruj' => $r['ruj'] ?? '-',
-                'price' => number_format((float) ($r['tend_price'] ?? 0), 2),
-                'bw' => $isFreak ? 'FREAK' : number_format((float) ($r['bw'] ?? 0), 2),
-                'z' => isset($r['z_score']) && $r['z_score'] !== null ? number_format((float) $r['z_score'], 2) : '-',
-                'pct_aj' => $this->formatPeratus($r['pct_bwaj'] ?? null),
-                'pct_mean' => ($r['pct_bwam'] ?? null) === 'FREAK' ? 'FREAK' : $this->formatPeratus($r['pct_bwam'] ?? null),
-                'freak' => $isFreak,
-            ];
-        })->all();
+                return [
+                    'no' => $r['bil'] ?? '-',
+                    'ruj' => $r['ruj'] ?? '-',
+                    'price' => $tendPrice === null ? '-' : number_format((float) $tendPrice, 2),
+                    'bw' => $failed || ($r['bw'] ?? null) === null
+                        ? '-'
+                        : ($isFreak ? 'FREAK' : number_format((float) $r['bw'], 2)),
+                    'z' => isset($r['z_score']) && $r['z_score'] !== null ? number_format((float) $r['z_score'], 2) : '-',
+                    'pct_aj' => $this->formatPeratus($r['pct_bwaj'] ?? null),
+                    'pct_mean' => ($r['pct_bwam'] ?? null) === 'FREAK' ? 'FREAK' : $this->formatPeratus($r['pct_bwam'] ?? null),
+                    'freak' => $isFreak,
+                    'failed' => $failed,
+                    'status' => $r['status'] ?? ($failed ? 'Gagal' : 'Lulus'),
+                    'selectable' => ! $failed && $tendPrice !== null,
+                ];
+            })->values()->all();
 
         // Carta/jadual taburan frekuensi
         $bins = array_map(fn ($b) => $b['label'], $frequency);
@@ -142,8 +151,10 @@ class CutOffController extends Controller
 
         // Peraturan minimum pilihan checkbox (mesti sepadan dengan STOS Api\CutOffController::simpan()):
         // <=10 baris atau semua FREAK -> wajib pilih SEMUA; selain itu >= 10.
-        $totalCount = count($rows);
-        $allFreak = $totalCount > 0 && collect($rows)->every(fn ($r) => $r['freak']);
+        // Hanya baris yang boleh dipilih (bukan gagal pembuka) dikira.
+        $selectableRows = collect($rows)->filter(fn ($r) => ! empty($r['selectable']));
+        $totalCount = $selectableRows->count();
+        $allFreak = $totalCount > 0 && $selectableRows->every(fn ($r) => $r['freak']);
         $requireAll = $totalCount <= 10 || $allFreak;
 
         return view('newModule.cut_off.show', [
