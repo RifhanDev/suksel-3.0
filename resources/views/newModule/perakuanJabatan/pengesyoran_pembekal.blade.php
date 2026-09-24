@@ -7,6 +7,7 @@
 	$ppSyorOptions = \App\Models\PerakuanJabatanPengesyoranPembekalItem::SYOR_OPTIONS;
 	$showHargaBidaan = (bool) ($tender->is_ebidding ?? false);
 	$ppEmptyColspan = (!empty($isKerja) ? 10 : 11) + ($showHargaBidaan ? 1 : 0);
+	$ppSingleDisyorkanOnly = $ppSingleDisyorkanOnly ?? false;
 @endphp
 <div class="tab-pane fade pengesyoran-pembekal-tab" id="tab-pengesyoran-pembekal" role="tabpanel">
 	<style>
@@ -77,7 +78,8 @@
 		}
 	</style>
 
-	<div class="content-card p-4" id="pp-root" data-submitted="{{ $ppLocked ? '1' : '0' }}">
+	<div class="content-card p-4" id="pp-root" data-submitted="{{ $ppLocked ? '1' : '0' }}"
+		data-single-disyorkan-only="{{ $ppSingleDisyorkanOnly ? '1' : '0' }}">
 		<div class="alert d-none py-2 px-3 mb-3" id="ppAlert" role="alert"></div>
 		@if ($tabsReadOnly)
 			<div class="alert alert-info py-2 px-3 mb-3">Maklumat pengesyoran pembekal adalah read-only pada peringkat ini.</div>
@@ -244,6 +246,7 @@
 			if (!root) return;
 
 			const submitted = root.getAttribute('data-submitted') === '1';
+			const singleDisyorkanOnly = root.getAttribute('data-single-disyorkan-only') === '1';
 			const simpanUrl = @json($ppSimpanUrl);
 			const hantarUrl = @json($ppHantarUrl);
 			const token = document.querySelector('meta[name="_token"]')?.getAttribute('content');
@@ -263,6 +266,7 @@
 			}
 
 			function enforceDisyorkanRule(changedSelect) {
+				if (!singleDisyorkanOnly) return;
 				if (!changedSelect || changedSelect.value !== SYOR_DISYORKAN) return;
 
 				getSyorSelects().forEach(sel => {
