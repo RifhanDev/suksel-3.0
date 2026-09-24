@@ -353,7 +353,7 @@ class JawatankuasaPembukaController extends Controller
         $vendors = $participants->map(fn ($p) => [
             'vendor_id' => (int) $p->vendor_id,
             'name'      => $p->vendor?->name ?: ('Vendor #' . $p->vendor_id),
-            'kod'       => $p->vendor?->registration ?: (string) $p->vendor_id,
+            'kod'       => $p->kod_pembekal ?: null,
         ])->values()->all();
 
         $semakPayload  = $this->buildSemakPayload($tender, $teknikalItems, $kewanganItems, $dokumenByVendor, $vendors);
