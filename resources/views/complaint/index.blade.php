@@ -124,7 +124,9 @@
 					targets: 5,
 					width: '220px',
 				}, ],
-				aaSorting: []
+				order: [
+					[6, 'desc']
+				],
 			});
 		});
 	</script>
