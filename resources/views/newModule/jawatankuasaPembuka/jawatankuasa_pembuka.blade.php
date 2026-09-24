@@ -474,6 +474,43 @@
 			{{-- Rumusan content (rendered after AJAX load) --}}
 			<div id="rumusan-content" class="d-none">
 
+				{{-- Senarai keseluruhan (semua pembeli dokumen — kod kekal seperti Jadual Pembuka) --}}
+				<div class="mb-4">
+					<div class="d-flex align-items-center gap-3 mb-3">
+						<span class="rumusan-icon" style="background: #e0e7ff;">
+							<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+								stroke="#4338ca" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+								<path d="M8 6h13"></path><path d="M8 12h13"></path><path d="M8 18h13"></path>
+								<path d="M3 6h.01"></path><path d="M3 12h.01"></path><path d="M3 18h.01"></path>
+							</svg>
+						</span>
+						<div>
+							<div class="rumusan-heading-title">Senarai Petender</div>
+							<div class="rumusan-heading-sub">Semua pembekal yang membeli dokumen tender. Kod pembekal kekal (contoh: 4/4) walaupun tidak layak.</div>
+						</div>
+					</div>
+					<table id="tableSemuaPembekal" class="table rumusan-table align-middle">
+						<thead>
+							<tr>
+								<th class="text-center" style="width: 120px;">Kod Pembekal</th>
+								<th>Nama Syarikat</th>
+								<th class="text-center" style="width: 140px;">Kelayakan</th>
+							</tr>
+						</thead>
+						<tbody id="tableSemuaPembekalBody">
+							<tr><td colspan="3" class="text-center text-muted" style="padding: 18px 16px;">Memuatkan...</td></tr>
+						</tbody>
+						<tfoot>
+							<tr>
+								<td colspan="3">
+									<span class="rumusan-total-label">Jumlah Petender</span>
+									<span class="rumusan-total-value" id="totalSemuaPembekalText" style="color: #4338ca;">0</span>
+								</td>
+							</tr>
+						</tfoot>
+					</table>
+				</div>
+
 				{{-- Senarai Layak --}}
 				<div class="mb-4">
 					<div class="d-flex align-items-center gap-3 mb-3">
@@ -492,7 +529,7 @@
 					<table id="tableRumusan" class="table rumusan-table align-middle">
 						<thead>
 							<tr>
-								<th class="text-center" style="width: 80px;">Bil</th>
+								<th class="text-center" style="width: 120px;">Kod Pembekal</th>
 								<th>Nama Syarikat</th>
 								<th class="text-center" style="width: 200px;">Taraf Bumiputera</th>
 								<th class="text-center" style="width: 250px;">Harga Tawaran (RM)</th>
@@ -558,16 +595,17 @@
 					<table id="tableTidakLayak" class="table rumusan-table align-middle">
 						<thead>
 							<tr>
+								<th class="text-center" style="width: 120px;">Kod Pembekal</th>
 								<th>Nama Syarikat</th>
 								<th>Sebab Tidak Layak</th>
 							</tr>
 						</thead>
 						<tbody id="tableTidakLayakBody">
-							<tr><td colspan="2" class="text-center text-muted" style="padding: 18px 16px;">Tiada pembekal tidak layak.</td></tr>
+							<tr><td colspan="3" class="text-center text-muted" style="padding: 18px 16px;">Tiada pembekal tidak layak.</td></tr>
 						</tbody>
 						<tfoot>
 							<tr>
-								<td colspan="2">
+								<td colspan="3">
 									<span class="rumusan-total-label">Jumlah Pembekal Tidak Layak</span>
 									<span class="rumusan-total-value" id="totalTidakLayakText" style="color: #dc2626;">0</span>
 								</td>
@@ -1525,12 +1563,53 @@
 			});
 	}
 
+	function parseKodSequence(kod) {
+		const match = String(kod || '').match(/^(\d+)\s*\//);
+		return match ? parseInt(match[1], 10) : 99999;
+	}
+
+	function formatKodPembekal(kod) {
+		if (kod) {
+			return `<span class="fw-bold font-monospace">${escapeHtml(kod)}</span>`;
+		}
+		return '<span class="fst-italic small text-muted">Kod Pembekal Belum Dijana</span>';
+	}
+
 	function renderRumusan(data) {
-		const layak     = data.layak      || [];
+		const layak      = data.layak       || [];
 		const tidakLayak = data.tidak_layak || [];
 
 		$('#totalLayakText').text(layak.length);
 		$('#totalTidakLayakText').text(tidakLayak.length);
+
+		const semua = layak
+			.map(function (v) { return Object.assign({}, v, { kelayakan: 'layak' }); })
+			.concat(tidakLayak.map(function (v) { return Object.assign({}, v, { kelayakan: 'tidak_layak' }); }))
+			.sort(function (a, b) {
+				const diff = parseKodSequence(a.kod) - parseKodSequence(b.kod);
+				return diff !== 0 ? diff : (a.vendor_id - b.vendor_id);
+			});
+
+		$('#totalSemuaPembekalText').text(semua.length);
+		const $semuaBody = $('#tableSemuaPembekalBody');
+		$semuaBody.empty();
+		if (semua.length === 0) {
+			$semuaBody.append('<tr><td colspan="3" class="text-center text-muted py-3">Tiada petender.</td></tr>');
+		} else {
+			semua.forEach(function (v) {
+				const isLayak = v.kelayakan === 'layak';
+				const badge = isLayak
+					? '<span class="badge-status badge-status-success">Layak</span>'
+					: '<span class="badge-status badge-status-danger">Tidak Layak</span>';
+				$semuaBody.append(
+					`<tr>
+						<td class="text-center">${formatKodPembekal(v.kod)}</td>
+						<td class="fw-bold ${isLayak ? 'text-primary' : 'text-danger'}">${escapeHtml(v.name)}</td>
+						<td class="text-center">${badge}</td>
+					</tr>`
+				);
+			});
+		}
 
 		// ── Senarai Layak Table ────────────────────────────────────
 		const $rumusanBody = $('#tableRumusanBody');
@@ -1539,7 +1618,13 @@
 		if (layak.length === 0) {
 			$rumusanBody.append('<tr><td colspan="4" class="text-center text-muted py-3">Tiada petender layak.</td></tr>');
 		} else {
-			layak.forEach(function (v, idx) {
+			layak
+				.slice()
+				.sort(function (a, b) {
+					const diff = parseKodSequence(a.kod) - parseKodSequence(b.kod);
+					return diff !== 0 ? diff : (a.vendor_id - b.vendor_id);
+				})
+				.forEach(function (v) {
 				// Both values are derived, not officer input.
 				const bumi    = BUMIPUTERA_STATUSES[v.vendor_id];
 				const isBumi  = bumi ? bumi.is_bumiputera === 1 : null;
@@ -1555,7 +1640,7 @@
 
 				$rumusanBody.append(
 					`<tr>
-						<td class="text-center">${idx + 1} / ${layak.length}</td>
+						<td class="text-center">${formatKodPembekal(v.kod)}</td>
 						<td class="fw-bold text-primary">${escapeHtml(v.name)}</td>
 						<td class="text-center">
 							${bumiHtml}
@@ -1575,12 +1660,19 @@
 		$tidakLayakBody.empty();
 
 		if (tidakLayak.length === 0) {
-			$tidakLayakBody.append('<tr><td colspan="2" class="text-center text-muted py-3">Tiada pembekal tidak layak.</td></tr>');
+			$tidakLayakBody.append('<tr><td colspan="3" class="text-center text-muted py-3">Tiada pembekal tidak layak.</td></tr>');
 		} else {
-			tidakLayak.forEach(function (v) {
+			tidakLayak
+				.slice()
+				.sort(function (a, b) {
+					const diff = parseKodSequence(a.kod) - parseKodSequence(b.kod);
+					return diff !== 0 ? diff : (a.vendor_id - b.vendor_id);
+				})
+				.forEach(function (v) {
 				const reasonsHtml = (v.reasons || []).map(r => `<li class="mb-1">${escapeHtml(r)}</li>`).join('');
 				$tidakLayakBody.append(
 					`<tr>
+						<td class="text-center">${formatKodPembekal(v.kod)}</td>
 						<td class="fw-bold text-danger">${escapeHtml(v.name)}</td>
 						<td><ul class="mb-0 small ps-3">${reasonsHtml}</ul></td>
 					</tr>`
