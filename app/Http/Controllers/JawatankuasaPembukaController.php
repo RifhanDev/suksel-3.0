@@ -234,14 +234,7 @@ class JawatankuasaPembukaController extends Controller
             ->reject($isExcludedKewangan)
             ->values()->all();
 
-        $vendors = $participants->map(fn ($p) => [
-            'vendor_id'     => (int) $p->vendor_id,
-            'name'          => $p->vendor?->name ?: ('Vendor #' . $p->vendor_id),
-            'kod'           => $p->kod_pembekal ?: null,
-            // Include existing rumusan values or auto-calculated specification price
-            'is_bumiputera' => $p->is_bumiputera,
-            'harga_tawaran' => $this->resolveVendorHargaTawaran($tender, (int) $p->vendor_id, $p->harga_tawaran),
-        ])->values()->all();
+        $vendors = $this->mapParticipatingVendorsForQualification($tender, $participants);
 
         $semakPayload = $this->buildSemakPayload($tender, $teknikalItems, $kewanganItems, $dokumenByVendor, $vendors);
         $evaluations  = $this->service->loadEvaluations($tender);
@@ -249,6 +242,23 @@ class JawatankuasaPembukaController extends Controller
         $result = $this->service->computeVendorQualifications($vendors, $semakPayload, $evaluations);
 
         return response()->json($result);
+    }
+
+    /**
+     * @param  \Illuminate\Support\Collection<int, \App\TenderVendor>|\Illuminate\Database\Eloquent\Collection  $participants
+     * @return array<int, array{vendor_id: int, name: string, kod: ?string, is_bumiputera: mixed, harga_tawaran: mixed}>
+     */
+    protected function mapParticipatingVendorsForQualification(Tender $tender, $participants): array
+    {
+        return $participants->map(function ($p) use ($tender) {
+            return [
+                'vendor_id'     => (int) $p->vendor_id,
+                'name'          => $p->vendor?->name ?: ('Vendor #' . $p->vendor_id),
+                'kod'           => $p->kod_pembekal ?: null,
+                'is_bumiputera' => $p->is_bumiputera,
+                'harga_tawaran' => $this->resolveVendorHargaTawaran($tender, (int) $p->vendor_id, $p->harga_tawaran),
+            ];
+        })->values()->all();
     }
 
     /**
@@ -350,11 +360,7 @@ class JawatankuasaPembukaController extends Controller
             ->reject($isExcludedKewangan)
             ->values()->all();
 
-        $vendors = $participants->map(fn ($p) => [
-            'vendor_id' => (int) $p->vendor_id,
-            'name'      => $p->vendor?->name ?: ('Vendor #' . $p->vendor_id),
-            'kod'       => $p->kod_pembekal ?: null,
-        ])->values()->all();
+        $vendors = $this->mapParticipatingVendorsForQualification($tender, $participants);
 
         $semakPayload  = $this->buildSemakPayload($tender, $teknikalItems, $kewanganItems, $dokumenByVendor, $vendors);
         $evaluations   = $this->service->loadEvaluations($tender);
