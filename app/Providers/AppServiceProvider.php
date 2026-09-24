@@ -66,5 +66,27 @@ class AppServiceProvider extends ServiceProvider
 
             return $body->success;
         });
+
+        Validator::extend('email_domain', function ($attribute, $value, $parameters) {
+            if (! is_string($value) || ! str_contains($value, '@')) {
+                return false;
+            }
+
+            $domain = strtolower(ltrim(strrchr($value, '@'), '@'));
+            if ($domain === '') {
+                return false;
+            }
+
+            $allowedSuffixes = $parameters !== [] ? $parameters : ['gov.my'];
+
+            foreach ($allowedSuffixes as $suffix) {
+                $suffix = strtolower($suffix);
+                if ($domain === $suffix || str_ends_with($domain, '.'.$suffix)) {
+                    return true;
+                }
+            }
+
+            return false;
+        });
     }
 }

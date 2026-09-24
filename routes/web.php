@@ -204,6 +204,8 @@ Route::get('auth/forgot_password', [AuthController::class, 'forgotPassword']);
 Route::post('auth/forgot_password', [AuthController::class, 'doForgotPassword']);
 Route::get('auth/reset/{token}', [AuthController::class, 'resetPassword']);
 Route::post('auth/reset', [AuthController::class, 'doResetPassword']);
+Route::get('auth/pending-agency-approval', [AuthController::class, 'pendingAgencyApproval'])
+    ->name('auth.pending-agency-approval');
 
 // Tenders
 Route::get('tenders/select', [TendersController::class, 'select']);
@@ -828,6 +830,7 @@ Route::middleware(['auth'])->group(function () {
 		Route::get('users/pending-approval', [UsersController::class, 'pendingApproval'])->name('users.pending-approval');
 		Route::get('users/{user}/approval', [UsersController::class, 'approval'])->name('users.approval');
 		Route::put('users/{user}/approval', [UsersController::class, 'storeApproval'])->name('users.store-approval');
+		Route::put('users/{user}/approve', [UsersController::class, 'approveUser'])->name('users.approve');
 		Route::get('users/{user}/histories', [UsersController::class, 'histories'])->name('users.histories');
 		Route::get('users/{user}/login', [UsersController::class, 'doLogin'])->name('users.login');
 		Route::put('users/{user}/confirm', [UsersController::class, 'confirm']);

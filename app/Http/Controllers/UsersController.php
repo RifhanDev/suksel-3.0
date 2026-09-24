@@ -10,9 +10,13 @@ use Mail;
 use App\User;
 use App\UserHistory;
 use App\Mail\ConfirmRegistration;
+use App\Mail\UserAccountInvite;
+use App\Mail\UserApplicationApproved;
+use App\Support\UserRegistrationNotifier;
 use Carbon\Carbon;
 use Crypt;
 use App\Traits\Helper;
+use Illuminate\Support\Facades\Log;
 
 class UsersController extends Controller
 {
@@ -125,18 +129,7 @@ class UsersController extends Controller
 			return $this->_access_denied();
 		}
 
-		$passwordOption = $request->input('password_option', 'assign');
-
-		// If password_option is 'reset', make password optional
-		if ($passwordOption === 'reset') {
-			$rules = User::$_rules['storeUser'];
-			unset($rules['password']);
-			unset($rules['password_confirmation']);
-			User::setRules('storeUser');
-			User::$rules = $rules;
-		} else {
-			User::setRules('store');
-		}
+		User::setRules('storeUserInvite');
 
 		if (isset($data['ic_number'])) {
 			$digits = preg_replace('/\D+/', '', (string) $data['ic_number']);
@@ -151,8 +144,8 @@ class UsersController extends Controller
 
 		$data['name']      = $data['name'];
 		$data['username']  = $data['email'];
-		// Pengguna baharu perlu sahkan emel sebelum akaun diaktifkan
 		$data['confirmed'] = 0;
+		$data['approved']  = null;
 		$data['roles']     = isset($data['roles']) ? $data['roles'] : [];
 
 		if (isset($data['organization_unit_id']) && empty($data['organization_unit_id'])) {
@@ -180,34 +173,24 @@ class UsersController extends Controller
 		// Jana kod pengesahan untuk emel pengesahan
 		$user->confirmation_code = md5(uniqid(mt_rand(), true));
 
-		if ($passwordOption === 'reset') {
-			// Generate a random temporary password that user will never use
-			$user->password = Hash::make(\Illuminate\Support\Str::random(32));
-			$user->password_changed_at = null; // User hasn't set password yet
-		} else {
-			$user->password = Hash::make($request->password);
-			$user->password_changed_at = now();
-		}
+		$user->password = Hash::make(\Illuminate\Support\Str::random(32));
+		$user->password_changed_at = null;
 
 		if (!$user->save()) {
 			return $this->_validation_error($user);
 		}
 		$user->roles()->sync($data['roles']);
 
-		// fix bug: send ARR email immediately after user created without waiting queue
-		if ($user->organization_unit_id) {
-			// Refresh user to ensure we have the latest data from database
-			$user->refresh();
-
-			$to = trim($user->email);
-			$subject = 'Permintaan Semakan Akaun Pengguna Oleh Sistem Tender ' . $user->name;
-			$send_status = $this->sendMail("html", $to, $subject, "", "users.emails.account-review-request", ['emailUser' => $user]);
-
-			$user->arr_sent_at = Carbon::now();
-			$user->arr = 0;
-			$user->save();
+		try {
+			Mail::to($user)->send(new UserAccountInvite($user));
+			UserHistory::log($user->id, 'invite-sent', auth()->id());
+		} catch (\Exception $e) {
+			\Log::error('Failed to send user invite email: ' . $e->getMessage());
+			return redirect('users/' . $user->id . '/edit')->with(
+				'error',
+				'Pengguna disimpan tetapi emel jemputan gagal dihantar. Sila hantar semula emel pengesahan.'
+			);
 		}
-		////////////////////////////////////////////////////////////////////////////////
 
 		if ($request->ajax()) {
 			return response()->json($user, 201);
@@ -550,8 +533,12 @@ class UsersController extends Controller
 	{
 		$user = User::findOrFail($id);
 
-		if ($user->confirmed) {
-			$this->_access_denied();
+		if ($user->hasRole('Vendor') && $user->confirmed) {
+			return $this->_access_denied();
+		}
+
+		if (!$user->hasRole('Vendor') && !is_null($user->approved)) {
+			return $this->_access_denied();
 		}
 
 		// yg ni mmg dh comment dri asal
@@ -561,7 +548,11 @@ class UsersController extends Controller
 		// 	->subject(trans('auth.email.account_confirmation.subject'));
 		// });
 
-		Mail::to($user)->send(new ConfirmRegistration($user)); // yg ni yg commented baru 24/11/2022
+		if ($user->hasRole('Vendor')) {
+			Mail::to($user)->send(new ConfirmRegistration($user));
+		} else {
+			Mail::to($user)->send(new UserAccountInvite($user));
+		}
 
 		if ($user->hasRole('Vendor')) {
 			$redirect = redirect('vendors/' . $user->vendor_id);
@@ -662,7 +653,12 @@ class UsersController extends Controller
 		if (!$user->updateUniques()) {
 			return $this->_validation_error($user);
 		}
-		$user->save();
+
+		if ($user->approved == 1) {
+			$this->applyAgencyUserApprovalActivation($user);
+		} else {
+			$user->save();
+		}
 
 		$data['roles'] = isset($data['roles']) ? $data['roles'] : [];
 		$user->roles()->sync($data['roles']);
@@ -672,14 +668,7 @@ class UsersController extends Controller
 		}
 
 		if ($user->approved == 1) {
-			// Mail::send('users.emails.application-approved', ['user' => $user], function ($message) use ($user) {
-			// 	$message->to($user->email);
-			// 	$message->subject('Status Permohonan Akaun Agensi');
-			// });
-
-			$to			= trim($user->email);
-			$subject 	= 'Status Permohonan Akaun Agensi';
-			$send_status = $this->sendMail("html", $to, $subject, "", "users.emails.application-approved", ['user' => $user]);
+			$this->sendApplicationApprovedEmail($user);
 		} else {
 			// Mail::send('users.emails.application-rejected', ['user' => $user], function ($message) use ($user) {
 			// 	$message->to($user->email);
@@ -699,6 +688,49 @@ class UsersController extends Controller
 		return redirect('users/pending-approval')->with('success', $this->updated_message);
 	}
 
+	public function approveUser(Request $request, $id)
+	{
+		$user = User::findOrFail($id);
+
+		if (! $user->canBeApprovedByAuthUser()) {
+			return $this->_access_denied();
+		}
+
+		$user->approved = 1;
+		$user->remark = trim((string) $request->input('remark', ''));
+		if ($user->remark === '') {
+			$user->remark = 'Diluluskan oleh '.auth()->user()->name;
+		}
+
+		$this->applyAgencyUserApprovalActivation($user);
+		$this->sendApplicationApprovedEmail($user);
+
+		UserHistory::log($user->id, 'approval', auth()->id());
+
+		return redirect('users')->with('success', 'Pengguna telah disahkan dan akaun diaktifkan.');
+	}
+
+	protected function applyAgencyUserApprovalActivation(User $user): void
+	{
+		$user->approver_id = auth()->id();
+		$user->arr_sent_at = Carbon::now();
+		$user->arr = 1;
+		$user->confirmed = 1;
+		$user->save();
+	}
+
+	protected function sendApplicationApprovedEmail(User $user): void
+	{
+		try {
+			Mail::to(trim($user->email))->send(new UserApplicationApproved($user));
+		} catch (\Throwable $e) {
+			Log::error('[UsersController] Failed to send application approved email.', [
+				'user_id' => $user->id,
+				'error' => $e->getMessage(),
+			]);
+		}
+	}
+
 	public function accountReview($id)
 	{
 
@@ -711,7 +743,7 @@ class UsersController extends Controller
 			$user = User::find(Crypt::decrypt($id));
 			if ($user) {
 				$user->arr = 1;
-				$user->confirmed = 1; // menukarkan semula status user kepada aktif setelah email arr dihantar dan sekiranya lebih dari 3 bulan, akaun akan disekat
+				$user->confirmed = 1; // aktif semula selepas semakan ARR; jika melebihi 6 bulan tanpa semakan, akaun akan disekat
 				$user->save();
 				return redirect()->to('/')->with('success', 'Akaun telah disemak dan anda boleh log masuk semula pada sistem.');
 			} else {
@@ -742,10 +774,11 @@ class UsersController extends Controller
 	public function sendArr()
 	{
 		$today = Carbon::today();
+		$arrMonths = User::ARR_REVIEW_INTERVAL_MONTHS;
 		$users = User::active()
-			->where(function ($query) use ($today) {
+			->where(function ($query) use ($today, $arrMonths) {
 				$query->whereNull('arr_sent_at')
-					->orWhere('arr_sent_at', '<', $today->subMonths(3)); // Semakan tarikh Arr Send At melebihi 3 bulan e-mail akan dihantar
+					->orWhere('arr_sent_at', '<', $today->copy()->subMonths($arrMonths));
 			})
 			->whereNotNull('organization_unit_id')
 			->whereNotIn('email', ['anonymous', 'tenderadmin@selangor.gov.my'])
@@ -763,8 +796,8 @@ class UsersController extends Controller
 			$send_status = $this->sendMail("html", $to, $subject, "", "users.emails.account-review-request", ['emailUser' => $user]);
 
 			$user->arr_sent_at = Carbon::now();
-			$user->arr = 0; // Jika user lebih dari 3 bulan akan bertukar tidak disemak
-			$user->confirmed = 0; // Jika user lebih 3 bulan akan berstatus tidak aktif
+			$user->arr = 0;
+			$user->confirmed = 0;
 			$user->save();
 		}
 

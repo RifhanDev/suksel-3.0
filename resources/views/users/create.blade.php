@@ -32,7 +32,7 @@
 		</div>
 	</div>
 
-	<form action="{{ url('users') }}" method="POST">
+	<form action="{{ url('users') }}" method="POST" id="createUserForm" novalidate>
 		@csrf
 
 		<div class="modern-card">
@@ -66,30 +66,13 @@
 						</div>
 						<div class="small lh-sm">
 							<strong>Perhatian</strong>
-							Sila isikan maklumat pengguna sistem yang baru dengan tepat. Kata laluan mestilah
-							sekurang-kurangnya 8 aksara dan mengandungi satu simbol, nombor, huruf besar dan kecil.
+							Tiada kata laluan perlu diisi di sini. Selepas disimpan, emel akan dihantar kepada pengguna
+							berdaftar dengan pautan untuk mengesahkan emel dan menetapkan kata laluan. Akaun hanya aktif
+							selepas Agensi Admin meluluskan permohonan.
 						</div>
 					</div>
 
 					@include('users.form')
-
-					<div class="row g-3">
-						<div class="col-12">
-							<hr class="text-muted opacity-25 my-2">
-						</div>
-
-						<div class="col-md-6">
-							<label for="password" class="form-label fw-medium small">Kata Laluan <span class="text-danger">*</span></label>
-							<input type="password" class="form-control" id="password" name="password" required>
-							{!! $errors->first('password', '<div class="text-danger small mt-1">:message</div>') !!}
-						</div>
-
-						<div class="col-md-6">
-							<label for="password_confirmation" class="form-label fw-medium small">Sahkan Kata Laluan
-								<span class="text-danger">*</span></label>
-							<input type="password" class="form-control" id="password_confirmation" name="password_confirmation" required>
-						</div>
-					</div>
 				</div>
 
 				<!-- FOOTER ACTIONS -->
@@ -102,7 +85,7 @@
 						</svg>
 						Batal
 					</a>
-					<button type="submit" class="btn-form btn-form-primary">
+					<button type="button" class="btn-form btn-form-primary" id="btnCreateUserConfirm">
 						<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
 							stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 							<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
@@ -117,6 +100,47 @@
 		</div>
 		</div>
 	</form>
+
+	@push('modals')
+		<div class="modal fade" id="confirmUserEmailModal" tabindex="-1" aria-labelledby="confirmUserEmailModalLabel"
+			aria-hidden="true">
+			<div class="modal-dialog modal-dialog-centered">
+				<div class="modal-content p-4">
+					<div class="d-flex align-items-start gap-3 mb-3">
+						<div class="flex-shrink-0 d-flex align-items-center justify-content-center rounded-circle"
+							style="width: 44px; height: 44px; background: #fef3c7;">
+							<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"
+								stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+								<path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+								<polyline points="22,6 12,13 2,6"></polyline>
+							</svg>
+						</div>
+						<div class="flex-grow-1">
+							<h5 class="fw-bold mb-2" id="confirmUserEmailModalLabel">Sahkan alamat emel</h5>
+							<p class="text-muted small mb-3">
+								Emel jemputan (pengesahan emel & tetapan kata laluan) akan dihantar ke alamat di bawah.
+								Sila pastikan maklumat betul sebelum meneruskan.
+							</p>
+							<dl class="mb-0 small">
+								<dt class="text-muted fw-normal">Nama</dt>
+								<dd class="fw-semibold text-dark mb-2" id="confirmUserEmailName">—</dd>
+								<dt class="text-muted fw-normal">Alamat emel</dt>
+								<dd class="fw-semibold text-dark mb-2" id="confirmUserEmailAddress">—</dd>
+								<dt class="text-muted fw-normal d-none" id="confirmUserAgencyLabel">Agensi</dt>
+								<dd class="fw-semibold text-dark mb-0 d-none" id="confirmUserAgencyName">—</dd>
+							</dl>
+						</div>
+					</div>
+					<div class="d-flex justify-content-end gap-2 pt-2">
+						<button type="button" class="btn-form btn-form-secondary" data-bs-dismiss="modal">Semak semula</button>
+						<button type="button" class="btn-form btn-form-primary" id="btnCreateUserSubmit">
+							Ya, hantar emel &amp; simpan
+						</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	@endpush
 @endsection
 
 @section('scripts')
@@ -129,33 +153,57 @@
 			if ($('#organization_unit_id').length) {
 				$('#organization_unit_id').selectize();
 			}
-		});
-	</script>
-@endsection
 
-@section('scripts')
-	@parent
-	<script>
-		document.addEventListener('DOMContentLoaded', function() {
-			const passwordOption = document.querySelectorAll('input[name="password_option"]');
-			const passwordFields = document.getElementById('password-fields');
-			const passwordInputs = passwordFields.querySelectorAll('input[type="password"]');
+			const form = document.getElementById('createUserForm');
+			const confirmModalEl = document.getElementById('confirmUserEmailModal');
+			const confirmModal = confirmModalEl ? bootstrap.Modal.getOrCreateInstance(confirmModalEl) : null;
 
-			passwordOption.forEach(radio => {
-				radio.addEventListener('change', function() {
-					if (this.value === 'reset') {
-						passwordFields.style.display = 'none';
-						passwordInputs.forEach(input => {
-							input.removeAttribute('required');
-							input.value = '';
-						});
-					} else {
-						passwordFields.style.display = 'block';
-						passwordInputs.forEach(input => {
-							input.setAttribute('required', 'required');
-						});
+			function getAgencyLabel() {
+				const select = document.getElementById('organization_unit_id');
+				if (!select) {
+					return '';
+				}
+				if (select.selectize) {
+					const value = select.selectize.getValue();
+					if (!value) {
+						return '';
 					}
-				});
+					const option = select.selectize.options[value];
+					return option ? option.text : '';
+				}
+				const option = select.options[select.selectedIndex];
+				return option ? option.text.trim() : '';
+			}
+
+			document.getElementById('btnCreateUserConfirm')?.addEventListener('click', function() {
+				if (!form.reportValidity()) {
+					return;
+				}
+
+				const name = (document.getElementById('name')?.value || '').trim();
+				const email = (document.getElementById('email')?.value || '').trim();
+				const agency = getAgencyLabel();
+
+				document.getElementById('confirmUserEmailName').textContent = name || '—';
+				document.getElementById('confirmUserEmailAddress').textContent = email || '—';
+
+				const agencyLabel = document.getElementById('confirmUserAgencyLabel');
+				const agencyName = document.getElementById('confirmUserAgencyName');
+				if (agency) {
+					agencyLabel.classList.remove('d-none');
+					agencyName.classList.remove('d-none');
+					agencyName.textContent = agency;
+				} else {
+					agencyLabel.classList.add('d-none');
+					agencyName.classList.add('d-none');
+				}
+
+				confirmModal?.show();
+			});
+
+			document.getElementById('btnCreateUserSubmit')?.addEventListener('click', function() {
+				confirmModal?.hide();
+				form.submit();
 			});
 		});
 	</script>
