@@ -132,6 +132,11 @@ class User extends Authenticatable
 			'password_confirmation' => 'required',
 			'organization_unit_id' => 'required'
 		],
+		'storeUserInvite' => [
+			'name' => 'required',
+			'email' => 'required|email|email_domain|unique:users,email',
+			'organization_unit_id' => 'required'
+		],
 		'storeApproval' => [
 			'email'    => 'required|email|unique:users,email',
 			'approved' => 'required|boolean',
@@ -284,6 +289,9 @@ class User extends Authenticatable
 			->whereNull('approved');
 	}
 
+	/** Months after arr_sent_at before periodic account review email and deactivation. */
+	public const ARR_REVIEW_INTERVAL_MONTHS = 6;
+
 	public function scopePendingReview($query)
 	{
 		return $query->whereNotNull('arr')->where('arr', 0);
@@ -321,6 +329,32 @@ class User extends Authenticatable
 	public function canApprove()
 	{
 		return (auth()->user() && auth()->user()->ability(['Admin'], ['User:approve']));
+	}
+
+	public function isPendingAgencyApproval(): bool
+	{
+		return is_null($this->approved)
+			&& (int) $this->confirmed === 1
+			&& ! is_null($this->password_changed_at)
+			&& ! is_null($this->organization_unit_id)
+			&& is_null($this->vendor_id);
+	}
+
+	public function canBeApprovedByAuthUser(): bool
+	{
+		if (! auth()->check() || ! auth()->user()->canApprove()) {
+			return false;
+		}
+
+		if (! $this->isPendingAgencyApproval()) {
+			return false;
+		}
+
+		if (auth()->user()->hasRole('Admin')) {
+			return true;
+		}
+
+		return (int) auth()->user()->organization_unit_id === (int) $this->organization_unit_id;
 	}
 
 	public function canDelete()
