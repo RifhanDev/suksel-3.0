@@ -128,7 +128,7 @@ class CutOffController extends Controller
                     'no' => $r['bil'] ?? '-',
                     'ruj' => $r['ruj'] ?? '-',
                     'price' => $tendPrice === null ? '-' : number_format((float) $tendPrice, 2),
-                    'bw' => $failed || ($r['bw'] ?? null) === null
+                    'bw' => ($r['bw'] ?? null) === null
                         ? '-'
                         : ($isFreak ? 'FREAK' : number_format((float) $r['bw'], 2)),
                     'z' => isset($r['z_score']) && $r['z_score'] !== null ? number_format((float) $r['z_score'], 2) : '-',
