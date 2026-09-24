@@ -133,6 +133,7 @@ class PerakuanJabatanController extends Controller
 
         $tabsReadOnly = in_array($pjMode, ['jadual', 'laporan'], true);
         $biddingEndedAt = $pjMode === 'laporan' ? $this->ebiddingWindowEndAt($tender) : null;
+        $ppSingleDisyorkanOnly = $this->pengesyoranRequiresSingleDisyorkan($tender);
 
         return view(
             'newModule.perakuanJabatan.show',
@@ -149,7 +150,8 @@ class PerakuanJabatanController extends Controller
                 'jadualReadOnly',
                 'tabsReadOnly',
                 'isKerja',
-                'biddingEndedAt'
+                'biddingEndedAt',
+                'ppSingleDisyorkanOnly'
             )
         );
     }
@@ -409,6 +411,19 @@ class PerakuanJabatanController extends Controller
         }
 
         return 'jadual';
+    }
+
+    /**
+     * Syor Urusetia "Disyorkan" is limited to one vendor only after e-bidding has ended.
+     * Before bidaan (or when tender is not e-bidding), multiple Disyorkan is allowed.
+     */
+    private function pengesyoranRequiresSingleDisyorkan(Tender $tender): bool
+    {
+        if (! (bool) ($tender->is_ebidding ?? false)) {
+            return false;
+        }
+
+        return $this->ebiddingWindowHasEnded($tender);
     }
 
     private function ebiddingWindowHasEnded(Tender $tender): bool
@@ -722,7 +737,7 @@ class PerakuanJabatanController extends Controller
             ->filter(fn ($row) => ($row['syor_urusetia'] ?? null) === PerakuanJabatanPengesyoranPembekalItem::SYOR_DISYORKAN)
             ->count();
 
-        if ($disyorkanCount > 1) {
+        if ($this->pengesyoranRequiresSingleDisyorkan($tender) && $disyorkanCount > 1) {
             throw ValidationException::withMessages([
                 'rows' => 'Hanya satu syarikat boleh dipilih sebagai Disyorkan.',
             ]);
