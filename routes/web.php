@@ -271,9 +271,13 @@ Route::get('aduan/list', [ComplaintController::class, 'index'])->name('aduan.ind
 Route::get('aduan/{id}', [ComplaintController::class, 'show'])->name('aduan.show');
 Route::get('aduan/{id}/{status}', [ComplaintController::class, 'updateStatus'])->name('aduan.update.status');
 
-// BotMan
-Route::match(['get', 'post'], 'botman', [BotManController::class, 'handle'])->name('botman');
-Route::get('chat-widget/{chat_id}', [BotManController::class, 'chatWidget'])->withoutMiddleware(['auth'])->name('chat_widget');
+// BotMan — public (guest + vendor + agency). Do not register again inside role:Admin.
+Route::match(['get', 'post'], 'botman', [BotManController::class, 'handle'])
+	->withoutMiddleware(['auth'])
+	->name('botman');
+Route::get('chat-widget/{chat_id}', [BotManController::class, 'chatWidget'])
+	->withoutMiddleware(['auth'])
+	->name('chat_widget');
 
 
 // Place 3.0 Modules Routes Temporarily Here
@@ -1044,10 +1048,6 @@ Route::middleware(['auth'])->group(function () {
 		Route::get('aduan/{id}', [ComplaintController::class, 'show'])->name('aduan.show');
 		Route::post('aduan/{id}/reply', [ComplaintController::class, 'reply'])->name('aduan.reply');
 		Route::get('aduan/{id}/{status}', [ComplaintController::class, 'updateStatus'])->name('aduan.update.status');
-
-		// BotMan
-		Route::match(['get', 'post'], 'botman', [BotManController::class, 'handle'])->withoutMiddleware(['auth'])->name('botman');
-		Route::get('chat-widget/{chat_id}', [BotManController::class, 'chatWidget'])->withoutMiddleware(['auth'])->name('chat_widget');
 
 		// API Token
 		Route::get('apitoken', [ApiTokenController::class, 'index'])->name('apitoken.index');

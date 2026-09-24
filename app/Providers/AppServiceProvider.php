@@ -2,12 +2,16 @@
 
 namespace App\Providers;
 
-use Illuminate\Support\ServiceProvider;
-use Illuminate\Support\Facades\Validator;
+use App\Support\BotManFileCache;
+use BotMan\BotMan\BotManFactory;
+use BotMan\BotMan\Container\LaravelContainer;
+use BotMan\BotMan\Storages\Drivers\FileStorage;
 use GuzzleHttp\Client;
-use Illuminate\Support\Facades\Config;
-use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\View;
+use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -18,7 +22,21 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        //
+        $this->app->singleton('botman', function ($app) {
+            $storage = new FileStorage(storage_path('botman'));
+            $cache = new BotManFileCache();
+
+            $botman = BotManFactory::create(
+                config('botman', []),
+                $cache,
+                $app->make('request'),
+                $storage
+            );
+
+            $botman->setContainer(new LaravelContainer($app));
+
+            return $botman;
+        });
     }
 
     /**

@@ -975,7 +975,7 @@
 
         var botmanWidget = {
             title           : 'Lela (Bot)',
-            introMessage    : 'Hi, saya Lela. Saya di sini untuk membantu anda dan menjawab persoalan anda.',
+            introMessage    : 'Hai, saya Lela — pembantu SUKSEL. Saya boleh bantu dengan panduan, status permohonan, aduan, dan soalan lazim (FAQ). Menu pilihan akan dipaparkan sebentar lagi.',
             mainColor       : '#c41e3a',
             aboutText       : '',
             bubbleBackground: '#c41e3a',
@@ -984,6 +984,7 @@
             desktopWidth    : 400,
             bubbleAvatarUrl : '{{ asset('images/chatbot.png') }}',
             placeholderText : 'Hantar Pesanan..',
+            chatServer      : "{{ url('botman') }}",
             frameEndpoint   : "{{ route('chat_widget', ['chat_id' => $chat_id]) }}",
             userId          : "{{ $chat_id }}"
         };
