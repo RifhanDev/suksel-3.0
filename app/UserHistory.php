@@ -78,6 +78,7 @@ class UserHistory extends Model
 		'password-forget' => 'Permintaan Lupa Kata Laluan',
 		'password-reset'  => 'Tukar Kata Laluan',
 		'password-update' => 'Kemaskini Kata Laluan',
+		'password-reset-sent' => 'Emel Tukar Kata Laluan Dihantar',
 		'invite-sent'     => 'Emel Jemputan Dihantar',
 		'approval'        => 'Kelulusan Akaun Agensi',
 		'activate'        => 'Aktifkan Pengguna',
