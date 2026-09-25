@@ -34,6 +34,8 @@ class Kernel extends ConsoleKernel
         $schedule->command('requery:fpx')->everyMinute()->withoutOverlapping();
         $schedule->command('send:account-review-request')
             ->cron('0 0 1 3,9 *');
+        $schedule->command('send:periodic-password-reset')
+            ->dailyAt('08:00');
     }
 
     /**

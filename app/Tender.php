@@ -447,6 +447,8 @@ class Tender extends Model
 				return false;
 			} elseif (!$this->canParticipate(auth()->user()->vendor_id)) {
 				return false;
+			} elseif (!$this->isWithinVendorDokumenWindow()) {
+				return false;
 			} else {
 				return true;
 			}
@@ -1096,13 +1098,7 @@ class Tender extends Model
 
 	public function validDocumentDate()
 	{
-		if (empty($this->document_start_date) || empty($this->document_stop_date)) {
-			return false;
-		}
-
-		$today = Carbon::today();
-		return $today->gte(Carbon::parse($this->document_start_date))
-			&& $today->lte(Carbon::parse($this->document_stop_date));
+		return $this->isWithinVendorDokumenWindow();
 	}
 
 	/**
@@ -1137,7 +1133,7 @@ class Tender extends Model
 		$fromMeta = $this->combineIklanDateTime(
 			$iklan['tarikh_tutup'] ?? null,
 			$iklan['masa_tutup'] ?? null,
-			'23:59'
+			'12:00'
 		);
 		if ($fromMeta) {
 			return $fromMeta;
@@ -1164,7 +1160,7 @@ class Tender extends Model
 			return false;
 		}
 
-		if ($closes !== null && $at->gt($closes)) {
+		if ($closes !== null && $at->gte($closes)) {
 			return false;
 		}
 
@@ -1185,7 +1181,7 @@ class Tender extends Model
 			return 'Tempoh key-in dokumen belum bermula. Dibuka pada '.$opens->format('d/m/Y H:i').'.';
 		}
 
-		if ($closes !== null && $at->gt($closes)) {
+		if ($closes !== null && $at->gte($closes)) {
 			return 'Tempoh key-in dokumen telah tamat pada '.$closes->format('d/m/Y H:i').'.';
 		}
 
@@ -1257,20 +1253,22 @@ class Tender extends Model
 
 	public function documentSalesNotYetOpen(): bool
 	{
-		if (empty($this->document_start_date)) {
+		$opens = $this->vendorDokumenOpensAt();
+		if ($opens === null) {
 			return true;
 		}
 
-		return Carbon::today()->lt(Carbon::parse($this->document_start_date)->startOfDay());
+		return Carbon::now()->lt($opens);
 	}
 
 	public function documentSalesClosed(): bool
 	{
-		if (empty($this->document_stop_date)) {
+		$closes = $this->vendorDokumenClosesAt();
+		if ($closes === null) {
 			return true;
 		}
 
-		return Carbon::today()->gt(Carbon::parse($this->document_stop_date)->startOfDay());
+		return Carbon::now()->gte($closes);
 	}
 
 	public function nearSubmission()
@@ -1943,7 +1941,7 @@ class Tender extends Model
 	 */
 	public function scopeOpen($q)
 	{
-		return $q->where('submission_datetime', '>', date('Y-m-d H:i:s'));
+		return $q->where('submission_datetime', '>', Carbon::now()->format('Y-m-d H:i:s'));
 	}
 
 	public function saveAudit($action = null)
