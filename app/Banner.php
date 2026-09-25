@@ -11,10 +11,27 @@ class Banner extends Model
 		'link',
 		'published',
 		'start',
-		'end'
+		'end',
+		'start_time',
+		'end_time',
 	];
 
 	protected $dates = ['start', 'end'];
+
+	public function scopeVisibleNow($query)
+	{
+		$now = now()->format('Y-m-d H:i:s');
+
+		return $query->where('published', 1)
+			->where(function ($q) use ($now) {
+				$q->whereNull('start')
+					->orWhereRaw("CONCAT(DATE(`start`), ' ', COALESCE(`start_time`, '00:00:00')) <= ?", [$now]);
+			})
+			->where(function ($q) use ($now) {
+				$q->whereNull('end')
+					->orWhereRaw("CONCAT(DATE(`end`), ' ', COALESCE(`end_time`, '23:59:59')) > ?", [$now]);
+			});
+	}
 
 	public static $rules = array(
 		'title' => 'required'

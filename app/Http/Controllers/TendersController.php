@@ -54,7 +54,7 @@ class TendersController extends Controller
 				$tenders = $tenders->where('organization_unit_id', auth()->user()->organization_unit_id);
 
 			if (!auth()->check() || auth()->user()->hasRole('Vendor'))
-				$tenders = $tenders->forPublic()->published()->advertised();
+				$tenders = $tenders->forPublic()->published()->advertised()->open();
 
 			$tenders = $tenders->select([
 				'tenders.id',
@@ -883,7 +883,8 @@ class TendersController extends Controller
 		return $values;
 	}
 
-	/**
+	/**
+
 	 * Kumpulkan semula kod tender kepada bentuk yang borang gunakan.
 	 *
 	 * Borang menyusun kod sebagai blok: setiap blok mempunyai senarai kod, satu
@@ -1088,8 +1089,7 @@ class TendersController extends Controller
 
 		$tender = Tender::findOrFail($id);
 
-		// Check if tender submission deadline has passed
-		if (Carbon::parse($tender->submission_datetime)->isPast()) {
+		if ($tender->documentSalesClosed() || !$tender->isWithinVendorDokumenWindow()) {
 			return redirect()->back()->with('error', 'Pembelian tender telah tamat tempoh');
 		}
 

@@ -169,7 +169,7 @@ class OrganizationUnitsController extends Controller
 		{
 			$tenders = $tenders->where(function ($query)
 			{
-				$query->advertised()->forPublic()->published();
+				$query->advertised()->forPublic()->published()->open();
 			});
 		}
 
@@ -418,7 +418,7 @@ class OrganizationUnitsController extends Controller
 
 		if (!auth()->check() || auth()->user()->hasRole('Vendor') || !Tender::canShowUpdate($organizationunit->id)) {
 			$tenders = $tenders->where(function ($query) {
-				$query->advertised()->forPublic()->published();
+				$query->advertised()->forPublic()->published()->open();
 			});
 		}
 
