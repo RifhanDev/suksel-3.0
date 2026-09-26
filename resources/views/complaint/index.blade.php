@@ -34,11 +34,13 @@
 					<thead class="bg-light">
 						<tr>
 							<th class="text-uppercase text-muted small fw-bold py-3 ps-4">Subjek</th>
+							<th class="text-uppercase text-muted small fw-bold py-3">Isu / Modul</th>
+							<th class="text-uppercase text-muted small fw-bold py-3">Tender</th>
 							<th class="text-uppercase text-muted small fw-bold py-3">Kandungan</th>
 							<th class="text-uppercase text-muted small fw-bold py-3">Email</th>
-							<th class="text-uppercase text-muted small fw-bold py-3">Status</th>
+							<th class="text-uppercase text-center text-muted small fw-bold py-3">Status</th>
 							<th class="text-uppercase text-muted small fw-bold py-3">Tarikh Aduan</th>
-							<th class="text-uppercase text-center text-muted small fw-bold py-3 pe-4" style="width: 220px;">Tindakan</th>
+							<th class="text-uppercase text-center text-muted small fw-bold py-3 pe-4" style="width: 160px;">Tindakan</th>
 						</tr>
 					</thead>
 					<tbody></tbody>
@@ -93,7 +95,7 @@
 					}
 				],
 				serverSide: true,
-				stateSave: true,
+				stateSave: false,
 				language: {
 					sEmptyTable: "Tiada data",
 					sInfo: "Paparan dari _START_ hingga _END_ dari _TOTAL_ rekod",
@@ -121,9 +123,9 @@
 				columnDefs: [{
 					searchable: false,
 					orderable: false,
-					targets: 5,
-					width: '220px',
-				}, ],
+					targets: 7,
+					width: '160px',
+				}],
 				order: [
 					[6, 'desc']
 				],
