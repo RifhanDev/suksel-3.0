@@ -737,6 +737,8 @@ Route::middleware(['auth'])->group(function () {
 	Route::get('tenders/{id}/vendors/template', [TendersController::class, 'template'])->name('tenders.template');
 	Route::post('tenders/bulkUpdate', [TendersController::class, 'bulkUpdate'])->name('tenders.bulkUpdate');
 	Route::get('tenders/{id}/eligibles', [TendersController::class, 'eligibles'])->name('tenders.eligibles');
+	Route::post('tenders/{id}/eligibles/blast', [TendersController::class, 'blastEligibleEmails'])->name('tenders.eligibles.blast');
+	Route::post('tenders/{id}/eligibles/{eligible}/send-email', [TendersController::class, 'sendEligibleEmail'])->name('tenders.eligibles.send-email');
 	Route::post('tenders/exception/store', [TendersController::class, 'storeException'])->name('tender.store.exception');
 	Route::get('tenders/{id}/exceptions', [TendersController::class, 'exceptions'])->name('tender.exceptions');
 	Route::get('tenders/{id}/approve', [TendersController::class, 'approve_exception'])->name('tender.approve.exception');
