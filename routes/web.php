@@ -266,12 +266,10 @@ Route::get('circulars/list', [CircularController::class, 'public'])->name('circu
 Route::get('circulars/sort', [CircularController::class, 'sortPosition'])->name('circulars.position');
 Route::post('circulars/sort', [CircularController::class, 'updatePosition'])->name('circulars.update.position');
 
-// Complaint/Aduan
+// Complaint/Aduan — create/store must stay public (guest + any logged-in role).
+// Do not re-register them inside role:Admin: same URI overwrites and causes 403.
 Route::get('aduan', [ComplaintController::class, 'create'])->name('aduan.create');
 Route::post('aduan', [ComplaintController::class, 'store'])->name('aduan.store');
-Route::get('aduan/list', [ComplaintController::class, 'index'])->name('aduan.index');
-Route::get('aduan/{id}', [ComplaintController::class, 'show'])->name('aduan.show');
-Route::get('aduan/{id}/{status}', [ComplaintController::class, 'updateStatus'])->name('aduan.update.status');
 
 // BotMan — public (guest + vendor + agency). Do not register again inside role:Admin.
 Route::match(['get', 'post'], 'botman', [BotManController::class, 'handle'])
@@ -739,6 +737,8 @@ Route::middleware(['auth'])->group(function () {
 	Route::get('tenders/{id}/vendors/template', [TendersController::class, 'template'])->name('tenders.template');
 	Route::post('tenders/bulkUpdate', [TendersController::class, 'bulkUpdate'])->name('tenders.bulkUpdate');
 	Route::get('tenders/{id}/eligibles', [TendersController::class, 'eligibles'])->name('tenders.eligibles');
+	Route::post('tenders/{id}/eligibles/blast', [TendersController::class, 'blastEligibleEmails'])->name('tenders.eligibles.blast');
+	Route::post('tenders/{id}/eligibles/{eligible}/send-email', [TendersController::class, 'sendEligibleEmail'])->name('tenders.eligibles.send-email');
 	Route::post('tenders/exception/store', [TendersController::class, 'storeException'])->name('tender.store.exception');
 	Route::get('tenders/{id}/exceptions', [TendersController::class, 'exceptions'])->name('tender.exceptions');
 	Route::get('tenders/{id}/approve', [TendersController::class, 'approve_exception'])->name('tender.approve.exception');
@@ -1044,9 +1044,7 @@ Route::middleware(['auth'])->group(function () {
 			});
 		});
 
-		// Complaint/Aduan
-		Route::get('aduan', [ComplaintController::class, 'create'])->name('aduan.create');
-		Route::post('aduan', [ComplaintController::class, 'store'])->name('aduan.store');
+		// Complaint/Aduan — admin management only (create/store are public above)
 		Route::get('aduan/list', [ComplaintController::class, 'index'])->name('aduan.index');
 		Route::get('aduan/{id}', [ComplaintController::class, 'show'])->name('aduan.show');
 		Route::post('aduan/{id}/reply', [ComplaintController::class, 'reply'])->name('aduan.reply');

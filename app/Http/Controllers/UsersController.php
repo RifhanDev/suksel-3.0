@@ -624,7 +624,15 @@ class UsersController extends Controller
 			return $this->_access_denied();
 		}
 
-		return view('users.approval', compact('currentUser'));
+		$predefinedRemarks = [];
+		if (\Illuminate\Support\Facades\Schema::hasTable('predefined_remarks')) {
+			$predefinedRemarks = \App\PredefinedRemark::query()
+				->orderBy('id')
+				->pluck('remark', 'remark')
+				->toArray();
+		}
+
+		return view('users.approval', compact('currentUser', 'predefinedRemarks'));
 	}
 
 	public function storeApproval(Request $request, $id)

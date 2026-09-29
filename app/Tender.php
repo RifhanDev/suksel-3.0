@@ -23,8 +23,10 @@ class Tender extends Model
 	use RevisionableTrait;
 
 	static $types = [
-		'tender'      => 'Tender',
-		'quotation'   => 'Sebut Harga'
+		'tender'          => 'Tender',
+		'quotation'       => 'Sebut Harga',
+		'pembelian_terus' => 'Pembelian Terus',
+		'lantikan_terus'  => 'Lantikan Terus',
 	];
 
 	/**
