@@ -130,6 +130,23 @@
 		<div class="p-4 bg-white rounded-bottom">
 			<p class="text-muted small mb-4">Sila pilih tindakan yang ingin dilakukan terhadap pengguna ini:</p>
 			<div class="d-flex flex-wrap gap-3">
+				@if ($currentUser->canBeApprovedByAuthUser())
+					<form action="{{ route('users.approve', $currentUser->id) }}" method="POST" class="d-inline"
+						id="approveUserForm">
+						@csrf
+						@method('PUT')
+						<button type="button" class="btn-action btn-action-green" id="btnOpenApproveUserModal">
+							<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+								stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+								<path d="M16 21v-2a4 4 0 0 0-4-4H5a2 2 0 0 0-4 4v2"></path>
+								<circle cx="8.5" cy="7" r="4"></circle>
+								<polyline points="17 11 19 13 23 9"></polyline>
+							</svg>
+							Sahkan Pengguna
+						</button>
+					</form>
+				@endif
+
 				@if ($currentUser->canLogin())
 					<a href="{{ asset('users/' . $currentUser->id . '/login') }}" class="btn-action btn-action-red">
 						<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
@@ -214,6 +231,52 @@
 		</div>
 	</div>
 
+	@if ($currentUser->canBeApprovedByAuthUser())
+		@push('modals')
+			<div class="modal fade" id="confirmApproveUserModal" tabindex="-1" aria-labelledby="confirmApproveUserModalLabel"
+				aria-hidden="true">
+				<div class="modal-dialog modal-dialog-centered">
+					<div class="modal-content p-4">
+						<div class="d-flex align-items-start gap-3 mb-3">
+							<div class="flex-shrink-0 d-flex align-items-center justify-content-center rounded-circle"
+								style="width: 44px; height: 44px; background: #fef3c7;">
+								<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"
+									stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+									<path d="M16 21v-2a4 4 0 0 0-4-4H5a2 2 0 0 0-4 4v2"></path>
+									<circle cx="8.5" cy="7" r="4"></circle>
+									<polyline points="17 11 19 13 23 9"></polyline>
+								</svg>
+							</div>
+							<div class="flex-grow-1">
+								<h5 class="fw-bold mb-2" id="confirmApproveUserModalLabel">Sahkan pengguna</h5>
+								<p class="text-muted small mb-3">
+									Akaun pengguna berikut akan diaktifkan. Semakan ARR akan ditanda selesai dan emel kelulusan
+									akan dihantar kepada pengguna. Sila pastikan maklumat betul sebelum meneruskan.
+								</p>
+								<dl class="mb-0 small">
+									<dt class="text-muted fw-normal">Nama</dt>
+									<dd class="fw-semibold text-dark mb-2">{{ $currentUser->name }}</dd>
+									<dt class="text-muted fw-normal">Alamat emel</dt>
+									<dd class="fw-semibold text-dark mb-2">{{ $currentUser->email }}</dd>
+									@if ($currentUser->agency)
+										<dt class="text-muted fw-normal">Agensi</dt>
+										<dd class="fw-semibold text-dark mb-0">{{ $currentUser->agency->name }}</dd>
+									@endif
+								</dl>
+							</div>
+						</div>
+						<div class="d-flex justify-content-end gap-2 pt-2">
+							<button type="button" class="btn-form btn-form-secondary" data-bs-dismiss="modal">Batal</button>
+							<button type="button" class="btn-form btn-form-primary" id="btnConfirmApproveUser">
+								Ya, sahkan pengguna
+							</button>
+						</div>
+					</div>
+				</div>
+			</div>
+		@endpush
+	@endif
+
 @endsection
 
 @section('scripts')
@@ -226,6 +289,19 @@
 			if ($('#organization_unit_id').length) {
 				$('#organization_unit_id').selectize();
 			}
+
+			const approveForm = document.getElementById('approveUserForm');
+			const approveModalEl = document.getElementById('confirmApproveUserModal');
+			const approveModal = approveModalEl ? bootstrap.Modal.getOrCreateInstance(approveModalEl) : null;
+
+			document.getElementById('btnOpenApproveUserModal')?.addEventListener('click', function() {
+				approveModal?.show();
+			});
+
+			document.getElementById('btnConfirmApproveUser')?.addEventListener('click', function() {
+				approveModal?.hide();
+				approveForm?.submit();
+			});
 		});
 	</script>
 @endsection

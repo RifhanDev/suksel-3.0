@@ -304,7 +304,7 @@
 							<li>
 								<a class="submenu-item" href="{{ route('indexJawatankuasaPembuka') }}">
 									<div class="submenu-icon" style="{{ $isPenilaianPembukaActive ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}"></div>
-									<span class="{{ $isPenilaianPembukaActive ? 'text-white' : '' }}">Penilaian Pembuka</span>
+									<span class="{{ $isPenilaianPembukaActive ? 'text-white' : '' }}">Pembukaan Tawaran</span>
 								</a>
 							</li>
 							@endif

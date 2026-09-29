@@ -18,6 +18,7 @@ use Auth;
 use Mail;
 use Log;
 use Carbon\Carbon;
+use App\Support\UserRegistrationNotifier;
 
 class AuthController extends Controller
 {
@@ -83,6 +84,12 @@ class AuthController extends Controller
                if ($user->hasRole('Vendor') && !$user->confirmed) {
                   auth()->logout();
                   session()->flash('error', 'Sila sahkan alamat emel anda terlebih dahulu. Semak inbox emel anda untuk pautan pengesahan.');
+                  return redirect('/auth/login');
+               }
+
+               if ($user->organization_unit_id && is_null($user->approved)) {
+                  auth()->logout();
+                  session()->flash('error', 'Akaun anda menunggu kelulusan Agensi Admin. Sila hubungi pentadbir agensi anda.');
                   return redirect('/auth/login');
                }
 
@@ -266,6 +273,11 @@ class AuthController extends Controller
     * Shows the change password form with the given token
     *
     */
+   public function pendingAgencyApproval()
+   {
+      return view('auth.pending-agency-approval');
+   }
+
    public function resetPassword(Request $request, $token)
    {
       $email = PasswordReminder::where('token', $request->token)->first();
@@ -306,11 +318,28 @@ class AuthController extends Controller
          $user->password = Hash::make($request->password);
          $user->password_changed_at = now();
 
+         $pendingAgencyApproval = $user->organization_unit_id && is_null($user->approved);
+         if ($pendingAgencyApproval) {
+            $user->confirmed = 1;
+         }
+
          if ($user->save()) {
             PasswordReminder::where('email', $email->email)->where('token', $request->token)->delete();
-            $notice_msg = trans('auth.alerts.password_reset');
             UserHistory::log($user->id, 'password-reset');
-            return redirect('/')->with('notice', $notice_msg);
+
+            if ($pendingAgencyApproval) {
+               if (auth()->check()) {
+                  auth()->logout();
+                  $request->session()->invalidate();
+                  $request->session()->regenerateToken();
+               }
+
+               (new UserRegistrationNotifier())->notifyAgencyAdmins($user);
+
+               return redirect()->route('auth.pending-agency-approval');
+            }
+
+            return redirect('/')->with('notice', trans('auth.alerts.password_reset'));
          } else {
             $error_msg = trans('auth.alerts.wrong_password_reset');
             return redirect('auth/reset/' . $request->token)->withInput()->with('error', $error_msg);

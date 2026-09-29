@@ -204,6 +204,8 @@ Route::get('auth/forgot_password', [AuthController::class, 'forgotPassword']);
 Route::post('auth/forgot_password', [AuthController::class, 'doForgotPassword']);
 Route::get('auth/reset/{token}', [AuthController::class, 'resetPassword']);
 Route::post('auth/reset', [AuthController::class, 'doResetPassword']);
+Route::get('auth/pending-agency-approval', [AuthController::class, 'pendingAgencyApproval'])
+    ->name('auth.pending-agency-approval');
 
 // Tenders
 Route::get('tenders/select', [TendersController::class, 'select']);
@@ -264,16 +266,18 @@ Route::get('circulars/list', [CircularController::class, 'public'])->name('circu
 Route::get('circulars/sort', [CircularController::class, 'sortPosition'])->name('circulars.position');
 Route::post('circulars/sort', [CircularController::class, 'updatePosition'])->name('circulars.update.position');
 
-// Complaint/Aduan
+// Complaint/Aduan — create/store must stay public (guest + any logged-in role).
+// Do not re-register them inside role:Admin: same URI overwrites and causes 403.
 Route::get('aduan', [ComplaintController::class, 'create'])->name('aduan.create');
 Route::post('aduan', [ComplaintController::class, 'store'])->name('aduan.store');
-Route::get('aduan/list', [ComplaintController::class, 'index'])->name('aduan.index');
-Route::get('aduan/{id}', [ComplaintController::class, 'show'])->name('aduan.show');
-Route::get('aduan/{id}/{status}', [ComplaintController::class, 'updateStatus'])->name('aduan.update.status');
 
-// BotMan
-Route::match(['get', 'post'], 'botman', [BotManController::class, 'handle'])->name('botman');
-Route::get('chat-widget/{chat_id}', [BotManController::class, 'chatWidget'])->withoutMiddleware(['auth'])->name('chat_widget');
+// BotMan — public (guest + vendor + agency). Do not register again inside role:Admin.
+Route::match(['get', 'post'], 'botman', [BotManController::class, 'handle'])
+	->withoutMiddleware(['auth'])
+	->name('botman');
+Route::get('chat-widget/{chat_id}', [BotManController::class, 'chatWidget'])
+	->withoutMiddleware(['auth'])
+	->name('chat_widget');
 
 
 // Place 3.0 Modules Routes Temporarily Here
@@ -733,6 +737,8 @@ Route::middleware(['auth'])->group(function () {
 	Route::get('tenders/{id}/vendors/template', [TendersController::class, 'template'])->name('tenders.template');
 	Route::post('tenders/bulkUpdate', [TendersController::class, 'bulkUpdate'])->name('tenders.bulkUpdate');
 	Route::get('tenders/{id}/eligibles', [TendersController::class, 'eligibles'])->name('tenders.eligibles');
+	Route::post('tenders/{id}/eligibles/blast', [TendersController::class, 'blastEligibleEmails'])->name('tenders.eligibles.blast');
+	Route::post('tenders/{id}/eligibles/{eligible}/send-email', [TendersController::class, 'sendEligibleEmail'])->name('tenders.eligibles.send-email');
 	Route::post('tenders/exception/store', [TendersController::class, 'storeException'])->name('tender.store.exception');
 	Route::get('tenders/{id}/exceptions', [TendersController::class, 'exceptions'])->name('tender.exceptions');
 	Route::get('tenders/{id}/approve', [TendersController::class, 'approve_exception'])->name('tender.approve.exception');
@@ -824,6 +830,7 @@ Route::middleware(['auth'])->group(function () {
 		Route::get('users/pending-approval', [UsersController::class, 'pendingApproval'])->name('users.pending-approval');
 		Route::get('users/{user}/approval', [UsersController::class, 'approval'])->name('users.approval');
 		Route::put('users/{user}/approval', [UsersController::class, 'storeApproval'])->name('users.store-approval');
+		Route::put('users/{user}/approve', [UsersController::class, 'approveUser'])->name('users.approve');
 		Route::get('users/{user}/histories', [UsersController::class, 'histories'])->name('users.histories');
 		Route::get('users/{user}/login', [UsersController::class, 'doLogin'])->name('users.login');
 		Route::put('users/{user}/confirm', [UsersController::class, 'confirm']);
@@ -1037,17 +1044,11 @@ Route::middleware(['auth'])->group(function () {
 			});
 		});
 
-		// Complaint/Aduan
-		Route::get('aduan', [ComplaintController::class, 'create'])->name('aduan.create');
-		Route::post('aduan', [ComplaintController::class, 'store'])->name('aduan.store');
+		// Complaint/Aduan — admin management only (create/store are public above)
 		Route::get('aduan/list', [ComplaintController::class, 'index'])->name('aduan.index');
 		Route::get('aduan/{id}', [ComplaintController::class, 'show'])->name('aduan.show');
 		Route::post('aduan/{id}/reply', [ComplaintController::class, 'reply'])->name('aduan.reply');
 		Route::get('aduan/{id}/{status}', [ComplaintController::class, 'updateStatus'])->name('aduan.update.status');
-
-		// BotMan
-		Route::match(['get', 'post'], 'botman', [BotManController::class, 'handle'])->withoutMiddleware(['auth'])->name('botman');
-		Route::get('chat-widget/{chat_id}', [BotManController::class, 'chatWidget'])->withoutMiddleware(['auth'])->name('chat_widget');
 
 		// API Token
 		Route::get('apitoken', [ApiTokenController::class, 'index'])->name('apitoken.index');

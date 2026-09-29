@@ -140,6 +140,11 @@
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             showKdtToast('success', @json(session('success')));
+            @if ($modalEmbed ?? false)
+            if (typeof vendorFormComplete === 'function') {
+                vendorFormComplete(@json(session('success')));
+            }
+            @endif
         });
     </script>
     @endif
@@ -225,8 +230,8 @@
                             <tr>
                                 <th class="text-center py-3" style="width:50px;">Bil.</th>
                                 <th class="py-3" style="min-width:220px;">Senarai Kerja Dalam Tangan</th>
-                                <th class="py-3" style="min-width:140px;">PIC</th>
-                                <th class="py-3" style="width:160px;">Nombor Telefon PIC</th>
+                                <th class="py-3" style="min-width:140px;">Agensi/ Pemilik</th>
+                                <th class="py-3" style="width:160px;">No. Telefon Agensi</th>
                                 <th class="text-end py-3" style="width:150px;">Nilai Kerja (RM)</th>
                                 <th class="text-center py-3" style="width:80px;"></th>
                             </tr>
@@ -359,8 +364,8 @@ $(document).ready(function () {
         return $('<tr class="kdt-row">' +
             '<td class="text-center row-bil fw-semibold text-muted" style="font-size:0.8rem;">' + bil + '</td>' +
             '<td><input type="text" name="kdt_tajuk[]" class="form-control form-control-sm" placeholder="Senarai kerja dalam tangan..." value="' + $('<div/>').text(data.tajuk || '').html() + '"></td>' +
-            '<td><input type="text" name="kdt_pic[]" class="form-control form-control-sm" placeholder="PIC..." value="' + $('<div/>').text(data.pic || '').html() + '"></td>' +
-            '<td><input type="text" name="kdt_telefon[]" class="form-control form-control-sm" placeholder="Nombor telefon PIC" value="' + $('<div/>').text(data.telefon_pic || '').html() + '"></td>' +
+            '<td><input type="text" name="kdt_pic[]" class="form-control form-control-sm" placeholder="Agensi/ Pemilik..." value="' + $('<div/>').text(data.pic || '').html() + '"></td>' +
+            '<td><input type="text" name="kdt_telefon[]" class="form-control form-control-sm" placeholder="No. Telefon Agensi" value="' + $('<div/>').text(data.telefon_pic || '').html() + '"></td>' +
             '<td><input type="text" name="kdt_nilai[]" class="form-control form-control-sm text-end nilai-kerja" placeholder="0.00" value="' + nilaiFormatted + '"></td>' +
             '<td class="text-center">' +
                 '<div class="d-inline-flex align-items-center gap-1">' + ADD_BTN + DELETE_BTN + '</div>' +
@@ -440,20 +445,6 @@ $(document).ready(function () {
                 showKdtToast('error', msg);
             }
         });
-    });
-
-    $('#form-kerja-dalam-tangan').on('submit', function (e) {
-        var hasContent = false;
-        $('#tbl-kdt-body .kdt-row').each(function () {
-            if ($(this).find('[name="kdt_tajuk[]"]').val().trim()) {
-                hasContent = true;
-                return false;
-            }
-        });
-        if (!hasContent) {
-            e.preventDefault();
-            showKdtToast('error', 'Sila isi sekurang-kurangnya satu baris kerja dalam tangan.');
-        }
     });
 
     if (typeof FileUpload !== 'undefined' && typeof FileUpload.init === 'function') {

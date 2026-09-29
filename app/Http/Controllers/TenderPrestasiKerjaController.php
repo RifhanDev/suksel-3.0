@@ -119,16 +119,6 @@ class TenderPrestasiKerjaController extends Controller
             ->filter(fn (array $row) => $row['nama'] !== '')
             ->values();
 
-        if ($filledRows->isEmpty()) {
-            $message = 'Sila isi sekurang-kurangnya satu baris prestasi kerja semasa.';
-
-            if ($request->ajax() || $request->boolean('modal')) {
-                return redirect()->back()->withInput()->with('error', $message);
-            }
-
-            return redirect()->back()->withInput()->with('error', $message);
-        }
-
         try {
             DB::transaction(function () use ($validated, $tender, $request, $filledRows) {
                 $keys = $this->vendorFormRecordKeys($tender);
@@ -147,7 +137,7 @@ class TenderPrestasiKerjaController extends Controller
                 // Clear existing items
                 $prestasi->items()->delete();
 
-                // Save new items
+                // Save new items (may be empty — form is optional)
                 foreach ($filledRows as $sortOrder => $row) {
                     $index = $row['index'];
                     $itemAttrs = $this->prestasiItemAttributes($validated, $index, $row['nama']);
@@ -317,7 +307,7 @@ class TenderPrestasiKerjaController extends Controller
             'tempoh'                 => $validated['tempoh'][$index] ?? null,
             'tarikh_siap'            => $validated['tarikh_siap'][$index] ?? null,
             'tarikh_penilaian'       => $validated['tarikh_penilaian'][$index] ?? null,
-            'luputan'                => $validated['luputan'][$index] ?? null,
+            'luputan'                => null,
             'kemajuan_sebenar'       => $validated['kemajuan_sebenar'][$index] ?? null,
             'kemajuan_jadual'        => $validated['kemajuan_jadual'][$index] ?? null,
         ];

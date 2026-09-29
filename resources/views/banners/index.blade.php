@@ -41,8 +41,8 @@
 					<thead class="bg-light">
 						<tr>
 							<th class="text-uppercase text-muted small fw-bold py-3 ps-4">Tajuk</th>
-							<th class="text-uppercase text-center text-muted small fw-bold py-3">Tarikh Mula Paparan</th>
-							<th class="text-uppercase text-center text-muted small fw-bold py-3">Tarikh Tamat Paparan</th>
+							<th class="text-uppercase text-center text-muted small fw-bold py-3">Mula Paparan</th>
+							<th class="text-uppercase text-center text-muted small fw-bold py-3">Tamat Paparan</th>
 							<th class="text-uppercase text-center text-muted small fw-bold py-3">Siar</th>
 							<th class="text-uppercase text-center text-muted small fw-bold py-3">Tarikh Muat Naik</th>
 							<th class="text-uppercase text-center text-muted small fw-bold py-3 pe-4" style="width: 160px; min-width: 160px;">

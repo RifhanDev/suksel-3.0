@@ -419,10 +419,6 @@
 					</svg>
 					<div>
 						<strong>Tawaran telah dihantar.</strong>
-						Maklumat lawatan tapak dan dokumen tender tidak boleh dikemaskini.
-						@if (!empty($vendorPurchase?->kod_pembekal))
-							<div class="mt-1">Kod Pembekal: <strong>{{ $vendorPurchase->kod_pembekal }}</strong></div>
-						@endif
 					</div>
 				</div>
 			@elseif (!$vendorWithinDokumenWindow && $vendorDokumenWindowReason)
@@ -459,13 +455,7 @@
 						</div>
 						<div class="flex-grow-1">
 							<h6 class="mb-0">Hantar Tawaran</h6>
-							<small class="text-muted" style="font-size:0.72rem;">
-								Lengkapkan dokumen tender/tawaran sebelum menghantar.
-							</small>
 						</div>
-						@if (!empty($vendorPurchase?->kod_pembekal))
-							<span class="badge bg-light text-dark border">Kod: {{ $vendorPurchase->kod_pembekal }}</span>
-						@endif
 					</div>
 					<div class="p-4">
 						<div id="vendor-submission-errors" class="alert alert-warning d-none py-2 px-3 mb-3" style="font-size:0.8rem;">

@@ -18,6 +18,7 @@ use App\Models\Ref\RefJustifikasiPemilihanPembekal;
 use App\Models\TenderTeknikalSpesifikasiEvaluation;
 use App\Services\StosBackendClient;
 use App\Services\TenderProcessStatusService;
+use App\Support\BidSpecBreakdown;
 use App\Support\TenderProcessStatus;
 use App\Support\VendorCidbMeta;
 use App\Tender;
@@ -96,6 +97,8 @@ class JawatankuasaPerolehanController extends Controller
         $pemilihanOpts = $this->pemilihanDropdownOptions(null);
         $pemilihanVendors = collect();
         $kkJustifikasiOptions = $this->justifikasiPemilihanPembekalOptions();
+        $bidSpecBreakdown = [];
+        $showBidPriceDiff = false;
 
         if ($tender) {
             $meetings = JawatankuasaPerolehanMeeting::query()
@@ -193,6 +196,7 @@ class JawatankuasaPerolehanController extends Controller
                     'bil_mesyuarat' => (string) ($headerModel->bil_mesyuarat ?? ''),
                     'no_kod' => (string) ($headerModel->no_kod ?? ''),
                     'sahkan_layak_bidaan' => (bool) $headerModel->sahkan_layak_bidaan,
+                    'catatan_bidaan' => (string) ($headerModel->catatan_bidaan ?? ''),
                 ];
 
                 // If Bidaan was already run, clear stale selection so urusetia picks Terus/Lebih.
@@ -213,6 +217,8 @@ class JawatankuasaPerolehanController extends Controller
                 ->get();
 
             $isEbidding = (bool) ($tender->is_ebidding ?? false);
+            $showBidPriceDiff = $isEbidding && (int) ($tender->ebidding_process_stage_id ?? 0) >= 3;
+            $bidSpecBreakdown = $isEbidding ? BidSpecBreakdown::forTender($tender) : [];
             $bidsByItemVendor = [];
             if ($isEbidding && $pemilihanItems->isNotEmpty()) {
                 $bids = EbiddingVendorBidItem::query()
@@ -226,7 +232,7 @@ class JawatankuasaPerolehanController extends Controller
             }
 
             $pemilihanItems = $pemilihanItems
-                ->map(function (JawatankuasaPerolehanPemilihanItem $item) use ($isEbidding, $bidsByItemVendor) {
+                ->map(function (JawatankuasaPerolehanPemilihanItem $item) use ($isEbidding, $bidsByItemVendor, $bidSpecBreakdown) {
                     return [
                         'id' => $item->id,
                         'perihal_item' => $item->perihal_item,
@@ -236,7 +242,7 @@ class JawatankuasaPerolehanController extends Controller
                         'dibatalkan' => $item->dibatalkan,
                         'pembekal_dipilih' => (int) $item->pembekal_dipilih,
                         'kuantiti' => (string) $item->kuantiti,
-                        'petenders' => $item->petenders->map(function (JawatankuasaPerolehanPemilihanPetender $p) use ($item, $isEbidding, $bidsByItemVendor) {
+                        'petenders' => $item->petenders->map(function (JawatankuasaPerolehanPemilihanPetender $p) use ($item, $isEbidding, $bidsByItemVendor, $bidSpecBreakdown) {
                             $hasCidbMeta = $p->vendor_id
                                 && is_array(VendorCidbMeta::normalizeMeta(is_array($p->vendor?->meta) ? $p->vendor->meta : null));
 
@@ -257,6 +263,9 @@ class JawatankuasaPerolehanController extends Controller
                                 'status_bumiputra' => $p->status_bumiputra ?: '',
                                 'harga_tawaran' => (string) $hargaTawaran,
                                 'harga_bidaan' => $hargaBidaan !== null ? (string) $hargaBidaan : null,
+                                'spec_items' => $isEbidding
+                                    ? BidSpecBreakdown::itemsForVendor($bidSpecBreakdown, $vendorId)
+                                    : [],
                                 'jumlah_skor' => $p->jumlah_skor !== null ? (string) $p->jumlah_skor : '',
                                 'kedudukan_penilaian' => $p->kedudukan_penilaian,
                                 'status_mof' => $p->status_mof ?: '',
@@ -269,6 +278,18 @@ class JawatankuasaPerolehanController extends Controller
                     ];
                 })
                 ->values();
+
+            // Align Senarai Pembekal harga with modal totals (sum of all child items).
+            if ($isEbidding && $bidSpecBreakdown !== []) {
+                $pemilihanItems = $pemilihanItems->map(function (array $item) use ($bidSpecBreakdown) {
+                    $item['petenders'] = BidSpecBreakdown::attachToRows(
+                        collect($item['petenders'] ?? []),
+                        $bidSpecBreakdown
+                    )->all();
+
+                    return $item;
+                })->values();
+            }
 
             $vendorIds = $pemilihanItems
                 ->flatMap(fn(array $item) => collect($item['petenders'])->pluck('vendor_id'))
@@ -291,6 +312,8 @@ class JawatankuasaPerolehanController extends Controller
             'pemilihanOpts',
             'pemilihanVendors',
             'kkJustifikasiOptions',
+            'bidSpecBreakdown',
+            'showBidPriceDiff',
         ));
     }
 
@@ -705,6 +728,7 @@ class JawatankuasaPerolehanController extends Controller
             'bil_mesyuarat' => '',
             'no_kod' => '',
             'sahkan_layak_bidaan' => false,
+            'catatan_bidaan' => '',
         ];
     }
 
@@ -727,6 +751,16 @@ class JawatankuasaPerolehanController extends Controller
     private function syncPemilihanFromSources(Tender $tender): void
     {
         DB::transaction(function () use ($tender) {
+            // When multiple Senarai Item rows already exist (e.g. eBidding child specs),
+            // do not overwrite the first row into the tender name / overall harga — that
+            // corrupts child prices and breaks breakdown totals vs table totals.
+            $existingItemCount = JawatankuasaPerolehanPemilihanItem::query()
+                ->where('tender_id', $tender->id)
+                ->count();
+            if ($existingItemCount > 1) {
+                return;
+            }
+
             $participants = $tender->participants()
                 ->with('vendor')
                 ->where('participate', 1)
@@ -951,6 +985,7 @@ class JawatankuasaPerolehanController extends Controller
             'header.bil_mesyuarat' => [$forSubmit ? 'required' : 'nullable', 'string', 'max:100'],
             'header.no_kod' => [$forSubmit ? 'required' : 'nullable', 'string', 'max:100'],
             'header.sahkan_layak_bidaan' => ['nullable', 'boolean'],
+            'header.catatan_bidaan' => ['nullable', 'string', 'max:65535'],
         ];
 
         $itemRules = [
@@ -987,6 +1022,13 @@ class JawatankuasaPerolehanController extends Controller
         if ($forSubmit && $kaedah === 'Bidaan' && ! filter_var($sahkan, FILTER_VALIDATE_BOOLEAN)) {
             throw ValidationException::withMessages([
                 'header.sahkan_layak_bidaan' => 'Sila tandakan pengesahan petender layak untuk menyertai Bidaan.',
+            ]);
+        }
+
+        $catatanBidaan = trim((string) ($validated['header']['catatan_bidaan'] ?? ''));
+        if ($forSubmit && $kaedah === 'Bidaan' && $catatanBidaan === '') {
+            throw ValidationException::withMessages([
+                'header.catatan_bidaan' => 'Sila isi Catatan mengapa perlu bidaan.',
             ]);
         }
 
@@ -1100,6 +1142,7 @@ class JawatankuasaPerolehanController extends Controller
         $header->bil_mesyuarat = $this->nullableTrim($h['bil_mesyuarat'] ?? null);
         $header->no_kod = $this->nullableTrim($h['no_kod'] ?? null);
         $header->sahkan_layak_bidaan = (bool) ($h['sahkan_layak_bidaan'] ?? false);
+        $header->catatan_bidaan = $this->nullableTrim($h['catatan_bidaan'] ?? null);
 
         if ($forSubmit) {
             $header->submitted_at = now();

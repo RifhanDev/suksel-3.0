@@ -28,7 +28,9 @@ class ComplaintController extends Controller
             return $this->_access_denied();
 
         if ($request->ajax()) {
-            $complaints = Complaint::with('tender')->select('*');
+            $complaints = Complaint::with('tender')
+                ->select('*')
+                ->orderByDesc('created_at');
 
             return Datatables::of($complaints)
                 ->editColumn('content', function ($complaint) {
@@ -296,7 +298,9 @@ class ComplaintController extends Controller
         }
 
         if ($request->ajax()) {
-            $complaints = Complaint::where('user_id', auth()->user()->id)->with('tender');
+            $complaints = Complaint::where('user_id', auth()->user()->id)
+                ->with('tender')
+                ->orderByDesc('created_at');
 
             return Datatables::of($complaints)
                 ->editColumn('content', function ($complaint) {

@@ -144,6 +144,11 @@
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             showPkToast('success', @json(session('success')));
+            @if ($modalEmbed ?? false)
+            if (typeof vendorFormComplete === 'function') {
+                vendorFormComplete(@json(session('success')));
+            }
+            @endif
         });
     </script>
     @endif
@@ -235,8 +240,8 @@
                             <tr>
                                 <th class="text-center py-3" style="width:50px;">Bil.</th>
                                 <th class="py-3" style="min-width:220px;">Senarai Kerja Yang Disiapkan</th>
-                                <th class="py-3" style="min-width:140px;">PIC</th>
-                                <th class="py-3" style="width:160px;">Nombor Telefon PIC</th>
+                                <th class="py-3" style="min-width:140px;">Agensi/ Pemilik</th>
+                                <th class="py-3" style="width:160px;">No. Telefon Agensi</th>
                                 @if($isKerja)
                                 <th class="text-end py-3" style="width:150px;">Wang Kos Prima (RM)</th>
                                 <th class="text-end py-3" style="width:160px;">Wang Peruntukan Semasa (RM)</th>
@@ -384,8 +389,8 @@ $(document).ready(function () {
         var html = '<tr class="pengalaman-row">' +
             '<td class="text-center row-bil fw-semibold text-muted" style="font-size:0.8rem;">' + bil + '</td>' +
             '<td><input type="text" name="pengalaman_tajuk[]" class="form-control form-control-sm" placeholder="Senarai kerja yang disiapkan..." value="' + $('<div/>').text(data.tajuk || '').html() + '"></td>' +
-            '<td><input type="text" name="pengalaman_pic[]" class="form-control form-control-sm" placeholder="PIC..." value="' + $('<div/>').text(data.pic || '').html() + '"></td>' +
-            '<td><input type="text" name="pengalaman_telefon[]" class="form-control form-control-sm" placeholder="Nombor telefon PIC" value="' + $('<div/>').text(data.telefon_pic || '').html() + '"></td>';
+            '<td><input type="text" name="pengalaman_pic[]" class="form-control form-control-sm" placeholder="Agensi/ Pemilik..." value="' + $('<div/>').text(data.pic || '').html() + '"></td>' +
+            '<td><input type="text" name="pengalaman_telefon[]" class="form-control form-control-sm" placeholder="No. Telefon Agensi" value="' + $('<div/>').text(data.telefon_pic || '').html() + '"></td>';
 
         if (isKerja) {
             html += '<td><input type="text" name="pengalaman_wang_kos_prima[]" class="form-control form-control-sm text-end wang-kos-prima" placeholder="0.00" value="' + kosPrimaFormatted + '"></td>' +
@@ -494,21 +499,6 @@ $(document).ready(function () {
                 showPkToast('error', msg);
             }
         });
-    });
-
-    // ── Disable Simpan if no rows with content ───────────────────────
-    $('#form-pengalaman-kerja').on('submit', function (e) {
-        var hasContent = false;
-        $('#tbl-pengalaman-body .pengalaman-row').each(function () {
-            if ($(this).find('[name="pengalaman_tajuk[]"]').val().trim()) {
-                hasContent = true;
-                return false;
-            }
-        });
-        if (!hasContent) {
-            e.preventDefault();
-            showPkToast('error', 'Sila isi sekurang-kurangnya satu baris pengalaman kerja.');
-        }
     });
 
     // ── File Upload Zone ─────────────────────────────────────────────

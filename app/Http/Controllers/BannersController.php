@@ -22,15 +22,17 @@ class BannersController extends Controller
 				'published',
 				'created_at',
 				'start',
-				'end'
+				'end',
+				'start_time',
+				'end_time',
 			]);
 
 			return Datatables::of($banners)
 				->editColumn('start', function ($banner) {
-					return '<div class="text-center">' . ($banner->start ? Carbon::parse($banner->start)->format('j M Y') : '-') . '</div>';
+					return '<div class="text-center">' . $this->formatBannerSchedule($banner->start, $banner->start_time) . '</div>';
 				})
 				->editColumn('end', function ($banner) {
-					return '<div class="text-center">' . ($banner->end ? Carbon::parse($banner->end)->format('j M Y') : '-') . '</div>';
+					return '<div class="text-center">' . $this->formatBannerSchedule($banner->end, $banner->end_time) . '</div>';
 				})
 				->editColumn('published', function ($banner) {
 					return '<div class="text-center">' . boolean_icon($banner->published) . '</div>';
@@ -93,14 +95,7 @@ class BannersController extends Controller
 
 		$data = $request->all();
 
-		// Convert date format from datepicker (d M yyyy) to database format (Y-m-d)
-		if (!empty($data['start'])) {
-			$data['start'] = date('Y-m-d', strtotime($data['start']));
-		}
-
-		if (!empty($data['end'])) {
-			$data['end'] = date('Y-m-d', strtotime($data['end']));
-		}
+		$data = $this->normalizeBannerSchedule($data);
 
 		$banner = new Banner;
 		$banner->fill($data);
@@ -138,14 +133,7 @@ class BannersController extends Controller
 
 		if (!isset($data['published'])) $data['published'] = 0;
 
-		// Convert date format from datepicker (d M yyyy) to database format (Y-m-d)
-		if (!empty($data['start'])) {
-			$data['start'] = date('Y-m-d', strtotime($data['start']));
-		}
-
-		if (!empty($data['end'])) {
-			$data['end'] = date('Y-m-d', strtotime($data['end']));
-		}
+		$data = $this->normalizeBannerSchedule($data);
 
 		if (!$banner->update($data))
 			return $this->_validation_error($banner);
@@ -179,5 +167,53 @@ class BannersController extends Controller
 	{
 		// parent::__construct();
 		// View::share('controller', 'Banner');
+	}
+
+	protected function normalizeBannerSchedule(array $data): array
+	{
+		if (! empty($data['start'])) {
+			$data['start'] = date('Y-m-d', strtotime($data['start']));
+		} else {
+			$data['start'] = null;
+		}
+
+		if (! empty($data['end'])) {
+			$data['end'] = date('Y-m-d', strtotime($data['end']));
+		} else {
+			$data['end'] = null;
+		}
+
+		$data['start_time'] = $this->normalizeTime($data['start_time'] ?? null);
+		$data['end_time'] = $this->normalizeTime($data['end_time'] ?? null);
+
+		return $data;
+	}
+
+	protected function normalizeTime(?string $value): ?string
+	{
+		$value = trim((string) $value);
+		if ($value === '') {
+			return null;
+		}
+
+		try {
+			return Carbon::parse($value)->format('H:i:s');
+		} catch (\Throwable) {
+			return null;
+		}
+	}
+
+	protected function formatBannerSchedule($date, $time): string
+	{
+		if (! $date) {
+			return '-';
+		}
+
+		$label = Carbon::parse($date)->format('j M Y');
+		if ($time) {
+			$label .= ' ' . Carbon::parse($time)->format('H:i');
+		}
+
+		return $label;
 	}
 }

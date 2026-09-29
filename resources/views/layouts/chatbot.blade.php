@@ -1,205 +1,182 @@
-<html>
+<!DOCTYPE html>
+<html lang="ms">
 
 <head>
 	<title>BotMan Widget</title>
 	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<meta name="csrf-token" content="{{ csrf_token() }}" />
-	<link href="//fonts.googleapis.com/css?family=Open+Sans:400,300,600,700&subset=all" rel="stylesheet" type="text/css">
-	<link href="{{ asset('packages/fontawesome/css/font-awesome.css') }}" type="text/css" rel="stylesheet" media="screen">
-	<link href="{{ asset('css/application.css') }}" rel="stylesheet">
-	<link rel="stylesheet" type="text/css"
-		href="https://cdn.jsdelivr.net/npm/botman-web-widget@0/build/assets/css/chat.min.css">
-	<!-- <link rel="stylesheet" type="text/css" href="static/css/chat.min.css"> -->
+	<link href="{{ asset('packages/botman/build/assets/css/chat.min.css') }}" type="text/css" rel="stylesheet">
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css"
 		integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+	<link href="{{ asset('packages/fontawesome/css/font-awesome.css') }}" type="text/css" rel="stylesheet" media="screen">
 
-
-	{{-- Modern Chatbot Styles --}}
 	<style>
-		/* Modern Typography */
+		html,
 		body {
-			font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+			height: 100%;
+			overflow: hidden;
+		}
+
+		body {
+			font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 			background: #ffffff;
+			margin: 0;
+			display: flex;
+			flex-direction: column;
 		}
 
-		/* Modern Chat Messages */
+		#fileApp {
+			position: absolute;
+			width: 0;
+			height: 0;
+			overflow: hidden;
+		}
+
+		#botmanChatRoot {
+			flex: 1 1 auto;
+			display: flex;
+			flex-direction: column;
+			min-height: 0;
+			width: 100%;
+		}
+
 		.chat ol li {
-			border-radius: 18px !important;
-			padding: 12px 16px !important;
-			margin: 8px 0 !important;
-			font-size: 14px !important;
-			line-height: 1.5 !important;
-			word-wrap: break-word !important;
-			animation: message-fade-in 0.3s ease-out !important;
-			box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
-			transition: all 0.2s ease !important;
+			border-radius: 18px;
+			padding: 12px 16px;
+			margin: 8px 0;
+			font-size: 14px;
+			line-height: 1.5;
+			word-wrap: break-word;
 		}
 
-		@keyframes message-fade-in {
-			from {
-				opacity: 0;
-				transform: translateY(10px);
-			}
-
-			to {
-				opacity: 1;
-				transform: translateY(0);
-			}
-		}
-
-		/* Bot Messages */
 		.chat ol li.from-bot {
-			background: #f3f4f6 !important;
-			color: #1f2937 !important;
-			border-bottom-left-radius: 4px !important;
-			margin-right: 20% !important;
+			background: #f3f4f6;
+			color: #1f2937;
 		}
 
-		/* User Messages */
 		.chat ol li.from-user {
-			background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%) !important;
-			color: #ffffff !important;
-			border-bottom-right-radius: 4px !important;
-			margin-left: 20% !important;
-			text-align: right !important;
+			background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+			color: #ffffff;
 		}
 
-		.chat ol li:hover {
-			transform: translateY(-2px) !important;
-			box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12) !important;
+		/* Syor / menu / confirmation buttons (must stay above fixed paperclip bar) */
+		.chat .msg .btn,
+		.chat .msg a.btn,
+		.chat .msg div.btn {
+			display: block;
+			width: 100%;
+			max-width: 100%;
+			margin: 6px 0;
+			padding: 10px 14px;
+			text-align: center;
+			background: #fff;
+			border: 2px solid #c41e3a;
+			color: #c41e3a;
+			border-radius: 8px;
+			cursor: pointer;
+			font-size: 14px;
+			font-weight: 600;
+			white-space: normal;
+			word-break: break-word;
+			position: relative;
+			z-index: 20;
+			pointer-events: auto;
+			user-select: none;
+			-webkit-tap-highlight-color: transparent;
 		}
 
-		/* Modern Input Area */
+		.chat .msg .btn:hover,
+		.chat .msg a.btn:hover {
+			background: #c41e3a;
+			color: #fff;
+			text-decoration: none;
+		}
+
+		#messageArea {
+			flex: 1 1 auto;
+			min-height: 0;
+			overflow-y: auto;
+			padding-bottom: 24px;
+			-webkit-overflow-scrolling: touch;
+		}
+
+		/* Override BotMan fixed input bar — it overlapped action buttons at the bottom. */
+		input.textarea#userText,
+		#userText.textarea {
+			position: relative !important;
+			bottom: auto !important;
+			left: auto !important;
+			right: auto !important;
+			width: 100% !important;
+			flex-shrink: 0;
+			z-index: 1;
+			box-sizing: border-box;
+		}
+
 		#userText,
 		input[type="text"],
 		textarea {
-			border-radius: 12px !important;
-			border: 2px solid #e5e7eb !important;
-			padding: 12px 16px !important;
-			font-size: 14px !important;
-			transition: all 0.2s ease !important;
-			background: #ffffff !important;
-			font-family: 'Inter', sans-serif !important;
+			border-radius: 12px;
+			border: 2px solid #e5e7eb;
+			padding: 12px 16px;
+			font-size: 14px;
 		}
 
 		#userText:focus,
 		input[type="text"]:focus,
 		textarea:focus {
-			outline: none !important;
-			border-color: #dc2626 !important;
-			box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1) !important;
+			outline: none;
+			border-color: #dc2626;
+			box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
 		}
 
-		/* Modern Send Button */
 		button[type="submit"],
 		.btn-send,
 		#send {
-			background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%) !important;
-			border-radius: 12px !important;
-			border: none !important;
-			padding: 12px 20px !important;
-			transition: all 0.2s ease !important;
-			box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3) !important;
-			color: #ffffff !important;
-			font-weight: 500 !important;
-			cursor: pointer !important;
+			background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+			border-radius: 12px;
+			border: none;
+			color: #fff;
 		}
 
-		button[type="submit"]:hover,
-		.btn-send:hover,
-		#send:hover {
-			transform: translateY(-2px) !important;
-			box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4) !important;
-		}
-
-		button[type="submit"]:active,
-		.btn-send:active,
-		#send:active {
-			transform: translateY(0) !important;
-		}
-
-		/* Modern Scrollbar */
-		.chat,
-		#messageArea,
-		[class*="message"] {
-			scrollbar-width: thin !important;
-			scrollbar-color: #d1d5db #f3f4f6 !important;
-		}
-
-		.chat::-webkit-scrollbar,
-		#messageArea::-webkit-scrollbar,
-		[class*="message"]::-webkit-scrollbar {
-			width: 6px !important;
-		}
-
-		.chat::-webkit-scrollbar-track,
-		#messageArea::-webkit-scrollbar-track,
-		[class*="message"]::-webkit-scrollbar-track {
-			background: #f3f4f6 !important;
-			border-radius: 10px !important;
-		}
-
-		.chat::-webkit-scrollbar-thumb,
-		#messageArea::-webkit-scrollbar-thumb,
-		[class*="message"]::-webkit-scrollbar-thumb {
-			background: #d1d5db !important;
-			border-radius: 10px !important;
-		}
-
-		.chat::-webkit-scrollbar-thumb:hover,
-		#messageArea::-webkit-scrollbar-thumb:hover,
-		[class*="message"]::-webkit-scrollbar-thumb:hover {
-			background: #9ca3af !important;
-		}
-
-		/* Attachment Button */
+		/* Paperclip only — do not use a full-width hit area (it blocked Ya/Tidak clicks). */
 		.div-attachments-container {
-			width: 100%;
-			display: inline-block;
 			position: fixed;
-			bottom: 70px;
+			bottom: 88px;
+			right: 12px;
+			left: auto;
+			width: auto;
+			height: auto;
+			pointer-events: none;
+			z-index: 15;
 		}
 
-		.div-attachments {
-			margin-top: 10px;
-			position: relative;
+		.div-attachments-container .div-attachments,
+		.div-attachments-container .pull-right {
+			width: auto;
+			pointer-events: none;
 		}
 
-		div.btn {
-			white-space: normal !important;
-			word-break: break-word !important;
-			overflow-wrap: break-word !important;
+		.div-attachments-container .circle-button {
+			pointer-events: auto;
 		}
 
 		.circle-button {
 			width: 44px;
 			height: 44px;
 			background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
-			border-radius: 50% !important;
+			border-radius: 50%;
 			display: flex;
 			justify-content: center;
 			align-items: center;
 			cursor: pointer;
-			position: relative;
-			z-index: 1;
-			opacity: 1;
-			transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 			box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
-		}
-
-		.circle-button:hover {
-			transform: scale(1.1);
-			box-shadow: 0 6px 16px rgba(220, 38, 38, 0.4);
 		}
 
 		.circle-button-icon {
 			color: #ffffff;
 			font-size: 20px;
-			transition: transform 0.2s;
-		}
-
-		.circle-button:hover .circle-button-icon {
-			transform: scale(1.15);
 		}
 
 		.options {
@@ -208,130 +185,72 @@
 			left: 50%;
 			transform: translateX(-50%);
 			background: #ffffff;
-			color: #1f2937;
 			padding: 8px 12px;
 			border-radius: 8px;
 			opacity: 0;
 			pointer-events: none;
-			transition: all 0.2s ease;
 			box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 			font-size: 12px;
 			white-space: nowrap;
 		}
 
-		.active .options {
+		.circle-button.active .options {
 			opacity: 1;
 			pointer-events: auto;
 		}
 
-		/* Typing Indicator */
-		.typing-indicator {
-			display: flex;
-			gap: 4px;
-			padding: 12px 16px;
-		}
-
-		.typing-dot {
-			width: 8px;
-			height: 8px;
-			border-radius: 50%;
-			background: #9ca3af;
-			animation: typing-bounce 1.4s infinite ease-in-out;
-		}
-
-		.typing-dot:nth-child(1) {
-			animation-delay: -0.32s;
-		}
-
-		.typing-dot:nth-child(2) {
-			animation-delay: -0.16s;
-		}
-
-		@keyframes typing-bounce {
-
-			0%,
-			80%,
-			100% {
-				transform: scale(0.8);
-				opacity: 0.5;
-			}
-
-			40% {
-				transform: scale(1);
-				opacity: 1;
-			}
+		.chat .msg {
+			position: relative;
+			z-index: 2;
 		}
 	</style>
 </head>
 
 <body>
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.4/jquery.min.js"
-		integrity="sha512-pumBsjNRGGqkPzKHndZMaAG+bir374sORyzM3uulLV14lN5LyykqNk8eEeUlUkB3U0M4FApyaHraT65ihJhDpQ=="
-		crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-	<script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js"
-		integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous">
-	</script>
-	<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js"
-		integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous">
-	</script>
-
-	<script id="botmanWidget" src='https://cdn.jsdelivr.net/npm/botman-web-widget@0/build/js/chat.js'></script>
-
-	{{-- Configure CSRF Token for BotMan Requests --}}
-	<script>
-		// Set up CSRF token for all AJAX requests
-		$.ajaxSetup({
-			headers: {
-				'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-			}
-		});
-
-		// Intercept XMLHttpRequest to add CSRF token
-		(function() {
-			var originalOpen = XMLHttpRequest.prototype.open;
-			var originalSend = XMLHttpRequest.prototype.send;
-			var csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-
-			XMLHttpRequest.prototype.open = function(method, url, async, user, password) {
-				this._url = url;
-				return originalOpen.apply(this, arguments);
-			};
-
-			XMLHttpRequest.prototype.send = function(data) {
-				if (this._url && this._url.includes('botman') && csrfToken) {
-					this.setRequestHeader('X-CSRF-TOKEN', csrfToken);
-				}
-				return originalSend.apply(this, arguments);
-			};
-		})();
-	</script>
-
-	{{-- <script src="static/js/jquery-1.10.2.min.js"></script>
-	<script src="static/bootstrap-4.1.3/js/bootstrap.min.js"></script> --}}
-
 	<div id="fileApp"></div>
 	<div class="div-attachments-container">
 		<div class="div-attachments">
 			<div class="pull-right">
 				<div style="padding-right: 10px;">
 					<div class="circle-button" id="circle-button">
-						<div class="circle-button-icon" id="circle-button-icon">
+						<div class="circle-button-icon">
 							<i class="fa fa-paperclip"></i>
 						</div>
-						<div class="options" id="open-folder">
-							Tambah Lampiran
-						</div>
+						<div class="options" id="open-folder">Tambah Lampiran</div>
 					</div>
 					<span id="view-file-name" style="display:none"></span>
 				</div>
 			</div>
-
-
 		</div>
 	</div>
 
-	{{-- <script src='static/js/bot_attachment.js?v=1'></script> --}}
-	{{-- bot_attachment.js  --}}
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.4/jquery.min.js" crossorigin="anonymous"></script>
+
+	{{-- Config from parent iframe ?conf= (merged by chat.js) — ensure chatServer is absolute --}}
+	<script>
+		(function() {
+			var params = new URLSearchParams(window.location.search);
+			var conf = {};
+			try {
+				conf = JSON.parse(decodeURIComponent(params.get('conf') || '{}'));
+			} catch (e) {
+				conf = {};
+			}
+			window.botmanWidget = Object.assign({
+				chatServer: @json(url('botman')),
+				userId: @json($chat_id ?? ''),
+				introMessage: 'Hai, saya Lela — pembantu SUKSEL. Saya boleh bantu dengan panduan, status permohonan, aduan, dan soalan lazim (FAQ). Menu pilihan akan dipaparkan sebentar lagi.',
+				placeholderText: 'Taip soalan anda atau taip "menu"',
+				mainColor: '#c41e3a',
+			}, conf, {
+				chatServer: conf.chatServer || @json(url('botman')),
+				userId: conf.userId || @json($chat_id ?? ''),
+			});
+		})();
+	</script>
+
+	<script src="{{ asset('packages/botman/build/js/chat.js') }}"></script>
+
 	<script>
 		$(document).ready(function() {
 			$("#circle-button").on("click", function() {
@@ -340,38 +259,24 @@
 				icon.toggleClass("fa-paperclip fa-times");
 			});
 
-
 			document.getElementById('fileApp').innerHTML =
-				'<div> <input style="display:none" type="file" id="fileInput" /> </div> ';
+				'<div><input style="display:none" type="file" id="fileInput" accept=".jpeg,.jpg,.png" /></div>';
 
 			const fileInput = document.querySelector("#fileInput");
 			var file_type;
 			var files;
 
-			$("#open-folder").on("click", function(e) {
+			$("#open-folder").on("click", function() {
 				file_type = "image";
 				fileInput.click();
 			});
 
-			// $("#view-audio").on("click", function(e){
-			//     file_type = "audio";
-			//     fileInput.click();
-			// });
-
-			// $("#send").on("click", function(e){
-			//     if(($("#view-file-name").text() == "") || (files == null)) return;
-			//     sendFile(files[0], file_type);
-			// });
-
 			$("#fileInput").on("change", function(e) {
-				console.log("File here");
 				files = e.target.files;
-				console.log(files);
 				if (files.length > 0) {
 					$("#view-file-name").text(files[0]["name"]);
-					sendFile(files[0], file_type)
+					sendFile(files[0], file_type);
 				}
-
 			});
 
 			function sendFile(file, filetype) {
@@ -380,114 +285,307 @@
 				form.append("attachment", filetype);
 				form.append("interactive", 0);
 				form.append("file", file);
-				form.append("userId", '{{ $chat_id ?? 'EMpty Id' }}');
+				form.append("userId", @json($chat_id ?? ''));
 
-				// Get CSRF token - try iframe first, then current page
-				var csrfToken = '';
-				try {
-					// Try to get from parent window (main page)
-					if (window.parent && window.parent.document) {
-						var parentToken = window.parent.document.querySelector('meta[name="csrf-token"]');
-						if (parentToken) {
-							csrfToken = parentToken.getAttribute('content');
-						}
-					}
-					// Fallback to current page
-					if (!csrfToken) {
-						csrfToken = $('meta[name="csrf-token"]').attr('content') || '{{ csrf_token() }}';
-					}
-				} catch (e) {
-					// If can't access parent, use current page token
-					csrfToken = $('meta[name="csrf-token"]').attr('content') || '{{ csrf_token() }}';
-				}
-
-				// Add CSRF token to form data (required for multipart/form-data)
+				var csrfToken = $('meta[name="csrf-token"]').attr('content') || @json(csrf_token());
 				form.append("_token", csrfToken);
 
-				var settings = {
-					"url": "{{ url('botman') }}",
+				$.ajax({
+					url: @json(url('botman')),
+					method: "POST",
 					headers: {
 						'X-CSRF-TOKEN': csrfToken,
 						'X-Requested-With': 'XMLHttpRequest'
 					},
-					"method": "POST",
-					"timeout": 0,
-					"processData": false,
-					"mimeType": "multipart/form-data",
-					"contentType": false,
-					"data": form
-				};
+					processData: false,
+					contentType: false,
+					data: form
+				}).done(function(response) {
+					files = null;
+					$("#fileInput").val(null);
+					$("#view-file-name").text("");
+					try {
+						response = typeof response === 'string' ? JSON.parse(response) : response;
+						window.parent.postMessage(response, '*');
+					} catch (e) {
+						window.parent.postMessage({
+							status: 200,
+							messages: [{ text: 'File uploaded successfully' }]
+						}, '*');
+					}
+				}).fail(function(xhr) {
+					if (xhr.status === 419) {
+						alert('Sesi telah tamat. Sila muat semula halaman dan cuba lagi.');
+					} else {
+						alert('Ralat semasa memuat naik fail. Sila cuba lagi.');
+					}
+				});
+			}
+		});
 
-				$.ajax(settings)
-					.done(function(response) {
-						files = null;
-						$("#fileInput").val(null);
-						$("#view-file-name").text("");
+		window.addEventListener('load', function() {
+			var conf = window.botmanWidget || {};
+			var userText = document.getElementById("userText");
+			var messageArea = document.getElementById("messageArea");
 
-						try {
-							response = JSON.parse(response);
-							window.parent.postMessage(response, '*');
-						} catch (e) {
-							console.error('Error parsing response:', e);
-							window.parent.postMessage({
-								status: 200,
-								messages: [{
-									text: 'File uploaded successfully'
-								}]
-							}, '*');
+			if (userText) {
+				userText.setAttribute("autocomplete", "off");
+			}
+
+			function scrollChatToBottom() {
+				if (messageArea) {
+					messageArea.scrollTop = messageArea.scrollHeight;
+				}
+			}
+
+			function setupChatLayout() {
+				messageArea = document.getElementById("messageArea");
+				if (!messageArea || !messageArea.parentElement) {
+					return false;
+				}
+
+				document.body.style.display = 'flex';
+				document.body.style.flexDirection = 'column';
+
+				var botmanRoot = document.getElementById('botmanChatRoot');
+				if (botmanRoot) {
+					botmanRoot.style.flex = '1 1 auto';
+					botmanRoot.style.display = 'flex';
+					botmanRoot.style.flexDirection = 'column';
+					botmanRoot.style.minHeight = '0';
+					botmanRoot.style.width = '100%';
+				}
+
+				var chatRoot = messageArea.parentElement;
+				chatRoot.style.flex = '1 1 auto';
+				chatRoot.style.display = 'flex';
+				chatRoot.style.flexDirection = 'column';
+				chatRoot.style.minHeight = '0';
+				chatRoot.style.overflow = 'hidden';
+				chatRoot.style.width = '100%';
+
+				scrollChatToBottom();
+				return true;
+			}
+
+			var labelToValue = {
+				'Ya': '1',
+				'Tidak': '0',
+				'Ya, ada lampiran': '1',
+				'Tidak, terus hantar': '0',
+				'Panduan pengguna': '1',
+				'Panduan (daftar & log masuk)': '1',
+				'Semak status permohonan': '2',
+				'Hantar aduan': '3',
+				'Soalan lazim (FAQ)': '4',
+				'Panduan': '1',
+				'Semak Status': '2',
+				'Aduan': '3'
+			};
+
+			function findChatList() {
+				return document.querySelector('#messageArea ol.chat, #messageArea .chat, ol.chat');
+			}
+
+			function appendBotmanMessages(payload) {
+				var messages = (payload && payload.messages) || [];
+				var ol = findChatList();
+				if (!ol || !messages.length) {
+					return false;
+				}
+
+				messages.forEach(function(m) {
+					if (!m || m.type === 'typing' || m.type === 'typing_indicator') {
+						return;
+					}
+					var li = document.createElement('li');
+					li.className = 'chatbot from-bot';
+					var inner = document.createElement('div');
+					inner.className = 'msg';
+					var textWrap = document.createElement('div');
+					textWrap.innerHTML = m.text || '';
+					inner.appendChild(textWrap);
+
+					if (m.actions && m.actions.length) {
+						var actionWrap = document.createElement('div');
+						m.actions.forEach(function(action) {
+							var btn = document.createElement('div');
+							btn.className = 'btn btn-botman-action';
+							btn.textContent = action.text || '';
+							if (action.value != null) {
+								btn.setAttribute('data-value', String(action.value));
+							}
+							actionWrap.appendChild(btn);
+						});
+						inner.appendChild(actionWrap);
+					}
+
+					li.appendChild(inner);
+					ol.appendChild(li);
+				});
+
+				scrollChatToBottom();
+				return true;
+			}
+
+			/** Same code path as typing "hi" — BotMan widget listens for this postMessage. */
+			function triggerWelcomeMenuViaWidget() {
+				window.postMessage({
+					method: 'whisper',
+					params: ['__welcome__']
+				}, '*');
+			}
+
+			function parseBotmanResponseBody(text) {
+				try {
+					return JSON.parse(text);
+				} catch (e) {
+					var start = text.indexOf('{"status"');
+					if (start === -1) {
+						start = text.indexOf('{');
+					}
+					var end = text.lastIndexOf('}');
+					if (start >= 0 && end > start) {
+						return JSON.parse(text.slice(start, end + 1));
+					}
+					throw e;
+				}
+			}
+
+			function showBotmanReplyMessages(data) {
+				var messages = (data && data.messages) || [];
+
+				messages.forEach(function(m) {
+					if (!m || m.type === 'typing_indicator') {
+						return;
+					}
+					if (m.type === 'text' && m.text) {
+						window.postMessage({
+							method: 'sayAsBot',
+							params: [m.text]
+						}, '*');
+					} else if (m.type === 'actions') {
+						appendBotmanMessages({
+							messages: [m]
+						});
+					}
+				});
+
+				return messages.length > 0;
+			}
+
+			function postInteractiveReply(value, sourceBtn) {
+				if (!value || !conf.chatServer) {
+					return;
+				}
+
+				var form = new FormData();
+				form.append('driver', 'web');
+				form.append('userId', conf.userId || '');
+				form.append('message', value);
+				form.append('value', value);
+				form.append('interactive', '1');
+
+				if (sourceBtn) {
+					sourceBtn.style.opacity = '0.55';
+					sourceBtn.style.pointerEvents = 'none';
+				}
+
+				fetch(conf.chatServer, {
+					method: 'POST',
+					body: form,
+					credentials: 'same-origin',
+					headers: {
+						'X-Requested-With': 'XMLHttpRequest'
+					}
+				}).then(function(res) {
+					return res.text().then(function(text) {
+						var data = parseBotmanResponseBody(text);
+						if (!res.ok) {
+							throw new Error('HTTP ' + res.status);
 						}
-					})
-					.fail(function(xhr, status, error) {
-						console.error('File upload failed:', status, error);
-						console.error('Response:', xhr.responseText);
-						console.error('CSRF Token used:', csrfToken ? 'Token found' : 'Token missing');
-						if (xhr.status === 419) {
-							// CSRF token issue - try to get fresh token and show helpful message
-							console.error('CSRF token expired or invalid');
-							alert('Sesi telah tamat. Sila muat semula halaman dan cuba lagi.');
-						} else {
-							alert('Ralat semasa memuat naik fail. Sila cuba lagi. (Status: ' + xhr.status + ')');
-						}
+						return data;
 					});
+				}).then(function(data) {
+					if (sourceBtn) {
+						var actionBlock = sourceBtn.parentElement;
+						if (actionBlock) {
+							actionBlock.style.display = 'none';
+						}
+					}
+					showBotmanReplyMessages(data);
+					try {
+						window.parent.postMessage(data, '*');
+					} catch (e) {}
+				}).catch(function() {
+					if (sourceBtn) {
+						sourceBtn.style.opacity = '';
+						sourceBtn.style.pointerEvents = '';
+					}
+					alert('Gagal menghantar pilihan. Sila muat semula chat dan cuba lagi.');
+				});
+			}
+
+			function resolveButtonValue(btn) {
+				if (btn.getAttribute('data-value')) {
+					return btn.getAttribute('data-value');
+				}
+				var label = (btn.textContent || '').trim();
+				return labelToValue[label] || '';
+			}
+
+			document.body.addEventListener('click', function(ev) {
+				var btn = ev.target.closest('.chat .msg div.btn');
+				if (!btn) {
+					return;
+				}
+				var value = resolveButtonValue(btn);
+				if (!value) {
+					return;
+				}
+				ev.preventDefault();
+				ev.stopPropagation();
+				postInteractiveReply(value, btn);
+			}, true);
+
+			var welcomeMenuSent = false;
+
+			function trySendWelcomeMenu() {
+				if (welcomeMenuSent) {
+					return true;
+				}
+				if (!setupChatLayout() || !findChatList()) {
+					return false;
+				}
+				welcomeMenuSent = true;
+				setTimeout(triggerWelcomeMenuViaWidget, 350);
+				return true;
+			}
+
+			if (!trySendWelcomeMenu()) {
+				var welcomeTimer = setInterval(function() {
+					if (trySendWelcomeMenu()) {
+						clearInterval(welcomeTimer);
+					}
+				}, 150);
+				setTimeout(function() {
+					clearInterval(welcomeTimer);
+					if (!welcomeMenuSent) {
+						trySendWelcomeMenu();
+					}
+				}, 8000);
+			}
+
+			if (window.MutationObserver) {
+				new MutationObserver(function() {
+					scrollChatToBottom();
+				}).observe(document.body, {
+					childList: true,
+					subtree: true
+				});
 			}
 		});
 	</script>
-
-
-	{{-- <script src="static/js/chat_changes.js?v=1"></script> --}}
-	{{-- chat_changes.js --}}
-	<script>
-		window.addEventListener('load', function() {
-			var messageArea = document.getElementById("messageArea");
-			var userText = document.getElementById("userText");
-			var chatOl = document.getElementsByClassName("chat")[0];
-			var messageAreaHeight = messageArea.clientHeight;
-			chatHeight = chatOl.clientHeight;
-			// messageArea.style.height = (messageAreaHeight - 20) + "px";
-			// chatOl.style.height = (chatHeight - 20) + "px";
-			userText.setAttribute("autocomplete", "off");
-			userText.style.width = "100%";
-			messageArea.style.overflow = "auto";
-			// userText.style.position = "absolute";
-			// userText.style.bottom = "40px";
-		});
-	</script>
-</body>
-
-</html>
-
-<!doctype html>
-<html>
-
-<head>
-	<title>BotMan Widget</title>
-	<meta charset="UTF-8">
-	<link rel="stylesheet" type="text/css"
-		href="https://cdn.jsdelivr.net/npm/botman-web-widget@0/build/assets/css/chat.min.css">
-</head>
-
-<body>
-
 </body>
 
 </html>

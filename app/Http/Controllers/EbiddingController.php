@@ -9,7 +9,13 @@ use App\Models\EbiddingJadualBidaan;
 use App\Models\EbiddingPengesyoranPembekal;
 use App\Models\EbiddingVendorBidItem;
 use App\Models\JawatankuasaPerolehanPemilihanItem;
+use App\Models\JawatankuasaPerolehanPemilihanPetender;
 use App\Models\PerakuanJabatanKertasTaklimat;
+use App\Models\SpesifikasiKerjaHeader;
+use App\Models\SpesifikasiKerjaItem;
+use App\Models\TenderVendorDokumenResponse;
+use App\Services\VendorDokumenResponseService;
+use App\Support\BidSpecBreakdown;
 use App\Support\TenderProcessStatus;
 use App\TenderEligible;
 use App\Tender;
@@ -18,6 +24,7 @@ use App\Vendor;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -129,6 +136,7 @@ class EbiddingController extends Controller
         $isVendorUser = Auth::check() && $currentUser && $this->isVendorUserById((int) $currentUser->id);
         $vendorId = $isVendorUser ? (int) ($currentUser->vendor_id ?? 0) : 0;
         if (!$isVendorUser && $currentStage === self::STAGE_VENDOR && $window['has_ended']) {
+            $this->carryForwardUnbidPrices($tender);
             Tender::query()->where('id', $tender->id)->update([
                 'ebidding_process_stage_id' => self::STAGE_AGENCY_ADMIN_REVIEW,
                 'status_process_id' => TenderProcessStatus::PENILAIAN_KEWANGAN,
@@ -221,21 +229,28 @@ class EbiddingController extends Controller
             $petenders = $item->petenders->values()->map(function ($petender) use ($bidsByVendor) {
                 $vendorId = (int) ($petender->vendor_id ?? 0);
                 $bid = $vendorId > 0 ? $bidsByVendor->get($vendorId) : null;
+                $hargaTawaran = (float) ($petender->harga_tawaran ?? 0);
                 $bidaan = $bid ? (float) $bid->bid_price : null;
+                $isCarriedForward = $bid
+                    ? (bool) ($bid->is_carried_forward ?? false)
+                    : true; // no new key-in yet → still showing old price
+                $isNewBid = $bid && ! $isCarriedForward;
 
                 return [
                     'vendor_id' => $vendorId,
                     'vendor_name' => (string) ($petender->vendor->name ?? '-'),
                     'bil_label' => (string) ($petender->bil_label ?? ''),
                     'status_bumiputra' => (string) ($petender->status_bumiputra ?? ''),
-                    'harga_tawaran' => (float) ($petender->harga_tawaran ?? 0),
+                    'harga_tawaran' => $hargaTawaran,
                     'jumlah_skor' => (string) ($petender->jumlah_skor ?? ''),
                     'kedudukan_penilaian' => (string) ($petender->kedudukan_penilaian ?? ''),
                     'status_mof' => (string) ($petender->status_mof ?? ''),
                     'tindakan_disiplin' => (string) ($petender->tindakan_disiplin ?? ''),
                     'lembaga_pengarah_url' => $petender->lembaga_pengarah_file_path ? asset($petender->lembaga_pengarah_file_path) : null,
                     'kaedah_sulp' => 'Bidaan',
-                    'harga_bidaan' => $bidaan !== null ? $bidaan : (float) ($petender->harga_tawaran ?? 0),
+                    'harga_bidaan' => $bidaan !== null ? $bidaan : $hargaTawaran,
+                    'is_new_bid' => $isNewBid,
+                    'is_carried_forward' => $isCarriedForward,
                 ];
             });
 
@@ -248,75 +263,59 @@ class EbiddingController extends Controller
             ];
         })->values();
 
-        if ($isVendorUser) {
-            $vendorItems = JawatankuasaPerolehanPemilihanItem::query()
-                ->where('tender_id', $tender->id)
-                ->orderBy('sort_order')
-                ->get()
-                ->map(function (JawatankuasaPerolehanPemilihanItem $item) use ($tender, $vendorId) {
-                    $bid = EbiddingVendorBidItem::query()
-                        ->where('tender_id', $tender->id)
-                        ->where('vendor_id', $vendorId)
-                        ->where('pemilihan_item_id', $item->id)
-                        ->first();
+        $specBreakdown = BidSpecBreakdown::forTender($tender);
+        $agencyPemilihanItems = $agencyPemilihanItems->map(function (array $item) use ($specBreakdown) {
+            $item['petenders'] = BidSpecBreakdown::attachToRows(
+                collect($item['petenders'] ?? []),
+                $specBreakdown
+            );
 
-                    // Harga Sebelum Bidaan = harga tawaran from Senarai Pembekal (per item).
-                    $petender = DB::table('jawatankuasa_perolehan_pemilihan_petenders')
-                        ->where('pemilihan_item_id', $item->id)
-                        ->where('vendor_id', $vendorId)
-                        ->orderBy('sort_order')
-                        ->first();
+            return $item;
+        })->values();
 
-                    $previousPrice = $petender && $petender->harga_tawaran !== null
-                        ? (float) $petender->harga_tawaran
-                        : null;
+		if ($isVendorUser) {
+			// After bidding ends (or stage moved on), vendor must not open the form —
+			// even via hardcoded /eBidding/{id}.
+			$vendorBlocked = $window['has_ended']
+				|| $currentStage > self::STAGE_VENDOR
+				|| $currentStage < self::STAGE_VENDOR;
 
-                    // Fallback only if petender row missing vendor_id / harga.
-                    if ($previousPrice === null) {
-                        $tenderVendor = TenderVendor::query()
-                            ->where('tender_id', $tender->id)
-                            ->where('vendor_id', $vendorId)
-                            ->orderByDesc('id')
-                            ->first();
-                        $previousPrice = $tenderVendor ? (float) $tenderVendor->amount : null;
-                    }
+			if ($vendorBlocked) {
+				if ($window['has_ended'] || $currentStage > self::STAGE_VENDOR) {
+					$message = 'Tempoh bidaan untuk tender ini telah tamat. Harga baharu tidak lagi boleh dihantar.';
+				} else {
+					$message = 'Bidaan untuk tender ini belum dibuka kepada vendor.';
+				}
 
-                    // Harga Bidaan stays empty until vendor keys in / submits a bid.
-                    $effectiveBid = $bid !== null ? (float) $bid->bid_price : null;
+				return response()
+					->view('newModule.eBidding.bidding_ended', [
+						'tender' => $tender,
+						'message' => $message,
+					], 403);
+			}
 
-                    return [
-                        'pemilihan_item_id' => (int) $item->id,
-                        'spesifikasi' => (string) $item->perihal_item,
-                        'kuantiti' => (string) $item->kuantiti,
-                        'unit_ukuran' => (string) ($item->unit_ukuran ?? '-'),
-                        'pematuhan' => '-',
-                        'cadangan_petender' => '-',
-                        'previous_price' => $previousPrice !== null ? number_format($previousPrice, 2, '.', '') : '',
-                        'bid_price' => $effectiveBid !== null ? number_format($effectiveBid, 2, '.', '') : '',
-                    ];
-                })
-                ->values();
+			$vendorItems = $this->buildVendorBidRows($tender, $vendorId);
 
-            $canVendorEditBid = $currentStage === self::STAGE_VENDOR && $window['is_open'];
-            $hasVendorSubmitted = EbiddingVendorBidItem::query()
-                ->where('tender_id', $tender->id)
-                ->where('vendor_id', $vendorId)
-                ->whereNotNull('submitted_at')
-                ->exists();
-            // After Hantar, lock the form even if the bidding window is still open.
-            if ($hasVendorSubmitted) {
-                $canVendorEditBid = false;
-            }
+			$canVendorEditBid = $currentStage === self::STAGE_VENDOR && $window['is_open'];
+			$hasVendorSubmitted = EbiddingVendorBidItem::query()
+				->where('tender_id', $tender->id)
+				->where('vendor_id', $vendorId)
+				->whereNotNull('submitted_at')
+				->exists();
+			// After Hantar, lock the form even if the bidding window is still open.
+			if ($hasVendorSubmitted) {
+				$canVendorEditBid = false;
+			}
 
-            return view('newModule.eBidding.vendor_bidding', [
-                'tender' => $tender,
-                'jadualBidaan' => $jadualBidaan,
-                'vendorItems' => $vendorItems,
-                'canVendorEditBid' => $canVendorEditBid,
-                'hasVendorSubmitted' => $hasVendorSubmitted,
-                'window' => $window,
-            ]);
-        }
+			return view('newModule.eBidding.vendor_bidding', [
+				'tender' => $tender,
+				'jadualBidaan' => $jadualBidaan,
+				'vendorItems' => $vendorItems,
+				'canVendorEditBid' => $canVendorEditBid,
+				'hasVendorSubmitted' => $hasVendorSubmitted,
+				'window' => $window,
+			]);
+		}
 
         $isRestrictedEbidding = (bool) $tender->is_ebidding
             && $currentStage === self::STAGE_AGENCY_ADMIN;
@@ -324,6 +323,12 @@ class EbiddingController extends Controller
         $visibleTabs = $isRestrictedEbidding
             ? ['pengesyoran', 'taklimat', 'jadual-bidaan']
             : ['penyediaan', 'taklimat', 'pemilihan', 'pengesyoran', 'jadual-bidaan', 'keputusan'];
+
+        // Red/green harga baharu vs lama: only after Vendor bidding stage is finished
+        // (Agency Semakan / Admin SULP). Never on earlier statuses — Perakuan Jabatan
+        // and JP Keputusan Mesyuarat stay plain (no colour styling there).
+        $showBidPriceDiff = (bool) $tender->is_ebidding
+            && $currentStage >= self::STAGE_AGENCY_ADMIN_REVIEW;
 
         return view('newModule.eBidding.keptusan_mesyuarat', compact(
             'tender',
@@ -335,6 +340,8 @@ class EbiddingController extends Controller
             'jadualBidaan',
             'currentStage',
             'agencyPemilihanItems',
+            'window',
+            'showBidPriceDiff',
         ));
     }
 
@@ -356,58 +363,78 @@ class EbiddingController extends Controller
             return response()->json(['message' => 'Profil vendor tidak sah.'], 422);
         }
 
-        $window = $this->biddingWindowState((int) $tender->id);
-        if (!$window['is_open']) {
-            return response()->json(['message' => 'Bidaan tidak berada dalam tempoh aktif.'], 422);
-        }
+		$window = $this->biddingWindowState((int) $tender->id);
+		if (!$window['is_open'] || $currentStage !== self::STAGE_VENDOR) {
+			$message = $window['has_ended']
+				? 'Tempoh bidaan telah tamat. Harga baharu tidak lagi boleh dihantar.'
+				: 'Bidaan tidak berada dalam tempoh aktif.';
+
+			if ($request->expectsJson()) {
+				return response()->json(['message' => $message], 403);
+			}
+
+			return response()
+				->view('newModule.eBidding.bidding_ended', [
+					'tender' => $tender,
+					'message' => $message,
+				], 403);
+		}
 
         $payload = $request->validate([
             'items' => ['required', 'array', 'min:1'],
             'items.*.pemilihan_item_id' => ['required', 'integer'],
-            'items.*.bid_price' => ['nullable', 'numeric', 'min:0.01'],
+            'items.*.bid_price' => ['required', 'numeric', 'min:0.01'],
         ]);
 
-        DB::transaction(function () use ($payload, $tender, $vendorId) {
-            foreach ($payload['items'] as $row) {
+        $bidableRows = $this->buildVendorBidRows($tender, $vendorId)
+            ->where('is_bidable', true)
+            ->keyBy(fn ($row) => (int) ($row['pemilihan_item_id'] ?? 0));
+
+        $bidableIds = $bidableRows->keys()
+            ->map(fn ($id) => (int) $id)
+            ->filter()
+            ->values()
+            ->all();
+
+        if ($bidableIds === []) {
+            return response()->json([
+                'message' => 'Tiada item anak untuk bidaan. Sila pastikan spesifikasi mempunyai sub-item.',
+            ], 422);
+        }
+
+        $submitted = collect($payload['items'])
+            ->keyBy(fn ($row) => (int) $row['pemilihan_item_id']);
+
+        foreach ($bidableIds as $itemId) {
+            $row = $submitted->get($itemId);
+            $price = isset($row['bid_price']) ? (float) $row['bid_price'] : 0;
+            if ($price <= 0) {
+                return response()->json([
+                    'message' => 'Sila isi Harga Bidaan (harga baharu) bagi setiap item anak.',
+                ], 422);
+            }
+
+            $previousRaw = (string) ($bidableRows->get($itemId)['previous_price'] ?? '');
+            $previousPrice = $previousRaw !== '' ? (float) $previousRaw : null;
+            if ($previousPrice !== null && $previousPrice > 0 && $price > $previousPrice + 0.00001) {
+                return response()->json([
+                    'message' => 'Harga Bidaan tidak boleh melebihi Harga Sebelum Bidaan (RM '
+                        . number_format($previousPrice, 2) . ') bagi setiap item.',
+                ], 422);
+            }
+        }
+
+        DB::transaction(function () use ($bidableIds, $submitted, $tender, $vendorId) {
+            foreach ($bidableIds as $itemId) {
                 $item = JawatankuasaPerolehanPemilihanItem::query()
-                    ->where('id', (int) $row['pemilihan_item_id'])
+                    ->where('id', $itemId)
                     ->where('tender_id', $tender->id)
                     ->first();
                 if (!$item) {
                     continue;
                 }
 
-                $inputPrice = isset($row['bid_price']) && $row['bid_price'] !== '' && $row['bid_price'] !== null
-                    ? (float) $row['bid_price']
-                    : null;
-
-                // Empty Harga Bidaan → keep old harga tawaran (track submission even with no change).
-                if ($inputPrice === null || $inputPrice <= 0) {
-                    $petender = DB::table('jawatankuasa_perolehan_pemilihan_petenders')
-                        ->where('pemilihan_item_id', $item->id)
-                        ->where('vendor_id', $vendorId)
-                        ->orderBy('sort_order')
-                        ->first();
-
-                    $fallback = $petender && $petender->harga_tawaran !== null
-                        ? (float) $petender->harga_tawaran
-                        : null;
-
-                    if ($fallback === null || $fallback <= 0) {
-                        $tenderVendor = TenderVendor::query()
-                            ->where('tender_id', $tender->id)
-                            ->where('vendor_id', $vendorId)
-                            ->orderByDesc('id')
-                            ->first();
-                        $fallback = $tenderVendor ? (float) $tenderVendor->amount : null;
-                    }
-
-                    $inputPrice = ($fallback !== null && $fallback > 0) ? $fallback : null;
-                }
-
-                if ($inputPrice === null || $inputPrice <= 0) {
-                    continue;
-                }
+                $inputPrice = (float) $submitted->get($itemId)['bid_price'];
 
                 EbiddingVendorBidItem::query()->updateOrCreate(
                     [
@@ -417,6 +444,7 @@ class EbiddingController extends Controller
                     ],
                     [
                         'bid_price' => $inputPrice,
+                        'is_carried_forward' => false,
                         'submitted_at' => now(),
                     ]
                 );
@@ -607,6 +635,7 @@ class EbiddingController extends Controller
 
         $updateData = ['ebidding_process_stage_id' => $nextStage];
         if ($currentStage === self::STAGE_VENDOR && $nextStage === self::STAGE_AGENCY_ADMIN_REVIEW) {
+            $this->carryForwardUnbidPrices($tender);
             $updateData['status_process_id'] = TenderProcessStatus::PENILAIAN_KEWANGAN;
         }
 
@@ -852,6 +881,8 @@ class EbiddingController extends Controller
                 'is_open' => false,
                 'has_started' => false,
                 'has_ended' => false,
+                'starts_at' => null,
+                'ends_at' => null,
             ];
         }
 
@@ -864,6 +895,8 @@ class EbiddingController extends Controller
             'is_open' => $now->betweenIncluded($startAt, $endAt),
             'has_started' => $now->greaterThanOrEqualTo($startAt),
             'has_ended' => $now->greaterThan($endAt),
+            'starts_at' => $startAt->toIso8601String(),
+            'ends_at' => $endAt->toIso8601String(),
         ];
     }
 
@@ -965,6 +998,395 @@ class EbiddingController extends Controller
             ->where('role_user.user_id', $userId)
             ->where('roles.name', 'Vendor')
             ->exists();
+    }
+
+    /**
+     * When bidding ends: any vendor/item without a new Harga Bidaan keeps the old harga tawaran.
+     * Creates submitted bid rows so downstream screens use a stable final price.
+     */
+    private function carryForwardUnbidPrices(Tender $tender): void
+    {
+        $items = JawatankuasaPerolehanPemilihanItem::query()
+            ->where('tender_id', $tender->id)
+            ->with(['petenders' => fn ($q) => $q->orderBy('sort_order')])
+            ->orderBy('sort_order')
+            ->get();
+
+        if ($items->isEmpty()) {
+            return;
+        }
+
+        $tenderName = trim((string) ($tender->name ?? ''));
+        $submittedAt = now();
+
+        DB::transaction(function () use ($items, $tender, $tenderName, $submittedAt) {
+            foreach ($items as $item) {
+                // Skip overall tender-name row when line items also exist.
+                $isOverall = $tenderName !== ''
+                    && trim((string) $item->perihal_item) === $tenderName
+                    && $items->count() > 1;
+                if ($isOverall) {
+                    continue;
+                }
+
+                foreach ($item->petenders as $petender) {
+                    $vendorId = (int) ($petender->vendor_id ?? 0);
+                    if ($vendorId <= 0) {
+                        continue;
+                    }
+
+                    $oldPrice = $petender->harga_tawaran !== null
+                        ? (float) $petender->harga_tawaran
+                        : 0.0;
+                    if ($oldPrice <= 0) {
+                        continue;
+                    }
+
+                    $existing = EbiddingVendorBidItem::query()
+                        ->where('tender_id', $tender->id)
+                        ->where('vendor_id', $vendorId)
+                        ->where('pemilihan_item_id', $item->id)
+                        ->whereNotNull('submitted_at')
+                        ->first();
+
+                    // Vendor already keyed a new price — keep it.
+                    if ($existing) {
+                        continue;
+                    }
+
+                    EbiddingVendorBidItem::query()->updateOrCreate(
+                        [
+                            'tender_id' => $tender->id,
+                            'vendor_id' => $vendorId,
+                            'pemilihan_item_id' => $item->id,
+                        ],
+                        [
+                            'bid_price' => $oldPrice,
+                            'is_carried_forward' => true,
+                            'submitted_at' => $submittedAt,
+                        ]
+                    );
+                }
+            }
+        });
+    }
+
+    /**
+     * Vendor eBidding rows: show parent + all child spesifikasi items.
+     * Harga Bidaan (new price) is only editable on child / leaf rows — never overall tender price.
+     *
+     * @return Collection<int, array<string, mixed>>
+     */
+    private function buildVendorBidRows(Tender $tender, int $vendorId): Collection
+    {
+        $vendorItemPrices = $this->vendorSpecificationItemPrices($tender, $vendorId);
+        $existingBids = EbiddingVendorBidItem::query()
+            ->where('tender_id', $tender->id)
+            ->where('vendor_id', $vendorId)
+            ->get()
+            ->keyBy('pemilihan_item_id');
+
+        $header = SpesifikasiKerjaHeader::query()
+            ->where('tender_id', $tender->id)
+            ->with(['items.specs'])
+            ->first();
+
+        if ($header && $header->items->isNotEmpty()) {
+            $rows = collect();
+            $sort = 0;
+            $hasChildren = $header->items->contains(fn (SpesifikasiKerjaItem $p) => $p->specs->isNotEmpty());
+
+            foreach ($header->items as $parentIndex => $parent) {
+                $children = $parent->specs;
+                $parentTitle = trim((string) ($parent->nama_item ?: $parent->spesifikasi ?: 'Item'));
+                $groupKey = 'g' . $parentIndex;
+
+                if ($hasChildren && $children->isNotEmpty()) {
+                    $rows->push($this->makeVendorBidRow([
+                        'pemilihan_item_id' => null,
+                        'row_type' => 'parent',
+                        'is_bidable' => false,
+                        'spesifikasi' => $parentTitle,
+                        'kuantiti' => '',
+                        'unit_ukuran' => '—',
+                        'previous_price' => '',
+                        'bid_price' => '',
+                        'indent' => 0,
+                        'group_key' => $groupKey,
+                    ]));
+
+                    foreach ($children as $child) {
+                        $sort++;
+                        $childTitle = trim((string) ($child->spesifikasi ?: $child->nama_item ?: 'Sub-item'));
+                        $pemilihan = $this->ensurePemilihanItemForSpec($tender, $child, $childTitle, $sort);
+                        $previous = $this->resolveChildPreviousPrice(
+                            $tender,
+                            $vendorId,
+                            $pemilihan,
+                            $child,
+                            $vendorItemPrices
+                        );
+                        $bid = $existingBids->get($pemilihan->id);
+
+                        $rows->push($this->makeVendorBidRow([
+                            'pemilihan_item_id' => (int) $pemilihan->id,
+                            'row_type' => 'child',
+                            'is_bidable' => true,
+                            'spesifikasi' => $childTitle,
+                            'kuantiti' => (string) ($child->kuantiti ?? $pemilihan->kuantiti ?? ''),
+                            'unit_ukuran' => (string) ($child->unit ?: $pemilihan->unit_ukuran ?: '-'),
+                            'previous_price' => $previous !== null ? number_format($previous, 2, '.', '') : '',
+                            'bid_price' => $bid ? number_format((float) $bid->bid_price, 2, '.', '') : '',
+                            'indent' => 1,
+                            'group_key' => $groupKey,
+                        ]));
+                    }
+
+                    continue;
+                }
+
+                // Bekalan-style: parent itself is the bidable line (no children).
+                $sort++;
+                $pemilihan = $this->ensurePemilihanItemForSpec($tender, $parent, $parentTitle, $sort);
+                $previous = $this->resolveChildPreviousPrice(
+                    $tender,
+                    $vendorId,
+                    $pemilihan,
+                    $parent,
+                    $vendorItemPrices
+                );
+                $bid = $existingBids->get($pemilihan->id);
+
+                $rows->push($this->makeVendorBidRow([
+                    'pemilihan_item_id' => (int) $pemilihan->id,
+                    'row_type' => 'leaf',
+                    'is_bidable' => true,
+                    'spesifikasi' => $parentTitle,
+                    'kuantiti' => (string) ($parent->kuantiti ?? $pemilihan->kuantiti ?? ''),
+                    'unit_ukuran' => (string) ($parent->unit ?: $pemilihan->unit_ukuran ?: '-'),
+                    'previous_price' => $previous !== null ? number_format($previous, 2, '.', '') : '',
+                    'bid_price' => $bid ? number_format((float) $bid->bid_price, 2, '.', '') : '',
+                    'indent' => 0,
+                    'group_key' => $groupKey,
+                ]));
+            }
+
+            return $rows->values();
+        }
+
+        // Fallback: pemilihan items — hide overall tender-name row when line items exist.
+        $items = JawatankuasaPerolehanPemilihanItem::query()
+            ->where('tender_id', $tender->id)
+            ->orderBy('sort_order')
+            ->get();
+
+        $tenderName = trim((string) ($tender->name ?? ''));
+        $hasLineItems = $items->contains(function (JawatankuasaPerolehanPemilihanItem $item) use ($tenderName) {
+            return $tenderName === '' || trim((string) $item->perihal_item) !== $tenderName;
+        });
+
+        return $items
+            ->map(function (JawatankuasaPerolehanPemilihanItem $item, int $index) use ($tender, $vendorId, $existingBids, $tenderName, $hasLineItems) {
+                $isOverall = $hasLineItems
+                    && $tenderName !== ''
+                    && trim((string) $item->perihal_item) === $tenderName;
+
+                $previous = null;
+                if (! $isOverall) {
+                    $petender = DB::table('jawatankuasa_perolehan_pemilihan_petenders')
+                        ->where('pemilihan_item_id', $item->id)
+                        ->where('vendor_id', $vendorId)
+                        ->orderBy('sort_order')
+                        ->first();
+                    $previous = $petender && $petender->harga_tawaran !== null
+                        ? (float) $petender->harga_tawaran
+                        : null;
+                }
+
+                $bid = $existingBids->get($item->id);
+
+                return $this->makeVendorBidRow([
+                    'pemilihan_item_id' => $isOverall ? null : (int) $item->id,
+                    'row_type' => $isOverall ? 'parent' : 'leaf',
+                    'is_bidable' => ! $isOverall,
+                    'spesifikasi' => (string) $item->perihal_item,
+                    'kuantiti' => $isOverall ? '' : (string) $item->kuantiti,
+                    'unit_ukuran' => $isOverall ? '—' : (string) ($item->unit_ukuran ?? '-'),
+                    'previous_price' => $previous !== null ? number_format($previous, 2, '.', '') : '',
+                    'bid_price' => (! $isOverall && $bid) ? number_format((float) $bid->bid_price, 2, '.', '') : '',
+                    'indent' => $isOverall ? 0 : ($hasLineItems ? 1 : 0),
+                    'group_key' => 'fallback',
+                ]);
+            })
+            ->values();
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    private function makeVendorBidRow(array $data): array
+    {
+        return [
+            'pemilihan_item_id' => $data['pemilihan_item_id'] ?? null,
+            'row_type' => $data['row_type'] ?? 'leaf',
+            'is_bidable' => (bool) ($data['is_bidable'] ?? false),
+            'spesifikasi' => (string) ($data['spesifikasi'] ?? ''),
+            'kuantiti' => (string) ($data['kuantiti'] ?? ''),
+            'unit_ukuran' => (string) ($data['unit_ukuran'] ?? '-'),
+            'pematuhan' => '-',
+            'previous_price' => (string) ($data['previous_price'] ?? ''),
+            'bid_price' => (string) ($data['bid_price'] ?? ''),
+            'indent' => (int) ($data['indent'] ?? 0),
+            'group_key' => (string) ($data['group_key'] ?? ''),
+        ];
+    }
+
+    private function ensurePemilihanItemForSpec(
+        Tender $tender,
+        SpesifikasiKerjaItem $specItem,
+        string $title,
+        int $sortOrder
+    ): JawatankuasaPerolehanPemilihanItem {
+        $existing = JawatankuasaPerolehanPemilihanItem::query()
+            ->where('tender_id', $tender->id)
+            ->where('perihal_item', $title)
+            ->orderBy('sort_order')
+            ->first();
+
+        if ($existing) {
+            $dirty = false;
+            if ((string) $existing->kuantiti !== (string) ($specItem->kuantiti ?? $existing->kuantiti)) {
+                $existing->kuantiti = $specItem->kuantiti ?? $existing->kuantiti;
+                $dirty = true;
+            }
+            if ($specItem->unit && $existing->unit_ukuran !== $specItem->unit) {
+                $existing->unit_ukuran = $specItem->unit;
+                $dirty = true;
+            }
+            if ($dirty) {
+                $existing->save();
+            }
+
+            return $existing;
+        }
+
+        $item = JawatankuasaPerolehanPemilihanItem::query()->create([
+            'tender_id' => $tender->id,
+            'sort_order' => $sortOrder,
+            'perihal_item' => $title,
+            'jenis_item' => $this->resolveJenisItemLabel($tender),
+            'unit_ukuran' => $specItem->unit ?: 'Unit',
+            'jenis_harga' => 'Biasa Standard',
+            'dibatalkan' => 'Tidak',
+            'pembekal_dipilih' => 0,
+            'kuantiti' => $specItem->kuantiti ?? 1,
+        ]);
+
+        $this->clonePetendersOntoItem($tender, $item);
+
+        return $item;
+    }
+
+    private function clonePetendersOntoItem(Tender $tender, JawatankuasaPerolehanPemilihanItem $target): void
+    {
+        $source = JawatankuasaPerolehanPemilihanItem::query()
+            ->where('tender_id', $tender->id)
+            ->where('id', '!=', $target->id)
+            ->with('petenders')
+            ->orderBy('sort_order')
+            ->first();
+
+        if (! $source || $source->petenders->isEmpty()) {
+            return;
+        }
+
+        foreach ($source->petenders as $petender) {
+            JawatankuasaPerolehanPemilihanPetender::query()->updateOrCreate(
+                [
+                    'pemilihan_item_id' => $target->id,
+                    'vendor_id' => $petender->vendor_id,
+                ],
+                [
+                    'sort_order' => $petender->sort_order,
+                    'bil_label' => $petender->bil_label,
+                    'status_bumiputra' => $petender->status_bumiputra,
+                    'harga_tawaran' => $petender->harga_tawaran,
+                    'jumlah_skor' => $petender->jumlah_skor,
+                    'kedudukan_penilaian' => $petender->kedudukan_penilaian,
+                    'status_mof' => $petender->status_mof,
+                    'tindakan_disiplin' => $petender->tindakan_disiplin,
+                    'lembaga_pengarah_file_path' => $petender->lembaga_pengarah_file_path,
+                    'keputusan_urusetia' => $petender->keputusan_urusetia,
+                    'catatan_urusetia' => $petender->catatan_urusetia,
+                ]
+            );
+        }
+    }
+
+    /**
+     * @param  array<string, string>  $vendorItemPrices
+     */
+    private function resolveChildPreviousPrice(
+        Tender $tender,
+        int $vendorId,
+        JawatankuasaPerolehanPemilihanItem $pemilihan,
+        SpesifikasiKerjaItem $specItem,
+        array $vendorItemPrices
+    ): ?float {
+        $uuid = (string) ($specItem->uuid ?? '');
+        if ($uuid !== '' && isset($vendorItemPrices[$uuid]) && $vendorItemPrices[$uuid] !== '') {
+            return (float) str_replace(',', '', (string) $vendorItemPrices[$uuid]);
+        }
+
+        $petender = DB::table('jawatankuasa_perolehan_pemilihan_petenders')
+            ->where('pemilihan_item_id', $pemilihan->id)
+            ->where('vendor_id', $vendorId)
+            ->orderBy('sort_order')
+            ->first();
+
+        if ($petender && $petender->harga_tawaran !== null) {
+            return (float) $petender->harga_tawaran;
+        }
+
+        return null;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function vendorSpecificationItemPrices(Tender $tender, int $vendorId): array
+    {
+        $response = TenderVendorDokumenResponse::query()
+            ->where('tender_id', $tender->id)
+            ->where('vendor_id', $vendorId)
+            ->where(function ($q) {
+                $q->where('section', 'spesifikasi_kerja')
+                    ->orWhere('section', 'like', 'specification%')
+                    ->orWhere('response_type', 'specification');
+            })
+            ->orderByDesc('id')
+            ->first();
+
+        if (! $response) {
+            return [];
+        }
+
+        return app(VendorDokumenResponseService::class)
+            ->normalizeSpecificationPayload($response->payload)['item_prices'] ?? [];
+    }
+
+    private function resolveJenisItemLabel(Tender $tender): string
+    {
+        $type = strtolower((string) ($tender->type ?? ''));
+        if (str_contains($type, 'kerja')) {
+            return 'Kerja';
+        }
+        if (str_contains($type, 'bekalan')) {
+            return 'Bekalan';
+        }
+
+        return 'Perkhidmatan';
     }
 
     private function nullableTrim($value): ?string

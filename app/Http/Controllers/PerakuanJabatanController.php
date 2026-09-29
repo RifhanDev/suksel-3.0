@@ -14,6 +14,7 @@ use App\Models\TenderKewanganKerjaEvaluation;
 use App\Models\TenderTeknikalSpesifikasiEvaluation;
 use App\Services\StosBackendClient;
 use App\Services\TenderProcessStatusService;
+use App\Support\BidSpecBreakdown;
 use App\Support\TenderProcessStatus;
 use App\Tender;
 use Carbon\Carbon;
@@ -131,6 +132,8 @@ class PerakuanJabatanController extends Controller
         }
 
         $tabsReadOnly = in_array($pjMode, ['jadual', 'laporan'], true);
+        $biddingEndedAt = $pjMode === 'laporan' ? $this->ebiddingWindowEndAt($tender) : null;
+        $ppSingleDisyorkanOnly = $this->pengesyoranRequiresSingleDisyorkan($tender);
 
         return view(
             'newModule.perakuanJabatan.show',
@@ -146,7 +149,9 @@ class PerakuanJabatanController extends Controller
                 'jadualBidaan',
                 'jadualReadOnly',
                 'tabsReadOnly',
-                'isKerja'
+                'isKerja',
+                'biddingEndedAt',
+                'ppSingleDisyorkanOnly'
             )
         );
     }
@@ -163,8 +168,26 @@ class PerakuanJabatanController extends Controller
 
     public function semakanBidaanHantar(Request $request, Tender $tender)
     {
-        if (! (bool) $tender->is_ebidding || (int) ($tender->ebidding_process_stage_id ?? 0) < 3) {
-            return response()->json(['message' => 'Semakan bidaan hanya selepas tempoh bidaan tamat.'], 422);
+        if (! (bool) $tender->is_ebidding) {
+            return response()->json(['message' => 'Tender ini bukan dalam aliran e-bidding.'], 422);
+        }
+
+        if (! $this->ebiddingWindowHasEnded($tender)) {
+            $endAt = $this->ebiddingWindowEndAt($tender);
+            $until = $endAt ? $endAt->format('d/m/Y H:i') : '-';
+
+            return response()->json([
+                'message' => 'Semakan bidaan hanya selepas tempoh bidaan tamat (sehingga ' . $until . ').',
+            ], 422);
+        }
+
+        // Ensure stage is promoted once window has ended.
+        if ((int) ($tender->ebidding_process_stage_id ?? 0) < 3) {
+            Tender::query()->where('id', $tender->id)->update([
+                'ebidding_process_stage_id' => 3,
+                'status_process_id' => TenderProcessStatus::PENILAIAN_KEWANGAN,
+            ]);
+            $tender->refresh();
         }
 
         $header = PerakuanJabatanKertasTaklimat::firstOrCreate(
@@ -382,12 +405,61 @@ class PerakuanJabatanController extends Controller
             return 'normal';
         }
 
-        $stage = (int) ($tender->ebidding_process_stage_id ?? 0);
-        if ($stage >= 3) {
+        // Laporan & Pengesahan Bidaan only after jadual end date/time (not stage alone).
+        if ($this->ebiddingWindowHasEnded($tender)) {
             return 'laporan';
         }
 
         return 'jadual';
+    }
+
+    /**
+     * Syor Urusetia "Disyorkan" is limited to one vendor only after e-bidding has ended.
+     * Before bidaan (or when tender is not e-bidding), multiple Disyorkan is allowed.
+     */
+    private function pengesyoranRequiresSingleDisyorkan(Tender $tender): bool
+    {
+        if (! (bool) ($tender->is_ebidding ?? false)) {
+            return false;
+        }
+
+        return $this->ebiddingWindowHasEnded($tender);
+    }
+
+    private function ebiddingWindowHasEnded(Tender $tender): bool
+    {
+        $schedule = EbiddingJadualBidaan::query()->where('tender_id', $tender->id)->first();
+        if (
+            ! $schedule
+            || ! $schedule->tarikh_bidaan_mula
+            || ! $schedule->masa_bidaan_mula
+            || ! $schedule->tarikh_bidaan_tamat
+            || ! $schedule->masa_bidaan_tamat
+        ) {
+            return false;
+        }
+
+        $endAt = Carbon::parse(
+            $schedule->tarikh_bidaan_tamat->format('Y-m-d') . ' ' . $schedule->masa_bidaan_tamat
+        );
+
+        return Carbon::now()->greaterThan($endAt);
+    }
+
+    private function ebiddingWindowEndAt(Tender $tender): ?Carbon
+    {
+        $schedule = EbiddingJadualBidaan::query()->where('tender_id', $tender->id)->first();
+        if (
+            ! $schedule
+            || ! $schedule->tarikh_bidaan_tamat
+            || ! $schedule->masa_bidaan_tamat
+        ) {
+            return null;
+        }
+
+        return Carbon::parse(
+            $schedule->tarikh_bidaan_tamat->format('Y-m-d') . ' ' . $schedule->masa_bidaan_tamat
+        );
     }
 
     private function promoteEbiddingReviewIfWindowEnded(Tender $tender): void
@@ -401,22 +473,7 @@ class PerakuanJabatanController extends Controller
             return;
         }
 
-        $schedule = EbiddingJadualBidaan::query()->where('tender_id', $tender->id)->first();
-        if (
-            ! $schedule
-            || ! $schedule->tarikh_bidaan_mula
-            || ! $schedule->masa_bidaan_mula
-            || ! $schedule->tarikh_bidaan_tamat
-            || ! $schedule->masa_bidaan_tamat
-        ) {
-            return;
-        }
-
-        $endAt = Carbon::parse(
-            $schedule->tarikh_bidaan_tamat->format('Y-m-d') . ' ' . $schedule->masa_bidaan_tamat
-        );
-
-        if (Carbon::now()->lessThanOrEqualTo($endAt)) {
+        if (! $this->ebiddingWindowHasEnded($tender)) {
             return;
         }
 
@@ -504,6 +561,7 @@ class PerakuanJabatanController extends Controller
         $total = $participants->count();
 
         $bidTotalsByVendor = [];
+        $specBreakdown = [];
         if ($isEbidding) {
             $bidTotalsByVendor = EbiddingVendorBidItem::query()
                 ->where('tender_id', $tender->id)
@@ -514,6 +572,7 @@ class PerakuanJabatanController extends Controller
                 ->pluck('total_bid', 'vendor_id')
                 ->map(fn ($v) => (float) $v)
                 ->all();
+            $specBreakdown = BidSpecBreakdown::forTender($tender);
         }
 
         $sortedByHarga = $participants
@@ -532,7 +591,8 @@ class PerakuanJabatanController extends Controller
             $savedByVendor,
             $isKerja,
             $isEbidding,
-            $bidTotalsByVendor
+            $bidTotalsByVendor,
+            $specBreakdown
         ) {
             $vendorId = (int) $p->vendor_id;
             $vendor = $p->vendor;
@@ -553,21 +613,28 @@ class PerakuanJabatanController extends Controller
             }
 
             $hargaBidaan = null;
+            $specItems = [];
             if ($isEbidding) {
-                if (array_key_exists($vendorId, $bidTotalsByVendor)) {
+                $specItems = BidSpecBreakdown::itemsForVendor($specBreakdown, $vendorId);
+                if ($specItems !== []) {
+                    $totals = BidSpecBreakdown::totalsForItems($specItems);
+                    $harga = $totals['previous'];
+                    $hargaBidaan = $totals['bid'];
+                } elseif (array_key_exists($vendorId, $bidTotalsByVendor)) {
                     $hargaBidaan = (float) $bidTotalsByVendor[$vendorId];
                 } elseif ($harga !== null) {
-                    // No submitted bid yet — show old harga tawaran for tracking/display.
                     $hargaBidaan = (float) $harga;
                 }
             }
 
             return [
                 'vendor_id' => $vendorId,
+                'vendor_name' => (string) ($vendor->name ?? '-'),
                 'bil' => ($idx + 1) . '/' . $total,
                 'status_bumiputra' => $bumi ? 'Ya' : 'Tidak',
                 'harga_tawaran' => $harga !== null ? (float) $harga : null,
                 'harga_bidaan' => $hargaBidaan,
+                'spec_items' => $specItems,
                 'skor_teknikal' => $score['skor'] ?? null,
                 'skor_keseluruhan' => $isKerja ? ($score['skor'] ?? null) : null,
                 'kedudukan_teknikal' => $isKerja ? null : ($score['kedudukan'] ?? null),
@@ -670,7 +737,7 @@ class PerakuanJabatanController extends Controller
             ->filter(fn ($row) => ($row['syor_urusetia'] ?? null) === PerakuanJabatanPengesyoranPembekalItem::SYOR_DISYORKAN)
             ->count();
 
-        if ($disyorkanCount > 1) {
+        if ($this->pengesyoranRequiresSingleDisyorkan($tender) && $disyorkanCount > 1) {
             throw ValidationException::withMessages([
                 'rows' => 'Hanya satu syarikat boleh dipilih sebagai Disyorkan.',
             ]);

@@ -69,6 +69,11 @@ class CartController extends Controller
 			$amount  = Tender::whereIn('id', $items)->sum('price');
 		}
 
+		$expired = $tenders->first(fn ($tender) => $tender->documentSalesClosed() || ! $tender->isWithinVendorDokumenWindow());
+		if ($expired) {
+			return redirect('cart')->with('error', 'Pembelian tender telah tamat tempoh: ' . $expired->name);
+		}
+
 		if (session('cart_ou')) {
 			$fpx  = Gateway::whereType('fpx')->where('organization_unit_id', session('cart_ou'))->whereActive(1)->first();
 			$ebpg = config('services.ebpg.enabled') ? Gateway::whereType('ebpg')->where('organization_unit_id', session('cart_ou'))->whereActive(1)->first() : null;
@@ -99,6 +104,11 @@ class CartController extends Controller
 
 			$tenders = Tender::whereIn('id', $items)->get();
 			$amount  = Tender::whereIn('id', $items)->sum('price');
+		}
+
+		$expired = $tenders->first(fn ($tender) => $tender->documentSalesClosed() || ! $tender->isWithinVendorDokumenWindow());
+		if ($expired) {
+			return redirect('cart')->with('error', 'Pembelian tender telah tamat tempoh: ' . $expired->name);
 		}
 
 		$user   = auth()->user();
