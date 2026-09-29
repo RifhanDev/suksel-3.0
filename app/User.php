@@ -122,7 +122,7 @@ class User extends Authenticatable
 		],
 		'storeUser' => [
 			'name' => 'required',
-			'email' => 'required|email|email_domain|unique:users,email',
+			'email' => 'required|email|unique:users,email',
 			'password' => [
 				'required',
 				'min:8',
@@ -134,7 +134,7 @@ class User extends Authenticatable
 		],
 		'storeUserInvite' => [
 			'name' => 'required',
-			'email' => 'required|email|email_domain|unique:users,email',
+			'email' => 'required|email|unique:users,email',
 			'organization_unit_id' => 'required'
 		],
 		'storeApproval' => [
