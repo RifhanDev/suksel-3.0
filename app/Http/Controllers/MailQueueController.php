@@ -121,15 +121,21 @@ class MailQueueController extends Controller
 
 				switch ($rows->status) {
 					case 'S':
-						$status = "<span class='badge badge-success'>Telah dihantar</span>";
+						$status = "<span class='badge rounded-pill bg-success bg-opacity-10 text-success border border-success'>Telah dihantar</span>";
 						break;
 
 					case 'N':
-						$status = "<span class='badge badge-secondary'>Belum dihantar</span>";
+						$status = "<span class='badge rounded-pill bg-secondary bg-opacity-10 text-secondary border border-secondary'>Belum dihantar</span>";
+						break;
+
+					// Pelayan mel (STOS-2.0-WEB-MailServer) tetapkan 'T' apabila penghantaran SMTP gagal
+					case 'T':
+					case 'F':
+						$status = "<span class='badge rounded-pill bg-danger bg-opacity-10 text-danger border border-danger'>Gagal dihantar</span>";
 						break;
 
 					default:
-						# code...
+						$status = "<span class='badge rounded-pill bg-light text-dark border'>" . e($rows->status ?? '-') . "</span>";
 						break;
 				}
 
