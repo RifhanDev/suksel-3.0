@@ -60,21 +60,23 @@ class MailQueueController extends Controller
 			$keyword 	= Str::lower($keyword);
 
 			$orderByColumn  = $request->get('order')[0]["column"] ?? "";
-			$orderByDir     = $request->get('order')[0]["dir"] ?? "";
+			// Hanya terima asc/desc kerana nilai ini dimasukkan ke dalam orderByRaw
+			$orderByDir     = strtolower($request->get('order')[0]["dir"] ?? "") === 'desc' ? 'desc' : 'asc';
 
-			if ($orderByColumn == 0) {
+			// Indeks lajur mengikut jadual di paparan: 0 No., 1 Tajuk, 2 Tetapan, 3 Dijana, 4 Dihantar, 5 Status
+			if ($orderByColumn == 1) {
 				$mail_queue_list->orderByRaw("lower(payload->'$.subject') " . $orderByDir);
 			}
 
-			if ($orderByColumn == 2) {
+			if ($orderByColumn == 3) {
 				$mail_queue_list->orderBy('created_at', $orderByDir);
 			}
 
-			if ($orderByColumn == 3) {
+			if ($orderByColumn == 4) {
 				$mail_queue_list->orderBy('email_send_at', $orderByDir);
 			}
 
-			if ($orderByColumn == 4) {
+			if ($orderByColumn == 5) {
 				$mail_queue_list->orderBy('status', $orderByDir);
 			}
 

@@ -66,8 +66,11 @@
 			],
 			ajax: path,
 			columns: [{
-					data: 'id',
-					name: 'id'
+					data: null,
+					name: 'no',
+					render: function(data, type, row, meta) {
+						return meta.settings._iDisplayStart + meta.row + 1;
+					}
 				},
 				{
 					data: 'subject',
@@ -131,15 +134,5 @@
 				[1, 'asc']
 			],
 		});
-
-		table.on('order.dt search.dt', function() {
-			let i = 1;
-			table.cells(null, 0, {
-				search: 'applied',
-				order: 'applied'
-			}).every(function(cell) {
-				this.data(i++);
-			});
-		}).draw();
 	</script>
 @endsection
