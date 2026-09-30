@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\UpdatesTenderProcessAfterChecklistSubmit;
+use App\Models\SpesifikasiKerjaFile;
 use App\Models\Tender;
 use App\Services\StosBackendClient;
+use App\Support\StosStoredFile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
@@ -103,6 +105,41 @@ class SpesifikasiTenderKerjaController extends Controller
     }
 
     /**
+     * Open an uploaded specification file through this app.
+     * The API returns a storage URL on 127.0.0.1, which the browser cannot open.
+     */
+    public function downloadFile(string $tenderUuid, string $fileUuid)
+    {
+        $this->ensureAccess();
+
+        $tender = Tender::query()->where('uuid', $tenderUuid)->firstOrFail();
+
+        $file = SpesifikasiKerjaFile::query()
+            ->where('uuid', $fileUuid)
+            ->whereHas('header', fn ($query) => $query->where('tender_id', $tender->id))
+            ->first();
+
+        if (! $file) {
+            $file = $this->findRemoteSpecificationFile($tenderUuid, $fileUuid);
+        }
+
+        if (! $file) {
+            abort(404, 'Fail tidak dijumpai.');
+        }
+
+        $name = is_array($file) ? ($file['original_name'] ?? 'Dokumen') : $file->original_name;
+        $path = is_array($file) ? ($file['path'] ?? null) : $file->path;
+        $mime = is_array($file) ? ($file['mime_type'] ?? null) : $file->mime_type;
+
+        return StosStoredFile::response([
+            'original_name' => $name ?: 'Dokumen',
+            'path' => $path,
+            'mime_type' => $mime,
+            'download_api' => 'spesifikasi-kerja-files/' . $fileUuid . '/download',
+        ]);
+    }
+
+    /**
      * Delete an uploaded file — proxied to backend API.
      */
     public function deleteFile(string $fileUuid)
@@ -138,5 +175,47 @@ class SpesifikasiTenderKerjaController extends Controller
     private function url(string $path): string
     {
         return config('services.stos_backend.url') . '/api/' . $path;
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function findRemoteSpecificationFile(string $tenderUuid, string $fileUuid): ?array
+    {
+        $response = $this->api()->get($this->url('spesifikasi-kerja/' . $tenderUuid));
+        if (! $response->successful()) {
+            return null;
+        }
+
+        $data = $response->json('data') ?? [];
+        $files = $data['files'] ?? [];
+
+        foreach ($data['items'] ?? [] as $item) {
+            if (! is_array($item)) {
+                continue;
+            }
+
+            foreach ($item['files'] ?? [] as $file) {
+                $files[] = $file;
+            }
+
+            foreach ($item['specs'] ?? [] as $spec) {
+                if (! is_array($spec)) {
+                    continue;
+                }
+
+                foreach ($spec['files'] ?? [] as $file) {
+                    $files[] = $file;
+                }
+            }
+        }
+
+        foreach ($files as $file) {
+            if (is_array($file) && ($file['uuid'] ?? '') === $fileUuid) {
+                return $file;
+            }
+        }
+
+        return null;
     }
 }
