@@ -269,6 +269,7 @@ $(document).ready(function () {
     const SUBMIT_URL     = @json(route('penyediaanSpekTender.submit', $tender->uuid));
     const UPLOAD_URL     = @json(route('penyediaanSpekTender.uploadFile', $tender->uuid));
     const DELETE_BASE    = @json(url('/penyediaan-spesifikasi-tender/fail'));
+    const FILE_BASE      = @json(url('/penyediaan-spesifikasi-tender/' . $tender->uuid . '/fail'));
     const USER_ID        = @json(auth()->id());
     const IS_SUBMITTED   = @json(($checklistData['status'] ?? null) === 'submitted');
 
@@ -727,9 +728,12 @@ $(document).ready(function () {
 
     function renderFileChip(fileData, $container) {
         var ext = (fileData.original_name || '').split('.').pop().toLowerCase();
+        var fileHref = fileData.uuid
+            ? (FILE_BASE + '/' + encodeURIComponent(fileData.uuid))
+            : '#';
         var $chip = $('<div class="file-chip" data-file-uuid="' + fileData.uuid + '">' +
             '<span class="ext-badge">' + htmlEscape(ext) + '</span>' +
-            '<a href="' + (fileData.url || '#') + '" target="_blank" title="' + htmlEscape(fileData.original_name) + '">' +
+            '<a href="' + fileHref + '" target="_blank" title="' + htmlEscape(fileData.original_name) + '">' +
                 htmlEscape(fileData.original_name) + '</a>' +
             '<button type="button" class="chip-delete" title="Padam fail">' +
                 '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>' +

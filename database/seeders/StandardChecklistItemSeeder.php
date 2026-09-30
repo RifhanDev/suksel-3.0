@@ -295,6 +295,30 @@ class StandardChecklistItemSeeder extends Seeder
             ],
         ];
 
+        $dokumenStandard = [
+            'Borang Tender / Borang Sebut Harga / Lampiran Q / Senarai Kuantiti BQ',
+            'Borang A - Borang pengakuan kebenaran maklumat dan kesahihan dokumen yang dikemukakan oleh pembida',
+            'Surat Akuan Pembida',
+            'Borang Pemberitahuan pemunya benefisial (Borang B.O.)',
+            'Surat akuan syarikat dalam menangani jenayah pemerdagangan orang dan buruh paksa. (Surat S.A.)',
+            'Sijil Pematuhan Cukai (Tax Compliance Certificate – TCC)',
+        ];
+
+        foreach (['technical', 'financial', 'kewangan_kerja'] as $category) {
+            foreach ($dokumenStandard as $index => $title) {
+                $items[] = [
+                    'category'              => $category,
+                    'type'                  => 'standard',
+                    'title'                 => $title,
+                    'mechanism_default'     => null,
+                    'vendor_action_default' => null,
+                    'action_url'            => null,
+                    'is_active'             => true,
+                    'sort_order'            => 20 + $index,
+                ];
+            }
+        }
+
         foreach ($items as $item) {
             $exists = DB::table('standard_checklist_items')
                 ->where('title', $item['title'])

@@ -605,6 +605,7 @@ Route::middleware(['auth'])->group(function () {
 	Route::post('/penyediaan-spesifikasi-tender/{tenderUuid}', [SpesifikasiTenderKerjaController::class, 'store'])->name('penyediaanSpekTender.store');
 	Route::post('/penyediaan-spesifikasi-tender/{tenderUuid}/hantar', [SpesifikasiTenderKerjaController::class, 'submit'])->name('penyediaanSpekTender.submit');
 	Route::post('/penyediaan-spesifikasi-tender/{tenderUuid}/fail', [SpesifikasiTenderKerjaController::class, 'uploadFile'])->name('penyediaanSpekTender.uploadFile');
+	Route::get('/penyediaan-spesifikasi-tender/{tenderUuid}/fail/{fileUuid}', [SpesifikasiTenderKerjaController::class, 'downloadFile'])->name('penyediaanSpekTender.downloadFile');
 	Route::delete('/penyediaan-spesifikasi-tender/fail/{fileUuid}', [SpesifikasiTenderKerjaController::class, 'deleteFile'])->name('penyediaanSpekTender.deleteFile');
 
 	// Senarai Kewangan Kerja
