@@ -283,7 +283,7 @@ class TendersController extends Controller
 		$country_states = RefState::where('display_status', 1)->get();
 
 		// Fetch reference data for new fields
-		$kaedahPerolehan = \App\Models\Ref\RefKaedahPerolehan::all();
+		$kaedahPerolehan = \App\Models\Ref\RefKaedahPerolehan::whereNotIn('name', ['Pembelian Terus', 'Lantikan Terus'])->get();
 		$kategoriPerolehan = \App\Models\Ref\RefKategoriJenisPerolehan::all();
 		$jenisTender = \App\Models\Ref\RefTypeOfTender::all();
 		$jenisKontrak = \App\Models\Ref\RefTypeOfContract::all();
@@ -762,7 +762,7 @@ class TendersController extends Controller
 		// Data rujukan yang sama seperti createNew(); tanpanya dropdown akan kosong.
 		$organizations = OrganizationUnit::all();
 		$country_states = RefState::where('display_status', 1)->get();
-		$kaedahPerolehan = \App\Models\Ref\RefKaedahPerolehan::all();
+		$kaedahPerolehan = \App\Models\Ref\RefKaedahPerolehan::whereNotIn('name', ['Pembelian Terus', 'Lantikan Terus'])->get();
 		$kategoriPerolehan = \App\Models\Ref\RefKategoriJenisPerolehan::all();
 		$jenisTender = \App\Models\Ref\RefTypeOfTender::all();
 		$jenisKontrak = \App\Models\Ref\RefTypeOfContract::all();
