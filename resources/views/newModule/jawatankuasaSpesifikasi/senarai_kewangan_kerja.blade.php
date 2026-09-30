@@ -408,6 +408,10 @@
                             </tbody>
                         </table>
                     </div>
+                    <div class="border-top mt-3 pt-3">
+                        <label class="form-label small fw-semibold mb-1">Other</label>
+                        <input type="text" class="form-control form-control-sm standard-custom-title" placeholder="Nama dokumen" maxlength="500">
+                    </div>
                 </div>
                 <div class="modal-footer border-0 px-4 pb-4">
                     <button type="button" class="btn-form btn-form-secondary" data-bs-dismiss="modal">Batal</button>
@@ -588,8 +592,8 @@ $(document).ready(function () {
         return $tr;
     }
 
-    function buildNewRow() {
-        return buildEditableRow({ source_type: 'manual' });
+    function buildNewRow(title) {
+        return buildEditableRow({ source_type: 'manual', title: title || '' });
     }
 
     function buildStandardRow(tajuk, uuid) {
@@ -1029,7 +1033,12 @@ $(document).ready(function () {
     // Pilih standard items
     $('#senaraiSemakStandard').on('click', '.btn-pilih-standard', function () {
         var $checked = $('#tbl-standard .row-check-standard:checked');
-        if ($checked.length === 0) { alert('Sila pilih sekurang-kurangnya satu senarai semak.'); return; }
+        var $customTitle = $('#senaraiSemakStandard .standard-custom-title');
+        var customTitle = $.trim($customTitle.val() || '');
+        if ($checked.length === 0 && customTitle === '') {
+            alert('Sila pilih sekurang-kurangnya satu senarai semak atau masukkan nama dokumen.');
+            return;
+        }
         $checked.each(function () {
             var $tr  = $(this).closest('tr');
             var tajuk = $tr.data('tajuk') || $tr.find('td:last-child').text().trim();
@@ -1037,6 +1046,10 @@ $(document).ready(function () {
             $('#tbl-kewangan-body').append(buildStandardRow(tajuk, uuid));
             $tr.remove();
         });
+        if (customTitle !== '') {
+            $('#tbl-kewangan-body').append(buildNewRow(customTitle));
+            $customTitle.val('');
+        }
         syncStandardTableEmpty();
         updateSkemaMaksima();
         syncTableEmpty();
