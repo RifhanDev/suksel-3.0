@@ -229,7 +229,7 @@ class PenilaianTeknikalController extends Controller
     public function show(string $uuid)
     {
         $tender = $this->resolveTender($uuid);
-        // Langkah 1 vendor list — frozen record, see loadPenilaianTeknikalVendors().
+        // Langkah 1 vendor list — cut-off selection, excluding opening-stage failures.
         $shortlistedVendors = $this->loadPenilaianTeknikalVendors($tender);
         $pematuhanEvaluations = $this->service->loadPematuhanEvaluations($tender);
 
@@ -303,18 +303,13 @@ class PenilaianTeknikalController extends Controller
     }
 
     /**
-     * Vendors eligible to START Penilaian Teknikal — active or eliminated at this stage only.
-     * Frozen list: doesn't shrink when a later step eliminates a vendor (keeps Langkah 1 historical).
+     * Companies selected at cut-off, excluding anyone who failed the opening stage.
+     * A company eliminated during this stage stays listed.
      */
     private function loadPenilaianTeknikalVendors(Tender $tender): Collection
     {
         return TenderVendor::query()
-            ->where('tender_id', $tender->id)
-            ->where('participate', 1)
-            ->where(function ($query) {
-                $query->where('cancel_fg', 0)
-                    ->orWhere('eliminated_process_id', TenderProcessStatus::PENILAIAN_TEKNIKAL);
-            })
+            ->forTechnicalEvaluation($tender->id)
             ->orderBy('id')
             ->get(['id', 'vendor_id', 'kod_pembekal'])
             ->values();

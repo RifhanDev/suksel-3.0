@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Models\TenderTeknikalKerjaEvaluation;
 use App\Models\TenderTeknikalKerjaLampiran;
 use App\Models\TenderVendorDokumenResponse;
-use App\Support\TenderProcessStatus;
 use App\Tender;
 use App\TenderVendor;
 use Illuminate\Http\UploadedFile;
@@ -20,16 +19,11 @@ use Illuminate\Support\Str;
  */
 class TeknikalKerjaEvaluationService
 {
-    /** Frozen vendor list for this stage — keeps vendors eliminated here, excludes earlier cuts. */
+    /** Companies selected at cut-off, excluding anyone who failed the opening stage. */
     public function loadShortlistedVendors(Tender $tender): Collection
     {
         return TenderVendor::query()
-            ->where('tender_id', $tender->id)
-            ->where('participate', 1)
-            ->where(function ($query) {
-                $query->where('cancel_fg', 0)
-                    ->orWhere('eliminated_process_id', TenderProcessStatus::PENILAIAN_TEKNIKAL);
-            })
+            ->forTechnicalEvaluation($tender->id)
             ->orderBy('id')
             ->get(['id', 'vendor_id', 'kod_pembekal', 'harga_tawaran'])
             ->values();

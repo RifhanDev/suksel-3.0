@@ -1700,9 +1700,9 @@ class TendersController extends Controller
 	{
 		$tender = Tender::findOrFail($id);
 
-		if (!$tender->canUpdate())
+		if (!$tender->canPublish())
 			$this->_access_denied();
-		if (!empty($tender->approver_id))
+		if ($tender->publishedByKetuaJabatan())
 			return redirect('tenders/' . $tender->id)->with('error', 'Tender / Sebut Harga ini telah disiarkan.');
 
 		$approval          = new Approval;

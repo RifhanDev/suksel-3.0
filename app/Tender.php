@@ -252,6 +252,38 @@ class Tender extends Model
 		}
 	}
 
+	/**
+	 * Public siar is done by the ketua jabatan (or an admin). Urusetia submission of
+	 * penyediaan iklan does not publish the tender onto the public list.
+	 */
+	public function canPublish(): bool
+	{
+		if (! auth()->check()) {
+			return false;
+		}
+
+		$user = auth()->user();
+
+		if ($user->hasRole('Admin')) {
+			return true;
+		}
+
+		return $user->hasRole('Agency Ketua Jabatan')
+			&& (int) $this->organization_unit_id === (int) $user->organization_unit_id;
+	}
+
+	public function publishedByKetuaJabatan(): bool
+	{
+		if (empty($this->approver_id)) {
+			return false;
+		}
+
+		$approver = $this->relationLoaded('approver') ? $this->approver : $this->approver()->first();
+
+		return $approver
+			&& ($approver->hasRole('Agency Ketua Jabatan') || $approver->hasRole('Admin'));
+	}
+
 	public function canAllowEdit()
 	{
 		if (auth()->check()) {
@@ -466,6 +498,11 @@ class Tender extends Model
 	public function creator()
 	{
 		return $this->belongsTo('App\User', 'creator_id', 'id');
+	}
+
+	public function approver()
+	{
+		return $this->belongsTo('App\User', 'approver_id', 'id');
 	}
 
 	public function officer()
@@ -1906,9 +1943,16 @@ class Tender extends Model
 
 	public function scopePublished($q)
 	{
-		// Temporarily commented out to fix column issue
-		// return $q->whereNotNull('approver_id');
-		return $q;
+		return $q->where(function ($query) {
+			$query->where(function ($inner) {
+				$inner->whereIn('type', ['tender', 'quotation'])
+					->whereHas('approver', function ($approver) {
+						$approver->whereHas('roles', function ($roles) {
+							$roles->whereIn('name', ['Agency Ketua Jabatan', 'Admin']);
+						});
+					});
+			})->orWhereNotIn('type', ['tender', 'quotation']);
+		});
 	}
 
 	public function scopePublishedPrices($q)
