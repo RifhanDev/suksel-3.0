@@ -63,7 +63,8 @@ class HomeController extends Controller
 				->orderBy('submission_datetime', 'desc')
 				->open()
 				->advertised()
-				->forPublic();
+				->forPublic()
+				->published();
 
 			switch ($request->type) {
 				case 'tenders':

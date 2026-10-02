@@ -52,7 +52,7 @@
 						Tender Terhad
 					</span>
 				@endif
-				@if ($tender->approver_id)
+				@if ($tender->publishedByKetuaJabatan())
 					<span class="badge bg-success d-inline-flex align-items-center">
 						<svg xmlns="http://www.w3.org/2000/svg" class="me-1" width="13" height="13" viewBox="0 0 24 24">
 							<path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -105,7 +105,7 @@
 					</button>
 					<ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" style="min-width: 200px;">
 						@if (empty($tender->publish_prices))
-							@if ($tender->canUpdate() && empty($tender->approver_id))
+							@if ($tender->canPublish() && ! $tender->publishedByKetuaJabatan())
 								<li>
 									<a class="dropdown-item publish-tender" href="{{ asset('tenders/' . $tender->id . '/publish') }}">
 										<svg xmlns="http://www.w3.org/2000/svg" class="me-2" width="15" height="15" viewBox="0 0 24 24">
@@ -184,6 +184,15 @@
 						@endif
 					</ul>
 				</div>
+			</div>
+		</div>
+	@elseif (Auth::check() && ! Auth::user()->hasRole('Vendor') && $tender->canPublish() && ! $tender->publishedByKetuaJabatan())
+		<div class="tender-menu-bottom">
+			<div class="tender-status-badges"></div>
+			<div class="d-flex align-items-center gap-2">
+				<a class="tender-menu-btn tender-menu-btn-primary publish-tender" href="{{ asset('tenders/' . $tender->id . '/publish') }}">
+					Siar Tender
+				</a>
 			</div>
 		</div>
 	@endif
