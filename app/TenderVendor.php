@@ -2,7 +2,9 @@
 
 namespace App;
 
+use App\Support\TenderProcessStatus;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use PDF;
 
@@ -124,6 +126,71 @@ class TenderVendor extends Model
    public function scopeEliminated($query)
    {
        return $query->where('cancel_fg', 1);
+   }
+
+   /**
+    * Companies the technical committee may evaluate: chosen on a submitted
+    * cut-off, and not failed at the opening stage. A company eliminated
+    * during technical evaluation stays on the list so that decision remains visible.
+    */
+   public function scopeForTechnicalEvaluation($query, int $tenderId)
+   {
+       $table = $query->getModel()->getTable();
+       $refs = static::submittedCutOffVendorRefs($tenderId);
+
+       $query->where("{$table}.tender_id", $tenderId)
+           ->where("{$table}.participate", 1)
+           ->where(function ($eligible) use ($table) {
+               $eligible->where(function ($active) use ($table) {
+                   $active->where("{$table}.cancel_fg", 0)
+                       ->where(function ($opening) use ($table) {
+                           $opening->whereNull("{$table}.eliminated_process_id")
+                               ->orWhere("{$table}.eliminated_process_id", '!=', TenderProcessStatus::PENILAIAN_PEMBUKA);
+                       });
+               })->orWhere("{$table}.eliminated_process_id", TenderProcessStatus::PENILAIAN_TEKNIKAL);
+           });
+
+       if ($refs === []) {
+           return $query->whereRaw('0 = 1');
+       }
+
+       $numericIds = array_values(array_filter($refs, fn ($ref) => ctype_digit($ref)));
+
+       return $query->where(function ($match) use ($table, $refs, $numericIds) {
+           $match->whereIn("{$table}.kod_pembekal", $refs);
+
+           if ($numericIds !== []) {
+               $match->orWhereIn("{$table}.vendor_id", array_map('intval', $numericIds));
+           }
+
+           $match->orWhereHas('vendor', function ($vendor) use ($refs) {
+               $vendor->whereIn('registration', $refs);
+           });
+       });
+   }
+
+   /**
+    * Supplier references ticked and submitted on the cut-off form
+    * (kod pembekal, registration, or vendor id).
+    *
+    * @return list<string>
+    */
+   public static function submittedCutOffVendorRefs(int $tenderId): array
+   {
+       $raw = DB::table('cut_off_selections')
+           ->where('tender_id', $tenderId)
+           ->where('status', 'submitted')
+           ->value('selected_refs');
+
+       $refs = is_array($raw) ? $raw : json_decode((string) $raw, true);
+       if (! is_array($refs)) {
+           return [];
+       }
+
+       return array_values(array_unique(array_filter(array_map(
+           fn ($ref) => trim((string) $ref),
+           $refs
+       ), fn ($ref) => $ref !== '' && strcasecmp($ref, 'AJ') !== 0)));
    }
 
    // ─────────────────────────────────────────────────────────────────

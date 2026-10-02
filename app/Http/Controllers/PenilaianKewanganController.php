@@ -1665,7 +1665,8 @@ class PenilaianKewanganController extends Controller
             }
 
             $scorePct = ($totalMaxScore > 0) ? round(($vendorTotalScore / $totalMaxScore) * 100, 2) : 0.0;
-            $isMelepasi = ($scorePct >= $passingPercentage) || ($vendorTotalScore >= $effectivePassingScore);
+            // A percentage under the passing threshold is a fail, even when the raw mark meets a lower passing score.
+            $isMelepasi = $scorePct >= $passingPercentage;
 
             $fmtTotal = (number_format($vendorTotalScore, 0) == $vendorTotalScore) ? number_format($vendorTotalScore, 0) : number_format($vendorTotalScore, 2);
             $fmtMax = (number_format($totalMaxScore, 0) == $totalMaxScore) ? number_format($totalMaxScore, 0) : number_format($totalMaxScore, 2);
