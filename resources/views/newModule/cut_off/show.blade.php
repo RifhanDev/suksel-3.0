@@ -228,7 +228,7 @@
                         </thead>
                         <tbody>
                             <tr>
-                                <td><strong>No. of Tender Analysed (Nt)</strong></td>
+                                <td><strong>No. of Tender Analysed (Nt)</strong><br><span class="fw-normal">Syarikat yang masuk + AJ</span></td>
                                 <td class="text-center">{{ $nt ?? '-' }}</td>
                             </tr>
                             <tr>
@@ -423,7 +423,7 @@
                     x: {
                         title: {
                             display: true,
-                            text: 'Price Classification: % of Mean'
+                            text: '% BWAM'
                         }
                     }
                 }
