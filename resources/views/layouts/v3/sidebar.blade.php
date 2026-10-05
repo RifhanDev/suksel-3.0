@@ -417,7 +417,7 @@
 										style="{{ request()->routeIs('pembelianTerus.cutOffProject') || request()->routeIs('pembelianTerus.cutOffDetails') || request()->is('pembelian-terus/cut-off-projek*') || request()->is('pembelian-terus/cut-off-details*') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}">
 									</div><span
 										class="{{ request()->routeIs('pembelianTerus.cutOffProject') || request()->routeIs('pembelianTerus.cutOffDetails') || request()->is('pembelian-terus/cut-off-projek*') || request()->is('pembelian-terus/cut-off-details*') ? 'text-white' : '' }}">
-										Cut Off
+										Kajian Pasaran
 									</span>
 								</a>
 							</li>
@@ -541,7 +541,7 @@
 										style="{{ request()->routeIs('cutOffTerus.index') || request()->routeIs('cutOffTerus.show') ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}">
 									</div><span
 										class="{{ request()->routeIs('cutOffTerus.index') || request()->routeIs('cutOffTerus.show') ? 'text-white' : '' }}">
-										Cut Off
+										Kajian Pasaran
 									</span>
 								</a>
 							</li>
