@@ -306,7 +306,7 @@ class PerakuanJabatanController extends Controller
     {
         $identifier = $tender->uuid ?: ($tender->no_tender ?: ($tender->ref_number ?: (string) $tender->id));
 
-        return app(PenilaianKewanganController::class)->cetakLaporan($identifier);
+        return app(PenilaianKewanganController::class)->cetakLaporan($identifier, false);
     }
 
     /**

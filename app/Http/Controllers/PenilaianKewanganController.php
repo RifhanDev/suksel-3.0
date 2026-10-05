@@ -515,7 +515,7 @@ class PenilaianKewanganController extends Controller
      *
      * Sections 1-5 read live data; 6 onwards are still hardcoded from the sample report.
      */
-    public function cetakLaporan(string $tender_no)
+    public function cetakLaporan(string $tender_no, bool $enforceCommittee = true)
     {
         $tender = Tender::query()
             ->with('tenderer')
@@ -529,7 +529,16 @@ class PenilaianKewanganController extends Controller
             })
             ->first();
 
-        $this->assertCommitteeAppointment($tender, $this->financialCommitteeJenis);
+        if (! $tender) {
+            abort(404, 'Tender tidak ditemui.');
+        }
+
+        // Perakuan Jabatan and Jawatankuasa Perolehan open this report for Urusetia.
+        // Those modules already check their own access. The jawatankuasa appointment
+        // check stays on the Penilaian Kewangan route only.
+        if ($enforceCommittee) {
+            $this->assertCommitteeAppointment($tender, $this->financialCommitteeJenis);
+        }
 
         $dokumenKewangan = $this->loadDokumenKewangan($tender);
         $jphJenis = $this->resolveJphJenis($tender);
@@ -585,8 +594,8 @@ class PenilaianKewanganController extends Controller
             'petenderDisyorkan' => $pengesyoran['disyorkan'],
             'petenderLayakLain' => $pengesyoran['layakLain'],
             'pengesyoranJustifikasi' => collect($laporanRecord?->pengesyoran_justifikasi ?? [])
-                ->map(fn ($t) => trim((string) $t))
-                ->filter()
+                ->filter(fn ($line) => is_string($line) && trim($line) !== '')
+                ->map(fn ($line) => trim($line))
                 ->values(),
             'petenderHarga' => $petenderHarga,
             'bilanganPetender' => $this->bilanganPerkataan($petenderHarga->count()),
