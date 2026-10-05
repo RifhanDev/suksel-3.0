@@ -474,6 +474,14 @@
             var SUBMIT_URL      = '{{ route('senaraiKewanganBekalan.submit', $tender->uuid) }}';
             var UPLOAD_FILE_URL = @json(route('senaraiKewanganBekalan.uploadFile', $tender->uuid));
             var DELETE_FILE_URL = @json(route('senaraiKewanganBekalan.deleteFile', ':uuid'));
+            var CHECKLIST_FILE_URL = @json(route('tenderChecklist.download', [
+                'tender' => $tender->id,
+                'section' => 'financial',
+                'fileUuid' => '__FILE_UUID__',
+            ]));
+            function checklistFileUrl(fileUuid) {
+                return CHECKLIST_FILE_URL.replace('__FILE_UUID__', encodeURIComponent(fileUuid || ''));
+            }
             var CSRF_TOKEN      = '{{ csrf_token() }}';
             var checklistItems   = @json($checklistData['items'] ?? []);
             var sokonganFiles   = @json($checklistData['files'] ?? []);
@@ -701,7 +709,7 @@
                     if (item.mechanism === 'ptj_muat_naik' && item.files && item.files.length) {
                         var $list = $row.find('.rujukan-cell .dokumen-ptj-list');
                         item.files.forEach(function(f) {
-                            $list.append(buildPtjFileEntry(f.uuid, f.original_name, f.url));
+                            $list.append(buildPtjFileEntry(f.uuid, f.original_name, checklistFileUrl(f.uuid)));
                         });
                     }
 
@@ -1049,7 +1057,7 @@
                             var f = res && res.data ? res.data : null;
                             if (!f) return;
                             $row.find('.rujukan-cell .dokumen-ptj-list').append(
-                                buildPtjFileEntry(f.uuid, f.original_name, f.url)
+                                buildPtjFileEntry(f.uuid, f.original_name, checklistFileUrl(f.uuid))
                             );
                             updateRowCompletionStatus($row);
                             autoSave(true);

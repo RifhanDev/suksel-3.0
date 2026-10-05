@@ -437,6 +437,14 @@ $(document).ready(function () {
     const AFTER_SPEC_URL = @json($afterSpecificationUrl ?? route('pengurusanSpesifikasi'));
     const UPLOAD_URL   = @json(route('senaraiKewanganKerja.uploadFile', $tender->uuid));
     const DELETE_BASE  = @json(url('/senarai-kewangan-kerja/fail'));
+    const CHECKLIST_FILE_URL = @json(route('tenderChecklist.download', [
+        'tender' => $tender->id,
+        'section' => 'kewangan_kerja',
+        'fileUuid' => '__FILE_UUID__',
+    ]));
+    function checklistFileUrl(fileUuid) {
+        return CHECKLIST_FILE_URL.replace('__FILE_UUID__', encodeURIComponent(fileUuid || ''));
+    }
     const USER_ID      = @json(auth()->id());
     const IS_SUBMITTED = @json(($checklistData['status'] ?? null) === 'submitted');
 
@@ -606,7 +614,7 @@ $(document).ready(function () {
         var $chip = $(
             '<div class="file-chip" data-file-uuid="' + fileData.uuid + '">' +
             '<span class="ext-badge">' + htmlEscape(ext) + '</span>' +
-            '<a href="' + fileData.url + '" target="_blank" title="' + htmlEscape(fileData.original_name) + '">' + htmlEscape(fileData.original_name) + '</a>' +
+            '<a href="' + checklistFileUrl(fileData.uuid) + '" target="_blank" title="' + htmlEscape(fileData.original_name) + '">' + htmlEscape(fileData.original_name) + '</a>' +
             '<button type="button" class="chip-delete" title="Padam fail">' +
                 '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>' +
             '</button>' +
@@ -1086,7 +1094,7 @@ $(document).ready(function () {
                         var $chip = $(
                             '<div class="file-chip" data-file-uuid="' + f.uuid + '">' +
                             '<span class="ext-badge">' + htmlEscape(ext) + '</span>' +
-                            '<a href="' + f.url + '" target="_blank">' + htmlEscape(f.original_name) + '</a>' +
+                            '<a href="' + checklistFileUrl(f.uuid) + '" target="_blank">' + htmlEscape(f.original_name) + '</a>' +
                             '<button type="button" class="chip-delete header-file-delete" title="Padam">' +
                                 '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>' +
                             '</button>' +
@@ -1116,7 +1124,7 @@ $(document).ready(function () {
             var $chip = $(
                 '<div class="file-chip" data-file-uuid="' + f.uuid + '">' +
                 '<span class="ext-badge">' + htmlEscape(ext) + '</span>' +
-                '<a href="' + f.url + '" target="_blank">' + htmlEscape(f.original_name) + '</a>' +
+                '<a href="' + checklistFileUrl(f.uuid) + '" target="_blank">' + htmlEscape(f.original_name) + '</a>' +
                 '<button type="button" class="chip-delete header-file-delete" title="Padam">' +
                     '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>' +
                 '</button>' +
