@@ -226,14 +226,16 @@ class CutOffController extends Controller
     }
 
     /**
-     * Format nilai RM: '-' untuk kosong/sifar, selain itu format 2 titik perpuluhan
-     * dengan pemisah ribu (ikut gaya paparan sedia ada di halaman ini).
+     * Format nilai RM: '-' hanya bila tiada nilai. Sifar dipaparkan sebagai 0.00
+     * (PCP Bekalan/Perkhidmatan dan SD sifar adalah hasil kiraan, bukan data kosong).
      */
     private function formatHarga($value): string
     {
-        $value = (float) ($value ?? 0);
+        if ($value === null || $value === '') {
+            return '-';
+        }
 
-        return $value > 0 ? number_format($value, 2) : '-';
+        return number_format((float) $value, 2);
     }
 
     /**
