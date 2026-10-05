@@ -560,6 +560,14 @@
             var SUBMIT_URL      = @json(route('senaraiTeknikal.submit', $tender->uuid));
             var UPLOAD_FILE_URL = @json(route('senaraiTeknikal.uploadFile', $tender->uuid));
             var DELETE_FILE_URL = @json(route('senaraiTeknikal.deleteFile', ':uuid'));
+            var CHECKLIST_FILE_URL = @json(route('tenderChecklist.download', [
+                'tender' => $tender->id,
+                'section' => 'technical',
+                'fileUuid' => '__FILE_UUID__',
+            ]));
+            function checklistFileUrl(fileUuid) {
+                return CHECKLIST_FILE_URL.replace('__FILE_UUID__', encodeURIComponent(fileUuid || ''));
+            }
             var CSRF_TOKEN      = @json(csrf_token());
             var EXISTING_CHECKLIST = @json($checklistData);
             var STANDARD_ACTION_URLS = @json(collect($standardItems ?? [])->pluck('action_url', 'uuid')->all());
@@ -1083,7 +1091,7 @@
                         if (mech === 'ptj_muat_naik' && item.files && item.files.length) {
                             var $list = $row.find('.rujukan-cell .dokumen-ptj-list');
                             item.files.forEach(function(f) {
-                                $list.append(buildPtjFileEntry(f.uuid, f.original_name, f.url));
+                                $list.append(buildPtjFileEntry(f.uuid, f.original_name, checklistFileUrl(f.uuid)));
                             });
                         }
                         $row.find('.skema-input').val(item.score || 0);
@@ -1134,7 +1142,7 @@
             // Restore Dokumen Sokongan chips from saved header files
             if (EXISTING_CHECKLIST && EXISTING_CHECKLIST.files && EXISTING_CHECKLIST.files.length) {
                 EXISTING_CHECKLIST.files.forEach(function(f) {
-                    $('#file-chip-list-sokongan').append(buildSokonganChip(f.uuid, f.original_name, f.url, f.size));
+                    $('#file-chip-list-sokongan').append(buildSokonganChip(f.uuid, f.original_name, checklistFileUrl(f.uuid), f.size));
                 });
             }
 
@@ -1242,7 +1250,7 @@
                             var f = res && res.data ? res.data : null;
                             if (!f) return;
                             $row.find('.rujukan-cell .dokumen-ptj-list').append(
-                                buildPtjFileEntry(f.uuid, f.original_name, f.url)
+                                buildPtjFileEntry(f.uuid, f.original_name, checklistFileUrl(f.uuid))
                             );
                         },
                         error: function() {
@@ -1458,7 +1466,7 @@
                     success: function(res) {
                         var f = res && res.data ? res.data : null;
                         if (!f) return;
-                        $('#file-chip-list-sokongan').append(buildSokonganChip(f.uuid, f.original_name, f.url, f.size));
+                        $('#file-chip-list-sokongan').append(buildSokonganChip(f.uuid, f.original_name, checklistFileUrl(f.uuid), f.size));
                     },
                     error: function() {
                         alert('Gagal memuat naik fail. Sila cuba lagi.');
