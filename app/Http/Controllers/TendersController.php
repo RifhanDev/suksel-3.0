@@ -334,6 +334,10 @@ class TendersController extends Controller
 		// berbeza daripada tender yang baru dicipta.
 		$payload = $this->buildTenderCodePayload($payload);
 
+		if ($denied = $this->rejectInvalidKategoriForKaedah($payload)) {
+			return $denied;
+		}
+
 		$errorCheck = false;
 		try {
 			$stosClient = app(StosBackendClient::class);
@@ -945,6 +949,10 @@ class TendersController extends Controller
 		// serupa supaya kedua-dua laluan menghasilkan bentuk yang backend jangka.
 		$payload = $this->buildTenderCodePayload($request->all());
 
+		if ($denied = $this->rejectInvalidKategoriForKaedah($payload)) {
+			return $denied;
+		}
+
 		if (isset($payload['ptj_id']) && auth()->user()->hasRole('Admin')) {
 			$payload['organization_unit_id'] = $payload['ptj_id'];
 		} else {
@@ -995,6 +1003,34 @@ class TendersController extends Controller
 	 * @param  array<string, mixed>  $payload
 	 * @return array<string, mixed>
 	 */
+	/**
+	 * Pembelian Terus cannot use Kerja. Lantikan Terus can only use Kerja.
+	 */
+	private function rejectInvalidKategoriForKaedah(array $payload)
+	{
+		$kaedahId = $payload['type'] ?? null;
+		$kategoriId = $payload['kategori_perolehan'] ?? null;
+
+		if ($kaedahId === null || $kaedahId === '') {
+			return null;
+		}
+
+		$kaedahName = mb_strtolower(trim((string) DB::table('ref_kaedah_perolehans')->where('id', $kaedahId)->value('name')));
+		$kategoriName = mb_strtolower(trim((string) DB::table('ref_kategori_jenis_perolehans')->where('id', $kategoriId)->value('name')));
+
+		if ($kaedahName === 'pembelian terus' && $kategoriName === 'kerja') {
+			return redirect()->back()->withInput()
+				->with('error', 'Kategori Kerja tidak digunakan untuk Pembelian Terus.');
+		}
+
+		if ($kaedahName === 'lantikan terus' && $kategoriName !== 'kerja') {
+			return redirect()->back()->withInput()
+				->with('error', 'Lantikan Terus hanya menggunakan Kategori Kerja.');
+		}
+
+		return null;
+	}
+
 	private function buildTenderCodePayload(array $payload): array
 	{
 		if (isset($payload['mof']) && is_array($payload['mof'])) {
