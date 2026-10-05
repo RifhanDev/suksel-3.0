@@ -398,7 +398,7 @@ class OrganizationUnitsSeeder extends Seeder
             ],
             [
                 'id' => 24,
-                'name' => 'Jabatan Pengairan dan Saliran',
+                'name' => 'Jabatan Pengairan dan Saliran Negeri Selangor',
                 'short_name' => 'JPS',
                 'parent_id' => null,
                 'lft' => 91,
