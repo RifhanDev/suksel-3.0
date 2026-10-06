@@ -1747,6 +1747,13 @@ class TendersController extends Controller
 
 		// $tender->approver_id = $approval->id; // OLD CODE BUG: stores approval record ID, not user ID — FK references users.id
 		$tender->approver_id = auth()->user()->id;
+
+		// Siar opens vendor submission. Older tenders stay below status 5 because
+		// publish never advanced the process status.
+		if ((int) ($tender->status_process_id ?? 0) < TenderProcessStatus::PENYEDIAAN_IKLAN) {
+			$tender->status_process_id = TenderProcessStatus::PENYEDIAAN_IKLAN;
+		}
+
 		$tender->save();
 
 		$tender_ids = [];
