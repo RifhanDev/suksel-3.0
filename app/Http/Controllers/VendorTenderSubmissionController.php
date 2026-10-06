@@ -27,13 +27,18 @@ class VendorTenderSubmissionController extends Controller
         ]);
     }
 
+    public function show(Tender $tender)
+    {
+        return redirect()->route('tenders.show', $tender->id);
+    }
+
     public function submit(Request $request, Tender $tender)
     {
         $vendorId = $this->vendorId();
 
         $purchase = $this->submissions->submit($tender, $vendorId);
 
-        return response()->json([
+        $payload = [
             'success' => true,
             'message' => 'Tawaran berjaya dihantar. Maklumat tidak boleh dikemaskini selepas ini.',
             'data' => [
@@ -41,7 +46,15 @@ class VendorTenderSubmissionController extends Controller
                 'kod_pembekal' => $purchase->kod_pembekal,
                 'status_process_id' => (int) $tender->fresh()->status_process_id,
             ],
-        ]);
+        ];
+
+        if (! $request->expectsJson()) {
+            return redirect()
+                ->route('tenders.show', $tender->id)
+                ->with('success', $payload['message']);
+        }
+
+        return response()->json($payload);
     }
 
     protected function vendorId(): int

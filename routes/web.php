@@ -219,6 +219,7 @@ Route::post('tenders/{id}/exception', [TendersController::class, 'exception'])->
 
 Route::middleware(['auth'])->group(function () {
 	Route::get('tenders/{tender}/vendor-submission/readiness', [\App\Http\Controllers\VendorTenderSubmissionController::class, 'readiness'])->name('tenders.vendorSubmission.readiness');
+	Route::get('tenders/{tender}/vendor-submission', [\App\Http\Controllers\VendorTenderSubmissionController::class, 'show'])->name('tenders.vendorSubmission.show');
 	Route::post('tenders/{tender}/vendor-submission', [\App\Http\Controllers\VendorTenderSubmissionController::class, 'submit'])->name('tenders.vendorSubmission.submit');
 	Route::get('tenders/{tender}/dokumen/{itemUuid}/specification', [\App\Http\Controllers\VendorTenderDokumenController::class, 'specificationForm'])->name('tenderDokumen.specificationForm');
 	Route::get('tenders/{tender}/dokumen/pengalaman-kerja-review', [\App\Http\Controllers\PengalamanKerjaController::class, 'review'])->name('tenderDokumen.pengalamanKerjaReview');
