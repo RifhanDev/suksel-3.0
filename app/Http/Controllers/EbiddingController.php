@@ -132,6 +132,7 @@ class EbiddingController extends Controller
         $tender = Tender::findOrFail($id);
         $currentStage = $this->resolveEbiddingStage($tender);
         $window = $this->biddingWindowState((int) $tender->id);
+        $currentStage = $this->reopenVendorStageIfWindowOpen($tender, $currentStage, $window);
         $currentUser = Auth::user();
         $isVendorUser = Auth::check() && $currentUser && $this->isVendorUserById((int) $currentUser->id);
         $vendorId = $isVendorUser ? (int) ($currentUser->vendor_id ?? 0) : 0;
@@ -274,14 +275,12 @@ class EbiddingController extends Controller
         })->values();
 
 		if ($isVendorUser) {
-			// After bidding ends (or stage moved on), vendor must not open the form —
-			// even via hardcoded /eBidding/{id}.
-			$vendorBlocked = $window['has_ended']
-				|| $currentStage > self::STAGE_VENDOR
-				|| $currentStage < self::STAGE_VENDOR;
+			// The schedule start/end is the source of truth. A later process stage
+			// must not report "telah tamat" while that window is still open.
+			$vendorBlocked = ! $window['is_open'] || $currentStage < self::STAGE_VENDOR;
 
 			if ($vendorBlocked) {
-				if ($window['has_ended'] || $currentStage > self::STAGE_VENDOR) {
+				if ($window['has_ended']) {
 					$message = 'Tempoh bidaan untuk tender ini telah tamat. Harga baharu tidak lagi boleh dihantar.';
 				} else {
 					$message = 'Bidaan untuk tender ini belum dibuka kepada vendor.';
@@ -324,11 +323,9 @@ class EbiddingController extends Controller
             ? ['pengesyoran', 'taklimat', 'jadual-bidaan']
             : ['penyediaan', 'taklimat', 'pemilihan', 'pengesyoran', 'jadual-bidaan', 'keputusan'];
 
-        // Red/green harga baharu vs lama: only after Vendor bidding stage is finished
-        // (Agency Semakan / Admin SULP). Never on earlier statuses — Perakuan Jabatan
-        // and JP Keputusan Mesyuarat stay plain (no colour styling there).
-        $showBidPriceDiff = (bool) $tender->is_ebidding
-            && $currentStage >= self::STAGE_AGENCY_ADMIN_REVIEW;
+        // Green/red harga baharu vs lama belongs on Perakuan Jabatan and
+        // Jawatankuasa Perolehan after bidding has finished, not on this page.
+        $showBidPriceDiff = false;
 
         return view('newModule.eBidding.keptusan_mesyuarat', compact(
             'tender',
@@ -349,6 +346,24 @@ class EbiddingController extends Controller
     {
         $tender = Tender::query()->findOrFail($id);
         $currentStage = $this->resolveEbiddingStage($tender);
+        $window = $this->biddingWindowState((int) $tender->id);
+        if (! $window['is_open']) {
+            $message = $window['has_ended']
+                ? 'Tempoh bidaan telah tamat. Harga baharu tidak lagi boleh dihantar.'
+                : 'Bidaan tidak berada dalam tempoh aktif.';
+
+            if ($request->expectsJson()) {
+                return response()->json(['message' => $message], 403);
+            }
+
+            return response()
+                ->view('newModule.eBidding.bidding_ended', [
+                    'tender' => $tender,
+                    'message' => $message,
+                ], 403);
+        }
+
+        $currentStage = $this->reopenVendorStageIfWindowOpen($tender, $currentStage, $window);
         if ($currentStage !== self::STAGE_VENDOR) {
             return response()->json(['message' => 'Bidaan vendor hanya dibenarkan pada peringkat Vendor.'], 422);
         }
@@ -362,23 +377,6 @@ class EbiddingController extends Controller
         if ($vendorId <= 0) {
             return response()->json(['message' => 'Profil vendor tidak sah.'], 422);
         }
-
-		$window = $this->biddingWindowState((int) $tender->id);
-		if (!$window['is_open'] || $currentStage !== self::STAGE_VENDOR) {
-			$message = $window['has_ended']
-				? 'Tempoh bidaan telah tamat. Harga baharu tidak lagi boleh dihantar.'
-				: 'Bidaan tidak berada dalam tempoh aktif.';
-
-			if ($request->expectsJson()) {
-				return response()->json(['message' => $message], 403);
-			}
-
-			return response()
-				->view('newModule.eBidding.bidding_ended', [
-					'tender' => $tender,
-					'message' => $message,
-				], 403);
-		}
 
         $payload = $request->validate([
             'items' => ['required', 'array', 'min:1'],
@@ -844,25 +842,33 @@ class EbiddingController extends Controller
     {
         $rules = [
             'tarikh_bidaan_mula' => [$forStart ? 'required' : 'nullable', 'date'],
-            'masa_bidaan_mula' => [$forStart ? 'required' : 'nullable', 'date_format:H:i'],
+            'masa_bidaan_mula' => [$forStart ? 'required' : 'nullable', 'regex:/^\d{1,2}:\d{2}(:\d{2})?$/'],
             'tarikh_bidaan_tamat' => [$forStart ? 'required' : 'nullable', 'date'],
-            'masa_bidaan_tamat' => [$forStart ? 'required' : 'nullable', 'date_format:H:i'],
+            'masa_bidaan_tamat' => [$forStart ? 'required' : 'nullable', 'regex:/^\d{1,2}:\d{2}(:\d{2})?$/'],
         ];
 
         $payload = $request->validate($rules, [
             'tarikh_bidaan_mula.required' => 'Tarikh Bidaan Mula wajib diisi.',
             'masa_bidaan_mula.required' => 'Masa Bidaan Mula wajib diisi.',
+            'masa_bidaan_mula.regex' => 'Masa Bidaan Mula tidak sah.',
             'tarikh_bidaan_tamat.required' => 'Tarikh Bidaan Tamat wajib diisi.',
             'masa_bidaan_tamat.required' => 'Masa Bidaan Tamat wajib diisi.',
+            'masa_bidaan_tamat.regex' => 'Masa Bidaan Tamat tidak sah.',
         ]);
+
+        foreach (['masa_bidaan_mula', 'masa_bidaan_tamat'] as $timeKey) {
+            if (! empty($payload[$timeKey])) {
+                $payload[$timeKey] = EbiddingJadualBidaan::normalizeTime($payload[$timeKey], true);
+            }
+        }
 
         if (
             !empty($payload['tarikh_bidaan_mula']) && !empty($payload['masa_bidaan_mula']) &&
             !empty($payload['tarikh_bidaan_tamat']) && !empty($payload['masa_bidaan_tamat'])
         ) {
-            $mula = Carbon::parse($payload['tarikh_bidaan_mula'] . ' ' . $payload['masa_bidaan_mula']);
-            $tamat = Carbon::parse($payload['tarikh_bidaan_tamat'] . ' ' . $payload['masa_bidaan_tamat']);
-            if ($tamat->lessThanOrEqualTo($mula)) {
+            $mula = EbiddingJadualBidaan::combine($payload['tarikh_bidaan_mula'], $payload['masa_bidaan_mula']);
+            $tamat = EbiddingJadualBidaan::combine($payload['tarikh_bidaan_tamat'], $payload['masa_bidaan_tamat']);
+            if (! $mula || ! $tamat || $tamat->lessThanOrEqualTo($mula)) {
                 throw ValidationException::withMessages([
                     'masa_bidaan_tamat' => 'Masa/Tarikh tamat bidaan mesti selepas masa/tarikh mula.',
                 ]);
@@ -875,29 +881,29 @@ class EbiddingController extends Controller
     private function biddingWindowState(int $tenderId): array
     {
         $schedule = EbiddingJadualBidaan::query()->where('tender_id', $tenderId)->first();
-        if (!$schedule || !$schedule->tarikh_bidaan_mula || !$schedule->masa_bidaan_mula || !$schedule->tarikh_bidaan_tamat || !$schedule->masa_bidaan_tamat) {
-            return [
-                'has_schedule' => false,
-                'is_open' => false,
-                'has_started' => false,
-                'has_ended' => false,
-                'starts_at' => null,
-                'ends_at' => null,
-            ];
+        if (! $schedule) {
+            return EbiddingJadualBidaan::emptyWindow();
         }
 
-        $startAt = Carbon::parse($schedule->tarikh_bidaan_mula->format('Y-m-d') . ' ' . $schedule->masa_bidaan_mula);
-        $endAt = Carbon::parse($schedule->tarikh_bidaan_tamat->format('Y-m-d') . ' ' . $schedule->masa_bidaan_tamat);
-        $now = Carbon::now();
+        return $schedule->windowState();
+    }
 
-        return [
-            'has_schedule' => true,
-            'is_open' => $now->betweenIncluded($startAt, $endAt),
-            'has_started' => $now->greaterThanOrEqualTo($startAt),
-            'has_ended' => $now->greaterThan($endAt),
-            'starts_at' => $startAt->toIso8601String(),
-            'ends_at' => $endAt->toIso8601String(),
-        ];
+    /**
+     * Review stage was being treated as "tempoh tamat" even when the saved
+     * start/end datetime was still open. Put the tender back on the vendor stage.
+     */
+    private function reopenVendorStageIfWindowOpen(Tender $tender, int $currentStage, array $window): int
+    {
+        if (empty($window['is_open']) || $currentStage !== self::STAGE_AGENCY_ADMIN_REVIEW) {
+            return $currentStage;
+        }
+
+        Tender::query()->where('id', $tender->id)->update([
+            'ebidding_process_stage_id' => self::STAGE_VENDOR,
+        ]);
+        $tender->ebidding_process_stage_id = self::STAGE_VENDOR;
+
+        return self::STAGE_VENDOR;
     }
 
     /**

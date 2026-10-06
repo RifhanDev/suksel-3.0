@@ -6,6 +6,7 @@ use App\Banner;
 use App\CodeRequest;
 use App\Comment;
 use App\Gateway;
+use App\Models\EbiddingJadualBidaan;
 use App\Models\Refund;
 use App\Models\VersionHistory;
 use App\News;
@@ -1557,10 +1558,10 @@ class HomeController extends Controller
 				&& ! empty($schedule->masa_bidaan_mula)
 				&& ! empty($schedule->tarikh_bidaan_tamat)
 				&& ! empty($schedule->masa_bidaan_tamat)) {
-				$startAt = Carbon::parse($schedule->tarikh_bidaan_mula . ' ' . $schedule->masa_bidaan_mula);
-				$endAt = Carbon::parse($schedule->tarikh_bidaan_tamat . ' ' . $schedule->masa_bidaan_tamat);
-				$isOpen = $now->betweenIncluded($startAt, $endAt);
-				$hasEnded = $now->greaterThan($endAt);
+				$startAt = EbiddingJadualBidaan::combine($schedule->tarikh_bidaan_mula, $schedule->masa_bidaan_mula);
+				$endAt = EbiddingJadualBidaan::combine($schedule->tarikh_bidaan_tamat, $schedule->masa_bidaan_tamat);
+				$isOpen = $startAt && $endAt && $now->betweenIncluded($startAt, $endAt);
+				$hasEnded = $endAt ? $now->greaterThan($endAt) : false;
 			}
 
 			$hasSubmitted = $submittedIds->contains($tender->id);

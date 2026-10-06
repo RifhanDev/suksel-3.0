@@ -1409,11 +1409,84 @@
             });
 
             // --- KAEDAH PEROLEHAN LABEL LISTENER ---
+            var kerjaKategoriOption = null;
+
+            function rememberKerjaOption() {
+                var currentKerja = kategoriPerolehanDropdown.find('option').filter(function() {
+                    return ($(this).text() || '').trim().toLowerCase() === 'kerja';
+                });
+
+                if (currentKerja.length) {
+                    kerjaKategoriOption = currentKerja;
+                }
+            }
+
+            function unlockKategoriPerolehan() {
+                kategoriPerolehanDropdown.prop('disabled', false);
+                $('#kategori_perolehan_locked').remove();
+            }
+
+            function lockKategoriToKerja() {
+                if (!kerjaKategoriOption || !kerjaKategoriOption.length) {
+                    return;
+                }
+
+                if (!kerjaKategoriOption.parent().length) {
+                    kategoriPerolehanDropdown.append(kerjaKategoriOption);
+                }
+
+                var kerjaValue = String(kerjaKategoriOption.val());
+                if (String(kategoriPerolehanDropdown.val()) !== kerjaValue) {
+                    kategoriPerolehanDropdown.val(kerjaValue).trigger('change');
+                }
+
+                kategoriPerolehanDropdown.prop('disabled', true);
+                var locked = $('#kategori_perolehan_locked');
+                if (!locked.length) {
+                    locked = $('<input>', {
+                        type: 'hidden',
+                        id: 'kategori_perolehan_locked',
+                        name: 'kategori_perolehan'
+                    });
+                    kategoriPerolehanDropdown.after(locked);
+                }
+                locked.val(kerjaValue);
+            }
+
+            function syncKerjaOptionForKaedah() {
+                var kaedahText = ($('select[name="type"] option:selected').text() || '').trim().toLowerCase();
+                rememberKerjaOption();
+
+                if (kaedahText === 'pembelian terus') {
+                    unlockKategoriPerolehan();
+                    if (kerjaKategoriOption && kerjaKategoriOption.parent().length) {
+                        if (String(kategoriPerolehanDropdown.val()) === String(kerjaKategoriOption.val())) {
+                            kategoriPerolehanDropdown.val('').trigger('change');
+                        }
+                        kerjaKategoriOption.detach();
+                    }
+                    return;
+                }
+
+                if (kaedahText === 'lantikan terus') {
+                    lockKategoriToKerja();
+                    return;
+                }
+
+                unlockKategoriPerolehan();
+                if (kerjaKategoriOption && !kerjaKategoriOption.parent().length) {
+                    kategoriPerolehanDropdown.append(kerjaKategoriOption);
+                }
+            }
+
             $('select[name="type"]').change(function() {
                 var text = $(this).find('option:selected').text().toLowerCase();
                 var label = text.includes('sebut harga') ? 'NO. SEBUT HARGA' : 'NO. TENDER';
                 $('#kaedah-label').text(label);
+                syncKerjaOptionForKaedah();
             });
+
+            syncKerjaOptionForKaedah();
 
             // --- PTJ DROPDOWN LISTENER ---
             $('#ptj-select').change(function() {

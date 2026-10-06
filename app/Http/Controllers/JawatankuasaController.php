@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class JawatankuasaController extends Controller
 {
@@ -90,6 +91,7 @@ class JawatankuasaController extends Controller
         $jenis = $validated['jenis'];
         $catatan = $this->normalizeCatatan($validated['catatan'] ?? null);
         $rows = $this->normalizeRows($validated['rows'] ?? []);
+        $this->assertRowsBelongToInvolvedAgencies($tender, $rows);
         $meeting = $jenis === 'spec' ? $this->normalizeMeeting($validated) : [];
 
         try {
@@ -145,6 +147,11 @@ class JawatankuasaController extends Controller
         $validated = $request->validate($rules);
         $tender = Tender::where('uuid', $validated['tender_uuid'])->firstOrFail();
         $tabsInput = $validated['tabs'] ?? [];
+
+        foreach ($supportedJenis as $jenis) {
+            $tabRows = $this->normalizeRows($tabsInput[$jenis]['rows'] ?? []);
+            $this->assertRowsBelongToInvolvedAgencies($tender, $tabRows);
+        }
 
         try {
             DB::transaction(function () use ($request, $tender, $supportedJenis, $tabsInput) {
@@ -712,22 +719,7 @@ class JawatankuasaController extends Controller
 
         $committeeDrafts = [];
         $supportedDraftJenis = $this->getSupportedJenis($tender);
-        $icUsers = User::query()
-            ->whereNotNull('ic_number')
-            ->where('ic_number', '!=', '')
-            ->orderBy('ic_number')
-            ->get(['id', 'ic_number', 'name', 'email', 'jawatan', 'gred'])
-            ->map(function ($user) {
-                return [
-                    'id' => (int) $user->id,
-                    'ic_number' => (string) $user->ic_number,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'jawatan' => $user->jawatan ?? '-',
-                    'gred' => $user->gred ?? '-',
-                ];
-            })
-            ->values();
+        $icUsers = $this->committeeIcUsers($tender);
 
         if ($tender) {
             $committeeDrafts = Jawatankuasa::with('user')
@@ -782,22 +774,7 @@ class JawatankuasaController extends Controller
 
         $committeeDrafts = [];
         $supportedDraftJenis = $this->getSupportedJenis($tender);
-        $icUsers = User::query()
-            ->whereNotNull('ic_number')
-            ->where('ic_number', '!=', '')
-            ->orderBy('ic_number')
-            ->get(['id', 'ic_number', 'name', 'email', 'jawatan', 'gred'])
-            ->map(function ($user) {
-                return [
-                    'id' => (int) $user->id,
-                    'ic_number' => (string) $user->ic_number,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'jawatan' => $user->jawatan ?? '-',
-                    'gred' => $user->gred ?? '-',
-                ];
-            })
-            ->values();
+        $icUsers = $this->committeeIcUsers($tender);
 
         if ($tender) {
             $committeeDrafts = Jawatankuasa::with('user')
@@ -840,6 +817,111 @@ class JawatankuasaController extends Controller
         }
 
         return view('tenders.pelantikan_jawatankuasa_1_peringkat', compact('tender', 'committeeDrafts', 'supportedDraftJenis', 'icUsers'));
+    }
+
+    /**
+     * Names offered for pelantikan are staff of the agencies on this tender:
+     * the tender PTJ, the project owner, and the secretariat.
+     */
+    private function committeeIcUsers(?Tender $tender)
+    {
+        if (! $tender) {
+            return collect();
+        }
+
+        return $this->committeeCandidateQuery($tender)
+            ->orderBy('ic_number')
+            ->get(['id', 'ic_number', 'name', 'email', 'jawatan', 'gred'])
+            ->map(function ($user) {
+                return [
+                    'id' => (int) $user->id,
+                    'ic_number' => (string) $user->ic_number,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'jawatan' => $user->jawatan ?? '-',
+                    'gred' => $user->gred ?? '-',
+                ];
+            })
+            ->values();
+    }
+
+    private function committeeCandidateQuery(Tender $tender)
+    {
+        $agencyIds = $this->involvedAgencyIds($tender);
+
+        return User::query()
+            ->whereIn('organization_unit_id', $agencyIds === [] ? [0] : $agencyIds)
+            ->whereNull('vendor_id')
+            ->whereNotNull('ic_number')
+            ->where('ic_number', '!=', '');
+    }
+
+    /**
+     * Tender PTJ is the project-owner agency. Creator, officer, and approver
+     * agencies cover the secretariat when that unit differs from the PTJ.
+     * The parent agency is included so a bahagian-level tender can still
+     * appoint officers registered on that parent.
+     *
+     * @return array<int, int>
+     */
+    private function involvedAgencyIds(Tender $tender): array
+    {
+        $ids = [];
+
+        if (! empty($tender->organization_unit_id)) {
+            $ids[] = (int) $tender->organization_unit_id;
+        }
+
+        $linkedUserIds = array_values(array_filter([
+            $tender->creator_id,
+            $tender->officer_id,
+            $tender->approver_id,
+        ]));
+
+        if ($linkedUserIds !== []) {
+            User::query()
+                ->whereIn('id', $linkedUserIds)
+                ->whereNotNull('organization_unit_id')
+                ->pluck('organization_unit_id')
+                ->each(function ($orgId) use (&$ids) {
+                    $ids[] = (int) $orgId;
+                });
+        }
+
+        $ids = array_values(array_unique(array_filter($ids)));
+
+        if ($ids !== []) {
+            DB::table('organization_units')
+                ->whereIn('id', $ids)
+                ->whereNotNull('parent_id')
+                ->pluck('parent_id')
+                ->each(function ($parentId) use (&$ids) {
+                    $ids[] = (int) $parentId;
+                });
+        }
+
+        return array_values(array_unique($ids));
+    }
+
+    private function assertRowsBelongToInvolvedAgencies(Tender $tender, $rows): void
+    {
+        $userIds = collect($rows)->pluck('user_id')->filter()->unique()->values();
+        if ($userIds->isEmpty()) {
+            return;
+        }
+
+        $allowedIds = $this->committeeCandidateQuery($tender)->pluck('id');
+        $alreadyAppointed = Jawatankuasa::query()
+            ->where('tender_id', $tender->id)
+            ->whereIn('user_id', $userIds)
+            ->pluck('user_id');
+
+        $rejected = $userIds->diff($allowedIds->merge($alreadyAppointed)->unique());
+        if ($rejected->isNotEmpty()) {
+            throw ValidationException::withMessages([
+                'rows' => 'Nama yang dipilih mestilah daripada agensi tender, pemilik projek atau urusetia yang terlibat.',
+            ]);
+        }
     }
 
     private function getSupportedJenis(?Tender $tender = null): array

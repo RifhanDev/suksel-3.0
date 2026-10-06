@@ -6,6 +6,7 @@
 	$ppLocked = $tabsReadOnly || $ppSubmitted;
 	$ppSyorOptions = \App\Models\PerakuanJabatanPengesyoranPembekalItem::SYOR_OPTIONS;
 	$showHargaBidaan = (bool) ($tender->is_ebidding ?? false);
+	$showBidPriceDiff = $showHargaBidaan && (int) ($tender->ebidding_process_stage_id ?? 0) >= 3;
 	$ppEmptyColspan = (!empty($isKerja) ? 10 : 11) + ($showHargaBidaan ? 1 : 0);
 	$ppSingleDisyorkanOnly = $ppSingleDisyorkanOnly ?? false;
 @endphp
@@ -120,6 +121,18 @@
 		<div class="pp-section-bar rounded-top">SENARAI PEMBEKAL</div>
 		<div class="border border-top-0 border-secondary-subtle p-3 rounded-bottom mb-4"
 			style="border-color:#dde2ea!important;">
+			@if ($showBidPriceDiff)
+				<div class="d-flex flex-wrap gap-3 small mb-2">
+					<span class="d-inline-flex align-items-center gap-1">
+						<span class="rounded-circle d-inline-block" style="width:10px;height:10px;background:#198754;"></span>
+						<span class="text-success fw-semibold">Hijau</span> = harga baharu (vendor key-in)
+					</span>
+					<span class="d-inline-flex align-items-center gap-1">
+						<span class="rounded-circle d-inline-block" style="width:10px;height:10px;background:#dc3545;"></span>
+						<span class="text-danger fw-semibold">Merah</span> = harga lama (tiada bidaan baharu)
+					</span>
+				</div>
+			@endif
 			<div class="table-responsive pp-table-wrap">
 				<table class="table table-bordered align-middle mb-0 text-center" id="ppPembekalTable">
 					<thead>
@@ -160,18 +173,30 @@
 									{{ $row['harga_tawaran'] !== null ? number_format((float) $row['harga_tawaran'], 2) : '—' }}
 								</td>
 								@if ($showHargaBidaan)
-									<td>
+									@php
+										$isNewBid = $showBidPriceDiff && !empty($row['is_new_bid']);
+										$isOldBid = $showBidPriceDiff && empty($row['is_new_bid']);
+										$bidCellClass = $isNewBid ? 'text-success fw-semibold' : ($isOldBid ? 'text-danger fw-semibold' : '');
+										$bidCellBg = $isNewBid ? '#e8f7ef' : ($isOldBid ? '#fdebec' : '');
+										$bidLabel = $isNewBid ? 'Harga baharu' : ($isOldBid ? 'Harga lama' : null);
+									@endphp
+									<td class="{{ $bidCellClass }}" @if ($bidCellBg) style="background:{{ $bidCellBg }};" @endif>
 										<div class="d-flex align-items-center justify-content-center gap-1">
-											<span>
-												{{ isset($row['harga_bidaan']) && $row['harga_bidaan'] !== null
-												    ? number_format((float) $row['harga_bidaan'], 2)
-												    : '—' }}
-											</span>
+											<div>
+												<div>
+													{{ isset($row['harga_bidaan']) && $row['harga_bidaan'] !== null
+													    ? number_format((float) $row['harga_bidaan'], 2)
+													    : '—' }}
+												</div>
+												@if ($bidLabel)
+													<div class="small fw-normal">{{ $bidLabel }}</div>
+												@endif
+											</div>
 											@include('components.bid-spec-breakdown', [
 												'items' => $row['spec_items'] ?? [],
 												'vendorName' => $row['vendor_name'] ?? null,
 												'vendorId' => $row['vendor_id'] ?? null,
-												'showPriceDiff' => (int) ($tender->ebidding_process_stage_id ?? 0) >= 3,
+												'showPriceDiff' => $showBidPriceDiff,
 												'modalSuffix' => 'pj-' . ($row['vendor_id'] ?? uniqid()),
 												'title' => 'Item Spesifikasi',
 											])
