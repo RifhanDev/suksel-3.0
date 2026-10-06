@@ -474,11 +474,14 @@
             var SUBMIT_URL      = '{{ route('senaraiKewanganBekalan.submit', $tender->uuid) }}';
             var UPLOAD_FILE_URL = @json(route('senaraiKewanganBekalan.uploadFile', $tender->uuid));
             var DELETE_FILE_URL = @json(route('senaraiKewanganBekalan.deleteFile', ':uuid'));
-            var CHECKLIST_FILE_URL = @json(route('tenderChecklist.download', [
-                'tender' => $tender->id,
-                'section' => 'financial',
-                'fileUuid' => '__FILE_UUID__',
-            ]));
+            @php
+                $checklistFileUrl = route('tenderChecklist.download', [
+                    'tender' => $tender->id,
+                    'section' => 'financial',
+                    'fileUuid' => '__FILE_UUID__',
+                ]);
+            @endphp
+            var CHECKLIST_FILE_URL = @json($checklistFileUrl);
             function checklistFileUrl(fileUuid) {
                 return CHECKLIST_FILE_URL.replace('__FILE_UUID__', encodeURIComponent(fileUuid || ''));
             }

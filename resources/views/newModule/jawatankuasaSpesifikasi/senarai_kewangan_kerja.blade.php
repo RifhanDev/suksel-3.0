@@ -437,11 +437,14 @@ $(document).ready(function () {
     const AFTER_SPEC_URL = @json($afterSpecificationUrl ?? route('pengurusanSpesifikasi'));
     const UPLOAD_URL   = @json(route('senaraiKewanganKerja.uploadFile', $tender->uuid));
     const DELETE_BASE  = @json(url('/senarai-kewangan-kerja/fail'));
-    const CHECKLIST_FILE_URL = @json(route('tenderChecklist.download', [
-        'tender' => $tender->id,
-        'section' => 'kewangan_kerja',
-        'fileUuid' => '__FILE_UUID__',
-    ]));
+    @php
+        $checklistFileUrl = route('tenderChecklist.download', [
+            'tender' => $tender->id,
+            'section' => 'kewangan_kerja',
+            'fileUuid' => '__FILE_UUID__',
+        ]);
+    @endphp
+    const CHECKLIST_FILE_URL = @json($checklistFileUrl);
     function checklistFileUrl(fileUuid) {
         return CHECKLIST_FILE_URL.replace('__FILE_UUID__', encodeURIComponent(fileUuid || ''));
     }

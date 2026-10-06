@@ -560,11 +560,14 @@
             var SUBMIT_URL      = @json(route('senaraiTeknikal.submit', $tender->uuid));
             var UPLOAD_FILE_URL = @json(route('senaraiTeknikal.uploadFile', $tender->uuid));
             var DELETE_FILE_URL = @json(route('senaraiTeknikal.deleteFile', ':uuid'));
-            var CHECKLIST_FILE_URL = @json(route('tenderChecklist.download', [
-                'tender' => $tender->id,
-                'section' => 'technical',
-                'fileUuid' => '__FILE_UUID__',
-            ]));
+            @php
+                $checklistFileUrl = route('tenderChecklist.download', [
+                    'tender' => $tender->id,
+                    'section' => 'technical',
+                    'fileUuid' => '__FILE_UUID__',
+                ]);
+            @endphp
+            var CHECKLIST_FILE_URL = @json($checklistFileUrl);
             function checklistFileUrl(fileUuid) {
                 return CHECKLIST_FILE_URL.replace('__FILE_UUID__', encodeURIComponent(fileUuid || ''));
             }
