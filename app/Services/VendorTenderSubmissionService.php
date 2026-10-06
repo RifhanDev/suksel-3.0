@@ -46,6 +46,15 @@ class VendorTenderSubmissionService
             ];
         }
 
+        $blockedReason = $this->submissionBlockedReason($tender);
+        if ($blockedReason !== null) {
+            return [
+                'ready' => false,
+                'errors' => [$blockedReason],
+                'purchase' => $purchase,
+            ];
+        }
+
         $errors = $this->collectValidationErrors($tender, $vendorId);
 
         return [
@@ -108,7 +117,7 @@ class VendorTenderSubmissionService
             return;
         }
 
-        if ((int) ($tender->status_process_id ?? 0) !== TenderProcessStatus::PENYEDIAAN_IKLAN) {
+        if ((int) ($tender->status_process_id ?? 0) >= TenderProcessStatus::HANTAR_DOKUMEN_SYARIKAT) {
             return;
         }
 
@@ -121,25 +130,39 @@ class VendorTenderSubmissionService
      * hantar jemputan mesyuarat) sementara tempoh iklan masih terbuka; company lain
      * mesti kekal boleh hantar. Tempoh dikuatkuasakan oleh
      * vendorDokumenWindowBlockedReason() dalam readiness(), dipanggil sebelum ini.
+     *
+     * Siar (approver_id) membuka penghantaran walaupun status masih di bawah 5.
+     * Aliran siar lama tidak menaikkan status_process_id.
      */
     protected function assertTenderAcceptsVendorSubmission(Tender $tender): void
     {
-        $status = (int) ($tender->status_process_id ?? 0);
+        $reason = $this->submissionBlockedReason($tender);
 
-        if ($status < TenderProcessStatus::PENYEDIAAN_IKLAN) {
+        if ($reason !== null) {
             throw ValidationException::withMessages([
-                'tender' => 'Tender belum dibuka untuk penghantaran tawaran.',
+                'tender' => $reason,
             ]);
         }
+    }
+
+    protected function submissionBlockedReason(Tender $tender): ?string
+    {
+        $status = (int) ($tender->status_process_id ?? 0);
 
         // Jaring keselamatan: menjelang Penilaian Pembuka, jawatankuasa sudah membuka
         // tawaran — tiada penghantaran baharu boleh diterima walau apa pun tarikh.
         // Perlu kerana isWithinVendorDokumenWindow() gagal-terbuka bila tiada tarikh.
         if ($status >= TenderProcessStatus::PENILAIAN_PEMBUKA) {
-            throw ValidationException::withMessages([
-                'tender' => 'Tender telah masuk fasa penilaian. Penghantaran tawaran telah ditutup.',
-            ]);
+            return 'Tender telah masuk fasa penilaian. Penghantaran tawaran telah ditutup.';
         }
+
+        $opened = $status >= TenderProcessStatus::PENYEDIAAN_IKLAN || ! empty($tender->approver_id);
+
+        if (! $opened) {
+            return 'Tender belum dibuka untuk penghantaran tawaran.';
+        }
+
+        return null;
     }
 
     public function assertEditable(Tender $tender, int $vendorId): void
