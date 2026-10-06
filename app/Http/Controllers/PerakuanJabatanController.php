@@ -429,36 +429,20 @@ class PerakuanJabatanController extends Controller
     private function ebiddingWindowHasEnded(Tender $tender): bool
     {
         $schedule = EbiddingJadualBidaan::query()->where('tender_id', $tender->id)->first();
-        if (
-            ! $schedule
-            || ! $schedule->tarikh_bidaan_mula
-            || ! $schedule->masa_bidaan_mula
-            || ! $schedule->tarikh_bidaan_tamat
-            || ! $schedule->masa_bidaan_tamat
-        ) {
-            return false;
-        }
 
-        $endAt = Carbon::parse(
-            $schedule->tarikh_bidaan_tamat->format('Y-m-d') . ' ' . $schedule->masa_bidaan_tamat
-        );
-
-        return Carbon::now()->greaterThan($endAt);
+        return (bool) ($schedule?->windowState()['has_ended'] ?? false);
     }
 
     private function ebiddingWindowEndAt(Tender $tender): ?Carbon
     {
         $schedule = EbiddingJadualBidaan::query()->where('tender_id', $tender->id)->first();
-        if (
-            ! $schedule
-            || ! $schedule->tarikh_bidaan_tamat
-            || ! $schedule->masa_bidaan_tamat
-        ) {
+        if (! $schedule) {
             return null;
         }
 
-        return Carbon::parse(
-            $schedule->tarikh_bidaan_tamat->format('Y-m-d') . ' ' . $schedule->masa_bidaan_tamat
+        return EbiddingJadualBidaan::combine(
+            $schedule->getRawOriginal('tarikh_bidaan_tamat'),
+            $schedule->getRawOriginal('masa_bidaan_tamat')
         );
     }
 

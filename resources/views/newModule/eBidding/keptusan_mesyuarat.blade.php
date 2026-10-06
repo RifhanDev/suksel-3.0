@@ -611,7 +611,7 @@
 							<div class="col-md-3">
 								<label class="form-label">Masa Bidaan Mula<span class="text-danger">*</span></label>
 								<input type="time" class="form-control" id="eb_jadual_masa_mula"
-									value="{{ old('masa_bidaan_mula', optional($jadualBidaan)->masa_bidaan_mula) }}">
+									value="{{ old('masa_bidaan_mula', optional($jadualBidaan)->timeForInput('masa_bidaan_mula')) }}">
 							</div>
 							<div class="col-md-3">
 								<label class="form-label">Tarikh Bidaan Tamat<span class="text-danger">*</span></label>
@@ -621,7 +621,7 @@
 							<div class="col-md-3">
 								<label class="form-label">Masa Bidaan Tamat<span class="text-danger">*</span></label>
 								<input type="time" class="form-control" id="eb_jadual_masa_tamat"
-									value="{{ old('masa_bidaan_tamat', optional($jadualBidaan)->masa_bidaan_tamat) }}">
+									value="{{ old('masa_bidaan_tamat', optional($jadualBidaan)->timeForInput('masa_bidaan_tamat')) }}">
 							</div>
 						</div>
 

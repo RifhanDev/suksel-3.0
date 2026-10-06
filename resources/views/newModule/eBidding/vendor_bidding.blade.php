@@ -30,7 +30,7 @@
 			</div>
 			<div class="col-md-3">
 				<label class="form-label small">Masa Mula Bidaan</label>
-				<input type="text" class="form-control form-control-sm" value="{{ $jadualBidaan->masa_bidaan_mula }}" readonly>
+				<input type="text" class="form-control form-control-sm" value="{{ $jadualBidaan->timeForInput('masa_bidaan_mula') }}" readonly>
 			</div>
 			<div class="col-md-3">
 				<label class="form-label small">Tarikh Tamat Bidaan</label>
@@ -39,7 +39,7 @@
 			</div>
 			<div class="col-md-3">
 				<label class="form-label small">Masa Tamat Bidaan</label>
-				<input type="text" class="form-control form-control-sm" value="{{ $jadualBidaan->masa_bidaan_tamat }}" readonly>
+				<input type="text" class="form-control form-control-sm" value="{{ $jadualBidaan->timeForInput('masa_bidaan_tamat') }}" readonly>
 			</div>
 		</div>
 
