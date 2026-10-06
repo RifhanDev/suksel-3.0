@@ -1494,6 +1494,7 @@
 			$(function() {
 				var READINESS_URL = @json(route('tenders.vendorSubmission.readiness', $tender->id));
 				var SUBMIT_URL = @json(route('tenders.vendorSubmission.submit', $tender->id));
+				var TENDER_URL = @json(route('tenders.show', $tender->id));
 				var CSRF = @json(csrf_token());
 				var warningModal = document.getElementById('vendorSubmissionWarningModal');
 				var warningModalInstance = warningModal && typeof bootstrap !== 'undefined' ?
@@ -1550,13 +1551,15 @@
 					$.ajax({
 							url: SUBMIT_URL,
 							type: 'POST',
+							dataType: 'json',
 							headers: {
-								'X-CSRF-TOKEN': CSRF
+								'X-CSRF-TOKEN': CSRF,
+								'Accept': 'application/json'
 							},
 						})
 						.done(function(res) {
 							if (res && res.success) {
-								window.location.reload();
+								window.location.href = TENDER_URL;
 								return;
 							}
 							$btn.prop('disabled', false);
