@@ -34,6 +34,12 @@
 		<span class="text-muted small">Perakuan Jabatan</span>
 	</div>
 
+	@include('newModule.eBidding.partials.bidding_countdown', [
+		'window' => $biddingWindow ?? [],
+		'countdownId' => 'pj-bid-countdown',
+		'wrapExtraClass' => 'mb-3',
+	])
+
 	<!-- HEADER -->
 	<div class="tender-header-card mb-4">
 
@@ -181,4 +187,12 @@
 @endsection
 
 @section('scripts')
+	@include('newModule.eBidding.partials.bidding_countdown_script')
+	<script type="text/javascript">
+		$(document).ready(function() {
+			if (typeof window.initEbBidCountdowns === 'function') {
+				window.initEbBidCountdowns();
+			}
+		});
+	</script>
 @endsection

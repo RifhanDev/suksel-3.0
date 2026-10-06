@@ -323,11 +323,9 @@ class EbiddingController extends Controller
             ? ['pengesyoran', 'taklimat', 'jadual-bidaan']
             : ['penyediaan', 'taklimat', 'pemilihan', 'pengesyoran', 'jadual-bidaan', 'keputusan'];
 
-        // Red/green harga baharu vs lama: only after Vendor bidding stage is finished
-        // (Agency Semakan / Admin SULP). Never on earlier statuses — Perakuan Jabatan
-        // and JP Keputusan Mesyuarat stay plain (no colour styling there).
-        $showBidPriceDiff = (bool) $tender->is_ebidding
-            && $currentStage >= self::STAGE_AGENCY_ADMIN_REVIEW;
+        // Green/red harga baharu vs lama belongs on Perakuan Jabatan and
+        // Jawatankuasa Perolehan after bidding has finished, not on this page.
+        $showBidPriceDiff = false;
 
         return view('newModule.eBidding.keptusan_mesyuarat', compact(
             'tender',

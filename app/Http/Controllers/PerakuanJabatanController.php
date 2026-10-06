@@ -133,6 +133,14 @@ class PerakuanJabatanController extends Controller
 
         $tabsReadOnly = in_array($pjMode, ['jadual', 'laporan'], true);
         $biddingEndedAt = $pjMode === 'laporan' ? $this->ebiddingWindowEndAt($tender) : null;
+        // Live countdown only while Perakuan is holding the open window.
+        // After it ends this page switches to laporan, and JP only returns once bidding is over.
+        $biddingWindow = ($pjMode === 'jadual' && $jadualBidaan)
+            ? $jadualBidaan->windowState()
+            : EbiddingJadualBidaan::emptyWindow();
+        if (empty($biddingWindow['has_schedule']) || ! empty($biddingWindow['has_ended'])) {
+            $biddingWindow = EbiddingJadualBidaan::emptyWindow();
+        }
         $ppSingleDisyorkanOnly = $this->pengesyoranRequiresSingleDisyorkan($tender);
 
         return view(
@@ -151,6 +159,7 @@ class PerakuanJabatanController extends Controller
                 'tabsReadOnly',
                 'isKerja',
                 'biddingEndedAt',
+                'biddingWindow',
                 'ppSingleDisyorkanOnly'
             )
         );
@@ -598,12 +607,16 @@ class PerakuanJabatanController extends Controller
 
             $hargaBidaan = null;
             $specItems = [];
+            $isNewBid = false;
             if ($isEbidding) {
                 $specItems = BidSpecBreakdown::itemsForVendor($specBreakdown, $vendorId);
                 if ($specItems !== []) {
                     $totals = BidSpecBreakdown::totalsForItems($specItems);
                     $harga = $totals['previous'];
                     $hargaBidaan = $totals['bid'];
+                    $newCount = collect($specItems)->where('is_new_bid', true)->count();
+                    $oldCount = collect($specItems)->where('is_new_bid', false)->count();
+                    $isNewBid = $newCount > 0 && $oldCount === 0;
                 } elseif (array_key_exists($vendorId, $bidTotalsByVendor)) {
                     $hargaBidaan = (float) $bidTotalsByVendor[$vendorId];
                 } elseif ($harga !== null) {
@@ -618,6 +631,7 @@ class PerakuanJabatanController extends Controller
                 'status_bumiputra' => $bumi ? 'Ya' : 'Tidak',
                 'harga_tawaran' => $harga !== null ? (float) $harga : null,
                 'harga_bidaan' => $hargaBidaan,
+                'is_new_bid' => $isNewBid,
                 'spec_items' => $specItems,
                 'skor_teknikal' => $score['skor'] ?? null,
                 'skor_keseluruhan' => $isKerja ? ($score['skor'] ?? null) : null,
