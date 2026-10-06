@@ -10,7 +10,11 @@
 		}
 
 		function startOneCountdown($countdown, options) {
-			const endsAtMs = Date.parse($countdown.data('ends-at'));
+			const serverOpen = String($countdown.attr('data-server-open') || '') === '1';
+			const endsMsAttr = parseInt($countdown.attr('data-ends-ms'), 10);
+			const endsAtMs = Number.isFinite(endsMsAttr) && endsMsAttr > 0
+				? endsMsAttr
+				: Date.parse($countdown.attr('data-ends-at'));
 			if (Number.isNaN(endsAtMs)) {
 				return;
 			}
@@ -20,6 +24,7 @@
 			const $wrap = $('#' + wrapId);
 			const $label = $('#' + labelId);
 			let endedFired = false;
+			let sawTimeRemaining = false;
 
 			function onEnded() {
 				if (endedFired) {
@@ -40,9 +45,16 @@
 			function tick() {
 				const remaining = endsAtMs - Date.now();
 				if (remaining <= 0) {
+					// Trust the server clock when the page was rendered inside the window.
+					// A bad client parse used to show "Tempoh bidaan telah tamat" immediately.
+					if (serverOpen && !sawTimeRemaining) {
+						return;
+					}
 					onEnded();
 					return;
 				}
+
+				sawTimeRemaining = true;
 
 				const totalSec = Math.floor(remaining / 1000);
 				const days = Math.floor(totalSec / 86400);

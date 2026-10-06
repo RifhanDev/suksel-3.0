@@ -82,12 +82,6 @@
 		<span class="text-muted small fw-semibold text-dark">Keputusan Mesyuarat</span>
 	</div>
 
-	@include('newModule.eBidding.partials.bidding_countdown', [
-		'window' => $window ?? [],
-		'countdownId' => 'agency-bid-countdown',
-		'wrapExtraClass' => 'mb-3',
-	])
-
 	<div id="pageDetail">
 
 		{{-- HEADER --}}
@@ -611,7 +605,7 @@
 							<div class="col-md-3">
 								<label class="form-label">Masa Bidaan Mula<span class="text-danger">*</span></label>
 								<input type="time" class="form-control" id="eb_jadual_masa_mula"
-									value="{{ old('masa_bidaan_mula', optional($jadualBidaan)->masa_bidaan_mula) }}">
+									value="{{ old('masa_bidaan_mula', optional($jadualBidaan)->timeForInput('masa_bidaan_mula')) }}">
 							</div>
 							<div class="col-md-3">
 								<label class="form-label">Tarikh Bidaan Tamat<span class="text-danger">*</span></label>
@@ -621,7 +615,7 @@
 							<div class="col-md-3">
 								<label class="form-label">Masa Bidaan Tamat<span class="text-danger">*</span></label>
 								<input type="time" class="form-control" id="eb_jadual_masa_tamat"
-									value="{{ old('masa_bidaan_tamat', optional($jadualBidaan)->masa_bidaan_tamat) }}">
+									value="{{ old('masa_bidaan_tamat', optional($jadualBidaan)->timeForInput('masa_bidaan_tamat')) }}">
 							</div>
 						</div>
 
@@ -767,13 +761,8 @@
 @endsection
 
 @section('scripts')
-	@include('newModule.eBidding.partials.bidding_countdown_script')
 	<script type="text/javascript">
 		$(document).ready(function() {
-			if (typeof window.initEbBidCountdowns === 'function') {
-				window.initEbBidCountdowns();
-			}
-
 			const isAgencyReadOnly = @json(((int) ($currentStage ?? 1)) === 2);
 			const tenderId = @json(optional($tender)->id);
 			const taklimatSaveUrl = @json(optional($tender)->id ? route('eBidding.kertasTaklimat.simpan', ['id' => $tender->id]) : '');

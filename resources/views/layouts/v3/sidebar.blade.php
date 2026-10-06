@@ -578,49 +578,6 @@
 
 				@endif
 
-				@if ($user->canAccessMenu('Bidding:list'))
-				<!-- Menu: Bidaan -->
-				@php
-					$isBidaanMenuActive = request()->is('eBidding*') || request()->is('keputusan-mesyuarat*');
-				@endphp
-				<li class="nav-item">
-					<a class="sidebar-link {{ $isBidaanMenuActive ? '' : 'collapsed' }}" data-bs-toggle="collapse"
-						data-bs-target="#menuBidaan" aria-expanded="{{ $isBidaanMenuActive ? 'true' : 'false' }}"
-						style="cursor: pointer;">
-						<svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" viewBox="0 0 24 24" fill="none"
-							stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-							<path d="m14.5 12.5-8 8a2.119 2.119 0 0 1-3-3l8-8"/>
-							<path d="m16 16 6-6"/>
-							<path d="m8 8 6-6"/>
-							<path d="m9 7 8 8"/>
-							<path d="m21 11-8-8"/>
-						</svg>
-						<span class="nav-text">Bidaan</span>
-						<svg xmlns="http://www.w3.org/2000/svg" class="nav-arrow" viewBox="0 0 24 24" fill="none"
-							stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-							<polyline points="9 18 15 12 9 6"></polyline>
-						</svg>
-					</a>
-					<div class="collapse {{ $isBidaanMenuActive ? 'show' : '' }}" id="menuBidaan">
-						<ul class="sidebar-submenu">
-							<li>
-								<a class="submenu-item" href="#">
-									<div class="submenu-icon"></div>
-									<span>Perakuan Jabatan</span>
-								</a>
-							</li>
-							<li>
-								<a class="submenu-item" href="{{ route('eBidding.index') }}">
-									<div class="submenu-icon" style="{{ $isBidaanMenuActive ? 'background-color: var(--sg-yellow); transform: scale(1.2); box-shadow: 0 0 5px var(--sg-yellow);' : '' }}"></div>
-									<span class="{{ $isBidaanMenuActive ? 'text-white' : '' }}">Keputusan Mesyuarat</span>
-								</a>
-							</li>
-						</ul>
-					</div>
-				</li>
-
-				@endif
-
 				<!-- 2. PERMINTAAN KEMASKINI -->
 				@if (App\CodeRequest::canList())
 					@php

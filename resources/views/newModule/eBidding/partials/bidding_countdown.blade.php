@@ -17,6 +17,8 @@
 		<div id="{{ $countdownId }}"
 			class="eb-bid-countdown d-flex gap-2 text-center"
 			data-ends-at="{{ $endsAtIso }}"
+			data-ends-ms="{{ $window['ends_at_ms'] ?? '' }}"
+			data-server-open="{{ empty($window['is_open']) ? '0' : '1' }}"
 			aria-live="polite">
 			<div class="px-2 py-1 rounded bg-white border" style="min-width:3.25rem;">
 				<div class="fs-5 fw-bold lh-1" data-unit="days">0</div>

@@ -393,9 +393,22 @@
 						dijemput
 						untuk menyertai bidaan.</div>
 					@php $showHargaBidaan = (bool) optional($tender)->is_ebidding; @endphp
+					@if (!empty($showBidPriceDiff))
+						<div class="d-flex flex-wrap gap-3 small mb-2">
+							<span class="d-inline-flex align-items-center gap-1">
+								<span class="rounded-circle d-inline-block" style="width:10px;height:10px;background:#198754;"></span>
+								<span class="text-success fw-semibold">Hijau</span> = harga baharu (vendor key-in)
+							</span>
+							<span class="d-inline-flex align-items-center gap-1">
+								<span class="rounded-circle d-inline-block" style="width:10px;height:10px;background:#dc3545;"></span>
+								<span class="text-danger fw-semibold">Merah</span> = harga lama (tiada bidaan baharu)
+							</span>
+						</div>
+					@endif
 					<div class="table-responsive mb-3">
 						<table class="table table-bordered table-sm align-middle mb-0" id="mp-pembekal-table"
-							data-show-harga-bidaan="{{ $showHargaBidaan ? '1' : '0' }}">
+							data-show-harga-bidaan="{{ $showHargaBidaan ? '1' : '0' }}"
+							data-show-price-diff="{{ !empty($showBidPriceDiff) ? '1' : '0' }}">
 							<thead class="text-white text-center" style="background-color:#2d3e84;">
 								<tr>
 									<th>Bil</th>
@@ -929,6 +942,7 @@
 					}
 					const showHargaBidaan = $('#mp-pembekal-table').data('show-harga-bidaan') == 1 ||
 						$('#mp-pembekal-table').attr('data-show-harga-bidaan') === '1';
+					const showPriceDiff = $('#mp-pembekal-table').attr('data-show-price-diff') === '1';
 					const kaedah = ($('#mp_kaedah_memuktamadkan').val() || '').toString();
 					const showSelection = kaedah === 'Pemilihan Terus' || kaedah ===
 						'Pemilihan Lebih Daripada Satu Syarikat';
@@ -964,8 +978,14 @@
 										'<circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line>' +
 										'</svg></button>') :
 									'';
-								return '<td class="text-end"><div class="d-flex align-items-center justify-content-end gap-1">' +
-									'<span>' + escapeHtml(mpFormatMoney(harga)) + '</span>' +
+								const isNew = showPriceDiff && (p.is_new_bid === true || p.is_new_bid === 1 || p.is_new_bid === '1');
+								const isOld = showPriceDiff && !isNew;
+								const cellClass = isNew ? 'text-success fw-semibold' : (isOld ? 'text-danger fw-semibold' : 'text-end');
+								const cellStyle = isNew ? ' style="background:#e8f7ef;"' : (isOld ? ' style="background:#fdebec;"' : '');
+								const label = isNew ? 'Harga baharu' : (isOld ? 'Harga lama' : '');
+								const labelHtml = label ? '<div class="small fw-normal">' + label + '</div>' : '';
+								return '<td class="' + cellClass + '"' + cellStyle + '><div class="d-flex align-items-center justify-content-end gap-1">' +
+									'<div><div>' + escapeHtml(mpFormatMoney(harga)) + '</div>' + labelHtml + '</div>' +
 									infoBtn +
 									'</div></td>';
 							})() :
