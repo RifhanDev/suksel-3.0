@@ -92,6 +92,11 @@ final class TenderProcessStatus
         return self::PENILAIAN_TEKNIKAL;
     }
 
+    public static function penilaianKewanganNextStatus(): int
+    {
+        return self::PENILAIAN_KEWANGAN;
+    }
+
     public static function perakuanJabatanListStatus(): int
     {
         return self::PENILAIAN_KEWANGAN;
