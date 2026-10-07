@@ -44,8 +44,9 @@ class PenyataBankController extends Controller
             $vendorPayload = $this->loadVendorFormPayload($tender, 'penyata_bank');
             $penyataData = $this->penyataBankPersistence->mergeVendorPayload(
                 $localData ?? $penyataData,
-                $vendorPayload
-            ) ?? $localData ?? $penyataData;
+                $vendorPayload,
+                true
+            ) ?? $vendorPayload;
         } elseif (empty($penyataData)) {
             $penyataData = $localData;
         }
