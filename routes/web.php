@@ -218,6 +218,7 @@ Route::get('tenders/{id}/vendors', [TendersController::class, 'vendors'])->name(
 Route::post('tenders/{id}/exception', [TendersController::class, 'exception'])->name('tenders.exception');
 
 Route::middleware(['auth'])->group(function () {
+	Route::get('tenders/{tender}/iklan-dokumen/{dokumen}/download', [TendersController::class, 'downloadIklanDokumen'])->name('tenderIklanDokumen.download');
 	Route::get('tenders/{tender}/vendor-submission/readiness', [\App\Http\Controllers\VendorTenderSubmissionController::class, 'readiness'])->name('tenders.vendorSubmission.readiness');
 	Route::get('tenders/{tender}/vendor-submission', [\App\Http\Controllers\VendorTenderSubmissionController::class, 'show'])->name('tenders.vendorSubmission.show');
 	Route::post('tenders/{tender}/vendor-submission', [\App\Http\Controllers\VendorTenderSubmissionController::class, 'submit'])->name('tenders.vendorSubmission.submit');
@@ -666,8 +667,8 @@ Route::middleware(['auth'])->group(function () {
 	// Get type of perolehan by kategori jenis perolehan
 	Route::get('/ref/type-of-perolehan-by-kategori', [RefKategoriJenisPerolehanController::class, 'getTypeOfPerolehanByKategori'])->name('getTypeOfPerolehanByKategori');
 
-	Route::resource('vendors', VendorsController::class);
 	Route::get('vendors/select', [VendorsController::class, 'select']);
+	Route::resource('vendors', VendorsController::class);
 	Route::get('vendors/new', [VendorsController::class, 'pendingRegistrationIndex']);
 	Route::get('vendors/approval', [VendorsController::class, 'approvalNew1Index']);
 	Route::get('vendors/changes', [VendorsController::class, 'approvalEdit1Index']);
@@ -718,6 +719,7 @@ Route::middleware(['auth'])->group(function () {
 	Route::get('tenders/{id}/buy', [TendersController::class, 'buy'])->name('tenders.buy');
 	Route::get('tenders/{tender}/receipt/{id}', [TendersController::class, 'receipt'])->name('tenders.receipt');
 	Route::get('tenders/{tender}/document/{id}', [TendersController::class, 'document'])->name('tenders.document');
+	Route::post('tenders/{id}/vendors/selesai', [TendersController::class, 'markSelesai'])->name('tenders.vendors.selesai');
 	Route::post('tenders/{id}/vendors', [TendersController::class, 'updateVendors']);
 	Route::post('tenders/{id}/invites', [TendersController::class, 'updateInvites']);
 	Route::post('tenders/{id}/vendor', [TendersController::class, 'addVendor'])->name('tenders.addVendor');

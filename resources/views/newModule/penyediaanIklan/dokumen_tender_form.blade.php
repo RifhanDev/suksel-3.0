@@ -1,4 +1,7 @@
 <!-- SECTION: SENARAI DOKUMEN -->
+@if ($tender->usesIklanDokumen())
+    @include('newModule.penyediaanIklan.iklan_dokumen_form')
+@else
 <div class="content-card mb-4 p-0">
 
     <div class="review-section-header">
@@ -21,4 +24,5 @@
     ])
 
 </div>
+@endif
 <!-- End Senarai Dokumen -->

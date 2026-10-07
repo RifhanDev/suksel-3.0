@@ -87,6 +87,7 @@ class Tender extends Model
 		'only_bumiputera',
 		'type',
 		'only_advertise',
+		'kaedah_dokumen_id',
 		'mof_cidb_rule',
 		'district_list_rule',
 		// New fields for version 3.0
@@ -523,6 +524,25 @@ class Tender extends Model
 	public function kaedahPerolehan()
 	{
 		return $this->belongsTo(\App\Models\Ref\RefKaedahPerolehan::class, 'kaedah_perolehan_id');
+	}
+
+	public function kaedahDokumen()
+	{
+		return $this->belongsTo(\App\Models\Ref\RefKaedahDokumen::class, 'kaedah_dokumen_id');
+	}
+
+	public function iklanDokumens()
+	{
+		return $this->hasMany(\App\Models\TenderIklanDokumen::class, 'tender_id')->orderBy('sort_order')->orderBy('id');
+	}
+
+	public function usesIklanDokumen(): bool
+	{
+		if (! $this->relationLoaded('kaedahDokumen')) {
+			$this->load('kaedahDokumen');
+		}
+
+		return (bool) $this->kaedahDokumen?->skips_to_penyediaan_iklan;
 	}
 
 	public const LEMBAGA_ANGGARAN_THRESHOLD = 5000000.0;

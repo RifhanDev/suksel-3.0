@@ -641,77 +641,31 @@
                         <div class="col-12">
                             <label class="form-label">Kaedah Bayaran / Perolehan Dokumen<span
                                     class="text-danger">*</span></label>
-                            <div class="row row-cols-1 row-cols-md-2 row-cols-xxl-4 g-3">
-                                <div class="col">
-                                    <input type="radio" class="btn-check" name="kaedah_dokumen" id="kd_online"
-                                        value="online" checked>
-                                    <label class="payment-method-card d-block h-100 p-3 border rounded-3"
-                                        for="kd_online">
-                                        <span class="d-flex align-items-center gap-2 mb-2">
-                                            <span
-                                                class="payment-method-radio rounded-circle border border-2 flex-shrink-0 position-relative"></span>
-                                            <span class="payment-method-title fw-bold small">Bayaran Dokumen Secara
-                                                Online</span>
-                                        </span>
-                                        <span class="payment-method-body d-block text-muted lh-base">Syarikat membuat
-                                            bayaran dokumen melalui Sistem Tender Online Selangor. Dokumen boleh dimuat
-                                            turun melalui sistem atau diambil di pejabat/kaunter agensi mengikut Syarat
-                                            Tender.</span>
-                                    </label>
-                                </div>
-
-                                <div class="col">
-                                    <input type="radio" class="btn-check" name="kaedah_dokumen"
-                                        id="kd_online_penilaian" value="online_penilaian">
-                                    <label class="payment-method-card d-block h-100 p-3 border rounded-3"
-                                        for="kd_online_penilaian">
-                                        <span class="d-flex align-items-center gap-2 mb-2">
-                                            <span
-                                                class="payment-method-radio rounded-circle border border-2 flex-shrink-0 position-relative"></span>
-                                            <span class="payment-method-title fw-bold small">Bayaran Dokumen dan
-                                                Penilaian secara online</span>
-                                        </span>
-                                        <span class="payment-method-body d-block text-muted lh-base">Syarikat membayar
-                                            dokumen, kemudian mengisi dan menghantar dokumen penilaian melalui Sistem
-                                            Tender Online Selangor.</span>
-                                    </label>
-                                </div>
-
-                                <div class="col">
-                                    <input type="radio" class="btn-check" name="kaedah_dokumen" id="kd_manual"
-                                        value="manual">
-                                    <label class="payment-method-card d-block h-100 p-3 border rounded-3"
-                                        for="kd_manual">
-                                        <span class="d-flex align-items-center gap-2 mb-2">
-                                            <span
-                                                class="payment-method-radio rounded-circle border border-2 flex-shrink-0 position-relative"></span>
-                                            <span class="payment-method-title fw-bold small">Pembelian & Bayaran Manual
-                                                di Agensi (Iklan Sahaja)</span>
-                                        </span>
-                                        <span class="payment-method-body d-block text-muted lh-base">Sistem Tender
-                                            Online Selangor hanya digunakan untuk paparan iklan. Syarikat tidak boleh
-                                            membuat pembelian atau bayaran dokumen melalui sistem.
-                                            <span class="d-block mt-2 fw-bold text-danger">PERHATIAN: Jika pilihan ini
-                                                dipilih, fungsi pembelian dan pembayaran dokumen melalui Sistem Tender
-                                                Online Selangor tidak akan disediakan kepada syarikat.</span>
-                                        </span>
-                                    </label>
-                                </div>
-
-                                <div class="col">
-                                    <input type="radio" class="btn-check" name="kaedah_dokumen" id="kd_percuma"
-                                        value="percuma">
-                                    <label class="payment-method-card d-block h-100 p-3 border rounded-3"
-                                        for="kd_percuma">
-                                        <span class="d-flex align-items-center gap-2 mb-2">
-                                            <span
-                                                class="payment-method-radio rounded-circle border border-2 flex-shrink-0 position-relative"></span>
-                                            <span class="payment-method-title fw-bold small">Dokumen Percuma</span>
-                                        </span>
-                                        <span class="payment-method-body d-block text-muted lh-base">Tiada bayaran
-                                            diperlukan. Harga dokumen ditetapkan kepada RM0.00.</span>
-                                    </label>
-                                </div>
+                            <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3">
+                                @php
+                                    $defaultKaedahId = $kaedahDokumen->firstWhere('code', 'online')?->id;
+                                    $selectedKaedahId = (string) old('kaedah_dokumen_id', $defaultKaedahId);
+                                @endphp
+                                @foreach ($kaedahDokumen as $kaedah)
+                                    <div class="col">
+                                        <input type="radio" class="btn-check" name="kaedah_dokumen_id"
+                                            id="kd_{{ $kaedah->code }}" value="{{ $kaedah->id }}"
+                                            @checked($selectedKaedahId === (string) $kaedah->id)>
+                                        <label class="payment-method-card d-block h-100 p-3 border rounded-3"
+                                            for="kd_{{ $kaedah->code }}">
+                                            <span class="d-flex align-items-center gap-2 mb-2">
+                                                <span
+                                                    class="payment-method-radio rounded-circle border border-2 flex-shrink-0 position-relative"></span>
+                                                <span class="payment-method-title fw-bold small">{{ $kaedah->name }}</span>
+                                            </span>
+                                            <span class="payment-method-body d-block text-muted lh-base">{{ $kaedah->description }}
+                                                @if ($kaedah->attention)
+                                                    <span class="d-block mt-2 fw-bold text-danger">{{ $kaedah->attention }}</span>
+                                                @endif
+                                            </span>
+                                        </label>
+                                    </div>
+                                @endforeach
                             </div>
                         </div>
                     </div>
