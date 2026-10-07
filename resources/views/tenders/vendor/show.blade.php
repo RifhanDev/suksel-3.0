@@ -571,7 +571,17 @@
 						</a>
 					@endif
 
-					@if ($tender->canShowDokumenSenaraiTab(Auth::user()->vendor_id))
+					@if ($tender->usesIklanDokumen() && $tender->iklanDokumens->isNotEmpty())
+						<a class="nav-link" href="#vt-dokumen-tawaran" data-bs-toggle="pill" role="tab">
+							<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
+								stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+								<path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" />
+								<polyline points="13 2 13 9 20 9" />
+							</svg>
+							{{ $tender->dokumenSenaraiTabLabel() }}
+							<span class="badge bg-primary ms-auto" style="font-size:0.6rem;">{{ $tender->iklanDokumens->count() }}</span>
+						</a>
+					@elseif ($tender->canShowDokumenSenaraiTab(Auth::user()->vendor_id))
 						<a class="nav-link" href="#vt-dokumen-tawaran" data-bs-toggle="pill" role="tab">
 							<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
 								stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1053,7 +1063,25 @@
 				@endif
 
 				{{-- TAB: Dokumen Tender/Tawaran atau Sebut Harga (senarai semak) --}}
-				@if ($tender->canShowDokumenSenaraiTab(Auth::user()->vendor_id))
+				@if ($tender->usesIklanDokumen() && $tender->iklanDokumens->isNotEmpty())
+					<div class="tab-pane fade" id="vt-dokumen-tawaran" role="tabpanel">
+						<div class="vendor-tender-card">
+							<div class="vendor-tender-card-header">
+								<div class="header-icon"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
+										viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+										stroke-linejoin="round">
+										<path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" />
+										<polyline points="13 2 13 9 20 9" />
+									</svg></div>
+								<div>
+									<h6 class="mb-0">{{ $tender->dokumenSenaraiTabLabel() }}</h6>
+									<small class="text-muted" style="font-size:0.72rem;">Dokumen untuk dimuat turun</small>
+								</div>
+							</div>
+							@include('tenders._iklan_dokumen_table', ['tender' => $tender])
+						</div>
+					</div>
+				@elseif ($tender->canShowDokumenSenaraiTab(Auth::user()->vendor_id))
 					<div class="tab-pane fade" id="vt-dokumen-tawaran" role="tabpanel">
 						<div class="vendor-tender-card">
 							<div class="vendor-tender-card-header">

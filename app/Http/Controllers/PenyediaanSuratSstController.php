@@ -35,15 +35,16 @@ class PenyediaanSuratSstController extends Controller
 
         // Tenders that have been sent on stay listed so their status is still visible.
         $pending = TenderProcessStatus::penyediaanSuratSstListStatus();
-        $sent = TenderProcessStatus::PENYEDIAAN_SURAT_SST;
+        $sent = TenderProcessStatus::sstSentStatuses();
 
         $tenders = Tender::query()
-            ->whereIn('status_process_id', [$pending, $sent])
+            ->whereIn('status_process_id', array_merge([$pending], $sent))
             ->orderByDesc('id')
             ->get()
             ->map(function (Tender $tender) use ($sent) {
                 $row = $this->mapTenderAdvertRow($tender, 'penyediaanSST');
-                $row['dihantar'] = (int) $tender->status_process_id === $sent;
+                $row['dihantar'] = in_array((int) $tender->status_process_id, $sent, true);
+                $row['selesai'] = (int) $tender->status_process_id === TenderProcessStatus::SELESAI;
 
                 return $row;
             })
@@ -70,7 +71,7 @@ class PenyediaanSuratSstController extends Controller
             'tunjukPemilihanItem' => (int) $tender->kategori_perolehan_id !== self::KATEGORI_KERJA,
             'tempohSahLaku' => $this->tempohSahLaku($tender),
             'tempohKontrak' => $tender->tempoh_kontrak_bulan,
-            'tenderDihantar' => (int) $tender->status_process_id === TenderProcessStatus::PENYEDIAAN_SURAT_SST,
+            'tenderDihantar' => TenderProcessStatus::isSstSent((int) $tender->status_process_id),
         ]);
     }
 
@@ -236,7 +237,7 @@ class PenyediaanSuratSstController extends Controller
 
         if (! $this->advanceTenderProcess(
             $tender,
-            TenderProcessStatus::PENYEDIAAN_SURAT_SST,
+            TenderProcessStatus::SELESAI,
             TenderProcessStatus::penyediaanSuratSstListStatus()
         )) {
             return response()->json(['message' => 'Tender belum sedia untuk penyediaan surat SST.'], 422);

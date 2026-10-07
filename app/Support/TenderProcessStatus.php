@@ -34,6 +34,8 @@ final class TenderProcessStatus
 
     public const PENYEDIAAN_SURAT_SST = 15;
 
+    public const SELESAI = 16;
+
     public static function label(int $status): string
     {
         return match ($status) {
@@ -52,6 +54,7 @@ final class TenderProcessStatus
             self::JAWATANKUASA_PEROLEHAN => 'Selesai Jawatankuasa Perolehan (Pemilihan syarikat)',
             self::PENYEDIAAN_SURAT_NIAT => 'Selesai Penyediaan Surat Niat',
             self::PENYEDIAAN_SURAT_SST => 'Selesai Penyediaan Surat SST',
+            self::SELESAI => 'Selesai',
             default => 'Tidak Diketahui',
         };
     }
@@ -65,6 +68,19 @@ final class TenderProcessStatus
     public static function penyediaanIklanListStatus(): int
     {
         return self::SPESIFIKASI_KEWANGAN;
+    }
+
+    /**
+     * Skip is stored on ref_kaedah_dokumens.skips_to_penyediaan_iklan.
+     * Online and manual skip pelantikan (2) and spesifikasi teknikal (3).
+     */
+    public static function statusAfterCiptaTender(?\App\Models\Ref\RefKaedahDokumen $kaedah): int
+    {
+        if ($kaedah?->skips_to_penyediaan_iklan) {
+            return self::penyediaanIklanListStatus();
+        }
+
+        return self::CIPTA_TENDER;
     }
 
     public static function penyediaanMesyuaratListStatus(): int
@@ -121,5 +137,16 @@ final class TenderProcessStatus
     public static function penyediaanSuratSstListStatus(): int
     {
         return self::PENYEDIAAN_SURAT_NIAT;
+    }
+
+    /** SST already sent. 15 is the previous resting status; 16 is Selesai. */
+    public static function sstSentStatuses(): array
+    {
+        return [self::PENYEDIAAN_SURAT_SST, self::SELESAI];
+    }
+
+    public static function isSstSent(int $status): bool
+    {
+        return in_array($status, self::sstSentStatuses(), true);
     }
 }

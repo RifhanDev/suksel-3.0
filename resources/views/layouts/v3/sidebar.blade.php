@@ -106,7 +106,7 @@
 								</li>
 							@endif
 
-							@if ($user->canAccessMenu('Advertisement:list'))
+							@if (\App\Support\PenyediaanIklanAccess::canOpenMenu($user))
 								<li>
 									<a class="submenu-item" href="{{ route('penyediaanIklan.index') }}">
 										<div class="submenu-icon"

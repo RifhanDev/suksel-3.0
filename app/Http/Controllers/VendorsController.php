@@ -751,18 +751,34 @@ class VendorsController extends Controller
 
 	public function select(Request $request)
 	{
-		if (!auth()->user()->ability(['Admin', 'Agency Admin', 'Agency User'], []))
+		if (!auth()->user()->ability(
+			['Admin', 'Agency Admin', 'Agency User', 'Agency Urusetia', 'Agency Ketua Jabatan'],
+			['Tender:vendors', 'Tender:vendors:all']
+		)) {
 			return $this->_ajax_denied();
+		}
 
-		$query = $request->get('q');
-
-		if (empty($query)) return response()->json(['error' => 'Please enter your search query']);
+		$query = trim((string) $request->get('q', ''));
 
 		$vendors = Vendor::canParticipate()
 			->join('users', 'vendors.id', '=', 'users.vendor_id')
-			->where('vendors.name', 'LIKE', "%{$query}%")
-			->orWhere('vendors.registration', 'LIKE', "%{$query}%")
-			->select('vendors.id', 'vendors.name', 'vendors.registration', 'vendors.expiry_date', 'users.email')->get();
+			->when($query !== '', function ($builder) use ($query) {
+				$builder->where(function ($inner) use ($query) {
+					$inner->where('vendors.name', 'LIKE', "%{$query}%")
+						->orWhere('vendors.registration', 'LIKE', "%{$query}%");
+				});
+			})
+			->select('vendors.id', 'vendors.name', 'vendors.registration', 'vendors.expiry_date', 'users.email')
+			->orderBy('vendors.name')
+			->limit(30)
+			->get()
+			->map(function ($vendor) {
+				$vendor->expiry_label = $vendor->expiry_date
+					? Carbon::parse($vendor->expiry_date)->format('d/m/Y')
+					: '-';
+
+				return $vendor;
+			});
 
 		return response()->json($vendors);
 	}

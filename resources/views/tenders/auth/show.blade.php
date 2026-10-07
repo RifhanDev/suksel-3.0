@@ -133,7 +133,17 @@
 									<span class="badge bg-primary ms-2">{{ $mejaTerkawal->count() }}</span>
 								</a>
 							@endif
-							@if ($tender->canShowDokumenSenaraiTab(Auth::user()->vendor_id))
+							@if ($tender->usesIklanDokumen() && $tender->iklanDokumens->isNotEmpty())
+								<a href="#tf-dokumen-tawaran" aria-controls="settings" role="tab" data-bs-toggle="tab" class="nav-link">
+									<svg xmlns="http://www.w3.org/2000/svg" class="me-1" width="18" height="18" viewBox="0 0 24 24">
+										<path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+											d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" />
+										<polyline points="13 2 13 9 20 9" />
+									</svg>
+									{{ $tender->dokumenSenaraiTabLabel() }}
+									<span class="badge bg-primary ms-2">{{ $tender->iklanDokumens->count() }}</span>
+								</a>
+							@elseif ($tender->canShowDokumenSenaraiTab(Auth::user()->vendor_id))
 								<a href="#tf-dokumen-tawaran" aria-controls="settings" role="tab" data-bs-toggle="tab" class="nav-link">
 									<svg xmlns="http://www.w3.org/2000/svg" class="me-1" width="18" height="18" viewBox="0 0 24 24">
 										<path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -853,7 +863,26 @@
 					@endif
 
 					{{-- === TAB: Dokumen Tender/Tawaran atau Sebut Harga (senarai semak) === --}}
-					@if ($tender->canShowDokumenSenaraiTab(Auth::user()->vendor_id))
+					@if ($tender->usesIklanDokumen() && $tender->iklanDokumens->isNotEmpty())
+						<div role="tabpanel" class="tab-pane" id="tf-dokumen-tawaran">
+							<div class="tender-tab-card">
+								<div class="card-header">
+									<h3 class="card-title">
+										<svg xmlns="http://www.w3.org/2000/svg" class="me-1" width="18" height="18" viewBox="0 0 24 24">
+											<path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+												stroke-width="2" d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" />
+											<polyline points="13 2 13 9 20 9" />
+										</svg>
+										{{ $tender->dokumenSenaraiTabLabel() }}
+									</h3>
+									<p class="text-muted small mb-0 mt-1">Dokumen untuk dimuat turun</p>
+								</div>
+								<div class="card-body p-0">
+									@include('tenders._iklan_dokumen_table', ['tender' => $tender])
+								</div>
+							</div>
+						</div>
+					@elseif ($tender->canShowDokumenSenaraiTab(Auth::user()->vendor_id))
 						<div role="tabpanel" class="tab-pane" id="tf-dokumen-tawaran">
 							<div class="tender-tab-card">
 								<div class="card-header">

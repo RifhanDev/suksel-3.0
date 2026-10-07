@@ -7,6 +7,8 @@ use App\Models\RefState;
 use App\Services\PenyediaanIklanService;
 use App\Services\StosBackendClient;
 use App\Services\StosTenderChecklistSync;
+use App\Services\TenderIklanDokumenService;
+use App\Support\PenyediaanIklanAccess;
 use App\Support\TenderProcessStatus;
 use App\Support\TenderDokumenPresenter;
 use App\Support\TenderReviewPresenter;
@@ -24,17 +26,28 @@ class PenyediaanIklanController extends Controller
     public function __construct(
         protected StosBackendClient $stos,
         protected PenyediaanIklanService $penyediaanIklanService,
-        protected StosTenderChecklistSync $checklistSync
+        protected StosTenderChecklistSync $checklistSync,
+        protected TenderIklanDokumenService $iklanDokumenService
     ) {
-        $this->menuMiddleware('Advertisement:list');
+        $this->middleware(function ($request, $next) {
+            if (! PenyediaanIklanAccess::canOpenMenu(auth()->user())) {
+                return $this->_access_denied();
+            }
+
+            return $next($request);
+        });
     }
 
     public function index()
     {
-        $tenders = Tender::query()
+        $query = Tender::query()
             ->where('status_process_id', TenderProcessStatus::penyediaanIklanListStatus())
             ->with('tenderer')
-            ->orderByDesc('id')
+            ->orderByDesc('id');
+
+        PenyediaanIklanAccess::scopeVisible($query, auth()->user());
+
+        $tenders = $query
             ->get()
             ->map(function ($tender) {
                 return [
@@ -56,6 +69,10 @@ class PenyediaanIklanController extends Controller
             /** @var \Illuminate\Http\RedirectResponse $redirect */
             $redirect = redirect()->route('penyediaanIklan.index');
             return $redirect->with('error', 'Tender ini belum selesai pengurusan spesifikasi (status ' . TenderProcessStatus::SPESIFIKASI_KEWANGAN . ').');
+        }
+
+        if (! PenyediaanIklanAccess::canManage(auth()->user(), $tender)) {
+            return $this->_access_denied();
         }
 
         $country_states = RefState::where('display_status', 1)->get();
@@ -81,7 +98,7 @@ class PenyediaanIklanController extends Controller
             }
         }
 
-        $tender->load(['tenderer', 'codes.code', 'creator.organizationunit', 'officer.organizationunit', 'siteVisits']);
+        $tender->load(['tenderer', 'codes.code', 'creator.organizationunit', 'officer.organizationunit', 'siteVisits', 'kaedahDokumen', 'iklanDokumens']);
         $this->checklistSync->syncForTender($tender);
         $tenderReview = TenderReviewPresenter::for($tender);
         $tenderDokumen = TenderDokumenPresenter::for($tender);
@@ -125,9 +142,18 @@ class PenyediaanIklanController extends Controller
             return $this->respondError($request, 'Tender belum selesai pengurusan spesifikasi.', 422);
         }
 
+        if (! PenyediaanIklanAccess::canManage(auth()->user(), $tender)) {
+            return $this->_access_denied();
+        }
+
         $payload = $this->buildPayload($request, $tender->id);
 
         try {
+            $iklanDokumenRows = null;
+            if ($tender->usesIklanDokumen() && $request->has('iklan_dokumen_present')) {
+                $iklanDokumenRows = $this->iklanDokumenService->sync($tender, $request);
+            }
+
             $record = $this->penyediaanIklanService->save($tender, $payload, $submit);
 
             if ($this->stos->isConfigured()) {
@@ -168,6 +194,7 @@ class PenyediaanIklanController extends Controller
                     // subsequent Simpan/Next-step save doesn't silently re-upload the same
                     // file and orphan (delete) the document it just created.
                     'dokumen_sokongan' => $record->meta['iklan']['dokumen_sokongan'] ?? [],
+                    'iklan_dokumen' => $iklanDokumenRows,
                 ]);
             }
 
@@ -227,7 +254,7 @@ class PenyediaanIklanController extends Controller
                 'tarikh_iklan' => $request->input('tarikh_iklan'),
                 'masa_iklan' => $request->input('masa_iklan'),
                 'tarikh_tutup' => $request->input('tarikh_tutup'),
-                'masa_tutup' => '12:00',
+                'masa_tutup' => $request->input('masa_tutup') ?: '12:00',
                 'tarikh_jual' => $request->input('tarikh_jual'),
                 'tempoh_iklan' => $request->input('tempoh_iklan'),
                 'tempoh_sah_laku' => $request->input('tempoh_sah_laku'),

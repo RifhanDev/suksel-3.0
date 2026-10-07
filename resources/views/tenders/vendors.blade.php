@@ -2,6 +2,49 @@
 
 @section('styles')
 	<link href="{{ asset('css/components/tender-show.css') }}" rel="stylesheet">
+	<style>
+		.selectize-dropdown.vendor-select-dropdown {
+			z-index: 2000;
+			border: 1px solid #e2e8f0;
+			border-radius: 8px;
+			background: #fff;
+			box-shadow: 0 12px 32px rgba(15, 23, 42, 0.16);
+		}
+
+		.selectize-dropdown.vendor-select-dropdown .selectize-dropdown-content {
+			max-height: 280px;
+		}
+
+		.selectize-dropdown.vendor-select-dropdown .option {
+			padding: 0.7rem 0.9rem;
+			line-height: 1.35;
+			border-bottom: 1px solid #f1f5f9;
+		}
+
+		.selectize-dropdown.vendor-select-dropdown .option.active {
+			background: #f8fafc;
+			color: #0f172a;
+		}
+
+		.btn-padam-syarikat {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			width: 32px;
+			height: 32px;
+			border: 1px solid #fecaca;
+			border-radius: 8px;
+			background: #fff;
+			color: #dc2626;
+			cursor: pointer;
+		}
+
+		.btn-padam-syarikat:hover {
+			background: #dc2626;
+			border-color: #dc2626;
+			color: #fff;
+		}
+	</style>
 @endsection
 
 @section('content')
@@ -212,15 +255,7 @@
 										@endif
 									@endif
 
-									<th class="text-center" style="width: 8%">
-										<svg xmlns="http://www.w3.org/2000/svg" class="me-1" width="13" height="13" viewBox="0 0 24 24"
-											fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-											<polyline points="3 6 5 6 21 6" />
-											<path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
-										</svg>
-										Padam
-										<input type="checkbox" class="form-check-input checker ms-2" data-target="delete">
-									</th>
+									<th class="text-center" style="width: 8%">Padam</th>
 								</tr>
 							</thead>
 							<tbody>
@@ -342,18 +377,15 @@
 										@endif
 
 										<td class="text-center">
-											@if ($purchase->participate == 0)
-												<input type="checkbox" class="form-check-input delete" name="delete[]" value="{{ $purchase->id }}">
-											@else
-												<span class="badge"
-													style="background: #fee2e2; color: #991b1b; font-size: 0.7rem; padding: 0.35em 0.6em; border-radius: 6px;">
-													<svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24"
-														fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-														<circle cx="12" cy="12" r="10" />
-														<line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
-													</svg>
-												</span>
-											@endif
+											<button type="button" class="btn-padam-syarikat" data-id="{{ $purchase->id }}" title="Padam syarikat">
+												<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+													fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+													<polyline points="3 6 5 6 21 6" />
+													<path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+													<line x1="10" y1="11" x2="10" y2="17" />
+													<line x1="14" y1="11" x2="14" y2="17" />
+												</svg>
+											</button>
 										</td>
 									</tr>
 									<?php $count++; ?>
@@ -383,9 +415,8 @@
 					<div class="row g-3">
 						<div class="col-lg-8">
 							<label class="form-label fw-semibold" style="font-size: 0.82rem; color: #334155;">Tambah Syarikat</label>
-							<input type="text" id="vendor_ids" name="vendor_ids" placeholder="Cari nama syarikat...">
-							<small class="text-muted" style="font-size: 0.78rem;">Cari nama syarikat yang ingin
-								ditambah dan tekan "Simpan Maklumat Syarikat"</small>
+							<select id="vendor_ids" name="vendor_ids" placeholder="Pilih syarikat..."></select>
+							<small class="text-muted" style="font-size: 0.78rem;">Pilih syarikat daripada senarai, kemudian tekan "Simpan Maklumat Syarikat".</small>
 						</div>
 						<div class="col-lg-4">
 							<div class="d-flex align-items-center h-100">
@@ -526,67 +557,75 @@
 				countChecked = $('input.' + target + ':checked').length;
 				if (countInput != 0 && countInput == countChecked) $(this).prop('checked', true);
 			});
-			$("#vendor_ids").selectize({
-				valueField: 'id',
-				labelField: 'name',
-				searchField: 'name',
-				create: false,
-				render: {
-					option: function(item, escape) {
-						return '<div>' +
-							'<strong>' + escape(item.registration) + '</strong> ' + escape(item.name) +
-							'<br><small>Alamat Emel: <strong>' + escape(item.email) +
-							'</strong> &bullet; Tarikh Tamat Langganan: <strong>' +
-							moment(item.expiry_date, 'YYYY-MM-DD').format('DD/MM/YY') +
-							'</strong></small>' +
-							'</div>';
-					}
-				},
-				load: function(query, callback) {
-					if (!query.length) return callback();
-					$.ajax({
-						url: '/vendors/select?q=' + query,
-						type: 'GET',
-						success: function(res) {
-							callback(res);
-						},
-						error: function() {
-							callback();
-						}
-					})
-				}
+			$(document).on('click', '.btn-padam-syarikat', function () {
+				var id = $(this).data('id');
+				var form = $(this).closest('form');
+				showConfirmModal({
+					title: 'Padam syarikat',
+					message: 'Syarikat ini akan dibuang daripada senarai tender.',
+					confirmText: 'Ya, Padam',
+					icon: 'danger'
+				}).then(function (ok) {
+					if (!ok) return;
+					form.find('input[name="delete[]"]').remove();
+					form.append($('<input>', { type: 'hidden', name: 'delete[]', value: id }));
+					form.get(0).submit();
+				});
 			});
-			$("#exception_id").selectize({
-				valueField: 'id',
-				labelField: 'name',
-				searchField: 'name',
-				maxItems: 1,
-				create: false,
-				render: {
-					option: function(item, escape) {
-						return '<div>' +
-							'<strong>' + escape(item.registration) + '</strong> ' + escape(item.name) +
-							'<br><small>Alamat Emel: <strong>' + escape(item.email) +
-							'</strong> &bullet; Tarikh Tamat Langganan: <strong>' +
-							moment(item.expiry_date, 'YYYY-MM-DD').format('DD/MM/YY') +
-							'</strong></small>' +
-							'</div>';
-					}
-				},
-				load: function(query, callback) {
-					if (!query.length) return callback();
-					$.ajax({
-						url: '/vendors/select?q=' + query,
-						type: 'GET',
-						success: function(res) {
-							callback(res);
-						},
-						error: function() {
-							callback();
+			function vendorSelectizeOptions(extra) {
+				return $.extend({
+					valueField: 'id',
+					labelField: 'name',
+					searchField: ['name', 'registration', 'email'],
+					create: false,
+					preload: true,
+					dropdownParent: 'body',
+					dropdownClass: 'selectize-dropdown vendor-select-dropdown',
+					placeholder: 'Pilih syarikat...',
+					render: {
+						option: function(item, escape) {
+							return '<div>' +
+								'<strong>' + escape(item.registration || '') + '</strong> ' + escape(item.name || '') +
+								'<br><small>Alamat Emel: <strong>' + escape(item.email || '-') +
+								'</strong> &bullet; Tarikh Tamat Langganan: <strong>' +
+								escape(item.expiry_label || '-') +
+								'</strong></small>' +
+								'</div>';
 						}
-					})
-				}
+					},
+					load: function(query, callback) {
+						$.ajax({
+							url: '{{ url('vendors/select') }}',
+							type: 'GET',
+							dataType: 'json',
+							data: { q: query },
+							success: function(res) {
+								callback($.isArray(res) ? res : []);
+							},
+							error: function() {
+								callback();
+							}
+						});
+					}
+				}, extra || {});
+			}
+
+			$('#formTenderSelesai').on('submit', function (event) {
+				event.preventDefault();
+				var form = this;
+				showConfirmModal({
+					title: 'Tandakan Selesai',
+					message: 'Tender ini akan ditanda sebagai Selesai. Status proses menjadi 16 untuk rekod laporan.',
+					confirmText: 'Ya, Tandakan Selesai',
+					icon: 'warning'
+				}).then(function (ok) {
+					if (ok) {
+						form.submit();
+					}
+				});
 			});
+			$("#vendor_ids").selectize(vendorSelectizeOptions());
+			$("#exception_id").selectize(vendorSelectizeOptions({ maxItems: 1 }));
 		});
 	</script>
 @endsection

@@ -17,7 +17,15 @@
 
 		{{-- Print Button --}}
 		<div class="d-flex align-items-center gap-2">
-			@if (Route::currentRouteAction() == 'TendersController@vendors')
+			@if (request()->routeIs('tenders.vendors'))
+				@if ($canMarkSelesai ?? false)
+					<form id="formTenderSelesai" method="POST" action="{{ route('tenders.vendors.selesai', $tender->id) }}" class="mb-0">
+						@csrf
+						<button type="submit" class="tender-menu-btn tender-menu-btn-primary">
+							Tandakan Selesai
+						</button>
+					</form>
+				@endif
 				<a href="{{ asset('tenders/' . $tender->id . '/vendors/print') }}" class="tender-menu-btn tender-menu-btn-ghost"
 					target="_new">
 					<svg xmlns="http://www.w3.org/2000/svg" class="me-1" width="15" height="15" viewBox="0 0 24 24">
