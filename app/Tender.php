@@ -2000,6 +2000,72 @@ class Tender extends Model
 	}
 
 
+	public function kategoriPerolehan()
+	{
+		return $this->belongsTo(\App\Models\Ref\RefKategoriJenisPerolehan::class, 'kategori_perolehan_id');
+	}
+
+	public function kategoriPerolehanDetail()
+	{
+		return $this->belongsTo(\App\Models\Ref\RefTypeOfPerolehan::class, 'kategori_perolehan_detail_id');
+	}
+
+	/**
+	 * Determine the Kerja Penilaian Kewangan flow classification.
+	 *
+	 * Returns:
+	 * - 'kerja_besar': Anggaran Jabatan > RM 10,000,000 (3 Peringkat: Borang 1 - 15)
+	 * - 'kerja_kecil_me': Anggaran Jabatan <= RM 10,000,000 & Kategori Detail is M&E (2 Peringkat: P1=B1, P2=B2-B8)
+	 * - 'kerja_kecil_other': Anggaran Jabatan <= RM 10,000,000 & Kategori Detail is not M&E (2 Peringkat: P1=B1, P2=B2-B6)
+	 * - 'non_kerja': Not a Kerja tender
+	 */
+	public function getKerjaClassification(): string
+	{
+		$isKerja = (int) ($this->kategori_perolehan_id ?? 0) === 3
+			|| strtolower(trim($this->kategoriPerolehan->name ?? '')) === 'kerja';
+
+		if (!$isKerja) {
+			return 'non_kerja';
+		}
+
+		$anggaranJabatan = (float) ($this->anggaran_jabatan ?? $this->harga_indikatif ?? $this->price ?? 0);
+
+		if ($anggaranJabatan > 10000000.00) {
+			return 'kerja_besar';
+		}
+
+		$detailName = strtoupper(trim($this->kategoriPerolehanDetail->name ?? ''));
+		$detailId = (int) ($this->kategori_perolehan_detail_id ?? 0);
+
+		$isME = ($detailId === 15 || str_contains($detailName, 'M&E') || str_contains($detailName, 'MEKANIKAL') || str_contains($detailName, 'ELEKTRIKAL'));
+
+		if ($isME) {
+			return 'kerja_kecil_me';
+		}
+
+		return 'kerja_kecil_other';
+	}
+
+	public function isKerjaBesar(): bool
+	{
+		return $this->getKerjaClassification() === 'kerja_besar';
+	}
+
+	public function isKerjaKecilMe(): bool
+	{
+		return $this->getKerjaClassification() === 'kerja_kecil_me';
+	}
+
+	public function isKerjaKecilOther(): bool
+	{
+		return $this->getKerjaClassification() === 'kerja_kecil_other';
+	}
+
+	public function isKerjaKecil(): bool
+	{
+		return in_array($this->getKerjaClassification(), ['kerja_kecil_me', 'kerja_kecil_other'], true);
+	}
+
 	/**
 	 * Boot Method
 	 */

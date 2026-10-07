@@ -461,6 +461,9 @@ $(document).ready(function () {
         $('#tbl-empty-row').addClass('d-none');
         items.forEach(function (item) {
             var $tr;
+            var isPtjFixed = (item.title === 'Spesifikasi Komponen Mekanikal/Elektrikal') ||
+                (item.source_type === 'borang_atas_talian' && (item.mechanism === 'ptj_muat_naik' || item.vendor_action === 'muat_turun_naik' || !item.action_url));
+
             if (item.source_type === 'borang_atas_talian' && item.action_url) {
                 $tr = buildInitialRow({
                     uuid:                  item.uuid,
@@ -477,7 +480,7 @@ $(document).ready(function () {
                     statusKey:             item.status || 'draft',
                     form_updated:          item.form_updated ?? true,
                 });
-            } else if (item.source_type === 'borang_atas_talian' && (item.mechanism === 'ptj_muat_naik' || item.vendor_action === 'muat_turun_naik' || !item.action_url)) {
+            } else if (isPtjFixed) {
                 $tr = buildInitialPtjRow(item);
             } else {
                 $tr = buildEditableRow(item);
@@ -527,9 +530,10 @@ $(document).ready(function () {
         var statusClass = statusVal === 'submitted' ? 'badge-status-success' : 'badge-status-warning';
         var standardItemUuid  = item.standard_item_uuid || '';
         var spesifikasiItemUuid = item.spesifikasi_item_uuid || '';
+        var sourceType        = item.source_type || 'borang_atas_talian';
 
         var $tr = $(
-            '<tr class="initial-row row-kewangan-tambah" data-uuid="' + uuid + '" data-source="borang_atas_talian" data-standard-item-uuid="' + standardItemUuid + '" data-spesifikasi-item-uuid="' + spesifikasiItemUuid + '" data-status="' + statusVal + '" data-mechanism="ptj_muat_naik" data-vendor-action="muat_turun_naik">' +
+            '<tr class="initial-row row-kewangan-tambah" data-uuid="' + uuid + '" data-source="' + sourceType + '" data-standard-item-uuid="' + standardItemUuid + '" data-spesifikasi-item-uuid="' + spesifikasiItemUuid + '" data-status="' + statusVal + '" data-mechanism="ptj_muat_naik" data-vendor-action="muat_turun_naik">' +
             '<td class="text-center"><span class="text-muted" style="font-size:0.75rem;" title="Item sistem">—</span></td>' +
             '<td><span class="small fw-semibold">' + htmlEscape(item.title || '') + '</span></td>' +
             '<td class="text-center"><span class="small fw-semibold text-muted">PTJ Muat Naik</span><input type="hidden" name="mekanisma[]" value="ptj_muat_naik"></td>' +
@@ -597,6 +601,15 @@ $(document).ready(function () {
     }
 
     function buildStandardRow(tajuk, uuid) {
+        if (tajuk === 'Spesifikasi Komponen Mekanikal/Elektrikal') {
+            return buildInitialPtjRow({
+                title: tajuk,
+                standard_item_uuid: uuid,
+                source_type: 'standard',
+                mechanism: 'ptj_muat_naik',
+                vendor_action: 'muat_turun_naik',
+            });
+        }
         return buildEditableRow({ title: tajuk, standard_item_uuid: uuid, source_type: 'standard' });
     }
 

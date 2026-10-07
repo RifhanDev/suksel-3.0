@@ -293,6 +293,16 @@ class StandardChecklistItemSeeder extends Seeder
                 'is_active'             => true,
                 'sort_order'            => 8,
             ],
+            [
+                'category'              => 'kewangan_kerja',
+                'type'                  => 'standard',
+                'title'                 => 'Spesifikasi Komponen Mekanikal/Elektrikal',
+                'mechanism_default'     => 'ptj_muat_naik',
+                'vendor_action_default' => 'muat_turun_naik',
+                'action_url'            => null,
+                'is_active'             => true,
+                'sort_order'            => 9,
+            ],
         ];
 
         $dokumenStandard = [
