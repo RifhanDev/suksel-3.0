@@ -10,7 +10,7 @@ use App\User;
 use App\Vendor;
 use Datatables;
 use App\Approval;
-use App\Models\RefState;
+use App\Models\Ref\RefState;
 use Carbon\Carbon;
 use App\VendorHistory;
 use App\OrganizationUnit;

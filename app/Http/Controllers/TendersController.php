@@ -8,6 +8,7 @@ use App\Jobs\GenerateEligible;
 use App\Models\ExceptionTender;
 use App\Models\OrganizationUnit;
 use App\Models\Ref\RefKaedahDokumen;
+use App\Models\Ref\RefState;
 use App\Models\RejectTemplate;
 use App\Models\Upload;
 use App\Tender;
