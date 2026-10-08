@@ -440,16 +440,13 @@ class LawatanTapakUrusetiaController extends Controller
                 ->map(fn ($n) => (int) $n)
                 ->all();
 
-            // Pasangan (vendor, lawatan) yang mempunyai TEPAT satu rekod hadir.
-            // Semakan asal TenderVisitor::hasVisit() menuntut tepat satu baris,
-            // jadi rekod pendua dikira belum disemak; HAVING mengekalkannya.
+            // Pasangan (vendor, lawatan) yang mempunyai sekurang-kurangnya satu rekod hadir.
             $sub = DB::table('tender_visitors as tvs')
                 ->join('tender_visits as tv', 'tv.id', '=', 'tvs.visit_id')
                 ->whereIn('tvs.visit_id', $requiredVisitIds)
                 ->where('tvs.vendor_id', '>', 0)
-                ->select('tv.tender_id as tender_id', 'tvs.visit_id', 'tvs.vendor_id', DB::raw('COUNT(*) as c'))
-                ->groupBy('tv.tender_id', 'tvs.visit_id', 'tvs.vendor_id')
-                ->having('c', '=', 1);
+                ->select('tv.tender_id as tender_id', 'tvs.visit_id', 'tvs.vendor_id')
+                ->groupBy('tv.tender_id', 'tvs.visit_id', 'tvs.vendor_id');
 
             $pairs = DB::query()
                 ->fromSub($sub, 'y')

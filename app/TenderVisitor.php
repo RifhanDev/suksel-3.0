@@ -28,6 +28,6 @@ class TenderVisitor extends Model
 
     public static function hasVisit($visit_id, $vendor_id)
     {
-        return self::where('visit_id', $visit_id)->where('vendor_id', $vendor_id)->count() == 1;
+        return self::where('visit_id', $visit_id)->where('vendor_id', $vendor_id)->exists();
     }
 }

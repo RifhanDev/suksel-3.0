@@ -735,7 +735,12 @@
 
 			@if ($tender->canPurchase())
 				<div class="text-end mt-3">
-					{{ link_to_route('tenders.buy', 'Tambah Kepada Senarai Tempahan', [$tender->id], ['class' => 'btn btn-primary']) }}
+					{{ link_to_route(
+						'tenders.buy',
+						$tender->vendorDokumenActionLabel(),
+						[$tender->id],
+						['class' => 'btn btn-primary']
+					) }}
 				</div>
 			@endif
 
