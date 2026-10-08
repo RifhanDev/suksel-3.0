@@ -8,7 +8,7 @@
 		<div id="vendor-bid-alert" class="alert d-none py-2 px-3 mb-3"></div>
 		<div class="d-flex justify-content-between align-items-center mb-3 gap-2 flex-wrap">
 			<p class="text-muted small m-0">
-				Isi <strong>Harga Bidaan</strong> (harga baharu) pada setiap <strong>item anak</strong> sahaja.
+				Isi <strong>Harga Bidaan</strong> (harga baharu) pada setiap item.
 				Harga baharu mesti lebih daripada 0 dan <strong>tidak boleh melebihi Harga Sebelum Bidaan</strong>.
 				<strong>Jumlah Keseluruhan</strong> dikira automatik semasa menaip dan tidak boleh diedit.
 			</p>
@@ -104,7 +104,7 @@
 								@elseif ($isBidable)
 									<span class="text-muted small">—</span>
 								@else
-									<span class="overall-price-group" data-group="{{ $groupKey }}">0.00</span>
+									—
 								@endif
 							</td>
 						</tr>
