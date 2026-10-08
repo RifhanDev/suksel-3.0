@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Gateway;
 use App\Mail\ConfirmRegistration;
-use App\Models\RefState;
+use App\Models\Ref\RefState;
 use App\Models\Ref\RefOrganizationType;
 use App\Role;
 use App\Traits\Helper;

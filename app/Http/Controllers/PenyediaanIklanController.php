@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\PenyediaanIklan;
-use App\Models\RefState;
+use App\Models\Ref\RefState;
 use App\Services\PenyediaanIklanService;
 use App\Services\StosBackendClient;
 use App\Services\StosTenderChecklistSync;

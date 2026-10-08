@@ -741,7 +741,7 @@ class Tender extends Model
 			foreach ($district_list_rule as $row_rules) {
 				if ($row_rules->district_id == 0 && $row_rules->state_id != 0) {
 					$tender_open_for_state_id[]		= $row_rules->state_id;
-					$tender_open_for_state_desc[]	= \App\Models\RefState::find($row_rules->state_id)->description ?? "";
+					$tender_open_for_state_desc[]	= \App\Models\Ref\RefState::find($row_rules->state_id)->description ?? "";
 				} elseif ($row_rules->state_id == 0 && $row_rules->district_id != 0) {
 					$tender_open_for_district_id[]		= $row_rules->district_id;
 					$tender_open_for_district_desc[]	= \App\Models\Vendor::$districts[$row_rules->district_id] ?? "";
@@ -1181,7 +1181,7 @@ class Tender extends Model
 			foreach ($district_list_rule as $row_rules) {
 				if ($row_rules->district_id == 0 && $row_rules->state_id != 0) {
 					$tender_open_for_state_id[]		= $row_rules->state_id;
-					$tender_open_for_state_desc[]	= \App\Models\RefState::find($row_rules->state_id)->description ?? "";
+					$tender_open_for_state_desc[]	= \App\Models\Ref\RefState::find($row_rules->state_id)->description ?? "";
 				} elseif ($row_rules->state_id == 0 && $row_rules->district_id != 0) {
 					$tender_open_for_district_id[]		= $row_rules->district_id;
 					$tender_open_for_district_desc[]	= \App\Models\Vendor::$districts[$row_rules->district_id] ?? "";
@@ -1227,7 +1227,7 @@ class Tender extends Model
 			foreach ($district_list_rule as $row_rules) {
 				if ($row_rules->district_id == 0 && $row_rules->state_id != 0) {
 					$tender_open_for_state_id[]		= $row_rules->state_id;
-					$tender_open_for_state_desc[]	= \App\Models\RefState::find($row_rules->state_id)->description ?? "";
+					$tender_open_for_state_desc[]	= \App\Models\Ref\RefState::find($row_rules->state_id)->description ?? "";
 				} elseif ($row_rules->state_id == 0 && $row_rules->district_id != 0) {
 					$tender_open_for_district_id[]		= $row_rules->district_id;
 					$tender_open_for_district_desc[]	= \App\Models\Vendor::$districts[$row_rules->district_id] ?? "";
@@ -1273,7 +1273,7 @@ class Tender extends Model
 			foreach ($district_list_rule as $row_rules) {
 				if ($row_rules->district_id == 0 && $row_rules->state_id != 0) {
 					$tender_open_for_state_id[]		= $row_rules->state_id;
-					$tender_open_for_state_desc[]	= \App\Models\RefState::find($row_rules->state_id)->description ?? "";
+					$tender_open_for_state_desc[]	= \App\Models\Ref\RefState::find($row_rules->state_id)->description ?? "";
 				} elseif ($row_rules->state_id == 0 && $row_rules->district_id != 0) {
 					$tender_open_for_district_id[]		= $row_rules->district_id;
 					$tender_open_for_district_desc[]	= \App\Models\Vendor::$districts[$row_rules->district_id] ?? "";
@@ -1313,7 +1313,7 @@ class Tender extends Model
 			foreach ($district_list_rule as $row_rules) {
 				if ($row_rules->district_id == 0 && $row_rules->state_id != 0) {
 					$tender_open_for_state_id[]		= $row_rules->state_id;
-					$tender_open_for_state_desc[]	= \App\Models\RefState::find($row_rules->state_id)->description ?? "";
+					$tender_open_for_state_desc[]	= \App\Models\Ref\RefState::find($row_rules->state_id)->description ?? "";
 				} elseif ($row_rules->state_id == 0 && $row_rules->district_id != 0) {
 					$tender_open_for_district_id[]		= $row_rules->district_id;
 					$tender_open_for_district_desc[]	= \App\Models\Vendor::$districts[$row_rules->district_id] ?? "";

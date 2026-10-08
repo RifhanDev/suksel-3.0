@@ -93,7 +93,7 @@ return new class extends Migration
 
         foreach ($state_array as $state)
         {
-            $new_state = new App\Models\RefState();
+            $new_state = new App\Models\Ref\RefState();
             $new_state->description = $state['name'];
             $new_state->display_status = $state['display_status'];
             $new_state->created_by = 0;

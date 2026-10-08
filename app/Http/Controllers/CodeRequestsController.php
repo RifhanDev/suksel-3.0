@@ -8,7 +8,7 @@ use Yajra\DataTables\Facades\DataTables;
 use App\Approval;
 use Carbon\Carbon;
 use App\CodeRequest;
-use App\Models\RefState;
+use App\Models\Ref\RefState;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Route;
 use App\Models\RejectTemplate;
