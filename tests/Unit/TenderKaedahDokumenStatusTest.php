@@ -35,6 +35,40 @@ class TenderKaedahDokumenStatusTest extends TestCase
         $this->assertSame(TenderProcessStatus::CIPTA_TENDER, TenderProcessStatus::statusAfterCiptaTender(null));
     }
 
+    public function test_bayaran_dokumen_online_bypasses_payment(): void
+    {
+        $online = new RefKaedahDokumen();
+        $online->code = 'online';
+        $online->skips_to_penyediaan_iklan = true;
+
+        $manual = new RefKaedahDokumen();
+        $manual->code = 'manual';
+        $manual->skips_to_penyediaan_iklan = true;
+
+        $tenderOnline = new Tender();
+        $tenderOnline->setRelation('kaedahDokumen', $online);
+        $this->assertTrue($tenderOnline->isBayaranDokumenOnline());
+        $this->assertTrue($tenderOnline->shouldBypassDokumenPayment());
+        $this->assertSame('Beli Dokumen', $tenderOnline->vendorDokumenActionLabel());
+
+        $tenderManual = new Tender();
+        $tenderManual->setRelation('kaedahDokumen', $manual);
+        $this->assertTrue($tenderManual->isIklanSahajaManual());
+        $this->assertTrue($tenderManual->shouldBypassDokumenPayment());
+        $this->assertSame('Tambah ke Senarai', $tenderManual->vendorDokumenActionLabel());
+    }
+
+    public function test_attend_visits_passes_when_no_required_lawatan(): void
+    {
+        $tender = new Tender();
+        $tender->setRelation('siteVisits', collect([
+            (object) ['id' => 1, 'required' => false],
+        ]));
+
+        $this->assertFalse($tender->hasRequiredSiteVisits());
+        $this->assertTrue($tender->attendVisits(7));
+    }
+
     public function test_pemilik_projek_can_prepare_iklan_only_for_bypass_kaedah_in_their_agency(): void
     {
         $pemilik = $this->userDouble(seesAll: false, pemilik: true, organizationUnitId: 9, id: 3);

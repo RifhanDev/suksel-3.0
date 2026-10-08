@@ -408,7 +408,8 @@
 		</div>
 	@endif
 
-	@if ($vendorHasPurchased)
+	{{-- Online / Manual iklan kaedah: tawaran dihantar secara manual ke kaunter, bukan melalui sistem. --}}
+	@if ($vendorHasPurchased && ! $tender->usesIklanDokumen())
 		<div class="mb-4" id="vendor-submission-panel">
 			@if ($vendorSubmitted)
 				<div class="alert alert-success d-flex align-items-start gap-2 mb-0 py-3 px-3" style="font-size:0.84rem;">
@@ -571,7 +572,7 @@
 						</a>
 					@endif
 
-					@if ($tender->usesIklanDokumen() && $tender->iklanDokumens->isNotEmpty())
+					@if ($vendorHasPurchased && $tender->usesIklanDokumen() && $tender->iklanDokumens->isNotEmpty())
 						<a class="nav-link" href="#vt-dokumen-tawaran" data-bs-toggle="pill" role="tab">
 							<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
 								stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -776,8 +777,9 @@
 					</div>
 					@if ($tender->canPurchase())
 						<div class="d-flex justify-content-end">
-							<a href="{{ route('tenders.buy', $tender->id) }}" class="btn-form btn-form-primary">Tambah Kepada Senarai
-								Tempahan</a>
+							<a href="{{ route('tenders.buy', $tender->id) }}" class="btn-form btn-form-primary">
+								{{ $tender->vendorDokumenActionLabel() }}
+							</a>
 						</div>
 					@endif
 				</div>
@@ -900,7 +902,7 @@
 													@endif
 													@if (!$vendorHasPurchased && $tender->canPurchase())
 														<div class="mt-1">
-															<a href="{{ route('tenders.buy', $tender->id) }}" class="small">Beli dokumen</a>
+															<a href="{{ route('tenders.buy', $tender->id) }}" class="small">{{ $tender->vendorDokumenActionLabel() }}</a>
 														</div>
 													@endif
 												</td>
@@ -1062,8 +1064,8 @@
 					</div>
 				@endif
 
-				{{-- TAB: Dokumen Tender/Tawaran atau Sebut Harga (senarai semak) --}}
-				@if ($tender->usesIklanDokumen() && $tender->iklanDokumens->isNotEmpty())
+				{{-- TAB: Dokumen Tender/Tawaran atau Sebut Harga (senarai semak) — iklan docs only after purchase --}}
+				@if ($vendorHasPurchased && $tender->usesIklanDokumen() && $tender->iklanDokumens->isNotEmpty())
 					<div class="tab-pane fade" id="vt-dokumen-tawaran" role="tabpanel">
 						<div class="vendor-tender-card">
 							<div class="vendor-tender-card-header">
@@ -1386,6 +1388,41 @@
 @endsection
 
 @section('scripts')
+	{{-- Deep-link from dashboard "Muat Turun" (#vt-dokumen-tawaran / legacy #tf-doc2) --}}
+	<script>
+		(function() {
+			function activateVendorHashTab() {
+				var hash = window.location.hash || '';
+				if (!hash || hash === '#') {
+					return;
+				}
+
+				// Legacy agency hash from old dashboard links.
+				if (hash === '#tf-doc2' || hash === '#tf-dokumen-tawaran') {
+					hash = '#vt-dokumen-tawaran';
+				}
+
+				var tabLink = document.querySelector('#vendorTabs a[href="' + hash + '"]');
+				if (!tabLink && hash === '#vt-dokumen-tawaran') {
+					tabLink = document.querySelector('#vendorTabs a[href="#vt-doc2"]');
+					hash = tabLink ? '#vt-doc2' : hash;
+				}
+				if (!tabLink || typeof bootstrap === 'undefined') {
+					return;
+				}
+
+				bootstrap.Tab.getOrCreateInstance(tabLink).show();
+				var pane = document.querySelector(hash);
+				if (pane) {
+					pane.scrollIntoView({ behavior: 'smooth', block: 'start' });
+				}
+			}
+
+			document.addEventListener('DOMContentLoaded', activateVendorHashTab);
+			window.addEventListener('hashchange', activateVendorHashTab);
+		})();
+	</script>
+
 	@if ($lawatanInfoBanner ?? null)
 		<script>
 			document.getElementById('btn-go-lawatan-tab')?.addEventListener('click', function() {
@@ -1517,7 +1554,7 @@
 		@include('tenders.forms._online_form_modal')
 	@endif
 
-	@if ($vendorHasPurchased && !$vendorSubmitted)
+	@if ($vendorHasPurchased && !$vendorSubmitted && ! $tender->usesIklanDokumen())
 		<script>
 			$(function() {
 				var READINESS_URL = @json(route('tenders.vendorSubmission.readiness', $tender->id));

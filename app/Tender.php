@@ -545,6 +545,81 @@ class Tender extends Model
 		return (bool) $this->kaedahDokumen?->skips_to_penyediaan_iklan;
 	}
 
+	/**
+	 * Kaedah "Bayaran Dokumen Secara Online" (ref_kaedah_dokumens.code = online).
+	 */
+	public function isBayaranDokumenOnline(): bool
+	{
+		if (! $this->relationLoaded('kaedahDokumen')) {
+			$this->load('kaedahDokumen');
+		}
+
+		return ($this->kaedahDokumen?->code ?? '') === 'online';
+	}
+
+	/**
+	 * Kaedah "Pembelian & Bayaran Manual di Agensi (Iklan Sahaja)" (code = manual).
+	 * No online payment — vendor may "add to list" to unlock dokumen downloads.
+	 */
+	public function isIklanSahajaManual(): bool
+	{
+		if (! $this->relationLoaded('kaedahDokumen')) {
+			$this->load('kaedahDokumen');
+		}
+
+		return ($this->kaedahDokumen?->code ?? '') === 'manual';
+	}
+
+	/**
+	 * Grant dokumen access without FPX: online (payment bypass) or manual iklan-sahaja (add to list).
+	 * Lawatan wajib / canParticipate still apply before the action is allowed.
+	 */
+	public function shouldBypassDokumenPayment(): bool
+	{
+		return $this->isBayaranDokumenOnline() || $this->isIklanSahajaManual();
+	}
+
+	public function vendorDokumenActionLabel(): string
+	{
+		if ($this->isIklanSahajaManual()) {
+			return 'Tambah ke Senarai';
+		}
+
+		if ($this->isBayaranDokumenOnline()) {
+			return 'Beli Dokumen';
+		}
+
+		return 'Tambah Kepada Senarai Tempahan';
+	}
+
+	/**
+	 * Record vendor as purchased (participate=1) without a payment gateway transaction.
+	 */
+	public function grantBypassDokumenPurchase(int $vendorId): TenderVendor
+	{
+		$purchase = $this->participants()->where('vendor_id', $vendorId)->first();
+
+		if ($purchase) {
+			$purchase->participate = 1;
+			$purchase->amount = $this->price;
+			if (empty($purchase->ref_number)) {
+				$purchase->ref_number = TenderVendor::generateNumber($this->id);
+			}
+			$purchase->save();
+		} else {
+			$purchase = $this->participants()->save(new TenderVendor([
+				'vendor_id' => $vendorId,
+				'participate' => 1,
+				'amount' => $this->price,
+				'ref_number' => TenderVendor::generateNumber($this->id),
+			]));
+		}
+
+		TenderVendor::syncKodPembekal($this->id);
+
+		return $purchase;
+	}
+
 	public const LEMBAGA_ANGGARAN_THRESHOLD = 5000000.0;
 
 	public function scopeAppointedTo($query, $user, string|array $jenis)
@@ -1119,7 +1194,11 @@ class Tender extends Model
 
 		$participate = $participate && $this->attendVisits($vendor->id);
 		$participate = !$this->isBlacklisted($vendor_id) && $participate;
-		$participate = !$this->only_advertise && $participate;
+		// Iklan Sahaja (manual): vendors may still "add to list" to unlock dokumen.
+		// Other only_advertise tenders stay blocked from purchase.
+		if ($this->only_advertise && ! $this->isIklanSahajaManual()) {
+			$participate = false;
+		}
 
 		return $participate;
 	}

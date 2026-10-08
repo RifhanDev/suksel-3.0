@@ -648,8 +648,10 @@
                                 @endphp
                                 @foreach ($kaedahDokumen as $kaedah)
                                     <div class="col">
-                                        <input type="radio" class="btn-check" name="kaedah_dokumen_id"
+                                        <input type="radio" class="btn-check kaedah-dokumen-radio" name="kaedah_dokumen_id"
                                             id="kd_{{ $kaedah->code }}" value="{{ $kaedah->id }}"
+                                            data-code="{{ $kaedah->code }}"
+                                            data-requires-lokasi="{{ in_array($kaedah->code, ['online', 'manual'], true) ? '1' : '0' }}"
                                             @checked($selectedKaedahId === (string) $kaedah->id)>
                                         <label class="payment-method-card d-block h-100 p-3 border rounded-3"
                                             for="kd_{{ $kaedah->code }}">
@@ -667,6 +669,18 @@
                                     </div>
                                 @endforeach
                             </div>
+                        </div>
+                    </div>
+
+                    {{-- Tempat Hantar (submission_location_address): only for Online + Manual (Iklan Sahaja) --}}
+                    <div class="row mb-4 d-none" id="lokasi_penghantaran_tender_row">
+                        <div class="col-12">
+                            <label class="form-label" for="submission_location_address">
+                                Tempat Hantar<span class="text-danger">*</span>
+                            </label>
+                            <textarea class="form-control" name="submission_location_address" id="submission_location_address"
+                                rows="3" placeholder="Contoh: Kaunter Tender, Pejabat SUK Selangor, Bangunan SSAAS, Shah Alam">{{ old('submission_location_address') }}</textarea>
+                            <div class="form-text">Wajib diisi untuk kaedah Bayaran Dokumen Secara Online dan Pembelian Manual di Agensi.</div>
                         </div>
                     </div>
 
@@ -1784,5 +1798,24 @@
                 $(this).val($(this).val().replace(/,/g, ''));
             });
         });
+
+        // Tempat Hantar — show/require only for online + manual kaedah
+        function syncLokasiPenghantaranField() {
+            var $checked = $('input.kaedah-dokumen-radio:checked');
+            var requires = $checked.data('requires-lokasi') == 1 || $checked.data('requires-lokasi') === '1';
+            var $row = $('#lokasi_penghantaran_tender_row');
+            var $input = $('#submission_location_address');
+
+            if (requires) {
+                $row.removeClass('d-none');
+                $input.prop('required', true);
+            } else {
+                $row.addClass('d-none');
+                $input.prop('required', false);
+            }
+        }
+
+        $(document).on('change', 'input.kaedah-dokumen-radio', syncLokasiPenghantaranField);
+        syncLokasiPenghantaranField();
     </script>
 @endsection

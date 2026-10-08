@@ -74,6 +74,7 @@ class TendersController extends Controller
 				'tenders.briefing_datetime',
 				'tenders.briefing_address',
 				'tenders.tender_peringkat',
+				'tenders.kaedah_dokumen_id',
 			]);
 			$tenders = $tenders->orderBy('created_at', 'desc');
 			$datatable = Datatables::of($tenders)
@@ -132,7 +133,8 @@ class TendersController extends Controller
 			->removeColumn('briefing_datetime')
 			->removeColumn('briefing_address')
 			->removeColumn('publish_prices')
-			->removeColumn('tender_peringkat');
+			->removeColumn('tender_peringkat')
+			->removeColumn('kaedah_dokumen_id');
 
 			if (!auth()->check() || auth()->user()->hasRole('Vendor')) $datatable = $datatable->removeColumn('approver_id');
 
@@ -348,6 +350,10 @@ class TendersController extends Controller
 				->with('error', 'Sila pilih Kaedah Bayaran / Perolehan Dokumen yang sah.');
 		}
 
+		if ($denied = $this->rejectMissingLokasiPenghantaran($payload, $kaedahDokumen)) {
+			return $denied;
+		}
+
 		$errorCheck = false;
 		try {
 			$stosClient = app(StosBackendClient::class);
@@ -361,7 +367,7 @@ class TendersController extends Controller
 				$statusProcessId = TenderProcessStatus::statusAfterCiptaTender($kaedahDokumen);
 
 				if ($tenderId > 0) {
-					Tender::query()->where('id', $tenderId)->update([
+					$localPatch = [
 						'status_process_id' => $statusProcessId,
 						'kaedah_dokumen_id' => $kaedahDokumen?->id,
 						'advertise_start_date' => null,
@@ -369,7 +375,10 @@ class TendersController extends Controller
 						'document_start_date' => null,
 						'document_stop_date' => null,
 						'submission_datetime' => null,
-					]);
+						'submission_location_address' => $this->lokasiPenghantaranForKaedah($payload, $kaedahDokumen),
+					];
+
+					Tender::query()->where('id', $tenderId)->update($localPatch);
 				}
 
 				Log::info(
@@ -509,6 +518,14 @@ class TendersController extends Controller
 
 		if (! auth()->check() || ! $tender->canShow()) {
 			return $this->_access_denied();
+		}
+
+		$user = auth()->user();
+		if ($user->hasRole('Vendor')) {
+			$vendorId = (int) ($user->vendor_id ?? 0);
+			if ($vendorId < 1 || ! $tender->hasParticipate($vendorId)) {
+				return $this->_access_denied();
+			}
 		}
 
 		if (! \Illuminate\Support\Facades\Storage::disk('local')->exists($dokumen->path)) {
@@ -859,6 +876,7 @@ class TendersController extends Controller
 			'no_kontrak'                => $tender->no_kontrak,
 			'price'                     => $tender->price,
 			'kaedah_dokumen_id'         => $tender->kaedah_dokumen_id,
+			'submission_location_address' => $tender->submission_location_address,
 			'harga_indikatif'           => $tender->harga_indikatif,
 			'anggaran_jabatan'          => $tender->anggaran_jabatan,
 			'wang_kos_prima'            => $tender->wang_kos_prima,
@@ -1006,6 +1024,10 @@ class TendersController extends Controller
 				->with('error', 'Sila pilih Kaedah Bayaran / Perolehan Dokumen yang sah.');
 		}
 
+		if ($denied = $this->rejectMissingLokasiPenghantaran($payload, $kaedahDokumen)) {
+			return $denied;
+		}
+
 		if (isset($payload['ptj_id']) && auth()->user()->hasRole('Admin')) {
 			$payload['organization_unit_id'] = $payload['ptj_id'];
 		} else {
@@ -1029,6 +1051,7 @@ class TendersController extends Controller
 
 			Tender::query()->where('id', $tender->id)->update([
 				'kaedah_dokumen_id' => $kaedahDokumen->id,
+				'submission_location_address' => $this->lokasiPenghantaranForKaedah($payload, $kaedahDokumen),
 			]);
 
 			Log::info('Tender updated via backend API', ['tender_id' => $tender->id]);
@@ -1097,6 +1120,40 @@ class TendersController extends Controller
 		}
 
 		return RefKaedahDokumen::query()->where('active', true)->find($id);
+	}
+
+	/**
+	 * Online + Manual (Iklan Sahaja) require Tempat Hantar (submission_location_address).
+	 */
+	private function kaedahRequiresLokasiPenghantaran(?RefKaedahDokumen $kaedah): bool
+	{
+		return in_array($kaedah?->code, ['online', 'manual'], true);
+	}
+
+	private function rejectMissingLokasiPenghantaran(array $payload, RefKaedahDokumen $kaedah)
+	{
+		if (! $this->kaedahRequiresLokasiPenghantaran($kaedah)) {
+			return null;
+		}
+
+		$lokasi = trim((string) ($payload['submission_location_address'] ?? ''));
+		if ($lokasi !== '') {
+			return null;
+		}
+
+		return redirect()->back()->withInput()
+			->with('error', 'Sila isi Tempat Hantar untuk kaedah yang dipilih.');
+	}
+
+	private function lokasiPenghantaranForKaedah(array $payload, ?RefKaedahDokumen $kaedah): ?string
+	{
+		if (! $this->kaedahRequiresLokasiPenghantaran($kaedah)) {
+			return null;
+		}
+
+		$lokasi = trim((string) ($payload['submission_location_address'] ?? ''));
+
+		return $lokasi !== '' ? $lokasi : null;
 	}
 
 	private function activeKaedahDokumenChoices()
@@ -1196,21 +1253,49 @@ class TendersController extends Controller
 	public function buy($id)
 	{
 
-		$tender = Tender::findOrFail($id);
+		$tender = Tender::with(['kaedahDokumen', 'siteVisits'])->findOrFail($id);
+		$vendorId = (int) (auth()->user()->vendor_id ?? 0);
 
 		if ($tender->documentSalesClosed() || !$tender->isWithinVendorDokumenWindow()) {
 			return redirect()->back()->with('error', 'Pembelian tender telah tamat tempoh');
 		}
 
-		if (!$tender->canShow() || !auth()->user()->hasRole('Vendor') || !$tender->canParticipate(auth()->user()->vendor_id) || $tender->hasParticipate(auth()->user()->vendor_id))
+		if (!$tender->canShow() || !auth()->user()->hasRole('Vendor') || $tender->hasParticipate($vendorId)) {
 			return $this->_access_denied();
+		}
+
+		if ($tender->hasParticipate($vendorId)) {
+			return redirect('tenders/' . $tender->id)->with('error', 'Tender ini sudah dibeli!');
+		}
+
+		// Wajib lawatan: wakil mesti hadir dan disahkan urusetia/agensi sebelum beli.
+		if ($tender->hasRequiredSiteVisits() && ! $tender->attendVisits($vendorId)) {
+			return redirect('tenders/' . $tender->id)->with(
+				'error',
+				'Lawatan tapak wajib. Sila daftar wakil syarikat dan tunggu pengesahan kehadiran oleh urusetia/agensi sebelum membeli dokumen.'
+			);
+		}
+
+		if (! $tender->canParticipate($vendorId)) {
+			return $this->_access_denied();
+		}
+
+		// Online (payment bypass) or Manual Iklan Sahaja (add to list) — no cart/FPX.
+		if ($tender->shouldBypassDokumenPayment()) {
+			$tender->grantBypassDokumenPurchase($vendorId);
+
+			$cartItems = array_values(array_diff(session('cart_items', []), [$tender->id]));
+			session()->put('cart_items', $cartItems);
+
+			$message = $tender->isIklanSahajaManual()
+				? 'Tender telah ditambah ke senarai anda. Dokumen kini boleh dimuat turun. Bayaran dokumen dibuat secara manual di agensi.'
+				: 'Dokumen telah dibeli. Bayaran dalam talian akan diaktifkan kemudian (bypass buat masa ini).';
+
+			return redirect('tenders/' . $tender->id)->with('success', $message);
+		}
 
 		if (!empty(session('cart_ou')) && session('cart_ou') != $tender->organization_unit_id) {
 			return redirect('tenders/' . $tender->id)->with('error', 'Hanya tender dari agensi yang sama boleh di beli!');
-		}
-
-		if ($tender->hasParticipate(auth()->user()->vendor_id)) {
-			return redirect('tenders/', $tender->id)->with('error', 'Tender ini sudah dibeli!');
 		}
 
 		if ($tender->organization_unit_id != config('app.global_cart_ou')) {
@@ -1394,32 +1479,48 @@ class TendersController extends Controller
 	public function receipt($tender_id, $id)
 	{
 		$tender   = Tender::findOrFail($tender_id);
-		$purchase = $tender->participants()->with('transaction')->findOrFail($id);
+		$purchase = $tender->participants()->with(['transaction.gateway.agency', 'vendor'])->findOrFail($id);
 
 		if (!$purchase->canViewReceipt())
 			return $this->_access_denied();
 
-		$year = date('d-m-Y', strtotime($purchase->transaction->created_at));
-		$receipt = $this->receiptNumGenerator($purchase->transaction->number, $year);
+		$transaction = $purchase->transaction;
+		// transaction_id 0 / missing = bypass / manual / agency-recorded purchase
+		$hasTransaction = $transaction && (int) ($purchase->transaction_id ?? 0) > 0;
+
 		$type = 'SALINAN';
-		if ($purchase->transaction->receipt_generated_at == null) {
-			$purchase->transaction->receipt_generated_at = date('Y-m-d H:i:s');
-			$purchase->transaction->update();
+		$receipt = 'old';
+
+		if ($hasTransaction) {
+			$year = date('d-m-Y', strtotime($transaction->created_at));
+			$receipt = $this->receiptNumGenerator($transaction->number, $year);
+			if ($transaction->receipt_generated_at == null) {
+				$transaction->receipt_generated_at = date('Y-m-d H:i:s');
+				$transaction->update();
+				$type = 'ASAL';
+			}
+		} else {
 			$type = 'ASAL';
+			$receipt = $purchase->ref_number ?: ('TV-' . $purchase->id);
 		}
-		return view('tenders.receipt', compact('tender', 'purchase', 'type', 'receipt'));
-		//return PDF::loadView('tenders.receipt', compact('tender', 'purchase', 'type'))->stream();
+
+		return view('tenders.receipt', compact('tender', 'purchase', 'type', 'receipt', 'hasTransaction'));
 	}
 
 	public function document($tender_id, $id)
 	{
 		$tender   = Tender::findOrFail($tender_id);
-		$purchase = TenderVendor::findOrFail($id);
-		$year = date('d-m-Y', strtotime($purchase->transaction->created_at));
-		$receipt = $this->receiptNumGenerator($purchase->transaction->number, $year);
+		$purchase = TenderVendor::with('transaction')->findOrFail($id);
 
 		if (auth()->user()->hasRole('Vendor') && $purchase->vendor_id != auth()->user()->vendor_id)
 			return $this->_access_denied();
+
+		$receipt = 'old';
+		$transaction = $purchase->transaction;
+		if ($transaction && (int) ($purchase->transaction_id ?? 0) > 0 && $transaction->created_at) {
+			$year = date('d-m-Y', strtotime($transaction->created_at));
+			$receipt = $this->receiptNumGenerator($transaction->number, $year);
+		}
 
 		return view('tenders.document', compact('purchase', 'receipt'));
 	}

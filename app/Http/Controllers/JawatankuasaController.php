@@ -31,7 +31,12 @@ class JawatankuasaController extends Controller
     {
         $tenderUuid = $request->input('tender');
         if (!empty($tenderUuid)) {
-            $tender = Tender::where('uuid', $tenderUuid)->first();
+            $tender = Tender::with('kaedahDokumen')->where('uuid', $tenderUuid)->first();
+            if ($tender && $tender->usesIklanDokumen()) {
+                return redirect()
+                    ->route('penyediaanIklan.show', $tender->id)
+                    ->with('error', 'Kaedah dokumen ini tidak memerlukan pelantikan jawatankuasa. Sila teruskan ke Penyediaan Iklan.');
+            }
             if ($tender) {
                 $tender->update(['tender_peringkat' => 2]);
             }
@@ -46,7 +51,12 @@ class JawatankuasaController extends Controller
     {
         $tenderUuid = $request->input('tender');
         if (!empty($tenderUuid)) {
-            $tender = Tender::where('uuid', $tenderUuid)->first();
+            $tender = Tender::with('kaedahDokumen')->where('uuid', $tenderUuid)->first();
+            if ($tender && $tender->usesIklanDokumen()) {
+                return redirect()
+                    ->route('penyediaanIklan.show', $tender->id)
+                    ->with('error', 'Kaedah dokumen ini tidak memerlukan pelantikan jawatankuasa. Sila teruskan ke Penyediaan Iklan.');
+            }
             if ($tender) {
                 $tender->update(['tender_peringkat' => 1]);
             }

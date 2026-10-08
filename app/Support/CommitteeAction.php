@@ -40,6 +40,12 @@ class CommitteeAction
             return '';
         }
 
+        // Bayaran Dokumen Secara Online / Pembelian Manual (Iklan Sahaja)
+        // skip pelantikan jawatankuasa — go straight to penyediaan iklan.
+        if (method_exists($tender, 'usesIklanDokumen') && $tender->usesIklanDokumen()) {
+            return '';
+        }
+
         // Proses sudah bermula atau selesai — tiada butang.
         if ($tender->status !== 'Tiada Jawatan Kuasa') {
             return '';

@@ -1146,7 +1146,9 @@
 
 			@if ($tender->canPurchase())
 				<div class="text-end mt-3">
-					<a href="{{ route('tenders.buy', [$tender->id]) }}" class="btn btn-selangor">Tambah Kepada Senarai Tempahan</a>
+					<a href="{{ route('tenders.buy', [$tender->id]) }}" class="btn btn-selangor">
+						{{ $tender->vendorDokumenActionLabel() }}
+					</a>
 				</div>
 			@endif
 
@@ -1160,6 +1162,32 @@
 	{{-- <script src="{{ asset('js/datatables.js') }}"></script> --}}
 	{{-- <script src="https://cdn.ckeditor.com/4.20.2/full/ckeditor.js"></script> --}}
 	<script src="{{ asset('custom_library/ckeditor/ckeditor.js') }}"></script>
+
+	{{-- Activate tender tab from URL hash (e.g. #tf-doc2 / #tf-dokumen-tawaran) --}}
+	<script>
+		(function() {
+			function activateAuthHashTab() {
+				var hash = window.location.hash || '';
+				if (!hash || hash === '#') {
+					return;
+				}
+
+				var tabLink = document.querySelector('.nav-tabs a[href="' + hash + '"]');
+				if (!tabLink && (hash === '#vt-dokumen-tawaran' || hash === '#vt-doc2')) {
+					tabLink = document.querySelector('.nav-tabs a[href="#tf-dokumen-tawaran"]')
+						|| document.querySelector('.nav-tabs a[href="#tf-doc2"]');
+				}
+				if (!tabLink || typeof bootstrap === 'undefined') {
+					return;
+				}
+
+				bootstrap.Tab.getOrCreateInstance(tabLink).show();
+			}
+
+			document.addEventListener('DOMContentLoaded', activateAuthHashTab);
+			window.addEventListener('hashchange', activateAuthHashTab);
+		})();
+	</script>
 
 	<script type="text/javascript">
 		$(document).ready(function() {

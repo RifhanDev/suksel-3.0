@@ -228,7 +228,8 @@ class OrganizationUnitsController extends Controller
 				'briefing_datetime',
 				'ref_number',
 				'created_at',
-				'tender_peringkat'
+				'tender_peringkat',
+				'kaedah_dokumen_id',
 			]);
 
 			$datatable = Datatables::of($tenders)->editColumn('name', function ($tender)
@@ -392,6 +393,7 @@ class OrganizationUnitsController extends Controller
 				->removeColumn('briefing_required')
 				->removeColumn('briefing_datetime')
 				->removeColumn('briefing_address')
+				->removeColumn('kaedah_dokumen_id')
 				->rawColumns(['name', 'codes', 'document_start_date', 'submission_datetime', 'price', 'status', 'actions', 'report'])
 				->make();
 		}

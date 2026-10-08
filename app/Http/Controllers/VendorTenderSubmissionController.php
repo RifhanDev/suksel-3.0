@@ -13,6 +13,8 @@ class VendorTenderSubmissionController extends Controller
 
     public function readiness(Tender $tender)
     {
+        $this->assertOnlineSubmissionAllowed($tender);
+
         $vendorId = $this->vendorId();
 
         $result = $this->submissions->readiness($tender, $vendorId);
@@ -34,6 +36,8 @@ class VendorTenderSubmissionController extends Controller
 
     public function submit(Request $request, Tender $tender)
     {
+        $this->assertOnlineSubmissionAllowed($tender);
+
         $vendorId = $this->vendorId();
 
         $purchase = $this->submissions->submit($tender, $vendorId);
@@ -66,5 +70,18 @@ class VendorTenderSubmissionController extends Controller
         }
 
         return (int) $user->vendor_id;
+    }
+
+    /**
+     * Bayaran Dokumen Secara Online / Pembelian Manual (Iklan Sahaja):
+     * tawaran dihantar secara manual ke kaunter, bukan melalui sistem.
+     */
+    protected function assertOnlineSubmissionAllowed(Tender $tender): void
+    {
+        $tender->loadMissing('kaedahDokumen');
+
+        if ($tender->usesIklanDokumen()) {
+            abort(403, 'Kaedah dokumen ini tidak memerlukan penghantaran tawaran melalui sistem.');
+        }
     }
 }
