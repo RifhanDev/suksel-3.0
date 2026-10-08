@@ -183,6 +183,10 @@ class JawatankuasaPerolehanController extends Controller
 
             $this->ensurePemilihanDefaults($tender);
             $this->syncPemilihanFromSources($tender);
+            // eBidding bekalan/perkhidmatan: expand Senarai Item from technical spec parents + children.
+            if ((bool) ($tender->is_ebidding ?? false)) {
+                app(EbiddingController::class)->syncPemilihanItemsFromSpecification($tender);
+            }
             $pemilihanOpts = $this->pemilihanDropdownOptions($tender);
             $headerModel = JawatankuasaPerolehanPemilihanHeader::query()
                 ->where('tender_id', $tender->id)
