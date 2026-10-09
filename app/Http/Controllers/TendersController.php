@@ -1280,18 +1280,18 @@ class TendersController extends Controller
 			return $this->_access_denied();
 		}
 
-		// Online (payment bypass) or Manual Iklan Sahaja (add to list) — no cart/FPX.
+		// Manual Iklan Sahaja only: add to list without FPX.
+		// Online / Online+Penilaian must continue to cart + FPX below.
 		if ($tender->shouldBypassDokumenPayment()) {
 			$tender->grantBypassDokumenPurchase($vendorId);
 
 			$cartItems = array_values(array_diff(session('cart_items', []), [$tender->id]));
 			session()->put('cart_items', $cartItems);
 
-			$message = $tender->isIklanSahajaManual()
-				? 'Tender telah ditambah ke senarai anda. Dokumen kini boleh dimuat turun. Bayaran dokumen dibuat secara manual di agensi.'
-				: 'Dokumen telah dibeli. Bayaran dalam talian akan diaktifkan kemudian (bypass buat masa ini).';
-
-			return redirect('tenders/' . $tender->id)->with('success', $message);
+			return redirect('tenders/' . $tender->id)->with(
+				'success',
+				'Tender telah ditambah ke senarai anda. Dokumen kini boleh dimuat turun. Bayaran dokumen dibuat secara manual di agensi.'
+			);
 		}
 
 		if (!empty(session('cart_ou')) && session('cart_ou') != $tender->organization_unit_id) {

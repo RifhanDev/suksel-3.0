@@ -35,11 +35,15 @@ class TenderKaedahDokumenStatusTest extends TestCase
         $this->assertSame(TenderProcessStatus::CIPTA_TENDER, TenderProcessStatus::statusAfterCiptaTender(null));
     }
 
-    public function test_bayaran_dokumen_online_bypasses_payment(): void
+    public function test_online_kaedah_requires_fpx_manual_bypasses(): void
     {
         $online = new RefKaedahDokumen();
         $online->code = 'online';
         $online->skips_to_penyediaan_iklan = true;
+
+        $penilaian = new RefKaedahDokumen();
+        $penilaian->code = 'online_penilaian';
+        $penilaian->skips_to_penyediaan_iklan = false;
 
         $manual = new RefKaedahDokumen();
         $manual->code = 'manual';
@@ -48,13 +52,21 @@ class TenderKaedahDokumenStatusTest extends TestCase
         $tenderOnline = new Tender();
         $tenderOnline->setRelation('kaedahDokumen', $online);
         $this->assertTrue($tenderOnline->isBayaranDokumenOnline());
-        $this->assertTrue($tenderOnline->shouldBypassDokumenPayment());
-        $this->assertSame('Beli Dokumen', $tenderOnline->vendorDokumenActionLabel());
+        $this->assertTrue($tenderOnline->requiresOnlineDokumenPayment());
+        $this->assertFalse($tenderOnline->shouldBypassDokumenPayment());
+        $this->assertSame('Tambah Kepada Senarai Tempahan', $tenderOnline->vendorDokumenActionLabel());
+
+        $tenderPenilaian = new Tender();
+        $tenderPenilaian->setRelation('kaedahDokumen', $penilaian);
+        $this->assertTrue($tenderPenilaian->isBayaranDokumenOnlinePenilaian());
+        $this->assertTrue($tenderPenilaian->requiresOnlineDokumenPayment());
+        $this->assertFalse($tenderPenilaian->shouldBypassDokumenPayment());
 
         $tenderManual = new Tender();
         $tenderManual->setRelation('kaedahDokumen', $manual);
         $this->assertTrue($tenderManual->isIklanSahajaManual());
         $this->assertTrue($tenderManual->shouldBypassDokumenPayment());
+        $this->assertFalse($tenderManual->requiresOnlineDokumenPayment());
         $this->assertSame('Tambah ke Senarai', $tenderManual->vendorDokumenActionLabel());
     }
 

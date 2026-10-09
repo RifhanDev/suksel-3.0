@@ -116,11 +116,11 @@ class CartController extends Controller
 		$method = $request->method;
 		$type   = in_array($method, ['fpx-1', 'fpx-2']) ? 'fpx' : $method;
 
-		// Safety net: cart checkout for Bayaran Dokumen Secara Online still bypasses gateway
-		// (primary path is TendersController::buy → grantBypassDokumenPurchase).
-		$allOnlineBypass = $tenders->isNotEmpty()
+		// Manual Iklan Sahaja only may skip gateway if somehow still in cart.
+		// Online / Online+Penilaian must pay via FPX (or eBPG when enabled).
+		$allManualBypass = $tenders->isNotEmpty()
 			&& $tenders->every(fn (Tender $tender) => $tender->shouldBypassDokumenPayment());
-		if ($allOnlineBypass) {
+		if ($allManualBypass) {
 			$method = 'direct';
 			$type = 'direct';
 			$amount = 0.00;
