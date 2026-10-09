@@ -317,16 +317,18 @@
                     {{-- $rows dihantar dari CutOffController (data sebenar dari STOS) --}}
                     @php $isSubmitted = ($selectionStatus ?? null) === 'submitted'; @endphp
                     @forelse($rows ?? [] as $idx => $r)
-                    <tr class="{{ !empty($r['failed']) ? 'table-danger' : '' }}">
+                    <tr class="{{ !empty($r['is_aj']) ? 'table-secondary' : (!empty($r['failed']) ? 'table-danger' : '') }}">
                         <td class="text-center">{{ $r['no'] }}</td>
-                        <td class="text-center">{{ $r['ruj'] }}</td>
+                        <td class="text-center">{{ !empty($r['is_aj']) ? 'AJ' : $r['ruj'] }}</td>
                         <td class="text-center">{{ $r['price'] }}</td>
                         <td class="text-center {{ $r['freak'] ? 'text-freak' : '' }}">{{ $r['bw'] }}</td>
                         <td class="text-center">{{ $r['z'] }}</td>
                         <td class="text-center">{{ $r['pct_aj'] }}</td>
                         <td class="text-center {{ $r['freak'] ? 'text-freak' : '' }}">{{ $r['pct_mean'] }}</td>
                         <td class="text-center">
-                            @if (!empty($r['failed']))
+                            @if (!empty($r['is_aj']))
+                                <span class="text-muted">—</span>
+                            @elseif (!empty($r['failed']))
                                 <span class="badge bg-danger">{{ $r['status'] ?? 'Gagal' }}</span>
                             @else
                                 <span class="badge bg-success">{{ $r['status'] ?? 'Lulus' }}</span>
