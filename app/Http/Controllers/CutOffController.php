@@ -116,17 +116,18 @@ class CutOffController extends Controller
         $frequency = $row['frequency'] ?? [];
         $selection = $row['selection'] ?? null;
 
-        // Jadual per-syarikat (No, Ruj, Tend Price, BW, Z, %Bwaj, %Bwam, Status)
+        // Jadual: baris AJ (Anggaran Jabatan) dahulu, kemudian syarikat.
+        // AJ dipaparkan sebagai rujukan — tidak boleh dipilih.
         $rows = collect($vendorsCutOff)
-            ->reject(fn ($r) => ! empty($r['is_aj']))
             ->map(function ($r) {
+                $isAj = ! empty($r['is_aj']);
                 $isFreak = ($r['bw'] ?? null) === 'FREAK';
                 $failed = ! empty($r['failed']);
                 $tendPrice = $r['tend_price'] ?? null;
 
                 return [
                     'no' => $r['bil'] ?? '-',
-                    'ruj' => $r['ruj'] ?? '-',
+                    'ruj' => $r['ruj'] ?? ($isAj ? 'AJ' : '-'),
                     'price' => $tendPrice === null ? '-' : number_format((float) $tendPrice, 2),
                     'bw' => ($r['bw'] ?? null) === null
                         ? '-'
@@ -136,8 +137,9 @@ class CutOffController extends Controller
                     'pct_mean' => ($r['pct_bwam'] ?? null) === 'FREAK' ? 'FREAK' : $this->formatPeratus($r['pct_bwam'] ?? null),
                     'freak' => $isFreak,
                     'failed' => $failed,
-                    'status' => $r['status'] ?? ($failed ? 'Gagal' : 'Lulus'),
-                    'selectable' => ! $failed && $tendPrice !== null,
+                    'is_aj' => $isAj,
+                    'status' => $isAj ? null : ($r['status'] ?? ($failed ? 'Gagal' : 'Lulus')),
+                    'selectable' => ! $isAj && ! $failed && $tendPrice !== null,
                 ];
             })->values()->all();
 
