@@ -558,6 +558,26 @@ class Tender extends Model
 	}
 
 	/**
+	 * Kaedah "Bayaran Dokumen dan Penilaian secara online" (code = online_penilaian).
+	 */
+	public function isBayaranDokumenOnlinePenilaian(): bool
+	{
+		if (! $this->relationLoaded('kaedahDokumen')) {
+			$this->load('kaedahDokumen');
+		}
+
+		return ($this->kaedahDokumen?->code ?? '') === 'online_penilaian';
+	}
+
+	/**
+	 * Vendor must pay dokumen via FPX cart (online / online_penilaian).
+	 */
+	public function requiresOnlineDokumenPayment(): bool
+	{
+		return $this->isBayaranDokumenOnline() || $this->isBayaranDokumenOnlinePenilaian();
+	}
+
+	/**
 	 * Kaedah "Pembelian & Bayaran Manual di Agensi (Iklan Sahaja)" (code = manual).
 	 * No online payment — vendor may "add to list" to unlock dokumen downloads.
 	 */
@@ -571,22 +591,18 @@ class Tender extends Model
 	}
 
 	/**
-	 * Grant dokumen access without FPX: online (payment bypass) or manual iklan-sahaja (add to list).
-	 * Lawatan wajib / canParticipate still apply before the action is allowed.
+	 * Only Manual (Iklan Sahaja) skips FPX — "Tambah ke Senarai".
+	 * Online kaedah must use cart + FPX.
 	 */
 	public function shouldBypassDokumenPayment(): bool
 	{
-		return $this->isBayaranDokumenOnline() || $this->isIklanSahajaManual();
+		return $this->isIklanSahajaManual();
 	}
 
 	public function vendorDokumenActionLabel(): string
 	{
 		if ($this->isIklanSahajaManual()) {
 			return 'Tambah ke Senarai';
-		}
-
-		if ($this->isBayaranDokumenOnline()) {
-			return 'Beli Dokumen';
 		}
 
 		return 'Tambah Kepada Senarai Tempahan';
