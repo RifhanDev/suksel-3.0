@@ -228,7 +228,7 @@
                         </thead>
                         <tbody>
                             <tr>
-                                <td><strong>No. of Tender Analysed (Nt)</strong><br><span class="fw-normal">Syarikat yang masuk + AJ</span></td>
+                                <td><strong>No. of Tenders Analysed including AJ (Nt)</strong><br><span class="fw-normal">Tidak termasuk harga FREAK</span></td>
                                 <td class="text-center">{{ $nt ?? '-' }}</td>
                             </tr>
                             <tr>
