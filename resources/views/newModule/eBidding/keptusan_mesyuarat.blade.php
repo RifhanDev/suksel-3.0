@@ -5,8 +5,8 @@
 
 	<style>
 		/* =====================
-															SECTION BAR
-															===================== */
+																SECTION BAR
+																===================== */
 		.section-title-bar {
 			background: #f3f5f8;
 			border: 1px solid #e9edf3;
@@ -20,8 +20,8 @@
 
 
 		/* =====================
-															TABLE STYLE
-															===================== */
+																TABLE STYLE
+																===================== */
 		.table thead th {
 			text-align: center;
 			vertical-align: middle;
@@ -37,8 +37,8 @@
 		}
 
 		/* =====================
-															RED TABLE HEADER
-															===================== */
+																RED TABLE HEADER
+																===================== */
 		.table thead th {
 			background-color: #B11217 !important;
 			color: #ffffff !important;
@@ -473,6 +473,18 @@
 						</div>
 
 						<div class="section-grey">Senarai Pembekal</div>
+						@if (!empty($showBidPriceDiff))
+							<div class="d-flex flex-wrap gap-3 small mb-2">
+								<span class="d-inline-flex align-items-center gap-1">
+									<span class="rounded-circle d-inline-block" style="width:10px;height:10px;background:#198754;"></span>
+									<span class="text-success fw-semibold">Hijau</span> = harga baharu (vendor key-in)
+								</span>
+								<span class="d-inline-flex align-items-center gap-1">
+									<span class="rounded-circle d-inline-block" style="width:10px;height:10px;background:#dc3545;"></span>
+									<span class="text-danger fw-semibold">Merah</span> = harga lama (tiada bidaan baharu)
+								</span>
+							</div>
+						@endif
 						<div class="table-responsive mb-3">
 							<table class="table table-bordered table-blue text-center align-middle">
 								<thead>
@@ -486,7 +498,7 @@
 										<th style="width:150px;">Status Pendaftaran MOF</th>
 										<th colspan="2" style="width:220px;">Maklumat Tambahan</th>
 										<th style="width:180px;">Kaedah Memuktamadkan Pembekal oleh SULP</th>
-										<th style="width:120px;">Harga Bidaan (RM)</th>
+										<th style="width:140px;">Harga Bidaan (RM)</th>
 									</tr>
 									<tr>
 										<th colspan="7"></th>
@@ -499,8 +511,16 @@
 									@php
 										$firstItem = collect($agencyPemilihanItems ?? [])->first();
 										$petenderRows = $firstItem['petenders'] ?? [];
+										$showBidPriceDiff = !empty($showBidPriceDiff);
 									@endphp
 									@foreach ($petenderRows as $row)
+										@php
+											$isNewBid = $showBidPriceDiff && !empty($row['is_new_bid']);
+											$isOldBid = $showBidPriceDiff && empty($row['is_new_bid']);
+											$bidCellClass = $isNewBid ? 'text-success fw-semibold' : ($isOldBid ? 'text-danger fw-semibold' : '');
+											$bidCellBg = $isNewBid ? '#e8f7ef' : ($isOldBid ? '#fdebec' : '');
+											$bidLabel = $isNewBid ? 'Harga baharu' : ($isOldBid ? 'Harga lama' : null);
+										@endphp
 										<tr>
 											<td>{{ $row['bil_label'] }}</td>
 											<td class="text-start">
@@ -522,7 +542,25 @@
 												@endif
 											</td>
 											<td>{{ $row['kaedah_sulp'] }}</td>
-											<td>{{ number_format((float) $row['harga_bidaan'], 2) }}</td>
+											<td class="{{ $bidCellClass }}"
+												@if ($bidCellBg) style="background:{{ $bidCellBg }};" @endif>
+												<div class="d-flex align-items-center justify-content-center gap-1">
+													<div>
+														<div>{{ number_format((float) $row['harga_bidaan'], 2) }}</div>
+														@if ($bidLabel)
+															<div class="small fw-normal">{{ $bidLabel }}</div>
+														@endif
+													</div>
+													@include('components.bid-spec-breakdown', [
+														'items' => $row['spec_items'] ?? [],
+														'vendorName' => $row['vendor_name'] ?? null,
+														'vendorId' => $row['vendor_id'] ?? null,
+														'showPriceDiff' => $showBidPriceDiff,
+														'modalSuffix' => 'eb-' . ($row['vendor_id'] ?? uniqid()),
+														'title' => 'Item Spesifikasi',
+													])
+												</div>
+											</td>
 										</tr>
 									@endforeach
 								</tbody>
@@ -567,7 +605,7 @@
 							<div class="col-md-3">
 								<label class="form-label">Masa Bidaan Mula<span class="text-danger">*</span></label>
 								<input type="time" class="form-control" id="eb_jadual_masa_mula"
-									value="{{ old('masa_bidaan_mula', optional($jadualBidaan)->masa_bidaan_mula) }}">
+									value="{{ old('masa_bidaan_mula', optional($jadualBidaan)->timeForInput('masa_bidaan_mula')) }}">
 							</div>
 							<div class="col-md-3">
 								<label class="form-label">Tarikh Bidaan Tamat<span class="text-danger">*</span></label>
@@ -577,7 +615,7 @@
 							<div class="col-md-3">
 								<label class="form-label">Masa Bidaan Tamat<span class="text-danger">*</span></label>
 								<input type="time" class="form-control" id="eb_jadual_masa_tamat"
-									value="{{ old('masa_bidaan_tamat', optional($jadualBidaan)->masa_bidaan_tamat) }}">
+									value="{{ old('masa_bidaan_tamat', optional($jadualBidaan)->timeForInput('masa_bidaan_tamat')) }}">
 							</div>
 						</div>
 
@@ -998,7 +1036,11 @@
 
 			if (isAgencyReadOnly) {
 				$('#mainTabContent input, #mainTabContent select, #mainTabContent textarea').prop('disabled', true);
-				$('#mainTabContent button').prop('disabled', true).addClass('disabled');
+				// Keep spec breakdown info icons clickable (view-only).
+				$('#mainTabContent button')
+					.not('.bid-spec-breakdown-btn')
+					.prop('disabled', true)
+					.addClass('disabled');
 			}
 
 			renderTaklimatRows();

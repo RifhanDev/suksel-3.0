@@ -12,7 +12,11 @@ class MailQueue extends Model
     use SoftDeletes;
 
     public $timestamps = true;
-    protected $dates = ['email_send_at', 'created_at', 'deleted_at'];
+    protected $casts = [
+        'email_send_at' => 'datetime',
+        'created_at'    => 'datetime',
+        'deleted_at'    => 'datetime',
+    ];
 
     protected $fillable = [
         "smtp_mail_id",

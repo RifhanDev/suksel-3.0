@@ -228,7 +228,7 @@
                         </thead>
                         <tbody>
                             <tr>
-                                <td><strong>No. of Tender Analysed (Nt)</strong></td>
+                                <td><strong>No. of Tenders Analysed including AJ (Nt)</strong><br><span class="fw-normal">Tidak termasuk harga FREAK</span></td>
                                 <td class="text-center">{{ $nt ?? '-' }}</td>
                             </tr>
                             <tr>
@@ -301,6 +301,7 @@
                         <th>Z-score</th>
                         <th>%BWAJ</th>
                         <th>%BWAM</th>
+                        <th>Status</th>
                         <th class="text-center" style="width:10%;">
                             <div class="d-inline-flex align-items-center gap-1">
                                 Pilih
@@ -316,24 +317,37 @@
                     {{-- $rows dihantar dari CutOffController (data sebenar dari STOS) --}}
                     @php $isSubmitted = ($selectionStatus ?? null) === 'submitted'; @endphp
                     @forelse($rows ?? [] as $idx => $r)
-                    <tr>
+                    <tr class="{{ !empty($r['is_aj']) ? 'table-secondary' : (!empty($r['failed']) ? 'table-danger' : '') }}">
                         <td class="text-center">{{ $r['no'] }}</td>
-                        <td class="text-center">{{ $r['ruj'] }}</td>
+                        <td class="text-center">{{ !empty($r['is_aj']) ? 'AJ' : $r['ruj'] }}</td>
                         <td class="text-center">{{ $r['price'] }}</td>
                         <td class="text-center {{ $r['freak'] ? 'text-freak' : '' }}">{{ $r['bw'] }}</td>
                         <td class="text-center">{{ $r['z'] }}</td>
                         <td class="text-center">{{ $r['pct_aj'] }}</td>
                         <td class="text-center {{ $r['freak'] ? 'text-freak' : '' }}">{{ $r['pct_mean'] }}</td>
                         <td class="text-center">
-                            <input type="checkbox" class="form-check-input pilih-checkbox" name="pilih[]"
-                                value="{{ $r['ruj'] }}"
-                                {{ in_array($r['ruj'], $selectedRefs ?? [], true) ? 'checked' : '' }}
-                                {{ $isSubmitted ? 'disabled' : '' }}>
+                            @if (!empty($r['is_aj']))
+                                <span class="text-muted">—</span>
+                            @elseif (!empty($r['failed']))
+                                <span class="badge bg-danger">{{ $r['status'] ?? 'Gagal' }}</span>
+                            @else
+                                <span class="badge bg-success">{{ $r['status'] ?? 'Lulus' }}</span>
+                            @endif
+                        </td>
+                        <td class="text-center">
+                            @if (!empty($r['selectable']))
+                                <input type="checkbox" class="form-check-input pilih-checkbox" name="pilih[]"
+                                    value="{{ $r['ruj'] }}"
+                                    {{ in_array($r['ruj'], $selectedRefs ?? [], true) ? 'checked' : '' }}
+                                    {{ $isSubmitted ? 'disabled' : '' }}>
+                            @else
+                                <span class="text-muted" style="font-size:0.75rem;">—</span>
+                            @endif
                         </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="8" class="text-center text-muted py-4">Tiada syarikat untuk dianalisis.</td>
+                        <td colspan="9" class="text-center text-muted py-4">Tiada syarikat untuk dianalisis.</td>
                     </tr>
                     @endforelse
                 </tbody>
@@ -411,7 +425,7 @@
                     x: {
                         title: {
                             display: true,
-                            text: 'Price Classification: % of Mean'
+                            text: '% BWAM'
                         }
                     }
                 }

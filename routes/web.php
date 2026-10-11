@@ -105,6 +105,7 @@ use App\Http\Controllers\JawatankuasaPerolehanController;
 use App\Http\Controllers\PenyediaanMesyuaratController;
 use App\Http\Controllers\PenilaianKewanganController;
 use App\Http\Controllers\PenilaianKewanganKerjaController;
+use App\Http\Controllers\PenilaianKewanganSebutHargaKerjaController;
 use App\Http\Controllers\PenilaianTeknikalController;
 use App\Http\Controllers\PerakuanJabatanController;
 use App\Http\Controllers\EbiddingController;
@@ -204,6 +205,8 @@ Route::get('auth/forgot_password', [AuthController::class, 'forgotPassword']);
 Route::post('auth/forgot_password', [AuthController::class, 'doForgotPassword']);
 Route::get('auth/reset/{token}', [AuthController::class, 'resetPassword']);
 Route::post('auth/reset', [AuthController::class, 'doResetPassword']);
+Route::get('auth/pending-agency-approval', [AuthController::class, 'pendingAgencyApproval'])
+    ->name('auth.pending-agency-approval');
 
 // Tenders
 Route::get('tenders/select', [TendersController::class, 'select']);
@@ -216,7 +219,9 @@ Route::get('tenders/{id}/vendors', [TendersController::class, 'vendors'])->name(
 Route::post('tenders/{id}/exception', [TendersController::class, 'exception'])->name('tenders.exception');
 
 Route::middleware(['auth'])->group(function () {
+	Route::get('tenders/{tender}/iklan-dokumen/{dokumen}/download', [TendersController::class, 'downloadIklanDokumen'])->name('tenderIklanDokumen.download');
 	Route::get('tenders/{tender}/vendor-submission/readiness', [\App\Http\Controllers\VendorTenderSubmissionController::class, 'readiness'])->name('tenders.vendorSubmission.readiness');
+	Route::get('tenders/{tender}/vendor-submission', [\App\Http\Controllers\VendorTenderSubmissionController::class, 'show'])->name('tenders.vendorSubmission.show');
 	Route::post('tenders/{tender}/vendor-submission', [\App\Http\Controllers\VendorTenderSubmissionController::class, 'submit'])->name('tenders.vendorSubmission.submit');
 	Route::get('tenders/{tender}/dokumen/{itemUuid}/specification', [\App\Http\Controllers\VendorTenderDokumenController::class, 'specificationForm'])->name('tenderDokumen.specificationForm');
 	Route::get('tenders/{tender}/dokumen/pengalaman-kerja-review', [\App\Http\Controllers\PengalamanKerjaController::class, 'review'])->name('tenderDokumen.pengalamanKerjaReview');
@@ -264,16 +269,18 @@ Route::get('circulars/list', [CircularController::class, 'public'])->name('circu
 Route::get('circulars/sort', [CircularController::class, 'sortPosition'])->name('circulars.position');
 Route::post('circulars/sort', [CircularController::class, 'updatePosition'])->name('circulars.update.position');
 
-// Complaint/Aduan
+// Complaint/Aduan — create/store must stay public (guest + any logged-in role).
+// Do not re-register them inside role:Admin: same URI overwrites and causes 403.
 Route::get('aduan', [ComplaintController::class, 'create'])->name('aduan.create');
 Route::post('aduan', [ComplaintController::class, 'store'])->name('aduan.store');
-Route::get('aduan/list', [ComplaintController::class, 'index'])->name('aduan.index');
-Route::get('aduan/{id}', [ComplaintController::class, 'show'])->name('aduan.show');
-Route::get('aduan/{id}/{status}', [ComplaintController::class, 'updateStatus'])->name('aduan.update.status');
 
-// BotMan
-Route::match(['get', 'post'], 'botman', [BotManController::class, 'handle'])->name('botman');
-Route::get('chat-widget/{chat_id}', [BotManController::class, 'chatWidget'])->withoutMiddleware(['auth'])->name('chat_widget');
+// BotMan — public (guest + vendor + agency). Do not register again inside role:Admin.
+Route::match(['get', 'post'], 'botman', [BotManController::class, 'handle'])
+	->withoutMiddleware(['auth'])
+	->name('botman');
+Route::get('chat-widget/{chat_id}', [BotManController::class, 'chatWidget'])
+	->withoutMiddleware(['auth'])
+	->name('chat_widget');
 
 
 // Place 3.0 Modules Routes Temporarily Here
@@ -455,6 +462,18 @@ Route::middleware(['auth'])->group(function () {
 	Route::post('/penilaian-kewangan/simpan-laporan', [PenilaianKewanganController::class, 'simpanLaporanDraft'])->name('penilaianKewangan.simpanLaporan');
 	Route::post('/penilaian-kewangan/hantar', [PenilaianKewanganController::class, 'hantar'])->name('penilaianKewangan.hantar');
 
+	// Penilaian Kewangan (Sebut Harga Kerja - Type 2)
+	Route::get('/penilaian-kewangan-sebut-harga-kerja/{tender_no}/laporan/cetak', [PenilaianKewanganSebutHargaKerjaController::class, 'cetakLaporan'])->name('penilaianKewanganSebutHargaKerja.cetakLaporan')->where('tender_no', '.*');
+	Route::get('/penilaian-kewangan-sebut-harga-kerja/{tender_no}', [PenilaianKewanganSebutHargaKerjaController::class, 'show'])->name('penilaianKewanganSebutHargaKerja.show')->where('tender_no', '.*');
+	Route::post('/penilaian-kewangan-sebut-harga-kerja/simpan-dokumen', [PenilaianKewanganSebutHargaKerjaController::class, 'simpanDokumen'])->name('penilaianKewanganSebutHargaKerja.simpanDokumen');
+	Route::post('/penilaian-kewangan-sebut-harga-kerja/sahkan-langkah-1', [PenilaianKewanganSebutHargaKerjaController::class, 'sahkanLangkah1'])->name('penilaianKewanganSebutHargaKerja.sahkanLangkah1');
+	Route::post('/penilaian-kewangan-sebut-harga-kerja/simpan-kewangan', [PenilaianKewanganSebutHargaKerjaController::class, 'simpanKewangan'])->name('penilaianKewanganSebutHargaKerja.simpanKewangan');
+	Route::post('/penilaian-kewangan-sebut-harga-kerja/sahkan-langkah-2', [PenilaianKewanganSebutHargaKerjaController::class, 'sahkanLangkah2'])->name('penilaianKewanganSebutHargaKerja.sahkanLangkah2');
+	Route::post('/penilaian-kewangan-sebut-harga-kerja/simpan-kerja', [PenilaianKewanganSebutHargaKerjaController::class, 'simpanKerja'])->name('penilaianKewanganSebutHargaKerja.simpanKerja');
+	Route::post('/penilaian-kewangan-sebut-harga-kerja/sahkan-langkah-3', [PenilaianKewanganSebutHargaKerjaController::class, 'sahkanLangkah3'])->name('penilaianKewanganSebutHargaKerja.sahkanLangkah3');
+	Route::post('/penilaian-kewangan-sebut-harga-kerja/simpan-laporan-draf', [PenilaianKewanganSebutHargaKerjaController::class, 'simpanLaporanDraf'])->name('penilaianKewanganSebutHargaKerja.simpanLaporanDraf');
+	Route::post('/penilaian-kewangan-sebut-harga-kerja/hantar', [PenilaianKewanganSebutHargaKerjaController::class, 'hantar'])->name('penilaianKewanganSebutHargaKerja.hantar');
+
 	// Penilaian Kewangan (Kerja)
 	Route::post('/penilaian-kewangan-kerja/{tender_no}/borang/borang1/simpan-kriteria', [PenilaianKewanganKerjaController::class, 'simpanBorang1Kriteria'])->name('penilaianKewanganKerja.borang1.simpanKriteria')->where('tender_no', '.*');
 	Route::post('/penilaian-kewangan-kerja/{tender_no}/borang/borang1/simpan-muktamad', [PenilaianKewanganKerjaController::class, 'simpanBorang1Muktamad'])->name('penilaianKewanganKerja.borang1.simpanMuktamad')->where('tender_no', '.*');
@@ -462,8 +481,10 @@ Route::middleware(['auth'])->group(function () {
 	Route::post('/penilaian-kewangan-kerja/{tender_no}/borang/borang2/simpan-muktamad', [PenilaianKewanganKerjaController::class, 'simpanBorang2Muktamad'])->name('penilaianKewanganKerja.borang2.simpanMuktamad')->where('tender_no', '.*');
 	Route::post('/penilaian-kewangan-kerja/{tender_no}/borang/borang3/simpan-muktamad', [PenilaianKewanganKerjaController::class, 'simpanBorang3Muktamad'])->name('penilaianKewanganKerja.borang3.simpanMuktamad')->where('tender_no', '.*');
 	Route::post('/penilaian-kewangan-kerja/{tender_no}/borang/borang4/simpan-vendor', [PenilaianKewanganKerjaController::class, 'simpanBorang4PenilaianVendor'])->name('penilaianKewanganKerja.borang4.simpanVendor')->where('tender_no', '.*');
+	Route::post('/penilaian-kewangan-kerja/{tender_no}/borang/borang4/simpan-penilaian', [PenilaianKewanganKerjaController::class, 'simpanPenilaianBorang7'])->name('penilaianKewanganKerja.borang4.simpanPenilaian')->where('tender_no', '.*');
 	Route::post('/penilaian-kewangan-kerja/{tender_no}/borang/borang4/simpan-muktamad', [PenilaianKewanganKerjaController::class, 'simpanBorang4Muktamad'])->name('penilaianKewanganKerja.borang4.simpanMuktamad')->where('tender_no', '.*');
 	Route::post('/penilaian-kewangan-kerja/{tender_no}/borang/borang5/simpan-kriteria', [PenilaianKewanganKerjaController::class, 'simpanBorang5Kriteria'])->name('penilaianKewanganKerja.borang5.simpanKriteria')->where('tender_no', '.*');
+	Route::post('/penilaian-kewangan-kerja/{tender_no}/borang/borang5/simpan-penilaian', [PenilaianKewanganKerjaController::class, 'simpanPenilaianBorang9'])->name('penilaianKewanganKerja.borang5.simpanPenilaian')->where('tender_no', '.*');
 	Route::post('/penilaian-kewangan-kerja/{tender_no}/borang/borang5/simpan-muktamad', [PenilaianKewanganKerjaController::class, 'simpanBorang5Muktamad'])->name('penilaianKewanganKerja.borang5.simpanMuktamad')->where('tender_no', '.*');
 	Route::post('/penilaian-kewangan-kerja/{tender_no}/borang/borang6/simpan-muktamad', [PenilaianKewanganKerjaController::class, 'simpanBorang6Muktamad'])->name('penilaianKewanganKerja.borang6.simpanMuktamad')->where('tender_no', '.*');
 	Route::post('/penilaian-kewangan-kerja/{tender_no}/borang/borang7/simpan-muktamad', [PenilaianKewanganKerjaController::class, 'simpanBorang7Muktamad'])->name('penilaianKewanganKerja.borang7.simpanMuktamad')->where('tender_no', '.*');
@@ -601,6 +622,7 @@ Route::middleware(['auth'])->group(function () {
 	Route::post('/penyediaan-spesifikasi-tender/{tenderUuid}', [SpesifikasiTenderKerjaController::class, 'store'])->name('penyediaanSpekTender.store');
 	Route::post('/penyediaan-spesifikasi-tender/{tenderUuid}/hantar', [SpesifikasiTenderKerjaController::class, 'submit'])->name('penyediaanSpekTender.submit');
 	Route::post('/penyediaan-spesifikasi-tender/{tenderUuid}/fail', [SpesifikasiTenderKerjaController::class, 'uploadFile'])->name('penyediaanSpekTender.uploadFile');
+	Route::get('/penyediaan-spesifikasi-tender/{tenderUuid}/fail/{fileUuid}', [SpesifikasiTenderKerjaController::class, 'downloadFile'])->name('penyediaanSpekTender.downloadFile');
 	Route::delete('/penyediaan-spesifikasi-tender/fail/{fileUuid}', [SpesifikasiTenderKerjaController::class, 'deleteFile'])->name('penyediaanSpekTender.deleteFile');
 
 	// Senarai Kewangan Kerja
@@ -660,8 +682,8 @@ Route::middleware(['auth'])->group(function () {
 	// Get type of perolehan by kategori jenis perolehan
 	Route::get('/ref/type-of-perolehan-by-kategori', [RefKategoriJenisPerolehanController::class, 'getTypeOfPerolehanByKategori'])->name('getTypeOfPerolehanByKategori');
 
-	Route::resource('vendors', VendorsController::class);
 	Route::get('vendors/select', [VendorsController::class, 'select']);
+	Route::resource('vendors', VendorsController::class);
 	Route::get('vendors/new', [VendorsController::class, 'pendingRegistrationIndex']);
 	Route::get('vendors/approval', [VendorsController::class, 'approvalNew1Index']);
 	Route::get('vendors/changes', [VendorsController::class, 'approvalEdit1Index']);
@@ -712,6 +734,7 @@ Route::middleware(['auth'])->group(function () {
 	Route::get('tenders/{id}/buy', [TendersController::class, 'buy'])->name('tenders.buy');
 	Route::get('tenders/{tender}/receipt/{id}', [TendersController::class, 'receipt'])->name('tenders.receipt');
 	Route::get('tenders/{tender}/document/{id}', [TendersController::class, 'document'])->name('tenders.document');
+	Route::post('tenders/{id}/vendors/selesai', [TendersController::class, 'markSelesai'])->name('tenders.vendors.selesai');
 	Route::post('tenders/{id}/vendors', [TendersController::class, 'updateVendors']);
 	Route::post('tenders/{id}/invites', [TendersController::class, 'updateInvites']);
 	Route::post('tenders/{id}/vendor', [TendersController::class, 'addVendor'])->name('tenders.addVendor');
@@ -733,6 +756,8 @@ Route::middleware(['auth'])->group(function () {
 	Route::get('tenders/{id}/vendors/template', [TendersController::class, 'template'])->name('tenders.template');
 	Route::post('tenders/bulkUpdate', [TendersController::class, 'bulkUpdate'])->name('tenders.bulkUpdate');
 	Route::get('tenders/{id}/eligibles', [TendersController::class, 'eligibles'])->name('tenders.eligibles');
+	Route::post('tenders/{id}/eligibles/blast', [TendersController::class, 'blastEligibleEmails'])->name('tenders.eligibles.blast');
+	Route::post('tenders/{id}/eligibles/{eligible}/send-email', [TendersController::class, 'sendEligibleEmail'])->name('tenders.eligibles.send-email');
 	Route::post('tenders/exception/store', [TendersController::class, 'storeException'])->name('tender.store.exception');
 	Route::get('tenders/{id}/exceptions', [TendersController::class, 'exceptions'])->name('tender.exceptions');
 	Route::get('tenders/{id}/approve', [TendersController::class, 'approve_exception'])->name('tender.approve.exception');
@@ -824,6 +849,7 @@ Route::middleware(['auth'])->group(function () {
 		Route::get('users/pending-approval', [UsersController::class, 'pendingApproval'])->name('users.pending-approval');
 		Route::get('users/{user}/approval', [UsersController::class, 'approval'])->name('users.approval');
 		Route::put('users/{user}/approval', [UsersController::class, 'storeApproval'])->name('users.store-approval');
+		Route::put('users/{user}/approve', [UsersController::class, 'approveUser'])->name('users.approve');
 		Route::get('users/{user}/histories', [UsersController::class, 'histories'])->name('users.histories');
 		Route::get('users/{user}/login', [UsersController::class, 'doLogin'])->name('users.login');
 		Route::put('users/{user}/confirm', [UsersController::class, 'confirm']);
@@ -1037,17 +1063,11 @@ Route::middleware(['auth'])->group(function () {
 			});
 		});
 
-		// Complaint/Aduan
-		Route::get('aduan', [ComplaintController::class, 'create'])->name('aduan.create');
-		Route::post('aduan', [ComplaintController::class, 'store'])->name('aduan.store');
+		// Complaint/Aduan — admin management only (create/store are public above)
 		Route::get('aduan/list', [ComplaintController::class, 'index'])->name('aduan.index');
 		Route::get('aduan/{id}', [ComplaintController::class, 'show'])->name('aduan.show');
 		Route::post('aduan/{id}/reply', [ComplaintController::class, 'reply'])->name('aduan.reply');
 		Route::get('aduan/{id}/{status}', [ComplaintController::class, 'updateStatus'])->name('aduan.update.status');
-
-		// BotMan
-		Route::match(['get', 'post'], 'botman', [BotManController::class, 'handle'])->withoutMiddleware(['auth'])->name('botman');
-		Route::get('chat-widget/{chat_id}', [BotManController::class, 'chatWidget'])->withoutMiddleware(['auth'])->name('chat_widget');
 
 		// API Token
 		Route::get('apitoken', [ApiTokenController::class, 'index'])->name('apitoken.index');

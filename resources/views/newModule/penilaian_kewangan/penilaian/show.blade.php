@@ -297,23 +297,32 @@
 
 @php
     $tenderIdentifier = isset($tender) ? ($tender->uuid ?: $tender->id ?: $no_tender_display) : $no_tender_display;
-    $activeTab = request('tab') ?: request('stage') ?: 'p1';
+    $activeTab = request('tab') ?: request('stage') ?: ($nextActiveStage ?? 'p1');
     if (! in_array($activeTab, ['p1', 'p2', 'p3'], true)) {
-        $activeTab = 'p1';
+        $activeTab = $nextActiveStage ?? 'p1';
     }
 
+    $currentFlowType = $flowType ?? (isset($tender) && method_exists($tender, 'getKerjaClassification') ? $tender->getKerjaClassification() : 'kerja_besar');
+
     // Helper closure to render Borang card with sequential access control
-    $renderBorangCard = function ($code, $stageClass, $iconClass, $badgeLabel, $title, $description, $subPills = []) use ($borangAccess, $tenderIdentifier) {
+    $renderBorangCard = function ($code, $stageClass, $iconClass, $badgeLabel, $title, $description, $subPills = [], $isKerjaKecilPlaceholder = false) use ($borangAccess, $tenderIdentifier) {
         $acc = $borangAccess[$code] ?? ['is_unlocked' => ($code === 'borang1'), 'is_completed' => false, 'prev_title' => 'Borang Terdahulu'];
-        $unlocked = $acc['is_unlocked'];
-        $completed = $acc['is_completed'];
-        $prevTitle = $acc['prev_title'] ?? 'Borang Terdahulu';
+        
+        if ($isKerjaKecilPlaceholder) {
+            $unlocked = false;
+            $completed = false;
+            $prevTitle = 'Modul Borang Kerja Kecil dalam fasa pembangunan berasingan';
+        } else {
+            $unlocked = $acc['is_unlocked'];
+            $completed = $acc['is_completed'];
+            $prevTitle = $acc['prev_title'] ?? 'Borang Terdahulu';
+        }
 
         $href = $unlocked 
             ? route('penilaianKewanganKerja.borang.show', ['tender_no' => $tenderIdentifier, 'borang_code' => $code]) 
             : 'javascript:void(0);';
 
-        $cardClass = 'borang-card ' . ($unlocked ? 'borang-card-' . $stageClass : 'borang-card-locked js-locked-borang');
+        $cardClass = 'borang-card ' . ($unlocked ? 'borang-card-' . $stageClass : 'borang-card-locked ' . ($isKerjaKecilPlaceholder ? 'js-kerja-kecil-placeholder' : 'js-locked-borang'));
         $avatarClass = $unlocked ? 'icon-avatar-' . $stageClass : 'icon-avatar-locked';
         $textColor = $unlocked ? 'text-dark' : 'text-secondary';
         $btnColor = $unlocked ? 'text-danger' : 'text-muted';
@@ -323,13 +332,15 @@
         echo '    <div>';
         echo '      <div class="d-flex align-items-center justify-content-between mb-3">';
         echo '        <div class="icon-avatar ' . $avatarClass . '">';
-        echo '          <i class="bi ' . ($unlocked ? $iconClass : 'bi-lock-fill') . '"></i>';
+        echo '          <i class="bi ' . ($unlocked ? $iconClass : ($isKerjaKecilPlaceholder ? 'bi-clock-history' : 'bi-lock-fill')) . '"></i>';
         echo '        </div>';
 
         if ($completed) {
             echo '        <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2 py-1"><i class="bi bi-check-circle-fill me-1"></i>SELESAI</span>';
         } elseif ($unlocked) {
             echo '        <span class="borang-badge bg-danger bg-opacity-10 text-danger">' . e($badgeLabel) . '</span>';
+        } elseif ($isKerjaKecilPlaceholder) {
+            echo '        <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 px-2 py-1"><i class="bi bi-tools me-1"></i>FASA HADAPAN</span>';
         } else {
             echo '        <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 px-2 py-1"><i class="bi bi-lock-fill me-1"></i>TERKUNCI</span>';
         }
@@ -353,6 +364,9 @@
         if ($unlocked) {
             echo '      <span>Buka Borang</span>';
             echo '      <i class="bi bi-arrow-right-short fs-5"></i>';
+        } elseif ($isKerjaKecilPlaceholder) {
+            echo '      <span class="text-muted fw-normal">Modul Akan Datang</span>';
+            echo '      <i class="bi bi-tools small text-muted"></i>';
         } else {
             echo '      <span class="text-muted fw-normal">Terkunci</span>';
             echo '      <i class="bi bi-lock-fill small text-muted"></i>';
@@ -383,10 +397,23 @@
 
     {{-- Tender Summary Info Card --}}
     <div class="tender-summary-card">
-        <div class="tender-summary-header d-flex justify-content-between align-items-center">
+        <div class="tender-summary-header d-flex justify-content-between align-items-center flex-wrap gap-2">
             <div class="d-flex align-items-center gap-2">
                 <i class="bi bi-bank2 fs-5"></i>
                 <h5 class="fw-bold mb-0 text-white" style="letter-spacing: -0.3px;">RINGKASAN TENDER & PEROLEHAN</h5>
+                <!-- @if($currentFlowType === 'kerja_besar')
+                    <span class="badge bg-white text-danger font-monospace px-2.5 py-1 rounded-2 ms-2 fs-7 fw-bold border">
+                        <i class="bi bi-building me-1"></i>KERJA BESAR (&gt; RM10j)
+                    </span>
+                @elseif($currentFlowType === 'kerja_kecil_me')
+                    <span class="badge bg-warning text-dark font-monospace px-2.5 py-1 rounded-2 ms-2 fs-7 fw-bold border border-warning">
+                        <i class="bi bi-tools me-1"></i>KERJA KECIL - M&amp;E (&le; RM10j)
+                    </span>
+                @elseif($currentFlowType === 'kerja_kecil_other')
+                    <span class="badge bg-info text-dark font-monospace px-2.5 py-1 rounded-2 ms-2 fs-7 fw-bold border border-info">
+                        <i class="bi bi-gear me-1"></i>KERJA KECIL - LAIN-LAIN (&le; RM10j)
+                    </span>
+                @endif -->
             </div>
             <span class="status-pill-process bg-warning text-white border-0">
                 <span class="pulse-dot"></span>
@@ -486,24 +513,36 @@
                 <li class="nav-item" role="presentation">
                     <button class="nav-link {{ $activeTab === 'p1' ? 'active' : '' }}" id="tab-p1" data-bs-toggle="pill" data-bs-target="#pane-p1" type="button" role="tab" aria-controls="pane-p1" aria-selected="{{ $activeTab === 'p1' ? 'true' : 'false' }}">
                         <i class="bi bi-layers me-1 text-danger"></i>
-                        <span>Peringkat 1</span>
-                        <span class="badge bg-light text-secondary border ms-1">Borang 1 – 6</span>
+                        <span>Peringkat Pertama</span>
+                        @if($currentFlowType === 'kerja_besar')
+                            <span class="badge bg-light text-secondary border ms-1">Borang 1 – 6</span>
+                        @else
+                            <span class="badge bg-light text-secondary border ms-1">Borang 1</span>
+                        @endif
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
                     <button class="nav-link {{ $activeTab === 'p2' ? 'active' : '' }}" id="tab-p2" data-bs-toggle="pill" data-bs-target="#pane-p2" type="button" role="tab" aria-controls="pane-p2" aria-selected="{{ $activeTab === 'p2' ? 'true' : 'false' }}">
                         <i class="bi bi-cpu me-1 text-danger"></i>
-                        <span>Peringkat 2</span>
-                        <span class="badge bg-light text-secondary border ms-1">Borang 7 – 12</span>
+                        <span>Peringkat Kedua</span>
+                        @if($currentFlowType === 'kerja_besar')
+                            <span class="badge bg-light text-secondary border ms-1">Borang 7 – 12</span>
+                        @elseif($currentFlowType === 'kerja_kecil_me')
+                            <span class="badge bg-light text-secondary border ms-1">Borang 2 – 8</span>
+                        @else
+                            <span class="badge bg-light text-secondary border ms-1">Borang 2 – 6</span>
+                        @endif
                     </button>
                 </li>
+                @if($currentFlowType === 'kerja_besar')
                 <li class="nav-item" role="presentation">
                     <button class="nav-link {{ $activeTab === 'p3' ? 'active' : '' }}" id="tab-p3" data-bs-toggle="pill" data-bs-target="#pane-p3" type="button" role="tab" aria-controls="pane-p3" aria-selected="{{ $activeTab === 'p3' ? 'true' : 'false' }}">
                         <i class="bi bi-award me-1 text-danger"></i>
-                        <span>Peringkat 3</span>
+                        <span>Peringkat Ketiga</span>
                         <span class="badge bg-light text-secondary border ms-1">Borang 13 – 15</span>
                     </button>
                 </li>
+                @endif
             </ul>
 
             {{-- ========================================================================= --}}
@@ -511,7 +550,7 @@
             {{-- ========================================================================= --}}
             <div class="tab-content" id="peringkat-tab-content">
 
-                {{-- PANE 1: PERINGKAT PERTAMA (BORANG 1 - 6) --}}
+                {{-- PANE 1: PERINGKAT PERTAMA --}}
                 <div class="tab-pane fade {{ $activeTab === 'p1' ? 'show active' : '' }} mt-4" id="pane-p1" role="tabpanel" aria-labelledby="tab-p1">
                     <div class="d-flex align-items-center mb-4">
                         <div class="bg-danger-subtle p-2 rounded-2 me-3">
@@ -519,30 +558,43 @@
                         </div>
                         <div>
                             <h5 class="fw-bold mb-0">Penilaian Peringkat Pertama
-                                <span class="badge bg-warning text-white border border-white rounded-pill px-3 py-1 text-uppercase small" style="font-size: 0.7rem;">6 Komponen Borang</span>
+                                @if($currentFlowType === 'kerja_besar')
+                                    <span class="badge bg-warning text-white border border-white rounded-pill px-3 py-1 text-uppercase small" style="font-size: 0.7rem;">6 Komponen Borang</span>
+                                @else
+                                    <span class="badge bg-warning text-white border border-white rounded-pill px-3 py-1 text-uppercase small" style="font-size: 0.7rem;">1 Komponen Borang</span>
+                                @endif
                             </h5>
-                            <p class="text-secondary small mb-0">Analisa Kecukupan Dokumen, Analisa Kesempurnaan Tender, Nisbah Kewangan & Kelayakan Peringkat 1 (Borang 1 – 6)</p>
+                            <p class="text-secondary small mb-0">
+                                @if($currentFlowType === 'kerja_besar')
+                                    Analisa Kecukupan Dokumen, Analisa Kesempurnaan Tender, Nisbah Kewangan &amp; Kelayakan Peringkat 1 (Borang 1 – 6)
+                                @else
+                                    Analisa Kesempurnaan Tender (Borang 1)
+                                @endif
+                            </p>
                         </div>
                     </div>
             
                     <div class="row g-3">
                         @php
                             $renderBorangCard('borang1', 'p1', 'bi-file-earmark-spreadsheet', 'BORANG 1', 'Analisa Kesempurnaan Tender', 'Jadual penyerahan tender, maklumat asas petender & harga tawaran.');
-                            $renderBorangCard('borang2', 'p1', 'bi-shield-check', 'BORANG 2', 'Analisa Kecukupan Dokumen', 'Semakan kecukupan & kelayakan dokumen kewangan wajib petender.');
-                            $renderBorangCard('borang3', 'p1', 'bi-shield-check', 'BORANG 3', 'Analisa Kecukupan Modal', 'Penilaian nisbah kewangan, penyata bank & lembaran imbangan.', [
-                                ['icon' => 'bi-file-earmark-text', 'label' => 'Borang 3'],
-                                ['icon' => 'bi-journal-text', 'label' => 'Lembaran'],
-                                ['icon' => 'bi-bank', 'label' => 'Akaun Bank'],
-                                ['icon' => 'bi-cash-coin', 'label' => 'Bon / Saham']
-                            ]);
-                            $renderBorangCard('borang4', 'p1', 'bi-graph-up-arrow', 'BORANG 4', 'Analisa Data-Data Penilaian Prestasi Petender', 'Penilaian modal pusingan & had kelayakan kewangan petender.');
-                            $renderBorangCard('borang5', 'p1', 'bi-card-checklist', 'BORANG 5', 'Keputusan Peringkat Pertama', 'Jadual keputusan & rumusan kelayakan peringkat pertama.');
-                            $renderBorangCard('borang6', 'p1', 'bi-list-stars', 'BORANG 6', 'Petender Lulus Peringkat 1', 'Senarai petender lulus disusun mengikut turutan harga tender.');
+                            
+                            if ($currentFlowType === 'kerja_besar') {
+                                $renderBorangCard('borang2', 'p1', 'bi-shield-check', 'BORANG 2', 'Analisa Kecukupan Dokumen', 'Semakan kecukupan & kelayakan dokumen kewangan wajib petender.');
+                                $renderBorangCard('borang3', 'p1', 'bi-shield-check', 'BORANG 3', 'Analisa Kecukupan Modal', 'Penilaian nisbah kewangan, penyata bank & lembaran imbangan.', [
+                                    ['icon' => 'bi-file-earmark-text', 'label' => 'Borang 3'],
+                                    ['icon' => 'bi-journal-text', 'label' => 'Lembaran'],
+                                    ['icon' => 'bi-bank', 'label' => 'Akaun Bank'],
+                                    ['icon' => 'bi-cash-coin', 'label' => 'Bon / Saham']
+                                ]);
+                                $renderBorangCard('borang4', 'p1', 'bi-graph-up-arrow', 'BORANG 4', 'Analisa Data-Data Penilaian Prestasi Petender', 'Penilaian modal pusingan & had kelayakan kewangan petender.');
+                                $renderBorangCard('borang5', 'p1', 'bi-card-checklist', 'BORANG 5', 'Keputusan Peringkat Pertama', 'Jadual keputusan & rumusan kelayakan peringkat pertama.');
+                                $renderBorangCard('borang6', 'p1', 'bi-list-stars', 'BORANG 6', 'Petender Lulus Peringkat 1', 'Senarai petender lulus disusun mengikut turutan harga tender.');
+                            }
                         @endphp
                     </div>
                 </div>
 
-                {{-- PANE 2: PERINGKAT KEDUA (BORANG 7 - 12) --}}
+                {{-- PANE 2: PERINGKAT KEDUA --}}
                 <div class="tab-pane fade {{ $activeTab === 'p2' ? 'show active' : '' }} mt-4" id="pane-p2" role="tabpanel" aria-labelledby="tab-p2">
                     <div class="d-flex align-items-center mb-4">
                         <div class="bg-danger-subtle p-2 rounded-2 me-3">
@@ -550,25 +602,68 @@
                         </div>
                         <div>
                             <h5 class="fw-bold mb-0">Penilaian Peringkat Kedua
-                                <span class="badge bg-warning text-white border border-white rounded-pill px-3 py-1 text-uppercase small" style="font-size: 0.7rem;">6 Komponen Borang</span>
+                                @if($currentFlowType === 'kerja_besar')
+                                    <span class="badge bg-warning text-white border border-white rounded-pill px-3 py-1 text-uppercase small" style="font-size: 0.7rem;">6 Komponen Borang</span>
+                                @elseif($currentFlowType === 'kerja_kecil_me')
+                                    <span class="badge bg-warning text-white border border-white rounded-pill px-3 py-1 text-uppercase small" style="font-size: 0.7rem;">7 Komponen Borang</span>
+                                @else
+                                    <span class="badge bg-warning text-white border border-white rounded-pill px-3 py-1 text-uppercase small" style="font-size: 0.7rem;">5 Komponen Borang</span>
+                                @endif
                             </h5>
-                            <p class="text-secondary small mb-0">Analisis Keupayaan Teknikal, Prestasi Kerja Semasa & Pengalaman (Borang 7 – 12)</p>
+                            <p class="text-secondary small mb-0">
+                                @if($currentFlowType === 'kerja_besar')
+                                    Analisis Keupayaan Teknikal, Prestasi Kerja Semasa &amp; Pengalaman (Borang 7 – 12)
+                                @elseif($currentFlowType === 'kerja_kecil_me')
+                                    Penilaian Peringkat Kedua Kerja Kecil (Borang 2 – 8)
+                                @else
+                                    Penilaian Peringkat Kedua Kerja Kecil (Borang 2 – 6)
+                                @endif
+                            </p>
                         </div>
                     </div>
 
                     <div class="row g-3">
                         @php
-                            $renderBorangCard('borang7', 'p2', 'bi-bar-chart-steps', 'BORANG 7', 'Analisa Baki Kerja Dalam Tangan', 'Analisis data penilaian keupayaan petender.');
-                            $renderBorangCard('borang8', 'p2', 'bi-pie-chart-fill', 'BORANG 8', 'Analisa Data-Data Penilaian Keupayaan Petender', 'Jadual analisa data-data penilaian keupayaan petender.');
-                            $renderBorangCard('borang9', 'p2', 'bi-gear-wide-connected', 'BORANG 9', 'Analisa Data-Data Penilaian Keupayaan Teknikal Petender', 'Analisis data penilaian keupayaan teknikal petender.');
-                            $renderBorangCard('borang10', 'p2', 'bi-person-workspace', 'BORANG 10', 'Analisa Data-Data Penilaian Keupayaan Teknikal Petender', 'Penilaian rekod & prestasi kerja semasa petender di tapak.');
-                            $renderBorangCard('borang11', 'p2', 'bi-cpu', 'BORANG 11', 'Penilaian Keupayaan Teknikal', 'Penilaian kakitangan teknikal, loji & peralatan petender.');
-                            $renderBorangCard('borang12', 'p2', 'bi-patch-check', 'BORANG 12', 'Jadual Keputusan Peringkat Kedua', 'Penilaian skor gabungan keupayaan kewangan & teknikal.');
+                            if ($currentFlowType === 'kerja_besar') {
+                                $renderBorangCard('borang7', 'p2', 'bi-bar-chart-steps', 'BORANG 7', 'Analisa Baki Kerja Dalam Tangan', 'Analisis data penilaian keupayaan petender.');
+                                $renderBorangCard('borang8', 'p2', 'bi-pie-chart-fill', 'BORANG 8', 'Analisa Data-Data Penilaian Keupayaan Petender', 'Jadual analisa data-data penilaian keupayaan petender.');
+                                $renderBorangCard('borang9', 'p2', 'bi-gear-wide-connected', 'BORANG 9', 'Analisa Data-Data Penilaian Keupayaan Teknikal Petender', 'Analisis data penilaian keupayaan teknikal petender.');
+                                $renderBorangCard('borang10', 'p2', 'bi-person-workspace', 'BORANG 10', 'Analisa Data-Data Penilaian Keupayaan Teknikal Petender', 'Penilaian rekod & prestasi kerja semasa petender di tapak.');
+                                $renderBorangCard('borang11', 'p2', 'bi-cpu', 'BORANG 11', 'Penilaian Keupayaan Teknikal', 'Penilaian kakitangan teknikal, loji & peralatan petender.');
+                                $renderBorangCard('borang12', 'p2', 'bi-patch-check', 'BORANG 12', 'Jadual Keputusan Peringkat Kedua', 'Penilaian skor gabungan keupayaan kewangan & teknikal.');
+                            } elseif ($currentFlowType === 'kerja_kecil_me') {
+                                // Kerja Kecil M&E: Borang 2 to 8
+                                $renderBorangCard('borang2', 'p2', 'bi-shield-check', 'BORANG 2', 'Analisa Kecukupan Modal', 'Penilaian nisbah kewangan, penyata bank & lembaran imbangan.', [
+                                    ['icon' => 'bi-file-earmark-text', 'label' => 'Borang 2'],
+                                    ['icon' => 'bi-journal-text', 'label' => 'Lembaran'],
+                                    ['icon' => 'bi-bank', 'label' => 'Akaun Bank'],
+                                    ['icon' => 'bi-cash-coin', 'label' => 'Bon / Saham']
+                                ]);
+                                $renderBorangCard('borang3', 'p2', 'bi-person-workspace', 'BORANG 3', 'Prestasi Kerja Semasa Petender', 'Penilaian rekod & prestasi kerja semasa petender.');
+                                $renderBorangCard('borang4', 'p2', 'bi-bar-chart-steps', 'BORANG 4', 'Beban Kerja Semasa Petender', 'Analisis baki kerja dalam tangan & beban kerja petender.');
+                                $renderBorangCard('borang5', 'p2', 'bi-clock-history', 'BORANG 5', 'Pengalaman Kerja Petender', 'Penilaian pengalaman kerja serupa & sebanding petender.');
+                                $renderBorangCard('borang6', 'p2', 'bi-card-checklist', 'BORANG 6', 'Ringkasan Penilaian Kewangan', 'Jadual keputusan ringkasan penilaian kewangan petender.');
+                                $renderBorangCard('borang7', 'p2', 'bi-cpu', 'BORANG 7', 'Ringkasan Keputusan Penilaian Teknikal', 'Penilaian keupayaan teknikal, kakitangan & peralatan petender.');
+                                $renderBorangCard('borang8', 'p2', 'bi-award', 'BORANG 8', 'Keputusan Penilaian Keseluruhan Teknikal & Kewangan', 'Jadual keputusan penilaian muktamad kewangan & teknikal.');
+                            } else {
+                                // Kerja Kecil Other: Borang 2 to 6
+                                $renderBorangCard('borang2', 'p2', 'bi-shield-check', 'BORANG 2', 'Analisa Kecukupan Modal', 'Penilaian nisbah kewangan, penyata bank & lembaran imbangan.', [
+                                    ['icon' => 'bi-file-earmark-text', 'label' => 'Borang 2'],
+                                    ['icon' => 'bi-journal-text', 'label' => 'Lembaran'],
+                                    ['icon' => 'bi-bank', 'label' => 'Akaun Bank'],
+                                    ['icon' => 'bi-cash-coin', 'label' => 'Bon / Saham']
+                                ]);
+                                $renderBorangCard('borang3', 'p2', 'bi-person-workspace', 'BORANG 3', 'Prestasi Kerja Semasa Petender', 'Penilaian rekod & prestasi kerja semasa petender.');
+                                $renderBorangCard('borang4', 'p2', 'bi-bar-chart-steps', 'BORANG 4', 'Beban Kerja Semasa Petender', 'Analisis baki kerja dalam tangan & beban kerja petender.');
+                                $renderBorangCard('borang5', 'p2', 'bi-clock-history', 'BORANG 5', 'Pengalaman Kerja Petender', 'Penilaian pengalaman kerja serupa & sebanding petender.');
+                                $renderBorangCard('borang6', 'p2', 'bi-award', 'BORANG 6', 'Keputusan Penilaian Keseluruhan', 'Rumusan & keputusan penilaian muktamad Kerja Kecil.');
+                            }
                         @endphp
                     </div>
                 </div>
 
-                {{-- PANE 3: PERINGKAT KETIGA (BORANG 13 - 15) --}}
+                {{-- PANE 3: PERINGKAT KETIGA (HANYA UNTUK KERJA BESAR) --}}
+                @if($currentFlowType === 'kerja_besar')
                 <div class="tab-pane fade {{ $activeTab === 'p3' ? 'show active' : '' }} mt-4" id="pane-p3" role="tabpanel" aria-labelledby="tab-p3">
                     <div class="d-flex align-items-center mb-4">
                         <div class="bg-danger-subtle p-2 rounded-2 me-3">
@@ -578,7 +673,7 @@
                             <h5 class="fw-bold mb-0">Penilaian Peringkat Ketiga
                                 <span class="badge bg-warning text-white border border-white rounded-pill px-3 py-1 text-uppercase small" style="font-size: 0.7rem;">3 Komponen Borang</span>
                             </h5>
-                            <p class="text-secondary small mb-0">Laporan Muktamad, Perakuan Jawatankuasa & Ringkasan Keputusan Syor (Borang 13 – 15)</p>
+                            <p class="text-secondary small mb-0">Laporan Muktamad, Perakuan Jawatankuasa &amp; Ringkasan Keputusan Syor (Borang 13 – 15)</p>
                         </div>
                     </div>
 
@@ -590,6 +685,7 @@
                         @endphp
                     </div>
                 </div>
+                @endif
 
             </div>
         </div>
@@ -638,6 +734,28 @@
                     });
                 } else {
                     alert(borangTitle + ' belum boleh diakses.\nSila selesaikan ' + prevTitle + ' terlebih dahulu.');
+                }
+            });
+        });
+
+        document.querySelectorAll('.js-kerja-kecil-placeholder').forEach(function(card) {
+            card.addEventListener('click', function(e) {
+                e.preventDefault();
+                var borangTitle = this.getAttribute('data-borang-title') || 'Borang ini';
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'info',
+                        title: borangTitle,
+                        html: '<p class="mb-1 text-secondary fs-6">Modul borang bagi aliran <strong>Kerja Kecil</strong> ini direka khas dan akan diaktifkan secara khusus dalam fasa seterusnya.</p>',
+                        confirmButtonText: 'Faham',
+                        confirmButtonColor: '#dc2626',
+                        customClass: {
+                            popup: 'rounded-4 shadow',
+                            confirmButton: 'px-4 py-2 rounded-3 fw-semibold'
+                        }
+                    });
+                } else {
+                    alert(borangTitle + ' - Modul borang Kerja Kecil dalam fasa pembangunan seterusnya.');
                 }
             });
         });

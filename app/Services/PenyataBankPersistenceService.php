@@ -69,24 +69,79 @@ class PenyataBankPersistenceService
     }
 
     /**
-     * @param  array<string, mixed>  $vendorPayload
-     * @return array<string, mixed>
+     * @param  array<string, mixed>|null  $tenderPayload
+     * @param  array<string, mixed>|null  $vendorPayload
+     * @return array<string, mixed>|null
      */
-    public function mergeVendorPayload(?array $tenderPayload, ?array $vendorPayload): ?array
+    public function mergeVendorPayload(?array $tenderPayload, ?array $vendorPayload, bool $isVendorScoped = false): ?array
     {
         if (! $tenderPayload && ! $vendorPayload) {
             return null;
         }
 
-        if (! $tenderPayload) {
-            return $vendorPayload;
+        $merged = $tenderPayload ?? [];
+
+        // When viewing in vendor context or for a specific vendor_id,
+        // vendor-specific fields (accounts, bulans, amounts, files) MUST come from $vendorPayload
+        // and NEVER leak shared tender-level files or amounts.
+        if ($isVendorScoped) {
+            $tenderAccounts = $tenderPayload['accounts'] ?? [];
+            $vendorAccounts = $vendorPayload['accounts'] ?? [];
+
+            if ($vendorAccounts !== []) {
+                $merged['accounts'] = array_map(function (array $vendorAccount, int $index) use ($tenderAccounts) {
+                    $tenderAccount = $tenderAccounts[$index] ?? [];
+
+                    return array_merge($tenderAccount, $vendorAccount, [
+                        'bulans' => $this->mergeBulans(
+                            $tenderAccount['bulans'] ?? [],
+                            $vendorAccount['bulans'] ?? []
+                        ),
+                        'jumlah_keseluruhan' => (float) ($vendorAccount['jumlah_keseluruhan'] ?? 0),
+                        'purata' => (float) ($vendorAccount['purata'] ?? 0),
+                        'files' => array_values($vendorAccount['files'] ?? []),
+                    ]);
+                }, $vendorAccounts, array_keys($vendorAccounts));
+            } else {
+                $merged['accounts'] = array_map(function (array $tenderAccount) {
+                    $clean = $tenderAccount;
+                    $clean['jumlah_keseluruhan'] = 0;
+                    $clean['purata'] = 0;
+                    $clean['files'] = [];
+                    if (isset($clean['bulans']) && is_array($clean['bulans'])) {
+                        $clean['bulans'] = array_map(function (array $b) {
+                            $b['jumlah'] = 0;
+                            return $b;
+                        }, $clean['bulans']);
+                    }
+
+                    return $clean;
+                }, $tenderAccounts !== [] ? $tenderAccounts : [[
+                    'dari_bulan' => $tenderPayload['dari_bulan'] ?? null,
+                    'dari_tahun' => $tenderPayload['dari_tahun'] ?? null,
+                    'hingga_bulan' => $tenderPayload['hingga_bulan'] ?? null,
+                    'hingga_tahun' => $tenderPayload['hingga_tahun'] ?? null,
+                    'bulans' => [],
+                    'jumlah_keseluruhan' => 0,
+                    'purata' => 0,
+                    'files' => [],
+                ]]);
+            }
+
+            $merged['jumlah_keseluruhan'] = (float) ($vendorPayload['jumlah_keseluruhan'] ?? 0);
+            $merged['purata'] = (float) ($vendorPayload['purata'] ?? 0);
+            $merged['jumlah_keseluruhan_grand'] = (float) ($vendorPayload['jumlah_keseluruhan_grand'] ?? $merged['jumlah_keseluruhan']);
+            if (isset($vendorPayload['status'])) {
+                $merged['status'] = $vendorPayload['status'];
+            }
+
+            return $merged;
         }
 
         if (! $vendorPayload) {
             return $tenderPayload;
         }
 
-        $merged = $tenderPayload;
         $tenderAccounts = $tenderPayload['accounts'] ?? [];
         $vendorAccounts = $vendorPayload['accounts'] ?? [];
 
@@ -101,7 +156,7 @@ class PenyataBankPersistenceService
                     ),
                     'jumlah_keseluruhan' => $vendorAccount['jumlah_keseluruhan'] ?? $tenderAccount['jumlah_keseluruhan'] ?? 0,
                     'purata' => $vendorAccount['purata'] ?? $tenderAccount['purata'] ?? 0,
-                    'files' => $vendorAccount['files'] ?? $tenderAccount['files'] ?? [],
+                    'files' => $vendorAccount['files'] ?? [],
                 ]);
             }, $tenderAccounts, array_keys($tenderAccounts));
         } elseif ($vendorAccounts !== []) {

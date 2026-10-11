@@ -216,6 +216,15 @@
     .kewangan-tender-row {
         cursor: pointer;
     }
+
+    .kewangan-tender-row.row-disabled {
+        cursor: default;
+        background-color: #fafbfc;
+    }
+
+    .kewangan-tender-row.row-disabled:hover {
+        background-color: #f8fafc;
+    }
 </style>
 @endsection
 
@@ -329,18 +338,37 @@
                 </thead>
                 <tbody>
                     @forelse($tenders ?? [] as $index => $item)
-                    <tr class="kewangan-tender-row" data-href="{{ $item['show_url'] }}">
+                    @php
+                        $hasShowUrl = !empty($item['show_url']);
+                        $workflow = $item['action_meta']['workflow'] ?? ($item['workflow'] ?? 'invalid');
+                        $badgeLabel = $item['action_meta']['badge_label'] ?? null;
+                        $noticeMsg = $item['action_meta']['notice_message'] ?? null;
+                    @endphp
+                    <tr class="kewangan-tender-row {{ $hasShowUrl ? '' : 'row-disabled' }}" @if($hasShowUrl) data-href="{{ $item['show_url'] }}" @endif>
                         <td class="text-center text-muted small fw-medium">{{ $index + 1 }}</td>
                         <td>
-                            <a href="{{ $item['show_url'] }}" class="text-decoration-none" onclick="event.stopPropagation();">
-                                <span class="tender-badge">
+                            @if($hasShowUrl)
+                                <a href="{{ $item['show_url'] }}" class="text-decoration-none" onclick="event.stopPropagation();">
+                                    <span class="tender-badge">
+                                        <i class="bi bi-file-text me-1 opacity-75"></i>{{ $item['no_tender'] }}
+                                    </span>
+                                </a>
+                            @else
+                                <span class="tender-badge text-muted" style="background: rgba(100, 116, 139, 0.08); border-color: rgba(100, 116, 139, 0.2); color: #64748b;" title="{{ $noticeMsg }}">
                                     <i class="bi bi-file-text me-1 opacity-75"></i>{{ $item['no_tender'] }}
                                 </span>
-                            </a>
+                            @endif
                         </td>
                         <td>
                             <div class="fw-semibold text-dark mb-1">{{ $item['tajuk'] }}</div>
-                            <span class="text-muted extra-small">ID Tender: #{{ $item['id'] }}</span>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="text-muted extra-small">ID Tender: #{{ $item['id'] }}</span>
+                                @if($badgeLabel)
+                                    <span class="badge {{ $workflow === 'sebut_harga_kerja' ? 'bg-warning text-dark' : 'bg-secondary text-white' }} extra-small py-0 px-2" style="font-size: 0.7rem; border-radius: 4px;">
+                                        {{ $badgeLabel }}
+                                    </span>
+                                @endif
+                            </div>
                         </td>
                         <td class="text-center">
                             <span class="badge bg-light text-dark border px-2.5 py-1.5 rounded-2 font-monospace fw-normal">
@@ -354,10 +382,20 @@
                             </span>
                         </td>
                         <td class="text-center">
-                            <a href="{{ $item['show_url'] }}" class="action-btn-kewangan" onclick="event.stopPropagation();">
-                                <span>Nilai</span>
-                                <i class="bi bi-chevron-right small"></i>
-                            </a>
+                            @if($hasShowUrl)
+                                <a href="{{ $item['show_url'] }}" class="action-btn-kewangan" onclick="event.stopPropagation();">
+                                    <span>Nilai</span>
+                                    <i class="bi bi-chevron-right small"></i>
+                                </a>
+                            @elseif($workflow === 'sebut_harga_kerja')
+                                <button type="button" class="btn btn-sm btn-outline-warning text-nowrap" style="font-size: 0.78rem; border-radius: 8px; font-weight: 600; padding: 0.4rem 0.75rem;" title="{{ $noticeMsg ?? 'Aliran Penilaian Kewangan bagi Sebut Harga Kerja sedang dalam pembangunan.' }}" onclick="event.stopPropagation();" disabled>
+                                    <i class="bi bi-hourglass-split me-1"></i>Pembangunan
+                                </button>
+                            @else
+                                <button type="button" class="btn btn-sm btn-outline-secondary text-nowrap" style="font-size: 0.78rem; border-radius: 8px; font-weight: 600; padding: 0.4rem 0.75rem;" title="{{ $noticeMsg ?? 'Maklumat tidak lengkap' }}" onclick="event.stopPropagation();" disabled>
+                                    <i class="bi bi-exclamation-circle me-1"></i>Tidak Sah
+                                </button>
+                            @endif
                         </td>
                     </tr>
                     @empty
@@ -391,7 +429,9 @@
             row.addEventListener('click', function(e) {
                 if (e.target.closest('a') || e.target.closest('button')) return;
                 var href = this.getAttribute('data-href');
-                if (href) window.location = href;
+                if (href && href.trim() !== '') {
+                    window.location = href;
+                }
             });
         });
     });

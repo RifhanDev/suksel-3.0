@@ -91,7 +91,9 @@
                                 <td class="text-center">{{ $item['tarikh_tutup'] }}</td>
                                 <td class="text-center">{{ $item['harga'] }}</td>
                                 <td class="text-center">
-                                    @if ($item['dihantar'] ?? false)
+                                    @if ($item['selesai'] ?? false)
+                                        <span class="badge-status badge-status-success">Selesai</span>
+                                    @elseif ($item['dihantar'] ?? false)
                                         <span class="badge-status badge-status-success">Dihantar</span>
                                     @else
                                         <span class="badge-status badge-status-warning">Belum Dihantar</span>

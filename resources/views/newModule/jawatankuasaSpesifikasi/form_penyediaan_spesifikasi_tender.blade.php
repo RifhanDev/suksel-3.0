@@ -261,7 +261,7 @@
 $(document).ready(function () {
 
     $.ajaxSetup({
-        headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') }
+        headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') || $('meta[name="_token"]').attr('content') }
     });
 
     const LIST_URL       = @json(route('pengurusanSpesifikasi'));
@@ -269,6 +269,7 @@ $(document).ready(function () {
     const SUBMIT_URL     = @json(route('penyediaanSpekTender.submit', $tender->uuid));
     const UPLOAD_URL     = @json(route('penyediaanSpekTender.uploadFile', $tender->uuid));
     const DELETE_BASE    = @json(url('/penyediaan-spesifikasi-tender/fail'));
+    const FILE_BASE      = @json(url('/penyediaan-spesifikasi-tender/' . $tender->uuid . '/fail'));
     const USER_ID        = @json(auth()->id());
     const IS_SUBMITTED   = @json(($checklistData['status'] ?? null) === 'submitted');
 
@@ -727,9 +728,12 @@ $(document).ready(function () {
 
     function renderFileChip(fileData, $container) {
         var ext = (fileData.original_name || '').split('.').pop().toLowerCase();
+        var fileHref = fileData.uuid
+            ? (FILE_BASE + '/' + encodeURIComponent(fileData.uuid))
+            : '#';
         var $chip = $('<div class="file-chip" data-file-uuid="' + fileData.uuid + '">' +
             '<span class="ext-badge">' + htmlEscape(ext) + '</span>' +
-            '<a href="' + (fileData.url || '#') + '" target="_blank" title="' + htmlEscape(fileData.original_name) + '">' +
+            '<a href="' + fileHref + '" target="_blank" title="' + htmlEscape(fileData.original_name) + '">' +
                 htmlEscape(fileData.original_name) + '</a>' +
             '<button type="button" class="chip-delete" title="Padam fail">' +
                 '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>' +
@@ -773,10 +777,27 @@ $(document).ready(function () {
         });
     }
 
+    function itemIsBlank($item) {
+        if (($item.find('[name="nama_item"]').val() || '').trim()) return false;
+
+        var blank = true;
+        getItemSpecs($item).each(function () {
+            var $spec = $(this);
+            if (($spec.find('[name="spesifikasi"]').val() || '').trim()) blank = false;
+            if ($spec.find('[name="unit"]').val()) blank = false;
+            if ($spec.find('[name="ya_tidak"]').val()) blank = false;
+            if (($spec.find('[name="catatan"]').val() || '').trim()) blank = false;
+            if (parseAmount($spec.find('[name="kuantiti"]').val()) || parseAmount($spec.find('[name="kadar"]').val())) blank = false;
+        });
+        return blank;
+    }
+
     function collectPayload() {
         var items = [];
-        $('#tbl-spesifikasi-body tr.item-row').each(function (idx) {
+        $('#tbl-spesifikasi-body tr.item-row').each(function () {
             var $item = $(this);
+            if (itemIsBlank($item)) return;
+
             var specs = [];
             getItemSpecs($item).each(function (sIdx) {
                 var $spec = $(this);
@@ -799,7 +820,7 @@ $(document).ready(function () {
                 kuantiti: null,
                 kadar: null,
                 jumlah: null,
-                sort_order: idx,
+                sort_order: items.length,
                 specs: specs,
             });
         });
@@ -807,19 +828,24 @@ $(document).ready(function () {
     }
 
     function validateBeforeSubmit() {
-        var $items = $('#tbl-spesifikasi-body tr.item-row');
+        var $items = $('#tbl-spesifikasi-body tr.item-row').filter(function () {
+            return !itemIsBlank($(this));
+        });
         if ($items.length === 0) {
             showToast('Sila tambah sekurang-kurangnya satu item sebelum menghantar.', 'danger');
             return false;
         }
 
         var valid = true;
-        $items.each(function () {
+        var messages = [];
+        $items.each(function (idx) {
             var $item = $(this);
+            var label = 'Item ' + (idx + 1);
             var $nama = $item.find('[name="nama_item"]');
             if (!$nama.val().trim()) {
                 $nama.addClass('is-invalid');
                 valid = false;
+                messages.push(label + ': nama item diperlukan.');
             } else {
                 $nama.removeClass('is-invalid');
             }
@@ -827,16 +853,17 @@ $(document).ready(function () {
             var $specs = getItemSpecs($item);
             if ($specs.length === 0) {
                 valid = false;
-                showToast('Setiap item mesti mempunyai sekurang-kurangnya satu spesifikasi.', 'danger');
-                return false;
+                messages.push(label + ': sekurang-kurangnya satu spesifikasi diperlukan.');
+                return;
             }
 
-            $specs.each(function () {
+            $specs.each(function (sIdx) {
                 var $spec = $(this);
                 var $ta = $spec.find('[name="spesifikasi"]');
                 if (!$ta.val().trim()) {
                     $ta.addClass('is-invalid');
                     valid = false;
+                    messages.push(label + ', spesifikasi ' + (sIdx + 1) + ': penerangan diperlukan.');
                 } else {
                     $ta.removeClass('is-invalid');
                 }
@@ -845,6 +872,7 @@ $(document).ready(function () {
                 if (!$unit.val()) {
                     $unit.addClass('is-invalid');
                     valid = false;
+                    messages.push(label + ', spesifikasi ' + (sIdx + 1) + ': unit diperlukan.');
                 } else {
                     $unit.removeClass('is-invalid');
                 }
@@ -852,7 +880,7 @@ $(document).ready(function () {
         });
 
         if (!valid) {
-            showToast('Sila lengkapkan semua medan wajib sebelum menghantar.', 'danger');
+            showToast(messages[0] || 'Sila lengkapkan semua medan wajib sebelum menghantar.', 'danger');
         }
         return valid;
     }
@@ -868,17 +896,18 @@ $(document).ready(function () {
             data: JSON.stringify({ items: items, status: 'draft', user_id: USER_ID }),
             success: function (response) {
                 if (response && response.success && response.data) {
+                    renderFromServer(response.data, currentItemIndex);
+
                     if (typeof callback === 'function') {
                         callback(response);
                         return;
                     }
 
+                    // Simpan draf: kekal di halaman yang sama (jangan redirect ke senarai).
                     showBerjayaModal({
                         message: 'Spesifikasi berjaya disimpan.',
-                        onClose: function () {
-                            window.location.href = LIST_URL;
-                        }
                     });
+                    setBusy('#btn-simpan', false, 'Simpan');
                 } else {
                     showToast('Gagal menyimpan. Sila cuba lagi.', 'danger');
                     setBusy('#btn-simpan', false, 'Simpan');
@@ -890,7 +919,6 @@ $(document).ready(function () {
                 setBusy('#btn-simpan', false, 'Simpan');
             },
             complete: function () {
-                // Keep busy state when redirecting after a plain Simpan.
                 if (typeof callback === 'function') {
                     setBusy('#btn-simpan', false, 'Simpan');
                 }

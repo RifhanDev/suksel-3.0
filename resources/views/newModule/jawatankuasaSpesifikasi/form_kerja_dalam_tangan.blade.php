@@ -112,8 +112,8 @@
                             <tr>
                                 <th class="text-center py-3" style="width:50px;">Bil</th>
                                 <th class="py-3" style="min-width:220px;">Senarai Kerja Dalam Tangan</th>
-                                <th class="py-3" style="min-width:160px;">PIC</th>
-                                <th class="py-3" style="width:150px;">No. Telefon PIC</th>
+                                <th class="py-3" style="min-width:160px;">Agensi/ Pemilik</th>
+                                <th class="py-3" style="width:150px;">No. Telefon Agensi</th>
                                 <th class="text-end py-3" style="width:160px;">Nilai Kerja (RM)</th>
                                 <th class="text-center py-3" style="width:60px;">Tindakan</th>
                             </tr>
@@ -221,8 +221,8 @@ $(document).ready(function () {
         return $('<tr class="kdt-row">' +
             '<td class="text-center row-bil fw-semibold text-muted" style="font-size:0.8rem;">' + bil + '</td>' +
             '<td><input type="text" name="kdt_tajuk[]" class="form-control form-control-sm" placeholder="Nama / tajuk kerja..."></td>' +
-            '<td><input type="text" name="kdt_pic[]" class="form-control form-control-sm" placeholder="Nama PIC..."></td>' +
-            '<td><input type="text" name="kdt_telefon[]" class="form-control form-control-sm" placeholder="Cth: 012-3456789"></td>' +
+            '<td><input type="text" name="kdt_pic[]" class="form-control form-control-sm" placeholder="Agensi/ Pemilik..."></td>' +
+            '<td><input type="text" name="kdt_telefon[]" class="form-control form-control-sm" placeholder="No. Telefon Agensi"></td>' +
             '<td><input type="text" name="kdt_nilai[]" class="form-control form-control-sm text-end nilai-kerja" placeholder="0.00"></td>' +
             '<td class="text-center">' +
                 '<button type="button" class="btn btn-sm btn-hapus-row d-inline-flex align-items-center justify-content-center p-0" ' +

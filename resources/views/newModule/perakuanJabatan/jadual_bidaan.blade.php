@@ -27,7 +27,7 @@
 			<div class="col-md-3">
 				<label class="form-label">Masa Bidaan Mula<span class="text-danger">*</span></label>
 				<input type="time" class="form-control" id="pj_jadual_masa_mula"
-					value="{{ optional($jadualBidaan)->masa_bidaan_mula }}"
+					value="{{ optional($jadualBidaan)->timeForInput('masa_bidaan_mula') }}"
 					{{ $jadualReadOnly ? 'disabled' : '' }}>
 			</div>
 			<div class="col-md-3">
@@ -39,7 +39,7 @@
 			<div class="col-md-3">
 				<label class="form-label">Masa Bidaan Tamat<span class="text-danger">*</span></label>
 				<input type="time" class="form-control" id="pj_jadual_masa_tamat"
-					value="{{ optional($jadualBidaan)->masa_bidaan_tamat }}"
+					value="{{ optional($jadualBidaan)->timeForInput('masa_bidaan_tamat') }}"
 					{{ $jadualReadOnly ? 'disabled' : '' }}>
 			</div>
 		</div>

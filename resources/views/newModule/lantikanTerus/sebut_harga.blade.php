@@ -376,6 +376,81 @@
                         </div>
                     </div>
 
+                    @php
+                        $mofGroups  = collect($p->mof ?? [])->filter(fn ($g) => ! empty($g['code']))->values();
+                        $cidbGroups = collect($p->cidb ?? [])->filter(fn ($g) => ! empty($g['spec']))->values();
+                        $gredIds    = collect($p->cidb[0]['grade'] ?? []);
+
+                        $codeMap = App\Code::whereIn('id', $mofGroups->pluck('code')->flatten()
+                            ->merge($cidbGroups->pluck('spec')->flatten())
+                            ->merge($gredIds)->unique()->values()->all())->get()->keyBy('id');
+
+                        $ruleText = fn ($rule) => strtoupper((string) $rule) === 'AND' ? 'DAN' : 'ATAU';
+                        $senarai  = fn ($ids) => collect($ids)->map(fn ($id) => $codeMap->get($id))->filter()->values();
+                    @endphp
+
+                    @if ($mofGroups->isNotEmpty() || $cidbGroups->isNotEmpty() || $gredIds->isNotEmpty())
+                        <hr class="my-4">
+
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                                fill="none" stroke="var(--sg-red)" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                            </svg>
+                            <span class="fw-bold text-dark text-uppercase small">Kod Bidang</span>
+                        </div>
+                        <p class="text-muted small mb-3">Syarat pendaftaran bagi projek ini.</p>
+
+                        @if ($mofGroups->isNotEmpty())
+                            <label class="form-label">Kod Bidang MOF</label>
+                            <div class="border rounded p-3 mb-3 small">
+                                @foreach ($mofGroups as $group)
+                                    @foreach ($senarai($group['code']) as $code)
+                                        @if (! $loop->first)
+                                            <div class="fw-bold text-secondary my-1">{{ $ruleText($group['logic_mid']) }}</div>
+                                        @endif
+                                        <div>{{ $code->label }}</div>
+                                    @endforeach
+                                    @if (! $loop->last)
+                                        <div class="fw-bold text-secondary my-2">{{ $ruleText($group['join_rule']) }}</div>
+                                    @endif
+                                @endforeach
+                            </div>
+                        @endif
+
+                        @if ($mofGroups->isNotEmpty() && ($cidbGroups->isNotEmpty() || $gredIds->isNotEmpty()))
+                            <div class="fw-bold text-secondary small mb-3">{{ $ruleText($p->mof_cidb_rule ?? 'AND') }}</div>
+                        @endif
+
+                        @if ($gredIds->isNotEmpty())
+                            <label class="form-label">Gred CIDB</label>
+                            <div class="border rounded p-3 mb-3 small">
+                                @foreach ($senarai($gredIds) as $code)
+                                    <div>{{ $code->label }}</div>
+                                @endforeach
+                            </div>
+                        @endif
+
+                        @if ($cidbGroups->isNotEmpty())
+                            <label class="form-label">Pengkhususan CIDB</label>
+                            <div class="border rounded p-3 mb-0 small">
+                                @foreach ($cidbGroups as $group)
+                                    @foreach ($senarai($group['spec']) as $code)
+                                        @if (! $loop->first)
+                                            <div class="fw-bold text-secondary my-1">{{ $ruleText($group['logic_mid']) }}</div>
+                                        @endif
+                                        <div>{{ $code->label }}</div>
+                                    @endforeach
+                                    @if (! $loop->last)
+                                        <div class="fw-bold text-secondary my-2">{{ $ruleText($group['join_rule']) }}</div>
+                                    @endif
+                                @endforeach
+                            </div>
+                        @endif
+                    @endif
+
                 </div>
             </div>
             <!-- END STEP 1 -->

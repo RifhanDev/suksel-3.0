@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\User;
 use Database\Seeders\Ref\HaveNo;
 use Database\Seeders\Ref\JustifikasiPemilihanPembekal;
+use Database\Seeders\Ref\KaedahDokumenSeeder;
 use Database\Seeders\Ref\KaedahPerolehanSeeder;
 use Database\Seeders\Ref\KategoriJenisPerolehan;
 use Database\Seeders\Ref\OpenTo;
@@ -40,6 +41,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             RefLokalitisSeeder::class,
             KaedahPerolehanSeeder::class,
+            KaedahDokumenSeeder::class,
             KategoriJenisPerolehan::class,
             YesNo::class,
             SumberPeruntukan::class,

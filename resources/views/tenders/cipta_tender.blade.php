@@ -263,6 +263,48 @@
             text-wrap: balance;
         }
 
+        /* --- KAEDAH BAYARAN / PEROLEHAN DOKUMEN --- */
+        .payment-method-card {
+            cursor: pointer;
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+
+        .payment-method-radio {
+            --bs-border-color: #cbd5e1;
+            width: 18px;
+            height: 18px;
+        }
+
+        .payment-method-body {
+            font-size: 0.75rem;
+        }
+
+        .btn-check:checked+.payment-method-card {
+            --bs-border-color: var(--sg-red);
+            box-shadow: 0 0 0 1px var(--sg-red);
+        }
+
+        .btn-check:checked+.payment-method-card .payment-method-title {
+            color: var(--sg-red);
+        }
+
+        .btn-check:checked+.payment-method-card .payment-method-radio {
+            --bs-border-color: var(--sg-red);
+        }
+
+        .btn-check:checked+.payment-method-card .payment-method-radio::after {
+            content: '';
+            position: absolute;
+            inset: 3px;
+            border-radius: 50%;
+            background: var(--sg-red);
+        }
+
+        .btn-check:focus-visible+.payment-method-card {
+            outline: 2px solid var(--sg-red);
+            outline-offset: 2px;
+        }
+
         /* --- MOBILE --- */
         @media (max-width: 991px) {
 
@@ -410,7 +452,7 @@
             <!-- Item 1 -->
             <div class="d-flex align-items-center gap-2">
                 <span class="badge bg-light text-dark border" id="kaedah-label">- Pilih Tender -</span>
-                <span class="small text-primary fw-bold text-muted">-</span>
+                <span class="small text-primary fw-bold text-muted" id="no-tender-display">-</span>
             </div>
             <!-- Divider (Desktop Only) -->
             <div class="vr d-none d-lg-block text-muted opacity-25" style="height: 20px;"></div>
@@ -494,9 +536,9 @@
                     <!-- ROW 1 -->
                     <div class="row g-3 mb-3">
                         <div class="col-md-6">
-                            <label class="form-label">Kaedah Perolehan</label>
-                            <select class="form-select" name="type">
-                                <option selected disabled>Pilih...</option>
+                            <label class="form-label">Kaedah Perolehan<span class="text-danger">*</span></label>
+                            <select class="form-select" name="type" required>
+                                <option value="" selected disabled>Pilih...</option>
                                 @foreach ($kaedahPerolehan as $kaedahOlehan)
                                     <option value="{{ $kaedahOlehan->id }}"
                                         {{ old('type') == $kaedahOlehan->id ? 'selected' : '' }}>{{ $kaedahOlehan->name }}
@@ -507,7 +549,7 @@
                         <div class="col-md-6">
                             <label class="form-label">Kategori Jenis Perolehan<span class="text-danger">*</span></label>
                             <select class="form-select" name="kategori_perolehan" required>
-                                <option selected disabled>Pilih...</option>
+                                <option value="" selected disabled>Pilih...</option>
                                 @foreach ($kategoriPerolehan as $kategoriOlehan)
                                     <option value="{{ $kategoriOlehan->id }}"
                                         {{ old('kategori_perolehan') == $kategoriOlehan->id ? 'selected' : '' }}>
@@ -531,7 +573,7 @@
                         <div class="col-md-12">
                             <label class="form-label">Disediakan Untuk PTJ<span class="text-danger">*</span></label>
                             <select class="form-select" name="ptj_id" id="ptj-select" required>
-                                <option selected disabled>Pilih...</option>
+                                <option value="" selected disabled>Pilih...</option>
                                 @foreach ($organizations as $org)
                                     <option value="{{ $org->id }}" {{ old('ptj_id') == $org->id ? 'selected' : '' }}>
                                         {{ strtoupper($org->name) }}</option>
@@ -594,11 +636,59 @@
                         </div>
                     </div>
 
+                    <!-- ROW 4C — Kaedah Bayaran / Perolehan Dokumen -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <label class="form-label">Kaedah Bayaran / Perolehan Dokumen<span
+                                    class="text-danger">*</span></label>
+                            <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3">
+                                @php
+                                    $defaultKaedahId = $kaedahDokumen->firstWhere('code', 'online')?->id;
+                                    $selectedKaedahId = (string) old('kaedah_dokumen_id', $defaultKaedahId);
+                                @endphp
+                                @foreach ($kaedahDokumen as $kaedah)
+                                    <div class="col">
+                                        <input type="radio" class="btn-check kaedah-dokumen-radio" name="kaedah_dokumen_id"
+                                            id="kd_{{ $kaedah->code }}" value="{{ $kaedah->id }}"
+                                            data-code="{{ $kaedah->code }}"
+                                            data-requires-lokasi="{{ in_array($kaedah->code, ['online', 'manual'], true) ? '1' : '0' }}"
+                                            @checked($selectedKaedahId === (string) $kaedah->id)>
+                                        <label class="payment-method-card d-block h-100 p-3 border rounded-3"
+                                            for="kd_{{ $kaedah->code }}">
+                                            <span class="d-flex align-items-center gap-2 mb-2">
+                                                <span
+                                                    class="payment-method-radio rounded-circle border border-2 flex-shrink-0 position-relative"></span>
+                                                <span class="payment-method-title fw-bold small">{{ $kaedah->name }}</span>
+                                            </span>
+                                            <span class="payment-method-body d-block text-muted lh-base">{{ $kaedah->description }}
+                                                @if ($kaedah->attention)
+                                                    <span class="d-block mt-2 fw-bold text-danger">{{ $kaedah->attention }}</span>
+                                                @endif
+                                            </span>
+                                        </label>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Tempat Hantar (submission_location_address): only for Online + Manual (Iklan Sahaja) --}}
+                    <div class="row mb-4 d-none" id="lokasi_penghantaran_tender_row">
+                        <div class="col-12">
+                            <label class="form-label" for="submission_location_address">
+                                Tempat Hantar<span class="text-danger">*</span>
+                            </label>
+                            <textarea class="form-control" name="submission_location_address" id="submission_location_address"
+                                rows="3" placeholder="Contoh: Kaunter Tender, Pejabat SUK Selangor, Bangunan SSAAS, Shah Alam">{{ old('submission_location_address') }}</textarea>
+                            <div class="form-text">Wajib diisi untuk kaedah Bayaran Dokumen Secara Online dan Pembelian Manual di Agensi.</div>
+                        </div>
+                    </div>
+
                     <!-- ROW 5 -->
                     <div class="row mb-4 g-3">
                         <div class="col-md-4">
                             <label class="form-label">Tarikh Dicipta<span class="text-danger">*</span></label>
-                            <input type="text" class="form-control form-control-lg" name="tarikh_dicipta"
+                            <input type="text" class="form-control bg-light" name="tarikh_dicipta"
                                 value="{{ old('tarikh_dicipta', \Carbon\Carbon::today()->format('j M Y')) }}" required readonly>
                         </div>
                         <div class="col-md-4">
@@ -616,7 +706,7 @@
                                 <label class="form-label">Jenis Tender / Sebut Harga<span
                                         class="text-danger">*</span></label>
                                 <select class="form-select" name="jenis_tender" id="jenis_tender">
-                                    <option selected disabled>Pilih...</option>
+                                    <option value="" selected disabled>Pilih...</option>
                                     @foreach ($jenisTender as $jt)
                                         <option value="{{ $jt->id }}"
                                             {{ old('jenis_tender') == $jt->id ? 'selected' : '' }}>{{ $jt->name }}
@@ -633,7 +723,7 @@
                                          menawarkan 1/2/3 (Kementerian/Jabatan/Agensi) sedangkan jadual itu hanya
                                          mengandungi dua baris, jadi penyimpanan gagal dengan ralat 1452.
                                          Medan jirannya, jenis_tender, sudah menggunakan cara ini. --}}
-                                    <option selected disabled>Pilih...</option>
+                                    <option value="" selected disabled>Pilih...</option>
                                     @foreach ($jenisKontrak as $jk)
                                         <option value="{{ $jk->id }}"
                                             {{ old('jenis_kontrak') == $jk->id ? 'selected' : '' }}>{{ $jk->name }}
@@ -676,10 +766,11 @@
                                     <div class="col-12">
                                         <!-- For Kerja -->
                                         <div id="tempoh_siap_group" class="d-none">
-                                            <label class="form-label">Tempoh Siap Maksima</label>
+                                            <label class="form-label">Tempoh Siap Maksima<span
+                                                    class="text-danger">*</span></label>
                                             <div class="input-group input-group-md">
                                                 <input type="number" class="form-control" name="tempoh_siap_val"
-                                                    value="{{ old('tempoh_siap_val') }}" placeholder="0">
+                                                    value="{{ old('tempoh_siap_val') }}" placeholder="0" required>
                                                 <select class="form-select" name="tempoh_siap_unit"
                                                     style="max-width: 100px;">
                                                     <option value="1"
@@ -693,10 +784,11 @@
                                         </div>
                                         <!-- For Perkhidmatan / Bekalan -->
                                         <div id="tempoh_kontrak_group" class="d-none">
-                                            <label class="form-label">Tempoh Kontrak / Penyiapan (Bulan)</label>
+                                            <label class="form-label">Tempoh Kontrak / Penyiapan (Bulan)<span
+                                                    class="text-danger">*</span></label>
                                             <input type="number" class="form-control" name="tempoh_kontrak_bulan"
                                                 value="{{ old('tempoh_kontrak_bulan') }}" placeholder="0"
-                                                min="0">
+                                                min="0" required>
                                         </div>
                                     </div>
                                 </div>
@@ -711,8 +803,8 @@
                                         <label class="form-label">Kategori Perolehan<span
                                                 class="text-danger">*</span></label>
                                         <select class="form-select form-select-sm" name="kategori_perolehan_detail"
-                                            id="kategori_perolehan_detail">
-                                            <option selected disabled>Pilih...</option>
+                                            id="kategori_perolehan_detail" required>
+                                            <option value="" selected disabled>Pilih...</option>
                                             <!-- Options will be set dynamically by JavaScript -->
                                         </select>
                                     </div>
@@ -737,7 +829,7 @@
                                     <div class="col-12 {{ old('zon_lokasi', '1') == '0' ? 'd-none' : '' }}" id="lokaliti-group">
                                         <label class="form-label">Lokaliti Liputan</label>
                                         <select class="form-select form-select-sm" name="lokaliti_id">
-                                            <option selected disabled>Pilih...</option>
+                                            <option value="" selected disabled>Pilih...</option>
                                             @foreach ($lokalitis as $lokaliti)
                                                 <option value="{{ $lokaliti->id }}"
                                                     {{ old('lokaliti_id') == $lokaliti->id ? 'selected' : '' }}>
@@ -1136,7 +1228,7 @@
             function updateKategoriPerolehanOptions() {
                 const selectedKategori = kategoriPerolehanDropdown.val();
                 kategoriDetailDropdown.empty();
-                kategoriDetailDropdown.append('<option selected disabled>Pilih...</option>');
+                kategoriDetailDropdown.append('<option value="" selected disabled>Pilih...</option>');
 
                 if (!selectedKategori) {
                     return;
@@ -1192,15 +1284,23 @@
                 const selectedKategori = kategoriPerolehanDropdown.val();
                 const tempohSiapGroup = $('#tempoh_siap_group');
                 const tempohKontrakGroup = $('#tempoh_kontrak_group');
+                const tempohSiapInput = $('input[name="tempoh_siap_val"]');
+                const tempohKontrakInput = $('input[name="tempoh_kontrak_bulan"]');
 
                 if (selectedKategori === '1' || selectedKategori === '2') {
                     // Show Tempoh Kontrak for old values (1 and 2), hide Tempoh Siap
                     tempohSiapGroup.addClass('d-none');
+                    tempohSiapInput.removeAttr('required');
+
                     tempohKontrakGroup.removeClass('d-none');
+                    tempohKontrakInput.attr('required', 'required');
                 } else {
                     // Show Tempoh Siap for other new values, hide Tempoh Kontrak
                     tempohSiapGroup.removeClass('d-none');
+                    tempohSiapInput.attr('required', 'required');
+
                     tempohKontrakGroup.addClass('d-none');
+                    tempohKontrakInput.removeAttr('required');
                 }
             }
 
@@ -1277,11 +1377,84 @@
             });
 
             // --- KAEDAH PEROLEHAN LABEL LISTENER ---
+            var kerjaKategoriOption = null;
+
+            function rememberKerjaOption() {
+                var currentKerja = kategoriPerolehanDropdown.find('option').filter(function() {
+                    return ($(this).text() || '').trim().toLowerCase() === 'kerja';
+                });
+
+                if (currentKerja.length) {
+                    kerjaKategoriOption = currentKerja;
+                }
+            }
+
+            function unlockKategoriPerolehan() {
+                kategoriPerolehanDropdown.prop('disabled', false);
+                $('#kategori_perolehan_locked').remove();
+            }
+
+            function lockKategoriToKerja() {
+                if (!kerjaKategoriOption || !kerjaKategoriOption.length) {
+                    return;
+                }
+
+                if (!kerjaKategoriOption.parent().length) {
+                    kategoriPerolehanDropdown.append(kerjaKategoriOption);
+                }
+
+                var kerjaValue = String(kerjaKategoriOption.val());
+                if (String(kategoriPerolehanDropdown.val()) !== kerjaValue) {
+                    kategoriPerolehanDropdown.val(kerjaValue).trigger('change');
+                }
+
+                kategoriPerolehanDropdown.prop('disabled', true);
+                var locked = $('#kategori_perolehan_locked');
+                if (!locked.length) {
+                    locked = $('<input>', {
+                        type: 'hidden',
+                        id: 'kategori_perolehan_locked',
+                        name: 'kategori_perolehan'
+                    });
+                    kategoriPerolehanDropdown.after(locked);
+                }
+                locked.val(kerjaValue);
+            }
+
+            function syncKerjaOptionForKaedah() {
+                var kaedahText = ($('select[name="type"] option:selected').text() || '').trim().toLowerCase();
+                rememberKerjaOption();
+
+                if (kaedahText === 'pembelian terus') {
+                    unlockKategoriPerolehan();
+                    if (kerjaKategoriOption && kerjaKategoriOption.parent().length) {
+                        if (String(kategoriPerolehanDropdown.val()) === String(kerjaKategoriOption.val())) {
+                            kategoriPerolehanDropdown.val('').trigger('change');
+                        }
+                        kerjaKategoriOption.detach();
+                    }
+                    return;
+                }
+
+                if (kaedahText === 'lantikan terus') {
+                    lockKategoriToKerja();
+                    return;
+                }
+
+                unlockKategoriPerolehan();
+                if (kerjaKategoriOption && !kerjaKategoriOption.parent().length) {
+                    kategoriPerolehanDropdown.append(kerjaKategoriOption);
+                }
+            }
+
             $('select[name="type"]').change(function() {
                 var text = $(this).find('option:selected').text().toLowerCase();
                 var label = text.includes('sebut harga') ? 'NO. SEBUT HARGA' : 'NO. TENDER';
                 $('#kaedah-label').text(label);
+                syncKerjaOptionForKaedah();
             });
+
+            syncKerjaOptionForKaedah();
 
             // --- PTJ DROPDOWN LISTENER ---
             $('#ptj-select').change(function() {
@@ -1290,6 +1463,22 @@
                     $('#ptj-display').text(selectedText);
                 }
             });
+
+            // --- NO. TENDER INPUT LISTENER ---
+            function updateNoTenderDisplay() {
+                var val = $('input[name="no_tender"]').val();
+                if (val && val.trim() !== '') {
+                    $('#no-tender-display').text(val);
+                } else {
+                    $('#no-tender-display').text('-');
+                }
+            }
+
+            $('input[name="no_tender"]').on('input keyup', function() {
+                updateNoTenderDisplay();
+            });
+
+            updateNoTenderDisplay();
 
             // --- WIZARD NAVIGATION ---
             let currentStep = 1;
@@ -1318,10 +1507,17 @@
                 }
             }
 
+            // Live clearing of is-invalid class when user inputs valid data
+            $('#step1-content').on('input change', 'input, select, textarea', function() {
+                if (this.checkValidity()) {
+                    $(this).removeClass('is-invalid');
+                }
+            });
+
             $('#btn-next').click(function() {
-                // Validate Step 1 required fields before proceeding
+                // Validate Step 1 visible required fields before proceeding
                 var isValid = true;
-                $('#step1-content [required]').each(function() {
+                $('#step1-content [required]:visible').each(function() {
                     if (!this.checkValidity()) {
                         $(this).addClass('is-invalid');
                         isValid = false;
@@ -1331,8 +1527,8 @@
                 });
 
                 if (!isValid) {
-                    // Focus on first invalid field
-                    $('#step1-content [required]:invalid').first().focus();
+                    // Focus on first invalid visible field
+                    $('#step1-content [required]:visible:invalid').first().focus();
                     return;
                 }
 
@@ -1341,7 +1537,7 @@
                 $('html, body').animate({
                     scrollTop: $('#stepper-wrapper').offset().top - 20
                 }, 400);
-            }); // nanti akan ditambah lagi validation check
+            });
 
             $('#btn-back').click(function() {
                 currentStep = 1;
@@ -1602,5 +1798,24 @@
                 $(this).val($(this).val().replace(/,/g, ''));
             });
         });
+
+        // Tempat Hantar — show/require only for online + manual kaedah
+        function syncLokasiPenghantaranField() {
+            var $checked = $('input.kaedah-dokumen-radio:checked');
+            var requires = $checked.data('requires-lokasi') == 1 || $checked.data('requires-lokasi') === '1';
+            var $row = $('#lokasi_penghantaran_tender_row');
+            var $input = $('#submission_location_address');
+
+            if (requires) {
+                $row.removeClass('d-none');
+                $input.prop('required', true);
+            } else {
+                $row.addClass('d-none');
+                $input.prop('required', false);
+            }
+        }
+
+        $(document).on('change', 'input.kaedah-dokumen-radio', syncLokasiPenghantaranField);
+        syncLokasiPenghantaranField();
     </script>
 @endsection

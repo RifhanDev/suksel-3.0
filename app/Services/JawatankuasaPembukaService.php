@@ -213,9 +213,13 @@ class JawatankuasaPembukaService
      * Persist the rumusan data (Bumiputera status + offer price) for each vendor
      * and eliminate disqualified vendors.
      *
+     * Layak vendors come from the rumusan form. Tidak layak are also persisted
+     * (harga + elimination) so they still appear under Cut-Off Tawaran Harga
+     * with status Gagal.
+     *
      * @param  Tender  $tender
      * @param  array<int, array{vendor_id: int, is_bumiputera: int, harga_tawaran: ?float}>  $rumusanData
-     * @param  array<int, array{vendor_id: int, reasons: array<int, string>}>  $tidakLayak
+     * @param  array<int, array{vendor_id: int, reasons: array<int, string>, harga_tawaran?: ?float, is_bumiputera?: ?int}>  $tidakLayak
      * @param  int  $currentProcessId   The process ID at which elimination occurs.
      */
     public function persistRumusan(
@@ -224,13 +228,15 @@ class JawatankuasaPembukaService
         array  $tidakLayak,
         int    $currentProcessId
     ): void {
-        // Build a quick lookup for disqualified vendors
-        $eliminatedVendorIds = collect($tidakLayak)
-            ->keyBy('vendor_id')
-            ->all();
+        $rumusanByVendor = collect($rumusanData)->keyBy(fn ($row) => (int) $row['vendor_id']);
+        $tidakLayakByVendor = collect($tidakLayak)->keyBy(fn ($row) => (int) $row['vendor_id']);
 
-        foreach ($rumusanData as $row) {
-            $vendorId    = (int) $row['vendor_id'];
+        $vendorIds = $rumusanByVendor->keys()
+            ->merge($tidakLayakByVendor->keys())
+            ->unique()
+            ->values();
+
+        foreach ($vendorIds as $vendorId) {
             $participant = TenderVendor::query()
                 ->where('tender_id', $tender->id)
                 ->where('vendor_id', $vendorId)
@@ -241,16 +247,29 @@ class JawatankuasaPembukaService
                 continue;
             }
 
-            // Save Bumiputera + harga regardless of eligibility
-            $participant->is_bumiputera  = isset($row['is_bumiputera']) ? (int) $row['is_bumiputera'] : null;
-            $participant->harga_tawaran  = isset($row['harga_tawaran']) && $row['harga_tawaran'] !== '' && $row['harga_tawaran'] !== null
-                ? (float) $row['harga_tawaran']
-                : null;
+            $row = $rumusanByVendor->get($vendorId);
+            $tidak = $tidakLayakByVendor->get($vendorId);
+
+            if ($row) {
+                $participant->is_bumiputera = isset($row['is_bumiputera']) && $row['is_bumiputera'] !== ''
+                    ? (int) $row['is_bumiputera']
+                    : null;
+                $participant->harga_tawaran = isset($row['harga_tawaran']) && $row['harga_tawaran'] !== '' && $row['harga_tawaran'] !== null
+                    ? (float) $row['harga_tawaran']
+                    : null;
+            } elseif ($tidak) {
+                if (array_key_exists('is_bumiputera', $tidak) && $tidak['is_bumiputera'] !== null && $tidak['is_bumiputera'] !== '') {
+                    $participant->is_bumiputera = (int) $tidak['is_bumiputera'];
+                }
+                if (isset($tidak['harga_tawaran']) && $tidak['harga_tawaran'] !== '' && $tidak['harga_tawaran'] !== null) {
+                    $participant->harga_tawaran = (float) $tidak['harga_tawaran'];
+                }
+            }
+
             $participant->save();
 
-            // Eliminate disqualified vendors
-            if (isset($eliminatedVendorIds[$vendorId])) {
-                $reasons = $eliminatedVendorIds[$vendorId]['reasons'] ?? [];
+            if ($tidak) {
+                $reasons = $tidak['reasons'] ?? [];
                 $participant->eliminate(
                     $currentProcessId,
                     implode(' ', $reasons)

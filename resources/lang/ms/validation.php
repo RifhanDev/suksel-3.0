@@ -72,7 +72,7 @@ return array(
     "url" => "The :attribute format is invalid.",
 
     "before_field" => ":attribute mestilah sebelum :date.",
-    "email_domain" => ":attribute anda mestilah mengguna :attribute rasmi.",
+    "email_domain" => ":attribute mestilah menggunakan domain emel rasmi (.gov.my).",
     
     /*
     |--------------------------------------------------------------------------

@@ -53,8 +53,8 @@
                 <tr>
                     <th style="width: 50px;">Bil.</th>
                     <th>Senarai Kerja Yang Disiapkan</th>
-                    <th>PIC</th>
-                    <th>Nombor Telefon PIC</th>
+                    <th>Agensi/ Pemilik</th>
+                    <th>No. Telefon Agensi</th>
                     <th class="text-end">Nilai Kerja (RM)</th>
                 </tr>
             </thead>

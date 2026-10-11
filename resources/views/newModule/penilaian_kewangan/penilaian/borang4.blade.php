@@ -547,9 +547,9 @@
             return cells;
         }
 
-        // Row 1: Nama Ringkas Kerja Semasa
+        // Row 1: Tajuk Projek
         bodyHtml += `<tr>
-            <td class="fw-semibold text-dark ps-4" style="background-color: #efeff0ff;">Nama Ringkas Kerja Semasa</td>
+            <td class="fw-semibold text-dark ps-4" style="background-color: #efeff0ff;">Tajuk Projek</td>
             ${buildRowCells(it => it.nama || '-', 'fw-medium text-dark')}
         </tr>`;
 
@@ -589,25 +589,19 @@
             ${buildRowCells(it => it.tarikh_penilaian || '-', 'font-monospace')}
         </tr>`;
 
-        // Row 8: Luputan Tarikh Siap Kontrak (Hari) (D)
-        bodyHtml += `<tr>
-            <td class="fw-semibold text-dark ps-4" style="background-color: #efeff0ff;">Luputan Tarikh Siap Kontrak (Hari) (D)</td>
-            ${buildRowCells(it => it.luputan || '0', 'font-monospace')}
-        </tr>`;
-
-        // Row 9: Peratus Kemajuan Sebenar Dicapai (A) (%)
+        // Row 8: Peratus Kemajuan Sebenar Dicapai (A) (%)
         bodyHtml += `<tr>
             <td class="fw-semibold text-dark ps-4" style="background-color: #efeff0ff;">Peratus Kemajuan Sebenar Dicapai (A) (%)</td>
             ${buildRowCells(it => parseFloat(it.kemajuan_sebenar || 0).toFixed(2), 'font-monospace fw-bold text-primary')}
         </tr>`;
 
-        // Row 10: Peratus Kemajuan Mengikut Jadual (S) (%)
+        // Row 9: Peratus Kemajuan Mengikut Jadual (S) (%)
         bodyHtml += `<tr>
             <td class="fw-semibold text-dark ps-4" style="background-color: #efeff0ff;">Peratus Kemajuan Mengikut Jadual (S) (%)</td>
             ${buildRowCells(it => parseFloat(it.kemajuan_jadual || 0).toFixed(2), 'font-monospace fw-bold text-dark')}
         </tr>`;
 
-        // Row 11: Prestasi Kerja Semasa (A-(S*P-D)/P)
+        // Row 10: Prestasi Kerja Semasa (A-(S*P-D)/P) — D (luputan) default 0
         bodyHtml += `<tr>
             <td class="fw-semibold text-dark ps-4" style="background-color: #efeff0ff;">Prestasi Kerja Semasa (A-(S*P-D)/P)</td>
             ${buildRowCells(it => {
@@ -620,7 +614,7 @@
             }, 'font-monospace fw-bold')}
         </tr>`;
 
-        // Row 12: Status Prestasi (Per Item)
+        // Row 11: Status Prestasi (Per Item)
         bodyHtml += `<tr>
             <td class="fw-semibold text-dark ps-4" style="background-color: #efeff0ff;">Status Prestasi</td>
             ${buildRowCells(it => {
@@ -637,7 +631,7 @@
             })}
         </tr>`;
 
-        // Row 13: Prestasi Kerja Semasa Terendah (%)
+        // Row 12: Prestasi Kerja Semasa Terendah (%)
         bodyHtml += `<tr>
             <td class="fw-semibold text-dark ps-4" style="background-color: #efeff0ff;">Prestasi Kerja Semasa Terendah (%)</td>
             <td colspan="${colCount}" class="font-monospace fw-bold">${minKemajuan.toFixed(2)}</td>

@@ -121,7 +121,7 @@ class User extends Authenticatable
 		],
 		'storeUser' => [
 			'name' => 'required',
-			'email' => 'required|email|email_domain|unique:users,email',
+			'email' => 'required|email|unique:users,email',
 			'password' => [
 				'required',
 				'min:8',

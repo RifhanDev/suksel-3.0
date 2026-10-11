@@ -62,4 +62,27 @@ class OnlineFormRegistry
             default => 'Borang Atas Talian',
         };
     }
+
+    /**
+     * Online forms that vendors may leave blank without blocking Hantar Tawaran.
+     *
+     * @return list<string>
+     */
+    public static function optionalForVendorSubmission(): array
+    {
+        return [
+            'pengalaman_kerja',
+            'kerja_dalam_tangan',
+            'prestasi_kerja',
+        ];
+    }
+
+    public static function isOptionalForVendorSubmission(?string $formKey): bool
+    {
+        if (! $formKey) {
+            return false;
+        }
+
+        return in_array($formKey, self::optionalForVendorSubmission(), true);
+    }
 }

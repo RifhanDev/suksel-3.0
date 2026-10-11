@@ -107,17 +107,26 @@
             {{-- Senarai Layak Table --}}
             <div class="content-card">
                 <div class="content-card-header">
-                    <div class="d-flex align-items-center gap-3">
-                        <div class="content-card-icon">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                                <circle cx="9" cy="7" r="4" />
-                                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                            </svg>
+                    <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap w-100">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="content-card-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                                    <circle cx="9" cy="7" r="4" />
+                                    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                                </svg>
+                            </div>
+                            <h3 class="content-card-title">Senarai Layak</h3>
                         </div>
-                        <h3 class="content-card-title">Senarai Layak</h3>
+                        @if (Auth::user() && Auth::user()->ability(['Admin'], []))
+                            <button type="button" id="btn-blast-eligible-emails"
+                                class="btn btn-primary btn-sm"
+                                data-url="{{ route('tenders.eligibles.blast', $tender->id) }}">
+                                <i class="ti ti-mail-forward me-1"></i>Hantar Emel kepada Semua
+                            </button>
+                        @endif
                     </div>
                 </div>
                 <div class="content-card-body p-2">
@@ -131,7 +140,8 @@
                                     <th class="text-uppercase text-muted small fw-bold py-3">Nama Syarikat</th>
                                     <th class="text-uppercase text-muted small fw-bold py-3">Alamat Emel</th>
                                     <th class="text-uppercase text-muted small fw-bold py-3">Tarikh Janaan</th>
-                                    <th class="text-uppercase text-muted small fw-bold py-3 pe-4">Tarikh Email</th>
+                                    <th class="text-uppercase text-muted small fw-bold py-3">Tarikh Email</th>
+                                    <th class="text-uppercase text-muted small fw-bold py-3 pe-4" style="width: 12%;">Tindakan</th>
                                 </tr>
                             </thead>
                             <tbody></tbody>
@@ -173,6 +183,12 @@
                     {
                         data: 'sent_at',
                         name: 'sent_at'
+                    },
+                    {
+                        data: 'actions',
+                        name: 'actions',
+                        orderable: false,
+                        searchable: false
                     }
                 ],
                 serverSide: true,
@@ -211,6 +227,57 @@
                     });
                 }
             });
+
+            window.eligiblesDataTable = DT;
+        });
+
+        function postEligibleEmail(url, confirmMsg, $btn) {
+            if (!confirm(confirmMsg)) {
+                return;
+            }
+
+            var originalHtml = $btn.html();
+            $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>Menghantar...');
+
+            $.ajax({
+                url: url,
+                method: 'POST',
+                data: {
+                    _token: '{{ csrf_token() }}'
+                },
+                success: function(res) {
+                    alert(res.message || 'Emel berjaya dihantar.');
+                    if (window.eligiblesDataTable) {
+                        window.eligiblesDataTable.ajax.reload(null, false);
+                    }
+                },
+                error: function(xhr) {
+                    var msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Gagal menghantar emel.';
+                    alert(msg);
+                },
+                complete: function() {
+                    $btn.prop('disabled', false).html(originalHtml);
+                }
+            });
+        }
+
+        $(document).on('click', '.btn-send-eligible-email', function() {
+            var $btn = $(this);
+            var name = $btn.data('name') || 'syarikat ini';
+            postEligibleEmail(
+                $btn.data('url'),
+                'Hantar emel layak kepada ' + name + '?',
+                $btn
+            );
+        });
+
+        $('#btn-blast-eligible-emails').on('click', function() {
+            var $btn = $(this);
+            postEligibleEmail(
+                $btn.data('url'),
+                'Hantar emel layak kepada SEMUA syarikat yang belum menerima emel?',
+                $btn
+            );
         });
     </script>
 @endsection

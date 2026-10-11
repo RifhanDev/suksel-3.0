@@ -160,8 +160,8 @@ class AduanConversation extends Conversation
             if ($answer->isInteractiveMessageReply()) {
                 if ($answer->getValue() == '1') {
                     $this->submitAduan();
-                } else if ($answer->getValue() == '0') {
-                    $this->sendRegisterManual();
+                } elseif ($answer->getValue() == '0') {
+                    $this->cancelAduanSubmission();
                 }
             } else {
                 $this->repeat();
@@ -204,13 +204,26 @@ class AduanConversation extends Conversation
         $complaint = Complaint::create($arr);
 
         if ($complaint) {
-            // Send email notification to all admin users
             $this->sendEmailNotificationToAdmins($complaint);
 
-            $this->bot->reply('Aduan hantar telah dihantar. Terima kasih atas maklumbalas anda.');
+            $this->say('Terima kasih! Aduan anda telah berjaya dihantar.');
+            $this->say('Kami akan semak maklum balas anda secepat mungkin. Taip <strong>menu</strong> jika anda perlukan bantuan lain.');
         } else {
-            $this->bot->reply('Maaf, kami menghadapi masalah teknikal. Sila cuba sekali lagi.');
+            $this->say('Maaf, kami menghadapi masalah teknikal. Sila cuba sekali lagi atau taip <strong>aduan</strong> untuk mula semula.');
         }
+    }
+
+    public function cancelAduanSubmission()
+    {
+        $this->bot->userStorage()->save([
+            'aduan_content' => null,
+            'aduan_attachments' => [],
+            'pending_attachment' => null,
+            'attachment_uploaded' => false,
+        ]);
+
+        $this->say('Baik, aduan tidak dihantar.');
+        $this->say('Terima kasih. Taip <strong>menu</strong> jika anda perlukan bantuan lain.');
     }
 
     /**
@@ -267,9 +280,4 @@ class AduanConversation extends Conversation
         }
     }
 
-    public function sendRegisterManual()
-    {
-        $this->say('Sila hubungi SUK SELANGOR untuk bantuan lanjut.');
-        $this->stopsConversing();
-    }
 }

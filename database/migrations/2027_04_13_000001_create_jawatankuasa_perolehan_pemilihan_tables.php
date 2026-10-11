@@ -19,6 +19,7 @@ return new class extends Migration
                 $table->string('bil_mesyuarat', 100)->nullable();
                 $table->string('no_kod', 100)->nullable();
                 $table->boolean('sahkan_layak_bidaan')->default(false);
+                $table->text('catatan_bidaan')->nullable();
                 $table->timestamp('submitted_at')->nullable();
                 $table->timestamps();
             });

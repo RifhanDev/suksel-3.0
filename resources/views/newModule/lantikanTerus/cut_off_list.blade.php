@@ -9,8 +9,8 @@
     <!-- HEADER -->
     <div class="d-flex flex-column flex-lg-row justify-content-start align-items-start align-items-lg-center mb-4">
         <div>
-            <h3 class="fw-bold text-dark m-0" style="letter-spacing: -0.5px;">Cut Off Projek</h3>
-            <p class="text-muted small m-0">Paparan senarai projek yang menunggu proses penentuan cut-off.</p>
+            <h3 class="fw-bold text-dark m-0" style="letter-spacing: -0.5px;">Kajian Pasaran Projek</h3>
+            <p class="text-muted small m-0">Paparan senarai projek yang menunggu proses penentuan kajian pasaran.</p>
         </div>
     </div>
 
@@ -57,7 +57,7 @@
                         <line x1="16" y1="17" x2="8" y2="17"></line>
                     </svg>
                 </div>
-                <h3 class="content-card-title" style="font-size: 1rem;">Senarai Cut Off</h3>
+                <h3 class="content-card-title" style="font-size: 1rem;">Senarai Kajian Pasaran</h3>
             </div>
         </div>
 

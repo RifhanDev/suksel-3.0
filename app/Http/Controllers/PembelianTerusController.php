@@ -9,6 +9,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rule;
 
 class PembelianTerusController extends Controller
 {
@@ -37,7 +38,7 @@ class PembelianTerusController extends Controller
 
         $project = null;
         $items = collect();
-        $kategoriPerolehan = \App\Models\Ref\RefKategoriJenisPerolehan::where('active', true)->get();
+        $kategoriPerolehan = $this->kategoriPerolehanOptions();
 
         return view('newModule.pembelian_terus.cipta_projek', compact('project', 'items', 'kategoriPerolehan'));
     }
@@ -58,7 +59,7 @@ class PembelianTerusController extends Controller
             $data = $json['data'] ?? [];
             $project = $this->mapProject($data, $json['items'] ?? []);
             $items = collect($json['items'] ?? []);
-            $kategoriPerolehan = \App\Models\Ref\RefKategoriJenisPerolehan::where('active', true)->get();
+            $kategoriPerolehan = $this->kategoriPerolehanOptions();
 
             return view('newModule.pembelian_terus.cipta_projek', compact('project', 'items', 'kategoriPerolehan'));
         } catch (\Throwable $e) {
@@ -587,6 +588,27 @@ class PembelianTerusController extends Controller
         }
     }
 
+    private function kategoriPerolehanOptions()
+    {
+        return \App\Models\Ref\RefKategoriJenisPerolehan::query()
+            ->where('active', true)
+            ->whereRaw('LOWER(name) <> ?', ['kerja'])
+            ->orderBy('id')
+            ->get();
+    }
+
+    /**
+     * @return array<int, int>
+     */
+    private function kerjaKategoriIds(): array
+    {
+        return \App\Models\Ref\RefKategoriJenisPerolehan::query()
+            ->whereRaw('LOWER(name) = ?', ['kerja'])
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+    }
+
     private function persist(Request $request, ?int $id = null)
     {
         if (! auth()->check()) {
@@ -600,11 +622,13 @@ class PembelianTerusController extends Controller
             'harga_indikatif' => 'required',
             'sumber_peruntukan' => 'required|string',
             'terbuka_kepada' => 'required|string',
+            'kategori_perolehan' => ['nullable', Rule::notIn($this->kerjaKategoriIds())],
         ], [
             'name.required' => 'Tajuk Perolehan wajib diisi.',
             'ref_number.required' => 'No. Rujukan Fail wajib diisi.',
             'ptj_id.required' => 'PTJ wajib dipilih.',
             'harga_indikatif.required' => 'Harga Indikatif Jabatan wajib diisi.',
+            'kategori_perolehan.not_in' => 'Kategori Kerja tidak digunakan untuk Pembelian Terus.',
         ]);
 
         $payload = $this->buildPayload($request);
@@ -633,8 +657,10 @@ class PembelianTerusController extends Controller
                     ?: (int) ($response->json('tender_id') ?? $response->json('data.id') ?? 0);
 
                 if ($savedId > 0) {
-                    return redirect()->route('pembelianTerus.edit', $savedId)
-                        ->with('success', $message);
+                    return redirect()->route('pembelianTerus.edit', [
+                        'id' => $savedId,
+                        'step' => min(3, max(1, (int) $request->input('wizard_step', 1))),
+                    ])->with('success', $message);
                 }
 
                 return redirect()->route('pembelianTerus.createProject')
@@ -666,7 +692,7 @@ class PembelianTerusController extends Controller
 
     private function buildPayload(Request $request): array
     {
-        $payload = $request->except(['_token', '_method']);
+        $payload = $request->except(['_token', '_method', 'wizard_step']);
         $user = auth()->user();
         $payload['creator_id'] = $user->id;
 
@@ -680,12 +706,17 @@ class PembelianTerusController extends Controller
             $mofCodes = [];
             foreach ($payload['mof'] as $index => $mofGroup) {
                 if (isset($mofGroup['code']) && is_array($mofGroup['code'])) {
+                    $codes = array_values(array_filter($mofGroup['code'], fn ($code) => $code !== '' && $code !== null));
+                    if ($codes === []) {
+                        continue;
+                    }
+
                     $joinRule = isset($payload['mof_logic_' . $index])
                         ? strtolower($payload['mof_logic_' . $index])
                         : 'and';
 
                     $mofCodes[] = [
-                        'codes' => $mofGroup['code'],
+                        'codes' => $codes,
                         'inner_rule' => strtolower($mofGroup['logic_mid'] ?? 'or'),
                         'join_rule' => $joinRule,
                     ];
@@ -701,16 +732,24 @@ class PembelianTerusController extends Controller
 
             foreach ($payload['cidb'] as $index => $cidbGroup) {
                 if (isset($cidbGroup['grade']) && is_array($cidbGroup['grade'])) {
-                    $cidbGrades = array_merge($cidbGrades, $cidbGroup['grade']);
+                    $cidbGrades = array_merge(
+                        $cidbGrades,
+                        array_values(array_filter($cidbGroup['grade'], fn ($grade) => $grade !== '' && $grade !== null))
+                    );
                 }
 
                 if (isset($cidbGroup['spec']) && is_array($cidbGroup['spec'])) {
+                    $specs = array_values(array_filter($cidbGroup['spec'], fn ($spec) => $spec !== '' && $spec !== null));
+                    if ($specs === []) {
+                        continue;
+                    }
+
                     $joinRule = isset($payload['cidb_logic_' . $index])
                         ? strtolower($payload['cidb_logic_' . $index])
                         : 'or';
 
                     $cidbCodes[] = [
-                        'codes' => $cidbGroup['spec'],
+                        'codes' => $specs,
                         'inner_rule' => strtolower($cidbGroup['logic_mid'] ?? 'and'),
                         'join_rule' => $joinRule,
                     ];
@@ -852,6 +891,7 @@ class PembelianTerusController extends Controller
 
         $tarikhBuka = $data['advertise_start_date'] ?? null;
         $tarikhTutup = $data['advertise_stop_date'] ?? null;
+        $kodBidang = $this->mapKodBidang((array) ($data['codes'] ?? []));
 
         return (object) [
             'id' => $data['id'] ?? null,
@@ -872,9 +912,52 @@ class PembelianTerusController extends Controller
             'status' => $status,
             'status_process_id' => $statusId,
             'items' => $items,
-            'mof' => [],
-            'cidb' => [],
+            'mof' => $kodBidang['mof'],
+            'cidb' => $kodBidang['cidb'],
+            'mof_cidb_rule' => strtoupper((string) ($data['mof_cidb_rule'] ?? 'AND')) === 'OR' ? 'OR' : 'AND',
         ];
+    }
+
+    /**
+     * Rebuild Kod Bidang rows, grouped by order, in the shape the form posts.
+     *
+     * @param  array<int, mixed>  $codes
+     * @return array{mof: array<int, array<string, mixed>>, cidb: array<int, array<string, mixed>>}
+     */
+    private function mapKodBidang(array $codes): array
+    {
+        $rows = collect($codes)->map(fn ($code) => (array) $code);
+
+        $group = function (string $type, string $key, string $inner, string $join) use ($rows) {
+            return $rows->where('code_type', $type)
+                ->groupBy(fn (array $code) => (int) ($code['order'] ?? 1))
+                ->sortKeys()
+                ->map(fn ($items) => [
+                    $key => $items->pluck('code_id')->map(fn ($id) => (int) $id)->values()->all(),
+                    'logic_mid' => strtoupper((string) ($items->first()['inner_rule'] ?: $inner)),
+                    'join_rule' => strtoupper((string) ($items->first()['join_rule'] ?: $join)),
+                ])
+                ->values()
+                ->all();
+        };
+
+        $mof = $group('mof', 'code', 'or', 'and');
+        $cidb = $group('cidb', 'spec', 'and', 'or');
+
+        $grades = $rows->where('code_type', 'cidb-g')
+            ->pluck('code_id')
+            ->map(fn ($id) => (int) $id)
+            ->values()
+            ->all();
+
+        if ($grades !== [] && $cidb === []) {
+            $cidb[] = ['spec' => [], 'logic_mid' => 'AND', 'join_rule' => 'OR'];
+        }
+        if ($cidb !== []) {
+            $cidb[0]['grade'] = $grades;
+        }
+
+        return ['mof' => $mof, 'cidb' => $cidb];
     }
 
     private function isVendorActor(): bool

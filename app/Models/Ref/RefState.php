@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Models;
+namespace App\Models\Ref;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -11,14 +11,13 @@ class RefState extends Model
     use HasFactory;
     use SoftDeletes;
 
-    
     public $timestamps = true;
 
     protected $fillable = [
-        "description",
-        "display_status",
-        "created_by",
-        "updated_by",
-        "deleted_by",
+        'description',
+        'display_status',
+        'created_by',
+        'updated_by',
+        'deleted_by',
     ];
 }

@@ -23,8 +23,10 @@ class Tender extends Model
 	use RevisionableTrait;
 
 	static $types = [
-		'tender'      => 'Tender',
-		'quotation'   => 'Sebut Harga'
+		'tender'          => 'Tender',
+		'quotation'       => 'Sebut Harga',
+		'pembelian_terus' => 'Pembelian Terus',
+		'lantikan_terus'  => 'Lantikan Terus',
 	];
 
 	/**
@@ -85,6 +87,7 @@ class Tender extends Model
 		'only_bumiputera',
 		'type',
 		'only_advertise',
+		'kaedah_dokumen_id',
 		'mof_cidb_rule',
 		'district_list_rule',
 		// New fields for version 3.0
@@ -248,6 +251,38 @@ class Tender extends Model
 		} else {
 			return false;
 		}
+	}
+
+	/**
+	 * Public siar is done by the ketua jabatan (or an admin). Urusetia submission of
+	 * penyediaan iklan does not publish the tender onto the public list.
+	 */
+	public function canPublish(): bool
+	{
+		if (! auth()->check()) {
+			return false;
+		}
+
+		$user = auth()->user();
+
+		if ($user->hasRole('Admin')) {
+			return true;
+		}
+
+		return $user->hasRole('Agency Ketua Jabatan')
+			&& (int) $this->organization_unit_id === (int) $user->organization_unit_id;
+	}
+
+	public function publishedByKetuaJabatan(): bool
+	{
+		if (empty($this->approver_id)) {
+			return false;
+		}
+
+		$approver = $this->relationLoaded('approver') ? $this->approver : $this->approver()->first();
+
+		return $approver
+			&& ($approver->hasRole('Agency Ketua Jabatan') || $approver->hasRole('Admin'));
 	}
 
 	public function canAllowEdit()
@@ -447,6 +482,8 @@ class Tender extends Model
 				return false;
 			} elseif (!$this->canParticipate(auth()->user()->vendor_id)) {
 				return false;
+			} elseif (!$this->isWithinVendorDokumenWindow()) {
+				return false;
 			} else {
 				return true;
 			}
@@ -462,6 +499,11 @@ class Tender extends Model
 	public function creator()
 	{
 		return $this->belongsTo('App\User', 'creator_id', 'id');
+	}
+
+	public function approver()
+	{
+		return $this->belongsTo('App\User', 'approver_id', 'id');
 	}
 
 	public function officer()
@@ -482,6 +524,116 @@ class Tender extends Model
 	public function kaedahPerolehan()
 	{
 		return $this->belongsTo(\App\Models\Ref\RefKaedahPerolehan::class, 'kaedah_perolehan_id');
+	}
+
+	public function kaedahDokumen()
+	{
+		return $this->belongsTo(\App\Models\Ref\RefKaedahDokumen::class, 'kaedah_dokumen_id');
+	}
+
+	public function iklanDokumens()
+	{
+		return $this->hasMany(\App\Models\TenderIklanDokumen::class, 'tender_id')->orderBy('sort_order')->orderBy('id');
+	}
+
+	public function usesIklanDokumen(): bool
+	{
+		if (! $this->relationLoaded('kaedahDokumen')) {
+			$this->load('kaedahDokumen');
+		}
+
+		return (bool) $this->kaedahDokumen?->skips_to_penyediaan_iklan;
+	}
+
+	/**
+	 * Kaedah "Bayaran Dokumen Secara Online" (ref_kaedah_dokumens.code = online).
+	 */
+	public function isBayaranDokumenOnline(): bool
+	{
+		if (! $this->relationLoaded('kaedahDokumen')) {
+			$this->load('kaedahDokumen');
+		}
+
+		return ($this->kaedahDokumen?->code ?? '') === 'online';
+	}
+
+	/**
+	 * Kaedah "Bayaran Dokumen dan Penilaian secara online" (code = online_penilaian).
+	 */
+	public function isBayaranDokumenOnlinePenilaian(): bool
+	{
+		if (! $this->relationLoaded('kaedahDokumen')) {
+			$this->load('kaedahDokumen');
+		}
+
+		return ($this->kaedahDokumen?->code ?? '') === 'online_penilaian';
+	}
+
+	/**
+	 * Vendor must pay dokumen via FPX cart (online / online_penilaian).
+	 */
+	public function requiresOnlineDokumenPayment(): bool
+	{
+		return $this->isBayaranDokumenOnline() || $this->isBayaranDokumenOnlinePenilaian();
+	}
+
+	/**
+	 * Kaedah "Pembelian & Bayaran Manual di Agensi (Iklan Sahaja)" (code = manual).
+	 * No online payment — vendor may "add to list" to unlock dokumen downloads.
+	 */
+	public function isIklanSahajaManual(): bool
+	{
+		if (! $this->relationLoaded('kaedahDokumen')) {
+			$this->load('kaedahDokumen');
+		}
+
+		return ($this->kaedahDokumen?->code ?? '') === 'manual';
+	}
+
+	/**
+	 * Only Manual (Iklan Sahaja) skips FPX — "Tambah ke Senarai".
+	 * Online kaedah must use cart + FPX.
+	 */
+	public function shouldBypassDokumenPayment(): bool
+	{
+		return $this->isIklanSahajaManual();
+	}
+
+	public function vendorDokumenActionLabel(): string
+	{
+		if ($this->isIklanSahajaManual()) {
+			return 'Tambah ke Senarai';
+		}
+
+		return 'Tambah Kepada Senarai Tempahan';
+	}
+
+	/**
+	 * Record vendor as purchased (participate=1) without a payment gateway transaction.
+	 */
+	public function grantBypassDokumenPurchase(int $vendorId): TenderVendor
+	{
+		$purchase = $this->participants()->where('vendor_id', $vendorId)->first();
+
+		if ($purchase) {
+			$purchase->participate = 1;
+			$purchase->amount = $this->price;
+			if (empty($purchase->ref_number)) {
+				$purchase->ref_number = TenderVendor::generateNumber($this->id);
+			}
+			$purchase->save();
+		} else {
+			$purchase = $this->participants()->save(new TenderVendor([
+				'vendor_id' => $vendorId,
+				'participate' => 1,
+				'amount' => $this->price,
+				'ref_number' => TenderVendor::generateNumber($this->id),
+			]));
+		}
+
+		TenderVendor::syncKodPembekal($this->id);
+
+		return $purchase;
 	}
 
 	public const LEMBAGA_ANGGARAN_THRESHOLD = 5000000.0;
@@ -1021,7 +1173,7 @@ class Tender extends Model
 			foreach ($district_list_rule as $row_rules) {
 				if ($row_rules->district_id == 0 && $row_rules->state_id != 0) {
 					$tender_open_for_state_id[]		= $row_rules->state_id;
-					$tender_open_for_state_desc[]	= \App\Models\RefState::find($row_rules->state_id)->description ?? "";
+					$tender_open_for_state_desc[]	= \App\Models\Ref\RefState::find($row_rules->state_id)->description ?? "";
 				} elseif ($row_rules->state_id == 0 && $row_rules->district_id != 0) {
 					$tender_open_for_district_id[]		= $row_rules->district_id;
 					$tender_open_for_district_desc[]	= \App\Models\Vendor::$districts[$row_rules->district_id] ?? "";
@@ -1058,7 +1210,11 @@ class Tender extends Model
 
 		$participate = $participate && $this->attendVisits($vendor->id);
 		$participate = !$this->isBlacklisted($vendor_id) && $participate;
-		$participate = !$this->only_advertise && $participate;
+		// Iklan Sahaja (manual): vendors may still "add to list" to unlock dokumen.
+		// Other only_advertise tenders stay blocked from purchase.
+		if ($this->only_advertise && ! $this->isIklanSahajaManual()) {
+			$participate = false;
+		}
 
 		return $participate;
 	}
@@ -1096,13 +1252,7 @@ class Tender extends Model
 
 	public function validDocumentDate()
 	{
-		if (empty($this->document_start_date) || empty($this->document_stop_date)) {
-			return false;
-		}
-
-		$today = Carbon::today();
-		return $today->gte(Carbon::parse($this->document_start_date))
-			&& $today->lte(Carbon::parse($this->document_stop_date));
+		return $this->isWithinVendorDokumenWindow();
 	}
 
 	/**
@@ -1137,7 +1287,7 @@ class Tender extends Model
 		$fromMeta = $this->combineIklanDateTime(
 			$iklan['tarikh_tutup'] ?? null,
 			$iklan['masa_tutup'] ?? null,
-			'23:59'
+			'12:00'
 		);
 		if ($fromMeta) {
 			return $fromMeta;
@@ -1164,7 +1314,7 @@ class Tender extends Model
 			return false;
 		}
 
-		if ($closes !== null && $at->gt($closes)) {
+		if ($closes !== null && $at->gte($closes)) {
 			return false;
 		}
 
@@ -1185,7 +1335,7 @@ class Tender extends Model
 			return 'Tempoh key-in dokumen belum bermula. Dibuka pada '.$opens->format('d/m/Y H:i').'.';
 		}
 
-		if ($closes !== null && $at->gt($closes)) {
+		if ($closes !== null && $at->gte($closes)) {
 			return 'Tempoh key-in dokumen telah tamat pada '.$closes->format('d/m/Y H:i').'.';
 		}
 
@@ -1257,20 +1407,22 @@ class Tender extends Model
 
 	public function documentSalesNotYetOpen(): bool
 	{
-		if (empty($this->document_start_date)) {
+		$opens = $this->vendorDokumenOpensAt();
+		if ($opens === null) {
 			return true;
 		}
 
-		return Carbon::today()->lt(Carbon::parse($this->document_start_date)->startOfDay());
+		return Carbon::now()->lt($opens);
 	}
 
 	public function documentSalesClosed(): bool
 	{
-		if (empty($this->document_stop_date)) {
+		$closes = $this->vendorDokumenClosesAt();
+		if ($closes === null) {
 			return true;
 		}
 
-		return Carbon::today()->gt(Carbon::parse($this->document_stop_date)->startOfDay());
+		return Carbon::now()->gte($closes);
 	}
 
 	public function nearSubmission()
@@ -1704,7 +1856,7 @@ class Tender extends Model
 			foreach ($district_list_rule as $row_rules) {
 				if ($row_rules->district_id == 0 && $row_rules->state_id != 0) {
 					$tender_open_for_state_id[]		= $row_rules->state_id;
-					$tender_open_for_state_desc[]	= \App\Models\RefState::find($row_rules->state_id)->description ?? "";
+					$tender_open_for_state_desc[]	= \App\Models\Ref\RefState::find($row_rules->state_id)->description ?? "";
 				} elseif ($row_rules->state_id == 0 && $row_rules->district_id != 0) {
 					$tender_open_for_district_id[]		= $row_rules->district_id;
 					$tender_open_for_district_desc[]	= \App\Models\Vendor::$districts[$row_rules->district_id] ?? "";
@@ -1750,7 +1902,7 @@ class Tender extends Model
 			foreach ($district_list_rule as $row_rules) {
 				if ($row_rules->district_id == 0 && $row_rules->state_id != 0) {
 					$tender_open_for_state_id[]		= $row_rules->state_id;
-					$tender_open_for_state_desc[]	= \App\Models\RefState::find($row_rules->state_id)->description ?? "";
+					$tender_open_for_state_desc[]	= \App\Models\Ref\RefState::find($row_rules->state_id)->description ?? "";
 				} elseif ($row_rules->state_id == 0 && $row_rules->district_id != 0) {
 					$tender_open_for_district_id[]		= $row_rules->district_id;
 					$tender_open_for_district_desc[]	= \App\Models\Vendor::$districts[$row_rules->district_id] ?? "";
@@ -1796,7 +1948,7 @@ class Tender extends Model
 			foreach ($district_list_rule as $row_rules) {
 				if ($row_rules->district_id == 0 && $row_rules->state_id != 0) {
 					$tender_open_for_state_id[]		= $row_rules->state_id;
-					$tender_open_for_state_desc[]	= \App\Models\RefState::find($row_rules->state_id)->description ?? "";
+					$tender_open_for_state_desc[]	= \App\Models\Ref\RefState::find($row_rules->state_id)->description ?? "";
 				} elseif ($row_rules->state_id == 0 && $row_rules->district_id != 0) {
 					$tender_open_for_district_id[]		= $row_rules->district_id;
 					$tender_open_for_district_desc[]	= \App\Models\Vendor::$districts[$row_rules->district_id] ?? "";
@@ -1836,7 +1988,7 @@ class Tender extends Model
 			foreach ($district_list_rule as $row_rules) {
 				if ($row_rules->district_id == 0 && $row_rules->state_id != 0) {
 					$tender_open_for_state_id[]		= $row_rules->state_id;
-					$tender_open_for_state_desc[]	= \App\Models\RefState::find($row_rules->state_id)->description ?? "";
+					$tender_open_for_state_desc[]	= \App\Models\Ref\RefState::find($row_rules->state_id)->description ?? "";
 				} elseif ($row_rules->state_id == 0 && $row_rules->district_id != 0) {
 					$tender_open_for_district_id[]		= $row_rules->district_id;
 					$tender_open_for_district_desc[]	= \App\Models\Vendor::$districts[$row_rules->district_id] ?? "";
@@ -1906,9 +2058,16 @@ class Tender extends Model
 
 	public function scopePublished($q)
 	{
-		// Temporarily commented out to fix column issue
-		// return $q->whereNotNull('approver_id');
-		return $q;
+		return $q->where(function ($query) {
+			$query->where(function ($inner) {
+				$inner->whereIn('type', ['tender', 'quotation'])
+					->whereHas('approver', function ($approver) {
+						$approver->whereHas('roles', function ($roles) {
+							$roles->whereIn('name', ['Agency Ketua Jabatan', 'Admin']);
+						});
+					});
+			})->orWhereNotIn('type', ['tender', 'quotation']);
+		});
 	}
 
 	public function scopePublishedPrices($q)
@@ -1943,7 +2102,7 @@ class Tender extends Model
 	 */
 	public function scopeOpen($q)
 	{
-		return $q->where('submission_datetime', '>', date('Y-m-d H:i:s'));
+		return $q->where('submission_datetime', '>', Carbon::now()->format('Y-m-d H:i:s'));
 	}
 
 	public function saveAudit($action = null)
@@ -1955,6 +2114,82 @@ class Tender extends Model
 		]));
 	}
 
+
+	public function kategoriPerolehan()
+	{
+		return $this->belongsTo(\App\Models\Ref\RefKategoriJenisPerolehan::class, 'kategori_perolehan_id');
+	}
+
+	public function kategoriPerolehanDetail()
+	{
+		return $this->belongsTo(\App\Models\Ref\RefTypeOfPerolehan::class, 'kategori_perolehan_detail_id');
+	}
+
+	/**
+	 * Determine the Kerja Penilaian Kewangan flow classification.
+	 *
+	 * Returns:
+	 * - 'kerja_besar': Anggaran Jabatan > RM 10,000,000 (3 Peringkat: Borang 1 - 15)
+	 * - 'kerja_kecil_me': Anggaran Jabatan <= RM 10,000,000 & Kategori Detail is M&E (2 Peringkat: P1=B1, P2=B2-B8)
+	 * - 'kerja_kecil_other': Anggaran Jabatan <= RM 10,000,000 & Kategori Detail is not M&E (2 Peringkat: P1=B1, P2=B2-B6)
+	 * - 'sebut_harga_kerja': Kaedah Perolehan is Sebut Harga & Kategori is Kerja
+	 * - 'non_kerja': Not a Kerja tender
+	 */
+	public function getKerjaClassification(): string
+	{
+		$isKerja = (int) ($this->kategori_perolehan_id ?? 0) === 3
+			|| strtolower(trim($this->kategoriPerolehan->name ?? '')) === 'kerja';
+
+		if (!$isKerja) {
+			return 'non_kerja';
+		}
+
+		if ($this->isSebutHargaKaedah()) {
+			return 'sebut_harga_kerja';
+		}
+
+		$anggaranJabatan = (float) ($this->anggaran_jabatan ?? $this->harga_indikatif ?? $this->price ?? 0);
+
+		if ($anggaranJabatan > 10000000.00) {
+			return 'kerja_besar';
+		}
+
+		$detailName = strtoupper(trim($this->kategoriPerolehanDetail->name ?? ''));
+		$detailId = (int) ($this->kategori_perolehan_detail_id ?? 0);
+
+		$isME = ($detailId === 15 || str_contains($detailName, 'M&E') || str_contains($detailName, 'MEKANIKAL') || str_contains($detailName, 'ELEKTRIKAL'));
+
+		if ($isME) {
+			return 'kerja_kecil_me';
+		}
+
+		return 'kerja_kecil_other';
+	}
+
+	public function isSebutHargaKerja(): bool
+	{
+		return $this->getKerjaClassification() === 'sebut_harga_kerja';
+	}
+
+	public function isKerjaBesar(): bool
+	{
+		return $this->getKerjaClassification() === 'kerja_besar';
+	}
+
+	public function isKerjaKecilMe(): bool
+	{
+		return $this->getKerjaClassification() === 'kerja_kecil_me';
+	}
+
+	public function isKerjaKecilOther(): bool
+	{
+		return $this->getKerjaClassification() === 'kerja_kecil_other';
+	}
+
+	public function isKerjaKecil(): bool
+	{
+		return in_array($this->getKerjaClassification(), ['kerja_kecil_me', 'kerja_kecil_other'], true);
+	}
 
 	/**
 	 * Boot Method

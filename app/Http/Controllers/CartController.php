@@ -69,6 +69,11 @@ class CartController extends Controller
 			$amount  = Tender::whereIn('id', $items)->sum('price');
 		}
 
+		$expired = $tenders->first(fn ($tender) => $tender->documentSalesClosed() || ! $tender->isWithinVendorDokumenWindow());
+		if ($expired) {
+			return redirect('cart')->with('error', 'Pembelian tender telah tamat tempoh: ' . $expired->name);
+		}
+
 		if (session('cart_ou')) {
 			$fpx  = Gateway::whereType('fpx')->where('organization_unit_id', session('cart_ou'))->whereActive(1)->first();
 			$ebpg = config('services.ebpg.enabled') ? Gateway::whereType('ebpg')->where('organization_unit_id', session('cart_ou'))->whereActive(1)->first() : null;
@@ -101,10 +106,25 @@ class CartController extends Controller
 			$amount  = Tender::whereIn('id', $items)->sum('price');
 		}
 
+		$expired = $tenders->first(fn ($tender) => $tender->documentSalesClosed() || ! $tender->isWithinVendorDokumenWindow());
+		if ($expired) {
+			return redirect('cart')->with('error', 'Pembelian tender telah tamat tempoh: ' . $expired->name);
+		}
+
 		$user   = auth()->user();
 		$vendor = $user->vendor;
 		$method = $request->method;
 		$type   = in_array($method, ['fpx-1', 'fpx-2']) ? 'fpx' : $method;
+
+		// Manual Iklan Sahaja only may skip gateway if somehow still in cart.
+		// Online / Online+Penilaian must pay via FPX (or eBPG when enabled).
+		$allManualBypass = $tenders->isNotEmpty()
+			&& $tenders->every(fn (Tender $tender) => $tender->shouldBypassDokumenPayment());
+		if ($allManualBypass) {
+			$method = 'direct';
+			$type = 'direct';
+			$amount = 0.00;
+		}
 
 		if ($amount > 0.00) {
 			// Client requirement (Aug 2026): only FPX is used. eBPG code stays in place

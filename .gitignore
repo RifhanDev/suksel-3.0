@@ -26,3 +26,6 @@ storage
 
 # Claude Code local settings
 .claude/settings.local.json
+
+# Local-only check for the vendor submission flow. Not used by the live site.
+/tests/Feature/VendorSubmissionFlowTest.php

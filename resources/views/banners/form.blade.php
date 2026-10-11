@@ -50,11 +50,27 @@
     </div>
 
     <div class="col-md-6">
+        <label for="start_time" class="form-label fw-medium small">Masa Mula Paparan</label>
+        <input type="time" class="form-control" id="start_time" name="start_time"
+            value="{{ old('start_time', $banner->start_time ? \Carbon\Carbon::parse($banner->start_time)->format('H:i') : '') }}">
+        <small class="text-muted mt-1 d-block">Jika dikosongkan, banner bermula dari 00:00 pada tarikh mula.</small>
+        {!! $errors->first('start_time', '<div class="text-danger small mt-1">:message</div>') !!}
+    </div>
+
+    <div class="col-md-6">
         <label for="end" class="form-label fw-medium small">Tarikh Tamat Paparan</label>
         <input type="text" class="form-control datepicker" id="end" name="end"
             value="{{ old('end', $banner->end ? \Carbon\Carbon::parse($banner->end)->format('j M Y') : '') }}"
             placeholder="Pilih tarikh tamat">
         {!! $errors->first('end', '<div class="text-danger small mt-1">:message</div>') !!}
+    </div>
+
+    <div class="col-md-6">
+        <label for="end_time" class="form-label fw-medium small">Masa Tamat Paparan</label>
+        <input type="time" class="form-control" id="end_time" name="end_time"
+            value="{{ old('end_time', $banner->end_time ? \Carbon\Carbon::parse($banner->end_time)->format('H:i') : '') }}">
+        <small class="text-muted mt-1 d-block">Jika dikosongkan, banner tamat pada 23:59 pada tarikh tamat.</small>
+        {!! $errors->first('end_time', '<div class="text-danger small mt-1">:message</div>') !!}
     </div>
 
     <!-- Published Toggle -->

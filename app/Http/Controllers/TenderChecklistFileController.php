@@ -149,6 +149,7 @@ class TenderChecklistFileController extends Controller
         return match ($section) {
             'technical' => 'technical-checklist-files/' . $fileUuid . '/download',
             'financial' => 'financial-checklist-files/' . $fileUuid . '/download',
+            'kewangan_kerja' => 'kewangan-kerja-files/' . $fileUuid . '/download',
             default => null,
         };
     }

@@ -346,12 +346,27 @@ class VendorTenderDokumenController extends Controller
             $summary = 'dokumentasi';
         }
 
+        // JTK must not see company offered prices. Penilaian Teknikal always
+        // requests this; a tech-only appointee is blocked even without the flag.
+        $hideOfferedPrice = ! $isVendor && (
+            $request->boolean('hide_offered_price')
+            || $this->viewerIsTechnicalCommitteeOnly($tender)
+        );
+
+        if ($hideOfferedPrice) {
+            $spec = $item['vendor_content']['specification'] ?? null;
+            if (is_array($spec) && array_key_exists('item_prices', $spec)) {
+                $item['vendor_content']['specification']['item_prices'] = [];
+            }
+        }
+
         return view($viewName, array_merge([
             'tender' => $tender,
             'item' => $item,
             'vendor' => $vendorInfo,
             'isReadOnly' => ! $isVendor,
             'summary' => $summary,
+            'hideOfferedPrice' => $hideOfferedPrice,
         ], $this->formViewVars($tender)));
     }
 
@@ -474,6 +489,22 @@ class VendorTenderDokumenController extends Controller
             'Content-Type' => $file->mime_type ?: ($api->header('Content-Type') ?: 'application/octet-stream'),
             'Content-Disposition' => 'inline; filename="' . addslashes($file->original_name) . '"',
         ]);
+    }
+
+    /**
+     * A member appointed only to the technical committee never sees offered prices.
+     * Combined (eval/harga), opening, and financial committees still can, unless
+     * the form was opened from Penilaian Teknikal.
+     */
+    protected function viewerIsTechnicalCommitteeOnly(Tender $tender): bool
+    {
+        $user = Auth::user();
+        if (! $user || $user->hasRole('Admin')) {
+            return false;
+        }
+
+        return $tender->isAppointedTo($user, ['tech'])
+            && ! $tender->isAppointedTo($user, ['fin', 'open', 'eval', 'harga']);
     }
 
     protected function requireVendorId(): int

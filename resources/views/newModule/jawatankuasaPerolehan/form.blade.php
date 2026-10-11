@@ -393,9 +393,22 @@
 						dijemput
 						untuk menyertai bidaan.</div>
 					@php $showHargaBidaan = (bool) optional($tender)->is_ebidding; @endphp
+					@if (!empty($showBidPriceDiff))
+						<div class="d-flex flex-wrap gap-3 small mb-2">
+							<span class="d-inline-flex align-items-center gap-1">
+								<span class="rounded-circle d-inline-block" style="width:10px;height:10px;background:#198754;"></span>
+								<span class="text-success fw-semibold">Hijau</span> = harga baharu (vendor key-in)
+							</span>
+							<span class="d-inline-flex align-items-center gap-1">
+								<span class="rounded-circle d-inline-block" style="width:10px;height:10px;background:#dc3545;"></span>
+								<span class="text-danger fw-semibold">Merah</span> = harga lama (tiada bidaan baharu)
+							</span>
+						</div>
+					@endif
 					<div class="table-responsive mb-3">
 						<table class="table table-bordered table-sm align-middle mb-0" id="mp-pembekal-table"
-							data-show-harga-bidaan="{{ $showHargaBidaan ? '1' : '0' }}">
+							data-show-harga-bidaan="{{ $showHargaBidaan ? '1' : '0' }}"
+							data-show-price-diff="{{ !empty($showBidPriceDiff) ? '1' : '0' }}">
 							<thead class="text-white text-center" style="background-color:#2d3e84;">
 								<tr>
 									<th>Bil</th>
@@ -425,18 +438,43 @@
 						</table>
 					</div>
 
-					<div class="form-check mb-4" id="mp_sahkan_wrap">
-						<input class="form-check-input" type="checkbox" id="mp_sahkan_layak" value="1"
-							{{ !empty($pemilihanHeader['sahkan_layak_bidaan']) ? 'checked' : '' }}>
-						<label class="form-check-label small" for="mp_sahkan_layak">Saya mengesahkan petender diatas layak untuk
-							menyertai
-							Bidaan.</label>
+					<div id="mp_bidaan_extra_wrap" class="d-none mb-4">
+						<div class="mb-3">
+							<label class="form-label small fw-semibold" for="mp_catatan_bidaan">
+								Catatan <span class="text-danger">*</span>
+							</label>
+							<textarea id="mp_catatan_bidaan" class="form-control form-control-sm" rows="3"
+							 placeholder="Kenapa perlu biddan...">{{ $pemilihanHeader['catatan_bidaan'] ?? '' }}</textarea>
+						</div>
+						<div class="form-check" id="mp_sahkan_wrap">
+							<input class="form-check-input" type="checkbox" id="mp_sahkan_layak" value="1"
+								{{ !empty($pemilihanHeader['sahkan_layak_bidaan']) ? 'checked' : '' }}>
+							<label class="form-check-label small" for="mp_sahkan_layak">Saya mengesahkan petender diatas layak untuk
+								menyertai
+								Bidaan.</label>
+						</div>
 					</div>
 
 					<div class="d-flex justify-content-end gap-2">
 						<button type="button" class="btn btn-kt-teal" id="mp_btn_simpan">Simpan</button>
 						<button type="button" class="btn btn-selangor" id="mp_btn_hantar">Hantar</button>
 					</div>
+
+					@if (!empty($bidSpecBreakdown))
+						<div id="mp-bid-spec-modals">
+							@foreach ($bidSpecBreakdown as $vendorId => $pack)
+								@include('components.bid-spec-breakdown', [
+									'items' => $pack['items'] ?? [],
+									'vendorName' => $pack['vendor_name'] ?? null,
+									'vendorId' => $vendorId,
+									'showPriceDiff' => !empty($showBidPriceDiff),
+									'modalSuffix' => 'jp-' . $vendorId,
+									'title' => 'Item Spesifikasi',
+									'trigger' => 'none',
+								])
+							@endforeach
+						</div>
+					@endif
 				@endif
 			</div>
 		</div>
@@ -483,7 +521,7 @@
 							    optional($kertasKeputusan)->justifikasi_pemilihan_pembekal,
 							);
 							$kkJustifikasiOptions = $kkJustifikasiOptions ?? [];
-							if (filled($kkJustifikasi) && ! in_array($kkJustifikasi, $kkJustifikasiOptions, true)) {
+							if (filled($kkJustifikasi) && !in_array($kkJustifikasi, $kkJustifikasiOptions, true)) {
 							    $kkJustifikasiOptions[] = $kkJustifikasi;
 							}
 						@endphp
@@ -642,7 +680,8 @@
 
 				for (let i = 0; i < rows.length; i++) {
 					const row = rows[i];
-					if (!row.bil_mesyuarat || !row.tarikh_mesyuarat || !row.masa || !row.tajuk_agenda || !row.tempat || !row
+					if (!row.bil_mesyuarat || !row.tarikh_mesyuarat || !row.masa || !row.tajuk_agenda || !row.tempat ||
+						!row
 						.no_kod_kertas || !row.status) {
 						return 'Sila lengkapkan medan wajib pada baris ' + (i + 1) + '.';
 					}
@@ -836,6 +875,7 @@
 						bil_mesyuarat: ($('#mp_bil_mesyuarat').val() || '').toString(),
 						no_kod: ($('#mp_no_kod').val() || '').toString(),
 						sahkan_layak_bidaan: $('#mp_sahkan_layak').is(':checked'),
+						catatan_bidaan: ($('#mp_catatan_bidaan').val() || '').toString(),
 					};
 				}
 
@@ -900,8 +940,9 @@
 					if (!item || !item.petenders) {
 						return;
 					}
-					const showHargaBidaan = $('#mp-pembekal-table').data('show-harga-bidaan') == 1
-						|| $('#mp-pembekal-table').attr('data-show-harga-bidaan') === '1';
+					const showHargaBidaan = $('#mp-pembekal-table').data('show-harga-bidaan') == 1 ||
+						$('#mp-pembekal-table').attr('data-show-harga-bidaan') === '1';
+					const showPriceDiff = $('#mp-pembekal-table').attr('data-show-price-diff') === '1';
 					const kaedah = ($('#mp_kaedah_memuktamadkan').val() || '').toString();
 					const showSelection = kaedah === 'Pemilihan Terus' || kaedah ===
 						'Pemilihan Lebih Daripada Satu Syarikat';
@@ -918,15 +959,37 @@
 						const vendorId = p.vendor_id ? String(p.vendor_id) : '';
 						const vendorCell = '<td class="text-start">' +
 							'<div class="fw-semibold small">' + escapeHtml(vendorName) + '</div>' +
-							(vendorId ? '<div class="text-muted" style="font-size:0.7rem;">ID: ' + escapeHtml(vendorId) + '</div>' : '') +
+							(vendorId ? '<div class="text-muted" style="font-size:0.7rem;">ID: ' + escapeHtml(
+								vendorId) + '</div>' : '') +
 							'</td>';
-						const hargaBidaanCell = showHargaBidaan
-							? ('<td class="text-end">' + escapeHtml(mpFormatMoney(
-								(p.harga_bidaan !== null && p.harga_bidaan !== undefined && p.harga_bidaan !== '')
-									? p.harga_bidaan
-									: p.harga_tawaran
-							)) + '</td>')
-							: '';
+						const hargaBidaanCell = showHargaBidaan ?
+							(function() {
+								const harga = (p.harga_bidaan !== null && p.harga_bidaan !== undefined && p
+										.harga_bidaan !== '') ?
+									p.harga_bidaan :
+									p.harga_tawaran;
+								const specCount = Array.isArray(p.spec_items) ? p.spec_items.length : 0;
+								const modalId = vendorId ? ('bidSpecBreakdownModal-jp-' + vendorId) : '';
+								const infoBtn = (vendorId && specCount > 0) ?
+									('<button type="button" class="btn btn-sm btn-outline-secondary bid-spec-breakdown-btn d-inline-flex align-items-center justify-content-center"' +
+										' data-bs-toggle="modal" data-bs-target="#' + modalId + '"' +
+										' title="Item Spesifikasi" aria-label="Item Spesifikasi">' +
+										'<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+										'<circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line>' +
+										'</svg></button>') :
+									'';
+								const isNew = showPriceDiff && (p.is_new_bid === true || p.is_new_bid === 1 || p.is_new_bid === '1');
+								const isOld = showPriceDiff && !isNew;
+								const cellClass = isNew ? 'text-success fw-semibold' : (isOld ? 'text-danger fw-semibold' : 'text-end');
+								const cellStyle = isNew ? ' style="background:#e8f7ef;"' : (isOld ? ' style="background:#fdebec;"' : '');
+								const label = isNew ? 'Harga baharu' : (isOld ? 'Harga lama' : '');
+								const labelHtml = label ? '<div class="small fw-normal">' + label + '</div>' : '';
+								return '<td class="' + cellClass + '"' + cellStyle + '><div class="d-flex align-items-center justify-content-end gap-1">' +
+									'<div><div>' + escapeHtml(mpFormatMoney(harga)) + '</div>' + labelHtml + '</div>' +
+									infoBtn +
+									'</div></td>';
+							})() :
+							'';
 						const row = '<tr data-pet-idx="' + i + '">' +
 							'<td class="text-center">' + escapeHtml(p.bil_label || '') + '</td>' +
 							vendorCell +
@@ -1038,7 +1101,7 @@
 				function mpSyncSahkanBidaanVisibility() {
 					const kaedah = ($('#mp_kaedah_memuktamadkan').val() || '').toString();
 					const isBidaan = kaedah === 'Bidaan';
-					$('#mp_sahkan_wrap').toggleClass('d-none', !isBidaan);
+					$('#mp_bidaan_extra_wrap').toggleClass('d-none', !isBidaan);
 					if (!isBidaan) {
 						$('#mp_sahkan_layak').prop('checked', false);
 					}

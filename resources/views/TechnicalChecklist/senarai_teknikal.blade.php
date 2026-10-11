@@ -427,6 +427,10 @@
                             </tbody>
                         </table>
                     </div>
+                    <div class="border-top mt-3 pt-3">
+                        <label class="form-label small fw-semibold mb-1">Other</label>
+                        <input type="text" class="form-control form-control-sm standard-custom-title" placeholder="Nama dokumen" maxlength="500">
+                    </div>
                 </div>
                 <div class="modal-footer border-0 px-4 pb-4">
                     <button type="button" class="btn-form btn-form-secondary" data-bs-dismiss="modal">Batal</button>
@@ -556,6 +560,17 @@
             var SUBMIT_URL      = @json(route('senaraiTeknikal.submit', $tender->uuid));
             var UPLOAD_FILE_URL = @json(route('senaraiTeknikal.uploadFile', $tender->uuid));
             var DELETE_FILE_URL = @json(route('senaraiTeknikal.deleteFile', ':uuid'));
+            @php
+                $checklistFileUrl = route('tenderChecklist.download', [
+                    'tender' => $tender->id,
+                    'section' => 'technical',
+                    'fileUuid' => '__FILE_UUID__',
+                ]);
+            @endphp
+            var CHECKLIST_FILE_URL = @json($checklistFileUrl);
+            function checklistFileUrl(fileUuid) {
+                return CHECKLIST_FILE_URL.replace('__FILE_UUID__', encodeURIComponent(fileUuid || ''));
+            }
             var CSRF_TOKEN      = @json(csrf_token());
             var EXISTING_CHECKLIST = @json($checklistData);
             var STANDARD_ACTION_URLS = @json(collect($standardItems ?? [])->pluck('action_url', 'uuid')->all());
@@ -769,9 +784,9 @@
                 return '<span class="text-muted small">—</span>';
             }
 
-            function buildNewRow() {
+            function buildNewRow(title) {
                 var defaultMekanisma = 'petender_muat_naik';
-                return $(
+                var $row = $(
                     '<tr class="row-teknikal-tambah" data-source-type="manual">' +
                     '<td class="text-center"><input type="checkbox" name="row_check_teknikal[]" class="form-check-input row-check-teknikal"></td>' +
                     '<td><input type="text" name="tajuk_dokumen[]" class="form-control form-control-sm" placeholder="Tajuk / Dokumen..."></td>' +
@@ -790,6 +805,10 @@
                     '<td class="text-center tindakan-cell">' + buildTindakanCell(defaultMekanisma) + '</td>' +
                     '</tr>'
                 );
+                if (title) {
+                    $row.find('[name="tajuk_dokumen[]"]').val(title);
+                }
+                return $row;
             }
 
             function buildChecklistStatusBadge(status) {
@@ -1075,7 +1094,7 @@
                         if (mech === 'ptj_muat_naik' && item.files && item.files.length) {
                             var $list = $row.find('.rujukan-cell .dokumen-ptj-list');
                             item.files.forEach(function(f) {
-                                $list.append(buildPtjFileEntry(f.uuid, f.original_name, f.url));
+                                $list.append(buildPtjFileEntry(f.uuid, f.original_name, checklistFileUrl(f.uuid)));
                             });
                         }
                         $row.find('.skema-input').val(item.score || 0);
@@ -1126,7 +1145,7 @@
             // Restore Dokumen Sokongan chips from saved header files
             if (EXISTING_CHECKLIST && EXISTING_CHECKLIST.files && EXISTING_CHECKLIST.files.length) {
                 EXISTING_CHECKLIST.files.forEach(function(f) {
-                    $('#file-chip-list-sokongan').append(buildSokonganChip(f.uuid, f.original_name, f.url, f.size));
+                    $('#file-chip-list-sokongan').append(buildSokonganChip(f.uuid, f.original_name, checklistFileUrl(f.uuid), f.size));
                 });
             }
 
@@ -1234,7 +1253,7 @@
                             var f = res && res.data ? res.data : null;
                             if (!f) return;
                             $row.find('.rujukan-cell .dokumen-ptj-list').append(
-                                buildPtjFileEntry(f.uuid, f.original_name, f.url)
+                                buildPtjFileEntry(f.uuid, f.original_name, checklistFileUrl(f.uuid))
                             );
                         },
                         error: function() {
@@ -1341,8 +1360,10 @@
 
             $('#senaraiSemakStandard').on('click', '.btn-pilih-standard', function() {
                 var $checked = $('#tbl-standard .row-check-standard:checked');
-                if ($checked.length === 0) {
-                    alert('Sila pilih sekurang-kurangnya satu senarai semak.');
+                var $customTitle = $('#senaraiSemakStandard .standard-custom-title');
+                var customTitle = $.trim($customTitle.val() || '');
+                if ($checked.length === 0 && customTitle === '') {
+                    alert('Sila pilih sekurang-kurangnya satu senarai semak atau masukkan nama dokumen.');
                     return;
                 }
 
@@ -1364,6 +1385,11 @@
                     }
                     $tr.hide();
                 });
+
+                if (customTitle !== '') {
+                    $('#tbl-teknikal tbody').append(buildNewRow(customTitle));
+                    $customTitle.val('');
+                }
 
                 updateSkemaMaksima();
                 syncTableEmpty();
@@ -1443,7 +1469,7 @@
                     success: function(res) {
                         var f = res && res.data ? res.data : null;
                         if (!f) return;
-                        $('#file-chip-list-sokongan').append(buildSokonganChip(f.uuid, f.original_name, f.url, f.size));
+                        $('#file-chip-list-sokongan').append(buildSokonganChip(f.uuid, f.original_name, checklistFileUrl(f.uuid), f.size));
                     },
                     error: function() {
                         alert('Gagal memuat naik fail. Sila cuba lagi.');

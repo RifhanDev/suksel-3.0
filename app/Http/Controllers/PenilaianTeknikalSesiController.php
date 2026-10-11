@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\ResolvesTenderForProcess;
 use App\Models\TenderTeknikalPematuhanEvaluation;
-use App\Support\TenderProcessStatus;
 use App\TenderVendor;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -42,12 +41,7 @@ class PenilaianTeknikalSesiController extends Controller
             ->pluck('evaluated_count', 'checklist_item_uuid');
 
         $totalVendors = TenderVendor::query()
-            ->where('tender_id', $tender->id)
-            ->where('participate', 1)
-            ->where(function ($query) {
-                $query->where('cancel_fg', 0)
-                    ->orWhere('eliminated_process_id', TenderProcessStatus::PENILAIAN_TEKNIKAL);
-            })
+            ->forTechnicalEvaluation($tender->id)
             ->count();
 
         $statuses = [];

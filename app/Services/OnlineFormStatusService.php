@@ -11,6 +11,7 @@ use App\Models\TenderPrestasiKerja;
 use App\Models\TenderVendorOnlineFormStatus;
 use App\Support\OnlineFormRegistry;
 use App\Tender;
+use Illuminate\Support\Facades\Log;
 
 class OnlineFormStatusService
 {
@@ -243,27 +244,37 @@ class OnlineFormStatusService
             return $this->formatStatus('draft');
         }
 
-        $response = $this->stos->get('/api/' . $endpoint . '/' . $tender->uuid);
-        if (! $response->successful()) {
+        try {
+            $response = $this->stos->get('/api/' . $endpoint . '/' . $tender->uuid);
+            if (! $response->successful()) {
+                return $this->formatStatus('draft');
+            }
+
+            $data = $response->json('data') ?? [];
+            $count = 0;
+            foreach ($collections as $collection) {
+                $count += count($data[$collection] ?? []);
+            }
+
+            if ($count === 0) {
+                return $this->formatStatus('draft');
+            }
+
+            $formatted = $this->formatStatus(
+                ($data['status'] ?? '') === 'submitted' ? 'submitted' : 'in_progress'
+            );
+            $formatted['summary'] = "{$count} rekod";
+
+            return $formatted;
+        } catch (\Throwable $e) {
+            Log::warning('OnlineFormStatusService STOS collection query failed', [
+                'tender_id' => $tender->id,
+                'endpoint'  => $endpoint,
+                'error'     => $e->getMessage(),
+            ]);
+
             return $this->formatStatus('draft');
         }
-
-        $data = $response->json('data') ?? [];
-        $count = 0;
-        foreach ($collections as $collection) {
-            $count += count($data[$collection] ?? []);
-        }
-
-        if ($count === 0) {
-            return $this->formatStatus('draft');
-        }
-
-        $formatted = $this->formatStatus(
-            ($data['status'] ?? '') === 'submitted' ? 'submitted' : 'in_progress'
-        );
-        $formatted['summary'] = "{$count} rekod";
-
-        return $formatted;
     }
 
     /**

@@ -403,9 +403,9 @@
 								value="{{ $iklan['tarikh_tutup'] ?? '' }}" placeholder="Pilih tarikh..." readonly>
 						</div>
 						<div class="col-5">
-							<label class="form-label fw-semibold">Masa Tutup</label>
-							<input type="time" class="form-control form-control-lg bg-light" name="masa_tutup"
-								value="12:00" readonly tabindex="-1">
+							<label class="form-label fw-semibold">Masa Tutup <span class="text-danger">*</span></label>
+							<input type="time" class="form-control form-control-lg" name="masa_tutup"
+								value="{{ ! empty($iklan['masa_tutup']) ? substr($iklan['masa_tutup'], 0, 5) : '12:00' }}">
 						</div>
 					</div>
 				</div>
@@ -841,8 +841,6 @@
 			}
 
 			function refreshIklanDerivedFields() {
-				$('input[name="masa_tutup"]').val('12:00');
-
 				var startDate = parseDmY($('input[name="tarikh_iklan"]').val());
 				var endDate = parseDmY($('input[name="tarikh_tutup"]').val());
 				var tempohSah = parseInt($('input[name="tempoh_sah_laku"]').val(), 10);
@@ -861,7 +859,6 @@
 			}
 
 			function validateIklanStep1Dates() {
-				$('input[name="masa_tutup"]').val('12:00');
 				refreshIklanDerivedFields();
 
 				var tarikhIklan = $.trim($('input[name="tarikh_iklan"]').val() || '');
@@ -1064,6 +1061,9 @@
 						// upload gets treated as orphaned and deleted.
 						if (response && Array.isArray(response.dokumen_sokongan)) {
 							refreshMejaTerkawalRows(response.dokumen_sokongan);
+						}
+						if (response && Array.isArray(response.iklan_dokumen) && typeof refreshIklanDokumenRows === 'function') {
+							refreshIklanDokumenRows(response.iklan_dokumen);
 						}
 						if (typeof done === 'function') done();
 					},

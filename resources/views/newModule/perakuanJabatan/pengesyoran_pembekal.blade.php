@@ -6,7 +6,9 @@
 	$ppLocked = $tabsReadOnly || $ppSubmitted;
 	$ppSyorOptions = \App\Models\PerakuanJabatanPengesyoranPembekalItem::SYOR_OPTIONS;
 	$showHargaBidaan = (bool) ($tender->is_ebidding ?? false);
+	$showBidPriceDiff = $showHargaBidaan && (int) ($tender->ebidding_process_stage_id ?? 0) >= 3;
 	$ppEmptyColspan = (!empty($isKerja) ? 10 : 11) + ($showHargaBidaan ? 1 : 0);
+	$ppSingleDisyorkanOnly = $ppSingleDisyorkanOnly ?? false;
 @endphp
 <div class="tab-pane fade pengesyoran-pembekal-tab" id="tab-pengesyoran-pembekal" role="tabpanel">
 	<style>
@@ -77,8 +79,8 @@
 		}
 	</style>
 
-	<div class="content-card p-4" id="pp-root"
-		data-submitted="{{ $ppLocked ? '1' : '0' }}">
+	<div class="content-card p-4" id="pp-root" data-submitted="{{ $ppLocked ? '1' : '0' }}"
+		data-single-disyorkan-only="{{ $ppSingleDisyorkanOnly ? '1' : '0' }}">
 		<div class="alert d-none py-2 px-3 mb-3" id="ppAlert" role="alert"></div>
 		@if ($tabsReadOnly)
 			<div class="alert alert-info py-2 px-3 mb-3">Maklumat pengesyoran pembekal adalah read-only pada peringkat ini.</div>
@@ -119,6 +121,18 @@
 		<div class="pp-section-bar rounded-top">SENARAI PEMBEKAL</div>
 		<div class="border border-top-0 border-secondary-subtle p-3 rounded-bottom mb-4"
 			style="border-color:#dde2ea!important;">
+			@if ($showBidPriceDiff)
+				<div class="d-flex flex-wrap gap-3 small mb-2">
+					<span class="d-inline-flex align-items-center gap-1">
+						<span class="rounded-circle d-inline-block" style="width:10px;height:10px;background:#198754;"></span>
+						<span class="text-success fw-semibold">Hijau</span> = harga baharu (vendor key-in)
+					</span>
+					<span class="d-inline-flex align-items-center gap-1">
+						<span class="rounded-circle d-inline-block" style="width:10px;height:10px;background:#dc3545;"></span>
+						<span class="text-danger fw-semibold">Merah</span> = harga lama (tiada bidaan baharu)
+					</span>
+				</div>
+			@endif
 			<div class="table-responsive pp-table-wrap">
 				<table class="table table-bordered align-middle mb-0 text-center" id="ppPembekalTable">
 					<thead>
@@ -159,10 +173,34 @@
 									{{ $row['harga_tawaran'] !== null ? number_format((float) $row['harga_tawaran'], 2) : '—' }}
 								</td>
 								@if ($showHargaBidaan)
-									<td>
-										{{ isset($row['harga_bidaan']) && $row['harga_bidaan'] !== null
-											? number_format((float) $row['harga_bidaan'], 2)
-											: '—' }}
+									@php
+										$isNewBid = $showBidPriceDiff && !empty($row['is_new_bid']);
+										$isOldBid = $showBidPriceDiff && empty($row['is_new_bid']);
+										$bidCellClass = $isNewBid ? 'text-success fw-semibold' : ($isOldBid ? 'text-danger fw-semibold' : '');
+										$bidCellBg = $isNewBid ? '#e8f7ef' : ($isOldBid ? '#fdebec' : '');
+										$bidLabel = $isNewBid ? 'Harga baharu' : ($isOldBid ? 'Harga lama' : null);
+									@endphp
+									<td class="{{ $bidCellClass }}" @if ($bidCellBg) style="background:{{ $bidCellBg }};" @endif>
+										<div class="d-flex align-items-center justify-content-center gap-1">
+											<div>
+												<div>
+													{{ isset($row['harga_bidaan']) && $row['harga_bidaan'] !== null
+													    ? number_format((float) $row['harga_bidaan'], 2)
+													    : '—' }}
+												</div>
+												@if ($bidLabel)
+													<div class="small fw-normal">{{ $bidLabel }}</div>
+												@endif
+											</div>
+											@include('components.bid-spec-breakdown', [
+												'items' => $row['spec_items'] ?? [],
+												'vendorName' => $row['vendor_name'] ?? null,
+												'vendorId' => $row['vendor_id'] ?? null,
+												'showPriceDiff' => $showBidPriceDiff,
+												'modalSuffix' => 'pj-' . ($row['vendor_id'] ?? uniqid()),
+												'title' => 'Item Spesifikasi',
+											])
+										</div>
 									</td>
 								@endif
 								@if (!empty($isKerja))
@@ -189,21 +227,18 @@
 									@endif
 								</td>
 								<td>
-									<select class="form-select form-select-sm pp-syor-select"
-										{{ $ppLocked ? 'disabled' : '' }}>
+									<select class="form-select form-select-sm pp-syor-select" {{ $ppLocked ? 'disabled' : '' }}>
 										<option value="">-- Pilih --</option>
 										@foreach ($ppSyorOptions as $opt)
-											<option value="{{ $opt }}"
-												{{ ($row['syor_urusetia'] ?? '') === $opt ? 'selected' : '' }}>
+											<option value="{{ $opt }}" {{ ($row['syor_urusetia'] ?? '') === $opt ? 'selected' : '' }}>
 												{{ $opt }}
 											</option>
 										@endforeach
 									</select>
 								</td>
 								<td>
-									<textarea class="form-control form-control-sm pp-catatan-input"
-										rows="2" placeholder="Catatan..."
-										{{ $ppLocked ? 'disabled' : '' }}>{{ $row['catatan_urusetia'] ?? '' }}</textarea>
+									<textarea class="form-control form-control-sm pp-catatan-input" rows="2" placeholder="Catatan..."
+									 {{ $ppLocked ? 'disabled' : '' }}>{{ $row['catatan_urusetia'] ?? '' }}</textarea>
 								</td>
 							</tr>
 						@empty
@@ -217,8 +252,8 @@
 		</div>
 
 		<div class="pp-section-bar rounded-top">CATATAN</div>
-		<textarea class="form-control pp-textarea-catatan mb-4" id="ppCatatan" name="catatan" rows="4"
-			placeholder="" {{ $ppLocked ? 'disabled' : '' }}>{{ old('catatan', $pengesyoranPembekal->catatan) }}</textarea>
+		<textarea class="form-control pp-textarea-catatan mb-4" id="ppCatatan" name="catatan" rows="4" placeholder=""
+		 {{ $ppLocked ? 'disabled' : '' }}>{{ old('catatan', $pengesyoranPembekal->catatan) }}</textarea>
 
 		@unless ($ppLocked)
 			<div class="d-flex justify-content-end gap-2">
@@ -236,6 +271,7 @@
 			if (!root) return;
 
 			const submitted = root.getAttribute('data-submitted') === '1';
+			const singleDisyorkanOnly = root.getAttribute('data-single-disyorkan-only') === '1';
 			const simpanUrl = @json($ppSimpanUrl);
 			const hantarUrl = @json($ppHantarUrl);
 			const token = document.querySelector('meta[name="_token"]')?.getAttribute('content');
@@ -255,6 +291,7 @@
 			}
 
 			function enforceDisyorkanRule(changedSelect) {
+				if (!singleDisyorkanOnly) return;
 				if (!changedSelect || changedSelect.value !== SYOR_DISYORKAN) return;
 
 				getSyorSelects().forEach(sel => {
@@ -329,7 +366,9 @@
 			document.getElementById('ppHantar')?.addEventListener('click', function() {
 				const hasSyor = getSyorSelects().some(sel => (sel.value || '').trim() !== '');
 				if (!hasSyor) {
-					showAlert('Sila pilih Syor Urusetia untuk sekurang-kurangnya satu pembekal sebelum menghantar.', false);
+					showAlert(
+						'Sila pilih Syor Urusetia untuk sekurang-kurangnya satu pembekal sebelum menghantar.',
+						false);
 					return;
 				}
 				post(hantarUrl);

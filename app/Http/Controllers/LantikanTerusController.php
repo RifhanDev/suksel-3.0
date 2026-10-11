@@ -521,8 +521,10 @@ class LantikanTerusController extends Controller
                     ?: (int) ($response->json('tender_id') ?? $response->json('data.id') ?? 0);
 
                 if ($savedId > 0) {
-                    return redirect()->route('lantikan.edit', $savedId)
-                        ->with('success', $message);
+                    return redirect()->route('lantikan.edit', [
+                        'id' => $savedId,
+                        'step' => min(3, max(1, (int) $request->input('wizard_step', 1))),
+                    ])->with('success', $message);
                 }
 
                 return redirect()->route('lantikan.create')->with('success', $message);
@@ -558,7 +560,7 @@ class LantikanTerusController extends Controller
 
     private function buildPayload(Request $request): array
     {
-        $payload = $request->except(['_token', '_method', 'dokumen_bq']);
+        $payload = $request->except(['_token', '_method', 'dokumen_bq', 'wizard_step']);
         $user = auth()->user();
         $payload['creator_id'] = $user->id;
 
@@ -686,6 +688,8 @@ class LantikanTerusController extends Controller
             $bqFilename = $bqDoc['display_name'] ?? $bqDoc['original_name'] ?? null;
         }
 
+        $kodBidang = $this->mapKodBidang((array) ($data['codes'] ?? []));
+
         return (object) [
             'id' => $data['id'] ?? null,
             'name' => $data['name'] ?? '',
@@ -707,9 +711,48 @@ class LantikanTerusController extends Controller
             'bq_filename' => $bqFilename,
             'has_bq' => is_array($bqDoc) && ! empty($bqDoc['file_path']),
             'documents' => $documents,
-            'mof' => [],
-            'cidb' => [],
+            'mof' => $kodBidang['mof'],
+            'cidb' => $kodBidang['cidb'],
+            'mof_cidb_rule' => strtoupper((string) ($data['mof_cidb_rule'] ?? 'AND')) === 'OR' ? 'OR' : 'AND',
         ];
+    }
+
+    /** Rebuild the Kod Bidang rows (grouped by `order`) the form was saved with. */
+    private function mapKodBidang(array $codes): array
+    {
+        $rows = collect($codes)->map(fn ($code) => (array) $code);
+
+        $group = function (string $type, string $key, string $inner, string $join) use ($rows) {
+            return $rows->where('code_type', $type)
+                ->groupBy(fn (array $code) => (int) ($code['order'] ?? 1))
+                ->sortKeys()
+                ->map(fn ($items) => [
+                    $key => $items->pluck('code_id')->map(fn ($id) => (int) $id)->values()->all(),
+                    'logic_mid' => strtoupper((string) ($items->first()['inner_rule'] ?: $inner)),
+                    'join_rule' => strtoupper((string) ($items->first()['join_rule'] ?: $join)),
+                ])
+                ->values()
+                ->all();
+        };
+
+        $mof = $group('mof', 'code', 'or', 'and');
+        $cidb = $group('cidb', 'spec', 'and', 'or');
+
+        $grades = $rows->where('code_type', 'cidb-g')
+            ->pluck('code_id')
+            ->map(fn ($id) => (int) $id)
+            ->values()
+            ->all();
+
+        // Gred CIDB hanya wujud pada baris pertama.
+        if ($grades !== [] && $cidb === []) {
+            $cidb[] = ['spec' => [], 'logic_mid' => 'AND', 'join_rule' => 'OR'];
+        }
+        if ($cidb !== []) {
+            $cidb[0]['grade'] = $grades;
+        }
+
+        return ['mof' => $mof, 'cidb' => $cidb];
     }
 
     private function mapOfferSuppliers(Collection $offers): Collection

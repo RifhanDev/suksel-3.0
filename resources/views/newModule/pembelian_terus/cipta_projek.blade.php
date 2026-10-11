@@ -306,13 +306,16 @@
 @section('content')
     @php
         $p = $project ?? null;
+        $wizardStep = min(3, max(1, (int) old('wizard_step', request('step', 1))));
 
         // Kod Bidang prefill (initial row only) — falls back to old() on validation error
-        $mof0      = old('mof.0', optional($p)->mof[0] ?? []);
+        $savedMof = old('mof', optional($p)->mof ?? []);
+        $savedCidb = old('cidb', optional($p)->cidb ?? []);
+        $mof0      = $savedMof[0] ?? [];
         $mof0Logic = $mof0['logic_mid'] ?? 'OR';
         $mof0Code  = $mof0['code'] ?? [];
 
-        $cidb0      = old('cidb.0', optional($p)->cidb[0] ?? []);
+        $cidb0      = $savedCidb[0] ?? [];
         $cidb0Logic = $cidb0['logic_mid'] ?? 'AND';
         $cidb0Grade = $cidb0['grade'] ?? [];
         $cidb0Spec  = $cidb0['spec'] ?? [];
@@ -353,6 +356,7 @@
             @method('PUT')
         @endif
         <input type="hidden" name="action" id="form-action" value="draft">
+        <input type="hidden" name="wizard_step" id="wizard-step" value="{{ $wizardStep }}">
 
         <div class="modern-card">
 
@@ -463,7 +467,8 @@
                                 <label class="form-label">Kategori Perolehan <span class="text-danger">*</span></label>
                                 <select class="form-select" name="kategori_perolehan" required>
                                     <option value="" selected disabled>Pilih...</option>
-                                    @foreach (($kategoriPerolehan ?? \App\Models\Ref\RefKategoriJenisPerolehan::where('active', true)->get()) as $kategori)
+                                    @foreach (($kategoriPerolehan ?? \App\Models\Ref\RefKategoriJenisPerolehan::where('active', true)->whereRaw('LOWER(name) <> ?', ['kerja'])->get()) as $kategori)
+                                        @continue(strtolower((string) $kategori->name) === 'kerja')
                                         <option value="{{ $kategori->id }}" {{ (string) $kategoriSelected === (string) $kategori->id ? 'selected' : '' }}>
                                             {{ $kategori->name }}
                                         </option>
@@ -712,8 +717,8 @@
                                             <select name="section_logic"
                                                 class="form-select form-select-sm fw-bold text-dark border-secondary bg-light"
                                                 style="cursor: pointer;">
-                                                <option value="AND" {{ old('section_logic', 'AND') == 'AND' ? 'selected' : '' }}>DAN</option>
-                                                <option value="OR" {{ old('section_logic') == 'OR' ? 'selected' : '' }}>ATAU</option>
+                                                <option value="AND" {{ old('section_logic', optional($p)->mof_cidb_rule ?? 'AND') == 'AND' ? 'selected' : '' }}>DAN</option>
+                                                <option value="OR" {{ old('section_logic', optional($p)->mof_cidb_rule ?? 'AND') == 'OR' ? 'selected' : '' }}>ATAU</option>
                                             </select>
                                         </div>
                                     </div>
@@ -762,7 +767,7 @@
                                             <div class="cidb-row-top">
                                                 <div class="field-grade-full">
                                                     <label class="form-label">Gred CIDB</label>
-                                                    <select class="selectize" name="cidb[0][grade]" multiple>
+                                                    <select class="selectize" name="cidb[0][grade][]" multiple>
                                                         <option value="" selected disabled>Pilih Gred...</option>
                                                         @foreach (App\Code::where('type', 'cidb-g')->orderBy('code')->get() as $code)
                                                             <option value="{{ $code->id }}"
@@ -961,10 +966,11 @@
                 todayHighlight: true
             });
 
-            // --- SELECTIZE (Kod Bidang multi-selects) ---
-            $('#step3-content select.selectize').each(function() {
-                if (!this.selectize) $(this).selectize();
-            });
+            function initKodBidangSelects($root) {
+                ($root || $('#step3-content')).find('select.selectize').each(function() {
+                    if (!this.selectize) $(this).selectize();
+                });
+            }
 
             // --- ZON/LOKASI TOGGLE ---
             $('input[name="zon_lokasi"]').change(function() {
@@ -976,15 +982,20 @@
             });
 
             // --- WIZARD NAVIGATION (3 steps) ---
-            let currentStep = 1;
+            let currentStep = {{ $wizardStep }};
             const TOTAL_STEPS = 3;
 
             function updateWizardUI() {
                 $('#stepper-wrapper').attr('data-step', currentStep);
+                $('#wizard-step').val(currentStep);
 
                 // Toggle step content panels
                 for (let i = 1; i <= TOTAL_STEPS; i++) {
                     $('#step' + i + '-content').toggleClass('d-none', i !== currentStep);
+                }
+
+                if (currentStep === 3) {
+                    initKodBidangSelects($('#step3-content'));
                 }
 
                 // Stepper indicators
@@ -1044,6 +1055,7 @@
             $('#btn-save').on('click', function() {
                 if (!validateStep(1)) return;
                 $('#form-action').val('draft');
+                $('#wizard-step').val(currentStep);
                 $('#createProjekForm').submit();
             });
 
@@ -1124,9 +1136,9 @@
                     </div>`;
 
                 $('#mof-wrapper').append(connectorHtml + rowHtml);
-                $('#mof-row-' + index + ' select.selectize').each(function() {
-                    if (!this.selectize) $(this).selectize();
-                });
+                if (!$('#step3-content').hasClass('d-none')) {
+                    initKodBidangSelects($('#mof-row-' + index));
+                }
             });
 
             window.removeMofRow = function(index) {
@@ -1188,10 +1200,46 @@
                     </div>`;
 
                 $('#cidb-wrapper').append(connectorHtml + rowHtml);
-                $('#cidb-row-' + index + ' select.selectize').each(function() {
-                    if (!this.selectize) $(this).selectize();
-                });
+                if (!$('#step3-content').hasClass('d-none')) {
+                    initKodBidangSelects($('#cidb-row-' + index));
+                }
             });
+
+            var savedMof = @json(array_values($savedMof));
+            var savedCidb = @json(array_values($savedCidb));
+
+            function applyKodValues($select, ids) {
+                var wanted = (ids || []).map(String);
+                if ($select[0] && $select[0].selectize) {
+                    $select[0].selectize.setValue(wanted, true);
+                    return;
+                }
+                $select.find('option').prop('selected', false);
+                wanted.forEach(function(id) {
+                    $select.find('option[value="' + id + '"]').prop('selected', true);
+                });
+            }
+
+            savedMof.slice(1).forEach(function(group) {
+                $('#btn-add-mof').trigger('click');
+                var $row = $('#mof-wrapper .mof-row').last();
+                var index = $row.data('index');
+                applyKodValues($row.find('select[name="mof[' + index + '][code][]"]'), group.code || []);
+                $row.find('input[name="mof[' + index + '][logic_mid]"][value="' + (group.logic_mid || 'OR') + '"]').prop('checked', true);
+                $('#mof-logic-' + index + ' select').val(group.join_rule || 'AND');
+            });
+
+            savedCidb.slice(1).forEach(function(group) {
+                $('#btn-add-cidb').trigger('click');
+                var $row = $('#cidb-wrapper .cidb-row').last();
+                var index = $row.data('index');
+                applyKodValues($row.find('select[name="cidb[' + index + '][spec][]"]'), group.spec || []);
+                applyKodValues($row.find('select[name="cidb[' + index + '][grade][]"]'), group.grade || []);
+                $row.find('input[name="cidb[' + index + '][logic_mid]"][value="' + (group.logic_mid || 'AND') + '"]').prop('checked', true);
+                $('#cidb-logic-' + index + ' select').val(group.join_rule || 'OR');
+            });
+
+            updateWizardUI();
 
             window.removeCidbRow = function(index) {
                 $('#cidb-row-' + index).remove();
@@ -1231,6 +1279,10 @@
         $('#createProjekForm').on('submit', function () {
             $(this).find('.amount-input').each(function () {
                 $(this).val($(this).val().replace(/,/g, ''));
+            });
+            $(this).find('select.selectize').each(function () {
+                if (!this.selectize) return;
+                $(this).val(this.selectize.getValue());
             });
         });
     </script>

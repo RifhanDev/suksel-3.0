@@ -6,6 +6,7 @@ use App\Banner;
 use App\CodeRequest;
 use App\Comment;
 use App\Gateway;
+use App\Models\EbiddingJadualBidaan;
 use App\Models\Refund;
 use App\Models\VersionHistory;
 use App\News;
@@ -59,9 +60,12 @@ class HomeController extends Controller
 			Log::debug('This is a debug message');
 			Log::debug($request->post());
 
-			// Temporarily commented out to fix column issue
-			// $base = Tender::orderBy('advertise_start_date', 'desc')->orderBy('submission_datetime', 'desc')->where('submission_datetime', '>=', date('Y-m-d 00:00:00'))->advertised()->forPublic()->published();
-			$base = Tender::orderBy('advertise_start_date', 'desc')->orderBy('submission_datetime', 'desc')->where('submission_datetime', '>=', date('Y-m-d 00:00:00'))->advertised()->forPublic();
+			$base = Tender::orderBy('advertise_start_date', 'desc')
+				->orderBy('submission_datetime', 'desc')
+				->open()
+				->advertised()
+				->forPublic()
+				->published();
 
 			switch ($request->type) {
 				case 'tenders':
@@ -237,34 +241,7 @@ class HomeController extends Controller
 				break;
 		}
 
-		// Get banners where today is between start and end date (or no date restriction)
-		$today = date('Y-m-d');
-		$banners = Banner::where('published', 1)
-			->where(function ($query) use ($today) {
-				$query->where(function ($q) use ($today) {
-					// Has both start and end dates, and today is between them
-					$q->whereNotNull('start')
-						->whereNotNull('end')
-						->where('start', '<=', $today)
-						->where('end', '>=', $today);
-				})
-					->orWhere(function ($q) use ($today) {
-						// Has start date only, and today is after or equal to start
-						$q->whereNotNull('start')
-							->whereNull('end')
-							->where('start', '<=', $today);
-					})
-					->orWhere(function ($q) use ($today) {
-						// Has end date only, and today is before or equal to end
-						$q->whereNull('start')
-							->whereNotNull('end')
-							->where('end', '>=', $today);
-					})
-					->orWhere(function ($q) {
-						// No date restriction (both start and end are null)
-						$q->whereNull('start')->whereNull('end');
-					});
-			})
+		$banners = Banner::visibleNow()
 			->orderBy('created_at', 'desc')
 			->get();
 		// $global_news = News::where('show_main', '1')->orderBy('published_at', 'desc')->get();
@@ -447,12 +424,10 @@ class HomeController extends Controller
 
 			// Temporarily commented out to fix column issue
 			// $eligibles = Tender::forPublic()->published()->where('submission_datetime', '>', date('Y-m-d H:i:s'))->has('codes', '=', '0')->get();
-			$eligibles = Tender::forPublic()->where('submission_datetime', '>', date('Y-m-d H:i:s'))->has('codes', '=', '0')->get();
+			$eligibles = Tender::forPublic()->open()->has('codes', '=', '0')->get();
 
-			// Temporarily commented out to fix column issue
-			// $eligibles = $eligibles->merge(Tender::whereNotNull('approver_id')->whereIn('id', $eligibles_ids)->where('submission_datetime', '>', date('Y-m-d H:i:s'))->get())->sortByDesc('submission_datetime');
-			$eligibles = $eligibles->merge(Tender::whereIn('id', $eligibles_ids)->where('submission_datetime', '>', date('Y-m-d H:i:s'))->get())->sortByDesc('submission_datetime');
-			$eligibles = $eligibles->merge(Tender::whereIn('id', $exception_ids)->get())->sortByDesc('submission_datetime');
+			$eligibles = $eligibles->merge(Tender::whereIn('id', $eligibles_ids)->open()->get())->sortByDesc('submission_datetime');
+			$eligibles = $eligibles->merge(Tender::whereIn('id', $exception_ids)->open()->get())->sortByDesc('submission_datetime');
 			$eligibles = $eligibles
 				->reject(function ($eligible) use ($purchases) {
 					return in_array($eligible->id, (array) $purchases->pluck('tender_id'));
@@ -520,7 +495,7 @@ class HomeController extends Controller
 
 			if (!auth()->check() || auth()->user()->hasRole('Vendor') || !Tender::canViewInternal($organizationunit->id)) {
 				$tenders = $tenders->where(function ($query) {
-					$query->advertised()->forPublic()->published();
+					$query->advertised()->forPublic()->published()->open();
 				});
 			}
 
@@ -1583,13 +1558,18 @@ class HomeController extends Controller
 				&& ! empty($schedule->masa_bidaan_mula)
 				&& ! empty($schedule->tarikh_bidaan_tamat)
 				&& ! empty($schedule->masa_bidaan_tamat)) {
-				$startAt = Carbon::parse($schedule->tarikh_bidaan_mula . ' ' . $schedule->masa_bidaan_mula);
-				$endAt = Carbon::parse($schedule->tarikh_bidaan_tamat . ' ' . $schedule->masa_bidaan_tamat);
-				$isOpen = $now->betweenIncluded($startAt, $endAt);
-				$hasEnded = $now->greaterThan($endAt);
+				$startAt = EbiddingJadualBidaan::combine($schedule->tarikh_bidaan_mula, $schedule->masa_bidaan_mula);
+				$endAt = EbiddingJadualBidaan::combine($schedule->tarikh_bidaan_tamat, $schedule->masa_bidaan_tamat);
+				$isOpen = $startAt && $endAt && $now->betweenIncluded($startAt, $endAt);
+				$hasEnded = $endAt ? $now->greaterThan($endAt) : false;
 			}
 
 			$hasSubmitted = $submittedIds->contains($tender->id);
+
+			// Hide from vendor list once bidding window has ended.
+			if ($hasEnded) {
+				return null;
+			}
 
 			if ($hasSubmitted) {
 				$statusKey = 'submitted';
@@ -1597,9 +1577,6 @@ class HomeController extends Controller
 			} elseif ($isOpen) {
 				$statusKey = 'open';
 				$statusLabel = 'Bidaan Dibuka';
-			} elseif ($hasEnded) {
-				$statusKey = 'ended';
-				$statusLabel = 'Tempoh Tamat';
 			} else {
 				$statusKey = 'pending';
 				$statusLabel = 'Menunggu';
@@ -1615,6 +1592,6 @@ class HomeController extends Controller
 				'status_label' => $statusLabel,
 				'url' => route('eBidding.show', ['id' => $tender->id]),
 			];
-		})->values();
+		})->filter()->values();
 	}
 }

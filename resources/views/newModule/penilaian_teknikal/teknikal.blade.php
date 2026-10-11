@@ -815,7 +815,7 @@
 
     {{-- "Dokumen" opens the vendor's saved specification form, read-only. --}}
     <div class="modal fade" id="modalSemakanSpesifikasiTeknikalStep1" tabindex="-1" aria-labelledby="modalSemakanSpesifikasiTeknikalStep1Label" aria-hidden="true"
-        data-spec-form-url-template="{{ route('tenderDokumen.specificationForm', ['tender' => $tender->id, 'itemUuid' => '__ITEM_UUID__', 'summary' => 'dokumentasi']) }}">
+        data-spec-form-url-template="{{ route('tenderDokumen.specificationForm', ['tender' => $tender->id, 'itemUuid' => '__ITEM_UUID__', 'summary' => 'dokumentasi', 'hide_offered_price' => 1]) }}">
         <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">

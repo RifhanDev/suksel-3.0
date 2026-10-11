@@ -77,11 +77,6 @@
                     <td class="text-center text-muted">{{ $i + 1 }}</td>
                     <td>
                         <div class="fw-semibold">{{ $dok['nama'] ?? $dok['title'] ?? '-' }}</div>
-                        @if (! empty($dok['section']))
-                            <div class="text-muted" style="font-size:0.72rem;">
-                                {{ ucfirst(str_replace('_', ' ', $dok['section'])) }}
-                            </div>
-                        @endif
                     </td>
                     <td class="text-center">
                         <span class="badge-status {{ $dok['badge_class'] ?? 'badge-status-neutral' }}">
