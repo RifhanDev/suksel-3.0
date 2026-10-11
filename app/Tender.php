@@ -2017,6 +2017,7 @@ class Tender extends Model
 	 * - 'kerja_besar': Anggaran Jabatan > RM 10,000,000 (3 Peringkat: Borang 1 - 15)
 	 * - 'kerja_kecil_me': Anggaran Jabatan <= RM 10,000,000 & Kategori Detail is M&E (2 Peringkat: P1=B1, P2=B2-B8)
 	 * - 'kerja_kecil_other': Anggaran Jabatan <= RM 10,000,000 & Kategori Detail is not M&E (2 Peringkat: P1=B1, P2=B2-B6)
+	 * - 'sebut_harga_kerja': Kaedah Perolehan is Sebut Harga & Kategori is Kerja
 	 * - 'non_kerja': Not a Kerja tender
 	 */
 	public function getKerjaClassification(): string
@@ -2026,6 +2027,10 @@ class Tender extends Model
 
 		if (!$isKerja) {
 			return 'non_kerja';
+		}
+
+		if ($this->isSebutHargaKaedah()) {
+			return 'sebut_harga_kerja';
 		}
 
 		$anggaranJabatan = (float) ($this->anggaran_jabatan ?? $this->harga_indikatif ?? $this->price ?? 0);
@@ -2044,6 +2049,11 @@ class Tender extends Model
 		}
 
 		return 'kerja_kecil_other';
+	}
+
+	public function isSebutHargaKerja(): bool
+	{
+		return $this->getKerjaClassification() === 'sebut_harga_kerja';
 	}
 
 	public function isKerjaBesar(): bool

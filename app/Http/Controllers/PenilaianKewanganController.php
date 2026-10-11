@@ -14,6 +14,7 @@ use App\Models\TenderKewanganLaporan;
 use App\Models\TenderKewanganProgress;
 use App\Models\TenderVendorDokumenResponse;
 use App\Models\TechnicalChecklistHeader;
+use App\Services\PenilaianKewanganWorkflowResolver;
 use App\Services\StosBackendClient;
 use App\Support\ChecklistMechanism;
 use App\Support\TenderDokumenPresenter;
@@ -73,17 +74,48 @@ class PenilaianKewanganController extends Controller
 
         $totalCount = (clone $query)->count();
 
-        $tenders = $this->mapTendersForProcessList(
-            $query->orderByDesc('id')
-                ->get(['id', 'uuid', 'no_tender', 'ref_number', 'name', 'submission_datetime', 'status_process_id', 'kategori_perolehan_id']),
-            function (Tender $tender, string $noTender) {
-                $identifier = $tender->uuid ?: $tender->id;
-                if ((int) ($tender->kategori_perolehan_id ?? 0) === 3) {
-                    return route('penilaianKewanganKerja.show', $identifier);
-                }
-                return route('penilaianKewangan.show', $identifier);
+        $resolver = app(PenilaianKewanganWorkflowResolver::class);
+
+        $tenderRecords = $query->with(['kategoriPerolehan', 'kategoriPerolehanDetail', 'kaedahPerolehan'])
+            ->orderByDesc('id')
+            ->get([
+                'id',
+                'uuid',
+                'no_tender',
+                'ref_number',
+                'name',
+                'submission_datetime',
+                'status_process_id',
+                'kategori_perolehan_id',
+                'kategori_perolehan_detail_id',
+                'kaedah_perolehan_id',
+                'type',
+                'anggaran_jabatan',
+                'harga_indikatif',
+                'price',
+            ]);
+
+        $tenders = collect($tenderRecords)->map(function (Tender $tender) use ($resolver) {
+            $submissionDate = null;
+            if (! empty($tender->submission_datetime)) {
+                $submissionDate = Carbon::parse($tender->submission_datetime);
             }
-        );
+
+            $noTender = $tender->no_tender ?: $tender->ref_number ?: (string) $tender->id;
+            $actionMeta = $resolver->resolveActionMeta($tender);
+
+            return [
+                'id'           => $tender->id,
+                'uuid'         => $tender->uuid,
+                'no_tender'    => $noTender,
+                'tajuk'        => $tender->name ?: '-',
+                'tarikh'       => $submissionDate ? $submissionDate->format('d/m/Y') : '-',
+                'status_label' => 'Dalam Proses',
+                'show_url'     => $actionMeta['show_url'],
+                'workflow'     => $actionMeta['workflow'],
+                'action_meta'  => $actionMeta,
+            ];
+        })->values()->all();
 
         return view('newModule.penilaian_kewangan.index', compact('tenders', 'totalCount'));
     }
@@ -91,7 +123,7 @@ class PenilaianKewanganController extends Controller
     public function show(string $tender_no)
     {
         $tender = Tender::query()
-            ->with(['tenderer'])
+            ->with(['tenderer', 'kategoriPerolehan', 'kategoriPerolehanDetail', 'kaedahPerolehan'])
             ->where(function ($q) use ($tender_no) {
                 $q->where('no_tender', $tender_no)
                   ->orWhere('ref_number', $tender_no)
@@ -104,8 +136,26 @@ class PenilaianKewanganController extends Controller
 
         $this->assertCommitteeAppointment($tender, $this->financialCommitteeJenis);
 
-        if ($tender && (int) ($tender->kategori_perolehan_id ?? 0) === 3) {
-            return redirect()->route('penilaianKewanganKerja.show', $tender->uuid ?: $tender->id);
+        if ($tender) {
+            $resolver = app(PenilaianKewanganWorkflowResolver::class);
+            $workflow = $resolver->classify($tender);
+
+            if ($workflow === PenilaianKewanganWorkflowResolver::WORKFLOW_SEBUT_HARGA_KERJA) {
+                return redirect()->route('penilaianKewanganSebutHargaKerja.show', $tender->uuid ?: $tender->id);
+            }
+
+            if (in_array($workflow, [
+                PenilaianKewanganWorkflowResolver::WORKFLOW_TENDER_KERJA_BESAR,
+                PenilaianKewanganWorkflowResolver::WORKFLOW_TENDER_KERJA_KECIL_ME,
+                PenilaianKewanganWorkflowResolver::WORKFLOW_TENDER_KERJA_KECIL_BUKAN_ME,
+            ], true)) {
+                return redirect()->route('penilaianKewanganKerja.show', $tender->uuid ?: $tender->id);
+            }
+
+            if ($workflow === PenilaianKewanganWorkflowResolver::WORKFLOW_INVALID) {
+                return redirect()->route('penilaianKewangan')
+                    ->with('error', 'Maklumat perolehan, kaedah, atau anggaran jabatan tidak sah untuk penilaian kewangan.');
+            }
         }
 
         $no_tender_display = $tender ? ($tender->no_tender ?: $tender->ref_number ?: (string) $tender->id) : $tender_no;
