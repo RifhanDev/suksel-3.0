@@ -896,17 +896,18 @@ $(document).ready(function () {
             data: JSON.stringify({ items: items, status: 'draft', user_id: USER_ID }),
             success: function (response) {
                 if (response && response.success && response.data) {
+                    renderFromServer(response.data, currentItemIndex);
+
                     if (typeof callback === 'function') {
                         callback(response);
                         return;
                     }
 
+                    // Simpan draf: kekal di halaman yang sama (jangan redirect ke senarai).
                     showBerjayaModal({
                         message: 'Spesifikasi berjaya disimpan.',
-                        onClose: function () {
-                            window.location.href = LIST_URL;
-                        }
                     });
+                    setBusy('#btn-simpan', false, 'Simpan');
                 } else {
                     showToast('Gagal menyimpan. Sila cuba lagi.', 'danger');
                     setBusy('#btn-simpan', false, 'Simpan');
@@ -918,7 +919,6 @@ $(document).ready(function () {
                 setBusy('#btn-simpan', false, 'Simpan');
             },
             complete: function () {
-                // Keep busy state when redirecting after a plain Simpan.
                 if (typeof callback === 'function') {
                     setBusy('#btn-simpan', false, 'Simpan');
                 }
