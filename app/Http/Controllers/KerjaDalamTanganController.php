@@ -4,11 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\HandlesTenderFormAccess;
 use App\Models\Tender;
+use App\Models\TenderKerjaDalamTanganDokumen;
 use App\Services\StosBackendClient;
 use Illuminate\Http\Client\Response;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Throwable;
 
@@ -62,7 +64,33 @@ class KerjaDalamTanganController extends Controller
             );
         }
 
-        if (is_array($existingData) && ! empty($existingData['dokumens'])) {
+        if (! is_array($existingData)) {
+            $existingData = ['items' => [], 'dokumens' => []];
+        }
+
+        $localDokumenQuery = TenderKerjaDalamTanganDokumen::where('tender_uuid', $tenderUuid);
+        if ($vendorId) {
+            $localDokumenQuery->where('vendor_id', $vendorId);
+        }
+        $localDocs = $localDokumenQuery->get()->map(fn ($d) => [
+            'uuid'          => $d->uuid,
+            'original_name' => $d->original_name,
+            'size'          => $d->size,
+            'path'          => $d->path,
+            'created_at'    => $d->created_at?->toISOString(),
+        ])->all();
+
+        $dokumens = is_array($existingData['dokumens'] ?? null) ? $existingData['dokumens'] : [];
+        $seenUuids = array_filter(array_column($dokumens, 'uuid'));
+        foreach ($localDocs as $ld) {
+            if (! in_array($ld['uuid'], $seenUuids, true)) {
+                $dokumens[] = $ld;
+                $seenUuids[] = $ld['uuid'];
+            }
+        }
+        $existingData['dokumens'] = $dokumens;
+
+        if (! empty($existingData['dokumens'])) {
             $existingData['dokumens'] = StosFormFileController::rewriteDokumenUrls(
                 $tender,
                 'kerja-dalam-tangan',
@@ -157,53 +185,65 @@ class KerjaDalamTanganController extends Controller
             return redirect()->back()->with('error', $message);
         }
 
+        // ── Handle file uploads (direct to SUKSel 3.0 server storage) ─────────────────
         $fileErrors = [];
 
         if ($request->hasFile('dokumen_kdt')) {
+            $vendorId = $this->isVendorFormMode() ? $this->vendorId() : null;
+
             foreach ($request->file('dokumen_kdt') as $file) {
                 if (!$file->isValid()) {
                     $fileErrors[] = $file->getClientOriginalName() . ': fail tidak sah.';
                     continue;
                 }
 
-                $uploadUrl = $this->url('kerja-dalam-tangan/' . $tenderUuid . '/files');
+                $maxSize = 10240 * 1024; // 10MB
+                if ($file->getSize() > $maxSize) {
+                    $fileErrors[] = $file->getClientOriginalName() . ': saiz fail melebihi had 10MB.';
+                    continue;
+                }
 
                 try {
-                    $uploadExtra = ['user_id' => auth()->id()];
-                    if ($this->isVendorFormMode()) {
-                        $uploadExtra['vendor_id'] = $this->vendorId();
+                    $safeOriginalName = preg_replace('/[^A-Za-z0-9._-]/', '_', $file->getClientOriginalName());
+                    $storedName       = now()->format('YmdHis') . '_' . Str::uuid() . '_' . $safeOriginalName;
+                    $folder           = 'uploads/kerja-dalam-tangan/' . $tenderUuid . ($vendorId ? '/' . $vendorId : '');
+                    $path             = $file->storeAs($folder, $storedName, 'public');
+
+                    if (! $path) {
+                        $fileErrors[] = $file->getClientOriginalName() . ': gagal disimpan ke storan SUKSel 3.0.';
+                        continue;
                     }
-                    $uploadResponse = $this->api()
-                        ->attach('file', file_get_contents($file->getRealPath()), $file->getClientOriginalName())
-                        ->post($uploadUrl, $uploadExtra);
 
-                    if (!$uploadResponse->successful()) {
-                        $fileErrors[] = $file->getClientOriginalName() . ': gagal dimuat naik.';
+                    $dokumen = TenderKerjaDalamTanganDokumen::create([
+                        'uuid'          => (string) Str::uuid(),
+                        'tender_uuid'   => $tenderUuid,
+                        'vendor_id'     => $vendorId,
+                        'original_name' => $file->getClientOriginalName(),
+                        'stored_name'   => $storedName,
+                        'path'          => $path,
+                        'mime_type'     => $file->getClientMimeType(),
+                        'size'          => $file->getSize() ?: 0,
+                        'uploaded_by'   => auth()->id(),
+                    ]);
 
-                        Log::warning('KerjaDalamTanganController@store: file upload failed', [
-                            'tender_uuid'   => $tenderUuid,
-                            'original_name' => $file->getClientOriginalName(),
-                            'user_id'       => auth()->id(),
-                            'status'        => $uploadResponse->status(),
-                            'body'          => Str::limit($uploadResponse->body(), 300),
+                    if ($this->isVendorFormMode()) {
+                        $this->appendVendorFormDokumen($tender, 'kerja_dalam_tangan', [
+                            'uuid'          => $dokumen->uuid,
+                            'original_name' => $dokumen->original_name,
+                            'size'          => $dokumen->size,
+                            'path'          => $dokumen->path,
+                            'created_at'    => $dokumen->created_at?->toISOString(),
                         ]);
-                    } elseif ($this->isVendorFormMode()) {
-                        $uploaded = $uploadResponse->json('data');
-                        if (is_array($uploaded)) {
-                            $this->appendVendorFormDokumen($tender, 'kerja_dalam_tangan', $uploaded);
-                        }
                     }
                 } catch (Throwable $e) {
-                    $fileErrors[] = $file->getClientOriginalName() . ': ralat semasa muat naik.';
+                    $fileErrors[] = $file->getClientOriginalName() . ': ralat semasa simpan fail.';
 
-                    Log::error('KerjaDalamTanganController@store: file upload threw an exception', [
+                    Log::error('KerjaDalamTanganController@store: direct upload threw an exception', [
                         'tender_uuid'     => $tenderUuid,
                         'original_name'   => $file->getClientOriginalName(),
                         'user_id'         => auth()->id(),
                         'exception_class' => get_class($e),
                         'exception_msg'   => $e->getMessage(),
-                        'exception_file'  => $e->getFile(),
-                        'exception_line'  => $e->getLine(),
                     ]);
                 }
             }
@@ -248,6 +288,25 @@ class KerjaDalamTanganController extends Controller
         }
         $this->ensureFormEditable();
 
+        $dokumen = TenderKerjaDalamTanganDokumen::where('uuid', $fileUuid)->first();
+        if ($dokumen) {
+            if ($dokumen->path && Storage::disk('public')->exists($dokumen->path)) {
+                Storage::disk('public')->delete($dokumen->path);
+            }
+            $tenderUuid = $dokumen->tender_uuid;
+            $dokumen->delete();
+
+            $tender = $this->findTender($tenderUuid);
+            if ($tender) {
+                $this->removeVendorFormDokumen($tender, 'kerja_dalam_tangan', $fileUuid);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Fail berjaya dipadam dari storan SUKSel 3.0.',
+            ]);
+        }
+
         $apiUrl = $this->url('kerja-dalam-tangan-files/' . $fileUuid);
 
         try {
@@ -282,11 +341,32 @@ class KerjaDalamTanganController extends Controller
     {
         $this->ensureTenderFormAccess($tender);
 
+        $vendorId = (int) $request->query('vendor_id') ?: null;
         $local = $this->loadVendorFormPayload($tender, 'kerja_dalam_tangan');
-        $remote = $this->fetchOnlineFormData('kerja-dalam-tangan', $tender->uuid, (int) $request->query('vendor_id'));
+        $remote = $this->fetchOnlineFormData('kerja-dalam-tangan', $tender->uuid, $vendorId);
         $resolved = $this->resolveVendorFormDisplayData($tender, 'kerja_dalam_tangan', $remote ?: null);
 
+        $localDokumenQuery = TenderKerjaDalamTanganDokumen::where('tender_uuid', $tender->uuid);
+        if ($vendorId) {
+            $localDokumenQuery->where('vendor_id', $vendorId);
+        }
+        $localDocs = $localDokumenQuery->get()->map(fn ($d) => [
+            'uuid'          => $d->uuid,
+            'original_name' => $d->original_name,
+            'size'          => $d->size,
+            'path'          => $d->path,
+            'created_at'    => $d->created_at?->toISOString(),
+        ])->all();
+
         $dokumens = is_array($resolved['dokumens'] ?? null) ? $resolved['dokumens'] : [];
+        $seenUuids = array_filter(array_column($dokumens, 'uuid'));
+        foreach ($localDocs as $ld) {
+            if (! in_array($ld['uuid'], $seenUuids, true)) {
+                $dokumens[] = $ld;
+                $seenUuids[] = $ld['uuid'];
+            }
+        }
+
         $dokumens = StosFormFileController::rewriteDokumenUrls($tender, 'kerja-dalam-tangan', $dokumens);
 
         return view('tenders.dokumen.review.kerja_dalam_tangan_review', array_merge([

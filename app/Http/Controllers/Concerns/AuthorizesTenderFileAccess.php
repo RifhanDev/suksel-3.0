@@ -12,7 +12,7 @@ trait AuthorizesTenderFileAccess
      *
      * @param  int|null  $ownerVendorId  When set, vendors may only access their own file.
      */
-    protected function assertCanAccessTenderFile(Tender $tender, ?int $ownerVendorId = null): void
+    protected function assertCanAccessTenderFile(\App\Tender|\App\Models\Tender $tender, ?int $ownerVendorId = null): void
     {
         $user = Auth::user();
         if (! $user) {
@@ -37,7 +37,7 @@ trait AuthorizesTenderFileAccess
         }
     }
 
-    protected function userCanReviewTenderFiles($user, ?Tender $tender = null): bool
+    protected function userCanReviewTenderFiles($user, \App\Tender|\App\Models\Tender|null $tender = null): bool
     {
         if ($user->hasRole('Admin') || $user->can('tender:specification-management')) {
             return true;
