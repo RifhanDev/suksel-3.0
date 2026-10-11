@@ -8,6 +8,7 @@ use App\Http\Controllers\Concerns\RestrictsTenderByRole;
 use App\Models\TenderKewanganKerjaEvaluation;
 use App\Models\TenderKewanganLaporan;
 use App\Models\TenderKewanganProgress;
+use App\Services\PenilaianKewanganWorkflowResolver;
 use App\Support\TenderProcessStatus;
 use App\Tender;
 use App\TenderVendor;
@@ -39,6 +40,25 @@ class PenilaianKewanganKerjaController extends Controller
 
         if (! $tender) {
             abort(404, 'Tender tidak ditemui.');
+        }
+
+        $resolver = app(PenilaianKewanganWorkflowResolver::class);
+        $workflow = $resolver->classify($tender);
+
+        if ($workflow === PenilaianKewanganWorkflowResolver::WORKFLOW_SEBUT_HARGA_KERJA) {
+            return redirect()
+                ->route('penilaianKewangan.show', $tender->uuid ?: $tender->id);
+        }
+
+        if ($workflow === PenilaianKewanganWorkflowResolver::WORKFLOW_NORMAL) {
+            return redirect()
+                ->route('penilaianKewangan.show', $tender->uuid ?: $tender->id);
+        }
+
+        if ($workflow === PenilaianKewanganWorkflowResolver::WORKFLOW_INVALID) {
+            return redirect()
+                ->route('penilaianKewangan')
+                ->with('error', 'Maklumat perolehan, kaedah, atau anggaran jabatan tidak sah untuk penilaian kerja.');
         }
 
         $no_tender_display = $tender->no_tender ?: $tender->ref_number ?: (string) $tender->id;
@@ -97,6 +117,25 @@ class PenilaianKewanganKerjaController extends Controller
 
         if (! $tender) {
             abort(404, 'Tender tidak ditemui.');
+        }
+
+        $resolver = app(PenilaianKewanganWorkflowResolver::class);
+        $workflow = $resolver->classify($tender);
+
+        if ($workflow === PenilaianKewanganWorkflowResolver::WORKFLOW_SEBUT_HARGA_KERJA) {
+            return redirect()
+                ->route('penilaianKewangan.show', $tender->uuid ?: $tender->id);
+        }
+
+        if ($workflow === PenilaianKewanganWorkflowResolver::WORKFLOW_NORMAL) {
+            return redirect()
+                ->route('penilaianKewangan.show', $tender->uuid ?: $tender->id);
+        }
+
+        if ($workflow === PenilaianKewanganWorkflowResolver::WORKFLOW_INVALID) {
+            return redirect()
+                ->route('penilaianKewangan')
+                ->with('error', 'Maklumat perolehan, kaedah, atau anggaran jabatan tidak sah untuk penilaian kerja.');
         }
 
         $validBorangs = [

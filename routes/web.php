@@ -105,6 +105,7 @@ use App\Http\Controllers\JawatankuasaPerolehanController;
 use App\Http\Controllers\PenyediaanMesyuaratController;
 use App\Http\Controllers\PenilaianKewanganController;
 use App\Http\Controllers\PenilaianKewanganKerjaController;
+use App\Http\Controllers\PenilaianKewanganSebutHargaKerjaController;
 use App\Http\Controllers\PenilaianTeknikalController;
 use App\Http\Controllers\PerakuanJabatanController;
 use App\Http\Controllers\EbiddingController;
@@ -460,6 +461,18 @@ Route::middleware(['auth'])->group(function () {
 	Route::post('/penilaian-kewangan/kemaskini-langkah', [PenilaianKewanganController::class, 'kemaskiniLangkah'])->name('penilaianKewangan.kemaskiniLangkah');
 	Route::post('/penilaian-kewangan/simpan-laporan', [PenilaianKewanganController::class, 'simpanLaporanDraft'])->name('penilaianKewangan.simpanLaporan');
 	Route::post('/penilaian-kewangan/hantar', [PenilaianKewanganController::class, 'hantar'])->name('penilaianKewangan.hantar');
+
+	// Penilaian Kewangan (Sebut Harga Kerja - Type 2)
+	Route::get('/penilaian-kewangan-sebut-harga-kerja/{tender_no}/laporan/cetak', [PenilaianKewanganSebutHargaKerjaController::class, 'cetakLaporan'])->name('penilaianKewanganSebutHargaKerja.cetakLaporan')->where('tender_no', '.*');
+	Route::get('/penilaian-kewangan-sebut-harga-kerja/{tender_no}', [PenilaianKewanganSebutHargaKerjaController::class, 'show'])->name('penilaianKewanganSebutHargaKerja.show')->where('tender_no', '.*');
+	Route::post('/penilaian-kewangan-sebut-harga-kerja/simpan-dokumen', [PenilaianKewanganSebutHargaKerjaController::class, 'simpanDokumen'])->name('penilaianKewanganSebutHargaKerja.simpanDokumen');
+	Route::post('/penilaian-kewangan-sebut-harga-kerja/sahkan-langkah-1', [PenilaianKewanganSebutHargaKerjaController::class, 'sahkanLangkah1'])->name('penilaianKewanganSebutHargaKerja.sahkanLangkah1');
+	Route::post('/penilaian-kewangan-sebut-harga-kerja/simpan-kewangan', [PenilaianKewanganSebutHargaKerjaController::class, 'simpanKewangan'])->name('penilaianKewanganSebutHargaKerja.simpanKewangan');
+	Route::post('/penilaian-kewangan-sebut-harga-kerja/sahkan-langkah-2', [PenilaianKewanganSebutHargaKerjaController::class, 'sahkanLangkah2'])->name('penilaianKewanganSebutHargaKerja.sahkanLangkah2');
+	Route::post('/penilaian-kewangan-sebut-harga-kerja/simpan-kerja', [PenilaianKewanganSebutHargaKerjaController::class, 'simpanKerja'])->name('penilaianKewanganSebutHargaKerja.simpanKerja');
+	Route::post('/penilaian-kewangan-sebut-harga-kerja/sahkan-langkah-3', [PenilaianKewanganSebutHargaKerjaController::class, 'sahkanLangkah3'])->name('penilaianKewanganSebutHargaKerja.sahkanLangkah3');
+	Route::post('/penilaian-kewangan-sebut-harga-kerja/simpan-laporan-draf', [PenilaianKewanganSebutHargaKerjaController::class, 'simpanLaporanDraf'])->name('penilaianKewanganSebutHargaKerja.simpanLaporanDraf');
+	Route::post('/penilaian-kewangan-sebut-harga-kerja/hantar', [PenilaianKewanganSebutHargaKerjaController::class, 'hantar'])->name('penilaianKewanganSebutHargaKerja.hantar');
 
 	// Penilaian Kewangan (Kerja)
 	Route::post('/penilaian-kewangan-kerja/{tender_no}/borang/borang1/simpan-kriteria', [PenilaianKewanganKerjaController::class, 'simpanBorang1Kriteria'])->name('penilaianKewanganKerja.borang1.simpanKriteria')->where('tender_no', '.*');
