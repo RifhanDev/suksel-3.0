@@ -59,20 +59,8 @@
                             $itemPayload = $semakPayload[$itemUuid] ?? null;
                             $itemVendors = $itemPayload['vendors'] ?? [];
 
-                            $failedStep1VendorIds = collect($semakPayload ?? [])
-                                ->reject(function ($payload, $uuid) use ($penyataBankItems) {
-                                    return in_array($uuid, collect($penyataBankItems ?? [])->pluck('uuid')->all(), true);
-                                })
-                                ->flatMap(function ($payload) {
-                                    return collect($payload['vendors'] ?? [])
-                                        ->filter(fn ($v) => $v['status_pematuhan'] === 'tidak_mematuhi' || $v['status_pematuhan'] === 0 || $v['status_pematuhan'] === '0')
-                                        ->pluck('vendor_id');
-                                })
-                                ->unique()
-                                ->toArray();
-
-                            $eligibleVendors = collect($itemVendors)->reject(function ($v) use ($failedStep1VendorIds) {
-                                return in_array((int) $v['vendor_id'], $failedStep1VendorIds, true);
+                            $eligibleVendors = collect($itemVendors)->filter(function ($v) use ($step2PassedVendorIds) {
+                                return in_array((int) $v['vendor_id'], $step2PassedVendorIds ?? [], true);
                             });
 
                             $totalEligible = $eligibleVendors->count();
@@ -369,18 +357,8 @@
                         </thead>
                         <tbody id="step3VendorTableBody">
                             @php
-                                $failedStep1And2VendorIds = collect($semakPayload ?? [])
-                                    ->flatMap(function ($payload) {
-                                        return collect($payload['vendors'] ?? [])
-                                            ->filter(fn ($v) => $v['status_pematuhan'] === 'tidak_mematuhi' || $v['status_pematuhan'] === 0 || $v['status_pematuhan'] === '0')
-                                            ->pluck('vendor_id');
-                                    })
-                                    ->unique()
-                                    ->toArray();
-
-                                $allTenderVendors = collect($vendors ?? []);
-                                $step3EligibleVendors = $allTenderVendors->reject(function ($v) use ($failedStep1And2VendorIds) {
-                                    return in_array((int) $v['vendor_id'], $failedStep1And2VendorIds, true);
+                                $step3EligibleVendors = collect($vendors ?? [])->filter(function ($v) use ($step2PassedVendorIds) {
+                                    return in_array((int) $v['vendor_id'], $step2PassedVendorIds ?? [], true);
                                 })->values();
                             @endphp
                             @forelse($step3EligibleVendors as $idx => $v)
@@ -1091,19 +1069,39 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentStep3ItemUuid = null;
     let currentStep3VendorId = null;
 
-    function getFailedVendorIdsStep3() {
-        const failedSet = new Set();
-        if (typeof SEMAK_PAYLOAD !== 'undefined' && SEMAK_PAYLOAD) {
-            Object.keys(SEMAK_PAYLOAD).forEach(uuid => {
-                const itemObj = SEMAK_PAYLOAD[uuid];
-                (itemObj?.vendors || []).forEach(v => {
-                    if (v.status_pematuhan === 'tidak_mematuhi' || v.status_pematuhan === 0 || v.status_pematuhan === '0') {
-                        failedSet.add(parseInt(v.vendor_id));
+    function getStep2PassedVendorIdsClient() {
+        if (typeof STEP2_PASSED_VENDOR_IDS !== 'undefined' && Array.isArray(STEP2_PASSED_VENDOR_IDS)) {
+            const penyataUuids = (typeof PENYATA_BANK_UUIDS !== 'undefined' && Array.isArray(PENYATA_BANK_UUIDS)) ? PENYATA_BANK_UUIDS : [];
+            const step1Uuids = Object.keys(SEMAK_PAYLOAD || {}).filter(u => !penyataUuids.includes(u));
+
+            return STEP2_PASSED_VENDOR_IDS.filter(vid => {
+                for (const u of [...step1Uuids, ...penyataUuids]) {
+                    const itemObj = SEMAK_PAYLOAD?.[u];
+                    const v = (itemObj?.vendors || []).find(x => parseInt(x.vendor_id) === vid);
+                    if (v && (v.status_pematuhan === 'tidak_mematuhi' || v.status_pematuhan === 0 || v.status_pematuhan === '0')) {
+                        return false;
                     }
-                });
+                }
+                return true;
             });
         }
-        return Array.from(failedSet);
+        return [];
+    }
+
+    function getFailedVendorIdsStep3() {
+        const eligibleIds = new Set(getStep2PassedVendorIdsClient());
+        const failed = [];
+        if (typeof SEMAK_PAYLOAD !== 'undefined' && SEMAK_PAYLOAD) {
+            const firstKey = Object.keys(SEMAK_PAYLOAD)[0];
+            const allVendors = (SEMAK_PAYLOAD[firstKey]?.vendors || []);
+            allVendors.forEach(v => {
+                const vid = parseInt(v.vendor_id);
+                if (!eligibleIds.has(vid)) {
+                    failed.push(vid);
+                }
+            });
+        }
+        return failed;
     }
 
     function reloadStep3ChecklistTable(callback) {

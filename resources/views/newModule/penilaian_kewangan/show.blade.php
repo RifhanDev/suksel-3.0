@@ -1155,6 +1155,8 @@
     const VENDOR_FORM_PAYLOADS = @json($vendorFormPayloads ?? []);
     const DOKUMEN_BY_VENDOR = @json($dokumenByVendor ?? []);
     const PENYATA_DOKUMEN_BY_VENDOR = @json($penyataDokumenByVendor ?? []);
+    const STEP1_PASSED_VENDOR_IDS = @json(array_values($step1PassedVendorIds ?? []));
+    const STEP2_PASSED_VENDOR_IDS = @json(array_values($step2PassedVendorIds ?? []));
 
     let activeStep2Uuid = PENYATA_BANK_UUIDS[0] || null;
     let activeStep2VendorId = null;
@@ -1323,12 +1325,51 @@
             if (cb3) cb3.disabled = (dbCurrentStep > 3);
         }
 
+        function areAllStep1VendorsEvaluated() {
+            const step1Uuids = Object.keys(SEMAK_PAYLOAD).filter(uuid => !PENYATA_BANK_UUIDS.includes(uuid));
+            if (!step1Uuids.length) return true;
+            for (const uuid of step1Uuids) {
+                const itemObj = SEMAK_PAYLOAD[uuid];
+                const rawVendors = itemObj?.vendors || [];
+                const unevaluated = rawVendors.filter(v => v.status_pematuhan === null || v.status_pematuhan === '' || v.status_pematuhan === undefined);
+                if (unevaluated.length > 0) return false;
+            }
+            return true;
+        }
+
+        function getStep1PassedVendorIdsClient() {
+            const step1Uuids = Object.keys(SEMAK_PAYLOAD).filter(uuid => !PENYATA_BANK_UUIDS.includes(uuid));
+            if (!step1Uuids.length) {
+                return (typeof STEP1_PASSED_VENDOR_IDS !== 'undefined' ? STEP1_PASSED_VENDOR_IDS : []);
+            }
+            const firstItem = SEMAK_PAYLOAD[step1Uuids[0]];
+            const allVendors = firstItem?.vendors || [];
+            const passedIds = [];
+
+            allVendors.forEach(v => {
+                const vid = parseInt(v.vendor_id);
+                let passedAll = true;
+                for (const uuid of step1Uuids) {
+                    const itemObj = SEMAK_PAYLOAD[uuid];
+                    const vRow = (itemObj?.vendors || []).find(x => parseInt(x.vendor_id) === vid);
+                    if (!vRow || (vRow.status_pematuhan !== 'mematuhi' && vRow.status_pematuhan !== 1 && vRow.status_pematuhan !== '1')) {
+                        passedAll = false;
+                        break;
+                    }
+                }
+                if (passedAll) {
+                    passedIds.push(vid);
+                }
+            });
+            return passedIds;
+        }
+
         function areAllStep2VendorsEvaluated() {
             const uuidToUse = activeStep2Uuid || (PENYATA_BANK_UUIDS && PENYATA_BANK_UUIDS[0]) || '';
             const itemObj = SEMAK_PAYLOAD[uuidToUse] || Object.values(SEMAK_PAYLOAD).find(item => PENYATA_BANK_UUIDS.includes(item?.uuid));
             const rawVendors = itemObj?.vendors || [];
-            const failedStep1Ids = getFailedStep1VendorIds();
-            const eligibleVendors = rawVendors.filter(v => !failedStep1Ids.includes(parseInt(v.vendor_id)));
+            const passedStep1Ids = getStep1PassedVendorIdsClient();
+            const eligibleVendors = rawVendors.filter(v => passedStep1Ids.includes(parseInt(v.vendor_id)));
 
             if (!eligibleVendors.length) return true;
 
@@ -1337,6 +1378,20 @@
         }
 
         window.saveConfirmedStates = async function(stepNum, confirmedVal) {
+            if (stepNum === 1 && confirmedVal) {
+                if (!areAllStep1VendorsEvaluated()) {
+                    const cb = document.getElementById('confirmLayakStep1') || document.getElementById('confirmLayak');
+                    if (cb) cb.checked = false;
+                    Swal.fire({
+                        title: 'Penilaian Belum Selesai',
+                        text: 'Semua pembekal yang layak mesti dinilai sepenuhnya untuk semua dokumen pematuhan Langkah 1 sebelum pengesahan dibuat.',
+                        icon: 'warning',
+                        confirmButtonText: 'Faham',
+                        confirmButtonColor: '#1e293b'
+                    });
+                    return;
+                }
+            }
             if (stepNum === 2 && confirmedVal) {
                 if (!areAllStep2VendorsEvaluated()) {
                     const cb = document.getElementById('confirmLayakStep2');
@@ -1674,10 +1729,10 @@
 
             const itemObj = SEMAK_PAYLOAD[activeStep2Uuid];
             const rawVendors = itemObj?.vendors || [];
-            const failedVendorIds = getFailedStep1VendorIds();
+            const passedStep1Ids = getStep1PassedVendorIdsClient();
 
-            // Exclude vendors listed under "Tidak Melepasi" in Step 1
-            const eligibleVendors = rawVendors.filter(v => !failedVendorIds.includes(parseInt(v.vendor_id)));
+            // Include only vendors who passed Step 1
+            const eligibleVendors = rawVendors.filter(v => passedStep1Ids.includes(parseInt(v.vendor_id)));
 
             if (!eligibleVendors.length) {
                 $tbody.append('<tr><td colspan="4" class="text-center text-muted py-4"><i class="bi bi-info-circle me-1"></i>Tiada petender yang melepasi penilaian pematuhan dokumentasi.</td></tr>');
@@ -1751,8 +1806,8 @@
             const targetUuid = activeStep2Uuid || (PENYATA_BANK_UUIDS && PENYATA_BANK_UUIDS[0]) || '';
             const itemObj = SEMAK_PAYLOAD[targetUuid] || Object.values(SEMAK_PAYLOAD).find(item => PENYATA_BANK_UUIDS.includes(item?.uuid));
             const rawVendors = itemObj?.vendors || [];
-            const failedStep1Ids = getFailedStep1VendorIds();
-            const eligibleVendors = rawVendors.filter(v => !failedStep1Ids.includes(parseInt(v.vendor_id)));
+            const passedStep1Ids = getStep1PassedVendorIdsClient();
+            const eligibleVendors = rawVendors.filter(v => passedStep1Ids.includes(parseInt(v.vendor_id)));
 
             const melepasiList = [];
             const tidakMelepasiList = [];
@@ -2167,8 +2222,8 @@
 
                 const itemObj = SEMAK_PAYLOAD[activeStep2Uuid];
                 const rawVendors = itemObj?.vendors || [];
-                const failedVendorIds = getFailedStep1VendorIds();
-                const eligibleVendors = rawVendors.filter(v => !failedVendorIds.includes(parseInt(v.vendor_id)));
+                const passedStep1Ids = getStep1PassedVendorIdsClient();
+                const eligibleVendors = rawVendors.filter(v => passedStep1Ids.includes(parseInt(v.vendor_id)));
 
                 const totalV = eligibleVendors.length;
                 const reviewedV = eligibleVendors.filter(v => v.status_pematuhan !== null && v.status_pematuhan !== '' && v.status_pematuhan !== undefined).length;

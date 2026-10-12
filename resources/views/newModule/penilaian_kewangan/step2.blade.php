@@ -58,20 +58,8 @@
                             $itemPayload = $semakPayload[$itemUuid] ?? null;
                             $itemVendors = $itemPayload['vendors'] ?? [];
 
-                            $failedStep1VendorIds = collect($semakPayload ?? [])
-                                ->reject(function ($payload, $uuid) use ($penyataBankItems) {
-                                    return in_array($uuid, collect($penyataBankItems ?? [])->pluck('uuid')->all(), true);
-                                })
-                                ->flatMap(function ($payload) {
-                                    return collect($payload['vendors'] ?? [])
-                                        ->filter(fn ($v) => $v['status_pematuhan'] === 'tidak_mematuhi' || $v['status_pematuhan'] === 0 || $v['status_pematuhan'] === '0')
-                                        ->pluck('vendor_id');
-                                })
-                                ->unique()
-                                ->toArray();
-
-                            $eligibleVendors = collect($itemVendors)->reject(function ($v) use ($failedStep1VendorIds) {
-                                return in_array((int) $v['vendor_id'], $failedStep1VendorIds, true);
+                            $eligibleVendors = collect($itemVendors)->filter(function ($v) use ($step1PassedVendorIds) {
+                                return in_array((int) $v['vendor_id'], $step1PassedVendorIds ?? [], true);
                             });
 
                             $totalEligible = $eligibleVendors->count();
