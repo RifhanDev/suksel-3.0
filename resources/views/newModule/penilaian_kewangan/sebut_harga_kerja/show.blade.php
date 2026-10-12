@@ -1607,24 +1607,52 @@ window.type2State = {
                         <span class="badge bg-secondary-subtle text-secondary border px-1.5 py-0.5 rounded-1 extra-small align-self-start">
                             <i class="bi bi-files me-1"></i>${files.length} Fail Dimuat Naik
                         </span>
-                        ${files.map((f, fIdx) => `
-                            <button type="button" class="btn btn-sm btn-link text-danger p-0 text-decoration-none fw-semibold d-inline-flex align-items-center gap-1.5 btn-preview-file-action text-start" data-title="${this.escapeAttr((f.name || ('Fail ' + (fIdx + 1))) + ' - ' + v.name)}" data-url="${this.escapeAttr(f.url || '#')}">
-                                <i class="bi bi-file-earmark-pdf fs-6 flex-shrink-0"></i>
-                                <span class="text-truncate" style="max-width: 220px;" title="${this.escapeAttr(f.name || ('Fail ' + (fIdx + 1)))}">${f.name || ('Fail ' + (fIdx + 1))}</span>
-                            </button>
-                        `).join('')}
+                        ${files.map((f, fIdx) => {
+                            const fName = f.name || ('Fail ' + (fIdx + 1));
+                            const fExt = (fName.split('.').pop() || '').toLowerCase();
+                            const isPdf = f.is_pdf || fExt === 'pdf';
+                            if (isPdf) {
+                                return `
+                                    <a href="${this.escapeAttr(f.url || '#')}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-link text-danger p-0 text-decoration-none fw-semibold d-inline-flex align-items-center gap-1.5 text-start">
+                                        <i class="bi bi-file-earmark-pdf fs-6 flex-shrink-0"></i>
+                                        <span class="text-truncate" style="max-width: 220px;" title="${this.escapeAttr(fName)}">${this.escapeAttr(fName)}</span>
+                                        <i class="bi bi-box-arrow-up-right small text-muted"></i>
+                                    </a>
+                                `;
+                            } else {
+                                return `
+                                    <a href="${this.escapeAttr(f.url || '#')}" download="${this.escapeAttr(fName)}" class="btn btn-sm btn-link text-primary p-0 text-decoration-none fw-semibold d-inline-flex align-items-center gap-1.5 text-start">
+                                        <i class="bi bi-file-earmark-arrow-down fs-6 flex-shrink-0"></i>
+                                        <span class="text-truncate" style="max-width: 220px;" title="${this.escapeAttr(fName)}">${this.escapeAttr(fName)}</span>
+                                    </a>
+                                `;
+                            }
+                        }).join('')}
                     </div>
                 `;
             } else if (files.length === 1 && files[0].url) {
-                filesHtml = `
-                    <button type="button" class="btn btn-sm btn-link text-danger p-0 text-decoration-none fw-semibold d-inline-flex align-items-center gap-1 btn-preview-file-action text-start" data-title="${this.escapeAttr((files[0].name || previewTitle) + ' - ' + v.name)}" data-url="${this.escapeAttr(files[0].url)}">
-                        <i class="bi bi-file-earmark-pdf fs-6 flex-shrink-0"></i>
-                        <span class="text-truncate" style="max-width: 220px;" title="${this.escapeAttr(files[0].name || previewLabel)}">${files[0].name || previewLabel}</span>
-                    </button>
-                `;
+                const fName = files[0].name || previewLabel;
+                const fExt = (fName.split('.').pop() || '').toLowerCase();
+                const isPdf = files[0].is_pdf || fExt === 'pdf';
+                if (isPdf) {
+                    filesHtml = `
+                        <a href="${this.escapeAttr(files[0].url)}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-link text-danger p-0 text-decoration-none fw-semibold d-inline-flex align-items-center gap-1 text-start">
+                            <i class="bi bi-file-earmark-pdf fs-6 flex-shrink-0"></i>
+                            <span class="text-truncate" style="max-width: 220px;" title="${this.escapeAttr(fName)}">${this.escapeAttr(fName)}</span>
+                            <i class="bi bi-box-arrow-up-right small text-muted"></i>
+                        </a>
+                    `;
+                } else {
+                    filesHtml = `
+                        <a href="${this.escapeAttr(files[0].url)}" download="${this.escapeAttr(fName)}" class="btn btn-sm btn-link text-primary p-0 text-decoration-none fw-semibold d-inline-flex align-items-center gap-1 text-start">
+                            <i class="bi bi-file-earmark-arrow-down fs-6 flex-shrink-0"></i>
+                            <span class="text-truncate" style="max-width: 220px;" title="${this.escapeAttr(fName)}">${this.escapeAttr(fName)}</span>
+                        </a>
+                    `;
+                }
             } else if (previewUrl) {
                 filesHtml = `
-                    <button type="button" class="btn btn-sm btn-link text-danger p-0 text-decoration-none fw-semibold d-inline-flex align-items-center gap-1 btn-preview-file-action" data-title="${this.escapeAttr(previewTitle)}" data-url="${this.escapeAttr(previewUrl)}">
+                    <button type="button" class="btn btn-sm btn-link text-primary p-0 text-decoration-none fw-semibold d-inline-flex align-items-center gap-1 btn-preview-file-action" data-title="${this.escapeAttr(previewTitle)}" data-url="${this.escapeAttr(previewUrl)}">
                         <i class="bi ${previewIcon} fs-6 flex-shrink-0"></i>
                         <span>${previewLabel}</span>
                     </button>
@@ -2052,34 +2080,50 @@ window.previewDocument = function(title, url) {
 
     const urlPath = resolvedUrl.split(/[#?]/)[0];
     const extension = urlPath.split('.').pop().trim().toLowerCase();
+    const extFromTitle = (title || '').split('.').pop().trim().toLowerCase();
     const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp'];
     const filenamePortion = urlPath.substring(urlPath.lastIndexOf('/') + 1);
-    const isProbablyPage = !filenamePortion.includes('.') || filenamePortion.endsWith('.html') || resolvedUrl.includes('modal=1') || resolvedUrl.includes('mode=view');
+    const isDownloadRoute = /\/download\/?$/.test(urlPath) || urlPath.includes('/dokumen-files/') || urlPath.includes('/checklist-files/') || urlPath.includes('/stos-form-files/');
+    const isPdf = extension === 'pdf' || extFromTitle === 'pdf' || resolvedUrl.toLowerCase().includes('.pdf');
+    const isImage = imageExtensions.includes(extension) || imageExtensions.includes(extFromTitle);
+    const isProbablyPage = !isDownloadRoute && (!filenamePortion.includes('.') || filenamePortion.endsWith('.html') || resolvedUrl.includes('modal=1') || resolvedUrl.includes('mode=view') || resolvedUrl.includes('form') || resolvedUrl.includes('borang'));
 
+    // Open PDF directly in a new tab
+    if (isPdf && !isProbablyPage) {
+        window.open(resolvedUrl, '_blank');
+        return;
+    }
+
+    // Direct download for non-PDF file download routes
+    if (isDownloadRoute && !isPdf && !isProbablyPage && !isImage) {
+        const a = document.createElement('a');
+        a.href = resolvedUrl;
+        a.setAttribute('download', title || 'Dokumen');
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        return;
+    }
+
+    if (imageWrapper) imageWrapper.classList.add('d-none');
+    if (image) image.src = '';
+    if (fallback) fallback.classList.add('d-none');
     if (icon) icon.className = '';
 
-    if (imageExtensions.includes(extension)) {
+    if (isImage) {
         if (icon) icon.className = 'bi bi-file-earmark-image text-primary fs-5';
         if (image) image.src = resolvedUrl;
         if (imageWrapper) imageWrapper.classList.remove('d-none');
         if (spinner) spinner.classList.add('d-none');
-    } else if (extension === 'pdf' || resolvedUrl.includes('.pdf') || resolvedUrl.includes('/download')) {
-        if (icon) icon.className = 'bi bi-file-earmark-pdf text-danger fs-5';
+    } else if (isProbablyPage || isPdf) {
+        if (icon) icon.className = isPdf ? 'bi bi-file-earmark-pdf text-danger fs-5' : 'bi bi-window text-success fs-5';
         if (iframe) {
             iframe.onload = function() {
                 if (spinner) spinner.classList.add('d-none');
                 iframe.classList.remove('d-none');
             };
-            iframe.src = resolvedUrl;
-        }
-    } else if (isProbablyPage) {
-        if (icon) icon.className = 'bi bi-window text-success fs-5';
-        if (iframe) {
-            iframe.onload = function() {
-                if (spinner) spinner.classList.add('d-none');
-                iframe.classList.remove('d-none');
-            };
-            iframe.src = resolvedUrl;
+            const bust = (resolvedUrl.indexOf('?') === -1 ? '?' : '&') + '_ts=' + Date.now();
+            iframe.src = resolvedUrl + bust;
         }
     } else {
         if (icon) icon.className = 'bi bi-file-earmark-zip text-warning fs-5';
@@ -2098,7 +2142,9 @@ document.addEventListener('click', function(e) {
         e.preventDefault();
         const title = actionBtn.getAttribute('data-title');
         const url = actionBtn.getAttribute('data-url');
-        window.previewDocument(title, url);
+        if (url && url !== '#') {
+            window.previewDocument(title, url);
+        }
         return;
     }
 
@@ -2106,8 +2152,10 @@ document.addEventListener('click', function(e) {
     if (dummyBtn) {
         e.preventDefault();
         const title = dummyBtn.getAttribute('data-title') || 'Dokumen Sokongan';
-        const url = dummyBtn.getAttribute('data-url') || 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf';
-        window.previewDocument(title, url);
+        const url = dummyBtn.getAttribute('data-url');
+        if (url && url !== '#') {
+            window.previewDocument(title, url);
+        }
         return;
     }
 });

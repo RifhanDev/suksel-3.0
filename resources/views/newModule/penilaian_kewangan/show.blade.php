@@ -1208,13 +1208,18 @@
             if (Array.isArray(vendor.files) && vendor.files.length) {
                 docHtml = vendor.files.map(function (file) {
                     const ext = (file.name || '').split('.').pop().toLowerCase();
-                    if (['pdf', 'png', 'jpg', 'jpeg', 'svg', 'webp'].includes(ext)) {
-                        return '<a href="' + escapeHtml(file.url) + '" data-name="' + escapeHtml(file.name) + '" class="d-block small text-primary btn-preview-file text-decoration-none mb-1">' +
+                    const isPdf = file.is_pdf === true || ext === 'pdf';
+                    if (isPdf) {
+                        return '<a href="' + escapeHtml(file.url) + '" target="_blank" rel="noopener noreferrer" class="d-block small text-primary text-decoration-none mb-1 fw-medium">' +
                             '<i class="bi bi-file-earmark-pdf-fill text-danger me-1"></i>' + escapeHtml(file.name) +
+                            ' <i class="bi bi-box-arrow-up-right small text-muted"></i></a>';
+                    } else if (['png', 'jpg', 'jpeg', 'svg', 'webp'].includes(ext)) {
+                        return '<a href="' + escapeHtml(file.url) + '" data-name="' + escapeHtml(file.name) + '" class="d-block small text-primary btn-preview-file text-decoration-none mb-1 fw-medium">' +
+                            '<i class="bi bi-file-earmark-image text-primary me-1"></i>' + escapeHtml(file.name) +
                             '</a>';
                     } else {
-                        return '<a href="' + escapeHtml(file.url) + '" download data-name="' + escapeHtml(file.name) + '" class="d-block small text-primary text-decoration-none mb-1">' +
-                            '<i class="bi bi-file-earmark-arrow-down me-1"></i>' + escapeHtml(file.name) +
+                        return '<a href="' + escapeHtml(file.url) + '" download="' + escapeHtml(file.name) + '" data-name="' + escapeHtml(file.name) + '" class="d-block small text-primary text-decoration-none mb-1 fw-medium">' +
+                            '<i class="bi bi-file-earmark-arrow-down text-secondary me-1"></i>' + escapeHtml(file.name) +
                             '</a>';
                     }
                 }).join('');
@@ -1928,7 +1933,7 @@
                             ? '<a href="' + escapeHtml(fileUrl) + '" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-primary px-3 py-1 d-inline-flex align-items-center gap-1 font-monospace">' +
                                 '<i class="bi bi-eye me-1"></i><span>Papar Dokumen</span>' +
                               '</a>'
-                            : '<a href="' + escapeHtml(fileUrl) + '" target="_blank" rel="noopener noreferrer" download="' + escapeHtml(fileName) + '" class="btn btn-sm btn-outline-primary px-3 py-1 d-inline-flex align-items-center gap-1 font-monospace">' +
+                            : '<a href="' + escapeHtml(fileUrl) + '" download="' + escapeHtml(fileName) + '" class="btn btn-sm btn-outline-primary px-3 py-1 d-inline-flex align-items-center gap-1 font-monospace">' +
                                 '<i class="bi bi-download me-1"></i><span>Muat Turun Dokumen</span>' +
                               '</a>';
 
@@ -2233,17 +2238,21 @@
 
             const urlPath  = url.split(/[#?]/)[0];
             const extension = urlPath.split('.').pop().trim().toLowerCase();
+            const extFromName = (name || '').split('.').pop().trim().toLowerCase();
             const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp'];
             const filenamePortion = urlPath.substring(urlPath.lastIndexOf('/') + 1);
-            const isProbablyPage  = !filenamePortion.includes('.') || filenamePortion.endsWith('.html') || url.includes('form') || url.includes('borang');
+            const isPdf = extension === 'pdf' || extFromName === 'pdf' || url.toLowerCase().includes('.pdf');
+            const isImage = imageExtensions.includes(extension) || imageExtensions.includes(extFromName);
+            const isDownloadRoute = /\/download\/?$/.test(urlPath) || urlPath.includes('/dokumen-files/') || urlPath.includes('/checklist-files/') || urlPath.includes('/stos-form-files/');
+            const isProbablyPage  = !isDownloadRoute && (!filenamePortion.includes('.') || filenamePortion.endsWith('.html') || url.includes('form') || url.includes('borang') || url.includes('modal=1'));
 
             const $icon = $('#previewIcon');
             $icon.removeClass();
-            if (imageExtensions.includes(extension)) {
+            if (isImage) {
                 $icon.addClass('bi bi-file-earmark-image text-primary fs-5');
                 $('#previewImage').attr('src', url);
                 $('#previewImageWrapper').removeClass('d-none');
-            } else if (extension === 'pdf') {
+            } else if (isPdf) {
                 $icon.addClass('bi bi-file-earmark-pdf text-danger fs-5');
                 $('#previewIframe').attr('src', url).removeClass('d-none');
             } else if (isProbablyPage) {
@@ -2252,6 +2261,7 @@
             } else {
                 $icon.addClass('bi bi-file-earmark-zip text-warning fs-5');
                 $('#previewSpinner').addClass('d-none');
+                $('#btnFallbackDownload').attr('download', name);
                 $('#previewFallback').removeClass('d-none');
             }
 

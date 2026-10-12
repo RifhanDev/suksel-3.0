@@ -1301,7 +1301,7 @@
 
                     if (!files.length) {
                         const empty = document.createElement('span');
-                        empty.className = 'text-muted small';
+                        empty.className = 'text-muted small fst-italic';
                         empty.textContent = 'Tiada dokumen dimuat naik';
                         container.appendChild(empty);
                         return;
@@ -1309,14 +1309,31 @@
 
                     files.forEach(function(file) {
                         const fileName = file.name || 'Dokumen';
+                        const ext = (fileName.split('.').pop() || '').trim().toLowerCase();
+                        const isPdf = file.is_pdf === true || ext === 'pdf';
+
                         const link = document.createElement('a');
                         link.href = file.url || '#';
-                        link.target = '_blank';
-                        link.rel = 'noopener noreferrer';
-                        link.className = 'text-primary text-decoration-none d-inline-flex align-items-center gap-1';
+                        link.className = 'text-primary text-decoration-none d-inline-flex align-items-center gap-1 small fw-semibold';
+                        link.title = fileName;
 
                         const icon = document.createElement('i');
-                        icon.className = 'bi bi-file-earmark-pdf-fill';
+                        if (isPdf) {
+                            link.target = '_blank';
+                            link.rel = 'noopener noreferrer';
+                            icon.className = 'bi bi-file-earmark-pdf-fill text-danger';
+                        } else {
+                            link.setAttribute('download', fileName);
+                            if (['xls', 'xlsx', 'csv'].includes(ext)) {
+                                icon.className = 'bi bi-file-earmark-excel-fill text-success';
+                            } else if (['doc', 'docx'].includes(ext)) {
+                                icon.className = 'bi bi-file-earmark-word-fill text-primary';
+                            } else if (['zip', 'rar', '7z'].includes(ext)) {
+                                icon.className = 'bi bi-file-earmark-zip-fill text-warning';
+                            } else {
+                                icon.className = 'bi bi-file-earmark-arrow-down-fill text-secondary';
+                            }
+                        }
                         icon.setAttribute('aria-hidden', 'true');
                         link.appendChild(icon);
                         link.appendChild(document.createTextNode(' ' + fileName));

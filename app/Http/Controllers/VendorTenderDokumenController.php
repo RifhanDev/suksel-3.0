@@ -98,14 +98,11 @@ class VendorTenderDokumenController extends Controller
 
                 $rawPath = ltrim(str_replace('public/', '', (string) $pbFile->path), '/');
                 $candidates = [
-                    storage_path('app/private/' . $rawPath),
                     storage_path('app/public/' . $rawPath),
                     storage_path('app/' . $rawPath),
+                    storage_path('app/private/' . $rawPath),
                     public_path('storage/' . $rawPath),
                     public_path($rawPath),
-                    base_path('../STOS-EPENILAIAN-WEB/storage/app/private/' . $rawPath),
-                    base_path('../STOS-EPENILAIAN-WEB/storage/app/public/' . $rawPath),
-                    base_path('../STOS-EPENILAIAN-WEB/storage/app/' . $rawPath),
                 ];
                 $absolutePath = null;
                 foreach ($candidates as $cand) {
@@ -127,21 +124,10 @@ class VendorTenderDokumenController extends Controller
                     ]);
                 }
 
-                return \App\Support\StosStoredFile::response([
-                    'uuid'          => $pbFile->uuid,
-                    'original_name' => $pbFile->original_name ?: $pbFile->stored_name,
-                    'path'          => $pbFile->path,
-                    'mime_type'     => $pbFile->mime_type ?: 'application/pdf',
-                    'download_api'  => 'penyata-bank-files/' . $pbFile->uuid . '/download',
-                ]);
+                abort(404, 'Fail penyata bank tidak dijumpai pada storan sistem.');
             }
 
-            return \App\Support\StosStoredFile::response([
-                'uuid'          => $fileUuid,
-                'original_name' => 'Dokumen_Sokongan.pdf',
-                'mime_type'     => 'application/pdf',
-                'download_api'  => 'penyata-bank-files/' . $fileUuid . '/download',
-            ]);
+            abort(404, 'Fail dokumen tidak dijumpai.');
         }
 
         $tender = Tender::query()->findOrFail($file->tender_id);
@@ -151,14 +137,11 @@ class VendorTenderDokumenController extends Controller
         if (! $absolutePath || ! is_file($absolutePath)) {
             $rawPath = ltrim(str_replace('public/', '', (string) $file->path), '/');
             $candidates = [
-                storage_path('app/private/' . $rawPath),
                 storage_path('app/public/' . $rawPath),
                 storage_path('app/' . $rawPath),
+                storage_path('app/private/' . $rawPath),
                 public_path('storage/' . $rawPath),
                 public_path($rawPath),
-                base_path('../STOS-EPENILAIAN-WEB/storage/app/private/' . $rawPath),
-                base_path('../STOS-EPENILAIAN-WEB/storage/app/public/' . $rawPath),
-                base_path('../STOS-EPENILAIAN-WEB/storage/app/' . $rawPath),
             ];
             foreach ($candidates as $cand) {
                 if (is_file($cand)) {
@@ -181,12 +164,7 @@ class VendorTenderDokumenController extends Controller
             ]);
         }
 
-        return \App\Support\StosStoredFile::response([
-            'uuid'          => $file->uuid,
-            'original_name' => $file->original_name ?: $file->stored_name,
-            'path'          => $file->path,
-            'mime_type'     => $file->mime_type ?: 'application/octet-stream',
-        ]);
+        abort(404, 'Fail dokumen tidak dijumpai pada storan sistem.');
     }
 
     public function streamByPath(Request $request)
@@ -211,34 +189,53 @@ class VendorTenderDokumenController extends Controller
                     }
                 }
 
-                return \App\Support\StosStoredFile::response([
-                    'uuid'          => $pbFile->uuid,
-                    'original_name' => $pbFile->original_name ?: $name,
-                    'path'          => $pbFile->path,
-                    'mime_type'     => $pbFile->mime_type ?: 'application/pdf',
-                    'download_api'  => 'penyata-bank-files/' . $pbFile->uuid . '/download',
-                ]);
+                $rawPath = ltrim(str_replace('public/', '', (string) $pbFile->path), '/');
+                $candidates = [
+                    storage_path('app/public/' . $rawPath),
+                    storage_path('app/' . $rawPath),
+                    storage_path('app/private/' . $rawPath),
+                    public_path('storage/' . $rawPath),
+                    public_path($rawPath),
+                ];
+                foreach ($candidates as $cand) {
+                    if (is_file($cand)) {
+                        $mime = $pbFile->mime_type ?: (function_exists('mime_content_type') ? mime_content_type($cand) : null) ?: 'application/pdf';
+                        $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
+                        $isPdf = ($ext === 'pdf' || str_contains(strtolower($mime), 'pdf'));
+                        $disposition = $isPdf ? 'inline' : 'attachment';
+
+                        return response()->file($cand, [
+                            'Content-Type' => $mime,
+                            'Content-Disposition' => $disposition . '; filename="' . addslashes($name) . '"',
+                        ]);
+                    }
+                }
+
+                abort(404, 'Fail penyata bank tidak dijumpai.');
             }
+
             $vFile = \App\Models\TenderVendorDokumenFile::where('uuid', $uuid)->first();
             if ($vFile) {
                 $tender = Tender::query()->findOrFail($vFile->tender_id);
                 $this->assertCanAccessTenderFile($tender, (int) $vFile->vendor_id);
 
-                return \App\Support\StosStoredFile::response([
-                    'uuid'          => $vFile->uuid,
-                    'original_name' => $vFile->original_name ?: $name,
-                    'path'          => $vFile->path,
-                    'mime_type'     => $vFile->mime_type ?: 'application/octet-stream',
-                ]);
+                $absolutePath = $vFile->absolutePath();
+                if ($absolutePath && is_file($absolutePath)) {
+                    $mime = $vFile->mime_type ?: (function_exists('mime_content_type') ? mime_content_type($absolutePath) : null) ?: 'application/octet-stream';
+                    $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
+                    $isPdf = ($ext === 'pdf' || str_contains(strtolower($mime), 'pdf'));
+                    $disposition = $isPdf ? 'inline' : 'attachment';
+
+                    return response()->file($absolutePath, [
+                        'Content-Type' => $mime,
+                        'Content-Disposition' => $disposition . '; filename="' . addslashes($name) . '"',
+                    ]);
+                }
+
+                abort(404, 'Fail dokumen tidak dijumpai.');
             }
 
-            return \App\Support\StosStoredFile::response([
-                'uuid'          => $uuid,
-                'original_name' => $name,
-                'path'          => $path,
-                'mime_type'     => 'application/pdf',
-                'download_api'  => 'penyata-bank-files/' . $uuid . '/download',
-            ]);
+            abort(404, 'Fail tidak dijumpai.');
         }
 
         if ($path === '') {
@@ -246,17 +243,29 @@ class VendorTenderDokumenController extends Controller
         }
 
         $cleanPath = ltrim(str_replace('public/', '', $path), '/');
-        $downloadApi = '';
-        if (preg_match('/([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/i', $cleanPath, $m)) {
-            $downloadApi = 'penyata-bank-files/' . $m[1] . '/download';
+        $candidates = [
+            storage_path('app/public/' . $cleanPath),
+            storage_path('app/' . $cleanPath),
+            storage_path('app/private/' . $cleanPath),
+            public_path('storage/' . $cleanPath),
+            public_path($cleanPath),
+        ];
+
+        foreach ($candidates as $cand) {
+            if (is_file($cand)) {
+                $mime = function_exists('mime_content_type') ? mime_content_type($cand) : 'application/octet-stream';
+                $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
+                $isPdf = ($ext === 'pdf' || str_contains(strtolower($mime), 'pdf'));
+                $disposition = $isPdf ? 'inline' : 'attachment';
+
+                return response()->file($cand, [
+                    'Content-Type' => $mime,
+                    'Content-Disposition' => $disposition . '; filename="' . addslashes($name) . '"',
+                ]);
+            }
         }
 
-        return \App\Support\StosStoredFile::response([
-            'path'          => $cleanPath,
-            'original_name' => $name,
-            'mime_type'     => 'application/pdf',
-            'download_api'  => $downloadApi,
-        ]);
+        abort(404, 'Fail tidak dijumpai.');
     }
 
     public function saveKeyIn(Request $request, Tender $tender, string $itemUuid)

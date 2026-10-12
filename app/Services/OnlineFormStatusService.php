@@ -7,6 +7,8 @@ use App\Models\LembaranImbangan;
 use App\Models\PenyataBank;
 use App\Models\ProfilPetender;
 use App\Models\TenderKakitanganTeknikal;
+use App\Models\TenderKerjaDalamTangan;
+use App\Models\TenderPengalamanKerja;
 use App\Models\TenderPrestasiKerja;
 use App\Models\TenderVendorOnlineFormStatus;
 use App\Support\OnlineFormRegistry;
@@ -55,8 +57,24 @@ class OnlineFormStatusService
                 },
                 TenderPrestasiKerja::query()->withCount('items')->where('tender_id', $tender->id)->first()
             ),
-            'pengalaman_kerja' => $this->stosCollectionStatus($tender, 'pengalaman-kerja', 'items', 'dokumens'),
-            'kerja_dalam_tangan' => $this->stosCollectionStatus($tender, 'kerja-dalam-tangan', 'items'),
+            'pengalaman_kerja' => $this->fromRecordStatus(
+                TenderPengalamanKerja::query()->where('tender_uuid', $tender->uuid)->exists() ? 'submitted' : 'draft',
+                function () use ($tender) {
+                    $count = TenderPengalamanKerja::query()->where('tender_uuid', $tender->uuid)->count();
+
+                    return $count > 0 ? "{$count} rekod pengalaman" : null;
+                },
+                TenderPengalamanKerja::query()->where('tender_uuid', $tender->uuid)->first()
+            ),
+            'kerja_dalam_tangan' => $this->fromRecordStatus(
+                TenderKerjaDalamTangan::query()->where('tender_uuid', $tender->uuid)->exists() ? 'submitted' : 'draft',
+                function () use ($tender) {
+                    $count = TenderKerjaDalamTangan::query()->where('tender_uuid', $tender->uuid)->count();
+
+                    return $count > 0 ? "{$count} projek dalam tangan" : null;
+                },
+                TenderKerjaDalamTangan::query()->where('tender_uuid', $tender->uuid)->first()
+            ),
             'kakitangan_teknikal' => $this->fromRecordStatus(
                 TenderKakitanganTeknikal::query()->where('tender_uuid', $tender->uuid)->exists() ? 'submitted' : 'draft',
                 function () use ($tender) {
@@ -167,6 +185,17 @@ class OnlineFormStatusService
                 ->where('vendor_id', $vendorId)
                 ->exists()
                 ? 'Senarai kakitangan teknikal disimpan'
+                : null,
+            'pengalaman_kerja' => TenderPengalamanKerja::query()
+                ->where('tender_uuid', $tender->uuid)
+                ->where('vendor_id', $vendorId)
+                ->exists()
+                ? 'Pengalaman kerja disimpan'
+                : null,
+            'kerja_dalam_tangan' => TenderKerjaDalamTangan::query()
+                ->where('tender_uuid', $tender->uuid)
+                ->exists()
+                ? 'Kerja dalam tangan disimpan'
                 : null,
             default => null,
         };

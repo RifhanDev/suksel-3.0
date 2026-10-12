@@ -966,16 +966,28 @@
 			const LIHAT_LINK_CLASS = 'text-primary text-decoration-none d-inline-flex align-items-center gap-1 btn-semak-lihat';
 
 			// Nothing submitted: still claimable so Tiada can be recorded.
-			let docHtml = '<span class="small text-muted d-block">' + escapeHtml(vendor.summary || '-') + '</span>' +
+			let docHtml = '<span class="small text-muted d-block fst-italic">' + escapeHtml(vendor.summary || 'Tiada dokumen dimuat naik') + '</span>' +
 				'<a href="#" data-vendor-id="' + vendor.vendor_id + '" class="' + LIHAT_LINK_CLASS + '">' +
 				'<i class="bi bi-pencil-square"></i>Mula Menilai</a>';
 
 			if (Array.isArray(vendor.files) && vendor.files.length) {
 				docHtml = '<div class="d-flex flex-wrap gap-2">' + vendor.files.map(function (file, idx) {
-					const label = vendor.files.length > 1 ? 'Lihat ' + (idx + 1) : 'Lihat';
-					return '<a href="#" data-url="' + escapeHtml(file.url) + '" data-name="' + escapeHtml(file.name) + '" ' +
-						'data-vendor-id="' + vendor.vendor_id + '" class="' + LIHAT_LINK_CLASS + '">' +
-						'<i class="bi bi-file-earmark-pdf-fill"></i>' + label + '</a>';
+					const fileName = file.name || 'Dokumen';
+					const ext = (fileName.split('.').pop() || '').trim().toLowerCase();
+					const isPdf = file.is_pdf === true || ext === 'pdf';
+					const label = vendor.files.length > 1 ? (isPdf ? 'Lihat PDF ' : 'Muat Turun ') + (idx + 1) : (isPdf ? 'Lihat PDF' : 'Muat Turun Fail');
+					const iconClass = isPdf
+						? 'bi-file-earmark-pdf-fill text-danger'
+						: (['xls', 'xlsx', 'csv'].includes(ext)
+							? 'bi-file-earmark-excel-fill text-success'
+							: (['doc', 'docx'].includes(ext)
+								? 'bi-file-earmark-word-fill text-primary'
+								: (['zip', 'rar', '7z'].includes(ext)
+									? 'bi-file-earmark-zip-fill text-warning'
+									: 'bi-file-earmark-arrow-down-fill text-secondary')));
+					return '<a href="#" data-url="' + escapeHtml(file.url) + '" data-name="' + escapeHtml(fileName) + '" data-type="file" data-is-pdf="' + (isPdf ? '1' : '0') + '" ' +
+						'data-vendor-id="' + vendor.vendor_id + '" class="' + LIHAT_LINK_CLASS + '" title="' + escapeHtml(fileName) + '">' +
+						'<i class="bi ' + iconClass + '"></i>' + label + '</a>';
 				}).join('') + '</div>';
 			} else if (vendor.form_url) {
 				const isSpec = (item?.action === 'view_specification');
@@ -1005,7 +1017,7 @@
 						formUrl += (formUrl.indexOf('?') === -1 ? '?' : '&') + 'mode=view';
 					}
 				}
-				docHtml = '<a href="#" data-url="' + escapeHtml(formUrl) + '" data-name="' + (isSpec ? 'Spesifikasi ' : 'Borang ') + escapeHtml(vendor.kod || vendor.name) + '" data-vendor-id="' + vendor.vendor_id + '" class="' + LIHAT_LINK_CLASS + '"><i class="bi bi-file-earmark-pdf-fill"></i>' + label + '</a>';
+				docHtml = '<a href="#" data-url="' + escapeHtml(formUrl) + '" data-name="' + (isSpec ? 'Spesifikasi ' : 'Borang ') + escapeHtml(vendor.kod || vendor.name) + '" data-type="form" data-vendor-id="' + vendor.vendor_id + '" class="' + LIHAT_LINK_CLASS + '"><i class="bi bi-ui-checks-grid text-primary"></i>' + label + '</a>';
 			}
 
 			// Status Pematuhan – pre-fill from saved evaluation. Rendered disabled;
@@ -1142,18 +1154,38 @@
 		const $link    = $(this);
 		const url      = $link.data('url');
 		const name     = $link.data('name') || 'Fail';
+		const dataType = $link.data('type') || '';
+		const isPdf    = $link.data('is-pdf') === '1' || $link.data('is-pdf') === 1;
 		const vendorId = $link.data('vendor-id');
 		const itemUuid = activeItemUuid;
 
+		function triggerViewOrDownload() {
+			if (!url) return;
+			if (dataType === 'file') {
+				if (isPdf) {
+					window.open(url, '_blank');
+				} else {
+					const a = document.createElement('a');
+					a.href = url;
+					a.setAttribute('download', name);
+					document.body.appendChild(a);
+					a.click();
+					a.remove();
+				}
+			} else {
+				openPreview(url, name);
+			}
+		}
+
 		if (!lockingActive()) {
-			if (url) openPreview(url, name);
+			triggerViewOrDownload();
 			return;
 		}
 
 		const state = lockState(itemUuid, vendorId);
 
 		if (state === 'mine') {
-			if (url) openPreview(url, name);
+			triggerViewOrDownload();
 			return;
 		}
 
@@ -1218,7 +1250,7 @@
 					user_name: 'Anda'
 				});
 				applyLockStates();
-				if (url) openPreview(url, name);
+				triggerViewOrDownload();
 			}).fail(function (xhr) {
 				// 409 = another member won the race in the moment between render and click.
 				if (xhr.status === 409) {
@@ -1808,17 +1840,20 @@
 
 		const urlPath  = url.split(/[#?]/)[0];
 		const extension = urlPath.split('.').pop().trim().toLowerCase();
+		const extFromName = (name || '').split('.').pop().trim().toLowerCase();
 		const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp'];
 		const filenamePortion = urlPath.substring(urlPath.lastIndexOf('/') + 1);
+		const isPdf = extension === 'pdf' || extFromName === 'pdf' || url.toLowerCase().includes('.pdf');
+		const isImage = imageExtensions.includes(extension) || imageExtensions.includes(extFromName);
 		const isDownloadRoute = /\/download\/?$/.test(urlPath) || urlPath.includes('/dokumen-files/') || urlPath.includes('/checklist-files/') || urlPath.includes('/stos-form-files/');
-		const isProbablyPage  = !isDownloadRoute && (!filenamePortion.includes('.') || filenamePortion.endsWith('.html') || url.includes('form') || url.includes('borang'));
+		const isProbablyPage  = !isDownloadRoute && (!filenamePortion.includes('.') || filenamePortion.endsWith('.html') || url.includes('form') || url.includes('borang') || url.includes('modal=1'));
 
 		const $icon = $('#previewIcon');
 		$icon.removeClass();
-		if (imageExtensions.includes(extension)) {
+		if (isImage) {
 			$icon.addClass('bi bi-file-earmark-image text-primary fs-5');
 			$('#previewImage').attr('src', url);
-		} else if (extension === 'pdf' || isDownloadRoute) {
+		} else if (isPdf) {
 			$icon.addClass('bi bi-file-earmark-pdf text-danger fs-5');
 			$('#previewIframe').attr('src', url);
 		} else if (isProbablyPage) {
@@ -1829,6 +1864,7 @@
 		} else {
 			$icon.addClass('bi bi-file-earmark-zip text-warning fs-5');
 			$('#previewSpinner').addClass('d-none');
+			$('#btnFallbackDownload').attr('download', name);
 			$('#previewFallback').removeClass('d-none');
 		}
 
