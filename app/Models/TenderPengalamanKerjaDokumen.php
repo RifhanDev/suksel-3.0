@@ -9,6 +9,7 @@ class TenderPengalamanKerjaDokumen extends Model
     protected $fillable = [
         'uuid',
         'tender_uuid',
+        'vendor_id',
         'original_name',
         'stored_name',
         'path',

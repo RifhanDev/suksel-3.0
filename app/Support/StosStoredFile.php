@@ -84,6 +84,10 @@ class StosStoredFile
             config('services.stos_backend.storage_path'),
             base_path('../STOS-EPENILAIAN-WEB/storage/app/public'),
             base_path('../stos-epenilaian-web/storage/app/public'),
+            base_path('../STOS-EPENILAIAN-WEB/storage/app/private'),
+            base_path('../stos-epenilaian-web/storage/app/private'),
+            base_path('../STOS-EPENILAIAN-WEB/storage/app'),
+            base_path('../stos-epenilaian-web/storage/app'),
         ]);
 
         foreach ($roots as $root) {

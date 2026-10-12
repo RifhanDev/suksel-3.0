@@ -27,12 +27,34 @@ class StosFormFileController extends Controller
         ],
     ];
 
-    public function download(Tender $tender, string $type, string $fileUuid)
+    public function download(\App\Tender|\App\Models\Tender $tender, string $type, string $fileUuid)
     {
         $this->assertCanAccessTenderFile($tender);
         $config = self::TYPES[$type] ?? null;
         if (! $config || empty($tender->uuid)) {
             abort(404, 'Fail tidak dijumpai.');
+        }
+
+        if ($type === 'pengalaman-kerja') {
+            $localDoc = \App\Models\TenderPengalamanKerjaDokumen::where('uuid', $fileUuid)->first();
+            if ($localDoc) {
+                return StosStoredFile::response([
+                    'uuid'          => $localDoc->uuid,
+                    'original_name' => $localDoc->original_name,
+                    'path'          => $localDoc->path,
+                    'mime_type'     => $localDoc->mime_type ?: 'application/pdf',
+                ]);
+            }
+        } elseif ($type === 'kerja-dalam-tangan') {
+            $localDoc = \App\Models\TenderKerjaDalamTanganDokumen::where('uuid', $fileUuid)->first();
+            if ($localDoc) {
+                return StosStoredFile::response([
+                    'uuid'          => $localDoc->uuid,
+                    'original_name' => $localDoc->original_name,
+                    'path'          => $localDoc->path,
+                    'mime_type'     => $localDoc->mime_type ?: 'application/pdf',
+                ]);
+            }
         }
 
         $file = $this->findFileMeta($tender->uuid, $config['api'], $config['collection'], $fileUuid);
