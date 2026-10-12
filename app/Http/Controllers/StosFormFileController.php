@@ -57,19 +57,38 @@ class StosFormFileController extends Controller
             }
         }
 
-        $file = $this->findFileMeta($tender->uuid, $config['api'], $config['collection'], $fileUuid);
-        if (! $file) {
-            // Still try authenticated STOS download by uuid (meta list may be empty / filtered).
-            $file = [
-                'uuid' => $fileUuid,
-                'original_name' => 'Dokumen',
-                'download_api' => str_replace('{uuid}', $fileUuid, $config['download_api']),
-            ];
-        } else {
-            $file['download_api'] = str_replace('{uuid}', $fileUuid, $config['download_api']);
+        // Also check TenderVendorFormPayload in case metadata only exists in form payload
+        $formKey = match ($type) {
+            'pengalaman-kerja' => 'pengalaman_kerja',
+            'kerja-dalam-tangan' => 'kerja_dalam_tangan',
+            default => null,
+        };
+        if ($formKey) {
+            $payloads = \App\Models\TenderVendorFormPayload::where('tender_id', $tender->id)
+                ->where('form_key', $formKey)
+                ->get();
+            foreach ($payloads as $p) {
+                $dokumens = $p->payload['dokumens'] ?? [];
+                foreach ($dokumens as $d) {
+                    if (($d['uuid'] ?? '') === $fileUuid) {
+                        return StosStoredFile::response([
+                            'uuid'          => $d['uuid'],
+                            'original_name' => $d['original_name'] ?? $d['name'] ?? 'Dokumen',
+                            'path'          => $d['path'] ?? '',
+                            'mime_type'     => $d['mime_type'] ?? 'application/pdf',
+                        ]);
+                    }
+                }
+            }
         }
 
-        return StosStoredFile::response($file);
+        $file = $this->findFileMeta($tender->uuid, $config['api'], $config['collection'], $fileUuid);
+        if ($file) {
+            $file['download_api'] = str_replace('{uuid}', $fileUuid, $config['download_api']);
+            return StosStoredFile::response($file);
+        }
+
+        abort(404, 'Fail dokumen tidak dijumpai pada storan sistem.');
     }
 
     /**

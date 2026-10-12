@@ -22,59 +22,111 @@ class StosStoredFile
         $isPdf = ($ext === 'pdf' || str_contains(strtolower($mime), 'pdf'));
         $disposition = $isPdf ? 'inline' : 'attachment';
 
-        if ($path !== '' && Storage::disk('public')->exists($path)) {
-            return Storage::disk('public')->response($path, $name, [
-                'Content-Disposition' => $disposition . '; filename="' . addslashes($name) . '"',
-            ]);
-        }
+        $resolved = self::resolveLocalFilePath($path);
+        if ($resolved && is_file($resolved)) {
+            $resolvedMime = (function_exists('mime_content_type') ? @mime_content_type($resolved) : null) ?: $mime;
+            if ($isPdf && ! str_contains(strtolower($resolvedMime), 'pdf')) {
+                $resolvedMime = 'application/pdf';
+            }
 
-        $absolute = self::absolutePathOnStosDisk($path);
-        if ($absolute) {
-            return response()->file($absolute, [
-                'Content-Type' => is_file($absolute) ? (mime_content_type($absolute) ?: $mime) : $mime,
+            return response()->file($resolved, [
+                'Content-Type' => $resolvedMime,
                 'Content-Disposition' => $disposition . '; filename="' . addslashes($name) . '"',
             ]);
         }
 
         $apiPath = trim((string) ($file['download_api'] ?? ''));
-        if ($apiPath !== '') {
-            $apiResponse = StosBackendClient::http()
-                ->withHeaders(['Accept' => '*/*'])
-                ->get(StosBackendClient::apiUrl($apiPath));
-            if ($apiResponse->successful()) {
-                $mimeType = (string) ($file['mime_type'] ?? $apiResponse->header('Content-Type') ?? $mime);
+        if ($apiPath !== '' && StosBackendClient::isConfigured()) {
+            try {
+                $apiResponse = StosBackendClient::http()
+                    ->timeout(5)
+                    ->withHeaders(['Accept' => '*/*'])
+                    ->get(StosBackendClient::apiUrl($apiPath));
+                if ($apiResponse->successful()) {
+                    $mimeType = (string) ($file['mime_type'] ?? $apiResponse->header('Content-Type') ?? $mime);
 
-                return new StreamedResponse(function () use ($apiResponse) {
-                    echo $apiResponse->body();
-                }, 200, [
-                    'Content-Type' => $mimeType,
-                    'Content-Disposition' => 'inline; filename="' . addslashes($name) . '"',
-                ]);
+                    return new StreamedResponse(function () use ($apiResponse) {
+                        echo $apiResponse->body();
+                    }, 200, [
+                        'Content-Type' => $mimeType,
+                        'Content-Disposition' => 'inline; filename="' . addslashes($name) . '"',
+                    ]);
+                }
+            } catch (\Throwable) {
+                // Ignore API timeout/connection failure and proceed to 404
             }
         }
 
         $remoteUrl = trim((string) ($file['url'] ?? ''));
-        if ($remoteUrl === '' && $path !== '') {
-            $remoteUrl = rtrim((string) config('services.stos_backend.url'), '/') . '/storage/' . $path;
-        }
+        if ($remoteUrl !== '' && filter_var($remoteUrl, FILTER_VALIDATE_URL)) {
+            try {
+                $response = StosBackendClient::http()
+                    ->timeout(5)
+                    ->withHeaders(['Accept' => '*/*'])
+                    ->get($remoteUrl);
+                if ($response->successful()) {
+                    $mimeType = (string) ($file['mime_type'] ?? $response->header('Content-Type') ?? $mime);
 
-        if ($remoteUrl !== '') {
-            $response = StosBackendClient::http()
-                ->withHeaders(['Accept' => '*/*'])
-                ->get($remoteUrl);
-            if ($response->successful()) {
-                $mimeType = (string) ($file['mime_type'] ?? $response->header('Content-Type') ?? $mime);
-
-                return new StreamedResponse(function () use ($response) {
-                    echo $response->body();
-                }, 200, [
-                    'Content-Type' => $mimeType,
-                    'Content-Disposition' => 'inline; filename="' . addslashes($name) . '"',
-                ]);
+                    return new StreamedResponse(function () use ($response) {
+                        echo $response->body();
+                    }, 200, [
+                        'Content-Type' => $mimeType,
+                        'Content-Disposition' => 'inline; filename="' . addslashes($name) . '"',
+                    ]);
+                }
+            } catch (\Throwable) {
+                // Ignore remote URL failure and proceed to 404
             }
         }
 
-        abort(404, 'Fail tidak dijumpai.');
+        abort(404, 'Fail dokumen tidak dijumpai pada storan sistem.');
+    }
+
+    /**
+     * Resolve file path across SUKSel 3.0 server storage disks and candidate folders.
+     */
+    public static function resolveLocalFilePath(string $path): ?string
+    {
+        $path = ltrim(trim($path), '/');
+        if ($path === '') {
+            return null;
+        }
+
+        $cleanPath = ltrim(str_replace('public/', '', $path), '/');
+        $strippedUploads = preg_replace('#^uploads/#', '', $cleanPath);
+
+        $candidates = [
+            storage_path('app/public/' . $cleanPath),
+            storage_path('app/public/uploads/' . $cleanPath),
+            storage_path('app/public/' . $strippedUploads),
+            storage_path('app/' . $cleanPath),
+            storage_path('app/uploads/' . $cleanPath),
+            storage_path('app/' . $strippedUploads),
+            storage_path('app/private/' . $cleanPath),
+            storage_path('app/private/uploads/' . $cleanPath),
+            storage_path('app/private/' . $strippedUploads),
+            public_path('storage/' . $cleanPath),
+            public_path('storage/uploads/' . $cleanPath),
+            public_path('storage/' . $strippedUploads),
+            public_path($cleanPath),
+        ];
+
+        foreach ($candidates as $cand) {
+            $cand = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $cand);
+            if (is_file($cand)) {
+                return $cand;
+            }
+        }
+
+        $stosCand = self::absolutePathOnStosDisk($cleanPath)
+            ?: self::absolutePathOnStosDisk('uploads/' . $cleanPath)
+            ?: self::absolutePathOnStosDisk($strippedUploads);
+
+        if ($stosCand && is_file($stosCand)) {
+            return $stosCand;
+        }
+
+        return null;
     }
 
     protected static function absolutePathOnStosDisk(string $path): ?string
