@@ -592,6 +592,12 @@ document.addEventListener('DOMContentLoaded', function () {
         btnHantar.addEventListener('click', function (e) {
             e.preventDefault();
 
+            const unassessedCount = {{ collect($rumusanLaporanData ?? [])->filter(fn ($r) => in_array('belum_dinilai', [$r['step1_status'] ?? '', $r['step2_status'] ?? '', $r['step3_status'] ?? ''], true))->count() }};
+            if (unassessedCount > 0) {
+                alert('Terdapat pembekal yang belum dinilai sepenuhnya merentasi Langkah 1, 2, atau 3. Sila lengkapkan semua penilaian sebelum menghantar laporan akhir.');
+                return;
+            }
+
             if (!confirm('Adakah anda pasti untuk menghantar Laporan Penilaian Kewangan ini? Selepas penghantaran, status tender dan keputusan pembekal akan dikemaskini.')) {
                 return;
             }
