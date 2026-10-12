@@ -84,12 +84,21 @@ class VendorDokumenResponseService
                 'specification' => $response?->response_type === 'specification'
                     ? $this->normalizeSpecificationPayload($response->payload)
                     : ['item_prices' => [], 'details' => []],
-                'files' => $itemFiles->map(fn (TenderVendorDokumenFile $file) => [
-                    'uuid' => $file->uuid,
-                    'name' => $file->original_name,
-                    'url' => $file->url(),
-                    'size' => $file->size,
-                ])->values()->all(),
+                'files' => $itemFiles->map(function (TenderVendorDokumenFile $file) {
+                    $ext = strtolower(pathinfo($file->original_name ?? '', PATHINFO_EXTENSION));
+                    $mime = $file->mime_type ?? '';
+                    $isPdf = ($ext === 'pdf' || str_contains(strtolower($mime), 'pdf'));
+
+                    return [
+                        'uuid' => $file->uuid,
+                        'name' => $file->original_name,
+                        'url' => $file->url(),
+                        'size' => $file->size,
+                        'extension' => $ext,
+                        'mime_type' => $mime,
+                        'is_pdf' => $isPdf,
+                    ];
+                })->values()->all(),
                 'status' => $this->resolveItemStatus($response, $itemFiles->count()),
             ];
         }
