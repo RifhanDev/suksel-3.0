@@ -18,10 +18,13 @@ class StosStoredFile
         $name = (string) ($file['original_name'] ?? $file['name'] ?? 'Dokumen');
         $path = ltrim((string) ($file['path'] ?? ''), '/');
         $mime = (string) ($file['mime_type'] ?? 'application/octet-stream');
+        $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
+        $isPdf = ($ext === 'pdf' || str_contains(strtolower($mime), 'pdf'));
+        $disposition = $isPdf ? 'inline' : 'attachment';
 
         if ($path !== '' && Storage::disk('public')->exists($path)) {
             return Storage::disk('public')->response($path, $name, [
-                'Content-Disposition' => 'inline; filename="' . addslashes($name) . '"',
+                'Content-Disposition' => $disposition . '; filename="' . addslashes($name) . '"',
             ]);
         }
 
@@ -29,7 +32,7 @@ class StosStoredFile
         if ($absolute) {
             return response()->file($absolute, [
                 'Content-Type' => is_file($absolute) ? (mime_content_type($absolute) ?: $mime) : $mime,
-                'Content-Disposition' => 'inline; filename="' . addslashes($name) . '"',
+                'Content-Disposition' => $disposition . '; filename="' . addslashes($name) . '"',
             ]);
         }
 

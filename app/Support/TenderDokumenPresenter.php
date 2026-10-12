@@ -249,8 +249,16 @@ class TenderDokumenPresenter
             'kewangan_kerja' => [],
         ];
 
-        if (empty($this->tender->uuid)) {
-            return;
+        // If local items exist in SUKSel 3.0 database, do not depend on legacy STOS API
+        if ($this->isKerjaCategory()) {
+            if (KewanganKerjaItem::query()->whereHas('header', fn ($q) => $q->where('tender_id', $this->tender->id))->exists()) {
+                return;
+            }
+        } else {
+            if (TechnicalChecklistItem::query()->whereHas('header', fn ($q) => $q->where('tender_id', $this->tender->id))->exists()
+                || FinancialChecklistItem::query()->whereHas('header', fn ($q) => $q->where('tender_id', $this->tender->id))->exists()) {
+                return;
+            }
         }
 
         $stos = app(StosBackendClient::class);
