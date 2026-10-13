@@ -197,11 +197,25 @@ class FinancialChecklistController extends Controller
     {
         $this->ensureAccess();
 
+        $uploadedFile = $request->file('file');
+
         $response = $this->api()->attach(
             'file',
-            $request->file('file')->get(),
-            $request->file('file')->getClientOriginalName()
+            $uploadedFile->get(),
+            $uploadedFile->getClientOriginalName()
         )->post($this->url('financial-checklists/' . $tenderUuid . '/files'), $request->except(['_token', 'file']));
+
+        if ($response->successful()) {
+            $data = $response->json('data');
+            if (! empty($data['path']) && $uploadedFile) {
+                try {
+                    $cleanPath = ltrim(str_replace('public/', '', (string) $data['path']), '/');
+                    \Illuminate\Support\Facades\Storage::disk('public')->put($cleanPath, file_get_contents($uploadedFile->getRealPath()));
+                } catch (\Throwable $e) {
+                    Log::warning('FinancialChecklistController@uploadFile: Failed to mirror file to SUKSel 3.0 storage', ['error' => $e->getMessage()]);
+                }
+            }
+        }
 
         return response()->json($response->json(), $response->status());
     }

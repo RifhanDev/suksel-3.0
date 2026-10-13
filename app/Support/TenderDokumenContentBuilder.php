@@ -442,37 +442,43 @@ class TenderDokumenContentBuilder
         };
 
         return collect($files)->map(function ($file) use ($section) {
-            $file = is_object($file) ? (array) $file : $file;
+            $data = $file instanceof \Illuminate\Database\Eloquent\Model
+                ? $file->toArray()
+                : (is_object($file) ? (array) $file : (array) $file);
 
-            return $this->mapChecklistFile($file, $section);
+            return $this->mapChecklistFile($data, $section);
         })->values()->all();
     }
 
     /**
-     * @param  array<string, mixed>  $file
+     * @param  array<string, mixed>|object  $file
      * @return array{uuid: ?string, name: string, url: string}
      */
-    protected function mapChecklistFile(array $file, string $section): array
+    protected function mapChecklistFile(array|object $file, string $section): array
     {
-        $uuid = $file['uuid'] ?? null;
-        $name = $file['original_name'] ?? $file['name'] ?? 'Dokumen';
+        $uuid = is_object($file) ? ($file->uuid ?? null) : ($file['uuid'] ?? null);
+        $name = is_object($file)
+            ? ($file->original_name ?? $file->name ?? 'Dokumen')
+            : ($file['original_name'] ?? $file['name'] ?? 'Dokumen');
+        $path = is_object($file) ? ($file->path ?? null) : ($file['path'] ?? null);
+        $url  = is_object($file) ? ($file->url ?? null) : ($file['url'] ?? null);
 
         if (! empty($uuid) && in_array($section, ['technical', 'financial', 'kewangan_kerja'], true)) {
             return [
-                'uuid' => $uuid,
-                'name' => $name,
+                'uuid' => (string) $uuid,
+                'name' => (string) $name,
                 'url' => route('tenderChecklist.download', [
                     'tender' => $this->tender->id,
                     'section' => $section,
-                    'fileUuid' => $uuid,
+                    'fileUuid' => (string) $uuid,
                 ]),
             ];
         }
 
         return [
-            'uuid' => $uuid,
-            'name' => $name,
-            'url' => $file['url'] ?? $this->resolveFileUrl($file['path'] ?? '#'),
+            'uuid' => $uuid ? (string) $uuid : null,
+            'name' => (string) $name,
+            'url' => $url ?? $this->resolveFileUrl($path ?? '#'),
         ];
     }
 
