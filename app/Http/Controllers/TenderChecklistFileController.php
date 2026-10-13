@@ -177,6 +177,23 @@ class TenderChecklistFileController extends Controller
                     'Content-Disposition' => 'inline; filename="' . addslashes($name) . '"',
                 ]);
             }
+
+            $resolvedPath = StosStoredFile::resolveLocalFilePath($path);
+            if ($resolvedPath && is_file($resolvedPath)) {
+                try {
+                    $cleanPath = ltrim(str_replace('public/', '', $path), '/');
+                    if (! Storage::disk('public')->exists($cleanPath)) {
+                        Storage::disk('public')->put($cleanPath, file_get_contents($resolvedPath));
+                    }
+                } catch (\Throwable) {
+                }
+
+                $resolvedMime = (function_exists('mime_content_type') ? @mime_content_type($resolvedPath) : null) ?: ($file->mime_type ?? 'application/octet-stream');
+                return response()->file($resolvedPath, [
+                    'Content-Type' => $resolvedMime,
+                    'Content-Disposition' => 'inline; filename="' . addslashes($name) . '"',
+                ]);
+            }
         }
 
         return null;

@@ -91,11 +91,25 @@ class TechnicalChecklistController extends Controller
     {
         $this->ensureSpecificationAccess();
 
+        $uploadedFile = $request->file('file');
+
         $response = $this->api()->attach(
             'file',
-            $request->file('file')->get(),
-            $request->file('file')->getClientOriginalName()
+            $uploadedFile->get(),
+            $uploadedFile->getClientOriginalName()
         )->post($this->url('technical-checklists/' . $tenderUuid . '/files'), $request->except(['_token', 'file']));
+
+        if ($response->successful()) {
+            $data = $response->json('data');
+            if (! empty($data['path']) && $uploadedFile) {
+                try {
+                    $cleanPath = ltrim(str_replace('public/', '', (string) $data['path']), '/');
+                    \Illuminate\Support\Facades\Storage::disk('public')->put($cleanPath, file_get_contents($uploadedFile->getRealPath()));
+                } catch (\Throwable $e) {
+                    \Illuminate\Support\Facades\Log::warning('TechnicalChecklistController@uploadFile: Failed to mirror file to SUKSel 3.0 storage', ['error' => $e->getMessage()]);
+                }
+            }
+        }
 
         return response()->json($response->json(), $response->status());
     }
