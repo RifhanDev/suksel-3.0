@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Models\FinancialChecklistHeader;
+use App\Models\FinancialChecklistItem;
 use App\Models\TenderKewanganEvaluation;
 use App\Models\TenderKewanganProgress;
 use App\Support\TenderProcessStatus;
@@ -10,6 +12,7 @@ use App\TenderVendor;
 use App\User;
 use App\Vendor;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -327,5 +330,77 @@ class PenilaianKewanganProgressionTest extends TestCase
         // 7. Financially qualified vendor must remain active (cancel_fg = 0)
         $this->assertEquals(0, (int) $tvPass->cancel_fg);
         $this->assertNull($tvPass->eliminated_process_id);
+    }
+
+    public function test_step3_evaluation_succeeds_when_steps_1_and_2_are_confirmed(): void
+    {
+        $tender = $this->createTender(TenderProcessStatus::PENILAIAN_TEKNIKAL);
+        $v = $this->createVendor('V1', 'R1');
+
+        TenderVendor::query()->create([
+            'tender_id'   => $tender->id,
+            'vendor_id'   => $v->id,
+            'participate' => 1,
+            'cancel_fg'   => 0,
+        ]);
+
+        $header = FinancialChecklistHeader::query()->create([
+            'tender_id' => $tender->id,
+            'passing_percentage' => 50,
+            'max_score' => 100,
+        ]);
+
+        $step1Item = FinancialChecklistItem::query()->create([
+            'uuid' => (string) Str::uuid(),
+            'financial_checklist_header_id' => $header->id,
+            'title' => 'Dokumen Sokongan Kewangan',
+            'action_type' => 'document',
+        ]);
+
+        $step3Item = FinancialChecklistItem::query()->create([
+            'uuid' => (string) Str::uuid(),
+            'financial_checklist_header_id' => $header->id,
+            'title' => 'Spesifikasi Kewangan',
+            'action_type' => 'specification',
+            'score' => 100,
+        ]);
+
+        // Mark steps 1 & 2 as confirmed in progress
+        TenderKewanganProgress::query()->create([
+            'tender_id' => $tender->id,
+            'current_step' => 3,
+            'step1_confirmed_at' => now(),
+            'step2_confirmed_at' => now(),
+        ]);
+
+        // Evaluate Step 1
+        TenderKewanganEvaluation::query()->create([
+            'tender_id' => $tender->id,
+            'vendor_id' => $v->id,
+            'checklist_item_uuid' => $step1Item->uuid,
+            'status_pematuhan' => 1,
+        ]);
+
+        $this->actingAs($this->user);
+
+        $request = Request::create('/penilaian-kewangan/simpan-pematuhan', 'POST', [
+            'tender' => (string) $tender->id,
+            'vendor_id' => $v->id,
+            'checklist_item_uuid' => $step3Item->uuid,
+            'status_pematuhan' => 1,
+            'skor' => 85,
+            'step' => 3,
+        ]);
+
+        $controller = app(\App\Http\Controllers\PenilaianKewanganController::class);
+        $response = $controller->simpanPematuhan($request);
+
+        $this->assertEquals(200, $response->getStatusCode(), (string) $response->getContent());
+        $this->assertDatabaseHas('tender_kewangan_evaluations', [
+            'tender_id' => $tender->id,
+            'vendor_id' => $v->id,
+            'checklist_item_uuid' => $step3Item->uuid,
+            'skor' => 85,
+        ]);
     }
 }
