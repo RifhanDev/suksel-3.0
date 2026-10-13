@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\AdvancesTenderProcessStatus;
 use App\Http\Controllers\Concerns\ResolvesTenderForProcess;
+use App\Models\Ref\RefTypeOfContract;
+use App\Models\TenderVendorDokumenResponse;
 use App\Services\StosBackendClient;
 use App\Support\TenderProcessStatus;
 use App\Tender;
@@ -24,21 +26,25 @@ class PenyediaanSuratSstController extends Controller
 
     public function __construct(
         private StosBackendClient $stos,
-    ) {}
+    ) {
+        $this->menuMiddleware('SST:list');
+    }
 
     public function index()
     {
+
         // Tenders that have been sent on stay listed so their status is still visible.
         $pending = TenderProcessStatus::penyediaanSuratSstListStatus();
-        $sent = TenderProcessStatus::PENYEDIAAN_SURAT_SST;
+        $sent = TenderProcessStatus::sstSentStatuses();
 
         $tenders = Tender::query()
-            ->whereIn('status_process_id', [$pending, $sent])
+            ->whereIn('status_process_id', array_merge([$pending], $sent))
             ->orderByDesc('id')
             ->get()
             ->map(function (Tender $tender) use ($sent) {
                 $row = $this->mapTenderAdvertRow($tender, 'penyediaanSST');
-                $row['dihantar'] = (int) $tender->status_process_id === $sent;
+                $row['dihantar'] = in_array((int) $tender->status_process_id, $sent, true);
+                $row['selesai'] = (int) $tender->status_process_id === TenderProcessStatus::SELESAI;
 
                 return $row;
             })
@@ -57,11 +63,26 @@ class PenyediaanSuratSstController extends Controller
         return view('newModule.penyediaanSST.penyediaanSST', [
             'tender' => $tender,
             'noTender' => $tender->no_tender ?: $tender->ref_number ?: '-',
+            'rujukanFail' => $tender->ref_number ?: '-',
             'jenisPerolehanLabel' => $tender->isSebutHargaKaedah() ? 'Sebut Harga' : 'Tender',
+            'kategoriPerolehanLabel' => $this->kategoriPerolehanLabel($tender),
+            'jenisKontrakLabel' => RefTypeOfContract::query()->find($tender->jenis_kontrak_id)?->name ?? '-',
+            'agensi' => $tender->tenderer?->name ?? '-',
             'tunjukPemilihanItem' => (int) $tender->kategori_perolehan_id !== self::KATEGORI_KERJA,
             'tempohSahLaku' => $this->tempohSahLaku($tender),
             'tempohKontrak' => $tender->tempoh_kontrak_bulan,
+            'tenderDihantar' => TenderProcessStatus::isSstSent((int) $tender->status_process_id),
         ]);
+    }
+
+    private function kategoriPerolehanLabel(Tender $tender): string
+    {
+        return match ((int) $tender->kategori_perolehan_id) {
+            1 => 'Bekalan',
+            2 => 'Perkhidmatan',
+            self::KATEGORI_KERJA => 'Kerja',
+            default => '-',
+        };
     }
 
     /** Winning vendors plus each one's SST status. */
@@ -74,7 +95,48 @@ class PenyediaanSuratSstController extends Controller
             return response()->json(['message' => 'Ralat memuatkan senarai pembekal.'], $result['status']);
         }
 
-        return response()->json(['rows' => $result['body']['data'] ?? []]);
+        $rows = collect($result['body']['data'] ?? [])->map(function ($row) use ($tender) {
+            $row['tempoh_kontrak_bulan'] = $this->resolveVendorTempohKontrakBulan($tender, (int) $row['vendor_id']);
+
+            return $row;
+        })->values();
+
+        return response()->json(['rows' => $rows]);
+    }
+
+    // Each bidder proposes their own completion period on the specification form —
+    // there is no single tender-wide duration for kerja, unlike bekalan/perkhidmatan.
+    private function resolveVendorTempohKontrakBulan(Tender $tender, int $vendorId): ?int
+    {
+        $response = TenderVendorDokumenResponse::query()
+            ->where('tender_id', $tender->id)
+            ->where('vendor_id', $vendorId)
+            ->whereNotNull('payload')
+            ->latest('updated_at')
+            ->get()
+            ->first(fn (TenderVendorDokumenResponse $r) => is_array($r->payload)
+                && ($r->payload['vendor_tempoh_siap_val'] ?? null) !== null);
+
+        if (! $response) {
+            return null;
+        }
+
+        $val = (float) $response->payload['vendor_tempoh_siap_val'];
+
+        if ($val <= 0) {
+            return null;
+        }
+
+        $unit = strtolower(trim((string) ($response->payload['vendor_tempoh_siap_unit'] ?? 'bulan')));
+
+        // Same 1 bulan = 4 minggu simplification already used in the kewangan kerja evaluation.
+        $bulan = match ($unit) {
+            'minggu' => $val / 4,
+            'hari' => $val / 28,
+            default => $val,
+        };
+
+        return (int) round($bulan);
     }
 
     /** Letters already issued for this tender. */
@@ -175,7 +237,7 @@ class PenyediaanSuratSstController extends Controller
 
         if (! $this->advanceTenderProcess(
             $tender,
-            TenderProcessStatus::PENYEDIAAN_SURAT_SST,
+            TenderProcessStatus::SELESAI,
             TenderProcessStatus::penyediaanSuratSstListStatus()
         )) {
             return response()->json(['message' => 'Tender belum sedia untuk penyediaan surat SST.'], 422);
@@ -245,6 +307,7 @@ class PenyediaanSuratSstController extends Controller
 
         $kategoriPerolehan = $this->kategoriPerolehanSlug($tender);
         $taxRate = (float) ($sst['tax_rate'] ?? 0);
+        $tempohKontrakBulan = $this->resolveVendorTempohKontrakBulan($tender, $vendorId) ?? $tender->tempoh_kontrak_bulan;
 
         return [
             'tender' => $tender,
@@ -260,7 +323,7 @@ class PenyediaanSuratSstController extends Controller
             'taxClause' => $this->taxClauseVariant($taxRate, $pembekal, $kategoriPerolehan),
             'taxRateFormatted' => rtrim(rtrim(number_format($taxRate, 2), '0'), '.'),
             'taxLabel' => $kategoriPerolehan === 'kerja' ? 'cukai jualan' : 'cukai perkhidmatan/cukai jualan',
-            'lampiranA' => $this->lampiranAValues($tender, $sst, $pembekal),
+            'lampiranA' => $this->lampiranAValues($tender, $sst, $pembekal, $tempohKontrakBulan),
             'clause4Documents' => $this->clause4Documents($sst, $kategoriPerolehan),
             'clause5Documents' => $this->clause5Documents($sst, $kategoriPerolehan),
             'protege' => $this->protegeVariant($sst),
@@ -273,7 +336,7 @@ class PenyediaanSuratSstController extends Controller
             // Repeated in the running header on every page.
             'documentNo' => $sst['document_no'] ?: '...................................',
             'rujukanKami' => $sst['file_reference_no'] ?: '',
-            'tempohKontrak' => $tender->tempoh_kontrak_bulan ? $tender->tempoh_kontrak_bulan . ' Bulan' : '',
+            'tempohKontrak' => $tempohKontrakBulan ? $tempohKontrakBulan . ' Bulan' : '',
         ];
     }
 
@@ -281,7 +344,7 @@ class PenyediaanSuratSstController extends Controller
      * Contract details printed in Lampiran A. Anything with no source yet comes back as an
      * empty string so the view prints a fill-in rule instead.
      */
-    private function lampiranAValues(Tender $tender, array $sst, array $pembekal): array
+    private function lampiranAValues(Tender $tender, array $sst, array $pembekal, ?int $tempohKontrakBulan): array
     {
         $offer = (float) ($sst['offer_price'] ?? 0);
         $taxRate = (float) ($sst['tax_rate'] ?? 0);
@@ -309,7 +372,7 @@ class PenyediaanSuratSstController extends Controller
             'cukai_jualan' => number_format($offer * $taxRate / 100, 2),
             'fi_eperolehan' => '',
             'harga_kontrak' => number_format($total, 2),
-            'tempoh_kontrak' => $tender->tempoh_kontrak_bulan ? $tender->tempoh_kontrak_bulan . ' Bulan' : '',
+            'tempoh_kontrak' => $tempohKontrakBulan ? $tempohKontrakBulan . ' Bulan' : '',
             'tarikh_mula' => $this->formatTarikhRingkas($sst['effective_date'] ?? null),
             'tarikh_tamat' => $this->formatTarikhRingkas($sst['end_date'] ?? null),
 
@@ -488,6 +551,19 @@ class PenyediaanSuratSstController extends Controller
         ]);
     }
 
+    public function muatTurunDokumen(Request $request, Tender $tender, string $storedName)
+    {
+        abort_unless(preg_match('/^[A-Za-z0-9._-]+$/', $storedName) === 1, 404, 'Fail tidak dijumpai.');
+
+        $absolutePath = storage_path("app/public/uploads/sst/{$tender->id}/{$storedName}");
+
+        abort_unless(is_file($absolutePath), 404, 'Fail tidak dijumpai.');
+
+        $namaFail = basename((string) $request->query('nama', $storedName));
+
+        return response()->download($absolutePath, $namaFail);
+    }
+
     private function validatePayload(Request $request): array
     {
         $validated = $request->validate([
@@ -506,6 +582,10 @@ class PenyediaanSuratSstController extends Controller
             'documents' => 'nullable|array',
             'documents.*.document_name' => 'nullable|string|max:255',
             'documents.*.original_name' => 'nullable|string|max:255',
+            'documents.*.stored_name' => 'nullable|string|max:255',
+            'documents.*.path' => 'nullable|string|max:255',
+            'documents.*.mime_type' => 'nullable|string|max:255',
+            'documents.*.size' => 'nullable|integer|min:0',
         ]);
 
         return array_merge($validated, ['acting_user_id' => Auth::id()]);

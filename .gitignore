@@ -15,9 +15,17 @@ yarn-error.log
 /.idea
 /.vscode
 vendor/autoload.php
-public/uploads/
+public/uploads/*
+!public/uploads/.gitkeep
 composer.lock
 storage
 
+# macOS Finder metadata — never useful to track, causes recurring merge conflicts
+.DS_Store
+**/.DS_Store
+
 # Claude Code local settings
 .claude/settings.local.json
+
+# Local-only check for the vendor submission flow. Not used by the live site.
+/tests/Feature/VendorSubmissionFlowTest.php

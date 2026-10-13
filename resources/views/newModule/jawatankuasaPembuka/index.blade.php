@@ -7,63 +7,6 @@
         font-weight: 700;
         letter-spacing: -0.5px;
     }
-
-    .stats-card {
-        background: #ffffff;
-        border-radius: 12px;
-        border: 1px solid #e2e8f0;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
-        overflow: hidden;
-        position: relative;
-    }
-
-    .stats-card::before {
-        content: ''; position: absolute; top: -25px; right: -25px; width: 80px; height: 80px;
-        background: var(--sg-red); opacity: 0.03; border-radius: 20px; transform: rotate(45deg); pointer-events: none;
-    }
-
-    .stats-card-header {
-        padding: 20px 24px;
-        background: #fff;
-        border-bottom: 1px solid #f1f5f9;
-        display: flex; align-items: center; justify-content: space-between;
-    }
-
-    .stats-card-title {
-        margin: 0; font-size: 1.1rem; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 10px;
-    }
-
-    .table-modern thead th {
-        background-color: #f8fafc;
-        color: #64748b;
-        font-weight: 700;
-        text-transform: uppercase;
-        font-size: 0.7rem;
-        letter-spacing: 0.5px;
-        padding: 14px 20px;
-        border-bottom: 2px solid #e2e8f0;
-        white-space: nowrap;
-    }
-
-    .table-modern tbody td {
-        padding: 16px 20px;
-        vertical-align: middle;
-        color: #334155;
-        font-size: 0.9rem;
-        border-bottom: 1px solid #f1f5f9;
-    }
-
-    .table-modern tbody tr:hover {
-        background-color: #fff9f9;
-    }
-
-    .badge-date {
-        background: #f8fafc;
-        color: #475569;
-        border: 1px solid #e2e8f0;
-        font-weight: 600;
-        padding: 0.4em 0.8em;
-    }
 </style>
 @endsection
 
@@ -122,31 +65,38 @@
 		</div>
 	</div>
 
-	<div class="stats-card mb-4">
-		<div class="stats-card-header">
-			<h3 class="stats-card-title">
-				<div class="d-flex align-items-center justify-content-center bg-danger bg-opacity-10 text-danger rounded-2" style="width: 36px; height: 36px;">
-					<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+	<div class="content-card p-0">
+		<div class="content-card-header">
+			<div class="d-flex align-items-center gap-3">
+				<div class="content-card-icon" style="width: 38px; height: 38px;">
+					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+						<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+						<polyline points="14 2 14 8 20 8"></polyline>
+						<line x1="16" y1="13" x2="8" y2="13"></line>
+						<line x1="16" y1="17" x2="8" y2="17"></line>
+					</svg>
 				</div>
-				Senarai Tender / Sebut Harga
-			</h3>
+				<h3 class="content-card-title" style="font-size: 1rem;">Senarai Tender / Sebut Harga</h3>
+			</div>
 		</div>
 
-		<div class="card-body p-2">
+		<div class="content-card-body p-2">
 			<div class="table-responsive">
-				<table data-path="" class=" table table-modern w-100 mb-0">
-					<thead>
+				<table class="table table-hover align-middle mb-0 w-100">
+					<thead class="bg-light">
 						<tr>
-							<th class="text-center">Maklumat Tender/Sebut Harga</th>
-							<th class="text-center" width="150px">Tarikh Jual</th>
-							<th class="text-center" width="150px">Tarikh Tutup</th>
-							<th class="text-center" width="150px">Harga (RM)</th>
-							<th class="text-center" width="150px">Tindakan</th>
+							<th class="text-uppercase text-muted small fw-bold py-3 ps-4" width="60px">No.</th>
+							<th class="text-uppercase text-muted small fw-bold py-3">Maklumat Tender/Sebut Harga</th>
+							<th class="text-uppercase text-center text-muted small fw-bold py-3" width="150px">Tarikh Jual</th>
+							<th class="text-uppercase text-center text-muted small fw-bold py-3" width="150px">Tarikh Tutup</th>
+							<th class="text-uppercase text-center text-muted small fw-bold py-3" width="150px">Harga (RM)</th>
+							<th class="text-uppercase text-center text-muted small fw-bold py-3 pe-4" width="150px">Tindakan</th>
 						</tr>
 					</thead>
 					<tbody>
                         @forelse($tenders ?? [] as $item)
                         <tr>
+                            <td class="ps-4">{{ $loop->iteration }}</td>
                             <td>
                                 <strong>{{ $item['no_tender'] }}</strong><br>
                                 <small>{{ $item['name'] }}</small>
@@ -154,15 +104,19 @@
                             <td class="text-center">{{ $item['tarikh_jual'] }}</td>
                             <td class="text-center">{{ $item['tarikh_tutup'] }}</td>
                             <td class="text-center">{{ $item['harga'] }}</td>
-                            <td class="text-center">
-                                <a href="{{ route('jawatankuasaPembuka', ['tender' => $item['uuid']]) }}" class="btn btn-sm btn-info text-white" title="Kemaskini">
+                            <td class="text-center pe-4">
+                                <a href="{{ route('jawatankuasaPembuka', ['tender' => $item['uuid']]) }}" class="btn btn-sm btn-info text-white d-inline-flex align-items-center gap-1" title="Kemaskini">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                    </svg>
                                     Kemaskini
                                 </a>
                             </td>
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="5" class="text-center text-muted py-4">Tiada tender pada peringkat ini.</td>
+                            <td colspan="6" class="text-center text-muted py-4">Tiada tender pada peringkat ini.</td>
                         </tr>
                         @endforelse
                     </tbody>

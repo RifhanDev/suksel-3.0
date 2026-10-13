@@ -88,10 +88,12 @@
     @php
         $content = $item['admin_content'] ?? [];
 
-        // ?summary=dokumentasi swaps in Penilaian Teknikal's own partial without touching
-        // the shared specification_table.blade.php (also used by the vendor form + Jawatankuasa Pembuka).
+        // ?summary=dokumentasi swaps in the shared, module-neutral clean partial (no Pematuhan
+        // column) without touching specification_table.blade.php (still used by the vendor's
+        // own live form + admin template preview). Used by both Penilaian Teknikal and
+        // Jawatankuasa Pembuka.
         $summaryPartials = [
-            'dokumentasi' => 'newModule.penilaian_teknikal.partials.specification_dokumentasi',
+            'dokumentasi' => 'tenders.dokumen.partials.specification_dokumentasi',
         ];
         $specificationPartial = $summaryPartials[$summary ?? ''] ?? 'tenders.dokumen.partials.specification_table';
     @endphp

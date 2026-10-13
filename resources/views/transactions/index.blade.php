@@ -100,29 +100,46 @@
 			}, 240000);
 		});
 
+		// Sebelum ini setiap kad statistik menembak permintaannya sendiri - lapan
+		// permintaan pada muatan halaman, setiap satu COUNT ke atas jadual transaksi
+		// yang sama. Satu permintaan kini memulangkan kesemuanya sekali gus.
 		function updateFpxCount() {
-			updatePendingTrans();
-			updateSuccessTrans();
-			updatePendingAuthorizationTrans();
-			updateFailedTrans();
-			updateDeclinedTrans();
-			updateSubscriptionTrans();
-			updatePurchaseTrans();
-			updateTotalTrans();
+			$.ajax({
+				type: "POST",
+				url: "{{ route('updateFpxCount') }}",
+				data: {
+					type: "custom_all"
+				},
+				success: function(response) {
+					var cards = {
+						success_trans_count: response.success_trans_count,
+						pending_trans_count: response.pending_trans_count,
+						pending_authorization_trans_count: response.pending_authorization_trans_count,
+						failed_trans_count: response.failed_trans_count,
+						declined_trans_count: response.declined_trans_count,
+						subscribe_trans_count: response.subscribe_trans_count,
+						purchase_trans_count: response.purchase_trans_count,
+						total_trans_count: response.total_trans_count
+					};
+
+					Object.keys(cards).forEach(function(id) {
+						var value = cards[id];
+						if (value === undefined || value === null) return;
+						$("#" + id).html(Number(value).toLocaleString("en-US"));
+					});
+				}
+			});
 		}
 
+		// Penyegaran berkala menggunakan panggilan tunggal yang sama; tiada sebab
+		// untuk memecahkannya kepada subset apabila satu permintaan memulangkan
+		// semua kiraan.
 		function updateFpxCount1() {
-			updatePendingTrans();
-			updateSuccessTrans();
-			updateFailedTrans();
+			updateFpxCount();
 		}
 
 		function updateFpxCount2() {
-			updatePendingAuthorizationTrans();
-			updateDeclinedTrans();
-			updateSubscriptionTrans();
-			updatePurchaseTrans();
-			updateTotalTrans();
+			updateFpxCount();
 		}
 
 		function updateTotalTrans() {
@@ -233,7 +250,8 @@
 		function updateFpxRequery() {
 			$.ajax({
 				type: "GET",
-				async: false,
+				// async: false menyekat utas UI pelayar sehingga permintaan ini
+				// selesai, membekukan halaman pada setiap penyegaran.
 				url: "{{ route('fpx_queue') }}",
 				success: function(response) {
 					// console.log(response);

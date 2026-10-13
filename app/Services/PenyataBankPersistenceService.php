@@ -69,24 +69,79 @@ class PenyataBankPersistenceService
     }
 
     /**
-     * @param  array<string, mixed>  $vendorPayload
-     * @return array<string, mixed>
+     * @param  array<string, mixed>|null  $tenderPayload
+     * @param  array<string, mixed>|null  $vendorPayload
+     * @return array<string, mixed>|null
      */
-    public function mergeVendorPayload(?array $tenderPayload, ?array $vendorPayload): ?array
+    public function mergeVendorPayload(?array $tenderPayload, ?array $vendorPayload, bool $isVendorScoped = false): ?array
     {
         if (! $tenderPayload && ! $vendorPayload) {
             return null;
         }
 
-        if (! $tenderPayload) {
-            return $vendorPayload;
+        $merged = $tenderPayload ?? [];
+
+        // When viewing in vendor context or for a specific vendor_id,
+        // vendor-specific fields (accounts, bulans, amounts, files) MUST come from $vendorPayload
+        // and NEVER leak shared tender-level files or amounts.
+        if ($isVendorScoped) {
+            $tenderAccounts = $tenderPayload['accounts'] ?? [];
+            $vendorAccounts = $vendorPayload['accounts'] ?? [];
+
+            if ($vendorAccounts !== []) {
+                $merged['accounts'] = array_map(function (array $vendorAccount, int $index) use ($tenderAccounts) {
+                    $tenderAccount = $tenderAccounts[$index] ?? [];
+
+                    return array_merge($tenderAccount, $vendorAccount, [
+                        'bulans' => $this->mergeBulans(
+                            $tenderAccount['bulans'] ?? [],
+                            $vendorAccount['bulans'] ?? []
+                        ),
+                        'jumlah_keseluruhan' => (float) ($vendorAccount['jumlah_keseluruhan'] ?? 0),
+                        'purata' => (float) ($vendorAccount['purata'] ?? 0),
+                        'files' => array_values($vendorAccount['files'] ?? []),
+                    ]);
+                }, $vendorAccounts, array_keys($vendorAccounts));
+            } else {
+                $merged['accounts'] = array_map(function (array $tenderAccount) {
+                    $clean = $tenderAccount;
+                    $clean['jumlah_keseluruhan'] = 0;
+                    $clean['purata'] = 0;
+                    $clean['files'] = [];
+                    if (isset($clean['bulans']) && is_array($clean['bulans'])) {
+                        $clean['bulans'] = array_map(function (array $b) {
+                            $b['jumlah'] = 0;
+                            return $b;
+                        }, $clean['bulans']);
+                    }
+
+                    return $clean;
+                }, $tenderAccounts !== [] ? $tenderAccounts : [[
+                    'dari_bulan' => $tenderPayload['dari_bulan'] ?? null,
+                    'dari_tahun' => $tenderPayload['dari_tahun'] ?? null,
+                    'hingga_bulan' => $tenderPayload['hingga_bulan'] ?? null,
+                    'hingga_tahun' => $tenderPayload['hingga_tahun'] ?? null,
+                    'bulans' => [],
+                    'jumlah_keseluruhan' => 0,
+                    'purata' => 0,
+                    'files' => [],
+                ]]);
+            }
+
+            $merged['jumlah_keseluruhan'] = (float) ($vendorPayload['jumlah_keseluruhan'] ?? 0);
+            $merged['purata'] = (float) ($vendorPayload['purata'] ?? 0);
+            $merged['jumlah_keseluruhan_grand'] = (float) ($vendorPayload['jumlah_keseluruhan_grand'] ?? $merged['jumlah_keseluruhan']);
+            if (isset($vendorPayload['status'])) {
+                $merged['status'] = $vendorPayload['status'];
+            }
+
+            return $merged;
         }
 
         if (! $vendorPayload) {
             return $tenderPayload;
         }
 
-        $merged = $tenderPayload;
         $tenderAccounts = $tenderPayload['accounts'] ?? [];
         $vendorAccounts = $vendorPayload['accounts'] ?? [];
 
@@ -101,14 +156,14 @@ class PenyataBankPersistenceService
                     ),
                     'jumlah_keseluruhan' => $vendorAccount['jumlah_keseluruhan'] ?? $tenderAccount['jumlah_keseluruhan'] ?? 0,
                     'purata' => $vendorAccount['purata'] ?? $tenderAccount['purata'] ?? 0,
-                    'files' => $vendorAccount['files'] ?? $tenderAccount['files'] ?? [],
+                    'files' => $vendorAccount['files'] ?? [],
                 ]);
             }, $tenderAccounts, array_keys($tenderAccounts));
         } elseif ($vendorAccounts !== []) {
             $merged['accounts'] = $vendorAccounts;
         }
 
-        foreach (['jumlah_keseluruhan', 'purata', 'jumlah_keseluruhan_grand'] as $key) {
+        foreach (['dari_bulan', 'dari_tahun', 'hingga_bulan', 'hingga_tahun', 'jumlah_keseluruhan', 'purata', 'jumlah_keseluruhan_grand'] as $key) {
             if (array_key_exists($key, $vendorPayload)) {
                 $merged[$key] = $vendorPayload[$key];
             }
@@ -131,6 +186,20 @@ class PenyataBankPersistenceService
     {
         $accounts = $record->accounts;
 
+        $dbFiles = $record->files->map(function ($f) {
+            $cleanPath = ltrim(str_replace('public/', '', $f->path ?? ''), '/');
+            return [
+                'uuid'          => $f->uuid,
+                'name'          => $f->original_name,
+                'original_name' => $f->original_name,
+                'path'          => $cleanPath,
+                'file_path'     => $cleanPath,
+                'url'           => ! empty($f->uuid) ? route('tenderDokumen.download', $f->uuid) : asset('storage/' . $cleanPath),
+                'size'          => $f->size,
+                'uploaded_by'   => $f->uploaded_by,
+            ];
+        })->values()->all();
+
         if (! is_array($accounts) || $accounts === []) {
             $accounts = [[
                 'dari_bulan' => $record->dari_bulan,
@@ -144,12 +213,21 @@ class PenyataBankPersistenceService
                 ])->values()->all(),
                 'jumlah_keseluruhan' => (float) $record->jumlah_keseluruhan,
                 'purata' => (float) $record->purata,
-                'files' => $record->files->map(fn ($f) => [
-                    'uuid' => $f->uuid,
-                    'original_name' => $f->original_name,
-                    'size' => $f->size,
-                ])->values()->all(),
+                'files' => $dbFiles,
             ]];
+        } else {
+            if (! empty($dbFiles)) {
+                $hasFiles = false;
+                foreach ($accounts as $acc) {
+                    if (! empty($acc['files']) && is_array($acc['files'])) {
+                        $hasFiles = true;
+                        break;
+                    }
+                }
+                if (! $hasFiles && isset($accounts[0])) {
+                    $accounts[0]['files'] = $dbFiles;
+                }
+            }
         }
 
         $first = $accounts[0] ?? [];

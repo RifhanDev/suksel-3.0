@@ -1152,6 +1152,11 @@
     const SEMAK_PAYLOAD = @json($semakPayload ?? []);
     const PENYATA_BANK_UUIDS = @json(collect($penyataBankItems ?? [])->pluck('uuid')->filter()->values()->all());
     const PENYATA_BANK_CONFIG = @json($penyataBankConfig ?? []);
+    const VENDOR_FORM_PAYLOADS = @json($vendorFormPayloads ?? []);
+    const DOKUMEN_BY_VENDOR = @json($dokumenByVendor ?? []);
+    const PENYATA_DOKUMEN_BY_VENDOR = @json($penyataDokumenByVendor ?? []);
+    const STEP1_PASSED_VENDOR_IDS = @json(array_values($step1PassedVendorIds ?? []));
+    const STEP2_PASSED_VENDOR_IDS = @json(array_values($step2PassedVendorIds ?? []));
 
     let activeStep2Uuid = PENYATA_BANK_UUIDS[0] || null;
     let activeStep2VendorId = null;
@@ -1184,8 +1189,8 @@
         const itemUuid = item?.uuid || activeItemUuid;
         const isStep2Item = (PENYATA_BANK_UUIDS.includes(itemUuid));
         const isReadOnly = isStep2Item
-            ? (dbConfirmed.step2 || dbCurrentStep > 2)
-            : (dbConfirmed.step1 || dbCurrentStep > 1);
+            ? (dbConfirmed.step2)
+            : (dbConfirmed.step1);
 
         if (isReadOnly) {
             $('#btnStep1SimpanDokKewangan').addClass('d-none');
@@ -1205,13 +1210,18 @@
             if (Array.isArray(vendor.files) && vendor.files.length) {
                 docHtml = vendor.files.map(function (file) {
                     const ext = (file.name || '').split('.').pop().toLowerCase();
-                    if (['pdf', 'png', 'jpg', 'jpeg', 'svg', 'webp'].includes(ext)) {
-                        return '<a href="' + escapeHtml(file.url) + '" data-name="' + escapeHtml(file.name) + '" class="d-block small text-primary btn-preview-file text-decoration-none mb-1">' +
+                    const isPdf = file.is_pdf === true || ext === 'pdf';
+                    if (isPdf) {
+                        return '<a href="' + escapeHtml(file.url) + '" target="_blank" rel="noopener noreferrer" class="d-block small text-primary text-decoration-none mb-1 fw-medium">' +
                             '<i class="bi bi-file-earmark-pdf-fill text-danger me-1"></i>' + escapeHtml(file.name) +
+                            ' <i class="bi bi-box-arrow-up-right small text-muted"></i></a>';
+                    } else if (['png', 'jpg', 'jpeg', 'svg', 'webp'].includes(ext)) {
+                        return '<a href="' + escapeHtml(file.url) + '" data-name="' + escapeHtml(file.name) + '" class="d-block small text-primary btn-preview-file text-decoration-none mb-1 fw-medium">' +
+                            '<i class="bi bi-file-earmark-image text-primary me-1"></i>' + escapeHtml(file.name) +
                             '</a>';
                     } else {
-                        return '<a href="' + escapeHtml(file.url) + '" download data-name="' + escapeHtml(file.name) + '" class="d-block small text-primary text-decoration-none mb-1">' +
-                            '<i class="bi bi-file-earmark-arrow-down me-1"></i>' + escapeHtml(file.name) +
+                        return '<a href="' + escapeHtml(file.url) + '" download="' + escapeHtml(file.name) + '" data-name="' + escapeHtml(file.name) + '" class="d-block small text-primary text-decoration-none mb-1 fw-medium">' +
+                            '<i class="bi bi-file-earmark-arrow-down text-secondary me-1"></i>' + escapeHtml(file.name) +
                             '</a>';
                     }
                 }).join('');
@@ -1315,12 +1325,58 @@
             if (cb3) cb3.disabled = (dbCurrentStep > 3);
         }
 
+        function areAllStep1VendorsEvaluated() {
+            const step1Uuids = Object.keys(SEMAK_PAYLOAD).filter(uuid => !PENYATA_BANK_UUIDS.includes(uuid));
+            if (!step1Uuids.length) return true;
+            for (const uuid of step1Uuids) {
+                const itemObj = SEMAK_PAYLOAD[uuid];
+                const rawVendors = itemObj?.vendors || [];
+                const unevaluated = rawVendors.filter(v => v.status_pematuhan === null || v.status_pematuhan === '' || v.status_pematuhan === undefined);
+                if (unevaluated.length > 0) return false;
+            }
+            return true;
+        }
+
+        function getStep1PassedVendorIdsClient() {
+            const step1Uuids = Object.keys(SEMAK_PAYLOAD).filter(uuid => !PENYATA_BANK_UUIDS.includes(uuid));
+            if (!step1Uuids.length) {
+                return (typeof STEP1_PASSED_VENDOR_IDS !== 'undefined' ? STEP1_PASSED_VENDOR_IDS : []);
+            }
+            const firstItem = SEMAK_PAYLOAD[step1Uuids[0]];
+            const allVendors = firstItem?.vendors || [];
+            const passedIds = [];
+
+            allVendors.forEach(v => {
+                const vid = parseInt(v.vendor_id);
+                let passedAll = true;
+                let hasFailed = false;
+                for (const uuid of step1Uuids) {
+                    const itemObj = SEMAK_PAYLOAD[uuid];
+                    const vRow = (itemObj?.vendors || []).find(x => parseInt(x.vendor_id) === vid);
+                    if (vRow && (vRow.status_pematuhan === 'tidak_mematuhi' || vRow.status_pematuhan === 0 || vRow.status_pematuhan === '0')) {
+                        hasFailed = true;
+                        passedAll = false;
+                        break;
+                    }
+                    if (!vRow || (vRow.status_pematuhan !== 'mematuhi' && vRow.status_pematuhan !== 1 && vRow.status_pematuhan !== '1')) {
+                        passedAll = false;
+                    }
+                }
+                if (hasFailed) return;
+
+                if (passedAll || dbConfirmed.step1) {
+                    passedIds.push(vid);
+                }
+            });
+            return passedIds;
+        }
+
         function areAllStep2VendorsEvaluated() {
             const uuidToUse = activeStep2Uuid || (PENYATA_BANK_UUIDS && PENYATA_BANK_UUIDS[0]) || '';
             const itemObj = SEMAK_PAYLOAD[uuidToUse] || Object.values(SEMAK_PAYLOAD).find(item => PENYATA_BANK_UUIDS.includes(item?.uuid));
             const rawVendors = itemObj?.vendors || [];
-            const failedStep1Ids = getFailedStep1VendorIds();
-            const eligibleVendors = rawVendors.filter(v => !failedStep1Ids.includes(parseInt(v.vendor_id)));
+            const passedStep1Ids = getStep1PassedVendorIdsClient();
+            const eligibleVendors = rawVendors.filter(v => passedStep1Ids.includes(parseInt(v.vendor_id)));
 
             if (!eligibleVendors.length) return true;
 
@@ -1329,6 +1385,20 @@
         }
 
         window.saveConfirmedStates = async function(stepNum, confirmedVal) {
+            if (stepNum === 1 && confirmedVal) {
+                if (!areAllStep1VendorsEvaluated()) {
+                    const cb = document.getElementById('confirmLayakStep1') || document.getElementById('confirmLayak');
+                    if (cb) cb.checked = false;
+                    Swal.fire({
+                        title: 'Penilaian Belum Selesai',
+                        text: 'Semua pembekal yang layak mesti dinilai sepenuhnya untuk semua dokumen pematuhan Langkah 1 sebelum pengesahan dibuat.',
+                        icon: 'warning',
+                        confirmButtonText: 'Faham',
+                        confirmButtonColor: '#1e293b'
+                    });
+                    return;
+                }
+            }
             if (stepNum === 2 && confirmedVal) {
                 if (!areAllStep2VendorsEvaluated()) {
                     const cb = document.getElementById('confirmLayakStep2');
@@ -1666,10 +1736,10 @@
 
             const itemObj = SEMAK_PAYLOAD[activeStep2Uuid];
             const rawVendors = itemObj?.vendors || [];
-            const failedVendorIds = getFailedStep1VendorIds();
+            const passedStep1Ids = getStep1PassedVendorIdsClient();
 
-            // Exclude vendors listed under "Tidak Melepasi" in Step 1
-            const eligibleVendors = rawVendors.filter(v => !failedVendorIds.includes(parseInt(v.vendor_id)));
+            // Include only vendors who passed Step 1
+            const eligibleVendors = rawVendors.filter(v => passedStep1Ids.includes(parseInt(v.vendor_id)));
 
             if (!eligibleVendors.length) {
                 $tbody.append('<tr><td colspan="4" class="text-center text-muted py-4"><i class="bi bi-info-circle me-1"></i>Tiada petender yang melepasi penilaian pematuhan dokumentasi.</td></tr>');
@@ -1743,17 +1813,17 @@
             const targetUuid = activeStep2Uuid || (PENYATA_BANK_UUIDS && PENYATA_BANK_UUIDS[0]) || '';
             const itemObj = SEMAK_PAYLOAD[targetUuid] || Object.values(SEMAK_PAYLOAD).find(item => PENYATA_BANK_UUIDS.includes(item?.uuid));
             const rawVendors = itemObj?.vendors || [];
-            const failedStep1Ids = getFailedStep1VendorIds();
-            const eligibleVendors = rawVendors.filter(v => !failedStep1Ids.includes(parseInt(v.vendor_id)));
+            const passedStep1Ids = getStep1PassedVendorIdsClient();
+            const eligibleVendors = rawVendors.filter(v => passedStep1Ids.includes(parseInt(v.vendor_id)));
 
             const melepasiList = [];
             const tidakMelepasiList = [];
 
             eligibleVendors.forEach(v => {
-                if (v.status_pematuhan === 'mematuhi' || v.status_pematuhan === 1) {
-                    melepasiList.push(v);
-                } else if (v.status_pematuhan === 'tidak_mematuhi' || v.status_pematuhan === 0) {
+                if (v.status_pematuhan === 'tidak_mematuhi' || v.status_pematuhan === 0 || v.status_pematuhan === '0') {
                     tidakMelepasiList.push(v);
+                } else if (v.status_pematuhan === 'mematuhi' || v.status_pematuhan === 1 || v.status_pematuhan === '1' || dbConfirmed.step2) {
+                    melepasiList.push(v);
                 }
             });
 
@@ -1874,6 +1944,82 @@
             $('#modalStep2NamaPembekal').text(nama || '-');
             $('#modalButiranCadanganKewanganTajukStep2').text($('#modalCadanganKewanganTajukStep2').text() || $('#modalDocTitle').text() || 'Penyata Bank Terkini (3 Bulan Terakhir) Syarikat');
 
+            // Render Section 1: Dokumen Sokongan Petender (STRICTLY this vendor only)
+            const $dokTbody = $('#modalStep2DokumenSemakSilangTableBody');
+            if ($dokTbody.length) {
+                $dokTbody.empty();
+
+                const vIdStr = String(activeStep2VendorId || '');
+                const vIdNum = parseInt(activeStep2VendorId, 10);
+                let vendorFiles = [];
+
+                if (typeof PENYATA_DOKUMEN_BY_VENDOR !== 'undefined') {
+                    const scoped = PENYATA_DOKUMEN_BY_VENDOR[vIdStr]
+                        || PENYATA_DOKUMEN_BY_VENDOR[vIdNum]
+                        || [];
+                    if (Array.isArray(scoped)) {
+                        vendorFiles = scoped.slice();
+                    }
+                }
+
+                if (vendorFiles.length > 0) {
+                    vendorFiles.forEach(f => {
+                        if (!f) return;
+                        const fileName = f.name || f.filename || f.original_name || f.title || 'Dokumen Sokongan';
+                        let fileUrl = f.url || '';
+
+                        if (!fileUrl || fileUrl === '#') {
+                            if (f.uuid) {
+                                fileUrl = '{{ url('/tenders/dokumen-files') }}/' + encodeURIComponent(f.uuid) + '/download';
+                            } else {
+                                const cleanFPath = String(f.path || f.file_path || f.filepath || '')
+                                    .replace(/\\/g, '/')
+                                    .replace(/^public\//, '')
+                                    .replace(/^\//, '');
+                                if (cleanFPath !== '') {
+                                    fileUrl = '{{ route('tenderDokumen.streamByPath') }}'
+                                        + '?path=' + encodeURIComponent(cleanFPath)
+                                        + '&name=' + encodeURIComponent(fileName);
+                                }
+                            }
+                        }
+
+                        if (!fileUrl || fileUrl === '#') {
+                            return;
+                        }
+
+                        const ext = (fileName.split('.').pop() || '').toLowerCase();
+                        const isPdf = (ext === 'pdf' || (f.mime_type && String(f.mime_type).toLowerCase().includes('pdf')));
+
+                        const actionBtn = isPdf
+                            ? '<a href="' + escapeHtml(fileUrl) + '" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-primary px-3 py-1 d-inline-flex align-items-center gap-1 font-monospace">' +
+                                '<i class="bi bi-eye me-1"></i><span>Papar Dokumen</span>' +
+                              '</a>'
+                            : '<a href="' + escapeHtml(fileUrl) + '" download="' + escapeHtml(fileName) + '" class="btn btn-sm btn-outline-primary px-3 py-1 d-inline-flex align-items-center gap-1 font-monospace">' +
+                                '<i class="bi bi-download me-1"></i><span>Muat Turun Dokumen</span>' +
+                              '</a>';
+
+                        $dokTbody.append(
+                            '<tr>' +
+                                '<td class="px-3 py-2.5">' +
+                                    '<div class="d-flex align-items-center gap-2">' +
+                                        '<i class="bi ' + (isPdf ? 'bi-file-earmark-pdf text-danger' : 'bi-file-earmark-text text-primary') + ' fs-6 me-1"></i>' +
+                                        '<span class="fw-medium text-dark">' + escapeHtml(fileName) + '</span>' +
+                                    '</div>' +
+                                '</td>' +
+                                '<td class="text-center px-3 py-2.5">' + actionBtn + '</td>' +
+                            '</tr>'
+                        );
+                    });
+
+                    if ($dokTbody.children().length === 0) {
+                        $dokTbody.append('<tr><td colspan="2" class="text-center text-muted py-3 fst-italic"><i class="bi bi-info-circle me-1"></i>Tiada Dokumen Dimuatnaik</td></tr>');
+                    }
+                } else {
+                    $dokTbody.append('<tr><td colspan="2" class="text-center text-muted py-3 fst-italic"><i class="bi bi-info-circle me-1"></i>Tiada Dokumen Dimuatnaik</td></tr>');
+                }
+            }
+
             // Render dynamic month rows matching PENYATA_BANK_CONFIG.bulans
             const $bulanTbody = $('#modalStep2BulanTableBody');
             $bulanTbody.empty();
@@ -1886,11 +2032,59 @@
                     { bulan: 8, tahun: 2025, nama: 'Bulan 8 (Ogos 2025)', jumlah: 200000 }
                 ];
 
+            const vPayloadData = (typeof VENDOR_FORM_PAYLOADS !== 'undefined' && VENDOR_FORM_PAYLOADS[activeStep2VendorId])
+                ? VENDOR_FORM_PAYLOADS[activeStep2VendorId]
+                : {};
+
+            const itemObj = SEMAK_PAYLOAD[activeStep2Uuid];
+            const vRow = itemObj?.vendors?.find(v => v.vendor_id == activeStep2VendorId);
+
             bulansArr.forEach((b, idx) => {
                 const rowId = 'step2-bulan-' + (b.bulan || (idx + 6));
-                const amtVal = (typeof b.jumlah === 'number')
-                    ? b.jumlah.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-                    : (b.jumlah || '0.00');
+                
+                let vendorAmtVal = null;
+                const mNum = parseInt(b.bulan);
+
+                // 1. Check multi-account array in vendor payload
+                if (vPayloadData.accounts && Array.isArray(vPayloadData.accounts) && vPayloadData.accounts.length > 0) {
+                    let totalMonthFromAccounts = 0;
+                    let foundAnyInAccounts = false;
+                    vPayloadData.accounts.forEach(acc => {
+                        if (acc.bulans && Array.isArray(acc.bulans)) {
+                            const mb = acc.bulans.find(m => parseInt(m.bulan) === mNum);
+                            if (mb && mb.jumlah !== undefined && mb.jumlah !== null) {
+                                totalMonthFromAccounts += (parseFloat(mb.jumlah) || 0);
+                                foundAnyInAccounts = true;
+                            }
+                        }
+                    });
+                    if (foundAnyInAccounts) {
+                        vendorAmtVal = totalMonthFromAccounts;
+                    }
+                }
+
+                // 2. Check top-level bulans array in vendor payload
+                if (vendorAmtVal === null && vPayloadData.bulans && Array.isArray(vPayloadData.bulans)) {
+                    const matchB = vPayloadData.bulans.find(mb => parseInt(mb.bulan) === mNum);
+                    if (matchB && matchB.jumlah !== undefined && matchB.jumlah !== null) {
+                        vendorAmtVal = parseFloat(matchB.jumlah);
+                    }
+                }
+
+                // 3. Fallback direct property matches
+                if (vendorAmtVal === null && vPayloadData['bulan_' + mNum] !== undefined) {
+                    vendorAmtVal = parseFloat(vPayloadData['bulan_' + mNum]);
+                } else if (vendorAmtVal === null && vPayloadData['bulan' + mNum] !== undefined) {
+                    vendorAmtVal = parseFloat(vPayloadData['bulan' + mNum]);
+                } else if (vendorAmtVal === null && vRow && vRow.bulans && vRow.bulans[mNum] !== undefined) {
+                    vendorAmtVal = parseFloat(vRow.bulans[mNum]);
+                }
+
+                if (vendorAmtVal === null || isNaN(vendorAmtVal)) {
+                    vendorAmtVal = (typeof b.jumlah === 'number' && b.jumlah > 0) ? b.jumlah : (parseFloat(b.jumlah) || 0);
+                }
+
+                const amtVal = vendorAmtVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
                 $bulanTbody.append(
                     '<tr>' +
@@ -1935,9 +2129,6 @@
                     '</tr>'
                 );
             });
-
-            const itemObj = SEMAK_PAYLOAD[activeStep2Uuid];
-            const vRow = itemObj?.vendors?.find(v => v.vendor_id == activeStep2VendorId);
 
             const savedStatus  = vRow ? vRow.status_pematuhan : null;
             const savedCatatan = vRow ? (vRow.catatan || '') : '';
@@ -2038,8 +2229,8 @@
 
                 const itemObj = SEMAK_PAYLOAD[activeStep2Uuid];
                 const rawVendors = itemObj?.vendors || [];
-                const failedVendorIds = getFailedStep1VendorIds();
-                const eligibleVendors = rawVendors.filter(v => !failedVendorIds.includes(parseInt(v.vendor_id)));
+                const passedStep1Ids = getStep1PassedVendorIdsClient();
+                const eligibleVendors = rawVendors.filter(v => passedStep1Ids.includes(parseInt(v.vendor_id)));
 
                 const totalV = eligibleVendors.length;
                 const reviewedV = eligibleVendors.filter(v => v.status_pematuhan !== null && v.status_pematuhan !== '' && v.status_pematuhan !== undefined).length;
@@ -2109,17 +2300,21 @@
 
             const urlPath  = url.split(/[#?]/)[0];
             const extension = urlPath.split('.').pop().trim().toLowerCase();
+            const extFromName = (name || '').split('.').pop().trim().toLowerCase();
             const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp'];
             const filenamePortion = urlPath.substring(urlPath.lastIndexOf('/') + 1);
-            const isProbablyPage  = !filenamePortion.includes('.') || filenamePortion.endsWith('.html') || url.includes('form') || url.includes('borang');
+            const isPdf = extension === 'pdf' || extFromName === 'pdf' || url.toLowerCase().includes('.pdf');
+            const isImage = imageExtensions.includes(extension) || imageExtensions.includes(extFromName);
+            const isDownloadRoute = /\/download\/?$/.test(urlPath) || urlPath.includes('/dokumen-files/') || urlPath.includes('/checklist-files/') || urlPath.includes('/stos-form-files/');
+            const isProbablyPage  = !isDownloadRoute && (!filenamePortion.includes('.') || filenamePortion.endsWith('.html') || url.includes('form') || url.includes('borang') || url.includes('modal=1'));
 
             const $icon = $('#previewIcon');
             $icon.removeClass();
-            if (imageExtensions.includes(extension)) {
+            if (isImage) {
                 $icon.addClass('bi bi-file-earmark-image text-primary fs-5');
                 $('#previewImage').attr('src', url);
                 $('#previewImageWrapper').removeClass('d-none');
-            } else if (extension === 'pdf') {
+            } else if (isPdf) {
                 $icon.addClass('bi bi-file-earmark-pdf text-danger fs-5');
                 $('#previewIframe').attr('src', url).removeClass('d-none');
             } else if (isProbablyPage) {
@@ -2128,6 +2323,7 @@
             } else {
                 $icon.addClass('bi bi-file-earmark-zip text-warning fs-5');
                 $('#previewSpinner').addClass('d-none');
+                $('#btnFallbackDownload').attr('download', name);
                 $('#previewFallback').removeClass('d-none');
             }
 

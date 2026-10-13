@@ -378,23 +378,6 @@
 @endsection
 
 @push('modals')
-    <!-- ===================== MODAL: SUCCESS ===================== -->
-    <div class="modal fade" id="successModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content text-center p-4">
-                <div class="mb-3">
-                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none">
-                        <circle cx="12" cy="12" r="10" fill="#E6F7F3" />
-                        <path d="M10 14.2L7.8 12l-1.4 1.4L10 17l8-8-1.4-1.4L10 14.2z" fill="#19c1a7" />
-                    </svg>
-                </div>
-                <h5 class="fw-bold mb-2">Berjaya</h5>
-                <p class="text-muted mb-4">Maklumat telah berjaya disimpan.</p>
-                <button type="button" class="btn-form btn-form-primary mx-auto" data-bs-dismiss="modal">Tutup</button>
-            </div>
-        </div>
-    </div>
-
     <!-- ===================== MODAL: VALIDASI HANTAR ===================== -->
     <div class="modal fade" id="validasiHantarModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
@@ -462,6 +445,10 @@
                             </tbody>
                         </table>
                     </div>
+                    <div class="border-top mt-3 pt-3">
+                        <label class="form-label small fw-semibold mb-1">Other</label>
+                        <input type="text" class="form-control form-control-sm standard-custom-title" placeholder="Nama dokumen" maxlength="500">
+                    </div>
                 </div>
                 <div class="modal-footer border-0 px-4 pb-4">
                     <button type="button" class="btn-form btn-form-secondary" data-bs-dismiss="modal">Batal</button>
@@ -487,6 +474,17 @@
             var SUBMIT_URL      = '{{ route('senaraiKewanganBekalan.submit', $tender->uuid) }}';
             var UPLOAD_FILE_URL = @json(route('senaraiKewanganBekalan.uploadFile', $tender->uuid));
             var DELETE_FILE_URL = @json(route('senaraiKewanganBekalan.deleteFile', ':uuid'));
+            @php
+                $checklistFileUrl = route('tenderChecklist.download', [
+                    'tender' => $tender->id,
+                    'section' => 'financial',
+                    'fileUuid' => '__FILE_UUID__',
+                ]);
+            @endphp
+            var CHECKLIST_FILE_URL = @json($checklistFileUrl);
+            function checklistFileUrl(fileUuid) {
+                return CHECKLIST_FILE_URL.replace('__FILE_UUID__', encodeURIComponent(fileUuid || ''));
+            }
             var CSRF_TOKEN      = '{{ csrf_token() }}';
             var checklistItems   = @json($checklistData['items'] ?? []);
             var sokonganFiles   = @json($checklistData['files'] ?? []);
@@ -714,7 +712,7 @@
                     if (item.mechanism === 'ptj_muat_naik' && item.files && item.files.length) {
                         var $list = $row.find('.rujukan-cell .dokumen-ptj-list');
                         item.files.forEach(function(f) {
-                            $list.append(buildPtjFileEntry(f.uuid, f.original_name, f.url));
+                            $list.append(buildPtjFileEntry(f.uuid, f.original_name, checklistFileUrl(f.uuid)));
                         });
                     }
 
@@ -784,9 +782,9 @@
                 return '<span class="text-muted small">—</span>';
             }
 
-            function buildNewRow() {
+            function buildNewRow(title) {
                 var defaultMekanisma = 'petender_muat_naik';
-                return $(
+                var $row = $(
                     '<tr class="row-kewangan-tambah" data-source-type="manual" data-status="draft">' +
                     '<td class="text-center"><input type="checkbox" name="row_check_kewangan[]" class="form-check-input row-check-kewangan"></td>' +
                     '<td><input type="text" name="tajuk_dokumen[]" class="form-control form-control-sm" placeholder="Tajuk / Dokumen..."></td>' +
@@ -805,6 +803,10 @@
                     '<td class="text-center tindakan-cell">' + buildTindakanCell(defaultMekanisma) + '</td>' +
                     '</tr>'
                 );
+                if (title) {
+                    $row.find('[name="tajuk_dokumen[]"]').val(title);
+                }
+                return $row;
             }
 
             function updateSkemaMaksima() {
@@ -1058,7 +1060,7 @@
                             var f = res && res.data ? res.data : null;
                             if (!f) return;
                             $row.find('.rujukan-cell .dokumen-ptj-list').append(
-                                buildPtjFileEntry(f.uuid, f.original_name, f.url)
+                                buildPtjFileEntry(f.uuid, f.original_name, checklistFileUrl(f.uuid))
                             );
                             updateRowCompletionStatus($row);
                             autoSave(true);
@@ -1189,8 +1191,10 @@
             // ─── PILIH: Add selected standard items to main table ─────────────────────
             $('#senaraiSemakStandard').on('click', '.btn-pilih-standard', function() {
                 var $checked = $('#tbl-standard .row-check-standard:checked');
-                if ($checked.length === 0) {
-                    alert('Sila pilih sekurang-kurangnya satu senarai semak.');
+                var $customTitle = $('#senaraiSemakStandard .standard-custom-title');
+                var customTitle = $.trim($customTitle.val() || '');
+                if ($checked.length === 0 && customTitle === '') {
+                    alert('Sila pilih sekurang-kurangnya satu senarai semak atau masukkan nama dokumen.');
                     return;
                 }
 
@@ -1213,6 +1217,11 @@
                     }
                     $tr.hide(); // hide from list once added — prevents duplicate selection
                 });
+
+                if (customTitle !== '') {
+                    $('#tbl-kewangan tbody').append(buildNewRow(customTitle));
+                    $customTitle.val('');
+                }
 
                 updateSkemaMaksima();
                 syncTableEmpty();
@@ -1352,14 +1361,14 @@
             }
 
             // ─── SIMPAN ───────────────────────────────────────────────────────────────
-            var successModal = new bootstrap.Modal(document.getElementById('successModal'));
-
             $('.btn-simpan').on('click', function() {
                 if (IS_SUBMITTED) return;
                 blockUI('Menyimpan...');
                 doSave(function() {
                     unblockUI();
-                    successModal.show();
+                    if (typeof showBerjayaModal === 'function') {
+                        showBerjayaModal();
+                    }
                 }, function() {
                     unblockUI();
                     alert('Ralat semasa menyimpan. Sila cuba lagi.');

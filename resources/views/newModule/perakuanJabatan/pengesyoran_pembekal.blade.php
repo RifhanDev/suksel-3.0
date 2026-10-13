@@ -1,6 +1,14 @@
 @php
 	$ppSimpanUrl = route('perakuanjabatan.pengesyoranPembekal.simpan', ['tender' => $tender->id]);
 	$ppHantarUrl = route('perakuanjabatan.pengesyoranPembekal.hantar', ['tender' => $tender->id]);
+	$ppSubmitted = !empty($pengesyoranPembekal->submitted_at);
+	$tabsReadOnly = $tabsReadOnly ?? false;
+	$ppLocked = $tabsReadOnly || $ppSubmitted;
+	$ppSyorOptions = \App\Models\PerakuanJabatanPengesyoranPembekalItem::SYOR_OPTIONS;
+	$showHargaBidaan = (bool) ($tender->is_ebidding ?? false);
+	$showBidPriceDiff = $showHargaBidaan && (int) ($tender->ebidding_process_stage_id ?? 0) >= 3;
+	$ppEmptyColspan = (!empty($isKerja) ? 10 : 11) + ($showHargaBidaan ? 1 : 0);
+	$ppSingleDisyorkanOnly = $ppSingleDisyorkanOnly ?? false;
 @endphp
 <div class="tab-pane fade pengesyoran-pembekal-tab" id="tab-pengesyoran-pembekal" role="tabpanel">
 	<style>
@@ -59,10 +67,24 @@
 			border-color: #0d9488;
 			color: #fff;
 		}
+
+		.pengesyoran-pembekal-tab .pp-syor-select {
+			min-width: 140px;
+		}
+
+		.pengesyoran-pembekal-tab .pp-catatan-input {
+			min-width: 160px;
+			min-height: 60px;
+			resize: vertical;
+		}
 	</style>
 
-	<div class="content-card p-4" id="pp-root">
+	<div class="content-card p-4" id="pp-root" data-submitted="{{ $ppLocked ? '1' : '0' }}"
+		data-single-disyorkan-only="{{ $ppSingleDisyorkanOnly ? '1' : '0' }}">
 		<div class="alert d-none py-2 px-3 mb-3" id="ppAlert" role="alert"></div>
+		@if ($tabsReadOnly)
+			<div class="alert alert-info py-2 px-3 mb-3">Maklumat pengesyoran pembekal adalah read-only pada peringkat ini.</div>
+		@endif
 
 		<div class="pp-section-bar rounded-top">SENARAI ITEM</div>
 		<div class="border border-top-0 border-secondary-subtle p-3 rounded-bottom mb-4"
@@ -84,12 +106,12 @@
 					<tbody>
 						<tr>
 							<td class="text-center">
-								<input type="checkbox" class="form-check-input m-0" aria-label="Pilih item" disabled>
+								<input type="checkbox" class="form-check-input m-0" aria-label="Pilih item" checked disabled>
 							</td>
-							<td>{{ $tender->name }}</td>
-							<td class="text-center">—</td>
-							<td class="text-center">—</td>
-							<td class="text-center">—</td>
+							<td>{{ $senaraiItem['item'] ?? ($tender->name ?: '-') }}</td>
+							<td class="text-center">{{ $senaraiItem['jenis_item'] ?? '—' }}</td>
+							<td class="text-center">{{ $senaraiItem['unit_ukuran'] ?? '—' }}</td>
+							<td class="text-center">{{ $senaraiItem['jenis_harga'] ?? '—' }}</td>
 						</tr>
 					</tbody>
 				</table>
@@ -99,51 +121,146 @@
 		<div class="pp-section-bar rounded-top">SENARAI PEMBEKAL</div>
 		<div class="border border-top-0 border-secondary-subtle p-3 rounded-bottom mb-4"
 			style="border-color:#dde2ea!important;">
-			<p class="text-muted small mb-3">Paparan senarai pembekal akan disambungkan dalam kemaskini akan datang.</p>
+			@if ($showBidPriceDiff)
+				<div class="d-flex flex-wrap gap-3 small mb-2">
+					<span class="d-inline-flex align-items-center gap-1">
+						<span class="rounded-circle d-inline-block" style="width:10px;height:10px;background:#198754;"></span>
+						<span class="text-success fw-semibold">Hijau</span> = harga baharu (vendor key-in)
+					</span>
+					<span class="d-inline-flex align-items-center gap-1">
+						<span class="rounded-circle d-inline-block" style="width:10px;height:10px;background:#dc3545;"></span>
+						<span class="text-danger fw-semibold">Merah</span> = harga lama (tiada bidaan baharu)
+					</span>
+				</div>
+			@endif
 			<div class="table-responsive pp-table-wrap">
-				<table class="table table-bordered align-middle mb-0 text-center">
+				<table class="table table-bordered align-middle mb-0 text-center" id="ppPembekalTable">
 					<thead>
 						<tr>
 							<th rowspan="2">Bil</th>
 							<th rowspan="2">Status Bumiputra</th>
 							<th rowspan="2">Harga Tawaran (RM)</th>
-							<th rowspan="2">Skor Teknikal</th>
-							<th colspan="2">Kedudukan Penilaian</th>
+							@if ($showHargaBidaan)
+								<th rowspan="2">Harga Bidaan (RM)</th>
+							@endif
+							@if (!empty($isKerja))
+								<th rowspan="2">Skor Keseluruhan</th>
+								<th rowspan="2">Kedudukan</th>
+							@else
+								<th rowspan="2">Skor Teknikal</th>
+								<th colspan="2">Kedudukan Penilaian</th>
+							@endif
 							<th rowspan="2">Status Pendaftaran MOF</th>
 							<th colspan="2">Maklumat Tambahan</th>
-							<th rowspan="2">Keputusan Urusetia</th>
-							<th rowspan="2">Catatan Urusetia</th>
+							<th rowspan="2" style="min-width:150px;">Syor Urusetia</th>
+							<th rowspan="2" style="min-width:180px;">Catatan Urusetia</th>
 						</tr>
 						<tr>
-							<th>Teknikal</th>
-							<th>Kewangan</th>
+							@if (empty($isKerja))
+								<th>Teknikal</th>
+								<th>Kewangan</th>
+							@endif
 							<th>Prestasi Pembekal</th>
 							<th>Lembaga Pengarah</th>
 						</tr>
 					</thead>
 					<tbody>
-						<tr>
-							<td colspan="11" class="text-muted py-4">Tiada data (dummy)</td>
-						</tr>
+						@forelse ($pembekalRows ?? [] as $row)
+							<tr data-vendor-id="{{ $row['vendor_id'] }}">
+								<td>{{ $row['bil'] }}</td>
+								<td>{{ $row['status_bumiputra'] }}</td>
+								<td>
+									{{ $row['harga_tawaran'] !== null ? number_format((float) $row['harga_tawaran'], 2) : '—' }}
+								</td>
+								@if ($showHargaBidaan)
+									@php
+										$isNewBid = $showBidPriceDiff && !empty($row['is_new_bid']);
+										$isOldBid = $showBidPriceDiff && empty($row['is_new_bid']);
+										$bidCellClass = $isNewBid ? 'text-success fw-semibold' : ($isOldBid ? 'text-danger fw-semibold' : '');
+										$bidCellBg = $isNewBid ? '#e8f7ef' : ($isOldBid ? '#fdebec' : '');
+										$bidLabel = $isNewBid ? 'Harga baharu' : ($isOldBid ? 'Harga lama' : null);
+									@endphp
+									<td class="{{ $bidCellClass }}" @if ($bidCellBg) style="background:{{ $bidCellBg }};" @endif>
+										<div class="d-flex align-items-center justify-content-center gap-1">
+											<div>
+												<div>
+													{{ isset($row['harga_bidaan']) && $row['harga_bidaan'] !== null
+													    ? number_format((float) $row['harga_bidaan'], 2)
+													    : '—' }}
+												</div>
+												@if ($bidLabel)
+													<div class="small fw-normal">{{ $bidLabel }}</div>
+												@endif
+											</div>
+											@include('components.bid-spec-breakdown', [
+												'items' => $row['spec_items'] ?? [],
+												'vendorName' => $row['vendor_name'] ?? null,
+												'vendorId' => $row['vendor_id'] ?? null,
+												'showPriceDiff' => $showBidPriceDiff,
+												'modalSuffix' => 'pj-' . ($row['vendor_id'] ?? uniqid()),
+												'title' => 'Item Spesifikasi',
+											])
+										</div>
+									</td>
+								@endif
+								@if (!empty($isKerja))
+									<td>
+										@php $skorKes = $row['skor_keseluruhan'] ?? $row['skor_teknikal'] ?? null; @endphp
+										{{ $skorKes !== null ? number_format((float) $skorKes, 2) : '—' }}
+									</td>
+									<td>{{ $row['kedudukan_keseluruhan'] ?? '—' }}</td>
+								@else
+									<td>
+										{{ $row['skor_teknikal'] !== null ? number_format((float) $row['skor_teknikal'], 2) : '—' }}
+									</td>
+									<td>{{ $row['kedudukan_teknikal'] ?? '—' }}</td>
+									<td>{{ $row['kedudukan_kewangan'] ?? '—' }}</td>
+								@endif
+								<td>{{ $row['status_mof'] ?? '—' }}</td>
+								<td>{{ $row['prestasi_pembekal'] ?? '—' }}</td>
+								<td>
+									@if (!empty($row['lembaga_pengarah_url']))
+										<a href="{{ $row['lembaga_pengarah_url'] }}" target="_blank" rel="noopener noreferrer"
+											class="btn btn-light btn-sm">Lihat</a>
+									@else
+										—
+									@endif
+								</td>
+								<td>
+									<select class="form-select form-select-sm pp-syor-select" {{ $ppLocked ? 'disabled' : '' }}>
+										<option value="">-- Pilih --</option>
+										@foreach ($ppSyorOptions as $opt)
+											<option value="{{ $opt }}" {{ ($row['syor_urusetia'] ?? '') === $opt ? 'selected' : '' }}>
+												{{ $opt }}
+											</option>
+										@endforeach
+									</select>
+								</td>
+								<td>
+									<textarea class="form-control form-control-sm pp-catatan-input" rows="2" placeholder="Catatan..."
+									 {{ $ppLocked ? 'disabled' : '' }}>{{ $row['catatan_urusetia'] ?? '' }}</textarea>
+								</td>
+							</tr>
+						@empty
+							<tr>
+								<td colspan="{{ $ppEmptyColspan }}" class="text-muted py-4">Tiada pembekal layak untuk dipaparkan.</td>
+							</tr>
+						@endforelse
 					</tbody>
 				</table>
 			</div>
 		</div>
 
 		<div class="pp-section-bar rounded-top">CATATAN</div>
-		<textarea class="form-control pp-textarea-catatan mb-4" id="ppCatatan" name="catatan" rows="4" placeholder="">{{ old('catatan', $pengesyoranPembekal->catatan) }}</textarea>
+		<textarea class="form-control pp-textarea-catatan mb-4" id="ppCatatan" name="catatan" rows="4" placeholder=""
+		 {{ $ppLocked ? 'disabled' : '' }}>{{ old('catatan', $pengesyoranPembekal->catatan) }}</textarea>
 
-		<div class="form-check mb-3">
-			<input class="form-check-input" type="checkbox" name="sahkan_petender_layak" id="ppPengakuan" value="1"
-				{{ old('sahkan_petender_layak', $pengesyoranPembekal->sahkan_petender_layak) ? 'checked' : '' }}>
-			<label class="form-check-label" for="ppPengakuan">Saya mengesahkan petender diatas layak untuk
-				menyertai Bidaan.</label>
-		</div>
-
-		<div class="d-flex justify-content-end gap-2">
-			<button type="button" class="btn pp-btn-teal" id="ppSimpan">Simpan</button>
-			<button type="button" class="btn btn-selangor" id="ppHantar">Hantar</button>
-		</div>
+		@unless ($ppLocked)
+			<div class="d-flex justify-content-end gap-2">
+				<button type="button" class="btn pp-btn-teal" id="ppSimpan">Simpan</button>
+				<button type="button" class="btn btn-selangor" id="ppHantar">Hantar</button>
+			</div>
+		@endunless
 	</div>
 </div>
 
@@ -153,12 +270,14 @@
 			const root = document.getElementById('pp-root');
 			if (!root) return;
 
+			const submitted = root.getAttribute('data-submitted') === '1';
+			const singleDisyorkanOnly = root.getAttribute('data-single-disyorkan-only') === '1';
 			const simpanUrl = @json($ppSimpanUrl);
 			const hantarUrl = @json($ppHantarUrl);
 			const token = document.querySelector('meta[name="_token"]')?.getAttribute('content');
 			const catatanEl = document.getElementById('ppCatatan');
-			const pengakuanEl = document.getElementById('ppPengakuan');
 			const alertEl = document.getElementById('ppAlert');
+			const SYOR_DISYORKAN = 'Disyorkan';
 
 			function showAlert(msg, ok) {
 				if (!alertEl) return;
@@ -167,13 +286,44 @@
 				alertEl.classList.add(ok ? 'alert-success' : 'alert-danger');
 			}
 
+			function getSyorSelects() {
+				return Array.from(document.querySelectorAll('#ppPembekalTable .pp-syor-select'));
+			}
+
+			function enforceDisyorkanRule(changedSelect) {
+				if (!singleDisyorkanOnly) return;
+				if (!changedSelect || changedSelect.value !== SYOR_DISYORKAN) return;
+
+				getSyorSelects().forEach(sel => {
+					if (sel === changedSelect) return;
+					if (sel.value === SYOR_DISYORKAN) {
+						sel.value = '';
+					}
+				});
+			}
+
+			document.querySelectorAll('#ppPembekalTable .pp-syor-select').forEach(sel => {
+				sel.addEventListener('change', function() {
+					enforceDisyorkanRule(this);
+				});
+			});
+
+			if (submitted) return;
+
 			function buildFormData() {
 				const fd = new FormData();
 				fd.append('_token', token);
 				fd.append('catatan', catatanEl ? catatanEl.value : '');
-				if (pengakuanEl && pengakuanEl.checked) {
-					fd.append('sahkan_petender_layak', '1');
-				}
+
+				document.querySelectorAll('#ppPembekalTable tbody tr[data-vendor-id]').forEach((tr, idx) => {
+					const vendorId = tr.getAttribute('data-vendor-id');
+					const syor = tr.querySelector('.pp-syor-select')?.value || '';
+					const catatan = tr.querySelector('.pp-catatan-input')?.value || '';
+					fd.append(`rows[${idx}][vendor_id]`, vendorId);
+					fd.append(`rows[${idx}][syor_urusetia]`, syor);
+					fd.append(`rows[${idx}][catatan_urusetia]`, catatan);
+				});
+
 				return fd;
 			}
 
@@ -214,6 +364,13 @@
 				post(simpanUrl);
 			});
 			document.getElementById('ppHantar')?.addEventListener('click', function() {
+				const hasSyor = getSyorSelects().some(sel => (sel.value || '').trim() !== '');
+				if (!hasSyor) {
+					showAlert(
+						'Sila pilih Syor Urusetia untuk sekurang-kurangnya satu pembekal sebelum menghantar.',
+						false);
+					return;
+				}
 				post(hantarUrl);
 			});
 		})();

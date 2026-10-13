@@ -4,6 +4,7 @@ namespace App;
 
 use App\Models\PetenderPerformance;
 use App\Models\VendorCode;
+use App\Support\TenderProcessStatus;
 use App\Traits\Helper;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
@@ -13,12 +14,19 @@ use Venturecraft\Revisionable\RevisionableTrait;
 
 class Tender extends Model
 {
+	/** Cache per-instance: blade memanggil showDokumenSenaraiTab() beberapa kali. */
+	private ?string $kaedahPerolehanKindCache = null;
+
+	private bool $kaedahPerolehanKindResolved = false;
+
 	use Helper;
 	use RevisionableTrait;
 
 	static $types = [
-		'tender'      => 'Tender',
-		'quotation'   => 'Sebut Harga'
+		'tender'          => 'Tender',
+		'quotation'       => 'Sebut Harga',
+		'pembelian_terus' => 'Pembelian Terus',
+		'lantikan_terus'  => 'Lantikan Terus',
 	];
 
 	/**
@@ -79,6 +87,7 @@ class Tender extends Model
 		'only_bumiputera',
 		'type',
 		'only_advertise',
+		'kaedah_dokumen_id',
 		'mof_cidb_rule',
 		'district_list_rule',
 		// New fields for version 3.0
@@ -198,6 +207,11 @@ class Tender extends Model
 					return true;
 				} elseif ($user->hasRole('Vendor') && $this->invites()->where('vendor_id', $user->vendor_id)->first()) {
 					return true;
+				} elseif (self::canViewInternal($this->organization_unit_id)) {
+					// Kakitangan dalaman agensi pemilik. Senarai agensi memaparkan
+					// tender ini kepada mereka, jadi menolak halaman butirannya
+					// hanya menghasilkan 403 selepas satu klik.
+					return true;
 				} else {
 					return false;
 				}
@@ -208,6 +222,11 @@ class Tender extends Model
 			if (auth()->check() && $user->hasRole('Admin')) {
 				return true;
 			} elseif (auth()->check() && $user->ability(['Agency Admin', 'Agency User'], ['Tender:edit']) && $this->organization_unit_id == $user->organization_unit_id) {
+				return true;
+			} elseif (self::canViewInternal($this->organization_unit_id)) {
+				// Tender belum diluluskan. Sebelum ini hanya Agency Admin/User
+				// dibenarkan, jadi Urusetia yang perlu menggerakkannya melalui
+				// aliran kerja dihalang daripada membuka tendernya sendiri.
 				return true;
 			} else {
 				return false;
@@ -234,6 +253,38 @@ class Tender extends Model
 		}
 	}
 
+	/**
+	 * Public siar is done by the ketua jabatan (or an admin). Urusetia submission of
+	 * penyediaan iklan does not publish the tender onto the public list.
+	 */
+	public function canPublish(): bool
+	{
+		if (! auth()->check()) {
+			return false;
+		}
+
+		$user = auth()->user();
+
+		if ($user->hasRole('Admin')) {
+			return true;
+		}
+
+		return $user->hasRole('Agency Ketua Jabatan')
+			&& (int) $this->organization_unit_id === (int) $user->organization_unit_id;
+	}
+
+	public function publishedByKetuaJabatan(): bool
+	{
+		if (empty($this->approver_id)) {
+			return false;
+		}
+
+		$approver = $this->relationLoaded('approver') ? $this->approver : $this->approver()->first();
+
+		return $approver
+			&& ($approver->hasRole('Agency Ketua Jabatan') || $approver->hasRole('Admin'));
+	}
+
 	public function canAllowEdit()
 	{
 		if (auth()->check()) {
@@ -252,6 +303,59 @@ class Tender extends Model
 		} else {
 			return false;
 		}
+	}
+
+	/**
+	 * Peranan yang terikat kepada sesebuah agensi, bukan kepada umum atau
+	 * pembekal. Diambil daripada Role::scopeAvailableRoles() berserta
+	 * 'Agency Admin' yang memberikannya.
+	 */
+	public const INTERNAL_AGENCY_ROLES = [
+		'Agency Admin',
+		'Agency User',
+		'Agency Finance',
+		'Agency Urusetia',
+		'Agency Jawatankuasa',
+		'Agency Lembaga Perolehan',
+		'Agency Ketua Jabatan',
+	];
+
+	/**
+	 * Kakitangan dalaman agensi yang berhak melihat tender agensi sendiri,
+	 * termasuk yang belum diiklankan.
+	 *
+	 * Sengaja berasingan daripada canShowUpdate(). Kaedah itu tentang hak
+	 * MENGEMAS KINI dan digunakan di lebih 20 tempat untuk mengawal butang
+	 * sunting; menambah peranan ke dalamnya akan memberi kuasa yang tidak
+	 * diminta. Melihat bukan mengemas kini, jadi ia diasingkan.
+	 *
+	 * Dalam 2.0 mencipta tender bermakna terus mengiklankannya, jadi
+	 * advertise_start_date sentiasa berisi dan senarai agensi sentiasa
+	 * memaparkannya. Dalam 3.0 pengiklanan ialah peringkat kelima, jadi tender
+	 * yang baru dicipta mempunyai advertise_start_date NULL dan tersingkir
+	 * daripada penapis awam — menjadikan kakitangan agensi tidak nampak kerja
+	 * mereka sendiri.
+	 */
+	public static function canViewInternal($organization_unit_id)
+	{
+		if (!auth()->check()) {
+			return false;
+		}
+
+		$user = auth()->user();
+
+		if ($user->hasRole('Admin')) {
+			return true;
+		}
+
+		if (empty($user->organization_unit_id)) {
+			return false;
+		}
+
+		// Bandingkan sebagai integer: id daripada laluan URL boleh jadi rentetan,
+		// dan perbandingan ketat pada jenis bercampur gagal secara senyap.
+		return (int) $organization_unit_id === (int) $user->organization_unit_id
+			&& $user->hasRole(self::INTERNAL_AGENCY_ROLES);
 	}
 
 	public static function canShowUpdate($organization_unit_id)
@@ -297,7 +401,9 @@ class Tender extends Model
 
 			if ($user->hasRole('Admin')) {
 				return true;
-			} elseif ($user->ability(['Agency Admin', 'Agency User'], []) && $this->organization_unit_id == $user->organization_unit_id) {
+			} elseif ($user->ability(['Agency Admin', 'Agency User', 'Agency Ketua Jabatan'], []) && $this->organization_unit_id == $user->organization_unit_id) {
+				// Agency Ketua Jabatan dihadkan kepada agensinya sendiri, sama seperti
+				// Agency Admin dan Agency User — hanya Admin melihat semua agensi.
 				return true;
 			} elseif ($user->hasRole('Vendor') && $this->hasParticipate($vendor_id)) {
 				return true;
@@ -344,6 +450,16 @@ class Tender extends Model
 		}
 	}
 
+	// Batal Siar rewinds the tender to Penyediaan Iklan, so block it once vendor documents are in.
+	public function canCancelSiar()
+	{
+		if (!$this->canCancel()) {
+			return false;
+		}
+
+		return (int) ($this->status_process_id ?? 0) < TenderProcessStatus::HANTAR_DOKUMEN_SYARIKAT;
+	}
+
 	public function canApprove()
 	{
 		if (auth()->check()) {
@@ -366,6 +482,8 @@ class Tender extends Model
 				return false;
 			} elseif (!$this->canParticipate(auth()->user()->vendor_id)) {
 				return false;
+			} elseif (!$this->isWithinVendorDokumenWindow()) {
+				return false;
 			} else {
 				return true;
 			}
@@ -383,6 +501,11 @@ class Tender extends Model
 		return $this->belongsTo('App\User', 'creator_id', 'id');
 	}
 
+	public function approver()
+	{
+		return $this->belongsTo('App\User', 'approver_id', 'id');
+	}
+
 	public function officer()
 	{
 		return $this->belongsTo('App\User', 'officer_id', 'id');
@@ -396,6 +519,217 @@ class Tender extends Model
 	public function jawatankuasas()
 	{
 		return $this->hasMany(\App\Models\Jawatankuasa::class, 'tender_id');
+	}
+
+	public function kaedahPerolehan()
+	{
+		return $this->belongsTo(\App\Models\Ref\RefKaedahPerolehan::class, 'kaedah_perolehan_id');
+	}
+
+	public function kaedahDokumen()
+	{
+		return $this->belongsTo(\App\Models\Ref\RefKaedahDokumen::class, 'kaedah_dokumen_id');
+	}
+
+	public function iklanDokumens()
+	{
+		return $this->hasMany(\App\Models\TenderIklanDokumen::class, 'tender_id')->orderBy('sort_order')->orderBy('id');
+	}
+
+	public function usesIklanDokumen(): bool
+	{
+		if (! $this->relationLoaded('kaedahDokumen')) {
+			$this->load('kaedahDokumen');
+		}
+
+		return (bool) $this->kaedahDokumen?->skips_to_penyediaan_iklan;
+	}
+
+	/**
+	 * Kaedah "Bayaran Dokumen Secara Online" (ref_kaedah_dokumens.code = online).
+	 */
+	public function isBayaranDokumenOnline(): bool
+	{
+		if (! $this->relationLoaded('kaedahDokumen')) {
+			$this->load('kaedahDokumen');
+		}
+
+		return ($this->kaedahDokumen?->code ?? '') === 'online';
+	}
+
+	/**
+	 * Kaedah "Bayaran Dokumen dan Penilaian secara online" (code = online_penilaian).
+	 */
+	public function isBayaranDokumenOnlinePenilaian(): bool
+	{
+		if (! $this->relationLoaded('kaedahDokumen')) {
+			$this->load('kaedahDokumen');
+		}
+
+		return ($this->kaedahDokumen?->code ?? '') === 'online_penilaian';
+	}
+
+	/**
+	 * Vendor must pay dokumen via FPX cart (online / online_penilaian).
+	 */
+	public function requiresOnlineDokumenPayment(): bool
+	{
+		return $this->isBayaranDokumenOnline() || $this->isBayaranDokumenOnlinePenilaian();
+	}
+
+	/**
+	 * Kaedah "Pembelian & Bayaran Manual di Agensi (Iklan Sahaja)" (code = manual).
+	 * No online payment — vendor may "add to list" to unlock dokumen downloads.
+	 */
+	public function isIklanSahajaManual(): bool
+	{
+		if (! $this->relationLoaded('kaedahDokumen')) {
+			$this->load('kaedahDokumen');
+		}
+
+		return ($this->kaedahDokumen?->code ?? '') === 'manual';
+	}
+
+	/**
+	 * Only Manual (Iklan Sahaja) skips FPX — "Tambah ke Senarai".
+	 * Online kaedah must use cart + FPX.
+	 */
+	public function shouldBypassDokumenPayment(): bool
+	{
+		return $this->isIklanSahajaManual();
+	}
+
+	public function vendorDokumenActionLabel(): string
+	{
+		if ($this->isIklanSahajaManual()) {
+			return 'Tambah ke Senarai';
+		}
+
+		return 'Tambah Kepada Senarai Tempahan';
+	}
+
+	/**
+	 * Record vendor as purchased (participate=1) without a payment gateway transaction.
+	 */
+	public function grantBypassDokumenPurchase(int $vendorId): TenderVendor
+	{
+		$purchase = $this->participants()->where('vendor_id', $vendorId)->first();
+
+		if ($purchase) {
+			$purchase->participate = 1;
+			$purchase->amount = $this->price;
+			if (empty($purchase->ref_number)) {
+				$purchase->ref_number = TenderVendor::generateNumber($this->id);
+			}
+			$purchase->save();
+		} else {
+			$purchase = $this->participants()->save(new TenderVendor([
+				'vendor_id' => $vendorId,
+				'participate' => 1,
+				'amount' => $this->price,
+				'ref_number' => TenderVendor::generateNumber($this->id),
+			]));
+		}
+
+		TenderVendor::syncKodPembekal($this->id);
+
+		return $purchase;
+	}
+
+	public const LEMBAGA_ANGGARAN_THRESHOLD = 5000000.0;
+
+	public function scopeAppointedTo($query, $user, string|array $jenis)
+	{
+		$jenis = (array) $jenis;
+		$table = $query->getModel()->getTable();
+		$committeeTable = \Illuminate\Support\Facades\Schema::hasTable('jawatankuasas')
+			? 'jawatankuasas'
+			: 'jawatankuasa';
+
+		return $query->whereIn("{$table}.id", function ($sub) use ($user, $jenis, $committeeTable) {
+			$sub->from($committeeTable)
+				->select('tender_id')
+				->where('user_id', $user->id)
+				->whereIn('jenis_jawatankuasa', $jenis);
+		});
+	}
+
+	public function isAppointedTo($user, string|array $jenis): bool
+	{
+		if (!$user) {
+			return false;
+		}
+
+		return $this->jawatankuasas()
+			->where('user_id', $user->id)
+			->whereIn('jenis_jawatankuasa', (array) $jenis)
+			->exists();
+	}
+
+	public function scopeForLembagaDecision($query, $user)
+	{
+		$threshold = self::LEMBAGA_ANGGARAN_THRESHOLD;
+		$isAgency = $user && $user->hasRole('Agency Lembaga Perolehan');
+		$isNegeri = $user && $user->hasRole('Lembaga Perolehan Negeri Selangor');
+
+		if ($isAgency && $isNegeri) {
+			return $query;
+		}
+
+		if ($isAgency) {
+			return $query->where(function ($q) use ($threshold) {
+				$q->where(function ($q2) {
+					$q2->whereHas('kaedahPerolehan', fn ($k) => $k->where('name', 'Sebut Harga'))
+						->orWhere(function ($q3) {
+							$q3->whereNull('kaedah_perolehan_id')->where('type', 'quotation');
+						});
+				})->orWhere(function ($q2) use ($threshold) {
+					$q2->where(function ($q3) {
+						$q3->whereHas('kaedahPerolehan', fn ($k) => $k->where('name', 'Tender'))
+							->orWhere(function ($q4) {
+								$q4->whereNull('kaedah_perolehan_id')->where('type', 'tender');
+							});
+					})->where('anggaran_jabatan', '<', $threshold);
+				});
+			});
+		}
+
+		if ($isNegeri) {
+			return $query->where(function ($q) {
+				$q->whereHas('kaedahPerolehan', fn ($k) => $k->where('name', 'Tender'))
+					->orWhere(function ($q2) {
+						$q2->whereNull('kaedah_perolehan_id')->where('type', 'tender');
+					});
+			})->where('anggaran_jabatan', '>=', $threshold);
+		}
+
+		return $query;
+	}
+
+	public function isVisibleToLembaga($user): bool
+	{
+		if (!$user) {
+			return false;
+		}
+
+		$threshold = self::LEMBAGA_ANGGARAN_THRESHOLD;
+		$isSebutHarga = $this->isSebutHargaKaedah();
+		$isTender = $this->isTenderKaedah();
+		$anggaran = (float) ($this->anggaran_jabatan ?? 0);
+
+		if ($user->hasRole('Agency Lembaga Perolehan') && $user->hasRole('Lembaga Perolehan Negeri Selangor')) {
+			return true;
+		}
+
+		if ($user->hasRole('Agency Lembaga Perolehan')) {
+			return $isSebutHarga || ($isTender && $anggaran < $threshold);
+		}
+
+		if ($user->hasRole('Lembaga Perolehan Negeri Selangor')) {
+			return $isTender && $anggaran >= $threshold;
+		}
+
+		return true;
 	}
 
 	public function news()
@@ -656,19 +990,61 @@ class Tender extends Model
 		};
 	}
 
+	/**
+	 * Kaedah perolehan tender ini, dinormalkan kepada 'tender' atau 'quotation'.
+	 *
+	 * Dahulunya ketiga-tiga predikat di bawah membandingkan id mentah dengan 1
+	 * dan 2. Nilai itu bukan pengecam yang stabil — `ref_kaedah_perolehans`
+	 * disemai semula oleh migration, jadi id sebenarnya bergantung pada
+	 * AUTO_INCREMENT jadual pada masa itu (35 dan 36 pada pangkalan data ini).
+	 * Setiap tender yang dicipta dengan kaedah_perolehan_id sebenar gagal
+	 * padanan itu: tab Dokumen tersembunyi, dan setiap Sebut Harga dilabel
+	 * sebagai Tender pada Surat SST serta laporan penilaian.
+	 *
+	 * Padanan kini dibuat mengikut nama baris rujukan, yang kekal walaupun id
+	 * berubah.
+	 */
+	public function kaedahPerolehanKind(): ?string
+	{
+		if (! $this->kaedahPerolehanKindResolved) {
+			$this->kaedahPerolehanKindResolved = true;
+			$this->kaedahPerolehanKindCache = $this->resolveKaedahPerolehanKind();
+		}
+
+		return $this->kaedahPerolehanKindCache;
+	}
+
+	private function resolveKaedahPerolehanKind(): ?string
+	{
+		if ($this->kaedah_perolehan_id !== null) {
+			$name = DB::table('ref_kaedah_perolehans')
+				->where('id', $this->kaedah_perolehan_id)
+				->value('name');
+
+			return match (mb_strtolower(trim((string) $name))) {
+				'tender'      => 'tender',
+				'sebut harga' => 'quotation',
+				default       => null,
+			};
+		}
+
+		// Tender lama tiada kaedah_perolehan_id; `type` ialah sumber asalnya.
+		return in_array($this->type, ['tender', 'quotation'], true) ? $this->type : null;
+	}
+
 	public function isTenderKaedah(): bool
 	{
-		return $this->resolvedKaedahPerolehanId() === 1;
+		return $this->kaedahPerolehanKind() === 'tender';
 	}
 
 	public function isSebutHargaKaedah(): bool
 	{
-		return $this->resolvedKaedahPerolehanId() === 2;
+		return $this->kaedahPerolehanKind() === 'quotation';
 	}
 
 	public function showDokumenSenaraiTab(): bool
 	{
-		return in_array($this->resolvedKaedahPerolehanId(), [1, 2], true);
+		return $this->kaedahPerolehanKind() !== null;
 	}
 
 	public function canShowDokumenSenaraiTab($vendor_id = null): bool
@@ -797,7 +1173,7 @@ class Tender extends Model
 			foreach ($district_list_rule as $row_rules) {
 				if ($row_rules->district_id == 0 && $row_rules->state_id != 0) {
 					$tender_open_for_state_id[]		= $row_rules->state_id;
-					$tender_open_for_state_desc[]	= \App\Models\RefState::find($row_rules->state_id)->description ?? "";
+					$tender_open_for_state_desc[]	= \App\Models\Ref\RefState::find($row_rules->state_id)->description ?? "";
 				} elseif ($row_rules->state_id == 0 && $row_rules->district_id != 0) {
 					$tender_open_for_district_id[]		= $row_rules->district_id;
 					$tender_open_for_district_desc[]	= \App\Models\Vendor::$districts[$row_rules->district_id] ?? "";
@@ -834,7 +1210,11 @@ class Tender extends Model
 
 		$participate = $participate && $this->attendVisits($vendor->id);
 		$participate = !$this->isBlacklisted($vendor_id) && $participate;
-		$participate = !$this->only_advertise && $participate;
+		// Iklan Sahaja (manual): vendors may still "add to list" to unlock dokumen.
+		// Other only_advertise tenders stay blocked from purchase.
+		if ($this->only_advertise && ! $this->isIklanSahajaManual()) {
+			$participate = false;
+		}
 
 		return $participate;
 	}
@@ -872,13 +1252,7 @@ class Tender extends Model
 
 	public function validDocumentDate()
 	{
-		if (empty($this->document_start_date) || empty($this->document_stop_date)) {
-			return false;
-		}
-
-		$today = Carbon::today();
-		return $today->gte(Carbon::parse($this->document_start_date))
-			&& $today->lte(Carbon::parse($this->document_stop_date));
+		return $this->isWithinVendorDokumenWindow();
 	}
 
 	/**
@@ -913,7 +1287,7 @@ class Tender extends Model
 		$fromMeta = $this->combineIklanDateTime(
 			$iklan['tarikh_tutup'] ?? null,
 			$iklan['masa_tutup'] ?? null,
-			'23:59'
+			'12:00'
 		);
 		if ($fromMeta) {
 			return $fromMeta;
@@ -940,7 +1314,7 @@ class Tender extends Model
 			return false;
 		}
 
-		if ($closes !== null && $at->gt($closes)) {
+		if ($closes !== null && $at->gte($closes)) {
 			return false;
 		}
 
@@ -961,7 +1335,7 @@ class Tender extends Model
 			return 'Tempoh key-in dokumen belum bermula. Dibuka pada '.$opens->format('d/m/Y H:i').'.';
 		}
 
-		if ($closes !== null && $at->gt($closes)) {
+		if ($closes !== null && $at->gte($closes)) {
 			return 'Tempoh key-in dokumen telah tamat pada '.$closes->format('d/m/Y H:i').'.';
 		}
 
@@ -1033,20 +1407,22 @@ class Tender extends Model
 
 	public function documentSalesNotYetOpen(): bool
 	{
-		if (empty($this->document_start_date)) {
+		$opens = $this->vendorDokumenOpensAt();
+		if ($opens === null) {
 			return true;
 		}
 
-		return Carbon::today()->lt(Carbon::parse($this->document_start_date)->startOfDay());
+		return Carbon::now()->lt($opens);
 	}
 
 	public function documentSalesClosed(): bool
 	{
-		if (empty($this->document_stop_date)) {
+		$closes = $this->vendorDokumenClosesAt();
+		if ($closes === null) {
 			return true;
 		}
 
-		return Carbon::today()->gt(Carbon::parse($this->document_stop_date)->startOfDay());
+		return Carbon::now()->gte($closes);
 	}
 
 	public function nearSubmission()
@@ -1179,6 +1555,13 @@ class Tender extends Model
 		}
 
 		if (empty($grades)) {
+			return true;
+		}
+
+		// Grade-only filter: if no specialization groups were set on the tender,
+		// matching the CIDB grade (already checked via matchCidbGrade) is enough.
+		// Previously an empty group list always returned false and blocked every vendor.
+		if (count($this->cidb_code_groups) === 0) {
 			return true;
 		}
 
@@ -1473,7 +1856,7 @@ class Tender extends Model
 			foreach ($district_list_rule as $row_rules) {
 				if ($row_rules->district_id == 0 && $row_rules->state_id != 0) {
 					$tender_open_for_state_id[]		= $row_rules->state_id;
-					$tender_open_for_state_desc[]	= \App\Models\RefState::find($row_rules->state_id)->description ?? "";
+					$tender_open_for_state_desc[]	= \App\Models\Ref\RefState::find($row_rules->state_id)->description ?? "";
 				} elseif ($row_rules->state_id == 0 && $row_rules->district_id != 0) {
 					$tender_open_for_district_id[]		= $row_rules->district_id;
 					$tender_open_for_district_desc[]	= \App\Models\Vendor::$districts[$row_rules->district_id] ?? "";
@@ -1519,7 +1902,7 @@ class Tender extends Model
 			foreach ($district_list_rule as $row_rules) {
 				if ($row_rules->district_id == 0 && $row_rules->state_id != 0) {
 					$tender_open_for_state_id[]		= $row_rules->state_id;
-					$tender_open_for_state_desc[]	= \App\Models\RefState::find($row_rules->state_id)->description ?? "";
+					$tender_open_for_state_desc[]	= \App\Models\Ref\RefState::find($row_rules->state_id)->description ?? "";
 				} elseif ($row_rules->state_id == 0 && $row_rules->district_id != 0) {
 					$tender_open_for_district_id[]		= $row_rules->district_id;
 					$tender_open_for_district_desc[]	= \App\Models\Vendor::$districts[$row_rules->district_id] ?? "";
@@ -1565,7 +1948,7 @@ class Tender extends Model
 			foreach ($district_list_rule as $row_rules) {
 				if ($row_rules->district_id == 0 && $row_rules->state_id != 0) {
 					$tender_open_for_state_id[]		= $row_rules->state_id;
-					$tender_open_for_state_desc[]	= \App\Models\RefState::find($row_rules->state_id)->description ?? "";
+					$tender_open_for_state_desc[]	= \App\Models\Ref\RefState::find($row_rules->state_id)->description ?? "";
 				} elseif ($row_rules->state_id == 0 && $row_rules->district_id != 0) {
 					$tender_open_for_district_id[]		= $row_rules->district_id;
 					$tender_open_for_district_desc[]	= \App\Models\Vendor::$districts[$row_rules->district_id] ?? "";
@@ -1605,7 +1988,7 @@ class Tender extends Model
 			foreach ($district_list_rule as $row_rules) {
 				if ($row_rules->district_id == 0 && $row_rules->state_id != 0) {
 					$tender_open_for_state_id[]		= $row_rules->state_id;
-					$tender_open_for_state_desc[]	= \App\Models\RefState::find($row_rules->state_id)->description ?? "";
+					$tender_open_for_state_desc[]	= \App\Models\Ref\RefState::find($row_rules->state_id)->description ?? "";
 				} elseif ($row_rules->state_id == 0 && $row_rules->district_id != 0) {
 					$tender_open_for_district_id[]		= $row_rules->district_id;
 					$tender_open_for_district_desc[]	= \App\Models\Vendor::$districts[$row_rules->district_id] ?? "";
@@ -1675,9 +2058,16 @@ class Tender extends Model
 
 	public function scopePublished($q)
 	{
-		// Temporarily commented out to fix column issue
-		// return $q->whereNotNull('approver_id');
-		return $q;
+		return $q->where(function ($query) {
+			$query->where(function ($inner) {
+				$inner->whereIn('type', ['tender', 'quotation'])
+					->whereHas('approver', function ($approver) {
+						$approver->whereHas('roles', function ($roles) {
+							$roles->whereIn('name', ['Agency Ketua Jabatan', 'Admin']);
+						});
+					});
+			})->orWhereNotIn('type', ['tender', 'quotation']);
+		});
 	}
 
 	public function scopePublishedPrices($q)
@@ -1712,7 +2102,7 @@ class Tender extends Model
 	 */
 	public function scopeOpen($q)
 	{
-		return $q->where('submission_datetime', '>', date('Y-m-d H:i:s'));
+		return $q->where('submission_datetime', '>', Carbon::now()->format('Y-m-d H:i:s'));
 	}
 
 	public function saveAudit($action = null)
@@ -1724,6 +2114,82 @@ class Tender extends Model
 		]));
 	}
 
+
+	public function kategoriPerolehan()
+	{
+		return $this->belongsTo(\App\Models\Ref\RefKategoriJenisPerolehan::class, 'kategori_perolehan_id');
+	}
+
+	public function kategoriPerolehanDetail()
+	{
+		return $this->belongsTo(\App\Models\Ref\RefTypeOfPerolehan::class, 'kategori_perolehan_detail_id');
+	}
+
+	/**
+	 * Determine the Kerja Penilaian Kewangan flow classification.
+	 *
+	 * Returns:
+	 * - 'kerja_besar': Anggaran Jabatan > RM 10,000,000 (3 Peringkat: Borang 1 - 15)
+	 * - 'kerja_kecil_me': Anggaran Jabatan <= RM 10,000,000 & Kategori Detail is M&E (2 Peringkat: P1=B1, P2=B2-B8)
+	 * - 'kerja_kecil_other': Anggaran Jabatan <= RM 10,000,000 & Kategori Detail is not M&E (2 Peringkat: P1=B1, P2=B2-B6)
+	 * - 'sebut_harga_kerja': Kaedah Perolehan is Sebut Harga & Kategori is Kerja
+	 * - 'non_kerja': Not a Kerja tender
+	 */
+	public function getKerjaClassification(): string
+	{
+		$isKerja = (int) ($this->kategori_perolehan_id ?? 0) === 3
+			|| strtolower(trim($this->kategoriPerolehan->name ?? '')) === 'kerja';
+
+		if (!$isKerja) {
+			return 'non_kerja';
+		}
+
+		if ($this->isSebutHargaKaedah()) {
+			return 'sebut_harga_kerja';
+		}
+
+		$anggaranJabatan = (float) ($this->anggaran_jabatan ?? $this->harga_indikatif ?? $this->price ?? 0);
+
+		if ($anggaranJabatan > 10000000.00) {
+			return 'kerja_besar';
+		}
+
+		$detailName = strtoupper(trim($this->kategoriPerolehanDetail->name ?? ''));
+		$detailId = (int) ($this->kategori_perolehan_detail_id ?? 0);
+
+		$isME = ($detailId === 15 || str_contains($detailName, 'M&E') || str_contains($detailName, 'MEKANIKAL') || str_contains($detailName, 'ELEKTRIKAL'));
+
+		if ($isME) {
+			return 'kerja_kecil_me';
+		}
+
+		return 'kerja_kecil_other';
+	}
+
+	public function isSebutHargaKerja(): bool
+	{
+		return $this->getKerjaClassification() === 'sebut_harga_kerja';
+	}
+
+	public function isKerjaBesar(): bool
+	{
+		return $this->getKerjaClassification() === 'kerja_besar';
+	}
+
+	public function isKerjaKecilMe(): bool
+	{
+		return $this->getKerjaClassification() === 'kerja_kecil_me';
+	}
+
+	public function isKerjaKecilOther(): bool
+	{
+		return $this->getKerjaClassification() === 'kerja_kecil_other';
+	}
+
+	public function isKerjaKecil(): bool
+	{
+		return in_array($this->getKerjaClassification(), ['kerja_kecil_me', 'kerja_kecil_other'], true);
+	}
 
 	/**
 	 * Boot Method

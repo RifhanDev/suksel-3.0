@@ -181,7 +181,7 @@
                             <label class="form-label fw-bold text-dark small mb-1.5 d-flex align-items-center gap-1.5">
                                 <i class="bi bi-chat-left-text text-primary"></i>Justifikasi / Keputusan JPT (Peringkat 1):
                             </label>
-                            <textarea name="catatan_peringkat1" class="form-control bg-white" rows="2" style="font-size: 0.875rem;" {{ $isSubmitted ? 'readonly' : '' }}>{{ old('catatan_peringkat1', $laporanRecord->catatan_peringkat1 ?? ('Sehubungan dengan itu, JPT bersetuju untuk mengambil ' . count($pembekalMelepasi ?? []) . ' penyebut harga untuk ke Penilaian Peringkat Kedua.')) }}</textarea>
+                            <textarea name="catatan_peringkat1" class="form-control bg-white" rows="2" style="font-size: 0.875rem;" {{ $isSubmitted ? 'readonly' : '' }}>{{ old('catatan_peringkat1', $laporanRecord?->catatan_peringkat1 ?? ('Sehubungan dengan itu, JPT bersetuju untuk mengambil ' . count($pembekalMelepasi ?? []) . ' penyebut harga untuk ke Penilaian Peringkat Kedua.')) }}</textarea>
                         </div>
                     </div>
                 </div>
@@ -266,7 +266,7 @@
                             <label class="form-label fw-bold text-dark small mb-1.5 d-flex align-items-center gap-1.5">
                                 <i class="bi bi-chat-left-text text-primary"></i>Justifikasi / Keputusan JPT (Peringkat 2):
                             </label>
-                            <textarea name="catatan_peringkat2" class="form-control bg-white" rows="2" style="font-size: 0.875rem;" {{ $isSubmitted ? 'readonly' : '' }}>{{ old('catatan_peringkat2', $laporanRecord->catatan_peringkat2 ?? 'Sehubungan dengan itu, JPT bersetuju untuk mengambil penyebut harga yang melepasi untuk ke Penilaian Peringkat Ketiga.') }}</textarea>
+                            <textarea name="catatan_peringkat2" class="form-control bg-white" rows="2" style="font-size: 0.875rem;" {{ $isSubmitted ? 'readonly' : '' }}>{{ old('catatan_peringkat2', $laporanRecord?->catatan_peringkat2 ?? 'Sehubungan dengan itu, JPT bersetuju untuk mengambil penyebut harga yang melepasi untuk ke Penilaian Peringkat Ketiga.') }}</textarea>
                         </div>
                     </div>
                 </div>
@@ -366,7 +366,7 @@
                             <label class="form-label fw-bold text-dark small mb-1.5 d-flex align-items-center gap-1.5">
                                 <i class="bi bi-chat-left-text text-primary"></i>Justifikasi / Keputusan JPT (Peringkat 3):
                             </label>
-                            <textarea name="catatan_peringkat3" class="form-control bg-white" rows="2" style="font-size: 0.875rem;" {{ $isSubmitted ? 'readonly' : '' }}>{{ old('catatan_peringkat3', $laporanRecord->catatan_peringkat3 ?? 'Sehubungan dengan itu, JPT bersetuju untuk mengambil penyebut harga yang melepasi untuk ke Peringkat Pengesyoran.') }}</textarea>
+                            <textarea name="catatan_peringkat3" class="form-control bg-white" rows="2" style="font-size: 0.875rem;" {{ $isSubmitted ? 'readonly' : '' }}>{{ old('catatan_peringkat3', $laporanRecord?->catatan_peringkat3 ?? 'Sehubungan dengan itu, JPT bersetuju untuk mengambil penyebut harga yang melepasi untuk ke Peringkat Pengesyoran.') }}</textarea>
                         </div>
                     </div>
                 </div>
@@ -416,6 +416,13 @@
                     <span>Sebelumnya</span>
                 </button>
                 <div class="d-flex gap-2">
+                    @if($tender)
+                        <button type="button" id="btnStep4Laporan" class="btn btn-outline-secondary px-4 fw-semibold d-inline-flex align-items-center gap-2"
+                            data-url="{{ route('penilaianKewangan.cetakLaporan', $tender->uuid ?: $tender->id) }}">
+                            <i class="bi bi-printer"></i>
+                            <span>Laporan</span>
+                        </button>
+                    @endif
                     @if(!$isSubmitted)
                         <button type="button" id="btnStep4SimpanDraft" class="btn btn-outline-secondary px-4 fw-semibold d-inline-flex align-items-center gap-2">
                             <i class="bi bi-save"></i>
@@ -428,7 +435,7 @@
                     @else
                         <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-20 px-4 py-2.5 rounded-3 fw-bold font-monospace d-inline-flex align-items-center gap-2">
                             <i class="bi bi-check-circle-fill"></i>
-                            <span>Laporan telah dihantar pada {{ $laporanRecord->submitted_at ? $laporanRecord->submitted_at->format('d/m/Y h:i A') : '' }}</span>
+                            <span>Laporan telah dihantar pada {{ $laporanRecord?->submitted_at ? $laporanRecord->submitted_at->format('d/m/Y h:i A') : '' }}</span>
                         </span>
                     @endif
                 </div>
@@ -468,6 +475,13 @@ document.addEventListener('DOMContentLoaded', function () {
     const btnClose = document.getElementById('btnStep4CloseSuccess');
     const btnTambahPengesyoran = document.getElementById('btnTambahPengesyoran4');
     const pengesyoranList = document.getElementById('pengesyoran-list-4');
+    const btnLaporan = document.getElementById('btnStep4Laporan');
+
+    if (btnLaporan) {
+        btnLaporan.addEventListener('click', function () {
+            window.open(btnLaporan.dataset.url, '_blank');
+        });
+    }
 
     if (btnClose) {
         btnClose.addEventListener('click', function () {
@@ -577,6 +591,12 @@ document.addEventListener('DOMContentLoaded', function () {
     if (btnHantar && formLaporan && mainWrap && successWrap) {
         btnHantar.addEventListener('click', function (e) {
             e.preventDefault();
+
+            const unassessedCount = {{ collect($rumusanLaporanData ?? [])->filter(fn ($r) => in_array('belum_dinilai', [$r['step1_status'] ?? '', $r['step2_status'] ?? '', $r['step3_status'] ?? ''], true))->count() }};
+            if (unassessedCount > 0) {
+                alert('Terdapat pembekal yang belum dinilai sepenuhnya merentasi Langkah 1, 2, atau 3. Sila lengkapkan semua penilaian sebelum menghantar laporan akhir.');
+                return;
+            }
 
             if (!confirm('Adakah anda pasti untuk menghantar Laporan Penilaian Kewangan ini? Selepas penghantaran, status tender dan keputusan pembekal akan dikemaskini.')) {
                 return;

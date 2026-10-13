@@ -74,6 +74,7 @@ class User extends Authenticatable
 		'store' => [
 			'name'      => 'required',
 			'email'     => 'required|email|unique:users,email',
+			'ic_number' => 'nullable|digits:12',
 			'password'  => [
 				'required',
 				'min:8',
@@ -84,6 +85,7 @@ class User extends Authenticatable
 		],
 		'update' => [
 			'email' => 'required|email|unique:users,email',
+			'ic_number' => 'nullable|digits:12',
 		],
 		'setPassword' => [
 			'password'  => [
@@ -119,7 +121,7 @@ class User extends Authenticatable
 		],
 		'storeUser' => [
 			'name' => 'required',
-			'email' => 'required|email|email_domain|unique:users,email',
+			'email' => 'required|email|unique:users,email',
 			'password' => [
 				'required',
 				'min:8',
@@ -418,8 +420,7 @@ class User extends Authenticatable
 	 */
 	public function roles(): BelongsToMany
 	{
-		return $this->belongsToMany(\App\Role::class, 'role_user', 'user_id', 'role_id')
-			->withTimestamps();
+		return $this->belongsToMany(\App\Role::class, 'role_user', 'user_id', 'role_id');
 	}
 
 	/**

@@ -59,26 +59,14 @@
                             $itemPayload = $semakPayload[$itemUuid] ?? null;
                             $itemVendors = $itemPayload['vendors'] ?? [];
 
-                            $failedStep1VendorIds = collect($semakPayload ?? [])
-                                ->reject(function ($payload, $uuid) use ($penyataBankItems) {
-                                    return in_array($uuid, collect($penyataBankItems ?? [])->pluck('uuid')->all(), true);
-                                })
-                                ->flatMap(function ($payload) {
-                                    return collect($payload['vendors'] ?? [])
-                                        ->filter(fn ($v) => $v['status_pematuhan'] === 'tidak_mematuhi' || $v['status_pematuhan'] === 0 || $v['status_pematuhan'] === '0')
-                                        ->pluck('vendor_id');
-                                })
-                                ->unique()
-                                ->toArray();
-
-                            $eligibleVendors = collect($itemVendors)->reject(function ($v) use ($failedStep1VendorIds) {
-                                return in_array((int) $v['vendor_id'], $failedStep1VendorIds, true);
+                            $eligibleVendors = collect($itemVendors)->filter(function ($v) use ($step2PassedVendorIds) {
+                                return in_array((int) $v['vendor_id'], $step2PassedVendorIds ?? [], true);
                             });
 
                             $totalEligible = $eligibleVendors->count();
 
-                            $reviewedCount = $eligibleVendors->filter(function($v) use ($item) {
-                                return !empty($v['step3_evaluated']);
+                            $reviewedCount = $eligibleVendors->filter(function($v) {
+                                return !empty($v['step3_evaluated']) || (isset($v['skor_modal_berbayar']) && $v['skor_modal_berbayar'] !== null);
                             })->count();
 
                             $isItemSelesai = ($totalEligible > 0 && $reviewedCount === $totalEligible);
@@ -369,18 +357,8 @@
                         </thead>
                         <tbody id="step3VendorTableBody">
                             @php
-                                $failedStep1And2VendorIds = collect($semakPayload ?? [])
-                                    ->flatMap(function ($payload) {
-                                        return collect($payload['vendors'] ?? [])
-                                            ->filter(fn ($v) => $v['status_pematuhan'] === 'tidak_mematuhi' || $v['status_pematuhan'] === 0 || $v['status_pematuhan'] === '0')
-                                            ->pluck('vendor_id');
-                                    })
-                                    ->unique()
-                                    ->toArray();
-
-                                $allTenderVendors = collect($vendors ?? []);
-                                $step3EligibleVendors = $allTenderVendors->reject(function ($v) use ($failedStep1And2VendorIds) {
-                                    return in_array((int) $v['vendor_id'], $failedStep1And2VendorIds, true);
+                                $step3EligibleVendors = collect($vendors ?? [])->filter(function ($v) use ($step2PassedVendorIds) {
+                                    return in_array((int) $v['vendor_id'], $step2PassedVendorIds ?? [], true);
                                 })->values();
                             @endphp
                             @forelse($step3EligibleVendors as $idx => $v)
@@ -390,13 +368,23 @@
                                     $hargaDisplay = isset($v['harga_tawaran']) && $v['harga_tawaran'] > 0
                                         ? number_format((float)$v['harga_tawaran'], 2)
                                         : ($v['harga_tawaran_fmt'] ?? '-');
+
+                                    $hargaVal = isset($v['harga_tawaran']) ? (float)$v['harga_tawaran'] : 0;
+                                    $anggaranVal = isset($tender->anggaran_jabatan) ? (float)$tender->anggaran_jabatan : 0;
+                                    $perbezaanDisplay = '-';
+                                    if ($hargaVal > 0 && $anggaranVal > 0) {
+                                        $diffRM = $hargaVal - $anggaranVal;
+                                        $diffPct = (($hargaVal - $anggaranVal) / $anggaranVal) * 100;
+                                        $sign = $diffRM > 0 ? '+' : '';
+                                        $perbezaanDisplay = sprintf('%sRM %s (%s%.2f%%)', $diffRM < 0 ? '-' : $sign, number_format(abs($diffRM), 2), $sign, $diffPct);
+                                    }
                                 @endphp
                                 <tr>
                                     <td class="text-center font-monospace fw-medium">{{ $kodDisplay }}</td>
                                     <td class="text-center">{{ $bumiStatus }}</td>
                                     <td class="text-end fw-medium px-3">{{ $hargaDisplay }}</td>
                                     <td class="text-center">-</td>
-                                    <td class="text-center">-</td>
+                                    <td class="text-center font-monospace small">{{ $perbezaanDisplay }}</td>
                                     <td class="text-center">
                                         <button type="button" class="btn btn-sm btn-success btn-step3-papar-vendor px-3 py-1 font-monospace d-inline-flex align-items-center gap-1"
                                             data-vendor-id="{{ $v['vendor_id'] }}"
@@ -518,7 +506,7 @@
                                 Skor Penilaian <span class="text-danger">*</span>
                             </label>
                             <div class="input-group input-group-sm">
-                                <input type="number" step="0.01" min="0" max="100" id="step3VendorSkorInput" class="form-control fw-bold text-center" placeholder="0.00" aria-label="Skor">
+                                <input type="number" step="0.01" min="0" max="100" id="step3VendorSkorInput" class="form-control fw-bold text-center" placeholder="Masukkan skor..." aria-label="Skor">
                                 <span id="step3VendorMaxSkorLabel" class="input-group-text font-monospace bg-white">/ 100</span>
                             </div>
                             <div class="form-text text-muted" style="font-size: 0.75rem;">Masukkan skor penilaian bagi petender ini.</div>
@@ -742,8 +730,9 @@
 
                     <div class="row align-items-center g-2">
                         <div class="col-md-4">
-                            <label for="step3ModalBerbayarSkorInput" class="form-label fw-bold text-dark mb-1" style="font-size: 0.83rem;">
-                                Skor Modal Berbayar <span class="text-danger">*</span>
+                            <label for="step3ModalBerbayarSkorInput" class="form-label fw-bold text-dark mb-1 d-flex align-items-center gap-1" style="font-size: 0.83rem;">
+                                <span>Skor Modal Berbayar</span> <span class="text-danger">*</span>
+                                <span id="step3ModalBerbayarAutoBadge" class="badge bg-success-subtle text-success border border-success-subtle ms-1 font-monospace fw-normal" style="font-size: 0.65rem; display: none;" title="Skor dikira secara automatik mengikut julat modal"><i class="bi bi-magic me-1"></i>Auto</span>
                             </label>
                             <div class="input-group input-group-sm">
                                 <input type="number" step="0.01" min="0" id="step3ModalBerbayarSkorInput" class="form-control fw-bold text-center" placeholder="0.00">
@@ -777,8 +766,9 @@
 
                     <div class="row align-items-center g-2">
                         <div class="col-md-4">
-                            <label for="step3ModalDibenarkanSkorInput" class="form-label fw-bold text-dark mb-1" style="font-size: 0.83rem;">
-                                Skor Modal Dibenarkan <span class="text-danger">*</span>
+                            <label for="step3ModalDibenarkanSkorInput" class="form-label fw-bold text-dark mb-1 d-flex align-items-center gap-1" style="font-size: 0.83rem;">
+                                <span>Skor Modal Dibenarkan</span> <span class="text-danger">*</span>
+                                <span id="step3ModalDibenarkanAutoBadge" class="badge bg-info-subtle text-info border border-info-subtle ms-1 font-monospace fw-normal" style="font-size: 0.65rem; display: none;" title="Skor dikira secara automatik mengikut julat modal"><i class="bi bi-magic me-1"></i>Auto</span>
                             </label>
                             <div class="input-group input-group-sm">
                                 <input type="number" step="0.01" min="0" id="step3ModalDibenarkanSkorInput" class="form-control fw-bold text-center" placeholder="0.00">
@@ -1079,23 +1069,91 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentStep3ItemUuid = null;
     let currentStep3VendorId = null;
 
-    function getFailedVendorIdsStep3() {
-        const failedSet = new Set();
-        if (typeof SEMAK_PAYLOAD !== 'undefined' && SEMAK_PAYLOAD) {
-            Object.keys(SEMAK_PAYLOAD).forEach(uuid => {
-                const itemObj = SEMAK_PAYLOAD[uuid];
-                (itemObj?.vendors || []).forEach(v => {
-                    if (v.status_pematuhan === 'tidak_mematuhi' || v.status_pematuhan === 0 || v.status_pematuhan === '0') {
-                        failedSet.add(parseInt(v.vendor_id));
+    function getStep2PassedVendorIdsClient() {
+        if (typeof STEP2_PASSED_VENDOR_IDS !== 'undefined' && Array.isArray(STEP2_PASSED_VENDOR_IDS)) {
+            const penyataUuids = (typeof PENYATA_BANK_UUIDS !== 'undefined' && Array.isArray(PENYATA_BANK_UUIDS)) ? PENYATA_BANK_UUIDS : [];
+            const step1Uuids = Object.keys(SEMAK_PAYLOAD || {}).filter(u => !penyataUuids.includes(u));
+
+            return STEP2_PASSED_VENDOR_IDS.filter(vid => {
+                for (const u of [...step1Uuids, ...penyataUuids]) {
+                    const itemObj = SEMAK_PAYLOAD?.[u];
+                    const v = (itemObj?.vendors || []).find(x => parseInt(x.vendor_id) === vid);
+                    if (v && (v.status_pematuhan === 'tidak_mematuhi' || v.status_pematuhan === 0 || v.status_pematuhan === '0')) {
+                        return false;
                     }
-                });
+                }
+                return true;
             });
         }
-        return Array.from(failedSet);
+        return [];
     }
 
-    function updateMainTableStatusPenilaian(itemUuid) {
-        if (!itemUuid || typeof SEMAK_PAYLOAD === 'undefined' || !SEMAK_PAYLOAD[itemUuid]) return;
+    function getFailedVendorIdsStep3() {
+        const eligibleIds = new Set(getStep2PassedVendorIdsClient());
+        const failed = [];
+        if (typeof SEMAK_PAYLOAD !== 'undefined' && SEMAK_PAYLOAD) {
+            const firstKey = Object.keys(SEMAK_PAYLOAD)[0];
+            const allVendors = (SEMAK_PAYLOAD[firstKey]?.vendors || []);
+            allVendors.forEach(v => {
+                const vid = parseInt(v.vendor_id);
+                if (!eligibleIds.has(vid)) {
+                    failed.push(vid);
+                }
+            });
+        }
+        return failed;
+    }
+
+    function reloadStep3ChecklistTable(callback) {
+        console.log('[TABLE RELOAD] Re-fetching checklist table HTML from backend...');
+        $.ajax({
+            url: window.location.href,
+            type: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            success: function(htmlText) {
+                var $parsed = $('<div>').html(htmlText);
+                var $newTable = $parsed.find('.step3-kewangan-table');
+                var $currentTable = $('.step3-kewangan-table');
+
+                if ($newTable.length && $currentTable.length) {
+                    $currentTable.replaceWith($newTable);
+                    console.log('[TABLE RELOAD] Successfully reloaded checklist table HTML from backend.');
+                }
+
+                var match = htmlText.match(/const\s+SEMAK_PAYLOAD\s*=\s*(\{[\s\S]*?\});/);
+                if (match && match[1]) {
+                    try {
+                        var updatedPayload = JSON.parse(match[1]);
+                        if (typeof SEMAK_PAYLOAD !== 'undefined') {
+                            Object.assign(SEMAK_PAYLOAD, updatedPayload);
+                            console.log('[TABLE RELOAD] SEMAK_PAYLOAD synchronized with backend state.');
+                        }
+                    } catch(e) {
+                        console.error('[TABLE RELOAD] Error parsing updated SEMAK_PAYLOAD:', e);
+                    }
+                }
+
+                if (typeof callback === 'function') {
+                    callback();
+                }
+            },
+            error: function(xhr, status, err) {
+                console.error('[TABLE RELOAD] Failed to reload checklist table:', err);
+                if (typeof callback === 'function') {
+                    callback();
+                }
+            }
+        });
+    }
+
+    function updateMainTableStatusPenilaian(itemUuid, isSelesaiOverride) {
+        console.log('[updateMainTableStatus] Called with itemUuid:', itemUuid, 'isSelesaiOverride:', isSelesaiOverride, 'type:', typeof isSelesaiOverride);
+        if (!itemUuid || typeof SEMAK_PAYLOAD === 'undefined' || !SEMAK_PAYLOAD[itemUuid]) {
+            console.log('[updateMainTableStatus] EARLY RETURN - missing data. itemUuid:', itemUuid, 'SEMAK_PAYLOAD exists:', typeof SEMAK_PAYLOAD !== 'undefined', 'item exists:', !!(typeof SEMAK_PAYLOAD !== 'undefined' && SEMAK_PAYLOAD[itemUuid]));
+            return;
+        }
 
         const failedVendorIds = getFailedVendorIdsStep3();
         const rawVendors = SEMAK_PAYLOAD[itemUuid].vendors || [];
@@ -1103,12 +1161,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const totalEligible = eligibleVendors.length;
         const evaluatedCount = eligibleVendors.filter(v => {
-            return !!v.step3_evaluated;
+            return !!(v.step3_evaluated || (v.skor_modal_berbayar !== null && v.skor_modal_berbayar !== undefined && v.skor_modal_berbayar !== '') || (v.skor !== null && v.skor !== undefined && v.skor !== ''));
         }).length;
 
-        const isSelesai = totalEligible > 0 && evaluatedCount === totalEligible;
+        let isSelesai = (totalEligible > 0 && evaluatedCount === totalEligible);
+        console.log('[updateMainTableStatus] totalEligible:', totalEligible, 'evaluatedCount:', evaluatedCount, 'localCalc:', isSelesai);
+        if (typeof isSelesaiOverride === 'boolean') {
+            isSelesai = isSelesaiOverride;
+            console.log('[updateMainTableStatus] Using override:', isSelesaiOverride);
+        }
 
         const tr = document.querySelector(`tr[data-item-uuid="${itemUuid}"]`);
+        console.log('[updateMainTableStatus] Found TR:', !!tr);
         if (tr) {
             const tdStatus = tr.querySelector('.status-penilaian');
             if (tdStatus) {
@@ -1150,6 +1214,15 @@ document.addEventListener('DOMContentLoaded', function() {
         const maxScore = parseFloat(specDetail.max_score || itemObj?.max_score || 100);
         const fmtMax = (maxScore % 1 === 0) ? maxScore.toFixed(0) : maxScore.toFixed(2);
 
+        const tenderAnggaranInput = document.querySelector('#modalPaparCadanganKewanganStep3 input[readonly]');
+        let rawAnggaran = specDetail.anggaran_jabatan;
+        if (!rawAnggaran || parseFloat(rawAnggaran) <= 0) {
+            if (tenderAnggaranInput && tenderAnggaranInput.value) {
+                rawAnggaran = tenderAnggaranInput.value.replace(/,/g, '');
+            }
+        }
+        const anggaranJabatan = parseFloat(rawAnggaran || 0);
+
         const eligibleVendors = rawVendors.filter(v => !failedVendorIds.includes(parseInt(v.vendor_id)));
 
         if (!eligibleVendors.length) {
@@ -1163,12 +1236,29 @@ document.addEventListener('DOMContentLoaded', function() {
             const bumiStatus = v.bumiputera_status || (v.is_bumiputera ? 'Bumiputera' : 'Bukan Bumiputera');
             const hargaFmt = v.harga_tawaran_fmt || (v.harga_tawaran ? parseFloat(v.harga_tawaran).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '-');
 
-            const isEvaluated = (v.skor !== null && v.skor !== undefined && v.skor !== '');
+            let actualSkor = null;
+            if (v.skor !== null && v.skor !== undefined && v.skor !== '') {
+                actualSkor = parseFloat(v.skor);
+            } else if (v.skor_modal_berbayar !== null && v.skor_modal_berbayar !== undefined && v.skor_modal_berbayar !== '') {
+                actualSkor = parseFloat(v.skor_modal_berbayar || 0) + parseFloat(v.skor_modal_dibenarkan || 0);
+            }
+
+            const isEvaluated = !!(v.step3_evaluated);
+
             let skorDisplay = '-';
-            if (isEvaluated) {
-                const numericSkor = parseFloat(v.skor);
-                const fmtSkor = (numericSkor % 1 === 0) ? numericSkor.toFixed(0) : numericSkor.toFixed(2);
+            if (isEvaluated && actualSkor !== null) {
+                const fmtSkor = (actualSkor % 1 === 0) ? actualSkor.toFixed(0) : actualSkor.toFixed(2);
                 skorDisplay = `${fmtSkor}/${fmtMax}`;
+            }
+
+            const hargaVal = parseFloat(v.harga_tawaran || 0);
+            let perbezaanDisplay = '-';
+            if (hargaVal > 0 && anggaranJabatan > 0) {
+                const diffRM = hargaVal - anggaranJabatan;
+                const diffPct = ((hargaVal - anggaranJabatan) / anggaranJabatan) * 100;
+                const sign = diffRM > 0 ? '+' : '';
+                const formattedRM = Math.abs(diffRM).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                perbezaanDisplay = `${diffRM < 0 ? '-' : sign}RM ${formattedRM} (${sign}${diffPct.toFixed(2)}%)`;
             }
 
             let actionBtnHtml = '';
@@ -1202,7 +1292,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <td class="text-center">${escapeHtml(bumiStatus)}</td>
                 <td class="text-end fw-medium px-3">${escapeHtml(hargaFmt)}</td>
                 <td class="text-center font-monospace fw-bold ${isEvaluated ? 'text-primary' : 'text-muted'}">${escapeHtml(skorDisplay)}</td>
-                <td class="text-center">-</td>
+                <td class="text-center font-monospace small">${escapeHtml(perbezaanDisplay)}</td>
                 <td class="text-center">
                     ${actionBtnHtml}
                 </td>
@@ -1213,17 +1303,15 @@ document.addEventListener('DOMContentLoaded', function() {
         bindStep3VendorDetailButtons();
     }
 
-    document.querySelectorAll('.btn-papar-cadangan-kewangan-step3').forEach(function(btn) {
-        btn.addEventListener('click', function() {
-            const dokumen = btn.getAttribute('data-dokumen') || '';
-            const uuid = btn.getAttribute('data-uuid') || '';
-            currentStep3ItemUuid = uuid;
-            const titleEl = document.getElementById('step3ModalDokumenTitle');
-            if (titleEl && dokumen) {
-                titleEl.textContent = `${dokumen}.`;
-            }
-            renderStep3VendorTableModal(uuid);
-        });
+    $(document).on('click', '.btn-papar-cadangan-kewangan-step3', function() {
+        const dokumen = this.getAttribute('data-dokumen') || '';
+        const uuid = this.getAttribute('data-uuid') || '';
+        currentStep3ItemUuid = uuid;
+        const titleEl = document.getElementById('step3ModalDokumenTitle');
+        if (titleEl && dokumen) {
+            titleEl.textContent = `${dokumen}.`;
+        }
+        renderStep3VendorTableModal(uuid);
     });
 
     const firstModalEl = document.getElementById('modalPaparCadanganKewanganStep3');
@@ -1307,17 +1395,34 @@ document.addEventListener('DOMContentLoaded', function() {
                     const unitStr = item.unit || item.uom || 'Unit';
 
                     // Anggaran Jabatan (status_process_id = 3)
-                    const pricingItem = pricingItems[itemUuid] || pricingItems[item.spec_item_id] || pricingItems[item.id] || null;
-                    const itemAnggaranTotal = pricingItem ? parseFloat(pricingItem.harga || 0) : 0;
+                    const pricingItem = pricingItems[itemUuid] || pricingItems[item.spec_item_id] || pricingItems[item.id] || pricingItems[item.uuid] || null;
+                    let itemAnggaranTotal = pricingItem ? parseFloat(pricingItem.harga || 0) : 0;
+                    if (!itemAnggaranTotal && groups.length === 1 && specDetail.anggaran_jabatan) {
+                        itemAnggaranTotal = parseFloat(specDetail.anggaran_jabatan || 0);
+                    }
                     totalAnggaran += itemAnggaranTotal;
 
                     // Tawaran Harga (status_process_id = 5)
                     let vendorSubmittedHarga = 0;
-                    if (itemPricesMap[itemUuid] !== undefined && itemPricesMap[itemUuid] !== null && itemPricesMap[itemUuid] !== '') {
-                        vendorSubmittedHarga = parseFloat(itemPricesMap[itemUuid]);
-                    } else if (item.spec_item_id && itemPricesMap[item.spec_item_id] !== undefined) {
-                        vendorSubmittedHarga = parseFloat(itemPricesMap[item.spec_item_id]);
-                    } else if (groups.length === 1 && vendorObj.harga_tawaran) {
+                    const possibleKeys = [
+                        itemUuid,
+                        item.spec_item_id,
+                        item.id,
+                        item.uuid,
+                        (gIdx + 1),
+                        (gIdx + 1).toString()
+                    ];
+
+                    for (const key of possibleKeys) {
+                        if (key !== undefined && key !== null && key !== '' && itemPricesMap[key] !== undefined && itemPricesMap[key] !== null && itemPricesMap[key] !== '') {
+                            const parsed = parseFloat(itemPricesMap[key]);
+                            if (!isNaN(parsed) && parsed >= 0) {
+                                vendorSubmittedHarga = parsed;
+                                break;
+                            }
+                        }
+                    }
+                    if (!vendorSubmittedHarga && groups.length === 1 && vendorObj.harga_tawaran) {
                         vendorSubmittedHarga = parseFloat(vendorObj.harga_tawaran || 0);
                     }
                     if (isNaN(vendorSubmittedHarga)) vendorSubmittedHarga = 0;
@@ -1378,7 +1483,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             };
         }
-        if (elCatatanInput) elCatatanInput.value = vendorObj.catatan || '';
+        if (elCatatanInput) elCatatanInput.value = vendorObj.catatan_skor || '';
 
         // Show Second Modal
         if (firstModal && secondModal) {
@@ -1441,23 +1546,24 @@ document.addEventListener('DOMContentLoaded', function() {
                             const vRow = SEMAK_PAYLOAD[currentStep3ItemUuid].vendors.find(v => parseInt(v.vendor_id) === currentStep3VendorId);
                             if (vRow) {
                                 vRow.skor = skorVal;
-                                vRow.catatan = catatanVal;
+                                vRow.catatan_skor = catatanVal;
                                 vRow.status_pematuhan = 'mematuhi';
                                 vRow.step3_evaluated = true;
                             }
                         }
 
+                        const savedItemUuid = currentStep3ItemUuid;
+
                         if (secondModal) {
                             secondModal.hide();
                         }
 
-                        setTimeout(function() {
+                        reloadStep3ChecklistTable(function() {
                             if (firstModal) {
                                 firstModal.show();
                             }
-                            renderStep3VendorTableModal(currentStep3ItemUuid);
-                            updateMainTableStatusPenilaian(currentStep3ItemUuid);
-                        }, 300);
+                            renderStep3VendorTableModal(savedItemUuid);
+                        });
 
                         if (typeof Swal !== 'undefined') {
                             Swal.fire({
@@ -1497,17 +1603,23 @@ document.addEventListener('DOMContentLoaded', function() {
     const profilModal1 = profilModal1El ? bootstrap.Modal.getOrCreateInstance(profilModal1El) : null;
     const profilModal2 = profilModal2El ? bootstrap.Modal.getOrCreateInstance(profilModal2El) : null;
 
-    document.querySelectorAll('.btn-papar-profil-petender-step3').forEach(function(btn) {
-        btn.addEventListener('click', function() {
-            const dokumen = btn.getAttribute('data-dokumen') || 'Maklumat Profil Petender';
-            const uuid = btn.getAttribute('data-uuid') || '';
-            currentStep3ItemUuid = uuid;
-            const titleEl = document.getElementById('step3ProfilPetenderModalDokumenTitle');
-            if (titleEl) {
-                titleEl.textContent = dokumen;
+    if (profilModal1El) {
+        profilModal1El.addEventListener('hidden.bs.modal', function() {
+            if (currentStep3ItemUuid) {
+                updateMainTableStatusPenilaian(currentStep3ItemUuid);
             }
-            renderStep3ProfilPetenderVendorTableModal(uuid);
         });
+    }
+
+    $(document).on('click', '.btn-papar-profil-petender-step3', function() {
+        const dokumen = this.getAttribute('data-dokumen') || 'Maklumat Profil Petender';
+        const uuid = this.getAttribute('data-uuid') || '';
+        currentStep3ItemUuid = uuid;
+        const titleEl = document.getElementById('step3ProfilPetenderModalDokumenTitle');
+        if (titleEl) {
+            titleEl.textContent = dokumen;
+        }
+        renderStep3ProfilPetenderVendorTableModal(uuid);
     });
 
     function renderStep3ProfilPetenderVendorTableModal(itemUuid) {
@@ -1545,13 +1657,13 @@ document.addEventListener('DOMContentLoaded', function() {
         eligibleVendors.forEach((v, idx) => {
             const kodDisplay = v.kod ? v.kod : ((idx + 1) + '/' + eligibleVendors.length);
 
-            const isEvaluated = (v.skor !== null && v.skor !== undefined && v.skor !== '');
+            const isEvaluated = !!(v.step3_evaluated || (v.skor_modal_berbayar !== null && v.skor_modal_berbayar !== undefined && v.skor_modal_berbayar !== ''));
             let skorBerbayarDisplay = '-';
             let skorDibenarkanDisplay = '-';
 
             if (isEvaluated) {
-                const sBerbayar = parseFloat(v.skor_modal_berbayar ?? 0);
-                const sDibenarkan = parseFloat(v.skor_modal_dibenarkan ?? 0);
+                const sBerbayar = (v.skor_modal_berbayar !== null && v.skor_modal_berbayar !== undefined && v.skor_modal_berbayar !== '') ? parseFloat(v.skor_modal_berbayar) : 0;
+                const sDibenarkan = (v.skor_modal_dibenarkan !== null && v.skor_modal_dibenarkan !== undefined && v.skor_modal_dibenarkan !== '') ? parseFloat(v.skor_modal_dibenarkan) : 0;
                 const fmtSB = (sBerbayar % 1 === 0) ? sBerbayar.toFixed(0) : sBerbayar.toFixed(2);
                 const fmtSD = (sDibenarkan % 1 === 0) ? sDibenarkan.toFixed(0) : sDibenarkan.toFixed(2);
                 skorBerbayarDisplay = `${fmtSB}/${fmtMaxBerbayar}`;
@@ -1646,11 +1758,23 @@ document.addEventListener('DOMContentLoaded', function() {
         setVal('viewProfilModalBerbayar', mBerbayar > 0 ? 'RM ' + mBerbayar.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : 'RM 0.00');
         setVal('viewProfilModalDibenarkan', mDibenarkan > 0 ? 'RM ' + mDibenarkan.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : 'RM 0.00');
 
-        // 3. Render Modal Berbayar Scoring Reference Table
+        // 3. Render Modal Berbayar Scoring Reference Table & Auto Calculation
         const tbodyBerbayar = document.getElementById('step3ModalBerbayarScoringTbody');
         const berbayarItems = profilDetail.modal_berbayar_items || [];
         const maxBerbayar = parseFloat(profilDetail.max_modal_berbayar || 0);
         const fmtMaxBerbayar = (maxBerbayar % 1 === 0) ? maxBerbayar.toFixed(0) : maxBerbayar.toFixed(2);
+
+        let autoSkorBerbayar = null;
+        if (berbayarItems.length > 0) {
+            for (const item of berbayarItems) {
+                const dari = parseFloat(item.dari || 0);
+                const hingga = (item.hingga !== null && item.hingga !== undefined && item.hingga !== '') ? parseFloat(item.hingga) : null;
+                if (mBerbayar >= dari && (hingga === null || mBerbayar <= hingga)) {
+                    autoSkorBerbayar = parseFloat(item.skema || 0);
+                    break;
+                }
+            }
+        }
 
         if (tbodyBerbayar) {
             if (!berbayarItems.length) {
@@ -1676,23 +1800,42 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const elBerbayarInput = document.getElementById('step3ModalBerbayarSkorInput');
         const elBerbayarMaxLabel = document.getElementById('step3ModalBerbayarMaxLabel');
+        const elBerbayarBadge = document.getElementById('step3ModalBerbayarAutoBadge');
         if (elBerbayarMaxLabel) elBerbayarMaxLabel.textContent = '/ ' + fmtMaxBerbayar;
         if (elBerbayarInput) {
             elBerbayarInput.setAttribute('max', maxBerbayar);
-            elBerbayarInput.value = (vendorObj.skor_modal_berbayar !== null && vendorObj.skor_modal_berbayar !== undefined && vendorObj.skor_modal_berbayar !== '') ? vendorObj.skor_modal_berbayar : '';
+            const hasSavedBerbayar = (vendorObj.skor_modal_berbayar !== null && vendorObj.skor_modal_berbayar !== undefined && vendorObj.skor_modal_berbayar !== '');
+            let valToSet = hasSavedBerbayar ? vendorObj.skor_modal_berbayar : (autoSkorBerbayar !== null ? autoSkorBerbayar : '');
+            elBerbayarInput.value = valToSet;
+            if (elBerbayarBadge) {
+                elBerbayarBadge.style.display = (!hasSavedBerbayar && autoSkorBerbayar !== null) ? 'inline-block' : 'none';
+            }
             elBerbayarInput.oninput = function() {
                 let val = parseFloat(this.value);
                 if (!isNaN(val) && val > maxBerbayar) {
                     this.value = maxBerbayar;
                 }
+                if (elBerbayarBadge) elBerbayarBadge.style.display = 'none';
             };
         }
 
-        // 4. Render Modal Dibenarkan Scoring Reference Table
+        // 4. Render Modal Dibenarkan Scoring Reference Table & Auto Calculation
         const tbodyDibenarkan = document.getElementById('step3ModalDibenarkanScoringTbody');
         const dibenarkanItems = profilDetail.modal_dibenarkan_items || [];
         const maxDibenarkan = parseFloat(profilDetail.max_modal_dibenarkan || 0);
         const fmtMaxDibenarkan = (maxDibenarkan % 1 === 0) ? maxDibenarkan.toFixed(0) : maxDibenarkan.toFixed(2);
+
+        let autoSkorDibenarkan = null;
+        if (dibenarkanItems.length > 0) {
+            for (const item of dibenarkanItems) {
+                const dari = parseFloat(item.dari || 0);
+                const hingga = (item.hingga !== null && item.hingga !== undefined && item.hingga !== '') ? parseFloat(item.hingga) : null;
+                if (mDibenarkan >= dari && (hingga === null || mDibenarkan <= hingga)) {
+                    autoSkorDibenarkan = parseFloat(item.skema || 0);
+                    break;
+                }
+            }
+        }
 
         if (tbodyDibenarkan) {
             if (!dibenarkanItems.length) {
@@ -1718,21 +1861,28 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const elDibenarkanInput = document.getElementById('step3ModalDibenarkanSkorInput');
         const elDibenarkanMaxLabel = document.getElementById('step3ModalDibenarkanMaxLabel');
+        const elDibenarkanBadge = document.getElementById('step3ModalDibenarkanAutoBadge');
         if (elDibenarkanMaxLabel) elDibenarkanMaxLabel.textContent = '/ ' + fmtMaxDibenarkan;
         if (elDibenarkanInput) {
             elDibenarkanInput.setAttribute('max', maxDibenarkan);
-            elDibenarkanInput.value = (vendorObj.skor_modal_dibenarkan !== null && vendorObj.skor_modal_dibenarkan !== undefined && vendorObj.skor_modal_dibenarkan !== '') ? vendorObj.skor_modal_dibenarkan : '';
+            const hasSavedDibenarkan = (vendorObj.skor_modal_dibenarkan !== null && vendorObj.skor_modal_dibenarkan !== undefined && vendorObj.skor_modal_dibenarkan !== '');
+            let valToSet = hasSavedDibenarkan ? vendorObj.skor_modal_dibenarkan : (autoSkorDibenarkan !== null ? autoSkorDibenarkan : '');
+            elDibenarkanInput.value = valToSet;
+            if (elDibenarkanBadge) {
+                elDibenarkanBadge.style.display = (!hasSavedDibenarkan && autoSkorDibenarkan !== null) ? 'inline-block' : 'none';
+            }
             elDibenarkanInput.oninput = function() {
                 let val = parseFloat(this.value);
                 if (!isNaN(val) && val > maxDibenarkan) {
                     this.value = maxDibenarkan;
                 }
+                if (elDibenarkanBadge) elDibenarkanBadge.style.display = 'none';
             };
         }
 
         // 5. Catatan Penilai
         const elProfilCatatan = document.getElementById('step3VendorProfilCatatanInput');
-        if (elProfilCatatan) elProfilCatatan.value = vendorObj.catatan || '';
+        if (elProfilCatatan) elProfilCatatan.value = vendorObj.catatan_skor || '';
 
         // Transition from Modal 1 to Modal 2
         if (profilModal1 && profilModal2) {
@@ -1812,29 +1962,32 @@ document.addEventListener('DOMContentLoaded', function() {
                         step: 3
                     },
                     success: function(resp) {
+                        console.log('[PROFIL SAVE] AJAX success. resp:', JSON.stringify(resp));
+
                         if (typeof SEMAK_PAYLOAD !== 'undefined' && SEMAK_PAYLOAD[currentStep3ItemUuid]) {
                             const vRow = SEMAK_PAYLOAD[currentStep3ItemUuid].vendors.find(v => parseInt(v.vendor_id) === currentStep3VendorId);
                             if (vRow) {
                                 vRow.skor_modal_berbayar = skorBerbayarVal;
                                 vRow.skor_modal_dibenarkan = skorDibenarkanVal;
                                 vRow.skor = skorBerbayarVal + skorDibenarkanVal;
-                                vRow.catatan = catatanVal;
+                                vRow.catatan_skor = catatanVal;
                                 vRow.status_pematuhan = 'mematuhi';
                                 vRow.step3_evaluated = true;
                             }
                         }
 
+                        const savedItemUuid = currentStep3ItemUuid;
+
                         if (profilModal2) {
                             profilModal2.hide();
                         }
 
-                        setTimeout(function() {
+                        reloadStep3ChecklistTable(function() {
                             if (profilModal1) {
                                 profilModal1.show();
                             }
-                            renderStep3ProfilPetenderVendorTableModal(currentStep3ItemUuid);
-                            updateMainTableStatusPenilaian(currentStep3ItemUuid);
-                        }, 300);
+                            renderStep3ProfilPetenderVendorTableModal(savedItemUuid);
+                        });
 
                         if (typeof Swal !== 'undefined') {
                             Swal.fire({
@@ -1872,17 +2025,15 @@ document.addEventListener('DOMContentLoaded', function() {
     const muatNaikModalEl = document.getElementById('modalMuatNaikStep3');
     const muatNaikModal = muatNaikModalEl ? bootstrap.Modal.getOrCreateInstance(muatNaikModalEl) : null;
 
-    document.querySelectorAll('.btn-papar-muat-naik-step3').forEach(function(btn) {
-        btn.addEventListener('click', function() {
-            const dokumen = btn.getAttribute('data-dokumen') || 'Item Kewangan (Muat Naik)';
-            const uuid = btn.getAttribute('data-uuid') || '';
-            currentStep3ItemUuid = uuid;
-            const titleEl = document.getElementById('step3MuatNaikModalDokumenTitle');
-            if (titleEl) {
-                titleEl.textContent = dokumen;
-            }
-            renderStep3MuatNaikVendorTableModal(uuid);
-        });
+    $(document).on('click', '.btn-papar-muat-naik-step3', function() {
+        const dokumen = this.getAttribute('data-dokumen') || 'Item Kewangan (Muat Naik)';
+        const uuid = this.getAttribute('data-uuid') || '';
+        currentStep3ItemUuid = uuid;
+        const titleEl = document.getElementById('step3MuatNaikModalDokumenTitle');
+        if (titleEl) {
+            titleEl.textContent = dokumen;
+        }
+        renderStep3MuatNaikVendorTableModal(uuid);
     });
 
     function renderStep3MuatNaikVendorTableModal(itemUuid) {
@@ -2032,8 +2183,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (muatNaikModal) {
                     muatNaikModal.hide();
                 }
-                updateMainTableStatusPenilaian(currentStep3ItemUuid);
-                renderStep3MuatNaikVendorTableModal(currentStep3ItemUuid);
+                const savedItemUuid = currentStep3ItemUuid;
+                reloadStep3ChecklistTable(function() {
+                    renderStep3MuatNaikVendorTableModal(savedItemUuid);
+                });
 
                 if (!hasError && typeof Swal !== 'undefined') {
                     Swal.fire({

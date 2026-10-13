@@ -207,7 +207,7 @@ class TenderReviewPresenter
 
     public function mofCidbRuleLabel(): string
     {
-        return strtoupper((string) ($this->tender->mof_cidb_rule ?: 'dan'));
+        return $this->logicLabel($this->tender->mof_cidb_rule);
     }
 
     public function logicLabel(?string $rule): string

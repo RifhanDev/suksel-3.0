@@ -7,6 +7,7 @@ use App\Http\Conversations\GlobalConversation;
 use App\Http\Conversations\ManualConversation;
 use App\Http\Conversations\SelectServiceConversation;
 use App\Http\Conversations\StatusConversation;
+use App\Http\Conversations\WelcomeConversation;
 use BotMan\BotMan\BotMan;
 use BotMan\BotMan\Messages\Attachments\Image;
 use BotMan\BotMan\Messages\Incoming\Answer;
@@ -29,14 +30,10 @@ class BotManController extends Controller
             return $this->handleFileUpload($request, $botman);
         }
 
-        $botman->hears('(hi|hai|hello)', function ($botman) {
+        $botman->hears('(hi|hai|hello|menu|mula|bantuan|help|__welcome__|senarai menu)', function ($botman) {
             $botman->typesAndWaits(1);
-
-            $botman->ask('Hi, apa yang boleh saya bantu? </br> cth:- </br>senarai perkhidmatan</br>panduan</br>aduan', function (Answer $answer) {
-
-                $answer = $answer->getText();
-            });
-        });
+            $botman->startConversation(new WelcomeConversation);
+        })->skipsConversation();
 
         $botman->hears('senarai perkhidmatan', function ($botman) {
             $botman->typesAndWaits(1);
@@ -48,7 +45,7 @@ class BotManController extends Controller
             $botman->startConversation(new ManualConversation);
         })->skipsConversation();
 
-        $botman->hears('aduan', function ($botman) {
+        $botman->hears('(aduan|complaint|membuat aduan|hantar aduan)', function ($botman) {
             $botman->typesAndWaits(1);
             $botman->startConversation(new AduanConversation);
         })->skipsConversation();
@@ -85,20 +82,8 @@ class BotManController extends Controller
             $bot->reply($message);
         });
 
-        // Direct route for "aduan" (complaint) - exact match, case insensitive
-        $botman->hears('aduan', function ($botman) {
-            $botman->typesAndWaits(1);
-            $botman->startConversation(new AduanConversation);
-        })->skipsConversation();
-
-        // Also catch variations
-        $botman->hears('(complaint|membuat aduan|hantar aduan)', function ($botman) {
-            $botman->typesAndWaits(1);
-            $botman->startConversation(new AduanConversation);
-        })->skipsConversation();
-
-        // Catch-all route for other questions (FAQ) - must be last
-        $botman->hears('{question}', function ($botman) use ($request) {
+        // FAQ only when no other command matched (avoid double-reply with senarai perkhidmatan, etc.)
+        $botman->fallback(function ($botman) {
             $botman->typesAndWaits(1);
             $botman->startConversation(new GlobalConversation());
         });

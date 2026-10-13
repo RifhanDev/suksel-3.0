@@ -13,11 +13,13 @@ class AddAttachmentsToMailQueuesTable extends Migration
      */
     public function up()
     {
-        Schema::table('mail_queues', function (Blueprint $table) {
-            // JSON array of attachments: [{ filename, mime, data (base64) }, ...]
-            // Nullable so existing/plain emails are unaffected.
-            $table->longText('attachments')->nullable()->after('payload');
-        });
+        if (Schema::hasTable('mail_queues') && ! Schema::hasColumn('mail_queues', 'attachments')) {
+            Schema::table('mail_queues', function (Blueprint $table) {
+                // JSON array of attachments: [{ filename, mime, data (base64) }, ...]
+                // Nullable so existing/plain emails are unaffected.
+                $table->longText('attachments')->nullable()->after('payload');
+            });
+        }
     }
 
     /**

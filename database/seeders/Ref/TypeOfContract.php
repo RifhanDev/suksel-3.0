@@ -2,31 +2,48 @@
 
 namespace Database\Seeders\Ref;
 
-use App\Models\Ref\RefTypeOfContract;
-use Carbon\Carbon;
-use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
-class TypeOfContract extends Seeder
+/**
+ * Senarai rujukan Jenis Kontrak.
+ *
+ * Lihat RefListSeeder untuk kelakuan dan sebab ia selamat dijalankan berulang.
+ * Jadual ini dirujuk oleh tenders.jenis_kontrak_id dengan onDelete('set null').
+ */
+class TypeOfContract extends RefListSeeder
 {
-    /**
-     * Run the database seeds.
-     */
+    public const ROWS = [
+        ['id' => 1, 'name' => 'Kementerian'],
+        ['id' => 2, 'name' => 'Kerajaan Negeri'],
+        ['id' => 3, 'name' => 'Agensi dan Jabatan'],
+        ['id' => 4, 'name' => 'Lain-lain'],
+    ];
+
+    protected function table(): string
+    {
+        return 'ref_type_of_contracts';
+    }
+
+    protected function rows(): array
+    {
+        return self::ROWS;
+    }
+
     public function run(): void
     {
+        foreach ($this->rows() as $row) {
+            DB::table($this->table())->updateOrInsert(
+                ['id' => $row['id']],
+                [
+                    'name'       => $row['name'],
+                    'active'     => 1,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]
+            );
+        }
 
-        // Create Admin User
-        RefTypeOfContract::create([
-            'name' => 'Kementerian',
-            'active' => '1',
-            'created_at' => Carbon::now(),
-            'updated_at' => Carbon::now(),
-        ]);
-
-        RefTypeOfContract::create([
-            'name' => 'Bukan Kementerian',
-            'active' => '1',
-            'created_at' => Carbon::now(),
-            'updated_at' => Carbon::now(),
-        ]);
+        // Remove any extra rows beyond ID 4
+        DB::table($this->table())->where('id', '>', 4)->delete();
     }
 }

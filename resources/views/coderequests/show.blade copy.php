@@ -68,7 +68,7 @@
 					<td style="border-color: #000000 !important;" class="bg-blue-selangor">
 						{{ App\Vendor::$districts[$request->data['district_id']] ?? '' }}
 						@if (!empty($request->data['state_id']) && $request->data['state_id'] > 0)
-							&nbsp;({{ App\Models\RefState::find($request->data['state_id'])->description }})
+							&nbsp;({{ App\Models\Ref\RefState::find($request->data['state_id'])->description }})
 						@endif
 						{{-- @php var_dump($request->data); die; @endphp --}}
 					</td>

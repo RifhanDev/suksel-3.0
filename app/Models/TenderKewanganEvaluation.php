@@ -14,6 +14,7 @@ class TenderKewanganEvaluation extends Model
         'checklist_item_uuid',
         'status_pematuhan',
         'catatan',
+        'catatan_skor',
         'skor',
         'created_by',
         'updated_by',

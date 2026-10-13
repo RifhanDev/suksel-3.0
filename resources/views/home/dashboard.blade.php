@@ -154,8 +154,8 @@
                 <div class="db-card-header">
                     <ul class="nav nav-tabs flex-wrap" role="tablist">
                         <li class="nav-item" role="presentation">
-                            <a class="nav-link active" href="#db-recom" data-bs-toggle="tab" role="tab"
-                                aria-controls="db-recom" aria-selected="true">
+                            <a class="nav-link {{ request('tab') === 'ebidding' ? '' : 'active' }}" href="#db-recom" data-bs-toggle="tab" role="tab"
+                                aria-controls="db-recom" aria-selected="{{ request('tab') === 'ebidding' ? 'false' : 'true' }}">
                                 Anggaran Layak
                                 <span class="badge ms-1">{{ count($eligibles) }}</span>
                             </a>
@@ -186,13 +186,27 @@
                                 Penilaian Prestasi
                             </a>
                         </li>
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link" href="#db-direct-wins" data-bs-toggle="tab" role="tab"
+                                aria-controls="db-direct-wins" aria-selected="false">
+                                Pembelian Terus/Lantikan Terus
+                                <span class="badge ms-1">{{ count($directWins ?? []) }}</span>
+                            </a>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link {{ request('tab') === 'ebidding' ? 'active' : '' }}" href="#db-ebidding" data-bs-toggle="tab" role="tab"
+                                aria-controls="db-ebidding" aria-selected="{{ request('tab') === 'ebidding' ? 'true' : 'false' }}">
+                                Bidaan
+                                <span class="badge ms-1">{{ count($ebiddingInvites ?? []) }}</span>
+                            </a>
+                        </li>
                     </ul>
                 </div>
 
                 <div class="p-4">
                     <div class="tab-content">
 
-                        <div class="tab-pane active" id="db-recom">
+                        <div class="tab-pane {{ request('tab') === 'ebidding' ? '' : 'active' }}" id="db-recom">
                             @if (count($eligibles) > 0)
                                 <div class="table-responsive">
                                     <table class="DT2 table table-hover table-bordered align-middle mb-0">
@@ -269,7 +283,7 @@
                                                                 <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                                                                 No. Siri Dokumen
                                                             </a>
-                                                            <a href="{{ asset('tenders/' . $purchase->tender_id) }}#tf-doc2" target="_blank"
+                                                            <a href="{{ url('tenders/' . $purchase->tender_id) }}#vt-dokumen-tawaran" target="_blank"
                                                                 style="display:inline-flex; align-items:center; gap:5px; font-size:0.72rem; font-weight:600; color:#166534; text-decoration:none; padding:4px 8px; background:#f0fdf4; border-radius:5px; border:1px solid #bbf7d0;">
                                                                 <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                                                                 Muat Turun
@@ -414,8 +428,127 @@
                             @include('home.tab-contents.penilaian-prestasi')
                         </div>
 
+                        <div class="tab-pane" id="db-direct-wins">
+                            @php $directWins = $directWins ?? collect(); @endphp
+                            @if (count($directWins) > 0)
+                                <div class="table-responsive">
+                                    <table class="DT2 table table-hover table-bordered align-middle mb-0">
+                                        <thead style="background: #f8fafc;">
+                                            <tr>
+                                                <th class="text-uppercase fw-bold py-3 ps-3" style="font-size:0.68rem; letter-spacing:0.5px; color:#6b7280; border-color:#e5e7eb;">Projek</th>
+                                                <th class="text-uppercase fw-bold py-3" style="font-size:0.68rem; letter-spacing:0.5px; color:#6b7280; border-color:#e5e7eb; width:140px;">Jenis</th>
+                                                <th class="text-uppercase fw-bold py-3 pe-3 text-end" style="font-size:0.68rem; letter-spacing:0.5px; color:#6b7280; border-color:#e5e7eb; width:160px;">Tarikh Tutup</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach ($directWins as $tender)
+                                                @php
+                                                    $isPembelian = $tender->type === 'pembelian_terus';
+                                                    $detailUrl = $isPembelian
+                                                        ? route('pembelianTerus.keputusanSyarikatDetails', $tender->id)
+                                                        : route('keputusanTerus.show', $tender->id);
+                                                    $jenisLabel = $isPembelian ? 'Pembelian Terus' : 'Lantikan Terus';
+                                                @endphp
+                                                <tr style="border-color:#e5e7eb;">
+                                                    <td class="py-3 ps-3" style="border-color:#e5e7eb;">
+                                                        <a href="{{ $detailUrl }}" class="fw-semibold mb-1 d-block" style="font-size:0.85rem;">{{ $tender->name }}</a>
+                                                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                                                            <span class="text-muted" style="font-size:0.72rem;">{{ optional($tender->tenderer)->name ?? '-' }}</span>
+                                                            @if($tender->ref_number)
+                                                                <span class="text-muted" style="font-size:0.72rem;">·</span>
+                                                                <span class="fw-semibold" style="font-size:0.72rem; color:#374151;">{{ $tender->ref_number }}</span>
+                                                            @endif
+                                                        </div>
+                                                    </td>
+                                                    <td class="py-3" style="border-color:#e5e7eb;">
+                                                        <span style="display:inline-block; font-size:0.68rem; font-weight:700; padding:3px 10px; border-radius:20px; background:{{ $isPembelian ? '#fef2f2' : '#eff6ff' }}; color:{{ $isPembelian ? '#b91c1c' : '#1d4ed8' }};">
+                                                            {{ $jenisLabel }}
+                                                        </span>
+                                                    </td>
+                                                    <td class="py-3 pe-3 text-end text-nowrap" style="border-color:#e5e7eb;">
+                                                        @if($tender->submission_datetime)
+                                                            <div class="fw-semibold" style="font-size:0.82rem; color:#1f2937;">{{ \Carbon\Carbon::parse($tender->submission_datetime)->format('j M Y') }}</div>
+                                                            <div class="text-muted" style="font-size:0.7rem;">{{ \Carbon\Carbon::parse($tender->submission_datetime)->format('g:i A') }}</div>
+                                                        @else
+                                                            <span class="text-muted" style="font-size:0.82rem;">-</span>
+                                                        @endif
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            @else
+                                <div class="alert alert-info mb-0">Tiada projek Pembelian Terus / Lantikan Terus yang dimenangi buat masa ini.</div>
+                            @endif
+                        </div>
+
+                        <div class="tab-pane {{ request('tab') === 'ebidding' ? 'active' : '' }}" id="db-ebidding">
+                            @php $ebiddingInvites = $ebiddingInvites ?? collect(); @endphp
+                            @if (count($ebiddingInvites) > 0)
+                                <div class="table-responsive">
+                                    <table class="DT2 table table-hover table-bordered align-middle mb-0">
+                                        <thead style="background: #f8fafc;">
+                                            <tr>
+                                                <th class="text-uppercase fw-bold py-3 ps-3" style="font-size:0.68rem; letter-spacing:0.5px; color:#6b7280; border-color:#e5e7eb;">Tender / Sebut Harga</th>
+                                                <th class="text-uppercase fw-bold py-3" style="font-size:0.68rem; letter-spacing:0.5px; color:#6b7280; border-color:#e5e7eb; width:160px;">Tempoh Bidaan</th>
+                                                <th class="text-uppercase fw-bold py-3" style="font-size:0.68rem; letter-spacing:0.5px; color:#6b7280; border-color:#e5e7eb; width:140px;">Status</th>
+                                                <th class="text-uppercase fw-bold py-3 pe-3 text-end" style="font-size:0.68rem; letter-spacing:0.5px; color:#6b7280; border-color:#e5e7eb; width:140px;">Tindakan</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach ($ebiddingInvites as $invite)
+                                                @php
+                                                    $statusStyles = [
+                                                        'open' => ['bg' => '#ecfdf5', 'color' => '#047857'],
+                                                        'submitted' => ['bg' => '#eff6ff', 'color' => '#1d4ed8'],
+                                                        'ended' => ['bg' => '#fef2f2', 'color' => '#b91c1c'],
+                                                        'pending' => ['bg' => '#fffbeb', 'color' => '#b45309'],
+                                                    ];
+                                                    $style = $statusStyles[$invite->status_key] ?? $statusStyles['pending'];
+                                                @endphp
+                                                <tr style="border-color:#e5e7eb;">
+                                                    <td class="py-3 ps-3" style="border-color:#e5e7eb;">
+                                                        <a href="{{ $invite->url }}" class="fw-semibold mb-1 d-block" style="font-size:0.85rem;">{{ $invite->tender->name }}</a>
+                                                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                                                            <span class="text-muted" style="font-size:0.72rem;">{{ optional($invite->tender->tenderer)->name ?? '-' }}</span>
+                                                            @if($invite->tender->ref_number)
+                                                                <span class="text-muted" style="font-size:0.72rem;">·</span>
+                                                                <span class="fw-semibold" style="font-size:0.72rem; color:#374151;">{{ $invite->tender->ref_number }}</span>
+                                                            @endif
+                                                        </div>
+                                                    </td>
+                                                    <td class="py-3 text-nowrap" style="border-color:#e5e7eb;">
+                                                        @if($invite->end_at)
+                                                            <div class="fw-semibold" style="font-size:0.82rem; color:#1f2937;">Tamat {{ $invite->end_at->format('j M Y') }}</div>
+                                                            <div class="text-muted" style="font-size:0.7rem;">{{ $invite->end_at->format('g:i A') }}</div>
+                                                        @else
+                                                            <span class="text-muted" style="font-size:0.82rem;">-</span>
+                                                        @endif
+                                                    </td>
+                                                    <td class="py-3" style="border-color:#e5e7eb;">
+                                                        <span style="display:inline-block; font-size:0.68rem; font-weight:700; padding:3px 10px; border-radius:20px; background:{{ $style['bg'] }}; color:{{ $style['color'] }};">
+                                                            {{ $invite->status_label }}
+                                                        </span>
+                                                    </td>
+                                                    <td class="py-3 pe-3 text-end" style="border-color:#e5e7eb;">
+                                                        <a href="{{ $invite->url }}"
+                                                            style="display:inline-flex; align-items:center; gap:5px; font-size:0.72rem; font-weight:600; color:#1d4ed8; text-decoration:none; padding:4px 10px; background:#eff6ff; border-radius:5px; border:1px solid #bfdbfe;">
+                                                            {{ $invite->has_submitted ? 'Lihat' : 'Pergi ke Bidaan' }}
+                                                        </a>
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            @else
+                                <div class="alert alert-info mb-0">Tiada jemputan bidaan buat masa ini. Semak semula selepas agensi memulakan bidaan, atau semak e-mel jemputan anda.</div>
+                            @endif
+                        </div>
+
                     </div>{{-- /.tab-content --}}
-                </div>{{-- /.p-4 --}}
+                    </div>{{-- /.p-4 --}}
 
             </div>{{-- /.db-card --}}
         </div>{{-- /.col-lg-9 --}}

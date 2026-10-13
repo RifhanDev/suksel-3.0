@@ -521,23 +521,25 @@
 										</td>
 									</tr>
 								</table>
-								@if (count($tender->cidb_grades) > 0)
-									<br><span class="label label-success">{{ $tender->mof_cidb_rule == 'or' ? 'ATAU' : 'DAN' }}</span><br><br>
+								@if (count($tender->cidb_grades) > 0 || count($tender->cidb_codes) > 0)
+									<br><span class="label label-success">{{ strtoupper((string) ($tender->mof_cidb_rule ?: 'or')) === 'AND' ? 'DAN' : 'ATAU' }}</span><br><br>
 								@endif
 							@endif
 
-							@if (count($tender->cidb_grades) > 0)
+							@if (count($tender->cidb_grades) > 0 || count($tender->cidb_codes) > 0)
 								<table class="table table-bordered table-condensed">
-									<tr>
-										<th class="col-xs-3">Gred CIDB</th>
-										<td>
-											<ul>
-												@foreach ($tender->cidb_grades as $code)
-													<li>{!! tender_cidb_grade($code->code, Auth::user()) !!}</li>
-												@endforeach
-											</ul>
-										</td>
-									</tr>
+									@if (count($tender->cidb_grades) > 0)
+										<tr>
+											<th class="col-xs-3">Gred CIDB</th>
+											<td>
+												<ul>
+													@foreach ($tender->cidb_grades as $code)
+														<li>{!! tender_cidb_grade($code->code, Auth::user()) !!}</li>
+													@endforeach
+												</ul>
+											</td>
+										</tr>
+									@endif
 
 									@if (count($tender->cidb_codes) > 0)
 										<?php $max_count = count($tender->cidb_code_groups); ?>
@@ -733,7 +735,12 @@
 
 			@if ($tender->canPurchase())
 				<div class="text-end mt-3">
-					{{ link_to_route('tenders.buy', 'Tambah Kepada Senarai Tempahan', [$tender->id], ['class' => 'btn btn-primary']) }}
+					{{ link_to_route(
+						'tenders.buy',
+						$tender->vendorDokumenActionLabel(),
+						[$tender->id],
+						['class' => 'btn btn-primary']
+					) }}
 				</div>
 			@endif
 

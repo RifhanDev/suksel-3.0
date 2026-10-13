@@ -10,7 +10,6 @@ class Gateway extends Model
 		'direct' => 'Langsung',
 		'fpx'    => 'FPX',
 		'ebpg'   => 'eBPG',
-		'duitnow' => 'DuitNow',
 		'migs'   => 'MIGS',
 		'm2u'    => 'm2u',
 		'cimb'   => 'CIMB Clicks *Legacy',

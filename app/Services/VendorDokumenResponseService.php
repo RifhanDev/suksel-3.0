@@ -6,6 +6,7 @@ use App\Models\TenderVendorDokumenFile;
 use App\Models\TenderVendorDokumenResponse;
 use App\Tender;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -40,6 +41,37 @@ class VendorDokumenResponseService
             ->get()
             ->groupBy('checklist_item_uuid');
 
+        return $this->buildResponseMap($keyIns, $files);
+    }
+
+    // Batches responsesByItemUuid() across vendors: 2 queries total instead of 2 per vendor.
+    public function responsesByItemUuidForVendors(Tender $tender, Collection $vendorIds): array
+    {
+        $keyInsByVendor = TenderVendorDokumenResponse::query()
+            ->where('tender_id', $tender->id)
+            ->whereIn('vendor_id', $vendorIds)
+            ->get()
+            ->groupBy('vendor_id');
+
+        $filesByVendor = TenderVendorDokumenFile::query()
+            ->where('tender_id', $tender->id)
+            ->whereIn('vendor_id', $vendorIds)
+            ->orderBy('id')
+            ->get()
+            ->groupBy('vendor_id');
+
+        $result = [];
+        foreach ($vendorIds as $vendorId) {
+            $keyIns = ($keyInsByVendor->get($vendorId) ?? collect())->keyBy('checklist_item_uuid');
+            $files = ($filesByVendor->get($vendorId) ?? collect())->groupBy('checklist_item_uuid');
+            $result[$vendorId] = $this->buildResponseMap($keyIns, $files);
+        }
+
+        return $result;
+    }
+
+    protected function buildResponseMap(Collection $keyIns, Collection $files): array
+    {
         $uuids = $keyIns->keys()->merge($files->keys())->unique();
 
         $result = [];
@@ -52,12 +84,21 @@ class VendorDokumenResponseService
                 'specification' => $response?->response_type === 'specification'
                     ? $this->normalizeSpecificationPayload($response->payload)
                     : ['item_prices' => [], 'details' => []],
-                'files' => $itemFiles->map(fn (TenderVendorDokumenFile $file) => [
-                    'uuid' => $file->uuid,
-                    'name' => $file->original_name,
-                    'url' => $file->url(),
-                    'size' => $file->size,
-                ])->values()->all(),
+                'files' => $itemFiles->map(function (TenderVendorDokumenFile $file) {
+                    $ext = strtolower(pathinfo($file->original_name ?? '', PATHINFO_EXTENSION));
+                    $mime = $file->mime_type ?? '';
+                    $isPdf = ($ext === 'pdf' || str_contains(strtolower($mime), 'pdf'));
+
+                    return [
+                        'uuid' => $file->uuid,
+                        'name' => $file->original_name,
+                        'url' => $file->url(),
+                        'size' => $file->size,
+                        'extension' => $ext,
+                        'mime_type' => $mime,
+                        'is_pdf' => $isPdf,
+                    ];
+                })->values()->all(),
                 'status' => $this->resolveItemStatus($response, $itemFiles->count()),
             ];
         }
@@ -147,7 +188,7 @@ class VendorDokumenResponseService
             return ['item_prices' => [], 'details' => []];
         }
 
-        if (isset($payload['item_prices']) || isset($payload['details'])) {
+        if (isset($payload['item_prices']) || isset($payload['details']) || isset($payload['vendor_tempoh_siap_val'])) {
             return [
                 'item_prices' => collect($payload['item_prices'] ?? [])
                     ->mapWithKeys(fn ($value, $key) => [trim((string) $key) => is_string($value) ? trim($value) : (string) $value])
@@ -165,6 +206,8 @@ class VendorDokumenResponseService
                         ]];
                     })
                     ->all(),
+                'vendor_tempoh_siap_val'  => isset($payload['vendor_tempoh_siap_val']) && $payload['vendor_tempoh_siap_val'] !== '' && $payload['vendor_tempoh_siap_val'] !== null ? (int) $payload['vendor_tempoh_siap_val'] : null,
+                'vendor_tempoh_siap_unit' => isset($payload['vendor_tempoh_siap_unit']) && $payload['vendor_tempoh_siap_unit'] !== '' ? trim((string) $payload['vendor_tempoh_siap_unit']) : null,
             ];
         }
 
@@ -203,6 +246,8 @@ class VendorDokumenResponseService
 
         $normalized = $this->normalizeSpecificationPayload($data);
 
+        // Per-vendor row: unique(tender_id, vendor_id, checklist_item_uuid).
+        // Never writes to spesifikasi_kerja_items (PTJ/admin reference stays intact).
         $record = TenderVendorDokumenResponse::query()->firstOrNew([
             'tender_id' => $tender->id,
             'vendor_id' => $vendorId,
@@ -220,6 +265,10 @@ class VendorDokumenResponseService
             $itemPrices[$itemUuid] = trim((string) $value);
         }
 
+        if ($section === 'spesifikasi_kerja') {
+            $itemPrices = $this->filterKerjaVendorItemPrices($tender, $itemPrices);
+        }
+
         $details = [];
         foreach ($normalized['details'] as $detailUuid => $fields) {
             $detailUuid = trim((string) $detailUuid);
@@ -233,6 +282,7 @@ class VendorDokumenResponseService
         }
 
         if ($adminSave) {
+            // Admin/Jawatankuasa may only update pematuhan — never vendor offers (item_prices).
             $mergedDetails = $existing['details'];
             foreach ($details as $detailUuid => $fields) {
                 if (! isset($mergedDetails[$detailUuid])) {
@@ -241,10 +291,9 @@ class VendorDokumenResponseService
                 $mergedDetails[$detailUuid]['pematuhan'] = $fields['pematuhan'];
             }
             $details = $mergedDetails;
-            if ($itemPrices === []) {
-                $itemPrices = $existing['item_prices'];
-            }
+            $itemPrices = $existing['item_prices'];
         } else {
+            // Vendor updates cadangan / item_prices; keep any existing pematuhan from admin.
             $mergedDetails = $existing['details'];
             foreach ($details as $detailUuid => $fields) {
                 if (! isset($mergedDetails[$detailUuid])) {
@@ -255,25 +304,144 @@ class VendorDokumenResponseService
             $details = $mergedDetails;
         }
 
+        $tempohVal = isset($data['vendor_tempoh_siap_val']) && $data['vendor_tempoh_siap_val'] !== '' && $data['vendor_tempoh_siap_val'] !== null ? (int) $data['vendor_tempoh_siap_val'] : ($existing['vendor_tempoh_siap_val'] ?? null);
+        $tempohUnit = isset($data['vendor_tempoh_siap_unit']) && $data['vendor_tempoh_siap_unit'] !== '' ? trim((string) $data['vendor_tempoh_siap_unit']) : ($existing['vendor_tempoh_siap_unit'] ?? null);
+
         if (! $record->exists) {
             $record->uuid = (string) Str::uuid();
         }
 
         $hasValue = collect($itemPrices)->contains(fn ($value) => $value !== '')
-            || collect($details)->contains(fn ($fields) => ($fields['pematuhan'] ?? '') !== '' || ($fields['cadangan'] ?? '') !== '');
+            || collect($details)->contains(fn ($fields) => ($fields['pematuhan'] ?? '') !== '' || ($fields['cadangan'] ?? '') !== '')
+            || ($tempohVal !== null);
+
+        $payloadToSave = [
+            'item_prices'             => $itemPrices,
+            'details'                 => $details,
+            'vendor_tempoh_siap_val'  => $tempohVal,
+            'vendor_tempoh_siap_unit' => $tempohUnit,
+        ];
 
         $record->fill([
             'section' => $section,
             'response_type' => 'specification',
-            'payload' => [
-                'item_prices' => $itemPrices,
-                'details' => $details,
-            ],
+            'payload' => $payloadToSave,
             'status' => $hasValue ? 'submitted' : 'draft',
             'updated_by' => Auth::id(),
         ])->save();
 
+        if (! $adminSave && $tempohVal !== null) {
+            $participant = $tender->participants()->where('vendor_id', $vendorId)->first();
+            if ($participant) {
+                if (\Illuminate\Support\Facades\Schema::hasColumn('tender_vendors', 'tempoh')) {
+                    $participant->tempoh = $tempohVal;
+                    $participant->save();
+                } elseif (\Illuminate\Support\Facades\Schema::hasColumn('tender_vendors', 'project_timeline')) {
+                    $participant->project_timeline = (string) $tempohVal;
+                    $participant->save();
+                }
+            }
+        }
+
         return $record;
+    }
+
+    /**
+     * Keep only child spesifikasi rows for this tender.
+     * Vendor offers live in item_prices — SpesifikasiKerjaItem.kadar (PTJ) is never updated here.
+     *
+     * @param  array<string, string>  $itemPrices
+     * @return array<string, string>
+     */
+    public function filterKerjaVendorItemPrices(Tender $tender, array $itemPrices): array
+    {
+        if ($itemPrices === []) {
+            return [];
+        }
+
+        $allowed = \App\Models\SpesifikasiKerjaItem::query()
+            ->whereIn('uuid', array_keys($itemPrices))
+            ->whereNotNull('parent_id')
+            ->whereHas('header', fn ($q) => $q->where('tender_id', $tender->id))
+            ->pluck('uuid')
+            ->all();
+
+        $allowedLookup = array_fill_keys($allowed, true);
+        $filtered = [];
+        foreach ($itemPrices as $uuid => $value) {
+            if (isset($allowedLookup[$uuid])) {
+                $filtered[$uuid] = $value;
+            }
+        }
+
+        return $filtered;
+    }
+
+    /**
+     * Jumlah keseluruhan from vendor item_prices.
+     * Kerja: sum(kadar × kuantiti) using PTJ kuantiti from spesifikasi_kerja_items.
+     * Bekalan / other: sum(item_prices) as line totals.
+     *
+     * @param  array<string, string|int|float>  $itemPrices
+     */
+    public function calculateSpecificationTotal(Tender $tender, array $itemPrices, ?string $section = null): float
+    {
+        if ($itemPrices === []) {
+            return 0.0;
+        }
+
+        $isKerja = $section === 'spesifikasi_kerja'
+            || \App\Models\SpesifikasiKerjaItem::query()
+                ->whereIn('uuid', array_keys($itemPrices))
+                ->whereNotNull('parent_id')
+                ->whereHas('header', fn ($q) => $q->where('tender_id', $tender->id))
+                ->exists();
+
+        if (! $isKerja) {
+            $total = 0.0;
+            foreach ($itemPrices as $value) {
+                $total += (float) str_replace(',', '', (string) $value);
+            }
+
+            return round($total, 2);
+        }
+
+        $specs = \App\Models\SpesifikasiKerjaItem::query()
+            ->whereIn('uuid', array_keys($itemPrices))
+            ->whereNotNull('parent_id')
+            ->whereHas('header', fn ($q) => $q->where('tender_id', $tender->id))
+            ->get(['uuid', 'kuantiti'])
+            ->keyBy('uuid');
+
+        $total = 0.0;
+        foreach ($itemPrices as $uuid => $kadarRaw) {
+            $spec = $specs->get($uuid);
+            if (! $spec) {
+                continue;
+            }
+            $kadar = (float) str_replace(',', '', (string) $kadarRaw);
+            $qty = (float) ($spec->kuantiti ?? 0);
+            $total += round($kadar * $qty, 2);
+        }
+
+        return round($total, 2);
+    }
+
+    /**
+     * Sync vendor's harga_tawaran from specification offers only.
+     * Does not modify SpesifikasiKerjaItem (PTJ/admin kadar).
+     *
+     * @param  array<string, string>  $itemPrices  keyed by child spec uuid => vendor kadar
+     */
+    public function syncHargaTawaranFromSpecification(Tender $tender, int $vendorId, array $itemPrices): void
+    {
+        $total = $this->calculateSpecificationTotal($tender, $itemPrices, 'spesifikasi_kerja');
+
+        $participant = $tender->participants()->where('vendor_id', $vendorId)->first();
+        if ($participant) {
+            $participant->harga_tawaran = $total;
+            $participant->save();
+        }
     }
 
     protected function assertValidSection(string $section): void

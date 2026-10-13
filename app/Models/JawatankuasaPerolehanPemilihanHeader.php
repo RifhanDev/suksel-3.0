@@ -19,6 +19,7 @@ class JawatankuasaPerolehanPemilihanHeader extends Model
         'bil_mesyuarat',
         'no_kod',
         'sahkan_layak_bidaan',
+        'catatan_bidaan',
         'submitted_at',
     ];
 

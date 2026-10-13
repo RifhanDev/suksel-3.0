@@ -77,6 +77,7 @@ class TenderHistory extends Model
 
 		'update-invites'     => 'Kemaskini Senarai Jemputan',
 		'update-vendors'     => 'Kemaskini Maklumat Syarikat',
+		'mark-selesai'       => 'Tandakan Tender Selesai',
 		'exception'     	 => 'Kebenaran Khas',
 
 		'rate-vendor-tender' => 'Penilaian Syarikat Vendor',

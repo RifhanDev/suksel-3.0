@@ -930,8 +930,16 @@ class Vendor extends Model
 
 	public function hasFile($name)
 	{
+		// Must match createUploads()'s naming exactly (see below, ~line 740): it
+		// sanitizes the registration number (e.g. "1157773-U" -> "1157773_U")
+		// before building the stored filename. Checking against the raw,
+		// unsanitized registration here caused hasFile() to report false for
+		// vendors whose registration contains a dash, even though the file was
+		// genuinely uploaded and exists.
+		$sanitizedRegistration = preg_replace('/[^a-zA-Z0-9]+/', '_', $this->registration);
+
 		$files = [
-			$this->registration . '_' . $name  . '.pdf',
+			$sanitizedRegistration . '_' . $name  . '.pdf',
 			'cr_' . $this->registration . '_' . $name . '.pdf'
 		];
 
@@ -1085,13 +1093,28 @@ class Vendor extends Model
 		});
 
 		self::updating(function ($vendor) {
+			// Vendor boleh disimpan sebelum pengguna pegawainya wujud — seeder
+			// mencipta vendor dahulu, dan hook Subscription::created menyimpan
+			// vendor semula sebelum pautan itu terbentuk. Dua semakan di bawah
+			// sudah menjangka $vendor->user boleh null; panggilan save() di
+			// hujung tidak, dan itu memfatalkan seeder dengan
+			// "Call to a member function save() on null".
+			if (! $vendor->user) {
+				return;
+			}
+
 			$data = request()->all();
-			if (isset($data['officer_name']) && $vendor->user) {
+
+			if (isset($data['officer_name'])) {
 				$vendor->user->name = $data['officer_name'];
 			}
-			if (isset($data['email']) && auth()->user()->hasRole('Admin')) {
+
+			// auth()->user() adalah null dalam konteks CLI dan kerja beratur,
+			// jadi ia mesti disemak sebelum hasRole() dipanggil.
+			if (isset($data['email']) && auth()->check() && auth()->user()->hasRole('Admin')) {
 				$vendor->user->email = $vendor->user->username = trim($data['email']);
 			}
+
 			$vendor->user->save();
 		});
 

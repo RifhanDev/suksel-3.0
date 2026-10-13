@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\TenderProcessStatus;
 use Illuminate\Database\Eloquent\Model;
 use Carbon\Carbon;
 use DB;
@@ -12,8 +13,10 @@ class Tender extends Model
 	use \Venturecraft\Revisionable\RevisionableTrait;
 
 	static $types = [
-		'tender'      => 'Tender',
-		'quotation'   => 'Sebut Harga'
+		'tender'          => 'Tender',
+		'quotation'       => 'Sebut Harga',
+		'pembelian_terus' => 'Pembelian Terus',
+		'lantikan_terus'  => 'Lantikan Terus',
 	];
 
 	/**
@@ -160,6 +163,11 @@ class Tender extends Model
 					return true;
 				} elseif ($user->hasRole('Vendor') && $this->invites()->where('vendor_id', $user->vendor_id)->first()) {
 					return true;
+				} elseif (self::canViewInternal($this->organization_unit_id)) {
+					// Kakitangan dalaman agensi pemilik. Senarai agensi memaparkan
+					// tender ini kepada mereka, jadi menolak halaman butirannya
+					// hanya menghasilkan 403 selepas satu klik.
+					return true;
 				} else {
 					return false;
 				}
@@ -170,6 +178,11 @@ class Tender extends Model
 			if (auth()->check() && $user->hasRole('Admin')) {
 				return true;
 			} elseif (auth()->check() && $user->ability(['Agency Admin', 'Agency User'], ['Tender:edit']) && $this->organization_unit_id == $user->organization_unit_id) {
+				return true;
+			} elseif (self::canViewInternal($this->organization_unit_id)) {
+				// Tender belum diluluskan. Sebelum ini hanya Agency Admin/User
+				// dibenarkan, jadi Urusetia yang perlu menggerakkannya melalui
+				// aliran kerja dihalang daripada membuka tendernya sendiri.
 				return true;
 			} else {
 				return false;
@@ -216,6 +229,59 @@ class Tender extends Model
 		}
 	}
 
+	/**
+	 * Peranan yang terikat kepada sesebuah agensi, bukan kepada umum atau
+	 * pembekal. Diambil daripada Role::scopeAvailableRoles() berserta
+	 * 'Agency Admin' yang memberikannya.
+	 */
+	public const INTERNAL_AGENCY_ROLES = [
+		'Agency Admin',
+		'Agency User',
+		'Agency Finance',
+		'Agency Urusetia',
+		'Agency Jawatankuasa',
+		'Agency Lembaga Perolehan',
+		'Agency Ketua Jabatan',
+	];
+
+	/**
+	 * Kakitangan dalaman agensi yang berhak melihat tender agensi sendiri,
+	 * termasuk yang belum diiklankan.
+	 *
+	 * Sengaja berasingan daripada canShowUpdate(). Kaedah itu tentang hak
+	 * MENGEMAS KINI dan digunakan di lebih 20 tempat untuk mengawal butang
+	 * sunting; menambah peranan ke dalamnya akan memberi kuasa yang tidak
+	 * diminta. Melihat bukan mengemas kini, jadi ia diasingkan.
+	 *
+	 * Dalam 2.0 mencipta tender bermakna terus mengiklankannya, jadi
+	 * advertise_start_date sentiasa berisi dan senarai agensi sentiasa
+	 * memaparkannya. Dalam 3.0 pengiklanan ialah peringkat kelima, jadi tender
+	 * yang baru dicipta mempunyai advertise_start_date NULL dan tersingkir
+	 * daripada penapis awam — menjadikan kakitangan agensi tidak nampak kerja
+	 * mereka sendiri.
+	 */
+	public static function canViewInternal($organization_unit_id)
+	{
+		if (!auth()->check()) {
+			return false;
+		}
+
+		$user = auth()->user();
+
+		if ($user->hasRole('Admin')) {
+			return true;
+		}
+
+		if (empty($user->organization_unit_id)) {
+			return false;
+		}
+
+		// Bandingkan sebagai integer: id daripada laluan URL boleh jadi rentetan,
+		// dan perbandingan ketat pada jenis bercampur gagal secara senyap.
+		return (int) $organization_unit_id === (int) $user->organization_unit_id
+			&& $user->hasRole(self::INTERNAL_AGENCY_ROLES);
+	}
+
 	public static function canShowUpdate($organization_unit_id)
 	{
 		if (auth()->check()) {
@@ -259,7 +325,7 @@ class Tender extends Model
 
 			if ($user->hasRole('Admin')) {
 				return true;
-			} elseif ($user->ability(['Agency Admin', 'Agency User'], []) && $this->organization_unit_id == $user->organization_unit_id) {
+			} elseif ($user->ability(['Agency Admin', 'Agency User', 'Agency Ketua Jabatan'], []) && $this->organization_unit_id == $user->organization_unit_id) {
 				return true;
 			} elseif ($user->hasRole('Vendor') && $this->hasParticipate($vendor_id)) {
 				return true;
@@ -304,6 +370,16 @@ class Tender extends Model
 		} else {
 			return false;
 		}
+	}
+
+	// Batal Siar rewinds the tender to Penyediaan Iklan, so block it once vendor documents are in.
+	public function canCancelSiar()
+	{
+		if (!$this->canCancel()) {
+			return false;
+		}
+
+		return (int) ($this->status_process_id ?? 0) < TenderProcessStatus::HANTAR_DOKUMEN_SYARIKAT;
 	}
 
 	public function canApprove()
@@ -665,7 +741,7 @@ class Tender extends Model
 			foreach ($district_list_rule as $row_rules) {
 				if ($row_rules->district_id == 0 && $row_rules->state_id != 0) {
 					$tender_open_for_state_id[]		= $row_rules->state_id;
-					$tender_open_for_state_desc[]	= \App\Models\RefState::find($row_rules->state_id)->description ?? "";
+					$tender_open_for_state_desc[]	= \App\Models\Ref\RefState::find($row_rules->state_id)->description ?? "";
 				} elseif ($row_rules->state_id == 0 && $row_rules->district_id != 0) {
 					$tender_open_for_district_id[]		= $row_rules->district_id;
 					$tender_open_for_district_desc[]	= \App\Models\Vendor::$districts[$row_rules->district_id] ?? "";
@@ -859,6 +935,12 @@ class Tender extends Model
 		}
 
 		if (empty($grades)) {
+			return true;
+		}
+
+		// Grade-only filter: if no specialization groups were set on the tender,
+		// matching the CIDB grade (already checked via matchCidbGrade) is enough.
+		if (count($this->cidb_code_groups) === 0) {
 			return true;
 		}
 
@@ -1099,7 +1181,7 @@ class Tender extends Model
 			foreach ($district_list_rule as $row_rules) {
 				if ($row_rules->district_id == 0 && $row_rules->state_id != 0) {
 					$tender_open_for_state_id[]		= $row_rules->state_id;
-					$tender_open_for_state_desc[]	= \App\Models\RefState::find($row_rules->state_id)->description ?? "";
+					$tender_open_for_state_desc[]	= \App\Models\Ref\RefState::find($row_rules->state_id)->description ?? "";
 				} elseif ($row_rules->state_id == 0 && $row_rules->district_id != 0) {
 					$tender_open_for_district_id[]		= $row_rules->district_id;
 					$tender_open_for_district_desc[]	= \App\Models\Vendor::$districts[$row_rules->district_id] ?? "";
@@ -1145,7 +1227,7 @@ class Tender extends Model
 			foreach ($district_list_rule as $row_rules) {
 				if ($row_rules->district_id == 0 && $row_rules->state_id != 0) {
 					$tender_open_for_state_id[]		= $row_rules->state_id;
-					$tender_open_for_state_desc[]	= \App\Models\RefState::find($row_rules->state_id)->description ?? "";
+					$tender_open_for_state_desc[]	= \App\Models\Ref\RefState::find($row_rules->state_id)->description ?? "";
 				} elseif ($row_rules->state_id == 0 && $row_rules->district_id != 0) {
 					$tender_open_for_district_id[]		= $row_rules->district_id;
 					$tender_open_for_district_desc[]	= \App\Models\Vendor::$districts[$row_rules->district_id] ?? "";
@@ -1191,7 +1273,7 @@ class Tender extends Model
 			foreach ($district_list_rule as $row_rules) {
 				if ($row_rules->district_id == 0 && $row_rules->state_id != 0) {
 					$tender_open_for_state_id[]		= $row_rules->state_id;
-					$tender_open_for_state_desc[]	= \App\Models\RefState::find($row_rules->state_id)->description ?? "";
+					$tender_open_for_state_desc[]	= \App\Models\Ref\RefState::find($row_rules->state_id)->description ?? "";
 				} elseif ($row_rules->state_id == 0 && $row_rules->district_id != 0) {
 					$tender_open_for_district_id[]		= $row_rules->district_id;
 					$tender_open_for_district_desc[]	= \App\Models\Vendor::$districts[$row_rules->district_id] ?? "";
@@ -1231,7 +1313,7 @@ class Tender extends Model
 			foreach ($district_list_rule as $row_rules) {
 				if ($row_rules->district_id == 0 && $row_rules->state_id != 0) {
 					$tender_open_for_state_id[]		= $row_rules->state_id;
-					$tender_open_for_state_desc[]	= \App\Models\RefState::find($row_rules->state_id)->description ?? "";
+					$tender_open_for_state_desc[]	= \App\Models\Ref\RefState::find($row_rules->state_id)->description ?? "";
 				} elseif ($row_rules->state_id == 0 && $row_rules->district_id != 0) {
 					$tender_open_for_district_id[]		= $row_rules->district_id;
 					$tender_open_for_district_desc[]	= \App\Models\Vendor::$districts[$row_rules->district_id] ?? "";

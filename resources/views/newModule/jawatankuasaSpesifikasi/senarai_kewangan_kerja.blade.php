@@ -403,10 +403,14 @@
                                         </td>
                                     </tr>
                                 @empty
-                                    <tr><td colspan="2" class="text-center text-muted small py-3">Tiada item standard.</td></tr>
+                                    <tr class="empty-row"><td colspan="2" class="text-center text-muted small py-3">Tiada item standard.</td></tr>
                                 @endforelse
                             </tbody>
                         </table>
+                    </div>
+                    <div class="border-top mt-3 pt-3">
+                        <label class="form-label small fw-semibold mb-1">Other</label>
+                        <input type="text" class="form-control form-control-sm standard-custom-title" placeholder="Nama dokumen" maxlength="500">
                     </div>
                 </div>
                 <div class="modal-footer border-0 px-4 pb-4">
@@ -433,6 +437,17 @@ $(document).ready(function () {
     const AFTER_SPEC_URL = @json($afterSpecificationUrl ?? route('pengurusanSpesifikasi'));
     const UPLOAD_URL   = @json(route('senaraiKewanganKerja.uploadFile', $tender->uuid));
     const DELETE_BASE  = @json(url('/senarai-kewangan-kerja/fail'));
+    @php
+        $checklistFileUrl = route('tenderChecklist.download', [
+            'tender' => $tender->id,
+            'section' => 'kewangan_kerja',
+            'fileUuid' => '__FILE_UUID__',
+        ]);
+    @endphp
+    const CHECKLIST_FILE_URL = @json($checklistFileUrl);
+    function checklistFileUrl(fileUuid) {
+        return CHECKLIST_FILE_URL.replace('__FILE_UUID__', encodeURIComponent(fileUuid || ''));
+    }
     const USER_ID      = @json(auth()->id());
     const IS_SUBMITTED = @json(($checklistData['status'] ?? null) === 'submitted');
 
@@ -457,6 +472,9 @@ $(document).ready(function () {
         $('#tbl-empty-row').addClass('d-none');
         items.forEach(function (item) {
             var $tr;
+            var isPtjFixed = (item.title === 'Spesifikasi Komponen Mekanikal/Elektrikal') ||
+                (item.source_type === 'borang_atas_talian' && (item.mechanism === 'ptj_muat_naik' || item.vendor_action === 'muat_turun_naik' || !item.action_url));
+
             if (item.source_type === 'borang_atas_talian' && item.action_url) {
                 $tr = buildInitialRow({
                     uuid:                  item.uuid,
@@ -473,6 +491,8 @@ $(document).ready(function () {
                     statusKey:             item.status || 'draft',
                     form_updated:          item.form_updated ?? true,
                 });
+            } else if (isPtjFixed) {
+                $tr = buildInitialPtjRow(item);
             } else {
                 $tr = buildEditableRow(item);
             }
@@ -487,13 +507,15 @@ $(document).ready(function () {
 
         var kemaskiniButton = '-';
 
-        if (data.tajuk === 'Penyata Bulanan / Akaun Bank') {
+        var allowedTitles = ['Penyata Bulanan / Akaun Bank'];
+
+        if (data.tindakanUrl && data.tindakanUrl.trim() !== '' && data.tindakanUrl !== '-' && allowedTitles.includes(data.tajuk ? data.tajuk.trim() : '')) {
             kemaskiniButton =
                 '<a href="' + data.tindakanUrl + '" class="btn btn-sm btn-warning d-inline-flex align-items-center justify-content-center p-1" style="width:30px;height:30px;" title="Kemaskini">' +
                 EDIT_ICON +
                 '</a>';
         }
-
+        
         var formUpdatedAttr = (data.form_updated !== undefined) ? ' data-form-updated="' + data.form_updated + '"' : '';
 
         return $(
@@ -508,6 +530,39 @@ $(document).ready(function () {
             '<td class="text-center">' + kemaskiniButton + '</td>' +
             '</tr>'
         );
+    }
+
+    function buildInitialPtjRow(item) {
+        item = item || {};
+        var uuid        = item.uuid || '';
+        var score       = item.score || 0;
+        var statusVal   = item.status || 'draft';
+        var statusLabel = statusVal === 'submitted' ? 'Selesai' : 'Draf';
+        var statusClass = statusVal === 'submitted' ? 'badge-status-success' : 'badge-status-warning';
+        var standardItemUuid  = item.standard_item_uuid || '';
+        var spesifikasiItemUuid = item.spesifikasi_item_uuid || '';
+        var sourceType        = item.source_type || 'borang_atas_talian';
+
+        var $tr = $(
+            '<tr class="initial-row row-kewangan-tambah" data-uuid="' + uuid + '" data-source="' + sourceType + '" data-standard-item-uuid="' + standardItemUuid + '" data-spesifikasi-item-uuid="' + spesifikasiItemUuid + '" data-status="' + statusVal + '" data-mechanism="ptj_muat_naik" data-vendor-action="muat_turun_naik">' +
+            '<td class="text-center"><span class="text-muted" style="font-size:0.75rem;" title="Item sistem">—</span></td>' +
+            '<td><span class="small fw-semibold">' + htmlEscape(item.title || '') + '</span></td>' +
+            '<td class="text-center"><span class="small fw-semibold text-muted">PTJ Muat Naik</span><input type="hidden" name="mekanisma[]" value="ptj_muat_naik"></td>' +
+            '<td class="text-center small">Muat Turun &amp; Muat Naik<input type="hidden" name="tindakan_pembekal[]" value="muat_turun_naik"></td>' +
+            '<td class="text-center"><input type="number" name="skema[]" class="form-control form-control-sm text-center skema-input fw-semibold" value="' + score + '" min="0" style="max-width:90px;margin:0 auto;"></td>' +
+            '<td class="text-center"><span class="badge-status ' + statusClass + '">' + statusLabel + '</span></td>' +
+            '<td class="text-center rujukan-cell">' + buildDokumenCell('ptj_muat_naik') + '</td>' +
+            '<td class="text-center tindakan-cell">' + buildTindakanCell('ptj_muat_naik') + '</td>' +
+            '</tr>'
+        );
+
+        if (item.files && item.files.length > 0) {
+            item.files.forEach(function (f) {
+                appendFileToDokumenCell($tr.find('.rujukan-cell'), f, uuid);
+            });
+        }
+
+        return $tr;
     }
 
     function buildEditableRow(item) {
@@ -552,11 +607,20 @@ $(document).ready(function () {
         return $tr;
     }
 
-    function buildNewRow() {
-        return buildEditableRow({ source_type: 'manual' });
+    function buildNewRow(title) {
+        return buildEditableRow({ source_type: 'manual', title: title || '' });
     }
 
     function buildStandardRow(tajuk, uuid) {
+        if (tajuk === 'Spesifikasi Komponen Mekanikal/Elektrikal') {
+            return buildInitialPtjRow({
+                title: tajuk,
+                standard_item_uuid: uuid,
+                source_type: 'standard',
+                mechanism: 'ptj_muat_naik',
+                vendor_action: 'muat_turun_naik',
+            });
+        }
         return buildEditableRow({ title: tajuk, standard_item_uuid: uuid, source_type: 'standard' });
     }
 
@@ -566,7 +630,7 @@ $(document).ready(function () {
         var $chip = $(
             '<div class="file-chip" data-file-uuid="' + fileData.uuid + '">' +
             '<span class="ext-badge">' + htmlEscape(ext) + '</span>' +
-            '<a href="' + fileData.url + '" target="_blank" title="' + htmlEscape(fileData.original_name) + '">' + htmlEscape(fileData.original_name) + '</a>' +
+            '<a href="' + checklistFileUrl(fileData.uuid) + '" target="_blank" title="' + htmlEscape(fileData.original_name) + '">' + htmlEscape(fileData.original_name) + '</a>' +
             '<button type="button" class="chip-delete" title="Padam fail">' +
                 '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>' +
             '</button>' +
@@ -610,7 +674,8 @@ $(document).ready(function () {
             var uuid   = $tr.data('uuid') || null;
             var source = $tr.data('source') || 'manual';
             var title  = $tr.find('[name="tajuk_dokumen[]"]').val() || $tr.find('td:eq(1) span').text().trim();
-            var mech   = $tr.find('[name="mekanisma[]"]').val() || (source === 'borang_atas_talian' ? 'borang_atas_talian' : null);
+            var mech   = $tr.find('[name="mekanisma[]"]').val() || $tr.data('mechanism') || (source === 'borang_atas_talian' ? 'borang_atas_talian' : null);
+            var vendorAct = $tr.find('[name="tindakan_pembekal[]"]').val() || $tr.data('vendor-action') || null;
             var score  = parseFloat($tr.find('.skema-input').val()) || 0;
             var standardItemUuid = $tr.data('standard-item-uuid') || null;
             var spesifikasiItemUuid = $tr.data('spesifikasi-item-uuid') || null;
@@ -623,6 +688,7 @@ $(document).ready(function () {
                 source_type:           source,
                 title:                 title,
                 mechanism:             mech,
+                vendor_action:         vendorAct,
                 score:                 score,
                 sort_order:            idx,
                 standard_item_uuid:    standardItemUuid,
@@ -799,6 +865,17 @@ $(document).ready(function () {
         else            $('#tbl-empty-row').addClass('d-none');
     }
 
+    function syncStandardTableEmpty() {
+        var realCount = $('#tbl-standard-body tr').not('.empty-row').length;
+        if (realCount === 0) {
+            if ($('#tbl-standard-body .empty-row').length === 0) {
+                $('#tbl-standard-body').html('<tr class="empty-row"><td colspan="2" class="text-center text-muted small py-3">Tiada item standard.</td></tr>');
+            }
+        } else {
+            $('#tbl-standard-body .empty-row').remove();
+        }
+    }
+
     function updateStatusBadge(status) {
         if (status !== 'submitted') return;
         $('#status-badge')
@@ -855,8 +932,31 @@ $(document).ready(function () {
     $('.btn-hapus-kewangan').on('click', function () {
         var $checked = $('#tbl-kewangan .row-check-kewangan:checked');
         if ($checked.length === 0) { alert('Sila pilih sekurang-kurangnya satu rekod untuk dihapus.'); return; }
-        $checked.closest('tr').remove();
+        $checked.each(function () {
+            var $tr     = $(this).closest('tr');
+            var stdUuid = $tr.data('standard-item-uuid') || $tr.attr('data-standard-item-uuid');
+            var source  = $tr.data('source') || $tr.attr('data-source');
+            var tajuk   = $tr.find('[name="tajuk_dokumen[]"]').val() || $tr.find('td:eq(1) span').text().trim();
+
+            if (stdUuid || source === 'standard') {
+                if (stdUuid) {
+                    var existsInStandard = $('#tbl-standard-body tr[data-uuid="' + stdUuid + '"]').length > 0;
+                    if (!existsInStandard) {
+                        $('#tbl-standard-body .empty-row').remove();
+                        var newStdRow = $(
+                            '<tr data-tajuk="' + htmlEscape(tajuk) + '" data-uuid="' + htmlEscape(stdUuid) + '" data-type="standard" data-action-url="">' +
+                            '<td class="text-center"><input type="checkbox" class="form-check-input row-check-standard"></td>' +
+                            '<td>' + htmlEscape(tajuk) + '</td>' +
+                            '</tr>'
+                        );
+                        $('#tbl-standard-body').append(newStdRow);
+                    }
+                }
+            }
+            $tr.remove();
+        });
         $('#tbl-kewangan .check-all-kewangan').prop('checked', false);
+        syncStandardTableEmpty();
         syncTableEmpty();
         updateSkemaMaksima();
     });
@@ -957,14 +1057,24 @@ $(document).ready(function () {
     // Pilih standard items
     $('#senaraiSemakStandard').on('click', '.btn-pilih-standard', function () {
         var $checked = $('#tbl-standard .row-check-standard:checked');
-        if ($checked.length === 0) { alert('Sila pilih sekurang-kurangnya satu senarai semak.'); return; }
+        var $customTitle = $('#senaraiSemakStandard .standard-custom-title');
+        var customTitle = $.trim($customTitle.val() || '');
+        if ($checked.length === 0 && customTitle === '') {
+            alert('Sila pilih sekurang-kurangnya satu senarai semak atau masukkan nama dokumen.');
+            return;
+        }
         $checked.each(function () {
             var $tr  = $(this).closest('tr');
             var tajuk = $tr.data('tajuk') || $tr.find('td:last-child').text().trim();
             var uuid  = $tr.data('uuid') || '';
             $('#tbl-kewangan-body').append(buildStandardRow(tajuk, uuid));
-            $tr.hide();
+            $tr.remove();
         });
+        if (customTitle !== '') {
+            $('#tbl-kewangan-body').append(buildNewRow(customTitle));
+            $customTitle.val('');
+        }
+        syncStandardTableEmpty();
         updateSkemaMaksima();
         syncTableEmpty();
         $('#tbl-standard .row-check-standard, #tbl-standard .check-all-standard').prop('checked', false);
@@ -1000,7 +1110,7 @@ $(document).ready(function () {
                         var $chip = $(
                             '<div class="file-chip" data-file-uuid="' + f.uuid + '">' +
                             '<span class="ext-badge">' + htmlEscape(ext) + '</span>' +
-                            '<a href="' + f.url + '" target="_blank">' + htmlEscape(f.original_name) + '</a>' +
+                            '<a href="' + checklistFileUrl(f.uuid) + '" target="_blank">' + htmlEscape(f.original_name) + '</a>' +
                             '<button type="button" class="chip-delete header-file-delete" title="Padam">' +
                                 '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>' +
                             '</button>' +
@@ -1030,7 +1140,7 @@ $(document).ready(function () {
             var $chip = $(
                 '<div class="file-chip" data-file-uuid="' + f.uuid + '">' +
                 '<span class="ext-badge">' + htmlEscape(ext) + '</span>' +
-                '<a href="' + f.url + '" target="_blank">' + htmlEscape(f.original_name) + '</a>' +
+                '<a href="' + checklistFileUrl(f.uuid) + '" target="_blank">' + htmlEscape(f.original_name) + '</a>' +
                 '<button type="button" class="chip-delete header-file-delete" title="Padam">' +
                     '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>' +
                 '</button>' +

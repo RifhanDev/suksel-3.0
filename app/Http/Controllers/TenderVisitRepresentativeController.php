@@ -48,9 +48,23 @@ class TenderVisitRepresentativeController extends Controller
         app(\App\Services\VendorTenderSubmissionService::class)
             ->assertEditable($visit->tender, (int) $user->vendor_id);
 
+        $repsInput = $request->input('reps', []);
+        if (is_array($repsInput)) {
+            foreach ($repsInput as $i => $rep) {
+                if (!is_array($rep)) {
+                    continue;
+                }
+                if (array_key_exists('ic_no', $rep)) {
+                    $digits = preg_replace('/\D+/', '', (string) $rep['ic_no']);
+                    $repsInput[$i]['ic_no'] = $digits === '' ? null : substr($digits, 0, 12);
+                }
+            }
+            $request->merge(['reps' => $repsInput]);
+        }
+
         $data = $request->validate([
             'reps'                 => 'array',
-            'reps.*.ic_no'         => 'nullable|string|max:32',
+            'reps.*.ic_no'         => 'nullable|digits:12',
             'reps.*.name'          => 'nullable|string|max:255',
         ]);
 

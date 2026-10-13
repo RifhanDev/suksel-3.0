@@ -28,6 +28,13 @@
             background: #dc2626;
             color: #fff;
         }
+
+        /* These letters don't exist until Simpan generates them — no button to show yet. */
+        .doc-belum-dijana {
+            color: #94a3b8;
+            font-size: 0.8rem;
+            font-style: italic;
+        }
     </style>
 @endsection
 
@@ -139,7 +146,7 @@
                     </svg>
                 </div>
                 <div>
-                    <h3 class="content-card-title mb-0">Senarai Surat Niat / Surat Setuju Terima</h3>
+                    <h3 class="content-card-title mb-0">Senarai Surat Setuju Terima</h3>
                     <p class="text-muted mb-0" style="font-size: 0.78rem;">Surat yang telah dijana bagi pembekal di atas.</p>
                 </div>
             </div>
@@ -168,7 +175,11 @@
 
     <!-- ACTION BUTTONS -->
     <div class="d-flex justify-content-end gap-2 mb-4">
-        <button type="button" class="btn-form btn-form-success" id="btn-hantar">Hantar</button>
+        @if ($tenderDihantar ?? false)
+            <a href="{{ route('indexPenyediaanSST') }}" class="btn-form btn-form-secondary">Kembali ke Senarai</a>
+        @else
+            <button type="button" class="btn-form btn-form-success" id="btn-hantar">Simpan</button>
+        @endif
     </div>
 
 @endsection
@@ -551,7 +562,6 @@
                             </div>
 
                             <div class="d-flex justify-content-end gap-2 mb-3">
-                                <button type="button" class="btn-form btn-form-secondary" id="btn-muat-turun-semua">Muat Turun Semua</button>
                                 <button type="button" class="btn-form btn-form-success" id="btn-tambah-dokumen">Tambah</button>
                             </div>
 
@@ -568,23 +578,17 @@
                                         <tr data-jenis="sistem">
                                             <td class="text-center">1</td>
                                             <td>Surat Setuju Terima (Termasuk Lampiran A)</td>
-                                            <td class="text-center">
-                                                <a href="javascript:void(0)" class="text-decoration-none small fw-semibold" id="link-surat-setuju-terima" target="_blank">Muat Turun</a>
-                                            </td>
+                                            <td class="text-center doc-belum-dijana">Muat turun di Senarai Surat selepas dijana</td>
                                         </tr>
                                         <tr data-jenis="sistem">
                                             <td class="text-center">2</td>
                                             <td>Lampiran B - Surat Akuan Pembidaan Berjaya</td>
-                                            <td class="text-center">
-                                                <a href="javascript:void(0)" class="text-decoration-none small fw-semibold" id="link-surat-akuan-pembida-berjaya" target="_blank">Muat Turun</a>
-                                            </td>
+                                            <td class="text-center doc-belum-dijana">Muat turun di Senarai Surat selepas dijana</td>
                                         </tr>
                                         <tr data-jenis="sistem">
                                             <td class="text-center">3</td>
                                             <td>Lampiran C - Surat Akuan Sumpah Syarikat</td>
-                                            <td class="text-center">
-                                                <a href="javascript:void(0)" class="text-decoration-none small fw-semibold" id="link-surat-akuan-sumpah-syarikat" target="_blank">Muat Turun</a>
-                                            </td>
+                                            <td class="text-center doc-belum-dijana">Muat turun di Senarai Surat selepas dijana</td>
                                         </tr>
                                         {{-- Perakuan Penerimaan SST dan Maklumat Insurans — disembunyikan
                                              sehingga dokumen tersedia. --}}
@@ -614,6 +618,12 @@
             const SST_TENDER = '{{ $tender->uuid }}';
             const SST_CSRF = '{{ csrf_token() }}';
             const SST_TEMPOH_KONTRAK = @json($tempohKontrak);
+            const SST_NO_DOKUMEN = @json($noTender);
+            const SST_RUJUKAN_FAIL = @json($rujukanFail);
+            const SST_KAEDAH_PEROLEHAN = @json($jenisPerolehanLabel);
+            const SST_KATEGORI_PEROLEHAN = @json($kategoriPerolehanLabel);
+            const SST_JENIS_KONTRAK = @json($jenisKontrakLabel);
+            const SST_AGENSI = @json($agensi);
             const URL_PEMBEKAL = '{{ route('penyediaanSST.pembekal', ['tender' => $tender->id]) }}';
             const URL_SURAT = '{{ route('penyediaanSST.senaraiSurat', ['tender' => $tender->id]) }}';
             const URL_SST = '{{ route('penyediaanSST.sst', ['tender' => $tender->id, 'vendorId' => 'VENDOR_ID']) }}';
@@ -621,6 +631,7 @@
             const URL_JANA = '{{ route('penyediaanSST.jana') }}';
             const URL_HANTAR = '{{ route('penyediaanSST.hantar') }}';
             const URL_MUAT_NAIK = '{{ route('penyediaanSST.muatNaikDokumen', ['tender' => $tender->id]) }}';
+            const URL_MUAT_TURUN_DOKUMEN = '{{ route('penyediaanSST.muatTurunDokumen', ['tender' => $tender->id, 'storedName' => 'STORED_NAME']) }}';
             const URL_SURAT_SETUJU_TERIMA = '{{ route('penyediaanSST.suratSetujuTerima', ['tender' => $tender->id, 'vendorId' => 'VENDOR_ID']) }}';
             const URL_SURAT_AKUAN_PEMBIDA_BERJAYA = '{{ route('penyediaanSST.suratAkuanPembidaBerjaya', ['tender' => $tender->id, 'vendorId' => 'VENDOR_ID']) }}';
             const URL_SURAT_AKUAN_SUMPAH_SYARIKAT = '{{ route('penyediaanSST.suratAkuanSumpahSyarikat', ['tender' => $tender->id, 'vendorId' => 'VENDOR_ID']) }}';
@@ -634,6 +645,7 @@
             const URL_SENARAI = '{{ route('indexPenyediaanSST') }}';
 
             let vendorAktif = null;
+            let sstTerkunci = false;
 
             // Same helpers as teknikal.blade.php — they are page-local there, not global.
             function setButtonBusy(button, busyLabel) {
@@ -677,17 +689,18 @@
                         const td = document.createElement('td');
                         td.className = 'text-center';
 
-                        // Once the letter is generated the row moves to Senarai Surat, so
-                        // there is nothing left to do here.
+                        // Once the letter is generated the row moves to Senarai Surat too,
+                        // but the modal stays reachable here, read-only, for reference.
+                        const btn = document.createElement('button');
+                        btn.type = 'button';
+                        btn.className = 'btn-form btn-sedia-sst ' + (row.status === 'submitted' ? 'btn-form-secondary' : 'btn-form-primary');
+                        btn.dataset.vendorId = row.vendor_id;
+                        btn.textContent = row.status === 'submitted' ? 'Lihat' : 'Sedia Surat Setuju Terima';
+                        td.appendChild(btn);
+
                         if (row.status === 'submitted') {
+                            td.appendChild(document.createTextNode(' '));
                             td.appendChild(selDom('span', 'Telah dijana', 'badge-status badge-status-success'));
-                        } else {
-                            const btn = document.createElement('button');
-                            btn.type = 'button';
-                            btn.className = 'btn-form btn-form-primary btn-sedia-sst';
-                            btn.dataset.vendorId = row.vendor_id;
-                            btn.textContent = 'Sedia Surat Setuju Terima';
-                            td.appendChild(btn);
                         }
 
                         tr.appendChild(td);
@@ -738,6 +751,17 @@
                                 kumpulan.appendChild(a);
                             });
 
+                            // Extra documents attached by the user when the letter was prepared.
+                            (row.documents || []).forEach(function (d) {
+                                const a = document.createElement('a');
+                                a.href = URL_MUAT_TURUN_DOKUMEN.replace('STORED_NAME', encodeURIComponent(d.stored_name))
+                                    + '?nama=' + encodeURIComponent(d.original_name || d.stored_name);
+                                a.className = 'btn-form btn-form-secondary';
+                                a.textContent = d.document_name;
+                                a.title = d.original_name || '';
+                                kumpulan.appendChild(a);
+                            });
+
                             tdAksi.appendChild(kumpulan);
                         } else {
                             tdAksi.textContent = '-';
@@ -760,6 +784,16 @@
                 $('#tbl_dokumen_sst tbody tr[data-jenis="pengguna"]').remove();
             }
 
+            // Nothing left to submit once a letter already exists — view only.
+            function kunciBorangSST(kunci) {
+                sstTerkunci = kunci;
+                $('#sst_tajuk, #sst_cukai, #kontrak_mula').prop('disabled', kunci);
+                $('#insurans_ya, #insurans_tidak, #semakan_ya, #semakan_tidak, #protege_ya, #protege_tidak, #perjanjian_ya, #perjanjian_tidak').prop('disabled', kunci);
+                $('#tbl_dokumen_sst input[type="text"], #tbl_dokumen_sst input[type="file"]').prop('disabled', kunci);
+                $('#btn-tambah-dokumen, .btn-hapus-baris').toggle(! kunci);
+                syncSstFooter();
+            }
+
             function isiBorang(pembekal, sst) {
                 kosongkanBorang();
 
@@ -776,27 +810,23 @@
                 $('#pembekal_email').val(pembekal.email);
 
                 $('#sst_harga_tawaran').val(formatWang(Number(sst?.offer_price ?? pembekal.harga_tawaran ?? 0)));
-                $('#kontrak_tempoh').val(SST_TEMPOH_KONTRAK ?? '');
+                $('#kontrak_tempoh').val(pembekal.tempoh_kontrak_bulan ?? SST_TEMPOH_KONTRAK ?? '');
+
+                // Tender-level facts — same for every vendor/letter under this tender.
+                $('#sst_no_dokumen').val(SST_NO_DOKUMEN);
+                $('#sst_rujukan_fail').val(sst?.file_reference_no || SST_RUJUKAN_FAIL);
+                $('#sst_kaedah_perolehan').val(SST_KAEDAH_PEROLEHAN);
+                $('#sst_jenis_tender').val('Terbuka');
+                $('#sst_kategori_perolehan').val(SST_KATEGORI_PEROLEHAN);
+                $('#kontrak_jenis').val(SST_JENIS_KONTRAK);
+                $('#kontrak_agensi').val(SST_AGENSI);
 
                 // Before signing, show today's date as a live preview; once signed, show the locked-in date.
                 $('#sst_tarikh_kerajaan').val(sst?.signed_at
                     ? formatTarikh(new Date(sst.signed_at + 'T00:00:00'))
                     : formatTarikh(new Date()));
 
-                // Documents can only be opened once a record exists.
-                $('#link-surat-setuju-terima')
-                    .attr('href', sst ? URL_SURAT_SETUJU_TERIMA.replace('VENDOR_ID', vendorAktif) : 'javascript:void(0)')
-                    .toggleClass('text-muted', ! sst);
-                $('#link-surat-akuan-pembida-berjaya')
-                    .attr('href', sst ? URL_SURAT_AKUAN_PEMBIDA_BERJAYA.replace('VENDOR_ID', vendorAktif) : 'javascript:void(0)')
-                    .toggleClass('text-muted', ! sst);
-                $('#link-surat-akuan-sumpah-syarikat')
-                    .attr('href', sst ? URL_SURAT_AKUAN_SUMPAH_SYARIKAT.replace('VENDOR_ID', vendorAktif) : 'javascript:void(0)')
-                    .toggleClass('text-muted', ! sst);
-
                 if (sst) {
-                    $('#sst_no_dokumen').val(sst.document_no);
-                    $('#sst_rujukan_fail').val(sst.file_reference_no);
                     $('#sst_tajuk').val(sst.title);
                     $('#sst_cukai').val(String(sst.tax_rate ?? 0));
                     $('#insurans_ya').prop('checked', !! sst.insurance);
@@ -826,6 +856,7 @@
 
                 kiraAmaunKontrak();
                 kiraTarikhTamat();
+                kunciBorangSST(!! sst);
             }
 
             $('#tbody_pembekal').on('click', '.btn-sedia-sst', function () {
@@ -1176,8 +1207,8 @@
             function syncSstFooter() {
                 const i = currentSstTab();
                 $('#btn-sst-kembali').toggle(i > 0);
-                $('#btn-sst-seterusnya').toggle(i < sstTabs.length - 1);
-                $('#btn-sst-simpan').toggle(i === sstTabs.length - 1);
+                $('#btn-sst-seterusnya').toggle(! sstTerkunci && i < sstTabs.length - 1);
+                $('#btn-sst-simpan').toggle(! sstTerkunci && i === sstTabs.length - 1);
             }
 
             function showSstTab(index) {

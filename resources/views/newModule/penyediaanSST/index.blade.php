@@ -91,15 +91,17 @@
                                 <td class="text-center">{{ $item['tarikh_tutup'] }}</td>
                                 <td class="text-center">{{ $item['harga'] }}</td>
                                 <td class="text-center">
-                                    @if ($item['dihantar'] ?? false)
+                                    @if ($item['selesai'] ?? false)
+                                        <span class="badge-status badge-status-success">Selesai</span>
+                                    @elseif ($item['dihantar'] ?? false)
                                         <span class="badge-status badge-status-success">Dihantar</span>
                                     @else
                                         <span class="badge-status badge-status-warning">Belum Dihantar</span>
                                     @endif
                                 </td>
                                 <td class="text-center pe-4">
-                                    <a href="{{ $item['show_url'] }}" class="btn btn-sm btn-info text-white" title="Kemaskini">
-                                        Kemaskini
+                                    <a href="{{ $item['show_url'] }}" class="btn btn-sm btn-info text-white" title="{{ ($item['dihantar'] ?? false) ? 'Lihat' : 'Kemaskini' }}">
+                                        {{ ($item['dihantar'] ?? false) ? 'Lihat' : 'Kemaskini' }}
                                     </a>
                                 </td>
                             </tr>

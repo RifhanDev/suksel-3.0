@@ -37,8 +37,13 @@ class ProfilPetenderController extends Controller
             ]);
         }
 
-        if ($this->isVendorFormMode()) {
-            $profilData = $this->resolveVendorFormDisplayData($tender, 'profil_petender', is_array($profilData) ? $profilData : null);
+        // Staff review (?vendor_id=&mode=view) and vendor mode both need per-vendor isolation.
+        if ($vendorId) {
+            $profilData = $this->resolveVendorFormDisplayData(
+                $tender,
+                'profil_petender',
+                is_array($profilData) ? $profilData : null
+            );
         }
 
         $vendorProfilDefaults = [];

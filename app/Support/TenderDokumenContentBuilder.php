@@ -7,6 +7,7 @@ use App\Models\FinancialChecklistItem;
 use App\Models\KewanganKerjaItem;
 use App\Models\SpesifikasiKerjaHeader;
 use App\Models\SpesifikasiKerjaItem;
+use App\Models\SpesifikasiKerjaFile;
 use App\Models\StandardChecklistItem;
 use App\Models\TechnicalChecklistFile;
 use App\Models\TechnicalChecklistItem;
@@ -68,18 +69,53 @@ class TenderDokumenContentBuilder
      */
     public function buildForSpesifikasiKerjaHeader(SpesifikasiKerjaHeader $header, $items): array
     {
-        $rows = $items->values()->map(function (SpesifikasiKerjaItem $item, int $index) {
-            return [
-                'kind' => 'item',
-                'bil' => $index + 1,
-                'item_uuid' => $item->uuid,
-                'title' => $item->spesifikasi,
-                'ya_tidak' => $item->ya_tidak,
-                'catatan' => $item->catatan,
-            ];
-        })->all();
+        $rows = [];
+        $bil = 0;
 
-        $label = 'Spesifikasi';
+        foreach ($items as $item) {
+            $bil++;
+            $rows[] = [
+                'kind' => 'item',
+                'bil' => $bil,
+                'item_uuid' => $item->uuid,
+                'title' => $item->nama_item ?: $item->spesifikasi,
+                'unit' => null,
+                'kuantiti' => null,
+                'quantity' => null,
+                'kadar' => null,
+                'jumlah' => null,
+                'ya_tidak' => null,
+                'catatan' => null,
+                'files' => [],
+            ];
+
+            foreach ($item->specs as $spec) {
+                $rows[] = [
+                    'kind' => 'spec',
+                    'bil' => null,
+                    'item_uuid' => $spec->uuid,
+                    'title' => $spec->spesifikasi,
+                    'unit' => $spec->unit,
+                    'kuantiti' => $spec->kuantiti,
+                    'quantity' => $spec->kuantiti,
+                    // PTJ reference rate (read-only context); vendor offer uses item_prices.
+                    'kadar' => $spec->kadar,
+                    'jumlah' => $spec->jumlah(),
+                    'ya_tidak' => $spec->ya_tidak,
+                    'catatan' => $spec->catatan,
+                    'files' => $spec->files->map(fn (SpesifikasiKerjaFile $file) => [
+                        'uuid' => $file->uuid,
+                        'name' => $file->original_name,
+                        'url' => route('tenderDokumen.spesifikasiKerjaFile', [
+                            'tender' => $this->tender->id,
+                            'fileUuid' => $file->uuid,
+                        ]),
+                        'mime_type' => $file->mime_type,
+                        'size' => $file->size,
+                    ])->values()->all(),
+                ];
+            }
+        }
 
         return [
             'uuid' => $header->uuid,
@@ -90,8 +126,8 @@ class TenderDokumenContentBuilder
             'mechanism' => null,
             'vendor_action' => null,
             'action' => 'view_specification',
-            'tindakan' => $label,
-            'badge_class' => VendorActionLabel::badgeClass($label),
+            'tindakan' => 'Spesifikasi',
+            'badge_class' => VendorActionLabel::badgeClass('Spesifikasi'),
             'source' => 'spesifikasi_kerja',
             'status' => $header->status ?? 'draft',
             'admin_content' => [
@@ -114,8 +150,8 @@ class TenderDokumenContentBuilder
 
         return [
             'uuid' => $item->uuid ?? null,
-            'title' => $item->spesifikasi ?? '',
-            'nama' => $item->spesifikasi ?? '',
+            'title' => $item->nama_item ?: ($item->spesifikasi ?? ''),
+            'nama' => $item->nama_item ?: ($item->spesifikasi ?? ''),
             'section' => 'spesifikasi_kerja',
             'source_type' => 'specification',
             'mechanism' => null,
@@ -130,9 +166,9 @@ class TenderDokumenContentBuilder
                 'document_title' => null,
                 'rows' => [[
                     'bil' => $index + 1,
-                    'title' => $item->spesifikasi,
-                    'quantity' => null,
-                    'unit' => null,
+                    'title' => $item->nama_item ?: $item->spesifikasi,
+                    'quantity' => $item->kuantiti,
+                    'unit' => $item->unit,
                     'ya_tidak' => $item->ya_tidak,
                     'catatan' => $item->catatan,
                 ]],
@@ -207,10 +243,14 @@ class TenderDokumenContentBuilder
         TechnicalChecklistItem|FinancialChecklistItem|KewanganKerjaItem $item,
         array $apiOverlay = []
     ): array {
-        if (! empty($apiOverlay['specification_rows']) && is_array($apiOverlay['specification_rows'])) {
+        if (
+            ! empty($apiOverlay['specification_rows'])
+            && is_array($apiOverlay['specification_rows'])
+            && count(array_filter($apiOverlay['specification_rows'])) > 0
+        ) {
             return [
                 'document_title' => $apiOverlay['document_title'] ?? $item->title,
-                'rows' => $apiOverlay['specification_rows'],
+                'rows' => array_values($apiOverlay['specification_rows']),
             ];
         }
 
@@ -402,37 +442,43 @@ class TenderDokumenContentBuilder
         };
 
         return collect($files)->map(function ($file) use ($section) {
-            $file = is_object($file) ? (array) $file : $file;
+            $data = $file instanceof \Illuminate\Database\Eloquent\Model
+                ? $file->toArray()
+                : (is_object($file) ? (array) $file : (array) $file);
 
-            return $this->mapChecklistFile($file, $section);
+            return $this->mapChecklistFile($data, $section);
         })->values()->all();
     }
 
     /**
-     * @param  array<string, mixed>  $file
+     * @param  array<string, mixed>|object  $file
      * @return array{uuid: ?string, name: string, url: string}
      */
-    protected function mapChecklistFile(array $file, string $section): array
+    protected function mapChecklistFile(array|object $file, string $section): array
     {
-        $uuid = $file['uuid'] ?? null;
-        $name = $file['original_name'] ?? $file['name'] ?? 'Dokumen';
+        $uuid = is_object($file) ? ($file->uuid ?? null) : ($file['uuid'] ?? null);
+        $name = is_object($file)
+            ? ($file->original_name ?? $file->name ?? 'Dokumen')
+            : ($file['original_name'] ?? $file['name'] ?? 'Dokumen');
+        $path = is_object($file) ? ($file->path ?? null) : ($file['path'] ?? null);
+        $url  = is_object($file) ? ($file->url ?? null) : ($file['url'] ?? null);
 
         if (! empty($uuid) && in_array($section, ['technical', 'financial', 'kewangan_kerja'], true)) {
             return [
-                'uuid' => $uuid,
-                'name' => $name,
+                'uuid' => (string) $uuid,
+                'name' => (string) $name,
                 'url' => route('tenderChecklist.download', [
                     'tender' => $this->tender->id,
                     'section' => $section,
-                    'fileUuid' => $uuid,
+                    'fileUuid' => (string) $uuid,
                 ]),
             ];
         }
 
         return [
-            'uuid' => $uuid,
-            'name' => $name,
-            'url' => $file['url'] ?? $this->resolveFileUrl($file['path'] ?? '#'),
+            'uuid' => $uuid ? (string) $uuid : null,
+            'name' => (string) $name,
+            'url' => $url ?? $this->resolveFileUrl($path ?? '#'),
         ];
     }
 
@@ -466,6 +512,7 @@ class TenderDokumenContentBuilder
 
         return match (true) {
             str_contains($normalized, 'pengalaman kerja') => '/pengalaman-kerja',
+            str_contains($normalized, 'kakitangan teknikal') => '/kakitangan-teknikal',
             str_contains($normalized, 'kerja dalam tangan') => '/kerja-dalam-tangan',
             str_contains($normalized, 'profil petender') => '/profil-petender',
             str_contains($normalized, 'penyata bank') => '/penyata-bank',

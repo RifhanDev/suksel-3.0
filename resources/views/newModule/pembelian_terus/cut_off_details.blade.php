@@ -229,49 +229,6 @@
         color: var(--topbar-text, #374151);
         margin-bottom: 16px;
     }
-
-    /* Success Modal Styles */
-    .success-modal .modal-content {
-        border-radius: 8px;
-        border: none;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    }
-
-    .success-modal .modal-body {
-        padding: 40px 30px;
-        text-align: center;
-    }
-
-    .success-icon {
-        width: 80px;
-        height: 80px;
-        margin: 0 auto 24px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .success-message {
-        font-size: 20px;
-        font-weight: bold;
-        color: #000;
-        margin-bottom: 30px;
-    }
-
-    .btn-tutup {
-        background: var(--sg-black);
-        color: var(--sg-bg);
-        border: none;
-        padding: 10px 30px;
-        border-radius: 4px;
-        font-weight: 500;
-        font-size: 16px;
-    }
-
-    .btn-tutup:hover {
-        background: var(--sg-black);
-        color: var(--sg-bg);
-    }
 </style>
 
 <div class="card">
@@ -421,41 +378,6 @@
     </div>
 </div>
 
-{{-- Modal: Success --}}
-<div class="modal fade success-modal" id="successModal" tabindex="-1" aria-labelledby="successModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-body">
-                <div class="success-icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100" fill="none">
-                        <!-- Party Popper Cone (Green) -->
-                        <path d="M50 15 L35 45 L50 40 L65 45 Z" fill="#10b981" />
-                        <path d="M50 15 L45 30 L50 25 L55 30 Z" fill="#0d9488" />
-                        <!-- Confetti Stream (Blue) -->
-                        <path d="M50 15 Q45 20 42 30 Q40 40 38 50" stroke="#3b82f6" stroke-width="3" fill="none" stroke-linecap="round" />
-                        <path d="M50 15 Q55 20 58 30 Q60 40 62 50" stroke="#3b82f6" stroke-width="3" fill="none" stroke-linecap="round" />
-                        <path d="M50 15 Q50 20 50 30 Q50 40 50 50" stroke="#3b82f6" stroke-width="3" fill="none" stroke-linecap="round" />
-                        <!-- Scattered Confetti Pieces -->
-                        <circle cx="25" cy="35" r="4" fill="#10b981" />
-                        <circle cx="75" cy="40" r="4" fill="#3b82f6" />
-                        <circle cx="30" cy="55" r="3" fill="#3b82f6" />
-                        <circle cx="70" cy="50" r="3" fill="#10b981" />
-                        <rect x="20" y="45" width="5" height="5" fill="#10b981" transform="rotate(45 22.5 47.5)" />
-                        <rect x="75" y="55" width="5" height="5" fill="#3b82f6" transform="rotate(45 77.5 57.5)" />
-                        <circle cx="40" cy="25" r="3" fill="#3b82f6" />
-                        <circle cx="60" cy="28" r="3" fill="#10b981" />
-                    </svg>
-                </div>
-                <div class="success-message">
-                    Cut-Off telah Selesai
-                </div>
-                <button type="button" class="btn btn-tutup" data-bs-dismiss="modal">Tutup</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-
 <script>
     // Supplier details data from controller
     const supplierDetails = {!! json_encode($suppliers ?? []) !!};
@@ -500,10 +422,8 @@
     }
 
     function showSuccessModal() {
-        const modalElement = document.getElementById('successModal');
-        if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
-            const modal = new bootstrap.Modal(modalElement);
-            modal.show();
+        if (typeof showBerjayaModal === 'function') {
+            showBerjayaModal({ message: 'Cut-Off telah Selesai' });
         }
     }
 

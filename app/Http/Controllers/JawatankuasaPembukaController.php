@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\AdvancesTenderProcessStatus;
 use App\Http\Controllers\Concerns\ResolvesTenderForProcess;
+use App\Http\Controllers\Concerns\RestrictsTenderByRole;
 use App\Models\TenderVendorDokumenResponse;
 use App\Services\JawatankuasaPembukaService;
+use App\Services\VendorDokumenResponseService;
 use App\Support\TenderDokumenPresenter;
 use App\Support\TenderProcessStatus;
 use App\Tender;
@@ -17,8 +19,14 @@ class JawatankuasaPembukaController extends Controller
 {
     use AdvancesTenderProcessStatus;
     use ResolvesTenderForProcess;
+    use RestrictsTenderByRole;
 
-    public function __construct(protected JawatankuasaPembukaService $service) {}
+    protected string $committeeJenisForResolvedTenders = 'open';
+
+    public function __construct(protected JawatankuasaPembukaService $service)
+    {
+        $this->menuMiddleware('OpenerEvaluation:list');
+    }
 
     // ─────────────────────────────────────────────────────────────────
     // Index – list tenders awaiting Pembuka evaluation
@@ -26,9 +34,12 @@ class JawatankuasaPembukaController extends Controller
 
     public function index()
     {
-        $tenders = Tender::query()
-            ->with('tenderer')
-            ->where('status_process_id', TenderProcessStatus::penilaianPembukaListStatus())
+        $tenders = $this->applyCommitteeAppointment(
+                Tender::query()
+                    ->with('tenderer')
+                    ->where('status_process_id', TenderProcessStatus::penilaianPembukaListStatus()),
+                'open'
+            )
             ->orderByDesc('id')
             ->get()
             ->map(function (Tender $tender) {
@@ -65,6 +76,8 @@ class JawatankuasaPembukaController extends Controller
                 ->with('error', 'Tender tidak ditemui.');
         }
 
+        $this->assertCommitteeAppointment($tender, 'open');
+
         $tender->loadMissing('tenderer');
 
         $tenderDokumen = TenderDokumenPresenter::for($tender);
@@ -83,6 +96,17 @@ class JawatankuasaPembukaController extends Controller
 
         $checklistItems  = $tenderDokumen->items('admin');
         $isNotMuatTurun  = fn (array $item) => strtolower(trim($item['tindakan'] ?? $item['mekanisma'] ?? '')) !== 'muat turun';
+        $isExcludedKewangan = function (array $item) {
+            $tindakan   = strtolower(trim($item['tindakan'] ?? ''));
+            $mekanisma  = strtolower(trim($item['mechanism'] ?? $item['mekanisma'] ?? ''));
+            $sourceType = strtolower(trim($item['source_type'] ?? ''));
+
+            return $tindakan === 'muat turun'
+                || $mekanisma === 'muat turun'
+                || $tindakan === 'spesifikasi'
+                || $mekanisma === 'spesifikasi'
+                || in_array($sourceType, ['specification', 'specification_document'], true);
+        };
 
         $teknikalItems   = collect($checklistItems)
             ->filter(fn (array $item) => in_array($item['source'] ?? $item['section'] ?? '', ['technical', 'spesifikasi_kerja'], true))
@@ -91,7 +115,7 @@ class JawatankuasaPembukaController extends Controller
             ->all();
         $kewanganItems   = collect($checklistItems)
             ->filter(fn (array $item) => in_array($item['source'] ?? $item['section'] ?? '', ['financial', 'kewangan_kerja'], true))
-            ->filter($isNotMuatTurun)
+            ->reject($isExcludedKewangan)
             ->values()
             ->all();
 
@@ -108,6 +132,7 @@ class JawatankuasaPembukaController extends Controller
         // Load existing evaluations and merge into semakPayload for pre-filling dropdowns
         $evaluations  = $this->service->loadEvaluations($tender);
         $semakPayload = $this->mergeEvaluationsIntoPayload($semakPayload, $evaluations);
+        $semakPayload = $this->attachStatusPenilaian($semakPayload);
 
         return view('newModule.jawatankuasaPembuka.jawatankuasa_pembuka', [
             'tender'        => $tender,
@@ -121,24 +146,26 @@ class JawatankuasaPembukaController extends Controller
     }
 
     // ─────────────────────────────────────────────────────────────────
-    // AJAX: Save compliance evaluation for a single item
+    // AJAX: Save compliance evaluations for every filled-in row of one
+    // checklist item in a single batch, and return that item's fresh
+    // Status Penilaian so the outer table badge can be patched live.
     // ─────────────────────────────────────────────────────────────────
 
     public function simpanPematuhan(Request $request): JsonResponse
     {
         $request->validate([
-            'tender'               => 'required|string',
-            'vendor_id'            => 'required|integer',
-            'checklist_item_uuid'  => 'required|uuid',
-            'status_pematuhan'     => 'required|in:0,1',
-            'catatan'              => 'nullable|string|max:2000',
+            'tender'                   => 'required|string',
+            'checklist_item_uuid'      => 'required|uuid',
+            'rows'                     => 'required|array|min:1',
+            'rows.*.vendor_id'         => 'required|integer',
+            'rows.*.status_pematuhan'  => 'required|in:0,1',
+            'rows.*.catatan'           => 'nullable|string|max:2000',
         ]);
 
-        // When status_pematuhan = 0 (Tiada), catatan is required
-        if ((int) $request->input('status_pematuhan') === 0) {
-            $request->validate([
-                'catatan' => 'required|string|min:1|max:2000',
-            ]);
+        foreach ($request->input('rows') as $row) {
+            if ((int) ($row['status_pematuhan'] ?? null) === 0 && trim((string) ($row['catatan'] ?? '')) === '') {
+                return response()->json(['message' => 'Catatan wajib diisi apabila Status Pematuhan = Tiada.'], 422);
+            }
         }
 
         $tender = $this->resolveTenderByIdentifier($request->input('tender'));
@@ -147,17 +174,15 @@ class JawatankuasaPembukaController extends Controller
             return response()->json(['message' => 'Tender tidak ditemui.'], 404);
         }
 
-        $record = $this->service->saveEvaluation(
+        $result = $this->service->saveEvaluationsBatch(
             $tender,
-            (int)    $request->input('vendor_id'),
             (string) $request->input('checklist_item_uuid'),
-            (int)    $request->input('status_pematuhan'),
-            $request->input('catatan')
+            $request->input('rows')
         );
 
         return response()->json([
-            'message'          => 'Penilaian pematuhan telah disimpan.',
-            'status_pematuhan' => $record->status_pematuhan,
+            'message'     => 'Penilaian pematuhan telah disimpan.',
+            'item_status' => $this->resolveStatusPenilaian($result['evaluated_count'], $result['total_vendors']),
         ]);
     }
 
@@ -188,6 +213,17 @@ class JawatankuasaPembukaController extends Controller
 
         $checklistItems = $tenderDokumen->items('admin');
         $isNotMuatTurun = fn (array $i) => strtolower(trim($i['tindakan'] ?? $i['mekanisma'] ?? '')) !== 'muat turun';
+        $isExcludedKewangan = function (array $item) {
+            $tindakan   = strtolower(trim($item['tindakan'] ?? ''));
+            $mekanisma  = strtolower(trim($item['mechanism'] ?? $item['mekanisma'] ?? ''));
+            $sourceType = strtolower(trim($item['source_type'] ?? ''));
+
+            return $tindakan === 'muat turun'
+                || $mekanisma === 'muat turun'
+                || $tindakan === 'spesifikasi'
+                || $mekanisma === 'spesifikasi'
+                || in_array($sourceType, ['specification', 'specification_document'], true);
+        };
 
         $teknikalItems  = collect($checklistItems)
             ->filter(fn (array $i) => in_array($i['source'] ?? $i['section'] ?? '', ['technical', 'spesifikasi_kerja'], true))
@@ -195,17 +231,10 @@ class JawatankuasaPembukaController extends Controller
             ->values()->all();
         $kewanganItems  = collect($checklistItems)
             ->filter(fn (array $i) => in_array($i['source'] ?? $i['section'] ?? '', ['financial', 'kewangan_kerja'], true))
-            ->filter($isNotMuatTurun)
+            ->reject($isExcludedKewangan)
             ->values()->all();
 
-        $vendors = $participants->map(fn ($p) => [
-            'vendor_id'     => (int) $p->vendor_id,
-            'name'          => $p->vendor?->name ?: ('Vendor #' . $p->vendor_id),
-            'kod'           => $p->kod_pembekal ?: null,
-            // Include existing rumusan values or auto-calculated specification price
-            'is_bumiputera' => $p->is_bumiputera,
-            'harga_tawaran' => $this->resolveVendorHargaTawaran($tender, (int) $p->vendor_id, $p->harga_tawaran),
-        ])->values()->all();
+        $vendors = $this->mapParticipatingVendorsForQualification($tender, $participants);
 
         $semakPayload = $this->buildSemakPayload($tender, $teknikalItems, $kewanganItems, $dokumenByVendor, $vendors);
         $evaluations  = $this->service->loadEvaluations($tender);
@@ -216,8 +245,27 @@ class JawatankuasaPembukaController extends Controller
     }
 
     /**
+     * @param  \Illuminate\Support\Collection<int, \App\TenderVendor>|\Illuminate\Database\Eloquent\Collection  $participants
+     * @return array<int, array{vendor_id: int, name: string, kod: ?string, is_bumiputera: mixed, harga_tawaran: mixed}>
+     */
+    protected function mapParticipatingVendorsForQualification(Tender $tender, $participants): array
+    {
+        return $participants->map(function ($p) use ($tender) {
+            return [
+                'vendor_id'     => (int) $p->vendor_id,
+                'name'          => $p->vendor?->name ?: ('Vendor #' . $p->vendor_id),
+                'kod'           => $p->kod_pembekal ?: null,
+                'is_bumiputera' => $p->is_bumiputera,
+                'harga_tawaran' => $this->resolveVendorHargaTawaran($tender, (int) $p->vendor_id, $p->harga_tawaran),
+            ];
+        })->values()->all();
+    }
+
+    /**
      * Resolve vendor's Harga Tawaran. If empty/null/0, auto-calculates total specification price
      * from tender_vendor_dokumen_responses where response_type = 'specification'.
+     * Kerja uses vendor kadar × PTJ kuantiti; bekalan sums item_prices as line totals.
+     * Never reads/writes SpesifikasiKerjaItem.kadar (PTJ reference).
      */
     protected function resolveVendorHargaTawaran(Tender $tender, int $vendorId, mixed $existingHarga): mixed
     {
@@ -231,23 +279,27 @@ class JawatankuasaPembukaController extends Controller
             ->where('response_type', 'specification')
             ->get();
 
-        $totalSpecPrice = 0;
+        $service = app(VendorDokumenResponseService::class);
+        $totalSpecPrice = 0.0;
         $hasPrices = false;
 
         foreach ($responses as $response) {
-            $payload = $response->payload ?? [];
+            $payload = $service->normalizeSpecificationPayload(
+                is_array($response->payload) ? $response->payload : null
+            );
             $itemPrices = $payload['item_prices'] ?? [];
-            if (is_array($itemPrices)) {
-                foreach ($itemPrices as $val) {
-                    if (is_numeric($val) && (float) $val > 0) {
-                        $totalSpecPrice += (float) $val;
-                        $hasPrices = true;
-                    }
-                }
+            if ($itemPrices === []) {
+                continue;
             }
+            $hasPrices = collect($itemPrices)->contains(fn ($v) => trim((string) $v) !== '');
+            $totalSpecPrice += $service->calculateSpecificationTotal(
+                $tender,
+                $itemPrices,
+                $response->section
+            );
         }
 
-        return $hasPrices ? number_format($totalSpecPrice, 2, '.', '') : $existingHarga;
+        return $hasPrices ? round($totalSpecPrice, 2) : $existingHarga;
     }
 
     // ─────────────────────────────────────────────────────────────────
@@ -287,6 +339,17 @@ class JawatankuasaPembukaController extends Controller
 
         $checklistItems = $tenderDokumen->items('admin');
         $isNotMuatTurun = fn (array $i) => strtolower(trim($i['tindakan'] ?? $i['mekanisma'] ?? '')) !== 'muat turun';
+        $isExcludedKewangan = function (array $item) {
+            $tindakan   = strtolower(trim($item['tindakan'] ?? ''));
+            $mekanisma  = strtolower(trim($item['mechanism'] ?? $item['mekanisma'] ?? ''));
+            $sourceType = strtolower(trim($item['source_type'] ?? ''));
+
+            return $tindakan === 'muat turun'
+                || $mekanisma === 'muat turun'
+                || $tindakan === 'spesifikasi'
+                || $mekanisma === 'spesifikasi'
+                || in_array($sourceType, ['specification', 'specification_document'], true);
+        };
 
         $teknikalItems  = collect($checklistItems)
             ->filter(fn (array $i) => in_array($i['source'] ?? $i['section'] ?? '', ['technical', 'spesifikasi_kerja'], true))
@@ -294,14 +357,10 @@ class JawatankuasaPembukaController extends Controller
             ->values()->all();
         $kewanganItems  = collect($checklistItems)
             ->filter(fn (array $i) => in_array($i['source'] ?? $i['section'] ?? '', ['financial', 'kewangan_kerja'], true))
-            ->filter($isNotMuatTurun)
+            ->reject($isExcludedKewangan)
             ->values()->all();
 
-        $vendors = $participants->map(fn ($p) => [
-            'vendor_id' => (int) $p->vendor_id,
-            'name'      => $p->vendor?->name ?: ('Vendor #' . $p->vendor_id),
-            'kod'       => $p->vendor?->registration ?: (string) $p->vendor_id,
-        ])->values()->all();
+        $vendors = $this->mapParticipatingVendorsForQualification($tender, $participants);
 
         $semakPayload  = $this->buildSemakPayload($tender, $teknikalItems, $kewanganItems, $dokumenByVendor, $vendors);
         $evaluations   = $this->service->loadEvaluations($tender);
@@ -380,6 +439,44 @@ class JawatankuasaPembukaController extends Controller
     }
 
     /**
+     * Attach each item's Status Penilaian (evaluation progress, not submission
+     * status) using vendor evaluation data already loaded into semakPayload.
+     *
+     * @param  array<string, array<string, mixed>>  $semakPayload
+     * @return array<string, array<string, mixed>>
+     */
+    protected function attachStatusPenilaian(array $semakPayload): array
+    {
+        foreach ($semakPayload as &$payload) {
+            $evaluatedCount = collect($payload['vendors'])->whereNotNull('status_pematuhan')->count();
+            $payload['status_penilaian'] = $this->resolveStatusPenilaian($evaluatedCount, (int) ($payload['vendor_count'] ?? 0));
+        }
+        unset($payload);
+
+        return $semakPayload;
+    }
+
+    /**
+     * 3-state Status Penilaian: Tiada Petender (no vendors bought this document),
+     * Menunggu Penilaian (none evaluated yet), Sedang Menilai (partial),
+     * Telah Dinilai (every vendor evaluated).
+     */
+    protected function resolveStatusPenilaian(int $evaluatedCount, int $totalVendors): array
+    {
+        if ($totalVendors === 0) {
+            return ['label' => 'Tiada Petender', 'badge' => 'badge-status-neutral'];
+        }
+        if ($evaluatedCount === 0) {
+            return ['label' => 'Menunggu Penilaian', 'badge' => 'badge-status-neutral'];
+        }
+        if ($evaluatedCount < $totalVendors) {
+            return ['label' => 'Sedang Menilai', 'badge' => 'badge-status-warning'];
+        }
+
+        return ['label' => 'Telah Dinilai', 'badge' => 'badge-status-success'];
+    }
+
+    /**
      * Build semakPayload keyed by checklist item UUID.
      * (Preserved from original controller, unchanged.)
      *
@@ -433,11 +530,15 @@ class JawatankuasaPembukaController extends Controller
 
                 $formUrl = $vendorItem['admin_content']['form']['url'] ?? ($item['admin_content']['form']['url'] ?? null);
                 if ($formUrl && ($item['action'] ?? '') === 'online_form') {
-                    $separator = str_contains($formUrl, '?') ? '&' : '?';
-                    if (! str_contains($formUrl, 'vendor_id=')) {
+                    // Always bind this row's vendor — never reuse another vendor_id already on the URL.
+                    if (preg_match('/([?&])vendor_id=\d+/', $formUrl)) {
+                        $formUrl = preg_replace('/([?&])vendor_id=\d+/', '${1}vendor_id=' . $vendorId, $formUrl, 1);
+                    } else {
+                        $separator = str_contains($formUrl, '?') ? '&' : '?';
                         $formUrl .= $separator . 'vendor_id=' . $vendorId;
-                        $separator = '&';
                     }
+
+                    $separator = str_contains($formUrl, '?') ? '&' : '?';
                     if (! str_contains($formUrl, 'modal=1')) {
                         $formUrl .= $separator . 'modal=1';
                         $separator = '&';
@@ -452,6 +553,8 @@ class JawatankuasaPembukaController extends Controller
                         'itemUuid'  => $uuid,
                         'vendor_id' => $vendorId,
                         'modal'     => 1,
+                        'mode'      => 'view',
+                        'summary'   => 'dokumentasi',
                     ]);
                 }
 

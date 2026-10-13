@@ -12,6 +12,7 @@ class JawatankuasaPerolehanMeeting extends Model
         'tender_id',
         'bil_mesyuarat',
         'tarikh_mesyuarat',
+        'masa',
         'tajuk_agenda',
         'tempat',
         'no_kod_kertas',

@@ -51,7 +51,7 @@ class SubscriptionsController extends Controller
 	 *
 	 * @return Response
 	 */
-	public function create($parent_id)
+	public function create(Request $request, $parent_id)
 	{
 		if ($request->ajax()) {
 			return $this->_ajax_denied();

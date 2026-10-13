@@ -40,7 +40,15 @@ class PenyediaanMesyuaratController extends Controller
         TenderProcessStatus::PENILAIAN_TEKNIKAL,
     ];
 
-    public function __construct(protected StosBackendClient $stos) {}
+    public function __construct(protected StosBackendClient $stos)
+    {
+        $this->menuMiddleware('Meeting:list', [
+            'except' => ['indexKehadiran', 'showKehadiran', 'simpanKehadiran'],
+        ]);
+        $this->menuMiddleware('MeetingAttendance:list', [
+            'only' => ['indexKehadiran', 'showKehadiran', 'simpanKehadiran'],
+        ]);
+    }
 
     public function index(Request $request)
     {

@@ -160,13 +160,16 @@ class OrganizationUnitsController extends Controller
 	public function agency(Request $request, $id)
 	{
 		$organizationunit = OrganizationUnit::findOrFail($id);
-		$tenders          = Tender::where('organization_unit_id', $organizationunit->id)->orderBy('created_at', 'desc')->orderBy('name', 'asc');
+		$tenders          = Tender::where('organization_unit_id', $organizationunit->id)
+			->whereNotIn('type', ['pembelian_terus', 'lantikan_terus'])
+			->orderBy('created_at', 'desc')
+			->orderBy('name', 'asc');
 
-		if (!auth()->check() || auth()->user()->hasRole('Vendor') || !Tender::canShowUpdate($organizationunit->id))
+		if (!auth()->check() || auth()->user()->hasRole('Vendor') || !Tender::canViewInternal($organizationunit->id))
 		{
 			$tenders = $tenders->where(function ($query)
 			{
-				$query->advertised()->forPublic()->published();
+				$query->advertised()->forPublic()->published()->open();
 			});
 		}
 
@@ -225,7 +228,8 @@ class OrganizationUnitsController extends Controller
 				'briefing_datetime',
 				'ref_number',
 				'created_at',
-				'tender_peringkat'
+				'tender_peringkat',
+				'kaedah_dokumen_id',
 			]);
 
 			$datatable = Datatables::of($tenders)->editColumn('name', function ($tender)
@@ -280,12 +284,12 @@ class OrganizationUnitsController extends Controller
 			{
 				return sprintf('RM %.2f', $tender->price);
 			})
+			// Teks status sahaja, sepadan dengan senarai admin. Butang Lantik
+			// dahulunya dipaparkan di sini tanpa logik peringkat dan tanpa modal;
+			// ia kini berada dalam kolum 'actions' melalui CommitteeAction.
 			->addColumn('status', function ($tender)
 			{
-				if ($tender->status === 'Tiada Jawatan Kuasa' && auth()->check() && auth()->user()->ability([], ['committee:create'])) {
-				                    return '<a href="/pelantikan-jawatankuasa?tender=' . $tender->uuid . '" class="btn btn-xs btn-warning">Lantik Jawatan Kuasa</a>';
-				                }
-				                return '';
+				return $tender->status;
 			})
 			->addColumn('codes', function ($tender)
 			{
@@ -356,20 +360,14 @@ class OrganizationUnitsController extends Controller
 				return $string;
 			});
 
+			// Syarat sama dengan senarai admin /tender, dari sumber yang sama.
+			$datatable = $datatable->addColumn('actions', function ($tender)
+			{
+				return \App\Support\CommitteeAction::button($tender);
+			});
+
 			if (Tender::canShowUpdate($organizationunit->id))
 			{
-				$datatable = $datatable->addColumn('actions', function ($tender)
-				{
-					$str   = [];
-					$str[] = '<div class="btn-group btn-group-vertical">';
-					if (empty($tender->approver_id)) $str[] = link_to_route('tender.edit', 'Kemaskini', $tender->id, ['class' => 'btn btn-xs btn-primary']);
-					if ($tender->canCancel() && $tender->approver_id > 0)
-						$str[] = link_to_action('TendersController@cancel', 'Batal Siar', $tender->id, ['class' => 'btn btn-xs btn-danger']);
-					if ($tender->canUpdate() && empty($tender->approver_id))
-						$str[] = link_to_action('TendersController@publish', 'Siar', $tender->id, ['class' => 'btn btn-xs btn-warning']);
-					return implode('', $str);
-				});
-
 				$datatable = $datatable->addColumn('report', function ($tender) use ($id)
 				{
 					$str   = [];
@@ -379,10 +377,6 @@ class OrganizationUnitsController extends Controller
 
 					return implode('', $str);
 				});
-			}
-			else
-			{
-				$datatable = $datatable->removeColumn('actions');
 			}
 
 			return $datatable
@@ -399,14 +393,15 @@ class OrganizationUnitsController extends Controller
 				->removeColumn('briefing_required')
 				->removeColumn('briefing_datetime')
 				->removeColumn('briefing_address')
+				->removeColumn('kaedah_dokumen_id')
 				->rawColumns(['name', 'codes', 'document_start_date', 'submission_datetime', 'price', 'status', 'actions', 'report'])
 				->make();
 		}
 
-		$count_1     = $organizationunit->tenders()->whereNull('approver_id')->count();
+		$count_1     = $organizationunit->tenders()->whereNotIn('type', ['pembelian_terus', 'lantikan_terus'])->whereNull('approver_id')->count();
 		// Temporarily commented out to fix column issue
-		$count_2     = $organizationunit->tenders()->whereNotNull('approver_id')->where('publish_prices', 0)->where('publish_winner', 0)->count();
-		$count_3     = $organizationunit->tenders()->whereNotNull('approver_id')->where('publish_prices', '>', 0)->where('publish_winner', 0)->count();
+		$count_2     = $organizationunit->tenders()->whereNotIn('type', ['pembelian_terus', 'lantikan_terus'])->whereNotNull('approver_id')->where('publish_prices', 0)->where('publish_winner', 0)->count();
+		$count_3     = $organizationunit->tenders()->whereNotIn('type', ['pembelian_terus', 'lantikan_terus'])->whereNotNull('approver_id')->where('publish_prices', '>', 0)->where('publish_winner', 0)->count();
 		// $count_2     = $organizationunit->tenders()->where('publish_prices', 0)->where('publish_winner', 0)->count();
 		// $count_3     = $organizationunit->tenders()->where('publish_prices', '>', 0)->where('publish_winner', 0)->count();
 		$global_news = $organizationunit->news()->where('publish', 1)->orderBy('published_at', 'desc')->take(10)->get();
@@ -418,11 +413,14 @@ class OrganizationUnitsController extends Controller
 	{
 
 		$organizationunit = OrganizationUnit::findOrFail($id);
-		$tenders          = Tender::where('organization_unit_id', $organizationunit->id)->orderBy('created_at', 'desc')->orderBy('name', 'asc');
+		$tenders          = Tender::where('organization_unit_id', $organizationunit->id)
+			->whereNotIn('type', ['pembelian_terus', 'lantikan_terus'])
+			->orderBy('created_at', 'desc')
+			->orderBy('name', 'asc');
 
 		if (!auth()->check() || auth()->user()->hasRole('Vendor') || !Tender::canShowUpdate($organizationunit->id)) {
 			$tenders = $tenders->where(function ($query) {
-				$query->advertised()->forPublic()->published();
+				$query->advertised()->forPublic()->published()->open();
 			});
 		}
 
@@ -598,7 +596,7 @@ class OrganizationUnitsController extends Controller
 				$datatable = $datatable->addColumn('actions', function ($tender) {
 					$str = [];
 					if (empty($tender->approver_id)) $str[] = link_to_route('tender.edit', 'Kemaskini', $tender->id, ['class' => 'btn btn-sm btn-warning rounded-8 px-3 text-nowrap']);
-					if ($tender->canCancel() && $tender->approver_id > 0) $str[] = link_to_action('TendersController@cancel', 'Batal Siar', $tender->id, ['class' => 'btn btn-sm btn-danger rounded-8 px-3 text-nowrap']);
+					if ($tender->canCancelSiar() && $tender->approver_id > 0) $str[] = link_to_action('TendersController@cancel', 'Batal Siar', $tender->id, ['class' => 'btn btn-sm btn-danger rounded-8 px-3 text-nowrap', 'onclick' => 'return confirm(\'Batal siar tender ini? Status akan kembali ke peringkat Penyediaan Iklan.\')']);
 					if ($tender->canUpdate() && empty($tender->approver_id)) $str[] = link_to_action('TendersController@publish', 'Siar', $tender->id, ['class' => 'btn btn-sm btn-success rounded-8 px-3 text-nowrap']);
 					return '<div class="d-flex gap-1 justify-content-center flex-nowrap">' . implode('', $str) . '</div>';
 				});
@@ -629,12 +627,12 @@ class OrganizationUnitsController extends Controller
 				->make();
 		}
 
-		$count_1     = $organizationunit->tenders()->whereNull('approver_id')->count();
+		$count_1     = $organizationunit->tenders()->whereNotIn('type', ['pembelian_terus', 'lantikan_terus'])->whereNull('approver_id')->count();
 		// Temporarily commented out to fix column issue
 		// $count_2     = $organizationunit->tenders()->whereNotNull('approver_id')->where('publish_prices', 0)->where('publish_winner', 0)->count();
 		// $count_3     = $organizationunit->tenders()->whereNotNull('approver_id')->where('publish_prices', '>', 0)->where('publish_winner', 0)->count();
-		$count_2     = $organizationunit->tenders()->where('publish_prices', 0)->where('publish_winner', 0)->count();
-		$count_3     = $organizationunit->tenders()->where('publish_prices', '>', 0)->where('publish_winner', 0)->count();
+		$count_2     = $organizationunit->tenders()->whereNotIn('type', ['pembelian_terus', 'lantikan_terus'])->where('publish_prices', 0)->where('publish_winner', 0)->count();
+		$count_3     = $organizationunit->tenders()->whereNotIn('type', ['pembelian_terus', 'lantikan_terus'])->where('publish_prices', '>', 0)->where('publish_winner', 0)->count();
 		$global_news = $organizationunit->news()->where('publish', 1)->orderBy('published_at', 'desc')->take(10)->get();
 		view()->share('global_ou', $organizationunit);
 		// [OLD CODE] return view('organizationunits.show', compact('organizationunit', 'tenders', 'count_1', 'count_2', 'count_3', 'global_news', 'path'));

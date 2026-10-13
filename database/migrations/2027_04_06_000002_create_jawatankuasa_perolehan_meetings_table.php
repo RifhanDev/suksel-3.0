@@ -20,6 +20,7 @@ return new class extends Migration
             $table->unsignedBigInteger('tender_id')->index();
             $table->string('bil_mesyuarat', 100);
             $table->date('tarikh_mesyuarat');
+            $table->string('masa', 10)->nullable();
             $table->string('tajuk_agenda');
             $table->string('tempat');
             $table->string('no_kod_kertas', 100);

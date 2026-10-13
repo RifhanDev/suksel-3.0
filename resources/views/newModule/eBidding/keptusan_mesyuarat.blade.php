@@ -5,8 +5,8 @@
 
 	<style>
 		/* =====================
-														SECTION BAR
-														===================== */
+																SECTION BAR
+																===================== */
 		.section-title-bar {
 			background: #f3f5f8;
 			border: 1px solid #e9edf3;
@@ -20,8 +20,8 @@
 
 
 		/* =====================
-														TABLE STYLE
-														===================== */
+																TABLE STYLE
+																===================== */
 		.table thead th {
 			text-align: center;
 			vertical-align: middle;
@@ -37,8 +37,8 @@
 		}
 
 		/* =====================
-														RED TABLE HEADER
-														===================== */
+																RED TABLE HEADER
+																===================== */
 		.table thead th {
 			background-color: #B11217 !important;
 			color: #ffffff !important;
@@ -59,7 +59,7 @@
 @section('content')
 	@php
 		$visibleTabs = $visibleTabs ?? ['penyediaan', 'taklimat', 'pemilihan', 'pengesyoran', 'jadual-bidaan', 'keputusan'];
-		// Default buka tab Pengesyoran Pembekal dahulu.
+		// Default buka tab Pemilihan Pembekal dahulu.
 		$tabOrder = ['pengesyoran', 'penyediaan', 'taklimat', 'pemilihan', 'jadual-bidaan', 'keputusan'];
 		$activeTab =
 		    collect($tabOrder)->first(function ($tabKey) use ($visibleTabs) {
@@ -163,7 +163,7 @@
 						<li class="nav-item" role="presentation">
 							<button class="nav-link {{ $activeTab === 'pengesyoran' ? 'active' : '' }}" id="tab-pengesyoran-btn"
 								data-bs-toggle="tab" data-bs-target="#tab-pengesyoran" type="button" role="tab">
-								Pengesyoran Pembekal
+								Pemilihan Pembekal
 							</button>
 						</li>
 					@endif
@@ -172,7 +172,7 @@
 						<li class="nav-item" role="presentation">
 							<button class="nav-link {{ $activeTab === 'taklimat' ? 'active' : '' }}" id="tab-taklimat-btn"
 								data-bs-toggle="tab" data-bs-target="#tab-taklimat" type="button" role="tab">
-								{{ !empty($isRestrictedEbidding) ? 'Penyediaan Kertas Taklimat' : 'Penyediaan Kertas Taklimat' }}
+								{{ !empty($isRestrictedEbidding) ? 'Paparan Kertas Taklimat' : 'Paparan Kertas Taklimat' }}
 							</button>
 						</li>
 					@endif
@@ -224,12 +224,13 @@
 								<thead class="text-white text-center" style="background-color:#2d3e84;">
 									<tr>
 										<th style="width:42px;"></th>
-										<th>Bil Mesyuarat <span class="text-danger">*</span></th>
-										<th>Tarikh Mesyuarat <span class="text-danger">*</span></th>
-										<th>Tajuk Agenda <span class="text-danger">*</span></th>
-										<th>Tempat <span class="text-danger">*</span></th>
-										<th>No. Kod Kertas <span class="text-danger">*</span></th>
-										<th>Status <span class="text-danger">*</span></th>
+										<th style="width:110px;">Bil. Mesyuarat <span class="text-danger">*</span></th>
+										<th style="width:130px;">Tarikh Mesyuarat <span class="text-danger">*</span></th>
+										<th style="width:100px;">Masa <span class="text-danger">*</span></th>
+										<th style="width:160px;">Tempat <span class="text-danger">*</span></th>
+										<th style="width:120px;">No. Kod Kertas <span class="text-danger">*</span></th>
+										<th style="min-width:240px;">Agenda <span class="text-danger">*</span></th>
+										<th style="width:130px;">Status <span class="text-danger">*</span></th>
 										<th>Catatan</th>
 									</tr>
 								</thead>
@@ -241,8 +242,9 @@
 										<td><input type="text" class="form-control form-control-sm" placeholder=""></td>
 										<td><input type="date" class="form-control form-control-sm" value="2021-10-18">
 										</td>
-										<td><input type="text" class="form-control form-control-sm" placeholder=""></td>
+										<td><input type="time" class="form-control form-control-sm" value="09:00"></td>
 										<td><input type="text" class="form-control form-control-sm" value="Bilik Mesyuarat Tingkat 3"></td>
+										<td><input type="text" class="form-control form-control-sm" placeholder=""></td>
 										<td><input type="text" class="form-control form-control-sm" placeholder=""></td>
 										<td>
 											<select class="form-select form-select-sm">
@@ -269,7 +271,7 @@
 				</div>
 			@endif
 
-			{{-- ============ TAB 2: Penyediaan Kertas Taklimat ============ --}}
+			{{-- ============ TAB 2: Paparan Kertas Taklimat ============ --}}
 			@if (in_array('taklimat', $visibleTabs, true))
 				<div class="tab-pane fade {{ $activeTab === 'taklimat' ? 'show active' : '' }}" id="tab-taklimat"
 					role="tabpanel">
@@ -321,7 +323,7 @@
 							<div class="col-md-4">
 								<label class="form-label">Keputusan Mesyuarat</label>
 								<select class="form-select">
-									<option selected>Pengesyoran Pembekal</option>
+									<option selected>Pemilihan Pembekal</option>
 									<option>Penilaian Semula</option>
 									<option>Iklan Semula</option>
 									<option>Kemukakan kepada Pihak Berkuasa Yang Lebih Tinggi</option>
@@ -433,7 +435,7 @@
 				</div>
 			@endif
 
-			{{-- ============ TAB: Pengesyoran Pembekal ============ --}}
+			{{-- ============ TAB: Pemilihan Pembekal ============ --}}
 			@if (in_array('pengesyoran', $visibleTabs, true))
 				<div class="tab-pane fade {{ $activeTab === 'pengesyoran' ? 'show active' : '' }}" id="tab-pengesyoran"
 					role="tabpanel">
@@ -471,11 +473,24 @@
 						</div>
 
 						<div class="section-grey">Senarai Pembekal</div>
+						@if (!empty($showBidPriceDiff))
+							<div class="d-flex flex-wrap gap-3 small mb-2">
+								<span class="d-inline-flex align-items-center gap-1">
+									<span class="rounded-circle d-inline-block" style="width:10px;height:10px;background:#198754;"></span>
+									<span class="text-success fw-semibold">Hijau</span> = harga baharu (vendor key-in)
+								</span>
+								<span class="d-inline-flex align-items-center gap-1">
+									<span class="rounded-circle d-inline-block" style="width:10px;height:10px;background:#dc3545;"></span>
+									<span class="text-danger fw-semibold">Merah</span> = harga lama (tiada bidaan baharu)
+								</span>
+							</div>
+						@endif
 						<div class="table-responsive mb-3">
 							<table class="table table-bordered table-blue text-center align-middle">
 								<thead>
 									<tr>
 										<th style="width:60px;">Bil</th>
+										<th style="min-width:180px;">Nama Vendor</th>
 										<th style="width:110px;">Status Bumiputra</th>
 										<th style="width:120px;">Harga Tawaran (RM)</th>
 										<th style="width:90px;">Jumlah Skor</th>
@@ -483,10 +498,10 @@
 										<th style="width:150px;">Status Pendaftaran MOF</th>
 										<th colspan="2" style="width:220px;">Maklumat Tambahan</th>
 										<th style="width:180px;">Kaedah Memuktamadkan Pembekal oleh SULP</th>
-										<th style="width:120px;">Harga Bidaan (RM)</th>
+										<th style="width:140px;">Harga Bidaan (RM)</th>
 									</tr>
 									<tr>
-										<th colspan="6"></th>
+										<th colspan="7"></th>
 										<th>Prestasi Pembekal</th>
 										<th>Lembaga Pengarah</th>
 										<th colspan="2"></th>
@@ -496,10 +511,24 @@
 									@php
 										$firstItem = collect($agencyPemilihanItems ?? [])->first();
 										$petenderRows = $firstItem['petenders'] ?? [];
+										$showBidPriceDiff = !empty($showBidPriceDiff);
 									@endphp
 									@foreach ($petenderRows as $row)
+										@php
+											$isNewBid = $showBidPriceDiff && !empty($row['is_new_bid']);
+											$isOldBid = $showBidPriceDiff && empty($row['is_new_bid']);
+											$bidCellClass = $isNewBid ? 'text-success fw-semibold' : ($isOldBid ? 'text-danger fw-semibold' : '');
+											$bidCellBg = $isNewBid ? '#e8f7ef' : ($isOldBid ? '#fdebec' : '');
+											$bidLabel = $isNewBid ? 'Harga baharu' : ($isOldBid ? 'Harga lama' : null);
+										@endphp
 										<tr>
 											<td>{{ $row['bil_label'] }}</td>
+											<td class="text-start">
+												<div class="fw-semibold">{{ $row['vendor_name'] ?? '-' }}</div>
+												@if (!empty($row['vendor_id']))
+													<div class="text-muted small">ID: {{ $row['vendor_id'] }}</div>
+												@endif
+											</td>
 											<td>{{ $row['status_bumiputra'] }}</td>
 											<td>{{ number_format((float) $row['harga_tawaran'], 2) }}</td>
 											<td>{{ $row['jumlah_skor'] }}</td>
@@ -513,7 +542,25 @@
 												@endif
 											</td>
 											<td>{{ $row['kaedah_sulp'] }}</td>
-											<td>{{ number_format((float) $row['harga_bidaan'], 2) }}</td>
+											<td class="{{ $bidCellClass }}"
+												@if ($bidCellBg) style="background:{{ $bidCellBg }};" @endif>
+												<div class="d-flex align-items-center justify-content-center gap-1">
+													<div>
+														<div>{{ number_format((float) $row['harga_bidaan'], 2) }}</div>
+														@if ($bidLabel)
+															<div class="small fw-normal">{{ $bidLabel }}</div>
+														@endif
+													</div>
+													@include('components.bid-spec-breakdown', [
+														'items' => $row['spec_items'] ?? [],
+														'vendorName' => $row['vendor_name'] ?? null,
+														'vendorId' => $row['vendor_id'] ?? null,
+														'showPriceDiff' => $showBidPriceDiff,
+														'modalSuffix' => 'eb-' . ($row['vendor_id'] ?? uniqid()),
+														'title' => 'Item Spesifikasi',
+													])
+												</div>
+											</td>
 										</tr>
 									@endforeach
 								</tbody>
@@ -558,7 +605,7 @@
 							<div class="col-md-3">
 								<label class="form-label">Masa Bidaan Mula<span class="text-danger">*</span></label>
 								<input type="time" class="form-control" id="eb_jadual_masa_mula"
-									value="{{ old('masa_bidaan_mula', optional($jadualBidaan)->masa_bidaan_mula) }}">
+									value="{{ old('masa_bidaan_mula', optional($jadualBidaan)->timeForInput('masa_bidaan_mula')) }}">
 							</div>
 							<div class="col-md-3">
 								<label class="form-label">Tarikh Bidaan Tamat<span class="text-danger">*</span></label>
@@ -568,7 +615,7 @@
 							<div class="col-md-3">
 								<label class="form-label">Masa Bidaan Tamat<span class="text-danger">*</span></label>
 								<input type="time" class="form-control" id="eb_jadual_masa_tamat"
-									value="{{ old('masa_bidaan_tamat', optional($jadualBidaan)->masa_bidaan_tamat) }}">
+									value="{{ old('masa_bidaan_tamat', optional($jadualBidaan)->timeForInput('masa_bidaan_tamat')) }}">
 							</div>
 						</div>
 
@@ -989,7 +1036,11 @@
 
 			if (isAgencyReadOnly) {
 				$('#mainTabContent input, #mainTabContent select, #mainTabContent textarea').prop('disabled', true);
-				$('#mainTabContent button').prop('disabled', true).addClass('disabled');
+				// Keep spec breakdown info icons clickable (view-only).
+				$('#mainTabContent button')
+					.not('.bid-spec-breakdown-btn')
+					.prop('disabled', true)
+					.addClass('disabled');
 			}
 
 			renderTaklimatRows();
@@ -1030,11 +1081,11 @@
 			}
 
 			$('#eb_btn_pengesyoran_simpan').on('click', function() {
-				submitPengesyoran(saveUrl, 'Pengesyoran pembekal berjaya disimpan.');
+				submitPengesyoran(saveUrl, 'Pemilihan Pembekal berjaya disimpan.');
 			});
 
 			$('#eb_btn_pengesyoran_hantar').on('click', function() {
-				submitPengesyoran(submitUrl, 'Pengesyoran pembekal berjaya dihantar.');
+				submitPengesyoran(submitUrl, 'Pemilihan Pembekal berjaya dihantar.');
 			});
 		});
 	</script>

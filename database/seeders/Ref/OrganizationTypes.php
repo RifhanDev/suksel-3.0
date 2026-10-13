@@ -2,80 +2,35 @@
 
 namespace Database\Seeders\Ref;
 
-use App\Models\Ref\RefOrganizationType;
-use Carbon\Carbon;
-use Illuminate\Database\Seeder;
-
-class OrganizationTypes extends Seeder
+/**
+ * Senarai rujukan Jenis Organisasi.
+ *
+ * Lihat RefListSeeder untuk kelakuan dan sebab ia selamat dijalankan berulang.
+     *
+     * `is_ssm` dikekalkan tepat seperti seeder asal. Nilainya kelihatan
+     * terbalik (ROB dan ROC ialah pendaftaran SSM, ROS bukan), tetapi itu
+     * keputusan data perniagaan dan bukan tempat perubahan ini membetulkannya.
+ */
+class OrganizationTypes extends RefListSeeder
 {
-    /**
-     * Run the database seeds.
-     */
-    public function run(): void
+    public const ROWS = [
+        ['name' => 'ROB: PERSEORANGAN', 'is_ssm' => 1],
+        ['name' => 'ROB: PERKONGSIAN', 'is_ssm' => 0],
+        ['name' => 'ROC: BERHAD', 'is_ssm' => 0],
+        ['name' => 'ROC: SENDIRIAN BERHAD', 'is_ssm' => 0],
+        ['name' => 'ROC: PERKONGSIAN LIABILITI TERHAD', 'is_ssm' => 0],
+        ['name' => 'ROS: KOPERASI', 'is_ssm' => 1],
+        ['name' => 'ROS: PERTUBUHAN', 'is_ssm' => 1],
+        ['name' => 'ROS: PERSATUAN', 'is_ssm' => 1],
+    ];
+
+    protected function table(): string
     {
-        // Create Admin User
-        RefOrganizationType::create([
-            'name' => 'ROB: PERSEORANGAN',
-            'active' => '1',
-            'is_ssm' => '1',
-            'created_at' => Carbon::now(),
-            'updated_at' => Carbon::now(),
-        ]);
+        return 'ref_organization_types';
+    }
 
-        RefOrganizationType::create([
-            'name' => 'ROB: PERKONGSIAN',
-            'active' => '1',
-            'is_ssm' => '0',
-            'created_at' => Carbon::now(),
-            'updated_at' => Carbon::now(),
-        ]);
-
-        RefOrganizationType::create([
-            'name' => 'ROC: BERHAD',
-            'active' => '1',
-            'is_ssm' => '0',
-            'created_at' => Carbon::now(),
-            'updated_at' => Carbon::now(),
-        ]);
-
-        RefOrganizationType::create([
-            'name' => 'ROC: SENDIRIAN BERHAD',
-            'active' => '1',
-            'is_ssm' => '0',
-            'created_at' => Carbon::now(),
-            'updated_at' => Carbon::now(),
-        ]);
-
-        RefOrganizationType::create([
-            'name' => 'ROC: PERKONGSIAN LIABILITI TERHAD',
-            'active' => '1',
-            'is_ssm' => '0',
-            'created_at' => Carbon::now(),
-            'updated_at' => Carbon::now(),
-        ]);
-
-        RefOrganizationType::create([
-            'name' => 'ROS: KOPERASI',
-            'active' => '1',
-            'is_ssm' => '1',
-            'created_at' => Carbon::now(),
-            'updated_at' => Carbon::now(),
-        ]);
-
-        RefOrganizationType::create([
-            'name' => 'ROS: PERTUBUHAN',
-            'active' => '1',
-            'is_ssm' => '1',
-            'created_at' => Carbon::now(),
-            'updated_at' => Carbon::now(),
-        ]);
-
-        RefOrganizationType::create([
-            'name' => 'ROS: PERSATUAN',
-            'active' => '1',
-            'is_ssm' => '1',
-            'created_at' => Carbon::now(),
-            'updated_at' => Carbon::now(),
-        ]);
+    protected function rows(): array
+    {
+        return self::ROWS;
     }
 }

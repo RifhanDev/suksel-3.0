@@ -28,6 +28,10 @@ class CheckUser
         if(
             auth()->check() && auth()->user()->hasRole('Agency Admin') || 
             auth()->check() && auth()->user()->hasRole('Agency User') ||
+            auth()->check() && auth()->user()->hasRole('Agency Urusetia') ||
+            auth()->check() && auth()->user()->hasRole('Agency Jawatankuasa') ||
+            auth()->check() && auth()->user()->hasRole('Agency Lembaga Perolehan') ||
+            auth()->check() && auth()->user()->hasRole('Lembaga Perolehan Negeri Selangor') ||
             auth()->check() && auth()->user()->hasRole('Admin UPEN') ||
             auth()->check() && auth()->user()->hasRole('Admin PWN') ||
             auth()->check() && auth()->user()->hasRole('Admin Kewangan')

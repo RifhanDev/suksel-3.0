@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\AdvancesTenderProcessStatus;
 use App\Http\Controllers\Concerns\ResolvesTenderForProcess;
+use App\Http\Controllers\Concerns\RestrictsTenderByRole;
 use App\Services\StosBackendClient;
 use App\Support\TenderProcessStatus;
 use App\Tender;
@@ -14,8 +15,14 @@ class CutOffController extends Controller
 {
     use AdvancesTenderProcessStatus;
     use ResolvesTenderForProcess;
+    use RestrictsTenderByRole;
 
-    public function __construct(protected StosBackendClient $stos) {}
+    protected string $committeeJenisForResolvedTenders = 'open';
+
+    public function __construct(protected StosBackendClient $stos)
+    {
+        $this->menuMiddleware('CutOff:list');
+    }
 
     public function index(Request $request)
     {
@@ -58,7 +65,7 @@ class CutOffController extends Controller
             $rows = $response->json('data') ?? [];
 
             return $this->mapTendersForProcessList(
-                Tender::hydrate($rows),
+                $this->filterTendersByAppointment(Tender::hydrate($rows), 'open'),
                 fn (Tender $tender) => route('cutOff.show', $tender->uuid)
             );
         } catch (\Throwable $e) {
@@ -98,6 +105,9 @@ class CutOffController extends Controller
             abort(502, 'Ralat menghubungi STOS.');
         }
 
+        $localTender = $this->resolveTenderByIdentifier($row['uuid'] ?? $uuid);
+        $this->assertCommitteeAppointment($localTender, 'open');
+
         $tender_no = $row['no_tender'] ?: $row['ref_number'] ?: (string) ($row['id'] ?? $uuid);
         $hargaCutOff = $row['harga_cutoff'] ?? [];
         $statisticalAttribute = $row['statistical_attribute'] ?? [];
@@ -106,21 +116,32 @@ class CutOffController extends Controller
         $frequency = $row['frequency'] ?? [];
         $selection = $row['selection'] ?? null;
 
-        // Jadual per-syarikat (No, Ruj, Tend Price, BW, Z, %Bwaj, %Bwam)
-        $rows = collect($vendorsCutOff)->map(function ($r) {
-            $isFreak = ($r['bw'] ?? null) === 'FREAK';
+        // Jadual: baris AJ (Anggaran Jabatan) dahulu, kemudian syarikat.
+        // AJ dipaparkan sebagai rujukan — tidak boleh dipilih.
+        $rows = collect($vendorsCutOff)
+            ->map(function ($r) {
+                $isAj = ! empty($r['is_aj']);
+                $isFreak = ($r['bw'] ?? null) === 'FREAK';
+                $failed = ! empty($r['failed']);
+                $tendPrice = $r['tend_price'] ?? null;
 
-            return [
-                'no' => $r['bil'] ?? '-',
-                'ruj' => $r['ruj'] ?? '-',
-                'price' => number_format((float) ($r['tend_price'] ?? 0), 2),
-                'bw' => $isFreak ? 'FREAK' : number_format((float) ($r['bw'] ?? 0), 2),
-                'z' => isset($r['z_score']) && $r['z_score'] !== null ? number_format((float) $r['z_score'], 2) : '-',
-                'pct_aj' => $this->formatPeratus($r['pct_bwaj'] ?? null),
-                'pct_mean' => ($r['pct_bwam'] ?? null) === 'FREAK' ? 'FREAK' : $this->formatPeratus($r['pct_bwam'] ?? null),
-                'freak' => $isFreak,
-            ];
-        })->all();
+                return [
+                    'no' => $r['bil'] ?? '-',
+                    'ruj' => $r['ruj'] ?? ($isAj ? 'AJ' : '-'),
+                    'price' => $tendPrice === null ? '-' : number_format((float) $tendPrice, 2),
+                    'bw' => ($r['bw'] ?? null) === null
+                        ? '-'
+                        : ($isFreak ? 'FREAK' : number_format((float) $r['bw'], 2)),
+                    'z' => isset($r['z_score']) && $r['z_score'] !== null ? number_format((float) $r['z_score'], 2) : '-',
+                    'pct_aj' => $this->formatPeratus($r['pct_bwaj'] ?? null),
+                    'pct_mean' => ($r['pct_bwam'] ?? null) === 'FREAK' ? 'FREAK' : $this->formatPeratus($r['pct_bwam'] ?? null),
+                    'freak' => $isFreak,
+                    'failed' => $failed,
+                    'is_aj' => $isAj,
+                    'status' => $isAj ? null : ($r['status'] ?? ($failed ? 'Gagal' : 'Lulus')),
+                    'selectable' => ! $isAj && ! $failed && $tendPrice !== null,
+                ];
+            })->values()->all();
 
         // Carta/jadual taburan frekuensi
         $bins = array_map(fn ($b) => $b['label'], $frequency);
@@ -132,8 +153,10 @@ class CutOffController extends Controller
 
         // Peraturan minimum pilihan checkbox (mesti sepadan dengan STOS Api\CutOffController::simpan()):
         // <=10 baris atau semua FREAK -> wajib pilih SEMUA; selain itu >= 10.
-        $totalCount = count($rows);
-        $allFreak = $totalCount > 0 && collect($rows)->every(fn ($r) => $r['freak']);
+        // Hanya baris yang boleh dipilih (bukan gagal pembuka) dikira.
+        $selectableRows = collect($rows)->filter(fn ($r) => ! empty($r['selectable']));
+        $totalCount = $selectableRows->count();
+        $allFreak = $totalCount > 0 && $selectableRows->every(fn ($r) => $r['freak']);
         $requireAll = $totalCount <= 10 || $allFreak;
 
         return view('newModule.cut_off.show', [
@@ -205,14 +228,16 @@ class CutOffController extends Controller
     }
 
     /**
-     * Format nilai RM: '-' untuk kosong/sifar, selain itu format 2 titik perpuluhan
-     * dengan pemisah ribu (ikut gaya paparan sedia ada di halaman ini).
+     * Format nilai RM: '-' hanya bila tiada nilai. Sifar dipaparkan sebagai 0.00
+     * (PCP Bekalan/Perkhidmatan dan SD sifar adalah hasil kiraan, bukan data kosong).
      */
     private function formatHarga($value): string
     {
-        $value = (float) ($value ?? 0);
+        if ($value === null || $value === '') {
+            return '-';
+        }
 
-        return $value > 0 ? number_format($value, 2) : '-';
+        return number_format((float) $value, 2);
     }
 
     /**

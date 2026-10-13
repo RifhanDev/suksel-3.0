@@ -316,11 +316,13 @@
         $cidb0Logic = $cidb0['logic_mid'] ?? 'AND';
         $cidb0Grade = $cidb0['grade'] ?? [];
         $cidb0Spec  = $cidb0['spec'] ?? [];
+
+        $sectionLogic = strtoupper((string) old('section_logic', optional($p)->mof_cidb_rule ?? 'AND'));
     @endphp
     <!-- HEADER -->
     <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center mb-4">
         <div class="mb-3 mb-lg-0">
-            <h3 class="fw-bold text-dark m-0" style="letter-spacing: -0.5px;">{{ $p ? 'Kemaskini' : 'Cipta' }} Projek Untuk Pembelian Terus</h3>
+            <h3 class="fw-bold text-dark m-0" style="letter-spacing: -0.5px;">{{ $p ? 'Kemaskini' : 'Cipta' }} Projek Untuk Lantikan Terus</h3>
             <p class="text-muted small m-0">Sila lengkapkan maklumat di bawah mengikut langkah.</p>
         </div>
     </div>
@@ -353,6 +355,8 @@
             @method('PUT')
         @endif
         <input type="hidden" name="action" id="form-action" value="draft">
+        {{-- Kekalkan langkah semasa selepas Simpan. --}}
+        <input type="hidden" name="wizard_step" id="wizard-step" value="{{ min(3, max(1, (int) request('step', 1))) }}">
 
         <div class="modern-card">
 
@@ -459,15 +463,15 @@
                             </div>
                             <!-- Kategori Perolehan -->
                             <div class="mb-0">
-                                @php $kategoriPerolehan = old('kategori_perolehan', optional($p)->kategori_perolehan); @endphp
+                                @php $kategoriSelected = old('kategori_perolehan', optional($p)->kategori_perolehan); @endphp
                                 <label class="form-label">Kategori Perolehan <span class="text-danger">*</span></label>
                                 <select class="form-select" name="kategori_perolehan" required>
                                     <option value="" selected disabled>Pilih...</option>
-                                    {{-- TODO: populate from controller ($kategoriPerolehan) --}}
-                                    <option value="ict" {{ $kategoriPerolehan == 'ict' ? 'selected' : '' }}>ICT</option>
-                                    <option value="bekalan" {{ $kategoriPerolehan == 'bekalan' ? 'selected' : '' }}>Bekalan</option>
-                                    <option value="perkhidmatan" {{ $kategoriPerolehan == 'perkhidmatan' ? 'selected' : '' }}>Perkhidmatan</option>
-                                    <option value="kerja" {{ $kategoriPerolehan == 'kerja' ? 'selected' : '' }}>Kerja</option>
+                                    @foreach (($kategoriPerolehan ?? \App\Models\Ref\RefKategoriJenisPerolehan::where('active', true)->get()) as $kategori)
+                                        <option value="{{ $kategori->id }}" {{ (string) $kategoriSelected === (string) $kategori->id ? 'selected' : '' }}>
+                                            {{ $kategori->name }}
+                                        </option>
+                                    @endforeach
                                 </select>
                             </div>
                         </div>
@@ -540,7 +544,8 @@
                     </label>
 
                     <!-- Uploaded file — with editable name field -->
-                    <div id="bq-file-preview" class="d-none mt-3">
+                    @php $hasSavedBq = ! empty($p?->bq_filename); @endphp
+                    <div id="bq-file-preview" class="{{ $hasSavedBq ? '' : 'd-none' }} mt-3">
                         <div class="d-flex align-items-center gap-3 border rounded-3 bg-white p-3"
                             style="border-color:#e2e8f0 !important;">
                             <span class="file-chip-ext" id="bq-file-ext"
@@ -548,9 +553,11 @@
                             <div class="flex-grow-1" style="min-width:0;">
                                 <label class="form-label mb-1">Nama Dokumen <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control form-control-sm" name="dokumen_bq_nama"
-                                    id="bq-file-nama" placeholder="Masukkan nama dokumen...">
+                                    id="bq-file-nama" placeholder="Masukkan nama dokumen..."
+                                    value="{{ old('dokumen_bq_nama', $hasSavedBq ? $p->bq_filename : '') }}">
                                 <div class="small text-muted mt-1 text-truncate">
-                                    <span id="bq-file-original">-</span> · <span id="bq-file-size">-</span>
+                                    <span id="bq-file-original">{{ $hasSavedBq ? $p->bq_filename : '-' }}</span>
+                                    · <span id="bq-file-size">{{ $hasSavedBq ? 'Tersimpan' : '-' }}</span>
                                 </div>
                             </div>
                             <button type="button" class="file-chip-remove flex-shrink-0" id="bq-file-remove"
@@ -562,6 +569,9 @@
                                 </svg>
                             </button>
                         </div>
+                        @if ($hasSavedBq)
+                            <div class="small text-muted mt-2">Fail BQ sedia ada akan diganti jika anda muat naik fail baharu.</div>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -688,8 +698,8 @@
                                             <select name="section_logic"
                                                 class="form-select form-select-sm fw-bold text-dark border-secondary bg-light"
                                                 style="cursor: pointer;">
-                                                <option value="AND" {{ old('section_logic', 'AND') == 'AND' ? 'selected' : '' }}>DAN</option>
-                                                <option value="OR" {{ old('section_logic') == 'OR' ? 'selected' : '' }}>ATAU</option>
+                                                <option value="AND" {{ $sectionLogic == 'AND' ? 'selected' : '' }}>DAN</option>
+                                                <option value="OR" {{ $sectionLogic == 'OR' ? 'selected' : '' }}>ATAU</option>
                                             </select>
                                         </div>
                                     </div>
@@ -844,6 +854,7 @@
 @endsection
 
 @section('scripts')
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         // --- DROPDOWN OPTIONS FOR DYNAMIC ROWS (Kod Bidang) ---
         var mofOptions =
@@ -852,6 +863,32 @@
             `@foreach (App\Code::where('type', 'cidb-c')->orderBy('code')->get() as $code)<option value="{{ $code->id }}">{{ $code->label }}</option>@endforeach`;
 
         $(document).ready(function() {
+            @if (session('success'))
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Berjaya',
+                    text: @json(session('success')),
+                    confirmButtonColor: '#c41e3a'
+                });
+            @endif
+
+            @if (session('error'))
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Gagal',
+                    text: @json(session('error')),
+                    confirmButtonColor: '#c41e3a'
+                });
+            @endif
+
+            @if ($errors->any())
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Maklumat tidak lengkap',
+                    text: @json($errors->first()),
+                    confirmButtonColor: '#c41e3a'
+                });
+            @endif
 
             // --- DOKUMEN BQ: single-file upload with editable name ---
             (function() {
@@ -934,21 +971,8 @@
                 }
             });
 
-            // --- SAVE DRAFT / PUBLISH ---
-            $('#btn-save').on('click', function() {
-                $('#form-action').val('draft');
-                $('#createProjekForm').submit();
-            });
-
-            $('#btn-submit').on('click', function(e) {
-                e.preventDefault();
-                if (typeof validateCurrentStep === 'function' && !validateCurrentStep()) return;
-                $('#form-action').val('publish');
-                $('#createProjekForm').submit();
-            });
-
             // --- WIZARD NAVIGATION (3 steps) ---
-            let currentStep = 1;
+            let currentStep = {{ min(3, max(1, (int) request('step', 1))) }};
             const TOTAL_STEPS = 3;
 
             function updateWizardUI() {
@@ -972,30 +996,93 @@
                 $('#btn-submit').toggleClass('d-none', currentStep !== TOTAL_STEPS);
             }
 
+            updateWizardUI();
+
             function scrollToStepper() {
                 $('html, body').animate({
                     scrollTop: $('#stepper-wrapper').offset().top - 20
                 }, 400);
             }
 
-            function validateCurrentStep() {
+            function validateStep(step) {
                 var isValid = true;
-                $('#step' + currentStep + '-content [required]').each(function() {
+                var $firstInvalid = null;
+                $('#step' + step + '-content [required]').each(function() {
                     if (!this.checkValidity()) {
                         $(this).addClass('is-invalid');
                         isValid = false;
+                        if (!$firstInvalid) $firstInvalid = $(this);
                     } else {
                         $(this).removeClass('is-invalid');
                     }
                 });
                 if (!isValid) {
-                    $('#step' + currentStep + '-content [required]:invalid').first().focus();
+                    currentStep = step;
+                    updateWizardUI();
+                    scrollToStepper();
+                    if ($firstInvalid) $firstInvalid.focus();
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Maklumat tidak lengkap',
+                        text: 'Sila lengkapkan medan bertanda * sebelum meneruskan.',
+                        confirmButtonColor: '#c41e3a'
+                    });
                 }
                 return isValid;
             }
 
+            function validateCurrentStep() {
+                return validateStep(currentStep);
+            }
+
+            // --- SAVE DRAFT / PUBLISH ---
+            // jQuery .submit() skips HTML5 required checks — validate step 1 explicitly.
+            function hasBqDocument() {
+                var bqInput = document.getElementById('input-dokumen-bq');
+                var hasNewFile = bqInput && bqInput.files && bqInput.files.length > 0;
+                var hasSaved = @json($hasSavedBq ?? false);
+                return hasNewFile || hasSaved;
+            }
+
+            $('#btn-save').on('click', function() {
+                if (!validateStep(1)) return;
+                $('#form-action').val('draft');
+                $('#wizard-step').val(currentStep);
+                $('#createProjekForm').submit();
+            });
+
+            $('#btn-submit').on('click', function(e) {
+                e.preventDefault();
+                for (var s = 1; s <= TOTAL_STEPS; s++) {
+                    if (!validateStep(s)) return;
+                }
+                if (!hasBqDocument()) {
+                    currentStep = 2;
+                    updateWizardUI();
+                    scrollToStepper();
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Dokumen BQ diperlukan',
+                        text: 'Sila muat naik Dokumen BQ sebelum menerbitkan projek.',
+                        confirmButtonColor: '#c41e3a'
+                    });
+                    return;
+                }
+                $('#form-action').val('publish');
+                $('#createProjekForm').submit();
+            });
+
             $('#btn-next').click(function() {
                 if (!validateCurrentStep()) return;
+                if (currentStep === 2 && !hasBqDocument()) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Dokumen BQ diperlukan',
+                        text: 'Sila muat naik Dokumen BQ sebelum meneruskan.',
+                        confirmButtonColor: '#c41e3a'
+                    });
+                    return;
+                }
                 if (currentStep < TOTAL_STEPS) {
                     currentStep++;
                     updateWizardUI();
@@ -1136,6 +1223,25 @@
                 $('#cidb-logic-' + index).remove();
                 updateCidbRowNumbers();
             };
+
+            // Baris pertama diisi oleh Blade; baris kedua ke atas dibina semula di sini.
+            function rehydrateRows(groups, prefix, valueKey) {
+                groups.forEach(function(group) {
+                    $('#btn-add-' + prefix).trigger('click');
+                    var index = $('#' + prefix + '-wrapper .condition-row').last().data('index');
+
+                    var $select = $('#' + prefix + '-row-' + index + ' select.selectize');
+                    if ($select.length && $select[0].selectize) {
+                        $select[0].selectize.setValue(group[valueKey] || [], true);
+                    }
+
+                    $('#' + prefix + index + '_' + (group.logic_mid === 'AND' ? 'and' : 'or')).prop('checked', true);
+                    $('select[name="' + prefix + '_logic_' + index + '"]').val(group.join_rule === 'AND' ? 'AND' : 'OR');
+                });
+            }
+
+            rehydrateRows(@json(array_slice((array) (old('mof', optional($p)->mof ?? [])), 1)), 'mof', 'code');
+            rehydrateRows(@json(array_slice((array) (old('cidb', optional($p)->cidb ?? [])), 1)), 'cidb', 'spec');
 
         });
 

@@ -6,10 +6,14 @@ use App\Models\BonSaham;
 use App\Models\LembaranImbangan;
 use App\Models\PenyataBank;
 use App\Models\ProfilPetender;
+use App\Models\TenderKakitanganTeknikal;
+use App\Models\TenderKerjaDalamTangan;
+use App\Models\TenderPengalamanKerja;
 use App\Models\TenderPrestasiKerja;
 use App\Models\TenderVendorOnlineFormStatus;
 use App\Support\OnlineFormRegistry;
 use App\Tender;
+use Illuminate\Support\Facades\Log;
 
 class OnlineFormStatusService
 {
@@ -53,8 +57,33 @@ class OnlineFormStatusService
                 },
                 TenderPrestasiKerja::query()->withCount('items')->where('tender_id', $tender->id)->first()
             ),
-            'pengalaman_kerja' => $this->stosCollectionStatus($tender, 'pengalaman-kerja', 'items', 'dokumens'),
-            'kerja_dalam_tangan' => $this->stosCollectionStatus($tender, 'kerja-dalam-tangan', 'items'),
+            'pengalaman_kerja' => $this->fromRecordStatus(
+                TenderPengalamanKerja::query()->where('tender_uuid', $tender->uuid)->exists() ? 'submitted' : 'draft',
+                function () use ($tender) {
+                    $count = TenderPengalamanKerja::query()->where('tender_uuid', $tender->uuid)->count();
+
+                    return $count > 0 ? "{$count} rekod pengalaman" : null;
+                },
+                TenderPengalamanKerja::query()->where('tender_uuid', $tender->uuid)->first()
+            ),
+            'kerja_dalam_tangan' => $this->fromRecordStatus(
+                TenderKerjaDalamTangan::query()->where('tender_uuid', $tender->uuid)->exists() ? 'submitted' : 'draft',
+                function () use ($tender) {
+                    $count = TenderKerjaDalamTangan::query()->where('tender_uuid', $tender->uuid)->count();
+
+                    return $count > 0 ? "{$count} projek dalam tangan" : null;
+                },
+                TenderKerjaDalamTangan::query()->where('tender_uuid', $tender->uuid)->first()
+            ),
+            'kakitangan_teknikal' => $this->fromRecordStatus(
+                TenderKakitanganTeknikal::query()->where('tender_uuid', $tender->uuid)->exists() ? 'submitted' : 'draft',
+                function () use ($tender) {
+                    $count = TenderKakitanganTeknikal::query()->where('tender_uuid', $tender->uuid)->count();
+
+                    return $count > 0 ? "{$count} kakitangan teknikal" : null;
+                },
+                TenderKakitanganTeknikal::query()->where('tender_uuid', $tender->uuid)->first()
+            ),
             default => $this->formatStatus('draft'),
         };
     }
@@ -70,14 +99,28 @@ class OnlineFormStatusService
             ->where('form_key', $formKey)
             ->first();
 
-        if (! $record) {
-            return $this->formatStatus('draft');
+        if ($record) {
+            $formatted = $this->formatStatus($record->status);
+            $formatted['summary'] = $record->summary['text'] ?? $record->summary['label'] ?? null;
+
+            return $formatted;
         }
 
-        $formatted = $this->formatStatus($record->status);
-        $formatted['summary'] = $record->summary['text'] ?? $record->summary['label'] ?? null;
+        // Heal: domain/payload data exists but status row was never written
+        // (e.g. dual-role Vendor+Jawatankuasa previously skipped trackVendorFormSubmitted).
+        $inferred = $this->inferVendorSubmittedFromData($tender, $vendorId, $formKey);
+        if ($inferred !== null) {
+            $this->markSubmitted($tender, $vendorId, $formKey, [
+                'text' => $inferred,
+            ]);
 
-        return $formatted;
+            $formatted = $this->formatStatus('submitted');
+            $formatted['summary'] = $inferred;
+
+            return $formatted;
+        }
+
+        return $this->formatStatus('draft');
     }
 
     /**
@@ -85,17 +128,77 @@ class OnlineFormStatusService
      */
     public function vendorStatusesForTender(Tender $tender, int $vendorId): array
     {
-        return TenderVendorOnlineFormStatus::query()
-            ->where('tender_id', $tender->id)
-            ->where('vendor_id', $vendorId)
-            ->get()
-            ->mapWithKeys(function (TenderVendorOnlineFormStatus $record) {
-                $formatted = $this->formatStatus($record->status);
-                $formatted['summary'] = $record->summary['text'] ?? null;
+        $knownKeys = array_values(OnlineFormRegistry::actionPathToFormKey());
+        $statuses = [];
 
-                return [$record->form_key => $formatted];
-            })
-            ->all();
+        foreach ($knownKeys as $formKey) {
+            $statuses[$formKey] = $this->vendorStatus($tender, $vendorId, $formKey);
+        }
+
+        return $statuses;
+    }
+
+    /**
+     * Detect already-saved vendor form data when online-form status is missing.
+     */
+    protected function inferVendorSubmittedFromData(Tender $tender, int $vendorId, string $formKey): ?string
+    {
+        $payload = app(VendorFormPayloadService::class)->get($tender, $vendorId, $formKey);
+        if (is_array($payload) && $payload !== []) {
+            $ignore = ['vendor_id', 'user_id', '_token', 'status'];
+            foreach ($payload as $key => $value) {
+                if (in_array($key, $ignore, true)) {
+                    continue;
+                }
+                if ($value === null || $value === '' || $value === []) {
+                    continue;
+                }
+
+                return OnlineFormRegistry::label($formKey) . ' disimpan';
+            }
+        }
+
+        return match ($formKey) {
+            'lembaran_imbangan' => LembaranImbangan::query()
+                ->where('tender_id', $tender->id)
+                ->where('vendor_id', $vendorId)
+                ->where('status', 'submitted')
+                ->exists()
+                ? 'Lembaran imbangan disimpan'
+                : null,
+            'bon_saham' => BonSaham::query()
+                ->where('tender_id', $tender->id)
+                ->where('vendor_id', $vendorId)
+                ->where('status', 'submitted')
+                ->exists()
+                ? 'Bon atau saham disimpan'
+                : null,
+            'prestasi_kerja' => TenderPrestasiKerja::query()
+                ->where('tender_id', $tender->id)
+                ->where('vendor_id', $vendorId)
+                ->where('status', 'submitted')
+                ->exists()
+                ? 'Prestasi kerja disimpan'
+                : null,
+            'kakitangan_teknikal' => TenderKakitanganTeknikal::query()
+                ->where('tender_uuid', $tender->uuid)
+                ->where('vendor_id', $vendorId)
+                ->exists()
+                ? 'Senarai kakitangan teknikal disimpan'
+                : null,
+            'pengalaman_kerja' => TenderPengalamanKerja::query()
+                ->where('tender_uuid', $tender->uuid)
+                ->where('vendor_id', $vendorId)
+                ->exists()
+                ? 'Pengalaman kerja disimpan'
+                : null,
+            'kerja_dalam_tangan' => TenderKerjaDalamTangan::query()
+                ->where('tender_uuid', $tender->uuid)
+                ->exists()
+                ? 'Kerja dalam tangan disimpan'
+                : null,
+            default => null,
+        };
     }
 
     /**
@@ -170,27 +273,37 @@ class OnlineFormStatusService
             return $this->formatStatus('draft');
         }
 
-        $response = $this->stos->get('/api/' . $endpoint . '/' . $tender->uuid);
-        if (! $response->successful()) {
+        try {
+            $response = $this->stos->get('/api/' . $endpoint . '/' . $tender->uuid);
+            if (! $response->successful()) {
+                return $this->formatStatus('draft');
+            }
+
+            $data = $response->json('data') ?? [];
+            $count = 0;
+            foreach ($collections as $collection) {
+                $count += count($data[$collection] ?? []);
+            }
+
+            if ($count === 0) {
+                return $this->formatStatus('draft');
+            }
+
+            $formatted = $this->formatStatus(
+                ($data['status'] ?? '') === 'submitted' ? 'submitted' : 'in_progress'
+            );
+            $formatted['summary'] = "{$count} rekod";
+
+            return $formatted;
+        } catch (\Throwable $e) {
+            Log::warning('OnlineFormStatusService STOS collection query failed', [
+                'tender_id' => $tender->id,
+                'endpoint'  => $endpoint,
+                'error'     => $e->getMessage(),
+            ]);
+
             return $this->formatStatus('draft');
         }
-
-        $data = $response->json('data') ?? [];
-        $count = 0;
-        foreach ($collections as $collection) {
-            $count += count($data[$collection] ?? []);
-        }
-
-        if ($count === 0) {
-            return $this->formatStatus('draft');
-        }
-
-        $formatted = $this->formatStatus(
-            ($data['status'] ?? '') === 'submitted' ? 'submitted' : 'in_progress'
-        );
-        $formatted['summary'] = "{$count} rekod";
-
-        return $formatted;
     }
 
     /**

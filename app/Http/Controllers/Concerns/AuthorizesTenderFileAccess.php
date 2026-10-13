@@ -12,14 +12,14 @@ trait AuthorizesTenderFileAccess
      *
      * @param  int|null  $ownerVendorId  When set, vendors may only access their own file.
      */
-    protected function assertCanAccessTenderFile(Tender $tender, ?int $ownerVendorId = null): void
+    protected function assertCanAccessTenderFile(\App\Tender|\App\Models\Tender $tender, ?int $ownerVendorId = null): void
     {
         $user = Auth::user();
         if (! $user) {
             abort(403, 'Sila log masuk untuk memuat turun fail.');
         }
 
-        if ($this->userCanReviewTenderFiles($user)) {
+        if ($this->userCanReviewTenderFiles($user, $tender)) {
             return;
         }
 
@@ -37,19 +37,41 @@ trait AuthorizesTenderFileAccess
         }
     }
 
-    protected function userCanReviewTenderFiles($user): bool
+    protected function userCanReviewTenderFiles($user, \App\Tender|\App\Models\Tender|null $tender = null): bool
     {
-        if (! $user->vendor_id) {
-            return true;
-        }
-
         if ($user->hasRole('Admin') || $user->can('tender:specification-management')) {
             return true;
         }
 
-        return $user->hasRole('Jawatankuasa')
-            || $user->hasRole('Agency Admin')
+        if (
+            $user->hasRole('Agency Admin')
             || $user->hasRole('Agency User')
-            || $user->hasRole('Front Desk');
+        ) {
+            return true;
+        }
+
+        // Committee members (including Agency Jawatankuasa / dual-role accounts).
+        if (
+            $user->hasRole('Jawatankuasa')
+            || $user->hasRole('Agency Jawatankuasa')
+            || $user->hasRole('Urus Setia')
+            || $user->hasRole('Agency Urus Setia')
+            || $user->hasRole('Agency Urusetia')
+            || $user->hasRole('Penilai')
+            || $user->hasRole('Agency Penilai')
+        ) {
+            if ($tender === null) {
+                return true;
+            }
+
+            return $tender->isAppointedTo($user, ['spec', 'open', 'tech', 'fin', 'eval', 'harga']);
+        }
+
+        // Non-vendor staff (e.g. PTJ, Agency staff, government evaluators) may review tender files.
+        if (empty($user->vendor_id)) {
+            return true;
+        }
+
+        return false;
     }
 }

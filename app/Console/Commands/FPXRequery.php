@@ -83,7 +83,7 @@ class FPXRequery extends Command
             $params = $fpx->request_keys;
 
             try {
-                    $client = new Client(['verify' => false]);
+                    $client = new Client(['verify' => config('services.fpx.verify_tls', true)]);
                     $response = $client->request('POST', $url, [
                         'form_params' => $params,
                         'debug' => false
@@ -106,7 +106,28 @@ class FPXRequery extends Command
                 }
 
                 ksort($data);
-                
+
+                // This loop runs unattended every minute. A signature failure here is
+                // logged loudly and the transaction is SKIPPED (left untouched for the
+                // next run or a manual requery) rather than marked failed — a transient
+                // problem must not permanently poison a real payment.
+                $sigCheck = \App\Models\Fpx::verifyResponseSignature($data);
+
+                if (!$sigCheck['valid']) {
+                    Log::error('FPX requery signature verification FAILED', [
+                        'enforced'      => (bool) config('services.fpx.verify_signature'),
+                        'reason'        => $sigCheck['reason'],
+                        'transaction'   => $transaction->number,
+                        'source_string' => $sigCheck['source_string'],
+                        'received_sum'  => $data['fpx_checkSum'] ?? null,
+                        'payload_keys'  => array_keys($data),
+                    ]);
+
+                    if (config('services.fpx.verify_signature')) {
+                        continue;
+                    }
+                }
+
                 switch(true) {
                     case $data['fpx_debitAuthCode'] == '00' && $data['fpx_creditAuthCode'] == '00':
                         $transaction->status            = 'success';

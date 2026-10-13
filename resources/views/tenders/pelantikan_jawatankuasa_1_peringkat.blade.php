@@ -210,6 +210,10 @@
 							</div>
 						</div>
 
+						@if ($tab === 'spec')
+							@include('tenders.partials.perincian_mesyuarat_spec')
+						@endif
+
 						<!-- CATATAN & DOKUMEN CARD -->
 						<div class="content-card mb-4 p-0">
 							<div class="content-card-header p-4 pb-3 border-bottom">
@@ -315,22 +319,6 @@
 					</div>
 				@endforeach
 
-			</div>
-
-			<!-- ===================== SUCCESS POPUP ====================== -->
-			<div id="successPopup" class="modal fade" tabindex="-1">
-				<div class="modal-dialog modal-dialog-centered">
-					<div class="modal-content text-center p-4">
-						<div class="mb-3">
-							<svg width="60" height="60" viewBox="0 0 24 24" fill="none">
-								<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" fill="#E6F7F3" />
-								<path d="M10 14.2l-2.2-2.2-1.4 1.4L10 17 18 9l-1.4-1.4z" fill="#19c1a7" />
-							</svg>
-						</div>
-						<h6 class="fw-bold mb-3">Maklumat telah berjaya disimpan</h6>
-						<button type="button" class="btn btn-primary px-4" data-bs-dismiss="modal">Tutup</button>
-					</div>
-				</div>
 			</div>
 
 		</div>
@@ -480,6 +468,15 @@
 						saveButton.title = 'Tab ini belum disokong untuk simpan draf.';
 					}
 				}
+
+				if (jenis === 'spec') {
+					const tarikhEl = tabPane.querySelector('.committee-tarikh-mesyuarat');
+					const masaEl = tabPane.querySelector('.committee-masa-mesyuarat');
+					const lokasiEl = tabPane.querySelector('.committee-lokasi-mesyuarat');
+					if (tarikhEl) tarikhEl.value = draftData.tarikh_mesyuarat || '';
+					if (masaEl) masaEl.value = draftData.masa_mesyuarat || '';
+					if (lokasiEl) lokasiEl.value = draftData.lokasi_mesyuarat || '';
+				}
 			});
 		}
 
@@ -503,6 +500,26 @@
 			});
 
 			return rows;
+		}
+
+		function collectSpecMeeting() {
+			const specPane = document.getElementById('tab-spec');
+			if (!specPane) {
+				return { tarikh_mesyuarat: '', masa_mesyuarat: '', lokasi_mesyuarat: '' };
+			}
+
+			return {
+				tarikh_mesyuarat: (specPane.querySelector('.committee-tarikh-mesyuarat') && specPane.querySelector('.committee-tarikh-mesyuarat').value) || '',
+				masa_mesyuarat: (specPane.querySelector('.committee-masa-mesyuarat') && specPane.querySelector('.committee-masa-mesyuarat').value) || '',
+				lokasi_mesyuarat: (specPane.querySelector('.committee-lokasi-mesyuarat') && specPane.querySelector('.committee-lokasi-mesyuarat').value.trim()) || '',
+			};
+		}
+
+		function appendSpecMeeting(formData) {
+			const meeting = collectSpecMeeting();
+			formData.append('tabs[spec][tarikh_mesyuarat]', meeting.tarikh_mesyuarat);
+			formData.append('tabs[spec][masa_mesyuarat]', meeting.masa_mesyuarat);
+			formData.append('tabs[spec][lokasi_mesyuarat]', meeting.lokasi_mesyuarat);
 		}
 
 		function buildDraftFormDataAll() {
@@ -534,6 +551,8 @@
 					formData.append(`tabs[${jenis}][dokumen_sokongan]`, fileInput.files[0]);
 				}
 			});
+
+			appendSpecMeeting(formData);
 
 			return formData;
 		}
@@ -567,7 +586,11 @@
 				processData: false,
 				contentType: false,
 				success: function() {
-					successModal.show();
+					if (typeof showBerjayaModal === 'function') {
+						showBerjayaModal();
+					} else if (successModal) {
+						successModal.show();
+					}
 				},
 				error: function(xhr) {
 					const message = (xhr && xhr.responseJSON && xhr.responseJSON.message) ?
@@ -622,15 +645,12 @@
 		// SAVE POPUP
 		document.addEventListener('DOMContentLoaded', function() {
 
-			const successModal = new bootstrap.Modal(
-				document.getElementById('successPopup')
-			);
 			seedCommitteeRows();
 
 			// SIMPAN
 			document.querySelectorAll('.btn-simpan').forEach(btn => {
 				btn.addEventListener('click', function() {
-					saveAllDrafts(this, successModal);
+					saveAllDrafts(this, null);
 				});
 			});
 
@@ -678,6 +698,12 @@
 						}
 					}
 
+					const meeting = collectSpecMeeting();
+					if (!meeting.tarikh_mesyuarat || !meeting.masa_mesyuarat || !meeting.lokasi_mesyuarat) {
+						alert('Sila lengkapkan tarikh, masa dan lokasi mesyuarat Jawatankuasa Spesifikasi.');
+						return;
+					}
+
 					if (!confirm(
 							'Adakah anda pasti untuk menghantar pemakluman kepada semua ahli jawatankuasa?'
 							)) {
@@ -697,6 +723,9 @@
 						data: {
 							_token: $('meta[name=_token]').attr('content'),
 							tender_uuid: tenderUuid,
+							tarikh_mesyuarat: meeting.tarikh_mesyuarat,
+							masa_mesyuarat: meeting.masa_mesyuarat,
+							lokasi_mesyuarat: meeting.lokasi_mesyuarat,
 						},
 						dataType: 'json',
 						success: function(res) {

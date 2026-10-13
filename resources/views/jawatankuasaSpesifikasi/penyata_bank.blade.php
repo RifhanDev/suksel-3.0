@@ -112,6 +112,7 @@
         $showScoringConfig = $showScoringConfig ?? true;
     @endphp
 
+    @unless ($modalEmbed ?? false)
     <!-- HEADER -->
     <div class="d-flex flex-column flex-lg-row justify-content-start align-items-start align-items-lg-center mb-4">
         <div>
@@ -165,15 +166,18 @@
 
         </div>
     </div>
+    @endunless
 
+    @unless ($viewOnly ?? false)
     <!-- Loading overlay -->
-    <div id="loading-overlay">
+    <div id="loading-overlay" style="display: none;">
         <div class="loading-box">
             <div class="loading-spinner"></div>
-            <svg class="loading-check" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            <svg class="loading-check" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display: none; width: 28px; height: 28px;"><polyline points="20 6 9 17 4 12"></polyline></svg>
             <span class="loading-text" id="loading-text">Menyimpan...</span>
         </div>
     </div>
+    @endunless
 
     <form id="form-penyata-bank" action="{{ route('penyataBank.store', $tender->uuid) }}" method="POST" enctype="multipart/form-data">
     @csrf
@@ -216,11 +220,30 @@
             <div class="row mb-3">
                 <div class="col-12 col-md-4">
                     <label class="form-label fw-semibold small">Jenis Skor <span class="text-danger">*</span></label>
-                    <select name="jenis_skor_purata" class="form-select form-select-sm jenis-skor-select" data-target="#panel-purata-penyata">
+                    <select name="jenis_skor_purata" class="form-select form-select-sm jenis-skor-select-purata">
                         <option value="">— Sila pilih —</option>
                         <option value="manual">Manual</option>
-                        <option value="automatik" disabled>Automatik</option>
+                        <option value="automatik">Automatik</option>
                     </select>
+                </div>
+            </div>
+
+            <!-- Automatik panel — calculated read-only rows -->
+            <div id="panel-purata-automatik" class="d-none">
+                <div class="table-responsive">
+                    <table class="table table-modern align-middle mb-0 w-100" style="border:1px solid #e2e8f0;">
+                        <thead>
+                            <tr>
+                                <th class="text-center py-3" style="width:55px;">Bil</th>
+                                <th class="py-3">Dari (RM)</th>
+                                <th class="py-3">Hingga (RM)</th>
+                                <th class="py-3 text-center" style="width:120px;">Skema</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbl-purata-auto-body">
+                            <!-- rendered by JS -->
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
@@ -371,6 +394,55 @@ $(document).ready(function () {
         return html;
     }
 
+    function formatBytes(bytes) {
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+        return (bytes / 1048576).toFixed(1) + ' MB';
+    }
+
+    function buildFileChip(fileUuid, fileName, fileSize, fileUrl, $block) {
+        var ext = fileName ? fileName.split('.').pop().toLowerCase() : '';
+        var safeName = $('<span>').text(fileName || 'Dokumen').html();
+        var viewUrl = fileUrl || '';
+
+        if (!viewUrl && fileUuid) {
+            viewUrl = '{{ url("/tenders/dokumen-files") }}/' + encodeURIComponent(fileUuid) + '/download';
+        }
+
+        var nameHtml = (viewUrl && viewUrl !== '#')
+            ? '<a href="' + viewUrl + '" target="_blank" rel="noopener noreferrer" class="file-chip-name text-decoration-none text-dark fw-semibold" title="Klik untuk lihat ' + safeName + '">' +
+                safeName + ' <i class="bi bi-box-arrow-up-right ms-1 text-primary extra-small"></i>' +
+              '</a>'
+            : '<span class="file-chip-name" title="' + safeName + '">' + safeName + '</span>';
+
+        var $chip = $(
+            '<div class="file-chip" data-file-uuid="' + (fileUuid || '') + '" data-file-name="' + safeName + '" data-file-size="' + (fileSize || 0) + '" data-file-url="' + (viewUrl || '') + '">' +
+                '<span class="file-chip-ext ext-' + ext + '">' + ext + '</span>' +
+                '<div class="file-chip-body">' +
+                    nameHtml +
+                    '<span class="file-chip-size">' + (fileSize ? formatBytes(fileSize) : '—') + '</span>' +
+                '</div>' +
+                (VIEW_ONLY ? '' :
+                    '<button type="button" class="file-chip-remove" title="Buang fail">' +
+                        '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">' +
+                        '<line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>' +
+                    '</button>') +
+            '</div>'
+        );
+        if (!VIEW_ONLY) {
+            $chip.find('.file-chip-remove').on('click', function () {
+                var uuid = $chip.data('file-uuid');
+                if (uuid) {
+                    $.ajax({ url: DELETE_FILE_BASE + '/' + uuid, method: 'DELETE', headers: { 'X-CSRF-TOKEN': CSRF_TOKEN } })
+                     .always(function () { $chip.remove(); });
+                } else {
+                    $chip.remove();
+                }
+            });
+        }
+        return $chip;
+    }
+
     function buildAkaunBlock(index, data) {
         data = data || {};
         var canDelete = index > 0;
@@ -435,7 +507,8 @@ $(document).ready(function () {
         if (data.purata) $block.find('.akaun-purata').val(formatRm(data.purata));
         if (data.files && data.files.length) {
             data.files.forEach(function (f) {
-                $block.find('.akaun-file-list').append(buildFileChip(f.uuid, f.original_name, f.size, $block));
+                var fileUrl = f.url || (f.uuid ? '{{ url("/tenders/dokumen-files") }}/' + encodeURIComponent(f.uuid) + '/download' : '');
+                $block.find('.akaun-file-list').append(buildFileChip(f.uuid, f.original_name || f.name, f.size, fileUrl, $block));
             });
         }
         return $block;
@@ -615,46 +688,10 @@ $(document).ready(function () {
         });
 
         // File upload per account
-        function formatBytes(bytes) {
-            if (bytes < 1024) return bytes + ' B';
-            if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
-            return (bytes / 1048576).toFixed(1) + ' MB';
-        }
-
-        function buildFileChip(fileUuid, fileName, fileSize, $block) {
-            var ext = fileName.split('.').pop().toLowerCase();
-            var safeName = $('<span>').text(fileName).html();
-            var $chip = $(
-                '<div class="file-chip" data-file-uuid="' + (fileUuid || '') + '">' +
-                    '<span class="file-chip-ext ext-' + ext + '">' + ext + '</span>' +
-                    '<div class="file-chip-body">' +
-                        '<span class="file-chip-name" title="' + safeName + '">' + safeName + '</span>' +
-                        '<span class="file-chip-size">' + (fileSize ? formatBytes(fileSize) : '—') + '</span>' +
-                    '</div>' +
-                    (VIEW_ONLY ? '' :
-                        '<button type="button" class="file-chip-remove" title="Buang fail">' +
-                            '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">' +
-                            '<line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>' +
-                        '</button>') +
-                '</div>'
-            );
-            if (!VIEW_ONLY) {
-                $chip.find('.file-chip-remove').on('click', function () {
-                    var uuid = $chip.data('file-uuid');
-                    if (uuid) {
-                        $.ajax({ url: DELETE_FILE_BASE + '/' + uuid, method: 'DELETE', headers: { 'X-CSRF-TOKEN': CSRF_TOKEN } })
-                         .always(function () { $chip.remove(); });
-                    } else {
-                        $chip.remove();
-                    }
-                });
-            }
-            return $chip;
-        }
 
         function uploadFileForAkaun(file, $block) {
             var akaunIndex = $block.data('akaun-index');
-            var $chip = buildFileChip(null, file.name, file.size, $block);
+            var $chip = buildFileChip(null, file.name, file.size, null, $block);
             $chip.find('.file-chip-size').text('Memuat naik...');
             $block.find('.akaun-file-list').append($chip);
 
@@ -667,8 +704,25 @@ $(document).ready(function () {
                 headers: { 'X-CSRF-TOKEN': CSRF_TOKEN },
             }).done(function (res) {
                 if (res && res.success) {
-                    $chip.attr('data-file-uuid', res.file.uuid).data('file-uuid', res.file.uuid);
-                    $chip.find('.file-chip-size').text(formatBytes(res.file.size || file.size));
+                    var uuid = (res.file && res.file.uuid) ? res.file.uuid : (res.uuid || '');
+                    var sz = (res.file && res.file.size) ? res.file.size : file.size;
+                    var viewUrl = (res.file && res.file.url) ? res.file.url : (uuid ? '{{ url("/tenders/dokumen-files") }}/' + encodeURIComponent(uuid) + '/download' : '');
+                    var safeName = $('<span>').text(file.name).html();
+
+                    $chip.attr('data-file-uuid', uuid).data('file-uuid', uuid);
+                    $chip.attr('data-file-name', file.name).data('file-name', file.name);
+                    $chip.attr('data-file-size', sz).data('file-size', sz);
+                    $chip.attr('data-file-url', viewUrl).data('file-url', viewUrl);
+                    $chip.find('.file-chip-size').text(formatBytes(sz));
+
+                    if (viewUrl && viewUrl !== '#') {
+                        $chip.find('.file-chip-body').html(
+                            '<a href="' + viewUrl + '" target="_blank" rel="noopener noreferrer" class="file-chip-name text-decoration-none text-dark fw-semibold" title="Klik untuk lihat ' + safeName + '">' +
+                                safeName + ' <i class="bi bi-box-arrow-up-right ms-1 text-primary extra-small"></i>' +
+                            '</a>' +
+                            '<span class="file-chip-size">' + formatBytes(sz) + '</span>'
+                        );
+                    }
                 } else {
                     $chip.remove();
                     alert('Fail tidak berjaya dimuat naik.');
@@ -691,6 +745,54 @@ $(document).ready(function () {
     }
 
     // ── Purata scoring table (PTJ) ────────────────────────────────────────────
+    var AUTOMATIK_ROWS_PURATA = @json($automatikRowsPurata ?? []);
+
+    var keAtasBadge =
+        '<span class="d-inline-flex align-items-center gap-1 px-2 py-1 rounded-2 fw-semibold" ' +
+        'style="background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;font-size:0.78rem;">' +
+            '<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'11\' height=\'11\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2.5\' stroke-linecap=\'round\' stroke-linejoin=\'round\'>' +
+                '<line x1=\'12\' y1=\'19\' x2=\'12\' y2=\'5\'></line>' +
+                '<polyline points=\'5 12 12 5 19 12\'></polyline>' +
+            '</svg>' +
+            'Ke Atas' +
+        '</span>';
+
+    function renderAutomatikRows(tbodyId, namePrefix, rows) {
+        var $tbody = $('#' + tbodyId);
+        var html   = '';
+        $.each(rows, function (i, row) {
+            var hinggaDisplay = row.hingga !== null ? '<span class="fw-semibold" style="font-size:0.85rem;">' + formatRm(row.hingga) + '</span>' : keAtasBadge;
+            var hinggaValue   = row.hingga !== null ? parseFloat(row.hingga).toFixed(2) : '';
+            html +=
+                '<tr>' +
+                '<td class="text-center fw-semibold text-muted" style="font-size:0.8rem;">' + (i + 1) + '</td>' +
+                '<td class="fw-semibold" style="font-size:0.85rem;">' + formatRm(row.dari) + '<input type="hidden" name="' + namePrefix + '_dari[]" value="' + parseFloat(row.dari).toFixed(2) + '"></td>' +
+                '<td>' + hinggaDisplay + '<input type="hidden" name="' + namePrefix + '_hingga[]" value="' + hinggaValue + '"></td>' +
+                '<td class="text-center fw-semibold" style="font-size:0.85rem;">' + row.skema + '<input type="hidden" name="' + namePrefix + '_skema[]" value="' + row.skema + '"></td>' +
+                '</tr>';
+        });
+        $tbody.html(html);
+    }
+
+    function handleJenisSkor(val, manualPanelId, autoPanelId, autoTbodyId, namePrefix, automatikRows) {
+        var $manual = $('#' + manualPanelId);
+        var $auto   = $('#' + autoPanelId);
+
+        $manual.addClass('d-none');
+        $auto.addClass('d-none');
+        $manual.find('input, select').prop('disabled', true);
+        $auto.find('input').prop('disabled', true);
+
+        if (val === 'manual') {
+            $manual.removeClass('d-none');
+            $manual.find('input, select').prop('disabled', false);
+        } else if (val === 'automatik') {
+            renderAutomatikRows(autoTbodyId, namePrefix, automatikRows);
+            $auto.removeClass('d-none');
+            $auto.find('input').prop('disabled', false);
+        }
+    }
+
     var DELETE_ROW_BTN =
         '<button type="button" class="btn btn-sm btn-hapus-row d-inline-flex align-items-center justify-content-center p-0" ' +
         'style="width:28px;height:28px;border-radius:6px;background:#fee2e2;color:#ef4444;border:none;" title="Buang baris">' +
@@ -749,13 +851,14 @@ $(document).ready(function () {
             }
         });
 
-        $('.jenis-skor-select').on('change', function () {
-            var $panel = $($(this).data('target'));
-            $(this).val() === 'manual' ? $panel.removeClass('d-none') : $panel.addClass('d-none');
+        $('.jenis-skor-select-purata').on('change', function () {
+            handleJenisSkor($(this).val(), 'panel-purata-penyata', 'panel-purata-automatik', 'tbl-purata-auto-body', 'purata', AUTOMATIK_ROWS_PURATA);
         });
 
         if (penyataData && penyataData.jenis_skor_purata) {
-            $('[name="jenis_skor_purata"]').val(penyataData.jenis_skor_purata).trigger('change');
+            $('[name="jenis_skor_purata"]').val(penyataData.jenis_skor_purata);
+            handleJenisSkor(penyataData.jenis_skor_purata, 'panel-purata-penyata', 'panel-purata-automatik', 'tbl-purata-auto-body', 'purata', AUTOMATIK_ROWS_PURATA);
+
             if (penyataData.jenis_skor_purata === 'manual' && penyataData.scoring_items && penyataData.scoring_items.length) {
                 $('#tbl-purata-body').empty();
                 penyataData.scoring_items.forEach(function (s, i) {
@@ -774,15 +877,15 @@ $(document).ready(function () {
     }
 
     // ── Amount input formatting ───────────────────────────────────────────────
-    $(document).on('focus',  '.amount-input', function () {
+    $(document).on('focus',  '.amount-input:not(.vendor-profile-locked)', function () {
         var raw = $(this).val().replace(/,/g, '');
         $(this).val(parseFloat(raw) === 0 ? '' : raw);
     });
-    $(document).on('blur',   '.amount-input', function () {
+    $(document).on('blur',   '.amount-input:not(.vendor-profile-locked)', function () {
         var val = $(this).val();
         if (val !== '') $(this).val(formatRm(parseRm(val)));
     });
-    $(document).on('input',  '.amount-input', function () {
+    $(document).on('input',  '.amount-input:not(.vendor-profile-locked)', function () {
         $(this).val($(this).val().replace(/[^\d.]/g, ''));
     });
 
@@ -834,6 +937,22 @@ $(document).ready(function () {
             $('#penyata-akaun-container .penyata-akaun-block').each(function () {
                 var $block = $(this);
                 var bulans = collectAccountBulans($block);
+                var files = [];
+                $block.find('.akaun-file-list .file-chip').each(function () {
+                    var uuid = $(this).attr('data-file-uuid') || $(this).data('file-uuid') || null;
+                    var name = $(this).attr('data-file-name') || $(this).data('file-name') || $(this).find('.file-chip-name').text() || 'Dokumen Sokongan';
+                    var size = $(this).attr('data-file-size') || $(this).data('file-size') || 0;
+                    var url  = $(this).attr('data-file-url') || $(this).data('file-url') || null;
+                    if (uuid || name) {
+                        files.push({
+                            uuid: uuid || null,
+                            original_name: name,
+                            name: name,
+                            size: parseInt(size, 10) || 0,
+                            url: url || (uuid ? '{{ url("/tenders/dokumen-files") }}/' + encodeURIComponent(uuid) + '/download' : null),
+                        });
+                    }
+                });
                 accounts.push({
                     dari_bulan:         period.dm,
                     dari_tahun:         period.dy,
@@ -842,6 +961,7 @@ $(document).ready(function () {
                     bulans:             bulans,
                     jumlah_keseluruhan: parseRm($block.find('.akaun-jumlah').val()),
                     purata:             parseRm($block.find('.akaun-purata').val()),
+                    files:              files,
                 });
             });
             payload.accounts = accounts;
@@ -867,6 +987,15 @@ $(document).ready(function () {
                         dari:   parseRm($(this).find('[name="purata_dari[]"]').val()),
                         hingga: hinggaVal !== '' ? parseRm(hinggaVal) : null,
                         skema:  $(this).find('[name="purata_skema[]"]').val() || null,
+                    });
+                });
+            } else if (jenisSkor === 'automatik') {
+                $('#tbl-purata-auto-body tr').each(function () {
+                    var h = $(this).find('[name="purata_hingga[]"]').val();
+                    scoringItems.push({
+                        dari:   parseFloat($(this).find('[name="purata_dari[]"]').val()) || 0,
+                        hingga: h !== '' ? parseFloat(h) : null,
+                        skema:  $(this).find('[name="purata_skema[]"]').val() || '',
                     });
                 });
             }

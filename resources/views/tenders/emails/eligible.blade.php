@@ -139,9 +139,9 @@
                   <tr>
                     <td align="center">
                       <div style="line-height:24px;">
-                        <a href="https://tender.selangor.my/tenders/{{ $tender->id }}" target="_blank" style="background: #F3565D; font-family: Arial, Helvetica, sans-serif; font-size: 13px; padding: 15px 30px;  text-decoration: none;">
+                        <a href="{{ $action_url ?? url('/tenders/' . $tender->id) }}" target="_blank" style="background: #F3565D; font-family: Arial, Helvetica, sans-serif; font-size: 13px; padding: 15px 30px;  text-decoration: none;">
                           <span style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; color: #fff;">
-                            Lihat Tender / Sebut Harga
+                            {{ $action_label ?? 'Lihat Tender / Sebut Harga' }}
                           </span>
                           </font>
                         </a>

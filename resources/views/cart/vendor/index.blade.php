@@ -76,7 +76,7 @@
         </a>
     </div>
 
-    @if (!$fpx && !$ebpg && !$duitnow)
+    @if (!$fpx && !$ebpg)
         <div class="d-flex align-items-center gap-3 p-4 rounded-2 mb-4" style="background:#fef2f2;border:1px solid #fecaca;">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#b91c1c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
             <span style="font-size:0.85rem;font-weight:600;color:#991b1b;">Harap Maaf! Pembayaran tidak dapat dilakukan buat masa ini.</span>

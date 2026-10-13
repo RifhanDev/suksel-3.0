@@ -73,15 +73,48 @@ class TenderProcessStatusService
         $this->advanceTo($tender, $status);
     }
 
+    /** Force status (allows 12→11 for bidaan loop). */
+    public function setStatus(Tender $tender, int $status): void
+    {
+        Tender::query()
+            ->where('id', $tender->id)
+            ->update(['status_process_id' => $status]);
+
+        $tender->status_process_id = $status;
+    }
+
     public function syncPerakuanJabatanCompletion(Tender $tender): void
     {
         $kertas = PerakuanJabatanKertasTaklimat::query()
             ->where('tender_id', $tender->id)
+            ->with(['items.files'])
             ->first();
 
         $pengesyoran = PerakuanJabatanPengesyoranPembekal::query()
             ->where('tender_id', $tender->id)
             ->first();
+
+        if ((bool) ($tender->is_ebidding ?? false)) {
+            $stage = (int) ($tender->ebidding_process_stage_id ?? 0);
+
+            // Still preparing jadual or vendors are bidding — stay on Perakuan Jabatan (11).
+            if ($stage > 0 && $stage < 3) {
+                return;
+            }
+
+            // Post-bidaan review: Laporan Bidaan + pengesahan required before returning to JP (12).
+            if ($stage >= 3) {
+                $laporan = $kertas?->items->firstWhere('slot_key', 'laporan_bidaan');
+                $hasLaporan = $laporan && $laporan->files->isNotEmpty();
+                if (! $hasLaporan || ! $pengesyoran?->pengesahan_bidaan) {
+                    return;
+                }
+
+                $this->setStatus($tender, TenderProcessStatus::PERAKUAN_JABATAN);
+
+                return;
+            }
+        }
 
         if (! $kertas?->submitted_at || ! $pengesyoran?->submitted_at) {
             return;
@@ -99,5 +132,7 @@ class TenderProcessStatusService
         Tender::query()
             ->where('id', $tender->id)
             ->update(['status_process_id' => $status]);
+
+        $tender->status_process_id = $status;
     }
 }

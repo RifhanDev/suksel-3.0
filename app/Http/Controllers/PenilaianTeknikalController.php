@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Concerns\AdvancesTenderProcessStatus;
 use App\Http\Controllers\Concerns\HandlesTenderFormAccess;
 use App\Http\Controllers\Concerns\ResolvesTenderForProcess;
+use App\Http\Controllers\Concerns\RestrictsTenderByRole;
 use App\Models\Jawatankuasa;
 use App\Models\PenyediaanIklan;
 use App\Models\PenyediaanMesyuaratMeeting;
@@ -35,12 +36,22 @@ class PenilaianTeknikalController extends Controller
     use AdvancesTenderProcessStatus;
     use HandlesTenderFormAccess;
     use ResolvesTenderForProcess;
+    use RestrictsTenderByRole;
+
+    /**
+     * 2-peringkat uses jenis "tech"; 1-peringkat uses combined "eval" (and legacy "harga").
+     *
+     * @var list<string>
+     */
+    protected array $technicalCommitteeJenis = ['tech', 'eval', 'harga'];
 
     public function __construct(
         protected TeknikalEvaluationService $service,
         protected TeknikalKerjaEvaluationService $kerjaService,
         protected StosBackendClient $stos
-    ){}
+    ) {
+        $this->menuMiddleware('TechnicalEvaluation:list');
+    }
 
     // Bekalan/perkhidmatan flow — methods below serve the active 'penilaianTeknikal*' routes.
 
@@ -56,17 +67,22 @@ class PenilaianTeknikalController extends Controller
 
     protected function indexAjax(Request $request)
     {
-        $tenders = Tender::query()
-            // CUT_OFF = pending; PENILAIAN_TEKNIKAL = just submitted — kept so evaluators can
-            // still reopen a completed review instead of it vanishing from the list.
-            ->whereIn('status_process_id', [
-                TenderProcessStatus::penilaianTeknikalListStatus(),
-                TenderProcessStatus::PENILAIAN_TEKNIKAL,
-            ])
-            ->where(function ($query) {
-                $query->where('is_ebidding', false)
-                    ->orWhereNull('is_ebidding');
-            }); // e-bidding tenders use a different legacy stage mapping — excluded.
+        // List gates:
+        // 1) status_process_id must be 9 (Cut Off selesai) or 10 (teknikal already submitted)
+        // 2) non e-bidding only
+        // 3) Agency Jawatankuasa: only tenders where they are appointed tech/eval/harga
+        $tenders = $this->applyCommitteeAppointment(
+            Tender::query()
+                ->whereIn('status_process_id', [
+                    TenderProcessStatus::penilaianTeknikalListStatus(),
+                    TenderProcessStatus::PENILAIAN_TEKNIKAL,
+                ])
+                ->where(function ($query) {
+                    $query->where('is_ebidding', false)
+                        ->orWhereNull('is_ebidding');
+                }),
+            $this->technicalCommitteeJenis
+        );
 
         // Only when the user hasn't clicked a column header — otherwise this would
         // out-rank whatever column DataTables just asked to sort by. Request::filled()
@@ -96,7 +112,7 @@ class PenilaianTeknikalController extends Controller
 
             $matchingIds = (clone $tenders)
                 ->get(['id', 'kategori_perolehan_id'])
-                ->filter(fn (Tender $t) => $this->resolveTenderRingkasanStatus($t) === $filterStatus)
+                ->filter(fn(Tender $t) => $this->resolveTenderRingkasanStatus($t) === $filterStatus)
                 ->pluck('id');
 
             $tenders->whereIn('id', $matchingIds);
@@ -173,7 +189,7 @@ class PenilaianTeknikalController extends Controller
             }
 
             $evaluations = $this->kerjaService->loadEvaluations($tender);
-            $evaluatedCount = $vendors->filter(fn (TenderVendor $v) => isset($evaluations[$v->vendor_id]))->count();
+            $evaluatedCount = $vendors->filter(fn(TenderVendor $v) => isset($evaluations[$v->vendor_id]))->count();
 
             if ($evaluatedCount === 0) {
                 return 'Belum Dinilai';
@@ -200,12 +216,12 @@ class PenilaianTeknikalController extends Controller
 
         $allItems = $step1Items->concat($step2Items);
 
-        $hasProgress = $allItems->contains(fn (array $item) => $item['status_label'] !== 'Menunggu Penilaian');
+        $hasProgress = $allItems->contains(fn(array $item) => $item['status_label'] !== 'Menunggu Penilaian');
         if (! $hasProgress) {
             return 'Belum Dinilai';
         }
 
-        $allComplete = $allItems->every(fn (array $item) => $item['status_label'] === 'Telah Dinilai');
+        $allComplete = $allItems->every(fn(array $item) => $item['status_label'] === 'Telah Dinilai');
 
         return $allComplete ? 'Selesai' : 'Dalam Proses';
     }
@@ -213,7 +229,7 @@ class PenilaianTeknikalController extends Controller
     public function show(string $uuid)
     {
         $tender = $this->resolveTender($uuid);
-        // Langkah 1 vendor list — frozen record, see loadPenilaianTeknikalVendors().
+        // Langkah 1 vendor list — cut-off selection, excluding opening-stage failures.
         $shortlistedVendors = $this->loadPenilaianTeknikalVendors($tender);
         $pematuhanEvaluations = $this->service->loadPematuhanEvaluations($tender);
 
@@ -260,7 +276,7 @@ class PenilaianTeknikalController extends Controller
             'shortlistedVendors' => $shortlistedVendors,
             'vendorDokumenResponses' => $this->loadVendorDokumenResponses($tender, $shortlistedVendors),
             'pematuhanEvaluations' => collect($pematuhanEvaluations)
-                ->map(fn (TenderTeknikalPematuhanEvaluation $e) => [
+                ->map(fn(TenderTeknikalPematuhanEvaluation $e) => [
                     'status_pematuhan' => $e->status_pematuhan,
                     'catatan' => $e->catatan,
                 ])
@@ -281,24 +297,19 @@ class PenilaianTeknikalController extends Controller
             ->first();
 
         return collect($header?->items ?? [])
-            ->reject(fn (TechnicalChecklistItem $item) => $item->mechanism === ChecklistMechanism::PTJ_MUAT_NAIK
+            ->reject(fn(TechnicalChecklistItem $item) => $item->mechanism === ChecklistMechanism::PTJ_MUAT_NAIK
                 && $item->vendor_action === ChecklistMechanism::VENDOR_ACTION_MUAT_TURUN)
             ->values();
     }
 
     /**
-     * Vendors eligible to START Penilaian Teknikal — active or eliminated at this stage only.
-     * Frozen list: doesn't shrink when a later step eliminates a vendor (keeps Langkah 1 historical).
+     * Companies selected at cut-off, excluding anyone who failed the opening stage.
+     * A company eliminated during this stage stays listed.
      */
     private function loadPenilaianTeknikalVendors(Tender $tender): Collection
     {
         return TenderVendor::query()
-            ->where('tender_id', $tender->id)
-            ->where('participate', 1)
-            ->where(function ($query) {
-                $query->where('cancel_fg', 0)
-                    ->orWhere('eliminated_process_id', TenderProcessStatus::PENILAIAN_TEKNIKAL);
-            })
+            ->forTechnicalEvaluation($tender->id)
             ->orderBy('id')
             ->get(['id', 'vendor_id', 'kod_pembekal'])
             ->values();
@@ -317,20 +328,15 @@ class PenilaianTeknikalController extends Controller
         $rumusan = $this->service->computeRumusanPematuhan($vendors, $items, $evaluations);
         $lulusVendorIds = collect($rumusan['layak'])->pluck('vendor_id')->all();
 
-        return $vendors->filter(fn (TenderVendor $vendor) => in_array((int) $vendor->vendor_id, $lulusVendorIds, true))
+        return $vendors->filter(fn(TenderVendor $vendor) => in_array((int) $vendor->vendor_id, $lulusVendorIds, true))
             ->values();
     }
 
     /** Uploaded documents per vendor per checklist item, via the shared VendorDokumenResponseService. */
     private function loadVendorDokumenResponses(Tender $tender, Collection $vendors): array
     {
-        $service = app(VendorDokumenResponseService::class);
-
-        return $vendors
-            ->mapWithKeys(fn (TenderVendor $vendor) => [
-                $vendor->vendor_id => $service->responsesByItemUuid($tender, $vendor->vendor_id),
-            ])
-            ->all();
+        return app(VendorDokumenResponseService::class)
+            ->responsesByItemUuidForVendors($tender, $vendors->pluck('vendor_id'));
     }
 
     /** Maps checklist items to Langkah 1 table rows. */
@@ -339,7 +345,7 @@ class PenilaianTeknikalController extends Controller
         return collect($items)
             ->map(function (TechnicalChecklistItem $item) use ($tender, $vendors, $evaluations) {
                 $evaluatedCount = $vendors
-                    ->filter(fn (TenderVendor $vendor) => isset($evaluations["{$vendor->vendor_id}:{$item->uuid}"]))
+                    ->filter(fn(TenderVendor $vendor) => isset($evaluations["{$vendor->vendor_id}:{$item->uuid}"]))
                     ->count();
                 $status = $this->resolveStatusPenilaian($evaluatedCount, $vendors->count());
 
@@ -394,7 +400,7 @@ class PenilaianTeknikalController extends Controller
                     $completedCount = collect($rollup)->where('is_complete', true)->count();
                 } elseif ($isItemLevelScored) {
                     $completedCount = $vendors
-                        ->filter(fn (TenderVendor $vendor) => isset($borangEvaluations["{$vendor->vendor_id}:{$item->uuid}"])
+                        ->filter(fn(TenderVendor $vendor) => isset($borangEvaluations["{$vendor->vendor_id}:{$item->uuid}"])
                             && $borangEvaluations["{$vendor->vendor_id}:{$item->uuid}"]->skor_manual !== null)
                         ->count();
                 } else {
@@ -427,7 +433,7 @@ class PenilaianTeknikalController extends Controller
                 ChecklistMechanism::PETENDER_MUAT_NAIK,
                 ChecklistMechanism::PTJ_MUAT_NAIK,
             ])
-            ->whereHas('header', fn ($query) => $query->where('tender_id', $tender->id))
+            ->whereHas('header', fn($query) => $query->where('tender_id', $tender->id))
             ->firstOrFail();
     }
 
@@ -453,9 +459,10 @@ class PenilaianTeknikalController extends Controller
         }
 
         return match ($item->vendor_action) {
-            'pengalaman-kerja'   => route('penilaianTeknikal.pengalamanKerjaReview', ['tender' => $tender->id]),
-            'kerja-dalam-tangan' => route('penilaianTeknikal.kerjaDalamTanganReview', ['tender' => $tender->id]),
-            default              => null,
+            'pengalaman-kerja'    => route('tenderDokumen.pengalamanKerjaReview', ['tender' => $tender->id]),
+            'kerja-dalam-tangan'  => route('tenderDokumen.kerjaDalamTanganReview', ['tender' => $tender->id]),
+            'kakitangan-teknikal' => route('kakitanganTeknikal', ['tenderUuid' => $tender->uuid]),
+            default               => null,
         };
     }
 
@@ -470,13 +477,16 @@ class PenilaianTeknikalController extends Controller
             'rows.*.catatan'             => 'nullable|string|max:2000',
         ]);
 
-        $result = $this->callStos('save pematuhan', ['tender' => $request->input('tender')],
-            fn () => $this->stos->savePematuhanTeknikal([
+        $result = $this->callStos(
+            'save pematuhan',
+            ['tender' => $request->input('tender')],
+            fn() => $this->stos->savePematuhanTeknikal([
                 'tender' => $request->input('tender'),
                 'checklist_item_uuid' => $request->input('checklist_item_uuid'),
                 'rows' => $request->input('rows'),
                 'acting_user_id' => Auth::id(),
-            ]));
+            ])
+        );
 
         if (! $result['ok']) {
             return response()->json([
@@ -540,8 +550,11 @@ class PenilaianTeknikalController extends Controller
 
     public function rumusanPematuhan(Tender $tender): JsonResponse
     {
-        $result = $this->callStos('load rumusan pematuhan', ['tender_id' => $tender->id],
-            fn () => $this->stos->getRumusanPematuhanTeknikal($tender->id));
+        $result = $this->callStos(
+            'load rumusan pematuhan',
+            ['tender_id' => $tender->id],
+            fn() => $this->stos->getRumusanPematuhanTeknikal($tender->id)
+        );
 
         if (! $result['ok']) {
             return response()->json(['message' => 'Ralat memuatkan rumusan pematuhan dokumentasi.'], $result['status']);
@@ -552,8 +565,11 @@ class PenilaianTeknikalController extends Controller
 
     public function hantarPematuhan(Tender $tender): JsonResponse
     {
-        $result = $this->callStos('submit pematuhan', ['tender_id' => $tender->id],
-            fn () => $this->stos->hantarPematuhanTeknikal($tender->id, ['acting_user_id' => Auth::id()]));
+        $result = $this->callStos(
+            'submit pematuhan',
+            ['tender_id' => $tender->id],
+            fn() => $this->stos->hantarPematuhanTeknikal($tender->id, ['acting_user_id' => Auth::id()])
+        );
 
         if (! $result['ok']) {
             return response()->json([
@@ -576,11 +592,14 @@ class PenilaianTeknikalController extends Controller
     {
         $request->validate(['tender' => 'required|string']);
 
-        $result = $this->callStos('confirm spesifikasi', ['tender' => $request->input('tender')],
-            fn () => $this->stos->confirmSpesifikasiTeknikal([
+        $result = $this->callStos(
+            'confirm spesifikasi',
+            ['tender' => $request->input('tender')],
+            fn() => $this->stos->confirmSpesifikasiTeknikal([
                 'tender' => $request->input('tender'),
                 'acting_user_id' => Auth::id(),
-            ]));
+            ])
+        );
 
         if (! $result['ok']) {
             return response()->json([
@@ -595,8 +614,11 @@ class PenilaianTeknikalController extends Controller
 
     public function spesifikasiRollup(Tender $tender, string $checklistItemUuid): JsonResponse
     {
-        $result = $this->callStos('load spesifikasi rollup', ['tender_id' => $tender->id, 'item' => $checklistItemUuid],
-            fn () => $this->stos->getSpesifikasiRollup($tender->id, $checklistItemUuid));
+        $result = $this->callStos(
+            'load spesifikasi rollup',
+            ['tender_id' => $tender->id, 'item' => $checklistItemUuid],
+            fn() => $this->stos->getSpesifikasiRollup($tender->id, $checklistItemUuid)
+        );
 
         if (! $result['ok']) {
             return response()->json([
@@ -617,8 +639,11 @@ class PenilaianTeknikalController extends Controller
 
     public function spesifikasiDetail(Tender $tender, string $checklistItemUuid, int $vendorId): JsonResponse
     {
-        $result = $this->callStos('load spesifikasi detail', ['tender_id' => $tender->id, 'vendor_id' => $vendorId],
-            fn () => $this->stos->getSpesifikasiDetail($tender->id, $checklistItemUuid, $vendorId));
+        $result = $this->callStos(
+            'load spesifikasi detail',
+            ['tender_id' => $tender->id, 'vendor_id' => $vendorId],
+            fn() => $this->stos->getSpesifikasiDetail($tender->id, $checklistItemUuid, $vendorId)
+        );
 
         if (! $result['ok']) {
             return response()->json([
@@ -656,14 +681,17 @@ class PenilaianTeknikalController extends Controller
             'rows.*.catatan'             => 'nullable|string|max:2000',
         ]);
 
-        $result = $this->callStos('save spesifikasi', ['tender' => $request->input('tender')],
-            fn () => $this->stos->saveSpesifikasiTeknikal([
+        $result = $this->callStos(
+            'save spesifikasi',
+            ['tender' => $request->input('tender')],
+            fn() => $this->stos->saveSpesifikasiTeknikal([
                 'tender' => $request->input('tender'),
                 'vendor_id' => $request->input('vendor_id'),
                 'checklist_item_uuid' => $request->input('checklist_item_uuid'),
                 'rows' => $request->input('rows'),
                 'acting_user_id' => Auth::id(),
-            ]));
+            ])
+        );
 
         if (! $result['ok']) {
             return response()->json([
@@ -689,8 +717,11 @@ class PenilaianTeknikalController extends Controller
      */
     public function borangRows(Tender $tender, string $checklistItemUuid): JsonResponse
     {
-        $result = $this->callStos('load borang rows', ['tender_id' => $tender->id, 'item' => $checklistItemUuid],
-            fn () => $this->stos->getBorangEvaluations($tender->id, $checklistItemUuid));
+        $result = $this->callStos(
+            'load borang rows',
+            ['tender_id' => $tender->id, 'item' => $checklistItemUuid],
+            fn() => $this->stos->getBorangEvaluations($tender->id, $checklistItemUuid)
+        );
 
         if (! $result['ok']) {
             return response()->json([
@@ -711,7 +742,14 @@ class PenilaianTeknikalController extends Controller
         $vendorDokumenService = app(VendorDokumenResponseService::class);
 
         $rows = collect($data['rows'] ?? [])->map(function (array $row) use (
-            $tender, $item, $isBorangAtasTalian, $formUrl, $formKey, $onlineFormStatus, $vendorDokumenService, $maxScore
+            $tender,
+            $item,
+            $isBorangAtasTalian,
+            $formUrl,
+            $formKey,
+            $onlineFormStatus,
+            $vendorDokumenService,
+            $maxScore
         ) {
             $vendorId = (int) $row['vendor_id'];
 
@@ -729,7 +767,7 @@ class PenilaianTeknikalController extends Controller
                 $docUrl = null;
                 $docMode = 'upload';
                 $files = collect($response['files'] ?? [])
-                    ->map(fn ($file) => ['name' => $file['name'], 'url' => $file['url']])
+                    ->map(fn($file) => ['name' => $file['name'], 'url' => $file['url']])
                     ->values()
                     ->all();
             }
@@ -764,13 +802,16 @@ class PenilaianTeknikalController extends Controller
             'rows.*.catatan'             => 'nullable|string|max:2000',
         ]);
 
-        $result = $this->callStos('save borang', ['tender' => $request->input('tender')],
-            fn () => $this->stos->saveBorangTeknikal([
+        $result = $this->callStos(
+            'save borang',
+            ['tender' => $request->input('tender')],
+            fn() => $this->stos->saveBorangTeknikal([
                 'tender' => $request->input('tender'),
                 'checklist_item_uuid' => $request->input('checklist_item_uuid'),
                 'rows' => $request->input('rows'),
                 'acting_user_id' => Auth::id(),
-            ]));
+            ])
+        );
 
         if (! $result['ok']) {
             return response()->json([
@@ -792,95 +833,31 @@ class PenilaianTeknikalController extends Controller
     /** Langkah 2 summary — each vendor's total score across every mechanism vs the passing benchmark. */
     public function rumusanPenilaianTeknikal(Tender $tender): JsonResponse
     {
-        $result = $this->callStos('load rumusan penilaian teknikal', ['tender_id' => $tender->id],
-            fn () => $this->stos->getRumusanPenilaianTeknikal($tender->id));
+        $result = $this->callStos(
+            'load rumusan penilaian teknikal',
+            ['tender_id' => $tender->id],
+            fn() => $this->stos->getRumusanPenilaianTeknikal($tender->id)
+        );
 
         if (! $result['ok']) {
             return response()->json(['message' => 'Ralat memuatkan rumusan penilaian teknikal.'], $result['status']);
         }
 
         return response()->json($result['body']['data'] ?? [
-            'layak' => [], 'tidak_layak' => [], 'passing_percentage' => 0, 'max_score' => 0,
+            'layak' => [],
+            'tidak_layak' => [],
+            'passing_percentage' => 0,
+            'max_score' => 0,
         ]);
-    }
-
-    public function pengalamanKerjaReview(Tender $tender, Request $request)
-    {
-        $this->ensureTenderFormAccess($tender);
-
-        $local = $this->loadVendorFormPayload($tender, 'pengalaman_kerja');
-        $remote = $this->fetchOnlineFormData('pengalaman-kerja', $tender->uuid, (int) $request->query('vendor_id'));
-        $resolved = $this->resolveVendorFormDisplayData($tender, 'pengalaman_kerja', $remote ?: null);
-
-        return view('newModule.penilaian_teknikal.review.pengalaman_kerja_review', array_merge([
-            'items'    => $resolved['items'] ?? ($local['items'] ?? []),
-            'dokumens' => $resolved['dokumens'] ?? [],
-        ], $this->formViewVars($tender)));
-    }
-
-    public function kerjaDalamTanganReview(Tender $tender, Request $request)
-    {
-        $this->ensureTenderFormAccess($tender);
-
-        $local = $this->loadVendorFormPayload($tender, 'kerja_dalam_tangan');
-        $remote = $this->fetchOnlineFormData('kerja-dalam-tangan', $tender->uuid, (int) $request->query('vendor_id'));
-        $resolved = $this->resolveVendorFormDisplayData($tender, 'kerja_dalam_tangan', $remote ?: null);
-
-        return view('newModule.penilaian_teknikal.review.kerja_dalam_tangan_review', array_merge([
-            'items'    => $resolved['items'] ?? ($local['items'] ?? []),
-            'dokumens' => $resolved['dokumens'] ?? [],
-        ], $this->formViewVars($tender)));
-    }
-
-    /**
-     * @return array{items?: array, dokumens?: array}
-     */
-    private function fetchOnlineFormData(string $apiSlug, string $tenderUuid, ?int $vendorId): array
-    {
-        $url = StosBackendClient::apiUrl($apiSlug . '/' . $tenderUuid);
-        if ($vendorId) {
-            $url .= '?vendor_id=' . $vendorId;
-        }
-
-        $response = StosBackendClient::http()->get($url);
-
-        return $response->successful()
-            ? $this->rewriteOnlineFormDokumens($apiSlug, $tenderUuid, (array) $response->json('data'))
-            : [];
-    }
-
-    /**
-     * @param  array<string, mixed>  $data
-     * @return array<string, mixed>
-     */
-    private function rewriteOnlineFormDokumens(string $apiSlug, string $tenderUuid, array $data): array
-    {
-        if (empty($data['dokumens']) || ! is_array($data['dokumens'])) {
-            return $data;
-        }
-
-        $tender = Tender::query()->where('uuid', $tenderUuid)->first();
-        if (! $tender) {
-            return $data;
-        }
-
-        $type = match ($apiSlug) {
-            'pengalaman-kerja' => 'pengalaman-kerja',
-            'kerja-dalam-tangan' => 'kerja-dalam-tangan',
-            default => null,
-        };
-
-        if ($type) {
-            $data['dokumens'] = StosFormFileController::rewriteDokumenUrls($tender, $type, $data['dokumens']);
-        }
-
-        return $data;
     }
 
     /** Resolves a tender from the index-page link's uuid. */
     private function resolveTender(string $uuid): Tender
     {
-        return Tender::query()->where('uuid', $uuid)->firstOrFail();
+        $tender = Tender::query()->where('uuid', $uuid)->firstOrFail();
+        $this->assertCommitteeAppointment($tender, $this->technicalCommitteeJenis);
+
+        return $tender;
     }
 
     /** catatan_pematuhan/catatan_spesifikasi/pengesyoran_intro are rich text now (contenteditable) —
@@ -897,18 +874,16 @@ class PenilaianTeknikalController extends Controller
     }
 
     /** Saved Langkah 3 report text, if any — reloaded each time the report step is shown. */
+    /** Read-only: served from the shared DB, not proxied — an HTTP hop here would hold a php worker. */
     public function laporanPenilaianTeknikal(Tender $tender): JsonResponse
     {
-        $result = $this->callStos('load laporan', ['tender_id' => $tender->id],
-            fn () => $this->stos->getLaporanTeknikal($tender->id));
-
-        $data = $result['ok'] ? ($result['body']['data'] ?? []) : [];
+        $laporan = $this->service->loadLaporan($tender);
 
         return response()->json([
-            'catatan_pematuhan' => $data['catatan_pematuhan'] ?? null,
-            'catatan_spesifikasi' => $data['catatan_spesifikasi'] ?? null,
-            'pengesyoran_intro' => $data['pengesyoran_intro'] ?? null,
-            'pengesyoran_justifikasi' => $data['pengesyoran_justifikasi'] ?? [],
+            'catatan_pematuhan' => $laporan->catatan_pematuhan ?? null,
+            'catatan_spesifikasi' => $laporan->catatan_spesifikasi ?? null,
+            'pengesyoran_intro' => $laporan->pengesyoran_intro ?? null,
+            'pengesyoran_justifikasi' => $laporan->pengesyoran_justifikasi ?? [],
         ]);
     }
 
@@ -919,13 +894,13 @@ class PenilaianTeknikalController extends Controller
 
         $jptMembers = Jawatankuasa::with('user')
             ->where('tender_id', $tender->id)
-            ->where('jenis_jawatankuasa', 'tech')
+            ->whereIn('jenis_jawatankuasa', $this->technicalCommitteeJenis)
             ->whereNotNull('user_id')
             ->orderBy('peranan')
             ->orderBy('id')
             ->get()
-            ->filter(fn (Jawatankuasa $row) => $row->user)
-            ->map(fn (Jawatankuasa $row) => [
+            ->filter(fn(Jawatankuasa $row) => $row->user)
+            ->map(fn(Jawatankuasa $row) => [
                 'peranan_label' => $perananLabels[(string) $row->peranan] ?? 'Ahli',
                 'name' => $row->user->name,
                 'jawatan' => $row->user->jawatan ?: '-',
@@ -935,21 +910,24 @@ class PenilaianTeknikalController extends Controller
 
         $mesyuaratTeknikal = PenyediaanMesyuaratMeeting::query()
             ->where('tender_id', $tender->id)
-            ->where('jenis_jawatankuasa', 'tech')
+            ->whereIn('jenis_jawatankuasa', $this->technicalCommitteeJenis)
             ->orderByDesc('tarikh_mesyuarat')
             ->first();
 
         $dokumenTeknikal = $this->loadStep1ChecklistItems($tender)
             ->values()
-            ->map(fn (TechnicalChecklistItem $item, int $idx) => [
+            ->map(fn(TechnicalChecklistItem $item, int $idx) => [
                 'bil' => $idx + 1,
                 'keterangan' => $item->title ?: '-',
             ]);
 
         $latarBelakang = $this->buildLatarBelakang($tender, $dokumenTeknikal->count());
 
-        $rumusanPematuhanResult = $this->callStos('load rumusan pematuhan (laporan cetak)', ['tender_id' => $tender->id],
-            fn () => $this->stos->getRumusanPematuhanTeknikal($tender->id));
+        $rumusanPematuhanResult = $this->callStos(
+            'load rumusan pematuhan (laporan cetak)',
+            ['tender_id' => $tender->id],
+            fn() => $this->stos->getRumusanPematuhanTeknikal($tender->id)
+        );
         $rumusanPematuhan = $rumusanPematuhanResult['ok']
             ? ($rumusanPematuhanResult['body']['data'] ?? ['layak' => [], 'tidak_layak' => []])
             : ['layak' => [], 'tidak_layak' => []];
@@ -978,16 +956,22 @@ class PenilaianTeknikalController extends Controller
             ];
         });
 
-        $laporanResult = $this->callStos('load laporan (laporan cetak)', ['tender_id' => $tender->id],
-            fn () => $this->stos->getLaporanTeknikal($tender->id));
+        $laporanResult = $this->callStos(
+            'load laporan (laporan cetak)',
+            ['tender_id' => $tender->id],
+            fn() => $this->stos->getLaporanTeknikal($tender->id)
+        );
         $laporanData = $laporanResult['ok'] ? ($laporanResult['body']['data'] ?? []) : [];
         $catatanPematuhan = $laporanData['catatan_pematuhan'] ?? null;
         $catatanSpesifikasi = $laporanData['catatan_spesifikasi'] ?? null;
         $pengesyoranIntro = $laporanData['pengesyoran_intro'] ?? null;
         $pengesyoranJustifikasi = $laporanData['pengesyoran_justifikasi'] ?? [];
 
-        $rumusanTeknikalResult = $this->callStos('load rumusan penilaian teknikal (laporan cetak)', ['tender_id' => $tender->id],
-            fn () => $this->stos->getRumusanPenilaianTeknikal($tender->id));
+        $rumusanTeknikalResult = $this->callStos(
+            'load rumusan penilaian teknikal (laporan cetak)',
+            ['tender_id' => $tender->id],
+            fn() => $this->stos->getRumusanPenilaianTeknikal($tender->id)
+        );
         $rumusanPenilaianTeknikal = $rumusanTeknikalResult['ok'] ? ($rumusanTeknikalResult['body']['data'] ?? []) : [];
         $passingPercentage = $rumusanPenilaianTeknikal['passing_percentage'] ?? null;
 
@@ -1030,7 +1014,7 @@ class PenilaianTeknikalController extends Controller
         // Everyone who passed Step 2 except the top-ranked vendor — 6.1 addresses the winner
         // separately, this is the "also eligible" list for 6.2.
         $petenderLainLulus = $penilaianPeringkatKedua
-            ->filter(fn (array $row) => $row['keputusan'] === 'LULUS' && (int) ($row['kedudukan'] ?? 0) !== 1)
+            ->filter(fn(array $row) => $row['keputusan'] === 'LULUS' && (int) ($row['kedudukan'] ?? 0) !== 1)
             ->pluck('no_petender')
             ->values();
 
@@ -1100,11 +1084,14 @@ class PenilaianTeknikalController extends Controller
             'pengesyoran_justifikasi.*' => 'nullable|string|max:2000',
         ]);
 
-        $result = $this->callStos('save draf laporan', ['tender' => $request->input('tender')],
-            fn () => $this->stos->saveDrafLaporanTeknikal(array_merge(
+        $result = $this->callStos(
+            'save draf laporan',
+            ['tender' => $request->input('tender')],
+            fn() => $this->stos->saveDrafLaporanTeknikal(array_merge(
                 $this->sanitizeCatatanFields($request->only(['tender', 'catatan_pematuhan', 'catatan_spesifikasi', 'pengesyoran_intro', 'pengesyoran_justifikasi'])),
                 ['acting_user_id' => Auth::id()]
-            )));
+            ))
+        );
 
         if (! $result['ok']) {
             return response()->json([
@@ -1144,11 +1131,14 @@ class PenilaianTeknikalController extends Controller
             ], 422);
         }
 
-        $result = $this->callStos('submit penilaian teknikal', ['tender_id' => $tender->id],
-            fn () => $this->stos->hantarPenilaianTeknikal(array_merge(
+        $result = $this->callStos(
+            'submit penilaian teknikal',
+            ['tender_id' => $tender->id],
+            fn() => $this->stos->hantarPenilaianTeknikal(array_merge(
                 $this->sanitizeCatatanFields($request->only(['tender', 'catatan_pematuhan', 'catatan_spesifikasi', 'pengesyoran_intro', 'pengesyoran_justifikasi'])),
                 ['acting_user_id' => Auth::id()]
-            )));
+            ))
+        );
 
         if (! $result['ok']) {
             return response()->json([
@@ -1177,8 +1167,10 @@ class PenilaianTeknikalController extends Controller
     public function index()
     {
         $tenders = $this->mapTendersForProcessList(
-            Tender::query()
-                ->where('status_process_id', TenderProcessStatus::penilaianTeknikalListStatus())
+            $this->applyCommitteeAppointment(
+                Tender::query()->where('status_process_id', TenderProcessStatus::penilaianTeknikalListStatus()),
+                $this->technicalCommitteeJenis
+            )
                 ->orderByDesc('id')
                 ->get(['id', 'uuid', 'no_tender', 'ref_number', 'name', 'submission_datetime', 'kategori_perolehan_id']),
             function (Tender $tender, string $noTender) {
@@ -1196,6 +1188,7 @@ class PenilaianTeknikalController extends Controller
     public function showTeknikalKerja(string $uuid)
     {
         $tender = Tender::with('tenderer')->where('uuid', $uuid)->firstOrFail();
+        $this->assertCommitteeAppointment($tender, $this->technicalCommitteeJenis);
         $tender_no = $tender->no_tender ?: $tender->ref_number ?: (string) $tender->id;
 
         $vendors = $this->kerjaService->loadShortlistedVendors($tender);
@@ -1212,7 +1205,7 @@ class PenilaianTeknikalController extends Controller
             ];
         })->values();
 
-        $lampiranList = $this->kerjaService->loadLampiran($tender)->map(fn (TenderTeknikalKerjaLampiran $file) => [
+        $lampiranList = $this->kerjaService->loadLampiran($tender)->map(fn(TenderTeknikalKerjaLampiran $file) => [
             'uuid' => $file->uuid,
             'name' => $file->display_name,
             'url' => $file->url(),
@@ -1320,12 +1313,15 @@ class PenilaianTeknikalController extends Controller
             ], 422);
         }
 
-        $result = $this->callStos('submit penilaian teknikal kerja', ['tender_id' => $tender->id],
-            fn () => $this->stos->hantarPenilaianTeknikalKerja([
+        $result = $this->callStos(
+            'submit penilaian teknikal kerja',
+            ['tender_id' => $tender->id],
+            fn() => $this->stos->hantarPenilaianTeknikalKerja([
                 'tender' => $request->input('tender'),
                 'rows' => $request->input('rows'),
                 'acting_user_id' => Auth::id(),
-            ]));
+            ])
+        );
 
         if (! $result['ok']) {
             return response()->json([

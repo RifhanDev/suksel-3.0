@@ -200,8 +200,8 @@
     <!-- HEADER -->
     <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center mb-3">
         <div class="mb-3 mb-lg-0">
-            <h3 class="fw-bold text-dark m-0" style="letter-spacing: -0.5px;">Sebut Harga Pembelian Terus</h3>
-            <p class="text-muted small m-0">Paparan maklumat projek dan penghantaran sebut harga.</p>
+            <h3 class="fw-bold text-dark m-0" style="letter-spacing: -0.5px;">Sebut Harga Lantikan Terus</h3>
+            <p class="text-muted small m-0">Paparan maklumat projek dan penghantaran sebut harga lantikan terus.</p>
         </div>
     </div>
 
@@ -376,6 +376,81 @@
                         </div>
                     </div>
 
+                    @php
+                        $mofGroups  = collect($p->mof ?? [])->filter(fn ($g) => ! empty($g['code']))->values();
+                        $cidbGroups = collect($p->cidb ?? [])->filter(fn ($g) => ! empty($g['spec']))->values();
+                        $gredIds    = collect($p->cidb[0]['grade'] ?? []);
+
+                        $codeMap = App\Code::whereIn('id', $mofGroups->pluck('code')->flatten()
+                            ->merge($cidbGroups->pluck('spec')->flatten())
+                            ->merge($gredIds)->unique()->values()->all())->get()->keyBy('id');
+
+                        $ruleText = fn ($rule) => strtoupper((string) $rule) === 'AND' ? 'DAN' : 'ATAU';
+                        $senarai  = fn ($ids) => collect($ids)->map(fn ($id) => $codeMap->get($id))->filter()->values();
+                    @endphp
+
+                    @if ($mofGroups->isNotEmpty() || $cidbGroups->isNotEmpty() || $gredIds->isNotEmpty())
+                        <hr class="my-4">
+
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                                fill="none" stroke="var(--sg-red)" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                            </svg>
+                            <span class="fw-bold text-dark text-uppercase small">Kod Bidang</span>
+                        </div>
+                        <p class="text-muted small mb-3">Syarat pendaftaran bagi projek ini.</p>
+
+                        @if ($mofGroups->isNotEmpty())
+                            <label class="form-label">Kod Bidang MOF</label>
+                            <div class="border rounded p-3 mb-3 small">
+                                @foreach ($mofGroups as $group)
+                                    @foreach ($senarai($group['code']) as $code)
+                                        @if (! $loop->first)
+                                            <div class="fw-bold text-secondary my-1">{{ $ruleText($group['logic_mid']) }}</div>
+                                        @endif
+                                        <div>{{ $code->label }}</div>
+                                    @endforeach
+                                    @if (! $loop->last)
+                                        <div class="fw-bold text-secondary my-2">{{ $ruleText($group['join_rule']) }}</div>
+                                    @endif
+                                @endforeach
+                            </div>
+                        @endif
+
+                        @if ($mofGroups->isNotEmpty() && ($cidbGroups->isNotEmpty() || $gredIds->isNotEmpty()))
+                            <div class="fw-bold text-secondary small mb-3">{{ $ruleText($p->mof_cidb_rule ?? 'AND') }}</div>
+                        @endif
+
+                        @if ($gredIds->isNotEmpty())
+                            <label class="form-label">Gred CIDB</label>
+                            <div class="border rounded p-3 mb-3 small">
+                                @foreach ($senarai($gredIds) as $code)
+                                    <div>{{ $code->label }}</div>
+                                @endforeach
+                            </div>
+                        @endif
+
+                        @if ($cidbGroups->isNotEmpty())
+                            <label class="form-label">Pengkhususan CIDB</label>
+                            <div class="border rounded p-3 mb-0 small">
+                                @foreach ($cidbGroups as $group)
+                                    @foreach ($senarai($group['spec']) as $code)
+                                        @if (! $loop->first)
+                                            <div class="fw-bold text-secondary my-1">{{ $ruleText($group['logic_mid']) }}</div>
+                                        @endif
+                                        <div>{{ $code->label }}</div>
+                                    @endforeach
+                                    @if (! $loop->last)
+                                        <div class="fw-bold text-secondary my-2">{{ $ruleText($group['join_rule']) }}</div>
+                                    @endif
+                                @endforeach
+                            </div>
+                        @endif
+                    @endif
+
                 </div>
             </div>
             <!-- END STEP 1 -->
@@ -423,17 +498,22 @@
                                 <tr>
                                     <td class="ps-4 fw-semibold">1</td>
                                     <td>
-                                        <a href="#" download
-                                            class="fw-semibold text-decoration-none d-inline-flex align-items-center gap-2">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
-                                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                                stroke-linejoin="round">
-                                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                                <polyline points="7 10 12 15 17 10"></polyline>
-                                                <line x1="12" y1="15" x2="12" y2="3"></line>
-                                            </svg>
-                                            {{ $p->bq_filename ?? 'Dokumen BQ.pdf' }}
-                                        </a>
+                                        @if (! empty($p->has_bq))
+                                            <a href="{{ route('lantikan.downloadDocument', [$p->id, 'bq']) }}"
+                                                target="_blank" rel="noopener noreferrer"
+                                                class="fw-semibold text-decoration-none d-inline-flex align-items-center gap-2">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                                    stroke-linejoin="round">
+                                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                                    <polyline points="7 10 12 15 17 10"></polyline>
+                                                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                                                </svg>
+                                                {{ $p->bq_filename ?? 'Dokumen BQ.pdf' }}
+                                            </a>
+                                        @else
+                                            <span class="text-muted">{{ $p->bq_filename ?? 'Tiada Dokumen BQ' }}</span>
+                                        @endif
                                     </td>
                                     <td class="pe-4 text-center">
                                         <label for="input-muatnaik-bq" id="muatnaik-bq-btn"
@@ -630,10 +710,26 @@
             $(this).val(val);
         });
 
-        $('#sebutHargaForm').on('submit', function () {
+        $('#sebutHargaForm').on('submit', function (e) {
             $(this).find('.amount-input').each(function () {
                 $(this).val($(this).val().replace(/,/g, ''));
             });
+
+            var bqInput = document.getElementById('input-muatnaik-bq');
+            var hasBq = bqInput && bqInput.files && bqInput.files.length > 0;
+            var harga = parseFloat(String($('[name="harga_tawaran"]').val() || '0').replace(/,/g, ''));
+
+            if (!harga || harga <= 0) {
+                e.preventDefault();
+                alert('Sila masukkan harga tawaran sebelum menghantar.');
+                return false;
+            }
+
+            if (!hasBq) {
+                e.preventDefault();
+                alert('Sila muat naik Dokumen BQ yang telah dilengkapkan sebelum menghantar.');
+                return false;
+            }
         });
     </script>
 @endsection

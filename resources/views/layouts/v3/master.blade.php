@@ -7,6 +7,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="_token" content="{{ csrf_token() }}">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Sistem Perolehan Selangor</title>
 
     <link rel="apple-touch-icon" sizes="120x120" href="{{ asset('favicon/apple-touch-icon.png') }}">
@@ -29,6 +30,7 @@
     <link href="{{ asset('css/components/content-card.css') }}" rel="stylesheet">
     <link href="{{ asset('css/components/badges.css') }}" rel="stylesheet">
     <link href="{{ asset('css/components/toast.css') }}" rel="stylesheet">
+    <link href="{{ asset('css/components/modal-confirm.css') }}" rel="stylesheet">
 
     <!-- Bootstrap Icons (bi-*); used by penilaian & other v3 screens -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" crossorigin="anonymous">
@@ -428,13 +430,16 @@
             opacity: 0.9;
         }
 
-        /* Level 2 submenu — Penilaian Kewangan (Kerja) list */
+        /* Level 2 submenu — single nested item (e.g. Cipta Projek -> Senarai Projek) */
         .sub-submenu {
-            margin: 2px 0.5rem 4px 0.5rem;
-            padding: 4px 0;
-            border-radius: 8px;
-            background: rgba(0, 0, 0, 0.18);
-            border-left: 2px solid rgba(255, 255, 255, 0.1);
+            margin: 2px 0.5rem 4px 1.5rem;
+            padding-left: 0.5rem;
+            border-left: 2px solid rgba(255, 255, 255, 0.15);
+        }
+
+        .sub-submenu .submenu-item {
+            padding-top: 0.55rem;
+            padding-bottom: 0.55rem;
         }
 
         /* Level 3 submenu — Borang children */
@@ -456,6 +461,12 @@
             flex-direction: column;
             width: calc(100% - var(--sidebar-width));
             transition: margin-left var(--transition-speed) ease-in-out;
+        }
+
+        /* Vendor (and any layout without sidebar) — no left gap */
+        .page-container.no-sidebar .main-wrapper {
+            margin-left: 0;
+            width: 100%;
         }
 
         /* ===== TOPBAR ===== */
@@ -804,7 +815,10 @@
 </head>
 
 <body>
-    <div class="page-container">
+    @php
+        $hideSidebar = ! auth()->check() || auth()->user()->hasRole('Vendor');
+    @endphp
+    <div class="page-container {{ $hideSidebar ? 'no-sidebar' : '' }}">
 
         @include('layouts.v3.sidebar')
 
@@ -816,17 +830,42 @@
             <div class="content-wrapper">
                 <div class="content-container">
                     @include('layouts._notification')
+
+                    @if (auth()->check() && auth()->user()->requiresTwoFactor() && !auth()->user()->hasTwoFactorEnabled() && !request()->routeIs('2fa.setup', '2fa.confirm', '2fa.manage'))
+                        @php
+                            $twoFactorPending = auth()->user()->twoFactorAuth;
+                        @endphp
+                        @if ($twoFactorPending && $twoFactorPending->required_since)
+                            @php
+                                $twoFactorDeadline = $twoFactorPending->required_since->copy()
+                                    ->addDays(\App\TwoFactorSetting::current()->grace_period_days);
+                            @endphp
+                            @if (now()->lessThanOrEqualTo($twoFactorDeadline))
+                                <div class="alert alert-info alert-dismissible" role="alert">
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                    Anda perlu mendayakan pengesahan dua faktor sebelum {{ $twoFactorDeadline->format('d/m/Y') }}.
+                                    <a href="{{ route('2fa.setup') }}" class="alert-link">Sediakan sekarang</a>.
+                                </div>
+                            @endif
+                        @endif
+                    @endif
+
                     @yield('content')
                 </div>
             </div>
         </div>
     </div>
 
+    @include('components.success-modal')
+    @include('components.confirm-dialog-modal')
     @stack('modals')
 
     <!-- Scripts -->
-    <script src="{{ asset('js/toast.js') }}"></script>
     <script src="{{ asset('js/modern.js') }}"></script>
+    <script src="{{ asset('js/toast.js') }}"></script>
+    <script src="{{ asset('js/success-modal.js') }}"></script>
+    <script src="{{ asset('js/confirm-modal.js') }}"></script>
+    <script src="{{ asset('js/ic-input.js') }}"></script>
     <!-- Bootbox 6.x -->
     <script src="{{ asset('packages/bootbox/bootbox.js') }}"></script>
     <!-- Selectize.js -->
@@ -937,7 +976,7 @@
 
         var botmanWidget = {
             title           : 'Lela (Bot)',
-            introMessage    : 'Hi, saya Lela. Saya di sini untuk membantu anda dan menjawab persoalan anda.',
+            introMessage    : 'Hai, saya Lela — pembantu SUKSEL. Saya boleh bantu dengan panduan, status permohonan, aduan, dan soalan lazim (FAQ). Menu pilihan akan dipaparkan sebentar lagi.',
             mainColor       : '#c41e3a',
             aboutText       : '',
             bubbleBackground: '#c41e3a',
@@ -946,6 +985,7 @@
             desktopWidth    : 400,
             bubbleAvatarUrl : '{{ asset('images/chatbot.png') }}',
             placeholderText : 'Hantar Pesanan..',
+            chatServer      : "{{ url('botman') }}",
             frameEndpoint   : "{{ route('chat_widget', ['chat_id' => $chat_id]) }}",
             userId          : "{{ $chat_id }}"
         };

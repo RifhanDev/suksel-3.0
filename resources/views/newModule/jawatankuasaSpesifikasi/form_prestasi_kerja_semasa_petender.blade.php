@@ -139,14 +139,15 @@
                         <thead>
                             <tr>
                                 <th class="text-center py-3" style="width:44px;">Bil.</th>
-                                <th class="py-3" style="min-width:160px;">Nama Ringkas Kerja Semasa</th>
+                                <th class="py-3" style="min-width:160px;">Tajuk Projek</th>
                                 <th class="py-3" style="min-width:130px;">No. Kontrak Kerja Semasa</th>
                                 <th class="text-end py-3" style="min-width:120px;">Harga Kontrak (RM)</th>
+                                <th class="text-end py-3" style="min-width:140px;">Wang Kos Prima (RM)</th>
+                                <th class="text-end py-3" style="min-width:150px;">Wang Peruntukan Semasa (RM)</th>
                                 <th class="py-3" style="min-width:120px;">Tarikh Pemilikan Tapak</th>
                                 <th class="text-center py-3" style="min-width:100px;">Tempoh Kontrak (Hari) (P)</th>
                                 <th class="py-3" style="min-width:140px;">Tarikh Siap Kontrak <span class="fw-normal">(termasuk EOT diluluskan)</span></th>
                                 <th class="py-3" style="min-width:120px;">Tarikh Penilaian Kemajuan</th>
-                                <th class="text-center py-3" style="min-width:110px;">Luputan Tarikh Siap Kontrak (Hari) (D)</th>
                                 <th class="text-center py-3" style="min-width:100px;">Peratus Kemajuan Sebenar Dicapai (A) (%)</th>
                                 <th class="text-center py-3" style="min-width:100px;">Peratus Kemajuan Mengikut Jadual (S) (%)</th>
                                 @unless($viewOnly)
@@ -272,31 +273,33 @@ $(document).ready(function () {
         if (old('nama')) {
             $prestasiItems = collect(old('nama', []))->map(function ($nama, $index) {
                 return [
-                    'nama'             => $nama,
-                    'no_kontrak'       => old('no_kontrak.' . $index),
-                    'harga'            => old('harga.' . $index),
-                    'tarikh_tapak'     => old('tarikh_tapak.' . $index),
-                    'tempoh'           => old('tempoh.' . $index),
-                    'tarikh_siap'      => old('tarikh_siap.' . $index),
-                    'tarikh_penilaian' => old('tarikh_penilaian.' . $index),
-                    'luputan'          => old('luputan.' . $index),
-                    'kemajuan_sebenar' => old('kemajuan_sebenar.' . $index),
-                    'kemajuan_jadual'  => old('kemajuan_jadual.' . $index),
+                    'nama'                   => $nama,
+                    'no_kontrak'             => old('no_kontrak.' . $index),
+                    'harga'                  => old('harga.' . $index),
+                    'wang_kos_prima'         => old('wang_kos_prima.' . $index),
+                    'wang_peruntukan_semasa' => old('wang_peruntukan_semasa.' . $index),
+                    'tarikh_tapak'           => old('tarikh_tapak.' . $index),
+                    'tempoh'                 => old('tempoh.' . $index),
+                    'tarikh_siap'            => old('tarikh_siap.' . $index),
+                    'tarikh_penilaian'       => old('tarikh_penilaian.' . $index),
+                    'kemajuan_sebenar'       => old('kemajuan_sebenar.' . $index),
+                    'kemajuan_jadual'        => old('kemajuan_jadual.' . $index),
                 ];
             })->values()->toArray();
         } else {
             $prestasiItems = isset($prestasi) ? $prestasi->items->map(function ($item) {
                 return [
-                    'nama'             => $item->nama,
-                    'no_kontrak'       => $item->no_kontrak,
-                    'harga'            => floatval($item->harga),
-                    'tarikh_tapak'     => $item->tarikh_tapak,
-                    'tempoh'           => $item->tempoh,
-                    'tarikh_siap'      => $item->tarikh_siap,
-                    'tarikh_penilaian' => $item->tarikh_penilaian,
-                    'luputan'          => $item->luputan,
-                    'kemajuan_sebenar' => $item->kemajuan_sebenar,
-                    'kemajuan_jadual'  => $item->kemajuan_jadual,
+                    'nama'                   => $item->nama,
+                    'no_kontrak'             => $item->no_kontrak,
+                    'harga'                  => floatval($item->harga),
+                    'wang_kos_prima'         => $item->wang_kos_prima !== null ? floatval($item->wang_kos_prima) : null,
+                    'wang_peruntukan_semasa' => $item->wang_peruntukan_semasa !== null ? floatval($item->wang_peruntukan_semasa) : null,
+                    'tarikh_tapak'           => $item->tarikh_tapak,
+                    'tempoh'                 => $item->tempoh,
+                    'tarikh_siap'            => $item->tarikh_siap,
+                    'tarikh_penilaian'       => $item->tarikh_penilaian,
+                    'kemajuan_sebenar'       => $item->kemajuan_sebenar,
+                    'kemajuan_jadual'        => $item->kemajuan_jadual,
                 ];
             })->toArray() : [];
         }
@@ -315,19 +318,22 @@ $(document).ready(function () {
     function buildRow(bil, data) {
         data = data || {};
         var hargaFmt = data.harga ? fmtAmt(data.harga) : '';
+        var wkpFmt = (data.wang_kos_prima !== null && data.wang_kos_prima !== undefined && data.wang_kos_prima !== '') ? fmtAmt(data.wang_kos_prima) : '';
+        var wpsFmt = (data.wang_peruntukan_semasa !== null && data.wang_peruntukan_semasa !== undefined && data.wang_peruntukan_semasa !== '') ? fmtAmt(data.wang_peruntukan_semasa) : '';
         var actionCol = VIEW_ONLY ? '' :
             '<td class="text-center"><div class="d-inline-flex align-items-center justify-content-center">' + DELETE_BTN + '</div></td>';
 
         return $('<tr class="prestasi-row">' +
             '<td class="text-center row-bil fw-semibold text-muted" style="font-size:0.8rem;">' + bil + '</td>' +
-            '<td><input type="text" name="nama[]" class="form-control form-control-sm field-nama" placeholder="Nama ringkas..." value="' + esc(data.nama) + '"' + ro() + '></td>' +
+            '<td><input type="text" name="nama[]" class="form-control form-control-sm field-nama" placeholder="Tajuk projek..." value="' + esc(data.nama) + '"' + ro() + '></td>' +
             '<td><input type="text" name="no_kontrak[]" class="form-control form-control-sm" placeholder="No. kontrak..." value="' + esc(data.no_kontrak) + '"' + ro() + '></td>' +
             '<td><input type="text" name="harga[]" class="form-control form-control-sm text-end field-harga" placeholder="0.00" value="' + hargaFmt + '"' + ro() + '></td>' +
+            '<td><input type="text" name="wang_kos_prima[]" class="form-control form-control-sm text-end field-harga" placeholder="0.00" value="' + wkpFmt + '"' + ro() + '></td>' +
+            '<td><input type="text" name="wang_peruntukan_semasa[]" class="form-control form-control-sm text-end field-harga" placeholder="0.00" value="' + wpsFmt + '"' + ro() + '></td>' +
             '<td><input type="text" name="tarikh_tapak[]" class="form-control form-control-sm pk-date" placeholder="dd/mm/yyyy" value="' + esc(data.tarikh_tapak) + '" readonly' + dis() + '></td>' +
             '<td><input type="number" name="tempoh[]" class="form-control form-control-sm text-center" placeholder="0" min="0" value="' + esc(data.tempoh) + '"' + ro() + '></td>' +
             '<td><input type="text" name="tarikh_siap[]" class="form-control form-control-sm pk-date" placeholder="dd/mm/yyyy" value="' + esc(data.tarikh_siap) + '" readonly' + dis() + '></td>' +
             '<td><input type="text" name="tarikh_penilaian[]" class="form-control form-control-sm pk-date" placeholder="dd/mm/yyyy" value="' + esc(data.tarikh_penilaian) + '" readonly' + dis() + '></td>' +
-            '<td><input type="number" name="luputan[]" class="form-control form-control-sm text-center" placeholder="0" min="0" value="' + esc(data.luputan) + '"' + ro() + '></td>' +
             '<td><input type="number" name="kemajuan_sebenar[]" class="form-control form-control-sm text-center" placeholder="0" min="0" max="100" step="0.01" value="' + esc(data.kemajuan_sebenar) + '"' + ro() + '></td>' +
             '<td><input type="number" name="kemajuan_jadual[]" class="form-control form-control-sm text-center" placeholder="0" min="0" max="100" step="0.01" value="' + esc(data.kemajuan_jadual) + '"' + ro() + '></td>' +
             actionCol +
@@ -386,20 +392,6 @@ $(document).ready(function () {
                 $(this).find(':input').prop('disabled', true);
             }
         });
-
-        var hasContent = false;
-        $('#tbl-prestasi-body .field-nama').each(function () {
-            if (!$(this).prop('disabled') && $(this).val().trim()) {
-                hasContent = true;
-                return false;
-            }
-        });
-
-        if (!hasContent) {
-            e.preventDefault();
-            $('#tbl-prestasi-body .prestasi-row :input').prop('disabled', false);
-            alert('Sila isi sekurang-kurangnya satu baris prestasi kerja semasa.');
-        }
     });
 
     $('#file-chip-list-prestasi').on('click', '.btn-delete-file', function () {
@@ -419,13 +411,14 @@ $(document).ready(function () {
     });
 
     if (!VIEW_ONLY) {
-        FileUpload.init({
-            zoneId     : 'upload-zone-prestasi',
-            inputId    : 'input-dokumen-prestasi',
-            chipListId : 'file-chip-list-prestasi'
-        });
+        if (typeof FileUpload !== 'undefined' && typeof FileUpload.init === 'function') {
+            FileUpload.init({
+                zoneId     : 'upload-zone-prestasi',
+                inputId    : 'input-dokumen-prestasi',
+                chipListId : 'file-chip-list-prestasi'
+            });
+        }
     }
-
 });
 </script>
 @endsection

@@ -267,7 +267,7 @@
 						<div class="mb-3">
 							<label class="form-label">Alamat Emel</label>
 							<input type="email" class="form-control @error('email') is-invalid @enderror" name="email"
-								placeholder="nama@syarikat.com" value="{{ old('email') }}" required autocomplete="email" autofocus>
+								placeholder="nama@syarikat.com" value="{{ old('email') }}" required autocomplete="off" autofocus>
 							@error('email')
 								<div class="invalid-feedback d-block small mt-1">{{ $message }}</div>
 							@enderror
@@ -282,7 +282,7 @@
 								</a>
 							</div>
 							<input type="password" class="form-control @error('password') is-invalid @enderror" name="password"
-								placeholder="••••••••" required autocomplete="current-password">
+								placeholder="••••••••" required autocomplete="off">
 							@error('password')
 								<div class="invalid-feedback d-block small mt-1">{{ $message }}</div>
 							@enderror

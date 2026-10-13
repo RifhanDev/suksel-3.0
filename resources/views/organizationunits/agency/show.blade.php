@@ -1,7 +1,21 @@
 @extends('layouts.v3.master')
+
+@php
+	// Dikira sekali dan digunakan semula oleh pengepala jadual dan konfigurasi
+	// kolum DataTable di bawah — kedua-duanya mesti sepadan susunannya.
+	$isInternal = Auth::check() && App\Tender::canViewInternal($organizationunit->id);
+	$canUpdate  = Auth::check() && App\Tender::canShowUpdate($organizationunit->id);
+@endphp
+
+@push('scripts')
+	<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+@endpush
+
+@push('modals')
+	@include('partials._pilih_peringkat_modal')
+@endpush
+
 @section('content')
-	<div class="row">
-		<div class="col-lg-9">
 			<div class="page-header">
 				<div class="page-title">
 					<div class="page-pretitle">
@@ -123,127 +137,58 @@
 
 						<div class="col-md-10">
 							<div class="table-responsive">
-								<table class="DT-show table table-vcenter table-mobile-md" data-path="{{ $path }}">
+								<table class="DT-show table table-modern w-100 mb-0" data-path="{{ $path }}">
 									<thead>
 										<tr>
-											<th>
-												<i class="ti ti-file-text me-1"></i>No / Tajuk
-											</th>
-											<th class="w-15">
-												<i class="ti ti-code me-1"></i>Kod Bidang
-											</th>
-											<th class="w-15">
-												<i class="ti ti-calendar me-1"></i>Tarikh Jual
-											</th>
-											<th class="w-15">
-												<i class="ti ti-calendar me-1"></i>Tarikh Tutup
-											</th>
-											<th class="w-15">
-												<i class="ti ti-currency-ringgit me-1"></i>Harga Dokumen
-											</th>
-											@if (Auth::check() && App\Tender::canShowUpdate($organizationunit->id))
-												<th class="w-10">
-													<i class="ti ti-status-change me-1"></i>Status
-												</th>
+											<th>No / Tajuk</th>
+											<th width="180px">Kod Bidang</th>
+											<th width="150px">Tarikh Jual</th>
+											<th width="150px">Tarikh Tutup</th>
+											<th width="150px">Harga Dokumen</th>
+											@if ($isInternal)
+												<th width="150px">Status</th>
+												<th width="170px">Tindakan</th>
 											@endif
-											@if (Auth::check() && App\Tender::canShowUpdate($organizationunit->id))
-												<th class="w-10">
-													<i class="ti ti-calendar me-1"></i>Jadual
-												</th>
-												<th class="w-10">
-													<i class="ti ti-settings me-1"></i>Tindakan
-												</th>
-												
+											@if ($canUpdate)
+												<th width="110px">Jadual</th>
 											@endif
 										</tr>
 									</thead>
-									<tbody>
-									</tbody>
+									<tbody></tbody>
 								</table>
 							</div>
 						</div>
 					</div>
 				</div>
 			</div>
-		</div>
 
-		<div class="col-lg-3">
-			<div class="row">
-				<div class="col-12">
-					@include('layouts._register')
-				</div>
-				<div class="col-12">
-					@include('layouts._news')
-				</div>
-			</div>
-		</div>
-	</div>
 @endsection
 
 @section('scripts')
 	<script>
-		var canUpdate = {!! json_encode(Auth::check() && App\Tender::canShowUpdate($organizationunit->id)) !!};
+		var isInternal = {!! json_encode($isInternal) !!};
+		var canUpdate  = {!! json_encode($canUpdate) !!};
 
 		$('.DT-show').each(function() {
 			var target = $(this);
 			var path = target.data('path');
 
+			// Susunan mesti sepadan dengan <th> dalam jadual di atas.
+			var columns = [
+				{ data: 'name', name: 'name' },
+				{ data: 'codes', name: 'codes' },
+				{ data: 'document_start_date', name: 'document_start_date' },
+				{ data: 'submission_datetime', name: 'submission_datetime' },
+				{ data: 'price', name: 'price' }
+			];
+
+			if (isInternal) {
+				columns.push({ data: 'status', name: 'status' });
+				columns.push({ data: 'actions', name: 'actions', orderable: false, searchable: false });
+			}
+
 			if (canUpdate) {
-				var columns = [{
-						data: 'name',
-						name: 'name'
-					},
-					{
-						data: 'codes',
-						name: 'codes'
-					},
-					{
-						data: 'document_start_date',
-						name: 'document_start_date'
-					},
-					{
-						data: 'submission_datetime',
-						name: 'submission_datetime'
-					},
-					{
-						data: 'price',
-						name: 'price'
-					},
-					{
-						data: 'actions',
-						name: 'actions'
-					},
-					{
-						data: 'report',
-						name: 'report'
-					},
-					{
-						data: 'status',
-						name: 'status'
-					},
-				];
-			} else {
-				var columns = [{
-						data: 'name',
-						name: 'name'
-					},
-					{
-						data: 'codes',
-						name: 'codes'
-					},
-					{
-						data: 'document_start_date',
-						name: 'document_start_date'
-					},
-					{
-						data: 'submission_datetime',
-						name: 'submission_datetime'
-					},
-					{
-						data: 'price',
-						name: 'price'
-					},
-				];
+				columns.push({ data: 'report', name: 'report', orderable: false, searchable: false });
 			}
 
 			var DT = target.DataTable({
@@ -278,4 +223,5 @@
 			});
 		});
 	</script>
+	@include('partials._pilih_peringkat_script')
 @endsection

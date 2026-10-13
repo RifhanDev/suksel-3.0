@@ -55,6 +55,12 @@
 						</a>
 					</li>
 					<li>
+						<a class="dropdown-item" href="{{ url('dashboard?tab=ebidding') }}">
+							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V10"></path><path d="M18 20V4"></path><path d="M6 20v-4"></path></svg>
+							Bidaan
+						</a>
+					</li>
+					<li>
 						<a class="dropdown-item" href="{{ action('VendorsController@certificate', $user->vendor->id) }}" target="_blank">
 							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"></rect><path d="M7 7h10M7 12h10M7 17h4"></path></svg>
 							Papar Sijil Pengesahan
@@ -80,6 +86,12 @@
 					<a class="dropdown-item" href="{{ asset('profile') }}">
 						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
 						Profil Saya
+					</a>
+				</li>
+				<li>
+					<a class="dropdown-item" href="{{ route('2fa.manage') }}">
+						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+						Keselamatan Akaun (2FA)
 					</a>
 				</li>
 				<li>

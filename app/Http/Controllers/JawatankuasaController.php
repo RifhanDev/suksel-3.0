@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Jawatankuasa;
+use App\Services\StosBackendClient;
 use App\Services\TenderProcessStatusService;
 use App\Tender;
 use App\User;
@@ -11,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class JawatankuasaController extends Controller
 {
@@ -29,7 +31,12 @@ class JawatankuasaController extends Controller
     {
         $tenderUuid = $request->input('tender');
         if (!empty($tenderUuid)) {
-            $tender = Tender::where('uuid', $tenderUuid)->first();
+            $tender = Tender::with('kaedahDokumen')->where('uuid', $tenderUuid)->first();
+            if ($tender && $tender->usesIklanDokumen()) {
+                return redirect()
+                    ->route('penyediaanIklan.show', $tender->id)
+                    ->with('error', 'Kaedah dokumen ini tidak memerlukan pelantikan jawatankuasa. Sila teruskan ke Penyediaan Iklan.');
+            }
             if ($tender) {
                 $tender->update(['tender_peringkat' => 2]);
             }
@@ -44,7 +51,12 @@ class JawatankuasaController extends Controller
     {
         $tenderUuid = $request->input('tender');
         if (!empty($tenderUuid)) {
-            $tender = Tender::where('uuid', $tenderUuid)->first();
+            $tender = Tender::with('kaedahDokumen')->where('uuid', $tenderUuid)->first();
+            if ($tender && $tender->usesIklanDokumen()) {
+                return redirect()
+                    ->route('penyediaanIklan.show', $tender->id)
+                    ->with('error', 'Kaedah dokumen ini tidak memerlukan pelantikan jawatankuasa. Sila teruskan ke Penyediaan Iklan.');
+            }
             if ($tender) {
                 $tender->update(['tender_peringkat' => 1]);
             }
@@ -73,6 +85,9 @@ class JawatankuasaController extends Controller
             'tender_uuid' => ['required', 'string', 'exists:tenders,uuid'],
             'jenis' => ['required', Rule::in($supportedJenis)],
             'catatan' => ['nullable', 'string'],
+            'tarikh_mesyuarat' => ['nullable', 'date'],
+            'masa_mesyuarat' => ['nullable', 'string', 'max:10'],
+            'lokasi_mesyuarat' => ['nullable', 'string', 'max:255'],
             'rows' => ['nullable', 'array'],
             'rows.*.user_id' => ['nullable', 'integer', 'exists:users,id'],
             'rows.*.p_p' => ['nullable', Rule::in(['0', '1'])],
@@ -86,16 +101,19 @@ class JawatankuasaController extends Controller
         $jenis = $validated['jenis'];
         $catatan = $this->normalizeCatatan($validated['catatan'] ?? null);
         $rows = $this->normalizeRows($validated['rows'] ?? []);
+        $this->assertRowsBelongToInvolvedAgencies($tender, $rows);
+        $meeting = $jenis === 'spec' ? $this->normalizeMeeting($validated) : [];
 
         try {
-            DB::transaction(function () use ($request, $tender, $jenis, $catatan, $rows) {
+            DB::transaction(function () use ($request, $tender, $jenis, $catatan, $rows, $meeting) {
                 $this->persistJenisDraft(
                     $request,
                     $tender,
                     $jenis,
                     $catatan,
                     $rows,
-                    'dokumen_sokongan'
+                    'dokumen_sokongan',
+                    $meeting
                 );
             });
         } catch (\Throwable $e) {
@@ -126,6 +144,9 @@ class JawatankuasaController extends Controller
         foreach ($supportedJenis as $jenis) {
             $rules["tabs.$jenis"] = ['nullable', 'array'];
             $rules["tabs.$jenis.catatan"] = ['nullable', 'string'];
+            $rules["tabs.$jenis.tarikh_mesyuarat"] = ['nullable', 'date'];
+            $rules["tabs.$jenis.masa_mesyuarat"] = ['nullable', 'string', 'max:10'];
+            $rules["tabs.$jenis.lokasi_mesyuarat"] = ['nullable', 'string', 'max:255'];
             $rules["tabs.$jenis.rows"] = ['nullable', 'array'];
             $rules["tabs.$jenis.rows.*.user_id"] = ['nullable', 'integer', 'exists:users,id'];
             $rules["tabs.$jenis.rows.*.p_p"] = ['nullable', Rule::in(['0', '1'])];
@@ -136,6 +157,11 @@ class JawatankuasaController extends Controller
         $validated = $request->validate($rules);
         $tender = Tender::where('uuid', $validated['tender_uuid'])->firstOrFail();
         $tabsInput = $validated['tabs'] ?? [];
+
+        foreach ($supportedJenis as $jenis) {
+            $tabRows = $this->normalizeRows($tabsInput[$jenis]['rows'] ?? []);
+            $this->assertRowsBelongToInvolvedAgencies($tender, $tabRows);
+        }
 
         try {
             DB::transaction(function () use ($request, $tender, $supportedJenis, $tabsInput) {
@@ -150,6 +176,7 @@ class JawatankuasaController extends Controller
                     $tabData = $hasTabInput ? ($tabsInput[$jenis] ?? []) : [];
                     $catatan = $this->normalizeCatatan($tabData['catatan'] ?? null);
                     $rows = $this->normalizeRows($tabData['rows'] ?? []);
+                    $meeting = $jenis === 'spec' ? $this->normalizeMeeting($tabData) : [];
 
                     $this->persistJenisDraft(
                         $request,
@@ -157,7 +184,8 @@ class JawatankuasaController extends Controller
                         $jenis,
                         $catatan,
                         $rows,
-                        "tabs.$jenis.dokumen_sokongan"
+                        "tabs.$jenis.dokumen_sokongan",
+                        $meeting
                     );
                 }
             });
@@ -187,6 +215,26 @@ class JawatankuasaController extends Controller
         return $catatan === '' ? null : $catatan;
     }
 
+    private function normalizeMeeting(array $data): array
+    {
+        $tarikh = trim((string) ($data['tarikh_mesyuarat'] ?? ''));
+        $masa = trim((string) ($data['masa_mesyuarat'] ?? ''));
+        $lokasi = trim((string) ($data['lokasi_mesyuarat'] ?? ''));
+
+        return [
+            'tarikh_mesyuarat' => $tarikh === '' ? null : $tarikh,
+            'masa_mesyuarat' => $masa === '' ? null : $masa,
+            'lokasi_mesyuarat' => $lokasi === '' ? null : $lokasi,
+        ];
+    }
+
+    private function hasMeetingValue(array $meeting): bool
+    {
+        return !empty($meeting['tarikh_mesyuarat'])
+            || !empty($meeting['masa_mesyuarat'])
+            || !empty($meeting['lokasi_mesyuarat']);
+    }
+
     private function normalizeRows($rows)
     {
         return collect($rows ?? [])
@@ -209,7 +257,8 @@ class JawatankuasaController extends Controller
         string $jenis,
         ?string $catatan,
         $rows,
-        string $fileKey
+        string $fileKey,
+        array $meeting = []
     ): void {
         $existing = Jawatankuasa::where('tender_id', $tender->id)
             ->where('jenis_jawatankuasa', $jenis)
@@ -217,6 +266,23 @@ class JawatankuasaController extends Controller
 
         $docName = optional($existing->first())->dokumen_sokongan_nama;
         $docPath = optional($existing->first())->dokumen_sokongan_path;
+
+        if ($jenis === 'spec' && $meeting === []) {
+            $first = $existing->first();
+            $meeting = [
+                'tarikh_mesyuarat' => optional($first)->tarikh_mesyuarat
+                    ? optional($first)->tarikh_mesyuarat->format('Y-m-d')
+                    : null,
+                'masa_mesyuarat' => optional($first)->masa_mesyuarat,
+                'lokasi_mesyuarat' => optional($first)->lokasi_mesyuarat,
+            ];
+        }
+
+        $meetingFields = $jenis === 'spec' ? [
+            'tarikh_mesyuarat' => $meeting['tarikh_mesyuarat'] ?? null,
+            'masa_mesyuarat' => $meeting['masa_mesyuarat'] ?? null,
+            'lokasi_mesyuarat' => $meeting['lokasi_mesyuarat'] ?? null,
+        ] : [];
 
         if ($request->hasFile($fileKey)) {
             $file = $request->file($fileKey);
@@ -239,10 +305,10 @@ class JawatankuasaController extends Controller
             ->delete();
 
         if ($rows->isEmpty()) {
-            $shouldKeepMeta = !empty($catatan) || !empty($docPath);
+            $shouldKeepMeta = !empty($catatan) || !empty($docPath) || ($jenis === 'spec' && $this->hasMeetingValue($meetingFields));
 
             if ($shouldKeepMeta) {
-                Jawatankuasa::create([
+                Jawatankuasa::create(array_merge([
                     'tender_id' => $tender->id,
                     'jenis_jawatankuasa' => $jenis,
                     'p_p' => '1',
@@ -251,14 +317,14 @@ class JawatankuasaController extends Controller
                     'catatan' => $catatan,
                     'dokumen_sokongan_nama' => $docName,
                     'dokumen_sokongan_path' => $docPath,
-                ]);
+                ], $meetingFields));
             }
 
             return;
         }
 
         foreach ($rows as $row) {
-            Jawatankuasa::create([
+            Jawatankuasa::create(array_merge([
                 'tender_id' => $tender->id,
                 'jenis_jawatankuasa' => $jenis,
                 'p_p' => $row['p_p'],
@@ -267,7 +333,7 @@ class JawatankuasaController extends Controller
                 'catatan' => $catatan,
                 'dokumen_sokongan_nama' => $docName,
                 'dokumen_sokongan_path' => $docPath,
-            ]);
+            ], $meetingFields));
         }
     }
 
@@ -320,9 +386,17 @@ class JawatankuasaController extends Controller
 
         $validated = $request->validate([
             'tender_uuid' => ['required', 'string', 'exists:tenders,uuid'],
+            'tarikh_mesyuarat' => ['required', 'date'],
+            'masa_mesyuarat' => ['required', 'string', 'max:10'],
+            'lokasi_mesyuarat' => ['required', 'string', 'max:255'],
+        ], [
+            'tarikh_mesyuarat.required' => 'Sila lengkapkan tarikh, masa dan lokasi mesyuarat Jawatankuasa Spesifikasi.',
+            'masa_mesyuarat.required' => 'Sila lengkapkan tarikh, masa dan lokasi mesyuarat Jawatankuasa Spesifikasi.',
+            'lokasi_mesyuarat.required' => 'Sila lengkapkan tarikh, masa dan lokasi mesyuarat Jawatankuasa Spesifikasi.',
         ]);
 
         $tender = Tender::with('tenderer')->where('uuid', $validated['tender_uuid'])->firstOrFail();
+        $meeting = $this->normalizeMeeting($validated);
 
         $jenisLabels = [
             'spec' => 'Jawatankuasa Spesifikasi',
@@ -370,10 +444,27 @@ class JawatankuasaController extends Controller
             }
         }
 
-        $emailCount = 0;
+        Jawatankuasa::where('tender_id', $tender->id)
+            ->where('jenis_jawatankuasa', 'spec')
+            ->update([
+                'tarikh_mesyuarat' => $meeting['tarikh_mesyuarat'],
+                'masa_mesyuarat' => $meeting['masa_mesyuarat'],
+                'lokasi_mesyuarat' => $meeting['lokasi_mesyuarat'],
+            ]);
+
+        $specQueued = $this->queueSpecPemaklumanFromStos($tender, $meeting);
+        if ($specQueued instanceof \Illuminate\Http\JsonResponse) {
+            return $specQueued;
+        }
+
+        $emailCount = $specQueued;
         $useQueue = config('mail.use_queue', false);
 
         foreach ($members as $member) {
+            if ($member->jenis_jawatankuasa === 'spec') {
+                continue;
+            }
+
             if (empty($member->user) || empty($member->user->email)) {
                 continue;
             }
@@ -441,6 +532,71 @@ class JawatankuasaController extends Controller
             'message' => "Pemakluman berjaya dihantar kepada {$emailCount} ahli jawatankuasa.",
             'email_count' => $emailCount,
         ]);
+    }
+
+    /**
+     * @return int|\Illuminate\Http\JsonResponse
+     */
+    private function queueSpecPemaklumanFromStos(Tender $tender, array $meeting)
+    {
+        $stos = app(StosBackendClient::class);
+
+        if (! $stos->isConfigured()) {
+            return response()->json([
+                'message' => 'STOS backend tidak dikonfigurasi. Tidak dapat menghantar jemputan mesyuarat Jawatankuasa Spesifikasi.',
+            ], 503);
+        }
+
+        try {
+            $response = $stos->submitJawatankuasaSpesifikasiPemakluman($tender->id, $meeting);
+        } catch (\Throwable $e) {
+            Log::error('STOS spec pemakluman request failed', [
+                'tender_id' => $tender->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'message' => 'Gagal menjana emel jemputan mesyuarat Jawatankuasa Spesifikasi.',
+            ], 502);
+        }
+
+        if (! $response->successful()) {
+            return response()->json([
+                'message' => $response->json('message') ?? 'Gagal menjana emel jemputan mesyuarat Jawatankuasa Spesifikasi.',
+            ], $response->status());
+        }
+
+        $queued = 0;
+        foreach ($response->json('data.recipients') ?? [] as $recipient) {
+            $to = $recipient['to'] ?? null;
+            if (empty($to)) {
+                continue;
+            }
+
+            $result = $this->createEmailQueue(
+                $recipient['content'] ?? '',
+                $to,
+                $recipient['subject'] ?? 'Pemakluman Pelantikan Jawatankuasa Spesifikasi dan Jemputan Mesyuarat',
+                $recipient['attachments'] ?? []
+            );
+
+            if ($this->emailSendSucceeded($result)) {
+                $queued++;
+            } else {
+                Log::error('Spec pemakluman queue failed', [
+                    'to' => $to,
+                    'reason' => $result,
+                ]);
+            }
+        }
+
+        if ($queued === 0) {
+            return response()->json([
+                'message' => 'Gagal menghantar pemakluman Jawatankuasa Spesifikasi. Tiada emel yang berjaya diqueue.',
+            ], 422);
+        }
+
+        return $queued;
     }
 
     public function storeProfilPetender(Request $request)
@@ -573,22 +729,7 @@ class JawatankuasaController extends Controller
 
         $committeeDrafts = [];
         $supportedDraftJenis = $this->getSupportedJenis($tender);
-        $icUsers = User::query()
-            ->whereNotNull('ic_number')
-            ->where('ic_number', '!=', '')
-            ->orderBy('ic_number')
-            ->get(['id', 'ic_number', 'name', 'email', 'jawatan', 'gred'])
-            ->map(function ($user) {
-                return [
-                    'id' => (int) $user->id,
-                    'ic_number' => (string) $user->ic_number,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'jawatan' => $user->jawatan ?? '-',
-                    'gred' => $user->gred ?? '-',
-                ];
-            })
-            ->values();
+        $icUsers = $this->committeeIcUsers($tender);
 
         if ($tender) {
             $committeeDrafts = Jawatankuasa::with('user')
@@ -601,6 +742,11 @@ class JawatankuasaController extends Controller
 
                     return [
                         'catatan' => optional($firstRow)->catatan,
+                        'tarikh_mesyuarat' => optional($firstRow)->tarikh_mesyuarat
+                            ? optional($firstRow)->tarikh_mesyuarat->format('Y-m-d')
+                            : null,
+                        'masa_mesyuarat' => optional($firstRow)->masa_mesyuarat,
+                        'lokasi_mesyuarat' => optional($firstRow)->lokasi_mesyuarat,
                         'dokumen_sokongan_nama' => optional($firstRow)->dokumen_sokongan_nama,
                         'dokumen_sokongan_path' => optional($firstRow)->dokumen_sokongan_path,
                         'rows' => $rows
@@ -638,22 +784,7 @@ class JawatankuasaController extends Controller
 
         $committeeDrafts = [];
         $supportedDraftJenis = $this->getSupportedJenis($tender);
-        $icUsers = User::query()
-            ->whereNotNull('ic_number')
-            ->where('ic_number', '!=', '')
-            ->orderBy('ic_number')
-            ->get(['id', 'ic_number', 'name', 'email', 'jawatan', 'gred'])
-            ->map(function ($user) {
-                return [
-                    'id' => (int) $user->id,
-                    'ic_number' => (string) $user->ic_number,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'jawatan' => $user->jawatan ?? '-',
-                    'gred' => $user->gred ?? '-',
-                ];
-            })
-            ->values();
+        $icUsers = $this->committeeIcUsers($tender);
 
         if ($tender) {
             $committeeDrafts = Jawatankuasa::with('user')
@@ -666,6 +797,11 @@ class JawatankuasaController extends Controller
 
                     return [
                         'catatan' => optional($firstRow)->catatan,
+                        'tarikh_mesyuarat' => optional($firstRow)->tarikh_mesyuarat
+                            ? optional($firstRow)->tarikh_mesyuarat->format('Y-m-d')
+                            : null,
+                        'masa_mesyuarat' => optional($firstRow)->masa_mesyuarat,
+                        'lokasi_mesyuarat' => optional($firstRow)->lokasi_mesyuarat,
                         'dokumen_sokongan_nama' => optional($firstRow)->dokumen_sokongan_nama,
                         'dokumen_sokongan_path' => optional($firstRow)->dokumen_sokongan_path,
                         'rows' => $rows
@@ -691,6 +827,111 @@ class JawatankuasaController extends Controller
         }
 
         return view('tenders.pelantikan_jawatankuasa_1_peringkat', compact('tender', 'committeeDrafts', 'supportedDraftJenis', 'icUsers'));
+    }
+
+    /**
+     * Names offered for pelantikan are staff of the agencies on this tender:
+     * the tender PTJ, the project owner, and the secretariat.
+     */
+    private function committeeIcUsers(?Tender $tender)
+    {
+        if (! $tender) {
+            return collect();
+        }
+
+        return $this->committeeCandidateQuery($tender)
+            ->orderBy('ic_number')
+            ->get(['id', 'ic_number', 'name', 'email', 'jawatan', 'gred'])
+            ->map(function ($user) {
+                return [
+                    'id' => (int) $user->id,
+                    'ic_number' => (string) $user->ic_number,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'jawatan' => $user->jawatan ?? '-',
+                    'gred' => $user->gred ?? '-',
+                ];
+            })
+            ->values();
+    }
+
+    private function committeeCandidateQuery(Tender $tender)
+    {
+        $agencyIds = $this->involvedAgencyIds($tender);
+
+        return User::query()
+            ->whereIn('organization_unit_id', $agencyIds === [] ? [0] : $agencyIds)
+            ->whereNull('vendor_id')
+            ->whereNotNull('ic_number')
+            ->where('ic_number', '!=', '');
+    }
+
+    /**
+     * Tender PTJ is the project-owner agency. Creator, officer, and approver
+     * agencies cover the secretariat when that unit differs from the PTJ.
+     * The parent agency is included so a bahagian-level tender can still
+     * appoint officers registered on that parent.
+     *
+     * @return array<int, int>
+     */
+    private function involvedAgencyIds(Tender $tender): array
+    {
+        $ids = [];
+
+        if (! empty($tender->organization_unit_id)) {
+            $ids[] = (int) $tender->organization_unit_id;
+        }
+
+        $linkedUserIds = array_values(array_filter([
+            $tender->creator_id,
+            $tender->officer_id,
+            $tender->approver_id,
+        ]));
+
+        if ($linkedUserIds !== []) {
+            User::query()
+                ->whereIn('id', $linkedUserIds)
+                ->whereNotNull('organization_unit_id')
+                ->pluck('organization_unit_id')
+                ->each(function ($orgId) use (&$ids) {
+                    $ids[] = (int) $orgId;
+                });
+        }
+
+        $ids = array_values(array_unique(array_filter($ids)));
+
+        if ($ids !== []) {
+            DB::table('organization_units')
+                ->whereIn('id', $ids)
+                ->whereNotNull('parent_id')
+                ->pluck('parent_id')
+                ->each(function ($parentId) use (&$ids) {
+                    $ids[] = (int) $parentId;
+                });
+        }
+
+        return array_values(array_unique($ids));
+    }
+
+    private function assertRowsBelongToInvolvedAgencies(Tender $tender, $rows): void
+    {
+        $userIds = collect($rows)->pluck('user_id')->filter()->unique()->values();
+        if ($userIds->isEmpty()) {
+            return;
+        }
+
+        $allowedIds = $this->committeeCandidateQuery($tender)->pluck('id');
+        $alreadyAppointed = Jawatankuasa::query()
+            ->where('tender_id', $tender->id)
+            ->whereIn('user_id', $userIds)
+            ->pluck('user_id');
+
+        $rejected = $userIds->diff($allowedIds->merge($alreadyAppointed)->unique());
+        if ($rejected->isNotEmpty()) {
+            throw ValidationException::withMessages([
+                'rows' => 'Nama yang dipilih mestilah daripada agensi tender, pemilik projek atau urusetia yang terlibat.',
+            ]);
+        }
     }
 
     private function getSupportedJenis(?Tender $tender = null): array

@@ -37,9 +37,6 @@ class UserHistory extends Model
 
      	if(array_key_exists($action, self::$types)) {
 
-     		$third_party_id=null;
-
-
          $history = new self([
              	'action' => $action,
              	'user_id' => $user_id,
@@ -48,7 +45,15 @@ class UserHistory extends Model
 
          try {
              	return $history->save();   
-         } catch (Exception $e) {
+         } catch (\Throwable $e) {
+             	// Never block auth/profile flows on audit trail failures
+             	// (e.g. legacy FK pointing at users1).
+             	\Log::warning('UserHistory::log failed', [
+             		'user_id' => $user_id,
+             		'action' => $action,
+             		'error' => $e->getMessage(),
+             	]);
+
              	return false;
          }
      	}
@@ -73,6 +78,9 @@ class UserHistory extends Model
 		'password-forget' => 'Permintaan Lupa Kata Laluan',
 		'password-reset'  => 'Tukar Kata Laluan',
 		'password-update' => 'Kemaskini Kata Laluan',
+		'password-reset-sent' => 'Emel Tukar Kata Laluan Dihantar',
+		'invite-sent'     => 'Emel Jemputan Dihantar',
+		'approval'        => 'Kelulusan Akaun Agensi',
 		'activate'        => 'Aktifkan Pengguna',
 		'deactivate'      => 'Nyahaktif Pengguna'
    ];

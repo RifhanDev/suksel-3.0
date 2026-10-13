@@ -22,15 +22,25 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\BeforeMiddleware::class,
         ]);
 
-        // Web middleware group
+        // Web middleware group. EncryptCookies/VerifyCsrfToken are App-namespaced
+        // subclasses meant to REPLACE Laravel's framework defaults (standard
+        // pre-Laravel-11 convention) — they were being appended instead, so the
+        // framework's own default VerifyCsrfToken (with no except list) ran
+        // FIRST and threw a 419 for payment/fpx/respond before the app's
+        // excepted version ever got a chance to apply its exemption.
+        $middleware->web(replace: [
+            \Illuminate\Cookie\Middleware\EncryptCookies::class => \App\Http\Middleware\EncryptCookies::class,
+            // Laravel 11's actual default web-group class is ValidateCsrfToken,
+            // not the VerifyCsrfToken name App\Http\Middleware\VerifyCsrfToken
+            // extends — that name mismatch is why this replace() previously
+            // matched nothing, leaving the framework's un-excepted default in
+            // place ahead of the app's except-list version.
+            \Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class => \App\Http\Middleware\VerifyCsrfToken::class,
+        ]);
+
         $middleware->web(append: [
-            \App\Http\Middleware\EncryptCookies::class,
-            \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
-            \Illuminate\Session\Middleware\StartSession::class,
-            \Illuminate\View\Middleware\ShareErrorsFromSession::class,
-            \App\Http\Middleware\VerifyCsrfToken::class,
-            \Illuminate\Routing\Middleware\SubstituteBindings::class,
             \App\Http\Middleware\CheckUser::class,
+            \App\Http\Middleware\RequireTwoFactorSetup::class,
         ]);
 
         // API middleware group
@@ -53,8 +63,13 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
             'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
             'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
+            // Restricts an action to the Pengerusi of a given jawatankuasa,
+            // e.g. ->middleware('committee.pengerusi:open')
+            'committee.pengerusi' => \App\Http\Middleware\EnsureCommitteeChairperson::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
+        $exceptions->shouldRenderJsonWhen(function ($request) {
+            return $request->is('api/*') || $request->expectsJson();
+        });
     })->create();

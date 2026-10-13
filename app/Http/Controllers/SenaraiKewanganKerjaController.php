@@ -42,7 +42,12 @@ class SenaraiKewanganKerjaController extends Controller
             ]);
         }
 
-        // Load standard items for the "Senarai Semak Standard" modal
+        // Collect standard_item_uuids currently in use in tbl-kewangan
+        $usedStandardUuids = array_values(array_filter(
+            array_map(fn ($item) => $item['standard_item_uuid'] ?? null, $checklistData['items'] ?? [])
+        ));
+
+        // Load standard items for the "Senarai Semak Standard" modal (excluding mandatory 'borang_atas_talian' and already used items)
         $standardItems = [];
         try {
             $standardResponse = $this->api()->get($this->url('standard-checklist-items?category=kewangan_kerja'));
@@ -59,11 +64,19 @@ class SenaraiKewanganKerjaController extends Controller
         if (empty($standardItems)) {
             $standardItems = \Illuminate\Support\Facades\DB::table('standard_checklist_items')
                 ->where('category', 'kewangan_kerja')
+                ->where('type', '!=', 'borang_atas_talian')
+                ->when(!empty($usedStandardUuids), fn ($q) => $q->whereNotIn('uuid', $usedStandardUuids))
                 ->where('is_active', 1)
                 ->orderBy('sort_order')
                 ->get()
                 ->map(fn ($item) => (array) $item)
                 ->all();
+        } else {
+            $standardItems = array_values(array_filter(
+                $standardItems,
+                fn ($item) => ($item['type'] ?? '') !== 'borang_atas_talian'
+                    && !in_array($item['uuid'] ?? '', $usedStandardUuids, true)
+            ));
         }
 
         return view(
@@ -118,16 +131,30 @@ class SenaraiKewanganKerjaController extends Controller
     {
         $this->ensureAccess();
 
+        $uploadedFile = $request->file('file');
+
         $response = $this->api()
             ->attach(
                 'file',
-                $request->file('file')->get(),
-                $request->file('file')->getClientOriginalName()
+                $uploadedFile->get(),
+                $uploadedFile->getClientOriginalName()
             )
             ->post(
                 $this->url('kewangan-kerja/' . $tenderUuid . '/files'),
                 $request->except(['_token', 'file'])
             );
+
+        if ($response->successful()) {
+            $data = $response->json('data');
+            if (! empty($data['path']) && $uploadedFile) {
+                try {
+                    $cleanPath = ltrim(str_replace('public/', '', (string) $data['path']), '/');
+                    \Illuminate\Support\Facades\Storage::disk('public')->put($cleanPath, file_get_contents($uploadedFile->getRealPath()));
+                } catch (\Throwable $e) {
+                    Log::warning('SenaraiKewanganKerjaController@uploadFile: Failed to mirror file to SUKSel 3.0 storage', ['error' => $e->getMessage()]);
+                }
+            }
+        }
 
         return response()->json($response->json(), $response->status());
     }

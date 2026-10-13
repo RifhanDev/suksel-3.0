@@ -61,6 +61,9 @@
 							<a href="/dashboard" class="dropdown-item">
 								<i class="ti ti-dashboard me-2"></i> Akaun Saya
 							</a>
+							<a href="/dashboard?tab=ebidding" class="dropdown-item">
+								<i class="ti ti-chart-bar me-2"></i> Bidaan
+							</a>
 							<a href="{{ action('VendorsController@certificate', $user->vendor->id) }}" target="_blank" class="dropdown-item">
 								<i class="ti ti-certificate me-2"></i> Papar Sijil Pengesahan
 							</a>

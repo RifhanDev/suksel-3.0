@@ -13,16 +13,16 @@ class VendorActionLabel
             return 'Spesifikasi';
         }
 
-        if ($sourceType === 'borang_atas_talian' || $mechanism === 'borang_atas_talian') {
-            return 'Borang Atas Talian';
-        }
-
         if ($mechanism === 'ptj_muat_naik') {
             return match ($vendorAction) {
                 'muat_turun' => 'Muat Turun',
                 'muat_turun_naik' => 'Muat Turun dan Muat Naik',
                 default => 'Muat Turun dan Muat Naik',
             };
+        }
+
+        if ($sourceType === 'borang_atas_talian' || $mechanism === 'borang_atas_talian') {
+            return 'Borang Atas Talian';
         }
 
         return 'Muat Naik';

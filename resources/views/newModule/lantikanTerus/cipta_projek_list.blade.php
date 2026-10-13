@@ -9,7 +9,7 @@
     <!-- HEADER -->
     <div class="d-flex flex-column flex-lg-row justify-content-start align-items-start align-items-lg-center mb-4">
         <div>
-            <h3 class="fw-bold text-dark m-0" style="letter-spacing: -0.5px;">Senarai Projek Untuk Pembelian Terus</h3>
+            <h3 class="fw-bold text-dark m-0" style="letter-spacing: -0.5px;">Senarai Projek Untuk Lantikan Terus</h3>
             <p class="text-muted small m-0">Paparan senarai projek yang layak untuk proses pelantikan/pembelian terus.</p>
         </div>
     </div>

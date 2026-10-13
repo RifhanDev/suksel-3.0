@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Concerns;
 
 use App\Models\Tender;
 use App\Services\OnlineFormStatusService;
+use App\Services\StosBackendClient;
 use App\Services\VendorFormPayloadService;
 use App\Tender as LegacyTender;
 use Illuminate\Http\RedirectResponse;
@@ -19,16 +20,36 @@ trait HandlesTenderFormAccess
             abort(403);
         }
 
-        if ($user->hasRole('Admin') || $user->can('tender:specification-management')) {
+        if ($user->hasRole('Admin')) {
             return;
         }
 
-        // PTJ / Jawatankuasa / agency staff reviewing tender documents
+        if ($user->hasRole('Agency Jawatankuasa') || $user->hasRole('Jawatankuasa')) {
+            $legacy = $tender instanceof \App\Tender
+                ? $tender
+                : \App\Tender::query()->find($tender->id);
+
+            // Any appointed committee member (pembuka/teknikal/kewangan/spesifikasi/etc.)
+            // may review vendor documents during evaluation — not only Spesifikasi.
+            $reviewJenis = ['spec', 'open', 'tech', 'fin', 'eval', 'harga'];
+
+            if (! $legacy || ! $legacy->isAppointedTo($user, $reviewJenis)) {
+                abort(403, 'Anda tidak dilantik pada tender ini.');
+            }
+
+            return;
+        }
+
+        if ($user->can('tender:specification-management') || $user->can('Tender:specification-management')) {
+            return;
+        }
+
+        // PTJ / agency staff reviewing tender documents
         if (! $user->vendor_id) {
             return;
         }
 
-        if ($user->hasRole('Jawatankuasa') || $user->hasRole('Agency Admin') || $user->hasRole('Agency User') || $user->hasRole('Front Desk')) {
+        if ($user->hasRole('Jawatankuasa') || $user->hasRole('Agency Admin') || $user->hasRole('Agency User')) {
             return;
         }
 
@@ -47,11 +68,37 @@ trait HandlesTenderFormAccess
             return false;
         }
 
-        if ($user->hasRole('Admin') || $user->can('tender:specification-management')) {
+        $isStaff = $user->hasRole('Admin')
+            || $user->can('tender:specification-management')
+            || $user->hasRole('Jawatankuasa')
+            || $user->hasRole('Agency Jawatankuasa')
+            || $user->hasRole('Agency Admin')
+            || $user->hasRole('Agency User');
+
+        // Staff/committee review must not run as vendor save/edit mode,
+        // even for dual-role Vendor + Jawatankuasa/Admin accounts.
+        $queryVendorId = (int) request('vendor_id');
+        $isReviewingVendor = $queryVendorId > 0
+            && (int) ($user->vendor_id ?? 0) !== $queryVendorId;
+        $isModalReview = $queryVendorId > 0 && request()->boolean('modal');
+
+        if (
+            $isStaff && (
+                request('mode') === 'view'
+                || request()->boolean('view')
+                || $isReviewingVendor
+                || $isModalReview
+            )
+        ) {
             return false;
         }
 
-        if ($user->hasRole('Jawatankuasa') || $user->hasRole('Agency Admin') || $user->hasRole('Agency User')) {
+        // Dual-role accounts still act as vendor when filling their own tender documents.
+        if ($user->hasRole('Vendor')) {
+            return true;
+        }
+
+        if ($isStaff) {
             return false;
         }
 
@@ -172,12 +219,17 @@ trait HandlesTenderFormAccess
     protected function vendorId(): ?int
     {
         $user = auth()->user();
+        $queryVendorId = (int) request('vendor_id');
+
+        // Staff review with ?vendor_id=... must use the queried vendor, not the
+        // reviewer's own vendor_id (dual-role Vendor + Jawatankuasa).
+        if (! $this->isVendorFormMode() && $queryVendorId > 0) {
+            return $queryVendorId;
+        }
 
         if ($user?->vendor_id) {
             return (int) $user->vendor_id;
         }
-
-        $queryVendorId = (int) request('vendor_id');
 
         return $queryVendorId > 0 ? $queryVendorId : null;
     }
@@ -197,6 +249,28 @@ trait HandlesTenderFormAccess
         }
 
         app(OnlineFormStatusService::class)->markSubmitted(
+            $resolved,
+            $this->vendorId(),
+            $formKey,
+            $summary
+        );
+    }
+
+    /**
+     * @param  array<string, mixed>  $summary
+     */
+    protected function trackVendorFormDraft(Tender|LegacyTender $tender, string $formKey, array $summary = []): void
+    {
+        if (! $this->isVendorFormMode() || ! $this->vendorId()) {
+            return;
+        }
+
+        $resolved = \App\Tender::query()->find($tender->id);
+        if (! $resolved) {
+            return;
+        }
+
+        app(OnlineFormStatusService::class)->markDraft(
             $resolved,
             $this->vendorId(),
             $formKey,
@@ -427,6 +501,51 @@ trait HandlesTenderFormAccess
             'items' => is_array($local) ? ($local['items'] ?? []) : [],
             'dokumens' => is_array($local) ? ($local['dokumens'] ?? []) : [],
         ];
+    }
+
+    /**
+     * @return array{items?: array, dokumens?: array}
+     */
+    protected function fetchOnlineFormData(string $apiSlug, string $tenderUuid, ?int $vendorId): array
+    {
+        $url = StosBackendClient::apiUrl($apiSlug . '/' . $tenderUuid);
+        if ($vendorId) {
+            $url .= '?vendor_id=' . $vendorId;
+        }
+
+        $response = StosBackendClient::http()->get($url);
+
+        return $response->successful()
+            ? $this->rewriteOnlineFormDokumens($apiSlug, $tenderUuid, (array) $response->json('data'))
+            : [];
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    protected function rewriteOnlineFormDokumens(string $apiSlug, string $tenderUuid, array $data): array
+    {
+        if (empty($data['dokumens']) || ! is_array($data['dokumens'])) {
+            return $data;
+        }
+
+        $tender = LegacyTender::query()->where('uuid', $tenderUuid)->first();
+        if (! $tender) {
+            return $data;
+        }
+
+        $type = match ($apiSlug) {
+            'pengalaman-kerja' => 'pengalaman-kerja',
+            'kerja-dalam-tangan' => 'kerja-dalam-tangan',
+            default => null,
+        };
+
+        if ($type) {
+            $data['dokumens'] = \App\Http\Controllers\StosFormFileController::rewriteDokumenUrls($tender, $type, $data['dokumens']);
+        }
+
+        return $data;
     }
 
     /**

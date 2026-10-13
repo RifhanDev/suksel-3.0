@@ -49,6 +49,35 @@ class Controller extends BaseController
 			}
 			abort(403);
 		}
+
+		protected function denyUnlessMenu(string $permission)
+		{
+			$user = auth()->user();
+			if (!$user || !$user->canAccessMenu($permission)) {
+				return $this->_access_denied();
+			}
+
+			return null;
+		}
+
+		protected function menuMiddleware(string $permission, array $options = []): void
+		{
+			$middleware = $this->middleware(function ($request, $next) use ($permission) {
+				if ($denied = $this->denyUnlessMenu($permission)) {
+					return $denied;
+				}
+
+				return $next($request);
+			});
+
+			if (!empty($options['only'])) {
+				$middleware->only($options['only']);
+			}
+
+			if (!empty($options['except'])) {
+				$middleware->except($options['except']);
+			}
+		}
 		
 		protected function _validation_error($obj) {
 			$validationErrors = (is_subclass_of($obj, 'LaravelBook\Ardent\Ardent'))

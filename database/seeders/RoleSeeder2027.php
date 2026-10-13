@@ -12,17 +12,16 @@ class RoleSeeder2027 extends Seeder
      */
     public function run(): void
     {
-        // Create role 'Jawatankuasa'
         DB::table('roles')->updateOrInsert(
-            ['name' => 'Jawatankuasa'],
+            ['name' => 'Agency Jawatankuasa'],
             [
-                'name'       => 'Jawatankuasa',
+                'name'       => 'Agency Jawatankuasa',
                 'updated_at' => now(),
                 'created_at' => now(),
             ]
         );
 
-        $role = DB::table('roles')->where('name', 'Jawatankuasa')->first();
+        $role = DB::table('roles')->where('name', 'Agency Jawatankuasa')->first();
 
         // Assign permission 'Create tender specification' to the role
         $permission = DB::table('permissions')->where('name', 'specification:create')->first();

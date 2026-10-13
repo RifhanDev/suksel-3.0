@@ -19,7 +19,9 @@
     <div class="col-md-6">
         <label for="ic_number" class="form-label fw-medium small">Nombor Kad Pengenalan</label>
         <input type="text" class="form-control" id="ic_number" name="ic_number"
-            value="{{ old('ic_number', $currentUser->ic_number ?? '') }}">
+            value="{{ old('ic_number', $currentUser->ic_number ?? '') }}"
+            data-ic-input maxlength="12" inputmode="numeric"
+            title="Masukkan 12 digit No. Kad Pengenalan (sempang akan dibuang automatik)">
         {!! $errors->first('ic_number', '<div class="text-danger small mt-1">:message</div>') !!}
     </div>
 

@@ -9,23 +9,26 @@ use App\TenderVisit;
 use App\TenderVisitor;
 use App\Vendor;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 
 class LawatanTapakUrusetiaController extends Controller
 {
+    public function __construct()
+    {
+        $this->menuMiddleware('SiteVisit:list');
+    }
+
     public function index(Request $request)
     {
-        $user = auth()->user();
-        if (!$user || !$user->ability(['Admin', 'Agency Admin', 'Agency User'], [])) {
-            return $this->_access_denied();
-        }
-
         $query = Tender::query()
+            // Dahulunya diikuti where(lawatan_tapak = 1 OR hasSiteVisits). Cabang
+            // kedua itu sama dengan syarat di atas, jadi kumpulan itu sentiasa
+            // benar dan syarat lawatan_tapak tidak pernah menapis apa-apa. Ia
+            // hanya menambah satu subkueri EXISTS berkorelasi bagi setiap baris
+            // pada halaman yang sedang tamat masa. Disahkan pada pangkalan data:
+            // set tender yang dipadankan tidak berubah tanpanya.
             ->whereHas('siteVisits')
-            ->where(function ($q) {
-                $q->where('lawatan_tapak', 1)
-                    ->orWhereHas('siteVisits');
-            })
             ->where(function ($q) {
                 $q->whereHas('participants', function ($participantQuery) {
                     $participantQuery->where('participate', 1)->whereNotNull('ref_number');
@@ -40,15 +43,10 @@ class LawatanTapakUrusetiaController extends Controller
                         ->join('tender_visits as tv', 'tv.id', '=', 'tvs.visit_id')
                         ->whereColumn('tv.tender_id', 'tenders.id');
                 });
-            })
-            ->with(['tenderer', 'siteVisits'])
-            ->withCount([
-                'participants as purchases_count' => function ($q) {
-                    $q->where('participate', 1)->whereNotNull('ref_number');
-                },
-            ]);
+            });
 
-        if (!$user->hasRole('Admin') && $user->organization_unit_id) {
+        $user = auth()->user();
+        if ($user && !$user->hasRole('Admin') && $user->organization_unit_id) {
             $query->where('organization_unit_id', $user->organization_unit_id);
         }
 
@@ -74,14 +72,69 @@ class LawatanTapakUrusetiaController extends Controller
             }
         }
 
-        $tenders = $query->orderByDesc('id')->get()->map(function (Tender $tender) {
-            $tender->lawatan_status = $this->resolveTenderLawatanStatus($tender);
-            return $tender;
-        });
+        // Staging memory_limit is 128MB. Loading every matching Tender model for
+        // status + the table exhausted that limit. Keep only IDs here, then load
+        // the current page.
+        $tenderIds = $query->orderByDesc('id')->pluck('id');
+        $index = $this->loadLawatanStatusIndex($tenderIds);
 
         if ($request->status === 'belum_disiarkan') {
-            $tenders = $tenders->filter(fn ($t) => $t->lawatan_status['key'] !== 'selesai');
+            $tenderIds = $tenderIds->filter(function ($id) use ($index) {
+                $status = $this->resolveTenderLawatanStatusById((int) $id, $index);
+
+                return $status['key'] !== 'selesai';
+            })->values();
         }
+
+        $perPage = 25;
+        $page = max(1, (int) $request->input('page', 1));
+        $total = $tenderIds->count();
+        $pageIds = $tenderIds->forPage($page, $perPage)->values();
+
+        $pageTenders = $pageIds->isEmpty()
+            ? collect()
+            : Tender::query()
+                ->whereIn('id', $pageIds)
+                ->select([
+                    'id',
+                    'name',
+                    'ref_number',
+                    'no_tender',
+                    'organization_unit_id',
+                ])
+                ->with([
+                    'tenderer:id,name',
+                    'siteVisits:id,tender_id',
+                ])
+                ->withCount([
+                    'participants as purchases_count' => function ($q) {
+                        $q->where('participate', 1)->whereNotNull('ref_number');
+                    },
+                ])
+                ->get()
+                ->keyBy('id');
+
+        $tenders = $pageIds->map(function ($id) use ($pageTenders, $index) {
+            $tender = $pageTenders->get($id);
+            if (! $tender) {
+                return null;
+            }
+
+            $tender->lawatan_status = $this->resolveTenderLawatanStatusById((int) $id, $index);
+
+            return $tender;
+        })->filter()->values();
+
+        $tenders = new LengthAwarePaginator(
+            $tenders,
+            $total,
+            $perPage,
+            $page,
+            [
+                'path' => $request->url(),
+                'query' => $request->query(),
+            ]
+        );
 
         return view('newModule.lawatanTapak.index', compact('tenders'));
     }
@@ -106,13 +159,25 @@ class LawatanTapakUrusetiaController extends Controller
     {
         $tender = $this->findTenderForUrusetia($tenderId);
 
+        $rowsInput = $request->input('rows', []);
+        if (is_array($rowsInput)) {
+            foreach ($rowsInput as $i => $row) {
+                if (!is_array($row) || !array_key_exists('ic_no', $row)) {
+                    continue;
+                }
+                $digits = preg_replace('/\D+/', '', (string) $row['ic_no']);
+                $rowsInput[$i]['ic_no'] = $digits === '' ? null : substr($digits, 0, 12);
+            }
+            $request->merge(['rows' => $rowsInput]);
+        }
+
         $data = $request->validate([
             'rows' => 'array',
             'rows.*.visit_id' => 'required|integer',
             'rows.*.vendor_id' => 'nullable|integer',
             'rows.*.vendor_registration' => 'nullable|string|max:64',
             'rows.*.rep_id' => 'nullable|integer',
-            'rows.*.ic_no' => 'nullable|string|max:32',
+            'rows.*.ic_no' => 'nullable|digits:12',
             'rows.*.name' => 'nullable|string|max:255',
             'rows.*.attended' => 'nullable|boolean',
         ]);
@@ -234,7 +299,7 @@ class LawatanTapakUrusetiaController extends Controller
     protected function findTenderForUrusetia($tenderId): Tender
     {
         $user = auth()->user();
-        if (!$user || !$user->ability(['Admin', 'Agency Admin', 'Agency User'], [])) {
+        if (!$user || !$user->ability(['Admin', 'Agency Admin', 'Agency User', 'Agency Urusetia'], [])) {
             abort(403);
         }
 
@@ -332,38 +397,138 @@ class LawatanTapakUrusetiaController extends Controller
         return $rows;
     }
 
-    protected function resolveTenderLawatanStatus(Tender $tender): array
+    /**
+     * Ringkaskan status lawatan bagi semua tender dalam beberapa pertanyaan
+     * teragregat, satu baris hasil per tender.
+     *
+     * Percubaan sebelum ini memuatkan setiap baris wakil dan pelawat ke dalam
+     * PHP dan menghabiskan memory_limit di staging. Pengiraan dibuat dalam SQL
+     * di sini, jadi penggunaan memori bergantung pada bilangan tender yang
+     * dipaparkan sahaja, bukan pada bilangan rekod kehadiran.
+     *
+     * @param  \Illuminate\Support\Collection|array<int, int>  $tenderIds
+     * @return array{tracked: array, reps: array, pairs: array, required: array}
+     */
+    private function loadLawatanStatusIndex($tenderIds): array
     {
-        $visits = $tender->siteVisits;
-        $trackedVendorIds = $this->attendanceVendorIds(
-            $tender,
-            $tender->participants()->where('participate', 1)->whereNotNull('ref_number')->with('vendor')->get(),
-            $visits
-        );
+        $tenderIds = collect($tenderIds)->filter()->map(fn ($id) => (int) $id)->unique()->values()->all();
 
-        if ($trackedVendorIds === []) {
+        $required = [];
+        $tracked = [];
+        $reps = [];
+        $pairs = [];
+
+        if ($tenderIds === []) {
+            return compact('tracked', 'reps', 'pairs', 'required');
+        }
+
+        // Lawatan "required" ditentukan per tender: yang bertanda required, atau
+        // semua lawatan apabila tiada satu pun ditanda.
+        $visits = DB::table('tender_visits')
+            ->whereIn('tender_id', $tenderIds)
+            ->get(['id', 'tender_id', 'required'])
+            ->groupBy('tender_id');
+
+        foreach ($tenderIds as $tenderId) {
+            $rows = $visits->get($tenderId, collect());
+            $chosen = $rows->where('required', 1);
+            if ($chosen->isEmpty()) {
+                $chosen = $rows;
+            }
+
+            $required[$tenderId] = $chosen->pluck('id')->map(fn ($id) => (int) $id)->all();
+        }
+
+        $requiredVisitIds = collect($required)->flatten()->unique()->values()->all();
+
+        // Vendor "tracked" ialah gabungan pembeli, wakil dan pelawat. Hanya
+        // bilangan unik diperlukan, jadi ia dikira dalam SQL.
+        $pembeli = DB::table('tender_vendors')
+            ->select('tender_id', 'vendor_id')
+            ->whereIn('tender_id', $tenderIds)
+            ->where('participate', 1)
+            ->whereNotNull('ref_number')
+            ->where('vendor_id', '>', 0);
+
+        $wakil = DB::table('tender_visit_representatives as tvr')
+            ->join('tender_visits as tv', 'tv.id', '=', 'tvr.visit_id')
+            ->select('tv.tender_id', 'tvr.vendor_id')
+            ->whereIn('tv.tender_id', $tenderIds)
+            ->where('tvr.vendor_id', '>', 0);
+
+        $pelawat = DB::table('tender_visitors as tvs')
+            ->join('tender_visits as tv', 'tv.id', '=', 'tvs.visit_id')
+            ->select('tv.tender_id', 'tvs.vendor_id')
+            ->whereIn('tv.tender_id', $tenderIds)
+            ->where('tvs.vendor_id', '>', 0);
+
+        $tracked = DB::query()
+            ->fromSub($pembeli->union($wakil)->union($pelawat), 'x')
+            ->select('tender_id', DB::raw('COUNT(DISTINCT vendor_id) as n'))
+            ->groupBy('tender_id')
+            ->pluck('n', 'tender_id')
+            ->map(fn ($n) => (int) $n)
+            ->all();
+
+        if ($requiredVisitIds !== []) {
+            // Setiap wakil pada lawatan required semestinya sudah termasuk dalam
+            // set tracked (tracked merangkumi wakil bagi semua lawatan tender
+            // itu), jadi penapis "vendor mesti tracked" dalam kod asal tidak
+            // pernah menyingkirkan apa-apa dan tidak diulang di sini.
+            $reps = DB::table('tender_visit_representatives as tvr')
+                ->join('tender_visits as tv', 'tv.id', '=', 'tvr.visit_id')
+                ->whereIn('tvr.visit_id', $requiredVisitIds)
+                ->select('tv.tender_id', DB::raw('COUNT(*) as n'))
+                ->groupBy('tv.tender_id')
+                ->pluck('n', 'tender_id')
+                ->map(fn ($n) => (int) $n)
+                ->all();
+
+            // Pasangan (vendor, lawatan) yang mempunyai sekurang-kurangnya satu rekod hadir.
+            $sub = DB::table('tender_visitors as tvs')
+                ->join('tender_visits as tv', 'tv.id', '=', 'tvs.visit_id')
+                ->whereIn('tvs.visit_id', $requiredVisitIds)
+                ->where('tvs.vendor_id', '>', 0)
+                ->select('tv.tender_id as tender_id', 'tvs.visit_id', 'tvs.vendor_id')
+                ->groupBy('tv.tender_id', 'tvs.visit_id', 'tvs.vendor_id');
+
+            $pairs = DB::query()
+                ->fromSub($sub, 'y')
+                ->select('tender_id', DB::raw('COUNT(*) as n'))
+                ->groupBy('tender_id')
+                ->pluck('n', 'tender_id')
+                ->map(fn ($n) => (int) $n)
+                ->all();
+        }
+
+        return compact('tracked', 'reps', 'pairs', 'required');
+    }
+
+    /**
+     * @param  array{tracked: array, reps: array, pairs: array, required: array}  $index
+     */
+    protected function resolveTenderLawatanStatusById(int $tenderId, array $index): array
+    {
+        $trackedCount = $index['tracked'][$tenderId] ?? 0;
+
+        if ($trackedCount === 0) {
             return ['key' => 'tiada_pembeli', 'label' => 'Tiada Rekod', 'class' => 'bg-secondary'];
         }
 
-        $requiredVisits = $tender->siteVisits->where('required', 1);
-        if ($requiredVisits->isEmpty()) {
-            $requiredVisits = $tender->siteVisits;
-        }
-
-        $hasReps = TenderVisitRepresentative::whereIn('visit_id', $requiredVisits->pluck('id'))
-            ->whereIn('vendor_id', $trackedVendorIds)
-            ->exists();
-
-        if (!$hasReps) {
+        if (($index['reps'][$tenderId] ?? 0) === 0) {
             return ['key' => 'menunggu_wakil', 'label' => 'Menunggu Wakil', 'class' => 'bg-warning text-dark'];
         }
 
-        foreach ($trackedVendorIds as $vendorId) {
-            foreach ($requiredVisits as $visit) {
-                if (!TenderVisitor::hasVisit($visit->id, $vendorId)) {
-                    return ['key' => 'belum_disemak', 'label' => 'Belum Disemak', 'class' => 'bg-warning text-dark'];
-                }
-            }
+        // Selesai hanya apabila SETIAP vendor tracked mempunyai tepat satu rekod
+        // hadir pada SETIAP lawatan required — iaitu bilangan pasangan sah sama
+        // dengan bilangan vendor didarab bilangan lawatan. Vendor yang langsung
+        // tiada rekod menyumbang sifar pasangan, jadi ia gagal syarat ini sama
+        // seperti gelung bersarang yang asal.
+        $requiredCount = count($index['required'][$tenderId] ?? []);
+        $pairsOk = $index['pairs'][$tenderId] ?? 0;
+
+        if ($pairsOk !== $trackedCount * $requiredCount) {
+            return ['key' => 'belum_disemak', 'label' => 'Belum Disemak', 'class' => 'bg-warning text-dark'];
         }
 
         return ['key' => 'selesai', 'label' => 'Selesai', 'class' => 'bg-success'];

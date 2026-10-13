@@ -4,6 +4,8 @@ namespace Database\Seeders;
 
 use App\Models\User;
 use Database\Seeders\Ref\HaveNo;
+use Database\Seeders\Ref\JustifikasiPemilihanPembekal;
+use Database\Seeders\Ref\KaedahDokumenSeeder;
 use Database\Seeders\Ref\KaedahPerolehanSeeder;
 use Database\Seeders\Ref\KategoriJenisPerolehan;
 use Database\Seeders\Ref\OpenTo;
@@ -39,11 +41,13 @@ class DatabaseSeeder extends Seeder
         $this->call([
             RefLokalitisSeeder::class,
             KaedahPerolehanSeeder::class,
+            KaedahDokumenSeeder::class,
             KategoriJenisPerolehan::class,
             YesNo::class,
             SumberPeruntukan::class,
             OpenTo::class,
             HaveNo::class,
+            JustifikasiPemilihanPembekal::class,
             TypeOfContract::class,
             TypeOfPemenuhan::class,
             TypeOfTender::class,
@@ -57,6 +61,7 @@ class DatabaseSeeder extends Seeder
             PermissionSeeder::class,
             PermissionSeeder2027::class,
             PermissionRoleSeeder::class,
+            StosRolePermissionSeeder::class,
             CodesSeeder::class,
             StandardChecklistItemSeeder::class,
         ]);

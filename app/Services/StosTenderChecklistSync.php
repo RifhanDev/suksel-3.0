@@ -165,19 +165,94 @@ class StosTenderChecklistSync
                 'status' => $data['status'] ?? $header->status ?? 'draft',
             ])->save();
 
-            $this->syncChecklistItems(
-                SpesifikasiKerjaItem::class,
-                'spesifikasi_kerja_header_id',
-                $header->id,
-                $data['items'] ?? [],
-                fn (array $item) => [
+            $keptIds = [];
+            $rawItems = $data['items'] ?? [];
+
+            foreach ($rawItems as $index => $item) {
+                if (! is_array($item)) {
+                    continue;
+                }
+
+                // Nested CR-004 shape: parent Item + specs[]
+                if (array_key_exists('specs', $item) || array_key_exists('nama_item', $item) || array_key_exists('unit', $item)) {
+                    $parent = $this->upsertSpesifikasiKerjaItem($header->id, $item, [
+                        'parent_id' => null,
+                        'nama_item' => $item['nama_item'] ?? $item['item'] ?? $item['title'] ?? '',
+                        'spesifikasi' => '',
+                        'unit' => null,
+                        'kuantiti' => null,
+                        'ya_tidak' => null,
+                        'catatan' => null,
+                        'kadar' => null,
+                        'sort_order' => $item['sort_order'] ?? $index,
+                    ]);
+                    $keptIds[] = $parent->id;
+
+                    foreach ($item['specs'] ?? $item['children'] ?? [] as $specIndex => $spec) {
+                        if (! is_array($spec)) {
+                            continue;
+                        }
+
+                        $child = $this->upsertSpesifikasiKerjaItem($header->id, $spec, [
+                            'parent_id' => $parent->id,
+                            'nama_item' => null,
+                            'spesifikasi' => $spec['spesifikasi'] ?? $spec['title'] ?? '',
+                            'unit' => $spec['unit'] ?? null,
+                            'kuantiti' => $spec['kuantiti'] ?? $spec['kekerapan'] ?? null,
+                            'ya_tidak' => $spec['ya_tidak'] ?? $spec['pematuhan'] ?? null,
+                            'catatan' => $spec['catatan'] ?? null,
+                            'kadar' => $spec['kadar'] ?? null,
+                            'sort_order' => $spec['sort_order'] ?? $specIndex,
+                        ]);
+                        $keptIds[] = $child->id;
+                    }
+
+                    continue;
+                }
+
+                // Legacy flat shape
+                $record = $this->upsertSpesifikasiKerjaItem($header->id, $item, [
+                    'parent_id' => null,
+                    'nama_item' => null,
                     'spesifikasi' => $item['spesifikasi'] ?? '',
+                    'unit' => $item['unit'] ?? null,
+                    'kuantiti' => $item['kuantiti'] ?? null,
                     'ya_tidak' => $item['ya_tidak'] ?? null,
                     'catatan' => $item['catatan'] ?? null,
-                    'sort_order' => $item['sort_order'] ?? 0,
-                ]
-            );
+                    'kadar' => $item['kadar'] ?? null,
+                    'sort_order' => $item['sort_order'] ?? $index,
+                ]);
+                $keptIds[] = $record->id;
+            }
+
+            SpesifikasiKerjaItem::query()
+                ->where('spesifikasi_kerja_header_id', $header->id)
+                ->when(! empty($keptIds), fn ($query) => $query->whereNotIn('id', $keptIds))
+                ->delete();
         });
+    }
+
+    /**
+     * @param  array<string, mixed>  $source
+     * @param  array<string, mixed>  $payload
+     */
+    protected function upsertSpesifikasiKerjaItem(int $headerId, array $source, array $payload): SpesifikasiKerjaItem
+    {
+        $record = ! empty($source['uuid'])
+            ? SpesifikasiKerjaItem::query()
+                ->where('spesifikasi_kerja_header_id', $headerId)
+                ->where('uuid', $source['uuid'])
+                ->first()
+            : null;
+
+        $record ??= new SpesifikasiKerjaItem([
+            'uuid' => $source['uuid'] ?? (string) Str::uuid(),
+            'spesifikasi_kerja_header_id' => $headerId,
+        ]);
+
+        $record->fill($payload)->save();
+
+        return $record;
     }
 
     protected function syncKewanganKerja(Tender $tender): void

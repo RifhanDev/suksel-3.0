@@ -18,7 +18,7 @@ class CreateOrganizationUnitsTable extends Migration
             $table->id();
             $table->string('name');
             $table->string('short_name')->nullable();
-            $table->unsignedBigInteger('parent_id')->nullable()->references('id')->on('organization_units')->nullOnDelete();
+            $table->unsignedInteger('parent_id')->nullable()->references('id')->on('organization_units')->nullOnDelete();
             $table->unsignedBigInteger('lft')->nullable();
             $table->unsignedBigInteger('rgt')->nullable();
             $table->unsignedBigInteger('depth')->nullable();
@@ -29,7 +29,8 @@ class CreateOrganizationUnitsTable extends Migration
             $table->string('fax')->nullable();
             $table->string('email')->nullable();
             $table->boolean('confirmation_agency')->default(false);
-            $table->foreignId('user_id')->nullable()->nullOnDelete();
+            $table->unsignedInteger('user_id')->nullable();
+            $table->foreign('user_id')->references('id')->on('users')->nullOnDelete();
             $table->unsignedInteger('type_id')->nullable();
             $table->foreign('type_id')->references('id')->on('organization_types')->nullOnDelete();
             $table->integer('sort_no')->nullable();

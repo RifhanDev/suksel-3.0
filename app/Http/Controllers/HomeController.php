@@ -6,6 +6,7 @@ use App\Banner;
 use App\CodeRequest;
 use App\Comment;
 use App\Gateway;
+use App\Models\EbiddingJadualBidaan;
 use App\Models\Refund;
 use App\Models\VersionHistory;
 use App\News;
@@ -59,9 +60,12 @@ class HomeController extends Controller
 			Log::debug('This is a debug message');
 			Log::debug($request->post());
 
-			// Temporarily commented out to fix column issue
-			// $base = Tender::orderBy('advertise_start_date', 'desc')->orderBy('submission_datetime', 'desc')->where('submission_datetime', '>=', date('Y-m-d 00:00:00'))->advertised()->forPublic()->published();
-			$base = Tender::orderBy('advertise_start_date', 'desc')->orderBy('submission_datetime', 'desc')->where('submission_datetime', '>=', date('Y-m-d 00:00:00'))->advertised()->forPublic();
+			$base = Tender::orderBy('advertise_start_date', 'desc')
+				->orderBy('submission_datetime', 'desc')
+				->open()
+				->advertised()
+				->forPublic()
+				->published();
 
 			switch ($request->type) {
 				case 'tenders':
@@ -73,8 +77,11 @@ class HomeController extends Controller
 				case 'pembelian_terus':
 					$tenders = $base->whereType('pembelian_terus')->where('status_process_id', '>=', 5);
 					break;
+				case 'lantikan_terus':
+					$tenders = $base->whereType('lantikan_terus')->where('status_process_id', '>=', 5);
+					break;
 				default:
-					$tenders = $base->whereIn('type', ['tender', 'quotation', 'pembelian_terus']);
+					$tenders = $base->whereIn('type', ['tender', 'quotation', 'pembelian_terus', 'lantikan_terus']);
 					break;
 			}
 
@@ -102,9 +109,11 @@ class HomeController extends Controller
 					$string   = [];
 					$string[] = '<strong><u>' . $tender->tenderer->name . '</u></strong>';
 					$string[] = '<small><strong>' . $tender->ref_number . '</strong></small>';
-					$detailUrl = $tender->type === 'pembelian_terus'
-						? route('pembelianTerus.detailProject', $tender->id)
-						: route('tenders.show', $tender->id);
+					$detailUrl = match ($tender->type) {
+						'pembelian_terus' => route('pembelianTerus.detailProject', $tender->id),
+						'lantikan_terus' => route('sebutHargaTerus.show', $tender->id),
+						default => route('tenders.show', $tender->id),
+					};
 					$string[] = '<a class="table-tender-title" href="' . $detailUrl . '">' . $tender->name . '</a>';
 
 					if ($tender->briefing_required) {
@@ -224,39 +233,15 @@ class HomeController extends Controller
 			case 'pembelian_terus':
 				$path = '/?type=pembelian_terus';
 				break;
+			case 'lantikan_terus':
+				$path = '/?type=lantikan_terus';
+				break;
 			default:
 				$path = '/';
 				break;
 		}
 
-		// Get banners where today is between start and end date (or no date restriction)
-		$today = date('Y-m-d');
-		$banners = Banner::where('published', 1)
-			->where(function ($query) use ($today) {
-				$query->where(function ($q) use ($today) {
-					// Has both start and end dates, and today is between them
-					$q->whereNotNull('start')
-						->whereNotNull('end')
-						->where('start', '<=', $today)
-						->where('end', '>=', $today);
-				})
-					->orWhere(function ($q) use ($today) {
-						// Has start date only, and today is after or equal to start
-						$q->whereNotNull('start')
-							->whereNull('end')
-							->where('start', '<=', $today);
-					})
-					->orWhere(function ($q) use ($today) {
-						// Has end date only, and today is before or equal to end
-						$q->whereNull('start')
-							->whereNotNull('end')
-							->where('end', '>=', $today);
-					})
-					->orWhere(function ($q) {
-						// No date restriction (both start and end are null)
-						$q->whereNull('start')->whereNull('end');
-					});
-			})
+		$banners = Banner::visibleNow()
 			->orderBy('created_at', 'desc')
 			->get();
 		// $global_news = News::where('show_main', '1')->orderBy('published_at', 'desc')->get();
@@ -439,12 +424,10 @@ class HomeController extends Controller
 
 			// Temporarily commented out to fix column issue
 			// $eligibles = Tender::forPublic()->published()->where('submission_datetime', '>', date('Y-m-d H:i:s'))->has('codes', '=', '0')->get();
-			$eligibles = Tender::forPublic()->where('submission_datetime', '>', date('Y-m-d H:i:s'))->has('codes', '=', '0')->get();
+			$eligibles = Tender::forPublic()->open()->has('codes', '=', '0')->get();
 
-			// Temporarily commented out to fix column issue
-			// $eligibles = $eligibles->merge(Tender::whereNotNull('approver_id')->whereIn('id', $eligibles_ids)->where('submission_datetime', '>', date('Y-m-d H:i:s'))->get())->sortByDesc('submission_datetime');
-			$eligibles = $eligibles->merge(Tender::whereIn('id', $eligibles_ids)->where('submission_datetime', '>', date('Y-m-d H:i:s'))->get())->sortByDesc('submission_datetime');
-			$eligibles = $eligibles->merge(Tender::whereIn('id', $exception_ids)->get())->sortByDesc('submission_datetime');
+			$eligibles = $eligibles->merge(Tender::whereIn('id', $eligibles_ids)->open()->get())->sortByDesc('submission_datetime');
+			$eligibles = $eligibles->merge(Tender::whereIn('id', $exception_ids)->open()->get())->sortByDesc('submission_datetime');
 			$eligibles = $eligibles
 				->reject(function ($eligible) use ($purchases) {
 					return in_array($eligible->id, (array) $purchases->pluck('tender_id'));
@@ -460,7 +443,44 @@ class HomeController extends Controller
 				$refund->receipt = $this->receiptNumGenerator($refund->transaction->number, date('d-m-Y', strtotime($refund->transaction->created_at)));
 			}
 
-			return view('home.dashboard', compact('purchases', 'eligibles', 'invites', 'refunds'));
+			// Projek Pembelian Terus / Lantikan Terus yang dimenangi oleh vendor.
+			$directWins = collect();
+			$ebiddingInvites = collect();
+			if ($user->vendor) {
+				$vendorId = (int) $user->vendor_id;
+
+				$ptWonIds = DB::table('pembelian_terus_offers')
+					->where('vendor_id', $vendorId)
+					->where('selected', 1)
+					->pluck('tender_id');
+
+				$ltWonIds = DB::table('lantikan_terus_offers')
+					->where('vendor_id', $vendorId)
+					->where('selected', 1)
+					->pluck('tender_id');
+
+				$tvWonIds = TenderVendor::query()
+					->where('vendor_id', $vendorId)
+					->where('winner', 1)
+					->whereHas('tender', function ($q) {
+						$q->whereIn('type', ['pembelian_terus', 'lantikan_terus']);
+					})
+					->pluck('tender_id');
+
+				$wonIds = $ptWonIds->merge($ltWonIds)->merge($tvWonIds)->unique()->filter()->values();
+
+				if ($wonIds->isNotEmpty()) {
+					$directWins = Tender::with('tenderer')
+						->whereIn('id', $wonIds)
+						->whereIn('type', ['pembelian_terus', 'lantikan_terus'])
+						->orderByDesc('submission_datetime')
+						->get();
+				}
+
+				$ebiddingInvites = $this->vendorEbiddingInvites($vendorId);
+			}
+
+			return view('home.dashboard', compact('purchases', 'eligibles', 'invites', 'refunds', 'directWins', 'ebiddingInvites'));
 		} else {
 			if (!$user->organization_unit_id) {
 				return $this->_access_denied();
@@ -473,9 +493,9 @@ class HomeController extends Controller
 			$organizationunit = OrganizationUnit::findOrFail($id);
 			$tenders          = Tender::where('organization_unit_id', $organizationunit->id)->orderBy('created_at', 'desc')->orderBy('name', 'asc');
 
-			if (!auth()->check() || auth()->user()->hasRole('Vendor') || !Tender::canShowUpdate($organizationunit->id)) {
+			if (!auth()->check() || auth()->user()->hasRole('Vendor') || !Tender::canViewInternal($organizationunit->id)) {
 				$tenders = $tenders->where(function ($query) {
-					$query->advertised()->forPublic()->published();
+					$query->advertised()->forPublic()->published()->open();
 				});
 			}
 
@@ -649,8 +669,8 @@ class HomeController extends Controller
 						$str   = [];
 						$str[] = '<div class="btn-group btn-group-vertical">';
 						if (empty($tender->approver_id)) $str[] = link_to_route('tenders.edit', 'Kemaskini', $tender->id, ['class' => 'btn btn-xs btn-primary']);
-						if ($tender->canCancel() && $tender->approver_id > 0)
-							$str[] = link_to_action('TendersController@cancel', 'Batal Siar', $tender->id, ['class' => 'btn btn-xs btn-danger']);
+						if ($tender->canCancelSiar() && $tender->approver_id > 0)
+							$str[] = link_to_action('TendersController@cancel', 'Batal Siar', $tender->id, ['class' => 'btn btn-xs btn-danger', 'onclick' => 'return confirm(\'Batal siar tender ini? Status akan kembali ke peringkat Penyediaan Iklan.\')']);
 						if ($tender->canUpdate() && empty($tender->approver_id))
 							$str[] = link_to_action('TendersController@publish', 'Siar', $tender->id, ['class' => 'btn btn-xs btn-warning']);
 						return implode('', $str);
@@ -748,10 +768,9 @@ class HomeController extends Controller
 		}
 
 		$fpx    = Gateway::whereType('fpx')->whereDefault(1)->whereActive(1)->first();
-		$ebpg   = Gateway::whereType('ebpg')->whereDefault(1)->whereActive(1)->first();
-		$duitnow = Gateway::whereType('duitnow')->whereDefault(1)->whereActive(1)->first();
+		$ebpg   = config('services.ebpg.enabled') ? Gateway::whereType('ebpg')->whereDefault(1)->whereActive(1)->first() : null;
 
-		return view('home.renewal', compact('start_date', 'end_date', 'fpx', 'ebpg', 'duitnow'));
+		return view('home.renewal', compact('start_date', 'end_date', 'fpx', 'ebpg'));
 	}
 
 	public function storeRenewal(Request $request)
@@ -760,7 +779,9 @@ class HomeController extends Controller
 		$user   = auth()->user();
 		$vendor = $user->vendor;
 
-		if (!in_array($request->method, ['fpx-1', 'fpx-2', 'ebpg', 'duitnow']))
+		$validMethods = ['fpx-1', 'fpx-2'];
+		if (config('services.ebpg.enabled')) $validMethods[] = 'ebpg';
+		if (!in_array($request->method, $validMethods))
 			return redirect()->back()->with('error', 'Sila pilih saluran pembayaran yang sah.');
 
 		if ($vendor->expired) {
@@ -1015,27 +1036,54 @@ class HomeController extends Controller
 		return redirect('/')->with('success', 'Alamat Emel anda telah disahkan.');
 	}
 
+	/**
+	 * Selang dan had semakan bagi halaman "menunggu respons bayaran".
+	 *
+	 * Satu sumber sahaja: teks pada halaman dan pemasa JS kedua-duanya membaca
+	 * nilai ini. Sebelum ini ketiga-tiga angka berlainan — teks kata 3 minit
+	 * sebanyak 5 kali, JS muat semula setiap 10 saat, kod menyerah pada 3.
+	 *
+	 * 10 saat x 30 = 5 minit. requery:fpx berjalan setiap minit, jadi tempoh ini
+	 * memberi rekonsiliasi sekurang-kurangnya lima peluang menjawab.
+	 */
+	private const TXN_STATUS_INTERVAL_SECONDS = 10;
+	private const TXN_STATUS_MAX_CHECKS = 30;
+
 	public function txnStatus($id)
 	{
-		$refresh = session('txn_status_' . $id, 0);
-		if ($refresh == 3) {
-			return redirect('/')->with('error', 'Transaksi anda masih belum berjaya.');
+		$refresh = (int) session('txn_status_' . $id, 0);
+
+		if ($refresh >= self::TXN_STATUS_MAX_CHECKS) {
+			session()->forget('txn_status_' . $id);
+
+			return redirect('/')->with('error', 'Bayaran anda masih dalam pengesahan. Statusnya akan dikemas kini secara automatik sebaik sahaja bank mengesahkan — sila semak semula sebentar lagi.');
 		}
-		session()->put('txn_status_' . $id, $refresh++);
+
+		// $refresh + 1, bukan $refresh++: post-increment memulangkan nilai lama,
+		// jadi kaunter kekal 0 dan halaman ini memuat semula tanpa henti.
+		session()->put('txn_status_' . $id, $refresh + 1);
 
 		$transaction = Transaction::whereUserId(auth()->user()->id)->findOrFail($id);
 
 		if ($transaction->status != 'pending') {
 			if ($transaction->type == 'purchase') {
+				session()->forget('txn_status_' . $id);
+
 				return redirect('cart/callback/' . $transaction->id);
 			}
 
 			if ($transaction->type == 'subscription') {
+				session()->forget('txn_status_' . $id);
+
 				return redirect('renewal_callback/' . $transaction->id);
 			}
 		}
 
-		return view('home.txn_status', compact('transaction'));
+		return view('home.txn_status', [
+			'transaction'     => $transaction,
+			'intervalSeconds' => self::TXN_STATUS_INTERVAL_SECONDS,
+			'maxChecks'       => self::TXN_STATUS_MAX_CHECKS,
+		]);
 	}
 
 	public function versionHistories()
@@ -1432,5 +1480,118 @@ class HomeController extends Controller
 	{
 		// Return chat widget view - you may need to create this view
 		return view('home.chat-widget');
+	}
+
+	/**
+	 * Vendor dashboard: jemputan / status bidaan (in-app, besides email).
+	 *
+	 * @return \Illuminate\Support\Collection<int, object>
+	 */
+	private function vendorEbiddingInvites(int $vendorId)
+	{
+		if ($vendorId <= 0
+			|| ! \Illuminate\Support\Facades\Schema::hasColumn('tenders', 'is_ebidding')
+			|| ! \Illuminate\Support\Facades\Schema::hasTable('ebidding_jadual_bidaans')) {
+			return collect();
+		}
+
+		$eligibleIds = TenderEligible::query()
+			->where('vendor_id', $vendorId)
+			->pluck('tender_id');
+
+		$petenderIds = collect();
+		if (\Illuminate\Support\Facades\Schema::hasTable('jawatankuasa_perolehan_pemilihan_petenders')
+			&& \Illuminate\Support\Facades\Schema::hasColumn('jawatankuasa_perolehan_pemilihan_petenders', 'vendor_id')) {
+			$petenderIds = DB::table('jawatankuasa_perolehan_pemilihan_petenders as p')
+				->join('jawatankuasa_perolehan_pemilihan_items as i', 'i.id', '=', 'p.pemilihan_item_id')
+				->where('p.vendor_id', $vendorId)
+				->pluck('i.tender_id');
+		}
+
+		$invitedIds = $eligibleIds->merge($petenderIds)->unique()->filter()->values();
+		if ($invitedIds->isEmpty()) {
+			return collect();
+		}
+
+		$tenders = Tender::query()
+			->with('tenderer')
+			->where('is_ebidding', 1)
+			->whereIn('id', $invitedIds)
+			->where(function ($q) {
+				$q->whereIn('ebidding_process_stage_id', [2, 3, 4])
+					->orWhereIn('status_process_id', [5, 6, 7]);
+			})
+			->orderByDesc('id')
+			->get();
+
+		if ($tenders->isEmpty()) {
+			return collect();
+		}
+
+		$tenderIds = $tenders->pluck('id');
+		$schedules = DB::table('ebidding_jadual_bidaans')
+			->whereIn('tender_id', $tenderIds)
+			->get()
+			->keyBy('tender_id');
+
+		$submittedIds = collect();
+		if (\Illuminate\Support\Facades\Schema::hasTable('ebidding_vendor_bid_items')) {
+			$submittedIds = DB::table('ebidding_vendor_bid_items')
+				->where('vendor_id', $vendorId)
+				->whereIn('tender_id', $tenderIds)
+				->whereNotNull('submitted_at')
+				->pluck('tender_id')
+				->unique();
+		}
+
+		$now = Carbon::now();
+
+		return $tenders->map(function (Tender $tender) use ($schedules, $submittedIds, $now) {
+			$schedule = $schedules->get($tender->id);
+			$startAt = null;
+			$endAt = null;
+			$isOpen = false;
+			$hasEnded = false;
+
+			if ($schedule
+				&& ! empty($schedule->tarikh_bidaan_mula)
+				&& ! empty($schedule->masa_bidaan_mula)
+				&& ! empty($schedule->tarikh_bidaan_tamat)
+				&& ! empty($schedule->masa_bidaan_tamat)) {
+				$startAt = EbiddingJadualBidaan::combine($schedule->tarikh_bidaan_mula, $schedule->masa_bidaan_mula);
+				$endAt = EbiddingJadualBidaan::combine($schedule->tarikh_bidaan_tamat, $schedule->masa_bidaan_tamat);
+				$isOpen = $startAt && $endAt && $now->betweenIncluded($startAt, $endAt);
+				$hasEnded = $endAt ? $now->greaterThan($endAt) : false;
+			}
+
+			$hasSubmitted = $submittedIds->contains($tender->id);
+
+			// Hide from vendor list once bidding window has ended.
+			if ($hasEnded) {
+				return null;
+			}
+
+			if ($hasSubmitted) {
+				$statusKey = 'submitted';
+				$statusLabel = 'Sudah Dihantar';
+			} elseif ($isOpen) {
+				$statusKey = 'open';
+				$statusLabel = 'Bidaan Dibuka';
+			} else {
+				$statusKey = 'pending';
+				$statusLabel = 'Menunggu';
+			}
+
+			return (object) [
+				'tender' => $tender,
+				'start_at' => $startAt,
+				'end_at' => $endAt,
+				'is_open' => $isOpen,
+				'has_submitted' => $hasSubmitted,
+				'status_key' => $statusKey,
+				'status_label' => $statusLabel,
+				'url' => route('eBidding.show', ['id' => $tender->id]),
+			];
+		})->filter()->values();
 	}
 }

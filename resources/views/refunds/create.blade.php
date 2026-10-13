@@ -264,7 +264,9 @@
                         <div class="col-md-6">
                             <div class="field-row">
                                 <label class="field-label" for="ic">No. Kad Pengenalan Pemohon <sup>*</sup></label>
-                                <input class="form-control" type="text" id="ic" name="ic" required>
+                                <input class="form-control" type="text" id="ic" name="ic" required
+                                    data-ic-input maxlength="12" inputmode="numeric"
+                                    title="Masukkan 12 digit No. Kad Pengenalan (sempang akan dibuang automatik)">
                             </div>
                         </div>
                         <div class="col-md-6">

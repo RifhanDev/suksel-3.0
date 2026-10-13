@@ -16,12 +16,10 @@ class TypeOfPerolehan extends Seeder
     {
         $kategori1And2Options = 
         [
-            'ICT',
             'Bekalan',
             'Perkhidmatan',
             'Kerja',
             'Perunding',
-            'Sewaan'
         ];
 
         foreach ([1, 2] as $kategoriId) 

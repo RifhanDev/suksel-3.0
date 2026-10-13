@@ -69,6 +69,12 @@ class UpdateFpxStatus implements ShouldQueue, ShouldBeUnique
             //     'transaction_id' => $this->transaction_id,
             // ]);
 
+            // NOTE: this posts to THIS app's own api_fpx_requery route, not to PayNet —
+            // the PayNet call happens inside that endpoint, where TLS verification is now
+            // controlled by services.fpx.verify_tls. Verification stays off here because
+            // staging commonly serves a self-signed certificate to itself; tightening it
+            // would break the loopback call without adding any protection on the PayNet
+            // trust boundary.
             $response = Http::withOptions([
                 'verify' => false,
             ])->post($route_url, [

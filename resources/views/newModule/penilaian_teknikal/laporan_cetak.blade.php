@@ -131,6 +131,16 @@
             grid-template-columns: 15% 15% 70% !important;
         }
 
+        /* Content otherwise starts flush against the header rule on every page. */
+        .pagedjs_page_content {
+            padding-top: 14px;
+        }
+
+        /* A heading landing first on a page would otherwise add its 30px on top of that. */
+        .pagedjs_page_content > div > *:first-child {
+            margin-top: 0;
+        }
+
         /* A section that must never be split across two pages (a table, a signature block).
            Does not guarantee it fits — only that it won't be cut mid-way. */
         .avoid-break {
@@ -144,10 +154,6 @@
 
         .doc-title-block {
             text-align: center;
-            /* Content starts flush against the @page top margin (no gap of its own), so this
-               margin-top balances against padding-bottom below for equal spacing either side
-               of the title text, relative to the two divider lines. */
-            margin-top: 14px;
             padding-bottom: 14px;
             border-bottom: 2.5px solid #000;
             margin-bottom: 22px;

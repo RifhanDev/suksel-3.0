@@ -1,8 +1,8 @@
-@extends('layouts.v3.master')
+@extends('layouts.modernLanding')
 
 @section('content')
 	<h4>Senarai Tempahan</h4>
-	@if (!$fpx && !$ebpg && !$duitnow)
+	@if (!$fpx && !$ebpg)
 		<div class="alert alert-danger">Harap Maaf! Pembayaran tidak dapat dilakukan buat masa ini.</div>
 	@else
 		<table class="DT table table-hover table-compact">

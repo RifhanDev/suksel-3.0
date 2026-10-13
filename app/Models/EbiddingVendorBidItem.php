@@ -14,11 +14,13 @@ class EbiddingVendorBidItem extends Model
         'vendor_id',
         'pemilihan_item_id',
         'bid_price',
+        'is_carried_forward',
         'submitted_at',
     ];
 
     protected $casts = [
         'bid_price' => 'decimal:2',
+        'is_carried_forward' => 'boolean',
         'submitted_at' => 'datetime',
     ];
 

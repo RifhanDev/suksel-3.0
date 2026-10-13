@@ -161,7 +161,7 @@
 							<line x1="16" y1="13" x2="8" y2="13"></line>
 							<line x1="16" y1="17" x2="8" y2="17"></line>
 						</svg>
-						Penyediaan Kertas Taklimat
+						Paparan Kertas Taklimat
 					</a>
 				</li>
 
@@ -209,12 +209,13 @@
 						<thead class="text-white text-center" style="background-color:#2d3e84;">
 							<tr>
 								<th style="width:42px;"></th>
-								<th>Bil Mesyuarat <span class="text-danger">*</span></th>
-								<th>Tarikh Mesyuarat <span class="text-danger">*</span></th>
-								<th>Tajuk Agenda <span class="text-danger">*</span></th>
-								<th>Tempat <span class="text-danger">*</span></th>
-								<th>No. Kod Kertas <span class="text-danger">*</span></th>
-								<th>Status <span class="text-danger">*</span></th>
+								<th style="width:110px;">Bil. Mesyuarat <span class="text-danger">*</span></th>
+								<th style="width:130px;">Tarikh Mesyuarat <span class="text-danger">*</span></th>
+								<th style="width:100px;">Masa <span class="text-danger">*</span></th>
+								<th style="width:160px;">Tempat <span class="text-danger">*</span></th>
+								<th style="width:120px;">No. Kod Kertas <span class="text-danger">*</span></th>
+								<th style="min-width:240px;">Agenda <span class="text-danger">*</span></th>
+								<th style="width:130px;">Status <span class="text-danger">*</span></th>
 								<th>Catatan</th>
 							</tr>
 						</thead>
@@ -234,12 +235,12 @@
 			</div>
 		</div>
 
-		<!-- Tab 2: Penyediaan Kertas Taklimat -->
+		<!-- Tab 2: Paparan Kertas Taklimat -->
 		<div class="tab-pane" id="tab-kertas-taklimat" role="tabpanel">
 			<div class="content-card p-4">
 				<h6 class="fw-bold text-dark mb-1">Seksyen Laporan</h6>
-				<p class="text-muted small mb-3">Senarai lampiran yang dimuat naik dalam modul Perakuan Jabatan. Di sini anda hanya
-					boleh <strong>papar</strong> (tiada muat naik / padam).</p>
+				<p class="text-muted small mb-3">Senarai lampiran daripada modul Perakuan Jabatan (termasuk laporan yang dijana
+					secara automatik). Di sini anda hanya boleh <strong>papar</strong> (tiada muat naik / padam).</p>
 
 				@if (($taklimatAttachments ?? collect())->isEmpty())
 					<div class="alert d-flex align-items-center gap-2 mb-0"
@@ -250,7 +251,7 @@
 							<line x1="12" y1="8" x2="12" y2="12"></line>
 							<line x1="12" y1="16" x2="12.01" y2="16"></line>
 						</svg>
-						Tiada lampiran ditemui daripada Penyediaan Kertas Taklimat.
+						Tiada lampiran ditemui daripada Paparan Kertas Taklimat.
 					</div>
 				@else
 					<div class="table-responsive">
@@ -347,8 +348,7 @@
 								</div>
 								<div class="form-check mb-0">
 									<input class="form-check-input" type="radio" name="mp_loi_loa_oleh" id="mp_loi_loa_lembaga"
-										value="Lembaga Perolehan"
-										{{ $mpLoiLoaOleh === 'Lembaga Perolehan' ? 'checked' : '' }}>
+										value="Lembaga Perolehan" {{ $mpLoiLoaOleh === 'Lembaga Perolehan' ? 'checked' : '' }}>
 									<label class="form-check-label small" for="mp_loi_loa_lembaga">Lembaga Perolehan</label>
 								</div>
 							</div>
@@ -392,27 +392,45 @@
 					<div class="mp-hint mb-2">Semua pembekal yang melepasi Markah Lulus Keseluruhan (teknikal dan kewangan) akan
 						dijemput
 						untuk menyertai bidaan.</div>
+					@php $showHargaBidaan = (bool) optional($tender)->is_ebidding; @endphp
+					@if (!empty($showBidPriceDiff))
+						<div class="d-flex flex-wrap gap-3 small mb-2">
+							<span class="d-inline-flex align-items-center gap-1">
+								<span class="rounded-circle d-inline-block" style="width:10px;height:10px;background:#198754;"></span>
+								<span class="text-success fw-semibold">Hijau</span> = harga baharu (vendor key-in)
+							</span>
+							<span class="d-inline-flex align-items-center gap-1">
+								<span class="rounded-circle d-inline-block" style="width:10px;height:10px;background:#dc3545;"></span>
+								<span class="text-danger fw-semibold">Merah</span> = harga lama (tiada bidaan baharu)
+							</span>
+						</div>
+					@endif
 					<div class="table-responsive mb-3">
-						<table class="table table-bordered table-sm align-middle mb-0">
+						<table class="table table-bordered table-sm align-middle mb-0" id="mp-pembekal-table"
+							data-show-harga-bidaan="{{ $showHargaBidaan ? '1' : '0' }}"
+							data-show-price-diff="{{ !empty($showBidPriceDiff) ? '1' : '0' }}">
 							<thead class="text-white text-center" style="background-color:#2d3e84;">
 								<tr>
 									<th>Bil</th>
+									<th style="min-width:160px;">Nama Vendor</th>
 									<th>Status Bumiputra</th>
 									<th>Harga Tawaran (RM)</th>
+									@if ($showHargaBidaan)
+										<th>Harga Bidaan (RM)</th>
+									@endif
 									<th>Jumlah Skor</th>
 									<th>Kedudukan Penilaian Teknikal Kewangan</th>
 									<th>Status Pendaftaran MOF</th>
-									<th colspan="3">Maklumat Tambahan</th>
-									<th id="mp-th-selection" class="d-none">Selection</th>
-									<th>Keputusan oleh Urusetia</th>
-									<th id="mp-th-catatan-zon" class="d-none" style="min-width:180px;">Catatan Mengikut Zon</th>
+									<th colspan="2">Maklumat Tambahan</th>
+									<th>Keputusan Urusetia</th>
 									<th style="min-width:180px;">Catatan Urusetia</th>
+									<th id="mp-th-selection" class="d-none">Pemilihan</th>
+									<th id="mp-th-catatan-zon" class="d-none" style="min-width:180px;">Catatan Mengikut Zon</th>
 								</tr>
 								<tr>
-									<th colspan="6"></th>
+									<th colspan="{{ $showHargaBidaan ? 8 : 7 }}"></th>
 									<th class="small">Prestasi Pembekal</th>
 									<th class="small">Lembaga Pengarah</th>
-									<th class="small">CIDB</th>
 									<th id="mp-th-empty-right" colspan="2"></th>
 								</tr>
 							</thead>
@@ -420,18 +438,43 @@
 						</table>
 					</div>
 
-					<div class="form-check mb-4">
-						<input class="form-check-input" type="checkbox" id="mp_sahkan_layak" value="1"
-							{{ !empty($pemilihanHeader['sahkan_layak_bidaan']) ? 'checked' : '' }}>
-						<label class="form-check-label small" for="mp_sahkan_layak">Saya mengesahkan petender diatas layak untuk
-							menyertai
-							Bidaan.</label>
+					<div id="mp_bidaan_extra_wrap" class="d-none mb-4">
+						<div class="mb-3">
+							<label class="form-label small fw-semibold" for="mp_catatan_bidaan">
+								Catatan <span class="text-danger">*</span>
+							</label>
+							<textarea id="mp_catatan_bidaan" class="form-control form-control-sm" rows="3"
+							 placeholder="Kenapa perlu biddan...">{{ $pemilihanHeader['catatan_bidaan'] ?? '' }}</textarea>
+						</div>
+						<div class="form-check" id="mp_sahkan_wrap">
+							<input class="form-check-input" type="checkbox" id="mp_sahkan_layak" value="1"
+								{{ !empty($pemilihanHeader['sahkan_layak_bidaan']) ? 'checked' : '' }}>
+							<label class="form-check-label small" for="mp_sahkan_layak">Saya mengesahkan petender diatas layak untuk
+								menyertai
+								Bidaan.</label>
+						</div>
 					</div>
 
 					<div class="d-flex justify-content-end gap-2">
 						<button type="button" class="btn btn-kt-teal" id="mp_btn_simpan">Simpan</button>
 						<button type="button" class="btn btn-selangor" id="mp_btn_hantar">Hantar</button>
 					</div>
+
+					@if (!empty($bidSpecBreakdown))
+						<div id="mp-bid-spec-modals">
+							@foreach ($bidSpecBreakdown as $vendorId => $pack)
+								@include('components.bid-spec-breakdown', [
+									'items' => $pack['items'] ?? [],
+									'vendorName' => $pack['vendor_name'] ?? null,
+									'vendorId' => $vendorId,
+									'showPriceDiff' => !empty($showBidPriceDiff),
+									'modalSuffix' => 'jp-' . $vendorId,
+									'title' => 'Item Spesifikasi',
+									'trigger' => 'none',
+								])
+							@endforeach
+						</div>
+					@endif
 				@endif
 			</div>
 		</div>
@@ -477,12 +520,10 @@
 							    'justifikasi_pemilihan_pembekal',
 							    optional($kertasKeputusan)->justifikasi_pemilihan_pembekal,
 							);
-							$kkJustifikasiOptions = [
-							    'Harga dalam lingkungan harga indikatif jabatan',
-							    'Spesifikasi teknikal memenuhi keperluan',
-							    'Tempoh penghantaran menepati keperluan projek',
-							    'Prestasi dan rekod pembekal memuaskan',
-							];
+							$kkJustifikasiOptions = $kkJustifikasiOptions ?? [];
+							if (filled($kkJustifikasi) && !in_array($kkJustifikasi, $kkJustifikasiOptions, true)) {
+							    $kkJustifikasiOptions[] = $kkJustifikasi;
+							}
 						@endphp
 						@foreach ($kkJustifikasiOptions as $option)
 							<option value="{{ $option }}" {{ $kkJustifikasi === $option ? 'selected' : '' }}>{{ $option }}
@@ -546,15 +587,6 @@
 		</div>
 
 	</div>
-
-	@if ($tender && ($pemilihanVendors ?? collect())->isNotEmpty())
-		@foreach ($pemilihanVendors as $vendor)
-			@include('components.vendor-cidb-meta', [
-				'vendor' => $vendor,
-				'trigger' => 'none',
-			])
-		@endforeach
-	@endif
 @endsection
 
 @section('scripts')
@@ -597,12 +629,14 @@
 						row.bil_mesyuarat || '') + '"></td>' +
 					'<td><input type="date" class="form-control form-control-sm tarikh_mesyuarat" value="' +
 					escapeHtml(row.tarikh_mesyuarat || '') + '"></td>' +
-					'<td><input type="text" class="form-control form-control-sm tajuk_agenda" value="' + escapeHtml(row
-						.tajuk_agenda || '') + '"></td>' +
+					'<td><input type="time" class="form-control form-control-sm masa" value="' +
+					escapeHtml(row.masa || '') + '"></td>' +
 					'<td><input type="text" class="form-control form-control-sm tempat" value="' + escapeHtml(row
 						.tempat || '') + '"></td>' +
 					'<td><input type="text" class="form-control form-control-sm no_kod_kertas" value="' + escapeHtml(
 						row.no_kod_kertas || '') + '"></td>' +
+					'<td><input type="text" class="form-control form-control-sm tajuk_agenda" value="' + escapeHtml(row
+						.tajuk_agenda || '') + '"></td>' +
 					'<td><select class="form-select form-select-sm status"><option value="Belum Selesai"' + (status ===
 						'Belum Selesai' ? ' selected' : '') + '>Belum Selesai</option><option value="Selesai"' + (
 						status === 'Selesai' ? ' selected' : '') + '>Selesai</option></select></td>' +
@@ -624,6 +658,7 @@
 					rows.push({
 						bil_mesyuarat: $tr.find('.bil_mesyuarat').val().trim(),
 						tarikh_mesyuarat: $tr.find('.tarikh_mesyuarat').val(),
+						masa: $tr.find('.masa').val(),
 						tajuk_agenda: $tr.find('.tajuk_agenda').val().trim(),
 						tempat: $tr.find('.tempat').val().trim(),
 						no_kod_kertas: $tr.find('.no_kod_kertas').val().trim(),
@@ -645,7 +680,8 @@
 
 				for (let i = 0; i < rows.length; i++) {
 					const row = rows[i];
-					if (!row.bil_mesyuarat || !row.tarikh_mesyuarat || !row.tajuk_agenda || !row.tempat || !row
+					if (!row.bil_mesyuarat || !row.tarikh_mesyuarat || !row.masa || !row.tajuk_agenda || !row.tempat ||
+						!row
 						.no_kod_kertas || !row.status) {
 						return 'Sila lengkapkan medan wajib pada baris ' + (i + 1) + '.';
 					}
@@ -759,6 +795,10 @@
 					processData: false,
 					contentType: false,
 					success: function(resp) {
+						if (resp.redirect) {
+							window.location.href = resp.redirect;
+							return;
+						}
 						showKertasKeputusanAlert(resp.message || successMessage, 'success');
 					},
 					error: function(xhr) {
@@ -807,7 +847,6 @@
 						if (!p) {
 							return;
 						}
-						p.tindakan_disiplin = ($(this).find('.mp-pet-disiplin').val() || '').toString();
 						p.selected_for_selection = $(this).find('.mp-pet-selection').is(':checked');
 						p.catatan_mengikut_zon = ($(this).find('.mp-pet-catatan-zon').val() || '').toString();
 					});
@@ -830,11 +869,13 @@
 					return {
 						keputusan_mesyuarat: ($('#mp_keputusan_mesyuarat').val() || '').toString(),
 						kaedah_memuktamadkan_pembekal: ($('#mp_kaedah_memuktamadkan').val() || '').toString(),
-						pemilihan_berdasarkan: ($('input[name="mp_pemilihan_berdasarkan"]:checked').val() || '').toString(),
+						pemilihan_berdasarkan: ($('input[name="mp_pemilihan_berdasarkan"]:checked').val() || '')
+							.toString(),
 						loi_loa_disediakan_oleh: ($('input[name="mp_loi_loa_oleh"]:checked').val() || '').toString(),
 						bil_mesyuarat: ($('#mp_bil_mesyuarat').val() || '').toString(),
 						no_kod: ($('#mp_no_kod').val() || '').toString(),
 						sahkan_layak_bidaan: $('#mp_sahkan_layak').is(':checked'),
+						catatan_bidaan: ($('#mp_catatan_bidaan').val() || '').toString(),
 					};
 				}
 
@@ -892,19 +933,6 @@
 					});
 				}
 
-				function mpCidbCell(p) {
-					if (!p.vendor_id || !p.cidb_has_meta) {
-						return '<td class="text-center"><span class="text-muted small">—</span></td>';
-					}
-
-					return '<td class="text-center">' +
-						'<button type="button" class="btn btn-sm btn-outline-primary py-0 px-2 d-inline-flex align-items-center justify-content-center" ' +
-						'data-bs-toggle="modal" data-bs-target="#cidbMetaModal-' + escapeHtml(String(p.vendor_id)) + '" title="Maklumat CIDB">' +
-						'<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-						'<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>' +
-						'</button></td>';
-				}
-
 				function mpRenderSuppliers() {
 					const item = pemilihanState.items[mpSelectedItemIndex];
 					const $b = $('#mp-pembekal-body');
@@ -912,39 +940,72 @@
 					if (!item || !item.petenders) {
 						return;
 					}
+					const showHargaBidaan = $('#mp-pembekal-table').data('show-harga-bidaan') == 1 ||
+						$('#mp-pembekal-table').attr('data-show-harga-bidaan') === '1';
+					const showPriceDiff = $('#mp-pembekal-table').attr('data-show-price-diff') === '1';
 					const kaedah = ($('#mp_kaedah_memuktamadkan').val() || '').toString();
 					const showSelection = kaedah === 'Pemilihan Terus' || kaedah ===
 						'Pemilihan Lebih Daripada Satu Syarikat';
 					const showCatatanZon = kaedah === 'Pemilihan Lebih Daripada Satu Syarikat';
 					item.petenders.forEach(function(p, i) {
-						const lp = p.lembaga_pengarah_papar_url ?
-							'<a href="' + escapeHtml(p.lembaga_pengarah_papar_url) +
-							'" class="btn btn-sm btn-outline-primary py-0 px-2" target="_blank" rel="noopener noreferrer" title="Papar">' +
-							'<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg></a>' :
-							'<span class="text-muted small">—</span>';
 						const selectionCell = showSelection ?
-							'<td class="text-center"><input type="checkbox" class="form-check-input mp-pet-selection"' + (p
+							'<td class="text-center"><input type="checkbox" class="form-check-input mp-pet-selection"' +
+							(p
 								.selected_for_selection ? ' checked' : '') + '></td>' : '';
 						const catatanZonCell = showCatatanZon ?
 							'<td><textarea class="form-control form-control-sm mp-pet-catatan-zon" rows="2">' +
 							escapeHtml(p.catatan_mengikut_zon || '') + '</textarea></td>' : '';
+						const vendorName = (p.vendor_name || '-').toString();
+						const vendorId = p.vendor_id ? String(p.vendor_id) : '';
+						const vendorCell = '<td class="text-start">' +
+							'<div class="fw-semibold small">' + escapeHtml(vendorName) + '</div>' +
+							(vendorId ? '<div class="text-muted" style="font-size:0.7rem;">ID: ' + escapeHtml(
+								vendorId) + '</div>' : '') +
+							'</td>';
+						const hargaBidaanCell = showHargaBidaan ?
+							(function() {
+								const harga = (p.harga_bidaan !== null && p.harga_bidaan !== undefined && p
+										.harga_bidaan !== '') ?
+									p.harga_bidaan :
+									p.harga_tawaran;
+								const specCount = Array.isArray(p.spec_items) ? p.spec_items.length : 0;
+								const modalId = vendorId ? ('bidSpecBreakdownModal-jp-' + vendorId) : '';
+								const infoBtn = (vendorId && specCount > 0) ?
+									('<button type="button" class="btn btn-sm btn-outline-secondary bid-spec-breakdown-btn d-inline-flex align-items-center justify-content-center"' +
+										' data-bs-toggle="modal" data-bs-target="#' + modalId + '"' +
+										' title="Item Spesifikasi" aria-label="Item Spesifikasi">' +
+										'<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+										'<circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line>' +
+										'</svg></button>') :
+									'';
+								const isNew = showPriceDiff && (p.is_new_bid === true || p.is_new_bid === 1 || p.is_new_bid === '1');
+								const isOld = showPriceDiff && !isNew;
+								const cellClass = isNew ? 'text-success fw-semibold' : (isOld ? 'text-danger fw-semibold' : 'text-end');
+								const cellStyle = isNew ? ' style="background:#e8f7ef;"' : (isOld ? ' style="background:#fdebec;"' : '');
+								const label = isNew ? 'Harga baharu' : (isOld ? 'Harga lama' : '');
+								const labelHtml = label ? '<div class="small fw-normal">' + label + '</div>' : '';
+								return '<td class="' + cellClass + '"' + cellStyle + '><div class="d-flex align-items-center justify-content-end gap-1">' +
+									'<div><div>' + escapeHtml(mpFormatMoney(harga)) + '</div>' + labelHtml + '</div>' +
+									infoBtn +
+									'</div></td>';
+							})() :
+							'';
 						const row = '<tr data-pet-idx="' + i + '">' +
 							'<td class="text-center">' + escapeHtml(p.bil_label || '') + '</td>' +
-							'<td class="text-center">' + escapeHtml(p.status_bumiputra || '') + '</td>' +
+							vendorCell +
+							'<td class="text-center">' + escapeHtml(p.status_bumiputra || '—') + '</td>' +
 							'<td class="text-end">' + escapeHtml(mpFormatMoney(p.harga_tawaran)) + '</td>' +
-							'<td class="text-end">' + escapeHtml(String(p.jumlah_skor ?? '')) + '</td>' +
-							'<td class="text-center">' + escapeHtml(String(p.kedudukan_penilaian ?? '')) +
+							hargaBidaanCell +
+							'<td class="text-end">' + escapeHtml(String(p.jumlah_skor || '—')) + '</td>' +
+							'<td class="text-center">' + escapeHtml(String(p.kedudukan_penilaian ?? '—')) +
 							'</td>' +
-							'<td class="text-center small">' + escapeHtml(p.status_mof || '') + '</td>' +
-							'<td><textarea class="form-control form-control-sm mp-pet-disiplin" rows="2">' +
-							escapeHtml(p
-								.tindakan_disiplin || '') + '</textarea></td>' +
-							'<td class="text-center">' + lp + '</td>' +
-							mpCidbCell(p) +
+							'<td class="text-center small">' + escapeHtml(p.status_mof || '—') + '</td>' +
+							'<td class="text-center text-muted small">—</td>' +
+							'<td class="text-center text-muted small">—</td>' +
+							'<td class="small">' + escapeHtml(p.keputusan_urusetia || '—') + '</td>' +
+							'<td class="small">' + escapeHtml(p.catatan_urusetia || '—') + '</td>' +
 							selectionCell +
-							'<td class="small">' + escapeHtml(p.keputusan_urusetia || '') + '</td>' +
 							catatanZonCell +
-							'<td class="small">' + escapeHtml(p.catatan_urusetia || '') + '</td>' +
 							'</tr>';
 						$b.append(row);
 					});
@@ -1007,6 +1068,10 @@
 						},
 						data: JSON.stringify(body),
 						success: function(resp) {
+							if (resp.redirect) {
+								window.location.href = resp.redirect;
+								return;
+							}
 							mpShowAlert(resp.message || successMessage, 'success');
 						},
 						error: function(xhr) {
@@ -1030,11 +1095,22 @@
 					mpFlushSuppliersToState();
 					mpSyncSupplierTableColumns();
 					mpRenderSuppliers();
+					mpSyncSahkanBidaanVisibility();
 				});
+
+				function mpSyncSahkanBidaanVisibility() {
+					const kaedah = ($('#mp_kaedah_memuktamadkan').val() || '').toString();
+					const isBidaan = kaedah === 'Bidaan';
+					$('#mp_bidaan_extra_wrap').toggleClass('d-none', !isBidaan);
+					if (!isBidaan) {
+						$('#mp_sahkan_layak').prop('checked', false);
+					}
+				}
 
 				mpSyncSupplierTableColumns();
 				mpRenderItems();
 				mpRenderSuppliers();
+				mpSyncSahkanBidaanVisibility();
 			@endif
 		});
 	</script>

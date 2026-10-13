@@ -22,7 +22,18 @@ class TenderPrestasiKerjaController extends Controller
         $tender = Tender::with('tenderer')
             ->leftJoin('ref_kategori_jenis_perolehans as k', 'k.id', '=', 'tenders.kategori_perolehan_id')
             ->select('tenders.*', 'k.name as kategori_perolehan_name')
-            ->where('tenders.uuid', $tenderUuid)
+            ->where(function ($q) use ($tenderUuid) {
+                $q->where('tenders.uuid', $tenderUuid);
+
+                // Hanya jatuh balik kepada id apabila nilainya benar-benar
+                // angka. tenders.id ialah integer, jadi MySQL memaksa string
+                // UUID kepada nombor sebelum membandingkan — UUID seperti
+                // '26f653c1-...' menjadi 26 dan memadankan tender id 26 yang
+                // tiada kaitan, memuatkan tender yang salah sepenuhnya.
+                if (ctype_digit((string) $tenderUuid)) {
+                    $q->orWhere('tenders.id', (int) $tenderUuid);
+                }
+            })
             ->firstOrFail();
 
         $this->ensureTenderFormAccess($tender);
@@ -44,8 +55,9 @@ class TenderPrestasiKerjaController extends Controller
         $this->ensureFormEditable();
 
         $arrayFields = [
-            'nama', 'no_kontrak', 'harga', 'tarikh_tapak', 'tempoh', 'tarikh_siap',
-            'tarikh_penilaian', 'luputan', 'kemajuan_sebenar', 'kemajuan_jadual',
+            'nama', 'no_kontrak', 'harga', 'wang_kos_prima', 'wang_peruntukan_semasa',
+            'tarikh_tapak', 'tempoh', 'tarikh_siap', 'tarikh_penilaian', 'luputan',
+            'kemajuan_sebenar', 'kemajuan_jadual',
         ];
 
         foreach ($arrayFields as $field) {
@@ -60,7 +72,7 @@ class TenderPrestasiKerjaController extends Controller
                             return null;
                         }
 
-                        if ($field === 'harga') {
+                        if (in_array($field, ['harga', 'wang_kos_prima', 'wang_peruntukan_semasa'], true)) {
                             return str_replace(',', '', (string) $value);
                         }
 
@@ -71,28 +83,32 @@ class TenderPrestasiKerjaController extends Controller
         }
 
         $validated = $request->validate([
-            'nama'               => ['nullable', 'array'],
-            'nama.*'             => ['nullable', 'string', 'max:255'],
-            'no_kontrak'         => ['nullable', 'array'],
-            'no_kontrak.*'       => ['nullable', 'string', 'max:255'],
-            'harga'              => ['nullable', 'array'],
-            'harga.*'            => ['nullable', 'numeric', 'min:0'],
-            'tarikh_tapak'       => ['nullable', 'array'],
-            'tarikh_tapak.*'     => ['nullable', 'string', 'max:100'],
-            'tempoh'             => ['nullable', 'array'],
-            'tempoh.*'           => ['nullable', 'integer', 'min:0'],
-            'tarikh_siap'        => ['nullable', 'array'],
-            'tarikh_siap.*'      => ['nullable', 'string', 'max:100'],
-            'tarikh_penilaian'   => ['nullable', 'array'],
-            'tarikh_penilaian.*' => ['nullable', 'string', 'max:100'],
-            'luputan'            => ['nullable', 'array'],
-            'luputan.*'          => ['nullable', 'integer', 'min:0'],
-            'kemajuan_sebenar'   => ['nullable', 'array'],
-            'kemajuan_sebenar.*' => ['nullable', 'numeric', 'min:0', 'max:100'],
-            'kemajuan_jadual'    => ['nullable', 'array'],
-            'kemajuan_jadual.*'  => ['nullable', 'numeric', 'min:0', 'max:100'],
-            'dokumen_prestasi'   => ['nullable', 'array'],
-            'dokumen_prestasi.*' => ['file', 'max:10240'],
+            'nama'                   => ['nullable', 'array'],
+            'nama.*'                 => ['nullable', 'string', 'max:255'],
+            'no_kontrak'             => ['nullable', 'array'],
+            'no_kontrak.*'           => ['nullable', 'string', 'max:255'],
+            'harga'                  => ['nullable', 'array'],
+            'harga.*'                => ['nullable', 'numeric', 'min:0'],
+            'wang_kos_prima'         => ['nullable', 'array'],
+            'wang_kos_prima.*'       => ['nullable', 'numeric', 'min:0'],
+            'wang_peruntukan_semasa' => ['nullable', 'array'],
+            'wang_peruntukan_semasa.*' => ['nullable', 'numeric', 'min:0'],
+            'tarikh_tapak'           => ['nullable', 'array'],
+            'tarikh_tapak.*'         => ['nullable', 'string', 'max:100'],
+            'tempoh'                 => ['nullable', 'array'],
+            'tempoh.*'               => ['nullable', 'integer', 'min:0'],
+            'tarikh_siap'            => ['nullable', 'array'],
+            'tarikh_siap.*'          => ['nullable', 'string', 'max:100'],
+            'tarikh_penilaian'       => ['nullable', 'array'],
+            'tarikh_penilaian.*'     => ['nullable', 'string', 'max:100'],
+            'luputan'                => ['nullable', 'array'],
+            'luputan.*'              => ['nullable', 'integer', 'min:0'],
+            'kemajuan_sebenar'       => ['nullable', 'array'],
+            'kemajuan_sebenar.*'     => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'kemajuan_jadual'        => ['nullable', 'array'],
+            'kemajuan_jadual.*'      => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'dokumen_prestasi'       => ['nullable', 'array'],
+            'dokumen_prestasi.*'     => ['file', 'max:10240'],
         ]);
 
         $filledRows = collect($validated['nama'] ?? [])
@@ -102,16 +118,6 @@ class TenderPrestasiKerjaController extends Controller
             ])
             ->filter(fn (array $row) => $row['nama'] !== '')
             ->values();
-
-        if ($filledRows->isEmpty()) {
-            $message = 'Sila isi sekurang-kurangnya satu baris prestasi kerja semasa.';
-
-            if ($request->ajax() || $request->boolean('modal')) {
-                return redirect()->back()->withInput()->with('error', $message);
-            }
-
-            return redirect()->back()->withInput()->with('error', $message);
-        }
 
         try {
             DB::transaction(function () use ($validated, $tender, $request, $filledRows) {
@@ -131,7 +137,7 @@ class TenderPrestasiKerjaController extends Controller
                 // Clear existing items
                 $prestasi->items()->delete();
 
-                // Save new items
+                // Save new items (may be empty — form is optional)
                 foreach ($filledRows as $sortOrder => $row) {
                     $index = $row['index'];
                     $itemAttrs = $this->prestasiItemAttributes($validated, $index, $row['nama']);
@@ -292,16 +298,18 @@ class TenderPrestasiKerjaController extends Controller
     protected function prestasiItemAttributes(array $validated, int $index, string $nama): array
     {
         return [
-            'nama' => $nama,
-            'no_kontrak' => $validated['no_kontrak'][$index] ?? null,
-            'harga' => $validated['harga'][$index] ?? null,
-            'tarikh_tapak' => $validated['tarikh_tapak'][$index] ?? null,
-            'tempoh' => $validated['tempoh'][$index] ?? null,
-            'tarikh_siap' => $validated['tarikh_siap'][$index] ?? null,
-            'tarikh_penilaian' => $validated['tarikh_penilaian'][$index] ?? null,
-            'luputan' => $validated['luputan'][$index] ?? null,
-            'kemajuan_sebenar' => $validated['kemajuan_sebenar'][$index] ?? null,
-            'kemajuan_jadual' => $validated['kemajuan_jadual'][$index] ?? null,
+            'nama'                   => $nama,
+            'no_kontrak'             => $validated['no_kontrak'][$index] ?? null,
+            'harga'                  => $validated['harga'][$index] ?? null,
+            'wang_kos_prima'         => $validated['wang_kos_prima'][$index] ?? null,
+            'wang_peruntukan_semasa' => $validated['wang_peruntukan_semasa'][$index] ?? null,
+            'tarikh_tapak'           => $validated['tarikh_tapak'][$index] ?? null,
+            'tempoh'                 => $validated['tempoh'][$index] ?? null,
+            'tarikh_siap'            => $validated['tarikh_siap'][$index] ?? null,
+            'tarikh_penilaian'       => $validated['tarikh_penilaian'][$index] ?? null,
+            'luputan'                => null,
+            'kemajuan_sebenar'       => $validated['kemajuan_sebenar'][$index] ?? null,
+            'kemajuan_jadual'        => $validated['kemajuan_jadual'][$index] ?? null,
         ];
     }
 
@@ -311,16 +319,18 @@ class TenderPrestasiKerjaController extends Controller
     protected function prestasiItemPayloadFromModel(TenderPrestasiKerjaItem $item): array
     {
         return [
-            'nama' => $item->nama,
-            'no_kontrak' => $item->no_kontrak,
-            'harga' => $item->harga !== null ? (float) $item->harga : null,
-            'tarikh_tapak' => $item->tarikh_tapak,
-            'tempoh' => $item->tempoh,
-            'tarikh_siap' => $item->tarikh_siap,
-            'tarikh_penilaian' => $item->tarikh_penilaian,
-            'luputan' => $item->luputan,
-            'kemajuan_sebenar' => $item->kemajuan_sebenar !== null ? (float) $item->kemajuan_sebenar : null,
-            'kemajuan_jadual' => $item->kemajuan_jadual !== null ? (float) $item->kemajuan_jadual : null,
+            'nama'                   => $item->nama,
+            'no_kontrak'             => $item->no_kontrak,
+            'harga'                  => $item->harga !== null ? (float) $item->harga : null,
+            'wang_kos_prima'         => $item->wang_kos_prima !== null ? (float) $item->wang_kos_prima : null,
+            'wang_peruntukan_semasa' => $item->wang_peruntukan_semasa !== null ? (float) $item->wang_peruntukan_semasa : null,
+            'tarikh_tapak'           => $item->tarikh_tapak,
+            'tempoh'                 => $item->tempoh,
+            'tarikh_siap'            => $item->tarikh_siap,
+            'tarikh_penilaian'       => $item->tarikh_penilaian,
+            'luputan'                => $item->luputan,
+            'kemajuan_sebenar'       => $item->kemajuan_sebenar !== null ? (float) $item->kemajuan_sebenar : null,
+            'kemajuan_jadual'        => $item->kemajuan_jadual !== null ? (float) $item->kemajuan_jadual : null,
         ];
     }
 }

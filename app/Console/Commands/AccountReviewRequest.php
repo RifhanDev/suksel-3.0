@@ -43,13 +43,15 @@ class AccountReviewRequest extends Command
     public function handle()
     {
         $today = Carbon::today();
+        $arrMonths = User::ARR_REVIEW_INTERVAL_MONTHS;
 
-        // Hantar emel Account Review Request kepada SEMUA pengguna aktif
-        // (kecuali emel anonymous / tenderadmin) tanpa mengira tarikh arr_sent_at.
-        // Tarikh arr_sent_at akan dikemas kini ke tarikh semasa selepas emel dihantar.
         $users = User::active()
             ->whereNotNull('organization_unit_id')
             ->whereNotIn('email', ['anonymous', 'tenderadmin@selangor.gov.my'])
+            ->where(function ($query) use ($today, $arrMonths) {
+                $query->whereNull('arr_sent_at')
+                    ->orWhere('arr_sent_at', '<', $today->copy()->subMonths($arrMonths));
+            })
             ->get();
 
         foreach ($users as $user) {

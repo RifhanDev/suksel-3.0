@@ -71,6 +71,34 @@
 			font-weight: 500;
 		}
 
+		.tender-code-divider {
+			display: flex;
+			align-items: center;
+			gap: 0.75rem;
+			margin: 0 0 1.25rem;
+		}
+
+		.tender-code-divider::before,
+		.tender-code-divider::after {
+			content: '';
+			flex: 1;
+			height: 1px;
+			background: #e5e7eb;
+		}
+
+		.tender-code-divider span {
+			flex: none;
+			padding: 0.25rem 0.85rem;
+			background: #f8fafc;
+			border: 1px solid #e5e7eb;
+			border-radius: 999px;
+			color: #6b7280;
+			font-size: 0.7rem;
+			font-weight: 700;
+			text-transform: uppercase;
+			letter-spacing: 0.8px;
+		}
+
 		/* Side nav */
 		.vendor-side-nav .nav-link {
 			color: #475569;
@@ -380,7 +408,8 @@
 		</div>
 	@endif
 
-	@if ($vendorHasPurchased)
+	{{-- Online / Manual iklan kaedah: tawaran dihantar secara manual ke kaunter, bukan melalui sistem. --}}
+	@if ($vendorHasPurchased && ! $tender->usesIklanDokumen())
 		<div class="mb-4" id="vendor-submission-panel">
 			@if ($vendorSubmitted)
 				<div class="alert alert-success d-flex align-items-start gap-2 mb-0 py-3 px-3" style="font-size:0.84rem;">
@@ -391,10 +420,6 @@
 					</svg>
 					<div>
 						<strong>Tawaran telah dihantar.</strong>
-						Maklumat lawatan tapak dan dokumen tender tidak boleh dikemaskini.
-						@if (!empty($vendorPurchase?->kod_pembekal))
-							<div class="mt-1">Kod Pembekal: <strong>{{ $vendorPurchase->kod_pembekal }}</strong></div>
-						@endif
 					</div>
 				</div>
 			@elseif (!$vendorWithinDokumenWindow && $vendorDokumenWindowReason)
@@ -431,13 +456,7 @@
 						</div>
 						<div class="flex-grow-1">
 							<h6 class="mb-0">Hantar Tawaran</h6>
-							<small class="text-muted" style="font-size:0.72rem;">
-								Lengkapkan dokumen tender/tawaran sebelum menghantar.
-							</small>
 						</div>
-						@if (!empty($vendorPurchase?->kod_pembekal))
-							<span class="badge bg-light text-dark border">Kod: {{ $vendorPurchase->kod_pembekal }}</span>
-						@endif
 					</div>
 					<div class="p-4">
 						<div id="vendor-submission-errors" class="alert alert-warning d-none py-2 px-3 mb-3" style="font-size:0.8rem;">
@@ -553,7 +572,17 @@
 						</a>
 					@endif
 
-					@if ($tender->canShowDokumenSenaraiTab(Auth::user()->vendor_id))
+					@if ($vendorHasPurchased && $tender->usesIklanDokumen() && $tender->iklanDokumens->isNotEmpty())
+						<a class="nav-link" href="#vt-dokumen-tawaran" data-bs-toggle="pill" role="tab">
+							<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
+								stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+								<path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" />
+								<polyline points="13 2 13 9 20 9" />
+							</svg>
+							{{ $tender->dokumenSenaraiTabLabel() }}
+							<span class="badge bg-primary ms-auto" style="font-size:0.6rem;">{{ $tender->iklanDokumens->count() }}</span>
+						</a>
+					@elseif ($tender->canShowDokumenSenaraiTab(Auth::user()->vendor_id))
 						<a class="nav-link" href="#vt-dokumen-tawaran" data-bs-toggle="pill" role="tab">
 							<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
 								stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -748,8 +777,9 @@
 					</div>
 					@if ($tender->canPurchase())
 						<div class="d-flex justify-content-end">
-							<a href="{{ route('tenders.buy', $tender->id) }}" class="btn-form btn-form-primary">Tambah Kepada Senarai
-								Tempahan</a>
+							<a href="{{ route('tenders.buy', $tender->id) }}" class="btn-form btn-form-primary">
+								{{ $tender->vendorDokumenActionLabel() }}
+							</a>
 						</div>
 					@endif
 				</div>
@@ -872,7 +902,7 @@
 													@endif
 													@if (!$vendorHasPurchased && $tender->canPurchase())
 														<div class="mt-1">
-															<a href="{{ route('tenders.buy', $tender->id) }}" class="small">Beli dokumen</a>
+															<a href="{{ route('tenders.buy', $tender->id) }}" class="small">{{ $tender->vendorDokumenActionLabel() }}</a>
 														</div>
 													@endif
 												</td>
@@ -960,13 +990,13 @@
 									</tr>
 								</table>
 							</div>
-							@if (count($tender->cidb_grades) > 0)
-								<div class="text-center my-2">
-									<span class="badge bg-success">{{ $tender->mof_cidb_rule == 'or' ? 'ATAU' : 'DAN' }}</span>
+							@if (count($tender->cidb_grades) > 0 || count($tender->cidb_codes) > 0)
+								<div class="tender-code-divider">
+									<span>{{ strtoupper((string) ($tender->mof_cidb_rule ?: 'or')) === 'AND' ? 'DAN' : 'ATAU' }}</span>
 								</div>
 							@endif
 						@endif
-						@if (count($tender->cidb_grades) > 0)
+						@if (count($tender->cidb_grades) > 0 || count($tender->cidb_codes) > 0)
 							<div class="vendor-tender-card">
 								<div class="vendor-tender-card-header">
 									<div class="header-icon"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
@@ -978,16 +1008,18 @@
 									<h6>Kod Bidang CIDB</h6>
 								</div>
 								<table class="info-table">
-									<tr>
-										<th>Gred CIDB</th>
-										<td>
-											<ul class="mb-0 ps-3">
-												@foreach ($tender->cidb_grades as $code)
-													<li>{!! tender_cidb_grade($code->code, Auth::user()) !!}</li>
-												@endforeach
-											</ul>
-										</td>
-									</tr>
+									@if (count($tender->cidb_grades) > 0)
+										<tr>
+											<th>Gred CIDB</th>
+											<td>
+												<ul class="mb-0 ps-3">
+													@foreach ($tender->cidb_grades as $code)
+														<li>{!! tender_cidb_grade($code->code, Auth::user()) !!}</li>
+													@endforeach
+												</ul>
+											</td>
+										</tr>
+									@endif
 									@if (count($tender->cidb_codes) > 0)
 										@php $max_count = count($tender->cidb_code_groups); @endphp
 										<tr>
@@ -1032,8 +1064,26 @@
 					</div>
 				@endif
 
-				{{-- TAB: Dokumen Tender/Tawaran atau Sebut Harga (senarai semak) --}}
-				@if ($tender->canShowDokumenSenaraiTab(Auth::user()->vendor_id))
+				{{-- TAB: Dokumen Tender/Tawaran atau Sebut Harga (senarai semak) — iklan docs only after purchase --}}
+				@if ($vendorHasPurchased && $tender->usesIklanDokumen() && $tender->iklanDokumens->isNotEmpty())
+					<div class="tab-pane fade" id="vt-dokumen-tawaran" role="tabpanel">
+						<div class="vendor-tender-card">
+							<div class="vendor-tender-card-header">
+								<div class="header-icon"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
+										viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+										stroke-linejoin="round">
+										<path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" />
+										<polyline points="13 2 13 9 20 9" />
+									</svg></div>
+								<div>
+									<h6 class="mb-0">{{ $tender->dokumenSenaraiTabLabel() }}</h6>
+									<small class="text-muted" style="font-size:0.72rem;">Dokumen untuk dimuat turun</small>
+								</div>
+							</div>
+							@include('tenders._iklan_dokumen_table', ['tender' => $tender])
+						</div>
+					</div>
+				@elseif ($tender->canShowDokumenSenaraiTab(Auth::user()->vendor_id))
 					<div class="tab-pane fade" id="vt-dokumen-tawaran" role="tabpanel">
 						<div class="vendor-tender-card">
 							<div class="vendor-tender-card-header">
@@ -1338,6 +1388,41 @@
 @endsection
 
 @section('scripts')
+	{{-- Deep-link from dashboard "Muat Turun" (#vt-dokumen-tawaran / legacy #tf-doc2) --}}
+	<script>
+		(function() {
+			function activateVendorHashTab() {
+				var hash = window.location.hash || '';
+				if (!hash || hash === '#') {
+					return;
+				}
+
+				// Legacy agency hash from old dashboard links.
+				if (hash === '#tf-doc2' || hash === '#tf-dokumen-tawaran') {
+					hash = '#vt-dokumen-tawaran';
+				}
+
+				var tabLink = document.querySelector('#vendorTabs a[href="' + hash + '"]');
+				if (!tabLink && hash === '#vt-dokumen-tawaran') {
+					tabLink = document.querySelector('#vendorTabs a[href="#vt-doc2"]');
+					hash = tabLink ? '#vt-doc2' : hash;
+				}
+				if (!tabLink || typeof bootstrap === 'undefined') {
+					return;
+				}
+
+				bootstrap.Tab.getOrCreateInstance(tabLink).show();
+				var pane = document.querySelector(hash);
+				if (pane) {
+					pane.scrollIntoView({ behavior: 'smooth', block: 'start' });
+				}
+			}
+
+			document.addEventListener('DOMContentLoaded', activateVendorHashTab);
+			window.addEventListener('hashchange', activateVendorHashTab);
+		})();
+	</script>
+
 	@if ($lawatanInfoBanner ?? null)
 		<script>
 			document.getElementById('btn-go-lawatan-tab')?.addEventListener('click', function() {
@@ -1361,7 +1446,7 @@
 
 				function emptyRow() {
 					return '<tr class="wakil-row">' +
-						'<td><input type="text" class="form-control form-control-sm rep-ic" maxlength="32" placeholder="No. IC"></td>' +
+						'<td><input type="text" class="form-control form-control-sm rep-ic js-ic-input" data-ic-input maxlength="12" inputmode="numeric" title="Masukkan 12 digit No. IC (sempang akan dibuang automatik)" placeholder="No. IC"></td>' +
 						'<td><input type="text" class="form-control form-control-sm rep-name" maxlength="255" placeholder="Nama"></td>' +
 						'<td class="text-center"><button type="button" class="btn btn-sm btn-link text-danger p-0 btn-remove-rep" title="Buang">&times;</button></td>' +
 						'</tr>';
@@ -1373,6 +1458,9 @@
 					if (!reps || !reps.length) {
 						$tbody.append(emptyRow());
 						$tbody.append(emptyRow());
+						if (typeof window.bindIcInputs === 'function') {
+							window.bindIcInputs($tbody[0]);
+						}
 						return;
 					}
 					reps.forEach(function(rep) {
@@ -1383,6 +1471,9 @@
 					});
 					if (reps.length < 2) {
 						$tbody.append(emptyRow());
+					}
+					if (typeof window.bindIcInputs === 'function') {
+						window.bindIcInputs($tbody[0]);
 					}
 				}
 
@@ -1400,6 +1491,9 @@
 
 				$('#wakilLawatanAddRow').on('click', function() {
 					$('#wakilLawatanRows').append(emptyRow());
+					if (typeof window.bindIcInputs === 'function') {
+						window.bindIcInputs(document.getElementById('wakilLawatanRows'));
+					}
 				});
 
 				$(document).on('click', '.btn-remove-rep', function() {
@@ -1413,7 +1507,9 @@
 
 					var reps = [];
 					$('#wakilLawatanRows .wakil-row').each(function() {
-						var ic = $(this).find('.rep-ic').val().trim();
+						var ic = (typeof window.normalizeIcNumber === 'function')
+							? window.normalizeIcNumber($(this).find('.rep-ic').val())
+							: $(this).find('.rep-ic').val().replace(/\D+/g, '').slice(0, 12);
 						var name = $(this).find('.rep-name').val().trim();
 						if (ic || name) {
 							reps.push({
@@ -1458,11 +1554,12 @@
 		@include('tenders.forms._online_form_modal')
 	@endif
 
-	@if ($vendorHasPurchased && !$vendorSubmitted)
+	@if ($vendorHasPurchased && !$vendorSubmitted && ! $tender->usesIklanDokumen())
 		<script>
 			$(function() {
 				var READINESS_URL = @json(route('tenders.vendorSubmission.readiness', $tender->id));
 				var SUBMIT_URL = @json(route('tenders.vendorSubmission.submit', $tender->id));
+				var TENDER_URL = @json(route('tenders.show', $tender->id));
 				var CSRF = @json(csrf_token());
 				var warningModal = document.getElementById('vendorSubmissionWarningModal');
 				var warningModalInstance = warningModal && typeof bootstrap !== 'undefined' ?
@@ -1519,13 +1616,15 @@
 					$.ajax({
 							url: SUBMIT_URL,
 							type: 'POST',
+							dataType: 'json',
 							headers: {
-								'X-CSRF-TOKEN': CSRF
+								'X-CSRF-TOKEN': CSRF,
+								'Accept': 'application/json'
 							},
 						})
 						.done(function(res) {
 							if (res && res.success) {
-								window.location.reload();
+								window.location.href = TENDER_URL;
 								return;
 							}
 							$btn.prop('disabled', false);

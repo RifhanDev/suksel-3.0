@@ -59,6 +59,19 @@ var FileUpload = (function ($) {
         return $chip;
     }
 
+    var instances = {};
+
+    function reset(inputId) {
+        if (instances[inputId] && typeof instances[inputId].clear === 'function') {
+            instances[inputId].clear();
+        } else {
+            var $input = $('#' + inputId);
+            if ($input.length && $input[0]) {
+                $input.val('');
+            }
+        }
+    }
+
     // ── Public: init ─────────────────────────────────────────────────────────
 
     function init(opts) {
@@ -75,8 +88,18 @@ var FileUpload = (function ($) {
         var dt = new DataTransfer();
 
         function syncInput() {
-            $input[0].files = dt.files;
+            if ($input[0]) {
+                $input[0].files = dt.files;
+            }
         }
+
+        function clear() {
+            dt = new DataTransfer();
+            syncInput();
+            $chipList.empty();
+        }
+
+        instances[opts.inputId] = { clear: clear };
 
         function addFiles(files) {
             $.each(files, function (i, file) {
@@ -132,6 +155,9 @@ var FileUpload = (function ($) {
         });
     }
 
-    return { init: init };
+    return {
+        init: init,
+        reset: reset
+    };
 
 }(jQuery));

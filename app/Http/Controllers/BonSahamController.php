@@ -21,7 +21,18 @@ class BonSahamController extends Controller
         $tender = Tender::with('tenderer')
             ->leftJoin('ref_kategori_jenis_perolehans as k', 'k.id', '=', 'tenders.kategori_perolehan_id')
             ->select('tenders.*', 'k.name as kategori_perolehan_name')
-            ->where('tenders.uuid', $tenderUuid)
+            ->where(function ($q) use ($tenderUuid) {
+                $q->where('tenders.uuid', $tenderUuid);
+
+                // Hanya jatuh balik kepada id apabila nilainya benar-benar
+                // angka. tenders.id ialah integer, jadi MySQL memaksa string
+                // UUID kepada nombor sebelum membandingkan — UUID seperti
+                // '26f653c1-...' menjadi 26 dan memadankan tender id 26 yang
+                // tiada kaitan, memuatkan tender yang salah sepenuhnya.
+                if (ctype_digit((string) $tenderUuid)) {
+                    $q->orWhere('tenders.id', (int) $tenderUuid);
+                }
+            })
             ->firstOrFail();
 
         $this->ensureTenderFormAccess($tender);

@@ -19,6 +19,14 @@
 </head>
 
 <body>
+	@php
+		$hasTransaction = $hasTransaction ?? ($purchase->transaction && (int) ($purchase->transaction_id ?? 0) > 0);
+		$txn = $hasTransaction ? $purchase->transaction : null;
+		$receiptDate = $txn?->created_at ?? $purchase->created_at;
+		$paymentMethod = $txn ? strtoupper((string) $txn->method) : 'MANUAL / BYPASS';
+		$txnNumber = $txn?->number ?? ($purchase->ref_number ?: '-');
+		$accountCode = ($txn && $txn->type === 'purchase') || ! $txn ? '73105' : '71399';
+	@endphp
 	<div class="container" style="margin-bottom: 5%;">
 		<header>
 			<div class="col-xs-12" style="text-align:right">Versi 1.0</div>
@@ -35,13 +43,17 @@
 				<div class="col-xs-6 clearfix"></div>
 				<div class="col-xs-6">
 					<ul class="list-unstyled">
-						@if ($purchase->transaction)
-							<li>No Resit :
-								<strong>{{ $receipt != 'old' ? $receipt : $purchase->transaction->vendor_id . '-' . $purchase->transaction->gateway_reference }}</strong>
-							</li>
-						@endif
+						<li>No Resit :
+							<strong>
+								@if ($txn)
+									{{ $receipt != 'old' ? $receipt : $purchase->vendor_id . '-' . $txn->gateway_reference }}
+								@else
+									{{ $receipt }}
+								@endif
+							</strong>
+						</li>
 						<li>Tarikh :
-							<strong>{{ \Carbon\Carbon::parse($purchase->transaction->created_at)->format('d / m / Y h:i:s') }}</strong>
+							<strong>{{ \Carbon\Carbon::parse($receiptDate)->format('d / m / Y h:i:s') }}</strong>
 						</li>
 					</ul>
 				</div>
@@ -57,11 +69,11 @@
 				</div>
 				<div class="col-xs-6">
 					<ul class="list-unstyled">
-						<li>Kaedah Bayaran: <strong>{{ strtoupper($purchase->transaction->method) }}</strong></li>
+						<li>Kaedah Bayaran: <strong>{{ $paymentMethod }}</strong></li>
 						<li>Bank: -</li>
-						<li>No Rujukan Bayaran/ Transaksi : <strong>{{ $purchase->transaction->number }}</strong></li>
-						@if ($purchase->transaction->gateway_auth)
-							<li>No Pengesahan : <strong>{{ $purchase->transaction->gateway_auth }}</strong></li>
+						<li>No Rujukan Bayaran/ Transaksi : <strong>{{ $txnNumber }}</strong></li>
+						@if ($txn && $txn->gateway_auth)
+							<li>No Pengesahan : <strong>{{ $txn->gateway_auth }}</strong></li>
 						@endif
 					</ul>
 				</div>
@@ -83,14 +95,7 @@
 							{{ $purchase->tender->ref_number }}<br>
 							{{ $purchase->tender->name }}
 						</td>
-						<td>
-							@if ($purchase->transaction->type == 'purchase')
-								73105
-							@else
-								71399
-							@endif
-						</td>
-						{{-- <td class="align-right">{{ number_format($purchase->amount, 2, '.', ',') }}</td> --}}
+						<td>{{ $accountCode }}</td>
 						<td class="align-right">{{ sprintf('%.2f', $purchase->amount) }}</td>
 					</tr>
 				</tbody>
@@ -98,24 +103,22 @@
 					<tr>
 						<th class="align-right" colspan="3">Jumlah Keseluruhan</th>
 						<td class="align-right">
-							{{-- {{ number_format($purchase->amount, 2, '.', ',') }} --}}
 							{{ sprintf('%.2f', $purchase->amount) }}
 						</td>
 					</tr>
 				</tfoot>
 			</table>
 			<div class="row">
-				<!-- <div class="col-xs-12 total-word">Ringgit Malaysia : {{ $purchase->spellOut() }}</div> -->
 				<div class="col-xs-12 total-word">Ringgit Malaysia : {{ $purchase->spellOut() }}</div>
 				<div class="clearfix"></div>
 			</div>
 			<div class="row">
 				<div class="col-xs-12 address">
 					<span>Pusat Terimaan: </span><br>
-					@if ($purchase->transaction->gateway != null && $purchase->transaction->gateway->agency != null)
-						<strong>{{ $purchase->transaction->gateway->agency->name }}</strong><br>
+					@if ($txn && $txn->gateway != null && $txn->gateway->agency != null)
+						<strong>{{ $txn->gateway->agency->name }}</strong><br>
 						<p>
-							{{ $purchase->transaction->gateway->agency->address }}
+							{{ $txn->gateway->agency->address }}
 						</p>
 					@else
 						<strong>PEJABAT SETIAUSAHA KERAJAAN NEGERI SELANGOR</strong><br>

@@ -1,4 +1,4 @@
-@extends('layouts.v3.master')
+@extends('layouts.modernLanding')
 
 @section('content')
 	<h4>Senarai Tempahan</h4>
@@ -93,11 +93,6 @@
 							@if ($ebpg)
 								<div class="btn-group">
 									<a href="#" class="btn bg-blue-steel method-ob" data-value="ebpg">Kad Kredit</a>
-								</div>
-							@endif
-							@if ($duitnow)
-								<div class="btn-group">
-									<a href="#" class="btn btn-success method-ob" data-value="duitnow">DuitNow</a>
 								</div>
 							@endif
 						@else

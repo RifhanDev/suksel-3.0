@@ -14,6 +14,7 @@ use App\Models\Gateway;
 use App\Models\Fpx;
 use GuzzleHttp\Client;
 use GuzzleHttp\Psr7\Response;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
@@ -86,18 +87,28 @@ class TransactionsController extends Controller
 			$recordsTotal = (clone $transactions)->count() ?? 0;
 
 
-			$transactions->where( function($q) use($keyword){
-				$q->whereRaw(" (case when transactions.status = 'pending' then 'belum diterima' when transactions.status = 'success' then 'berjaya' when transactions.status = 'declined' then 'ditolak' when transactions.status = 'failed' then 'gagal' when transactions.status = 'pending_authorization' then 'dalam proses pengesahan' end ) like ?", '%'.$keyword.'%')
-				->orWhereRaw(" (case when transactions.type = 'subscription' then 'langganan' when transactions.type = 'purchase' then 'pembelian dokumen' end ) like ?", '%'.$keyword.'%')
-				->orWhereRaw("transactions.vendor_id in (select id from vendors where name like ?)", '%'.$keyword.'%')
-				->orWhereRaw("transactions.number like ?", '%'.$keyword.'%')
-				->orWhereRaw("transactions.gateway_reference like ?", '%'.$keyword.'%');
-			});
+			// Penapis carian hanya dikenakan apabila pengguna benar-benar menaip
+			// sesuatu. Sebelum ini ia sentiasa dikenakan, jadi setiap muatan halaman
+			// menjalankan lima syarat LIKE dengan corak '%%' - termasuk subkueri ke
+			// atas `vendors` - yang tiada satu pun boleh menggunakan indeks. Pada
+			// jadual 1.4 juta baris itu memaksa imbasan penuh untuk kiraan DAN untuk
+			// pengambilan halaman, walaupun kotak carian kosong.
+			if ($keyword !== "") {
+				$transactions->where( function($q) use($keyword){
+					$q->whereRaw(" (case when transactions.status = 'pending' then 'belum diterima' when transactions.status = 'success' then 'berjaya' when transactions.status = 'declined' then 'ditolak' when transactions.status = 'failed' then 'gagal' when transactions.status = 'pending_authorization' then 'dalam proses pengesahan' end ) like ?", '%'.$keyword.'%')
+					->orWhereRaw(" (case when transactions.type = 'subscription' then 'langganan' when transactions.type = 'purchase' then 'pembelian dokumen' end ) like ?", '%'.$keyword.'%')
+					->orWhereRaw("transactions.vendor_id in (select id from vendors where name like ?)", '%'.$keyword.'%')
+					->orWhereRaw("transactions.number like ?", '%'.$keyword.'%')
+					->orWhereRaw("transactions.gateway_reference like ?", '%'.$keyword.'%');
+				});
 
-			// dd($transactions->toSql());
-			
-			$recordsFiltered = (clone $transactions)->count() ?? 0;
-			// dd( $request->all() );
+				$recordsFiltered = (clone $transactions)->count() ?? 0;
+			} else {
+				// Tiada penapis dikenakan, jadi bilangan yang ditapis semestinya sama
+				// dengan jumlah keseluruhan - mengiranya semula bermakna satu lagi
+				// imbasan penuh untuk jawapan yang sudah diketahui.
+				$recordsFiltered = $recordsTotal;
+			}
 
 			$results = $transactions->offset($start)->limit($length)->get();
 
@@ -151,8 +162,29 @@ class TransactionsController extends Controller
 
 	public function updateFpxCount(Request $request)
 	{
-		$m_transactions = Transaction::whereNotNull('transactions.id')->orderBy('transactions.created_at', 'desc');
-		$m_transactions->join('vendors', 'vendors.id', '=', 'transactions.vendor_id')->orderBy('transactions.created_at', 'desc');
+		// $data tidak pernah dimulakan sebelum ini - ia hanya wujud apabila salah
+		// satu cabang di bawah menetapkan kunci. Permintaan dengan type atau
+		// status yang tidak dikenali sampai ke response()->json($data) dengan
+		// pembolehubah yang tidak wujud, iaitu 500.
+		$data = [];
+
+		// Kad statistik dikira TANPA sebarang semakan vendor.
+		//
+		// Skop asal menyertai `vendors`, yang saya kekalkan sebagai EXISTS untuk
+		// menjaga bilangan tetap sama. Itu satu kesilapan: EXPLAIN menunjukkan
+		// semakan itu menghalang MySQL menjawab GROUP BY daripada indeks, memaksa
+		// bacaan jadual dan satu carian kunci utama bagi setiap baris. Di staging
+		// pertanyaan itu berjalan lebih 600 saat, tidak pernah selesai, tidak
+		// pernah mengisi cache, dan bertimbun sehingga lebih 50 salinan serentak
+		// menepukan pangkalan data dan menjatuhkan pelayan.
+		//
+		// Tanpa semakan itu GROUP BY dijawab terus daripada indeks. Kesannya:
+		// transaksi yang vendor_id-nya NULL atau menunjuk kepada vendor yang sudah
+		// tiada kini TERMASUK dalam kiraan kad, sedangkan sebelum ini ia
+		// dikecualikan. Untuk kiraan ringkasan itu boleh dipertahankan - dan
+		// nombor yang sedikit berbeza jauh lebih baik daripada nombor yang tidak
+		// pernah muncul.
+		$m_transactions = Transaction::query();
 
 		if (!auth()->user()->can('Transaction:all')) {
 			$m_transactions->where('transactions.organization_unit_id', auth()->user()->organization_unit_id);
@@ -208,16 +240,51 @@ class TransactionsController extends Controller
 
 		if($request->type == "custom_all")
 		{
-			$data["subscribe_trans_count"] 	= (clone $m_transactions)->where('type', 'subscription')->count();
-			$data["purchase_trans_count"] 	= (clone $m_transactions)->where('type', 'purchase')->count();
-			$data["total_trans_count"] 		= (clone $m_transactions)->count();
-			$data["success_trans_count"] 	= (clone $m_transactions)->where('status', 'success')->count();
-			$data["pending_trans_count"] 	= (clone $m_transactions)->where('status', 'pending')->count();
-			$data["failed_trans_count"] 	= (clone $m_transactions)->where('status', 'failed')->count();
-			$data["declined_trans_count"] 	= (clone $m_transactions)->where('status', 'declined')->count();
-			$data["pending_authorization_trans_count"] = (clone $m_transactions)->where('status', 'pending_authorization')->count();
-			
-			return response()->json($data);
+			// Kiraan ini merentasi keseluruhan jadual transaksi - 1.4 juta baris di
+			// staging. EXPLAIN menunjukkan GROUP BY sahaja boleh dijawab daripada
+			// indeks, tetapi semakan EXISTS ke atas `vendors` memaksa MySQL membaca
+			// baris jadual untuk mendapatkan vendor_id dan melakukan satu carian
+			// kunci utama bagi SETIAP baris. Itulah kosnya, dan ia tidak boleh
+			// dibuang tanpa mengubah nombor: vendor_id boleh null dan tiada FK,
+			// jadi baris tanpa vendor sepadan memang dikecualikan hari ini.
+			//
+			// Jadi hasilnya di-cache. Kad menyegar setiap 20 dan 30 saat, jadi tanpa
+			// cache setiap pelawat membayar kos itu berulang kali. Satu minit dipilih
+			// supaya penyegaran berkala dilayan daripada cache sambil nombor kekal
+			// segar dalam lingkungan seminit - sesuai untuk kiraan ringkasan.
+			$scopeKey = auth()->user()->can('Transaction:all')
+				? 'all'
+				: 'ou:' . auth()->user()->organization_unit_id;
+
+			$counts = Cache::remember('transactions:counts:' . $scopeKey, 60, function () use ($m_transactions) {
+				$byStatus = (clone $m_transactions)
+					->select('transactions.status', DB::raw('COUNT(*) as aggregate'))
+					->groupBy('transactions.status')
+					->pluck('aggregate', 'status');
+
+				$byType = (clone $m_transactions)
+					->select('transactions.type', DB::raw('COUNT(*) as aggregate'))
+					->groupBy('transactions.type')
+					->pluck('aggregate', 'type');
+
+				return [
+					"subscribe_trans_count" => (int) ($byType['subscription'] ?? 0),
+					"purchase_trans_count"  => (int) ($byType['purchase'] ?? 0),
+
+					// Jumlah kumpulan sentiasa sama dengan bilangan baris dalam skop -
+					// baris berstatus NULL menjadi kumpulannya sendiri dan tetap dikira -
+					// jadi jumlah keseluruhan tidak memerlukan pertanyaan tambahan.
+					"total_trans_count"     => (int) $byStatus->sum(),
+
+					"success_trans_count"   => (int) ($byStatus['success'] ?? 0),
+					"pending_trans_count"   => (int) ($byStatus['pending'] ?? 0),
+					"failed_trans_count"    => (int) ($byStatus['failed'] ?? 0),
+					"declined_trans_count"  => (int) ($byStatus['declined'] ?? 0),
+					"pending_authorization_trans_count" => (int) ($byStatus['pending_authorization'] ?? 0),
+				];
+			});
+
+			return response()->json(array_merge($data, $counts));
 		}
 
 		return response()->json($data);
@@ -439,6 +506,34 @@ class TransactionsController extends Controller
 		return redirect('transactions/' . $id)->with('success', $this->updated_message);
 	}
 
+	/**
+	 * Verify an FPX AE (status enquiry) response and log the outcome.
+	 *
+	 * Returns true when the caller should refuse to act on the payload. While
+	 * services.fpx.verify_signature is false this only logs and always returns false,
+	 * so the field set can be confirmed against real traffic before enforcing —
+	 * see config/services.php for the rollout steps.
+	 */
+	private function rejectOnBadFpxSignature(array $data, $transaction): bool
+	{
+		$result = \App\Models\Fpx::verifyResponseSignature($data);
+
+		if ($result['valid']) {
+			return false;
+		}
+
+		\Log::channel('fpx-respond')->warning('FPX requery signature verification FAILED', [
+			'enforced'      => (bool) config('services.fpx.verify_signature'),
+			'reason'        => $result['reason'],
+			'transaction'   => $transaction->number ?? null,
+			'source_string' => $result['source_string'],
+			'received_sum'  => $data['fpx_checkSum'] ?? null,
+			'payload_keys'  => array_keys($data),
+		]);
+
+		return (bool) config('services.fpx.verify_signature');
+	}
+
 	public function fpx_query($id)
 	{
 
@@ -480,7 +575,7 @@ class TransactionsController extends Controller
 
 		try {
 
-			$client   = new Client(['verify' => false]);
+			$client   = new Client(['verify' => config('services.fpx.verify_tls', true)]);
 			$response = $client->post($url, ['form_params' => $params, 'debug' => false ]);
 		} catch (\Exception $e) {
 			return view('transactions.fpx_query', ['error' => 'Gagal untuk berhubung dengan sistem FPX.']);
@@ -504,7 +599,11 @@ class TransactionsController extends Controller
 		$ac_responses 	= $data;
 		$ae_requests	= $params;
 
-		return view('transactions.fpx_query', compact('transaction', 'ac_responses', 'ae_requests'));
+		// Diagnostic screen only — this method never changes transaction status, so a
+		// failed signature is surfaced to the admin rather than blocking the view.
+		$signature_check = \App\Models\Fpx::verifyResponseSignature($data);
+
+		return view('transactions.fpx_query', compact('transaction', 'ac_responses', 'ae_requests', 'signature_check'));
 	}
 
 	public function fpx_requery($id)
@@ -546,7 +645,7 @@ class TransactionsController extends Controller
 		$params = $fpx->request_keys;
 
 		try {
-			$client = new Client(['verify' => false]);			
+			$client = new Client(['verify' => config('services.fpx.verify_tls', true)]);
 			$response = $client->post($url, ['form_params' => $params, 'debug' => false ]);
 		} catch (\Exception $e) {
 			return redirect('transactions/' . $id)->with('error', 'Gagal untuk berhubung dengan sistem FPX.');
@@ -566,6 +665,10 @@ class TransactionsController extends Controller
 		}
 
 		ksort($data);
+
+		if ($this->rejectOnBadFpxSignature($data, $transaction)) {
+			return redirect('transactions/' . $id)->with('error', 'Respons FPX gagal pengesahan tandatangan. Status transaksi tidak diubah.');
+		}
 
 		switch (true) {
 			case $data['fpx_debitAuthCode'] == '00' && $data['fpx_creditAuthCode'] == '00':
@@ -595,7 +698,36 @@ class TransactionsController extends Controller
 		return redirect('transactions/' . $id)->with('success', 'Status FPX dikemaskini.');
 	}
 
+	/**
+	 * Dipanggil setiap minit oleh cron melalui api/fpx_queue.
+	 *
+	 * Kunci diperlukan kerana cron menembak mengikut jam, bukan mengikut sama ada
+	 * larian sebelumnya sudah tamat. Apabila satu larian mengambil masa lebih
+	 * seminit, larian bertindih dan setiap satu mengulangi pertanyaan yang sama
+	 * pada jadual sejuta baris. Tujuh salinan serentak pernah diperhatikan di
+	 * staging, cukup untuk menepukan pangkalan data sehingga halaman lain 504.
+	 *
+	 * Larian pertama memegang kunci; yang lain keluar serta-merta. TTL 5 minit
+	 * memastikan larian yang tersembam tidak menahan kunci selama-lamanya.
+	 */
 	public function queue_fpx_requery()
+	{
+		$lock = Cache::lock('fpx-queue-requery', 300);
+
+		if (! $lock->get()) {
+			echo 'FPX requery already running, skipped.';
+
+			return;
+		}
+
+		try {
+			$this->dispatch_fpx_requery_jobs();
+		} finally {
+			$lock->release();
+		}
+	}
+
+	private function dispatch_fpx_requery_jobs()
 	{
 		$queueLimit = env('FPX_JOBS_LIMIT') ?? 50;
 
@@ -677,7 +809,7 @@ class TransactionsController extends Controller
 		$params = $fpx->request_keys;
 
 		try {
-			$client = new Client(['verify' => false]);
+			$client = new Client(['verify' => config('services.fpx.verify_tls', true)]);
 			$response = $client->post($url, ['form_params' => $params, 'debug' => false ]);
 		} catch (\Exception $e) {
 			return response()->json( array('status' => 'Gagal untuk berhubung dengan sistem FPX.', 'e' => $e->getMessage()) );
@@ -703,6 +835,10 @@ class TransactionsController extends Controller
 		}
 
 		ksort($data);
+
+		if ($this->rejectOnBadFpxSignature($data, $transaction)) {
+			return response()->json(['status' => 'Respons FPX gagal pengesahan tandatangan. Status transaksi tidak diubah.']);
+		}
 
 		switch (true) {
 			case $data['fpx_debitAuthCode'] == '00' && $data['fpx_creditAuthCode'] == '00':

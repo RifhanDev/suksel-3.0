@@ -27,7 +27,7 @@ class StosFormFileController extends Controller
         ],
     ];
 
-    public function download(Tender $tender, string $type, string $fileUuid)
+    public function download(\App\Tender|\App\Models\Tender $tender, string $type, string $fileUuid)
     {
         $this->assertCanAccessTenderFile($tender);
         $config = self::TYPES[$type] ?? null;
@@ -35,19 +35,60 @@ class StosFormFileController extends Controller
             abort(404, 'Fail tidak dijumpai.');
         }
 
-        $file = $this->findFileMeta($tender->uuid, $config['api'], $config['collection'], $fileUuid);
-        if (! $file) {
-            // Still try authenticated STOS download by uuid (meta list may be empty / filtered).
-            $file = [
-                'uuid' => $fileUuid,
-                'original_name' => 'Dokumen',
-                'download_api' => str_replace('{uuid}', $fileUuid, $config['download_api']),
-            ];
-        } else {
-            $file['download_api'] = str_replace('{uuid}', $fileUuid, $config['download_api']);
+        if ($type === 'pengalaman-kerja') {
+            $localDoc = \App\Models\TenderPengalamanKerjaDokumen::where('uuid', $fileUuid)->first();
+            if ($localDoc) {
+                return StosStoredFile::response([
+                    'uuid'          => $localDoc->uuid,
+                    'original_name' => $localDoc->original_name,
+                    'path'          => $localDoc->path,
+                    'mime_type'     => $localDoc->mime_type ?: 'application/pdf',
+                ]);
+            }
+        } elseif ($type === 'kerja-dalam-tangan') {
+            $localDoc = \App\Models\TenderKerjaDalamTanganDokumen::where('uuid', $fileUuid)->first();
+            if ($localDoc) {
+                return StosStoredFile::response([
+                    'uuid'          => $localDoc->uuid,
+                    'original_name' => $localDoc->original_name,
+                    'path'          => $localDoc->path,
+                    'mime_type'     => $localDoc->mime_type ?: 'application/pdf',
+                ]);
+            }
         }
 
-        return StosStoredFile::response($file);
+        // Also check TenderVendorFormPayload in case metadata only exists in form payload
+        $formKey = match ($type) {
+            'pengalaman-kerja' => 'pengalaman_kerja',
+            'kerja-dalam-tangan' => 'kerja_dalam_tangan',
+            default => null,
+        };
+        if ($formKey) {
+            $payloads = \App\Models\TenderVendorFormPayload::where('tender_id', $tender->id)
+                ->where('form_key', $formKey)
+                ->get();
+            foreach ($payloads as $p) {
+                $dokumens = $p->payload['dokumens'] ?? [];
+                foreach ($dokumens as $d) {
+                    if (($d['uuid'] ?? '') === $fileUuid) {
+                        return StosStoredFile::response([
+                            'uuid'          => $d['uuid'],
+                            'original_name' => $d['original_name'] ?? $d['name'] ?? 'Dokumen',
+                            'path'          => $d['path'] ?? '',
+                            'mime_type'     => $d['mime_type'] ?? 'application/pdf',
+                        ]);
+                    }
+                }
+            }
+        }
+
+        $file = $this->findFileMeta($tender->uuid, $config['api'], $config['collection'], $fileUuid);
+        if ($file) {
+            $file['download_api'] = str_replace('{uuid}', $fileUuid, $config['download_api']);
+            return StosStoredFile::response($file);
+        }
+
+        abort(404, 'Fail dokumen tidak dijumpai pada storan sistem.');
     }
 
     /**

@@ -403,9 +403,9 @@
 								value="{{ $iklan['tarikh_tutup'] ?? '' }}" placeholder="Pilih tarikh..." readonly>
 						</div>
 						<div class="col-5">
-							<label class="form-label fw-semibold">Masa Tutup</label>
-							<input type="time" class="form-control form-control-lg bg-light" name="masa_tutup"
-								value="12:00" readonly tabindex="-1">
+							<label class="form-label fw-semibold">Masa Tutup <span class="text-danger">*</span></label>
+							<input type="time" class="form-control form-control-lg" name="masa_tutup"
+								value="{{ ! empty($iklan['masa_tutup']) ? substr($iklan['masa_tutup'], 0, 5) : '12:00' }}">
 						</div>
 					</div>
 				</div>
@@ -727,23 +727,6 @@
 <!-- End Penyediaan Iklan -->
 
 @push('modals')
-	{{-- Success Modal --}}
-	<div class="modal fade" id="modalBerjayaIklan" tabindex="-1" aria-hidden="true">
-		<div class="modal-dialog modal-dialog-centered" style="max-width:360px;">
-			<div class="modal-content text-center p-4">
-				<div class="mb-3">
-					<svg width="64" height="64" viewBox="0 0 24 24" fill="none">
-						<circle cx="12" cy="12" r="10" fill="#E6F7F3" />
-						<path d="M10 14.2L7.8 12l-1.4 1.4L10 17l8-8-1.4-1.4L10 14.2z" fill="#19c1a7" />
-					</svg>
-				</div>
-				<h5 class="fw-bold mb-2">Berjaya</h5>
-				<p class="text-muted mb-4">Maklumat telah berjaya disimpan.</p>
-				<button type="button" class="btn-form btn-form-primary mx-auto" data-bs-dismiss="modal">Tutup</button>
-			</div>
-		</div>
-	</div>
-
 	<div class="modal fade" id="modalTaklimat" tabindex="-1" aria-labelledby="modalTaklimatLabel" aria-hidden="true">
 		<div class="modal-dialog modal-lg modal-dialog-centered">
 			<div class="modal-content">
@@ -858,8 +841,6 @@
 			}
 
 			function refreshIklanDerivedFields() {
-				$('input[name="masa_tutup"]').val('12:00');
-
 				var startDate = parseDmY($('input[name="tarikh_iklan"]').val());
 				var endDate = parseDmY($('input[name="tarikh_tutup"]').val());
 				var tempohSah = parseInt($('input[name="tempoh_sah_laku"]').val(), 10);
@@ -878,7 +859,6 @@
 			}
 
 			function validateIklanStep1Dates() {
-				$('input[name="masa_tutup"]').val('12:00');
 				refreshIklanDerivedFields();
 
 				var tarikhIklan = $.trim($('input[name="tarikh_iklan"]').val() || '');
@@ -1082,6 +1062,9 @@
 						if (response && Array.isArray(response.dokumen_sokongan)) {
 							refreshMejaTerkawalRows(response.dokumen_sokongan);
 						}
+						if (response && Array.isArray(response.iklan_dokumen) && typeof refreshIklanDokumenRows === 'function') {
+							refreshIklanDokumenRows(response.iklan_dokumen);
+						}
 						if (typeof done === 'function') done();
 					},
 					error: function(xhr) {
@@ -1110,9 +1093,8 @@
 				}
 
 				savePenyediaanIklanDraft(function() {
-					var el = document.getElementById('modalBerjayaIklan');
-					if (el && typeof bootstrap !== 'undefined') {
-						bootstrap.Modal.getOrCreateInstance(el).show();
+					if (typeof showBerjayaModal === 'function') {
+						showBerjayaModal();
 					} else {
 						alert('Penyediaan iklan berjaya disimpan.');
 					}
