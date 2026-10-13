@@ -1189,8 +1189,8 @@
         const itemUuid = item?.uuid || activeItemUuid;
         const isStep2Item = (PENYATA_BANK_UUIDS.includes(itemUuid));
         const isReadOnly = isStep2Item
-            ? (dbConfirmed.step2 || dbCurrentStep > 2)
-            : (dbConfirmed.step1 || dbCurrentStep > 1);
+            ? (dbConfirmed.step2)
+            : (dbConfirmed.step1);
 
         if (isReadOnly) {
             $('#btnStep1SimpanDokKewangan').addClass('d-none');
@@ -1349,15 +1349,22 @@
             allVendors.forEach(v => {
                 const vid = parseInt(v.vendor_id);
                 let passedAll = true;
+                let hasFailed = false;
                 for (const uuid of step1Uuids) {
                     const itemObj = SEMAK_PAYLOAD[uuid];
                     const vRow = (itemObj?.vendors || []).find(x => parseInt(x.vendor_id) === vid);
-                    if (!vRow || (vRow.status_pematuhan !== 'mematuhi' && vRow.status_pematuhan !== 1 && vRow.status_pematuhan !== '1')) {
+                    if (vRow && (vRow.status_pematuhan === 'tidak_mematuhi' || vRow.status_pematuhan === 0 || vRow.status_pematuhan === '0')) {
+                        hasFailed = true;
                         passedAll = false;
                         break;
                     }
+                    if (!vRow || (vRow.status_pematuhan !== 'mematuhi' && vRow.status_pematuhan !== 1 && vRow.status_pematuhan !== '1')) {
+                        passedAll = false;
+                    }
                 }
-                if (passedAll) {
+                if (hasFailed) return;
+
+                if (passedAll || dbConfirmed.step1) {
                     passedIds.push(vid);
                 }
             });
@@ -1813,10 +1820,10 @@
             const tidakMelepasiList = [];
 
             eligibleVendors.forEach(v => {
-                if (v.status_pematuhan === 'mematuhi' || v.status_pematuhan === 1) {
-                    melepasiList.push(v);
-                } else if (v.status_pematuhan === 'tidak_mematuhi' || v.status_pematuhan === 0) {
+                if (v.status_pematuhan === 'tidak_mematuhi' || v.status_pematuhan === 0 || v.status_pematuhan === '0') {
                     tidakMelepasiList.push(v);
+                } else if (v.status_pematuhan === 'mematuhi' || v.status_pematuhan === 1 || v.status_pematuhan === '1' || dbConfirmed.step2) {
+                    melepasiList.push(v);
                 }
             });
 

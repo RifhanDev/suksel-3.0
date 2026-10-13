@@ -186,83 +186,13 @@ class PenilaianKewanganController extends Controller
         $penyataDokumenByVendor = [];
 
         if ($tender) {
+            $sections = $this->resolveTenderChecklistSections($tender);
+            $kewanganItems    = $sections['kewanganItems'];
+            $penyataBankItems = $sections['penyataBankItems'];
+            $kewanganUuids    = $sections['kewanganUuids'];
+            $penyataUuids     = $sections['penyataUuids'];
+
             $tenderDokumen = TenderDokumenPresenter::for($tender);
-            $checklistItems = $tenderDokumen->items('admin');
-
-            $isNotMuatTurun = fn (array $item) => strtolower(trim($item['tindakan'] ?? $item['mekanisma'] ?? '')) !== 'muat turun';
-
-            // Retrieve Penyata Bank identifiers dynamically from standard_checklist_items table
-            $penyataBankUrls = \App\Models\StandardChecklistItem::query()
-                ->where(function ($q) {
-                    $q->where('action_url', 'like', '%penyata-bank%')
-                      ->orWhere('title', 'like', '%penyata bank%')
-                      ->orWhere('title', 'like', '%penyata bulanan%');
-                })
-                ->pluck('action_url')
-                ->filter()
-                ->toArray();
-
-            $isNotPenyataBank = function (array $item) use ($penyataBankUrls) {
-                $title = strtolower(trim($item['title'] ?? $item['nama'] ?? ''));
-                $actionUrl = strtolower(trim($item['admin_content']['form']['url'] ?? $item['action_url'] ?? ''));
-                $formKey = strtolower(trim($item['admin_content']['form']['form_key'] ?? ''));
-
-                if (str_contains($title, 'penyata bank') || str_contains($title, 'penyata bulanan bank') || $formKey === 'penyata_bank') {
-                    return false;
-                }
-
-                foreach ($penyataBankUrls as $url) {
-                    if ($actionUrl !== '' && str_contains($actionUrl, strtolower($url))) {
-                        return false;
-                    }
-                }
-
-                return true;
-            };
-
-            $kewanganItems = collect($checklistItems)
-                ->filter(fn (array $item) => in_array($item['source'] ?? $item['section'] ?? '', ['financial', 'kewangan_kerja'], true))
-                ->filter($isNotMuatTurun)
-                ->filter($isNotPenyataBank)
-                ->values()
-                ->all();
-
-            $penyataBankItems = collect($checklistItems)
-                ->filter(fn (array $item) => in_array($item['source'] ?? $item['section'] ?? '', ['financial', 'kewangan_kerja'], true))
-                ->filter($isNotMuatTurun)
-                ->filter(fn (array $item) => ! $isNotPenyataBank($item))
-                ->values()
-                ->all();
-
-            if (empty($penyataBankItems)) {
-                $stdPenyataBank = \App\Models\StandardChecklistItem::query()
-                    ->where('is_active', 1)
-                    ->where(function ($q) {
-                        $q->where('action_url', 'like', '%penyata-bank%')
-                          ->orWhere('title', 'like', '%penyata bank%')
-                          ->orWhere('title', 'like', '%penyata bulanan%');
-                    })
-                    ->first();
-
-                if ($stdPenyataBank) {
-                    $penyataBankItems = [[
-                        'uuid'       => $stdPenyataBank->uuid,
-                        'title'      => $stdPenyataBank->title,
-                        'nama'       => $stdPenyataBank->title,
-                        'mekanisma'  => $stdPenyataBank->mechanism_default ?: 'Borang Atas Talian',
-                        'tindakan'   => $stdPenyataBank->mechanism_default ?: 'Borang Atas Talian',
-                        'action'     => 'online_form',
-                        'source'     => 'financial',
-                        'admin_content' => [
-                            'form' => [
-                                'url'      => $stdPenyataBank->action_url ?: '/penyata-bank',
-                                'form_key' => 'penyata_bank',
-                            ],
-                        ],
-                    ]];
-                }
-            }
-
             $participants = $this->loadEligibleTechnicalParticipants($tender);
 
             $dokumenByVendor = [];
@@ -270,8 +200,6 @@ class PenilaianKewanganController extends Controller
                 $vendorId = (int) $participant->vendor_id;
                 $dokumenByVendor[$vendorId] = $tenderDokumen->items('vendor', $vendorId);
             }
-
-            $kewanganUuids = collect($kewanganItems)->pluck('uuid')->filter()->all();
 
             $vendors = $participants->map(function ($participant) use ($tender, $kewanganUuids) {
                 // Resolve vendor's total financial offered price (Financial Specification responses only)
@@ -369,7 +297,7 @@ class PenilaianKewanganController extends Controller
                         'ulasan'    => 'Tidak mematuhi syarat: ' . implode('; ', $failedReasons),
                         'failed_reasons' => $failedReasons,
                     ];
-                } else if ($passedCount === $totalStep1Items) {
+                } else if ($passedCount === $totalStep1Items || ($progress?->isStep1Confirmed() && count($failedReasons) === 0)) {
                     $pembekalMelepasi[] = [
                         'vendor_id' => $vendorId,
                         'kod'       => $v['kod'],
@@ -390,7 +318,6 @@ class PenilaianKewanganController extends Controller
                     ];
                 }
             }
-            $penyataUuids = collect($penyataBankItems)->pluck('uuid')->filter()->all();
             $step1PassedVendorIds = $this->getStep1PassedVendorIds($tender, $kewanganUuids);
             $step2PassedVendorIds = $this->getStep2PassedVendorIds($tender, $kewanganUuids, $penyataUuids);
         }
@@ -862,6 +789,113 @@ class PenilaianKewanganController extends Controller
     }
 
     /**
+     * Resolve tender checklist sections into kewangan (Step 1 & Step 3) items and penyata bank (Step 2) items.
+     *
+     * @return array{
+     *     kewanganItems: list<array<string, mixed>>,
+     *     penyataBankItems: list<array<string, mixed>>,
+     *     kewanganUuids: list<string>,
+     *     penyataUuids: list<string>
+     * }
+     */
+    protected function resolveTenderChecklistSections(?Tender $tender): array
+    {
+        if (! $tender) {
+            return [
+                'kewanganItems'    => [],
+                'penyataBankItems' => [],
+                'kewanganUuids'    => [],
+                'penyataUuids'     => [],
+            ];
+        }
+
+        $tenderDokumen = TenderDokumenPresenter::for($tender);
+        $checklistItems = $tenderDokumen->items('admin');
+        $isNotMuatTurun = fn (array $item) => strtolower(trim($item['tindakan'] ?? $item['mekanisma'] ?? '')) !== 'muat turun';
+
+        $penyataBankUrls = \App\Models\StandardChecklistItem::query()
+            ->where(function ($q) {
+                $q->where('action_url', 'like', '%penyata-bank%')
+                  ->orWhere('title', 'like', '%penyata bank%')
+                  ->orWhere('title', 'like', '%penyata bulanan%');
+            })
+            ->pluck('action_url')
+            ->filter()
+            ->toArray();
+
+        $isNotPenyataBank = function (array $item) use ($penyataBankUrls) {
+            $title = strtolower(trim($item['title'] ?? $item['nama'] ?? ''));
+            $actionUrl = strtolower(trim($item['admin_content']['form']['url'] ?? $item['action_url'] ?? ''));
+            $formKey = strtolower(trim($item['admin_content']['form']['form_key'] ?? ''));
+
+            if (str_contains($title, 'penyata bank') || str_contains($title, 'penyata bulanan bank') || $formKey === 'penyata_bank') {
+                return false;
+            }
+
+            foreach ($penyataBankUrls as $url) {
+                if ($actionUrl !== '' && str_contains($actionUrl, strtolower($url))) {
+                    return false;
+                }
+            }
+
+            return true;
+        };
+
+        $kewanganItems = collect($checklistItems)
+            ->filter(fn (array $item) => in_array($item['source'] ?? $item['section'] ?? '', ['financial', 'kewangan_kerja'], true))
+            ->filter($isNotMuatTurun)
+            ->filter($isNotPenyataBank)
+            ->values()
+            ->all();
+
+        $penyataBankItems = collect($checklistItems)
+            ->filter(fn (array $item) => in_array($item['source'] ?? $item['section'] ?? '', ['financial', 'kewangan_kerja'], true))
+            ->filter($isNotMuatTurun)
+            ->filter(fn (array $item) => ! $isNotPenyataBank($item))
+            ->values()
+            ->all();
+
+        if (empty($penyataBankItems)) {
+            $stdPenyataBank = \App\Models\StandardChecklistItem::query()
+                ->where('is_active', 1)
+                ->where(function ($q) {
+                    $q->where('action_url', 'like', '%penyata-bank%')
+                      ->orWhere('title', 'like', '%penyata bank%')
+                      ->orWhere('title', 'like', '%penyata bulanan%');
+                })
+                ->first();
+
+            if ($stdPenyataBank) {
+                $penyataBankItems = [[
+                    'uuid'       => $stdPenyataBank->uuid,
+                    'title'      => $stdPenyataBank->title,
+                    'nama'       => $stdPenyataBank->title,
+                    'mekanisma'  => $stdPenyataBank->mechanism_default ?: 'Borang Atas Talian',
+                    'tindakan'   => $stdPenyataBank->mechanism_default ?: 'Borang Atas Talian',
+                    'action'     => 'online_form',
+                    'source'     => 'financial',
+                    'admin_content' => [
+                        'form' => [
+                            'url'      => $stdPenyataBank->action_url ?: '/penyata-bank',
+                            'form_key' => 'penyata_bank',
+                        ],
+                    ],
+                ]];
+            }
+        }
+
+        $kewanganUuids = collect($kewanganItems)->pluck('uuid')->filter()->values()->all();
+        $penyataUuids  = collect($penyataBankItems)->pluck('uuid')->filter()->values()->all();
+
+        return [
+            'kewanganItems'    => $kewanganItems,
+            'penyataBankItems' => $penyataBankItems,
+            'kewanganUuids'    => $kewanganUuids,
+            'penyataUuids'     => $penyataUuids,
+        ];
+    }
+
+    /**
      * Vendor IDs that passed Step 1 (all non-bank checklist items compliant).
      *
      * @param  list<string>  $kewanganUuids
@@ -884,6 +918,9 @@ class PenilaianKewanganController extends Controller
             return $eligibleVendorIds;
         }
 
+        $progress = TenderKewanganProgress::query()->where('tender_id', $tender->id)->first();
+        $isStep1Confirmed = $progress?->isStep1Confirmed() || ((int) ($progress?->current_step ?? 1) > 1);
+
         $evals = TenderKewanganEvaluation::query()
             ->where('tender_id', $tender->id)
             ->whereIn('checklist_item_uuid', $kewanganUuids)
@@ -895,7 +932,15 @@ class PenilaianKewanganController extends Controller
 
         foreach ($eligibleVendorIds as $vId) {
             $vEvals = $evals->where('vendor_id', $vId);
+
+            $hasFailed = $vEvals->contains(fn ($e) => (int) $e->status_pematuhan === 0);
+            if ($hasFailed) {
+                continue;
+            }
+
             if ($vEvals->count() === $totalItems && $vEvals->every(fn ($e) => (int) $e->status_pematuhan === 1)) {
+                $passed[] = $vId;
+            } elseif ($isStep1Confirmed) {
                 $passed[] = $vId;
             }
         }
@@ -926,6 +971,9 @@ class PenilaianKewanganController extends Controller
             return $step1Passed;
         }
 
+        $progress = TenderKewanganProgress::query()->where('tender_id', $tender->id)->first();
+        $isStep2Confirmed = $progress?->isStep2Confirmed() || ((int) ($progress?->current_step ?? 1) > 2);
+
         $evals = TenderKewanganEvaluation::query()
             ->where('tender_id', $tender->id)
             ->whereIn('checklist_item_uuid', $penyataUuids)
@@ -937,7 +985,15 @@ class PenilaianKewanganController extends Controller
 
         foreach ($step1Passed as $vId) {
             $vEvals = $evals->where('vendor_id', $vId);
+
+            $hasFailed = $vEvals->contains(fn ($e) => (int) $e->status_pematuhan === 0);
+            if ($hasFailed) {
+                continue;
+            }
+
             if ($vEvals->count() === $totalPenyata && $vEvals->every(fn ($e) => (int) $e->status_pematuhan === 1)) {
+                $passed[] = $vId;
+            } elseif ($isStep2Confirmed) {
                 $passed[] = $vId;
             }
         }
@@ -1314,6 +1370,10 @@ class PenilaianKewanganController extends Controller
         $isStep3Item = ($stepParam === 3);
         $isStep2Item = ($stepParam === 2);
 
+        $sections = $this->resolveTenderChecklistSections($tender);
+        $kewanganUuids = $sections['kewanganUuids'];
+        $penyataUuids  = $sections['penyataUuids'];
+
         $stdPenyataUuids = \App\Models\StandardChecklistItem::query()
             ->where(function ($q) {
                 $q->where('action_url', 'like', '%penyata-bank%')
@@ -1331,17 +1391,11 @@ class PenilaianKewanganController extends Controller
             ->pluck('uuid')
             ->toArray();
 
-        $allPenyataUuids = array_merge($stdPenyataUuids, $finPenyataUuids);
+        $allPenyataUuids = array_unique(array_merge($penyataUuids, $stdPenyataUuids, $finPenyataUuids));
 
         if (! $isStep2Item && ! $isStep3Item) {
             $isStep2Item = in_array($checkUuid, $allPenyataUuids, true);
         }
-
-        $kewanganUuids = $this->loadDokumenKewangan($tender)
-            ->reject(fn ($item) => in_array($item->uuid, $allPenyataUuids, true))
-            ->pluck('uuid')
-            ->filter()
-            ->all();
 
         if ($isStep2Item) {
             $step1Passed = $this->getStep1PassedVendorIds($tender, $kewanganUuids);
@@ -1351,7 +1405,7 @@ class PenilaianKewanganController extends Controller
                 ], 422);
             }
         } elseif ($isStep3Item) {
-            $step2Passed = $this->getStep2PassedVendorIds($tender, $kewanganUuids, $allPenyataUuids);
+            $step2Passed = $this->getStep2PassedVendorIds($tender, $kewanganUuids, $penyataUuids);
             if (! in_array($vendorId, $step2Passed, true)) {
                 return response()->json([
                     'message' => 'Petender ini belum melepasi penilaian Langkah 1 dan Langkah 2.',
@@ -1360,19 +1414,19 @@ class PenilaianKewanganController extends Controller
         }
 
         if ($isStep3Item) {
-            if ($progress->isStep3Confirmed() || $progress->current_step > 3) {
+            if ($progress->isStep3Confirmed()) {
                 return response()->json([
                     'message' => 'Penilaian Spesifikasi Kewangan telah disahkan dan tidak boleh diubah lagi.'
                 ], 422);
             }
         } elseif ($isStep2Item) {
-            if ($progress->isStep2Confirmed() || $progress->current_step > 2) {
+            if ($progress->isStep2Confirmed()) {
                 return response()->json([
                     'message' => 'Penilaian Penyata Bulanan Bank telah disahkan dan tidak boleh diubah lagi.'
                 ], 422);
             }
         } else {
-            if ($progress->isStep1Confirmed() || $progress->current_step > 1) {
+            if ($progress->isStep1Confirmed()) {
                 return response()->json([
                     'message' => 'Penilaian pematuhan dokumentasi telah disahkan dan tidak boleh diubah lagi.'
                 ], 422);
@@ -1492,7 +1546,7 @@ class PenilaianKewanganController extends Controller
         $isItemSelesai = false;
         if ($tender) {
             if ($isStep3Item) {
-                $eligibleVendorIds = $this->getStep2PassedVendorIds($tender, $kewanganUuids, $allPenyataUuids);
+                $eligibleVendorIds = $this->getStep2PassedVendorIds($tender, $kewanganUuids, $penyataUuids);
             } elseif ($isStep2Item) {
                 $eligibleVendorIds = $this->getStep1PassedVendorIds($tender, $kewanganUuids);
             } else {
@@ -1571,54 +1625,11 @@ class PenilaianKewanganController extends Controller
                 ], 422);
             }
 
-            $tenderDokumen = TenderDokumenPresenter::for($tender);
-            $checklistItems = $tenderDokumen->items('admin');
-            $isNotMuatTurun = fn (array $item) => strtolower(trim($item['tindakan'] ?? $item['mekanisma'] ?? '')) !== 'muat turun';
-
-            $penyataBankUrls = \App\Models\StandardChecklistItem::query()
-                ->where(function ($q) {
-                    $q->where('action_url', 'like', '%penyata-bank%')
-                      ->orWhere('title', 'like', '%penyata bank%')
-                      ->orWhere('title', 'like', '%penyata bulanan%');
-                })
-                ->pluck('action_url')
-                ->filter()
-                ->toArray();
-
-            $isNotPenyataBank = function (array $item) use ($penyataBankUrls) {
-                $title = strtolower(trim($item['title'] ?? $item['nama'] ?? ''));
-                $actionUrl = strtolower(trim($item['admin_content']['form']['url'] ?? $item['action_url'] ?? ''));
-                $formKey = strtolower(trim($item['admin_content']['form']['form_key'] ?? ''));
-
-                if (str_contains($title, 'penyata bank') || str_contains($title, 'penyata bulanan bank') || $formKey === 'penyata_bank') {
-                    return false;
-                }
-
-                foreach ($penyataBankUrls as $url) {
-                    if ($actionUrl !== '' && str_contains($actionUrl, strtolower($url))) {
-                        return false;
-                    }
-                }
-
-                return true;
-            };
-
-            $kewanganItems = collect($checklistItems)
-                ->filter(fn (array $item) => in_array($item['source'] ?? $item['section'] ?? '', ['financial', 'kewangan_kerja'], true))
-                ->filter($isNotMuatTurun)
-                ->filter($isNotPenyataBank)
-                ->values()
-                ->all();
-
-            $penyataBankItems = collect($checklistItems)
-                ->filter(fn (array $item) => in_array($item['source'] ?? $item['section'] ?? '', ['financial', 'kewangan_kerja'], true))
-                ->filter($isNotMuatTurun)
-                ->filter(fn (array $item) => ! $isNotPenyataBank($item))
-                ->values()
-                ->all();
-
-            $kewanganUuids = collect($kewanganItems)->pluck('uuid')->filter()->all();
-            $penyataUuids  = collect($penyataBankItems)->pluck('uuid')->filter()->all();
+            $sections = $this->resolveTenderChecklistSections($tender);
+            $kewanganItems    = $sections['kewanganItems'];
+            $penyataBankItems = $sections['penyataBankItems'];
+            $kewanganUuids    = $sections['kewanganUuids'];
+            $penyataUuids     = $sections['penyataUuids'];
 
             if ($stepNum === 1) {
                 if ($confirmed) {
@@ -1811,54 +1822,11 @@ class PenilaianKewanganController extends Controller
         $passingPercentage = $header ? (float) $header->passing_percentage : 50.0;
         $passingScoreConf  = $header ? (float) $header->passing_score : 0.0;
 
-        $tenderDokumen = TenderDokumenPresenter::for($tender);
-        $checklistItems = $tenderDokumen->items('admin');
-        $isNotMuatTurun = fn (array $item) => strtolower(trim($item['tindakan'] ?? $item['mekanisma'] ?? '')) !== 'muat turun';
-
-        $penyataBankUrls = \App\Models\StandardChecklistItem::query()
-            ->where(function ($q) {
-                $q->where('action_url', 'like', '%penyata-bank%')
-                  ->orWhere('title', 'like', '%penyata bank%')
-                  ->orWhere('title', 'like', '%penyata bulanan%');
-            })
-            ->pluck('action_url')
-            ->filter()
-            ->toArray();
-
-        $isNotPenyataBank = function (array $item) use ($penyataBankUrls) {
-            $title = strtolower(trim($item['title'] ?? $item['nama'] ?? ''));
-            $actionUrl = strtolower(trim($item['admin_content']['form']['url'] ?? $item['action_url'] ?? ''));
-            $formKey = strtolower(trim($item['admin_content']['form']['form_key'] ?? ''));
-
-            if (str_contains($title, 'penyata bank') || str_contains($title, 'penyata bulanan bank') || $formKey === 'penyata_bank') {
-                return false;
-            }
-
-            foreach ($penyataBankUrls as $url) {
-                if ($actionUrl !== '' && str_contains($actionUrl, strtolower($url))) {
-                    return false;
-                }
-            }
-
-            return true;
-        };
-
-        $kewanganItems = collect($checklistItems)
-            ->filter(fn (array $item) => in_array($item['source'] ?? $item['section'] ?? '', ['financial', 'kewangan_kerja'], true))
-            ->filter($isNotMuatTurun)
-            ->filter($isNotPenyataBank)
-            ->values()
-            ->all();
-
-        $penyataBankItems = collect($checklistItems)
-            ->filter(fn (array $item) => in_array($item['source'] ?? $item['section'] ?? '', ['financial', 'kewangan_kerja'], true))
-            ->filter($isNotMuatTurun)
-            ->filter(fn (array $item) => ! $isNotPenyataBank($item))
-            ->values()
-            ->all();
-
-        $kewanganUuids = collect($kewanganItems)->pluck('uuid')->filter()->all();
-        $penyataUuids  = collect($penyataBankItems)->pluck('uuid')->filter()->all();
+        $sections = $this->resolveTenderChecklistSections($tender);
+        $kewanganItems    = $sections['kewanganItems'];
+        $penyataBankItems = $sections['penyataBankItems'];
+        $kewanganUuids    = $sections['kewanganUuids'];
+        $penyataUuids     = $sections['penyataUuids'];
 
         $step2PassedVendorIds = $this->getStep2PassedVendorIds($tender, $kewanganUuids, $penyataUuids);
 
@@ -2688,6 +2656,7 @@ class PenilaianKewanganController extends Controller
 
         $evaluations = $this->loadEvaluations($tender);
         $participants = $this->loadEligibleTechnicalParticipants($tender);
+        $progress = TenderKewanganProgress::query()->where('tender_id', $tender->id)->first();
 
         $step3PassedMap = collect($rumusanStep3Data['pembekal_melepasi'] ?? [])->keyBy('vendor_id');
         $step3FailedMap = collect($rumusanStep3Data['pembekal_tidak_melepasi'] ?? [])->keyBy('vendor_id');
@@ -2716,7 +2685,7 @@ class PenilaianKewanganController extends Controller
                     }
                 }
                 if ($step1Status !== 'tidak_melepasi' && $step1EvaluatedCount < $totalStep1Count) {
-                    $step1Status = 'belum_dinilai';
+                    $step1Status = $progress?->isStep1Confirmed() ? 'melepasi' : 'belum_dinilai';
                 }
             } else {
                 $step1Status = 'melepasi';
@@ -2741,7 +2710,7 @@ class PenilaianKewanganController extends Controller
                         }
                     }
                     if ($step2Status !== 'tidak_melepasi' && $step2EvaluatedCount < $totalStep2Count) {
-                        $step2Status = 'belum_dinilai';
+                        $step2Status = $progress?->isStep2Confirmed() ? 'melepasi' : 'belum_dinilai';
                     }
                 }
             } elseif ($step1Status === 'tidak_melepasi') {
@@ -2895,54 +2864,11 @@ class PenilaianKewanganController extends Controller
             ->values()
             ->all();
 
-        $tenderDokumen = TenderDokumenPresenter::for($tender);
-        $checklistItems = $tenderDokumen->items('admin');
-        $isNotMuatTurun = fn (array $item) => strtolower(trim($item['tindakan'] ?? $item['mekanisma'] ?? '')) !== 'muat turun';
-
-        $penyataBankUrls = \App\Models\StandardChecklistItem::query()
-            ->where(function ($q) {
-                $q->where('action_url', 'like', '%penyata-bank%')
-                  ->orWhere('title', 'like', '%penyata bank%')
-                  ->orWhere('title', 'like', '%penyata bulanan%');
-            })
-            ->pluck('action_url')
-            ->filter()
-            ->toArray();
-
-        $isNotPenyataBank = function (array $item) use ($penyataBankUrls) {
-            $title = strtolower(trim($item['title'] ?? $item['nama'] ?? ''));
-            $actionUrl = strtolower(trim($item['admin_content']['form']['url'] ?? $item['action_url'] ?? ''));
-            $formKey = strtolower(trim($item['admin_content']['form']['form_key'] ?? ''));
-
-            if (str_contains($title, 'penyata bank') || str_contains($title, 'penyata bulanan bank') || $formKey === 'penyata_bank') {
-                return false;
-            }
-
-            foreach ($penyataBankUrls as $url) {
-                if ($actionUrl !== '' && str_contains($actionUrl, strtolower($url))) {
-                    return false;
-                }
-            }
-
-            return true;
-        };
-
-        $kewanganItems = collect($checklistItems)
-            ->filter(fn (array $item) => in_array($item['source'] ?? $item['section'] ?? '', ['financial', 'kewangan_kerja'], true))
-            ->filter($isNotMuatTurun)
-            ->filter($isNotPenyataBank)
-            ->values()
-            ->all();
-
-        $penyataBankItems = collect($checklistItems)
-            ->filter(fn (array $item) => in_array($item['source'] ?? $item['section'] ?? '', ['financial', 'kewangan_kerja'], true))
-            ->filter($isNotMuatTurun)
-            ->filter(fn (array $item) => ! $isNotPenyataBank($item))
-            ->values()
-            ->all();
-
-        $allStepItems = array_merge($kewanganItems, $penyataBankItems);
-        $participants = $this->loadEligibleTechnicalParticipants($tender);
+        $sections = $this->resolveTenderChecklistSections($tender);
+        $kewanganItems    = $sections['kewanganItems'];
+        $penyataBankItems = $sections['penyataBankItems'];
+        $allStepItems     = array_merge($kewanganItems, $penyataBankItems);
+        $participants     = $this->loadEligibleTechnicalParticipants($tender);
 
         $vendors = $participants->map(fn ($p) => [
             'vendor_id' => (int) $p->vendor_id,
