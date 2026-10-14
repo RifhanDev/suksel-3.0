@@ -134,28 +134,35 @@ class PenilaianKewanganController extends Controller
             })
             ->first();
 
+        if (! $tender) {
+            abort(404, 'Tender tidak ditemui.');
+        }
+
         $this->assertCommitteeAppointment($tender, $this->financialCommitteeJenis);
 
-        if ($tender) {
-            $resolver = app(PenilaianKewanganWorkflowResolver::class);
-            $workflow = $resolver->classify($tender);
+        $progress = TenderKewanganProgress::query()->firstOrCreate(
+            ['tender_id' => $tender->id],
+            ['current_step' => 1]
+        );
 
-            if ($workflow === PenilaianKewanganWorkflowResolver::WORKFLOW_SEBUT_HARGA_KERJA) {
-                return redirect()->route('penilaianKewanganSebutHargaKerja.show', $tender->uuid ?: $tender->id);
-            }
+        $resolver = app(PenilaianKewanganWorkflowResolver::class);
+        $workflow = $resolver->classify($tender);
 
-            if (in_array($workflow, [
-                PenilaianKewanganWorkflowResolver::WORKFLOW_TENDER_KERJA_BESAR,
-                PenilaianKewanganWorkflowResolver::WORKFLOW_TENDER_KERJA_KECIL_ME,
-                PenilaianKewanganWorkflowResolver::WORKFLOW_TENDER_KERJA_KECIL_BUKAN_ME,
-            ], true)) {
-                return redirect()->route('penilaianKewanganKerja.show', $tender->uuid ?: $tender->id);
-            }
+        if ($workflow === PenilaianKewanganWorkflowResolver::WORKFLOW_SEBUT_HARGA_KERJA) {
+            return redirect()->route('penilaianKewanganSebutHargaKerja.show', $tender->uuid ?: $tender->id);
+        }
 
-            if ($workflow === PenilaianKewanganWorkflowResolver::WORKFLOW_INVALID) {
-                return redirect()->route('penilaianKewangan')
-                    ->with('error', 'Maklumat perolehan, kaedah, atau anggaran jabatan tidak sah untuk penilaian kewangan.');
-            }
+        if (in_array($workflow, [
+            PenilaianKewanganWorkflowResolver::WORKFLOW_TENDER_KERJA_BESAR,
+            PenilaianKewanganWorkflowResolver::WORKFLOW_TENDER_KERJA_KECIL_ME,
+            PenilaianKewanganWorkflowResolver::WORKFLOW_TENDER_KERJA_KECIL_BUKAN_ME,
+        ], true)) {
+            return redirect()->route('penilaianKewanganKerja.show', $tender->uuid ?: $tender->id);
+        }
+
+        if ($workflow === PenilaianKewanganWorkflowResolver::WORKFLOW_INVALID) {
+            return redirect()->route('penilaianKewangan')
+                ->with('error', 'Maklumat perolehan, kaedah, atau anggaran jabatan tidak sah untuk penilaian kewangan.');
         }
 
         $no_tender_display = $tender ? ($tender->no_tender ?: $tender->ref_number ?: (string) $tender->id) : $tender_no;
@@ -433,14 +440,6 @@ class PenilaianKewanganController extends Controller
             collect($penyataBankItems ?? [])->pluck('uuid')->filter()->all(),
             $penyataBankFiles
         );
-
-        $progress = null;
-        if ($tender) {
-            $progress = TenderKewanganProgress::query()->firstOrCreate(
-                ['tender_id' => $tender->id],
-                ['current_step' => 1]
-            );
-        }
 
         $rumusanStep3Data = $this->calculateStep3Rumusan($tender, $semakPayload);
 
