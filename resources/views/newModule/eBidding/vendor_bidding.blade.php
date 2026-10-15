@@ -230,7 +230,19 @@
 			});
 			recalcOverallPrices();
 
+			let isSubmitting = false;
+
+			function setSubmitBusy(busy) {
+				const $btn = $('#vendor-bid-submit');
+				isSubmitting = busy;
+				$btn.prop('disabled', busy || !canEdit || hasVendorSubmitted);
+				$btn.text(busy ? 'Menghantar...' : 'Hantar');
+			}
+
 			$('#vendor-bid-submit').on('click', function() {
+				if (isSubmitting) {
+					return;
+				}
 				if (!canEdit) {
 					showAlert('Tempoh bidaan belum dibuka atau sudah tamat.', 'error');
 					return;
@@ -291,6 +303,8 @@
 					return;
 				}
 
+				setSubmitBusy(true);
+
 				$.ajax({
 					url: submitUrl,
 					method: 'POST',
@@ -315,6 +329,7 @@
 							message = Object.values(xhr.responseJSON.errors).flat().join(' ');
 						}
 						showAlert(message, 'error');
+						setSubmitBusy(false);
 					}
 				});
 			});

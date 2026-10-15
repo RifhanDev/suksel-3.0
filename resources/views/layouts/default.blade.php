@@ -1533,6 +1533,7 @@
 			}
 		});
 	</script>
+	<script src="{{ asset('js/prevent-double-submit.js') }}"></script>
 
 	@yield('scripts')
 
