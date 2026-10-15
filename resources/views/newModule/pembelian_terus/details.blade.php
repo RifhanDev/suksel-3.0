@@ -790,6 +790,17 @@
             showStep(2);
             return;
         }
+        var form = e.currentTarget;
+        if (form.dataset.submitting === '1') {
+            e.preventDefault();
+            return;
+        }
+        form.dataset.submitting = '1';
+        var submitBtn = document.getElementById('btn-submit');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Menghantar...';
+        }
         syncHiddenInputs();
     });
 
