@@ -1058,13 +1058,16 @@ class JawatankuasaPerolehanController extends Controller
     {
         $winnerVendorIds = $this->resolveWinnerVendorIds($tender, $pemilihanPayload);
 
-        TenderVendor::query()
-            ->where('tender_id', $tender->id)
-            ->update(['winner' => 0]);
-
+        // Do not wipe existing winners when we cannot resolve a new set (e.g. Kertas
+        // Keputusan hantar without pemilihan payload and no Disyorkan row). That left
+        // Penyediaan Surat Niat with an empty pembekal list.
         if ($winnerVendorIds === []) {
             return;
         }
+
+        TenderVendor::query()
+            ->where('tender_id', $tender->id)
+            ->update(['winner' => 0]);
 
         TenderVendor::query()
             ->where('tender_id', $tender->id)

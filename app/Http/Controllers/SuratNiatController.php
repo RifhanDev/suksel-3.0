@@ -165,26 +165,6 @@ class SuratNiatController extends Controller
 
     private function fetchPembekals(int $tender): array
     {
-        $winners = TenderVendor::query()
-            ->where('tender_id', $tender)
-            ->where('winner', 1)
-            ->with('vendor')
-            ->orderBy('id')
-            ->get();
-
-        // Fallback when winner flag belum diisi (data JP lama): Disyorkan dari Keputusan Mesyuarat.
-        if ($winners->isEmpty()) {
-            $winnerVendorIds = $this->winnerVendorIdsFromKeputusanMesyuarat($tender);
-            if ($winnerVendorIds !== []) {
-                $winners = TenderVendor::query()
-                    ->where('tender_id', $tender)
-                    ->whereIn('vendor_id', $winnerVendorIds)
-                    ->with('vendor')
-                    ->orderBy('id')
-                    ->get();
-            }
-        }
-
         $savedByVendor = [];
         try {
             $response = $this->stos->getSuratNiatPembekals($tender);
@@ -200,15 +180,56 @@ class SuratNiatController extends Controller
             ]);
         }
 
+        $winners = TenderVendor::query()
+            ->where('tender_id', $tender)
+            ->where('winner', 1)
+            ->with('vendor')
+            ->orderBy('id')
+            ->get();
+
+        // Fallback when winner flag belum diisi / telah terhapus: Disyorkan dari JP / Perakuan.
+        if ($winners->isEmpty()) {
+            $winnerVendorIds = $this->winnerVendorIdsFromKeputusanMesyuarat($tender);
+
+            // STOS may already have a draf senarai pembekal even if local winner=0.
+            if ($winnerVendorIds === [] && $savedByVendor !== []) {
+                $winnerVendorIds = array_values(array_filter(array_map('intval', array_keys($savedByVendor))));
+            }
+
+            if ($winnerVendorIds !== []) {
+                $winners = TenderVendor::query()
+                    ->where('tender_id', $tender)
+                    ->whereIn('vendor_id', $winnerVendorIds)
+                    ->with('vendor')
+                    ->orderBy('id')
+                    ->get();
+
+                // Restore local winner flags so later screens stay consistent.
+                if ($winners->isNotEmpty()) {
+                    TenderVendor::query()
+                        ->where('tender_id', $tender)
+                        ->whereIn('vendor_id', $winners->pluck('vendor_id')->all())
+                        ->update(['winner' => 1]);
+                }
+            }
+        }
+
         return $winners->map(function (TenderVendor $participation) use ($savedByVendor) {
             $vendorId = (int) $participation->vendor_id;
             $saved = $savedByVendor[$vendorId] ?? null;
+            $savedName = is_array($saved) ? trim((string) ($saved['vendor_name'] ?? '')) : '';
+            $savedAddress = is_array($saved) ? trim((string) ($saved['vendor_address'] ?? '')) : '';
 
             return [
                 'id' => $saved['id'] ?? $participation->id,
                 'vendor_id' => $vendorId,
-                'vendor_name' => $saved['vendor_name'] ?? $participation->vendor?->name,
-                'vendor_address' => $saved['vendor_address'] ?? $participation->vendor?->address,
+                // Empty string from STOS must not hide the real company name.
+                'vendor_name' => $savedName !== ''
+                    ? $savedName
+                    : ($participation->vendor?->name ?: '-'),
+                'vendor_address' => $savedAddress !== ''
+                    ? $savedAddress
+                    : ($participation->vendor?->address ?: null),
                 'diperlukan' => array_key_exists('diperlukan', (array) $saved)
                     ? (bool) $saved['diperlukan']
                     : (bool) ($participation->surat_niat_diperlukan ?? true),
