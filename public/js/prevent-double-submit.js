@@ -141,14 +141,15 @@
         if (!form || isExcluded(form)) return;
         form.querySelectorAll('button[type="submit"], input[type="submit"], button:not([type])').forEach(function (btn) {
             if (isExcluded(btn)) return;
-            // Promote soft click-lock to hard once the form actually submits.
+            // Soft lock: full-page POST navigates away; AJAX forms (preventDefault) unlock on ajaxComplete.
+            // Hard lock here left dashboard/filter submits stuck disabled after $.ajax.
             if (btn.dataset.submitLocked === '1') {
-                btn.dataset.submitLockMode = 'hard';
-                window.clearTimeout(btn._sukselSubmitUnlockTimer);
                 window.clearTimeout(btn._sukselNoAjaxUnlockTimer);
+                scheduleNoAjaxUnlock(btn);
                 return;
             }
-            lock(btn, busyLabelFor(btn), true);
+            lock(btn, busyLabelFor(btn), false);
+            scheduleNoAjaxUnlock(btn);
         });
     }
 
