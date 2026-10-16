@@ -178,6 +178,16 @@
                 return;
             }
 
+            // Native submit controls: do NOT disable on click. Disabling the clicked
+            // submit button before the browser's default action cancels form submit
+            // (seen on /two-factor "Simpan Tetapan …"). Lock on the submit event instead.
+            if (
+                btn.matches('button[type="submit"], input[type="submit"]')
+                || (btn.tagName === 'BUTTON' && !btn.getAttribute('type'))
+            ) {
+                return;
+            }
+
             if (!shouldGuardClick(btn) || btn.disabled) return;
 
             var permanent = btn.matches('[data-submit-once="hard"]');
