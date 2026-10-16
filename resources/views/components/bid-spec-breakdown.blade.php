@@ -158,9 +158,9 @@
                 <div class="modal-header">
                     <div>
                         <h5 class="modal-title mb-0" id="{{ $modalId }}-label">{{ $title }}</h5>
-                        @if ($vendorName || $vendorId)
+                        @if ($vendorName)
                             <div class="modal-subtitle mt-1">
-                                {{ $vendorName ?: 'Vendor' }}
+                                {{ $vendorName }}
                                 @if ($vendorId)
                                     <span>· ID: {{ $vendorId }}</span>
                                 @endif

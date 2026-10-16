@@ -412,7 +412,6 @@
 							<thead class="text-white text-center" style="background-color:#2d3e84;">
 								<tr>
 									<th>Bil</th>
-									<th style="min-width:160px;">Nama Vendor</th>
 									<th>Status Bumiputra</th>
 									<th>Harga Tawaran (RM)</th>
 									@if ($showHargaBidaan)
@@ -428,7 +427,7 @@
 									<th id="mp-th-catatan-zon" class="d-none" style="min-width:180px;">Catatan Mengikut Zon</th>
 								</tr>
 								<tr>
-									<th colspan="{{ $showHargaBidaan ? 8 : 7 }}"></th>
+									<th colspan="{{ $showHargaBidaan ? 7 : 6 }}"></th>
 									<th class="small">Prestasi Pembekal</th>
 									<th class="small">Lembaga Pengarah</th>
 									<th id="mp-th-empty-right" colspan="2"></th>
@@ -465,7 +464,7 @@
 							@foreach ($bidSpecBreakdown as $vendorId => $pack)
 								@include('components.bid-spec-breakdown', [
 									'items' => $pack['items'] ?? [],
-									'vendorName' => $pack['vendor_name'] ?? null,
+									'vendorName' => null,
 									'vendorId' => $vendorId,
 									'showPriceDiff' => !empty($showBidPriceDiff),
 									'modalSuffix' => 'jp-' . $vendorId,
@@ -955,13 +954,7 @@
 						const catatanZonCell = showCatatanZon ?
 							'<td><textarea class="form-control form-control-sm mp-pet-catatan-zon" rows="2">' +
 							escapeHtml(p.catatan_mengikut_zon || '') + '</textarea></td>' : '';
-						const vendorName = (p.vendor_name || '-').toString();
 						const vendorId = p.vendor_id ? String(p.vendor_id) : '';
-						const vendorCell = '<td class="text-start">' +
-							'<div class="fw-semibold small">' + escapeHtml(vendorName) + '</div>' +
-							(vendorId ? '<div class="text-muted" style="font-size:0.7rem;">ID: ' + escapeHtml(
-								vendorId) + '</div>' : '') +
-							'</td>';
 						const hargaBidaanCell = showHargaBidaan ?
 							(function() {
 								const harga = (p.harga_bidaan !== null && p.harga_bidaan !== undefined && p
@@ -992,7 +985,6 @@
 							'';
 						const row = '<tr data-pet-idx="' + i + '">' +
 							'<td class="text-center">' + escapeHtml(p.bil_label || '') + '</td>' +
-							vendorCell +
 							'<td class="text-center">' + escapeHtml(p.status_bumiputra || '—') + '</td>' +
 							'<td class="text-end">' + escapeHtml(mpFormatMoney(p.harga_tawaran)) + '</td>' +
 							hargaBidaanCell +

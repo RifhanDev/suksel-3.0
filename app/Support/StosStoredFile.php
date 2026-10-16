@@ -20,7 +20,8 @@ class StosStoredFile
         $mime = (string) ($file['mime_type'] ?? 'application/octet-stream');
         $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
         $isPdf = ($ext === 'pdf' || str_contains(strtolower($mime), 'pdf'));
-        $disposition = $isPdf ? 'inline' : 'attachment';
+        $dispositionType = $isPdf ? 'inline' : 'attachment';
+        $disposition = self::contentDisposition($dispositionType, $name);
 
         $resolved = self::resolveLocalFilePath($path);
         if ($resolved && is_file($resolved)) {
@@ -31,7 +32,7 @@ class StosStoredFile
 
             return response()->file($resolved, [
                 'Content-Type' => $resolvedMime,
-                'Content-Disposition' => $disposition . '; filename="' . addslashes($name) . '"',
+                'Content-Disposition' => $disposition,
             ]);
         }
 
@@ -49,7 +50,7 @@ class StosStoredFile
                         echo $apiResponse->body();
                     }, 200, [
                         'Content-Type' => $mimeType,
-                        'Content-Disposition' => 'inline; filename="' . addslashes($name) . '"',
+                        'Content-Disposition' => self::contentDisposition('inline', $name),
                     ]);
                 }
             } catch (\Throwable) {
@@ -71,7 +72,7 @@ class StosStoredFile
                         echo $response->body();
                     }, 200, [
                         'Content-Type' => $mimeType,
-                        'Content-Disposition' => 'inline; filename="' . addslashes($name) . '"',
+                        'Content-Disposition' => self::contentDisposition('inline', $name),
                     ]);
                 }
             } catch (\Throwable) {
@@ -80,6 +81,18 @@ class StosStoredFile
         }
 
         abort(404, 'Fail dokumen tidak dijumpai pada storan sistem.');
+    }
+
+    /**
+     * Build a Content-Disposition header that won't throw on non-ASCII / quote-heavy names.
+     */
+    protected static function contentDisposition(string $type, string $name): string
+    {
+        $safeAscii = preg_replace('/[^\x20-\x7E]+/', '_', $name) ?: 'Dokumen';
+        $safeAscii = str_replace(['"', '\\', "\r", "\n"], ['_', '_', '', ''], $safeAscii);
+        $utf8 = rawurlencode(str_replace(["\r", "\n"], '', $name));
+
+        return $type . '; filename="' . $safeAscii . '"; filename*=UTF-8\'\'' . $utf8;
     }
 
     /**
