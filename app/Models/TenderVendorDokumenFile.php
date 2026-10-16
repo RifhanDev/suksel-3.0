@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\StosStoredFile;
 use App\Tender;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -48,6 +49,11 @@ class TenderVendorDokumenFile extends Model
 
         if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
             return null;
+        }
+
+        $resolved = StosStoredFile::resolveLocalFilePath($path);
+        if ($resolved && is_file($resolved)) {
+            return $resolved;
         }
 
         if (Storage::disk('public')->exists($path)) {

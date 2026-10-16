@@ -6,10 +6,12 @@ use App\Http\Controllers\Concerns\HandlesTenderFormAccess;
 use App\Http\Controllers\Concerns\AuthorizesTenderFileAccess;
 use App\Models\TenderVendorDokumenFile;
 use App\Services\VendorDokumenResponseService;
+use App\Support\StosStoredFile;
 use App\Support\TenderDokumenPresenter;
 use App\Tender;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 
 class VendorTenderDokumenController extends Controller
@@ -82,11 +84,15 @@ class VendorTenderDokumenController extends Controller
 
     public function download(string $fileUuid)
     {
-        $file = TenderVendorDokumenFile::query()->where('uuid', $fileUuid)->first();
+        try {
+            $file = TenderVendorDokumenFile::query()->where('uuid', $fileUuid)->first();
 
-        if (! $file) {
-            $pbFile = \App\Models\PenyataBankFile::query()->where('uuid', $fileUuid)->first();
-            if ($pbFile) {
+            if (! $file) {
+                $pbFile = \App\Models\PenyataBankFile::query()->where('uuid', $fileUuid)->first();
+                if (! $pbFile) {
+                    abort(404, 'Fail dokumen tidak dijumpai.');
+                }
+
                 $pbFile->loadMissing('penyataBank');
                 $tenderId = (int) ($pbFile->penyataBank?->tender_id ?? 0);
                 if ($tenderId > 0) {
@@ -96,75 +102,63 @@ class VendorTenderDokumenController extends Controller
                     }
                 }
 
-                $rawPath = ltrim(str_replace('public/', '', (string) $pbFile->path), '/');
-                $candidates = [
-                    storage_path('app/public/' . $rawPath),
-                    storage_path('app/' . $rawPath),
-                    storage_path('app/private/' . $rawPath),
-                    public_path('storage/' . $rawPath),
-                    public_path($rawPath),
-                ];
-                $absolutePath = null;
-                foreach ($candidates as $cand) {
-                    if (is_file($cand)) {
-                        $absolutePath = $cand;
-                        break;
-                    }
-                }
-                if ($absolutePath && is_file($absolutePath)) {
-                    $downloadName = $pbFile->original_name ?: $pbFile->stored_name;
-                    $mime = $pbFile->mime_type ?: (function_exists('mime_content_type') ? mime_content_type($absolutePath) : null) ?: 'application/pdf';
-                    $ext = strtolower(pathinfo($downloadName, PATHINFO_EXTENSION));
-                    $isPdf = ($ext === 'pdf' || str_contains(strtolower($mime), 'pdf'));
-                    $disposition = $isPdf ? 'inline' : 'attachment';
-
-                    return response()->file($absolutePath, [
-                        'Content-Type' => $mime,
-                        'Content-Disposition' => $disposition . '; filename="' . addslashes($downloadName) . '"',
-                    ]);
-                }
-
-                abort(404, 'Fail penyata bank tidak dijumpai pada storan sistem.');
+                return $this->streamStoredDokumenFile(
+                    path: (string) $pbFile->path,
+                    name: $pbFile->original_name ?: $pbFile->stored_name ?: 'Dokumen Sokongan',
+                    mime: $pbFile->mime_type,
+                    missingMessage: 'Fail penyata bank tidak dijumpai pada storan sistem.'
+                );
             }
 
-            abort(404, 'Fail dokumen tidak dijumpai.');
-        }
+            $tender = Tender::query()->findOrFail($file->tender_id);
+            $this->assertCanAccessTenderFile($tender, (int) $file->vendor_id);
 
-        $tender = Tender::query()->findOrFail($file->tender_id);
-        $this->assertCanAccessTenderFile($tender, (int) $file->vendor_id);
-
-        $absolutePath = $file->absolutePath();
-        if (! $absolutePath || ! is_file($absolutePath)) {
-            $rawPath = ltrim(str_replace('public/', '', (string) $file->path), '/');
-            $candidates = [
-                storage_path('app/public/' . $rawPath),
-                storage_path('app/' . $rawPath),
-                storage_path('app/private/' . $rawPath),
-                public_path('storage/' . $rawPath),
-                public_path($rawPath),
-            ];
-            foreach ($candidates as $cand) {
-                if (is_file($cand)) {
-                    $absolutePath = $cand;
-                    break;
-                }
-            }
-        }
-
-        if ($absolutePath && is_file($absolutePath)) {
-            $downloadName = $file->original_name ?: $file->stored_name;
-            $mime = $file->mime_type ?: (function_exists('mime_content_type') ? mime_content_type($absolutePath) : null) ?: 'application/octet-stream';
-            $ext = strtolower(pathinfo($downloadName, PATHINFO_EXTENSION));
-            $isPdf = ($ext === 'pdf' || str_contains(strtolower($mime), 'pdf'));
-            $disposition = $isPdf ? 'inline' : 'attachment';
-
-            return response()->file($absolutePath, [
-                'Content-Type' => $mime,
-                'Content-Disposition' => $disposition . '; filename="' . addslashes($downloadName) . '"',
+            return $this->streamStoredDokumenFile(
+                path: (string) $file->path,
+                name: $file->original_name ?: $file->stored_name ?: 'Dokumen Sokongan',
+                mime: $file->mime_type,
+                missingMessage: 'Fail dokumen tidak dijumpai pada storan sistem.'
+            );
+        } catch (\Symfony\Component\HttpKernel\Exception\HttpExceptionInterface $e) {
+            throw $e;
+        } catch (\Throwable $e) {
+            Log::error('Vendor dokumen download failed.', [
+                'file_uuid' => $fileUuid,
+                'error' => $e->getMessage(),
             ]);
-        }
 
-        abort(404, 'Fail dokumen tidak dijumpai pada storan sistem.');
+            abort(404, 'Fail dokumen tidak dijumpai pada storan sistem.');
+        }
+    }
+
+    /**
+     * Serve vendor / penyata attachments from local disk, STOS disk, or STOS /storage URL.
+     * Penilaian Teknikal "Dokumen Sokongan" links hit this path.
+     */
+    private function streamStoredDokumenFile(string $path, string $name, ?string $mime, string $missingMessage)
+    {
+        $cleanPath = ltrim(str_replace(['\\', 'public/'], ['/', ''], $path), '/');
+        $stosBase = rtrim((string) config('services.stos_backend.url'), '/');
+        $remoteUrl = ($stosBase !== '' && $cleanPath !== '')
+            ? $stosBase . '/storage/' . $cleanPath
+            : null;
+
+        try {
+            return StosStoredFile::response([
+                'original_name' => $name,
+                'path' => $cleanPath,
+                'mime_type' => $mime,
+                'url' => $remoteUrl,
+            ]);
+        } catch (\Symfony\Component\HttpKernel\Exception\HttpExceptionInterface $e) {
+            throw $e;
+        } catch (\Throwable $e) {
+            Log::warning('StosStoredFile failed for vendor dokumen.', [
+                'path' => $cleanPath,
+                'error' => $e->getMessage(),
+            ]);
+            abort(404, $missingMessage);
+        }
     }
 
     public function streamByPath(Request $request)
