@@ -865,6 +865,7 @@
     <script src="{{ asset('js/toast.js') }}"></script>
     <script src="{{ asset('js/success-modal.js') }}"></script>
     <script src="{{ asset('js/confirm-modal.js') }}"></script>
+    <script src="{{ asset('js/prevent-double-submit.js') }}"></script>
     <script src="{{ asset('js/ic-input.js') }}"></script>
     <!-- Bootbox 6.x -->
     <script src="{{ asset('packages/bootbox/bootbox.js') }}"></script>
