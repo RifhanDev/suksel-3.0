@@ -136,11 +136,11 @@
         <div class="cutoff-tender-header">
             <div class="row g-2 mb-0">
                 <div class="col-md-6"><strong>No. Sebut Harga / Tender:</strong> {{ $tender_no }}</div>
-                <div class="col-md-6"><strong>Tempoh Sah Laku Tawaran (Hari):</strong> 90</div>
-                <div class="col-md-6"><strong>PTJ:</strong> BAHAGIAN PENTADBIRAN - CAWANGAN KEWANGAN - KEMENTERIAN KEWANGAN</div>
+                <div class="col-md-6"><strong>Tempoh Sah Laku Tawaran (Hari):</strong> {{ $tempohSahLaku ?? '-' }}</div>
+                <div class="col-md-6"><strong>PTJ:</strong> {{ $ptj ?? '-' }}</div>
                 <div class="col-md-6"><strong>Tajuk Perolehan:</strong> {{ $tajuk ?? '-' }}</div>
-                <div class="col-md-6"><strong>STATUS:</strong> Menunggu Pengesahan CutOff</div>
-                <div class="col-md-6"><strong>Sah Laku Tawaran Tamat:</strong> 17/01/2022</div>
+                <div class="col-md-6"><strong>STATUS:</strong> {{ $statusLabel ?? 'Menunggu Pengesahan CutOff' }}</div>
+                <div class="col-md-6"><strong>Sah Laku Tawaran Tamat:</strong> {{ $sahLakuTamat ?? '-' }}</div>
             </div>
         </div>
 

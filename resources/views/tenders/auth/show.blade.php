@@ -29,7 +29,7 @@
 					<div class="tender-ref-label">
 						<span class="tender-type-label">{{ App\Tender::$types[$tender->type] }}</span>
 						<span class="tender-ref-sep">·</span>
-						<span class="tender-ref-no">{{ $tender->ref_number }}</span>
+						<span class="tender-ref-no">{{ $tender->displayNoTender() }}</span>
 					</div>
 					<h2 class="tender-title-main">{{ $tender->name }}</h2>
 				</div>
@@ -133,7 +133,7 @@
 									<span class="badge bg-primary ms-2">{{ $mejaTerkawal->count() }}</span>
 								</a>
 							@endif
-							@if ($tender->usesIklanDokumen() && $tender->iklanDokumens->isNotEmpty())
+							@if ($tender->showDokumenSenaraiTab() && $tender->usesIklanDokumen() && $tender->iklanDokumens->isNotEmpty())
 								<a href="#tf-dokumen-tawaran" aria-controls="settings" role="tab" data-bs-toggle="tab" class="nav-link">
 									<svg xmlns="http://www.w3.org/2000/svg" class="me-1" width="18" height="18" viewBox="0 0 24 24">
 										<path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -153,7 +153,7 @@
 									<span class="badge bg-primary ms-2">{{ count($dokumenList) }}</span>
 								</a>
 							@endif
-							@if (!$tender->showDokumenSenaraiTab() && Auth::check() && $tender->canShowFiles(Auth::user()->vendor_id))
+							@if (!$tender->isIklanSahaja() && !$tender->showDokumenSenaraiTab() && Auth::check() && $tender->canShowFiles(Auth::user()->vendor_id))
 								<a href="#tf-doc2" aria-controls="settings" role="tab" data-bs-toggle="tab" class="nav-link">
 									<svg xmlns="http://www.w3.org/2000/svg" class="me-1" width="18" height="18" viewBox="0 0 24 24">
 										<g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
@@ -520,7 +520,7 @@
 										</tr>
 										<tr>
 											<th>No. {{ App\Tender::$types[$tender->type] }}</th>
-											<td>{{ $tender->ref_number }}</td>
+											<td>{{ $tender->displayNoTender() }}</td>
 										</tr>
 										<tr>
 											<th>Tarikh Iklan</th>
@@ -766,23 +766,16 @@
 									<div class="card-body p-0">
 										<div class="table-responsive">
 											<table class="table tender-info-table mb-0">
-												<?php $max_count = count($tender->mof_code_groups); ?>
 												<tr>
 													<th>Kod Bidang MOF</th>
 													<td>
-														@foreach ($tender->mof_code_groups as $order => $data)
-															@foreach ($data['codes'] as $id => $label)
-																@if ($order < $max_count)
-																	<br>
-																@endif
-															@endforeach
-
+														@foreach (tender_code_groups_display($tender->mof_code_groups) as $order => $data)
 															{!! implode(
-															    '<br>' . App\VendorCode::$rule[$data['inner_rule']] . '<br>',
+															    '<br>' . tender_code_rule_html($data['inner_rule'], 'or') . '<br>',
 															    tender_vendor_codes($data['codes'], Auth::user()),
 															) !!}
-															@if ($order != $max_count)
-																<br><br>{!! App\VendorCode::$rule[$data['join_rule']] !!}<br><br>
+															@if ($data['join_after'] !== null)
+																<br><br>{!! tender_code_rule_html($data['join_after']) !!}<br><br>
 															@endif
 														@endforeach
 													</td>
@@ -817,17 +810,16 @@
 												@endif
 
 												@if (count($tender->cidb_codes) > 0)
-													<?php $max_count = count($tender->cidb_code_groups); ?>
 													<tr>
 														<th>Bidang Pengkhususan CIDB</th>
 														<td>
-															@foreach ($tender->cidb_code_groups as $order => $data)
+															@foreach (tender_code_groups_display($tender->cidb_code_groups) as $order => $data)
 																{!! implode(
-																    '<br>' . App\VendorCode::$rule[$data['inner_rule']] . '<br>',
+																    '<br>' . tender_code_rule_html($data['inner_rule']) . '<br>',
 																    tender_vendor_codes($data['codes'], Auth::user()),
 																) !!}
-																@if ($order != $max_count)
-																	<br><br>{!! App\VendorCode::$rule[$data['join_rule']] !!}<br><br>
+																@if ($data['join_after'] !== null)
+																	<br><br>{!! tender_code_rule_html($data['join_after'], 'or') !!}<br><br>
 																@endif
 															@endforeach
 														</td>
@@ -863,7 +855,7 @@
 					@endif
 
 					{{-- === TAB: Dokumen Tender/Tawaran atau Sebut Harga (senarai semak) === --}}
-					@if ($tender->usesIklanDokumen() && $tender->iklanDokumens->isNotEmpty())
+					@if ($tender->showDokumenSenaraiTab() && $tender->usesIklanDokumen() && $tender->iklanDokumens->isNotEmpty())
 						<div role="tabpanel" class="tab-pane" id="tf-dokumen-tawaran">
 							<div class="tender-tab-card">
 								<div class="card-header">
@@ -908,7 +900,7 @@
 					@endif
 
 					{{-- === TAB: Dokumen muat turun (legacy) === --}}
-					@if (!$tender->showDokumenSenaraiTab() && Auth::check() && $tender->canShowFiles(Auth::user()->vendor_id))
+					@if (!$tender->isIklanSahaja() && !$tender->showDokumenSenaraiTab() && Auth::check() && $tender->canShowFiles(Auth::user()->vendor_id))
 						<div role="tabpanel" class="tab-pane" id="tf-doc2">
 							@if (count($tender->tender_files) > 0)
 								<div class="tender-tab-card">

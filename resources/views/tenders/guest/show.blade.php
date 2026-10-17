@@ -145,9 +145,9 @@
 		<h3 class="fw-bold text-dark m-0" style="letter-spacing:-0.5px;">{{ $tender->name }}</h3>
 		<div class="d-flex align-items-center gap-2 mt-1 flex-wrap">
 			<span class="text-muted small">{{ optional($tender->tenderer)->name }}</span>
-			@if ($tender->ref_number)
+			@if ($tender->displayNoTender() !== '-')
 				<span class="text-muted small">·</span>
-				<span class="fw-semibold small text-dark">{{ $tender->ref_number }}</span>
+				<span class="fw-semibold small text-dark">{{ $tender->displayNoTender() }}</span>
 			@endif
 		</div>
 	</div>
@@ -265,7 +265,7 @@
 							</tr>
 							<tr>
 								<th>No. {{ App\Tender::$types[$tender->type] ?? 'Tender' }}</th>
-								<td>{{ $tender->ref_number ?? '-' }}</td>
+								<td>{{ $tender->displayNoTender() }}</td>
 							</tr>
 							<tr>
 								<th>Tarikh Iklan</th>
@@ -447,17 +447,16 @@
 									<h6>Kod Bidang MOF</h6>
 								</div>
 								<table class="info-table">
-									@php $max_count = count($tender->mof_code_groups); @endphp
 									<tr>
 										<th>Kod Bidang MOF</th>
 										<td>
-											@foreach ($tender->mof_code_groups as $order => $data)
+											@foreach (tender_code_groups_display($tender->mof_code_groups) as $order => $data)
 												{!! implode(
-												    '<br>' . App\VendorCode::$rule[$data['inner_rule']] . '<br>',
+												    '<br>' . tender_code_rule_html($data['inner_rule'], 'or') . '<br>',
 												    tender_vendor_codes($data['codes'], null),
 												) !!}
-												@if ($order != $max_count)
-													<br><br>{!! App\VendorCode::$rule[$data['join_rule']] !!}<br><br>
+												@if ($data['join_after'] !== null)
+													<br><br>{!! tender_code_rule_html($data['join_after']) !!}<br><br>
 												@endif
 											@endforeach
 										</td>
@@ -495,17 +494,16 @@
 										</tr>
 									@endif
 									@if (count($tender->cidb_codes) > 0)
-										@php $max_count = count($tender->cidb_code_groups); @endphp
 										<tr>
 											<th>Pengkhususan CIDB</th>
 											<td>
-												@foreach ($tender->cidb_code_groups as $order => $data)
+												@foreach (tender_code_groups_display($tender->cidb_code_groups) as $order => $data)
 													{!! implode(
-													    '<br>' . App\VendorCode::$rule[$data['inner_rule']] . '<br>',
+													    '<br>' . tender_code_rule_html($data['inner_rule']) . '<br>',
 													    tender_vendor_codes($data['codes'], null),
 													) !!}
-													@if ($order != $max_count)
-														<br><br>{!! App\VendorCode::$rule[$data['join_rule']] !!}<br><br>
+													@if ($data['join_after'] !== null)
+														<br><br>{!! tender_code_rule_html($data['join_after'], 'or') !!}<br><br>
 													@endif
 												@endforeach
 											</td>

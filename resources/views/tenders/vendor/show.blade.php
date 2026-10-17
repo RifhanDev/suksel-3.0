@@ -256,10 +256,11 @@
 		    Auth::check() &&
 		    Auth::user()->vendor_id &&
 		    !$vendorSubmitted &&
+		    $tender->allowsWakilLawatanRegistration() &&
 		    $tender->siteVisits->contains(fn($visit) => $visit->canSubmitRepresentatives());
 
 		$lawatanInfoBanner = null;
-		if (Auth::check() && Auth::user()->vendor_id && !$vendorSubmitted && $tender->siteVisits->isNotEmpty()) {
+		if (Auth::check() && Auth::user()->vendor_id && !$vendorSubmitted && $tender->allowsWakilLawatanRegistration() && $tender->siteVisits->isNotEmpty()) {
 		    $lawatanVendorId = (int) Auth::user()->vendor_id;
 		    $openLawatanVisits = $tender->siteVisits
 		        ->filter(fn($visit) => $visit->canSubmitRepresentatives())
@@ -319,9 +320,9 @@
 		<h3 class="fw-bold text-dark m-0" style="letter-spacing:-0.5px;">{{ $tender->name }}</h3>
 		<div class="d-flex align-items-center gap-2 mt-1 flex-wrap">
 			<span class="text-muted small">{{ optional($tender->tenderer)->name }}</span>
-			@if ($tender->ref_number)
+			@if ($tender->displayNoTender() !== '-')
 				<span class="text-muted small">·</span>
-				<span class="fw-semibold small text-dark">{{ $tender->ref_number }}</span>
+				<span class="fw-semibold small text-dark">{{ $tender->displayNoTender() }}</span>
 			@endif
 		</div>
 	</div>
@@ -572,7 +573,7 @@
 						</a>
 					@endif
 
-					@if ($vendorHasPurchased && $tender->usesIklanDokumen() && $tender->iklanDokumens->isNotEmpty())
+					@if (! $tender->isIklanSahaja() && $tender->showDokumenSenaraiTab() && $vendorHasPurchased && $tender->usesIklanDokumen() && $tender->iklanDokumens->isNotEmpty())
 						<a class="nav-link" href="#vt-dokumen-tawaran" data-bs-toggle="pill" role="tab">
 							<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
 								stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -582,7 +583,7 @@
 							{{ $tender->dokumenSenaraiTabLabel() }}
 							<span class="badge bg-primary ms-auto" style="font-size:0.6rem;">{{ $tender->iklanDokumens->count() }}</span>
 						</a>
-					@elseif ($tender->canShowDokumenSenaraiTab(Auth::user()->vendor_id))
+					@elseif (! $tender->isIklanSahaja() && $tender->canShowDokumenSenaraiTab(Auth::user()->vendor_id))
 						<a class="nav-link" href="#vt-dokumen-tawaran" data-bs-toggle="pill" role="tab">
 							<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
 								stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -686,7 +687,7 @@
 							</tr>
 							<tr>
 								<th>No. {{ App\Tender::$types[$tender->type] ?? 'Tender' }}</th>
-								<td>{{ $tender->ref_number ?? '-' }}</td>
+								<td>{{ $tender->displayNoTender() }}</td>
 							</tr>
 							<tr>
 								<th>Tarikh Iklan</th>
@@ -775,7 +776,7 @@
 							</tr>
 						</table>
 					</div>
-					@if ($tender->canPurchase())
+					@if (! $tender->isIklanSahaja() && $tender->canPurchase())
 						<div class="d-flex justify-content-end">
 							<a href="{{ route('tenders.buy', $tender->id) }}" class="btn-form btn-form-primary">
 								{{ $tender->vendorDokumenActionLabel() }}
@@ -820,7 +821,12 @@
 								<h6>Lawatan Tapak</h6>
 							</div>
 							<div class="px-4 pt-3 pb-0">
-								@if ($canManageWakilLawatan)
+								@if ($tender->isIklanSahaja())
+									<p class="text-muted small mb-0">
+										Tender <strong>Iklan Sahaja</strong> — maklumat lawatan tapak adalah untuk rujukan sahaja.
+										Pendaftaran wakil syarikat tidak diperlukan.
+									</p>
+								@elseif ($canManageWakilLawatan)
 									<p class="text-muted small mb-0">
 										Klik <strong>Wakil Syarikat</strong> pada setiap lawatan untuk masukkan No. IC dan nama wakil
 										<strong>sebelum tarikh lawatan</strong>. Kehadiran akan disahkan oleh urus setia selepas lawatan tapak.
@@ -900,7 +906,7 @@
 													@elseif (!$visitAttended)
 														<span class="text-muted small">—</span>
 													@endif
-													@if (!$vendorHasPurchased && $tender->canPurchase())
+													@if (! $tender->isIklanSahaja() && !$vendorHasPurchased && $tender->canPurchase())
 														<div class="mt-1">
 															<a href="{{ route('tenders.buy', $tender->id) }}" class="small">{{ $tender->vendorDokumenActionLabel() }}</a>
 														</div>
@@ -973,17 +979,16 @@
 									<h6>Kod Bidang MOF</h6>
 								</div>
 								<table class="info-table">
-									@php $max_count = count($tender->mof_code_groups); @endphp
 									<tr>
 										<th>Kod Bidang MOF</th>
 										<td>
-											@foreach ($tender->mof_code_groups as $order => $data)
+											@foreach (tender_code_groups_display($tender->mof_code_groups) as $order => $data)
 												{!! implode(
-												    '<br>' . App\VendorCode::$rule[$data['inner_rule']] . '<br>',
+												    '<br>' . tender_code_rule_html($data['inner_rule'], 'or') . '<br>',
 												    tender_vendor_codes($data['codes'], Auth::user()),
 												) !!}
-												@if ($order != $max_count)
-													<br><br>{!! App\VendorCode::$rule[$data['join_rule']] !!}<br><br>
+												@if ($data['join_after'] !== null)
+													<br><br>{!! tender_code_rule_html($data['join_after']) !!}<br><br>
 												@endif
 											@endforeach
 										</td>
@@ -1021,17 +1026,16 @@
 										</tr>
 									@endif
 									@if (count($tender->cidb_codes) > 0)
-										@php $max_count = count($tender->cidb_code_groups); @endphp
 										<tr>
 											<th>Pengkhususan CIDB</th>
 											<td>
-												@foreach ($tender->cidb_code_groups as $order => $data)
+												@foreach (tender_code_groups_display($tender->cidb_code_groups) as $order => $data)
 													{!! implode(
-													    '<br>' . App\VendorCode::$rule[$data['inner_rule']] . '<br>',
+													    '<br>' . tender_code_rule_html($data['inner_rule']) . '<br>',
 													    tender_vendor_codes($data['codes'], Auth::user()),
 													) !!}
-													@if ($order != $max_count)
-														<br><br>{!! App\VendorCode::$rule[$data['join_rule']] !!}<br><br>
+													@if ($data['join_after'] !== null)
+														<br><br>{!! tender_code_rule_html($data['join_after'], 'or') !!}<br><br>
 													@endif
 												@endforeach
 											</td>
@@ -1064,8 +1068,8 @@
 					</div>
 				@endif
 
-				{{-- TAB: Dokumen Tender/Tawaran atau Sebut Harga (senarai semak) — iklan docs only after purchase --}}
-				@if ($vendorHasPurchased && $tender->usesIklanDokumen() && $tender->iklanDokumens->isNotEmpty())
+				{{-- TAB: Dokumen Tender/Tawaran atau Sebut Harga — hidden for Iklan Sahaja --}}
+				@if (! $tender->isIklanSahaja() && $tender->showDokumenSenaraiTab() && $vendorHasPurchased && $tender->usesIklanDokumen() && $tender->iklanDokumens->isNotEmpty())
 					<div class="tab-pane fade" id="vt-dokumen-tawaran" role="tabpanel">
 						<div class="vendor-tender-card">
 							<div class="vendor-tender-card-header">
@@ -1083,7 +1087,7 @@
 							@include('tenders._iklan_dokumen_table', ['tender' => $tender])
 						</div>
 					</div>
-				@elseif ($tender->canShowDokumenSenaraiTab(Auth::user()->vendor_id))
+				@elseif (! $tender->isIklanSahaja() && $tender->canShowDokumenSenaraiTab(Auth::user()->vendor_id))
 					<div class="tab-pane fade" id="vt-dokumen-tawaran" role="tabpanel">
 						<div class="vendor-tender-card">
 							<div class="vendor-tender-card-header">
@@ -1109,7 +1113,7 @@
 				@endif
 
 				{{-- TAB: Dokumen muat turun (legacy — hanya jika tiada tab senarai semak kaedah) --}}
-				@if (!$tender->showDokumenSenaraiTab() && $tender->canShowFiles(Auth::user()->vendor_id))
+				@if (!$tender->isIklanSahaja() && !$tender->showDokumenSenaraiTab() && $tender->canShowFiles(Auth::user()->vendor_id))
 					<div class="tab-pane fade" id="vt-doc2" role="tabpanel">
 						<div class="vendor-tender-card">
 							<div class="vendor-tender-card-header">
