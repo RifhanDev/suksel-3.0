@@ -262,6 +262,10 @@ class PenyediaanIklanService
     /**
      * Mirror Penyediaan Iklan taklimat / lawatan tapak rows into tender_visits
      * so vendor tender pages can display them (they read siteVisits, not meta).
+     *
+     * Reuses visit_id when present; otherwise matches an existing row by content
+     * so a second Simpan/Hantar without visit_id (common after AJAX draft save)
+     * does not create duplicate Lawatan Tapak lines.
      */
     protected function syncTaklimatToSiteVisits(Tender $tender, array $taklimatRows, array $previousTaklimat): array
     {
@@ -283,7 +287,7 @@ class PenyediaanIklanService
         $keptIds = [];
         $updatedRows = [];
 
-        foreach ($taklimatRows as $row) {
+        foreach ($taklimatRows as $index => $row) {
             $datetime = $this->parseTaklimatDatetime($row['tarikh'] ?? null, $row['masa'] ?? null);
             if ($datetime === null) {
                 continue;
@@ -299,6 +303,25 @@ class PenyediaanIklanService
             $visitId = $row['visit_id'] ?? null;
             $visit = $visitId ? $tender->siteVisits()->find($visitId) : null;
 
+            // Fallback: same index in previous meta still has a visit_id.
+            if (! $visit && empty($visitId)) {
+                $prevId = $previousTaklimat[$index]['visit_id'] ?? null;
+                if ($prevId) {
+                    $visit = $tender->siteVisits()->find((int) $prevId);
+                }
+            }
+
+            // Fallback: reuse an existing visit with identical content (race / lost visit_id).
+            if (! $visit) {
+                $visit = $tender->siteVisits()
+                    ->where('meetpoint', $attrs['meetpoint'])
+                    ->where('address', $attrs['address'])
+                    ->where('datetime', $attrs['datetime'])
+                    ->when($keptIds !== [], fn ($q) => $q->whereNotIn('id', $keptIds))
+                    ->orderBy('id')
+                    ->first();
+            }
+
             if ($visit) {
                 $visit->update($attrs);
             } else {
@@ -311,7 +334,27 @@ class PenyediaanIklanService
             $updatedRows[] = array_merge($row, ['visit_id' => (int) $visit->id]);
         }
 
-        $toDelete = array_diff($previousIds, $keptIds);
+        $toDelete = array_values(array_unique(array_diff($previousIds, $keptIds)));
+
+        // Also drop exact content duplicates left by parallel saves (same perihal/lokasi/masa).
+        foreach ($updatedRows as $row) {
+            $datetime = $this->parseTaklimatDatetime($row['tarikh'] ?? null, $row['masa'] ?? null);
+            if ($datetime === null) {
+                continue;
+            }
+
+            $dupIds = $tender->siteVisits()
+                ->where('meetpoint', trim((string) ($row['perihal'] ?? '')) ?: '-')
+                ->where('address', trim((string) ($row['lokasi'] ?? '')) ?: '-')
+                ->where('datetime', $datetime)
+                ->whereNotIn('id', $keptIds)
+                ->pluck('id')
+                ->map(fn ($id) => (int) $id)
+                ->all();
+
+            $toDelete = array_values(array_unique(array_merge($toDelete, $dupIds)));
+        }
+
         if ($toDelete !== []) {
             $tender->siteVisits()->whereIn('id', $toDelete)->delete();
         }

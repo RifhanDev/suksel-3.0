@@ -192,13 +192,15 @@
             if (!shouldGuardClick(btn) || btn.disabled) return;
 
             var permanent = btn.matches('[data-submit-once="hard"]');
-            lock(btn, busyLabelFor(btn), permanent);
-            if (!permanent) {
-                // Defer until after sync click handlers (incl. window.confirm) finish.
-                window.setTimeout(function () {
+            // Defer lock until after bubble handlers (e.g. perincian-page Simpan/Hantar
+            // AJAX). Disabling in capture prevents those listeners from running.
+            window.setTimeout(function () {
+                if (btn.disabled || btn.dataset.submitLocked === '1') return;
+                lock(btn, busyLabelFor(btn), permanent);
+                if (!permanent) {
                     scheduleNoAjaxUnlock(btn);
-                }, 0);
-            }
+                }
+            }, 0);
         },
         true
     );
