@@ -27,7 +27,7 @@ class StosFormFileController extends Controller
         ],
     ];
 
-    public function download(\App\Tender|\App\Models\Tender $tender, string $type, string $fileUuid)
+    public function download(Tender $tender, string $type, string $fileUuid)
     {
         $this->assertCanAccessTenderFile($tender);
         $config = self::TYPES[$type] ?? null;
@@ -94,11 +94,11 @@ class StosFormFileController extends Controller
     /**
      * Rewrite STOS absolute storage URLs to local authenticated proxy routes.
      *
-     * @param  \App\Tender|\App\Models\Tender  $tender
+     * @param  Tender  $tender
      * @param  array<int, array<string, mixed>>  $dokumens
      * @return array<int, array<string, mixed>>
      */
-    public static function rewriteDokumenUrls(object $tender, string $type, array $dokumens): array
+    public static function rewriteDokumenUrls(Tender $tender, string $type, array $dokumens): array
     {
         if (! isset(self::TYPES[$type])) {
             return $dokumens;
