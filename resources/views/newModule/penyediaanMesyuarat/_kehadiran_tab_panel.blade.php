@@ -104,7 +104,7 @@
     </div>
 
     <div class="d-flex justify-content-end align-items-center mb-4 flex-wrap gap-2">
-        <button type="button" class="btn-form btn-form-success btn-simpan-kehadiran" data-ui-tab="{{ $uiTab }}" data-jenis="{{ $jenis }}">
+        <button type="button" class="btn-form btn-form-success btn-simpan-kehadiran" data-ui-tab="{{ $uiTab }}" data-jenis="{{ $jenis }}" data-allow-double-submit>
             Simpan
         </button>
     </div>

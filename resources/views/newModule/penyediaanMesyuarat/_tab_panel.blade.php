@@ -108,7 +108,8 @@
 
     <div class="d-flex justify-content-end align-items-center mb-4 flex-wrap gap-2">
         <div class="d-flex gap-2">
-            <button type="button" class="btn-form btn-form-success btn-simpan-mesyuarat" data-ui-tab="{{ $uiTab }}">
+            {{-- data-allow-double-submit: page owns busy state via overlay; global click-lock was swallowing AJAX --}}
+            <button type="button" class="btn-form btn-form-success btn-simpan-mesyuarat" data-ui-tab="{{ $uiTab }}" data-allow-double-submit>
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
@@ -117,7 +118,7 @@
                 </svg>
                 Simpan
             </button>
-            <button type="button" class="btn-form btn-form-primary btn-hantar-mesyuarat" data-ui-tab="{{ $uiTab }}">
+            <button type="button" class="btn-form btn-form-primary btn-hantar-mesyuarat" data-ui-tab="{{ $uiTab }}" data-allow-double-submit>
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <line x1="22" y1="2" x2="11" y2="13"></line>

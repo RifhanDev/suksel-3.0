@@ -194,6 +194,7 @@ class PenyediaanIklanController extends Controller
                     // subsequent Simpan/Next-step save doesn't silently re-upload the same
                     // file and orphan (delete) the document it just created.
                     'dokumen_sokongan' => $record->meta['iklan']['dokumen_sokongan'] ?? [],
+                    'taklimat' => $record->meta['iklan']['taklimat'] ?? [],
                     'iklan_dokumen' => $iklanDokumenRows,
                 ]);
             }

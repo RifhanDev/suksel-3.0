@@ -141,14 +141,15 @@
         if (!form || isExcluded(form)) return;
         form.querySelectorAll('button[type="submit"], input[type="submit"], button:not([type])').forEach(function (btn) {
             if (isExcluded(btn)) return;
-            // Promote soft click-lock to hard once the form actually submits.
+            // Soft lock: full-page POST navigates away; AJAX forms (preventDefault) unlock on ajaxComplete.
+            // Hard lock here left dashboard/filter submits stuck disabled after $.ajax.
             if (btn.dataset.submitLocked === '1') {
-                btn.dataset.submitLockMode = 'hard';
-                window.clearTimeout(btn._sukselSubmitUnlockTimer);
                 window.clearTimeout(btn._sukselNoAjaxUnlockTimer);
+                scheduleNoAjaxUnlock(btn);
                 return;
             }
-            lock(btn, busyLabelFor(btn), true);
+            lock(btn, busyLabelFor(btn), false);
+            scheduleNoAjaxUnlock(btn);
         });
     }
 
@@ -178,16 +179,28 @@
                 return;
             }
 
+            // Native submit controls: do NOT disable on click. Disabling the clicked
+            // submit button before the browser's default action cancels form submit
+            // (seen on /two-factor "Simpan Tetapan …"). Lock on the submit event instead.
+            if (
+                btn.matches('button[type="submit"], input[type="submit"]')
+                || (btn.tagName === 'BUTTON' && !btn.getAttribute('type'))
+            ) {
+                return;
+            }
+
             if (!shouldGuardClick(btn) || btn.disabled) return;
 
             var permanent = btn.matches('[data-submit-once="hard"]');
-            lock(btn, busyLabelFor(btn), permanent);
-            if (!permanent) {
-                // Defer until after sync click handlers (incl. window.confirm) finish.
-                window.setTimeout(function () {
+            // Defer lock until after bubble handlers (e.g. perincian-page Simpan/Hantar
+            // AJAX). Disabling in capture prevents those listeners from running.
+            window.setTimeout(function () {
+                if (btn.disabled || btn.dataset.submitLocked === '1') return;
+                lock(btn, busyLabelFor(btn), permanent);
+                if (!permanent) {
                     scheduleNoAjaxUnlock(btn);
-                }, 0);
-            }
+                }
+            }, 0);
         },
         true
     );

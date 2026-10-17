@@ -379,7 +379,9 @@
 
         <div class="d-flex justify-content-end gap-2 mb-4">
             <button type="button" class="btn-form btn-form-primary btn-simpan">Simpan</button>
-            <button type="submit" class="btn-form btn-form-success btn-hantar">
+            {{-- type=button (not submit): global double-submit guard must not disable this
+                 before the click handler runs — that cancelled form submit and made Hantar appear dead. --}}
+            <button type="button" class="btn-form btn-form-success btn-hantar">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"></path></svg>
                 Hantar
             </button>
@@ -1541,8 +1543,7 @@
                 });
             });
 
-            $('#form-senarai-teknikal').on('submit', function (e) {
-                e.preventDefault();
+            function doHantar() {
                 var skemaMaksima = parseInt($('#skema-maksima-display').val()) || 0;
                 var penilaian    = parseInt($('#input-penilaian').val()) || 0;
                 if (skemaMaksima > 0 && penilaian > skemaMaksima) {
@@ -1566,12 +1567,27 @@
                             var msg = 'Ralat semasa menghantar.';
                             if (xhr.responseJSON && xhr.responseJSON.message) msg = xhr.responseJSON.message;
                             alert(msg);
+                            if (window.SukselSubmitGuard) {
+                                window.SukselSubmitGuard.unlockAllSoft();
+                            }
                         }
                     });
                 }, function() {
                     hideOverlay();
                     alert('Ralat semasa menyimpan sebelum hantar. Sila cuba lagi.');
+                    if (window.SukselSubmitGuard) {
+                        window.SukselSubmitGuard.unlockAllSoft();
+                    }
                 });
+            }
+
+            $('.btn-hantar').on('click', function () {
+                doHantar();
+            });
+
+            $('#form-senarai-teknikal').on('submit', function (e) {
+                e.preventDefault();
+                doHantar();
             });
 
         });
