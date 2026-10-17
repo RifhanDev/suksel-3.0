@@ -310,8 +310,8 @@
 			@endif
 
 
-			@if ($tender->only_advertise)
-				<div class="alert alert-danger"><svg xmlns="http://www.w3.org/2000/svg" class="me-1" width="18"
+			@if ($tender->isIklanSahaja())
+				<div class="alert alert-info"><svg xmlns="http://www.w3.org/2000/svg" class="me-1" width="18"
 						height="18" viewBox="0 0 24 24">
 						<g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
 							<path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0-18 0m9-3h.01" />
@@ -319,7 +319,7 @@
 						</g>
 					</svg>
 					{{ App\Tender::$types[$tender->type] }}
-					ini hanya boleh dibeli secara manual. Sila rujuk Syarat Tender untuk maklumat lanjut.</div>
+					ini ialah <strong>Iklan Sahaja</strong> — paparan maklumat iklan sahaja. Tiada pembelian dokumen.</div>
 			@endif
 		@endif
 

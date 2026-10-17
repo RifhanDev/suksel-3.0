@@ -19,12 +19,13 @@ use Illuminate\Support\Str;
  */
 class TeknikalKerjaEvaluationService
 {
-    /** Companies selected at cut-off, excluding anyone who failed the opening stage. */
+    /** Companies selected at cut-off, excluding anyone who failed the opening stage.
+     *  Ranking follows cut-off: harga tawaran rendah → tinggi. */
     public function loadShortlistedVendors(Tender $tender): Collection
     {
         return TenderVendor::query()
             ->forTechnicalEvaluation($tender->id)
-            ->orderBy('id')
+            ->orderByRaw('harga_tawaran IS NULL, harga_tawaran ASC, id ASC')
             ->get(['id', 'vendor_id', 'kod_pembekal', 'harga_tawaran'])
             ->values();
     }

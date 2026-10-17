@@ -62,6 +62,7 @@ class TendersController extends Controller
 				'tenders.uuid',
 				'tenders.name',
 				'tenders.ref_number',
+				'tenders.no_tender',
 				'tenders.organization_unit_id',
 				'tenders.document_start_date',
 				'tenders.submission_datetime',
@@ -79,13 +80,13 @@ class TendersController extends Controller
 			$tenders = $tenders->orderBy('created_at', 'desc');
 			$datatable = Datatables::of($tenders)
 				->filterColumn('name', function ($query, $keyword) {
-					$sql = "CONCAT(name,'-',ref_number)  like ?";
+					$sql = "CONCAT(name,'-',COALESCE(NULLIF(no_tender,''),ref_number)) like ?";
 					$query->whereRaw($sql, ["%{$keyword}%"]);
 				})
 				->editColumn('name', function ($tender) {
 					$string   = [];
 					$string[] = (auth()->check() && !auth()->user()->hasRole('Vendor') && $tender->invitation ? '<i class="fa fa-lock"></i> ' : '') . "<strong><u>" . $tender->tenderer->name . "</u></strong>";
-					$string[] = "<small>" . $tender->ref_number . "</small>";
+					$string[] = "<small>" . e($tender->displayNoTender()) . "</small>";
 					$string[] = "<a class=\"table-tender-title\" href=" . action('TendersController@show', $tender->id) . ">" . $tender->name . "</a>";;
 
 					if ($tender->briefing_required) {
@@ -126,6 +127,7 @@ class TendersController extends Controller
 				})
 			->removeColumn('id')
 			->removeColumn('ref_number')
+			->removeColumn('no_tender')
 			->removeColumn('organization_unit_id')
 			->removeColumn('invitation')
 			->removeColumn('publish_winner')
@@ -1256,6 +1258,13 @@ class TendersController extends Controller
 		$tender = Tender::with(['kaedahDokumen', 'siteVisits'])->findOrFail($id);
 		$vendorId = (int) (auth()->user()->vendor_id ?? 0);
 
+		if ($tender->isIklanSahaja()) {
+			return redirect('tenders/' . $tender->id)->with(
+				'error',
+				'Tender Iklan Sahaja — paparan iklan sahaja. Tiada pembelian atau tambah ke senarai.'
+			);
+		}
+
 		if ($tender->documentSalesClosed() || !$tender->isWithinVendorDokumenWindow()) {
 			return redirect()->back()->with('error', 'Pembelian tender telah tamat tempoh');
 		}
@@ -1268,8 +1277,12 @@ class TendersController extends Controller
 			return redirect('tenders/' . $tender->id)->with('error', 'Tender ini sudah dibeli!');
 		}
 
-		// Wajib lawatan: wakil mesti hadir dan disahkan urusetia/agensi sebelum beli.
-		if ($tender->hasRequiredSiteVisits() && ! $tender->attendVisits($vendorId)) {
+		// Wajib lawatan: wakil mesti hadir dan disahkan urusetia/agensi sebelum beli
+		// (dikecualikan untuk Iklan Sahaja — lawatan paparan sahaja).
+		if ($tender->allowsWakilLawatanRegistration()
+			&& $tender->hasRequiredSiteVisits()
+			&& ! $tender->attendVisits($vendorId)
+		) {
 			return redirect('tenders/' . $tender->id)->with(
 				'error',
 				'Lawatan tapak wajib. Sila daftar wakil syarikat dan tunggu pengesahan kehadiran oleh urusetia/agensi sebelum membeli dokumen.'
