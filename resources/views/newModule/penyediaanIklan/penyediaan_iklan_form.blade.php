@@ -686,7 +686,7 @@
 						<th style="width:40px;" class="text-center">
 							<input type="checkbox" id="chkSelectAllTaklimat" title="Pilih semua">
 						</th>
-						<th>Perihal</th>
+						<th>Tempat Berkumpul</th>
 						<th style="width:145px;">Tarikh / Masa</th>
 						<th style="min-width:160px;">Lokasi / Alamat</th>
 						<th style="width:110px;" class="text-center">Kehadiran</th>
@@ -742,11 +742,11 @@
 				<div class="modal-body p-4">
 					<div class="row g-3">
 
-						{{-- Row 1: Perihal --}}
+						{{-- Row 1: Tempat Berkumpul (stored as perihal / meetpoint) --}}
 						<div class="col-12">
-							<label class="form-label fw-semibold">Perihal <span class="text-danger">*</span></label>
+							<label class="form-label fw-semibold">Tempat Berkumpul <span class="text-danger">*</span></label>
 							<textarea class="form-control" id="taklimat_perihal" name="taklimat_perihal" rows="2"
-							 placeholder="Huraikan perihal taklimat..."></textarea>
+							 placeholder="Nyatakan tempat berkumpul..."></textarea>
 						</div>
 
 						{{-- Row 2: Tarikh | Masa | Kehadiran --}}
@@ -1270,7 +1270,7 @@
 				var wajib = $('#taklimat_kehadiran').is(':checked');
 
 				if (!perihal || !tarikh) {
-					alert('Sila isi sekurang-kurangnya Perihal dan Tarikh.');
+					alert('Sila isi sekurang-kurangnya Tempat Berkumpul dan Tarikh.');
 					return;
 				}
 

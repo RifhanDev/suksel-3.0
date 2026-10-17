@@ -157,12 +157,8 @@
 			const formUrl = "{{ route('jawatankuasa.perolehan.form') }}";
 			const backendData = @json($tenders ?? []);
 			const tableData = backendData.map(function(row) {
-				const statusLabel = row.status_label || 'Dalam Proses';
-				const statusMap = {
-					'Dalam Proses': 'Bidaan',
-					'Selesai': 'Selesai'
-				};
-				const statusText = statusMap[statusLabel] || statusLabel;
+				// status_label from backend: "Bidaan" only if kaedah memuktamadkan = Bidaan
+				const statusText = row.status_label || 'Dalam Proses';
 
 				return {
 					id: row.id || '',
@@ -253,9 +249,11 @@
 				DT.column(1).search(filterTajuk, false, true);
 				DT.column(2).search(filterTarikh, false, true);
 
-				if (filterStatus) {
-					const statusSearch = filterStatus === 'Dalam Proses' ? 'Bidaan' : filterStatus;
-					DT.column(4).search(escapeRegex(statusSearch), true, false);
+				if (filterStatus === 'Dalam Proses') {
+					// In-progress includes optional "Bidaan" subtype (kaedah = Bidaan).
+					DT.column(4).search('^(Dalam Proses|Bidaan)$', true, false);
+				} else if (filterStatus) {
+					DT.column(4).search('^' + escapeRegex(filterStatus) + '$', true, false);
 				} else {
 					DT.column(4).search('');
 				}

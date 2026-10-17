@@ -93,6 +93,7 @@ class HomeController extends Controller
 				'submission_datetime',
 				'price',
 				'ref_number',
+				'no_tender',
 				'organization_unit_id',
 				'briefing_required',
 				'briefing_address',
@@ -102,13 +103,13 @@ class HomeController extends Controller
 			return Datatables::of($tenders)
 
 				->filterColumn('name', function ($query, $keyword) {
-					$sql = "CONCAT(name,'-',ref_number)  like ?";
+					$sql = "CONCAT(name,'-',COALESCE(NULLIF(no_tender,''),ref_number)) like ?";
 					$query->whereRaw($sql, ["%{$keyword}%"]);
 				})
 				->editColumn('name', function ($tender) {
 					$string   = [];
 					$string[] = '<strong><u>' . $tender->tenderer->name . '</u></strong>';
-					$string[] = '<small><strong>' . $tender->ref_number . '</strong></small>';
+					$string[] = '<small><strong>' . e($tender->displayNoTender()) . '</strong></small>';
 					$detailUrl = match ($tender->type) {
 						'pembelian_terus' => route('pembelianTerus.detailProject', $tender->id),
 						'lantikan_terus' => route('sebutHargaTerus.show', $tender->id),
@@ -144,10 +145,9 @@ class HomeController extends Controller
 					$string = '';
 
 					if (count($tender->mof_codes) > 0) {
-						$max_count = count($tender->mof_code_groups);
 						$string .= '<strong><u>MOF</u></strong><br>';
 
-						foreach ($tender->mof_code_groups_by_code as $order => $data) {
+						foreach (tender_code_groups_display($tender->mof_code_groups_by_code) as $order => $data) {
 							$code_count = count($data['codes']);
 							$i = 1;
 							$string .= '<small>';
@@ -155,14 +155,14 @@ class HomeController extends Controller
 							foreach ($data['codes'] as $id => $code) {
 								$string .= $code;
 								if ($i != $code_count)
-									$string .= VendorCode::$rule[$data['inner_rule']];
+									$string .= tender_code_rule_html($data['inner_rule'], 'or');
 								$i++;
 							}
 
 							$string .= '</small>';
 
-							if ($order !=  $max_count)
-								$string .= '<br>' . VendorCode::$rule[$data['join_rule']] . '<br>';
+							if ($data['join_after'] !== null)
+								$string .= '<br>' . tender_code_rule_html($data['join_after']) . '<br>';
 						}
 
 						$string .= '<br><br>';
@@ -178,10 +178,9 @@ class HomeController extends Controller
 					}
 
 					if (count($tender->cidb_codes) > 0) {
-						$max_count = count($tender->cidb_code_groups);
 						$string .= '<strong><u>CIDB</u></strong><br>';
 
-						foreach ($tender->cidb_code_groups_by_code as $order => $data) {
+						foreach (tender_code_groups_display($tender->cidb_code_groups_by_code) as $order => $data) {
 							$code_count = count($data['codes']);
 							$i = 1;
 							$string .= '<small>';
@@ -189,14 +188,14 @@ class HomeController extends Controller
 							foreach ($data['codes'] as $id => $code) {
 								$string .= $code;
 								if ($i != $code_count)
-									$string .= VendorCode::$rule[$data['inner_rule']];
+									$string .= tender_code_rule_html($data['inner_rule']);
 								$i++;
 							}
 
 							$string .= '</small>';
 
-							if ($order !=  $max_count)
-								$string .= '<br>' . VendorCode::$rule[$data['join_rule']] . '<br>';
+							if ($data['join_after'] !== null)
+								$string .= '<br>' . tender_code_rule_html($data['join_after'], 'or') . '<br>';
 						}
 
 						$string .= '<br><br>';
@@ -219,6 +218,8 @@ class HomeController extends Controller
 				->removeColumn('briefing_required')
 				->removeColumn('briefing_datetime')
 				->removeColumn('briefing_address')
+				->removeColumn('ref_number')
+				->removeColumn('no_tender')
 				->rawColumns(['name', 'codes', 'document_start_date', 'submission_datetime', 'price'])
 				->make();
 		}
@@ -276,20 +277,21 @@ class HomeController extends Controller
 				'submission_datetime',
 				'organization_unit_id',
 				'name',
-				'ref_number'
+				'ref_number',
+				'no_tender',
 			]);
 
 			return Datatables::of($tenders)
 
 				->filterColumn('name', function ($query, $keyword) {
-					$sql = "CONCAT(name,'-',ref_number)  like ?";
+					$sql = "CONCAT(name,'-',COALESCE(NULLIF(no_tender,''),ref_number)) like ?";
 					$query->whereRaw($sql, ["%{$keyword}%"]);
 				})
 
 				->editColumn('name', function ($tender) {
 					$string     = [];
 					$string[]   = '<a href="' . action('TendersController@vendors', $tender->id) . '">';
-					$string[]   = '<strong>' . $tender->ref_number . '</strong><br>';
+					$string[]   = '<strong>' . e($tender->displayNoTender()) . '</strong><br>';
 					$string[]   = $tender->name . '</a>';
 					return implode('', $string);
 				})
@@ -300,6 +302,7 @@ class HomeController extends Controller
 					return Carbon::parse($tender->submission_datetime)->format('j M Y');
 				})
 				->removeColumn('id')
+				->removeColumn('no_tender')
 				->rawColumns(['submission_datetime', 'organization_unit_id', 'name'])
 				->make();
 		}
@@ -341,19 +344,20 @@ class HomeController extends Controller
 				'submission_datetime',
 				'organization_unit_id',
 				'name',
-				'ref_number'
+				'ref_number',
+				'no_tender',
 			]);
 
 			return Datatables::of($tenders)
 
 				->filterColumn('name', function ($query, $keyword) {
-					$sql = "CONCAT(name,'-',ref_number)  like ?";
+					$sql = "CONCAT(name,'-',COALESCE(NULLIF(no_tender,''),ref_number)) like ?";
 					$query->whereRaw($sql, ["%{$keyword}%"]);
 				})
 				->editColumn('name', function ($tender) {
 					$string     = [];
 					$string[]   = '<a href="' . action('TendersController@vendors', [$tender->id, 'show' => 'winner']) . '">';
-					$string[]   = '<strong>' . $tender->ref_number . '</strong><br>';
+					$string[]   = '<strong>' . e($tender->displayNoTender()) . '</strong><br>';
 					$string[]   = $tender->name . '</a>';
 					return implode('', $string);
 				})
@@ -364,6 +368,7 @@ class HomeController extends Controller
 					return Carbon::parse($tender->submission_datetime)->format('j M Y');
 				})
 				->removeColumn('id')
+				->removeColumn('no_tender')
 				->rawColumns(['submission_datetime', 'organization_unit_id', 'name'])
 				->make();
 		}
@@ -549,13 +554,14 @@ class HomeController extends Controller
 						'briefing_address',
 						'briefing_datetime',
 						'ref_number',
+						'no_tender',
 						'created_at'
 					]
 				);
 
 				$datatable = Datatables::of($tenders)->editColumn('name', function ($tender) {
 					$string   = [];
-					$string[] = '<small><strong>' . $tender->ref_number . '</strong></small>';
+					$string[] = '<small><strong>' . e($tender->displayNoTender()) . '</strong></small>';
 					if (!auth()->check()) {
 						$string[] = link_to_route('tenders.show', $tender->name, $tender->id, ['class' => 'table-tender-title']);
 					} else {
@@ -603,10 +609,9 @@ class HomeController extends Controller
 						$string = '';
 
 						if (count($tender->mof_codes) > 0) {
-							$max_count = count($tender->mof_code_groups);
 							$string    .= '<strong><u>MOF</u></strong><br>';
 
-							foreach ($tender->mof_code_groups_by_code as $order => $data) {
+							foreach (tender_code_groups_display($tender->mof_code_groups_by_code) as $order => $data) {
 								$code_count = count($data['codes']);
 								$i          = 1;
 								$string     .= '<small>';
@@ -614,14 +619,14 @@ class HomeController extends Controller
 								foreach ($data['codes'] as $id => $code) {
 									$string .= $code;
 									if ($i   != $code_count)
-										$string .= VendorCode::$rule[$data['inner_rule']];
+										$string .= tender_code_rule_html($data['inner_rule'], 'or');
 									$i++;
 								}
 
 								$string .= '</small>';
 
-								if ($order !=  $max_count)
-									$string .= '<br>' . VendorCode::$rule[$data['join_rule']] . '<br>';
+								if ($data['join_after'] !== null)
+									$string .= '<br>' . tender_code_rule_html($data['join_after']) . '<br>';
 							}
 
 							$string .= '<br><br>';
@@ -637,10 +642,9 @@ class HomeController extends Controller
 						}
 
 						if (count($tender->cidb_codes) > 0) {
-							$max_count = count($tender->cidb_code_groups);
 							$string    .= '<strong><u>CIDB</u></strong><br>';
 
-							foreach ($tender->cidb_code_groups_by_code as $order => $data) {
+							foreach (tender_code_groups_display($tender->cidb_code_groups_by_code) as $order => $data) {
 								$code_count = count($data['codes']);
 								$i          = 1;
 								$string     .= '<small>';
@@ -648,14 +652,14 @@ class HomeController extends Controller
 								foreach ($data['codes'] as $id => $code) {
 									$string .= $code;
 									if ($i   != $code_count)
-										$string .= VendorCode::$rule[$data['inner_rule']];
+										$string .= tender_code_rule_html($data['inner_rule']);
 									$i++;
 								}
 
 								$string .= '</small>';
 
-								if ($order !=  $max_count)
-									$string .= '<br>' . VendorCode::$rule[$data['join_rule']] . '<br>';
+								if ($data['join_after'] !== null)
+									$string .= '<br>' . tender_code_rule_html($data['join_after'], 'or') . '<br>';
 							}
 
 							$string .= '<br><br>';
@@ -690,7 +694,7 @@ class HomeController extends Controller
 
 				return $datatable
 					->filterColumn('name', function ($query, $keyword) {
-						$sql = "CONCAT(name,'-',ref_number)  like ?";
+						$sql = "CONCAT(name,'-',COALESCE(NULLIF(no_tender,''),ref_number)) like ?";
 						$query->whereRaw($sql, ["%{$keyword}%"]);
 					})
 					->removeColumn('organization_unit_id')
@@ -701,6 +705,7 @@ class HomeController extends Controller
 					->removeColumn('briefing_required')
 					->removeColumn('briefing_datetime')
 					->removeColumn('briefing_address')
+					->removeColumn('no_tender')
 					->rawColumns(['name', 'codes', 'document_start_date', 'submission_datetime', 'price', 'actions', 'report'])
 					->make();
 			}
