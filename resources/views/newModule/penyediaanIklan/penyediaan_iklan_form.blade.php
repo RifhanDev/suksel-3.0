@@ -596,18 +596,18 @@
 			</div>
 		</div>
 
-		{{-- ── Section 3: Syarat Tender ── --}}
+		{{-- ── Section 3: Dokumen Meja Terkawal ── --}}
 		<div class="iklan-step-header">
 			<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
 				stroke="var(--sg-red,#c41e3a)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 				<path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
 				<polyline points="13 2 13 9 20 9"></polyline>
 			</svg>
-			<span>Syarat Tender</span>
+			<span>Dokumen Meja Terkawal</span>
 		</div>
 		<div class="p-4">
 			<p class="text-muted small mb-3">
-				Tambah satu atau lebih Syarat Tender. Setiap dokumen perlu mempunyai <strong>nama</strong> dan fail.
+				Tambah satu atau lebih Dokumen Meja Terkawal. Setiap dokumen perlu mempunyai <strong>nama</strong> dan fail.
 			</p>
 			<div id="mejaTerkawalRows"></div>
 			<button type="button" class="btn btn-sm btn-success d-inline-flex align-items-center gap-1 mt-2"
@@ -992,6 +992,9 @@
 									},
 								],
 								removeButtons: 'Flash,Iframe,Form,TextField,Checkbox,Radio,Textarea,Select,Button,ImageButton,HiddenField,Subscript,Superscript',
+								// Full CKEditor build enables Easy Image / Cloud Services by default;
+								// without cloudServices_tokenUrl it logs cloudservices-no-token-url.
+								removePlugins: 'easyimage,cloudservices,exportpdf',
 								height: 250,
 								contentsCss: [CKEDITOR.getUrl('contents.css'),
 									'html { overflow-y: hidden; }'
@@ -1062,6 +1065,11 @@
 						// upload gets treated as orphaned and deleted.
 						if (response && Array.isArray(response.dokumen_sokongan)) {
 							refreshMejaTerkawalRows(response.dokumen_sokongan);
+						}
+						// Keep visit_id from server so the next Simpan/Hantar updates
+						// tender_visits instead of inserting a duplicate Lawatan Tapak row.
+						if (response && Array.isArray(response.taklimat) && typeof refreshTaklimatRows === 'function') {
+							refreshTaklimatRows(response.taklimat);
 						}
 						if (response && Array.isArray(response.iklan_dokumen) && typeof refreshIklanDokumenRows === 'function') {
 							refreshIklanDokumenRows(response.iklan_dokumen);
@@ -1215,6 +1223,18 @@
 				taklimatRows.push(row);
 				$('#taklimatEmptyRow').hide();
 				$('#tblTaklimatBody').append(mainRow);
+				syncHapusTaklimat();
+			}
+
+			function refreshTaklimatRows(rows) {
+				taklimatRows = [];
+				taklimatRowCount = 0;
+				$('#tblTaklimatBody .taklimat-main-row').remove();
+				$('#tblTaklimatBody [id^="detail_"]').remove();
+				$('#chkSelectAllTaklimat').prop('checked', false);
+				(Array.isArray(rows) ? rows : []).forEach(function(row) {
+					appendTaklimatRow(row);
+				});
 				syncHapusTaklimat();
 			}
 
