@@ -58,8 +58,15 @@ class JawatankuasaPerolehanController extends Controller
                 'name',
                 'submission_datetime',
                 'status_process_id',
-            ])
-            ->map(function ($tender) {
+            ]);
+
+        // Status "Bidaan" only when kaedah memuktamadkan pembekal is actually Bidaan.
+        $kaedahByTenderId = JawatankuasaPerolehanPemilihanHeader::query()
+            ->whereIn('tender_id', $tenders->pluck('id'))
+            ->pluck('kaedah_memuktamadkan_pembekal', 'tender_id');
+
+        $tenders = $tenders
+            ->map(function ($tender) use ($kaedahByTenderId) {
                 $submissionDate = null;
                 $tempohSahLaku = '-';
 
@@ -68,6 +75,9 @@ class JawatankuasaPerolehanController extends Controller
                     $tempohSahLaku = '90 Hari (Sehingga ' . $submissionDate->copy()->addDays(90)->format('d/m/Y') . ')';
                 }
 
+                $kaedah = trim((string) ($kaedahByTenderId[$tender->id] ?? ''));
+                $statusLabel = $kaedah === 'Bidaan' ? 'Bidaan' : 'Dalam Proses';
+
                 return [
                     'id' => $tender->id,
                     'uuid' => $tender->uuid,
@@ -75,7 +85,7 @@ class JawatankuasaPerolehanController extends Controller
                     'tajuk' => $tender->name ?: '-',
                     'tarikh_serahan' => $submissionDate ? $submissionDate->format('d/m/Y') : '-',
                     'tempoh_sah_laku' => $tempohSahLaku,
-                    'status_label' => 'Dalam Proses',
+                    'status_label' => $statusLabel,
                 ];
             })
             ->values();

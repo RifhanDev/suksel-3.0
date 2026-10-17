@@ -13,7 +13,7 @@
 			<div class="page-header">
 				<div class="page-title">
 					<div class="page-pretitle">
-						{{ $tender->ref_number }}
+						{{ $tender->displayNoTender() }}
 					</div>
 				</div>
 			</div>
@@ -343,7 +343,7 @@
 							</tr>
 							<tr>
 								<th class="col-xs-3">No. {{ App\Tender::$types[$tender->type] }}</th>
-								<td>{{ $tender->ref_number }}</td>
+								<td>{{ $tender->displayNoTender() }}</td>
 							</tr>
 							<tr>
 								<th class="col-xs-3">Tarikh Iklan</th>
@@ -499,23 +499,16 @@
 							<h3 class="visible-print">Kod-Kod Bidang</h3>
 							@if (count($tender->mof_codes) > 0)
 								<table class="table table-bordered table-condensed">
-									<?php $max_count = count($tender->mof_code_groups); ?>
 									<tr>
 										<th class="col-xs-3">Kod Bidang MOF</th>
 										<td>
-											@foreach ($tender->mof_code_groups as $order => $data)
-												@foreach ($data['codes'] as $id => $label)
-													@if ($order < $max_count)
-														<br>
-													@endif
-												@endforeach
-
+											@foreach (tender_code_groups_display($tender->mof_code_groups) as $order => $data)
 												{!! implode(
-												    '<br>' . App\VendorCode::$rule[$data['inner_rule']] . '<br>',
+												    '<br>' . tender_code_rule_html($data['inner_rule'], 'or') . '<br>',
 												    tender_vendor_codes($data['codes'], Auth::user()),
 												) !!}
-												@if ($order != $max_count)
-													<br><br>{!! App\VendorCode::$rule[$data['join_rule']] !!}<br><br>
+												@if ($data['join_after'] !== null)
+													<br><br>{!! tender_code_rule_html($data['join_after']) !!}<br><br>
 												@endif
 											@endforeach
 										</td>
@@ -542,17 +535,16 @@
 									@endif
 
 									@if (count($tender->cidb_codes) > 0)
-										<?php $max_count = count($tender->cidb_code_groups); ?>
 										<tr>
 											<th class="col-xs-3">Bidang Pengkhususan CIDB</th>
 											<td>
-												@foreach ($tender->cidb_code_groups as $order => $data)
+												@foreach (tender_code_groups_display($tender->cidb_code_groups) as $order => $data)
 													{!! implode(
-													    '<br>' . App\VendorCode::$rule[$data['inner_rule']] . '<br>',
+													    '<br>' . tender_code_rule_html($data['inner_rule']) . '<br>',
 													    tender_vendor_codes($data['codes'], Auth::user()),
 													) !!}
-													@if ($order != $max_count)
-														<br><br>{!! App\VendorCode::$rule[$data['join_rule']] !!}<br><br>
+													@if ($data['join_after'] !== null)
+														<br><br>{!! tender_code_rule_html($data['join_after'], 'or') !!}<br><br>
 													@endif
 												@endforeach
 											</td>

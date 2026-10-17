@@ -5,9 +5,11 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Concerns\AdvancesTenderProcessStatus;
 use App\Http\Controllers\Concerns\ResolvesTenderForProcess;
 use App\Http\Controllers\Concerns\RestrictsTenderByRole;
+use App\Models\PenyediaanIklan;
 use App\Services\StosBackendClient;
 use App\Support\TenderProcessStatus;
 use App\Tender;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
@@ -116,9 +118,13 @@ class CutOffController extends Controller
         $frequency = $row['frequency'] ?? [];
         $selection = $row['selection'] ?? null;
 
-        // Jadual: baris AJ (Anggaran Jabatan) dahulu, kemudian syarikat.
+        // Header: PTJ + sah laku dari tender / penyediaan iklan (bukan hardcode).
+        $headerMeta = $this->resolveCutOffHeaderMeta($localTender, $row);
+
+        // Jadual: baris AJ (Anggaran Jabatan) dahulu, kemudian syarikat
+        // diisih harga rendah → tinggi (termasuk gagal / tidak menang).
         // AJ dipaparkan sebagai rujukan — tidak boleh dipilih.
-        $rows = collect($vendorsCutOff)
+        $mapped = collect($vendorsCutOff)
             ->map(function ($r) {
                 $isAj = ! empty($r['is_aj']);
                 $isFreak = ($r['bw'] ?? null) === 'FREAK';
@@ -129,6 +135,7 @@ class CutOffController extends Controller
                     'no' => $r['bil'] ?? '-',
                     'ruj' => $r['ruj'] ?? ($isAj ? 'AJ' : '-'),
                     'price' => $tendPrice === null ? '-' : number_format((float) $tendPrice, 2),
+                    'tend_price_raw' => $tendPrice === null ? null : (float) $tendPrice,
                     'bw' => ($r['bw'] ?? null) === null
                         ? '-'
                         : ($isFreak ? 'FREAK' : number_format((float) $r['bw'], 2)),
@@ -141,7 +148,29 @@ class CutOffController extends Controller
                     'status' => $isAj ? null : ($r['status'] ?? ($failed ? 'Gagal' : 'Lulus')),
                     'selectable' => ! $isAj && ! $failed && $tendPrice !== null,
                 ];
-            })->values()->all();
+            });
+
+        $ajRows = $mapped->filter(fn ($r) => ! empty($r['is_aj']))->values();
+        $vendorRows = $mapped
+            ->reject(fn ($r) => ! empty($r['is_aj']))
+            ->sortBy(fn ($r) => $r['tend_price_raw'] ?? INF)
+            ->values()
+            ->map(function ($r, $index) {
+                $r['no'] = $index + 1;
+                unset($r['tend_price_raw']);
+
+                return $r;
+            });
+
+        $rows = $ajRows
+            ->map(function ($r) {
+                unset($r['tend_price_raw']);
+
+                return $r;
+            })
+            ->concat($vendorRows)
+            ->values()
+            ->all();
 
         // Carta/jadual taburan frekuensi
         $bins = array_map(fn ($b) => $b['label'], $frequency);
@@ -162,7 +191,11 @@ class CutOffController extends Controller
         return view('newModule.cut_off.show', [
             'tenderUuid' => $uuid,
             'tender_no' => $tender_no,
-            'tajuk' => $row['name'] ?? '-',
+            'tajuk' => $row['name'] ?? ($localTender?->name ?? '-'),
+            'ptj' => $headerMeta['ptj'],
+            'tempohSahLaku' => $headerMeta['tempoh_sah_laku'],
+            'sahLakuTamat' => $headerMeta['sah_laku_tamat'],
+            'statusLabel' => $headerMeta['status_label'],
             'aj' => $this->formatHarga($hargaCutOff['aj'] ?? null),
             'pcp' => $this->formatHarga($hargaCutOff['pcp'] ?? null),
             'bwa' => $this->formatHarga($hargaCutOff['bwa'] ?? null),
@@ -188,6 +221,57 @@ class CutOffController extends Controller
             'requireAll' => $requireAll,
             'minSelect' => 10,
         ]);
+    }
+
+    /**
+     * PTJ + tempoh/sah laku dari tender tempatan + meta penyediaan iklan.
+     *
+     * @param  array<string, mixed>  $stosRow
+     * @return array{ptj: string, tempoh_sah_laku: string|int, sah_laku_tamat: string, status_label: string}
+     */
+    private function resolveCutOffHeaderMeta(?Tender $tender, array $stosRow): array
+    {
+        $ptj = $tender?->tenderer?->name
+            ?: ($stosRow['ptj'] ?? $stosRow['organization_unit_name'] ?? $stosRow['tenderer_name'] ?? null)
+            ?: '-';
+
+        $iklanMeta = [];
+        if ($tender) {
+            $iklanRecord = PenyediaanIklan::query()->where('tender_id', $tender->id)->first();
+            $iklanMeta = ($iklanRecord && is_array($iklanRecord->meta))
+                ? ($iklanRecord->meta['iklan'] ?? [])
+                : [];
+        }
+
+        $tempohDays = (int) ($iklanMeta['tempoh_sah_laku'] ?? $stosRow['tempoh_sah_laku'] ?? 90);
+        if ($tempohDays < 1) {
+            $tempohDays = 90;
+        }
+
+        $sahLakuTamat = trim((string) ($iklanMeta['sah_laku_tamat'] ?? $stosRow['sah_laku_tamat'] ?? ''));
+        if ($sahLakuTamat === '') {
+            $submission = $tender?->submission_datetime
+                ?? ($stosRow['submission_datetime'] ?? null);
+            $sahLakuTamat = $submission
+                ? Carbon::parse($submission)->addDays($tempohDays)->format('d/m/Y')
+                : '-';
+        }
+
+        $statusLabel = 'Menunggu Pengesahan CutOff';
+        if ($tender && isset($tender->status_process_id)) {
+            if ((int) $tender->status_process_id === TenderProcessStatus::cutOffListStatus()) {
+                $statusLabel = 'Menunggu Pengesahan CutOff';
+            } elseif ((int) $tender->status_process_id >= TenderProcessStatus::CUT_OFF) {
+                $statusLabel = TenderProcessStatus::label($tender->status_process_id) ?: $statusLabel;
+            }
+        }
+
+        return [
+            'ptj' => $ptj,
+            'tempoh_sah_laku' => $tempohDays,
+            'sah_laku_tamat' => $sahLakuTamat,
+            'status_label' => $statusLabel,
+        ];
     }
 
     /**

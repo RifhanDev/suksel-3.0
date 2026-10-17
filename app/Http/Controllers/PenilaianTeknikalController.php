@@ -305,14 +305,84 @@ class PenilaianTeknikalController extends Controller
     /**
      * Companies selected at cut-off, excluding anyone who failed the opening stage.
      * A company eliminated during this stage stays listed.
+     * Ranking follows cut-off: harga tawaran rendah → tinggi.
      */
     private function loadPenilaianTeknikalVendors(Tender $tender): Collection
     {
         return TenderVendor::query()
             ->forTechnicalEvaluation($tender->id)
-            ->orderBy('id')
-            ->get(['id', 'vendor_id', 'kod_pembekal'])
+            ->orderByRaw('harga_tawaran IS NULL, harga_tawaran ASC, id ASC')
+            ->get(['id', 'vendor_id', 'kod_pembekal', 'harga_tawaran'])
             ->values();
+    }
+
+    /**
+     * Harga tawaran per vendor_id (column first, then specification total fallback).
+     *
+     * @return array<int, float|null>
+     */
+    private function hargaTawaranByVendorId(Tender $tender): array
+    {
+        $vendors = TenderVendor::query()
+            ->where('tender_id', $tender->id)
+            ->get(['id', 'vendor_id', 'kod_pembekal', 'harga_tawaran']);
+
+        $harga = [];
+        foreach ($vendors as $vendor) {
+            $harga[(int) $vendor->vendor_id] = $this->kerjaService->resolveHargaTawaran($tender, $vendor);
+        }
+
+        return $harga;
+    }
+
+    /**
+     * Sort vendor row arrays (vendor_id keyed) by harga tawaran low → high (nulls last).
+     *
+     * @param  list<array<string, mixed>>  $rows
+     * @return list<array<string, mixed>>
+     */
+    private function sortVendorRowsByHargaTawaran(Tender $tender, array $rows): array
+    {
+        if ($rows === []) {
+            return [];
+        }
+
+        $hargaByVendorId = $this->hargaTawaranByVendorId($tender);
+
+        return collect($rows)
+            ->sortBy(function (array $row) use ($hargaByVendorId) {
+                $price = $hargaByVendorId[(int) ($row['vendor_id'] ?? 0)] ?? null;
+
+                return $price === null ? INF : $price;
+            })
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Ranking mengikuti cut-off / harga tawaran (bukan markah teknikal).
+     * Re-number kedudukan after sort: 1 = harga terendah among layak.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    private function sortRumusanByHargaTawaran(Tender $tender, array $data): array
+    {
+        if (isset($data['layak']) && is_array($data['layak'])) {
+            $data['layak'] = collect($this->sortVendorRowsByHargaTawaran($tender, $data['layak']))
+                ->values()
+                ->map(function (array $row, int $index) {
+                    $row['kedudukan'] = $index + 1;
+
+                    return $row;
+                })
+                ->all();
+        }
+        if (isset($data['tidak_layak']) && is_array($data['tidak_layak'])) {
+            $data['tidak_layak'] = $this->sortVendorRowsByHargaTawaran($tender, $data['tidak_layak']);
+        }
+
+        return $data;
     }
 
     /**
@@ -560,7 +630,9 @@ class PenilaianTeknikalController extends Controller
             return response()->json(['message' => 'Ralat memuatkan rumusan pematuhan dokumentasi.'], $result['status']);
         }
 
-        return response()->json($result['body']['data'] ?? ['layak' => [], 'tidak_layak' => []]);
+        $data = $result['body']['data'] ?? ['layak' => [], 'tidak_layak' => []];
+
+        return response()->json($this->sortRumusanByHargaTawaran($tender, $data));
     }
 
     public function hantarPematuhan(Tender $tender): JsonResponse
@@ -629,7 +701,7 @@ class PenilaianTeknikalController extends Controller
         $data = $result['body']['data'] ?? [];
 
         return response()->json([
-            'rows' => $data['rows'] ?? [],
+            'rows' => $this->sortVendorRowsByHargaTawaran($tender, $data['rows'] ?? []),
             'item_status' => $this->presentStatusPenilaian(
                 (int) ($data['completed_count'] ?? 0),
                 (int) ($data['total_vendors'] ?? 0)
@@ -780,10 +852,10 @@ class PenilaianTeknikalController extends Controller
                 'status_penyerahan_badge' => $submitted ? 'badge-status-success' : 'badge-status-neutral',
                 'max_score' => $maxScore,
             ]);
-        })->values();
+        })->values()->all();
 
         return response()->json([
-            'rows' => $rows,
+            'rows' => $this->sortVendorRowsByHargaTawaran($tender, $rows),
             'item_status' => $this->presentStatusPenilaian(
                 (int) ($data['scored_count'] ?? 0),
                 (int) ($data['total_vendors'] ?? 0)
@@ -843,12 +915,14 @@ class PenilaianTeknikalController extends Controller
             return response()->json(['message' => 'Ralat memuatkan rumusan penilaian teknikal.'], $result['status']);
         }
 
-        return response()->json($result['body']['data'] ?? [
+        $data = $result['body']['data'] ?? [
             'layak' => [],
             'tidak_layak' => [],
             'passing_percentage' => 0,
             'max_score' => 0,
-        ]);
+        ];
+
+        return response()->json($this->sortRumusanByHargaTawaran($tender, $data));
     }
 
     /** Resolves a tender from the index-page link's uuid. */
@@ -931,6 +1005,7 @@ class PenilaianTeknikalController extends Controller
         $rumusanPematuhan = $rumusanPematuhanResult['ok']
             ? ($rumusanPematuhanResult['body']['data'] ?? ['layak' => [], 'tidak_layak' => []])
             : ['layak' => [], 'tidak_layak' => []];
+        $rumusanPematuhan = $this->sortRumusanByHargaTawaran($tender, $rumusanPematuhan);
 
         $keputusanByVendorId = [];
         foreach ($rumusanPematuhan['layak'] ?? [] as $row) {
@@ -973,6 +1048,7 @@ class PenilaianTeknikalController extends Controller
             fn() => $this->stos->getRumusanPenilaianTeknikal($tender->id)
         );
         $rumusanPenilaianTeknikal = $rumusanTeknikalResult['ok'] ? ($rumusanTeknikalResult['body']['data'] ?? []) : [];
+        $rumusanPenilaianTeknikal = $this->sortRumusanByHargaTawaran($tender, $rumusanPenilaianTeknikal);
         $passingPercentage = $rumusanPenilaianTeknikal['passing_percentage'] ?? null;
 
         $passingPercentageFormatted = $passingPercentage !== null

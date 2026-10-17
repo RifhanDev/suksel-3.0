@@ -61,6 +61,47 @@ function tender_vendor_codes($codes, $user)
 	return $strings;
 }
 
+/**
+ * HTML label for MOF/CIDB join|inner rule (and/or → DAN/ATAU).
+ */
+function tender_code_rule_html(?string $rule, string $default = 'and'): string
+{
+	$key = strtolower(trim((string) $rule));
+	if ($key === '' || ! isset(\App\VendorCode::$rule[$key])) {
+		$key = $default;
+	}
+
+	return \App\VendorCode::$rule[$key];
+}
+
+/**
+ * Annotate code groups with join_after (connector AFTER this group).
+ *
+ * Cipta tender stores mof_logic_N / cidb_logic_N on the FOLLOWING group as
+ * join_rule. Display must read the next group's join_rule — using the current
+ * group's join_rule wrongly shows the default DAN between groups.
+ *
+ * @param  array<int|string, array{inner_rule?: string, join_rule?: string, codes?: array}>  $groups
+ * @return array<int|string, array{inner_rule: string, join_rule?: string, join_after: ?string, codes?: array}>
+ */
+function tender_code_groups_display(array $groups): array
+{
+	$orders = array_keys($groups);
+	$out = [];
+
+	foreach ($orders as $i => $order) {
+		$group = $groups[$order];
+		$group['inner_rule'] = strtolower((string) ($group['inner_rule'] ?? 'or'));
+		$nextOrder = $orders[$i + 1] ?? null;
+		$group['join_after'] = $nextOrder !== null
+			? strtolower((string) ($groups[$nextOrder]['join_rule'] ?? 'and'))
+			: null;
+		$out[$order] = $group;
+	}
+
+	return $out;
+}
+
 function str_random_unique($length)
 {
 	$available  = [2, 3, 4, 5, 6, 7, 8, 9, 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'J', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'];

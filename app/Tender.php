@@ -474,7 +474,10 @@ class Tender extends Model
 	public function canPurchase()
 	{
 		if (auth()->check() && auth()->user()->hasRole('Vendor')) {
-			if ($this->manual_payment) {
+			// Iklan Sahaja: paparan iklan sahaja — tiada beli / tambah ke senarai.
+			if ($this->isIklanSahaja()) {
+				return false;
+			} elseif ($this->manual_payment) {
 				return false;
 			} elseif ($this->hasParticipate(auth()->user()->vendor_id)) {
 				return false;
@@ -1042,8 +1045,32 @@ class Tender extends Model
 		return $this->kaedahPerolehanKind() === 'quotation';
 	}
 
+	/**
+	 * Kaedah pembayaran "Pembelian & Bayaran Manual di Agensi (Iklan Sahaja)"
+	 * (ref_kaedah_dokumens.code = manual) — dipilih semasa cipta tender.
+	 *
+	 * Bukan checkbox syarat only_advertise; itu medan berasingan.
+	 */
+	public function isIklanSahaja(): bool
+	{
+		return $this->isIklanSahajaManual();
+	}
+
+	/**
+	 * Syarikat perlu daftar wakil lawatan tapak (bukan untuk Iklan Sahaja — paparan sahaja).
+	 */
+	public function allowsWakilLawatanRegistration(): bool
+	{
+		return ! $this->isIklanSahaja();
+	}
+
 	public function showDokumenSenaraiTab(): bool
 	{
+		// Iklan Sahaja: pemilik projek tidak muat naik senarai Dokumen Tender/Sebut Harga.
+		if ($this->isIklanSahaja()) {
+			return false;
+		}
+
 		return $this->kaedahPerolehanKind() !== null;
 	}
 
@@ -1057,6 +1084,22 @@ class Tender extends Model
 		return $this->isSebutHargaKaedah()
 			? 'Dokumen Sebut Harga'
 			: 'Dokumen Tender/Tawaran';
+	}
+
+	/**
+	 * No. Tender / Sebut Harga for UI lists & detail headers.
+	 * Prefer no_tender; fall back to ref_number (No. Rujukan Fail) only if empty.
+	 */
+	public function displayNoTender(): string
+	{
+		$no = trim((string) ($this->no_tender ?? ''));
+		if ($no !== '') {
+			return $no;
+		}
+
+		$ref = trim((string) ($this->ref_number ?? ''));
+
+		return $ref !== '' ? $ref : '-';
 	}
 
 	public function hasParticipate($id)
@@ -1227,6 +1270,11 @@ class Tender extends Model
 
 	public function attendVisits($vendor_id)
 	{
+		// Iklan Sahaja: lawatan paparan sahaja — tiada syarat wakil / kehadiran untuk beli.
+		if ($this->isIklanSahaja()) {
+			return true;
+		}
+
 		if (! $this->hasRequiredSiteVisits()) {
 			return true;
 		}
