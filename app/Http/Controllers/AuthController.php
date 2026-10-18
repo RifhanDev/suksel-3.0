@@ -112,20 +112,8 @@ class AuthController extends Controller
 
                UserHistory::log($user->id, 'sign-in');
 
-               // Check if password needs to be changed (6 months expiration)
-               if ($user->password_changed_at) {
-                  $passwordChangedAt = Carbon::parse($user->password_changed_at);
-                  $passwordAge = $passwordChangedAt->diffInMonths(Carbon::now());
-                  if ($passwordAge >= 6) {
-                     // Password expired, redirect to change password
-                     session()->flash('warning', 'Kata laluan anda telah tamat tempoh (6 bulan). Sila tukar kata laluan anda.');
-                     return redirect()->route('profile.force-password-change');
-                  }
-               } else {
-                  // Password never changed, force change
-                  session()->flash('warning', 'Sila tetapkan kata laluan anda.');
-                  return redirect()->route('profile.force-password-change');
-               }
+               // Password expiry / admin-set password is enforced on every page by RequirePasswordChange,
+               // so login no longer stops here and GATE B below always runs.
 
                // GATE B - role requires 2FA but the user has not enrolled yet.
                // Same tier as the forced-password-change above: the user is logged in,
@@ -142,13 +130,7 @@ class AuthController extends Controller
                      $twoFactor->save();
                   }
 
-                  $graceDays = TwoFactorSetting::current()->grace_period_days;
-                  $deadline  = $twoFactor->required_since->copy()->addDays($graceDays);
-
-                  if (now()->greaterThan($deadline)) {
-                     session()->flash('warning', 'Tempoh tangguh pengesahan dua faktor telah tamat. Sila sediakan sekarang.');
-                     return redirect()->route('2fa.setup');
-                  }
+                  // Past the deadline is handled by RequireTwoFactorSetup on the next page (flashing here, after the early save above, left the warning stuck).
 
                   // No flash message here — the reminder is rendered live on every page
                   // (see layouts.v3.master) by re-checking hasTwoFactorEnabled() directly,
@@ -453,7 +435,13 @@ class AuthController extends Controller
             }
          }
       } else {
-         $verified = (new Google2FA())->verifyKey($twoFactor->secret, $submitted);
+         // Single-use: only a code newer than the last accepted one passes; its time step is saved below.
+         $step = (new Google2FA())->verifyKeyNewer($twoFactor->secret, $submitted, (int) ($twoFactor->last_used_step ?? 0));
+         $verified = $step !== false;
+
+         if ($verified) {
+            $twoFactor->last_used_step = $step;
+         }
       }
 
       if (!$verified) {

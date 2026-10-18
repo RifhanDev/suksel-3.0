@@ -744,7 +744,7 @@
 				<!-- 4. PENGURUSAN AKSES -->
 				@if (Auth::user()->hasRole('Admin'))
 					@php
-						$isAccessMenuActive = request()->is('roles*') || request()->is('permissions*');
+						$isAccessMenuActive = request()->is('roles*') || request()->is('permissions*') || request()->is('two-factor*');
 					@endphp
 					<li class="nav-item">
 						<a class="sidebar-link {{ $isAccessMenuActive ? 'active' : 'collapsed' }}" data-bs-toggle="collapse"

@@ -1555,6 +1555,14 @@
                                     Profil Saya
                                 </a>
 
+                                {{-- Only for those who need 2FA or already use it, so other vendors are not prompted to turn it on. --}}
+                                @if (Auth::user()->requiresTwoFactor() || Auth::user()->hasTwoFactorEnabled())
+                                    <a class="dropdown-item" href="{{ route('2fa.manage') }}">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M11.998 2l.118 .007l.059 .008l.061 .013l.111 .034a.993 .993 0 0 1 .217 .112l.104 .082l.255 .218a11 11 0 0 0 7.189 2.537l.342 -.01a1 1 0 0 1 1.005 .717a13 13 0 0 1 -9.208 16.25a1 1 0 0 1 -.502 0a13 13 0 0 1 -9.209 -16.25a1 1 0 0 1 1.005 -.717a11 11 0 0 0 7.531 -2.527l.263 -.225l.096 -.075a.993 .993 0 0 1 .217 -.112l.112 -.034a.97 .97 0 0 1 .119 -.021l.115 -.007zm3.71 7.293a1 1 0 0 0 -1.415 0l-3.293 3.292l-1.293 -1.292l-.094 -.083a1 1 0 0 0 -1.32 1.497l2 2l.094 .083a1 1 0 0 0 1.32 -.083l4 -4l.083 -.094a1 1 0 0 0 -.083 -1.32z"/></svg>
+                                        Keselamatan Akaun (2FA)
+                                    </a>
+                                @endif
+
                                 @if (Session::has('original_user_id'))
                                     <a class="dropdown-item" href="{{ route('release_user') }}">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12.088 4.598a4.49 4.49 0 0 1 6.314 6.31l-1.415 1.415a1 1 0 0 1-1.414-1.414l1.415-1.415a2.49 2.49 0 1 0-3.52-3.52C12.19 7.26 12 8.016 12 8.5a1 1 0 1 1-2 0c0-1.086.42-2.116 1.174-2.897l.914-.905z"/><path d="m14.5 16.5-1.414 1.414a4.49 4.49 0 0 1-6.315-6.314L8.186 10.186A1 1 0 0 1 9.6 11.6L8.185 13.014a2.49 2.49 0 1 0 3.52 3.52L13.12 15.12a1 1 0 0 1 1.38 1.38z"/></svg>
@@ -1761,6 +1769,8 @@
                             aria-label="Close"></button>
                     </div>
                 @endif
+
+                @include('partials.two-factor-reminder')
 
                 @yield('content')
             </div>

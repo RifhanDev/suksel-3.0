@@ -15,6 +15,7 @@ class TwoFactorAuth extends Model
       'required_since',
       'failed_attempts',
       'locked_until',
+      'last_used_step',
       'remember_token',
       'remember_expires_at',
    ];
@@ -30,6 +31,7 @@ class TwoFactorAuth extends Model
          'locked_until'        => 'datetime',
          'remember_expires_at' => 'datetime',
          'failed_attempts'     => 'integer',
+         'last_used_step'      => 'integer',
       ];
    }
 

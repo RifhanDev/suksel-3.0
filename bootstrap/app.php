@@ -40,6 +40,8 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->web(append: [
             \App\Http\Middleware\CheckUser::class,
+            // Before the 2FA one: a user who needs both sets the password first, then 2FA.
+            \App\Http\Middleware\RequirePasswordChange::class,
             \App\Http\Middleware\RequireTwoFactorSetup::class,
         ]);
 
@@ -66,6 +68,8 @@ return Application::configure(basePath: dirname(__DIR__))
             // Restricts an action to the Pengerusi of a given jawatankuasa,
             // e.g. ->middleware('committee.pengerusi:open')
             'committee.pengerusi' => \App\Http\Middleware\EnsureCommitteeChairperson::class,
+            // Asks for a 2FA code at a penilaian stage's final Hantar, e.g. ->middleware('2fa.penilaian:teknikal')
+            '2fa.penilaian' => \App\Http\Middleware\RequireTwoFactorPenilaian::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

@@ -127,7 +127,7 @@ Route::view('/jawatankuasa-spesifikasi/senarai-kewangan', 'newModule.jawatankuas
 Route::get('/cut-off', [CutOffController::class, 'index'])->middleware(['auth'])->name('cutOff.index');
 Route::get('/cut-off/{uuid}', [CutOffController::class, 'show'])->middleware(['auth'])->name('cutOff.show');
 Route::post('/cut-off/simpan', [CutOffController::class, 'simpan'])->middleware(['auth'])->name('cutOff.simpan');
-Route::post('/cut-off/hantar', [CutOffController::class, 'hantar'])->middleware(['auth'])->name('cutOff.hantar');
+Route::post('/cut-off/hantar', [CutOffController::class, 'hantar'])->middleware(['auth', '2fa.penilaian:cut_off'])->name('cutOff.hantar');
 
 Route::get('/perakuan-jabatan', [PerakuanJabatanController::class, 'index'])->middleware(['auth'])->name('perakuanjabatan.index');
 // Route::get('/perakuan-jabatan/{tender_no}', [PerakuanJabatanController::class, 'show'])->middleware(['auth'])->name('perakuanjabatan.show');
@@ -376,7 +376,7 @@ Route::middleware(['auth'])->group(function () {
 	Route::get('/jawatankuasa-pembuka/rumusan-data', [JawatankuasaPembukaController::class, 'getRumusanData'])->name('jawatankuasaPembuka.rumusanData');
 
 	Route::post('/jawatankuasa-pembuka/hantar', [JawatankuasaPembukaController::class, 'hantar'])
-		->middleware('committee.pengerusi:open')
+		->middleware(['committee.pengerusi:open', '2fa.penilaian:pembuka'])
 		->name('jawatankuasaPembuka.hantar');
 	Route::get('/jawatankuasa-pembuka/penilaian-semasa', [\App\Http\Controllers\JawatankuasaPembukaSesiController::class, 'evaluations'])
 		->name('jawatankuasaPembuka.penilaianSemasa');
@@ -426,7 +426,7 @@ Route::middleware(['auth'])->group(function () {
 	Route::get('/penilaian-teknikal/{uuid}', [PenilaianTeknikalController::class, 'show'])->name('penilaianTeknikal.show');
 	Route::get('/penilaian-teknikal-kerja/{uuid}', [PenilaianTeknikalController::class, 'showTeknikalKerja'])->name('penilaianTeknikalKerja.show');
 	Route::post('/penilaian-teknikal/hantar', [PenilaianTeknikalController::class, 'hantar'])
-		->middleware('committee.pengerusi:tech')
+		->middleware(['committee.pengerusi:tech', '2fa.penilaian:teknikal'])
 		->name('penilaianTeknikal.hantar');
 	Route::post('/penilaian-teknikal/pematuhan/simpan', [PenilaianTeknikalController::class, 'simpanPematuhan'])->name('penilaianTeknikal.simpanPematuhan');
 	Route::get('/penilaian-teknikal/{tender}/rumusan-pematuhan', [PenilaianTeknikalController::class, 'rumusanPematuhan'])->name('penilaianTeknikal.rumusanPematuhan');
@@ -447,7 +447,7 @@ Route::middleware(['auth'])->group(function () {
 	Route::post('/penilaian-teknikal/laporan/simpan-draf', [PenilaianTeknikalController::class, 'simpanDrafLaporan'])
 		->middleware('committee.pengerusi:tech,mengemaskini draf laporan ini')
 		->name('penilaianTeknikal.simpanDrafLaporan');
-	Route::post('/penilaian-teknikal-kerja/hantar', [PenilaianTeknikalController::class, 'hantarTeknikalKerja'])->name('penilaianTeknikalKerja.hantar');
+	Route::post('/penilaian-teknikal-kerja/hantar', [PenilaianTeknikalController::class, 'hantarTeknikalKerja'])->middleware('2fa.penilaian:teknikal')->name('penilaianTeknikalKerja.hantar');
 	Route::post('/penilaian-teknikal-kerja/{tender}/lampiran/upload', [PenilaianTeknikalController::class, 'uploadLampiranKerja'])->name('penilaianTeknikalKerja.lampiran.upload');
 	Route::post('/penilaian-teknikal-kerja/lampiran/{lampiran}/rename', [PenilaianTeknikalController::class, 'renameLampiranKerja'])->name('penilaianTeknikalKerja.lampiran.rename');
 	Route::delete('/penilaian-teknikal-kerja/lampiran/{lampiran}', [PenilaianTeknikalController::class, 'deleteLampiranKerja'])->name('penilaianTeknikalKerja.lampiran.delete');
@@ -460,7 +460,7 @@ Route::middleware(['auth'])->group(function () {
 	Route::post('/penilaian-kewangan/simpan-pematuhan', [PenilaianKewanganController::class, 'simpanPematuhan'])->name('penilaianKewangan.simpanPematuhan');
 	Route::post('/penilaian-kewangan/kemaskini-langkah', [PenilaianKewanganController::class, 'kemaskiniLangkah'])->name('penilaianKewangan.kemaskiniLangkah');
 	Route::post('/penilaian-kewangan/simpan-laporan', [PenilaianKewanganController::class, 'simpanLaporanDraft'])->name('penilaianKewangan.simpanLaporan');
-	Route::post('/penilaian-kewangan/hantar', [PenilaianKewanganController::class, 'hantar'])->name('penilaianKewangan.hantar');
+	Route::post('/penilaian-kewangan/hantar', [PenilaianKewanganController::class, 'hantar'])->middleware('2fa.penilaian:kewangan')->name('penilaianKewangan.hantar');
 
 	// Penilaian Kewangan (Sebut Harga Kerja - Type 2)
 	Route::get('/penilaian-kewangan-sebut-harga-kerja/{tender_no}/laporan/cetak', [PenilaianKewanganSebutHargaKerjaController::class, 'cetakLaporan'])->name('penilaianKewanganSebutHargaKerja.cetakLaporan')->where('tender_no', '.*');
@@ -472,7 +472,7 @@ Route::middleware(['auth'])->group(function () {
 	Route::post('/penilaian-kewangan-sebut-harga-kerja/simpan-kerja', [PenilaianKewanganSebutHargaKerjaController::class, 'simpanKerja'])->name('penilaianKewanganSebutHargaKerja.simpanKerja');
 	Route::post('/penilaian-kewangan-sebut-harga-kerja/sahkan-langkah-3', [PenilaianKewanganSebutHargaKerjaController::class, 'sahkanLangkah3'])->name('penilaianKewanganSebutHargaKerja.sahkanLangkah3');
 	Route::post('/penilaian-kewangan-sebut-harga-kerja/simpan-laporan-draf', [PenilaianKewanganSebutHargaKerjaController::class, 'simpanLaporanDraf'])->name('penilaianKewanganSebutHargaKerja.simpanLaporanDraf');
-	Route::post('/penilaian-kewangan-sebut-harga-kerja/hantar', [PenilaianKewanganSebutHargaKerjaController::class, 'hantar'])->name('penilaianKewanganSebutHargaKerja.hantar');
+	Route::post('/penilaian-kewangan-sebut-harga-kerja/hantar', [PenilaianKewanganSebutHargaKerjaController::class, 'hantar'])->middleware('2fa.penilaian:kewangan')->name('penilaianKewanganSebutHargaKerja.hantar');
 
 	// Penilaian Kewangan (Kerja)
 	Route::post('/penilaian-kewangan-kerja/{tender_no}/borang/borang1/simpan-kriteria', [PenilaianKewanganKerjaController::class, 'simpanBorang1Kriteria'])->name('penilaianKewanganKerja.borang1.simpanKriteria')->where('tender_no', '.*');
@@ -486,22 +486,22 @@ Route::middleware(['auth'])->group(function () {
 	Route::post('/penilaian-kewangan-kerja/{tender_no}/borang/borang5/simpan-kriteria', [PenilaianKewanganKerjaController::class, 'simpanBorang5Kriteria'])->name('penilaianKewanganKerja.borang5.simpanKriteria')->where('tender_no', '.*');
 	Route::post('/penilaian-kewangan-kerja/{tender_no}/borang/borang5/simpan-penilaian', [PenilaianKewanganKerjaController::class, 'simpanPenilaianBorang9'])->name('penilaianKewanganKerja.borang5.simpanPenilaian')->where('tender_no', '.*');
 	Route::post('/penilaian-kewangan-kerja/{tender_no}/borang/borang5/simpan-muktamad', [PenilaianKewanganKerjaController::class, 'simpanBorang5Muktamad'])->name('penilaianKewanganKerja.borang5.simpanMuktamad')->where('tender_no', '.*');
-	Route::post('/penilaian-kewangan-kerja/{tender_no}/borang/borang6/simpan-muktamad', [PenilaianKewanganKerjaController::class, 'simpanBorang6Muktamad'])->name('penilaianKewanganKerja.borang6.simpanMuktamad')->where('tender_no', '.*');
+	Route::post('/penilaian-kewangan-kerja/{tender_no}/borang/borang6/simpan-muktamad', [PenilaianKewanganKerjaController::class, 'simpanBorang6Muktamad'])->middleware('2fa.penilaian:kewangan,kerja_kecil_other')->name('penilaianKewanganKerja.borang6.simpanMuktamad')->where('tender_no', '.*');
 	Route::post('/penilaian-kewangan-kerja/{tender_no}/borang/borang7/simpan-muktamad', [PenilaianKewanganKerjaController::class, 'simpanBorang7Muktamad'])->name('penilaianKewanganKerja.borang7.simpanMuktamad')->where('tender_no', '.*');
 	Route::post('/penilaian-kewangan-kerja/{tender_no}/borang/borang7/simpan-penilaian', [PenilaianKewanganKerjaController::class, 'simpanPenilaianBorang7'])->name('penilaianKewanganKerja.borang7.simpanPenilaian')->where('tender_no', '.*');
 	Route::post('/penilaian-kewangan-kerja/{tender_no}/borang/borang9/simpan-penilaian', [PenilaianKewanganKerjaController::class, 'simpanPenilaianBorang9'])->name('penilaianKewanganKerja.borang9.simpanPenilaian')->where('tender_no', '.*');
-	Route::post('/penilaian-kewangan-kerja/{tender_no}/borang/borang8/simpan-muktamad', [PenilaianKewanganKerjaController::class, 'simpanBorang8Muktamad'])->name('penilaianKewanganKerja.borang8.simpanMuktamad')->where('tender_no', '.*');
+	Route::post('/penilaian-kewangan-kerja/{tender_no}/borang/borang8/simpan-muktamad', [PenilaianKewanganKerjaController::class, 'simpanBorang8Muktamad'])->middleware('2fa.penilaian:kewangan,kerja_kecil_me')->name('penilaianKewanganKerja.borang8.simpanMuktamad')->where('tender_no', '.*');
 	Route::post('/penilaian-kewangan-kerja/{tender_no}/borang/borang9/simpan-muktamad', [PenilaianKewanganKerjaController::class, 'simpanBorang9Muktamad'])->name('penilaianKewanganKerja.borang9.simpanMuktamad')->where('tender_no', '.*');
 	Route::post('/penilaian-kewangan-kerja/{tender_no}/borang/borang10/simpan-muktamad', [PenilaianKewanganKerjaController::class, 'simpanBorang10Muktamad'])->name('penilaianKewanganKerja.borang10.simpanMuktamad')->where('tender_no', '.*');
 	Route::post('/penilaian-kewangan-kerja/{tender_no}/borang/borang11/simpan-muktamad', [PenilaianKewanganKerjaController::class, 'simpanBorang11Muktamad'])->name('penilaianKewanganKerja.borang11.simpanMuktamad')->where('tender_no', '.*');
 	Route::post('/penilaian-kewangan-kerja/{tender_no}/borang/borang12/simpan-muktamad', [PenilaianKewanganKerjaController::class, 'simpanBorang12Muktamad'])->name('penilaianKewanganKerja.borang12.simpanMuktamad')->where('tender_no', '.*');
 	Route::post('/penilaian-kewangan-kerja/{tender_no}/borang/borang13/simpan-muktamad', [PenilaianKewanganKerjaController::class, 'simpanBorang13Muktamad'])->name('penilaianKewanganKerja.borang13.simpanMuktamad')->where('tender_no', '.*');
 	Route::post('/penilaian-kewangan-kerja/{tender_no}/borang/borang14/simpan-muktamad', [PenilaianKewanganKerjaController::class, 'simpanBorang14Muktamad'])->name('penilaianKewanganKerja.borang14.simpanMuktamad')->where('tender_no', '.*');
-	Route::post('/penilaian-kewangan-kerja/{tender_no}/borang/borang15/simpan-muktamad', [PenilaianKewanganKerjaController::class, 'simpanBorang15Muktamad'])->name('penilaianKewanganKerja.borang15.simpanMuktamad')->where('tender_no', '.*');
+	Route::post('/penilaian-kewangan-kerja/{tender_no}/borang/borang15/simpan-muktamad', [PenilaianKewanganKerjaController::class, 'simpanBorang15Muktamad'])->middleware('2fa.penilaian:kewangan')->name('penilaianKewanganKerja.borang15.simpanMuktamad')->where('tender_no', '.*');
 	Route::get('/penilaian-kewangan-kerja/{tender_no}/borang/{borang_code}', [PenilaianKewanganKerjaController::class, 'getBorang'])->name('penilaianKewanganKerja.borang.show')->where('tender_no', '.*');
 	Route::post('/penilaian-kewangan-kerja/{tender_no}/borang/{borang_code}/simpan', [PenilaianKewanganKerjaController::class, 'simpanBorang'])->name('penilaianKewanganKerja.borang.simpan')->where('tender_no', '.*');
 	Route::post('/penilaian-kewangan-kerja/{tender_no}/pengesahan-peringkat', [PenilaianKewanganKerjaController::class, 'sahkanPeringkat'])->name('penilaianKewanganKerja.sahkanPeringkat')->where('tender_no', '.*');
-	Route::post('/penilaian-kewangan-kerja/{tender_no}/hantar', [PenilaianKewanganKerjaController::class, 'hantar'])->name('penilaianKewanganKerja.hantar')->where('tender_no', '.*');
+	Route::post('/penilaian-kewangan-kerja/{tender_no}/hantar', [PenilaianKewanganKerjaController::class, 'hantar'])->middleware('2fa.penilaian:kewangan')->name('penilaianKewanganKerja.hantar')->where('tender_no', '.*');
 	Route::get('/penilaian-kewangan-kerja/{tender_no}', [PenilaianKewanganKerjaController::class, 'show'])->name('penilaianKewanganKerja.show')->where('tender_no', '.*');
 });
 
@@ -844,6 +844,8 @@ Route::middleware(['auth'])->group(function () {
 			Route::put('roles', [TwoFactorAdminController::class, 'updateRoleSettings'])->name('roles.update');
 			Route::put('settings', [TwoFactorAdminController::class, 'updateSettings'])->name('settings.update');
 			Route::put('users/{user}/reset', [TwoFactorAdminController::class, 'resetUser'])->name('users.reset');
+			Route::put('penilaian', [TwoFactorAdminController::class, 'updatePenilaianSettings'])->name('penilaian.update');
+			Route::get('penilaian/logs', [TwoFactorAdminController::class, 'penilaianLogs'])->name('penilaian.logs');
 		});
 
 		Route::get('users/pending-approval', [UsersController::class, 'pendingApproval'])->name('users.pending-approval');

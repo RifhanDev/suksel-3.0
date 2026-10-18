@@ -138,11 +138,7 @@ class ProfileController extends Controller
 
 	protected function requiresForcedPasswordChange(User $user)
 	{
-		if (is_null($user->password_changed_at)) {
-			return true;
-		}
-
-		return Carbon::parse($user->password_changed_at)->diffInMonths(Carbon::now()) >= 6;
+		return $user->mustChangePassword();
 	}
 
 	public function releaseUser()

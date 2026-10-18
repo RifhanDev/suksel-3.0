@@ -42,9 +42,10 @@ class TwoFactorController extends Controller
          $twoFactor->save();
       }
 
+      // The date in the account name tells a new app entry apart from an old one after a reset.
       $qrCodeUrl = $google2fa->getQRCodeUrl(
          config('app.name', 'e-Perolehan Selangor'),
-         $user->email,
+         $user->email . ' (' . now()->format('d/m/Y') . ')',
          $twoFactor->secret
       );
 
@@ -54,6 +55,10 @@ class TwoFactorController extends Controller
       return view('auth.2fa-setup', [
          'qrCodeSvg' => $qrCodeSvg,
          'secret'    => $twoFactor->secret,
+         // Turned off or reset before: their app may still hold an entry for the old key.
+         'hadTwoFactorBefore' => TwoFactorAuditLog::where('user_id', $user->id)
+            ->whereIn('event', [TwoFactorAuditLog::EVENT_DISABLED, TwoFactorAuditLog::EVENT_ADMIN_RESET])
+            ->exists(),
       ]);
    }
 
@@ -74,14 +79,18 @@ class TwoFactorController extends Controller
             ->with('error', 'Sesi pendaftaran telah tamat. Sila imbas kod QR semula.');
       }
 
-      if (!(new Google2FA())->verifyKey($twoFactor->secret, trim($request->input('code')))) {
+      // verifyKeyNewer returns the code's time step, saved so the same code cannot be replayed at login/Hantar.
+      $step = (new Google2FA())->verifyKeyNewer($twoFactor->secret, trim($request->input('code')), (int) ($twoFactor->last_used_step ?? 0));
+
+      if ($step === false) {
          return redirect()->route('2fa.setup')
             ->with('error', 'Kod pengesahan tidak betul. Sila cuba lagi.');
       }
 
       $plainCodes = [];
 
-      DB::transaction(function () use ($user, $twoFactor, &$plainCodes) {
+      DB::transaction(function () use ($user, $twoFactor, $step, &$plainCodes) {
+         $twoFactor->last_used_step = $step;
          $twoFactor->confirmed_at = now();
          $twoFactor->failed_attempts = 0;
          $twoFactor->locked_until = null;
@@ -104,11 +113,16 @@ class TwoFactorController extends Controller
    public function manage()
    {
       $user = auth()->user();
+      $twoFactor = $user->twoFactorAuth;
 
       return view('auth.2fa-manage', [
-         'twoFactor'     => $user->twoFactorAuth,
+         'twoFactor'     => $twoFactor,
          'remainingCodes' => TwoFactorRecoveryCode::where('user_id', $user->id)->unused()->count(),
          'isRequired'    => $user->requiresTwoFactor(),
+         // Activation deadline, shown on the "required" notice while 2FA is not active yet.
+         'deadline'      => $twoFactor && $twoFactor->required_since
+            ? $twoFactor->required_since->copy()->addDays(TwoFactorSetting::current()->grace_period_days)
+            : null,
       ]);
    }
 
