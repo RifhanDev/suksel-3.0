@@ -227,7 +227,8 @@ class TwoFactorAdminController extends Controller
             continue;
          }
 
-         $scope = $rule->kategoriAgensi->map(fn ($k) => 'Kategori ' . ($k->organizationType->name ?? $k->organization_type_id))
+         // toBase(): merge() on an empty Eloquent collection expects models, not these label strings.
+         $scope = $rule->kategoriAgensi->toBase()->map(fn ($k) => 'Kategori ' . ($k->organizationType->name ?? $k->organization_type_id))
             ->merge($rule->agensi->map(fn ($a) => $a->organizationUnit->name ?? ('#' . $a->organization_unit_id)))
             ->sort()
             ->implode(', ');
@@ -247,6 +248,21 @@ class TwoFactorAdminController extends Controller
 
       return '<div class="small py-1">'
          . '<span class="text-muted">' . e($type) . ' &middot;</span> ' . e($name) . ': ' . $change
+         . '</div>';
+   }
+
+   /** Audit row for a role's agency list change: what was added/removed, then the full list after it. */
+   private function auditListLine(string $name, array $added, array $removed, array $current): string
+   {
+      $row = fn (string $label, array $items, string $class = '') => '<div class="d-flex gap-2 ms-3">'
+         . '<span class="text-muted tf-audit-label">' . $label . '</span>'
+         . '<span class="' . $class . '">' . e(implode(', ', $items)) . '</span>'
+         . '</div>';
+
+      return '<div class="small py-1"><span class="text-muted">Peranan &middot;</span> ' . e($name)
+         . ($added ? $row('Ditambah', $added, 'fw-semibold') : '')
+         . ($removed ? $row('Dibuang', $removed, 'fw-semibold') : '')
+         . $row('Semasa', $current)
          . '</div>';
    }
 
@@ -405,7 +421,7 @@ class TwoFactorAdminController extends Controller
             $labels = [
                TwoFactorAuditLog::EVENT_ENROLLED          => ['Diaktifkan', 'badge-status-success'],
                TwoFactorAuditLog::EVENT_DISABLED          => ['Dimatikan', 'badge-status-warning'],
-               TwoFactorAuditLog::EVENT_ADMIN_RESET       => ['Set Semula (Admin)', 'badge-status-danger'],
+               TwoFactorAuditLog::EVENT_ADMIN_RESET       => ['Set Semula (Admin)', 'badge-status-warning badge-icon-refresh'],
                TwoFactorAuditLog::EVENT_RECOVERY_USED     => ['Kod Pemulihan Digunakan', 'badge-status-warning'],
                TwoFactorAuditLog::EVENT_LOCKED_OUT        => ['Dikunci', 'badge-status-danger'],
                TwoFactorAuditLog::EVENT_ROLE_TOGGLED      => ['Tetapan Log Masuk Diubah', 'badge-status-info'],
@@ -435,6 +451,23 @@ class TwoFactorAdminController extends Controller
                case TwoFactorAuditLog::EVENT_PENILAIAN_TOGGLED:
                   $lines = array_map(function ($change) {
                      $isRole = ($change['jenis'] ?? '') === 'roles';
+                     $name   = is_string($change['nama'] ?? null) ? $change['nama'] : '?';
+                     $from   = is_string($change['from'] ?? null) ? $change['from'] : '?';
+                     $to     = is_string($change['to'] ?? null) ? $change['to'] : '?';
+
+                     // Between two agency lists, show only what was added and removed, not both full lists.
+                     $singleValues = ['Ya', 'Tidak', 'Semua agensi', '?'];
+                     if ($isRole && !in_array($from, $singleValues, true) && !in_array($to, $singleValues, true)) {
+                        $old = explode(', ', $from);
+                        $new = explode(', ', $to);
+                        $added   = array_diff($new, $old);
+                        $removed = array_diff($old, $new);
+
+                        if ($added || $removed) {
+                           return $this->auditListLine($name, $added, $removed, $new);
+                        }
+                     }
+
                      // Stored as Ya/Tidak; shown as words that read naturally per row type.
                      $readable = fn ($value) => match ($value) {
                         'Ya'    => 'Aktif',
@@ -442,13 +475,8 @@ class TwoFactorAdminController extends Controller
                         default => $value,
                      };
 
-                     return $this->auditLine(
-                        $isRole ? 'Peranan' : 'Peringkat',
-                        $change['nama'] ?? '?',
-                        $readable($change['from'] ?? '?'),
-                        $readable($change['to'] ?? '?')
-                     );
-                  }, $meta['changes'] ?? []);
+                     return $this->auditLine($isRole ? 'Peranan' : 'Peringkat', $name, $readable($from), $readable($to));
+                  }, is_array($meta['changes'] ?? null) ? $meta['changes'] : []);
 
                   return implode('', $lines) ?: '<span class="text-muted small">&mdash;</span>';
 
