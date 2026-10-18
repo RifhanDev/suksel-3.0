@@ -830,25 +830,7 @@
             <div class="content-wrapper">
                 <div class="content-container">
                     @include('layouts._notification')
-
-                    @if (auth()->check() && auth()->user()->requiresTwoFactor() && !auth()->user()->hasTwoFactorEnabled() && !request()->routeIs('2fa.setup', '2fa.confirm', '2fa.manage'))
-                        @php
-                            $twoFactorPending = auth()->user()->twoFactorAuth;
-                        @endphp
-                        @if ($twoFactorPending && $twoFactorPending->required_since)
-                            @php
-                                $twoFactorDeadline = $twoFactorPending->required_since->copy()
-                                    ->addDays(\App\TwoFactorSetting::current()->grace_period_days);
-                            @endphp
-                            @if (now()->lessThanOrEqualTo($twoFactorDeadline))
-                                <div class="alert alert-info alert-dismissible" role="alert">
-                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                                    Anda perlu mendayakan pengesahan dua faktor sebelum {{ $twoFactorDeadline->format('d/m/Y') }}.
-                                    <a href="{{ route('2fa.setup') }}" class="alert-link">Sediakan sekarang</a>.
-                                </div>
-                            @endif
-                        @endif
-                    @endif
+                    @include('partials.two-factor-reminder')
 
                     @yield('content')
                 </div>
@@ -858,6 +840,9 @@
 
     @include('components.success-modal')
     @include('components.confirm-dialog-modal')
+    @auth
+        @include('partials.two-factor-penilaian-modal')
+    @endauth
     @stack('modals')
 
     <!-- Scripts -->
@@ -866,6 +851,11 @@
     <script src="{{ asset('js/success-modal.js') }}"></script>
     <script src="{{ asset('js/confirm-modal.js') }}"></script>
     <script src="{{ asset('js/prevent-double-submit.js') }}"></script>
+    @auth
+        {{-- 2FA code popup for penilaian Hantar; paths come from routes using the 2fa.penilaian middleware --}}
+        <script>window.TWO_FACTOR_PENILAIAN_PATHS = @json(\App\Http\Middleware\RequireTwoFactorPenilaian::protectedPathPatterns());</script>
+        <script src="{{ asset('js/two-factor-penilaian.js') }}"></script>
+    @endauth
     <script src="{{ asset('js/ic-input.js') }}"></script>
     <!-- Bootbox 6.x -->
     <script src="{{ asset('packages/bootbox/bootbox.js') }}"></script>

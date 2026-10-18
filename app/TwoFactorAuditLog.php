@@ -16,6 +16,7 @@ class TwoFactorAuditLog extends Model
    const EVENT_RECOVERY_USED   = 'recovery_used';
    const EVENT_LOCKED_OUT      = 'locked_out';
    const EVENT_ROLE_TOGGLED    = 'role_requirement_toggled';
+   const EVENT_PENILAIAN_TOGGLED = 'penilaian_requirement_toggled';
 
    protected $fillable = [
       'user_id',

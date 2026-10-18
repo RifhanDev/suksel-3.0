@@ -2,9 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\OrganizationType;
+use App\OrganizationUnit;
 use App\Role;
 use App\TwoFactorAuditLog;
 use App\TwoFactorAuth;
+use App\TwoFactorPenilaianLog;
+use App\TwoFactorPenilaianRole;
+use App\TwoFactorPenilaianRoleAgensi;
+use App\TwoFactorPenilaianRoleKategoriAgensi;
+use App\TwoFactorPenilaianSetting;
 use App\TwoFactorRecoveryCode;
 use App\TwoFactorRoleSetting;
 use App\TwoFactorSetting;
@@ -32,20 +39,18 @@ class TwoFactorAdminController extends Controller
 
          return Datatables::of($users)
             ->addColumn('roles', function ($user) {
-               $names = User::find($user->id)->roles->pluck('display_name', 'name');
+               $names = User::find($user->id)->roles->map(fn ($role) => $role->display_name ?: $role->name);
 
                if ($names->isEmpty()) {
                   return '<span class="text-muted small">Tiada peranan</span>';
                }
 
-               return collect($names)->map(function ($display, $name) {
-                  return '<span class="badge bg-light text-dark border me-1">' . e($display ?: $name) . '</span>';
-               })->implode('');
+               return '<span class="small">' . e($names->implode(', ')) . '</span>';
             })
             ->addColumn('status', function ($user) {
                return $user->confirmed_at
-                  ? '<span class="badge bg-success">Aktif</span>'
-                  : '<span class="badge bg-secondary">Tidak Aktif</span>';
+                  ? '<span class="badge-status badge-status-success">Diaktifkan</span>'
+                  : '<span class="badge-status badge-status-warning">Belum Diaktifkan</span>';
             })
             ->editColumn('confirmed_at', function ($user) {
                return $user->confirmed_at
@@ -60,9 +65,7 @@ class TwoFactorAdminController extends Controller
                return '<form action="' . route('two-factor.users.reset', $user->id) . '" method="POST" class="d-inline m-0">'
                   . csrf_field()
                   . method_field('PUT')
-                  . '<button type="submit" class="btn btn-sm btn-danger rounded-8 px-3"'
-                  . ' onclick="return confirm(\'Tetapkan semula 2FA untuk pengguna ini? Mereka perlu mendaftar semula.\');">'
-                  . 'Set Semula</button>'
+                  . '<button type="button" class="btn btn-sm btn-warning rounded-8 px-3 text-nowrap js-tf-reset" data-name="' . e($user->name) . '">Set Semula</button>'
                   . '</form>';
             })
             ->rawColumns(['roles', 'status', 'confirmed_at', 'actions'])
@@ -73,7 +76,211 @@ class TwoFactorAdminController extends Controller
          'roles'           => Role::orderBy('name')->get(),
          'requiredRoleIds' => TwoFactorRoleSetting::requiredRoleIds(),
          'settings'        => TwoFactorSetting::current(),
+         // 2FA at penilaian Hantar
+         'penilaianPeringkat' => TwoFactorPenilaianSetting::PERINGKAT,
+         'penilaianRequired'  => TwoFactorPenilaianSetting::requiredPeringkat(),
+         'penilaianEligible'  => TwoFactorPenilaianRole::eligibleRoles(),
+         'penilaianRoles'     => TwoFactorPenilaianRole::with(['kategoriAgensi', 'agensi'])->get()->keyBy('role_id'),
+         'kategoriAgensi'     => OrganizationType::orderBy('sort_no')->orderBy('name')->get(['id', 'name']),
+         'agensiByKategori'   => OrganizationUnit::query()->orderBy('name')->get(['id', 'name', 'short_name', 'type_id'])->groupBy('type_id'),
       ]);
+   }
+
+   /**
+    * Save which penilaian stages ask for a 2FA code at Hantar, and for which roles / kategori agensi / agensi.
+    */
+   public function updatePenilaianSettings(Request $request)
+   {
+      $data = $request->validate([
+         'peringkat'    => 'nullable|array',
+         'peringkat.*'  => 'string|in:' . implode(',', array_keys(TwoFactorPenilaianSetting::PERINGKAT)),
+         'roles'        => 'nullable|array',
+         'roles.*'      => 'integer|exists:roles,id',
+         'skop'         => 'nullable|array',
+         'skop.*'       => 'in:semua,pilih',
+         'kategori'     => 'nullable|array',
+         'kategori.*'   => 'array',
+         'kategori.*.*' => 'integer|exists:organization_types,id',
+         'agensi'       => 'nullable|array',
+         'agensi.*'     => 'array',
+         'agensi.*.*'   => 'integer|exists:organization_units,id',
+      ]);
+
+      $onPeringkat = $data['peringkat'] ?? [];
+
+      // A role is kept only if it can open at least one of the ticked stages and requires 2FA at login.
+      $selectedIds = array_map('intval', $data['roles'] ?? []);
+      $loginRequiredIds = TwoFactorRoleSetting::requiredRoleIds();
+      $roleIds = [];
+
+      foreach (TwoFactorPenilaianRole::eligibleRoles() as $role) {
+         $reachesTickedStage = !empty(array_intersect($role->peringkat, $onPeringkat));
+
+         if (in_array($role->id, $selectedIds, true) && $reachesTickedStage && in_array($role->id, $loginRequiredIds)) {
+            $roleIds[] = $role->id;
+         }
+      }
+
+      $roleNames = Role::whereIn('id', $roleIds)->pluck('name', 'id');
+
+      // "Pilih agensi" with nothing picked would silently ask nobody; refuse it instead.
+      foreach ($roleIds as $roleId) {
+         $pilih = ($data['skop'][$roleId] ?? 'semua') === 'pilih';
+
+         if ($pilih && empty($data['kategori'][$roleId]) && empty($data['agensi'][$roleId])) {
+            return redirect()->to(route('two-factor.index') . '#tab-penilaian')
+               ->with('error', 'Sila pilih sekurang-kurangnya satu kategori agensi atau agensi untuk peranan ' . ($roleNames[$roleId] ?? $roleId) . '.');
+         }
+      }
+
+      $actorId = auth()->id();
+      $before  = $this->penilaianSummary();
+
+      DB::transaction(function () use ($onPeringkat, $roleIds, $data, $actorId) {
+         foreach (array_keys(TwoFactorPenilaianSetting::PERINGKAT) as $peringkat) {
+            $setting = TwoFactorPenilaianSetting::firstOrNew(['peringkat' => $peringkat]);
+            $setting->required = in_array($peringkat, $onPeringkat, true);
+            $setting->updated_by = $actorId;
+            $setting->save();
+         }
+
+         // Unticked roles lose their whole selection.
+         TwoFactorPenilaianRole::whereNotIn('role_id', $roleIds ?: [0])->delete();
+         TwoFactorPenilaianRoleKategoriAgensi::whereNotIn('role_id', $roleIds ?: [0])->delete();
+         TwoFactorPenilaianRoleAgensi::whereNotIn('role_id', $roleIds ?: [0])->delete();
+
+         foreach ($roleIds as $roleId) {
+            $semua = ($data['skop'][$roleId] ?? 'semua') === 'semua';
+
+            $rule = TwoFactorPenilaianRole::firstOrNew(['role_id' => $roleId]);
+            $rule->semua_agensi = $semua;
+            $rule->updated_by = $actorId;
+            $rule->save();
+
+            TwoFactorPenilaianRoleKategoriAgensi::where('role_id', $roleId)->delete();
+            TwoFactorPenilaianRoleAgensi::where('role_id', $roleId)->delete();
+
+            if ($semua) {
+               continue;
+            }
+
+            foreach (array_unique(array_map('intval', $data['kategori'][$roleId] ?? [])) as $typeId) {
+               TwoFactorPenilaianRoleKategoriAgensi::create(['role_id' => $roleId, 'organization_type_id' => $typeId]);
+            }
+
+            foreach (array_unique(array_map('intval', $data['agensi'][$roleId] ?? [])) as $unitId) {
+               TwoFactorPenilaianRoleAgensi::create(['role_id' => $roleId, 'organization_unit_id' => $unitId]);
+            }
+         }
+      });
+
+      $this->recordPenilaianChanges($before, $actorId);
+
+      return redirect()->to(route('two-factor.index') . '#tab-penilaian')
+         ->with('success', 'Tetapan 2FA semasa Hantar penilaian telah dikemaskini.');
+   }
+
+   /**
+    * Audits what changed in the penilaian settings since $before (a penilaianSummary() snapshot).
+    */
+   private function recordPenilaianChanges(array $before, ?int $actorId): void
+   {
+      $after   = $this->penilaianSummary();
+      $changes = [];
+
+      foreach (['peringkat', 'roles'] as $group) {
+         foreach (array_unique(array_merge(array_keys($before[$group]), array_keys($after[$group]))) as $key) {
+            $from = $before[$group][$key] ?? 'Tidak';
+            $to   = $after[$group][$key] ?? 'Tidak';
+
+            if ($from !== $to) {
+               $changes[] = ['jenis' => $group, 'nama' => $key, 'from' => $from, 'to' => $to];
+            }
+         }
+      }
+
+      if (!empty($changes) && $actorId) {
+         TwoFactorAuditLog::record($actorId, TwoFactorAuditLog::EVENT_PENILAIAN_TOGGLED, $actorId, [
+            'changes' => $changes,
+         ]);
+      }
+   }
+
+   /**
+    * Readable snapshot of the penilaian settings, used to diff for the audit log.
+    *
+    * @return array{peringkat: array<string, string>, roles: array<string, string>}
+    */
+   private function penilaianSummary(): array
+   {
+      $peringkat = [];
+      foreach (TwoFactorPenilaianSetting::all() as $setting) {
+         $peringkat[TwoFactorPenilaianSetting::PERINGKAT[$setting->peringkat] ?? $setting->peringkat] = $setting->required ? 'Ya' : 'Tidak';
+      }
+
+      $roles = [];
+      foreach (TwoFactorPenilaianRole::with(['role', 'kategoriAgensi.organizationType', 'agensi.organizationUnit'])->get() as $rule) {
+         $name = $rule->role->name ?? ('#' . $rule->role_id);
+
+         if ($rule->semua_agensi) {
+            $roles[$name] = 'Semua agensi';
+            continue;
+         }
+
+         $scope = $rule->kategoriAgensi->map(fn ($k) => 'Kategori ' . ($k->organizationType->name ?? $k->organization_type_id))
+            ->merge($rule->agensi->map(fn ($a) => $a->organizationUnit->name ?? ('#' . $a->organization_unit_id)))
+            ->sort()
+            ->implode(', ');
+
+         $roles[$name] = $scope;
+      }
+
+      return ['peringkat' => $peringkat, 'roles' => $roles];
+   }
+
+   /** One readable audit row: "Peranan · Agency User: Tidak ditanda → Aktif". */
+   private function auditLine(string $type, string $name, ?string $from, string $to): string
+   {
+      $change = $from !== null
+         ? '<span class="text-muted">' . e($from) . '</span> <span class="text-muted">&rarr;</span> <span class="fw-semibold">' . e($to) . '</span>'
+         : '<span class="fw-semibold">' . e($to) . '</span>';
+
+      return '<div class="small py-1">'
+         . '<span class="text-muted">' . e($type) . ' &middot;</span> ' . e($name) . ': ' . $change
+         . '</div>';
+   }
+
+   /**
+    * Log of codes accepted at penilaian Hantar (ajax only).
+    */
+   public function penilaianLogs(Request $request)
+   {
+      $logs = TwoFactorPenilaianLog::query()
+         ->with(['user', 'tender'])
+         ->select('two_factor_penilaian_logs.*')
+         ->orderByDesc('created_at');
+
+      return Datatables::of($logs)
+         ->editColumn('created_at', function ($log) {
+            return $log->created_at ? $log->created_at->format('d/m/Y H:i') : '&mdash;';
+         })
+         ->addColumn('user_name', function ($log) {
+            return $log->user ? e($log->user->name) : '<span class="text-muted small">&mdash;</span>';
+         })
+         ->addColumn('tender_no', function ($log) {
+            $no = $log->tender ? ($log->tender->no_tender ?: $log->tender->ref_number) : null;
+            return $no ? e($no) : '<span class="text-muted small">&mdash;</span>';
+         })
+         ->editColumn('peringkat', function ($log) {
+            return e(TwoFactorPenilaianSetting::PERINGKAT[$log->peringkat] ?? $log->peringkat);
+         })
+         ->editColumn('kaedah', function ($log) {
+            return $log->kaedah === 'recovery'
+               ? '<span class="badge-status badge-status-warning">Kod Pemulihan</span>'
+               : '<span class="badge-status badge-status-info">Aplikasi Pengesah</span>';
+         })
+         ->rawColumns(['created_at', 'user_name', 'tender_no', 'kaedah'])
+         ->make(true);
    }
 
    /**
@@ -84,6 +291,7 @@ class TwoFactorAdminController extends Controller
       $selected = array_map('intval', (array) $request->input('required_roles', []));
       $actorId  = auth()->id();
       $changes  = [];
+      $penilaianBefore = $this->penilaianSummary();
 
       DB::transaction(function () use ($selected, $actorId, &$changes) {
          foreach (Role::all() as $role) {
@@ -113,7 +321,14 @@ class TwoFactorAdminController extends Controller
                'changes' => $changes,
             ]);
          }
+
+         // Penilaian 2FA sits on top of 2FA login, so a role switched off here loses its penilaian setting too.
+         TwoFactorPenilaianRole::whereNotIn('role_id', $selected ?: [0])->delete();
+         TwoFactorPenilaianRoleKategoriAgensi::whereNotIn('role_id', $selected ?: [0])->delete();
+         TwoFactorPenilaianRoleAgensi::whereNotIn('role_id', $selected ?: [0])->delete();
       });
+
+      $this->recordPenilaianChanges($penilaianBefore, $actorId);
 
       return redirect()->route('two-factor.index')
          ->with('success', 'Tetapan peranan 2FA telah dikemaskini.');
@@ -160,7 +375,7 @@ class TwoFactorAdminController extends Controller
          );
       });
 
-      return redirect()->route('two-factor.index')
+      return redirect()->to(route('two-factor.index') . '#tab-pengguna')
          ->with('success', 'Pengesahan dua faktor untuk ' . $user->name . ' telah ditetapkan semula.');
    }
 
@@ -188,17 +403,18 @@ class TwoFactorAdminController extends Controller
          })
          ->editColumn('event', function ($log) {
             $labels = [
-               TwoFactorAuditLog::EVENT_ENROLLED      => ['Didaftarkan', 'bg-success'],
-               TwoFactorAuditLog::EVENT_DISABLED      => ['Dimatikan', 'bg-secondary'],
-               TwoFactorAuditLog::EVENT_ADMIN_RESET   => ['Set Semula (Admin)', 'bg-danger'],
-               TwoFactorAuditLog::EVENT_RECOVERY_USED => ['Kod Pemulihan Digunakan', 'bg-warning text-dark'],
-               TwoFactorAuditLog::EVENT_LOCKED_OUT    => ['Dikunci', 'bg-danger'],
-               TwoFactorAuditLog::EVENT_ROLE_TOGGLED  => ['Tetapan Peranan Diubah', 'bg-info text-dark'],
+               TwoFactorAuditLog::EVENT_ENROLLED          => ['Diaktifkan', 'badge-status-success'],
+               TwoFactorAuditLog::EVENT_DISABLED          => ['Dimatikan', 'badge-status-warning'],
+               TwoFactorAuditLog::EVENT_ADMIN_RESET       => ['Set Semula (Admin)', 'badge-status-danger'],
+               TwoFactorAuditLog::EVENT_RECOVERY_USED     => ['Kod Pemulihan Digunakan', 'badge-status-warning'],
+               TwoFactorAuditLog::EVENT_LOCKED_OUT        => ['Dikunci', 'badge-status-danger'],
+               TwoFactorAuditLog::EVENT_ROLE_TOGGLED      => ['Tetapan Log Masuk Diubah', 'badge-status-info'],
+               TwoFactorAuditLog::EVENT_PENILAIAN_TOGGLED => ['Tetapan Penilaian Diubah', 'badge-status-info'],
             ];
 
-            [$label, $class] = $labels[$log->event] ?? [$log->event, 'bg-light text-dark'];
+            [$label, $class] = $labels[$log->event] ?? [$log->event, 'badge-status-info'];
 
-            return '<span class="badge ' . $class . '">' . e($label) . '</span>';
+            return '<span class="badge-status ' . $class . '">' . e($label) . '</span>';
          })
          ->addColumn('meta_summary', function ($log) {
             $meta = $log->meta;
@@ -210,19 +426,39 @@ class TwoFactorAdminController extends Controller
             switch ($log->event) {
                case TwoFactorAuditLog::EVENT_ROLE_TOGGLED:
                   $lines = array_map(function ($change) {
-                     $state = !empty($change['to']) ? 'diwajibkan' : 'tidak lagi diwajibkan';
-                     return 'Peranan <strong>' . e($change['role'] ?? '?') . '</strong>: 2FA ' . $state;
+                     $state = !empty($change['to']) ? 'Wajib 2FA' : 'Tidak wajib 2FA';
+                     return $this->auditLine('Peranan', $change['role'] ?? '?', null, $state);
                   }, $meta['changes'] ?? []);
 
-                  return implode('<br>', $lines) ?: '<span class="text-muted small">&mdash;</span>';
+                  return implode('', $lines) ?: '<span class="text-muted small">&mdash;</span>';
+
+               case TwoFactorAuditLog::EVENT_PENILAIAN_TOGGLED:
+                  $lines = array_map(function ($change) {
+                     $isRole = ($change['jenis'] ?? '') === 'roles';
+                     // Stored as Ya/Tidak; shown as words that read naturally per row type.
+                     $readable = fn ($value) => match ($value) {
+                        'Ya'    => 'Aktif',
+                        'Tidak' => $isRole ? 'Tidak ditanda' : 'Tidak aktif',
+                        default => $value,
+                     };
+
+                     return $this->auditLine(
+                        $isRole ? 'Peranan' : 'Peringkat',
+                        $change['nama'] ?? '?',
+                        $readable($change['from'] ?? '?'),
+                        $readable($change['to'] ?? '?')
+                     );
+                  }, $meta['changes'] ?? []);
+
+                  return implode('', $lines) ?: '<span class="text-muted small">&mdash;</span>';
 
                case TwoFactorAuditLog::EVENT_RECOVERY_USED:
-                  return 'Baki kod pemulihan selepas ini: <strong>' . (int) ($meta['remaining'] ?? 0) . '</strong>';
+                  return '<span class="small">Baki kod pemulihan: <span class="fw-semibold">' . (int) ($meta['remaining'] ?? 0) . '</span></span>';
 
                case TwoFactorAuditLog::EVENT_LOCKED_OUT:
                   $until = $meta['locked_until'] ?? null;
                   $formatted = $until ? \Carbon\Carbon::parse($until)->format('d/m/Y H:i') : '&mdash;';
-                  return 'Dikunci sehingga ' . $formatted;
+                  return '<span class="small">Dikunci sehingga <span class="fw-semibold">' . $formatted . '</span></span>';
 
                default:
                   // Fallback for any future event type: still readable, not raw JSON.

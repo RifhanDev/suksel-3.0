@@ -11,6 +11,7 @@ use \Venturecraft\Revisionable\RevisionableTrait;
 use App\Traits\EntrustCompatTrait;
 
 use App\Role;
+use Carbon\Carbon;
 
 class User extends Authenticatable
 {
@@ -291,6 +292,16 @@ class User extends Authenticatable
 
 	/** Months after arr_sent_at before periodic account review email and deactivation. */
 	public const ARR_REVIEW_INTERVAL_MONTHS = 6;
+
+	/** Months a password stays valid before the user must change it. */
+	public const PASSWORD_VALID_MONTHS = 6;
+
+	/** No date means an admin set the password (or the user never did); either way the user must set their own. */
+	public function mustChangePassword(): bool
+	{
+		return is_null($this->password_changed_at)
+			|| Carbon::parse($this->password_changed_at)->lte(now()->subMonths(self::PASSWORD_VALID_MONTHS));
+	}
 
 	public function scopePendingReview($query)
 	{
