@@ -29,6 +29,11 @@ class RequireTwoFactorSetup
          return $next($request);
       }
 
+      // RequirePasswordChange keeps the user on the password page first; let that page through.
+      if ($request->is('profile/force_password_change')) {
+         return $next($request);
+      }
+
       $twoFactor = $user->twoFactorAuth;
 
       if (!$twoFactor || is_null($twoFactor->required_since)) {
@@ -40,7 +45,7 @@ class RequireTwoFactorSetup
 
       if (now()->greaterThan($deadline)) {
          return redirect()->route('2fa.setup')
-            ->with('warning', 'Tempoh tangguh pengesahan dua faktor telah tamat. Sila sediakan sekarang.');
+            ->with('warning', 'Tempoh untuk mengaktifkan pengesahan dua faktor (2FA) telah tamat. Sila aktifkan sekarang untuk meneruskan.');
       }
 
       return $next($request);

@@ -111,7 +111,7 @@ class PenilaianTeknikalController extends Controller
             $filterStatus = (string) $request->input('filter_status');
 
             $matchingIds = (clone $tenders)
-                ->get(['id', 'kategori_perolehan_id'])
+                ->get(['id', 'kategori_perolehan_id', 'status_process_id'])
                 ->filter(fn(Tender $t) => $this->resolveTenderRingkasanStatus($t) === $filterStatus)
                 ->pluck('id');
 
@@ -176,10 +176,14 @@ class PenilaianTeknikalController extends Controller
 
     /**
      * Overall tender status for the index list: Belum Dinilai, Dalam Proses, or Selesai.
-     * Independent of status_process_id, which stays constant across this filtered list.
+     * Selesai only after Hantar, which moves the tender to status 10.
      */
     private function resolveTenderRingkasanStatus(Tender $tender): string
     {
+        if ((int) ($tender->status_process_id ?? 0) === TenderProcessStatus::PENILAIAN_TEKNIKAL) {
+            return 'Selesai';
+        }
+
         if ((int) ($tender->kategori_perolehan_id ?? 0) === 3) {
             $vendors = $this->kerjaService->loadShortlistedVendors($tender);
             $total = $vendors->count();
@@ -191,11 +195,7 @@ class PenilaianTeknikalController extends Controller
             $evaluations = $this->kerjaService->loadEvaluations($tender);
             $evaluatedCount = $vendors->filter(fn(TenderVendor $v) => isset($evaluations[$v->vendor_id]))->count();
 
-            if ($evaluatedCount === 0) {
-                return 'Belum Dinilai';
-            }
-
-            return $evaluatedCount === $total ? 'Selesai' : 'Dalam Proses';
+            return $evaluatedCount === 0 ? 'Belum Dinilai' : 'Dalam Proses';
         }
 
         $vendors = $this->loadPenilaianTeknikalVendors($tender);
@@ -217,13 +217,8 @@ class PenilaianTeknikalController extends Controller
         $allItems = $step1Items->concat($step2Items);
 
         $hasProgress = $allItems->contains(fn(array $item) => $item['status_label'] !== 'Menunggu Penilaian');
-        if (! $hasProgress) {
-            return 'Belum Dinilai';
-        }
 
-        $allComplete = $allItems->every(fn(array $item) => $item['status_label'] === 'Telah Dinilai');
-
-        return $allComplete ? 'Selesai' : 'Dalam Proses';
+        return $hasProgress ? 'Dalam Proses' : 'Belum Dinilai';
     }
 
     public function show(string $uuid)

@@ -14,17 +14,17 @@ class SendPeriodicPasswordReset extends Command
 {
     protected $signature = 'send:periodic-password-reset';
 
-    protected $description = 'Hantar emel tukar kata laluan kepada pengguna aktif 6 bulan selepas arr_sent_at.';
+    protected $description = 'Hantar emel tukar kata laluan kepada pengguna aktif pada hari kata laluan mereka mencapai 6 bulan.';
 
     public function handle(): int
     {
-        $cutoff = Carbon::today()->subMonths(User::ARR_REVIEW_INTERVAL_MONTHS);
+        // Counted from the last password change (any way it was changed), not from the account review date.
+        $expiresOn = Carbon::today()->subMonths(User::PASSWORD_VALID_MONTHS);
 
         $users = User::active()
             ->where('approved', 1)
             ->whereNotNull('organization_unit_id')
-            ->whereNotNull('arr_sent_at')
-            ->where('arr_sent_at', '<=', $cutoff)
+            ->whereDate('password_changed_at', $expiresOn)
             ->whereNotIn('email', ['anonymous', 'tenderadmin@selangor.gov.my'])
             ->get();
 
@@ -34,9 +34,6 @@ class SendPeriodicPasswordReset extends Command
         foreach ($users as $user) {
             try {
                 Mail::to(trim($user->email))->send(new PeriodicPasswordReset($user));
-
-                $user->arr_sent_at = Carbon::now();
-                $user->save();
 
                 UserHistory::log($user->id, 'password-reset-sent');
                 $sent++;

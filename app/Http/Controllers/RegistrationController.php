@@ -60,6 +60,7 @@ class RegistrationController extends Controller
                 $user->email             = $request->email;
                 $user->username          = $request->email;
                 $user->password          = Hash::make($request->password);
+                $user->password_changed_at = now(); // chosen by the vendor themselves
                 $user->confirmation_code = md5(uniqid(mt_rand(), true));
 
                 if ($user->save()) {
@@ -390,7 +391,8 @@ class RegistrationController extends Controller
             $user->name                  = $request->name;
             $user->email                 = $request->email;
             $user->username              = $request->email;
-            $user->password              = $request->password;
+            $user->password              = Hash::make($request->password);
+            $user->password_changed_at   = now(); // chosen by the user themselves
             $user->organization_unit_id  = $request->organization_unit_id;
             $user->role_applied          = $request->role_applied;
             $user->approved              = null;

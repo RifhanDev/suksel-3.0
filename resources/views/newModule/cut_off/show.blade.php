@@ -575,55 +575,65 @@
         if (btnHantar) {
             btnHantar.addEventListener('click', function() {
                 if (btnHantar.disabled) return;
-                if (!confirm('Sahkan Hantar cut-off? Tindakan ini muktamad dan tidak boleh diubah selepas ini.')) {
-                    return;
-                }
-
-                clearFeedback();
                 btnHantar.disabled = true;
-                btnHantar.textContent = 'Menghantar...';
 
-                fetch(cutoffConfig.hantarUrl, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json',
-                            'X-CSRF-TOKEN': cutoffConfig.csrfToken
-                        },
-                        body: JSON.stringify({ tender: cutoffConfig.tenderUuid })
-                    })
-                    .then(function(res) {
-                        return res.json().then(function(body) {
-                            return { ok: res.ok, body: body };
-                        });
-                    })
-                    .then(function(result) {
-                        btnHantar.textContent = 'Hantar';
-
-                        if (!result.ok) {
-                            btnHantar.disabled = false;
-                            showFeedback(result.body.message || 'Gagal menghantar.', 'error');
-                            return;
-                        }
-
-                        cutoffConfig.selectionStatus = 'submitted';
-                        lockPageAsSubmitted();
-
-                        // Redirect ke senarai cut-off selepas modal ditutup.
-                        if (typeof showBerjayaModal === 'function') {
-                            showBerjayaModal({
-                                message: 'Maklumat telah berjaya dihantar.',
-                                onClose: function() {
-                                    window.location.href = cutoffConfig.indexUrl;
-                                }
-                            });
-                        }
-                    })
-                    .catch(function() {
+                showConfirmModal({
+                    title: 'Sahkan Penghantaran',
+                    message: 'Hantar cut-off ini? Tindakan ini muktamad dan tidak boleh diubah selepas ini.',
+                    confirmText: 'Ya, Hantar',
+                    cancelText: 'Batal',
+                    icon: 'warning'
+                }).then(function(ok) {
+                    if (!ok) {
                         btnHantar.disabled = false;
-                        btnHantar.textContent = 'Hantar';
-                        showFeedback('Ralat rangkaian. Sila cuba lagi.', 'error');
-                    });
+                        return;
+                    }
+
+                    clearFeedback();
+                    btnHantar.textContent = 'Menghantar...';
+
+                    fetch(cutoffConfig.hantarUrl, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': cutoffConfig.csrfToken
+                            },
+                            body: JSON.stringify({ tender: cutoffConfig.tenderUuid })
+                        })
+                        .then(function(res) {
+                            return res.json().then(function(body) {
+                                return { ok: res.ok, body: body };
+                            });
+                        })
+                        .then(function(result) {
+                            btnHantar.textContent = 'Hantar';
+
+                            if (!result.ok) {
+                                btnHantar.disabled = false;
+                                showFeedback(result.body.message || 'Gagal menghantar.', 'error');
+                                return;
+                            }
+
+                            cutoffConfig.selectionStatus = 'submitted';
+                            lockPageAsSubmitted();
+
+                            // Redirect ke senarai cut-off selepas modal ditutup.
+                            if (typeof showBerjayaModal === 'function') {
+                                showBerjayaModal({
+                                    message: 'Maklumat telah berjaya dihantar.',
+                                    onClose: function() {
+                                        window.location.href = cutoffConfig.indexUrl;
+                                    }
+                                });
+                            }
+                        })
+                        .catch(function() {
+                            btnHantar.disabled = false;
+                            btnHantar.textContent = 'Hantar';
+                            showFeedback('Ralat rangkaian. Sila cuba lagi.', 'error');
+                        });
+                });
             });
         }
 

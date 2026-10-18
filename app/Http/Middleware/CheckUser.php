@@ -57,24 +57,7 @@ class CheckUser
             // $request->session()->invalidate();
             // $request->session()->regenerateToken();
 
-            $last_pass = auth()->user()->histories()
-                ->where('action', 'password-reset')
-                ->latest('created_at')
-                ->first();
-
-            if($last_pass)
-            {
-                $created_at = $last_pass->created_at;
-
-                if(strtotime($created_at) < strtotime('-90 days'))
-                {
-                    Auth::logout();
-                    $request->session()->invalidate();
-                    $request->session()->regenerateToken();
-
-                    return redirect()->route('home')->with('error', "Kata laluan telah tamat tempoh 90 hari, Sila klik pada <a href='/auth/forgot_password'>lupa kata laluan !<a>");
-                }
-            }
+            // Password expiry (6 months, any way of changing it) is handled by RequirePasswordChange.
 
             // Auth::logout();
             // $request->session()->invalidate();

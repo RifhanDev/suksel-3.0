@@ -360,7 +360,8 @@ class UsersController extends Controller
 		} else {
 
 			$user->password = Hash::make($request->password);
-			$user->password_changed_at = now();
+			// Set by an admin, so the user must replace it with their own at next login.
+			$user->password_changed_at = null;
 			$user->save();
 
 			if ($user->hasRole('Vendor')) {
