@@ -6,6 +6,7 @@
         .tfp-step { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; background: #f1f5f9; color: #475569; font-size: .75rem; font-weight: 700; margin-right: .5rem; }
         .tfp-section + .tfp-section { border-top: 1px solid #eef2f6; padding-top: 1.5rem; margin-top: 1.5rem; }
         .tfp-kategori summary { cursor: pointer; }
+        .tf-audit-label { min-width: 4.5rem; }
     </style>
 @endsection
 
@@ -417,10 +418,10 @@
                        class="DT-two-factor-audit table table-hover align-middle mb-0 w-100">
                     <thead class="bg-light">
                         <tr>
-                            <th class="text-uppercase text-muted small fw-bold py-3 ps-4" style="width: 150px;">Masa</th>
-                            <th class="text-uppercase text-muted small fw-bold py-3">Pengguna</th>
-                            <th class="text-uppercase text-muted small fw-bold py-3">Dilakukan Oleh</th>
-                            <th class="text-uppercase text-muted small fw-bold py-3" style="width: 200px;">Peristiwa</th>
+                            <th class="text-uppercase text-muted small fw-bold py-3 ps-4" style="width: 140px;">Masa</th>
+                            <th class="text-uppercase text-muted small fw-bold py-3" style="width: 14%;">Pengguna</th>
+                            <th class="text-uppercase text-muted small fw-bold py-3" style="width: 14%;">Dilakukan Oleh</th>
+                            <th class="text-uppercase text-muted small fw-bold py-3" style="width: 210px;">Peristiwa</th>
                             <th class="text-uppercase text-muted small fw-bold py-3 pe-4">Butiran</th>
                         </tr>
                     </thead>
@@ -506,9 +507,12 @@
 
             target.DataTable({
                 ajax: target.data('path'),
+                // The table starts in a hidden tab, so measured widths would be wrong; use the <th> widths instead.
+                autoWidth: false,
                 columns: [{
                         data: 'created_at',
-                        name: 'created_at'
+                        name: 'created_at',
+                        className: 'text-nowrap'
                     },
                     {
                         data: 'user_name',
@@ -524,7 +528,8 @@
                     },
                     {
                         data: 'event',
-                        name: 'event'
+                        name: 'event',
+                        className: 'text-nowrap'
                     },
                     {
                         data: 'meta_summary',
