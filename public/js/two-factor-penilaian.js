@@ -117,6 +117,19 @@
         }
     }
 
+    // Some pages keep their own confirm dialog open while sending; close it first so the two don't overlap.
+    function closeOtherModals() {
+        var open = Array.prototype.filter.call(document.querySelectorAll('.modal.show'), function (m) { return m !== el; });
+
+        return Promise.all(open.map(function (m) {
+            return new Promise(function (resolve) {
+                m.addEventListener('hidden.bs.modal', resolve, { once: true });
+                setTimeout(resolve, 600); // in case it never reports hidden
+                bootstrap.Modal.getOrCreateInstance(m).hide();
+            });
+        }));
+    }
+
     /**
      * Shows the modal for a 428/422 two_factor body. Resolves with the typed code, or null when cancelled
      * (or when the user still has to enrol, since there is nothing to type yet).
@@ -148,8 +161,10 @@
             setRecoveryMode(false);
         }
 
-        bootstrap.Modal.getOrCreateInstance(el).show();
-        if (retry) input.focus();
+        closeOtherModals().then(function () {
+            bootstrap.Modal.getOrCreateInstance(el).show();
+            if (retry) input.focus();
+        });
 
         return new Promise(function (resolve) { pending = resolve; });
     }
