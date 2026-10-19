@@ -653,13 +653,13 @@ class TendersController extends Controller
 			->whereIn("{$committeeTable}.jenis_jawatankuasa", ['spec', 'open', 'tech', 'fin'])
 			->groupBy("{$committeeTable}.tender_id")
 			->havingRaw("SUM(CASE WHEN {$committeeTable}.jenis_jawatankuasa = 'spec' AND {$committeeTable}.peranan = 1 AND {$committeeTable}.user_id IS NOT NULL THEN 1 ELSE 0 END) >= 1")
-			->havingRaw("SUM(CASE WHEN {$committeeTable}.jenis_jawatankuasa = 'spec' AND {$committeeTable}.peranan = 3 AND {$committeeTable}.user_id IS NOT NULL THEN 1 ELSE 0 END) >= 1")
+			->havingRaw("SUM(CASE WHEN {$committeeTable}.jenis_jawatankuasa = 'spec' AND {$committeeTable}.peranan = 3 AND {$committeeTable}.user_id IS NOT NULL THEN 1 ELSE 0 END) >= 2")
 			->havingRaw("SUM(CASE WHEN {$committeeTable}.jenis_jawatankuasa = 'open' AND {$committeeTable}.peranan = 1 AND {$committeeTable}.user_id IS NOT NULL THEN 1 ELSE 0 END) >= 1")
 			->havingRaw("SUM(CASE WHEN {$committeeTable}.jenis_jawatankuasa = 'open' AND {$committeeTable}.peranan = 3 AND {$committeeTable}.user_id IS NOT NULL THEN 1 ELSE 0 END) >= 1")
 			->havingRaw("SUM(CASE WHEN {$committeeTable}.jenis_jawatankuasa = 'tech' AND {$committeeTable}.peranan = 1 AND {$committeeTable}.user_id IS NOT NULL THEN 1 ELSE 0 END) >= 1")
-			->havingRaw("SUM(CASE WHEN {$committeeTable}.jenis_jawatankuasa = 'tech' AND {$committeeTable}.peranan = 3 AND {$committeeTable}.user_id IS NOT NULL THEN 1 ELSE 0 END) >= 1")
+			->havingRaw("SUM(CASE WHEN {$committeeTable}.jenis_jawatankuasa = 'tech' AND {$committeeTable}.peranan = 3 AND {$committeeTable}.user_id IS NOT NULL THEN 1 ELSE 0 END) >= 2")
 			->havingRaw("SUM(CASE WHEN {$committeeTable}.jenis_jawatankuasa = 'fin' AND {$committeeTable}.peranan = 1 AND {$committeeTable}.user_id IS NOT NULL THEN 1 ELSE 0 END) >= 1")
-			->havingRaw("SUM(CASE WHEN {$committeeTable}.jenis_jawatankuasa = 'fin' AND {$committeeTable}.peranan = 3 AND {$committeeTable}.user_id IS NOT NULL THEN 1 ELSE 0 END) >= 1")
+			->havingRaw("SUM(CASE WHEN {$committeeTable}.jenis_jawatankuasa = 'fin' AND {$committeeTable}.peranan = 3 AND {$committeeTable}.user_id IS NOT NULL THEN 1 ELSE 0 END) >= 2")
 			->havingRaw("SUM(CASE WHEN {$committeeTable}.user_id IS NOT NULL AND {$committeeTable}.dihantar_pemakluman_pada IS NULL THEN 1 ELSE 0 END) = 0")
 			->havingRaw("SUM(CASE WHEN {$committeeTable}.dihantar_pemakluman_pada IS NOT NULL THEN 1 ELSE 0 END) > 0");
 
@@ -671,11 +671,11 @@ class TendersController extends Controller
 			->whereIn("{$committeeTable}.jenis_jawatankuasa", ['spec', 'open', 'eval'])
 			->groupBy("{$committeeTable}.tender_id")
 			->havingRaw("SUM(CASE WHEN {$committeeTable}.jenis_jawatankuasa = 'spec' AND {$committeeTable}.peranan = 1 AND {$committeeTable}.user_id IS NOT NULL THEN 1 ELSE 0 END) >= 1")
-			->havingRaw("SUM(CASE WHEN {$committeeTable}.jenis_jawatankuasa = 'spec' AND {$committeeTable}.peranan = 3 AND {$committeeTable}.user_id IS NOT NULL THEN 1 ELSE 0 END) >= 1")
+			->havingRaw("SUM(CASE WHEN {$committeeTable}.jenis_jawatankuasa = 'spec' AND {$committeeTable}.peranan = 3 AND {$committeeTable}.user_id IS NOT NULL THEN 1 ELSE 0 END) >= 2")
 			->havingRaw("SUM(CASE WHEN {$committeeTable}.jenis_jawatankuasa = 'open' AND {$committeeTable}.peranan = 1 AND {$committeeTable}.user_id IS NOT NULL THEN 1 ELSE 0 END) >= 1")
 			->havingRaw("SUM(CASE WHEN {$committeeTable}.jenis_jawatankuasa = 'open' AND {$committeeTable}.peranan = 3 AND {$committeeTable}.user_id IS NOT NULL THEN 1 ELSE 0 END) >= 1")
 			->havingRaw("SUM(CASE WHEN {$committeeTable}.jenis_jawatankuasa = 'eval' AND {$committeeTable}.peranan = 1 AND {$committeeTable}.user_id IS NOT NULL THEN 1 ELSE 0 END) >= 1")
-			->havingRaw("SUM(CASE WHEN {$committeeTable}.jenis_jawatankuasa = 'eval' AND {$committeeTable}.peranan = 3 AND {$committeeTable}.user_id IS NOT NULL THEN 1 ELSE 0 END) >= 1")
+			->havingRaw("SUM(CASE WHEN {$committeeTable}.jenis_jawatankuasa = 'eval' AND {$committeeTable}.peranan = 3 AND {$committeeTable}.user_id IS NOT NULL THEN 1 ELSE 0 END) >= 2")
 			->havingRaw("SUM(CASE WHEN {$committeeTable}.user_id IS NOT NULL AND {$committeeTable}.dihantar_pemakluman_pada IS NULL THEN 1 ELSE 0 END) = 0")
 			->havingRaw("SUM(CASE WHEN {$committeeTable}.dihantar_pemakluman_pada IS NOT NULL THEN 1 ELSE 0 END) > 0");
 

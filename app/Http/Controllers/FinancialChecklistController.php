@@ -86,6 +86,24 @@ class FinancialChecklistController extends Controller
             unset($item);
         }
 
+        // Drop orphaned kewangan "spesifikasi" copies whose teknikal row was deleted
+        // (FK is nullOnDelete, so copies can linger after senarai-teknikal hapus).
+        if (! empty($checklistData['items']) && is_array($checklistData['items'])) {
+            $checklistData['items'] = array_values(array_filter(
+                $checklistData['items'],
+                function ($item) {
+                    $isSpec = ($item['source_type'] ?? '') === 'specification_document'
+                        || ($item['mechanism'] ?? '') === 'spesifikasi';
+                    if (! $isSpec) {
+                        return true;
+                    }
+
+                    // STOS serializeItem only sets technical_item_uuid when the link is live.
+                    return ! empty($item['technical_item_uuid'] ?? null);
+                }
+            ));
+        }
+
         // Check if $checklistData['items'] already has a specification_document item (linked via technical_item_id)
         $hasSpecItem = collect($checklistData['items'] ?? [])->contains(function ($item) {
             return ($item['source_type'] ?? '') === 'specification_document' || ($item['mechanism'] ?? '') === 'spesifikasi';

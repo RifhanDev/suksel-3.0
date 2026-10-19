@@ -1814,7 +1814,20 @@ class Tender extends Model
 
 	public function getStatusAttribute()
 	{
-		if (!$this->hasCompleteJawatankuasa()) {
+		$statusProcessId = (int) ($this->status_process_id ?? 0);
+
+		// If still in initial stage (Cipta Tender / Lantikan Jawatankuasa) and committees not yet completed & notified
+		if ($statusProcessId <= \App\Support\TenderProcessStatus::CIPTA_TENDER && !$this->hasCompleteJawatankuasa()) {
+			if ($this->hasAnyJawatankuasa()) {
+				return 'Draf Pelantikan Jawatankuasa';
+			}
+			return 'Tiada Jawatan Kuasa';
+		}
+
+		if (!$this->hasCompleteJawatankuasa() && $statusProcessId < \App\Support\TenderProcessStatus::PELANTIKAN_JAWATANKUASA) {
+			if ($this->hasAnyJawatankuasa()) {
+				return 'Draf Pelantikan Jawatankuasa';
+			}
 			return 'Tiada Jawatan Kuasa';
 		}
 
@@ -1836,7 +1849,6 @@ class Tender extends Model
 	public function hasCompleteJawatankuasa()
 	{
 		$requiredJenis = \App\Models\Jawatankuasa::requiredJenisForPeringkat((int) $this->tender_peringkat);
-		$minRequirements = \App\Models\Jawatankuasa::minimumRequirements();
 		$tableName = DB::getSchemaBuilder()->hasTable('jawatankuasas') ? 'jawatankuasas' : 'jawatankuasa';
 
 		$jawatankuasas = DB::table($tableName)
@@ -1846,7 +1858,6 @@ class Tender extends Model
 			->get(['jenis_jawatankuasa', 'peranan', 'user_id', 'dihantar_pemakluman_pada']);
 
 		foreach ($requiredJenis as $jenis) {
-			$req = $minRequirements[$jenis] ?? ['pengerusi' => 1, 'ahli' => 2];
 			$jenisRecords = $jawatankuasas->where('jenis_jawatankuasa', $jenis);
 
 			$pengerusiCount = $jenisRecords->filter(function ($row) {
@@ -1857,7 +1868,7 @@ class Tender extends Model
 				return (string) $row->peranan === \App\Models\Jawatankuasa::PERANAN_AHLI && !empty($row->user_id);
 			})->count();
 
-			if ($pengerusiCount < $req['pengerusi'] || $ahliCount < $req['ahli']) {
+			if (!\App\Models\Jawatankuasa::satisfiesRequirement($jenis, $pengerusiCount, $ahliCount)) {
 				return false;
 			}
 		}
@@ -1872,6 +1883,15 @@ class Tender extends Model
 		}
 
 		return true;
+	}
+
+	public function hasAnyJawatankuasa(): bool
+	{
+		$tableName = DB::getSchemaBuilder()->hasTable('jawatankuasas') ? 'jawatankuasas' : 'jawatankuasa';
+		return DB::table($tableName)
+			->where('tender_id', $this->id)
+			->whereNotNull('user_id')
+			->exists();
 	}
 
 	public function getNegeriListExist()

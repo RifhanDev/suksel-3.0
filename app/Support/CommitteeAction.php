@@ -46,8 +46,8 @@ class CommitteeAction
             return '';
         }
 
-        // Proses sudah bermula atau selesai — tiada butang.
-        if ($tender->status !== 'Tiada Jawatan Kuasa') {
+        // Proses sudah selesai pelantikan jawatankuasa — tiada butang.
+        if ($tender->hasCompleteJawatankuasa() || (int) ($tender->status_process_id ?? 0) >= \App\Support\TenderProcessStatus::PELANTIKAN_JAWATANKUASA) {
             return '';
         }
 
