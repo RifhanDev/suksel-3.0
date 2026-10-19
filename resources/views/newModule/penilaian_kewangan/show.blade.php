@@ -883,7 +883,7 @@
                             </svg>
                         </div>
                         <div class="flex-shrink-0">
-                            <span class="d-block text-uppercase fw-semibold" style="font-size: 0.62rem; letter-spacing: 0.06em; color: #6b7280;">Tajuk / Dokumen</span>
+                            <span class="d-block text-uppercase fw-semibold" style="font-size: 0.62rem; letter-spacing: 0.06em; color: #6b7280;">Tajuk / Dokumenssss</span>
                             <h6 id="modalDocTitle" class="fw-bold text-dark mb-0" style="font-size: 0.95rem;">Perkhidmatan Penilaian Forensik Ke atas Sistem XXXX</h6>
                         </div>
                         <div class="mx-3 align-self-stretch" style="width: 1px; background: #d1d5db;"></div>
