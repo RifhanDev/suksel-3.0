@@ -424,13 +424,11 @@ class JawatankuasaController extends Controller
         }
 
         $requiredJenis = Jawatankuasa::requiredJenisForPeringkat((int) $tender->tender_peringkat);
-        $minRequirements = Jawatankuasa::minimumRequirements();
 
         $grouped = $members->groupBy('jenis_jawatankuasa');
 
         foreach ($requiredJenis as $jenis) {
             $tabMembers = $grouped->get($jenis, collect());
-            $req = $minRequirements[$jenis] ?? ['pengerusi' => 1, 'ahli' => 2];
 
             $pengerusiCount = $tabMembers->filter(function ($member) {
                 return (string) $member->peranan === Jawatankuasa::PERANAN_PENGERUSI
@@ -442,7 +440,7 @@ class JawatankuasaController extends Controller
                     && !empty($member->user_id);
             })->count();
 
-            if ($pengerusiCount < $req['pengerusi'] || $ahliCount < $req['ahli']) {
+            if (!Jawatankuasa::satisfiesRequirement($jenis, $pengerusiCount, $ahliCount)) {
                 return response()->json([
                     'message' => 'Jawatan Kuasa Tidak Mencukupi',
                 ], 422);

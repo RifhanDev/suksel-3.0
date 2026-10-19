@@ -520,8 +520,11 @@ class OrganizationUnitsController extends Controller
 					return sprintf('RM %.2f', $tender->price);
 				})
 				->addColumn('status', function ($tender) {
-					if ($tender->status === 'Tiada Jawatan Kuasa' && auth()->check() && auth()->user()->ability([], ['committee:create'])) {
-						return '<a href="/pelantikan-jawatankuasa?tender=' . $tender->uuid . '" class="btn btn-sm btn-info rounded-8 px-3 text-nowrap">Lantik Jawatan Kuasa</a>';
+					if (in_array($tender->status, ['Tiada Jawatan Kuasa', 'Draf Pelantikan Jawatankuasa']) && auth()->check() && auth()->user()->ability([], ['committee:create'])) {
+						$p = $tender->tender_peringkat ?? null;
+						$url = ((int) $p === 1) ? '/pelantikan-jawatankuasa-1-peringkat?tender=' . $tender->uuid : '/pelantikan-jawatankuasa?tender=' . $tender->uuid;
+						$btnText = $p ? 'Sambung Proses Lantikan' : 'Lantik Jawatan Kuasa';
+						return '<a href="' . $url . '" class="btn btn-sm btn-info rounded-8 px-3 text-nowrap">' . $btnText . '</a>';
 					}
 					if ($tender->approver_id) {
 						return '<span class="badge-status badge-status-success">Disiarkan</span>';

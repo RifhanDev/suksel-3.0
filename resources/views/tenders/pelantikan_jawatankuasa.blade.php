@@ -808,6 +808,7 @@
 
 						const rows = tabPane.querySelectorAll('.committee-tbody tr');
 						let pengerusiCount = 0;
+						let setiausahaCount = 0;
 						let ahliCount = 0;
 
 						rows.forEach(function(tr) {
@@ -820,6 +821,8 @@
 							const perananVal = perananSelect ? String(perananSelect.value) : '';
 							if (perananVal === '1') {
 								pengerusiCount++;
+							} else if (perananVal === '2') {
+								setiausahaCount++;
 							} else if (perananVal === '3') {
 								ahliCount++;
 							}
@@ -867,35 +870,51 @@
 						const overlayText = document.getElementById('overlayText');
 
 						overlay.classList.add('active');
-						overlayText.textContent = 'Menghantar pemakluman...';
+						overlayText.textContent = 'Menyimpan draf dan menghantar pemakluman...';
 
+						// Auto-save all draft rows first to ensure DB is up to date
+						const draftFormData = buildDraftFormDataAll();
 						$.ajax({
-							url: hantarPemaklumanUrl,
+							url: saveDraftUrl,
 							type: 'POST',
-							timeout: 300000,
-							data: {
-								_token: $('meta[name=_token]').attr('content'),
-								tender_uuid: tenderUuid,
-								tarikh_mesyuarat: meeting.tarikh_mesyuarat,
-								masa_mesyuarat: meeting.masa_mesyuarat,
-								lokasi_mesyuarat: meeting.lokasi_mesyuarat,
-							},
-							dataType: 'json',
-							success: function(res) {
-								overlay.classList.remove('active');
-								Swal.fire({
-									icon: 'success',
-									title: 'Pemakluman Dihantar',
-									text: res.message || 'Pemakluman berjaya dihantar kepada ahli jawatankuasa.',
-									confirmButtonText: 'Selesai',
-									confirmButtonColor: '#16a34a'
-								}).then(() => {
-									window.location.href = '/tender';
+							data: draftFormData,
+							processData: false,
+							contentType: false,
+							success: function() {
+								overlayText.textContent = 'Menghantar pemakluman...';
+								$.ajax({
+									url: hantarPemaklumanUrl,
+									type: 'POST',
+									timeout: 300000,
+									data: {
+										_token: $('meta[name=_token]').attr('content'),
+										tender_uuid: tenderUuid,
+										tarikh_mesyuarat: meeting.tarikh_mesyuarat,
+										masa_mesyuarat: meeting.masa_mesyuarat,
+										lokasi_mesyuarat: meeting.lokasi_mesyuarat,
+									},
+									dataType: 'json',
+									success: function(res) {
+										overlay.classList.remove('active');
+										Swal.fire({
+											icon: 'success',
+											title: 'Pemakluman Dihantar',
+											text: res.message || 'Pemakluman berjaya dihantar kepada ahli jawatankuasa.',
+											confirmButtonText: 'Selesai',
+											confirmButtonColor: '#16a34a'
+										}).then(() => {
+											window.location.href = '/tender';
+										});
+									},
+									error: function(xhr) {
+										overlay.classList.remove('active');
+										handleAjaxError(xhr, 'Hantar pemakluman gagal. Sila cuba semula.');
+									}
 								});
 							},
 							error: function(xhr) {
 								overlay.classList.remove('active');
-								handleAjaxError(xhr, 'Hantar pemakluman gagal. Sila cuba semula.');
+								handleAjaxError(xhr, 'Gagal menyimpan draf sebelum menghantar pemakluman. Sila cuba semula.');
 							}
 						});
 					});
