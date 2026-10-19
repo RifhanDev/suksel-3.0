@@ -48,6 +48,19 @@ class Jawatankuasa extends Model
             : ['spec', 'open', 'tech', 'fin'];
     }
 
+    /**
+     * Determine if a committee tab satisfies the minimum appointment requirement:
+     * - Must have at least minPengerusi (1 Pengerusi).
+     * - Must have at least minAhli (2 Ahli for spec/tech/fin/eval; 1 Ahli for open).
+     * Setiausaha is optional for all committee types and does not substitute for an Ahli.
+     */
+    public static function satisfiesRequirement(string $jenis, int $pengerusiCount, int $ahliCount): bool
+    {
+        $min = self::minimumRequirements()[$jenis] ?? ['pengerusi' => 1, 'ahli' => 2];
+
+        return $pengerusiCount >= $min['pengerusi'] && $ahliCount >= $min['ahli'];
+    }
+
     protected $table = 'jawatankuasas';
 
     protected $fillable = [
