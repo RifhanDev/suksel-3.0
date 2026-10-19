@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class FinancialChecklistItem extends Model
 {
@@ -33,5 +34,10 @@ class FinancialChecklistItem extends Model
     public function header(): BelongsTo
     {
         return $this->belongsTo(FinancialChecklistHeader::class, 'financial_checklist_header_id');
+    }
+
+    public function files(): HasMany
+    {
+        return $this->hasMany(FinancialChecklistFile::class);
     }
 }

@@ -43,4 +43,9 @@ class FinancialChecklistHeader extends Model
     {
         return $this->hasMany(FinancialChecklistItem::class)->orderBy('sort_order');
     }
+
+    public function files(): HasMany
+    {
+        return $this->hasMany(FinancialChecklistFile::class);
+    }
 }

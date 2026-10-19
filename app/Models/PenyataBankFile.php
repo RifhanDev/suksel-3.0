@@ -12,6 +12,7 @@ class PenyataBankFile extends Model
     protected $fillable = [
         'uuid',
         'penyata_bank_id',
+        'vendor_id',
         'file_type',
         'original_name',
         'stored_name',
@@ -29,5 +30,10 @@ class PenyataBankFile extends Model
     public function penyataBank()
     {
         return $this->belongsTo(PenyataBank::class);
+    }
+
+    public function vendor()
+    {
+        return $this->belongsTo(\App\Vendor::class, 'vendor_id');
     }
 }

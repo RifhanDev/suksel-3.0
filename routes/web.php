@@ -604,6 +604,7 @@ Route::middleware(['auth'])->group(function () {
 
 	Route::get('/prestasi-kerja-semasa-petender/{tenderUuid}', [TenderPrestasiKerjaController::class, 'index'])->name('prestasiKerjaSemasa');
 	Route::post('/prestasi-kerja-semasa-petender/{tenderUuid}', [TenderPrestasiKerjaController::class, 'store'])->name('prestasiKerjaSemasa.store');
+	Route::get('/prestasi-kerja-semasa-petender/{tenderUuid}/fail/{fileUuid}/download', [TenderPrestasiKerjaController::class, 'downloadFile'])->name('prestasiKerjaSemasa.downloadFile')->middleware(['auth']);
 	Route::delete('/prestasi-kerja-semasa-petender/fail/{fileUuid}', [TenderPrestasiKerjaController::class, 'deleteFile'])->name('prestasiKerjaSemasa.deleteFile');
 	//////////////////////////
 

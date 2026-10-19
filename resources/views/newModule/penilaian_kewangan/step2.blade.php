@@ -459,19 +459,7 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('#penyata-bank .btn-sebelumnya').forEach(function(btn) {
-        btn.addEventListener('click', function() {
-            const tab = document.querySelector('#pematuhan-tab');
-            if (tab) tab.click();
-        });
-    });
-
-    document.querySelectorAll('#penyata-bank .btn-seterusnya').forEach(function(btn) {
-        btn.addEventListener('click', function() {
-            const tab = document.querySelector('#penilaian-tab');
-            if (tab) tab.click();
-        });
-    });
+    // Note: Step 2 sub-tab navigation, sebelumnya, and rumusan-2 confirmation are centrally handled in show.blade.php
 
     function parseMoney(str) {
         return parseFloat(String(str || '').replace(/,/g, '')) || 0;
@@ -533,20 +521,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    const btnStep2SimpanPenyata = document.getElementById('btnStep2SimpanPenyataBank');
-    const elModalButiranStep2 = document.getElementById('modalButiranCadanganKewanganStep2');
-    const elModalCadanganStep2 = document.getElementById('modalPenilaianCadanganKewanganStep2');
-    if (btnStep2SimpanPenyata && elModalButiranStep2 && elModalCadanganStep2 && typeof bootstrap !== 'undefined') {
-        btnStep2SimpanPenyata.addEventListener('click', function() {
-            const modalButiran = bootstrap.Modal.getInstance(elModalButiranStep2)
-                || new bootstrap.Modal(elModalButiranStep2);
-            const modalCadangan = bootstrap.Modal.getInstance(elModalCadanganStep2)
-                || new bootstrap.Modal(elModalCadanganStep2);
-            elModalButiranStep2.addEventListener('hidden.bs.modal', function reopenSenarai() {
-                modalCadangan.show();
-            }, { once: true });
-            modalButiran.hide();
-        });
-    }
+    // Note: Modal 2 validation, AJAX save, and reopening Modal 1 are centrally handled in show.blade.php
 });
 </script>

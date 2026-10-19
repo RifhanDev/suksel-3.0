@@ -38,6 +38,8 @@ class StosFormFileController extends Controller
         if ($type === 'pengalaman-kerja') {
             $localDoc = \App\Models\TenderPengalamanKerjaDokumen::where('uuid', $fileUuid)->first();
             if ($localDoc) {
+                $this->assertCanAccessTenderFile($tender, $localDoc->vendor_id ? (int) $localDoc->vendor_id : null);
+
                 return StosStoredFile::response([
                     'uuid'          => $localDoc->uuid,
                     'original_name' => $localDoc->original_name,
@@ -48,6 +50,8 @@ class StosFormFileController extends Controller
         } elseif ($type === 'kerja-dalam-tangan') {
             $localDoc = \App\Models\TenderKerjaDalamTanganDokumen::where('uuid', $fileUuid)->first();
             if ($localDoc) {
+                $this->assertCanAccessTenderFile($tender, $localDoc->vendor_id ? (int) $localDoc->vendor_id : null);
+
                 return StosStoredFile::response([
                     'uuid'          => $localDoc->uuid,
                     'original_name' => $localDoc->original_name,
@@ -71,6 +75,8 @@ class StosFormFileController extends Controller
                 $dokumens = $p->payload['dokumens'] ?? [];
                 foreach ($dokumens as $d) {
                     if (($d['uuid'] ?? '') === $fileUuid) {
+                        $this->assertCanAccessTenderFile($tender, $p->vendor_id ? (int) $p->vendor_id : null);
+
                         return StosStoredFile::response([
                             'uuid'          => $d['uuid'],
                             'original_name' => $d['original_name'] ?? $d['name'] ?? 'Dokumen',

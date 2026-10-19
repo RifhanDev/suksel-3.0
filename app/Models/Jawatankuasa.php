@@ -8,6 +8,46 @@ use Illuminate\Database\Eloquent\Model;
 
 class Jawatankuasa extends Model
 {
+    public const PERANAN_PENGERUSI = '1';
+    public const PERANAN_SETIAUSAHA = '2';
+    public const PERANAN_AHLI = '3';
+
+    /**
+     * Minimum appointments required per committee:
+     * - spec: 1 Pengerusi + 2 Ahli
+     * - open: 1 Pengerusi + 1 Ahli
+     * - tech: 1 Pengerusi + 2 Ahli
+     * - fin:  1 Pengerusi + 2 Ahli
+     * - eval: 1 Pengerusi + 2 Ahli
+     * Setiausaha is optional for all committees.
+     *
+     * @return array<string, array{pengerusi: int, ahli: int}>
+     */
+    public static function minimumRequirements(): array
+    {
+        return [
+            'spec' => ['pengerusi' => 1, 'ahli' => 2],
+            'open' => ['pengerusi' => 1, 'ahli' => 1],
+            'tech' => ['pengerusi' => 1, 'ahli' => 2],
+            'fin'  => ['pengerusi' => 1, 'ahli' => 2],
+            'eval' => ['pengerusi' => 1, 'ahli' => 2],
+        ];
+    }
+
+    /**
+     * Required committee types based on tender peringkat.
+     * 1 Peringkat: spec, open, eval
+     * 2 Peringkat: spec, open, tech, fin
+     *
+     * @return array<int, string>
+     */
+    public static function requiredJenisForPeringkat(int $peringkat): array
+    {
+        return $peringkat === 1
+            ? ['spec', 'open', 'eval']
+            : ['spec', 'open', 'tech', 'fin'];
+    }
+
     protected $table = 'jawatankuasas';
 
     protected $fillable = [

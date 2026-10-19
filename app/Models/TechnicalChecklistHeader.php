@@ -43,4 +43,9 @@ class TechnicalChecklistHeader extends Model
     {
         return $this->hasMany(TechnicalChecklistItem::class)->orderBy('sort_order');
     }
+
+    public function files(): HasMany
+    {
+        return $this->hasMany(TechnicalChecklistFile::class);
+    }
 }

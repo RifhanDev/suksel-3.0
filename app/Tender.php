@@ -1835,11 +1835,8 @@ class Tender extends Model
 
 	public function hasCompleteJawatankuasa()
 	{
-		$requiredJenis   = ['spec', 'open', 'tech', 'fin'];
-		if ($this->tender_peringkat == 1) {
-			$requiredJenis = ['spec', 'open', 'eval'];
-		}
-		$requiredPeranan = ['1', '2', '3'];
+		$requiredJenis = \App\Models\Jawatankuasa::requiredJenisForPeringkat((int) $this->tender_peringkat);
+		$minRequirements = \App\Models\Jawatankuasa::minimumRequirements();
 		$tableName = DB::getSchemaBuilder()->hasTable('jawatankuasas') ? 'jawatankuasas' : 'jawatankuasa';
 
 		$jawatankuasas = DB::table($tableName)
@@ -1849,21 +1846,20 @@ class Tender extends Model
 			->get(['jenis_jawatankuasa', 'peranan', 'user_id', 'dihantar_pemakluman_pada']);
 
 		foreach ($requiredJenis as $jenis) {
+			$req = $minRequirements[$jenis] ?? ['pengerusi' => 1, 'ahli' => 2];
 			$jenisRecords = $jawatankuasas->where('jenis_jawatankuasa', $jenis);
 
-			foreach ($requiredPeranan as $peranan) {
-				$hasPeranan = $jenisRecords->contains(function ($row) use ($peranan) {
-					return (string) $row->peranan === $peranan && !empty($row->user_id);
-				});
+			$pengerusiCount = $jenisRecords->filter(function ($row) {
+				return (string) $row->peranan === \App\Models\Jawatankuasa::PERANAN_PENGERUSI && !empty($row->user_id);
+			})->count();
 
-				if (!$hasPeranan) {
-					return false;
-				}
+			$ahliCount = $jenisRecords->filter(function ($row) {
+				return (string) $row->peranan === \App\Models\Jawatankuasa::PERANAN_AHLI && !empty($row->user_id);
+			})->count();
+
+			if ($pengerusiCount < $req['pengerusi'] || $ahliCount < $req['ahli']) {
+				return false;
 			}
-
-			// if ($jenisRecords->pluck('user_id')->filter()->unique()->count() < 3) {
-			// 	return false;
-			// }
 		}
 
 		// All members must have been notified (dihantar_pemakluman_pada not null)

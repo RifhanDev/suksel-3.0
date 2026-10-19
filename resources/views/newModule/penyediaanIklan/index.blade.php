@@ -208,6 +208,35 @@
 @endsection
 
 @section('scripts')
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+@if (session('error'))
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const errorMsg = @json(session('error'));
+            const isInfo = errorMsg.includes('tidak memerlukan pelantikan');
+            Swal.fire({
+                icon: isInfo ? 'info' : 'error',
+                title: isInfo ? 'Makluman Pelantikan' : 'Ralat',
+                text: errorMsg,
+                confirmButtonText: 'Faham',
+                confirmButtonColor: '#1e293b'
+            });
+        });
+    </script>
+@endif
+@if (session('success'))
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            Swal.fire({
+                icon: 'success',
+                title: 'Berjaya',
+                text: @json(session('success')),
+                confirmButtonText: 'OK',
+                confirmButtonColor: '#16a34a'
+            });
+        });
+    </script>
+@endif
 @if ($tender->showDokumenSenaraiTab())
     @include('tenders.forms._online_form_modal')
 @endif
