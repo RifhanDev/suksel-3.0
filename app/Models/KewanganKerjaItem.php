@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class KewanganKerjaItem extends Model
 {
@@ -33,5 +34,10 @@ class KewanganKerjaItem extends Model
     public function header(): BelongsTo
     {
         return $this->belongsTo(KewanganKerjaHeader::class, 'kewangan_kerja_header_id');
+    }
+
+    public function files(): HasMany
+    {
+        return $this->hasMany(KewanganKerjaFile::class, 'kewangan_kerja_item_id');
     }
 }

@@ -3,11 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\UpdatesTenderProcessAfterChecklistSubmit;
+use App\Models\FinancialChecklistFile;
+use App\Models\FinancialChecklistHeader;
+use App\Models\FinancialChecklistItem;
 use App\Models\Tender;
 use App\Services\StosBackendClient;
 use App\Support\PenyediaanIklanNavigation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class FinancialChecklistController extends Controller
 {
@@ -22,20 +27,37 @@ class FinancialChecklistController extends Controller
             ->where('tenders.uuid', $tenderUuid)
             ->firstOrFail();
 
-        $apiUrl  = $this->url('financial-checklists/' . $tenderUuid);
-        $response = $this->api()->get($apiUrl);
-
         $checklistData = null;
 
-        if ($response->successful()) {
-            $checklistData = $response->json('data');
-        } else {
-            Log::warning('FinancialChecklistController@index: API request failed', [
+        try {
+            $apiUrl  = $this->url('financial-checklists/' . $tenderUuid);
+            $response = $this->api()->get($apiUrl);
+
+            if ($response->successful()) {
+                $checklistData = $response->json('data');
+            } else {
+                Log::warning('FinancialChecklistController@index: API request failed', [
+                    'tender_uuid' => $tenderUuid,
+                    'api_url'     => $apiUrl,
+                    'status'      => $response->status(),
+                    'body'        => $response->body(),
+                ]);
+            }
+        } catch (\Throwable $e) {
+            Log::warning('FinancialChecklistController@index: STOS API connection failed', [
                 'tender_uuid' => $tenderUuid,
-                'api_url'     => $apiUrl,
-                'status'      => $response->status(),
-                'body'        => $response->body(),
+                'error'       => $e->getMessage(),
             ]);
+        }
+
+        if (! $checklistData) {
+            $header = FinancialChecklistHeader::where('tender_id', $tender->id)
+                ->with(['items.files', 'files'])
+                ->first();
+
+            if ($header) {
+                $checklistData = $this->serializeLocalChecklist($header, $tender);
+            }
         }
 
         if (!empty($checklistData['items']) && is_array($checklistData['items'])) {
@@ -197,36 +219,150 @@ class FinancialChecklistController extends Controller
     {
         $this->ensureAccess();
 
-        $uploadedFile = $request->file('file');
+        $request->validate([
+            'file' => ['required', 'file', 'max:10240'],
+            'file_type' => ['nullable', 'string', 'max:50'],
+            'checklist_item_uuid' => ['nullable', 'string'],
+        ]);
 
-        $response = $this->api()->attach(
-            'file',
-            $uploadedFile->get(),
-            $uploadedFile->getClientOriginalName()
-        )->post($this->url('financial-checklists/' . $tenderUuid . '/files'), $request->except(['_token', 'file']));
+        $tender = Tender::where('uuid', $tenderUuid)->firstOrFail();
 
-        if ($response->successful()) {
-            $data = $response->json('data');
-            if (! empty($data['path']) && $uploadedFile) {
-                try {
-                    $cleanPath = ltrim(str_replace('public/', '', (string) $data['path']), '/');
-                    \Illuminate\Support\Facades\Storage::disk('public')->put($cleanPath, file_get_contents($uploadedFile->getRealPath()));
-                } catch (\Throwable $e) {
-                    Log::warning('FinancialChecklistController@uploadFile: Failed to mirror file to SUKSel 3.0 storage', ['error' => $e->getMessage()]);
-                }
+        $header = FinancialChecklistHeader::firstOrCreate(
+            ['tender_id' => $tender->id],
+            [
+                'uuid' => (string) Str::uuid(),
+                'created_by' => auth()->id(),
+            ]
+        );
+
+        $item = null;
+        $itemUuid = $request->input('checklist_item_uuid');
+        if (!empty($itemUuid)) {
+            $item = FinancialChecklistItem::where('financial_checklist_header_id', $header->id)
+                ->where('uuid', $itemUuid)
+                ->first();
+
+            if (!$item) {
+                $item = FinancialChecklistItem::where('uuid', $itemUuid)->first();
             }
         }
 
-        return response()->json($response->json(), $response->status());
+        $uploadedFile = $request->file('file');
+        $safeOriginalName = preg_replace('/[^A-Za-z0-9._-]/', '_', $uploadedFile->getClientOriginalName());
+        $storedName = now()->format('YmdHis') . '_' . Str::uuid() . '_' . $safeOriginalName;
+        $path = $uploadedFile->storeAs('financial-checklists/' . $tender->uuid, $storedName, 'public');
+
+        $file = FinancialChecklistFile::create([
+            'uuid' => (string) Str::uuid(),
+            'financial_checklist_header_id' => $header->id,
+            'financial_checklist_item_id' => $item?->id,
+            'file_type' => $request->input('file_type') ?: 'support',
+            'original_name' => $uploadedFile->getClientOriginalName(),
+            'stored_name' => $storedName,
+            'path' => $path,
+            'mime_type' => $uploadedFile->getClientMimeType(),
+            'size' => $uploadedFile->getSize() ?: 0,
+            'uploaded_by' => auth()->id(),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Fail berjaya dimuat naik ke storan SUKSel 3.0.',
+            'data' => $this->serializeFile($file, $tender, $item),
+        ], 200);
     }
 
     public function deleteFile(string $fileUuid)
     {
         $this->ensureAccess();
 
-        $response = $this->api()->delete($this->url('financial-checklist-files/' . $fileUuid));
+        $file = FinancialChecklistFile::where('uuid', $fileUuid)->first();
+        if ($file) {
+            if ($file->path && Storage::disk('public')->exists($file->path)) {
+                Storage::disk('public')->delete($file->path);
+            }
+            $file->delete();
 
-        return response()->json($response->json(), $response->status());
+            return response()->json([
+                'success' => true,
+                'message' => 'Fail berjaya dipadam dari storan SUKSel 3.0.',
+            ]);
+        }
+
+        // Backward compatibility fallback if row only exists on STOS API
+        try {
+            $response = $this->api()->delete($this->url('financial-checklist-files/' . $fileUuid));
+            if ($response->successful()) {
+                return response()->json($response->json(), $response->status());
+            }
+        } catch (\Throwable $e) {
+            Log::warning('FinancialChecklistController@deleteFile: STOS API fallback failed', ['error' => $e->getMessage()]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Fail dipadam.',
+        ]);
+    }
+
+    private function serializeFile(FinancialChecklistFile $file, ?Tender $tender = null, ?FinancialChecklistItem $item = null): array
+    {
+        $tenderId = $tender?->id ?? $file->header?->tender_id ?? 0;
+        $downloadUrl = $tenderId > 0
+            ? route('tenderChecklist.download', [
+                'tender' => $tenderId,
+                'section' => 'financial',
+                'fileUuid' => $file->uuid,
+            ])
+            : Storage::disk('public')->url($file->path);
+
+        return [
+            'uuid' => $file->uuid,
+            'checklist_item_uuid' => $item?->uuid ?? $file->item?->uuid,
+            'file_type' => $file->file_type,
+            'original_name' => $file->original_name,
+            'stored_name' => $file->stored_name,
+            'path' => $file->path,
+            'mime_type' => $file->mime_type,
+            'size' => (int) $file->size,
+            'url' => $downloadUrl,
+            'uploaded_by' => $file->uploaded_by,
+            'created_at' => $file->created_at?->toISOString(),
+        ];
+    }
+
+    private function serializeLocalChecklist(FinancialChecklistHeader $header, Tender $tender): array
+    {
+        return [
+            'uuid' => $header->uuid,
+            'tender_uuid' => $tender->uuid,
+            'max_score' => (float) $header->max_score,
+            'passing_score' => (float) $header->passing_score,
+            'passing_percentage' => (float) $header->passing_percentage,
+            'status' => $header->status,
+            'submitted_at' => optional($header->submitted_at)->toIso8601String(),
+            'items' => $header->items->map(function ($item) use ($tender) {
+                return [
+                    'uuid' => $item->uuid,
+                    'source_type' => $item->source_type,
+                    'title' => $item->title,
+                    'mechanism' => $item->mechanism,
+                    'vendor_action' => $item->vendor_action,
+                    'score' => (float) $item->score,
+                    'status' => $item->status,
+                    'sort_order' => (int) $item->sort_order,
+                    'standard_item_uuid' => null,
+                    'files' => $item->files->map(fn ($f) => $this->serializeFile($f, $tender, $item))->values()->all(),
+                ];
+            })->values()->all(),
+            'files' => $header->files
+                ->filter(fn ($file) => $file->financial_checklist_item_id === null)
+                ->map(fn ($file) => $this->serializeFile($file, $tender))
+                ->values()
+                ->all(),
+            'created_at' => optional($header->created_at)->toIso8601String(),
+            'updated_at' => optional($header->updated_at)->toIso8601String(),
+        ];
     }
 
     private function ensureAccess(): void

@@ -98,7 +98,8 @@ class VendorTenderDokumenController extends Controller
                 if ($tenderId > 0) {
                     $tender = Tender::query()->find($tenderId);
                     if ($tender) {
-                        $this->assertCanAccessTenderFile($tender, null);
+                        $ownerVendorId = $pbFile->vendor_id ? (int) $pbFile->vendor_id : null;
+                        $this->assertCanAccessTenderFile($tender, $ownerVendorId);
                     }
                 }
 
@@ -179,33 +180,11 @@ class VendorTenderDokumenController extends Controller
                 if ($tenderId > 0) {
                     $tender = Tender::query()->find($tenderId);
                     if ($tender) {
-                        $this->assertCanAccessTenderFile($tender, null);
+                        $this->assertCanAccessTenderFile($tender, $pbFile->vendor_id ? (int) $pbFile->vendor_id : null);
                     }
                 }
 
-                $rawPath = ltrim(str_replace('public/', '', (string) $pbFile->path), '/');
-                $candidates = [
-                    storage_path('app/public/' . $rawPath),
-                    storage_path('app/' . $rawPath),
-                    storage_path('app/private/' . $rawPath),
-                    public_path('storage/' . $rawPath),
-                    public_path($rawPath),
-                ];
-                foreach ($candidates as $cand) {
-                    if (is_file($cand)) {
-                        $mime = $pbFile->mime_type ?: (function_exists('mime_content_type') ? mime_content_type($cand) : null) ?: 'application/pdf';
-                        $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
-                        $isPdf = ($ext === 'pdf' || str_contains(strtolower($mime), 'pdf'));
-                        $disposition = $isPdf ? 'inline' : 'attachment';
-
-                        return response()->file($cand, [
-                            'Content-Type' => $mime,
-                            'Content-Disposition' => $disposition . '; filename="' . addslashes($name) . '"',
-                        ]);
-                    }
-                }
-
-                abort(404, 'Fail penyata bank tidak dijumpai.');
+                return $this->serveCandidateFile((string) $pbFile->path, $name, $pbFile->mime_type);
             }
 
             $vFile = \App\Models\TenderVendorDokumenFile::where('uuid', $uuid)->first();
@@ -213,30 +192,84 @@ class VendorTenderDokumenController extends Controller
                 $tender = Tender::query()->findOrFail($vFile->tender_id);
                 $this->assertCanAccessTenderFile($tender, (int) $vFile->vendor_id);
 
-                $absolutePath = $vFile->absolutePath();
-                if ($absolutePath && is_file($absolutePath)) {
-                    $mime = $vFile->mime_type ?: (function_exists('mime_content_type') ? mime_content_type($absolutePath) : null) ?: 'application/octet-stream';
-                    $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
-                    $isPdf = ($ext === 'pdf' || str_contains(strtolower($mime), 'pdf'));
-                    $disposition = $isPdf ? 'inline' : 'attachment';
+                return $this->serveCandidateFile((string) $vFile->path, $name, $vFile->mime_type);
+            }
 
-                    return response()->file($absolutePath, [
-                        'Content-Type' => $mime,
-                        'Content-Disposition' => $disposition . '; filename="' . addslashes($name) . '"',
-                    ]);
+            $pkDoc = \App\Models\TenderPengalamanKerjaDokumen::where('uuid', $uuid)->first();
+            if ($pkDoc) {
+                $tender = Tender::where('uuid', $pkDoc->tender_uuid)->first();
+                if ($tender) {
+                    $this->assertCanAccessTenderFile($tender, $pkDoc->vendor_id ? (int) $pkDoc->vendor_id : null);
                 }
 
-                abort(404, 'Fail dokumen tidak dijumpai.');
+                return $this->serveCandidateFile((string) $pkDoc->path, $name, $pkDoc->mime_type);
+            }
+
+            $kdtDoc = \App\Models\TenderKerjaDalamTanganDokumen::where('uuid', $uuid)->first();
+            if ($kdtDoc) {
+                $tender = Tender::where('uuid', $kdtDoc->tender_uuid)->first();
+                if ($tender) {
+                    $this->assertCanAccessTenderFile($tender, $kdtDoc->vendor_id ? (int) $kdtDoc->vendor_id : null);
+                }
+
+                return $this->serveCandidateFile((string) $kdtDoc->path, $name, $kdtDoc->mime_type);
+            }
+
+            $ktDoc = \App\Models\TenderKakitanganTeknikalDokumen::where('uuid', $uuid)->first();
+            if ($ktDoc) {
+                $tender = Tender::where('uuid', $ktDoc->tender_uuid)->first();
+                if ($tender) {
+                    $this->assertCanAccessTenderFile($tender, $ktDoc->vendor_id ? (int) $ktDoc->vendor_id : null);
+                }
+
+                return $this->serveCandidateFile((string) $ktDoc->path, $name, $ktDoc->mime_type);
+            }
+
+            $prDoc = \App\Models\TenderPrestasiKerjaDokumen::with('prestasiKerja')->where('uuid', $uuid)->first();
+            if ($prDoc) {
+                $tender = Tender::find($prDoc->prestasiKerja?->tender_id);
+                if ($tender) {
+                    $this->assertCanAccessTenderFile($tender, $prDoc->prestasiKerja?->vendor_id ? (int) $prDoc->prestasiKerja->vendor_id : null);
+                }
+
+                return $this->serveCandidateFile((string) $prDoc->path, $name, $prDoc->mime_type);
             }
 
             abort(404, 'Fail tidak dijumpai.');
         }
 
-        if ($path === '') {
+        if ($path === '' || str_contains($path, '..')) {
             abort(404, 'Fail tidak dijumpai.');
         }
 
-        $cleanPath = ltrim(str_replace('public/', '', $path), '/');
+        $user = Auth::user();
+        $isStaff = $this->userCanReviewTenderFiles($user);
+
+        if (! $isStaff) {
+            $vendorId = (int) ($user->vendor_id ?? 0);
+            if ($vendorId <= 0) {
+                abort(403, 'Akses fail tidak dibenarkan.');
+            }
+
+            $cleanPath = ltrim(str_replace(['\\', 'public/'], ['/', ''], $path), '/');
+            if (! str_starts_with($cleanPath, 'uploads/')) {
+                abort(403, 'Akses fail tidak dibenarkan.');
+            }
+
+            // If the path contains a subfolder for vendor_id, ensure it matches the authenticated vendor
+            if (preg_match('#uploads/[^/]+/[^/]+/(\d+)/#', $cleanPath, $matches)) {
+                if ((int) $matches[1] !== $vendorId) {
+                    abort(403, 'Akses fail tidak dibenarkan.');
+                }
+            }
+        }
+
+        return $this->serveCandidateFile($path, $name);
+    }
+
+    private function serveCandidateFile(string $rawPath, string $name, ?string $mime = null)
+    {
+        $cleanPath = ltrim(str_replace(['\\', 'public/'], ['/', ''], $rawPath), '/');
         $candidates = [
             storage_path('app/public/' . $cleanPath),
             storage_path('app/' . $cleanPath),
@@ -247,19 +280,19 @@ class VendorTenderDokumenController extends Controller
 
         foreach ($candidates as $cand) {
             if (is_file($cand)) {
-                $mime = function_exists('mime_content_type') ? mime_content_type($cand) : 'application/octet-stream';
+                $fileMime = $mime ?: (function_exists('mime_content_type') ? mime_content_type($cand) : null) ?: 'application/octet-stream';
                 $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
-                $isPdf = ($ext === 'pdf' || str_contains(strtolower($mime), 'pdf'));
+                $isPdf = ($ext === 'pdf' || str_contains(strtolower($fileMime), 'pdf'));
                 $disposition = $isPdf ? 'inline' : 'attachment';
 
                 return response()->file($cand, [
-                    'Content-Type' => $mime,
+                    'Content-Type' => $fileMime,
                     'Content-Disposition' => $disposition . '; filename="' . addslashes($name) . '"',
                 ]);
             }
         }
 
-        abort(404, 'Fail tidak dijumpai.');
+        abort(404, 'Fail tidak dijumpai pada storan sistem.');
     }
 
     public function saveKeyIn(Request $request, Tender $tender, string $itemUuid)

@@ -204,6 +204,7 @@
         box-shadow: none !important;
         transform: none !important;
         cursor: not-allowed !important;
+        pointer-events: none !important;
     }
 
     .progress-step.locked .step-label {
@@ -561,11 +562,67 @@ window.type2State = {
     bindEvents() {
         const self = this;
 
-        // Stepper Navigation clicks
-        document.getElementById('pematuhan-tab')?.addEventListener('click', () => self.switchStep(1));
-        document.getElementById('penyata-bank-tab')?.addEventListener('click', () => self.switchStep(2));
-        document.getElementById('penilaian-tab')?.addEventListener('click', () => self.switchStep(3));
-        document.getElementById('laporan-tab')?.addEventListener('click', () => self.switchStep(4));
+        // Stepper Navigation clicks with show.bs.tab validation
+        const stepperTabs = [
+            { id: 'pematuhan-tab', step: 1 },
+            { id: 'penyata-bank-tab', step: 2 },
+            { id: 'penilaian-tab', step: 3 },
+            { id: 'laporan-tab', step: 4 }
+        ];
+
+        stepperTabs.forEach(t => {
+            const btn = document.getElementById(t.id);
+            if (!btn) return;
+
+            btn.addEventListener('show.bs.tab', (e) => {
+                if (t.step > 1 && !self.step1Confirmed) {
+                    e.preventDefault();
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Langkah Terkunci',
+                        text: 'Sila sahkan Langkah 1 (Pematuhan Dokumentasi) terlebih dahulu.',
+                        confirmButtonColor: '#dc2626'
+                    });
+                    return false;
+                }
+                if (t.step > 2 && !self.step2Confirmed) {
+                    e.preventDefault();
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Langkah Terkunci',
+                        text: 'Sila sahkan Langkah 2 (Kemampuan Kewangan) terlebih dahulu.',
+                        confirmButtonColor: '#dc2626'
+                    });
+                    return false;
+                }
+                if (t.step > 3 && !self.step3Confirmed) {
+                    e.preventDefault();
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Langkah Terkunci',
+                        text: 'Sila sahkan Langkah 3 (Penilaian Kerja) terlebih dahulu.',
+                        confirmButtonColor: '#dc2626'
+                    });
+                    return false;
+                }
+            });
+
+            btn.addEventListener('click', (e) => {
+                if ((t.step > 1 && !self.step1Confirmed) ||
+                    (t.step > 2 && !self.step2Confirmed) ||
+                    (t.step > 3 && !self.step3Confirmed)) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    self.switchStep(t.step);
+                    return false;
+                }
+            });
+
+            btn.addEventListener('shown.bs.tab', () => {
+                self.currentStep = t.step;
+                self.updateStepperClasses();
+            });
+        });
 
         // Step 1 confirm checkbox
         document.getElementById('confirmLayakStep1')?.addEventListener('change', function() {
@@ -1026,24 +1083,64 @@ window.type2State = {
         const step3Nav = document.getElementById('step-nav-3');
         const step4Nav = document.getElementById('step-nav-4');
 
+        const step2Btn = document.getElementById('penyata-bank-tab');
+        const step3Btn = document.getElementById('penilaian-tab');
+        const step4Btn = document.getElementById('laporan-tab');
+
         if (this.step1Confirmed) {
             step2Nav?.classList.remove('locked');
+            if (step2Btn) {
+                step2Btn.removeAttribute('aria-disabled');
+                step2Btn.classList.remove('disabled');
+                step2Btn.style.pointerEvents = 'auto';
+                step2Btn.style.cursor = 'pointer';
+            }
         } else {
             step2Nav?.classList.add('locked');
+            if (step2Btn) {
+                step2Btn.setAttribute('aria-disabled', 'true');
+                step2Btn.classList.add('disabled');
+                step2Btn.style.pointerEvents = 'none';
+                step2Btn.style.cursor = 'not-allowed';
+            }
             this.step2Confirmed = false;
         }
 
         if (this.step1Confirmed && this.step2Confirmed) {
             step3Nav?.classList.remove('locked');
+            if (step3Btn) {
+                step3Btn.removeAttribute('aria-disabled');
+                step3Btn.classList.remove('disabled');
+                step3Btn.style.pointerEvents = 'auto';
+                step3Btn.style.cursor = 'pointer';
+            }
         } else {
             step3Nav?.classList.add('locked');
+            if (step3Btn) {
+                step3Btn.setAttribute('aria-disabled', 'true');
+                step3Btn.classList.add('disabled');
+                step3Btn.style.pointerEvents = 'none';
+                step3Btn.style.cursor = 'not-allowed';
+            }
             this.step3Confirmed = false;
         }
 
         if (this.step1Confirmed && this.step2Confirmed && this.step3Confirmed) {
             step4Nav?.classList.remove('locked');
+            if (step4Btn) {
+                step4Btn.removeAttribute('aria-disabled');
+                step4Btn.classList.remove('disabled');
+                step4Btn.style.pointerEvents = 'auto';
+                step4Btn.style.cursor = 'pointer';
+            }
         } else {
             step4Nav?.classList.add('locked');
+            if (step4Btn) {
+                step4Btn.setAttribute('aria-disabled', 'true');
+                step4Btn.classList.add('disabled');
+                step4Btn.style.pointerEvents = 'none';
+                step4Btn.style.cursor = 'not-allowed';
+            }
         }
 
         this.updateStepperClasses();

@@ -231,8 +231,6 @@
 									</div>
 									<div>
 										<h3 class="content-card-title mb-0" style="font-size: 1rem;">Catatan &amp; Dokumen Sokongan</h3>
-										<p class="text-muted mb-0" style="font-size: 0.78rem;">Rekod catatan mesyuarat dan muat naik dokumen
-											berkaitan</p>
 									</div>
 								</div>
 							</div>
@@ -243,7 +241,7 @@
 									<div class="col-12 col-md-6 p-4" style="border-right: 1px solid #f1f5f9;">
 										<p class="fw-semibold text-uppercase mb-3" style="font-size: 0.7rem; letter-spacing: 0.6px; color: #64748b;">
 											Catatan</p>
-										<textarea class="form-control committee-catatan" rows="5" placeholder="Masukkan catatan mesyuarat...">{{ $committeeDrafts[$tab]['catatan'] ?? '' }}</textarea>
+										<textarea class="form-control committee-catatan" rows="5" placeholder="Masukkan catatan...">{{ $committeeDrafts[$tab]['catatan'] ?? '' }}</textarea>
 									</div>
 
 									<!-- Dokumen Sokongan -->
@@ -333,6 +331,35 @@
 @endsection
 
 @section('scripts')
+	<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+	@if (session('error'))
+		<script>
+			document.addEventListener('DOMContentLoaded', function() {
+				const errorMsg = @json(session('error'));
+				const isInfo = errorMsg.includes('tidak memerlukan pelantikan');
+				Swal.fire({
+					icon: isInfo ? 'info' : 'warning',
+					title: isInfo ? 'Makluman Pelantikan' : 'Perhatian',
+					text: errorMsg,
+					confirmButtonText: 'Faham',
+					confirmButtonColor: '#1e293b'
+				});
+			});
+		</script>
+	@endif
+	@if (session('success'))
+		<script>
+			document.addEventListener('DOMContentLoaded', function() {
+				Swal.fire({
+					icon: 'success',
+					title: 'Berjaya',
+					text: @json(session('success')),
+					confirmButtonText: 'OK',
+					confirmButtonColor: '#16a34a'
+				});
+			});
+		</script>
+	@endif
 	<script>
 		const initialCommitteeDrafts = @json($committeeDrafts ?? []);
 		const tenderUuid = @json($draftTenderUuid);
@@ -340,6 +367,81 @@
 		const hantarPemaklumanUrl = @json(route('jawatankuasa.hantarPemakluman'));
 		const supportedDraftJenis = @json($supportedDraftJenisData);
 		const localIcUsers = @json($localIcUsersData);
+
+		function handleAjaxError(xhr, fallbackMessage) {
+			let title = 'Ralat';
+			let icon = 'error';
+			let message = fallbackMessage || 'Permintaan gagal diproses. Sila cuba semula.';
+			let buttonText = 'Tutup';
+			let buttonColor = '#dc2626';
+
+			if (xhr && xhr.responseJSON) {
+				const res = xhr.responseJSON;
+				if (xhr.status === 422) {
+					icon = 'warning';
+					title = 'Perhatian';
+					buttonColor = '#1e293b';
+					buttonText = 'Faham';
+
+					if (res.errors) {
+						const firstErr = Object.values(res.errors).flat()[0];
+						if (firstErr) {
+							message = firstErr;
+						}
+					}
+					if (res.message && (message === fallbackMessage || res.message !== 'The given data was invalid.')) {
+						message = res.message;
+					}
+
+					const lower = String(message).toLowerCase();
+					if (lower.includes('tidak mencukupi')) {
+						title = 'Jawatankuasa Tidak Mencukupi';
+					} else if (lower.includes('tarikh') || lower.includes('mesyuarat') || lower.includes('lokasi') || lower.includes('masa')) {
+						title = 'Maklumat Mesyuarat Tidak Lengkap';
+					} else if (lower.includes('tiada ahli')) {
+						title = 'Tiada Ahli Jawatankuasa';
+					} else if (lower.includes('agensi') || lower.includes('urusetia') || lower.includes('pemilik projek')) {
+						title = 'Pegawai Tidak Sah';
+						icon = 'error';
+						buttonColor = '#dc2626';
+						buttonText = 'Tutup';
+					} else if (lower.includes('emel')) {
+						title = 'Emel Tidak Sah';
+						icon = 'error';
+						buttonColor = '#dc2626';
+						buttonText = 'Tutup';
+					}
+				} else if (xhr.status === 500) {
+					icon = 'error';
+					title = 'Ralat Pelayan';
+					buttonColor = '#dc2626';
+					buttonText = 'Tutup';
+
+					if (res.message && !res.message.includes('SQLSTATE') && !res.message.includes('Connection:') && !res.message.includes('Stack trace:')) {
+						message = res.message;
+					} else {
+						message = fallbackMessage || 'Ralat pelayan dalaman berlaku. Sila cuba semula sebentar lagi.';
+					}
+				} else if (res.message) {
+					message = res.message;
+				}
+			} else if (xhr && xhr.statusText && xhr.status !== 0 && xhr.status !== 200) {
+				if (xhr.status === 500) {
+					title = 'Ralat Pelayan';
+					message = fallbackMessage || 'Ralat pelayan dalaman berlaku. Sila cuba semula sebentar lagi.';
+				} else {
+					message = xhr.statusText;
+				}
+			}
+
+			Swal.fire({
+				icon: icon,
+				title: title,
+				text: message,
+				confirmButtonText: buttonText,
+				confirmButtonColor: buttonColor
+			});
+		}
 
 		/* =============================
 		   LOCAL TABLE FUNCTIONS
@@ -560,9 +662,13 @@
 
 		function saveAllDrafts(triggerButton, successModal) {
 			if (!tenderUuid) {
-				alert(
-					'{{ @$tender->procurement_label }} tidak ditemui. Sila buka semula halaman menggunakan pautan {{ strtolower(@$tender->procurement_label) }}.'
-					);
+				Swal.fire({
+					icon: 'warning',
+					title: 'Maklumat Tidak Ditemui',
+					text: '{{ @$tender->procurement_label }} tidak ditemui. Sila buka semula halaman menggunakan pautan {{ strtolower(@$tender->procurement_label) }}.',
+					confirmButtonText: 'Faham',
+					confirmButtonColor: '#1e293b'
+				});
 				return;
 			}
 
@@ -587,18 +693,23 @@
 				data: formData,
 				processData: false,
 				contentType: false,
-				success: function() {
+				success: function(res) {
 					if (typeof showBerjayaModal === 'function') {
 						showBerjayaModal();
 					} else if (successModal) {
 						successModal.show();
+					} else {
+						Swal.fire({
+							icon: 'success',
+							title: 'Draf Disimpan',
+							text: (res && res.message) ? res.message : 'Draf jawatankuasa berjaya disimpan.',
+							timer: 2000,
+							showConfirmButton: false
+						});
 					}
 				},
 				error: function(xhr) {
-					const message = (xhr && xhr.responseJSON && xhr.responseJSON.message) ?
-						xhr.responseJSON.message :
-						'Simpan draf gagal. Sila cuba semula.';
-					alert(message);
+					handleAjaxError(xhr, 'Simpan draf semua tab gagal. Sila cuba semula.');
 				},
 				complete: function() {
 					buttonStates.forEach(function(state) {
@@ -655,31 +766,49 @@
 					saveAllDrafts(this, null);
 				});
 			});
-
 			// HANTAR PEMAKLUMAN
 			document.querySelectorAll('.btn-hantar').forEach(btn => {
 				btn.addEventListener('click', function() {
 					if (!tenderUuid) {
-						alert(
-							'{{ @$tender->procurement_label }} tidak ditemui. Sila buka semula halaman menggunakan pautan {{ strtolower(@$tender->procurement_label) }}.'
-							);
+						Swal.fire({
+							icon: 'warning',
+							title: 'Maklumat Tidak Ditemui',
+							text: '{{ @$tender->procurement_label }} tidak ditemui. Sila buka semula halaman menggunakan pautan {{ strtolower(@$tender->procurement_label) }}.',
+							confirmButtonText: 'Faham',
+							confirmButtonColor: '#1e293b'
+						});
 						return;
 					}
 
-					// Validate all 4 tabs have Pengerusi(1), Setiausaha(2), Ahli(3)
-					const requiredTabs = ['spec', 'open', 'tech', 'fin'];
-					const requiredPeranan = ['1', '2', '3'];
+					// Validate minimum appointments for 2 Peringkat:
+					// - Jawatankuasa Spesifikasi (spec): 1 Pengerusi + 2 Ahli
+					// - Jawatankuasa Pembuka (open): 1 Pengerusi + 1 Ahli
+					// - Jawatankuasa Penilaian Teknikal (tech): 1 Pengerusi + 2 Ahli
+					// - Jawatankuasa Penilaian Kewangan (fin): 1 Pengerusi + 2 Ahli
+					// Setiausaha is optional for all committee types.
+					const committeeRequirements = {
+						'spec': { name: 'Jawatankuasa Spesifikasi', minPengerusi: 1, minAhli: 2 },
+						'open': { name: 'Jawatankuasa Pembuka', minPengerusi: 1, minAhli: 1 },
+						'tech': { name: 'Jawatankuasa Penilaian Teknikal', minPengerusi: 1, minAhli: 2 },
+						'fin':  { name: 'Jawatankuasa Penilaian Kewangan', minPengerusi: 1, minAhli: 2 }
+					};
 
-					for (let i = 0; i < requiredTabs.length; i++) {
-						const tab = requiredTabs[i];
+					for (const [tab, req] of Object.entries(committeeRequirements)) {
 						const tabPane = document.getElementById('tab-' + tab);
 						if (!tabPane) {
-							alert('Jawatan Kuasa tidak Mencukupi');
+							Swal.fire({
+								icon: 'warning',
+								title: 'Jawatankuasa Tidak Mencukupi',
+								text: 'Jawatan Kuasa tidak Mencukupi. Tab ' + req.name + ' tidak ditemui.',
+								confirmButtonText: 'Faham',
+								confirmButtonColor: '#1e293b'
+							});
 							return;
 						}
 
 						const rows = tabPane.querySelectorAll('.committee-tbody tr');
-						const existingPeranan = [];
+						let pengerusiCount = 0;
+						let ahliCount = 0;
 
 						rows.forEach(function(tr) {
 							const selectInput = tr.querySelector('.ic-search-select');
@@ -688,62 +817,87 @@
 							if (!userId) return;
 
 							const perananSelect = tr.querySelector('.peranan-select');
-							if (perananSelect) {
-								existingPeranan.push(perananSelect.value);
+							const perananVal = perananSelect ? String(perananSelect.value) : '';
+							if (perananVal === '1') {
+								pengerusiCount++;
+							} else if (perananVal === '3') {
+								ahliCount++;
 							}
 						});
 
-						for (let j = 0; j < requiredPeranan.length; j++) {
-							if (existingPeranan.indexOf(requiredPeranan[j]) === -1) {
-								alert('Jawatan Kuasa tidak Mencukupi');
-								return;
-							}
+						if (pengerusiCount < req.minPengerusi || ahliCount < req.minAhli) {
+							Swal.fire({
+								icon: 'warning',
+								title: 'Jawatankuasa Tidak Mencukupi',
+								text: 'Jawatan Kuasa tidak Mencukupi bagi ' + req.name + '. Sila lengkapkan pelantikan minimum: ' + req.minPengerusi + ' Pengerusi dan ' + req.minAhli + ' Ahli.',
+								confirmButtonText: 'Faham',
+								confirmButtonColor: '#1e293b'
+							});
+							return;
 						}
 					}
 
 					const meeting = collectSpecMeeting();
 					if (!meeting.tarikh_mesyuarat || !meeting.masa_mesyuarat || !meeting.lokasi_mesyuarat) {
-						alert('Sila lengkapkan tarikh, masa dan lokasi mesyuarat Jawatankuasa Spesifikasi.');
+						Swal.fire({
+							icon: 'warning',
+							title: 'Maklumat Mesyuarat Tidak Lengkap',
+							text: 'Sila lengkapkan tarikh, masa dan lokasi mesyuarat Jawatankuasa Spesifikasi.',
+							confirmButtonText: 'Faham',
+							confirmButtonColor: '#1e293b'
+						});
 						return;
 					}
 
-					if (!confirm(
-							'Adakah anda pasti untuk menghantar pemakluman kepada semua ahli jawatankuasa?'
-						)) {
-						return;
-					}
-
-					const overlay = document.getElementById('pageOverlay');
-					const overlayText = document.getElementById('overlayText');
-
-					overlay.classList.add('active');
-					overlayText.textContent = 'Menghantar pemakluman...';
-
-					$.ajax({
-						url: hantarPemaklumanUrl,
-						type: 'POST',
-						timeout: 300000,
-						data: {
-							_token: $('meta[name=_token]').attr('content'),
-							tender_uuid: tenderUuid,
-							tarikh_mesyuarat: meeting.tarikh_mesyuarat,
-							masa_mesyuarat: meeting.masa_mesyuarat,
-							lokasi_mesyuarat: meeting.lokasi_mesyuarat,
-						},
-						dataType: 'json',
-						success: function(res) {
-							overlay.classList.remove('active');
-							alert(res.message || 'Pemakluman berjaya dihantar.');
-							window.location.href = '/tender';
-						},
-						error: function(xhr) {
-							overlay.classList.remove('active');
-							const message = (xhr && xhr.responseJSON && xhr.responseJSON
-									.message) ?
-								xhr.responseJSON.message :
-								'Hantar pemakluman gagal. Sila cuba semula.';
-							alert(message);
+					Swal.fire({
+						icon: 'question',
+						title: 'Hantar Pemakluman?',
+						text: 'Adakah anda pasti untuk menghantar pemakluman kepada semua ahli jawatankuasa?',
+						showCancelButton: true,
+						confirmButtonText: 'Ya, Hantar',
+						cancelButtonText: 'Batal',
+						confirmButtonColor: '#16a34a',
+						cancelButtonColor: '#64748b'
+					}).then((result) => {
+						if (!result.isConfirmed) {
+							return;
 						}
+
+						const overlay = document.getElementById('pageOverlay');
+						const overlayText = document.getElementById('overlayText');
+
+						overlay.classList.add('active');
+						overlayText.textContent = 'Menghantar pemakluman...';
+
+						$.ajax({
+							url: hantarPemaklumanUrl,
+							type: 'POST',
+							timeout: 300000,
+							data: {
+								_token: $('meta[name=_token]').attr('content'),
+								tender_uuid: tenderUuid,
+								tarikh_mesyuarat: meeting.tarikh_mesyuarat,
+								masa_mesyuarat: meeting.masa_mesyuarat,
+								lokasi_mesyuarat: meeting.lokasi_mesyuarat,
+							},
+							dataType: 'json',
+							success: function(res) {
+								overlay.classList.remove('active');
+								Swal.fire({
+									icon: 'success',
+									title: 'Pemakluman Dihantar',
+									text: res.message || 'Pemakluman berjaya dihantar kepada ahli jawatankuasa.',
+									confirmButtonText: 'Selesai',
+									confirmButtonColor: '#16a34a'
+								}).then(() => {
+									window.location.href = '/tender';
+								});
+							},
+							error: function(xhr) {
+								overlay.classList.remove('active');
+								handleAjaxError(xhr, 'Hantar pemakluman gagal. Sila cuba semula.');
+							}
+						});
 					});
 				});
 			});
@@ -782,9 +936,13 @@
 		// GENERATE REPORT PDF
 		function printLaporan() {
 			if (!tenderUuid) {
-				alert(
-					'{{ @$tender->procurement_label }} tidak ditemui. Sila buka semula halaman menggunakan pautan {{ strtolower(@$tender->procurement_label) }}.'
-					);
+				Swal.fire({
+					icon: 'warning',
+					title: 'Maklumat Tidak Ditemui',
+					text: '{{ @$tender->procurement_label }} tidak ditemui. Sila buka semula halaman menggunakan pautan {{ strtolower(@$tender->procurement_label) }}.',
+					confirmButtonText: 'Faham',
+					confirmButtonColor: '#1e293b'
+				});
 				return;
 			}
 			const url = @json(route('jawatankuasa.laporan')) + '?tender=' + encodeURIComponent(tenderUuid);

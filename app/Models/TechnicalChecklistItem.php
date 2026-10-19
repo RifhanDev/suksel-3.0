@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class TechnicalChecklistItem extends Model
 {
@@ -36,5 +37,10 @@ class TechnicalChecklistItem extends Model
     public function header(): BelongsTo
     {
         return $this->belongsTo(TechnicalChecklistHeader::class, 'technical_checklist_header_id');
+    }
+
+    public function files(): HasMany
+    {
+        return $this->hasMany(TechnicalChecklistFile::class);
     }
 }

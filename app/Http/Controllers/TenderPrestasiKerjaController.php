@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\AuthorizesTenderFileAccess;
 use App\Http\Controllers\Concerns\HandlesTenderFormAccess;
 use App\Models\Tender;
 use App\Models\TenderPrestasiKerja;
@@ -11,11 +12,12 @@ use App\Services\StosBackendClient;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class TenderPrestasiKerjaController extends Controller
 {
-    use HandlesTenderFormAccess;
+    use HandlesTenderFormAccess, AuthorizesTenderFileAccess;
 
     public function index(string $tenderUuid)
     {
@@ -158,22 +160,17 @@ class TenderPrestasiKerjaController extends Controller
                         $size = $file->getSize();
 
                         $safeOriginalName = preg_replace('/[^A-Za-z0-9._-]/', '_', $originalName);
-                        $storedName = date('YmdHis') . '_' . $safeOriginalName;
-                        $relativeDir = 'uploads/prestasi_kerja_semasa/' . $tender->uuid;
-                        $absoluteDir = public_path($relativeDir);
-
-                        if (!is_dir($absoluteDir)) {
-                            mkdir($absoluteDir, 0755, true);
-                        }
-
-                        $file->move($absoluteDir, $storedName);
+                        $storedName = date('YmdHis') . '_' . Str::uuid() . '_' . $safeOriginalName;
+                        $vendorId = $this->vendorId();
+                        $relativeDir = 'uploads/prestasi_kerja_semasa/' . $tender->uuid . ($vendorId ? '/' . $vendorId : '');
+                        $path = $file->storeAs($relativeDir, $storedName, 'public');
 
                         TenderPrestasiKerjaDokumen::create([
                             'uuid'                     => (string) Str::uuid(),
                             'tender_prestasi_kerja_id' => $prestasi->id,
                             'original_name'            => $originalName,
                             'stored_name'              => $storedName,
-                            'path'                     => $relativeDir . '/' . $storedName,
+                            'path'                     => $path,
                             'mime_type'                => $mimeType,
                             'size'                     => $size,
                         ]);
@@ -249,15 +246,29 @@ class TenderPrestasiKerjaController extends Controller
 
     public function deleteFile(Request $request, string $fileUuid)
     {
+        $user = auth()->user();
+        if (! $user) {
+            abort(403);
+        }
         $this->ensureFormEditable();
 
         try {
-            $dokumen = TenderPrestasiKerjaDokumen::where('uuid', $fileUuid)->firstOrFail();
-            
-            // Delete file from storage
+            $dokumen = TenderPrestasiKerjaDokumen::with('prestasiKerja')->where('uuid', $fileUuid)->firstOrFail();
+
+            if (! $user->hasRole('Admin') && ! $user->can('tender:specification-management')) {
+                $vendorId = (int) ($user->vendor_id ?? 0);
+                if ($vendorId <= 0 || ($dokumen->prestasiKerja?->vendor_id && (int) $dokumen->prestasiKerja->vendor_id !== $vendorId)) {
+                    abort(403, 'Akses tidak dibenarkan.');
+                }
+            }
+
+            // Delete file from storage (check both public disk and public_path for backward compatibility)
+            if ($dokumen->path && Storage::disk('public')->exists($dokumen->path)) {
+                Storage::disk('public')->delete($dokumen->path);
+            }
             $absolutePath = public_path($dokumen->path);
             if (file_exists($absolutePath)) {
-                unlink($absolutePath);
+                @unlink($absolutePath);
             }
 
             $dokumen->delete();
@@ -266,6 +277,8 @@ class TenderPrestasiKerjaController extends Controller
                 'success' => true,
                 'message' => 'Dokumen berjaya dipadam.'
             ]);
+        } catch (\Symfony\Component\HttpKernel\Exception\HttpExceptionInterface $e) {
+            throw $e;
         } catch (\Throwable $e) {
             Log::error('TenderPrestasiKerjaController@deleteFile failed', [
                 'file_uuid' => $fileUuid,
@@ -277,6 +290,21 @@ class TenderPrestasiKerjaController extends Controller
                 'message' => 'Gagal memadam dokumen.'
             ], 500);
         }
+    }
+
+    public function downloadFile(string $tenderUuid, string $fileUuid)
+    {
+        $tender = Tender::where('uuid', $tenderUuid)->firstOrFail();
+        $dokumen = TenderPrestasiKerjaDokumen::with('prestasiKerja')->where('uuid', $fileUuid)->firstOrFail();
+
+        $ownerVendorId = $dokumen->prestasiKerja?->vendor_id ? (int) $dokumen->prestasiKerja->vendor_id : null;
+        $this->assertCanAccessTenderFile($tender, $ownerVendorId);
+
+        return \App\Support\StosStoredFile::response([
+            'path' => $dokumen->path,
+            'original_name' => $dokumen->original_name,
+            'mime_type' => $dokumen->mime_type,
+        ]);
     }
 
     private function api()

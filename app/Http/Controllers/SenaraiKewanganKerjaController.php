@@ -3,11 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\UpdatesTenderProcessAfterChecklistSubmit;
+use App\Models\KewanganKerjaFile;
+use App\Models\KewanganKerjaHeader;
+use App\Models\KewanganKerjaItem;
 use App\Models\Tender;
 use App\Services\StosBackendClient;
 use App\Support\PenyediaanIklanNavigation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class SenaraiKewanganKerjaController extends Controller
 {
@@ -25,21 +30,37 @@ class SenaraiKewanganKerjaController extends Controller
             ->where('tenders.uuid', $tenderUuid)
             ->firstOrFail();
 
-        // Load checklist data from backend
-        $apiUrl   = $this->url('kewangan-kerja/' . $tenderUuid);
-        $response = $this->api()->get($apiUrl);
-
         $checklistData = null;
 
-        if ($response->successful()) {
-            $checklistData = $response->json('data');
-        } else {
-            Log::warning('SenaraiKewanganKerjaController@index: API request failed', [
+        try {
+            $apiUrl   = $this->url('kewangan-kerja/' . $tenderUuid);
+            $response = $this->api()->get($apiUrl);
+
+            if ($response->successful()) {
+                $checklistData = $response->json('data');
+            } else {
+                Log::warning('SenaraiKewanganKerjaController@index: API request failed', [
+                    'tender_uuid' => $tenderUuid,
+                    'api_url'     => $apiUrl,
+                    'status'      => $response->status(),
+                    'body'        => $response->body(),
+                ]);
+            }
+        } catch (\Throwable $e) {
+            Log::warning('SenaraiKewanganKerjaController@index: STOS API connection failed', [
                 'tender_uuid' => $tenderUuid,
-                'api_url'     => $apiUrl,
-                'status'      => $response->status(),
-                'body'        => $response->body(),
+                'error'       => $e->getMessage(),
             ]);
+        }
+
+        if (! $checklistData) {
+            $header = KewanganKerjaHeader::where('tender_id', $tender->id)
+                ->with(['items.files', 'files'])
+                ->first();
+
+            if ($header) {
+                $checklistData = $this->serializeLocalKewanganKerja($header, $tender);
+            }
         }
 
         // Collect standard_item_uuids currently in use in tbl-kewangan
@@ -125,52 +146,169 @@ class SenaraiKewanganKerjaController extends Controller
     }
 
     /**
-     * Upload a file — proxied to STOS-EPENILAIAN-WEB.
+     * Upload a file — stored directly on SUKSel 3.0 server storage.
      */
     public function uploadFile(Request $request, string $tenderUuid)
     {
         $this->ensureAccess();
 
-        $uploadedFile = $request->file('file');
+        $request->validate([
+            'file' => ['required', 'file', 'max:10240'],
+            'file_type' => ['nullable', 'string', 'max:50'],
+            'checklist_item_uuid' => ['nullable', 'string'],
+        ]);
 
-        $response = $this->api()
-            ->attach(
-                'file',
-                $uploadedFile->get(),
-                $uploadedFile->getClientOriginalName()
-            )
-            ->post(
-                $this->url('kewangan-kerja/' . $tenderUuid . '/files'),
-                $request->except(['_token', 'file'])
-            );
+        $tender = Tender::where('uuid', $tenderUuid)->firstOrFail();
 
-        if ($response->successful()) {
-            $data = $response->json('data');
-            if (! empty($data['path']) && $uploadedFile) {
-                try {
-                    $cleanPath = ltrim(str_replace('public/', '', (string) $data['path']), '/');
-                    \Illuminate\Support\Facades\Storage::disk('public')->put($cleanPath, file_get_contents($uploadedFile->getRealPath()));
-                } catch (\Throwable $e) {
-                    Log::warning('SenaraiKewanganKerjaController@uploadFile: Failed to mirror file to SUKSel 3.0 storage', ['error' => $e->getMessage()]);
-                }
+        $header = KewanganKerjaHeader::firstOrCreate(
+            ['tender_id' => $tender->id],
+            [
+                'uuid' => (string) Str::uuid(),
+                'status' => 'draft',
+                'created_by' => auth()->id(),
+            ]
+        );
+
+        $item = null;
+        $itemUuid = $request->input('checklist_item_uuid');
+        if (!empty($itemUuid)) {
+            $item = KewanganKerjaItem::where('kewangan_kerja_header_id', $header->id)
+                ->where('uuid', $itemUuid)
+                ->first();
+
+            if (!$item) {
+                $item = KewanganKerjaItem::where('uuid', $itemUuid)->first();
             }
         }
 
-        return response()->json($response->json(), $response->status());
+        $uploadedFile = $request->file('file');
+        $safeOriginalName = preg_replace('/[^A-Za-z0-9._-]/', '_', $uploadedFile->getClientOriginalName());
+        $storedName = now()->format('YmdHis') . '_' . Str::uuid() . '_' . $safeOriginalName;
+        $path = $uploadedFile->storeAs('kewangan-kerja/' . $tender->uuid, $storedName, 'public');
+
+        $file = KewanganKerjaFile::create([
+            'uuid' => (string) Str::uuid(),
+            'kewangan_kerja_header_id' => $header->id,
+            'kewangan_kerja_item_id' => $item?->id,
+            'file_type' => $request->input('file_type') ?: 'support',
+            'original_name' => $uploadedFile->getClientOriginalName(),
+            'stored_name' => $storedName,
+            'path' => $path,
+            'mime_type' => $uploadedFile->getClientMimeType(),
+            'size' => $uploadedFile->getSize() ?: 0,
+            'uploaded_by' => auth()->id(),
+        ]);
+
+        $downloadUrl = route('tenderChecklist.download', [
+            'tender' => $tender->id,
+            'section' => 'kewangan_kerja',
+            'fileUuid' => $file->uuid,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Fail berjaya dimuat naik ke storan SUKSel 3.0.',
+            'data' => [
+                'uuid' => $file->uuid,
+                'checklist_item_uuid' => $item?->uuid,
+                'file_type' => $file->file_type,
+                'original_name' => $file->original_name,
+                'stored_name' => $file->stored_name,
+                'path' => $file->path,
+                'mime_type' => $file->mime_type,
+                'size' => (int) $file->size,
+                'url' => $downloadUrl,
+                'uploaded_by' => $file->uploaded_by,
+                'created_at' => $file->created_at?->toISOString(),
+            ],
+        ], 200);
     }
 
     /**
-     * Delete a file — proxied to STOS-EPENILAIAN-WEB.
+     * Delete a file — deleted directly on SUKSel 3.0 server storage.
      */
     public function deleteFile(string $fileUuid)
     {
         $this->ensureAccess();
 
-        $response = $this->api()->delete(
-            $this->url('kewangan-kerja-files/' . $fileUuid)
-        );
+        $file = KewanganKerjaFile::where('uuid', $fileUuid)->first();
+        if ($file) {
+            if ($file->path && Storage::disk('public')->exists($file->path)) {
+                Storage::disk('public')->delete($file->path);
+            }
+            $file->delete();
 
-        return response()->json($response->json(), $response->status());
+            return response()->json([
+                'success' => true,
+                'message' => 'Fail berjaya dipadam dari storan SUKSel 3.0.',
+            ]);
+        }
+
+        try {
+            $response = $this->api()->delete(
+                $this->url('kewangan-kerja-files/' . $fileUuid)
+            );
+            if ($response->successful()) {
+                return response()->json($response->json(), $response->status());
+            }
+        } catch (\Throwable $e) {
+            Log::warning('SenaraiKewanganKerjaController@deleteFile: STOS API fallback failed', ['error' => $e->getMessage()]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Fail dipadam.',
+        ]);
+    }
+
+    private function serializeLocalKewanganKerja(KewanganKerjaHeader $header, Tender $tender): array
+    {
+        return [
+            'uuid' => $header->uuid,
+            'tender_uuid' => $tender->uuid,
+            'max_score' => (float) $header->max_score,
+            'passing_score' => (float) $header->passing_score,
+            'passing_percentage' => (float) $header->passing_percentage,
+            'status' => $header->status,
+            'submitted_at' => optional($header->submitted_at)->toIso8601String(),
+            'items' => $header->items->map(function ($item) use ($tender) {
+                return [
+                    'uuid' => $item->uuid,
+                    'source_type' => $item->source_type,
+                    'title' => $item->title,
+                    'mechanism' => $item->mechanism,
+                    'vendor_action' => $item->vendor_action,
+                    'score' => (float) $item->score,
+                    'status' => $item->status,
+                    'sort_order' => (int) $item->sort_order,
+                    'standard_item_uuid' => null,
+                    'files' => $item->files->map(fn ($f) => [
+                        'uuid' => $f->uuid,
+                        'file_type' => $f->file_type,
+                        'original_name' => $f->original_name,
+                        'stored_name' => $f->stored_name,
+                        'path' => $f->path,
+                        'mime_type' => $f->mime_type,
+                        'size' => (int) $f->size,
+                        'url' => route('tenderChecklist.download', ['tender' => $tender->id, 'section' => 'kewangan_kerja', 'fileUuid' => $f->uuid]),
+                    ])->values()->all(),
+                ];
+            })->values()->all(),
+            'files' => $header->files
+                ->filter(fn ($file) => $file->kewangan_kerja_item_id === null)
+                ->map(fn ($f) => [
+                    'uuid' => $f->uuid,
+                    'file_type' => $f->file_type,
+                    'original_name' => $f->original_name,
+                    'stored_name' => $f->stored_name,
+                    'path' => $f->path,
+                    'mime_type' => $f->mime_type,
+                    'size' => (int) $f->size,
+                    'url' => route('tenderChecklist.download', ['tender' => $tender->id, 'section' => 'kewangan_kerja', 'fileUuid' => $f->uuid]),
+                ])
+                ->values()
+                ->all(),
+        ];
     }
 
     // ── Private helpers ───────────────────────────────────────────────────────

@@ -299,6 +299,13 @@ class PengalamanKerjaController extends Controller
 
         $dokumen = TenderPengalamanKerjaDokumen::where('uuid', $fileUuid)->first();
         if ($dokumen) {
+            if (! $user->hasRole('Admin') && ! $user->can('tender:specification-management')) {
+                $vendorId = (int) ($user->vendor_id ?? 0);
+                if ($vendorId <= 0 || ($dokumen->vendor_id && (int) $dokumen->vendor_id !== $vendorId)) {
+                    abort(403, 'Akses tidak dibenarkan.');
+                }
+            }
+
             if ($dokumen->path && Storage::disk('public')->exists($dokumen->path)) {
                 Storage::disk('public')->delete($dokumen->path);
             }
