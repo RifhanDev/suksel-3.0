@@ -423,24 +423,29 @@ class JawatankuasaController extends Controller
             ], 422);
         }
 
-        $requiredJenis = ['spec', 'open', 'tech', 'fin'];
-        if ($tender->tender_peringkat == 1) {
-            $requiredJenis = ['spec', 'open', 'eval'];
-        }
-        $requiredPeranan = ['1', '2', '3']; // Pengerusi, Setiausaha, Ahli
+        $requiredJenis = Jawatankuasa::requiredJenisForPeringkat((int) $tender->tender_peringkat);
+        $minRequirements = Jawatankuasa::minimumRequirements();
 
         $grouped = $members->groupBy('jenis_jawatankuasa');
 
         foreach ($requiredJenis as $jenis) {
             $tabMembers = $grouped->get($jenis, collect());
-            $existingPeranan = $tabMembers->pluck('peranan')->map(fn($p) => (string) $p)->unique()->values()->toArray();
+            $req = $minRequirements[$jenis] ?? ['pengerusi' => 1, 'ahli' => 2];
 
-            foreach ($requiredPeranan as $peranan) {
-                if (!in_array($peranan, $existingPeranan)) {
-                    return response()->json([
-                        'message' => 'Jawatan Kuasa Tidak Mencukupi',
-                    ], 422);
-                }
+            $pengerusiCount = $tabMembers->filter(function ($member) {
+                return (string) $member->peranan === Jawatankuasa::PERANAN_PENGERUSI
+                    && !empty($member->user_id);
+            })->count();
+
+            $ahliCount = $tabMembers->filter(function ($member) {
+                return (string) $member->peranan === Jawatankuasa::PERANAN_AHLI
+                    && !empty($member->user_id);
+            })->count();
+
+            if ($pengerusiCount < $req['pengerusi'] || $ahliCount < $req['ahli']) {
+                return response()->json([
+                    'message' => 'Jawatan Kuasa Tidak Mencukupi',
+                ], 422);
             }
         }
 
@@ -561,8 +566,18 @@ class JawatankuasaController extends Controller
         }
 
         if (! $response->successful()) {
+            $errMessage = $response->json('message');
+            $errors = $response->json('errors') ?? [];
+            if ((empty($errMessage) || $errMessage === 'The given data was invalid.') && !empty($errors)) {
+                $firstErr = collect($errors)->flatten()->first();
+                if (!empty($firstErr)) {
+                    $errMessage = $firstErr;
+                }
+            }
+
             return response()->json([
-                'message' => $response->json('message') ?? 'Gagal menjana emel jemputan mesyuarat Jawatankuasa Spesifikasi.',
+                'message' => $errMessage ?? 'Gagal menjana emel jemputan mesyuarat Jawatankuasa Spesifikasi.',
+                'errors' => $errors,
             ], $response->status());
         }
 

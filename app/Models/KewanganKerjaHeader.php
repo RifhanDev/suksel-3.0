@@ -45,4 +45,9 @@ class KewanganKerjaHeader extends Model
     {
         return $this->hasMany(KewanganKerjaItem::class)->orderBy('sort_order');
     }
+
+    public function files(): HasMany
+    {
+        return $this->hasMany(KewanganKerjaFile::class);
+    }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\AuthorizesTenderFileAccess;
 use App\Http\Controllers\Concerns\HandlesTenderFormAccess;
 use App\Models\Tender;
 use App\Models\TenderKakitanganTeknikal;
@@ -14,7 +15,7 @@ use Illuminate\Support\Str;
 
 class KakitanganTeknikalController extends Controller
 {
-    use HandlesTenderFormAccess;
+    use HandlesTenderFormAccess, AuthorizesTenderFileAccess;
 
     public function create(?string $tenderUuid = null)
     {
@@ -119,7 +120,7 @@ class KakitanganTeknikalController extends Controller
                     }
                     $originalName = $file->getClientOriginalName();
                     $storedName   = Str::uuid() . '.' . $file->getClientOriginalExtension();
-                    $path         = $file->storeAs("kakitangan-teknikal/{$tender->uuid}", $storedName, 'public');
+                    $path         = $file->storeAs("kakitangan-teknikal/{$tender->uuid}" . ($vendorId ? "/{$vendorId}" : ''), $storedName, 'public');
 
                     TenderKakitanganTeknikalDokumen::create([
                         'uuid'            => (string) Str::uuid(),
@@ -173,6 +174,15 @@ class KakitanganTeknikalController extends Controller
             return response()->json(['success' => false, 'message' => 'Tender tidak ditemui.'], 404);
         }
         $this->ensureTenderFormAccess($tender);
+        $this->ensureFormEditable();
+
+        $user = auth()->user();
+        if ($user && ! $user->hasRole('Admin') && ! $user->can('tender:specification-management')) {
+            $vendorId = (int) ($user->vendor_id ?? 0);
+            if ($vendorId <= 0 || ($staff->vendor_id && (int) $staff->vendor_id !== $vendorId)) {
+                abort(403, 'Akses tidak dibenarkan.');
+            }
+        }
 
         $validated = $request->validate([
             'nama_pegawai'         => ['required', 'string', 'max:255'],
@@ -216,7 +226,7 @@ class KakitanganTeknikalController extends Controller
                     }
                     $originalName = $file->getClientOriginalName();
                     $storedName   = Str::uuid() . '.' . $file->getClientOriginalExtension();
-                    $path         = $file->storeAs("kakitangan-teknikal/{$staff->tender_uuid}", $storedName, 'public');
+                    $path         = $file->storeAs("kakitangan-teknikal/{$staff->tender_uuid}" . ($staff->vendor_id ? "/{$staff->vendor_id}" : ''), $storedName, 'public');
 
                     TenderKakitanganTeknikalDokumen::create([
                         'uuid'            => (string) Str::uuid(),
@@ -271,6 +281,15 @@ class KakitanganTeknikalController extends Controller
             return response()->json(['success' => false, 'message' => 'Tender tidak ditemui.'], 404);
         }
         $this->ensureTenderFormAccess($tender);
+        $this->ensureFormEditable();
+
+        $user = auth()->user();
+        if ($user && ! $user->hasRole('Admin') && ! $user->can('tender:specification-management')) {
+            $vendorId = (int) ($user->vendor_id ?? 0);
+            if ($vendorId <= 0 || ($staff->vendor_id && (int) $staff->vendor_id !== $vendorId)) {
+                abort(403, 'Akses tidak dibenarkan.');
+            }
+        }
 
         DB::beginTransaction();
         try {
@@ -315,9 +334,27 @@ class KakitanganTeknikalController extends Controller
 
     public function destroyDokumen(string $uuid)
     {
+        $user = auth()->user();
+        if (! $user) {
+            abort(403);
+        }
+
         $dokumen = TenderKakitanganTeknikalDokumen::where('uuid', $uuid)->first();
         if (! $dokumen) {
             return response()->json(['success' => false, 'message' => 'Dokumen tidak ditemui.'], 404);
+        }
+
+        $tender = $this->findTender($dokumen->tender_uuid);
+        if ($tender) {
+            $this->ensureTenderFormAccess($tender);
+            $this->ensureFormEditable();
+        }
+
+        if (! $user->hasRole('Admin') && ! $user->can('tender:specification-management')) {
+            $vendorId = (int) ($user->vendor_id ?? 0);
+            if ($vendorId <= 0 || ($dokumen->vendor_id && (int) $dokumen->vendor_id !== $vendorId)) {
+                abort(403, 'Akses tidak dibenarkan.');
+            }
         }
 
         if (! empty($dokumen->kakitangan_uuid)) {
@@ -362,7 +399,8 @@ class KakitanganTeknikalController extends Controller
         if (! $tender) {
             abort(404, 'Tender tidak dijumpai.');
         }
-        $this->ensureTenderFormAccess($tender);
+
+        $this->assertCanAccessTenderFile($tender, $dokumen->vendor_id ? (int) $dokumen->vendor_id : null);
 
         return StosStoredFile::response([
             'path' => $dokumen->path,
@@ -400,7 +438,7 @@ class KakitanganTeknikalController extends Controller
                     }
                     $originalName = $file->getClientOriginalName();
                     $storedName   = Str::uuid() . '.' . $file->getClientOriginalExtension();
-                    $path         = $file->storeAs("kakitangan-teknikal/{$tender->uuid}", $storedName, 'public');
+                    $path         = $file->storeAs("kakitangan-teknikal/{$tender->uuid}" . ($vendorId ? "/{$vendorId}" : ''), $storedName, 'public');
 
                     $doc = TenderKakitanganTeknikalDokumen::create([
                         'uuid'            => (string) Str::uuid(),
@@ -442,7 +480,11 @@ class KakitanganTeknikalController extends Controller
 
     private function resolveVendorId(): ?int
     {
-        return auth()->check() ? (auth()->user()->vendor_id ?? auth()->id()) : null;
+        if (! auth()->check()) {
+            return null;
+        }
+
+        return auth()->user()->vendor_id ? (int) auth()->user()->vendor_id : null;
     }
 
     private function findTender(string $uuid): ?Tender

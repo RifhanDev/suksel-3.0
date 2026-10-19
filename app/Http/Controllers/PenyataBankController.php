@@ -88,6 +88,7 @@ class PenyataBankController extends Controller
             $this->trackVendorFormSubmitted($tender, 'penyata_bank', [
                 'text' => 'Penyata bank disimpan',
             ]);
+            $this->pruneOrphanedVendorFiles($tender, (int) $this->vendorId(), $payload);
 
             if (! $response->successful()) {
                 return response()->json([
@@ -127,13 +128,54 @@ class PenyataBankController extends Controller
 
         $response = $this->api()->post($this->url('penyata-banks/' . $tenderUuid . '/submit'), $payload);
 
-        if ($response->successful() && $this->isVendorFormMode()) {
-            $this->trackVendorFormSubmitted($tender, 'penyata_bank', [
-                'text' => 'Penyata bank dihantar',
-            ]);
+        if ($this->isVendorFormMode()) {
+            $this->pruneOrphanedVendorFiles($tender, (int) $this->vendorId(), $payload);
+            if ($response->successful()) {
+                $this->trackVendorFormSubmitted($tender, 'penyata_bank', [
+                    'text' => 'Penyata bank dihantar',
+                ]);
+            }
         }
 
         return response()->json($response->json(), $response->status());
+    }
+
+    protected function pruneOrphanedVendorFiles(Tender $tender, int $vendorId, array $payload): void
+    {
+        if ($vendorId <= 0) {
+            return;
+        }
+
+        $activeUuids = [];
+        foreach ($payload['accounts'] ?? [] as $acc) {
+            if (! is_array($acc)) {
+                continue;
+            }
+            foreach ($acc['files'] ?? [] as $f) {
+                if (is_array($f) && ! empty($f['uuid'])) {
+                    $activeUuids[] = (string) $f['uuid'];
+                }
+            }
+        }
+
+        if (empty($activeUuids)) {
+            return;
+        }
+
+        $orphans = PenyataBankFile::query()
+            ->whereHas('penyataBank', function ($q) use ($tender) {
+                $q->where('tender_id', $tender->id);
+            })
+            ->where('vendor_id', $vendorId)
+            ->whereNotIn('uuid', $activeUuids)
+            ->get();
+
+        foreach ($orphans as $orphan) {
+            if ($orphan->path && Storage::disk('public')->exists($orphan->path)) {
+                Storage::disk('public')->delete($orphan->path);
+            }
+            $orphan->delete();
+        }
     }
 
     public function uploadFile(Request $request, string $tenderUuid)
@@ -161,6 +203,7 @@ class PenyataBankController extends Controller
         $fileRecord = PenyataBankFile::create([
             'uuid'            => (string) Str::uuid(),
             'penyata_bank_id' => $penyata->id,
+            'vendor_id'       => $vendorId,
             'file_type'       => 'support',
             'original_name'   => $file->getClientOriginalName(),
             'stored_name'     => $storedName,
@@ -185,6 +228,9 @@ class PenyataBankController extends Controller
     public function deleteFile(string $fileUuid)
     {
         $user = auth()->user();
+        if (! $user) {
+            abort(403);
+        }
         if (! $user->hasRole('Admin') && ! $user->can('tender:specification-management') && ! $user->vendor_id) {
             abort(403);
         }
@@ -192,6 +238,13 @@ class PenyataBankController extends Controller
 
         $fileRecord = PenyataBankFile::where('uuid', $fileUuid)->first();
         if ($fileRecord) {
+            if (! $user->hasRole('Admin') && ! $user->can('tender:specification-management')) {
+                $vendorId = (int) ($user->vendor_id ?? 0);
+                if ($vendorId <= 0 || ($fileRecord->vendor_id && (int) $fileRecord->vendor_id !== $vendorId)) {
+                    abort(403, 'Akses tidak dibenarkan.');
+                }
+            }
+
             if ($fileRecord->path && Storage::disk('public')->exists($fileRecord->path)) {
                 Storage::disk('public')->delete($fileRecord->path);
             }

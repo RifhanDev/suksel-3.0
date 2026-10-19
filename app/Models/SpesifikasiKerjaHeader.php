@@ -39,4 +39,9 @@ class SpesifikasiKerjaHeader extends Model
     {
         return $this->hasMany(SpesifikasiKerjaItem::class)->orderBy('sort_order');
     }
+
+    public function files(): HasMany
+    {
+        return $this->hasMany(SpesifikasiKerjaFile::class);
+    }
 }

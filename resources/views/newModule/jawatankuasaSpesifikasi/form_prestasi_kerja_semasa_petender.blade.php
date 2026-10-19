@@ -206,7 +206,7 @@
                                             {{ strtolower(pathinfo($doc->original_name, PATHINFO_EXTENSION)) }}
                                         </span>
                                         <div class="file-chip-body">
-                                            <a href="{{ asset($doc->path) }}" target="_blank" class="file-chip-name" title="{{ $doc->original_name }}">
+                                            <a href="{{ route('prestasiKerjaSemasa.downloadFile', [$tender->uuid, $doc->uuid]) }}" target="_blank" class="file-chip-name" title="{{ $doc->original_name }}">
                                                 {{ $doc->original_name }}
                                             </a>
                                             <span class="file-chip-size">

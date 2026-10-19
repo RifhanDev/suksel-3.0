@@ -50,22 +50,25 @@ class TenderChecklistFileController extends Controller
     {
         return match ($section) {
             'technical' => DB::table('technical_checklist_files as f')
-                ->join('technical_checklist_items as i', 'i.id', '=', 'f.technical_checklist_item_id')
-                ->join('technical_checklist_headers as h', 'h.id', '=', 'i.technical_checklist_header_id')
+                ->join('technical_checklist_headers as h', 'h.id', '=', 'f.technical_checklist_header_id')
                 ->where('f.uuid', $fileUuid)
                 ->where('h.tender_id', $tenderId)
                 ->select('f.original_name', 'f.path', 'f.mime_type')
                 ->first(),
             'financial' => DB::table('financial_checklist_files as f')
-                ->join('financial_checklist_items as i', 'i.id', '=', 'f.financial_checklist_item_id')
-                ->join('financial_checklist_headers as h', 'h.id', '=', 'i.financial_checklist_header_id')
+                ->join('financial_checklist_headers as h', 'h.id', '=', 'f.financial_checklist_header_id')
                 ->where('f.uuid', $fileUuid)
                 ->where('h.tender_id', $tenderId)
                 ->select('f.original_name', 'f.path', 'f.mime_type')
                 ->first(),
             'kewangan_kerja' => DB::table('kewangan_kerja_files as f')
-                ->join('kewangan_kerja_items as i', 'i.id', '=', 'f.kewangan_kerja_item_id')
-                ->join('kewangan_kerja_headers as h', 'h.id', '=', 'i.kewangan_kerja_header_id')
+                ->join('kewangan_kerja_headers as h', 'h.id', '=', 'f.kewangan_kerja_header_id')
+                ->where('f.uuid', $fileUuid)
+                ->where('h.tender_id', $tenderId)
+                ->select('f.original_name', 'f.path', 'f.mime_type')
+                ->first(),
+            'spesifikasi_kerja' => DB::table('spesifikasi_kerja_files as f')
+                ->join('spesifikasi_kerja_headers as h', 'h.id', '=', 'f.spesifikasi_kerja_header_id')
                 ->where('f.uuid', $fileUuid)
                 ->where('h.tender_id', $tenderId)
                 ->select('f.original_name', 'f.path', 'f.mime_type')
@@ -105,6 +108,7 @@ class TenderChecklistFileController extends Controller
             'technical' => '/api/technical-checklists/' . $tender->uuid,
             'financial' => '/api/financial-checklists/' . $tender->uuid,
             'kewangan_kerja' => '/api/kewangan-kerja/' . $tender->uuid,
+            'spesifikasi_kerja' => '/api/spesifikasi-kerja/' . $tender->uuid,
             default => null,
         };
 
@@ -150,6 +154,7 @@ class TenderChecklistFileController extends Controller
             'technical' => 'technical-checklist-files/' . $fileUuid . '/download',
             'financial' => 'financial-checklist-files/' . $fileUuid . '/download',
             'kewangan_kerja' => 'kewangan-kerja-files/' . $fileUuid . '/download',
+            'spesifikasi_kerja' => 'spesifikasi-kerja-files/' . $fileUuid . '/download',
             default => null,
         };
     }

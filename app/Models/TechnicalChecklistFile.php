@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class TechnicalChecklistFile extends Model
 {
@@ -22,5 +23,15 @@ class TechnicalChecklistFile extends Model
     public function getRouteKeyName(): string
     {
         return 'uuid';
+    }
+
+    public function header(): BelongsTo
+    {
+        return $this->belongsTo(TechnicalChecklistHeader::class, 'technical_checklist_header_id');
+    }
+
+    public function item(): BelongsTo
+    {
+        return $this->belongsTo(TechnicalChecklistItem::class, 'technical_checklist_item_id');
     }
 }

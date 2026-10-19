@@ -570,19 +570,43 @@ document.addEventListener('DOMContentLoaded', function () {
                 btnSimpanDraft.innerHTML = '<i class="bi bi-save"></i><span>Simpan Draft</span>';
 
                 if (ok) {
-                    if (window.toastr) {
-                        toastr.success(data.message || 'Draft laporan disimpan.');
+                    if (typeof showToast === 'function') {
+                        showToast('success', data.message || 'Draft laporan disimpan.');
+                    } else if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Berjaya!',
+                            text: data.message || 'Draft laporan disimpan.',
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
                     } else {
                         alert(data.message || 'Draft laporan disimpan.');
                     }
                 } else {
-                    alert(data.message || 'Ralat semasa menyimpan draft.');
+                    if (typeof showToast === 'function') {
+                        showToast('error', data.message || 'Ralat semasa menyimpan draft.');
+                    } else if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Ralat',
+                            text: data.message || 'Ralat semasa menyimpan draft.'
+                        });
+                    } else {
+                        alert(data.message || 'Ralat semasa menyimpan draft.');
+                    }
                 }
             })
             .catch(err => {
                 btnSimpanDraft.disabled = false;
                 btnSimpanDraft.innerHTML = '<i class="bi bi-save"></i><span>Simpan Draft</span>';
-                alert('Ralat sambungan pelayan.');
+                if (typeof showToast === 'function') {
+                    showToast('error', 'Ralat sambungan pelayan.');
+                } else if (typeof Swal !== 'undefined') {
+                    Swal.fire({ icon: 'error', title: 'Ralat', text: 'Ralat sambungan pelayan.' });
+                } else {
+                    alert('Ralat sambungan pelayan.');
+                }
             });
         });
     }
@@ -594,43 +618,95 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const unassessedCount = {{ collect($rumusanLaporanData ?? [])->filter(fn ($r) => in_array('belum_dinilai', [$r['step1_status'] ?? '', $r['step2_status'] ?? '', $r['step3_status'] ?? ''], true))->count() }};
             if (unassessedCount > 0) {
-                alert('Terdapat pembekal yang belum dinilai sepenuhnya merentasi Langkah 1, 2, atau 3. Sila lengkapkan semua penilaian sebelum menghantar laporan akhir.');
-                return;
-            }
-
-            if (!confirm('Adakah anda pasti untuk menghantar Laporan Penilaian Kewangan ini? Selepas penghantaran, status tender dan keputusan pembekal akan dikemaskini.')) {
-                return;
-            }
-
-            const formData = new FormData(formLaporan);
-
-            btnHantar.disabled = true;
-            btnHantar.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span> Menghantar...';
-
-            fetch("{{ route('penilaianKewangan.hantar') }}", {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            })
-            .then(res => res.json().then(data => ({ ok: res.ok, data })))
-            .then(({ ok, data }) => {
-                btnHantar.disabled = false;
-                btnHantar.innerHTML = '<i class="bi bi-send-check"></i><span>Hantar Laporan</span>';
-
-                if (ok) {
-                    mainWrap.style.display = 'none';
-                    successWrap.classList.remove('d-none');
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        title: 'Penilaian Belum Selesai',
+                        text: 'Terdapat pembekal yang belum dinilai sepenuhnya merentasi Langkah 1, 2, atau 3. Sila lengkapkan semua penilaian sebelum menghantar laporan akhir.',
+                        icon: 'warning',
+                        confirmButtonText: 'Faham',
+                        confirmButtonColor: '#1e293b'
+                    });
                 } else {
-                    alert(data.message || 'Ralat semasa menghantar laporan penilaian kewangan.');
+                    alert('Terdapat pembekal yang belum dinilai sepenuhnya merentasi Langkah 1, 2, atau 3. Sila lengkapkan semua penilaian sebelum menghantar laporan akhir.');
                 }
-            })
-            .catch(err => {
-                btnHantar.disabled = false;
-                btnHantar.innerHTML = '<i class="bi bi-send-check"></i><span>Hantar Laporan</span>';
-                alert('Ralat sambungan pelayan.');
-            });
+                return;
+            }
+
+            const executeHantar = () => {
+                const formData = new FormData(formLaporan);
+
+                btnHantar.disabled = true;
+                btnHantar.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span> Menghantar...';
+
+                fetch("{{ route('penilaianKewangan.hantar') }}", {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(res => res.json().then(data => ({ ok: res.ok, data })))
+                .then(({ ok, data }) => {
+                    btnHantar.disabled = false;
+                    btnHantar.innerHTML = '<i class="bi bi-send-check"></i><span>Hantar Laporan</span>';
+
+                    if (ok) {
+                        mainWrap.style.display = 'none';
+                        successWrap.classList.remove('d-none');
+                        if (typeof showToast === 'function') {
+                            showToast('success', 'Laporan penilaian kewangan berjaya dihantar.');
+                        }
+                    } else {
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire({
+                                title: 'Ralat',
+                                text: data.message || 'Ralat semasa menghantar laporan penilaian kewangan.',
+                                icon: 'error',
+                                confirmButtonText: 'Tutup',
+                                confirmButtonColor: '#1e293b'
+                            });
+                        } else {
+                            alert(data.message || 'Ralat semasa menghantar laporan penilaian kewangan.');
+                        }
+                    }
+                })
+                .catch(err => {
+                    btnHantar.disabled = false;
+                    btnHantar.innerHTML = '<i class="bi bi-send-check"></i><span>Hantar Laporan</span>';
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            title: 'Ralat',
+                            text: 'Ralat sambungan pelayan.',
+                            icon: 'error',
+                            confirmButtonText: 'Tutup',
+                            confirmButtonColor: '#1e293b'
+                        });
+                    } else {
+                        alert('Ralat sambungan pelayan.');
+                    }
+                });
+            };
+
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: 'Pengesahan Penghantaran',
+                    text: 'Adakah anda pasti untuk menghantar Laporan Penilaian Kewangan ini? Selepas penghantaran, status tender dan keputusan pembekal akan dikemaskini.',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: 'Ya, Hantar Laporan',
+                    cancelButtonText: 'Batal',
+                    confirmButtonColor: '#16a34a',
+                    cancelButtonColor: '#64748b'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        executeHantar();
+                    }
+                });
+            } else {
+                if (confirm('Adakah anda pasti untuk menghantar Laporan Penilaian Kewangan ini? Selepas penghantaran, status tender dan keputusan pembekal akan dikemaskini.')) {
+                    executeHantar();
+                }
+            }
         });
     }
 });

@@ -1775,9 +1775,19 @@ class PenilaianKewanganController extends Controller
         // Handle target step change
         if ($request->filled('target_step')) {
             $targetStep = (int) $request->input('target_step');
+            if ($targetStep > 1 && ! $progress->isStep1Confirmed()) {
+                return response()->json([
+                    'message' => 'Sila sahkan Langkah 1 (Pematuhan Dokumentasi) terlebih dahulu sebelum meneruskan ke Langkah 2.'
+                ], 422);
+            }
             if ($targetStep > 2 && ! $progress->isStep2Confirmed()) {
                 return response()->json([
                     'message' => 'Sila sahkan Langkah 2 (Pengesahan Akhir) terlebih dahulu sebelum meneruskan ke Langkah 3.'
+                ], 422);
+            }
+            if ($targetStep > 3 && ! $progress->isStep3Confirmed()) {
+                return response()->json([
+                    'message' => 'Sila sahkan Langkah 3 (Pematuhan Spesifikasi Kewangan) terlebih dahulu sebelum meneruskan ke Langkah 4.'
                 ], 422);
             }
             if ($progress->isStepUnlocked($targetStep)) {
@@ -1801,6 +1811,7 @@ class PenilaianKewanganController extends Controller
                 'step1' => $progress->isStepUnlocked(1),
                 'step2' => $progress->isStepUnlocked(2),
                 'step3' => $progress->isStepUnlocked(3),
+                'step4' => $progress->isStepUnlocked(4),
             ],
         ]);
     }
@@ -2040,14 +2051,26 @@ class PenilaianKewanganController extends Controller
             }
 
             // STOS may hold per-vendor files even when local payload has none.
-            $files = array_merge($files, $this->fetchPenyataFilesFromStos($tender, $vendorId));
+            if (empty($files)) {
+                $files = array_merge($files, $this->fetchPenyataFilesFromStos($tender, $vendorId));
+            }
 
             // Legacy local penyata_bank_files: only if uploaded_by maps to this vendor.
-            foreach ($legacyPenyataFiles as $file) {
-                $uploaderId = (int) ($file['uploaded_by'] ?? 0);
-                if ($uploaderId > 0 && ($uploaderVendorMap[$uploaderId] ?? null) === $vendorId) {
-                    $files[] = $file;
+            // Only use as a fallback if the vendor has no files from submitted payload or checklist.
+            if (empty($files)) {
+                $legacyByFileName = [];
+                foreach ($legacyPenyataFiles as $file) {
+                    $uploaderId = (int) ($file['uploaded_by'] ?? 0);
+                    if ($uploaderId > 0 && ($uploaderVendorMap[$uploaderId] ?? null) === $vendorId) {
+                        $fName = (string) ($file['original_name'] ?? $file['name'] ?? '');
+                        if ($fName !== '') {
+                            $legacyByFileName[$fName] = $file;
+                        } else {
+                            $legacyByFileName[] = $file;
+                        }
+                    }
                 }
+                $files = array_merge($files, array_values($legacyByFileName));
             }
 
             $byVendor[$vendorId] = $this->normalizePenyataDokumenFiles($files);
@@ -2221,6 +2244,10 @@ class PenilaianKewanganController extends Controller
                 'mime_type' => $file['mime_type'] ?? null,
             ];
         }
+
+        usort($normalized, static function ($a, $b) {
+            return strnatcasecmp((string) ($a['name'] ?? ''), (string) ($b['name'] ?? ''));
+        });
 
         return array_values($normalized);
     }

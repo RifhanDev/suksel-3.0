@@ -642,24 +642,42 @@ class TendersController extends Controller
 	{
 		$committeeTable = DB::getSchemaBuilder()->hasTable('jawatankuasas') ? 'jawatankuasas' : 'jawatankuasa';
 
-		// 2-Peringkat: all 4 jenis (spec, open, tech, fin) with 12 role combos, all notified
+		// 2-Peringkat: spec, open, tech, fin (all must have Pengerusi and Ahli, Setiausaha optional, all notified)
 		$twoPeringkat = DB::table($committeeTable)
-			->select('tender_id')
-			->whereIn('jenis_jawatankuasa', ['spec', 'open', 'tech', 'fin'])
-			->groupBy('tender_id')
-			->havingRaw("COUNT(DISTINCT CASE WHEN user_id IS NOT NULL THEN CONCAT(jenis_jawatankuasa, ':', peranan) END) = 12")
-			->havingRaw("SUM(CASE WHEN user_id IS NOT NULL AND dihantar_pemakluman_pada IS NULL THEN 1 ELSE 0 END) = 0");
+			->select("{$committeeTable}.tender_id")
+			->join('tenders as t2p', 't2p.id', '=', "{$committeeTable}.tender_id")
+			->where(function ($q) {
+				$q->where('t2p.tender_peringkat', '=', 2)
+					->orWhereNull('t2p.tender_peringkat');
+			})
+			->whereIn("{$committeeTable}.jenis_jawatankuasa", ['spec', 'open', 'tech', 'fin'])
+			->groupBy("{$committeeTable}.tender_id")
+			->havingRaw("SUM(CASE WHEN {$committeeTable}.jenis_jawatankuasa = 'spec' AND {$committeeTable}.peranan = 1 AND {$committeeTable}.user_id IS NOT NULL THEN 1 ELSE 0 END) >= 1")
+			->havingRaw("SUM(CASE WHEN {$committeeTable}.jenis_jawatankuasa = 'spec' AND {$committeeTable}.peranan = 3 AND {$committeeTable}.user_id IS NOT NULL THEN 1 ELSE 0 END) >= 1")
+			->havingRaw("SUM(CASE WHEN {$committeeTable}.jenis_jawatankuasa = 'open' AND {$committeeTable}.peranan = 1 AND {$committeeTable}.user_id IS NOT NULL THEN 1 ELSE 0 END) >= 1")
+			->havingRaw("SUM(CASE WHEN {$committeeTable}.jenis_jawatankuasa = 'open' AND {$committeeTable}.peranan = 3 AND {$committeeTable}.user_id IS NOT NULL THEN 1 ELSE 0 END) >= 1")
+			->havingRaw("SUM(CASE WHEN {$committeeTable}.jenis_jawatankuasa = 'tech' AND {$committeeTable}.peranan = 1 AND {$committeeTable}.user_id IS NOT NULL THEN 1 ELSE 0 END) >= 1")
+			->havingRaw("SUM(CASE WHEN {$committeeTable}.jenis_jawatankuasa = 'tech' AND {$committeeTable}.peranan = 3 AND {$committeeTable}.user_id IS NOT NULL THEN 1 ELSE 0 END) >= 1")
+			->havingRaw("SUM(CASE WHEN {$committeeTable}.jenis_jawatankuasa = 'fin' AND {$committeeTable}.peranan = 1 AND {$committeeTable}.user_id IS NOT NULL THEN 1 ELSE 0 END) >= 1")
+			->havingRaw("SUM(CASE WHEN {$committeeTable}.jenis_jawatankuasa = 'fin' AND {$committeeTable}.peranan = 3 AND {$committeeTable}.user_id IS NOT NULL THEN 1 ELSE 0 END) >= 1")
+			->havingRaw("SUM(CASE WHEN {$committeeTable}.user_id IS NOT NULL AND {$committeeTable}.dihantar_pemakluman_pada IS NULL THEN 1 ELSE 0 END) = 0")
+			->havingRaw("SUM(CASE WHEN {$committeeTable}.dihantar_pemakluman_pada IS NOT NULL THEN 1 ELSE 0 END) > 0");
 
-		// 1-Peringkat: only 3 jenis (open, tech, fin) with 9 role combos, all notified,
-		// and the tender must be marked as tender_peringkat = 1
+		// 1-Peringkat: spec, open, eval (all must have Pengerusi and Ahli, Setiausaha optional, all notified)
 		$onePeringkat = DB::table($committeeTable)
 			->select("{$committeeTable}.tender_id")
 			->join('tenders as t1p', 't1p.id', '=', "{$committeeTable}.tender_id")
-			->whereIn("{$committeeTable}.jenis_jawatankuasa", ['spec', 'open', 'eval'])
 			->where('t1p.tender_peringkat', '=', 1)
+			->whereIn("{$committeeTable}.jenis_jawatankuasa", ['spec', 'open', 'eval'])
 			->groupBy("{$committeeTable}.tender_id")
-			->havingRaw("COUNT(DISTINCT CASE WHEN {$committeeTable}.user_id IS NOT NULL THEN CONCAT({$committeeTable}.jenis_jawatankuasa, ':', {$committeeTable}.peranan) END) = 9")
-			->havingRaw("SUM(CASE WHEN {$committeeTable}.user_id IS NOT NULL AND {$committeeTable}.dihantar_pemakluman_pada IS NULL THEN 1 ELSE 0 END) = 0");
+			->havingRaw("SUM(CASE WHEN {$committeeTable}.jenis_jawatankuasa = 'spec' AND {$committeeTable}.peranan = 1 AND {$committeeTable}.user_id IS NOT NULL THEN 1 ELSE 0 END) >= 1")
+			->havingRaw("SUM(CASE WHEN {$committeeTable}.jenis_jawatankuasa = 'spec' AND {$committeeTable}.peranan = 3 AND {$committeeTable}.user_id IS NOT NULL THEN 1 ELSE 0 END) >= 1")
+			->havingRaw("SUM(CASE WHEN {$committeeTable}.jenis_jawatankuasa = 'open' AND {$committeeTable}.peranan = 1 AND {$committeeTable}.user_id IS NOT NULL THEN 1 ELSE 0 END) >= 1")
+			->havingRaw("SUM(CASE WHEN {$committeeTable}.jenis_jawatankuasa = 'open' AND {$committeeTable}.peranan = 3 AND {$committeeTable}.user_id IS NOT NULL THEN 1 ELSE 0 END) >= 1")
+			->havingRaw("SUM(CASE WHEN {$committeeTable}.jenis_jawatankuasa = 'eval' AND {$committeeTable}.peranan = 1 AND {$committeeTable}.user_id IS NOT NULL THEN 1 ELSE 0 END) >= 1")
+			->havingRaw("SUM(CASE WHEN {$committeeTable}.jenis_jawatankuasa = 'eval' AND {$committeeTable}.peranan = 3 AND {$committeeTable}.user_id IS NOT NULL THEN 1 ELSE 0 END) >= 1")
+			->havingRaw("SUM(CASE WHEN {$committeeTable}.user_id IS NOT NULL AND {$committeeTable}.dihantar_pemakluman_pada IS NULL THEN 1 ELSE 0 END) = 0")
+			->havingRaw("SUM(CASE WHEN {$committeeTable}.dihantar_pemakluman_pada IS NOT NULL THEN 1 ELSE 0 END) > 0");
 
 		// UNION both sets so either peringkat can appear in the list
 		$completedCommitteeTenders = DB::query()
