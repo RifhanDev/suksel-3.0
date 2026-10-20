@@ -1933,7 +1933,7 @@ class TendersController extends Controller
 			}
 		}
 
-		TenderVendor::syncKodPembekal($tender->id);
+		// kod_pembekal assigned when vendor hantar dokumen, not when invited/purchased
 
 		TenderHistory::log($tender->id, 'update-vendors');
 
