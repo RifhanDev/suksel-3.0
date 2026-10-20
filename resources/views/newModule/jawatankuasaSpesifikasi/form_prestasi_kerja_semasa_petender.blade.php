@@ -315,6 +315,83 @@ $(document).ready(function () {
     function ro() { return VIEW_ONLY ? ' readonly' : ''; }
     function dis() { return VIEW_ONLY ? ' disabled' : ''; }
 
+    var malayMonths = {
+        jan: 0, januari: 0,
+        feb: 1, februari: 1,
+        mac: 2, mar: 2,
+        apr: 3, april: 3,
+        mei: 4, may: 4,
+        jun: 5,
+        jul: 6, julai: 6,
+        ogo: 7, ogos: 7, aug: 7,
+        sep: 8, sept: 8, september: 8,
+        okt: 9, oktob: 9, oktober: 9, oct: 9,
+        nov: 10, november: 10,
+        dis: 11, disember: 11, dec: 11
+    };
+
+    function parseDateString(val) {
+        if (!val || typeof val !== 'string') return null;
+        val = $.trim(val);
+        if (!val || val === '-') return null;
+
+        var parts = val.split(/[\s\/\-]+/);
+        if (parts.length === 3) {
+            var d = parseInt(parts[0], 10);
+            var mToken = parts[1].toLowerCase();
+            var m = null;
+            if (malayMonths[mToken] !== undefined) {
+                m = malayMonths[mToken];
+            } else if (/^\d+$/.test(mToken)) {
+                m = parseInt(mToken, 10) - 1;
+            }
+
+            var y = parseInt(parts[2], 10);
+            if (!isNaN(d) && m !== null && !isNaN(y) && y > 1900 && m >= 0 && m <= 11) {
+                var dt = new Date(y, m, d);
+                if (dt.getFullYear() === y && dt.getMonth() === m && dt.getDate() === d) {
+                    return dt;
+                }
+            }
+        }
+
+        var parsed = new Date(val);
+        if (parsed instanceof Date && !isNaN(parsed.getTime())) {
+            return new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
+        }
+
+        return null;
+    }
+
+    function parseDateInput($input) {
+        if (!$input || !$input.length) return null;
+        if (typeof $input.datepicker === 'function') {
+            try {
+                var dpDate = $input.datepicker('getDate');
+                if (dpDate instanceof Date && !isNaN(dpDate.getTime())) {
+                    return new Date(dpDate.getFullYear(), dpDate.getMonth(), dpDate.getDate());
+                }
+            } catch (e) {}
+        }
+        return parseDateString($input.val());
+    }
+
+    function calcTempoh($row, clearIfMissing) {
+        var $tapak = $row.find('.field-tarikh-tapak');
+        var $siap = $row.find('.field-tarikh-siap');
+        var $tempoh = $row.find('.field-tempoh');
+
+        var dTapak = parseDateInput($tapak);
+        var dSiap = parseDateInput($siap);
+
+        if (dTapak && dSiap) {
+            var diffDays = Math.round((dSiap.getTime() - dTapak.getTime()) / 86400000);
+            $tempoh.val(Math.max(0, diffDays));
+        } else if (clearIfMissing) {
+            $tempoh.val('');
+        }
+    }
+
     function buildRow(bil, data) {
         data = data || {};
         var hargaFmt = data.harga ? fmtAmt(data.harga) : '';
@@ -323,6 +400,13 @@ $(document).ready(function () {
         var actionCol = VIEW_ONLY ? '' :
             '<td class="text-center"><div class="d-inline-flex align-items-center justify-content-center">' + DELETE_BTN + '</div></td>';
 
+        var tempohVal = (data.tempoh !== null && data.tempoh !== undefined && data.tempoh !== '') ? data.tempoh : '';
+        var dTapakInit = parseDateString(data.tarikh_tapak);
+        var dSiapInit = parseDateString(data.tarikh_siap);
+        if (dTapakInit && dSiapInit) {
+            tempohVal = Math.max(0, Math.round((dSiapInit.getTime() - dTapakInit.getTime()) / 86400000));
+        }
+
         return $('<tr class="prestasi-row">' +
             '<td class="text-center row-bil fw-semibold text-muted" style="font-size:0.8rem;">' + bil + '</td>' +
             '<td><input type="text" name="nama[]" class="form-control form-control-sm field-nama" placeholder="Tajuk projek..." value="' + esc(data.nama) + '"' + ro() + '></td>' +
@@ -330,9 +414,9 @@ $(document).ready(function () {
             '<td><input type="text" name="harga[]" class="form-control form-control-sm text-end field-harga" placeholder="0.00" value="' + hargaFmt + '"' + ro() + '></td>' +
             '<td><input type="text" name="wang_kos_prima[]" class="form-control form-control-sm text-end field-harga" placeholder="0.00" value="' + wkpFmt + '"' + ro() + '></td>' +
             '<td><input type="text" name="wang_peruntukan_semasa[]" class="form-control form-control-sm text-end field-harga" placeholder="0.00" value="' + wpsFmt + '"' + ro() + '></td>' +
-            '<td><input type="text" name="tarikh_tapak[]" class="form-control form-control-sm pk-date" placeholder="dd/mm/yyyy" value="' + esc(data.tarikh_tapak) + '" readonly' + dis() + '></td>' +
-            '<td><input type="number" name="tempoh[]" class="form-control form-control-sm text-center" placeholder="0" min="0" value="' + esc(data.tempoh) + '"' + ro() + '></td>' +
-            '<td><input type="text" name="tarikh_siap[]" class="form-control form-control-sm pk-date" placeholder="dd/mm/yyyy" value="' + esc(data.tarikh_siap) + '" readonly' + dis() + '></td>' +
+            '<td><input type="text" name="tarikh_tapak[]" class="form-control form-control-sm pk-date field-tarikh-tapak" placeholder="dd/mm/yyyy" value="' + esc(data.tarikh_tapak) + '" readonly' + dis() + '></td>' +
+            '<td><input type="number" name="tempoh[]" class="form-control form-control-sm text-center field-tempoh" placeholder="0" min="0" value="' + esc(tempohVal) + '" readonly style="background-color:#f8fafc;" title="Auto dikira berdasarkan tarikh tapak dan tarikh siap"></td>' +
+            '<td><input type="text" name="tarikh_siap[]" class="form-control form-control-sm pk-date field-tarikh-siap" placeholder="dd/mm/yyyy" value="' + esc(data.tarikh_siap) + '" readonly' + dis() + '></td>' +
             '<td><input type="text" name="tarikh_penilaian[]" class="form-control form-control-sm pk-date" placeholder="dd/mm/yyyy" value="' + esc(data.tarikh_penilaian) + '" readonly' + dis() + '></td>' +
             '<td><input type="number" name="kemajuan_sebenar[]" class="form-control form-control-sm text-center" placeholder="0" min="0" max="100" step="0.01" value="' + esc(data.kemajuan_sebenar) + '"' + ro() + '></td>' +
             '<td><input type="number" name="kemajuan_jadual[]" class="form-control form-control-sm text-center" placeholder="0" min="0" max="100" step="0.01" value="' + esc(data.kemajuan_jadual) + '"' + ro() + '></td>' +
@@ -348,7 +432,15 @@ $(document).ready(function () {
 
     function initDatepickers($scope) {
         if (VIEW_ONLY) return;
-        $scope.find('.pk-date').datepicker({ format: 'd M yyyy', autoclose: true, todayHighlight: true, todayBtn: 'linked' });
+        $scope.find('.pk-date').datepicker({
+            format: 'd M yyyy',
+            autoclose: true,
+            todayHighlight: true,
+            todayBtn: 'linked'
+        }).on('changeDate clearDate', function () {
+            var $row = $(this).closest('.prestasi-row');
+            calcTempoh($row, true);
+        });
     }
 
     function appendRow(data) {
@@ -356,6 +448,7 @@ $(document).ready(function () {
         var $row = buildRow(bil, data);
         $('#tbl-prestasi-body').append($row);
         initDatepickers($row);
+        calcTempoh($row, false);
         reNumber();
         return $row;
     }
@@ -374,6 +467,11 @@ $(document).ready(function () {
         reNumber();
     });
 
+    $('#tbl-prestasi-body').on('change input clearDate', '.field-tarikh-tapak, .field-tarikh-siap', function () {
+        var $row = $(this).closest('.prestasi-row');
+        calcTempoh($row, true);
+    });
+
     $('#tbl-prestasi-body').on('focus', '.field-harga', function () {
         $(this).val($(this).val().replace(/,/g, '') || '');
     }).on('blur', '.field-harga', function () {
@@ -388,6 +486,7 @@ $(document).ready(function () {
         });
 
         $('#tbl-prestasi-body .prestasi-row').each(function () {
+            calcTempoh($(this), false);
             if (!$(this).find('.field-nama').val().trim()) {
                 $(this).find(':input').prop('disabled', true);
             }
