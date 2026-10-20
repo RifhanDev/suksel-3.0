@@ -9,7 +9,7 @@ class SyncKodPembekalCommand extends Command
 {
     protected $signature = 'kod-pembekal:sync {tender_id? : Optional tender ID to sync}';
 
-    protected $description = 'Generate kod_pembekal (e.g. 1/20) for tender purchasers';
+    protected $description = 'Generate kod_pembekal (e.g. 1/20) for vendors who have hantar dokumen';
 
     public function handle(KodPembekalService $service): int
     {

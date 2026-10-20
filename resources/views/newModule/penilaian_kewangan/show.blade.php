@@ -1870,15 +1870,16 @@
             // Render Melepasi Table
             if (melepasiList.length > 0) {
                 melepasiList.forEach((v, idx) => {
-                    const kodDisplay = v.kod ? escapeHtml(v.kod) : ((idx + 1) + '/' + melepasiList.length);
+                    const kodDisplay = v.kod ? ('<div class="small text-muted font-monospace">' + escapeHtml(v.kod) + '</div>') : '';
                     const ulasanTxt = v.catatan ? escapeHtml(v.catatan) : 'Mematuhi semua syarat penilaian penyata bulanan bank.';
                     $melepasiTbody.append(
                         '<tr>' +
                             '<td class="text-center py-3 px-3">' +
-                                '<span class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1.5 rounded-pill font-monospace fw-bold">' + kodDisplay + '</span>' +
+                                '<span class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1.5 rounded-pill font-monospace fw-bold">' + (idx + 1) + '</span>' +
                             '</td>' +
                             '<td class="py-3 px-3 fw-semibold text-dark">' +
                                 '<div>' + escapeHtml(v.name || '') + '</div>' +
+                                kodDisplay +
                                 '<div class="small text-muted font-normal mt-1">' + ulasanTxt + '</div>' +
                             '</td>' +
                         '</tr>'
@@ -1891,15 +1892,16 @@
             // Render Tidak Melepasi Table
             if (tidakMelepasiList.length > 0) {
                 tidakMelepasiList.forEach((v, idx) => {
-                    const kodDisplay = v.kod ? escapeHtml(v.kod) : ((idx + 1) + '/' + tidakMelepasiList.length);
+                    const kodDisplay = v.kod ? ('<div class="small text-muted font-monospace">' + escapeHtml(v.kod) + '</div>') : '';
                     const ulasanTxt = v.catatan ? escapeHtml(v.catatan) : 'Tidak mematuhi syarat penilaian penyata bulanan bank.';
                     $tidakMelepasiTbody.append(
                         '<tr>' +
                             '<td class="text-center py-3 px-3">' +
-                                '<span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2.5 py-1.5 rounded-pill font-monospace fw-bold">' + kodDisplay + '</span>' +
+                                '<span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2.5 py-1.5 rounded-pill font-monospace fw-bold">' + (idx + 1) + '</span>' +
                             '</td>' +
                             '<td class="py-3 px-3 fw-semibold text-dark">' +
                                 '<div>' + escapeHtml(v.name || '') + '</div>' +
+                                kodDisplay +
                                 '<div class="small text-danger font-medium mt-1">' + ulasanTxt + '</div>' +
                             '</td>' +
                         '</tr>'

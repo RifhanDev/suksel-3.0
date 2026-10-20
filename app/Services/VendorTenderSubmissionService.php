@@ -97,6 +97,9 @@ class VendorTenderSubmissionService
             $purchase->submitted = 1;
             $purchase->save();
 
+            // Kod pembekal only after hantar dokumen (not at payment).
+            TenderVendor::syncKodPembekal($tender->id);
+
             $this->advanceToHantarDokumenSyarikat($tender);
 
             return $purchase->fresh();

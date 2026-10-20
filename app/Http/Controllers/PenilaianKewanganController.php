@@ -200,7 +200,7 @@ class PenilaianKewanganController extends Controller
             $penyataUuids     = $sections['penyataUuids'];
 
             $tenderDokumen = TenderDokumenPresenter::for($tender);
-            $participants = $this->loadEligibleTechnicalParticipants($tender);
+            $participants = $this->resolveAndSortParticipantsByHargaTawaran($tender, null, $kewanganUuids);
 
             $dokumenByVendor = [];
             foreach ($participants as $participant) {
@@ -208,40 +208,8 @@ class PenilaianKewanganController extends Controller
                 $dokumenByVendor[$vendorId] = $tenderDokumen->items('vendor', $vendorId);
             }
 
-            $vendors = $participants->map(function ($participant) use ($tender, $kewanganUuids) {
-                // Resolve vendor's total financial offered price (Financial Specification responses only)
-                $harga = null;
-                $responses = \App\Models\TenderVendorDokumenResponse::query()
-                    ->where('tender_id', $tender->id)
-                    ->where('vendor_id', $participant->vendor_id)
-                    ->where('response_type', 'specification')
-                    ->where(function ($q) use ($kewanganUuids) {
-                        $q->whereIn('section', ['financial', 'kewangan_kerja']);
-                        if (! empty($kewanganUuids)) {
-                            $q->orWhereIn('checklist_item_uuid', $kewanganUuids);
-                        }
-                    })
-                    ->get();
-
-                $totalSpec = 0.0;
-                $hasPrices = false;
-                foreach ($responses as $resp) {
-                    $itemPrices = $resp->payload['item_prices'] ?? [];
-                    if (is_array($itemPrices)) {
-                        foreach ($itemPrices as $val) {
-                            if (is_numeric($val) && (float) $val > 0) {
-                                $totalSpec += (float) $val;
-                                $hasPrices = true;
-                            }
-                        }
-                    }
-                }
-
-                if ($hasPrices) {
-                    $harga = $totalSpec;
-                } elseif (filled($participant->harga_tawaran) && (float) $participant->harga_tawaran > 0) {
-                    $harga = (float) $participant->harga_tawaran;
-                }
+            $vendors = $participants->map(function ($participant) {
+                $harga = $participant->harga_tawaran_resolved;
 
                 // Resolve Bumiputera status
                 $isBumi = false;
@@ -259,7 +227,7 @@ class PenilaianKewanganController extends Controller
                     'is_bumiputera'     => $isBumi ? 1 : 0,
                     'bumiputera_status' => $bumiputeraStatusLabel,
                     'harga_tawaran'     => $harga ? (float) $harga : null,
-                    'harga_tawaran_fmt' => $harga ? number_format((float) $harga, 2) : '-',
+                    'harga_tawaran_fmt' => $participant->harga_tawaran_fmt ?? ($harga ? number_format((float) $harga, 2) : '-'),
                 ];
             })->values()->all();
 
@@ -788,6 +756,91 @@ class PenilaianKewanganController extends Controller
     }
 
     /**
+     * Resolve actual numeric offered price for each participant and sort ascending.
+     *
+     * Lowest-priced vendor ranked number 1. Unpriced/null/zero prices placed at the end.
+     *
+     * @param  \App\Tender|null  $tender
+     * @param  \Illuminate\Support\Collection|null  $participants
+     * @param  list<string>  $kewanganUuids
+     * @return \Illuminate\Support\Collection
+     */
+    protected function resolveAndSortParticipantsByHargaTawaran(?Tender $tender, ?Collection $participants = null, array $kewanganUuids = []): Collection
+    {
+        if (! $tender) {
+            return collect();
+        }
+
+        if ($participants === null) {
+            $participants = $this->loadEligibleTechnicalParticipants($tender);
+        }
+
+        if ($participants->isEmpty()) {
+            return collect();
+        }
+
+        if (empty($kewanganUuids)) {
+            $sections = $this->resolveTenderChecklistSections($tender);
+            $kewanganUuids = $sections['kewanganUuids'] ?? [];
+        }
+
+        $vendorIds = $participants->pluck('vendor_id')->filter()->unique()->all();
+
+        $responses = TenderVendorDokumenResponse::query()
+            ->where('tender_id', $tender->id)
+            ->whereIn('vendor_id', $vendorIds)
+            ->where('response_type', 'specification')
+            ->where(function ($q) use ($kewanganUuids) {
+                $q->whereIn('section', ['financial', 'kewangan_kerja']);
+                if (! empty($kewanganUuids)) {
+                    $q->orWhereIn('checklist_item_uuid', $kewanganUuids);
+                }
+            })
+            ->get()
+            ->groupBy('vendor_id');
+
+        foreach ($participants as $participant) {
+            $vId = (int) $participant->vendor_id;
+            $vResponses = $responses->get($vId, collect());
+
+            $totalSpec = 0.0;
+            $hasPrices = false;
+            foreach ($vResponses as $resp) {
+                $itemPrices = $resp->payload['item_prices'] ?? [];
+                if (is_array($itemPrices)) {
+                    foreach ($itemPrices as $val) {
+                        if (is_numeric($val) && (float) $val > 0) {
+                            $totalSpec += (float) $val;
+                            $hasPrices = true;
+                        }
+                    }
+                }
+            }
+
+            $harga = null;
+            if ($hasPrices) {
+                $harga = $totalSpec;
+            } elseif (filled($participant->harga_tawaran) && (float) $participant->harga_tawaran > 0) {
+                $harga = (float) $participant->harga_tawaran;
+            }
+
+            $participant->harga_tawaran_resolved = $harga !== null ? (float) $harga : null;
+            $participant->harga_tawaran_fmt = $harga !== null ? number_format((float) $harga, 2) : '-';
+        }
+
+        return $participants->sort(function ($a, $b) {
+            $pA = ($a->harga_tawaran_resolved !== null && $a->harga_tawaran_resolved > 0) ? (float) $a->harga_tawaran_resolved : PHP_FLOAT_MAX;
+            $pB = ($b->harga_tawaran_resolved !== null && $b->harga_tawaran_resolved > 0) ? (float) $b->harga_tawaran_resolved : PHP_FLOAT_MAX;
+
+            if ($pA === $pB) {
+                return $a->id <=> $b->id;
+            }
+
+            return $pA <=> $pB;
+        })->values();
+    }
+
+    /**
      * Resolve tender checklist sections into kewangan (Step 1 & Step 3) items and penyata bank (Step 2) items.
      *
      * @return array{
@@ -1023,48 +1076,18 @@ class PenilaianKewanganController extends Controller
             ->filter()
             ->all();
 
-        $participants = $this->loadEligibleTechnicalParticipants($tender);
+        $participants = $this->resolveAndSortParticipantsByHargaTawaran($tender, null, $kewanganUuids);
 
         $total = $participants->count();
 
-        return $participants->values()->map(function ($participant, int $idx) use ($tender, $kewanganUuids, $total) {
-            $responses = TenderVendorDokumenResponse::query()
-                ->where('tender_id', $tender->id)
-                ->where('vendor_id', $participant->vendor_id)
-                ->where('response_type', 'specification')
-                ->where(function ($q) use ($kewanganUuids) {
-                    $q->whereIn('section', ['financial', 'kewangan_kerja']);
-                    if (! empty($kewanganUuids)) {
-                        $q->orWhereIn('checklist_item_uuid', $kewanganUuids);
-                    }
-                })
-                ->get();
-
-            $totalSpec = 0.0;
-            $hasPrices = false;
-            foreach ($responses as $resp) {
-                foreach ((array) ($resp->payload['item_prices'] ?? []) as $val) {
-                    if (is_numeric($val) && (float) $val > 0) {
-                        $totalSpec += (float) $val;
-                        $hasPrices = true;
-                    }
-                }
-            }
-
-            $harga = null;
-            if ($hasPrices) {
-                $harga = $totalSpec;
-            } elseif (filled($participant->harga_tawaran) && (float) $participant->harga_tawaran > 0) {
-                $harga = (float) $participant->harga_tawaran;
-            }
-
+        return $participants->values()->map(function ($participant, int $idx) use ($total) {
             return [
                 'bil' => $idx + 1,
                 'vendor_id' => (int) $participant->vendor_id,
                 'no_petender' => $participant->kod_pembekal ?: (($idx + 1) . '/' . $total),
                 'nama' => $participant->vendor?->name ?: ('Vendor #' . $participant->vendor_id),
-                'harga' => $harga,
-                'harga_display' => $harga !== null ? number_format($harga, 2) : '-',
+                'harga' => $participant->harga_tawaran_resolved,
+                'harga_display' => $participant->harga_tawaran_fmt,
             ];
         });
     }
@@ -1840,7 +1863,7 @@ class PenilaianKewanganController extends Controller
 
         $step2PassedVendorIds = $this->getStep2PassedVendorIds($tender, $kewanganUuids, $penyataUuids);
 
-        $eligibleParticipants = $this->loadEligibleTechnicalParticipants($tender)
+        $eligibleParticipants = $this->resolveAndSortParticipantsByHargaTawaran($tender, null, $kewanganUuids)
             ->filter(fn ($p) => in_array((int) $p->vendor_id, $step2PassedVendorIds, true));
 
         $totalMaxScore = 0.0;
@@ -1894,15 +1917,17 @@ class PenilaianKewanganController extends Controller
             $fmtMax = (number_format($totalMaxScore, 0) == $totalMaxScore) ? number_format($totalMaxScore, 0) : number_format($totalMaxScore, 2);
 
             $vendorData = [
-                'vendor_id'     => $vId,
-                'kod'           => $vendorKod,
-                'name'          => $vendorName,
-                'total_score'   => $vendorTotalScore,
-                'max_score'     => $totalMaxScore,
-                'percentage'    => $scorePct,
-                'is_melepasi'   => $isMelepasi,
-                'score_fmt'     => "{$fmtTotal} / {$fmtMax}",
-                'status_label'  => $isMelepasi ? 'Melepasi Penanda Aras' : 'Tidak Melepasi Penanda Aras',
+                'vendor_id'         => $vId,
+                'kod'               => $vendorKod,
+                'name'              => $vendorName,
+                'harga_tawaran'     => $participant->harga_tawaran_resolved,
+                'harga_tawaran_fmt' => $participant->harga_tawaran_fmt,
+                'total_score'       => $vendorTotalScore,
+                'max_score'         => $totalMaxScore,
+                'percentage'        => $scorePct,
+                'is_melepasi'       => $isMelepasi,
+                'score_fmt'         => "{$fmtTotal} / {$fmtMax}",
+                'status_label'      => $isMelepasi ? 'Melepasi Penanda Aras' : 'Tidak Melepasi Penanda Aras',
             ];
 
             if ($isMelepasi) {
@@ -1913,16 +1938,41 @@ class PenilaianKewanganController extends Controller
             }
         }
 
-        usort($melepasiList, fn ($a, $b) => $b['total_score'] <=> $a['total_score']);
+        usort($melepasiList, function ($a, $b) {
+            $pA = ($a['harga_tawaran'] !== null && $a['harga_tawaran'] > 0) ? (float) $a['harga_tawaran'] : PHP_FLOAT_MAX;
+            $pB = ($b['harga_tawaran'] !== null && $b['harga_tawaran'] > 0) ? (float) $b['harga_tawaran'] : PHP_FLOAT_MAX;
+
+            if ($pA === $pB) {
+                return ($b['total_score'] ?? 0) <=> ($a['total_score'] ?? 0);
+            }
+
+            return $pA <=> $pB;
+        });
 
         $rank = 1;
         foreach ($melepasiList as $idx => &$item) {
-            if ($idx > 0 && $item['total_score'] < $melepasiList[$idx - 1]['total_score']) {
-                $rank = $idx + 1;
+            if ($idx > 0) {
+                $prev = $melepasiList[$idx - 1];
+                $prevHarga = ($prev['harga_tawaran'] !== null && $prev['harga_tawaran'] > 0) ? (float) $prev['harga_tawaran'] : PHP_FLOAT_MAX;
+                $currHarga = ($item['harga_tawaran'] !== null && $item['harga_tawaran'] > 0) ? (float) $item['harga_tawaran'] : PHP_FLOAT_MAX;
+                if ($currHarga > $prevHarga) {
+                    $rank = $idx + 1;
+                }
             }
             $item['kedudukan'] = $rank;
         }
         unset($item);
+
+        usort($tidakMelepasiList, function ($a, $b) {
+            $pA = ($a['harga_tawaran'] !== null && $a['harga_tawaran'] > 0) ? (float) $a['harga_tawaran'] : PHP_FLOAT_MAX;
+            $pB = ($b['harga_tawaran'] !== null && $b['harga_tawaran'] > 0) ? (float) $b['harga_tawaran'] : PHP_FLOAT_MAX;
+
+            if ($pA === $pB) {
+                return ($b['total_score'] ?? 0) <=> ($a['total_score'] ?? 0);
+            }
+
+            return $pA <=> $pB;
+        });
 
         return [
             'passing_percentage'      => $passingPercentage,
@@ -2681,7 +2731,7 @@ class PenilaianKewanganController extends Controller
         $kewanganUuids = collect($kewanganItems)->pluck('uuid')->filter()->all();
 
         $evaluations = $this->loadEvaluations($tender);
-        $participants = $this->loadEligibleTechnicalParticipants($tender);
+        $participants = $this->resolveAndSortParticipantsByHargaTawaran($tender, null, $kewanganUuids);
         $progress = TenderKewanganProgress::query()->where('tender_id', $tender->id)->first();
 
         $step3PassedMap = collect($rumusanStep3Data['pembekal_melepasi'] ?? [])->keyBy('vendor_id');
@@ -2775,14 +2825,16 @@ class PenilaianKewanganController extends Controller
             $isLayak = ($step1Status === 'melepasi' && $step2Status === 'melepasi' && $step3Status === 'melepasi');
 
             $summaryList[] = [
-                'vendor_id'    => $vId,
-                'kod'          => $kod,
-                'name'         => $name,
-                'step1_status' => $step1Status, // 'melepasi', 'tidak_melepasi', 'belum_dinilai'
-                'step2_status' => $step2Status, // 'melepasi', 'tidak_melepasi', 'belum_dinilai', '-'
-                'step3_status' => $step3Status, // 'melepasi', 'tidak_melepasi', 'belum_dinilai', '-'
-                'is_layak'     => $isLayak,
-                'keputusan'    => $isLayak ? 'Layak' : 'Tidak Layak',
+                'vendor_id'         => $vId,
+                'kod'               => $kod,
+                'name'              => $name,
+                'harga_tawaran'     => $p->harga_tawaran_resolved,
+                'harga_tawaran_fmt' => $p->harga_tawaran_fmt,
+                'step1_status'      => $step1Status, // 'melepasi', 'tidak_melepasi', 'belum_dinilai'
+                'step2_status'      => $step2Status, // 'melepasi', 'tidak_melepasi', 'belum_dinilai', '-'
+                'step3_status'      => $step3Status, // 'melepasi', 'tidak_melepasi', 'belum_dinilai', '-'
+                'is_layak'          => $isLayak,
+                'keputusan'         => $isLayak ? 'Layak' : 'Tidak Layak',
             ];
         }
 
