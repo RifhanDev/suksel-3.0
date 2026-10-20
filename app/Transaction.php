@@ -274,7 +274,7 @@ class Transaction extends Model
 				$purchase->amount = $tender->price;
 				$purchase->transaction_id = $this->id;
 				$purchase->save();
-				TenderVendor::syncKodPembekal($tender->id);
+				// kod_pembekal assigned on hantar dokumen, not on payment
 			} else {
 				$tender->participants()->save(new TenderVendor([
 				'ref_number' => TenderVendor::generateNumber($tender->id),
@@ -283,7 +283,7 @@ class Transaction extends Model
 				'amount' => $tender->price,
 				'vendor_id' => $this->vendor_id
 				]));
-				TenderVendor::syncKodPembekal($tender->id);
+				// kod_pembekal assigned on hantar dokumen, not on payment
 			}
 		}
 	}
