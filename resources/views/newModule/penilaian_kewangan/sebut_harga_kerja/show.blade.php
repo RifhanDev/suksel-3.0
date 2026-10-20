@@ -2188,12 +2188,12 @@ window.previewDocument = function(title, url) {
 
     // Open PDF directly in a new tab
     if (isPdf && !isProbablyPage) {
-        window.open(resolvedUrl, '_blank');
+        window.open(resolvedUrl, '_blank', 'noopener,noreferrer');
         return;
     }
 
     // Direct download for non-PDF file download routes
-    if (isDownloadRoute && !isPdf && !isProbablyPage && !isImage) {
+    if (isDownloadRoute && !isPdf && !isProbablyPage) {
         const a = document.createElement('a');
         a.href = resolvedUrl;
         a.setAttribute('download', title || 'Dokumen');
