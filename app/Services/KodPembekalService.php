@@ -8,8 +8,9 @@ use Illuminate\Support\Facades\DB;
 class KodPembekalService
 {
     /**
-     * Assign kod_pembekal (e.g. 1/20, 2/20) to all purchasers of a tender.
-     * Sequence follows purchase order (tender_vendors.id ASC).
+     * Assign kod_pembekal (e.g. 1/20, 2/20) after vendor "hantar dokumen".
+     * Only rows with participate=1 AND submitted=1 get a code; others are cleared.
+     * Sequence follows tender_vendors.id ASC among submitted vendors.
      */
     public function syncForTender(int $tenderId): void
     {
@@ -21,11 +22,16 @@ class KodPembekalService
                 ->lockForUpdate()
                 ->get();
 
-            $total = $purchases->count();
+            $submitted = $purchases->where('submitted', 1)->values();
+            $total = $submitted->count();
+            $codesById = [];
 
-            foreach ($purchases as $index => $purchase) {
-                $sequence = $index + 1;
-                $code = $total > 0 ? "{$sequence}/{$total}" : null;
+            foreach ($submitted as $index => $purchase) {
+                $codesById[(int) $purchase->id] = $total > 0 ? ($index + 1) . '/' . $total : null;
+            }
+
+            foreach ($purchases as $purchase) {
+                $code = $codesById[(int) $purchase->id] ?? null;
 
                 if ($purchase->kod_pembekal !== $code) {
                     $purchase->kod_pembekal = $code;
@@ -36,12 +42,13 @@ class KodPembekalService
     }
 
     /**
-     * @return array<int, int> tender_id => purchasers synced
+     * @return int number of tenders synced
      */
     public function syncAll(): int
     {
         $tenderIds = TenderVendor::query()
             ->where('participate', 1)
+            ->where('submitted', 1)
             ->distinct()
             ->pluck('tender_id');
 
