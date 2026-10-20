@@ -57,6 +57,7 @@
                             $itemUuid = $item['uuid'] ?? '';
 
                             $itemPayload = $semakPayload[$itemUuid] ?? null;
+                            $isProfil = !empty($itemPayload['profil_petender_detail']);
                             $itemVendors = $itemPayload['vendors'] ?? [];
 
                             $eligibleVendors = collect($itemVendors)->filter(function ($v) use ($step2PassedVendorIds) {
@@ -65,11 +66,14 @@
 
                             $totalEligible = $eligibleVendors->count();
 
-                            $reviewedCount = $eligibleVendors->filter(function($v) {
-                                return !empty($v['step3_evaluated']) || (isset($v['skor_modal_berbayar']) && $v['skor_modal_berbayar'] !== null);
+                            $completedCount = $eligibleVendors->filter(function($v) use ($isProfil) {
+                                if ($isProfil) {
+                                    return isset($v['skor_modal_berbayar']) && $v['skor_modal_berbayar'] !== null && $v['skor_modal_berbayar'] !== '';
+                                }
+                                return !empty($v['step3_evaluated']) && ($v['skor'] !== null && $v['skor'] !== '');
                             })->count();
 
-                            $isItemSelesai = ($totalEligible > 0 && $reviewedCount === $totalEligible);
+                            $isItemSelesai = ($totalEligible > 0 && $completedCount === $totalEligible);
                         @endphp
                         <tr data-item-uuid="{{ $itemUuid }}">
                             <td class="px-3 py-3">
@@ -1149,30 +1153,33 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function updateMainTableStatusPenilaian(itemUuid, isSelesaiOverride) {
-        console.log('[updateMainTableStatus] Called with itemUuid:', itemUuid, 'isSelesaiOverride:', isSelesaiOverride, 'type:', typeof isSelesaiOverride);
         if (!itemUuid || typeof SEMAK_PAYLOAD === 'undefined' || !SEMAK_PAYLOAD[itemUuid]) {
-            console.log('[updateMainTableStatus] EARLY RETURN - missing data. itemUuid:', itemUuid, 'SEMAK_PAYLOAD exists:', typeof SEMAK_PAYLOAD !== 'undefined', 'item exists:', !!(typeof SEMAK_PAYLOAD !== 'undefined' && SEMAK_PAYLOAD[itemUuid]));
             return;
         }
 
+        const itemObj = SEMAK_PAYLOAD[itemUuid];
+        const isProfil = !!itemObj.profil_petender_detail;
         const failedVendorIds = getFailedVendorIdsStep3();
-        const rawVendors = SEMAK_PAYLOAD[itemUuid].vendors || [];
+        const rawVendors = itemObj.vendors || [];
         const eligibleVendors = rawVendors.filter(v => !failedVendorIds.includes(parseInt(v.vendor_id)));
 
         const totalEligible = eligibleVendors.length;
-        const evaluatedCount = eligibleVendors.filter(v => {
-            return !!(v.step3_evaluated || (v.skor_modal_berbayar !== null && v.skor_modal_berbayar !== undefined && v.skor_modal_berbayar !== '') || (v.skor !== null && v.skor !== undefined && v.skor !== ''));
-        }).length;
+        let isSelesai = false;
 
-        let isSelesai = (totalEligible > 0 && evaluatedCount === totalEligible);
-        console.log('[updateMainTableStatus] totalEligible:', totalEligible, 'evaluatedCount:', evaluatedCount, 'localCalc:', isSelesai);
         if (typeof isSelesaiOverride === 'boolean') {
             isSelesai = isSelesaiOverride;
-            console.log('[updateMainTableStatus] Using override:', isSelesaiOverride);
+        } else if (totalEligible > 0) {
+            const completedCount = eligibleVendors.filter(v => {
+                if (isProfil) {
+                    return v.skor_modal_berbayar !== null && v.skor_modal_berbayar !== undefined && v.skor_modal_berbayar !== '';
+                } else {
+                    return !!v.step3_evaluated && v.skor !== null && v.skor !== undefined && v.skor !== '';
+                }
+            }).length;
+            isSelesai = (completedCount === totalEligible);
         }
 
         const tr = document.querySelector(`tr[data-item-uuid="${itemUuid}"]`);
-        console.log('[updateMainTableStatus] Found TR:', !!tr);
         if (tr) {
             const tdStatus = tr.querySelector('.status-penilaian');
             if (tdStatus) {
@@ -1318,6 +1325,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const secondModalEl = document.getElementById('modalPaparVendorCadanganKewanganStep3');
     const firstModal = firstModalEl ? bootstrap.Modal.getOrCreateInstance(firstModalEl) : null;
     const secondModal = secondModalEl ? bootstrap.Modal.getOrCreateInstance(secondModalEl) : null;
+
+    if (firstModalEl) {
+        firstModalEl.addEventListener('hidden.bs.modal', function() {
+            if (currentStep3ItemUuid) {
+                updateMainTableStatusPenilaian(currentStep3ItemUuid);
+            }
+        });
+    }
 
     function bindStep3VendorDetailButtons() {
         document.querySelectorAll('.btn-step3-papar-vendor').forEach(function(btn) {
@@ -1553,6 +1568,12 @@ document.addEventListener('DOMContentLoaded', function() {
                         }
 
                         const savedItemUuid = currentStep3ItemUuid;
+
+                        if (typeof resp.is_item_selesai === 'boolean') {
+                            updateMainTableStatusPenilaian(savedItemUuid, resp.is_item_selesai);
+                        } else {
+                            updateMainTableStatusPenilaian(savedItemUuid);
+                        }
 
                         if (secondModal) {
                             secondModal.hide();
@@ -1978,6 +1999,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
                         const savedItemUuid = currentStep3ItemUuid;
 
+                        if (typeof resp.is_item_selesai === 'boolean') {
+                            updateMainTableStatusPenilaian(savedItemUuid, resp.is_item_selesai);
+                        } else {
+                            updateMainTableStatusPenilaian(savedItemUuid);
+                        }
+
                         if (profilModal2) {
                             profilModal2.hide();
                         }
@@ -2024,6 +2051,14 @@ document.addEventListener('DOMContentLoaded', function() {
     // ----------------------------------------------------
     const muatNaikModalEl = document.getElementById('modalMuatNaikStep3');
     const muatNaikModal = muatNaikModalEl ? bootstrap.Modal.getOrCreateInstance(muatNaikModalEl) : null;
+
+    if (muatNaikModalEl) {
+        muatNaikModalEl.addEventListener('hidden.bs.modal', function() {
+            if (currentStep3ItemUuid) {
+                updateMainTableStatusPenilaian(currentStep3ItemUuid);
+            }
+        });
+    }
 
     $(document).on('click', '.btn-papar-muat-naik-step3', function() {
         const dokumen = this.getAttribute('data-dokumen') || 'Item Kewangan (Muat Naik)';
@@ -2085,14 +2120,18 @@ document.addEventListener('DOMContentLoaded', function() {
                     const fUrl = f.url || f.path || '#';
                     const fName = f.original_name || f.name || f.filename || 'Dokumen';
                     const ext = (fName.split('.').pop() || '').toLowerCase();
+                    const isPdf = (ext === 'pdf' || (f.mime_type && String(f.mime_type).toLowerCase().includes('pdf')));
 
-                    if (ext === 'pdf') {
-                        return `<button type="button" class="btn btn-sm btn-link text-decoration-none p-0 text-start text-primary fw-semibold me-2" onclick="openPdfPreview('${escapeHtml(fUrl)}', '${escapeHtml(fName)}');">
-                            <i class="bi bi-file-earmark-pdf text-danger me-1 fs-6"></i>${escapeHtml(fName)}
-                        </button>`;
+                    if (isPdf) {
+                        return `<a href="${escapeHtml(fUrl)}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-link text-decoration-none p-0 text-start text-primary fw-semibold me-2 d-inline-flex align-items-center">
+                            <i class="bi bi-file-earmark-pdf text-danger me-1 fs-6"></i>
+                            <span>${escapeHtml(fName)}</span>
+                            <i class="bi bi-box-arrow-up-right ms-1 text-muted" style="font-size: 0.72rem;"></i>
+                        </a>`;
                     } else {
-                        return `<a href="${escapeHtml(fUrl)}" download="${escapeHtml(fName)}" class="btn btn-sm btn-outline-secondary py-0 px-2 font-monospace me-2" style="font-size: 0.75rem;">
-                            <i class="bi bi-download me-1"></i>${escapeHtml(fName)}
+                        return `<a href="${escapeHtml(fUrl)}" download="${escapeHtml(fName)}" class="btn btn-sm btn-outline-secondary py-0 px-2 font-monospace me-2 d-inline-flex align-items-center" style="font-size: 0.75rem;">
+                            <i class="bi bi-download me-1"></i>
+                            <span>${escapeHtml(fName)}</span>
                         </a>`;
                     }
                 }).join('<br>');
@@ -2184,6 +2223,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     muatNaikModal.hide();
                 }
                 const savedItemUuid = currentStep3ItemUuid;
+                updateMainTableStatusPenilaian(savedItemUuid, !hasError && eligibleVendors.length > 0);
                 reloadStep3ChecklistTable(function() {
                     renderStep3MuatNaikVendorTableModal(savedItemUuid);
                 });
@@ -2203,37 +2243,10 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // PDF Preview Helper Function
+    // PDF Preview Helper Function — Opens PDF directly in a new browser tab to prevent modal stacking & backdrop conflicts
     window.openPdfPreview = function(url, title) {
-        const modalPreviewEl = document.getElementById('modalPreview');
-        if (!modalPreviewEl) {
-            window.open(url, '_blank');
-            return;
-        }
-        const modalInstance = bootstrap.Modal.getOrCreateInstance(modalPreviewEl);
-        const titleEl = document.getElementById('modalPreviewTitle');
-        const iframeEl = document.getElementById('previewIframe');
-        const spinnerEl = document.getElementById('previewSpinner');
-        const newTabBtn = document.getElementById('btnNewTabPreview');
-        const fallbackEl = document.getElementById('previewFallback');
-        const imageWrapper = document.getElementById('previewImageWrapper');
-
-        if (titleEl) titleEl.textContent = title || 'Prebiu Dokumen';
-        if (newTabBtn) newTabBtn.href = url;
-        if (fallbackEl) fallbackEl.classList.add('d-none');
-        if (imageWrapper) imageWrapper.classList.add('d-none');
-
-        if (iframeEl && spinnerEl) {
-            spinnerEl.classList.remove('d-none');
-            iframeEl.classList.add('d-none');
-            iframeEl.src = url;
-            iframeEl.onload = function() {
-                spinnerEl.classList.add('d-none');
-                iframeEl.classList.remove('d-none');
-            };
-        }
-
-        modalInstance.show();
+        if (!url || url === '#') return;
+        window.open(url, '_blank', 'noopener,noreferrer');
     };
 
     bindStep3VendorDetailButtons();

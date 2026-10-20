@@ -1541,20 +1541,27 @@ class PenilaianKewanganController extends Controller
 
         $fields = [
             'status_pematuhan' => $statusInt,
-            'skor'             => $skorInput,
             'updated_by'       => Auth::id(),
         ];
 
-        // Langkah 1 and Langkah 3 write to the same row, so each keeps its own note column.
-        // The modal-score branch still writes its JSON to catatan — the scores live inside it.
+        // Langkah 1, Langkah 2, and Langkah 3 write to the same row, so each step updates its relevant columns.
         if ((int) $request->input('step') === 3) {
-            $fields['catatan_skor'] = trim((string) ($request->input('catatan') ?? '')) ?: null;
+            $fields['skor'] = $skorInput;
+            $fields['catatan_skor'] = (string) ($request->input('catatan') ?? '');
 
             if ($isModalScore) {
                 $fields['catatan'] = $catatanSave;
             }
-        } else {
+        } elseif ((int) $request->input('step') === 2) {
+            $fields['skor'] = $skorInput;
             $fields['catatan'] = $catatanSave;
+        } else {
+            // Step 1: Only update catatan and status_pematuhan. Do not overwrite or default skor.
+            $fields['catatan'] = $catatanSave;
+            if (! $record->exists) {
+                $fields['skor'] = null;
+                $fields['catatan_skor'] = null;
+            }
         }
 
         $record->fill($fields);
@@ -1584,7 +1591,21 @@ class PenilaianKewanganController extends Controller
                     ->whereIn('vendor_id', $eligibleVendorIds);
 
                 if ($isStep3Item) {
-                    $query->whereNotNull('skor');
+                    $isProfilItem = $isModalScore || \App\Models\TenderKewanganEvaluation::query()
+                        ->where('tender_id', $tender->id)
+                        ->where('checklist_item_uuid', $checkUuid)
+                        ->whereNotNull('catatan')
+                        ->where('catatan', 'like', '%skor_modal_berbayar%')
+                        ->exists();
+
+                    if ($isProfilItem) {
+                        $query->whereNotNull('catatan')->where('catatan', 'like', '%skor_modal_berbayar%');
+                    } else {
+                        $query->where(function ($q) {
+                            $q->whereNotNull('catatan_skor')
+                              ->orWhere('skor', '>', 0);
+                        });
+                    }
                 } else {
                     $query->whereNotNull('status_pematuhan');
                 }
@@ -2032,15 +2053,14 @@ class PenilaianKewanganController extends Controller
                 }
 
                 // Determine if vendor was evaluated in Step 3 (not just Step 1)
-                // Step 1 saves status_pematuhan=1 with skor=0 for Muat Naik items.
-                // Step 3 saves meaningful scores: skor > 0 for spesifikasi/muat_naik,
-                // or skor_modal_berbayar/dibenarkan for profil_petender.
+                // Step 1 saves documentation compliance.
+                // Step 3 saves financial specification evaluations (score + catatan_skor or modal_berbayar/dibenarkan).
                 $step3Evaluated = false;
                 if ($eval) {
                     if ($isProfilPetender) {
-                        $step3Evaluated = ($vendorRow['skor_modal_berbayar'] !== null && $vendorRow['skor_modal_berbayar'] !== '') || ($eval->skor !== null);
+                        $step3Evaluated = ($vendorRow['skor_modal_berbayar'] !== null && $vendorRow['skor_modal_berbayar'] !== '');
                     } else {
-                        $step3Evaluated = ($vendorRow['skor'] !== null && $vendorRow['skor'] !== '');
+                        $step3Evaluated = ($eval->skor !== null && ($eval->catatan_skor !== null || (float) $eval->skor > 0));
                     }
                 }
                 $vendorRow['step3_evaluated'] = $step3Evaluated;
