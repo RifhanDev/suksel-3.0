@@ -634,7 +634,7 @@ class Tender extends Model
 			]));
 		}
 
-		TenderVendor::syncKodPembekal($this->id);
+		// kod_pembekal assigned on hantar dokumen, not on purchase/bypass
 
 		return $purchase;
 	}
