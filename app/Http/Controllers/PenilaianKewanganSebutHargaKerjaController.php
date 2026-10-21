@@ -27,9 +27,11 @@ use App\Support\PenilaianKewanganKerjaCalculator;
 use App\Support\TenderDokumenPresenter;
 use App\Support\TenderProcessStatus;
 use App\Tender;
+use App\TenderVendor;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -46,6 +48,31 @@ class PenilaianKewanganSebutHargaKerjaController extends Controller
         protected PenilaianKewanganKerjaCalculator $calculator
     ) {
         $this->menuMiddleware('FinancialEvaluation:list');
+    }
+
+    /**
+     * Vendors who legitimately qualified from Penilaian Teknikal and preceding processes.
+     * Excludes vendors eliminated at status_process_id = 8 (Pembuka) or 10 (Teknikal),
+     * and filters by submitted Cut Off selection if applicable.
+     */
+    protected function loadEligibleParticipants(?Tender $tender): Collection
+    {
+        if (! $tender) {
+            return collect();
+        }
+
+        $query = $tender->participants()
+            ->with(['vendor'])
+            ->where('cancel_fg', 0)
+            ->where(function ($q) {
+                $q->whereNull('eliminated_process_id')
+                  ->orWhereNotIn('eliminated_process_id', [
+                      TenderProcessStatus::PENILAIAN_PEMBUKA,
+                      TenderProcessStatus::PENILAIAN_TEKNIKAL,
+                  ]);
+            });
+
+        return $query->orderBy('id')->get();
     }
 
     /**
@@ -200,11 +227,8 @@ class PenilaianKewanganSebutHargaKerjaController extends Controller
             }
         }
 
-        // 4. Participating Vendors
-        $participants = $tender->participants()
-            ->with(['vendor'])
-            ->where('cancel_fg', 0)
-            ->get();
+        // 4. Participating Vendors (strictly eligible from preceding processes)
+        $participants = $this->loadEligibleParticipants($tender);
 
         $vendorIds = $participants->pluck('vendor_id');
 
@@ -848,15 +872,33 @@ class PenilaianKewanganSebutHargaKerjaController extends Controller
         $docId = $request->input('doc_id');
         $userId = Auth::id();
 
-        DB::transaction(function () use ($tender, $docId, $request, $userId) {
+        $disqualifiedVendorIds = TenderVendor::query()
+            ->where('tender_id', $tender->id)
+            ->where(function ($q) {
+                $q->where('cancel_fg', 1)
+                  ->orWhereIn('eliminated_process_id', [
+                      TenderProcessStatus::PENILAIAN_PEMBUKA,
+                      TenderProcessStatus::PENILAIAN_TEKNIKAL,
+                  ]);
+            })
+            ->pluck('vendor_id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        DB::transaction(function () use ($tender, $docId, $request, $userId, $disqualifiedVendorIds) {
             foreach ($request->input('decisions') as $row) {
+                $vendorId = (int) $row['vendor_id'];
+                if (in_array($vendorId, $disqualifiedVendorIds, true)) {
+                    continue;
+                }
+
                 $statusInt = ($row['status'] === 'sempurna') ? 1 : 0;
                 $catatan = trim((string) ($row['catatan'] ?? ''));
 
                 TenderKewanganEvaluation::query()->updateOrCreate(
                     [
                         'tender_id'           => $tender->id,
-                        'vendor_id'           => (int) $row['vendor_id'],
+                        'vendor_id'           => $vendorId,
                         'checklist_item_uuid' => $docId,
                     ],
                     [
@@ -930,13 +972,33 @@ class PenilaianKewanganSebutHargaKerjaController extends Controller
         $tender = Tender::query()->findOrFail($request->input('tender_id'));
         $this->assertCommitteeAppointment($tender, $this->financialCommitteeJenis);
 
+        $vendorId = (int) $request->input('vendor_id');
+        $isDisqualified = TenderVendor::query()
+            ->where('tender_id', $tender->id)
+            ->where('vendor_id', $vendorId)
+            ->where(function ($q) {
+                $q->where('cancel_fg', 1)
+                  ->orWhereIn('eliminated_process_id', [
+                      TenderProcessStatus::PENILAIAN_PEMBUKA,
+                      TenderProcessStatus::PENILAIAN_TEKNIKAL,
+                  ]);
+            })
+            ->exists();
+
+        if ($isDisqualified) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Petender ini tidak layak untuk dinilai dalam Penilaian Kewangan kerana telah disingkirkan pada peringkat terdahulu.',
+            ], 422);
+        }
+
         $statusInt = ($request->input('decision') === 'memuaskan') ? 1 : 0;
         $userId = Auth::id();
 
         TenderKewanganKerjaEvaluation::query()->updateOrCreate(
             [
                 'tender_id'   => $tender->id,
-                'vendor_id'   => (int) $request->input('vendor_id'),
+                'vendor_id'   => $vendorId,
                 'borang_code' => 'sh_kemampuan_kewangan',
             ],
             [
@@ -1014,13 +1076,33 @@ class PenilaianKewanganSebutHargaKerjaController extends Controller
         $tender = Tender::query()->findOrFail($request->input('tender_id'));
         $this->assertCommitteeAppointment($tender, $this->financialCommitteeJenis);
 
+        $vendorId = (int) $request->input('vendor_id');
+        $isDisqualified = TenderVendor::query()
+            ->where('tender_id', $tender->id)
+            ->where('vendor_id', $vendorId)
+            ->where(function ($q) {
+                $q->where('cancel_fg', 1)
+                  ->orWhereIn('eliminated_process_id', [
+                      TenderProcessStatus::PENILAIAN_PEMBUKA,
+                      TenderProcessStatus::PENILAIAN_TEKNIKAL,
+                  ]);
+            })
+            ->exists();
+
+        if ($isDisqualified) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Petender ini tidak layak untuk dinilai dalam Penilaian Kewangan kerana telah disingkirkan pada peringkat terdahulu.',
+            ], 422);
+        }
+
         $statusInt = ($request->input('decision') === 'memuaskan') ? 1 : 0;
         $userId = Auth::id();
 
         TenderKewanganKerjaEvaluation::query()->updateOrCreate(
             [
                 'tender_id'   => $tender->id,
-                'vendor_id'   => (int) $request->input('vendor_id'),
+                'vendor_id'   => $vendorId,
                 'borang_code' => 'sh_penilaian_kerja',
             ],
             [
@@ -1167,8 +1249,8 @@ class PenilaianKewanganSebutHargaKerjaController extends Controller
             }
             $laporan->save();
 
-            // 2. Identify qualified and disqualified vendors
-            $participants = $tender->participants()->where('cancel_fg', 0)->get();
+            // 2. Identify qualified and disqualified vendors from eligible participants
+            $participants = $this->loadEligibleParticipants($tender);
             $vendorIds = $participants->pluck('vendor_id');
 
             // Load evaluations
