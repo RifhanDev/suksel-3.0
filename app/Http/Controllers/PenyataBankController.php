@@ -55,6 +55,8 @@ class PenyataBankController extends Controller
             $penyataData = $localData;
         }
 
+        $penyataData = $this->resolveSupportingDocuments($tender, $vendorId, $penyataData);
+
         $isAdminForm = ! $this->isVendorFormMode() && ! $this->isFormViewOnly();
 
         $aj = (float) ($tender->anggaran_jabatan ?? 0);
@@ -147,18 +149,25 @@ class PenyataBankController extends Controller
         }
 
         $activeUuids = [];
+        $activeNames = [];
         foreach ($payload['accounts'] ?? [] as $acc) {
             if (! is_array($acc)) {
                 continue;
             }
             foreach ($acc['files'] ?? [] as $f) {
-                if (is_array($f) && ! empty($f['uuid'])) {
-                    $activeUuids[] = (string) $f['uuid'];
+                if (is_array($f)) {
+                    if (! empty($f['uuid'])) {
+                        $activeUuids[] = (string) $f['uuid'];
+                    }
+                    $name = $f['original_name'] ?? $f['name'] ?? null;
+                    if ($name) {
+                        $activeNames[] = (string) $name;
+                    }
                 }
             }
         }
 
-        if (empty($activeUuids)) {
+        if (empty($activeUuids) && empty($activeNames)) {
             return;
         }
 
@@ -168,6 +177,10 @@ class PenyataBankController extends Controller
             })
             ->where('vendor_id', $vendorId)
             ->whereNotIn('uuid', $activeUuids)
+            ->when(! empty($activeNames), function ($q) use ($activeNames) {
+                $q->whereNotIn('original_name', $activeNames);
+            })
+            ->where('created_at', '<', now()->subMinutes(15))
             ->get();
 
         foreach ($orphans as $orphan) {
@@ -220,7 +233,7 @@ class PenyataBankController extends Controller
                 'uuid'          => $fileRecord->uuid,
                 'original_name' => $fileRecord->original_name,
                 'size'          => $fileRecord->size,
-                'url'           => url('/tenders/dokumen-files/' . $fileRecord->uuid . '/download'),
+                'url'           => '/tenders/dokumen-files/' . $fileRecord->uuid . '/download',
             ],
         ]);
     }
@@ -312,5 +325,161 @@ class PenyataBankController extends Controller
     private function url(string $path): string
     {
         return StosBackendClient::apiUrl($path);
+    }
+
+    protected function resolveSupportingDocuments(Tender $tender, ?int $vendorId, ?array $penyataData): ?array
+    {
+        if (! $penyataData || empty($penyataData['accounts']) || ! is_array($penyataData['accounts'])) {
+            return $penyataData;
+        }
+
+        $penyata = PenyataBank::firstOrCreate(
+            ['tender_id' => $tender->id],
+            ['uuid' => (string) Str::uuid(), 'status' => 'draft']
+        );
+
+        $existingFiles = PenyataBankFile::where('penyata_bank_id', $penyata->id)
+            ->when($vendorId, fn ($q) => $q->where('vendor_id', $vendorId))
+            ->get();
+
+        $vendorPbFiles = $vendorId
+            ? PenyataBankFile::where('vendor_id', $vendorId)->get()
+            : collect();
+
+        $vendorDokumenFiles = $vendorId
+            ? \App\Models\TenderVendorDokumenFile::where('tender_id', $tender->id)->where('vendor_id', $vendorId)->get()
+            : collect();
+
+        $payloadNeedsUpdate = false;
+
+        foreach ($penyataData['accounts'] as $accIdx => &$account) {
+            if (! isset($account['files']) || ! is_array($account['files'])) {
+                $account['files'] = [];
+            }
+
+            foreach ($account['files'] as &$file) {
+                if (! is_array($file)) {
+                    continue;
+                }
+
+                $fileName = (string) ($file['original_name'] ?? $file['name'] ?? '');
+                $fileUuid = (string) ($file['uuid'] ?? '');
+                $fileUrl  = (string) ($file['url'] ?? '');
+
+                // 1. If uuid is present, ensure valid root-relative download URL
+                if ($fileUuid !== '') {
+                    $normalizedUrl = '/tenders/dokumen-files/' . $fileUuid . '/download';
+                    if ($fileUrl !== $normalizedUrl) {
+                        $file['url'] = $normalizedUrl;
+                        $payloadNeedsUpdate = true;
+                    }
+                    continue;
+                }
+
+                // 2. UUID missing: search in PenyataBankFile for this tender & vendor
+                $matched = $existingFiles->first(function ($ef) use ($fileName) {
+                    return strcasecmp($ef->original_name, $fileName) === 0 || strcasecmp($ef->stored_name, $fileName) === 0;
+                });
+
+                // 3. If not in this tender, search other PenyataBankFile records for this vendor
+                if (! $matched && $vendorPbFiles->isNotEmpty()) {
+                    $matchedCandidate = $vendorPbFiles->first(function ($vf) use ($fileName) {
+                        return strcasecmp($vf->original_name, $fileName) === 0 || strcasecmp($vf->stored_name, $fileName) === 0;
+                    });
+
+                    if ($matchedCandidate && $matchedCandidate->path && Storage::disk('public')->exists($matchedCandidate->path)) {
+                        $targetDir = 'uploads/penyata-bank/' . $tender->id . ($vendorId ? '/' . $vendorId : '');
+                        $targetPath = $targetDir . '/' . basename($matchedCandidate->path);
+
+                        if (! Storage::disk('public')->exists($targetPath)) {
+                            Storage::disk('public')->copy($matchedCandidate->path, $targetPath);
+                        }
+
+                        $matched = PenyataBankFile::firstOrCreate([
+                            'penyata_bank_id' => $penyata->id,
+                            'vendor_id'       => $vendorId,
+                            'original_name'   => $fileName ?: $matchedCandidate->original_name,
+                        ], [
+                            'uuid'            => (string) Str::uuid(),
+                            'file_type'       => 'support',
+                            'stored_name'     => basename($targetPath),
+                            'path'            => $targetPath,
+                            'mime_type'       => $matchedCandidate->mime_type ?: 'application/pdf',
+                            'size'            => $file['size'] ?? $matchedCandidate->size ?? 0,
+                            'uploaded_by'     => $matchedCandidate->uploaded_by,
+                        ]);
+
+                        $existingFiles->push($matched);
+                    } elseif ($matchedCandidate) {
+                        $matched = $matchedCandidate;
+                    }
+                }
+
+                // 4. Check TenderVendorDokumenFile
+                if (! $matched && $vendorDokumenFiles->isNotEmpty()) {
+                    $matched = $vendorDokumenFiles->first(function ($df) use ($fileName) {
+                        return strcasecmp($df->original_name, $fileName) === 0;
+                    });
+                }
+
+                // 5. If match found, assign UUID, URL, size and names
+                if ($matched) {
+                    $file['uuid'] = $matched->uuid;
+                    $file['url'] = '/tenders/dokumen-files/' . $matched->uuid . '/download';
+                    if (empty($file['size']) && ! empty($matched->size)) {
+                        $file['size'] = (int) $matched->size;
+                    }
+                    if (empty($file['name'])) {
+                        $file['name'] = $matched->original_name;
+                    }
+                    if (empty($file['original_name'])) {
+                        $file['original_name'] = $matched->original_name;
+                    }
+                    $payloadNeedsUpdate = true;
+                }
+            }
+            unset($file);
+
+            // Include any uploaded files from existingFiles missing in the accounts files list
+            if ($accIdx === 0 && $existingFiles->isNotEmpty()) {
+                $existingAccountUuids = array_filter(array_column($account['files'], 'uuid'));
+                $existingAccountNames = array_filter(array_map('strtolower', array_column($account['files'], 'name')));
+
+                foreach ($existingFiles as $ef) {
+                    if (! in_array($ef->uuid, $existingAccountUuids, true) && ! in_array(strtolower($ef->original_name), $existingAccountNames, true)) {
+                        $account['files'][] = [
+                            'uuid'          => $ef->uuid,
+                            'name'          => $ef->original_name,
+                            'original_name' => $ef->original_name,
+                            'size'          => (int) $ef->size,
+                            'url'           => '/tenders/dokumen-files/' . $ef->uuid . '/download',
+                        ];
+                        $payloadNeedsUpdate = true;
+                    }
+                }
+            }
+        }
+        unset($account);
+
+        // Update database payload if anything was enriched
+        if ($payloadNeedsUpdate && $vendorId) {
+            $legacyTender = \App\Tender::find($tender->id);
+            if ($legacyTender) {
+                $payloadService = app(\App\Services\VendorFormPayloadService::class);
+                $storedPayload = $payloadService->get($legacyTender, $vendorId, 'penyata_bank');
+                if (is_array($storedPayload)) {
+                    $storedPayload['accounts'] = $penyataData['accounts'];
+                    $payloadService->save(
+                        $legacyTender,
+                        $vendorId,
+                        'penyata_bank',
+                        $storedPayload,
+                        $storedPayload['status'] ?? 'submitted'
+                    );
+                }
+            }
+        }
+
+        return $penyataData;
     }
 }

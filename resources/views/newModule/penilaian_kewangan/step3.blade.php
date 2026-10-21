@@ -534,7 +534,7 @@
                 </div>
             </div>
             <div class="modal-footer bg-light border-0 px-4 py-3 justify-content-between">
-                <button type="button" class="btn btn-sm btn-secondary px-4 fw-bold" data-bs-dismiss="modal">
+                <button type="button" class="btn btn-sm btn-secondary px-4 fw-bold btn-kembali-step3-spec" data-bs-dismiss="modal">
                     <i class="bi bi-arrow-left-circle me-2"></i>Kembali
                 </button>
                 <button type="button" id="btnSimpanPenilaianStep3" class="btn btn-sm btn-success px-4 fw-bold d-inline-flex align-items-center gap-1">
@@ -804,7 +804,7 @@
                 </div>
             </div>
             <div class="modal-footer bg-light border-0 px-4 py-3 justify-content-between">
-                <button type="button" class="btn btn-sm btn-secondary px-4 fw-bold" data-bs-dismiss="modal">
+                <button type="button" class="btn btn-sm btn-secondary px-4 fw-bold btn-kembali-step3-profil" data-bs-dismiss="modal">
                     <i class="bi bi-arrow-left-circle me-2"></i>Kembali
                 </button>
                 <button type="button" id="btnSimpanPenilaianProfilStep3" class="btn btn-sm btn-success px-4 fw-bold d-inline-flex align-items-center gap-1">
@@ -1334,6 +1334,16 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    $(document).on('click', '.btn-kembali-step3-spec', function() {
+        if (currentStep3ItemUuid && firstModal && secondModalEl) {
+            secondModalEl.addEventListener('hidden.bs.modal', function handleReturn() {
+                firstModal.show();
+                renderStep3VendorTableModal(currentStep3ItemUuid);
+                secondModalEl.removeEventListener('hidden.bs.modal', handleReturn);
+            });
+        }
+    });
+
     function bindStep3VendorDetailButtons() {
         document.querySelectorAll('.btn-step3-papar-vendor').forEach(function(btn) {
             btn.removeEventListener('click', handleVendorDetailClick);
@@ -1631,6 +1641,16 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+
+    $(document).on('click', '.btn-kembali-step3-profil', function() {
+        if (currentStep3ItemUuid && profilModal1 && profilModal2El) {
+            profilModal2El.addEventListener('hidden.bs.modal', function handleReturn() {
+                profilModal1.show();
+                renderStep3ProfilPetenderVendorTableModal(currentStep3ItemUuid);
+                profilModal2El.removeEventListener('hidden.bs.modal', handleReturn);
+            });
+        }
+    });
 
     $(document).on('click', '.btn-papar-profil-petender-step3', function() {
         const dokumen = this.getAttribute('data-dokumen') || 'Maklumat Profil Petender';

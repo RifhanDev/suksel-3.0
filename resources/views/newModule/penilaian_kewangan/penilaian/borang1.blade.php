@@ -345,7 +345,7 @@
 
         <div class="table-modern-wrapper mb-2">
             <div class="table-responsive">
-                <table class="table table-modern-b1 align-middle">
+                <table class="table table-modern-b1 align-middle" id="section1KriteriaTable">
                     <thead>
                         <tr>
                             <th style="width: 60px;" class="text-center">#</th>
@@ -359,7 +359,7 @@
                             @php
                                 $kStat = $kriteriaStatusMap[$kId] ?? ['evaluated_count' => 0, 'total_count' => count($participants), 'is_complete' => false];
                             @endphp
-                            <tr>
+                            <tr data-kriteria-id="{{ $kId }}">
                                 <td class="text-center text-muted fw-bold small">{{ $kId }}</td>
                                 <td>
                                     <div class="d-flex align-items-center gap-2.5">
@@ -424,7 +424,7 @@
 
         <div class="table-modern-wrapper mb-4">
             <div class="table-responsive">
-                <table class="table table-modern-b1 align-middle">
+                <table class="table table-modern-b1 align-middle" id="section2VendorTable">
                     <thead>
                         <tr>
                             <th style="width: 80px;" class="text-center">Bil</th>
@@ -435,7 +435,7 @@
                     </thead>
                     <tbody>
                         @foreach($vendorSummary as $vId => $vSum)
-                            <tr>
+                            <tr data-vendor-id="{{ $vId }}">
                                 <td class="text-center fw-bold text-muted">{{ $loop->iteration }}/{{ count($vendorSummary) }}</td>
                                 <td>
                                     <div class="fw-bold text-dark mb-0.5">{{ $vSum['vendor_name'] }}</div>
@@ -612,6 +612,63 @@
         let currentKriteriaId = 1;
         const vendorSummaryData = @json($vendorSummary);
 
+        // Global SweetAlert scroll-preservation wrapper
+        if (typeof Swal !== 'undefined') {
+            const originalSwalFire = Swal.fire.bind(Swal);
+            Swal.fire = function (options, ...rest) {
+                const scrollY = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
+                let finalOptions = {};
+                if (typeof options === 'string') {
+                    finalOptions = {
+                        title: options,
+                        html: rest[0] || '',
+                        icon: rest[1] || null
+                    };
+                } else {
+                    finalOptions = Object.assign({}, options);
+                }
+
+                const origDidClose = finalOptions.didClose;
+                finalOptions.heightAuto = false;
+                finalOptions.returnFocus = false;
+                finalOptions.scrollbarPadding = false;
+                finalOptions.didClose = () => {
+                    window.scrollTo({ top: scrollY, behavior: 'instant' });
+                    if (typeof origDidClose === 'function') {
+                        origDidClose();
+                    }
+                };
+
+                return originalSwalFire(finalOptions).then(result => {
+                    window.scrollTo({ top: scrollY, behavior: 'instant' });
+                    return result;
+                });
+            };
+        }
+
+        // Restore scroll position on reload if any full refresh occurs
+        window.addEventListener('beforeunload', function () {
+            sessionStorage.setItem('borang1_scroll_pos', (window.pageYOffset || document.documentElement.scrollTop || 0).toString());
+        });
+        const savedScrollPos = sessionStorage.getItem('borang1_scroll_pos');
+        if (savedScrollPos !== null) {
+            sessionStorage.removeItem('borang1_scroll_pos');
+            window.scrollTo({
+                top: parseInt(savedScrollPos, 10),
+                behavior: 'instant'
+            });
+        }
+
+        const kriteriaNames = {
+            1: 'Borang Tender Ditandatangani',
+            2: 'Penandatangan Diberi kuasa?',
+            3: 'Harga Tender / Tempoh Tercatat di Borang Tender',
+            4: 'Pendaftaran Masih Sah Semasa Tutup Tender',
+            5: 'Mengembalikan Kesemua Dokumen Asas Tender',
+            6: 'Tempoh Tidak Melebihi Tempoh Siap Maksimum',
+            7: 'Surat Akuan Pembida Ditandatangani'
+        };
+
         function escapeHtml(text) {
             if (!text) return '';
             return String(text)
@@ -620,6 +677,115 @@
                 .replace(/>/g, '&gt;')
                 .replace(/"/g, '&quot;')
                 .replace(/'/g, '&#039;');
+        }
+
+        // Real-time DOM update for Section 1 Kriteria Status badges
+        function updateSection1KriteriaBadges() {
+            const totalVendors = Object.keys(vendorSummaryData).length;
+
+            for (let kId = 1; kId <= 7; kId++) {
+                let evalCount = 0;
+                Object.values(vendorSummaryData).forEach(function (vSum) {
+                    const kData = vSum.kriteria_data || {};
+                    const kItem = kData[kId] || kData[String(kId)] || null;
+                    if (kItem && kItem.status && kItem.status.trim() !== '') {
+                        evalCount++;
+                    }
+                });
+
+                const isComplete = (evalCount === totalVendors && totalVendors > 0);
+                let badgeHtml = '';
+                if (isComplete) {
+                    badgeHtml = `<span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2.5 py-1 rounded-pill small">
+                        <i class="bi bi-check-circle-fill me-1"></i>Selesai (${evalCount}/${totalVendors})
+                    </span>`;
+                } else if (evalCount > 0) {
+                    badgeHtml = `<span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 px-2.5 py-1 rounded-pill small">
+                        <i class="bi bi-clock me-1"></i>Separa (${evalCount}/${totalVendors})
+                    </span>`;
+                } else {
+                    badgeHtml = `<span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 px-2.5 py-1 rounded-pill small">
+                        <i class="bi bi-hourglass-split me-1"></i>Belum Dinilai
+                    </span>`;
+                }
+
+                const tr = document.querySelector(`#section1KriteriaTable tr[data-kriteria-id="${kId}"]`);
+                if (tr && tr.children[2]) {
+                    tr.children[2].innerHTML = badgeHtml;
+                }
+            }
+        }
+
+        // Real-time DOM update for Section 2 Vendor Summary table
+        function updateSection2VendorSummary() {
+            Object.keys(vendorSummaryData).forEach(function (vId) {
+                const vSum = vendorSummaryData[vId];
+                if (!vSum) return;
+
+                const kData = vSum.kriteria_data || {};
+                let allEvaluated = true;
+                let isOverallSempurna = true;
+                const failedReasons = [];
+
+                for (let kId = 1; kId <= 7; kId++) {
+                    const item = kData[kId] || kData[String(kId)] || null;
+                    if (item && item.status && item.status.trim() !== '') {
+                        if (item.status === 'Tidak Sempurna' || item.status === 'Tidak') {
+                            isOverallSempurna = false;
+                            const catTxt = item.catatan ? ': ' + item.catatan : '';
+                            failedReasons.push(`Kriteria ${kId} (${kriteriaNames[kId] || 'K' + kId})${catTxt}`);
+                        }
+                    } else {
+                        allEvaluated = false;
+                        isOverallSempurna = false;
+                    }
+                }
+
+                let finalStatus = 'Belum Dinilai';
+                if (allEvaluated) {
+                    finalStatus = isOverallSempurna ? 'Sempurna' : 'Tidak Sempurna';
+                }
+
+                vSum.final_status = finalStatus;
+                vSum.failed_reasons = failedReasons;
+
+                const row = document.querySelector(`#section2VendorTable tbody tr[data-vendor-id="${vId}"]`);
+                if (row) {
+                    // Update Keputusan Semakan (cell 2)
+                    let statusBadgeHtml = '';
+                    if (finalStatus === 'Sempurna') {
+                        statusBadgeHtml = `<span class="status-badge-sempurna">
+                            <i class="bi bi-check-circle-fill me-1"></i>Sempurna
+                        </span>`;
+                    } else if (finalStatus === 'Tidak Sempurna') {
+                        statusBadgeHtml = `<span class="status-badge-tidak">
+                            <i class="bi bi-x-circle-fill me-1"></i>Tidak Sempurna
+                        </span>`;
+                    } else {
+                        statusBadgeHtml = `<span class="status-badge-pending">
+                            <i class="bi bi-hourglass-split me-1"></i>Belum Dinilai
+                        </span>`;
+                    }
+                    if (row.children[2]) {
+                        row.children[2].innerHTML = statusBadgeHtml;
+                    }
+
+                    // Update Sebab / Catatan Semakan (cell 3)
+                    let reasonHtml = '';
+                    if (failedReasons.length > 0) {
+                        reasonHtml = `<ul class="mb-0 text-danger extra-small ps-3 fw-medium">` +
+                            failedReasons.map(r => `<li>${escapeHtml(r)}</li>`).join('') +
+                            `</ul>`;
+                    } else if (finalStatus === 'Sempurna') {
+                        reasonHtml = `<span class="text-success small fw-semibold"><i class="bi bi-check2 me-1"></i>Semua dokumen lengkap dan mematuhi syarat.</span>`;
+                    } else {
+                        reasonHtml = `<span class="text-muted extra-small">Sila selesaikan penilaian 7 kriteria bagi petender ini.</span>`;
+                    }
+                    if (row.children[3]) {
+                        row.children[3].innerHTML = reasonHtml;
+                    }
+                }
+            });
         }
 
         // Populate modal data when Papar & Semak button is clicked
@@ -761,7 +927,6 @@
             });
         });
 
-
         // AJAX Save Modal Evaluations for Criterion
         document.getElementById('btnSimpanDalamModal').addEventListener('click', function () {
             const btn = this;
@@ -804,6 +969,24 @@
                     const paparModal = bootstrap.Modal.getInstance(paparEl) || new bootstrap.Modal(paparEl);
                     paparModal.hide();
 
+                    // Update local cache in memory
+                    evaluations.forEach(function (ev) {
+                        const vId = ev.vendor_id;
+                        if (vendorSummaryData[vId]) {
+                            if (!vendorSummaryData[vId].kriteria_data) {
+                                vendorSummaryData[vId].kriteria_data = {};
+                            }
+                            vendorSummaryData[vId].kriteria_data[currentKriteriaId] = {
+                                status: ev.status,
+                                catatan: ev.catatan
+                            };
+                        }
+                    });
+
+                    // Update UI in-place dynamically without resetting page scroll
+                    updateSection1KriteriaBadges();
+                    updateSection2VendorSummary();
+
                     if (typeof Swal !== 'undefined') {
                         Swal.fire({
                             icon: 'success',
@@ -811,12 +994,9 @@
                             text: data.message || 'Penilaian kriteria telah berjaya disimpan.',
                             confirmButtonText: 'OK',
                             confirmButtonColor: '#047857'
-                        }).then(() => {
-                            window.location.reload();
                         });
                     } else {
                         alert(data.message || 'Berjaya disimpan.');
-                        window.location.reload();
                     }
                 } else {
                     Swal.fire({
