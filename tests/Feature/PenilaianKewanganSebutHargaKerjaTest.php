@@ -487,4 +487,47 @@ class PenilaianKewanganSebutHargaKerjaTest extends TestCase
             $this->assertNotContains('vendor_a_doc_1.pdf', $vBDocNames);
         }
     }
+
+    public function test_disqualified_vendors_cannot_be_saved(): void
+    {
+        if (! $this->tender) {
+            $this->markTestSkipped('No tender found in DB.');
+        }
+
+        $adminRole = \Spatie\Permission\Models\Role::query()->firstOrCreate(['name' => 'Admin']);
+        $this->user->assignRole($adminRole);
+        $this->actingAs($this->user);
+
+        $vendorDisq = \App\Vendor::query()->create([
+            'name'                 => 'Disqualified Petender',
+            'company_name'         => 'Disqualified Petender Sdn Bhd',
+            'organization_unit_id' => $this->tender->organization_unit_id,
+        ]);
+
+        $this->tender->participants()->create([
+            'vendor_id'             => $vendorDisq->id,
+            'kod_pembekal'          => 'DISQ/1',
+            'cancel_fg'             => 1,
+            'eliminated_process_id' => TenderProcessStatus::PENILAIAN_TEKNIKAL,
+            'eliminated_reason'     => 'Gagal Teknikal',
+            'participate'           => 1,
+        ]);
+
+        // Attempt simpan-kewangan with disqualified vendor
+        $response = $this->postJson(route('penilaianKewanganSebutHargaKerja.simpanKewangan'), [
+            'tender_id' => $this->tender->id,
+            'vendor_id' => $vendorDisq->id,
+            'decision'  => 'memuaskan',
+            'catatan'   => 'Test',
+        ]);
+
+        $response->assertStatus(422);
+        $response->assertJsonFragment(['message' => 'Petender ini tidak layak untuk dinilai dalam Penilaian Kewangan kerana telah disingkirkan pada peringkat terdahulu.']);
+
+        // Verify that no TenderKewanganKerjaEvaluation was created for the disqualified vendor
+        $this->assertDatabaseMissing('tender_kewangan_kerja_evaluations', [
+            'tender_id' => $this->tender->id,
+            'vendor_id' => $vendorDisq->id,
+        ]);
+    }
 }

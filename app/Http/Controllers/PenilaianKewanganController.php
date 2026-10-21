@@ -21,6 +21,7 @@ use App\Support\TenderDokumenPresenter;
 use App\Support\TenderProcessStatus;
 use App\Tender;
 use App\TenderCode;
+use App\TenderVendor;
 use App\User;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
@@ -735,7 +736,7 @@ class PenilaianKewanganController extends Controller
             return collect();
         }
 
-        return $tender->participants()
+        $query = $tender->participants()
             ->with('vendor')
             ->where('participate', 1)
             ->where(function ($q) {
@@ -750,9 +751,32 @@ class PenilaianKewanganController extends Controller
                   ->orWhere(function ($sub) {
                       $sub->where('eliminated_process_id', '>', TenderProcessStatus::PENILAIAN_TEKNIKAL);
                   });
-            })
-            ->orderBy('id')
-            ->get();
+            });
+
+        $hasSubmittedCutOff = DB::table('cut_off_selections')
+            ->where('tender_id', $tender->id)
+            ->where('status', 'submitted')
+            ->exists();
+
+        if ($hasSubmittedCutOff) {
+            $refs = TenderVendor::submittedCutOffVendorRefs($tender->id);
+            if ($refs === []) {
+                $query->whereRaw('0 = 1');
+            } else {
+                $numericIds = array_values(array_filter($refs, fn ($ref) => ctype_digit($ref)));
+                $query->where(function ($match) use ($refs, $numericIds) {
+                    $match->whereIn('kod_pembekal', $refs);
+                    if ($numericIds !== []) {
+                        $match->orWhereIn('vendor_id', array_map('intval', $numericIds));
+                    }
+                    $match->orWhereHas('vendor', function ($vendor) use ($refs) {
+                        $vendor->whereIn('registration', $refs);
+                    });
+                });
+            }
+        }
+
+        return $query->orderBy('id')->get();
     }
 
     /**
