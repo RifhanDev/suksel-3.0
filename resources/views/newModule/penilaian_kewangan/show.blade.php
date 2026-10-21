@@ -926,6 +926,8 @@
                         <i class="bi bi-save me-2"></i>Simpan Penilaian
                     </button>
                 </div>
+            </div>
+        </div>
     </div>
 
     {{-- MODAL: Prebiu Dokumen/Borang --}}
@@ -2516,32 +2518,80 @@
             bootstrap.Modal.getOrCreateInstance(document.getElementById('modalPreview')).show();
         });
 
-        $('#previewIframe').on('load', function () { $('#previewSpinner').addClass('d-none'); });
-        $('#previewImage').on('load',  function () { $('#previewSpinner').addClass('d-none'); });
+        $('#previewIframe').on('load',  function () { $('#previewSpinner').addClass('d-none'); });
+        $('#previewIframe').on('error', function () { $('#previewSpinner').addClass('d-none'); });
+        $('#previewImage').on('load',   function () { $('#previewSpinner').addClass('d-none'); });
 
-        // Stacking & backdrop handling for nested modals
-        const previewModalEl = document.getElementById('modalPreview');
-        if (previewModalEl) {
-            previewModalEl.addEventListener('show.bs.modal', function() {
-                const visibleModals = document.querySelectorAll('.modal.show');
-                const zIndex = 1065 + (10 * visibleModals.length);
-                previewModalEl.style.zIndex = zIndex;
-                setTimeout(() => {
+        // Relocate all modals to document.body on DOM ready to avoid clipping or stacking context traps
+        const appModals = [
+            'modalSemakanKetepatanDokumenKewangan',
+            'modalPreview',
+            'modalProfilPetenderReadonly',
+            'modalPenilaianCadanganKewanganStep2',
+            'modalButiranCadanganKewanganStep2',
+            'modalPaparCadanganKewanganStep3',
+            'modalPaparVendorCadanganKewanganStep3',
+            'modalPaparProfilPetenderStep3',
+            'modalPaparVendorProfilPetenderStep3',
+            'modalMuatNaikStep3'
+        ];
+        appModals.forEach(function (id) {
+            const el = document.getElementById(id);
+            if (el && el.parentElement !== document.body) {
+                document.body.appendChild(el);
+            }
+        });
+
+        // Global Stacking & Backdrop Coordination for nested/multiple modals
+        $(document).on('show.bs.modal', '.modal', function () {
+            const modalEl = this;
+            // Find modals that are already open and visible
+            const openModals = Array.from(document.querySelectorAll('.modal.show')).filter(function (m) {
+                return m !== modalEl;
+            });
+
+            // Base z-index for Bootstrap modals is 1055
+            const nextZ = 1055 + (20 * openModals.length);
+            modalEl.style.zIndex = nextZ;
+
+            // If this is a nested modal (i.e. another modal is already open),
+            // lift the newest backdrop so it sits right behind this modal and in front of previous modals
+            if (openModals.length > 0) {
+                setTimeout(function () {
                     const backdrops = document.querySelectorAll('.modal-backdrop');
                     if (backdrops.length > 0) {
-                        const lastBackdrop = backdrops[backdrops.length - 1];
-                        lastBackdrop.style.zIndex = zIndex - 1;
+                        const topBackdrop = backdrops[backdrops.length - 1];
+                        topBackdrop.style.zIndex = nextZ - 5;
                     }
                 }, 0);
-            });
+            }
+        });
 
-            previewModalEl.addEventListener('hidden.bs.modal', function() {
-                const otherVisible = document.querySelectorAll('.modal.show');
-                if (otherVisible.length > 0) {
-                    document.body.classList.add('modal-open');
-                }
-            });
-        }
+        $(document).on('hidden.bs.modal', '.modal', function () {
+            this.style.zIndex = '';
+            if (this.id === 'modalPreview') {
+                $('#previewIframe').attr('src', '');
+                $('#previewSpinner').addClass('d-none');
+            }
+
+            // Check if any other modals are still open (e.g. closing a nested preview modal while a parent modal is open)
+            const remainingModals = Array.from(document.querySelectorAll('.modal.show'));
+            if (remainingModals.length > 0) {
+                // Ensure body keeps modal-open so scrolling stays locked for the remaining modal
+                document.body.classList.add('modal-open');
+                document.body.style.overflow = 'hidden';
+
+                // Reset z-indices for remaining modals & backdrops in order
+                const backdrops = Array.from(document.querySelectorAll('.modal-backdrop'));
+                remainingModals.forEach(function (modal, index) {
+                    const mZ = 1055 + (index * 20);
+                    modal.style.zIndex = mZ;
+                    if (backdrops[index]) {
+                        backdrops[index].style.zIndex = mZ - 5;
+                    }
+                });
+            }
+        });
 
         // Seterusnya and Sebelumnya Button Functionality with sub-tab & checkbox validation
     const msgTandakanPengesahan = 'Sila tandakan kotak pengesahan terlebih dahulu sebelum meneruskan.';

@@ -163,6 +163,17 @@
 							</div>
 							<div class="content-card-body p-4">
 
+								<div class="alert alert-info d-flex align-items-start gap-2 py-2 px-3 mb-3" role="note" style="font-size: 0.85rem;">
+									<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+										stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+										class="flex-shrink-0 mt-1" aria-hidden="true">
+										<circle cx="12" cy="12" r="10"></circle>
+										<line x1="12" y1="16" x2="12" y2="12"></line>
+										<line x1="12" y1="8" x2="12.01" y2="8"></line>
+									</svg>
+									<span>Sila masukkan sekurang-kurangnya <strong>1 Pengerusi</strong>, <strong>2 Ahli</strong> atau <strong>1 Setiausaha</strong>.</span>
+								</div>
+
 								<!-- Table toolbar -->
 								<div class="d-flex justify-content-end gap-2 mb-3">
 									<button type="button" class="btn btn-sm btn-success d-inline-flex align-items-center gap-1 btn-tambah">

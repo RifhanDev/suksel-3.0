@@ -359,7 +359,7 @@
                             @php
                                 $dStat = $b2DocStatusMap[$dId] ?? ['evaluated_count' => 0, 'total_count' => count($participants), 'is_complete' => false];
                             @endphp
-                            <tr>
+                            <tr id="b2DocRow_{{ $dId }}">
                                 <td class="text-center text-muted fw-bold small">{{ $loop->iteration }}</td>
                                 <td>
                                     <div class="d-flex align-items-center gap-2.5">
@@ -369,7 +369,7 @@
                                         <span class="fw-semibold text-dark">{{ $doc['name'] }}</span>
                                     </div>
                                 </td>
-                                <td class="text-center">
+                                <td class="text-center b2-doc-status-col">
                                     @if($dStat['is_complete'])
                                         <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2.5 py-1 rounded-pill small">
                                             <i class="bi bi-check-circle-fill me-1"></i>Selesai ({{ $dStat['evaluated_count'] }}/{{ $dStat['total_count'] }})
@@ -432,13 +432,13 @@
                     </thead>
                     <tbody>
                         @foreach($b2VendorSummary as $vId => $vSum)
-                            <tr>
+                            <tr id="b2VendorRow_{{ $vId }}">
                                 <td class="text-center fw-bold text-muted">{{ $loop->iteration }}/{{ count($b2VendorSummary) }}</td>
                                 <td>
                                     <div class="fw-bold text-dark mb-0.5">{{ $vSum['vendor_name'] }}</div>
                                     <div class="font-monospace extra-small text-muted">{{ $vSum['kod_pembekal'] }}</div>
                                 </td>
-                                <td class="text-center">
+                                <td class="text-center b2-vendor-status-col">
                                     @if($vSum['is_cukup'])
                                         <span class="status-badge-cukup">
                                             <i class="bi bi-check-circle-fill me-1"></i>{{ $vSum['final_status'] }}
@@ -453,7 +453,7 @@
                                         </span>
                                     @endif
                                 </td>
-                                <td>
+                                <td class="b2-vendor-catatan-col">
                                     @if(! empty($vSum['failed_reasons']))
                                         <ul class="mb-0 text-danger extra-small ps-3 fw-medium">
                                             @foreach($vSum['failed_reasons'] as $reason)
@@ -722,7 +722,61 @@
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
+    // Global Swal wrapper to prevent page jumping to top (0,0) on open/close
+    if (typeof Swal !== 'undefined') {
+        const _origSwalFire = Swal.fire.bind(Swal);
+        Swal.fire = function (options, ...rest) {
+            const currentScrollY = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
+            let finalOptions = {};
+            if (typeof options === 'string') {
+                finalOptions = {
+                    title: options,
+                    html: rest[0] || '',
+                    icon: rest[1] || null
+                };
+            } else if (typeof options === 'object' && options !== null) {
+                finalOptions = Object.assign({}, options);
+            }
+
+            const origDidClose = finalOptions.didClose;
+            finalOptions.heightAuto = false;
+            finalOptions.returnFocus = false;
+            finalOptions.scrollbarPadding = false;
+            finalOptions.didClose = (popup) => {
+                window.scrollTo({ top: currentScrollY, behavior: 'instant' });
+                if (typeof origDidClose === 'function') {
+                    origDidClose(popup);
+                }
+            };
+
+            return _origSwalFire(finalOptions).then(result => {
+                window.scrollTo({ top: currentScrollY, behavior: 'instant' });
+                return result;
+            });
+        };
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
+        // Restore scroll position if previously saved before reload
+        const _b2ScrollKey = window.location.pathname + '_b2_scroll_pos';
+        const savedScrollPos = sessionStorage.getItem(_b2ScrollKey);
+        if (savedScrollPos !== null) {
+            sessionStorage.removeItem(_b2ScrollKey);
+            setTimeout(() => {
+                window.scrollTo({ top: parseInt(savedScrollPos, 10), behavior: 'instant' });
+            }, 50);
+        }
+
+        window.addEventListener('beforeunload', function () {
+            sessionStorage.setItem(_b2ScrollKey, (window.pageYOffset || document.documentElement.scrollTop || 0).toString());
+        });
+
+        document.querySelectorAll('a[href]').forEach(link => {
+            link.addEventListener('click', () => {
+                sessionStorage.removeItem(_b2ScrollKey);
+            });
+        });
+
         let currentDocId = 'imbangan';
         let currentShowDiaudit = true;
         const b2VendorSummaryData = @json($b2VendorSummary);
@@ -731,6 +785,114 @@
         const docViewPenyataBank = document.getElementById('docViewPenyataBank');
         const docViewListFooter = document.getElementById('docViewListFooter');
         const thDiaudit = document.getElementById('thDiaudit');
+
+        function updateB2SectionDom(docId, evaluations) {
+            const docRow = document.getElementById('b2DocRow_' + docId);
+            if (docRow) {
+                const statusCol = docRow.querySelector('.b2-doc-status-col');
+                if (statusCol) {
+                    statusCol.innerHTML = `
+                        <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2.5 py-1 rounded-pill small">
+                            <i class="bi bi-check-circle-fill me-1"></i>Selesai (${evaluations.length}/${evaluations.length})
+                        </span>
+                    `;
+                }
+            }
+
+            const docTitles = {
+                'imbangan': 'Lembaran Imbangan',
+                'penyata_bank': 'Penyata Bulanan / Akaun Bank',
+                'bon_saham': 'Bon atau Saham',
+                'prestasi': 'Prestasi Kerja Semasa Petender',
+                'laporan_ca': 'Laporan Bank atau Borang CA',
+                'laporan_penyelia': 'Laporan Penyelia Projek Bagi Kerja Semasa (Borang GA)'
+            };
+            const docKeys = Object.keys(docTitles);
+
+            evaluations.forEach(ev => {
+                const vId = ev.vendor_id;
+                if (!b2VendorSummaryData[vId]) return;
+
+                if (!b2VendorSummaryData[vId].docs_data) {
+                    b2VendorSummaryData[vId].docs_data = {};
+                }
+
+                b2VendorSummaryData[vId].docs_data[docId] = {
+                    id: docId,
+                    name: docTitles[docId] || docId,
+                    dikemukakan: ev.dikemukakan,
+                    diaudit: ev.diaudit,
+                    catatan: ev.catatan
+                };
+
+                let allEvaluated = true;
+                let allCukup = true;
+                let tanpaGA = false;
+                const failedReasons = [];
+
+                docKeys.forEach(dKey => {
+                    const dItem = b2VendorSummaryData[vId].docs_data[dKey];
+                    if (!dItem || !dItem.dikemukakan) {
+                        allEvaluated = false;
+                        allCukup = false;
+                    } else {
+                        if (dItem.dikemukakan === 'Tidak') {
+                            if (dKey === 'laporan_penyelia') {
+                                tanpaGA = true;
+                            } else {
+                                allCukup = false;
+                                const catTxt = dItem.catatan ? ': ' + dItem.catatan : '';
+                                failedReasons.push((docTitles[dKey] || dKey) + ': Dikemukakan = Tidak' + catTxt);
+                            }
+                        }
+
+                        if (dKey === 'imbangan' && dItem.diaudit === 'Tidak') {
+                            allCukup = false;
+                            const catTxt = dItem.catatan ? ': ' + dItem.catatan : '';
+                            failedReasons.push((docTitles[dKey] || dKey) + ': Diaudit = Tidak' + catTxt);
+                        }
+                    }
+                });
+
+                const finalStatus = allEvaluated ? (allCukup ? (tanpaGA ? '*Cukup' : 'Cukup') : 'Tidak Cukup') : 'Belum Selesai';
+                const isCukup = allEvaluated && allCukup;
+
+                b2VendorSummaryData[vId].is_cukup = isCukup;
+                b2VendorSummaryData[vId].final_status = finalStatus;
+                b2VendorSummaryData[vId].failed_reasons = failedReasons;
+                b2VendorSummaryData[vId].catatan = tanpaGA ? 'Cukup (Tanpa Borang GA).' : 'Dokumen kewangan lengkap dikemukakan.';
+
+                const vendorRow = document.getElementById('b2VendorRow_' + vId);
+                if (vendorRow) {
+                    const statusCell = vendorRow.querySelector('.b2-vendor-status-col');
+                    const catatanCell = vendorRow.querySelector('.b2-vendor-catatan-col');
+
+                    if (statusCell) {
+                        if (isCukup) {
+                            statusCell.innerHTML = `<span class="status-badge-cukup"><i class="bi bi-check-circle-fill me-1"></i>${finalStatus}</span>`;
+                        } else if (finalStatus === 'Tidak Cukup') {
+                            statusCell.innerHTML = `<span class="status-badge-tidak"><i class="bi bi-x-circle-fill me-1"></i>Tidak Cukup</span>`;
+                        } else {
+                            statusCell.innerHTML = `<span class="status-badge-pending"><i class="bi bi-hourglass-split me-1"></i>Belum Dinilai</span>`;
+                        }
+                    }
+
+                    if (catatanCell) {
+                        if (failedReasons.length > 0) {
+                            catatanCell.innerHTML = `
+                                <ul class="mb-0 text-danger extra-small ps-3 fw-medium">
+                                    ${failedReasons.map(r => `<li>${r}</li>`).join('')}
+                                </ul>
+                            `;
+                        } else if (isCukup) {
+                            catatanCell.innerHTML = `<span class="text-success small fw-semibold"><i class="bi bi-check2 me-1"></i>${b2VendorSummaryData[vId].catatan}</span>`;
+                        } else {
+                            catatanCell.innerHTML = `<span class="text-muted extra-small">Sila selesaikan semakan dokumen kewangan bagi petender ini.</span>`;
+                        }
+                    }
+                }
+            });
+        }
 
         // Populate modal data when Papar & Semak button is clicked
         document.querySelectorAll('.btn-papar-b2').forEach(function (btn) {
@@ -851,7 +1013,13 @@
                                             newScript.setAttribute(attr.name, attr.value);
                                         });
                                         newScript.text = oldScript.text || oldScript.textContent;
-                                        oldScript.parentNode.replaceChild(newScript, oldScript);
+                                        try {
+                                            if (oldScript.parentNode) {
+                                                oldScript.parentNode.replaceChild(newScript, oldScript);
+                                            }
+                                        } catch (scriptErr) {
+                                            console.error('Error executing dynamic modal script:', scriptErr);
+                                        }
                                     }
                                 });
 
@@ -966,6 +1134,8 @@
                     const docModal = bootstrap.Modal.getInstance(docModalEl) || new bootstrap.Modal(docModalEl);
                     docModal.hide();
 
+                    updateB2SectionDom(currentDocId, evaluations);
+
                     if (typeof Swal !== 'undefined') {
                         Swal.fire({
                             icon: 'success',
@@ -973,12 +1143,9 @@
                             text: data.message || 'Penilaian dokumen telah berjaya disimpan.',
                             confirmButtonText: 'OK',
                             confirmButtonColor: '#047857'
-                        }).then(() => {
-                            window.location.reload();
                         });
                     } else {
                         alert(data.message || 'Berjaya disimpan.');
-                        window.location.reload();
                     }
                 } else {
                     Swal.fire({

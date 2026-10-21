@@ -25,6 +25,10 @@ class TenderKakitanganTeknikalDokumen extends Model
         'size' => 'integer',
     ];
 
+    protected $appends = [
+        'url',
+    ];
+
     public function getRouteKeyName(): string
     {
         return 'uuid';
@@ -32,6 +36,6 @@ class TenderKakitanganTeknikalDokumen extends Model
 
     public function getUrlAttribute(): string
     {
-        return route('kakitanganTeknikal.dokumen.download', $this->uuid);
+        return route('kakitanganTeknikal.dokumen.download', $this->uuid, false);
     }
 }
