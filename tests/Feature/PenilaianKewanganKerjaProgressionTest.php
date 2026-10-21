@@ -464,4 +464,119 @@ class PenilaianKewanganKerjaProgressionTest extends TestCase
         $this->assertEquals(1, $tvFail->cancel_fg);
         $this->assertEquals(TenderProcessStatus::PENILAIAN_KEWANGAN, $tvFail->eliminated_process_id);
     }
+
+    public function test_simpan_borang1_kriteria_saves_successfully(): void
+    {
+        $tender = $this->createKerjaTender(15000000.00, TenderProcessStatus::PENILAIAN_TEKNIKAL);
+        $vendor = $this->createVendor('Vendor Kriteria Test', 'REG-KRIT1');
+
+        TenderVendor::query()->create([
+            'tender_id'             => $tender->id,
+            'vendor_id'             => $vendor->id,
+            'participate'           => 1,
+            'cancel_fg'             => 0,
+            'eliminated_process_id' => null,
+            'kod_pembekal'          => '1/1',
+        ]);
+
+        $controller = app(PenilaianKewanganKerjaController::class);
+        $request = new Request([
+            'kriteria_id' => 1,
+            'evaluations' => [
+                [
+                    'vendor_id' => $vendor->id,
+                    'status'    => 'Sempurna',
+                    'catatan'   => 'Lengkap dan teratur.',
+                ],
+            ],
+        ]);
+
+        $response = $controller->simpanBorang1Kriteria($request, $tender->no_tender);
+
+        $this->assertEquals(200, $response->getStatusCode());
+        $this->assertTrue($response->getData()->success);
+
+        $this->assertDatabaseHas('tender_kewangan_kerja_evaluations', [
+            'tender_id'   => $tender->id,
+            'vendor_id'   => $vendor->id,
+            'borang_code' => 'borang1',
+        ]);
+    }
+
+    public function test_simpan_borang2_kriteria_saves_successfully(): void
+    {
+        $tender = $this->createKerjaTender(15000000.00, TenderProcessStatus::PENILAIAN_TEKNIKAL);
+        $vendor = $this->createVendor('Vendor B2 Test', 'REG-B2T');
+
+        TenderVendor::query()->create([
+            'tender_id'             => $tender->id,
+            'vendor_id'             => $vendor->id,
+            'participate'           => 1,
+            'cancel_fg'             => 0,
+            'eliminated_process_id' => null,
+            'kod_pembekal'          => '1/1',
+        ]);
+
+        $controller = app(PenilaianKewanganKerjaController::class);
+        $request = new Request([
+            'doc_id'      => 'doc_1',
+            'evaluations' => [
+                [
+                    'vendor_id'   => $vendor->id,
+                    'dikemukakan' => 'Ya',
+                    'diaudit'     => 'Ya',
+                    'catatan'     => 'Dokumen diaudit dan lengkap.',
+                ],
+            ],
+        ]);
+
+        $response = $controller->simpanBorang2Kriteria($request, $tender->no_tender);
+
+        $this->assertEquals(200, $response->getStatusCode());
+        $this->assertTrue($response->getData()->success);
+
+        $this->assertDatabaseHas('tender_kewangan_kerja_evaluations', [
+            'tender_id'   => $tender->id,
+            'vendor_id'   => $vendor->id,
+            'borang_code' => 'borang2',
+        ]);
+    }
+
+    public function test_simpan_borang5_kriteria_saves_successfully(): void
+    {
+        $tender = $this->createKerjaTender(15000000.00, TenderProcessStatus::PENILAIAN_TEKNIKAL);
+        $vendor = $this->createVendor('Vendor B5 Test', 'REG-B5T');
+
+        TenderVendor::query()->create([
+            'tender_id'             => $tender->id,
+            'vendor_id'             => $vendor->id,
+            'participate'           => 1,
+            'cancel_fg'             => 0,
+            'eliminated_process_id' => null,
+            'kod_pembekal'          => '1/1',
+        ]);
+
+        $controller = app(PenilaianKewanganKerjaController::class);
+        $request = new Request([
+            'borang_target' => 'borang1',
+            'evaluations'   => [
+                [
+                    'vendor_id' => $vendor->id,
+                    'status'    => 'Sempurna',
+                    'catatan'   => 'Lulus peringkat.',
+                ],
+            ],
+        ]);
+
+        $response = $controller->simpanBorang5Kriteria($request, $tender->no_tender);
+
+        $this->assertEquals(200, $response->getStatusCode());
+        $this->assertTrue($response->getData()->success);
+
+        $this->assertDatabaseHas('tender_kewangan_kerja_evaluations', [
+            'tender_id'   => $tender->id,
+            'vendor_id'   => $vendor->id,
+            'borang_code' => 'borang5',
+        ]);
+    }
 }

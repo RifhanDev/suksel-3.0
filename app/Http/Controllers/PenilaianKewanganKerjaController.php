@@ -2188,6 +2188,8 @@ class PenilaianKewanganKerjaController extends Controller
             ->map(fn ($id) => (int) $id)
             ->all();
 
+        $kriteriaName = $kriteriaNames[$kriteriaId] ?? "Kriteria {$kriteriaId}";
+
         \Illuminate\Support\Facades\DB::transaction(function () use ($tender, $kriteriaId, $kriteriaName, $kriteriaNames, $evaluationsData, $disqualifiedVendorIds) {
             foreach ($evaluationsData as $item) {
                 $vendorId = (int) $item['vendor_id'];
@@ -2470,6 +2472,8 @@ class PenilaianKewanganKerjaController extends Controller
             ->pluck('vendor_id')
             ->map(fn ($id) => (int) $id)
             ->all();
+
+        $docName = $docDef ? $docDef['name'] : $docId;
 
         \Illuminate\Support\Facades\DB::transaction(function () use ($tender, $docId, $docName, $b2DocsList, $evaluationsData, $disqualifiedVendorIds) {
             foreach ($evaluationsData as $item) {
@@ -2840,6 +2844,8 @@ class PenilaianKewanganKerjaController extends Controller
             ->pluck('vendor_id')
             ->map(fn ($id) => (int) $id)
             ->all();
+
+        $criterionLabel = $b5CriteriaList[$borangTarget] ?? $borangTarget;
 
         \Illuminate\Support\Facades\DB::transaction(function () use ($tender, $borangTarget, $criterionLabel, $b5CriteriaList, $evaluationsData, $disqualifiedVendorIds) {
             foreach ($evaluationsData as $item) {
