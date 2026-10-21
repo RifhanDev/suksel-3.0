@@ -799,14 +799,8 @@
                 }
             }
 
-            const docTitles = {
-                'imbangan': 'Lembaran Imbangan',
-                'penyata_bank': 'Penyata Bulanan / Akaun Bank',
-                'bon_saham': 'Bon atau Saham',
-                'prestasi': 'Prestasi Kerja Semasa Petender',
-                'laporan_ca': 'Laporan Bank atau Borang CA',
-                'laporan_penyelia': 'Laporan Penyelia Projek Bagi Kerja Semasa (Borang GA)'
-            };
+            const docTitles = @json(collect($b2DocsList)->pluck('name', 'id'));
+            const docShowDiaudit = @json(collect($b2DocsList)->mapWithKeys(fn($d, $k) => [$k => !empty($d['showDiaudit']) ? 1 : 0]));
             const docKeys = Object.keys(docTitles);
 
             evaluations.forEach(ev => {
@@ -846,7 +840,7 @@
                             }
                         }
 
-                        if (dKey === 'imbangan' && dItem.diaudit === 'Tidak') {
+                        if (docShowDiaudit[dKey] && dItem.diaudit === 'Tidak') {
                             allCukup = false;
                             const catTxt = dItem.catatan ? ': ' + dItem.catatan : '';
                             failedReasons.push((docTitles[dKey] || dKey) + ': Diaudit = Tidak' + catTxt);
@@ -927,22 +921,27 @@
                     // Update Buka Borang / Dokumen link appearance per vendor
                     const textLinkDoc = tr.querySelector('.text-link-doc');
                     const iconLinkDoc = tr.querySelector('.icon-link-doc');
+                    const btnLinkDoc = tr.querySelector('.btn-link-doc');
                     const docActions = vSum.doc_actions || {};
                     const action = docActions[currentDocId] || {};
 
                     if (action.type === 'borang_atas_talian') {
                         if (textLinkDoc) textLinkDoc.textContent = 'Buka Borang';
                         if (iconLinkDoc) iconLinkDoc.className = 'bi bi-box-arrow-up-right me-1 icon-link-doc';
+                        if (btnLinkDoc) btnLinkDoc.title = 'Buka Borang Atas Talian';
                     } else {
                         if (action.has_file && action.is_pdf) {
                             if (textLinkDoc) textLinkDoc.textContent = 'Lihat PDF';
                             if (iconLinkDoc) iconLinkDoc.className = 'bi bi-file-earmark-pdf me-1 icon-link-doc';
+                            if (btnLinkDoc) btnLinkDoc.title = action.original_name || 'Lihat PDF';
                         } else if (action.has_file) {
                             if (textLinkDoc) textLinkDoc.textContent = 'Muat Turun Dokumen';
                             if (iconLinkDoc) iconLinkDoc.className = 'bi bi-file-earmark-arrow-down me-1 icon-link-doc';
+                            if (btnLinkDoc) btnLinkDoc.title = action.original_name || 'Muat Turun Dokumen';
                         } else {
                             if (textLinkDoc) textLinkDoc.textContent = 'Tiada Dokumen';
                             if (iconLinkDoc) iconLinkDoc.className = 'bi bi-exclamation-triangle me-1 icon-link-doc text-warning';
+                            if (btnLinkDoc) btnLinkDoc.title = 'Petender tidak memuat naik dokumen ini';
                         }
                     }
 
