@@ -87,12 +87,11 @@
 									@php
 										$prevMax = $row['previous_price'] !== '' ? (float) $row['previous_price'] : null;
 									@endphp
-									<input type="number" class="form-control form-control-sm vendor-bid-price"
+									<input type="text" inputmode="decimal" autocomplete="off"
+										class="form-control form-control-sm vendor-bid-price text-end"
 										data-item-id="{{ $row['pemilihan_item_id'] }}" data-group="{{ $groupKey }}"
-										data-max-price="{{ $prevMax !== null ? number_format($prevMax, 2, '.', '') : '' }}"
-										min="0.01"
-										@if ($prevMax !== null && $prevMax > 0) max="{{ number_format($prevMax, 2, '.', '') }}" @endif
-										step="0.01" required placeholder="0.00" value="{{ $row['bid_price'] }}"
+										data-max-price="{{ $prevMax !== null && $prevMax > 0 ? number_format($prevMax, 2, '.', '') : '' }}"
+										placeholder="0.00" value="{{ $row['bid_price'] }}"
 										{{ $canVendorEditBid ? '' : 'readonly' }}>
 								@else
 									<div class="text-center text-muted small">—</div>
@@ -139,6 +138,9 @@
 		$(document).ready(function() {
 			let canEdit = @json($canVendorEditBid);
 			const hasVendorSubmitted = @json(!empty($hasVendorSubmitted));
+			if (canEdit && !hasVendorSubmitted) {
+				$('.vendor-bid-price').prop('readonly', false);
+			}
 			const submitUrl = @json(route('eBidding.vendorBidaan.hantar', ['id' => $tender->id]));
 			const csrfToken = $('meta[name="csrf-token"]').attr('content') || $('meta[name="_token"]').attr('content');
 			const $alert = $('#vendor-bid-alert');
@@ -206,17 +208,42 @@
 				return Number.isNaN(max) || max <= 0 ? null : max;
 			}
 
-			// Cap typed value so it cannot exceed previous price.
-			$(document).on('input keyup change', '.vendor-bid-price', function() {
+			function parseBidPrice(raw) {
+				const cleaned = raw.toString().replace(/,/g, '').trim();
+				if (cleaned === '' || !/^\d+(\.\d{0,2})?$/.test(cleaned)) {
+					return null;
+				}
+				const price = parseFloat(cleaned);
+				return Number.isNaN(price) ? null : price;
+			}
+
+			// Do not rewrite the value while typing. A number input with max was
+			// snapping the field on each key and looked like it would not accept input.
+			$(document).on('input', '.vendor-bid-price', function() {
+				const $input = $(this);
+				const raw = ($input.val() || '').toString();
+				const cleaned = raw.replace(/[^\d.]/g, '');
+				if (cleaned !== raw) {
+					$input.val(cleaned);
+				}
+				const max = getMaxPrice($input);
+				const price = parseBidPrice($input.val() || '');
+				if (price !== null && max !== null && price > max) {
+					$input.addClass('is-invalid');
+				} else {
+					$input.removeClass('is-invalid');
+				}
+				recalcOverallPrices();
+			});
+			$(document).on('blur', '.vendor-bid-price', function() {
 				const $input = $(this);
 				const max = getMaxPrice($input);
-				const raw = ($input.val() || '').toString().trim();
-				if (raw === '' || max === null) {
+				const price = parseBidPrice($input.val() || '');
+				if (price === null) {
 					recalcOverallPrices();
 					return;
 				}
-				const price = parseFloat(raw);
-				if (!Number.isNaN(price) && price > max) {
+				if (max !== null && price > max) {
 					$input.val(max.toFixed(2));
 					$input.addClass('is-invalid');
 					showAlert(
@@ -224,6 +251,7 @@
 						'error'
 					);
 				} else {
+					$input.val(price.toFixed(2));
 					$input.removeClass('is-invalid');
 				}
 				recalcOverallPrices();
@@ -259,12 +287,12 @@
 
 				$('.vendor-bid-price').each(function() {
 					const $input = $(this);
-					const itemId = parseInt($input.data('item-id'), 10);
+					const itemId = parseInt($input.attr('data-item-id'), 10);
 					const raw = ($input.val() || '').toString().trim();
-					const price = raw === '' ? null : parseFloat(raw);
+					const price = parseBidPrice(raw);
 					const max = getMaxPrice($input);
 
-					if (raw === '' || price === null || Number.isNaN(price) || price <= 0) {
+					if (raw === '' || price === null || price <= 0) {
 						missing = true;
 						$input.addClass('is-invalid');
 					} else if (max !== null && price > max) {
@@ -273,7 +301,7 @@
 					} else {
 						$input.removeClass('is-invalid');
 					}
-					if (raw !== '' && (Number.isNaN(price) || price <= 0)) hasInvalid = true;
+					if (raw !== '' && (price === null || price <= 0)) hasInvalid = true;
 					items.push({
 						pemilihan_item_id: itemId,
 						bid_price: price
