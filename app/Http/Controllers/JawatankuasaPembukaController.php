@@ -82,8 +82,10 @@ class JawatankuasaPembukaController extends Controller
 
         $tenderDokumen = TenderDokumenPresenter::for($tender);
 
+        // Only vendors who paid AND hantar dokumen (same rule as cut-off / kod pembekal).
         $participants = $tender->participants()
             ->where('participate', 1)
+            ->where('submitted', 1)
             ->with('vendor')
             ->orderBy('id')
             ->get();
@@ -201,6 +203,7 @@ class JawatankuasaPembukaController extends Controller
         $tenderDokumen   = TenderDokumenPresenter::for($tender);
         $participants    = $tender->participants()
             ->where('participate', 1)
+            ->where('submitted', 1)
             ->with('vendor')
             ->orderBy('id')
             ->get();
@@ -327,6 +330,7 @@ class JawatankuasaPembukaController extends Controller
         $tenderDokumen = TenderDokumenPresenter::for($tender);
         $participants  = $tender->participants()
             ->where('participate', 1)
+            ->where('submitted', 1)
             ->with('vendor')
             ->orderBy('id')
             ->get();

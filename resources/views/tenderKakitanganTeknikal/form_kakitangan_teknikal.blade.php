@@ -90,6 +90,19 @@
             color: #b91c1c;
         }
 
+        .btn-papar-row {
+            font-size: 0.78rem;
+            font-weight: 600;
+            transition: all 0.15s ease-in-out;
+        }
+        .btn-papar-row:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 3px 8px rgba(37, 99, 235, 0.2);
+        }
+        #modal-view-kakitangan {
+            z-index: 1065 !important;
+        }
+
         /* ── Toast ── */
         #kt-toast-container {
             position: fixed;
@@ -210,9 +223,7 @@
                             <th class="py-3" style="min-width:140px;">Kategori</th>
                             <th class="py-3" style="min-width:200px;">Tahap Pendidikan Tertinggi</th>
                             <th class="py-3" style="width:160px;">Jumlah Pengalaman</th>
-                            @if (!($viewOnly ?? false))
-                            <th class="text-center py-3" style="width:80px;">Tindakan</th>
-                            @endif
+                            <th class="text-center py-3" style="width:{{ ($viewOnly ?? false) ? '110px' : '80px' }};">Tindakan</th>
                         </tr>
                     </thead>
                     <tbody id="tbl-kakitangan-body">
@@ -227,22 +238,30 @@
                                 </td>
                                 <td class="text-muted cell-pendidikan">{{ $item->tahap_pendidikan }}</td>
                                 <td class="text-muted cell-pengalaman">{{ $item->jumlah_pengalaman }} Tahun</td>
-                                @if (!($viewOnly ?? false))
                                 <td class="text-center">
-                                    <div class="d-inline-flex align-items-center gap-1">
-                                        <button type="button" class="row-action-btn btn-edit-row" title="Kemaskini">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                    @if ($viewOnly ?? false)
+                                        <button type="button" class="btn btn-sm btn-outline-primary btn-papar-row d-inline-flex align-items-center gap-1.5 px-2.5 py-1 rounded-2 shadow-xs" title="Papar Maklumat & Dokumen">
+                                            <i class="bi bi-eye"></i>
+                                            <span>Papar</span>
+                                            @if(!empty($item->dokumens) && count($item->dokumens) > 0)
+                                                <span class="badge bg-primary text-white rounded-pill px-1.5 py-0.5" style="font-size: 0.65rem;">{{ count($item->dokumens) }}</span>
+                                            @endif
                                         </button>
-                                        <button type="button" class="row-action-btn btn-hapus-row" title="Buang">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></svg>
-                                        </button>
-                                    </div>
+                                    @else
+                                        <div class="d-inline-flex align-items-center gap-1">
+                                            <button type="button" class="row-action-btn btn-edit-row" title="Kemaskini">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                            </button>
+                                            <button type="button" class="row-action-btn btn-hapus-row" title="Buang">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></svg>
+                                            </button>
+                                        </div>
+                                    @endif
                                 </td>
-                                @endif
                             </tr>
                         @empty
                             <tr id="tr-empty-state">
-                                <td colspan="{{ ($viewOnly ?? false) ? 5 : 6 }}" class="text-center text-muted py-4 small">Tiada rekod kakitangan teknikal dimasukkan lagi. Klik "Tambah Kakitangan" di atas untuk menambah.</td>
+                                <td colspan="6" class="text-center text-muted py-4 small">Tiada rekod kakitangan teknikal dimasukkan lagi.@if(!($viewOnly ?? false)) Klik "Tambah Kakitangan" di atas untuk menambah.@endif</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -431,6 +450,107 @@
                             <polyline points="7 3 7 8 15 8"></polyline>
                         </svg>
                         <span id="btn-simpan-text">Simpan</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: PAPAR MAKLUMAT & DOKUMEN KAKITANGAN TEKNIKAL (READ-ONLY) -->
+    <div class="modal fade" id="modal-view-kakitangan" tabindex="-1" aria-labelledby="modalViewKakitanganLabel" aria-hidden="true" style="z-index: 1065;">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 12px; overflow: hidden;">
+                <div class="modal-header border-bottom bg-light py-3 px-4 align-items-center">
+                    <div class="d-flex align-items-center gap-2.5">
+                        <div class="rounded-3 p-2 d-flex align-items-center justify-content-center text-primary" style="width: 38px; height: 38px; background: #e0f2fe;">
+                            <i class="bi bi-person-badge fs-5"></i>
+                        </div>
+                        <div>
+                            <h5 class="modal-title fw-bold text-dark fs-6 m-0" id="modalViewKakitanganLabel">Maklumat &amp; Dokumen Kakitangan Teknikal</h5>
+                            <span class="text-muted" style="font-size: 0.75rem;">Butiran kakitangan dan dokumen sokongan yang dimuat naik</span>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body p-4">
+                    <!-- Staff Overview Header Card -->
+                    <div class="p-3 rounded-3 border mb-3 bg-white d-flex align-items-center justify-content-between flex-wrap gap-2" style="border-color: #e2e8f0 !important;">
+                        <div>
+                            <span class="text-muted text-uppercase fw-semibold d-block mb-1" style="font-size: 0.68rem; letter-spacing: 0.5px;">Nama Pegawai</span>
+                            <h5 class="fw-bold text-dark mb-0" id="view-modal-nama" style="font-size: 1.05rem;">-</h5>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <span id="view-modal-kategori-badge" class="badge rounded-pill bg-primary px-3 py-1.5 fw-semibold" style="font-size: 0.78rem;">
+                                -
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Staff Details Grid -->
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <div class="p-3 rounded-3 bg-light border h-100" style="border-color: #e2e8f0 !important;">
+                                <span class="text-muted text-uppercase fw-semibold d-block mb-1" style="font-size: 0.68rem; letter-spacing: 0.5px;">
+                                    <i class="bi bi-mortarboard me-1 text-primary"></i>Tahap Pendidikan Tertinggi
+                                </span>
+                                <span class="fw-semibold text-dark d-block" id="view-modal-pendidikan" style="font-size: 0.9rem;">-</span>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="p-3 rounded-3 bg-light border h-100" style="border-color: #e2e8f0 !important;">
+                                <span class="text-muted text-uppercase fw-semibold d-block mb-1" style="font-size: 0.68rem; letter-spacing: 0.5px;">
+                                    <i class="bi bi-clock-history me-1 text-primary"></i>Jumlah Pengalaman
+                                </span>
+                                <span class="fw-semibold text-dark d-block" id="view-modal-pengalaman" style="font-size: 0.9rem;">-</span>
+                            </div>
+                        </div>
+
+                        <div class="col-md-12">
+                            <div class="p-3 rounded-3 bg-light border" style="border-color: #e2e8f0 !important;">
+                                <span class="text-muted text-uppercase fw-semibold d-block mb-1" style="font-size: 0.68rem; letter-spacing: 0.5px;">
+                                    <i class="bi bi-award me-1 text-primary"></i>Sijil Professional Teknikal
+                                </span>
+                                <div class="fw-normal text-dark mt-1" id="view-modal-sijil" style="font-size: 0.875rem; white-space: pre-line;">-</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Supporting Documents Section -->
+                    <div class="border-top pt-3">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="bi bi-folder2-open text-primary fs-5"></i>
+                                <span class="fw-bold text-dark small">Dokumen Sokongan Kakitangan</span>
+                            </div>
+                            <span class="badge bg-secondary-subtle text-secondary px-2.5 py-1 rounded-pill fw-semibold" id="view-modal-doc-count" style="font-size: 0.75rem;">
+                                0 Dokumen
+                            </span>
+                        </div>
+                        <p class="text-muted small mb-3" style="font-size: 0.75rem;">Salinan sijil kelayakan, sijil profesional, atau CV pegawai yang dimuat naik.</p>
+
+                        <div class="table-responsive rounded-2 border" style="border-color: #e2e8f0 !important;">
+                            <table class="table table-sm align-middle mb-0" style="font-size: 0.82rem;">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th class="text-center py-2" style="width: 45px;">Bil.</th>
+                                        <th class="py-2">Nama Dokumen</th>
+                                        <th class="text-center py-2" style="width: 120px;">Saiz</th>
+                                        <th class="text-center py-2" style="width: 110px;">Tindakan</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="view-modal-docs-tbody">
+                                    <!-- Dynamic rows -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer border-top bg-light py-2.5 px-4 justify-content-end">
+                    <button type="button" class="btn btn-sm btn-secondary px-3.5 py-1.5 rounded-2 fw-medium" data-bs-dismiss="modal">
+                        <i class="bi bi-x me-1"></i>Tutup
                     </button>
                 </div>
             </div>
@@ -840,6 +960,135 @@ $(document).ready(function () {
             reNumber();
         }
     }
+
+    // ── View Mode: Format file size helper ────────────────────────────
+    function formatBytes(bytes) {
+        if (!bytes || bytes <= 0) return '-';
+        var k = 1024;
+        var sizes = ['B', 'KB', 'MB', 'GB'];
+        var i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+    }
+
+    // ── View Mode: Resolve file icon ──────────────────────────────────
+    function getFileIcon(filename) {
+        if (!filename) return 'bi-file-earmark text-secondary';
+        var ext = filename.split('.').pop().toLowerCase();
+        if (ext === 'pdf') return 'bi-file-earmark-pdf-fill text-danger';
+        if (['doc', 'docx'].indexOf(ext) !== -1) return 'bi-file-earmark-word-fill text-primary';
+        if (['xls', 'xlsx'].indexOf(ext) !== -1) return 'bi-file-earmark-excel-fill text-success';
+        if (['png', 'jpg', 'jpeg', 'webp'].indexOf(ext) !== -1) return 'bi-file-earmark-image-fill text-warning';
+        if (['zip', 'rar', '7z'].indexOf(ext) !== -1) return 'bi-file-earmark-zip-fill text-secondary';
+        return 'bi-file-earmark-text text-secondary';
+    }
+
+    // ── View Mode: Check if file is PDF ───────────────────────────────
+    function isPdf(filename, mime) {
+        var ext = (filename || '').split('.').pop().toLowerCase();
+        return ext === 'pdf' || (mime && mime.toLowerCase().indexOf('pdf') !== -1);
+    }
+
+    // ── View Mode: Open Modal to View Staff Details & Supporting Docs ──
+    $('#tbl-kakitangan-body').on('click', '.btn-papar-row', function () {
+        var $tr = $(this).closest('tr');
+        var itemData = $tr.data('item');
+        if (!itemData) return;
+
+        $('#view-modal-nama').text(itemData.nama_pegawai || '-');
+
+        // Kategori badge
+        var kat = itemData.kategori || 'Kategori C';
+        var badgeClass = 'bg-warning text-dark';
+        if (kat === 'Kategori A') {
+            badgeClass = 'bg-success text-white';
+        } else if (kat === 'Kategori B') {
+            badgeClass = 'bg-primary text-white';
+        }
+        $('#view-modal-kategori-badge')
+            .attr('class', 'badge rounded-pill ' + badgeClass + ' px-3 py-1.5 fw-semibold')
+            .text(kat);
+
+        // Fields
+        $('#view-modal-pendidikan').text(itemData.tahap_pendidikan || '-');
+        $('#view-modal-pengalaman').text((itemData.jumlah_pengalaman !== undefined && itemData.jumlah_pengalaman !== null ? itemData.jumlah_pengalaman : 0) + ' Tahun');
+
+        var sijilText = (itemData.sijil_professional || '').trim();
+        if (sijilText) {
+            $('#view-modal-sijil').removeClass('text-muted fst-italic').text(sijilText);
+        } else {
+            $('#view-modal-sijil').addClass('text-muted fst-italic').text('Tiada maklumat sijil profesional dinyatakan.');
+        }
+
+        // Supporting Documents
+        var docs = itemData.dokumens || [];
+        $('#view-modal-doc-count').text(docs.length + ' Dokumen');
+
+        var $tbody = $('#view-modal-docs-tbody');
+        $tbody.empty();
+
+        if (docs.length === 0) {
+            $tbody.html('<tr><td colspan="4" class="text-center py-4 text-muted"><i class="bi bi-folder-x me-1"></i>Tiada dokumen sokongan dimuat naik bagi pegawai ini.</td></tr>');
+        } else {
+            docs.forEach(function (doc, idx) {
+                var docName = doc.original_name || 'Dokumen';
+                var docUuid = doc.uuid || '';
+                var docUrl = '/kakitangan-teknikal-dokumen/' + docUuid + '/download';
+                var iconClass = getFileIcon(docName);
+                var isPdfDoc = isPdf(docName, doc.mime_type);
+                var sizeText = formatBytes(doc.size);
+
+                var actionBtn = '';
+                if (isPdfDoc) {
+                    actionBtn = '<a href="' + docUrl + '" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1 px-2.5 py-1 rounded-2 fw-medium" title="Buka Dokumen PDF">' +
+                        '<i class="bi bi-eye"></i><span>Papar</span>' +
+                    '</a>';
+                } else {
+                    actionBtn = '<a href="' + docUrl + '" download="' + $('<div/>').text(docName).html() + '" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1 px-2.5 py-1 rounded-2 fw-medium" title="Muat Turun Dokumen">' +
+                        '<i class="bi bi-download"></i><span>Muat Turun</span>' +
+                    '</a>';
+                }
+
+                var rowHtml = '<tr>' +
+                    '<td class="text-center font-monospace fw-semibold text-muted">' + (idx + 1) + '</td>' +
+                    '<td>' +
+                        '<div class="d-flex align-items-center gap-2">' +
+                            '<i class="bi ' + iconClass + ' fs-5 flex-shrink-0"></i>' +
+                            '<span class="fw-medium text-dark text-break">' + $('<div/>').text(docName).html() + '</span>' +
+                        '</div>' +
+                    '</td>' +
+                    '<td class="text-center text-muted font-monospace" style="font-size: 0.78rem;">' + sizeText + '</td>' +
+                    '<td class="text-center">' + actionBtn + '</td>' +
+                '</tr>';
+
+                $tbody.append(rowHtml);
+            });
+        }
+
+        // Show modal and ensure it does not get trapped in overflow containers
+        var modalEl = document.getElementById('modal-view-kakitangan');
+        if (modalEl) {
+            if (modalEl.parentElement !== document.body) {
+                document.body.appendChild(modalEl);
+            }
+            var modalInstance = bootstrap.Modal.getOrCreateInstance(modalEl);
+            modalInstance.show();
+        }
+    });
+
+    // Handle nested modal backdrop z-index when opened over #borangModal
+    $('#modal-view-kakitangan').on('shown.bs.modal', function () {
+        var $backdrops = $('.modal-backdrop');
+        if ($backdrops.length > 1) {
+            $backdrops.last().css('z-index', 1060);
+        }
+    });
+
+    // Ensure scrolling on parent modal remains functional when closing nested modal
+    $('#modal-view-kakitangan').on('hidden.bs.modal', function () {
+        if ($('.modal.show').length > 0) {
+            $('body').addClass('modal-open');
+        }
+    });
 
 });
 </script>

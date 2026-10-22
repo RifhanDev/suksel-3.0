@@ -1841,32 +1841,34 @@
 		const urlPath  = url.split(/[#?]/)[0];
 		const extension = urlPath.split('.').pop().trim().toLowerCase();
 		const extFromName = (name || '').split('.').pop().trim().toLowerCase();
-		const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp'];
 		const filenamePortion = urlPath.substring(urlPath.lastIndexOf('/') + 1);
 		const isPdf = extension === 'pdf' || extFromName === 'pdf' || url.toLowerCase().includes('.pdf');
-		const isImage = imageExtensions.includes(extension) || imageExtensions.includes(extFromName);
 		const isDownloadRoute = /\/download\/?$/.test(urlPath) || urlPath.includes('/dokumen-files/') || urlPath.includes('/checklist-files/') || urlPath.includes('/stos-form-files/');
 		const isProbablyPage  = !isDownloadRoute && (!filenamePortion.includes('.') || filenamePortion.endsWith('.html') || url.includes('form') || url.includes('borang') || url.includes('modal=1'));
 
+		// Open PDF directly in a new tab without opening modal
+		if (isPdf && !isProbablyPage) {
+			window.open(url, '_blank', 'noopener,noreferrer');
+			return;
+		}
+
+		// Non-PDF files: Trigger file download directly
+		if (!isPdf && !isProbablyPage) {
+			const a = document.createElement('a');
+			a.href = url;
+			a.setAttribute('download', name || 'Dokumen');
+			document.body.appendChild(a);
+			a.click();
+			a.remove();
+			return;
+		}
+
 		const $icon = $('#previewIcon');
 		$icon.removeClass();
-		if (isImage) {
-			$icon.addClass('bi bi-file-earmark-image text-primary fs-5');
-			$('#previewImage').attr('src', url);
-		} else if (isPdf) {
-			$icon.addClass('bi bi-file-earmark-pdf text-danger fs-5');
-			$('#previewIframe').attr('src', url);
-		} else if (isProbablyPage) {
-			$icon.addClass('bi bi-window text-success fs-5');
-			// Bust cache so switching petender always reloads the correct vendor form.
-			const bust = (url.indexOf('?') === -1 ? '?' : '&') + '_ts=' + Date.now();
-			$('#previewIframe').attr('src', url + bust);
-		} else {
-			$icon.addClass('bi bi-file-earmark-zip text-warning fs-5');
-			$('#previewSpinner').addClass('d-none');
-			$('#btnFallbackDownload').attr('download', name);
-			$('#previewFallback').removeClass('d-none');
-		}
+		$icon.addClass('bi bi-window text-success fs-5');
+		// Bust cache so switching petender always reloads the correct vendor form.
+		const bust = (url.indexOf('?') === -1 ? '?' : '&') + '_ts=' + Date.now();
+		$('#previewIframe').attr('src', url + bust).removeClass('d-none');
 
 		bootstrap.Modal.getOrCreateInstance(document.getElementById('modalPreview')).show();
 	}
@@ -1880,6 +1882,30 @@
 		$('#previewSpinner').addClass('d-none');
 		$('#previewImageWrapper').removeClass('d-none');
 	});
+
+	// Stacking & backdrop handling for nested modals
+	const previewModalEl = document.getElementById('modalPreview');
+	if (previewModalEl) {
+		previewModalEl.addEventListener('show.bs.modal', function() {
+			const visibleModals = document.querySelectorAll('.modal.show');
+			const zIndex = 1065 + (10 * visibleModals.length);
+			previewModalEl.style.zIndex = zIndex;
+			setTimeout(() => {
+				const backdrops = document.querySelectorAll('.modal-backdrop');
+				if (backdrops.length > 0) {
+					const lastBackdrop = backdrops[backdrops.length - 1];
+					lastBackdrop.style.zIndex = zIndex - 1;
+				}
+			}, 0);
+		});
+
+		previewModalEl.addEventListener('hidden.bs.modal', function() {
+			const otherVisible = document.querySelectorAll('.modal.show');
+			if (otherVisible.length > 0) {
+				document.body.classList.add('modal-open');
+			}
+		});
+	}
 
 	// ─────────────────────────────────────────────────────────────────
 	// SESI PENILAIAN — akuan pengakuan

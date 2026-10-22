@@ -783,6 +783,40 @@
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
+    // Global Swal wrapper to prevent page jumping to top (0,0) on open/close
+    if (typeof Swal !== 'undefined') {
+        const _origSwalFire = Swal.fire.bind(Swal);
+        Swal.fire = function (options, ...rest) {
+            const currentScrollY = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
+            let finalOptions = {};
+            if (typeof options === 'string') {
+                finalOptions = {
+                    title: options,
+                    html: rest[0] || '',
+                    icon: rest[1] || null
+                };
+            } else if (typeof options === 'object' && options !== null) {
+                finalOptions = Object.assign({}, options);
+            }
+
+            const origDidClose = finalOptions.didClose;
+            finalOptions.heightAuto = false;
+            finalOptions.returnFocus = false;
+            finalOptions.scrollbarPadding = false;
+            finalOptions.didClose = (popup) => {
+                window.scrollTo({ top: currentScrollY, behavior: 'instant' });
+                if (typeof origDidClose === 'function') {
+                    origDidClose(popup);
+                }
+            };
+
+            return _origSwalFire(finalOptions).then(result => {
+                window.scrollTo({ top: currentScrollY, behavior: 'instant' });
+                return result;
+            });
+        };
+    }
+
     const b9VendorDataMap = @json($b9VendorSummary ?? []);
     let currentB9VendorId = null;
 
@@ -909,6 +943,26 @@
     }
 
     document.addEventListener('DOMContentLoaded', function () {
+        // Restore scroll position if previously saved before reload
+        const _b9ScrollKey = window.location.pathname + '_b9_scroll_pos';
+        const savedScrollPos = sessionStorage.getItem(_b9ScrollKey);
+        if (savedScrollPos !== null) {
+            sessionStorage.removeItem(_b9ScrollKey);
+            setTimeout(() => {
+                window.scrollTo({ top: parseInt(savedScrollPos, 10), behavior: 'instant' });
+            }, 50);
+        }
+
+        window.addEventListener('beforeunload', function () {
+            sessionStorage.setItem(_b9ScrollKey, (window.pageYOffset || document.documentElement.scrollTop || 0).toString());
+        });
+
+        document.querySelectorAll('a[href]').forEach(link => {
+            link.addEventListener('click', () => {
+                sessionStorage.removeItem(_b9ScrollKey);
+            });
+        });
+
         checkB9CompletionState();
     });
 

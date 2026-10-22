@@ -14,6 +14,7 @@ use App\Tender;
 use App\TenderVendor;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -47,7 +48,7 @@ class PenilaianKewanganKerjaController extends Controller
 
         if ($workflow === PenilaianKewanganWorkflowResolver::WORKFLOW_SEBUT_HARGA_KERJA) {
             return redirect()
-                ->route('penilaianKewangan.show', $tender->uuid ?: $tender->id);
+                ->route('penilaianKewanganSebutHargaKerja.show', $tender->uuid ?: $tender->id);
         }
 
         if ($workflow === PenilaianKewanganWorkflowResolver::WORKFLOW_NORMAL) {
@@ -124,7 +125,7 @@ class PenilaianKewanganKerjaController extends Controller
 
         if ($workflow === PenilaianKewanganWorkflowResolver::WORKFLOW_SEBUT_HARGA_KERJA) {
             return redirect()
-                ->route('penilaianKewangan.show', $tender->uuid ?: $tender->id);
+                ->route('penilaianKewanganSebutHargaKerja.show', $tender->uuid ?: $tender->id);
         }
 
         if ($workflow === PenilaianKewanganWorkflowResolver::WORKFLOW_NORMAL) {
@@ -235,30 +236,7 @@ class PenilaianKewanganKerjaController extends Controller
             ],
         ];
 
-        $participants = \App\TenderVendor::query()
-            ->with(['vendor'])
-            ->where('tender_id', $tender->id)
-            ->get();
-
-        if ($participants->isEmpty()) {
-            $existingVendors = \App\Vendor::query()->take(2)->get();
-            if ($existingVendors->count() > 0) {
-                foreach ($existingVendors as $idx => $v) {
-                    \App\TenderVendor::query()->firstOrCreate([
-                        'tender_id' => $tender->id,
-                        'vendor_id' => $v->id,
-                    ], [
-                        'ref_number'   => 'TV-' . $tender->id . '-' . ($idx + 1),
-                        'kod_pembekal' => 'V' . str_pad($idx + 1, 3, '0', STR_PAD_LEFT),
-                        'participate'  => 1,
-                    ]);
-                }
-                $participants = \App\TenderVendor::query()
-                    ->with(['vendor'])
-                    ->where('tender_id', $tender->id)
-                    ->get();
-            }
-        }
+        $participants = $this->loadEligibleTechnicalParticipants($tender);
 
         // For borangs beyond Borang 1, only include vendors who qualified (Sempurna) in Borang 1
         if ($borang_code !== 'borang1') {
@@ -268,11 +246,13 @@ class PenilaianKewanganKerjaController extends Controller
                 ->get()
                 ->keyBy('vendor_id');
 
-            if ($b1EvalsMap->isNotEmpty()) {
+            if ($b1EvalsMap->isEmpty()) {
+                $participants = collect();
+            } else {
                 $participants = $participants->filter(function ($p) use ($b1EvalsMap) {
                     $eval1 = $b1EvalsMap->get($p->vendor_id);
                     if (! $eval1) {
-                        return true;
+                        return false;
                     }
                     $payload = is_string($eval1->payload) ? json_decode($eval1->payload, true) : ($eval1->payload ?? []);
                     $isSempurna = ((int) $eval1->status_pematuhan === 1) || (($payload['keputusan_akhir'] ?? '') === 'Sempurna');
@@ -452,105 +432,7 @@ class PenilaianKewanganKerjaController extends Controller
             }
         }
 
-        $b2DocsList = [];
-
-        // Dynamic retrieval of Kewangan Kerja items (header items or standard items)
-        $kewanganHeader = \App\Models\KewanganKerjaHeader::with(['items' => function ($q) {
-            $q->orderBy('sort_order');
-        }])->where('tender_id', $tender->id)->first();
-
-        $itemsSource = [];
-        if ($kewanganHeader && $kewanganHeader->items && $kewanganHeader->items->count() > 0) {
-            foreach ($kewanganHeader->items as $item) {
-                $itemsSource[] = [
-                    'id'    => $item->id,
-                    'title' => $item->title,
-                    'uuid'  => $item->uuid ?? null,
-                    'type'  => $item->source_type ?? 'standard',
-                    'action_url' => null,
-                ];
-            }
-        } else {
-            $standardItems = \Illuminate\Support\Facades\DB::table('standard_checklist_items')
-                ->where('category', 'kewangan_kerja')
-                ->where('is_active', 1)
-                ->orderBy('sort_order')
-                ->get();
-
-            foreach ($standardItems as $item) {
-                $itemsSource[] = [
-                    'id'         => $item->id,
-                    'uuid'       => $item->uuid ?? null,
-                    'title'      => $item->title,
-                    'type'       => $item->type ?? 'standard',
-                    'action_url' => $item->action_url ?? null,
-                ];
-            }
-        }
-
-        foreach ($itemsSource as $src) {
-            $title = trim($src['title']);
-            $normTitle = strtolower($title);
-            $type = $src['type'] ?? 'standard';
-            $actionUrl = $src['action_url'] ?? null;
-            $itemUuid = $src['uuid'] ?? null;
-
-            if (str_contains($normTitle, 'lembaran imbangan')) {
-                $dId = 'imbangan';
-                $icon = 'bi-journal-bookmark';
-                $showDiaudit = true;
-                $type = 'borang_atas_talian';
-            } elseif (str_contains($normTitle, 'penyata') || str_contains($normTitle, 'akaun bank')) {
-                $dId = 'penyata_bank';
-                $icon = 'bi-bank';
-                $showDiaudit = false;
-                $type = 'borang_atas_talian';
-            } elseif (str_contains($normTitle, 'bon') || str_contains($normTitle, 'saham')) {
-                $dId = 'bon_saham';
-                $icon = 'bi-cash-stack';
-                $showDiaudit = false;
-                $type = 'borang_atas_talian';
-            } elseif (str_contains($normTitle, 'prestasi kerja')) {
-                $dId = 'prestasi';
-                $icon = 'bi-briefcase';
-                $showDiaudit = false;
-                $type = 'borang_atas_talian';
-            } elseif (str_contains($normTitle, 'pengalaman kerja')) {
-                $dId = 'pengalaman_kerja';
-                $icon = 'bi-clock-history';
-                $showDiaudit = false;
-                $type = 'borang_atas_talian';
-            } elseif (str_contains($normTitle, 'kakitangan teknikal')) {
-                $dId = 'kakitangan_teknikal';
-                $icon = 'bi-people';
-                $showDiaudit = false;
-                $type = 'borang_atas_talian';
-            } elseif (str_contains($normTitle, 'borang ca') || str_contains($normTitle, 'laporan bank')) {
-                $dId = 'laporan_ca';
-                $icon = 'bi-file-earmark-text';
-                $showDiaudit = false;
-            } elseif (str_contains($normTitle, 'laporan penyelia') || str_contains($normTitle, 'borang ga')) {
-                $dId = 'laporan_penyelia';
-                $icon = 'bi-person-badge';
-                $showDiaudit = false;
-            } else {
-                $dId = \Illuminate\Support\Str::slug($title, '_');
-                $icon = 'bi-file-earmark-check';
-                $showDiaudit = false;
-            }
-
-            if (!isset($b2DocsList[$dId])) {
-                $b2DocsList[$dId] = [
-                    'id'          => $dId,
-                    'name'        => $title,
-                    'icon'        => $icon,
-                    'showDiaudit' => $showDiaudit,
-                    'type'        => $type,
-                    'action_url'  => $actionUrl,
-                    'uuid'        => $itemUuid,
-                ];
-            }
-        }
+        $b2DocsList = $this->getBorang2DocsList($tender);
 
         $b2Evaluations = TenderKewanganKerjaEvaluation::query()
             ->where('tender_id', $tender->id)
@@ -626,17 +508,17 @@ class PenilaianKewanganKerjaController extends Controller
                     $formUrl = null;
                     $tenderKey = !empty($tender->uuid) ? $tender->uuid : $tender->id;
                     if ($dId === 'imbangan') {
-                        $formUrl = route('lembaranImbangan', [$tenderKey, 'vendor_id' => $vId, 'mode' => 'view', 'modal' => 1]);
+                        $formUrl = route('lembaranImbangan', [$tenderKey, 'vendor_id' => $vId, 'mode' => 'view', 'modal' => 1], false);
                     } elseif ($dId === 'penyata_bank') {
-                        $formUrl = route('penyataBank', [$tenderKey, 'vendor_id' => $vId, 'mode' => 'view', 'modal' => 1]);
+                        $formUrl = route('penyataBank', [$tenderKey, 'vendor_id' => $vId, 'mode' => 'view', 'modal' => 1], false);
                     } elseif ($dId === 'bon_saham') {
-                        $formUrl = route('bonAtauSaham', [$tenderKey, 'vendor_id' => $vId, 'mode' => 'view', 'modal' => 1]);
+                        $formUrl = route('bonAtauSaham', [$tenderKey, 'vendor_id' => $vId, 'mode' => 'view', 'modal' => 1], false);
                     } elseif ($dId === 'prestasi') {
-                        $formUrl = route('prestasiKerjaSemasa', [$tenderKey, 'vendor_id' => $vId, 'mode' => 'view', 'modal' => 1]);
+                        $formUrl = route('prestasiKerjaSemasa', [$tenderKey, 'vendor_id' => $vId, 'mode' => 'view', 'modal' => 1], false);
                     } elseif ($dId === 'pengalaman_kerja') {
-                        $formUrl = route('senaraiTeknikal.pengalamanKerja.tender', [$tenderKey, 'vendor_id' => $vId, 'mode' => 'view', 'modal' => 1]);
+                        $formUrl = route('senaraiTeknikal.pengalamanKerja.tender', [$tenderKey, 'vendor_id' => $vId, 'mode' => 'view', 'modal' => 1], false);
                     } elseif ($dId === 'kakitangan_teknikal') {
-                        $formUrl = route('kakitanganTeknikal', [$tenderKey, 'vendor_id' => $vId, 'mode' => 'view', 'modal' => 1]);
+                        $formUrl = route('kakitanganTeknikal', [$tenderKey, 'vendor_id' => $vId, 'mode' => 'view', 'modal' => 1], false);
                     } elseif (!empty($dDef['action_url'])) {
                         $formUrl = url(trim($dDef['action_url'], '/') . '/' . $tenderKey . '?vendor_id=' . $vId . '&mode=view&modal=1');
                     }
@@ -669,7 +551,7 @@ class PenilaianKewanganKerjaController extends Controller
                             'type'          => 'standard',
                             'has_file'      => true,
                             'is_pdf'        => $isPdf,
-                            'url'           => route('tenderDokumen.download', $matchedFile->uuid),
+                            'url'           => route('tenderDokumen.download', $matchedFile->uuid, false),
                             'original_name' => $origName,
                         ];
                     } else {
@@ -2179,9 +2061,22 @@ class PenilaianKewanganKerjaController extends Controller
         $scores = $request->input('score_cidb', []);
         $skorKeseluruhan = $request->input('skor_keseluruhan', []);
         $kedudukanMap = $request->input('kedudukan', []);
-        $participants = \App\TenderVendor::query()
+        $participants = $this->loadEligibleTechnicalParticipants($tender);
+
+        $b1EvalsMap = TenderKewanganKerjaEvaluation::query()
             ->where('tender_id', $tender->id)
-            ->get();
+            ->where('borang_code', 'borang1')
+            ->get()
+            ->keyBy('vendor_id');
+
+        $participants = $participants->filter(function ($p) use ($b1EvalsMap) {
+            $eval1 = $b1EvalsMap->get($p->vendor_id);
+            if (! $eval1) {
+                return false;
+            }
+            $payload = is_string($eval1->payload) ? json_decode($eval1->payload, true) : ($eval1->payload ?? []);
+            return ((int) $eval1->status_pematuhan === 1) || (($payload['keputusan_akhir'] ?? '') === 'Sempurna');
+        })->values();
 
         foreach ($participants as $p) {
             $vId = $p->vendor_id;
@@ -2280,11 +2175,27 @@ class PenilaianKewanganKerjaController extends Controller
             7 => 'Surat Akuan Pembida Ditandatangani (Integrity Pact)',
         ];
 
+        $disqualifiedVendorIds = TenderVendor::query()
+            ->where('tender_id', $tender->id)
+            ->where(function ($q) {
+                $q->where('cancel_fg', 1)
+                  ->orWhereIn('eliminated_process_id', [
+                      TenderProcessStatus::PENILAIAN_PEMBUKA,
+                      TenderProcessStatus::PENILAIAN_TEKNIKAL,
+                  ]);
+            })
+            ->pluck('vendor_id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
         $kriteriaName = $kriteriaNames[$kriteriaId] ?? "Kriteria {$kriteriaId}";
 
-        \Illuminate\Support\Facades\DB::transaction(function () use ($tender, $kriteriaId, $kriteriaName, $kriteriaNames, $evaluationsData) {
+        \Illuminate\Support\Facades\DB::transaction(function () use ($tender, $kriteriaId, $kriteriaName, $kriteriaNames, $evaluationsData, $disqualifiedVendorIds) {
             foreach ($evaluationsData as $item) {
                 $vendorId = (int) $item['vendor_id'];
+                if (in_array($vendorId, $disqualifiedVendorIds, true)) {
+                    continue;
+                }
                 $rawStatus = trim($item['status']);
                 $statusVal = ($rawStatus === 'Tidak' || $rawStatus === 'Tidak Sempurna') ? 'Tidak Sempurna' : 'Sempurna';
                 $catatanVal = $item['catatan'] ?? '';
@@ -2400,6 +2311,126 @@ class PenilaianKewanganKerjaController extends Controller
     }
 
     /**
+     * Retrieve dynamic list of documents to evaluate for Borang 2 (Kewangan Kerja).
+     *
+     * @return array<string, array{id: string, name: string, icon: string, showDiaudit: bool, type: string, action_url: ?string, uuid: ?string}>
+     */
+    protected function getBorang2DocsList(Tender $tender): array
+    {
+        $kewanganHeader = \App\Models\KewanganKerjaHeader::with(['items' => function ($q) {
+            $q->orderBy('sort_order');
+        }])->where('tender_id', $tender->id)->first();
+
+        $itemsSource = [];
+        if ($kewanganHeader && $kewanganHeader->items && $kewanganHeader->items->count() > 0) {
+            foreach ($kewanganHeader->items as $item) {
+                $itemsSource[] = [
+                    'id'         => $item->id,
+                    'title'      => $item->title,
+                    'uuid'       => $item->uuid ?? null,
+                    'type'       => $item->source_type ?? 'standard',
+                    'action_url' => null,
+                ];
+            }
+        } else {
+            $standardItems = \Illuminate\Support\Facades\DB::table('standard_checklist_items')
+                ->where('category', 'kewangan_kerja')
+                ->where('is_active', 1)
+                ->orderBy('sort_order')
+                ->get();
+
+            foreach ($standardItems as $item) {
+                $itemsSource[] = [
+                    'id'         => $item->id,
+                    'uuid'       => $item->uuid ?? null,
+                    'title'      => $item->title,
+                    'type'       => $item->type ?? 'standard',
+                    'action_url' => $item->action_url ?? null,
+                ];
+            }
+        }
+
+        $b2DocsList = [];
+        $knownOnlineForms = ['imbangan', 'penyata_bank', 'bon_saham', 'prestasi', 'pengalaman_kerja', 'kakitangan_teknikal'];
+
+        foreach ($itemsSource as $src) {
+            $title = trim($src['title']);
+            $normTitle = strtolower($title);
+            $actionUrl = $src['action_url'] ?? null;
+            $itemUuid = $src['uuid'] ?? null;
+
+            if (str_contains($normTitle, 'lembaran imbangan')) {
+                $dId = 'imbangan';
+                $icon = 'bi-journal-bookmark';
+                $showDiaudit = true;
+            } elseif (str_contains($normTitle, 'penyata') || str_contains($normTitle, 'akaun bank')) {
+                $dId = 'penyata_bank';
+                $icon = 'bi-bank';
+                $showDiaudit = false;
+            } elseif (str_contains($normTitle, 'bon') || str_contains($normTitle, 'saham')) {
+                $dId = 'bon_saham';
+                $icon = 'bi-cash-stack';
+                $showDiaudit = false;
+            } elseif (str_contains($normTitle, 'prestasi kerja')) {
+                $dId = 'prestasi';
+                $icon = 'bi-briefcase';
+                $showDiaudit = false;
+            } elseif (str_contains($normTitle, 'pengalaman kerja')) {
+                $dId = 'pengalaman_kerja';
+                $icon = 'bi-clock-history';
+                $showDiaudit = false;
+            } elseif (str_contains($normTitle, 'kakitangan teknikal')) {
+                $dId = 'kakitangan_teknikal';
+                $icon = 'bi-people';
+                $showDiaudit = false;
+            } elseif (str_contains($normTitle, 'borang ca') || str_contains($normTitle, 'laporan bank')) {
+                $dId = 'laporan_ca';
+                $icon = 'bi-file-earmark-text';
+                $showDiaudit = false;
+            } elseif (str_contains($normTitle, 'laporan penyelia') || str_contains($normTitle, 'borang ga')) {
+                $dId = 'laporan_penyelia';
+                $icon = 'bi-person-badge';
+                $showDiaudit = false;
+            } elseif (str_contains($normTitle, 'borang tender') || str_contains($normTitle, 'sebut harga')) {
+                $dId = \Illuminate\Support\Str::slug($title, '_');
+                $icon = 'bi-file-earmark-ruled';
+                $showDiaudit = false;
+            } elseif (str_contains($normTitle, 'akuan pembida')) {
+                $dId = \Illuminate\Support\Str::slug($title, '_');
+                $icon = 'bi-shield-check';
+                $showDiaudit = false;
+            } else {
+                $dId = \Illuminate\Support\Str::slug($title, '_');
+                $icon = 'bi-file-earmark-check';
+                $showDiaudit = false;
+            }
+
+            // Strictly determine if it is a real online form or standard document upload
+            if (in_array($dId, $knownOnlineForms, true)) {
+                $type = 'borang_atas_talian';
+            } elseif (!empty($actionUrl)) {
+                $type = 'borang_atas_talian';
+            } else {
+                $type = 'standard';
+            }
+
+            if (!isset($b2DocsList[$dId])) {
+                $b2DocsList[$dId] = [
+                    'id'          => $dId,
+                    'name'        => $title,
+                    'icon'        => $icon,
+                    'showDiaudit' => $showDiaudit,
+                    'type'        => $type,
+                    'action_url'  => $actionUrl,
+                    'uuid'        => $itemUuid,
+                ];
+            }
+        }
+
+        return $b2DocsList;
+    }
+
+    /**
      * AJAX: Save evaluation for a specific Borang 2 document item across participating vendors.
      */
     public function simpanBorang2Kriteria(Request $request, string $tender_no): JsonResponse
@@ -2427,20 +2458,29 @@ class PenilaianKewanganKerjaController extends Controller
         $docId = $request->input('doc_id');
         $evaluationsData = $request->input('evaluations');
 
-        $b2DocsList = [
-            'imbangan'         => 'Lembaran Imbangan',
-            'penyata_bank'     => 'Penyata Bulanan / Akaun Bank',
-            'bon_saham'        => 'Bon atau Saham',
-            'prestasi'         => 'Prestasi Kerja Semasa Petender',
-            'laporan_ca'       => 'Laporan Bank atau Borang CA',
-            'laporan_penyelia' => 'Laporan Penyelia Projek Bagi Kerja Semasa (Borang GA)',
-        ];
+        $b2DocsList = $this->getBorang2DocsList($tender);
+        $docDef = $b2DocsList[$docId] ?? null;
+        $disqualifiedVendorIds = TenderVendor::query()
+            ->where('tender_id', $tender->id)
+            ->where(function ($q) {
+                $q->where('cancel_fg', 1)
+                  ->orWhereIn('eliminated_process_id', [
+                      TenderProcessStatus::PENILAIAN_PEMBUKA,
+                      TenderProcessStatus::PENILAIAN_TEKNIKAL,
+                  ]);
+            })
+            ->pluck('vendor_id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
 
-        $docName = $b2DocsList[$docId] ?? $docId;
+        $docName = $docDef ? $docDef['name'] : $docId;
 
-        \Illuminate\Support\Facades\DB::transaction(function () use ($tender, $docId, $docName, $b2DocsList, $evaluationsData) {
+        \Illuminate\Support\Facades\DB::transaction(function () use ($tender, $docId, $docName, $b2DocsList, $evaluationsData, $disqualifiedVendorIds) {
             foreach ($evaluationsData as $item) {
                 $vendorId = (int) $item['vendor_id'];
+                if (in_array($vendorId, $disqualifiedVendorIds, true)) {
+                    continue;
+                }
                 $dikemukakan = trim($item['dikemukakan'] ?? 'Tidak');
                 $diaudit = trim($item['diaudit'] ?? 'T.K.S');
                 $catatanVal = $item['catatan'] ?? '';
@@ -2473,7 +2513,8 @@ class PenilaianKewanganKerjaController extends Controller
                 $tanpaGA = false;
                 $failedReasons = [];
 
-                foreach ($b2DocsList as $dKey => $dTitle) {
+                foreach ($b2DocsList as $dKey => $dDef) {
+                    $dTitle = $dDef['name'];
                     $dItem = $payload['docs'][$dKey] ?? null;
                     if (! $dItem || empty($dItem['dikemukakan'])) {
                         $allEvaluated = false;
@@ -2489,7 +2530,7 @@ class PenilaianKewanganKerjaController extends Controller
                             }
                         }
 
-                        if ($dKey === 'imbangan' && isset($dItem['diaudit']) && $dItem['diaudit'] === 'Tidak') {
+                        if (!empty($dDef['showDiaudit']) && isset($dItem['diaudit']) && $dItem['diaudit'] === 'Tidak') {
                             $allCukup = false;
                             $catTxt = ! empty($dItem['catatan']) ? ': ' . $dItem['catatan'] : '';
                             $failedReasons[] = $dTitle . ': Diaudit = Tidak' . $catTxt;
@@ -2642,6 +2683,26 @@ class PenilaianKewanganKerjaController extends Controller
         ]);
 
         $vendorId = (int) $request->input('vendor_id');
+
+        $isDisqualified = TenderVendor::query()
+            ->where('tender_id', $tender->id)
+            ->where('vendor_id', $vendorId)
+            ->where(function ($q) {
+                $q->where('cancel_fg', 1)
+                  ->orWhereIn('eliminated_process_id', [
+                      TenderProcessStatus::PENILAIAN_PEMBUKA,
+                      TenderProcessStatus::PENILAIAN_TEKNIKAL,
+                  ]);
+            })
+            ->exists();
+
+        if ($isDisqualified) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Petender ini telah disingkirkan pada penilaian terdahulu dan tidak layak dinilai.',
+            ], 422);
+        }
+
         $projekSakit = strtoupper(trim($request->input('projek_sakit', 'TIADA')));
         $catatanVal = $request->input('catatan', '');
 
@@ -2771,11 +2832,27 @@ class PenilaianKewanganKerjaController extends Controller
             'borang4' => 'Prestasi Kerja Semasa (Borang 4)',
         ];
 
+        $disqualifiedVendorIds = TenderVendor::query()
+            ->where('tender_id', $tender->id)
+            ->where(function ($q) {
+                $q->where('cancel_fg', 1)
+                  ->orWhereIn('eliminated_process_id', [
+                      TenderProcessStatus::PENILAIAN_PEMBUKA,
+                      TenderProcessStatus::PENILAIAN_TEKNIKAL,
+                  ]);
+            })
+            ->pluck('vendor_id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
         $criterionLabel = $b5CriteriaList[$borangTarget] ?? $borangTarget;
 
-        \Illuminate\Support\Facades\DB::transaction(function () use ($tender, $borangTarget, $criterionLabel, $b5CriteriaList, $evaluationsData) {
+        \Illuminate\Support\Facades\DB::transaction(function () use ($tender, $borangTarget, $criterionLabel, $b5CriteriaList, $evaluationsData, $disqualifiedVendorIds) {
             foreach ($evaluationsData as $item) {
                 $vendorId = (int) $item['vendor_id'];
+                if (in_array($vendorId, $disqualifiedVendorIds, true)) {
+                    continue;
+                }
                 $rawStatus = trim($item['status']);
                 $statusVal = ($rawStatus === 'Tidak' || $rawStatus === 'Tidak Sempurna') ? 'Tidak Sempurna' : 'Sempurna';
                 $catatanVal = $item['catatan'] ?? '';
@@ -2877,9 +2954,22 @@ class PenilaianKewanganKerjaController extends Controller
                 ->get()
                 ->keyBy('vendor_id');
 
-            $participants = \App\TenderVendor::query()
+            $participants = $this->loadEligibleTechnicalParticipants($tender);
+
+            $b1EvalsMap = TenderKewanganKerjaEvaluation::query()
                 ->where('tender_id', $tender->id)
-                ->get();
+                ->where('borang_code', 'borang1')
+                ->get()
+                ->keyBy('vendor_id');
+
+            $participants = $participants->filter(function ($p) use ($b1EvalsMap) {
+                $eval1 = $b1EvalsMap->get($p->vendor_id);
+                if (! $eval1) {
+                    return false;
+                }
+                $payload = is_string($eval1->payload) ? json_decode($eval1->payload, true) : ($eval1->payload ?? []);
+                return ((int) $eval1->status_pematuhan === 1) || (($payload['keputusan_akhir'] ?? '') === 'Sempurna');
+            })->values();
 
             $unEvaluatedVendors = [];
             foreach ($participants as $p) {
@@ -2935,10 +3025,22 @@ class PenilaianKewanganKerjaController extends Controller
             ]);
         }
 
-        $participants = \App\TenderVendor::query()
+        $participants = $this->loadEligibleTechnicalParticipants($tender);
+
+        $b1EvalsMap = TenderKewanganKerjaEvaluation::query()
             ->where('tender_id', $tender->id)
-            ->where('participate', 1)
-            ->get();
+            ->where('borang_code', 'borang1')
+            ->get()
+            ->keyBy('vendor_id');
+
+        $participants = $participants->filter(function ($p) use ($b1EvalsMap) {
+            $eval1 = $b1EvalsMap->get($p->vendor_id);
+            if (! $eval1) {
+                return false;
+            }
+            $payload = is_string($eval1->payload) ? json_decode($eval1->payload, true) : ($eval1->payload ?? []);
+            return ((int) $eval1->status_pematuhan === 1) || (($payload['keputusan_akhir'] ?? '') === 'Sempurna');
+        })->values();
 
         $evaluations = TenderKewanganKerjaEvaluation::query()
             ->where('tender_id', $tender->id)
@@ -3041,8 +3143,78 @@ class PenilaianKewanganKerjaController extends Controller
             : 'kerja_besar';
 
         if ($flowType === 'kerja_kecil_other') {
-            $nextStatus = TenderProcessStatus::penilaianKewanganNextStatus();
-            $this->advanceTenderProcess($tender, $nextStatus, TenderProcessStatus::penilaianKewanganListStatus());
+            DB::transaction(function () use ($tender) {
+                $eligibleParticipants = $this->loadEligibleTechnicalParticipants($tender);
+
+                $b1EvalsMap = TenderKewanganKerjaEvaluation::query()
+                    ->where('tender_id', $tender->id)
+                    ->where('borang_code', 'borang1')
+                    ->get()
+                    ->keyBy('vendor_id');
+
+                $b5Evals = TenderKewanganKerjaEvaluation::query()
+                    ->where('tender_id', $tender->id)
+                    ->where('borang_code', 'borang5')
+                    ->get()
+                    ->keyBy('vendor_id');
+
+                $passingVendorIds = [];
+                foreach ($eligibleParticipants as $p) {
+                    $vId = (int) $p->vendor_id;
+                    $eval1 = $b1EvalsMap->get($vId);
+                    if (! $eval1) {
+                        continue;
+                    }
+                    $payload1 = is_string($eval1->payload) ? json_decode($eval1->payload, true) : ($eval1->payload ?? []);
+                    $isSempurna1 = ((int) $eval1->status_pematuhan === 1) || (($payload1['keputusan_akhir'] ?? '') === 'Sempurna');
+                    if (! $isSempurna1) {
+                        continue;
+                    }
+
+                    $eval5 = $b5Evals->get($vId);
+                    $payload5 = $eval5 && is_string($eval5->payload) ? json_decode($eval5->payload, true) : ($eval5->payload ?? []);
+                    $isSempurna5 = ! $eval5 || ((int) $eval5->status_pematuhan === 1) || (($payload5['keputusan_akhir'] ?? '') === 'Sempurna');
+
+                    if ($isSempurna5) {
+                        $passingVendorIds[] = $vId;
+                    }
+                }
+
+                foreach ($eligibleParticipants as $tv) {
+                    if (in_array((int) $tv->vendor_id, $passingVendorIds, true)) {
+                        $tv->update([
+                            'cancel_fg'             => 0,
+                            'eliminated_process_id' => null,
+                            'eliminated_reason'     => null,
+                            'eliminated_at'         => null,
+                        ]);
+                    } else {
+                        $tv->eliminate(
+                            TenderProcessStatus::PENILAIAN_KEWANGAN,
+                            'Tidak melepasi penilaian kewangan kerja kecil (Borang 6)'
+                        );
+                    }
+                }
+
+                $laporan = TenderKewanganLaporan::query()->firstOrNew([
+                    'tender_id' => $tender->id,
+                ]);
+                $laporan->fill([
+                    'catatan_rumusan'         => 'Penilaian Kewangan Kerja Kecil (Lain-Lain) disahkan.',
+                    'pengesyoran_justifikasi' => ['passing_vendor_ids' => $passingVendorIds],
+                    'status'                  => 'submitted',
+                    'submitted_at'            => now(),
+                    'submitted_by'            => Auth::id(),
+                    'updated_by'              => Auth::id(),
+                ]);
+                if (! $laporan->exists) {
+                    $laporan->created_by = Auth::id();
+                }
+                $laporan->save();
+
+                $nextStatus = TenderProcessStatus::penilaianKewanganNextStatus();
+                $this->advanceTenderProcess($tender, $nextStatus, TenderProcessStatus::penilaianKewanganListStatus());
+            });
 
             return response()->json([
                 'success'  => true,
@@ -3154,8 +3326,64 @@ class PenilaianKewanganKerjaController extends Controller
             : 'kerja_besar';
 
         if ($flowType === 'kerja_kecil_me') {
-            $nextStatus = TenderProcessStatus::penilaianKewanganNextStatus();
-            $this->advanceTenderProcess($tender, $nextStatus, TenderProcessStatus::penilaianKewanganListStatus());
+            DB::transaction(function () use ($tender) {
+                $eligibleParticipants = $this->loadEligibleTechnicalParticipants($tender);
+
+                $b1EvalsMap = TenderKewanganKerjaEvaluation::query()
+                    ->where('tender_id', $tender->id)
+                    ->where('borang_code', 'borang1')
+                    ->get()
+                    ->keyBy('vendor_id');
+
+                $passingVendorIds = [];
+                foreach ($eligibleParticipants as $p) {
+                    $vId = (int) $p->vendor_id;
+                    $eval1 = $b1EvalsMap->get($vId);
+                    if (! $eval1) {
+                        continue;
+                    }
+                    $payload1 = is_string($eval1->payload) ? json_decode($eval1->payload, true) : ($eval1->payload ?? []);
+                    $isSempurna1 = ((int) $eval1->status_pematuhan === 1) || (($payload1['keputusan_akhir'] ?? '') === 'Sempurna');
+                    if ($isSempurna1) {
+                        $passingVendorIds[] = $vId;
+                    }
+                }
+
+                foreach ($eligibleParticipants as $tv) {
+                    if (in_array((int) $tv->vendor_id, $passingVendorIds, true)) {
+                        $tv->update([
+                            'cancel_fg'             => 0,
+                            'eliminated_process_id' => null,
+                            'eliminated_reason'     => null,
+                            'eliminated_at'         => null,
+                        ]);
+                    } else {
+                        $tv->eliminate(
+                            TenderProcessStatus::PENILAIAN_KEWANGAN,
+                            'Tidak melepasi penilaian kewangan kerja kecil M&E (Borang 8)'
+                        );
+                    }
+                }
+
+                $laporan = TenderKewanganLaporan::query()->firstOrNew([
+                    'tender_id' => $tender->id,
+                ]);
+                $laporan->fill([
+                    'catatan_rumusan'         => 'Penilaian Kewangan Kerja Kecil (M&E) disahkan.',
+                    'pengesyoran_justifikasi' => ['passing_vendor_ids' => $passingVendorIds],
+                    'status'                  => 'submitted',
+                    'submitted_at'            => now(),
+                    'submitted_by'            => Auth::id(),
+                    'updated_by'              => Auth::id(),
+                ]);
+                if (! $laporan->exists) {
+                    $laporan->created_by = Auth::id();
+                }
+                $laporan->save();
+
+                $nextStatus = TenderProcessStatus::penilaianKewanganNextStatus();
+                $this->advanceTenderProcess($tender, $nextStatus, TenderProcessStatus::penilaianKewanganListStatus());
+            });
 
             return response()->json([
                 'success'  => true,
@@ -3195,10 +3423,22 @@ class PenilaianKewanganKerjaController extends Controller
         ]);
 
         // Server-side check that all vendors in Borang 9 have been evaluated
-        $participants = \App\TenderVendor::query()
-            ->with(['vendor'])
+        $participants = $this->loadEligibleTechnicalParticipants($tender);
+
+        $b1EvalsMap = TenderKewanganKerjaEvaluation::query()
             ->where('tender_id', $tender->id)
-            ->get();
+            ->where('borang_code', 'borang1')
+            ->get()
+            ->keyBy('vendor_id');
+
+        $participants = $participants->filter(function ($p) use ($b1EvalsMap) {
+            $eval1 = $b1EvalsMap->get($p->vendor_id);
+            if (! $eval1) {
+                return false;
+            }
+            $payload = is_string($eval1->payload) ? json_decode($eval1->payload, true) : ($eval1->payload ?? []);
+            return ((int) $eval1->status_pematuhan === 1) || (($payload['keputusan_akhir'] ?? '') === 'Sempurna');
+        })->values();
 
         $b9Evaluations = TenderKewanganKerjaEvaluation::query()
             ->where('tender_id', $tender->id)
@@ -3486,7 +3726,18 @@ class PenilaianKewanganKerjaController extends Controller
 
         $selectedVendorIds = array_map('intval', (array) $request->input('selected_vendors', []));
 
-        DB::transaction(function () use ($tender, $selectedVendorIds) {
+        $eligibleParticipants = $this->loadEligibleTechnicalParticipants($tender);
+        $eligibleVendorIds = $eligibleParticipants->pluck('vendor_id')->map(fn ($id) => (int) $id)->toArray();
+
+        foreach ($selectedVendorIds as $svId) {
+            if (! in_array($svId, $eligibleVendorIds, true)) {
+                return response()->json([
+                    'message' => 'Petender yang dipilih tidak layak atau telah disingkirkan pada penilaian terdahulu.',
+                ], 422);
+            }
+        }
+
+        DB::transaction(function () use ($tender, $selectedVendorIds, $eligibleParticipants) {
             // 1. Update / Create TenderKewanganLaporan record
             $laporanRecord = TenderKewanganLaporan::query()->firstOrNew([
                 'tender_id' => $tender->id,
@@ -3507,14 +3758,15 @@ class PenilaianKewanganKerjaController extends Controller
 
             $laporanRecord->save();
 
-            // 2. Process all participating vendors for this tender
-            $allTenderVendors = TenderVendor::where('tender_id', $tender->id)->get();
-
-            foreach ($allTenderVendors as $tv) {
+            // 2. Process only eligible participants who legitimately made it to Penilaian Kewangan
+            foreach ($eligibleParticipants as $tv) {
                 if (in_array((int) $tv->vendor_id, $selectedVendorIds, true)) {
                     // Selected / Recommended vendor: Keep active
                     $tv->update([
-                        'cancel_fg' => 0,
+                        'cancel_fg'             => 0,
+                        'eliminated_process_id' => null,
+                        'eliminated_reason'     => null,
+                        'eliminated_at'         => null,
                     ]);
                 } else {
                     // Non-recommended vendor: Mark eliminated at Penilaian Kewangan
@@ -3684,6 +3936,25 @@ class PenilaianKewanganKerjaController extends Controller
         }
 
         $vendorId = (int) $request->input('vendor_id');
+
+        $isDisqualified = TenderVendor::query()
+            ->where('tender_id', $tender->id)
+            ->where('vendor_id', $vendorId)
+            ->where(function ($q) {
+                $q->where('cancel_fg', 1)
+                  ->orWhereIn('eliminated_process_id', [
+                      TenderProcessStatus::PENILAIAN_PEMBUKA,
+                      TenderProcessStatus::PENILAIAN_TEKNIKAL,
+                  ]);
+            })
+            ->exists();
+
+        if ($isDisqualified) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Petender ini telah disingkirkan pada penilaian terdahulu dan tidak layak dinilai.',
+            ], 422);
+        }
         $statusPematuhan = $request->has('status_pematuhan') ? (int) $request->input('status_pematuhan') : null;
         $catatan = $request->input('catatan');
         $payload = $request->input('payload', []);
@@ -3764,28 +4035,63 @@ class PenilaianKewanganKerjaController extends Controller
             return response()->json(['message' => 'Tender ini telah pun dihantar ke peringkat seterusnya.'], 422);
         }
 
-        $laporanRecord = TenderKewanganLaporan::query()->firstOrNew([
-            'tender_id' => $tender->id,
-        ]);
+        $eligibleParticipants = $this->loadEligibleTechnicalParticipants($tender);
+        $eligibleVendorIds = $eligibleParticipants->pluck('vendor_id')->map(fn ($id) => (int) $id)->toArray();
 
-        $laporanRecord->fill([
-            'catatan_rumusan' => $request->input('catatan_rumusan', 'Laporan Penilaian Kewangan (Kerja) disahkan.'),
-            'pengesyoran'     => $request->input('pengesyoran'),
-            'status'          => 'submitted',
-            'submitted_at'    => now(),
-            'submitted_by'    => Auth::id(),
-            'updated_by'      => Auth::id(),
-        ]);
-
-        if (! $laporanRecord->exists) {
-            $laporanRecord->created_by = Auth::id();
+        $selectedVendorIds = array_map('intval', (array) $request->input('selected_vendors', []));
+        if ($selectedVendorIds !== []) {
+            foreach ($selectedVendorIds as $svId) {
+                if (! in_array($svId, $eligibleVendorIds, true)) {
+                    return response()->json([
+                        'message' => 'Petender yang dipilih tidak layak atau telah disingkirkan pada penilaian terdahulu.',
+                    ], 422);
+                }
+            }
         }
 
-        $laporanRecord->save();
+        DB::transaction(function () use ($tender, $request, $eligibleParticipants, $selectedVendorIds) {
+            $laporanRecord = TenderKewanganLaporan::query()->firstOrNew([
+                'tender_id' => $tender->id,
+            ]);
 
-        // Advance tender process status to next stage
-        $nextStatus = TenderProcessStatus::penilaianKewanganNextStatus();
-        $this->advanceTenderProcess($tender, $nextStatus, TenderProcessStatus::penilaianKewanganListStatus());
+            $laporanRecord->fill([
+                'catatan_rumusan'         => $request->input('catatan_rumusan', 'Laporan Penilaian Kewangan (Kerja) disahkan.'),
+                'pengesyoran'             => $request->input('pengesyoran'),
+                'pengesyoran_justifikasi' => $selectedVendorIds !== [] ? ['recommended_vendor_ids' => $selectedVendorIds] : $request->input('pengesyoran_justifikasi'),
+                'status'                  => 'submitted',
+                'submitted_at'            => now(),
+                'submitted_by'            => Auth::id(),
+                'updated_by'              => Auth::id(),
+            ]);
+
+            if (! $laporanRecord->exists) {
+                $laporanRecord->created_by = Auth::id();
+            }
+
+            $laporanRecord->save();
+
+            if ($selectedVendorIds !== []) {
+                foreach ($eligibleParticipants as $tv) {
+                    if (in_array((int) $tv->vendor_id, $selectedVendorIds, true)) {
+                        $tv->update([
+                            'cancel_fg'             => 0,
+                            'eliminated_process_id' => null,
+                            'eliminated_reason'     => null,
+                            'eliminated_at'         => null,
+                        ]);
+                    } else {
+                        $tv->eliminate(
+                            TenderProcessStatus::PENILAIAN_KEWANGAN,
+                            'Tidak disyorkan dalam Penilaian Kewangan'
+                        );
+                    }
+                }
+            }
+
+            // Advance tender process status to next stage
+            $nextStatus = TenderProcessStatus::penilaianKewanganNextStatus();
+            $this->advanceTenderProcess($tender, $nextStatus, TenderProcessStatus::penilaianKewanganListStatus());
+        });
 
         return response()->json([
             'success' => true,
@@ -3818,6 +4124,25 @@ class PenilaianKewanganKerjaController extends Controller
         ]);
 
         $vendorId = (int) $validated['vendor_id'];
+
+        $isDisqualified = TenderVendor::query()
+            ->where('tender_id', $tender->id)
+            ->where('vendor_id', $vendorId)
+            ->where(function ($q) {
+                $q->where('cancel_fg', 1)
+                  ->orWhereIn('eliminated_process_id', [
+                      TenderProcessStatus::PENILAIAN_PEMBUKA,
+                      TenderProcessStatus::PENILAIAN_TEKNIKAL,
+                  ]);
+            })
+            ->exists();
+
+        if ($isDisqualified) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Petender ini telah disingkirkan pada penilaian terdahulu dan tidak layak dinilai.',
+            ], 422);
+        }
         $flowType = method_exists($tender, 'getKerjaClassification')
             ? $tender->getKerjaClassification()
             : 'kerja_besar';
@@ -3925,6 +4250,25 @@ class PenilaianKewanganKerjaController extends Controller
             ]);
 
             $vendorId = (int) $validated['vendor_id'];
+
+        $isDisqualified = TenderVendor::query()
+            ->where('tender_id', $tender->id)
+            ->where('vendor_id', $vendorId)
+            ->where(function ($q) {
+                $q->where('cancel_fg', 1)
+                  ->orWhereIn('eliminated_process_id', [
+                      TenderProcessStatus::PENILAIAN_PEMBUKA,
+                      TenderProcessStatus::PENILAIAN_TEKNIKAL,
+                  ]);
+            })
+            ->exists();
+
+        if ($isDisqualified) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Petender ini telah disingkirkan pada penilaian terdahulu dan tidak layak dinilai.',
+            ], 422);
+        }
             $itemsInput = $validated['items'] ?? [];
 
             // 1. Retrieve existing payload and update items
@@ -4144,5 +4488,58 @@ class PenilaianKewanganKerjaController extends Controller
             'weeks' => $weeks,
             'disp'  => $dispFormatted,
         ];
+    }
+
+    /**
+     * Vendors who legitimately survived Penilaian Pembuka and Penilaian Teknikal.
+     * Excludes vendors eliminated at status_process_id = 8 (Pembuka) or 10 (Teknikal).
+     */
+    protected function loadEligibleTechnicalParticipants(?Tender $tender): Collection
+    {
+        if (! $tender) {
+            return collect();
+        }
+
+        $query = $tender->participants()
+            ->with('vendor')
+            ->where('participate', 1)
+            ->where(function ($q) {
+                $q->whereNull('eliminated_process_id')
+                  ->orWhereNotIn('eliminated_process_id', [
+                      TenderProcessStatus::PENILAIAN_PEMBUKA,
+                      TenderProcessStatus::PENILAIAN_TEKNIKAL,
+                  ]);
+            })
+            ->where(function ($q) {
+                $q->where('cancel_fg', 0)
+                  ->orWhere(function ($sub) {
+                      $sub->where('eliminated_process_id', '>', TenderProcessStatus::PENILAIAN_TEKNIKAL);
+                  });
+            });
+
+        $hasSubmittedCutOff = DB::table('cut_off_selections')
+            ->where('tender_id', $tender->id)
+            ->where('status', 'submitted')
+            ->exists();
+
+        if ($hasSubmittedCutOff) {
+            $refs = TenderVendor::submittedCutOffVendorRefs($tender->id);
+            if ($refs === []) {
+                $query->whereRaw('0 = 1');
+            } else {
+                $numericIds = array_values(array_filter($refs, fn ($ref) => ctype_digit($ref)));
+                $query->where(function ($match) use ($refs, $numericIds) {
+                    $match->whereIn('kod_pembekal', $refs);
+                    if ($numericIds !== []) {
+                        $match->orWhereIn('vendor_id', array_map('intval', $numericIds));
+                    }
+                    $match->orWhereHas('vendor', function ($vendor) use ($refs) {
+                        $vendor->whereIn('registration', $refs);
+                    });
+                });
+            }
+        }
+
+        return $query->orderBy('id')->get();
     }
 }

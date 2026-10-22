@@ -497,18 +497,25 @@ class VendorTenderDokumenController extends Controller
 
         $path = ltrim(str_replace('\\', '/', (string) $file->path), '/');
         $absolute = storage_path('app/public/' . $path);
+        $fileMime = $file->mime_type ?: 'application/octet-stream';
+        $ext = strtolower(pathinfo((string) $file->original_name, PATHINFO_EXTENSION));
+        $isPdf = ($ext === 'pdf' || str_contains(strtolower($fileMime), 'pdf'));
+        $disposition = $isPdf ? 'inline' : 'attachment';
+
         if (is_file($absolute)) {
+            $effectiveMime = $file->mime_type ?: (function_exists('mime_content_type') ? @mime_content_type($absolute) : null) ?: $fileMime;
             return response()->file($absolute, [
-                'Content-Type' => $file->mime_type ?: 'application/octet-stream',
-                'Content-Disposition' => 'inline; filename="' . addslashes($file->original_name) . '"',
+                'Content-Type' => $effectiveMime,
+                'Content-Disposition' => $disposition . '; filename="' . addslashes($file->original_name) . '"',
             ]);
         }
 
         $stosPath = rtrim((string) config('services.stos_backend.storage_path'), '/') . '/' . $path;
         if ($stosPath !== '/' . $path && is_file($stosPath)) {
+            $effectiveMime = $file->mime_type ?: (function_exists('mime_content_type') ? @mime_content_type($stosPath) : null) ?: $fileMime;
             return response()->file($stosPath, [
-                'Content-Type' => $file->mime_type ?: 'application/octet-stream',
-                'Content-Disposition' => 'inline; filename="' . addslashes($file->original_name) . '"',
+                'Content-Type' => $effectiveMime,
+                'Content-Disposition' => $disposition . '; filename="' . addslashes($file->original_name) . '"',
             ]);
         }
 
@@ -523,7 +530,7 @@ class VendorTenderDokumenController extends Controller
 
         return response($api->body(), 200, [
             'Content-Type' => $file->mime_type ?: ($api->header('Content-Type') ?: 'application/octet-stream'),
-            'Content-Disposition' => 'inline; filename="' . addslashes($file->original_name) . '"',
+            'Content-Disposition' => $disposition . '; filename="' . addslashes($file->original_name) . '"',
         ]);
     }
 

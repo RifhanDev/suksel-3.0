@@ -926,6 +926,8 @@
                         <i class="bi bi-save me-2"></i>Simpan Penilaian
                     </button>
                 </div>
+            </div>
+        </div>
     </div>
 
     {{-- MODAL: Prebiu Dokumen/Borang --}}
@@ -1229,15 +1231,11 @@
             if (Array.isArray(vendor.files) && vendor.files.length) {
                 docHtml = vendor.files.map(function (file) {
                     const ext = (file.name || '').split('.').pop().toLowerCase();
-                    const isPdf = file.is_pdf === true || ext === 'pdf';
+                    const isPdf = file.is_pdf === true || ext === 'pdf' || (file.mime_type && String(file.mime_type).toLowerCase().includes('pdf'));
                     if (isPdf) {
                         return '<a href="' + escapeHtml(file.url) + '" target="_blank" rel="noopener noreferrer" class="d-block small text-primary text-decoration-none mb-1 fw-medium">' +
                             '<i class="bi bi-file-earmark-pdf-fill text-danger me-1"></i>' + escapeHtml(file.name) +
                             ' <i class="bi bi-box-arrow-up-right small text-muted"></i></a>';
-                    } else if (['png', 'jpg', 'jpeg', 'svg', 'webp'].includes(ext)) {
-                        return '<a href="' + escapeHtml(file.url) + '" data-name="' + escapeHtml(file.name) + '" class="d-block small text-primary btn-preview-file text-decoration-none mb-1 fw-medium">' +
-                            '<i class="bi bi-file-earmark-image text-primary me-1"></i>' + escapeHtml(file.name) +
-                            '</a>';
                     } else {
                         return '<a href="' + escapeHtml(file.url) + '" download="' + escapeHtml(file.name) + '" data-name="' + escapeHtml(file.name) + '" class="d-block small text-primary text-decoration-none mb-1 fw-medium">' +
                             '<i class="bi bi-file-earmark-arrow-down text-secondary me-1"></i>' + escapeHtml(file.name) +
@@ -2475,6 +2473,32 @@
                 } catch (err) {}
             }
 
+            const urlPath  = url.split(/[#?]/)[0];
+            const extension = urlPath.split('.').pop().trim().toLowerCase();
+            const extFromName = (name || '').split('.').pop().trim().toLowerCase();
+            const filenamePortion = urlPath.substring(urlPath.lastIndexOf('/') + 1);
+            const isPdf = extension === 'pdf' || extFromName === 'pdf' || url.toLowerCase().includes('.pdf');
+            const isDownloadRoute = /\/download\/?$/.test(urlPath) || urlPath.includes('/dokumen-files/') || urlPath.includes('/checklist-files/') || urlPath.includes('/stos-form-files/');
+            const isProbablyPage  = !isDownloadRoute && (!filenamePortion.includes('.') || filenamePortion.endsWith('.html') || url.includes('form') || url.includes('borang') || url.includes('modal=1'));
+
+            // PDF: Open directly in a new tab without opening modal
+            if (isPdf && !isProbablyPage) {
+                window.open(url, '_blank', 'noopener,noreferrer');
+                return;
+            }
+
+            // Non-PDF files: Trigger file download directly
+            if (!isPdf && !isProbablyPage) {
+                const a = document.createElement('a');
+                a.href = url;
+                a.setAttribute('download', name || 'Dokumen');
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                return;
+            }
+
+            // Only internal web pages / form URLs open in #modalPreview
             $('#modalPreviewTitle').text(name);
             $('#btnNewTabPreview').attr('href', url);
             $('#btnFallbackDownload').attr('href', url);
@@ -2485,40 +2509,89 @@
             $('#previewImage').attr('src', '');
             $('#previewFallback').addClass('d-none');
 
-            const urlPath  = url.split(/[#?]/)[0];
-            const extension = urlPath.split('.').pop().trim().toLowerCase();
-            const extFromName = (name || '').split('.').pop().trim().toLowerCase();
-            const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp'];
-            const filenamePortion = urlPath.substring(urlPath.lastIndexOf('/') + 1);
-            const isPdf = extension === 'pdf' || extFromName === 'pdf' || url.toLowerCase().includes('.pdf');
-            const isImage = imageExtensions.includes(extension) || imageExtensions.includes(extFromName);
-            const isDownloadRoute = /\/download\/?$/.test(urlPath) || urlPath.includes('/dokumen-files/') || urlPath.includes('/checklist-files/') || urlPath.includes('/stos-form-files/');
-            const isProbablyPage  = !isDownloadRoute && (!filenamePortion.includes('.') || filenamePortion.endsWith('.html') || url.includes('form') || url.includes('borang') || url.includes('modal=1'));
-
             const $icon = $('#previewIcon');
             $icon.removeClass();
-            if (isImage) {
-                $icon.addClass('bi bi-file-earmark-image text-primary fs-5');
-                $('#previewImage').attr('src', url);
-                $('#previewImageWrapper').removeClass('d-none');
-            } else if (isPdf) {
-                $icon.addClass('bi bi-file-earmark-pdf text-danger fs-5');
-                $('#previewIframe').attr('src', url).removeClass('d-none');
-            } else if (isProbablyPage) {
-                $icon.addClass('bi bi-window text-success fs-5');
-                $('#previewIframe').attr('src', url).removeClass('d-none');
-            } else {
-                $icon.addClass('bi bi-file-earmark-zip text-warning fs-5');
-                $('#previewSpinner').addClass('d-none');
-                $('#btnFallbackDownload').attr('download', name);
-                $('#previewFallback').removeClass('d-none');
-            }
+            $icon.addClass('bi bi-window text-success fs-5');
+            const bust = (url.indexOf('?') === -1 ? '?' : '&') + '_ts=' + Date.now();
+            $('#previewIframe').attr('src', url + bust).removeClass('d-none');
 
             bootstrap.Modal.getOrCreateInstance(document.getElementById('modalPreview')).show();
         });
 
-        $('#previewIframe').on('load', function () { $('#previewSpinner').addClass('d-none'); });
-        $('#previewImage').on('load',  function () { $('#previewSpinner').addClass('d-none'); });
+        $('#previewIframe').on('load',  function () { $('#previewSpinner').addClass('d-none'); });
+        $('#previewIframe').on('error', function () { $('#previewSpinner').addClass('d-none'); });
+        $('#previewImage').on('load',   function () { $('#previewSpinner').addClass('d-none'); });
+
+        // Relocate all modals to document.body on DOM ready to avoid clipping or stacking context traps
+        const appModals = [
+            'modalSemakanKetepatanDokumenKewangan',
+            'modalPreview',
+            'modalProfilPetenderReadonly',
+            'modalPenilaianCadanganKewanganStep2',
+            'modalButiranCadanganKewanganStep2',
+            'modalPaparCadanganKewanganStep3',
+            'modalPaparVendorCadanganKewanganStep3',
+            'modalPaparProfilPetenderStep3',
+            'modalPaparVendorProfilPetenderStep3',
+            'modalMuatNaikStep3'
+        ];
+        appModals.forEach(function (id) {
+            const el = document.getElementById(id);
+            if (el && el.parentElement !== document.body) {
+                document.body.appendChild(el);
+            }
+        });
+
+        // Global Stacking & Backdrop Coordination for nested/multiple modals
+        $(document).on('show.bs.modal', '.modal', function () {
+            const modalEl = this;
+            // Find modals that are already open and visible
+            const openModals = Array.from(document.querySelectorAll('.modal.show')).filter(function (m) {
+                return m !== modalEl;
+            });
+
+            // Base z-index for Bootstrap modals is 1055
+            const nextZ = 1055 + (20 * openModals.length);
+            modalEl.style.zIndex = nextZ;
+
+            // If this is a nested modal (i.e. another modal is already open),
+            // lift the newest backdrop so it sits right behind this modal and in front of previous modals
+            if (openModals.length > 0) {
+                setTimeout(function () {
+                    const backdrops = document.querySelectorAll('.modal-backdrop');
+                    if (backdrops.length > 0) {
+                        const topBackdrop = backdrops[backdrops.length - 1];
+                        topBackdrop.style.zIndex = nextZ - 5;
+                    }
+                }, 0);
+            }
+        });
+
+        $(document).on('hidden.bs.modal', '.modal', function () {
+            this.style.zIndex = '';
+            if (this.id === 'modalPreview') {
+                $('#previewIframe').attr('src', '');
+                $('#previewSpinner').addClass('d-none');
+            }
+
+            // Check if any other modals are still open (e.g. closing a nested preview modal while a parent modal is open)
+            const remainingModals = Array.from(document.querySelectorAll('.modal.show'));
+            if (remainingModals.length > 0) {
+                // Ensure body keeps modal-open so scrolling stays locked for the remaining modal
+                document.body.classList.add('modal-open');
+                document.body.style.overflow = 'hidden';
+
+                // Reset z-indices for remaining modals & backdrops in order
+                const backdrops = Array.from(document.querySelectorAll('.modal-backdrop'));
+                remainingModals.forEach(function (modal, index) {
+                    const mZ = 1055 + (index * 20);
+                    modal.style.zIndex = mZ;
+                    if (backdrops[index]) {
+                        backdrops[index].style.zIndex = mZ - 5;
+                    }
+                });
+            }
+        });
 
         // Seterusnya and Sebelumnya Button Functionality with sub-tab & checkbox validation
     const msgTandakanPengesahan = 'Sila tandakan kotak pengesahan terlebih dahulu sebelum meneruskan.';

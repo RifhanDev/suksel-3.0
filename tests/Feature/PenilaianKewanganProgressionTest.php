@@ -403,4 +403,46 @@ class PenilaianKewanganProgressionTest extends TestCase
             'skor' => 85,
         ]);
     }
+
+    public function test_type1_cut_off_submitted_enforces_selection(): void
+    {
+        $tender = $this->createTender(TenderProcessStatus::PENILAIAN_TEKNIKAL);
+
+        $vendorIn = $this->createVendor('Vendor In CutOff', 'REG-T1-IN');
+        $vendorOut = $this->createVendor('Vendor Out CutOff', 'REG-T1-OUT');
+
+        TenderVendor::query()->create([
+            'tender_id'             => $tender->id,
+            'vendor_id'             => $vendorIn->id,
+            'participate'           => 1,
+            'cancel_fg'             => 0,
+            'eliminated_process_id' => null,
+            'kod_pembekal'          => '1/2',
+        ]);
+
+        TenderVendor::query()->create([
+            'tender_id'             => $tender->id,
+            'vendor_id'             => $vendorOut->id,
+            'participate'           => 1,
+            'cancel_fg'             => 0,
+            'eliminated_process_id' => null,
+            'kod_pembekal'          => '2/2',
+        ]);
+
+        DB::table('cut_off_selections')->insert([
+            'tender_id'     => $tender->id,
+            'status'        => 'submitted',
+            'selected_refs' => json_encode(['1/2']),
+            'created_at'    => now(),
+            'updated_at'    => now(),
+        ]);
+
+        $controller = app(\App\Http\Controllers\PenilaianKewanganController::class);
+        $method = new \ReflectionMethod($controller, 'loadEligibleTechnicalParticipants');
+        $method->setAccessible(true);
+        $participants = $method->invoke($controller, $tender);
+
+        $this->assertCount(1, $participants);
+        $this->assertEquals($vendorIn->id, $participants->first()->vendor_id);
+    }
 }

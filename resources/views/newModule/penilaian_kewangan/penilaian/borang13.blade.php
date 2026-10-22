@@ -383,6 +383,40 @@
 @section('scripts')
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
+    // Global Swal wrapper to prevent page jumping to top (0,0) on open/close
+    if (typeof Swal !== 'undefined') {
+        const _origSwalFire = Swal.fire.bind(Swal);
+        Swal.fire = function (options, ...rest) {
+            const currentScrollY = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
+            let finalOptions = {};
+            if (typeof options === 'string') {
+                finalOptions = {
+                    title: options,
+                    html: rest[0] || '',
+                    icon: rest[1] || null
+                };
+            } else if (typeof options === 'object' && options !== null) {
+                finalOptions = Object.assign({}, options);
+            }
+
+            const origDidClose = finalOptions.didClose;
+            finalOptions.heightAuto = false;
+            finalOptions.returnFocus = false;
+            finalOptions.scrollbarPadding = false;
+            finalOptions.didClose = (popup) => {
+                window.scrollTo({ top: currentScrollY, behavior: 'instant' });
+                if (typeof origDidClose === 'function') {
+                    origDidClose(popup);
+                }
+            };
+
+            return _origSwalFire(finalOptions).then(result => {
+                window.scrollTo({ top: currentScrollY, behavior: 'instant' });
+                return result;
+            });
+        };
+    }
+
     function checkB13CompletionState() {
         const btn = document.getElementById('btnSimpanMuktamadB13');
         if (!btn) return;
@@ -476,6 +510,26 @@
     }
 
     document.addEventListener('DOMContentLoaded', function () {
+        // Restore scroll position if previously saved before reload
+        const _b13ScrollKey = window.location.pathname + '_b13_scroll_pos';
+        const savedScrollPos = sessionStorage.getItem(_b13ScrollKey);
+        if (savedScrollPos !== null) {
+            sessionStorage.removeItem(_b13ScrollKey);
+            setTimeout(() => {
+                window.scrollTo({ top: parseInt(savedScrollPos, 10), behavior: 'instant' });
+            }, 50);
+        }
+
+        window.addEventListener('beforeunload', function () {
+            sessionStorage.setItem(_b13ScrollKey, (window.pageYOffset || document.documentElement.scrollTop || 0).toString());
+        });
+
+        document.querySelectorAll('a[href]').forEach(link => {
+            link.addEventListener('click', () => {
+                sessionStorage.removeItem(_b13ScrollKey);
+            });
+        });
+
         checkB13CompletionState();
     });
 </script>

@@ -13,6 +13,7 @@ class TenderKewanganProgress extends Model
     protected $fillable = [
         'tender_id',
         'current_step',
+        'borang_status',
         'step1_confirmed_at',
         'step1_confirmed_by',
         'step2_confirmed_at',
@@ -23,6 +24,7 @@ class TenderKewanganProgress extends Model
 
     protected $casts = [
         'current_step'       => 'integer',
+        'borang_status'      => 'array',
         'step1_confirmed_at' => 'datetime',
         'step2_confirmed_at' => 'datetime',
         'step3_confirmed_at' => 'datetime',

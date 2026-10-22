@@ -292,22 +292,21 @@ $(document).ready(function () {
             syncEmpty();
             updateJumlahKeseluruhan();
             updateItemPager();
-            return;
-        }
-
-        items.forEach(function (item) {
-            var $itemRow = buildItemRow(item);
-            $('#tbl-spesifikasi-body').append($itemRow);
-            (item.specs || []).forEach(function (spec) {
-                var $specs = getItemSpecs($itemRow);
-                var $after = $specs.length ? $specs.last() : $itemRow;
-                $after.after(buildSpecRow(spec));
+        } else {
+            items.forEach(function (item) {
+                var $itemRow = buildItemRow(item);
+                $('#tbl-spesifikasi-body').append($itemRow);
+                (item.specs || []).forEach(function (spec) {
+                    var $specs = getItemSpecs($itemRow);
+                    var $after = $specs.length ? $specs.last() : $itemRow;
+                    $after.after(buildSpecRow(spec));
+                });
             });
-        });
 
-        reindexGroups();
-        updateJumlahKeseluruhan();
-        showItemPage(typeof preferredIndex === 'number' ? preferredIndex : 0);
+            reindexGroups();
+            updateJumlahKeseluruhan();
+            showItemPage(typeof preferredIndex === 'number' ? preferredIndex : 0);
+        }
 
         $('#bq-chips').empty();
         (data.files || []).forEach(function (f) {

@@ -403,17 +403,32 @@ $(document).ready(function () {
     function buildFileChip(fileUuid, fileName, fileSize, fileUrl, $block) {
         var ext = fileName ? fileName.split('.').pop().toLowerCase() : '';
         var safeName = $('<span>').text(fileName || 'Dokumen').html();
-        var viewUrl = fileUrl || '';
+        var viewUrl = '';
 
-        if (!viewUrl && fileUuid) {
-            viewUrl = '{{ url("/tenders/dokumen-files") }}/' + encodeURIComponent(fileUuid) + '/download';
+        if (fileUuid) {
+            viewUrl = '/tenders/dokumen-files/' + encodeURIComponent(fileUuid) + '/download';
+        } else if (fileUrl) {
+            try {
+                var parsed = new URL(fileUrl, window.location.origin);
+                viewUrl = parsed.pathname + parsed.search;
+            } catch (e) {
+                viewUrl = fileUrl;
+            }
         }
 
+        var isPdf = (ext === 'pdf');
+        var linkAttrs = isPdf
+            ? 'target="_blank" rel="noopener noreferrer"'
+            : 'download="' + safeName + '"';
+        var actionIcon = isPdf
+            ? '<i class="bi bi-box-arrow-up-right ms-1 text-primary extra-small"></i>'
+            : '<i class="bi bi-download ms-1 text-primary extra-small"></i>';
+
         var nameHtml = (viewUrl && viewUrl !== '#')
-            ? '<a href="' + viewUrl + '" target="_blank" rel="noopener noreferrer" class="file-chip-name text-decoration-none text-dark fw-semibold" title="Klik untuk lihat ' + safeName + '">' +
-                safeName + ' <i class="bi bi-box-arrow-up-right ms-1 text-primary extra-small"></i>' +
+            ? '<a href="' + viewUrl + '" ' + linkAttrs + ' class="file-chip-name text-decoration-none text-dark fw-semibold" title="' + (isPdf ? 'Klik untuk lihat ' : 'Klik untuk muat turun ') + safeName + '">' +
+                safeName + ' ' + actionIcon +
               '</a>'
-            : '<span class="file-chip-name" title="' + safeName + '">' + safeName + '</span>';
+            : '<span class="file-chip-name text-muted" title="' + safeName + '">' + safeName + '</span>';
 
         var $chip = $(
             '<div class="file-chip" data-file-uuid="' + (fileUuid || '') + '" data-file-name="' + safeName + '" data-file-size="' + (fileSize || 0) + '" data-file-url="' + (viewUrl || '') + '">' +
@@ -510,6 +525,13 @@ $(document).ready(function () {
                 var fileUrl = f.url || (f.uuid ? '{{ url("/tenders/dokumen-files") }}/' + encodeURIComponent(f.uuid) + '/download' : '');
                 $block.find('.akaun-file-list').append(buildFileChip(f.uuid, f.original_name || f.name, f.size, fileUrl, $block));
             });
+        } else if (VIEW_ONLY) {
+            $block.find('.akaun-file-list').append(
+                '<div class="text-muted small py-2 px-3 rounded-2 border bg-light d-inline-flex align-items-center gap-2 empty-files-notice" style="font-size:0.8rem;">' +
+                    '<i class="bi bi-file-earmark-x text-secondary fs-6"></i>' +
+                    '<span>Tiada dokumen sokongan dikemukakan.</span>' +
+                '</div>'
+            );
         }
         return $block;
     }
@@ -688,12 +710,17 @@ $(document).ready(function () {
         });
 
         // File upload per account
+        var pendingUploadCount = 0;
 
         function uploadFileForAkaun(file, $block) {
             var akaunIndex = $block.data('akaun-index');
             var $chip = buildFileChip(null, file.name, file.size, null, $block);
             $chip.find('.file-chip-size').text('Memuat naik...');
+            $block.find('.akaun-file-list').find('.empty-files-notice').remove();
             $block.find('.akaun-file-list').append($chip);
+
+            pendingUploadCount++;
+            $('#btn-simpan').prop('disabled', true);
 
             var fd = new FormData();
             fd.append('file', file);
@@ -705,9 +732,16 @@ $(document).ready(function () {
             }).done(function (res) {
                 if (res && res.success) {
                     var uuid = (res.file && res.file.uuid) ? res.file.uuid : (res.uuid || '');
-                    var sz = (res.file && res.file.size) ? res.file.size : file.size;
-                    var viewUrl = (res.file && res.file.url) ? res.file.url : (uuid ? '{{ url("/tenders/dokumen-files") }}/' + encodeURIComponent(uuid) + '/download' : '');
+                    var viewUrl = uuid ? '/tenders/dokumen-files/' + encodeURIComponent(uuid) + '/download' : ((res.file && res.file.url) ? res.file.url : '');
                     var safeName = $('<span>').text(file.name).html();
+                    var ext = file.name ? file.name.split('.').pop().toLowerCase() : '';
+                    var isPdf = (ext === 'pdf');
+                    var linkAttrs = isPdf
+                        ? 'target="_blank" rel="noopener noreferrer"'
+                        : 'download="' + safeName + '"';
+                    var actionIcon = isPdf
+                        ? '<i class="bi bi-box-arrow-up-right ms-1 text-primary extra-small"></i>'
+                        : '<i class="bi bi-download ms-1 text-primary extra-small"></i>';
 
                     $chip.attr('data-file-uuid', uuid).data('file-uuid', uuid);
                     $chip.attr('data-file-name', file.name).data('file-name', file.name);
@@ -717,8 +751,8 @@ $(document).ready(function () {
 
                     if (viewUrl && viewUrl !== '#') {
                         $chip.find('.file-chip-body').html(
-                            '<a href="' + viewUrl + '" target="_blank" rel="noopener noreferrer" class="file-chip-name text-decoration-none text-dark fw-semibold" title="Klik untuk lihat ' + safeName + '">' +
-                                safeName + ' <i class="bi bi-box-arrow-up-right ms-1 text-primary extra-small"></i>' +
+                            '<a href="' + viewUrl + '" ' + linkAttrs + ' class="file-chip-name text-decoration-none text-dark fw-semibold" title="' + (isPdf ? 'Klik untuk lihat ' : 'Klik untuk muat turun ') + safeName + '">' +
+                                safeName + ' ' + actionIcon +
                             '</a>' +
                             '<span class="file-chip-size">' + formatBytes(sz) + '</span>'
                         );
@@ -730,6 +764,11 @@ $(document).ready(function () {
             }).fail(function () {
                 $chip.remove();
                 alert('Ralat semasa muat naik fail. Sila cuba lagi.');
+            }).always(function () {
+                pendingUploadCount = Math.max(0, pendingUploadCount - 1);
+                if (pendingUploadCount === 0) {
+                    $('#btn-simpan').prop('disabled', false);
+                }
             });
         }
 
@@ -949,7 +988,7 @@ $(document).ready(function () {
                             original_name: name,
                             name: name,
                             size: parseInt(size, 10) || 0,
-                            url: url || (uuid ? '{{ url("/tenders/dokumen-files") }}/' + encodeURIComponent(uuid) + '/download' : null),
+                            url: uuid ? '/tenders/dokumen-files/' + encodeURIComponent(uuid) + '/download' : url,
                         });
                     }
                 });
@@ -1008,6 +1047,11 @@ $(document).ready(function () {
 
     // ── Save ─────────────────────────────────────────────────────────────────
     $('#btn-simpan').on('click', function () {
+        if (pendingUploadCount > 0) {
+            alert('Sila tunggu sehingga semua fail selesai dimuat naik.');
+            return;
+        }
+
         if (ADMIN_PERIOD) {
             var period = globalPeriod();
             if (!period.dm || !period.dy) {
