@@ -298,16 +298,27 @@ class EbiddingController extends Controller
 
 			$vendorItems = $this->buildVendorBidRows($tender, $vendorId);
 
-			$canVendorEditBid = $currentStage === self::STAGE_VENDOR && $window['is_open'];
-			$hasVendorSubmitted = EbiddingVendorBidItem::query()
-				->where('tender_id', $tender->id)
-				->where('vendor_id', $vendorId)
-				->whereNotNull('submitted_at')
-				->exists();
-			// After Hantar, lock the form even if the bidding window is still open.
-			if ($hasVendorSubmitted) {
-				$canVendorEditBid = false;
-			}
+			$bidableIds = $vendorItems
+				->filter(fn ($row) => ! empty($row['is_bidable']) && ! empty($row['pemilihan_item_id']))
+				->pluck('pemilihan_item_id')
+				->map(fn ($id) => (int) $id)
+				->unique()
+				->values();
+			// Lock only after this vendor has sent a real price for every current line.
+			// Older rows (other item ids, or a 0.00 placeholder) must not freeze the form
+			// while the schedule window is still open.
+			$submittedLineCount = $bidableIds->isEmpty()
+				? 0
+				: EbiddingVendorBidItem::query()
+					->where('tender_id', $tender->id)
+					->where('vendor_id', $vendorId)
+					->whereIn('pemilihan_item_id', $bidableIds->all())
+					->whereNotNull('submitted_at')
+					->where('bid_price', '>', 0)
+					->count();
+			$hasVendorSubmitted = $bidableIds->isNotEmpty()
+				&& $submittedLineCount >= $bidableIds->count();
+			$canVendorEditBid = ! empty($window['is_open']) && ! $hasVendorSubmitted;
 
 			return view('newModule.eBidding.vendor_bidding', [
 				'tender' => $tender,
@@ -892,12 +903,12 @@ class EbiddingController extends Controller
     }
 
     /**
-     * Review stage was being treated as "tempoh tamat" even when the saved
-     * start/end datetime was still open. Put the tender back on the vendor stage.
+     * The saved start/end is the source of truth. Any later stage (review, SULP,
+     * or a stray status id) must not lock the vendor form while that window is open.
      */
     private function reopenVendorStageIfWindowOpen(Tender $tender, int $currentStage, array $window): int
     {
-        if (empty($window['is_open']) || $currentStage !== self::STAGE_AGENCY_ADMIN_REVIEW) {
+        if (empty($window['is_open']) || $currentStage <= self::STAGE_VENDOR) {
             return $currentStage;
         }
 
