@@ -108,6 +108,7 @@ class Tender extends Model
 		'tempoh_siap_val',
 		'tempoh_siap_unit',
 		'tempoh_kontrak_bulan',
+		'tempoh_kontrak_unit',
 		'zon_lokasi',
 		'jawatankuasa',
 		'lawatan_tapak',

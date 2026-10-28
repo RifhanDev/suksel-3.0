@@ -907,6 +907,7 @@ class TendersController extends Controller
 			'tempoh_siap_val'           => $tender->tempoh_siap_val,
 			'tempoh_siap_unit'          => $tender->tempoh_siap_unit,
 			'tempoh_kontrak_bulan'      => $tender->tempoh_kontrak_bulan,
+			'tempoh_kontrak_unit'       => $tender->tempoh_kontrak_unit,
 			'zon_lokasi'                => $tender->zon_lokasi,
 			'lokaliti_id'               => $tender->lokaliti_id,
 			'jawatankuasa'              => $tender->jawatankuasa,
