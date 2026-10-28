@@ -585,9 +585,9 @@
                     <!-- ROW 4 -->
                     <div class="row g-3 mb-4">
                         <div class="col-md-3">
-                            <label class="form-label">No. Rujukan Fail</label>
+                            <label class="form-label">No. Rujukan Fail<span class="text-danger">*</span></label>
                             <input type="text" class="form-control" name="ref_number"
-                                value="{{ old('ref_number') }}">
+                                value="{{ old('ref_number', $tender->ref_number ?? '') }}" required>
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">No. Tender / Sebut Harga<span class="text-danger">*</span></label>

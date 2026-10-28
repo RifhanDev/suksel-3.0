@@ -326,6 +326,12 @@ class TendersController extends Controller
 			return $this->_access_denied();
 		}
 
+		$request->validate([
+			'ref_number' => ['required', 'string', 'max:255'],
+		], [
+			'ref_number.required' => 'No. Rujukan Fail adalah wajib.',
+		]);
+
 		$payload = $request->all();
 		$payload['creator_id'] = $user->id;
 
@@ -1028,6 +1034,12 @@ class TendersController extends Controller
 		if (!$tender->canUpdate()) {
 			return $this->_access_denied();
 		}
+
+		$request->validate([
+			'ref_number' => ['required', 'string', 'max:255'],
+		], [
+			'ref_number.required' => 'No. Rujukan Fail adalah wajib.',
+		]);
 
 		// Muatan disusun sama seperti storeNew(), kerana skrin kemaskini menghantar
 		// borang cipta tender yang sama. Penyusunan semula blok kod dikekalkan
