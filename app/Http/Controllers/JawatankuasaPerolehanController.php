@@ -985,10 +985,10 @@ class JawatankuasaPerolehanController extends Controller
                 Rule::in(array_merge($emptyPad, $opts['kaedah_memuktamadkan_pembekal'])),
             ],
             'header.pemilihan_berdasarkan' => [
-                $forSubmit ? 'required' : 'nullable',
+                'nullable',
                 'string',
                 'max:255',
-                Rule::in(array_merge($emptyPad, $opts['pemilihan_berdasarkan'])),
+                Rule::in(array_merge([''], $opts['pemilihan_berdasarkan'])),
             ],
             'header.loi_loa_disediakan_oleh' => [
                 $forSubmit ? 'required' : 'nullable',

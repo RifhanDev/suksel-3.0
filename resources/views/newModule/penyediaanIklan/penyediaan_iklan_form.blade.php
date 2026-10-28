@@ -1512,7 +1512,7 @@
 					'<div class="col-md-5">' +
 					'<label class="form-label fw-semibold small mb-1">Fail</label>' +
 					'<input type="file" class="form-control form-control-sm" name="dokumen_meja[' + i +
-					'][file]" accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.zip,.rar">' +
+					'][file]" accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg">' +
 					existingNote +
 					'</div>' +
 					'<div class="col-md-2 text-md-end">' +

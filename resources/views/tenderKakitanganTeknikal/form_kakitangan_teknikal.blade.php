@@ -318,7 +318,7 @@
                     </div>
                     <span class="upload-zone-label d-block fw-semibold text-dark small mb-1">Klik di sini untuk memuat naik dokumen sokongan keseluruhan</span>
                     <span class="upload-zone-sub d-block text-muted" style="font-size:0.75rem;">PDF, Word, Excel, Imej — saiz maksimum 10 MB per fail (Boleh muat naik pelbagai fail)</span>
-                    <input type="file" id="general-input-dokumen" name="dokumen_umum[]" multiple hidden accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.zip,.rar">
+                    <input type="file" id="general-input-dokumen" name="dokumen_umum[]" multiple hidden accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg">
                 </label>
 
                 <!-- File list container for newly selected uploads -->
@@ -432,7 +432,7 @@
                                 </div>
                                 <span class="upload-zone-label d-block fw-semibold text-dark small mb-1">Klik di sini untuk memuat naik dokumen</span>
                                 <span class="upload-zone-sub d-block text-muted" style="font-size:0.75rem;">PDF, Word, Excel, Imej — saiz maksimum 10 MB per fail (Pilih pelbagai fail)</span>
-                                <input type="file" id="modal-input-dokumen" name="kakitangan_dokumen[]" multiple hidden accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.zip,.rar">
+                                <input type="file" id="modal-input-dokumen" name="kakitangan_dokumen[]" multiple hidden accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg">
                             </label>
 
                             <!-- File list container for new uploads -->

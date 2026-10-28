@@ -347,10 +347,17 @@ class PenilaianKewanganKerjaController extends Controller
 
             $tarikhTutupTenderStr = $tender->submission_datetime ? \Carbon\Carbon::parse($tender->submission_datetime)->format('d/m/Y') : '-';
 
-            $rawTenderUnitKey = strtolower(trim((string) ($tender->tempoh_siap_unit ?? '')));
             $unitMap = ['1' => 'Minggu', '2' => 'Bulan', '3' => 'Hari', 'minggu' => 'Minggu', 'bulan' => 'Bulan', 'hari' => 'Hari'];
+            $rawTenderUnitKey = strtolower(trim((string) ($tender->tempoh_siap_unit ?? $tender->tempoh_kontrak_unit ?? '')));
             $resolvedTenderUnit = $unitMap[$rawTenderUnitKey] ?? ($tender->tempoh_siap_unit ?: 'Minggu');
-            $tempohSiapTenderStr = ! empty($tender->tempoh_siap_val) ? ($tender->tempoh_siap_val . ' ' . $resolvedTenderUnit) : ($tender->tempoh_kontrak_bulan ? ($tender->tempoh_kontrak_bulan . ' Bulan') : '-');
+            if (! empty($tender->tempoh_siap_val)) {
+                $tempohSiapTenderStr = $tender->tempoh_siap_val . ' ' . $resolvedTenderUnit;
+            } elseif (! empty($tender->tempoh_kontrak_bulan)) {
+                $kontrakUnit = $unitMap[strtolower(trim((string) ($tender->tempoh_kontrak_unit ?? 'bulan')))] ?? 'Bulan';
+                $tempohSiapTenderStr = $tender->tempoh_kontrak_bulan . ' ' . $kontrakUnit;
+            } else {
+                $tempohSiapTenderStr = '-';
+            }
 
             foreach ($participants as $p) {
                 $vId = $p->vendor_id;
@@ -1961,14 +1968,15 @@ class PenilaianKewanganKerjaController extends Controller
             'years'  => 'Tahun',
             'tahun'  => 'Tahun',
         ];
-        $rawUnitKey = strtolower(trim((string) ($tender->tempoh_siap_unit ?? '')));
+        $rawUnitKey = strtolower(trim((string) ($tender->tempoh_siap_unit ?? $tender->tempoh_kontrak_unit ?? '')));
         $resolvedUnit = $unitMap[$rawUnitKey] ?? ($tender->tempoh_siap_unit ?: 'Minggu');
 
         $tempohSiapMaks = '-';
         if (! empty($tender->tempoh_siap_val)) {
             $tempohSiapMaks = $tender->tempoh_siap_val . ' ' . $resolvedUnit;
         } elseif (! empty($tender->tempoh_kontrak_bulan)) {
-            $tempohSiapMaks = $tender->tempoh_kontrak_bulan . ' Bulan';
+            $kontrakUnit = $unitMap[strtolower(trim((string) ($tender->tempoh_kontrak_unit ?? 'bulan')))] ?? 'Bulan';
+            $tempohSiapMaks = $tender->tempoh_kontrak_bulan . ' ' . $kontrakUnit;
         }
 
         $b15HeaderSummary = [

@@ -585,9 +585,9 @@
                     <!-- ROW 4 -->
                     <div class="row g-3 mb-4">
                         <div class="col-md-3">
-                            <label class="form-label">No. Rujukan Fail</label>
+                            <label class="form-label">No. Rujukan Fail<span class="text-danger">*</span></label>
                             <input type="text" class="form-control" name="ref_number"
-                                value="{{ old('ref_number') }}">
+                                value="{{ old('ref_number', $tender->ref_number ?? '') }}" required>
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">No. Tender / Sebut Harga<span class="text-danger">*</span></label>
@@ -770,11 +770,14 @@
                                                     class="text-danger">*</span></label>
                                             <div class="input-group input-group-md">
                                                 <input type="number" class="form-control" name="tempoh_siap_val"
-                                                    value="{{ old('tempoh_siap_val') }}" placeholder="0" required>
+                                                    value="{{ old('tempoh_siap_val') }}" placeholder="0" min="0" required>
                                                 <select class="form-select" name="tempoh_siap_unit"
-                                                    style="max-width: 100px;">
+                                                    style="max-width: 110px;">
+                                                    <option value="3"
+                                                        {{ old('tempoh_siap_unit') == '3' ? 'selected' : '' }}>Hari
+                                                    </option>
                                                     <option value="1"
-                                                        {{ old('tempoh_siap_unit') == '1' ? 'selected' : '' }}>Minggu
+                                                        {{ old('tempoh_siap_unit', '1') == '1' ? 'selected' : '' }}>Minggu
                                                     </option>
                                                     <option value="2"
                                                         {{ old('tempoh_siap_unit') == '2' ? 'selected' : '' }}>Bulan
@@ -784,11 +787,25 @@
                                         </div>
                                         <!-- For Perkhidmatan / Bekalan -->
                                         <div id="tempoh_kontrak_group" class="d-none">
-                                            <label class="form-label">Tempoh Kontrak / Penyiapan (Bulan)<span
+                                            <label class="form-label">Tempoh Kontrak / Penyiapan<span
                                                     class="text-danger">*</span></label>
-                                            <input type="number" class="form-control" name="tempoh_kontrak_bulan"
-                                                value="{{ old('tempoh_kontrak_bulan') }}" placeholder="0"
-                                                min="0" required>
+                                            <div class="input-group input-group-md">
+                                                <input type="number" class="form-control" name="tempoh_kontrak_bulan"
+                                                    value="{{ old('tempoh_kontrak_bulan') }}" placeholder="0"
+                                                    min="0" required>
+                                                <select class="form-select" name="tempoh_kontrak_unit"
+                                                    style="max-width: 110px;">
+                                                    <option value="hari"
+                                                        {{ old('tempoh_kontrak_unit') == 'hari' ? 'selected' : '' }}>Hari
+                                                    </option>
+                                                    <option value="minggu"
+                                                        {{ old('tempoh_kontrak_unit') == 'minggu' ? 'selected' : '' }}>Minggu
+                                                    </option>
+                                                    <option value="bulan"
+                                                        {{ old('tempoh_kontrak_unit', 'bulan') == 'bulan' ? 'selected' : '' }}>Bulan
+                                                    </option>
+                                                </select>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -1285,22 +1302,28 @@
                 const tempohSiapGroup = $('#tempoh_siap_group');
                 const tempohKontrakGroup = $('#tempoh_kontrak_group');
                 const tempohSiapInput = $('input[name="tempoh_siap_val"]');
+                const tempohSiapUnit = $('select[name="tempoh_siap_unit"]');
                 const tempohKontrakInput = $('input[name="tempoh_kontrak_bulan"]');
+                const tempohKontrakUnit = $('select[name="tempoh_kontrak_unit"]');
 
                 if (selectedKategori === '1' || selectedKategori === '2') {
                     // Show Tempoh Kontrak for old values (1 and 2), hide Tempoh Siap
                     tempohSiapGroup.addClass('d-none');
                     tempohSiapInput.removeAttr('required');
+                    tempohSiapUnit.prop('disabled', true);
 
                     tempohKontrakGroup.removeClass('d-none');
                     tempohKontrakInput.attr('required', 'required');
+                    tempohKontrakUnit.prop('disabled', false);
                 } else {
                     // Show Tempoh Siap for other new values, hide Tempoh Kontrak
                     tempohSiapGroup.removeClass('d-none');
                     tempohSiapInput.attr('required', 'required');
+                    tempohSiapUnit.prop('disabled', false);
 
                     tempohKontrakGroup.addClass('d-none');
                     tempohKontrakInput.removeAttr('required');
+                    tempohKontrakUnit.prop('disabled', true);
                 }
             }
 

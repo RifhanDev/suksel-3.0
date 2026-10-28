@@ -43,6 +43,7 @@ return Application::configure(basePath: dirname(__DIR__))
             // Before the 2FA one: a user who needs both sets the password first, then 2FA.
             \App\Http\Middleware\RequirePasswordChange::class,
             \App\Http\Middleware\RequireTwoFactorSetup::class,
+            \App\Http\Middleware\RestrictUploadedFileTypes::class,
         ]);
 
         // API middleware group
