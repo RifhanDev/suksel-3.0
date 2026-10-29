@@ -260,7 +260,13 @@
 		    $tender->siteVisits->contains(fn($visit) => $visit->canSubmitRepresentatives());
 
 		$lawatanInfoBanner = null;
-		if (Auth::check() && Auth::user()->vendor_id && !$vendorSubmitted && $tender->allowsWakilLawatanRegistration() && $tender->siteVisits->isNotEmpty()) {
+		if (
+		    Auth::check() &&
+		    Auth::user()->vendor_id &&
+		    !$vendorSubmitted &&
+		    $tender->allowsWakilLawatanRegistration() &&
+		    $tender->siteVisits->isNotEmpty()
+		) {
 		    $lawatanVendorId = (int) Auth::user()->vendor_id;
 		    $openLawatanVisits = $tender->siteVisits
 		        ->filter(fn($visit) => $visit->canSubmitRepresentatives())
@@ -347,7 +353,7 @@
 							<div class="lawatan-info-banner__eyebrow">Tindakan Diperlukan</div>
 							<h6 class="lawatan-info-banner__title mb-2">Daftar Wakil Lawatan Tapak</h6>
 							<p class="lawatan-info-banner__text mb-2">
-								Sila daftar wakil syarikat di tab <strong>Lawatan Tapak</strong> sebelum
+								Sila daftar Penama Syarikat di tab <strong>Lawatan Tapak</strong> sebelum
 								<strong>{{ $lawatanInfoBanner['next_visit_label'] }}</strong>.
 								@if ($lawatanInfoBanner['pending_visits'] > 1)
 									Terdapat {{ $lawatanInfoBanner['pending_visits'] }} lawatan yang masih memerlukan pendaftaran wakil.
@@ -410,7 +416,7 @@
 	@endif
 
 	{{-- Online / Manual iklan kaedah: tawaran dihantar secara manual ke kaunter, bukan melalui sistem. --}}
-	@if ($vendorHasPurchased && ! $tender->usesIklanDokumen())
+	@if ($vendorHasPurchased && !$tender->usesIklanDokumen())
 		<div class="mb-4" id="vendor-submission-panel">
 			@if ($vendorSubmitted)
 				<div class="alert alert-success d-flex align-items-start gap-2 mb-0 py-3 px-3" style="font-size:0.84rem;">
@@ -573,7 +579,12 @@
 						</a>
 					@endif
 
-					@if (! $tender->isIklanSahaja() && $tender->showDokumenSenaraiTab() && $vendorHasPurchased && $tender->usesIklanDokumen() && $tender->iklanDokumens->isNotEmpty())
+					@if (
+						!$tender->isIklanSahaja() &&
+							$tender->showDokumenSenaraiTab() &&
+							$vendorHasPurchased &&
+							$tender->usesIklanDokumen() &&
+							$tender->iklanDokumens->isNotEmpty())
 						<a class="nav-link" href="#vt-dokumen-tawaran" data-bs-toggle="pill" role="tab">
 							<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
 								stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -583,7 +594,7 @@
 							{{ $tender->dokumenSenaraiTabLabel() }}
 							<span class="badge bg-primary ms-auto" style="font-size:0.6rem;">{{ $tender->iklanDokumens->count() }}</span>
 						</a>
-					@elseif (! $tender->isIklanSahaja() && $tender->canShowDokumenSenaraiTab(Auth::user()->vendor_id))
+					@elseif (!$tender->isIklanSahaja() && $tender->canShowDokumenSenaraiTab(Auth::user()->vendor_id))
 						<a class="nav-link" href="#vt-dokumen-tawaran" data-bs-toggle="pill" role="tab">
 							<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
 								stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -776,7 +787,7 @@
 							</tr>
 						</table>
 					</div>
-					@if (! $tender->isIklanSahaja() && $tender->canPurchase())
+					@if (!$tender->isIklanSahaja() && $tender->canPurchase())
 						<div class="d-flex justify-content-end">
 							<a href="{{ route('tenders.buy', $tender->id) }}" class="btn-form btn-form-primary">
 								{{ $tender->vendorDokumenActionLabel() }}
@@ -824,11 +835,11 @@
 								@if ($tender->isIklanSahaja())
 									<p class="text-muted small mb-0">
 										Tender <strong>Iklan Sahaja</strong> — maklumat lawatan tapak adalah untuk rujukan sahaja.
-										Pendaftaran wakil syarikat tidak diperlukan.
+										Pendaftaran Penama Syarikat tidak diperlukan.
 									</p>
 								@elseif ($canManageWakilLawatan)
 									<p class="text-muted small mb-0">
-										Klik <strong>Wakil Syarikat</strong> pada setiap lawatan untuk masukkan No. IC dan nama wakil
+										Klik <strong>Penama Syarikat</strong> pada setiap lawatan untuk masukkan No. IC dan nama wakil
 										<strong>sebelum tarikh lawatan</strong>. Kehadiran akan disahkan oleh urus setia selepas lawatan tapak.
 									</p>
 								@else
@@ -862,7 +873,7 @@
 											<th class="py-3"
 												style="border-color:#e5e7eb; font-size:0.68rem; color:#6b7280; text-transform:uppercase;">Wajib Hadir</th>
 											<th class="py-3 pe-4 text-center"
-												style="border-color:#e5e7eb; font-size:0.68rem; color:#6b7280; text-transform:uppercase;">Wakil Syarikat
+												style="border-color:#e5e7eb; font-size:0.68rem; color:#6b7280; text-transform:uppercase;">Penama Syarikat
 											</th>
 										</tr>
 									</thead>
@@ -906,9 +917,10 @@
 													@elseif (!$visitAttended)
 														<span class="text-muted small">—</span>
 													@endif
-													@if (! $tender->isIklanSahaja() && !$vendorHasPurchased && $tender->canPurchase())
+													@if (!$tender->isIklanSahaja() && !$vendorHasPurchased && $tender->canPurchase())
 														<div class="mt-1">
-															<a href="{{ route('tenders.buy', $tender->id) }}" class="small">{{ $tender->vendorDokumenActionLabel() }}</a>
+															<a href="{{ route('tenders.buy', $tender->id) }}"
+																class="small">{{ $tender->vendorDokumenActionLabel() }}</a>
 														</div>
 													@endif
 												</td>
@@ -921,13 +933,13 @@
 					</div>
 
 					@if ($canManageWakilLawatan)
-						{{-- Modal: Wakil Syarikat --}}
+						{{-- Modal: Penama Syarikat --}}
 						<div class="modal fade" id="wakilLawatanModal" tabindex="-1" aria-labelledby="wakilLawatanModalLabel"
 							aria-hidden="true">
 							<div class="modal-dialog modal-lg modal-dialog-centered">
 								<div class="modal-content">
 									<div class="modal-header" style="background:#c41e3a; color:#fff;">
-										<h6 class="modal-title" id="wakilLawatanModalLabel">Wakil Syarikat</h6>
+										<h6 class="modal-title" id="wakilLawatanModalLabel">Penama Syarikat</h6>
 										<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
 											aria-label="Tutup"></button>
 									</div>
@@ -1069,7 +1081,12 @@
 				@endif
 
 				{{-- TAB: Dokumen Tender/Tawaran atau Sebut Harga — hidden for Iklan Sahaja --}}
-				@if (! $tender->isIklanSahaja() && $tender->showDokumenSenaraiTab() && $vendorHasPurchased && $tender->usesIklanDokumen() && $tender->iklanDokumens->isNotEmpty())
+				@if (
+					!$tender->isIklanSahaja() &&
+						$tender->showDokumenSenaraiTab() &&
+						$vendorHasPurchased &&
+						$tender->usesIklanDokumen() &&
+						$tender->iklanDokumens->isNotEmpty())
 					<div class="tab-pane fade" id="vt-dokumen-tawaran" role="tabpanel">
 						<div class="vendor-tender-card">
 							<div class="vendor-tender-card-header">
@@ -1087,7 +1104,7 @@
 							@include('tenders._iklan_dokumen_table', ['tender' => $tender])
 						</div>
 					</div>
-				@elseif (! $tender->isIklanSahaja() && $tender->canShowDokumenSenaraiTab(Auth::user()->vendor_id))
+				@elseif (!$tender->isIklanSahaja() && $tender->canShowDokumenSenaraiTab(Auth::user()->vendor_id))
 					<div class="tab-pane fade" id="vt-dokumen-tawaran" role="tabpanel">
 						<div class="vendor-tender-card">
 							<div class="vendor-tender-card-header">
@@ -1418,7 +1435,10 @@
 				bootstrap.Tab.getOrCreateInstance(tabLink).show();
 				var pane = document.querySelector(hash);
 				if (pane) {
-					pane.scrollIntoView({ behavior: 'smooth', block: 'start' });
+					pane.scrollIntoView({
+						behavior: 'smooth',
+						block: 'start'
+					});
 				}
 			}
 
@@ -1511,9 +1531,9 @@
 
 					var reps = [];
 					$('#wakilLawatanRows .wakil-row').each(function() {
-						var ic = (typeof window.normalizeIcNumber === 'function')
-							? window.normalizeIcNumber($(this).find('.rep-ic').val())
-							: $(this).find('.rep-ic').val().replace(/\D+/g, '').slice(0, 12);
+						var ic = (typeof window.normalizeIcNumber === 'function') ?
+							window.normalizeIcNumber($(this).find('.rep-ic').val()) :
+							$(this).find('.rep-ic').val().replace(/\D+/g, '').slice(0, 12);
 						var name = $(this).find('.rep-name').val().trim();
 						if (ic || name) {
 							reps.push({
@@ -1558,7 +1578,7 @@
 		@include('tenders.forms._online_form_modal')
 	@endif
 
-	@if ($vendorHasPurchased && !$vendorSubmitted && ! $tender->usesIklanDokumen())
+	@if ($vendorHasPurchased && !$vendorSubmitted && !$tender->usesIklanDokumen())
 		<script>
 			$(function() {
 				var READINESS_URL = @json(route('tenders.vendorSubmission.readiness', $tender->id));

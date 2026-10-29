@@ -107,8 +107,8 @@
 
 
 			@if ($tender->briefing_required && !$tender->attendBriefing(Auth::user()->vendor_id))
-				<div class="alert alert-danger"><svg xmlns="http://www.w3.org/2000/svg" class="me-1" width="18" height="18"
-						viewBox="0 0 24 24">
+				<div class="alert alert-danger"><svg xmlns="http://www.w3.org/2000/svg" class="me-1" width="18"
+						height="18" viewBox="0 0 24 24">
 						<g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
 							<path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0-18 0m9-3h.01" />
 							<path d="M11 12h1v4h1" />
@@ -121,13 +121,15 @@
 			@if ($tender->hasRequiredSiteVisits() && !$tender->attendVisits(Auth::user()->vendor_id))
 				@php
 					$lawatanVendorId = (int) Auth::user()->vendor_id;
-					$requiredVisits = $tender->siteVisits->filter(fn ($visit) => (bool) $visit->required);
-					$hasWakilRegistered = $requiredVisits->isNotEmpty() && $requiredVisits->every(function ($visit) use ($lawatanVendorId) {
-						return \App\Models\TenderVisitRepresentative::query()
-							->where('visit_id', $visit->id)
-							->where('vendor_id', $lawatanVendorId)
-							->exists();
-					});
+					$requiredVisits = $tender->siteVisits->filter(fn($visit) => (bool) $visit->required);
+					$hasWakilRegistered =
+					    $requiredVisits->isNotEmpty() &&
+					    $requiredVisits->every(function ($visit) use ($lawatanVendorId) {
+					        return \App\Models\TenderVisitRepresentative::query()
+					            ->where('visit_id', $visit->id)
+					            ->where('vendor_id', $lawatanVendorId)
+					            ->exists();
+					    });
 				@endphp
 				<div class="alert alert-danger"><svg xmlns="http://www.w3.org/2000/svg" class="me-1" width="18"
 						height="18" viewBox="0 0 24 24">
@@ -137,10 +139,10 @@
 						</g>
 					</svg>
 					@if ($tender->hasParticipate(Auth::user()->vendor_id) || $hasWakilRegistered)
-						Wakil syarikat telah didaftarkan. Kehadiran lawatan tapak wajib belum disahkan urus setia
+						Penama Syarikat telah didaftarkan. Kehadiran lawatan tapak wajib belum disahkan urus setia
 						sebelum anda boleh membeli dokumen tender / sebut harga ini.
 					@else
-						Sila daftar wakil syarikat di tab <strong>Lawatan Tapak</strong> (sebelum tarikh lawatan).
+						Sila daftar Penama Syarikat di tab <strong>Lawatan Tapak</strong> (sebelum tarikh lawatan).
 						Kehadiran akan disahkan urus setia sebelum anda boleh membeli dokumen tender / sebut harga ini.
 					@endif
 				</div>
@@ -298,7 +300,7 @@
 				@if (
 					$current_vendor_state_id == 0 &&
 						$tender->getDaerahListExist() &&
-						! \App\Vendor::vendorMatchesDistrictRules($current_vendor_district_id, $tender_open_for_district_id))
+						!\App\Vendor::vendorMatchesDistrictRules($current_vendor_district_id, $tender_open_for_district_id))
 					<div class="alert alert-danger"><svg xmlns="http://www.w3.org/2000/svg" class="me-1" width="18"
 							height="18" viewBox="0 0 24 24">
 							<path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
