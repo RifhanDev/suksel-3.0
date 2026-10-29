@@ -342,7 +342,10 @@
 
     <!-- ACTION BUTTONS -->
     <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-        @include('tenders.forms._vendor_form_kembali', ['kembaliUrl' => $kembaliUrl])
+        @include('tenders.forms._vendor_form_kembali', [
+            'kembaliUrl' => $kembaliUrl,
+            'reloadOnClose' => true,
+        ])
         <!-- <div class="d-flex gap-2">
             @if (!($viewOnly ?? false))
             <a href="{{ $kembaliUrl }}" class="btn-form btn-form-success text-decoration-none">
@@ -854,6 +857,10 @@ $(document).ready(function () {
                     $('#modal-kakitangan').modal('hide');
                     showToast(res.message, 'success');
                     renderOrUpdateRow(res.data);
+                    // Tell parent checklist to refresh status when this iframe closes.
+                    if (typeof vendorFormMarkDirty === 'function') {
+                        vendorFormMarkDirty();
+                    }
                 } else {
                     showToast(res.message || 'Gagal menyimpan data.', 'error');
                 }
