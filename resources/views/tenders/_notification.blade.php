@@ -296,9 +296,9 @@
 				@endif
 
 				@if (
-					!in_array($current_vendor_district_id, $tender_open_for_district_id) &&
-						$current_vendor_state_id == 0 &&
-						$tender->getDaerahListExist())
+					$current_vendor_state_id == 0 &&
+						$tender->getDaerahListExist() &&
+						! \App\Vendor::vendorMatchesDistrictRules($current_vendor_district_id, $tender_open_for_district_id))
 					<div class="alert alert-danger"><svg xmlns="http://www.w3.org/2000/svg" class="me-1" width="18"
 							height="18" viewBox="0 0 24 24">
 							<path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"

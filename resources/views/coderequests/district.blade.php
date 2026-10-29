@@ -100,6 +100,7 @@
                             <select class="form-select" name="district_id" id="district_id" required>
                                 <option value="" disabled selected>Pilihan Daerah...</option>
                                 @foreach (App\Vendor::$districts as $key => $district_desc)
+                                    @continue((int) $key === \App\Vendor::DISTRICT_ALL_SELANGOR)
                                     <option value="{{ $key }}" {{ old('district_id', isset($vendor) ? $vendor->district_id : '') == $key ? 'selected' : '' }}>
                                         {{ $district_desc }}
                                     </option>

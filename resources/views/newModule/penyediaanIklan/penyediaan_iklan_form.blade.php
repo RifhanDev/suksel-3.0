@@ -574,10 +574,6 @@
 							<input type="checkbox" name="invitation" id="sk_terhad" value="1" @checked($isChecked($invitation))>
 							<span class="sk-check-label">Tender Terhad</span>
 						</label>
-						<label class="sk-check-row">
-							<input type="checkbox" name="only_advertise" id="sk_iklan" value="1" @checked($isChecked($onlyAdvertise))>
-							<span class="sk-check-label">Iklan Sahaja</span>
-						</label>
 					</div>
 
 					<div class="d-flex align-items-start gap-2 mt-3 p-3 rounded-2"
@@ -589,7 +585,7 @@
 							<line x1="12" y1="8" x2="12" y2="12"></line>
 							<line x1="12" y1="16" x2="12.01" y2="16"></line>
 						</svg>
-						<span>Sila tandakan <strong>Iklan Sahaja</strong> sekiranya penjualan dibuat secara manual.</span>
+						<span>Sila biarkan kosong sekiranya tender / sebut harga terbuka</span>
 					</div>
 				</div>
 
