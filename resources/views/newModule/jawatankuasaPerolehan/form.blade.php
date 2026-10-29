@@ -319,7 +319,7 @@
 							</select>
 						</div>
 						<div class="col-md-6">
-							<label class="form-label small fw-semibold">Pemilihan Berdasarkan <span class="text-danger">*</span></label>
+							<label class="form-label small fw-semibold">Pemilihan Berdasarkan</label>
 							@php $mpPemilihanBerdasarkan = ($pemilihanHeader['pemilihan_berdasarkan'] ?? ''); @endphp
 							<div class="d-flex align-items-center flex-wrap gap-3 pt-1">
 								<div class="form-check mb-0">

@@ -851,6 +851,7 @@
     <script src="{{ asset('js/success-modal.js') }}"></script>
     <script src="{{ asset('js/confirm-modal.js') }}"></script>
     <script src="{{ asset('js/prevent-double-submit.js') }}"></script>
+    <script src="{{ asset('js/restrict-upload-types.js') }}"></script>
     @auth
         {{-- 2FA code popup for penilaian Hantar; paths come from routes using the 2fa.penilaian middleware --}}
         <script>window.TWO_FACTOR_PENILAIAN_PATHS = @json(\App\Http\Middleware\RequireTwoFactorPenilaian::protectedPathPatterns());</script>

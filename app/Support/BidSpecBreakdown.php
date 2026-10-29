@@ -4,6 +4,10 @@ namespace App\Support;
 
 use App\Models\EbiddingVendorBidItem;
 use App\Models\JawatankuasaPerolehanPemilihanItem;
+use App\Models\SpesifikasiKerjaItem;
+use App\Models\TechnicalSpecificationItem;
+use App\Models\TenderVendorDokumenResponse;
+use App\Services\VendorDokumenResponseService;
 use App\Tender;
 use Illuminate\Support\Collection;
 
@@ -60,6 +64,9 @@ class BidSpecBreakdown
             ->get()
             ->groupBy(fn ($bid) => (int) $bid->vendor_id . ':' . (int) $bid->pemilihan_item_id);
 
+        // Per-line harga tawaran (not the cloned overall total on every pemilihan row).
+        $linePrices = self::linePricesByVendorTitle($tender);
+
         /** @var array<int, array{vendor_id: int, vendor_name: string, items: array<int, array<string, mixed>>}> $byVendor */
         $byVendor = [];
 
@@ -80,7 +87,14 @@ class BidSpecBreakdown
 
                 $bidKey = $vendorId . ':' . (int) $item->id;
                 $bid = ($bids->get($bidKey) ?? collect())->first();
-                $previous = $petender->harga_tawaran !== null ? (float) $petender->harga_tawaran : null;
+                $titleKey = self::normalizeTitle((string) ($item->perihal_item ?? ''));
+                $linePrice = $linePrices[$vendorId][$titleKey] ?? null;
+                // pemilihan_petenders.harga_tawaran is the overall offer, copied onto
+                // every line when eBidding expands items. Use it only for a single line.
+                $previous = $linePrice;
+                if ($previous === null && $lineItems->count() === 1 && $petender->harga_tawaran !== null) {
+                    $previous = (float) $petender->harga_tawaran;
+                }
                 $bidPrice = $bid ? (float) $bid->bid_price : null;
                 $isCarriedForward = $bid
                     ? (bool) ($bid->is_carried_forward ?? false)
@@ -150,10 +164,13 @@ class BidSpecBreakdown
             $items = self::itemsForVendor($breakdown, $vendorId);
             $row['spec_items'] = $items;
 
-            // Align table harga with modal totals (sum of child line items).
+            // Align table harga with the sum of real per-item offers.
+            // If line prices could not be resolved, keep the original overall
+            // offer — do not multiply it by the number of items.
             if ($items !== []) {
+                $overallOffer = isset($row['harga_tawaran']) ? (float) $row['harga_tawaran'] : 0.0;
                 $totals = self::totalsForItems($items);
-                $row['harga_tawaran'] = $totals['previous'];
+                $row['harga_tawaran'] = $totals['previous'] > 0 ? $totals['previous'] : $overallOffer;
                 $row['harga_bidaan'] = $totals['bid'];
                 $newCount = collect($items)->where('is_new_bid', true)->count();
                 $oldCount = collect($items)->where('is_new_bid', false)->count();
@@ -169,5 +186,103 @@ class BidSpecBreakdown
         }
 
         return array_map($map, $rows);
+    }
+
+    /**
+     * Vendor offer per spesifikasi line, keyed by vendor id then normalised title.
+     * Kerja: kadar × kuantiti. Bekalan: item_prices is already the line total.
+     *
+     * @return array<int, array<string, float>>
+     */
+    private static function linePricesByVendorTitle(Tender $tender): array
+    {
+        $responses = TenderVendorDokumenResponse::query()
+            ->where('tender_id', $tender->id)
+            ->where(function ($q) {
+                $q->where('section', 'spesifikasi_kerja')
+                    ->orWhere('section', 'like', 'specification%')
+                    ->orWhere('response_type', 'specification');
+            })
+            ->orderByDesc('id')
+            ->get();
+
+        $service = app(VendorDokumenResponseService::class);
+        $pricesByVendor = [];
+        $uuids = [];
+
+        foreach ($responses as $response) {
+            $vendorId = (int) $response->vendor_id;
+            if ($vendorId <= 0 || isset($pricesByVendor[$vendorId])) {
+                continue;
+            }
+
+            $payload = $service->normalizeSpecificationPayload(
+                is_array($response->payload) ? $response->payload : null
+            );
+            $prices = $payload['item_prices'] ?? [];
+            $pricesByVendor[$vendorId] = $prices;
+            foreach (array_keys($prices) as $uuid) {
+                $uuids[(string) $uuid] = true;
+            }
+        }
+
+        if ($uuids === []) {
+            return [];
+        }
+
+        $kerja = SpesifikasiKerjaItem::query()
+            ->whereIn('uuid', array_keys($uuids))
+            ->whereHas('header', fn ($q) => $q->where('tender_id', $tender->id))
+            ->get(['id', 'uuid', 'spesifikasi', 'nama_item', 'kuantiti', 'parent_id']);
+
+        $bekalan = TechnicalSpecificationItem::query()
+            ->whereIn('uuid', array_keys($uuids))
+            ->get(['uuid', 'title']);
+
+        $map = [];
+        foreach ($pricesByVendor as $vendorId => $prices) {
+            foreach ($prices as $uuid => $raw) {
+                $kerjaItem = $kerja->firstWhere('uuid', $uuid);
+                if ($kerjaItem) {
+                    // Parent rows are headings; priced lines are children (or a leaf parent).
+                    if ($kerjaItem->parent_id === null && $kerja->where('parent_id', $kerjaItem->id)->isNotEmpty()) {
+                        continue;
+                    }
+                    $kadar = (float) str_replace(',', '', (string) $raw);
+                    $qty = (float) ($kerjaItem->kuantiti ?? 0);
+                    $line = round($kadar * ($qty > 0 ? $qty : 1), 2);
+                    $title = trim((string) ($kerjaItem->spesifikasi ?: $kerjaItem->nama_item));
+                    if ($title !== '') {
+                        $map[$vendorId][self::normalizeTitle($title)] = $line;
+                    }
+
+                    continue;
+                }
+
+                $bekalanItem = $bekalan->firstWhere('uuid', $uuid);
+                if (! $bekalanItem) {
+                    continue;
+                }
+
+                $title = trim((string) ($bekalanItem->title ?? ''));
+                if ($title === '') {
+                    continue;
+                }
+
+                $map[$vendorId][self::normalizeTitle($title)] = round(
+                    (float) str_replace(',', '', (string) $raw),
+                    2
+                );
+            }
+        }
+
+        return $map;
+    }
+
+    private static function normalizeTitle(string $title): string
+    {
+        $title = mb_strtolower(trim($title));
+
+        return preg_replace('/\s+/', ' ', $title) ?? $title;
     }
 }

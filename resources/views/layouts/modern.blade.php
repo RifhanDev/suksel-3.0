@@ -1987,6 +1987,7 @@
 	<!-- Modern JS bundle (jQuery + Bootstrap 5) -->
 	<script src="{{ asset('js/modern.js') }}"></script>
 	<script src="{{ asset('js/prevent-double-submit.js') }}"></script>
+	<script src="{{ asset('js/restrict-upload-types.js') }}"></script>
 	<!-- Legacy application.js for vendor forms and old scripts -->
 	<script src="{{ asset('js/application.js') }}"></script>
 

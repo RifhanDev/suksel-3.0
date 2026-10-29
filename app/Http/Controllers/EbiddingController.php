@@ -298,16 +298,27 @@ class EbiddingController extends Controller
 
 			$vendorItems = $this->buildVendorBidRows($tender, $vendorId);
 
-			$canVendorEditBid = $currentStage === self::STAGE_VENDOR && $window['is_open'];
-			$hasVendorSubmitted = EbiddingVendorBidItem::query()
-				->where('tender_id', $tender->id)
-				->where('vendor_id', $vendorId)
-				->whereNotNull('submitted_at')
-				->exists();
-			// After Hantar, lock the form even if the bidding window is still open.
-			if ($hasVendorSubmitted) {
-				$canVendorEditBid = false;
-			}
+			$bidableIds = $vendorItems
+				->filter(fn ($row) => ! empty($row['is_bidable']) && ! empty($row['pemilihan_item_id']))
+				->pluck('pemilihan_item_id')
+				->map(fn ($id) => (int) $id)
+				->unique()
+				->values();
+			// Lock only after this vendor has sent a real price for every current line.
+			// Older rows (other item ids, or a 0.00 placeholder) must not freeze the form
+			// while the schedule window is still open.
+			$submittedLineCount = $bidableIds->isEmpty()
+				? 0
+				: EbiddingVendorBidItem::query()
+					->where('tender_id', $tender->id)
+					->where('vendor_id', $vendorId)
+					->whereIn('pemilihan_item_id', $bidableIds->all())
+					->whereNotNull('submitted_at')
+					->where('bid_price', '>', 0)
+					->count();
+			$hasVendorSubmitted = $bidableIds->isNotEmpty()
+				&& $submittedLineCount >= $bidableIds->count();
+			$canVendorEditBid = ! empty($window['is_open']) && ! $hasVendorSubmitted;
 
 			return view('newModule.eBidding.vendor_bidding', [
 				'tender' => $tender,
@@ -892,12 +903,12 @@ class EbiddingController extends Controller
     }
 
     /**
-     * Review stage was being treated as "tempoh tamat" even when the saved
-     * start/end datetime was still open. Put the tender back on the vendor stage.
+     * The saved start/end is the source of truth. Any later stage (review, SULP,
+     * or a stray status id) must not lock the vendor form while that window is open.
      */
     private function reopenVendorStageIfWindowOpen(Tender $tender, int $currentStage, array $window): int
     {
-        if (empty($window['is_open']) || $currentStage !== self::STAGE_AGENCY_ADMIN_REVIEW) {
+        if (empty($window['is_open']) || $currentStage <= self::STAGE_VENDOR) {
             return $currentStage;
         }
 
@@ -1086,69 +1097,71 @@ class EbiddingController extends Controller
      */
     public function syncPemilihanItemsFromSpecification(Tender $tender): void
     {
-        $kerja = SpesifikasiKerjaHeader::query()
-            ->where('tender_id', $tender->id)
-            ->with(['items.specs'])
-            ->first();
+        DB::transaction(function () use ($tender) {
+            $kerja = SpesifikasiKerjaHeader::query()
+                ->where('tender_id', $tender->id)
+                ->with(['items.specs'])
+                ->first();
 
-        if ($kerja && $kerja->items->isNotEmpty()) {
-            $hasChildren = $kerja->items->contains(fn (SpesifikasiKerjaItem $p) => $p->specs->isNotEmpty());
-            $sort = 0;
-            $keptIds = [];
+            if ($kerja && $kerja->items->isNotEmpty()) {
+                $hasChildren = $kerja->items->contains(fn (SpesifikasiKerjaItem $p) => $p->specs->isNotEmpty());
+                $sort = 0;
+                $keptIds = [];
 
-            foreach ($kerja->items as $parent) {
-                if ($hasChildren && $parent->specs->isNotEmpty()) {
-                    foreach ($parent->specs as $child) {
-                        $sort++;
-                        $title = trim((string) ($child->spesifikasi ?: $child->nama_item ?: 'Sub-item'));
-                        $keptIds[] = $this->ensurePemilihanItemLine(
-                            $tender,
-                            $title,
-                            $child->kuantiti,
-                            $child->unit,
-                            $sort
-                        )->id;
+                foreach ($kerja->items as $parent) {
+                    if ($hasChildren && $parent->specs->isNotEmpty()) {
+                        foreach ($parent->specs as $child) {
+                            $sort++;
+                            $title = trim((string) ($child->spesifikasi ?: $child->nama_item ?: 'Sub-item'));
+                            $keptIds[] = $this->ensurePemilihanItemLine(
+                                $tender,
+                                $title,
+                                $child->kuantiti,
+                                $child->unit,
+                                $sort
+                            )->id;
+                        }
+
+                        continue;
                     }
 
-                    continue;
+                    $sort++;
+                    $title = trim((string) ($parent->nama_item ?: $parent->spesifikasi ?: 'Item'));
+                    $keptIds[] = $this->ensurePemilihanItemLine(
+                        $tender,
+                        $title,
+                        $parent->kuantiti,
+                        $parent->unit,
+                        $sort
+                    )->id;
                 }
 
+                $this->pruneStalePemilihanItems($tender, $keptIds);
+
+                return;
+            }
+
+            $bekalanItems = $this->bekalanSpecificationItems($tender);
+            if ($bekalanItems->isEmpty()) {
+                return;
+            }
+
+            $sort = 0;
+            $keptIds = [];
+            foreach ($bekalanItems as $item) {
                 $sort++;
-                $title = trim((string) ($parent->nama_item ?: $parent->spesifikasi ?: 'Item'));
+                $title = trim((string) ($item->title ?: 'Item'));
                 $keptIds[] = $this->ensurePemilihanItemLine(
                     $tender,
                     $title,
-                    $parent->kuantiti,
-                    $parent->unit,
+                    $item->quantity,
+                    $item->unit,
                     $sort
                 )->id;
             }
 
-            $this->pruneOverallTenderPemilihanRow($tender, $keptIds);
-
-            return;
-        }
-
-        $bekalanItems = $this->bekalanSpecificationItems($tender);
-        if ($bekalanItems->isEmpty()) {
-            return;
-        }
-
-        $sort = 0;
-        $keptIds = [];
-        foreach ($bekalanItems as $item) {
-            $sort++;
-            $title = trim((string) ($item->title ?: 'Item'));
-            $keptIds[] = $this->ensurePemilihanItemLine(
-                $tender,
-                $title,
-                $item->quantity,
-                $item->unit,
-                $sort
-            )->id;
-        }
-
-        $this->pruneOverallTenderPemilihanRow($tender, $keptIds);
+            $this->pruneStalePemilihanItems($tender, $keptIds);
+        });
     }
 
     /**
@@ -1386,10 +1399,17 @@ class EbiddingController extends Controller
         $unit,
         int $sortOrder
     ): JawatankuasaPerolehanPemilihanItem {
+        $title = trim($title);
+        if ($title === '') {
+            $title = 'Item';
+        }
+
         $existing = JawatankuasaPerolehanPemilihanItem::query()
             ->where('tender_id', $tender->id)
-            ->where('perihal_item', $title)
+            ->whereRaw('TRIM(perihal_item) = ?', [$title])
             ->orderBy('sort_order')
+            ->orderBy('id')
+            ->lockForUpdate()
             ->first();
 
         $qty = $quantity ?? 1;
@@ -1397,6 +1417,10 @@ class EbiddingController extends Controller
 
         if ($existing) {
             $dirty = false;
+            if (trim((string) $existing->perihal_item) !== $title) {
+                $existing->perihal_item = $title;
+                $dirty = true;
+            }
             if ((string) $existing->kuantiti !== (string) $qty) {
                 $existing->kuantiti = $qty;
                 $dirty = true;
@@ -1457,28 +1481,50 @@ class EbiddingController extends Controller
             return collect();
         }
 
+        // Several checklist documents can repeat the same parent titles. Keep one
+        // line per title so Senarai Item does not grow duplicates.
         return TechnicalSpecificationItem::query()
             ->with('details')
             ->whereIn('technical_specification_document_id', $documentIds)
             ->orderBy('sort_order')
             ->orderBy('id')
-            ->get();
+            ->get()
+            ->unique(fn (TechnicalSpecificationItem $item) => mb_strtolower(trim((string) ($item->title ?: ''))))
+            ->values();
     }
 
     /**
+     * Keep only the current spec-driven Senarai Item rows. Removes the old overall
+     * tender-name row and any duplicate title rows left by earlier syncs/races.
+     *
      * @param  list<int>  $keptIds
      */
-    private function pruneOverallTenderPemilihanRow(Tender $tender, array $keptIds): void
+    private function pruneStalePemilihanItems(Tender $tender, array $keptIds): void
     {
-        $tenderName = trim((string) ($tender->name ?? ''));
-        if ($tenderName === '' || $keptIds === []) {
+        $keptIds = array_values(array_unique(array_filter(array_map('intval', $keptIds))));
+        if ($keptIds === []) {
             return;
         }
 
-        JawatankuasaPerolehanPemilihanItem::query()
+        $staleIds = JawatankuasaPerolehanPemilihanItem::query()
             ->where('tender_id', $tender->id)
-            ->where('perihal_item', $tenderName)
             ->whereNotIn('id', $keptIds)
+            ->pluck('id');
+
+        if ($staleIds->isEmpty()) {
+            return;
+        }
+
+        JawatankuasaPerolehanPemilihanPetender::query()
+            ->whereIn('pemilihan_item_id', $staleIds)
+            ->delete();
+
+        EbiddingVendorBidItem::query()
+            ->whereIn('pemilihan_item_id', $staleIds)
+            ->delete();
+
+        JawatankuasaPerolehanPemilihanItem::query()
+            ->whereIn('id', $staleIds)
             ->delete();
     }
 
