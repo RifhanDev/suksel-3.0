@@ -1020,7 +1020,8 @@ class PenilaianTeknikalController extends Controller
 
             return [
                 'bil' => $idx + 1,
-                'no_petender' => ($idx + 1) . '/' . $totalStep1Vendors,
+                // Use stable kod_pembekal (same as on-screen penilaian), not re-numbered idx/total.
+                'no_petender' => $vendor->kod_pembekal ?: (($idx + 1) . '/' . $totalStep1Vendors),
                 'keputusan' => $keputusan,
                 'ulasan' => $keputusan === 'LULUS'
                     ? 'Semua Dokumen Lengkap Dan Mencukupi Dan Layak Ke Penilaian Peringkat Kedua'
@@ -1074,7 +1075,8 @@ class PenilaianTeknikalController extends Controller
 
             return [
                 'bil' => $idx + 1,
-                'no_petender' => ($idx + 1) . '/' . $totalStep2Vendors,
+                // Same kod_pembekal as Langkah 1/2/3 — do not renumber among step-2 passers only.
+                'no_petender' => $vendor->kod_pembekal ?: (($idx + 1) . '/' . $totalStep2Vendors),
                 'markah_teknikal' => $peratusByVendorId[$vendorId] ?? 0,
                 'keputusan' => $keputusan,
                 'kedudukan' => $kedudukanByVendorId[$vendorId] ?? null,
