@@ -2875,17 +2875,48 @@ class PenilaianKewanganController extends Controller
             if ($step1Status === 'melepasi' && $step2Status === 'melepasi') {
                 $step3ItemsCount = count($kewanganUuids);
                 $step3EvaluatedCount = 0;
-                if ($step3ItemsCount > 0 && ! empty($semakPayload)) {
+                if ($step3ItemsCount > 0) {
                     foreach ($kewanganUuids as $uuid) {
                         $itemPayload = $semakPayload[$uuid] ?? null;
                         $vRow = collect($itemPayload['vendors'] ?? [])->firstWhere('vendor_id', $vId);
-                        if (! empty($vRow['step3_evaluated'])) {
+                        $evaluated = ! empty($vRow['step3_evaluated']);
+
+                        // Laporan cetak (and other callers) may pass a sparse payload without
+                        // vendors/step3_evaluated. Derive from DB the same way
+                        // mergeEvaluationsIntoPayload() does so Jadual 4 is not stuck on
+                        // "Belum Dinilai" after skor has been saved.
+                        if (! $evaluated) {
+                            $eval = $evaluations["{$vId}:{$uuid}"] ?? null;
+                            if ($eval) {
+                                $isProfil = ! empty($itemPayload['profil_petender_detail']);
+                                $modalJson = null;
+                                if (filled($eval->catatan)) {
+                                    $decoded = json_decode($eval->catatan, true);
+                                    if (is_array($decoded) && array_key_exists('skor_modal_berbayar', $decoded)) {
+                                        $modalJson = $decoded;
+                                        $isProfil = true;
+                                    }
+                                }
+
+                                if ($isProfil) {
+                                    $modal = $vRow['skor_modal_berbayar']
+                                        ?? ($modalJson['skor_modal_berbayar'] ?? null);
+                                    $evaluated = $modal !== null && $modal !== '';
+                                } else {
+                                    $evaluated = $eval->skor !== null
+                                        && ($eval->catatan_skor !== null || (float) $eval->skor > 0);
+                                }
+                            }
+                        }
+
+                        if ($evaluated) {
                             $step3EvaluatedCount++;
                         }
                     }
                 }
 
-                if ($step3ItemsCount > 0 && $step3EvaluatedCount < $step3ItemsCount) {
+                $step3Incomplete = $step3ItemsCount > 0 && $step3EvaluatedCount < $step3ItemsCount;
+                if ($step3Incomplete && ! $progress?->isStep3Confirmed()) {
                     $step3Status = 'belum_dinilai';
                 } elseif (isset($step3PassedMap[$vId])) {
                     $step3Status = 'melepasi';

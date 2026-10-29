@@ -181,7 +181,10 @@ class OnlineFormStatusService
                 ? 'Prestasi kerja disimpan'
                 : null,
             'kakitangan_teknikal' => TenderKakitanganTeknikal::query()
-                ->where('tender_uuid', $tender->uuid)
+                ->where(function ($q) use ($tender) {
+                    $q->where('tender_uuid', $tender->uuid)
+                        ->orWhere('tender_uuid', (string) $tender->id);
+                })
                 ->where('vendor_id', $vendorId)
                 ->exists()
                 ? 'Senarai kakitangan teknikal disimpan'

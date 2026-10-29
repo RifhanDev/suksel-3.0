@@ -12,6 +12,15 @@
             }, window.location.origin);
         }
 
+        function vendorFormMarkDirty() {
+            if (window.parent === window) {
+                return;
+            }
+            window.parent.postMessage({
+                type: 'vendor-form-dirty'
+            }, window.location.origin);
+        }
+
         function vendorFormComplete(message, status) {
             if (window.parent === window) {
                 return false;
