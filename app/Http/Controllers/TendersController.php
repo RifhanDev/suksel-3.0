@@ -1335,7 +1335,16 @@ class TendersController extends Controller
 			);
 		}
 
-		if ($tender->documentSalesClosed() || !$tender->isWithinVendorDokumenWindow()) {
+		if ($tender->documentSalesNotYetOpen()) {
+			$opens = $tender->documentSalesOpensAt();
+			$message = $opens
+				? 'Pembelian tender belum dibuka. Tarikh jual bermula pada ' . $opens->format('d/m/Y H:i') . '.'
+				: 'Pembelian tender belum dibuka.';
+
+			return redirect()->back()->with('error', $message);
+		}
+
+		if ($tender->documentSalesClosed()) {
 			return redirect()->back()->with('error', 'Pembelian tender telah tamat tempoh');
 		}
 

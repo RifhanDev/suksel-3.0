@@ -486,7 +486,7 @@ class Tender extends Model
 				return false;
 			} elseif (!$this->canParticipate(auth()->user()->vendor_id)) {
 				return false;
-			} elseif (!$this->isWithinVendorDokumenWindow()) {
+			} elseif ($this->documentSalesNotYetOpen() || $this->documentSalesClosed()) {
 				return false;
 			} else {
 				return true;
@@ -1303,9 +1303,83 @@ class Tender extends Model
 		return isset($purchase) && $purchase->briefing;
 	}
 
+	/**
+	 * Purchase / participate sales window uses tarikh jual (document_start_date),
+	 * not tarikh iklan. Key-in after purchase uses isWithinVendorDokumenWindow().
+	 */
 	public function validDocumentDate()
 	{
-		return $this->isWithinVendorDokumenWindow();
+		return $this->isWithinDocumentSalesWindow();
+	}
+
+	/**
+	 * Document sales open at tarikh jual (penyediaan iklan), falling back to document_start_date.
+	 */
+	public function documentSalesOpensAt(): ?Carbon
+	{
+		$iklan = $this->penyediaanIklanMeta();
+		$fromMeta = $this->combineIklanDateTime(
+			$iklan['tarikh_jual'] ?? null,
+			$iklan['masa_jual'] ?? null,
+			'00:00'
+		);
+		if ($fromMeta) {
+			return $fromMeta;
+		}
+
+		if (! empty($this->document_start_date)) {
+			return Carbon::parse($this->document_start_date)->startOfDay();
+		}
+
+		return null;
+	}
+
+	/**
+	 * Document sales close at tarikh/masa tutup, falling back to document_stop_date end of day
+	 * then submission_datetime.
+	 */
+	public function documentSalesClosesAt(): ?Carbon
+	{
+		$iklan = $this->penyediaanIklanMeta();
+		$fromMeta = $this->combineIklanDateTime(
+			$iklan['tarikh_tutup'] ?? null,
+			$iklan['masa_tutup'] ?? null,
+			'23:59'
+		);
+		if ($fromMeta) {
+			return $fromMeta;
+		}
+
+		if (! empty($this->document_stop_date)) {
+			return Carbon::parse($this->document_stop_date)->endOfDay();
+		}
+
+		if (! empty($this->submission_datetime)) {
+			return Carbon::parse($this->submission_datetime);
+		}
+
+		return null;
+	}
+
+	public function isWithinDocumentSalesWindow(?Carbon $at = null): bool
+	{
+		$at = $at ?? Carbon::now();
+		$opens = $this->documentSalesOpensAt();
+		$closes = $this->documentSalesClosesAt();
+
+		if ($opens === null && $closes === null) {
+			return false;
+		}
+
+		if ($opens !== null && $at->lt($opens)) {
+			return false;
+		}
+
+		if ($closes !== null && $at->gte($closes)) {
+			return false;
+		}
+
+		return true;
 	}
 
 	/**
@@ -1460,7 +1534,7 @@ class Tender extends Model
 
 	public function documentSalesNotYetOpen(): bool
 	{
-		$opens = $this->vendorDokumenOpensAt();
+		$opens = $this->documentSalesOpensAt();
 		if ($opens === null) {
 			return true;
 		}
@@ -1470,7 +1544,7 @@ class Tender extends Model
 
 	public function documentSalesClosed(): bool
 	{
-		$closes = $this->vendorDokumenClosesAt();
+		$closes = $this->documentSalesClosesAt();
 		if ($closes === null) {
 			return true;
 		}
