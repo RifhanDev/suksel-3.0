@@ -757,8 +757,20 @@
                         '<option value="muat_turun_naik">Muat Turun &amp; Muat Naik</option>' +
                         '</select>';
                 }
+                if (mekanisma === 'serahan_tangan') {
+                    return '<span class="small">Serahan Tangan</span>';
+                }
                 // petender_muat_naik
                 return '<span class="small">Muat Naik</span>';
+            }
+
+            function mekanismaSelectHtml(selected) {
+                selected = selected || 'petender_muat_naik';
+                return '<select name="mekanisma[]" class="form-select form-select-sm mekanisma-select" style="font-size:0.78rem;">' +
+                    '<option value="petender_muat_naik"' + (selected === 'petender_muat_naik' ? ' selected' : '') + '>Petender Muat Naik</option>' +
+                    '<option value="ptj_muat_naik"' + (selected === 'ptj_muat_naik' ? ' selected' : '') + '>PTJ Muat Naik</option>' +
+                    '<option value="serahan_tangan"' + (selected === 'serahan_tangan' ? ' selected' : '') + '>Serahan Tangan</option>' +
+                    '</select>';
             }
 
             // Upload button HTML — reused when showing/hiding for PTJ Muat Turun & Muat Naik
@@ -792,12 +804,7 @@
                     '<tr class="row-teknikal-tambah" data-source-type="manual">' +
                     '<td class="text-center"><input type="checkbox" name="row_check_teknikal[]" class="form-check-input row-check-teknikal"></td>' +
                     '<td><input type="text" name="tajuk_dokumen[]" class="form-control form-control-sm" placeholder="Tajuk / Dokumen..."></td>' +
-                    '<td class="text-center">' +
-                    '<select name="mekanisma[]" class="form-select form-select-sm mekanisma-select" style="font-size:0.78rem;">' +
-                    '<option value="petender_muat_naik" selected>Petender Muat Naik</option>' +
-                    '<option value="ptj_muat_naik">PTJ Muat Naik</option>' +
-                    '</select>' +
-                    '</td>' +
+                    '<td class="text-center">' + mekanismaSelectHtml(defaultMekanisma) + '</td>' +
                     '<td class="text-center tindakan-pembekal">' + buildTindakanPembekalCell(defaultMekanisma) + '</td>' +
                     '<td class="text-center">' +
                     '<input type="number" name="skema[]" class="form-control form-control-sm text-center skema-input fw-semibold" value="0" min="0" style="max-width:90px;margin:0 auto;">' +
@@ -985,6 +992,8 @@
                         vendorAction = normalizeActionSlug($tr.data('action-url-slug')) || null;
                     } else if (mechanism === 'ptj_muat_naik') {
                         vendorAction = $tr.find('.tindakan-pembekal select').val() || 'muat_turun';
+                    } else if (mechanism === 'serahan_tangan') {
+                        vendorAction = 'serahan_tangan';
                     } else {
                         vendorAction = 'muat_naik';
                     }
@@ -1329,12 +1338,7 @@
                     '<tr class="row-teknikal-tambah" data-source-type="standard"' + stdAttr + '>' +
                     '<td class="text-center"><input type="checkbox" name="row_check_teknikal[]" class="form-check-input row-check-teknikal"></td>' +
                     '<td><span class="small fw-semibold">' + $('<span>').text(tajuk).html() + '</span></td>' +
-                    '<td class="text-center">' +
-                        '<select name="mekanisma[]" class="form-select form-select-sm mekanisma-select" style="font-size:0.78rem;">' +
-                        '<option value="petender_muat_naik" selected>Petender Muat Naik</option>' +
-                        '<option value="ptj_muat_naik">PTJ Muat Naik</option>' +
-                        '</select>' +
-                    '</td>' +
+                    '<td class="text-center">' + mekanismaSelectHtml(defaultMekanisma) + '</td>' +
                     '<td class="text-center tindakan-pembekal">' + buildTindakanPembekalCell(defaultMekanisma) + '</td>' +
                     '<td class="text-center">' +
                         '<input type="number" name="skema[]" class="form-control form-control-sm text-center skema-input fw-semibold" value="0" min="0" style="max-width:90px;margin:0 auto;">' +

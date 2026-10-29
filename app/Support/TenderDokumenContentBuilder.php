@@ -232,6 +232,13 @@ class TenderDokumenContentBuilder
             return $content;
         }
 
+        if ($action === 'serahan_tangan') {
+            $content['type'] = 'serahan_tangan';
+            $content['note'] = 'Petender perlu menyerahkan dokumen secara serahan tangan.';
+
+            return $content;
+        }
+
         return $content;
     }
 

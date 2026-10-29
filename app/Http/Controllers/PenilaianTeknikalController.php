@@ -457,6 +457,7 @@ class PenilaianTeknikalController extends Controller
                     ChecklistMechanism::BORANG_ATAS_TALIAN,
                     ChecklistMechanism::PETENDER_MUAT_NAIK,
                     ChecklistMechanism::PTJ_MUAT_NAIK,
+                    ChecklistMechanism::SERAHAN_TANGAN,
                 ], true);
 
                 if ($isSpesifikasi) {
@@ -497,6 +498,7 @@ class PenilaianTeknikalController extends Controller
                 ChecklistMechanism::BORANG_ATAS_TALIAN,
                 ChecklistMechanism::PETENDER_MUAT_NAIK,
                 ChecklistMechanism::PTJ_MUAT_NAIK,
+                ChecklistMechanism::SERAHAN_TANGAN,
             ])
             ->whereHas('header', fn($query) => $query->where('tender_id', $tender->id))
             ->firstOrFail();
