@@ -670,28 +670,31 @@ class JawatankuasaController extends Controller
 
         $items = [
             [
-                'nama'      => 'Air Mineral 500ml',
-                'kuantiti'  => 1000,
-                'uom'       => 'Lot',
-                'specs'     => [
+                'nama'        => 'Air Mineral 500ml',
+                'kuantiti'    => 1000,
+                'uom'         => 'Lot',
+                'kadar_harga' => 2.50,
+                'specs'       => [
                     'Jenama tempatan yang diiktiraf KKM',
                     'Pembungkusan shrink wrap 24 botol per karton',
                 ],
             ],
             [
-                'nama'      => 'Air Mineral 1.5L',
-                'kuantiti'  => 500,
-                'uom'       => 'Unit',
-                'specs'     => [
+                'nama'        => 'Air Mineral 1.5L',
+                'kuantiti'    => 500,
+                'uom'         => 'Unit',
+                'kadar_harga' => 3.80,
+                'specs'       => [
                     'Jenama tempatan yang diiktiraf KKM',
                     'Tarikh luput minima 6 bulan dari tarikh penghantaran',
                 ],
             ],
             [
-                'nama'      => 'Air Mineral 5 Gallon',
-                'kuantiti'  => 100,
-                'uom'       => 'Hari',
-                'specs'     => [
+                'nama'        => 'Air Mineral 5 Gallon',
+                'kuantiti'    => 100,
+                'uom'         => 'Hari',
+                'kadar_harga' => 12.00,
+                'specs'       => [
                     'Dispenser compatible standard fitting',
                 ],
             ],

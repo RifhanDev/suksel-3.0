@@ -2627,6 +2627,7 @@ class PenilaianKewanganController extends Controller
                                 'title'         => $sItem->title,
                                 'quantity'      => $sItem->quantity,
                                 'unit'          => $sItem->unit,
+                                'kadar_harga'   => $sItem->kadar_harga,
                                 'response_type' => null,
                             ];
 
@@ -2643,6 +2644,7 @@ class PenilaianKewanganController extends Controller
                                     'title'         => $sDetail->description,
                                     'quantity'      => null,
                                     'unit'          => null,
+                                    'kadar_harga'   => null,
                                     'response_type' => $sDetail->response_type,
                                 ];
                             }

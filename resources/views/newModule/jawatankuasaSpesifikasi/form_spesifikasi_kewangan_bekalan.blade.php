@@ -291,8 +291,9 @@
                                         Spesifikasi
                                     </div>
                                 </th>
-                                <th class="text-center" style="width: 130px;">Kekerapan / Kuantiti</th>
-                                <th class="text-center" style="width: 130px;">Unit Ukuran</th>
+                                <th class="text-center" style="width: 110px;">Kekerapan / Kuantiti</th>
+                                <th class="text-center" style="width: 110px;">Unit Ukuran</th>
+                                <th class="text-center" style="width: 130px;">Kadar Harga (RM)</th>
                                 <th class="text-center" style="width: 180px;">Penetapan Harga (RM)</th>
                             </tr>
                         </thead>
@@ -370,6 +371,9 @@ $(document).ready(function () {
         var hasSpecsClass = specCount > 0 ? ' item-has-specs' : '';
 
         // ── Item row ──
+        var kadarHarga = (item.kadar_harga !== null && item.kadar_harga !== undefined && item.kadar_harga !== '')
+            ? Number(item.kadar_harga).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+            : '—';
         var $itemRow = $(
             '<tr class="item-row' + groupClass + hasSpecsClass + '">' +
                 '<td style="padding-left:32px;">' +
@@ -380,6 +384,9 @@ $(document).ready(function () {
                 '</td>' +
                 '<td class="text-center">' +
                     '<span class="small text-muted">' + $('<span>').text(item.uom).html() + '</span>' +
+                '</td>' +
+                '<td class="text-end">' +
+                    '<span class="fw-semibold" style="font-size:0.85rem;">' + kadarHarga + '</span>' +
                 '</td>' +
                 '<td class="text-center" rowspan="' + totalRows + '" style="vertical-align:middle;">' +
                     '<input type="text" name="harga_item[]" class="form-control form-control-sm text-end amount-input harga-input" placeholder="0.00" data-item-idx="' + itemIdx + '">' +
@@ -398,6 +405,7 @@ $(document).ready(function () {
                     '<td style="padding-left:40px;">' +
                         '<span class="text-muted" style="font-size:0.8rem;">' + $('<span>').text(specText).html() + '</span>' +
                     '</td>' +
+                    '<td></td>' +
                     '<td></td>' +
                     '<td></td>' +
                 '</tr>'
