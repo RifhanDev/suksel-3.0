@@ -1187,7 +1187,10 @@ class Tender extends Model
 		}
 
 		if ($this->district_id != null && $this->district_id > 0) {
-			$participate = $participate && ($this->district_id == $vendor->district_id);
+			$participate = $participate && \App\Vendor::vendorMatchesDistrictRules(
+				$vendor->district_id,
+				[(int) $this->district_id]
+			);
 		}
 
 		// dev 22/6/2023 [START]
@@ -1229,7 +1232,8 @@ class Tender extends Model
 			if (!in_array($current_vendor_state_id, $tender_open_for_state_id) && $current_vendor_district_id == 0 && $this->getNegeriListExist()) {
 				$allowed = false;
 				$participate = $participate && $allowed;
-			} elseif (!in_array($current_vendor_district_id, $tender_open_for_district_id) && $current_vendor_state_id == 0 && $this->getDaerahListExist()) {
+			} elseif ($current_vendor_state_id == 0 && $this->getDaerahListExist()
+				&& ! \App\Vendor::vendorMatchesDistrictRules($current_vendor_district_id, $tender_open_for_district_id)) {
 				$allowed = false;
 				$participate = $participate && $allowed;
 			} else {

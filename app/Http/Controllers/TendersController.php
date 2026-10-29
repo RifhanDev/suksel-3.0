@@ -77,6 +77,44 @@ class TendersController extends Controller
 				'tenders.tender_peringkat',
 				'tenders.kaedah_dokumen_id',
 			]);
+
+			if ($request->filled('filter_no_tender')) {
+				$filterNoTender = trim((string) $request->input('filter_no_tender'));
+				$tenders->where(function ($query) use ($filterNoTender) {
+					$query->where('tenders.no_tender', 'like', '%' . $filterNoTender . '%')
+						->orWhere('tenders.ref_number', 'like', '%' . $filterNoTender . '%');
+				});
+			}
+
+			if ($request->filled('filter_tajuk')) {
+				$filterTitle = trim((string) $request->input('filter_tajuk'));
+				$tenders->where('tenders.name', 'like', '%' . $filterTitle . '%');
+			}
+
+			if ($request->filled('filter_status')) {
+				$filterStatus = mb_strtolower(trim((string) $request->input('filter_status')));
+				if ($filterStatus === 'belum_disiarkan') {
+					$tenders->where(function ($query) {
+						$query->whereNull('tenders.approver_id')
+							->orWhere('tenders.approver_id', 0);
+					});
+				}
+			}
+
+			if ($request->filled('filter_tarikh')) {
+				try {
+					$filterDate = Carbon::createFromFormat('d/m/Y', (string) $request->input('filter_tarikh'))
+						->format('Y-m-d');
+
+					$tenders->where(function ($query) use ($filterDate) {
+						$query->whereDate('tenders.document_start_date', $filterDate)
+							->orWhereDate('tenders.submission_datetime', $filterDate);
+					});
+				} catch (\Throwable $th) {
+					// Ignore invalid date filter input and keep the query usable.
+				}
+			}
+
 			$tenders = $tenders->orderBy('created_at', 'desc');
 			$datatable = Datatables::of($tenders)
 				->filterColumn('name', function ($query, $keyword) {
@@ -577,7 +615,7 @@ class TendersController extends Controller
 
 			if ($request->filled('filter_status')) {
 				$filterStatus = mb_strtolower(trim((string) $request->input('filter_status')));
-				if ($filterStatus !== 'dalam process') {
+				if ($filterStatus !== 'dalam proses') {
 					$tenders->whereRaw('1 = 0');
 				}
 			}
@@ -914,8 +952,9 @@ class TendersController extends Controller
 			'tempoh_siap_unit'          => $tender->tempoh_siap_unit,
 			'tempoh_kontrak_bulan'      => $tender->tempoh_kontrak_bulan,
 			'tempoh_kontrak_unit'       => $tender->tempoh_kontrak_unit,
-			'zon_lokasi'                => $tender->zon_lokasi,
+			'zon_lokasi'                => $tender->zon_lokasi ? '1' : '0',
 			'lokaliti_id'               => $tender->lokaliti_id,
+			'district_id'               => $tender->district_id,
 			'jawatankuasa'              => $tender->jawatankuasa,
 			'lawatan_tapak'             => $tender->lawatan_tapak,
 			'terbuka_kepada'            => $tender->terbuka_kepada,
