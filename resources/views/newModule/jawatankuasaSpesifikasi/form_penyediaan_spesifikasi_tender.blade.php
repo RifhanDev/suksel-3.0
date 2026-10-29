@@ -448,13 +448,6 @@ $(document).ready(function () {
                         '<option value="HB"' + (unit === 'HB' ? ' selected' : '') + '>HB</option>' +
                         '<option value="L/S"' + (unit === 'L/S' ? ' selected' : '') + '>L/S</option>' +
                         '<option value="Unit"' + (unit === 'Unit' ? ' selected' : '') + '>Unit</option>' +
-                        '<option value="m"' + (unit === 'm' ? ' selected' : '') + '>m</option>' +
-                        '<option value="m2"' + (unit === 'm2' ? ' selected' : '') + '>m2</option>' +
-                        '<option value="m3"' + (unit === 'm3' ? ' selected' : '') + '>m3</option>' +
-                        '<option value="kg"' + (unit === 'kg' ? ' selected' : '') + '>kg</option>' +
-                        '<option value="tonne"' + (unit === 'tonne' ? ' selected' : '') + '>tonne</option>' +
-                        '<option value="month"' + (unit === 'month' ? ' selected' : '') + '>month</option>' +
-                        '<option value="Lot"' + (unit === 'Lot' ? ' selected' : '') + '>Lot</option>' +
                     '</select>' +
                 '</td>' +
                 '<td class="text-center" style="vertical-align:top;padding-top:10px;">' +
