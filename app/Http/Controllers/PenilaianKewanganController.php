@@ -209,7 +209,7 @@ class PenilaianKewanganController extends Controller
                 $dokumenByVendor[$vendorId] = $tenderDokumen->items('vendor', $vendorId);
             }
 
-            $vendors = $participants->map(function ($participant) {
+            $vendors = $participants->map(function ($participant, int $idx) {
                 $harga = $participant->harga_tawaran_resolved;
 
                 // Resolve Bumiputera status
@@ -222,6 +222,7 @@ class PenilaianKewanganController extends Controller
                 $bumiputeraStatusLabel = $isBumi ? 'Bumiputera' : 'Bukan Bumiputera';
 
                 return [
+                    'bil'               => $idx + 1,
                     'vendor_id'         => (int) $participant->vendor_id,
                     'name'              => $participant->vendor?->name ?: ('Vendor #' . $participant->vendor_id),
                     'kod'               => $participant->kod_pembekal ?: null,
@@ -830,7 +831,8 @@ class PenilaianKewanganController extends Controller
             $totalSpec = 0.0;
             $hasPrices = false;
             foreach ($vResponses as $resp) {
-                $itemPrices = $resp->payload['item_prices'] ?? [];
+                $payload = is_string($resp->payload) ? json_decode($resp->payload, true) : (is_array($resp->payload) ? $resp->payload : []);
+                $itemPrices = $payload['item_prices'] ?? [];
                 if (is_array($itemPrices)) {
                     foreach ($itemPrices as $val) {
                         if (is_numeric($val) && (float) $val > 0) {
@@ -839,13 +841,28 @@ class PenilaianKewanganController extends Controller
                         }
                     }
                 }
+                if (! $hasPrices) {
+                    $possibleTotal = $payload['total'] ?? $payload['total_price'] ?? $payload['harga_tawaran'] ?? $payload['grand_total'] ?? null;
+                    if (is_numeric($possibleTotal) && (float) $possibleTotal > 0) {
+                        $totalSpec += (float) $possibleTotal;
+                        $hasPrices = true;
+                    }
+                }
             }
 
             $harga = null;
-            if ($hasPrices) {
+            if ($hasPrices && $totalSpec > 0) {
                 $harga = $totalSpec;
-            } elseif (filled($participant->harga_tawaran) && (float) $participant->harga_tawaran > 0) {
+            } elseif (filled($participant->harga_tawaran) && is_numeric($participant->harga_tawaran) && (float) $participant->harga_tawaran > 0) {
                 $harga = (float) $participant->harga_tawaran;
+            } elseif (isset($participant->price) && is_numeric($participant->price) && (float) $participant->price > 0) {
+                $harga = (float) $participant->price;
+            } elseif (isset($participant->amount) && is_numeric($participant->amount) && (float) $participant->amount > 0) {
+                $harga = (float) $participant->amount;
+            } elseif (isset($participant->bid_price) && is_numeric($participant->bid_price) && (float) $participant->bid_price > 0) {
+                $harga = (float) $participant->bid_price;
+            } elseif (isset($participant->tawaran_harga) && is_numeric($participant->tawaran_harga) && (float) $participant->tawaran_harga > 0) {
+                $harga = (float) $participant->tawaran_harga;
             }
 
             $participant->harga_tawaran_resolved = $harga !== null ? (float) $harga : null;
@@ -857,6 +874,12 @@ class PenilaianKewanganController extends Controller
             $pB = ($b->harga_tawaran_resolved !== null && $b->harga_tawaran_resolved > 0) ? (float) $b->harga_tawaran_resolved : PHP_FLOAT_MAX;
 
             if ($pA === $pB) {
+                $nameA = $a->vendor->name ?? $a->vendor->company_name ?? $a->name ?? '';
+                $nameB = $b->vendor->name ?? $b->vendor->company_name ?? $b->name ?? '';
+                $cmp = strcmp($nameA, $nameB);
+                if ($cmp !== 0) {
+                    return $cmp;
+                }
                 return $a->id <=> $b->id;
             }
 
@@ -1988,7 +2011,11 @@ class PenilaianKewanganController extends Controller
             $pB = ($b['harga_tawaran'] !== null && $b['harga_tawaran'] > 0) ? (float) $b['harga_tawaran'] : PHP_FLOAT_MAX;
 
             if ($pA === $pB) {
-                return ($b['total_score'] ?? 0) <=> ($a['total_score'] ?? 0);
+                $cmpScore = ($b['total_score'] ?? 0) <=> ($a['total_score'] ?? 0);
+                if ($cmpScore !== 0) {
+                    return $cmpScore;
+                }
+                return strcmp($a['name'] ?? '', $b['name'] ?? '');
             }
 
             return $pA <=> $pB;
@@ -2013,7 +2040,11 @@ class PenilaianKewanganController extends Controller
             $pB = ($b['harga_tawaran'] !== null && $b['harga_tawaran'] > 0) ? (float) $b['harga_tawaran'] : PHP_FLOAT_MAX;
 
             if ($pA === $pB) {
-                return ($b['total_score'] ?? 0) <=> ($a['total_score'] ?? 0);
+                $cmpScore = ($b['total_score'] ?? 0) <=> ($a['total_score'] ?? 0);
+                if ($cmpScore !== 0) {
+                    return $cmpScore;
+                }
+                return strcmp($a['name'] ?? '', $b['name'] ?? '');
             }
 
             return $pA <=> $pB;

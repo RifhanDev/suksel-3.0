@@ -167,6 +167,20 @@
     if ($qualifiedParticipants->isEmpty() && $participants->isNotEmpty()) {
         $qualifiedParticipants = $participants;
     }
+
+    // Ensure qualified participants are consistently sorted by harga_tawaran ascending
+    $qualifiedParticipants = $qualifiedParticipants->sort(function ($a, $b) {
+        $priceA = (float)($a->harga_tawaran ?: ($a->tawaran_harga ?: ($a->price ?? PHP_FLOAT_MAX)));
+        $priceB = (float)($b->harga_tawaran ?: ($b->tawaran_harga ?: ($b->price ?? PHP_FLOAT_MAX)));
+        if ($priceA == 0.0) $priceA = PHP_FLOAT_MAX;
+        if ($priceB == 0.0) $priceB = PHP_FLOAT_MAX;
+        if ($priceA !== $priceB) {
+            return $priceA <=> $priceB;
+        }
+        $nameA = $a->vendor->name ?? $a->vendor->company_name ?? $a->name ?? '';
+        $nameB = $b->vendor->name ?? $b->vendor->company_name ?? $b->name ?? '';
+        return strcmp($nameA, $nameB);
+    })->values();
 @endphp
 
 {{-- Top-Right Save Confirmation Toast Container --}}
@@ -284,6 +298,7 @@
             <table class="table table-borang-modern align-middle mb-0">
                 <thead>
                     <tr>
+                        <th style="width: 60px;" class="text-center">BIL</th>
                         <th style="width: 130px;" class="text-center">Kod Pembekal</th>
                         <th style="min-width: 220px;" class="text-start ps-3">Nama Syarikat</th>
                         <th style="width: 200px;" class="text-center">Dokumen</th>
@@ -329,6 +344,7 @@
                             $catatanVal = $evalRec->catatan ?? $payload['catatan'] ?? '';
                         @endphp
                         <tr>
+                            <td class="text-center font-monospace fw-bold text-dark">{{ $idx + 1 }}</td>
                             <td class="text-center font-monospace fw-bold text-dark">{{ $kodPembekal }}</td>
                             <td class="ps-3">
                                 <div class="fw-bold text-dark">{{ $vendorName }}</div>
@@ -364,7 +380,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="text-center py-4 text-muted">
+                            <td colspan="6" class="text-center py-4 text-muted">
                                 <div class="d-flex flex-column align-items-center gap-2">
                                     <i class="bi bi-info-circle text-secondary display-6"></i>
                                     <span class="fw-semibold">Tiada petender yang layak / lulus dari Borang terdahulu.</span>

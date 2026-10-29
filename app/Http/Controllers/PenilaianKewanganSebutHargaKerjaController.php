@@ -72,7 +72,9 @@ class PenilaianKewanganSebutHargaKerjaController extends Controller
                   ]);
             });
 
-        return $query->orderBy('id')->get();
+        $participants = $query->orderBy('id')->get();
+
+        return $this->resolveAndSortParticipantsByHargaTawaran($tender, $participants);
     }
 
     /**
@@ -345,8 +347,8 @@ class PenilaianKewanganSebutHargaKerjaController extends Controller
             $cidbSpec = $vendor->cidb_specialization ?? 'CE21';
             $cidbDisplay = "CIDB Gred {$cidbGrade} ({$cidbSpec})";
 
-            $hargaTawaran = (float) ($p->harga_tawaran ?? $p->bid_price ?? 0);
-            $hargaTawaranDisp = $hargaTawaran > 0 ? ('RM ' . number_format($hargaTawaran, 2)) : '-';
+            $hargaTawaran = $p->harga_tawaran_resolved ?? ((float) ($p->harga_tawaran ?? $p->bid_price ?? $p->price ?? 0));
+            $hargaTawaranDisp = $p->harga_tawaran_fmt ?? ($hargaTawaran > 0 ? ('RM ' . number_format($hargaTawaran, 2)) : '-');
             $tempohSiap = $p->tempoh_siap ? ($p->tempoh_siap . ' Minggu') : '16 Minggu';
 
             // --- STEP 1: Docs Evaluation Map ---
@@ -750,6 +752,8 @@ class PenilaianKewanganSebutHargaKerjaController extends Controller
 
             $vendors[] = [
                 'id'              => $vId,
+                'bil'             => $idx + 1,
+                'rank'            => $idx + 1,
                 'kod'             => $kodDisplay,
                 'kod_pembekal'    => $kod,
                 'name'            => $vendorName,
@@ -1343,5 +1347,93 @@ class PenilaianKewanganSebutHargaKerjaController extends Controller
         // Redirect to show page with print trigger or draft preview
         return redirect()->route('penilaianKewanganSebutHargaKerja.show', $tender->uuid ?: $tender->id)
             ->with('info', 'Pratonton cetakan laporan.');
+    }
+
+    /**
+     * Resolve actual numeric tender price across all sources and sort participants ascending by Harga Tawaran.
+     * Lowest price vendor appears first (Bil 1). Secondary tie-breaker is vendor company name, then ID.
+     */
+    public function resolveAndSortParticipantsByHargaTawaran(?Tender $tender, Collection $participants): Collection
+    {
+        if (! $tender || $participants->isEmpty()) {
+            return $participants;
+        }
+
+        $vendorIds = $participants->pluck('vendor_id')->filter()->unique()->all();
+
+        // Retrieve specification responses in case harga_tawaran is not directly recorded on tender_vendors
+        $specResponses = TenderVendorDokumenResponse::query()
+            ->where('tender_id', $tender->id)
+            ->whereIn('vendor_id', $vendorIds)
+            ->where('response_type', 'specification')
+            ->get()
+            ->groupBy('vendor_id');
+
+        $docResponseService = app(VendorDokumenResponseService::class);
+
+        foreach ($participants as $p) {
+            $vId = (int) $p->vendor_id;
+            $harga = null;
+
+            // 1. Direct harga_tawaran or price on tender_vendors
+            if (filled($p->harga_tawaran) && (float) $p->harga_tawaran > 0) {
+                $harga = (float) $p->harga_tawaran;
+            } elseif (filled($p->price) && (float) $p->price > 0) {
+                $harga = (float) $p->price;
+            }
+
+            // 2. Fallback to specification responses
+            if ($harga === null || $harga <= 0) {
+                $vResps = $specResponses->get($vId, collect());
+                foreach ($vResps as $resp) {
+                    $itemPrices = is_array($resp->payload) ? ($resp->payload['item_prices'] ?? []) : [];
+                    if (! empty($itemPrices)) {
+                        $calcTotal = $docResponseService->calculateSpecificationTotal($tender, $itemPrices, $resp->section ?: 'spesifikasi_kerja');
+                        if ($calcTotal > 0) {
+                            $harga = (float) $calcTotal;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            // 3. Fallback to amount, bid_price, or tawaran_harga if present
+            if (($harga === null || $harga <= 0) && filled($p->amount) && (float) $p->amount > 0) {
+                $harga = (float) $p->amount;
+            }
+
+            if (($harga === null || $harga <= 0) && filled($p->bid_price) && (float) $p->bid_price > 0) {
+                $harga = (float) $p->bid_price;
+            }
+
+            if (($harga === null || $harga <= 0) && isset($p->tawaran_harga) && (float) $p->tawaran_harga > 0) {
+                $harga = (float) $p->tawaran_harga;
+            }
+
+            $p->harga_tawaran_resolved = ($harga !== null && $harga > 0) ? (float) $harga : null;
+            $p->harga_tawaran_fmt = $p->harga_tawaran_resolved !== null
+                ? ('RM ' . number_format($p->harga_tawaran_resolved, 2))
+                : '-';
+        }
+
+        return $participants->sort(function ($a, $b) {
+            $pA = ($a->harga_tawaran_resolved !== null && $a->harga_tawaran_resolved > 0)
+                ? (float) $a->harga_tawaran_resolved
+                : PHP_FLOAT_MAX;
+            $pB = ($b->harga_tawaran_resolved !== null && $b->harga_tawaran_resolved > 0)
+                ? (float) $b->harga_tawaran_resolved
+                : PHP_FLOAT_MAX;
+
+            if ($pA === $pB) {
+                $nameA = mb_strtolower(trim((string) ($a->vendor->name ?? ($a->vendor->company_name ?? ''))));
+                $nameB = mb_strtolower(trim((string) ($b->vendor->name ?? ($b->vendor->company_name ?? ''))));
+                if ($nameA !== $nameB) {
+                    return strcmp($nameA, $nameB);
+                }
+                return $a->id <=> $b->id;
+            }
+
+            return $pA <=> $pB;
+        })->values();
     }
 }
