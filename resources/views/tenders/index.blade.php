@@ -300,7 +300,15 @@
                 @endif
 
                 var DT = target.DataTable({
-                    ajax: path,
+                    ajax: {
+                        url: path,
+                        data: function (d) {
+                            d.filter_no_tender = $('#filter_no_tender').val();
+                            d.filter_tajuk = $('#filter_tajuk').val();
+                            d.filter_status = $('#filter_status').val();
+                            d.filter_tarikh = $('#filter_tarikh').val();
+                        }
+                    },
                     columns: columns,
                     serverSide: true,
                     stateSave: true,
@@ -349,18 +357,8 @@
 
             // ── Filter ─────────────────────────────────────────────────────
             $('#btn_apply_filter').on('click', function () {
-                var noTender = $('#filter_no_tender').val();
-                var tajuk    = $('#filter_tajuk').val();
-                var status   = $('#filter_status').val();
-                var tarikh   = $('#filter_tarikh').val();
-
                 if (window.tendersDT) {
-                    window.tendersDT.ajax.url(
-                        '/tender?no_tender=' + noTender +
-                        '&tajuk=' + tajuk +
-                        '&status=' + status +
-                        '&tarikh=' + tarikh
-                    ).load();
+                    window.tendersDT.ajax.reload();
                 }
             });
 
@@ -368,7 +366,7 @@
                 $('#filter_no_tender, #filter_tajuk, #filter_tarikh').val('');
                 $('#filter_status').val('');
                 if (window.tendersDT) {
-                    window.tendersDT.ajax.url('/tender').load();
+                    window.tendersDT.ajax.reload();
                 }
             });
 

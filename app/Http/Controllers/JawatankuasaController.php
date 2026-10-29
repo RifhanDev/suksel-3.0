@@ -101,6 +101,7 @@ class JawatankuasaController extends Controller
         $jenis = $validated['jenis'];
         $catatan = $this->normalizeCatatan($validated['catatan'] ?? null);
         $rows = $this->normalizeRows($validated['rows'] ?? []);
+        $this->assertUniqueUsersInRows($rows);
         $this->assertRowsBelongToInvolvedAgencies($tender, $rows);
         $meeting = $jenis === 'spec' ? $this->normalizeMeeting($validated) : [];
 
@@ -160,6 +161,7 @@ class JawatankuasaController extends Controller
 
         foreach ($supportedJenis as $jenis) {
             $tabRows = $this->normalizeRows($tabsInput[$jenis]['rows'] ?? []);
+            $this->assertUniqueUsersInRows($tabRows);
             $this->assertRowsBelongToInvolvedAgencies($tender, $tabRows);
         }
 
@@ -927,6 +929,16 @@ class JawatankuasaController extends Controller
         }
 
         return array_values(array_unique($ids));
+    }
+
+    private function assertUniqueUsersInRows($rows): void
+    {
+        $userIds = collect($rows)->pluck('user_id')->filter()->map(fn ($id) => (int) $id)->values();
+        if ($userIds->count() !== $userIds->unique()->count()) {
+            throw ValidationException::withMessages([
+                'rows' => 'Setiap pengguna hanya boleh dilantik sekali dalam jawatankuasa yang sama.',
+            ]);
+        }
     }
 
     private function assertRowsBelongToInvolvedAgencies(Tender $tender, $rows): void

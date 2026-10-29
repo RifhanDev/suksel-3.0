@@ -28,7 +28,7 @@
                     <label class="form-label small fw-bold text-secondary text-uppercase mb-1">Status</label>
                     <select id="filter_status" class="form-select form-select-sm">
                         <option value="">Semua</option>
-                        <option value="Dalam Process">Dalam Process</option>
+                        <option value="Dalam Proses">Dalam Proses</option>
                     </select>
                 </div>
 
