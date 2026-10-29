@@ -14,7 +14,7 @@
         </div>
     @elseif (! $vendorCanEdit)
         <div class="alert alert-warning py-2 px-3 mb-2" style="font-size:0.78rem;">
-            Sila beli dokumen tender untuk mengisi atau memuat naik.
+            {{ $vendorDokumenLockReason ?? 'Sila beli dokumen tender untuk mengisi atau memuat naik.' }}
         </div>
     @endif
 

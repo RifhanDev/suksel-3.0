@@ -2,6 +2,7 @@
     $mode = $mode ?? 'admin';
     $tender = $tender ?? null;
     $vendorCanEdit = $vendorCanEdit ?? false;
+    $vendorDokumenLockReason = $vendorDokumenLockReason ?? null;
     $vendorId = ($vendorCanEdit && auth()->check() && auth()->user()->vendor_id)
         ? (int) auth()->user()->vendor_id
         : null;
@@ -105,6 +106,7 @@
                                 'dok' => $dok,
                                 'mode' => $mode,
                                 'vendorCanEdit' => $vendorCanEdit,
+                                'vendorDokumenLockReason' => $vendorDokumenLockReason,
                                 'tender' => $tender,
                             ])
                         </td>

@@ -251,6 +251,19 @@
 		$vendorWithinDokumenWindow = $tender->isWithinVendorDokumenWindow();
 		$vendorDokumenWindowReason = $tender->vendorDokumenWindowBlockedReason();
 		$vendorCanEdit = $vendorHasPurchased && !$vendorSubmitted && $vendorWithinDokumenWindow;
+		$vendorDokumenLockReason = null;
+		if (! $vendorCanEdit) {
+			if (! $vendorHasPurchased) {
+				$vendorDokumenLockReason = 'Sila beli dokumen tender untuk mengisi atau memuat naik.';
+			} elseif ($vendorSubmitted) {
+				$vendorDokumenLockReason = 'Tawaran telah dihantar. Dokumen tidak boleh dikemaskini lagi.';
+			} elseif (! $vendorWithinDokumenWindow) {
+				$vendorDokumenLockReason = $vendorDokumenWindowReason
+					?: 'Di luar tempoh key-in dokumen.';
+			} else {
+				$vendorDokumenLockReason = 'Kemaskini dokumen tidak dibenarkan buat masa ini.';
+			}
+		}
 		$dokumenList = $tenderDokumen->items('vendor', $vendorHasPurchased ? (int) Auth::user()->vendor_id : null);
 		$canManageWakilLawatan =
 		    Auth::check() &&
@@ -1124,6 +1137,7 @@
 								'tender' => $tender,
 								'mode' => 'vendor',
 								'vendorCanEdit' => $vendorCanEdit,
+								'vendorDokumenLockReason' => $vendorDokumenLockReason,
 							])
 						</div>
 					</div>
