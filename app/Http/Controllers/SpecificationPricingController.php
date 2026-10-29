@@ -251,12 +251,15 @@ class SpecificationPricingController extends Controller
             $pItem = $pricingItemsBySpecItem->get($specItem->id);
 
             $items[] = [
-                'uuid'     => $pItem?->uuid ?? (string) Str::uuid(),
-                'title'    => $specItem->title,
-                'kuantiti' => (float) ($specItem->quantity ?? 0),
-                'uom'      => $specItem->unit ?? $specItem->uom ?? '-',
-                'harga'    => (float) ($pItem?->harga ?? 0),
-                'details'  => $details,
+                'uuid'        => $pItem?->uuid ?? (string) Str::uuid(),
+                'title'       => $specItem->title,
+                'kuantiti'    => (float) ($specItem->quantity ?? 0),
+                'uom'         => $specItem->unit ?? $specItem->uom ?? '-',
+                'kadar_harga' => isset($specItem->kadar_harga) && $specItem->kadar_harga !== null
+                    ? (float) $specItem->kadar_harga
+                    : null,
+                'harga'       => (float) ($pItem?->harga ?? 0),
+                'details'     => $details,
             ];
         }
 

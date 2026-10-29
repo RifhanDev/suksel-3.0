@@ -304,6 +304,10 @@
                         <span class="d-block">Unit</span>
                         <span class="d-block fw-normal text-white-50" style="font-size:0.68rem;">Ukuran</span>
                     </th>
+                    <th class="text-center py-3" style="width:120px;">
+                        <span class="d-block">Kadar Harga</span>
+                        <span class="d-block fw-normal text-white-50" style="font-size:0.68rem;">(RM)</span>
+                    </th>
                     <th class="text-center py-3" style="width:110px;">Pematuhan</th>
                     <th class="py-3" style="min-width:180px;">Cadangan Petender</th>
                     <th class="text-center py-3" style="width:130px;">
@@ -320,6 +324,7 @@
                         $itemUuid = $item['item_uuid'] ?? '';
                         $priceRowspan = max(1, count($details) + 1);
                         $savedPrice = $itemUuid !== '' ? ($itemPrices[$itemUuid] ?? '') : '';
+                        $kadarHarga = $item['kadar_harga'] ?? null;
                     @endphp
                     <tr class="spec-item-row">
                         <td>
@@ -327,6 +332,13 @@
                         </td>
                         <td class="text-center align-middle">{{ $item['quantity'] ?? '—' }}</td>
                         <td class="text-center align-middle text-uppercase">{{ $item['unit'] ?? '—' }}</td>
+                        <td class="text-end align-middle">
+                            @if ($kadarHarga !== null && $kadarHarga !== '')
+                                <span class="fw-semibold">{{ number_format((float) $kadarHarga, 2) }}</span>
+                            @else
+                                <span class="text-muted">—</span>
+                            @endif
+                        </td>
                         <td class="text-center text-muted">—</td>
                         <td class="text-center text-muted">—</td>
                         <td rowspan="{{ $priceRowspan }}" class="spec-price-cell align-middle text-end">
@@ -354,6 +366,7 @@
                             <td>
                                 <div class="spec-text-box spec-text-box-sub">{{ $detail['title'] ?? '-' }}</div>
                             </td>
+                            <td class="text-center text-muted">—</td>
                             <td class="text-center text-muted">—</td>
                             <td class="text-center text-muted">—</td>
                             <td class="align-middle">
@@ -386,12 +399,12 @@
                     @endforeach
                 @empty
                     <tr>
-                        <td colspan="6" class="text-center text-muted py-4">Tiada data spesifikasi.</td>
+                        <td colspan="7" class="text-center text-muted py-4">Tiada data spesifikasi.</td>
                     </tr>
                 @endforelse
                 @if (count($groups) > 0)
                     <tr class="spec-total-row">
-                        <td colspan="5" class="text-end fw-bold py-3">Jumlah Tawaran Harga</td>
+                        <td colspan="6" class="text-end fw-bold py-3">Jumlah Tawaran Harga</td>
                         <td class="text-end fw-bold py-3">
                             <span id="spec-price-total" class="spec-price-total-value">{{ number_format($initialTotal, 2) }}</span>
                         </td>

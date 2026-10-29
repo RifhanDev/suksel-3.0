@@ -146,10 +146,11 @@
         @else
         <thead class="text-center">
             <tr>
-                <th style="width:{{ $hideOfferedPrice ? '32%' : '26%' }};">Item / Spesifikasi</th>
-                <th style="width:{{ $hideOfferedPrice ? '16%' : '12%' }};">Kekerapan / Kuantiti</th>
+                <th style="width:{{ $hideOfferedPrice ? '28%' : '22%' }};">Item / Spesifikasi</th>
+                <th style="width:{{ $hideOfferedPrice ? '14%' : '10%' }};">Kekerapan / Kuantiti</th>
                 <th style="width:{{ $hideOfferedPrice ? '12%' : '10%' }};">Unit</th>
-                <th style="width:{{ $hideOfferedPrice ? '40%' : '37%' }};">Cadangan Petender</th>
+                <th style="width:{{ $hideOfferedPrice ? '14%' : '12%' }};">Kadar Harga (RM)</th>
+                <th style="width:{{ $hideOfferedPrice ? '32%' : '31%' }};">Cadangan Petender</th>
                 @unless ($hideOfferedPrice)
                     <th style="width:15%;">Tawaran Harga (RM)</th>
                 @endunless
@@ -163,6 +164,7 @@
                     $itemUuid = $item['item_uuid'] ?? '';
                     $priceRowspan = max(1, count($details) + 1);
                     $savedPrice = $itemUuid !== '' ? ($itemPrices[$itemUuid] ?? '') : '';
+                    $kadarHarga = $item['kadar_harga'] ?? null;
                 @endphp
                 <tr class="spec-item-row">
                     <td>
@@ -170,6 +172,13 @@
                     </td>
                     <td class="text-center align-middle">{{ $item['quantity'] ?? '—' }}</td>
                     <td class="text-center align-middle text-uppercase">{{ $item['unit'] ?? '—' }}</td>
+                    <td class="text-end align-middle">
+                        @if ($kadarHarga !== null && $kadarHarga !== '')
+                            <span class="fw-semibold">{{ number_format((float) $kadarHarga, 2) }}</span>
+                        @else
+                            <span class="text-muted">—</span>
+                        @endif
+                    </td>
                     <td class="text-center text-muted">—</td>
                     @unless ($hideOfferedPrice)
                         <td rowspan="{{ $priceRowspan }}" class="spec-price-cell align-middle text-center">
@@ -193,6 +202,7 @@
                         </td>
                         <td class="text-center text-muted">—</td>
                         <td class="text-center text-muted">—</td>
+                        <td class="text-center text-muted">—</td>
                         <td class="align-middle" style="white-space:normal; word-break:break-word;">
                             @if ($savedCadangan !== '')
                                 <span>{{ $savedCadangan }}</span>
@@ -204,12 +214,12 @@
                 @endforeach
             @empty
                 <tr>
-                    <td colspan="{{ $hideOfferedPrice ? 4 : 5 }}" class="text-center text-muted py-4">Tiada data spesifikasi.</td>
+                    <td colspan="{{ $hideOfferedPrice ? 5 : 6 }}" class="text-center text-muted py-4">Tiada data spesifikasi.</td>
                 </tr>
             @endforelse
             @if (count($groups) > 0 && ! $hideOfferedPrice)
                 <tr class="spec-total-row">
-                    <td colspan="4" class="text-end fw-bold py-3">Jumlah Tawaran Harga</td>
+                    <td colspan="5" class="text-end fw-bold py-3">Jumlah Tawaran Harga</td>
                     <td class="text-center fw-bold py-3">
                         <span class="spec-price-total-value">{{ number_format($initialTotal, 2) }}</span>
                     </td>

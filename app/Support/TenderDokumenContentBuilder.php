@@ -284,6 +284,7 @@ class TenderDokumenContentBuilder
                     'title' => $item->title,
                     'quantity' => null,
                     'unit' => null,
+                    'kadar_harga' => null,
                 ]],
             ];
         }
@@ -308,6 +309,7 @@ class TenderDokumenContentBuilder
                 'title' => $item->title,
                 'quantity' => $item->quantity,
                 'unit' => $item->unit,
+                'kadar_harga' => $item->kadar_harga,
                 'response_type' => null,
             ];
 
@@ -322,6 +324,7 @@ class TenderDokumenContentBuilder
                     'title' => $detail->description,
                     'quantity' => null,
                     'unit' => null,
+                    'kadar_harga' => null,
                     'response_type' => $detail->response_type,
                 ];
             }
@@ -335,6 +338,7 @@ class TenderDokumenContentBuilder
                 'title' => $documentTitle,
                 'quantity' => null,
                 'unit' => null,
+                'kadar_harga' => null,
                 'response_type' => null,
             ]],
         ];
