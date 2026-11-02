@@ -1101,7 +1101,8 @@ class PenilaianKewanganController extends Controller
     }
 
     /**
-     * Petender list with their offered price, ordered as they appear in the tender.
+     * Petender list for Perkara 6 / Jadual 1: every vendor that joined the tender
+     * (participate=1), not only those who passed penilaian teknikal.
      *
      * Price precedence mirrors show(): the summed financial specification prices when the
      * petender filled them in, otherwise the recorded harga_tawaran — so the report and the
@@ -1123,15 +1124,35 @@ class PenilaianKewanganController extends Controller
             ->filter()
             ->all();
 
-        $participants = $this->resolveAndSortParticipantsByHargaTawaran($tender, null, $kewanganUuids);
+        // All joiners for Perihal Tender — keep kod_pembekal denominator (e.g. 5/13) intact.
+        $allJoined = $tender->participants()
+            ->with('vendor')
+            ->where('participate', 1)
+            ->orderBy('id')
+            ->get();
 
-        $total = $participants->count();
+        $participants = $this->resolveAndSortParticipantsByHargaTawaran($tender, $allJoined, $kewanganUuids);
 
-        return $participants->values()->map(function ($participant, int $idx) use ($total) {
+        $totalJoined = max(
+            $allJoined->count(),
+            $participants
+                ->pluck('kod_pembekal')
+                ->filter()
+                ->map(function ($kod) {
+                    if (preg_match('/\/(\d+)\s*$/', (string) $kod, $m)) {
+                        return (int) $m[1];
+                    }
+
+                    return 0;
+                })
+                ->max() ?: 0
+        );
+
+        return $participants->values()->map(function ($participant, int $idx) use ($totalJoined) {
             return [
                 'bil' => $idx + 1,
                 'vendor_id' => (int) $participant->vendor_id,
-                'no_petender' => $participant->kod_pembekal ?: (($idx + 1) . '/' . $total),
+                'no_petender' => $participant->kod_pembekal ?: (($idx + 1) . '/' . $totalJoined),
                 'nama' => $participant->vendor?->name ?: ('Vendor #' . $participant->vendor_id),
                 'harga' => $participant->harga_tawaran_resolved,
                 'harga_display' => $participant->harga_tawaran_fmt,
