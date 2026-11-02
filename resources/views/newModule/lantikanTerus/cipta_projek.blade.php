@@ -467,7 +467,7 @@
                                 <label class="form-label">Kategori Perolehan <span class="text-danger">*</span></label>
                                 <select class="form-select" name="kategori_perolehan" required>
                                     <option value="" selected disabled>Pilih...</option>
-                                    @foreach (($kategoriPerolehan ?? \App\Models\Ref\RefKategoriJenisPerolehan::where('active', true)->get()) as $kategori)
+                                    @foreach (($kategoriPerolehan ?? \App\Models\Ref\RefKategoriJenisPerolehan::where('active', true)->whereRaw('LOWER(name) = ?', ['kerja'])->get()) as $kategori)
                                         <option value="{{ $kategori->id }}" {{ (string) $kategoriSelected === (string) $kategori->id ? 'selected' : '' }}>
                                             {{ $kategori->name }}
                                         </option>
