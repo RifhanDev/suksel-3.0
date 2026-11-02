@@ -751,7 +751,7 @@
                                             <div class="cidb-row-top">
                                                 <div class="field-grade-full">
                                                     <label class="form-label">Gred CIDB <span class="text-danger">*</span></label>
-                                                    <select class="selectize cidb-grade-select" name="cidb[0][grade]" multiple>
+                                                    <select class="selectize cidb-grade-select" name="cidb[0][grade][]" multiple>
                                                         <option value="" selected disabled>Pilih Gred...</option>
                                                         @foreach (App\Code::where('type', 'cidb-g')->orderBy('code')->get() as $code)
                                                             <option value="{{ $code->id }}"
