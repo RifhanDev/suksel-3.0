@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Services\StosBackendClient;
 use App\Tender;
+use App\User;
 use App\Vendor;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -291,8 +292,10 @@ class LantikanTerusController extends Controller
             ]);
 
             if ($response->successful()) {
+                $this->notifyVendorSelectedForKeputusan((int) $id, (int) $request->input('offer_id'));
+
                 return redirect()->route('pemilihanTerus.index')
-                    ->with('success', 'Syarikat berjaya dipilih.');
+                    ->with('success', 'Syarikat berjaya dipilih. Emel pemakluman telah dihantar kepada syarikat.');
             }
 
             return redirect()->back()->with('error', $response->json('message') ?? 'Gagal memilih syarikat');
@@ -422,13 +425,21 @@ class LantikanTerusController extends Controller
             return redirect()->back()->with('error', 'Hanya pengguna syarikat boleh membuat keputusan.');
         }
 
+        $decision = $request->input('decision');
+        if (! in_array($decision, ['accepted', 'rejected'], true)) {
+            return redirect()->back()->with('error', 'Keputusan tidak sah.');
+        }
+
         try {
+            $vendorId = (int) auth()->user()->vendor->id;
             $response = $this->stos->keputusanLantikanTerus((int) $id, [
-                'vendor_id' => auth()->user()->vendor->id,
-                'decision' => $request->input('decision'),
+                'vendor_id' => $vendorId,
+                'decision' => $decision,
             ]);
 
             if ($response->successful()) {
+                $this->notifyVendorKeputusanStatus((int) $id, $vendorId, $decision);
+
                 return redirect()->route('keputusanTerus.index')
                     ->with('success', $response->json('message'));
             }
@@ -847,6 +858,162 @@ class LantikanTerusController extends Controller
         $name = Vendor::query()->where('id', $vendorId)->value('name');
 
         return $name ? (string) $name : ('Vendor #' . $vendorId);
+    }
+
+    /**
+     * After pemilihan: notify selected syarikat to Terima / Tolak tawaran.
+     */
+    private function notifyVendorSelectedForKeputusan(int $tenderId, int $offerId): void
+    {
+        try {
+            $projectResponse = $this->stos->getLantikanTerus($tenderId);
+            if (! $projectResponse->successful()) {
+                return;
+            }
+
+            $project = $this->mapProject($projectResponse->json('data') ?? []);
+            $offers = collect($this->stos->getLantikanTerusOffers($tenderId)->json('data') ?? []);
+            $offer = $offers->firstWhere('id', $offerId) ?: $offers->firstWhere('selected', true);
+            if (! $offer) {
+                return;
+            }
+
+            $vendorId = (int) ($offer['vendor_id'] ?? 0);
+            $harga = number_format((float) ($offer['harga_tawaran'] ?? 0), 2);
+            $actionUrl = route('keputusanTerus.show', $tenderId);
+
+            $this->sendLantikanVendorEmails($vendorId, [
+                'emailTitle' => 'Pemakluman Pemilihan Syarikat — Lantikan Terus',
+                'emailBody' => 'Syarikat tuan/puan telah <strong>dipilih</strong> bagi projek Lantikan Terus berikut. '
+                    . 'Sila log masuk ke sistem untuk <strong>menerima</strong> atau <strong>menolak</strong> tawaran ini.',
+                'emailClosing' => 'Keputusan perlu dibuat melalui menu Keputusan Syarikat.',
+                'projectNo' => $project->no_tender ?? (string) $tenderId,
+                'projectName' => $project->name ?? '-',
+                'hargaTawaran' => $harga,
+                'statusLabel' => 'Menunggu Keputusan (Terima / Tolak)',
+                'actionUrl' => $actionUrl,
+                'actionLabel' => 'Buat Keputusan',
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('Lantikan Terus pemilihan email failed', [
+                'tender_id' => $tenderId,
+                'offer_id' => $offerId,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * After keputusan: notify syarikat of Terima / Tolak status.
+     */
+    private function notifyVendorKeputusanStatus(int $tenderId, int $vendorId, string $decision): void
+    {
+        try {
+            $projectResponse = $this->stos->getLantikanTerus($tenderId);
+            if (! $projectResponse->successful()) {
+                return;
+            }
+
+            $project = $this->mapProject($projectResponse->json('data') ?? []);
+            $offers = collect($this->stos->getLantikanTerusOffers($tenderId)->json('data') ?? []);
+            $offer = $offers->firstWhere('vendor_id', $vendorId);
+            $harga = number_format((float) ($offer['harga_tawaran'] ?? 0), 2);
+            $accepted = $decision === 'accepted';
+
+            $this->sendLantikanVendorEmails($vendorId, [
+                'emailTitle' => $accepted
+                    ? 'Tawaran Diterima — Lantikan Terus'
+                    : 'Tawaran Ditolak — Lantikan Terus',
+                'emailBody' => $accepted
+                    ? 'Adalah dimaklumkan bahawa tawaran bagi projek Lantikan Terus berikut telah <strong>DITERIMA</strong>.'
+                    : 'Adalah dimaklumkan bahawa tawaran bagi projek Lantikan Terus berikut telah <strong>DITOLAK</strong>.',
+                'emailClosing' => $accepted
+                    ? 'Sila log masuk ke sistem untuk maklumat lanjut dan Surat Setuju Terima (jika berkenaan).'
+                    : 'Projek akan dikembalikan ke peringkat pemilihan syarikat.',
+                'projectNo' => $project->no_tender ?? (string) $tenderId,
+                'projectName' => $project->name ?? '-',
+                'hargaTawaran' => $harga,
+                'statusLabel' => $accepted ? 'Diterima (Terima Tawaran)' : 'Ditolak (Tolak Tawaran)',
+                'actionUrl' => route('keputusanTerus.show', $tenderId),
+                'actionLabel' => 'Lihat Keputusan',
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('Lantikan Terus keputusan email failed', [
+                'tender_id' => $tenderId,
+                'vendor_id' => $vendorId,
+                'decision' => $decision,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * @param  array{
+     *   emailTitle: string,
+     *   emailBody: string,
+     *   emailClosing: string,
+     *   projectNo: string,
+     *   projectName: string,
+     *   hargaTawaran?: string,
+     *   statusLabel: string,
+     *   actionUrl: string,
+     *   actionLabel: string
+     * }  $payload
+     */
+    private function sendLantikanVendorEmails(int $vendorId, array $payload): void
+    {
+        if ($vendorId <= 0) {
+            return;
+        }
+
+        $vendor = Vendor::query()->with('user')->find($vendorId);
+        if (! $vendor) {
+            return;
+        }
+
+        $recipients = [];
+        $users = User::query()
+            ->where('vendor_id', $vendorId)
+            ->whereNotNull('email')
+            ->where('email', '!=', '')
+            ->get(['id', 'name', 'email']);
+
+        foreach ($users as $user) {
+            $recipients[strtolower((string) $user->email)] = [
+                'email' => (string) $user->email,
+                'name' => (string) ($user->name ?: $vendor->name),
+            ];
+        }
+
+        if (! empty($vendor->officer_email)) {
+            $recipients[strtolower((string) $vendor->officer_email)] = [
+                'email' => (string) $vendor->officer_email,
+                'name' => (string) ($vendor->officer_name ?: $vendor->name),
+            ];
+        }
+
+        if ($recipients === []) {
+            Log::warning('Lantikan Terus email skipped: no vendor email', [
+                'vendor_id' => $vendorId,
+            ]);
+
+            return;
+        }
+
+        foreach ($recipients as $recipient) {
+            $viewParams = array_merge($payload, [
+                'recipientName' => $recipient['name'],
+            ]);
+
+            $this->sendMail(
+                'html',
+                $recipient['email'],
+                $payload['emailTitle'] . ' (' . $payload['projectNo'] . ')',
+                '',
+                'emails.lantikan_terus_keputusan',
+                $viewParams
+            );
+        }
     }
 
     private function extractDownloadFilename(?string $contentDisposition, string $fallback): string
