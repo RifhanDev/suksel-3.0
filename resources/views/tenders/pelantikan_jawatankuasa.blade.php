@@ -383,6 +383,7 @@
 		const hantarPemaklumanUrl = @json(route('jawatankuasa.hantarPemakluman'));
 		const supportedDraftJenis = @json($supportedDraftJenisData);
 		const localIcUsers = @json(collect($localIcUsersData)->values()->all());
+		const searchUsersUrl = @json(route('jawatankuasa.searchUsers'));
 
 		function handleAjaxError(xhr, fallbackMessage) {
 			let title = 'Ralat';
@@ -471,10 +472,36 @@
 				options: Array.isArray(localIcUsers) ? localIcUsers.slice() : [],
 				maxItems: 1,
 				create: false,
+				preload: false,
+				loadThrottle: 250,
 				placeholder: (Array.isArray(localIcUsers) && localIcUsers.length)
-					? 'Taip No IC...'
-					: 'Tiada pegawai untuk dipilih',
+					? 'Taip No IC / nama / emel...'
+					: 'Taip untuk cari pegawai...',
 				dropdownParent: 'body',
+				// Remote top-up: keep results visible (Selectize otherwise re-filters to score 0).
+				score: function(search) {
+					var scoreFn = this.getScoreFunction(search);
+					return function(item) {
+						return Math.max(scoreFn(item), 0.1);
+					};
+				},
+				load: function(query, callback) {
+					if (!query || String(query).trim().length < 2) {
+						return callback([]);
+					}
+					$.ajax({
+						url: searchUsersUrl,
+						type: 'GET',
+						dataType: 'json',
+						data: { q: query },
+						error: function() {
+							callback([]);
+						},
+						success: function(res) {
+							callback(Array.isArray(res) ? res : []);
+						}
+					});
+				},
 				render: {
 					option: function(item, escape) {
 						return '<div>' +

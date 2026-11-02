@@ -292,6 +292,7 @@ Route::post('/penyediaan-iklan/{tender}/hantar', [\App\Http\Controllers\Penyedia
 
 Route::get('/pelantikan-jawatankuasa', [JawatankuasaController::class, 'create'])->middleware(['auth'])->name('pelantikanJawatankuasa');
 Route::get('/pelantikan-jawatankuasa-1-peringkat', [JawatankuasaController::class, 'create1Peringkat'])->middleware(['auth'])->name('pelantikanJawatankuasaSatuPeringkat');
+Route::get('/pelantikan-jawatankuasa/search-users', [JawatankuasaController::class, 'searchUsers'])->middleware(['auth'])->name('jawatankuasa.searchUsers');
 Route::get('/pelantikan-jawatankuasa/laporan', [JawatankuasaController::class, 'laporan'])->middleware(['auth'])->name('jawatankuasa.laporan');
 Route::post('/pelantikan-jawatankuasa/hantar-pemakluman', [JawatankuasaController::class, 'hantarPemakluman'])->middleware(['auth'])->name('jawatankuasa.hantarPemakluman');
 Route::view('/senarai-semak', 'newModule.jawatankuasaSpesifikasi.index')->name('senaraiSemak');
