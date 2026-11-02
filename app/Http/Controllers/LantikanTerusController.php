@@ -38,7 +38,7 @@ class LantikanTerusController extends Controller
         }
 
         $project = null;
-        $kategoriPerolehan = \App\Models\Ref\RefKategoriJenisPerolehan::where('active', true)->get();
+        $kategoriPerolehan = $this->lantikanKategoriPerolehanOptions();
 
         return view('newModule.lantikanTerus.cipta_projek', compact('project', 'kategoriPerolehan'));
     }
@@ -57,7 +57,7 @@ class LantikanTerusController extends Controller
 
             $json = $response->json();
             $project = $this->mapProject($json['data'] ?? [], $json['documents'] ?? []);
-            $kategoriPerolehan = \App\Models\Ref\RefKategoriJenisPerolehan::where('active', true)->get();
+            $kategoriPerolehan = $this->lantikanKategoriPerolehanOptions();
 
             return view('newModule.lantikanTerus.cipta_projek', compact('project', 'kategoriPerolehan'));
         } catch (\Throwable $e) {
@@ -858,6 +858,16 @@ class LantikanTerusController extends Controller
         $name = Vendor::query()->where('id', $vendorId)->value('name');
 
         return $name ? (string) $name : ('Vendor #' . $vendorId);
+    }
+
+    /** Lantikan Terus is Kerja-only for kategori perolehan. */
+    private function lantikanKategoriPerolehanOptions()
+    {
+        return \App\Models\Ref\RefKategoriJenisPerolehan::query()
+            ->where('active', true)
+            ->whereRaw('LOWER(name) = ?', ['kerja'])
+            ->orderBy('id')
+            ->get();
     }
 
     /**
