@@ -485,6 +485,28 @@ class LantikanTerusController extends Controller
         unset($payload['dokumen_bq']);
 
         if ($action === 'publish') {
+            // Kod Bidang CIDB (gred + pengkhususan) is mandatory on publish; MOF remains optional.
+            $cidbGrades = array_values(array_filter(
+                (array) ($payload['cidb_grade'] ?? []),
+                fn ($grade) => $grade !== null && $grade !== ''
+            ));
+            $cidbSpecs = collect($payload['cidb_codes'] ?? [])
+                ->flatMap(fn ($group) => (array) ($group['codes'] ?? []))
+                ->filter(fn ($code) => $code !== null && $code !== '')
+                ->values();
+
+            if ($cidbGrades === [] || $cidbSpecs->isEmpty()) {
+                $message = $cidbGrades === [] && $cidbSpecs->isEmpty()
+                    ? 'Kod Bidang CIDB wajib diisi. Sila pilih sekurang-kurangnya satu Gred CIDB dan satu Pengkhususan.'
+                    : ($cidbGrades === []
+                        ? 'Kod Bidang CIDB wajib diisi. Sila pilih sekurang-kurangnya satu Gred CIDB.'
+                        : 'Kod Bidang CIDB wajib diisi. Sila pilih sekurang-kurangnya satu Pengkhususan.');
+
+                return redirect()->back()
+                    ->withInput()
+                    ->with('error', $message);
+            }
+
             $hasNewBq = isset($files['dokumen_bq']);
             $hasExistingBq = $id
                 ? DB::table('lantikan_terus_documents')
@@ -570,20 +592,27 @@ class LantikanTerusController extends Controller
             $payload['organization_unit_id'] = optional($user->organizationunit)->id ?? ($payload['ptj_id'] ?? null);
         }
 
+        // MOF is optional for Lantikan Terus — only persist groups that actually have codes.
         if (isset($payload['mof']) && is_array($payload['mof'])) {
             $mofCodes = [];
             foreach ($payload['mof'] as $index => $mofGroup) {
-                if (isset($mofGroup['code']) && is_array($mofGroup['code'])) {
-                    $joinRule = isset($payload['mof_logic_' . $index])
-                        ? strtolower($payload['mof_logic_' . $index])
-                        : 'and';
-
-                    $mofCodes[] = [
-                        'codes' => $mofGroup['code'],
-                        'inner_rule' => strtolower($mofGroup['logic_mid'] ?? 'or'),
-                        'join_rule' => $joinRule,
-                    ];
+                $codes = array_values(array_filter(
+                    (array) ($mofGroup['code'] ?? []),
+                    fn ($code) => $code !== null && $code !== ''
+                ));
+                if ($codes === []) {
+                    continue;
                 }
+
+                $joinRule = isset($payload['mof_logic_' . $index])
+                    ? strtolower($payload['mof_logic_' . $index])
+                    : 'and';
+
+                $mofCodes[] = [
+                    'codes' => $codes,
+                    'inner_rule' => strtolower($mofGroup['logic_mid'] ?? 'or'),
+                    'join_rule' => $joinRule,
+                ];
             }
             $payload['mof_codes'] = $mofCodes;
             unset($payload['mof']);
@@ -594,28 +623,38 @@ class LantikanTerusController extends Controller
             $cidbGrades = [];
 
             foreach ($payload['cidb'] as $index => $cidbGroup) {
-                if (isset($cidbGroup['grade']) && is_array($cidbGroup['grade'])) {
-                    $cidbGrades = array_merge($cidbGrades, $cidbGroup['grade']);
+                $grades = array_values(array_filter(
+                    (array) ($cidbGroup['grade'] ?? []),
+                    fn ($grade) => $grade !== null && $grade !== ''
+                ));
+                if ($grades !== []) {
+                    $cidbGrades = array_merge($cidbGrades, $grades);
                 }
 
-                if (isset($cidbGroup['spec']) && is_array($cidbGroup['spec'])) {
-                    $joinRule = isset($payload['cidb_logic_' . $index])
-                        ? strtolower($payload['cidb_logic_' . $index])
-                        : 'or';
-
-                    $cidbCodes[] = [
-                        'codes' => $cidbGroup['spec'],
-                        'inner_rule' => strtolower($cidbGroup['logic_mid'] ?? 'and'),
-                        'join_rule' => $joinRule,
-                    ];
+                $specs = array_values(array_filter(
+                    (array) ($cidbGroup['spec'] ?? []),
+                    fn ($code) => $code !== null && $code !== ''
+                ));
+                if ($specs === []) {
+                    continue;
                 }
+
+                $joinRule = isset($payload['cidb_logic_' . $index])
+                    ? strtolower($payload['cidb_logic_' . $index])
+                    : 'or';
+
+                $cidbCodes[] = [
+                    'codes' => $specs,
+                    'inner_rule' => strtolower($cidbGroup['logic_mid'] ?? 'and'),
+                    'join_rule' => $joinRule,
+                ];
             }
 
             if (count($cidbCodes) > 0) {
                 $payload['cidb_codes'] = $cidbCodes;
             }
             if (count($cidbGrades) > 0) {
-                $payload['cidb_grade'] = array_unique($cidbGrades);
+                $payload['cidb_grade'] = array_values(array_unique($cidbGrades));
             }
             unset($payload['cidb']);
         }
