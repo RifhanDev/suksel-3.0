@@ -331,10 +331,27 @@ class SpecificationPricingController extends Controller
                 if (!empty($data['items'])) {
                     foreach ($data['items'] as $itemData) {
                         if (!empty($itemData['uuid'])) {
-                            DB::table('specification_pricing_items')
+                            $pricingItem = DB::table('specification_pricing_items')
                                 ->where('uuid', $itemData['uuid'])
                                 ->where('specification_pricing_id', $pricingId)
+                                ->first();
+
+                            if (!$pricingItem) {
+                                continue;
+                            }
+
+                            DB::table('specification_pricing_items')
+                                ->where('id', $pricingItem->id)
                                 ->update(['harga' => $itemData['harga'] ?? 0, 'updated_at' => now()]);
+
+                            if (array_key_exists('kadar_harga', $itemData) && !empty($pricingItem->spec_item_id)) {
+                                DB::table('technical_specification_items')
+                                    ->where('id', $pricingItem->spec_item_id)
+                                    ->update([
+                                        'kadar_harga' => $itemData['kadar_harga'],
+                                        'updated_at'  => now(),
+                                    ]);
+                            }
                         }
                     }
                 }
