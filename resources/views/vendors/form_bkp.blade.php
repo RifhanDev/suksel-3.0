@@ -136,15 +136,6 @@
 
 					<div class="tab-content" id="application-content">
 						<div class="tab-pane fade show active" id="makluman-umum" role="tabpanel" aria-labelledby="makluman-umum-tab">
-							<div class="row mt-4 justify-content-center">
-								<div class="col-12">
-									<h4 class="card-title card-title-grey">MAKLUMAT UMUM</h4>
-									<p class="card-title-desc text-primary fst-italic">
-										Untuk perkhidmatan yang memerlukan bayaran secara progresif, sila pilih Jenis
-										Pemenuhan sebagai Bermasa (Bila Perlu)
-									</p>
-								</div>
-							</div>
 							<div class="row d-flex justify-content-center">
 								<div class="col-11">
 									<div class="row">

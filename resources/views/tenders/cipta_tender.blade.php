@@ -1,1644 +1,1585 @@
 @extends('layouts.v3.master')
 
 @section('styles')
-    <link href="{{ asset('css/components/button-components.css') }}" rel="stylesheet">
-    <link href="{{ asset('css/components/stepper.css') }}" rel="stylesheet">
-    <style>
-        /* --- CONDITION BUILDER --- */
-        .condition-builder {
-            background: #f8fafc;
-            border-radius: 12px;
-            /* padding: 20px; */
-        }
-
-        .condition-group {
-            background: #fff;
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
-        }
-
-        .condition-group-header {
-            background: linear-gradient(135deg, var(--sg-red) 0%, #a01830 100%);
-            color: #fff;
-            padding: 14px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-radius: 12px 12px 0 0;
-        }
-
-        .condition-group-header .group-title {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .condition-group-header .group-title .group-icon {
-            width: 32px;
-            height: 32px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .condition-group-header .group-title h6 {
-            margin: 0;
-            font-size: 0.9rem;
-            font-weight: 700;
-        }
-
-        .condition-group-header .group-title small {
-            display: block;
-            font-size: 0.7rem;
-            font-weight: 400;
-            opacity: 0.85;
-            margin-top: 2px;
-        }
-
-        .condition-group-body {
-            padding: 0;
-        }
-
-        /* Condition Row */
-        .condition-row {
-            padding: 16px 20px;
-            border-bottom: 1px solid #f1f5f9;
-            position: relative;
-            display: flex;
-            align-items: flex-end;
-            gap: 16px;
-        }
-
-        .condition-row:last-child {
-            border-bottom: none;
-        }
-
-        .condition-row:hover {
-            background: #fafbfc;
-        }
-
-        .condition-row .row-number {
-            width: 28px;
-            height: 28px;
-            background: #f1f5f9;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.75rem;
-            font-weight: 700;
-            color: #64748b;
-            flex-shrink: 0;
-        }
-
-        .condition-row .row-fields {
-            flex: 1;
-            display: flex;
-            gap: 12px;
-            align-items: flex-start;
-        }
-
-        .condition-row .row-fields .form-label {
-            height: 20px;
-            margin-bottom: 6px;
-        }
-
-        .condition-row .row-actions {
-            flex-shrink: 0;
-            align-self: flex-end;
-            padding-bottom: 1px;
-        }
-
-        .condition-row .btn-remove {
-            width: 40px;
-            height: 40px;
-            border-radius: 8px;
-            border: none;
-            background: var(--sg-red);
-            color: #fff;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .condition-row .btn-remove:hover {
-            background: #a01830;
-            color: #fff;
-        }
-
-        /* Row Connector Inline */
-        .condition-connector {
-            display: flex;
-            align-items: center;
-            padding: 0 20px;
-            background: #f8fafc;
-        }
-
-        .condition-connector::before,
-        .condition-connector::after {
-            content: '';
-            flex: 1;
-            height: 1px;
-            background: #e2e8f0;
-        }
-
-        .connector-pill {
-            background: var(--sg-yellow);
-            color: #1a1a1a;
-            font-weight: 700;
-            font-size: 0.7rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            width: 90px;
-            padding: 6px 12px;
-            padding-right: 26px;
-            border-radius: 16px;
-            cursor: pointer;
-            appearance: none;
-            -webkit-appearance: none;
-            border: none;
-            margin: 8px 12px;
-            text-align: center;
-            transition: all 0.2s ease;
-        }
-
-        .connector-pill:focus {
-            outline: none;
-            box-shadow: 0 0 0 3px var(--sg-red-soft);
-        }
-
-        .connector-pill-wrapper {
-            position: relative;
-            display: inline-flex;
-            align-items: center;
-        }
-
-        .connector-pill-wrapper::after {
-            content: '';
-            position: absolute;
-            right: 22px;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 0;
-            height: 0;
-            border-left: 4px solid transparent;
-            border-right: 4px solid transparent;
-            border-top: 5px solid #1a1a1a;
-            pointer-events: none;
-        }
-
-        /* Field sizing within condition rows */
-        .condition-row .field-logic {
-            width: 140px;
-            flex-shrink: 0;
-        }
-
-        .condition-row .field-main {
-            flex: 1;
-            min-width: 200px;
-        }
-
-        .condition-row .field-grade {
-            width: 120px;
-            flex-shrink: 0;
-        }
-
-        /* Info text */
-        .condition-info {
-            font-size: 0.75rem;
-            color: #94a3b8;
-            padding: 12px 20px;
-            background: #fafbfc;
-            border-top: 1px solid #f1f5f9;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .condition-info svg {
-            flex-shrink: 0;
-        }
-
-        /* CIDB Layout */
-        .cidb-fields {
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .cidb-row-top {
-            width: 100%;
-        }
-
-        .cidb-row-top .field-grade-full {
-            width: 100%;
-        }
-
-        .cidb-row-bottom {
-            display: flex;
-            gap: 12px;
-            width: 100%;
-            align-items: flex-start;
-        }
-
-        .cidb-row-bottom .form-label {
-            height: 20px;
-            margin-bottom: 6px;
-        }
-
-        .cidb-row-bottom .field-logic {
-            width: 160px;
-            flex-shrink: 0;
-        }
-
-        .cidb-row-bottom .field-main {
-            flex: 1;
-        }
-
-        /* Utilities */
-        .text-balance {
-            text-wrap: balance;
-        }
-
-        /* --- KAEDAH BAYARAN / PEROLEHAN DOKUMEN --- */
-        .payment-method-card {
-            cursor: pointer;
-            transition: border-color 0.15s, box-shadow 0.15s;
-        }
-
-        .payment-method-radio {
-            --bs-border-color: #cbd5e1;
-            width: 18px;
-            height: 18px;
-        }
-
-        .payment-method-body {
-            font-size: 0.75rem;
-        }
-
-        .btn-check:checked+.payment-method-card {
-            --bs-border-color: var(--sg-red);
-            box-shadow: 0 0 0 1px var(--sg-red);
-        }
-
-        .btn-check:checked+.payment-method-card .payment-method-title {
-            color: var(--sg-red);
-        }
-
-        .btn-check:checked+.payment-method-card .payment-method-radio {
-            --bs-border-color: var(--sg-red);
-        }
-
-        .btn-check:checked+.payment-method-card .payment-method-radio::after {
-            content: '';
-            position: absolute;
-            inset: 3px;
-            border-radius: 50%;
-            background: var(--sg-red);
-        }
-
-        .btn-check:focus-visible+.payment-method-card {
-            outline: 2px solid var(--sg-red);
-            outline-offset: 2px;
-        }
-
-        /* --- MOBILE --- */
-        @media (max-width: 991px) {
-
-            /* Condition Builder */
-            .condition-group-header {
-                padding: 12px 16px;
-            }
-
-            .condition-group-header .group-title .group-icon {
-                width: 28px;
-                height: 28px;
-            }
-
-            .condition-group-header .group-title h6 {
-                font-size: 0.8rem;
-            }
-
-            .condition-group-header .group-title small {
-                font-size: 0.65rem;
-            }
-
-            /* Condition Rows */
-            .condition-row {
-                padding: 14px 16px;
-                flex-wrap: wrap;
-                gap: 12px;
-            }
-
-            .condition-row .row-number {
-                width: 24px;
-                height: 24px;
-                font-size: 0.7rem;
-            }
-
-            .condition-row .row-fields {
-                flex-direction: column;
-                width: 100%;
-                gap: 10px;
-            }
-
-            .condition-row .field-logic,
-            .condition-row .field-grade,
-            .condition-row .field-main {
-                width: 100%;
-                flex: none;
-            }
-
-            .condition-row .row-actions {
-                position: absolute;
-                top: 10px;
-                right: 10px;
-            }
-
-            .condition-row .btn-remove {
-                width: 28px;
-                height: 28px;
-            }
-
-            /* Connectors */
-            .section-connector {
-                padding: 16px 0;
-            }
-
-            .section-connector-select {
-                width: 100px;
-                font-size: 0.7rem;
-                padding: 8px 12px;
-                padding-right: 28px;
-            }
-
-            .section-connector-select-wrapper::after {
-                right: 10px;
-            }
-
-            .condition-connector {
-                padding: 0 16px;
-            }
-
-            .connector-pill {
-                width: 85px;
-                font-size: 0.65rem;
-                padding: 5px 10px;
-                padding-right: 22px;
-            }
-
-            .connector-pill-wrapper::after {
-                right: 18px;
-            }
-
-            /* Add Button */
-            .btn-add-condition {
-                padding: 10px;
-                font-size: 0.75rem;
-            }
-
-            /* Info */
-            .condition-info {
-                font-size: 0.7rem;
-                padding: 10px 16px;
-            }
-
-            /* CIDB Layout Mobile */
-            .cidb-row-bottom {
-                flex-direction: column;
-                gap: 10px;
-            }
-
-            .cidb-row-bottom .field-logic {
-                width: 100%;
-            }
-
-            /* Header Area */
-            .d-flex.justify-content-between.align-items-center.mb-4 {
-                flex-direction: column;
-                align-items: flex-start !important;
-                gap: 12px;
-            }
-
-            .d-flex.gap-3.align-items-center.bg-white.px-3.py-2.rounded-2.shadow-sm.border {
-                width: 100%;
-                flex-wrap: wrap;
-                gap: 8px !important;
-                padding: 10px !important;
-            }
-        }
-
-        @media (max-width: 576px) {
-            .condition-group-header .group-title small {
-                display: none;
-            }
-        }
-    </style>
+	<link href="{{ asset('css/components/button-components.css') }}" rel="stylesheet">
+	<link href="{{ asset('css/components/stepper.css') }}" rel="stylesheet">
+	<style>
+		/* --- CONDITION BUILDER --- */
+		.condition-builder {
+			background: #f8fafc;
+			border-radius: 12px;
+			/* padding: 20px; */
+		}
+
+		.condition-group {
+			background: #fff;
+			border: 1px solid #e2e8f0;
+			border-radius: 12px;
+		}
+
+		.condition-group-header {
+			background: linear-gradient(135deg, var(--sg-red) 0%, #a01830 100%);
+			color: #fff;
+			padding: 14px 20px;
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			border-radius: 12px 12px 0 0;
+		}
+
+		.condition-group-header .group-title {
+			display: flex;
+			align-items: center;
+			gap: 10px;
+		}
+
+		.condition-group-header .group-title .group-icon {
+			width: 32px;
+			height: 32px;
+			background: rgba(255, 255, 255, 0.2);
+			border-radius: 8px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+		}
+
+		.condition-group-header .group-title h6 {
+			margin: 0;
+			font-size: 0.9rem;
+			font-weight: 700;
+		}
+
+		.condition-group-header .group-title small {
+			display: block;
+			font-size: 0.7rem;
+			font-weight: 400;
+			opacity: 0.85;
+			margin-top: 2px;
+		}
+
+		.condition-group-body {
+			padding: 0;
+		}
+
+		/* Condition Row */
+		.condition-row {
+			padding: 16px 20px;
+			border-bottom: 1px solid #f1f5f9;
+			position: relative;
+			display: flex;
+			align-items: flex-end;
+			gap: 16px;
+		}
+
+		.condition-row:last-child {
+			border-bottom: none;
+		}
+
+		.condition-row:hover {
+			background: #fafbfc;
+		}
+
+		.condition-row .row-number {
+			width: 28px;
+			height: 28px;
+			background: #f1f5f9;
+			border-radius: 50%;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			font-size: 0.75rem;
+			font-weight: 700;
+			color: #64748b;
+			flex-shrink: 0;
+		}
+
+		.condition-row .row-fields {
+			flex: 1;
+			display: flex;
+			gap: 12px;
+			align-items: flex-start;
+		}
+
+		.condition-row .row-fields .form-label {
+			height: 20px;
+			margin-bottom: 6px;
+		}
+
+		.condition-row .row-actions {
+			flex-shrink: 0;
+			align-self: flex-end;
+			padding-bottom: 1px;
+		}
+
+		.condition-row .btn-remove {
+			width: 40px;
+			height: 40px;
+			border-radius: 8px;
+			border: none;
+			background: var(--sg-red);
+			color: #fff;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			cursor: pointer;
+			transition: all 0.2s;
+		}
+
+		.condition-row .btn-remove:hover {
+			background: #a01830;
+			color: #fff;
+		}
+
+		/* Row Connector Inline */
+		.condition-connector {
+			display: flex;
+			align-items: center;
+			padding: 0 20px;
+			background: #f8fafc;
+		}
+
+		.condition-connector::before,
+		.condition-connector::after {
+			content: '';
+			flex: 1;
+			height: 1px;
+			background: #e2e8f0;
+		}
+
+		.connector-pill {
+			background: var(--sg-yellow);
+			color: #1a1a1a;
+			font-weight: 700;
+			font-size: 0.7rem;
+			text-transform: uppercase;
+			letter-spacing: 0.5px;
+			width: 90px;
+			padding: 6px 12px;
+			padding-right: 26px;
+			border-radius: 16px;
+			cursor: pointer;
+			appearance: none;
+			-webkit-appearance: none;
+			border: none;
+			margin: 8px 12px;
+			text-align: center;
+			transition: all 0.2s ease;
+		}
+
+		.connector-pill:focus {
+			outline: none;
+			box-shadow: 0 0 0 3px var(--sg-red-soft);
+		}
+
+		.connector-pill-wrapper {
+			position: relative;
+			display: inline-flex;
+			align-items: center;
+		}
+
+		.connector-pill-wrapper::after {
+			content: '';
+			position: absolute;
+			right: 22px;
+			top: 50%;
+			transform: translateY(-50%);
+			width: 0;
+			height: 0;
+			border-left: 4px solid transparent;
+			border-right: 4px solid transparent;
+			border-top: 5px solid #1a1a1a;
+			pointer-events: none;
+		}
+
+		/* Field sizing within condition rows */
+		.condition-row .field-logic {
+			width: 140px;
+			flex-shrink: 0;
+		}
+
+		.condition-row .field-main {
+			flex: 1;
+			min-width: 200px;
+		}
+
+		.condition-row .field-grade {
+			width: 120px;
+			flex-shrink: 0;
+		}
+
+		/* Info text */
+		.condition-info {
+			font-size: 0.75rem;
+			color: #94a3b8;
+			padding: 12px 20px;
+			background: #fafbfc;
+			border-top: 1px solid #f1f5f9;
+			display: flex;
+			align-items: center;
+			gap: 8px;
+		}
+
+		.condition-info svg {
+			flex-shrink: 0;
+		}
+
+		/* CIDB Layout */
+		.cidb-fields {
+			flex-direction: column;
+			gap: 12px;
+		}
+
+		.cidb-row-top {
+			width: 100%;
+		}
+
+		.cidb-row-top .field-grade-full {
+			width: 100%;
+		}
+
+		.cidb-row-bottom {
+			display: flex;
+			gap: 12px;
+			width: 100%;
+			align-items: flex-start;
+		}
+
+		.cidb-row-bottom .form-label {
+			height: 20px;
+			margin-bottom: 6px;
+		}
+
+		.cidb-row-bottom .field-logic {
+			width: 160px;
+			flex-shrink: 0;
+		}
+
+		.cidb-row-bottom .field-main {
+			flex: 1;
+		}
+
+		/* Utilities */
+		.text-balance {
+			text-wrap: balance;
+		}
+
+		/* --- KAEDAH BAYARAN / PEROLEHAN DOKUMEN --- */
+		.payment-method-card {
+			cursor: pointer;
+			transition: border-color 0.15s, box-shadow 0.15s;
+		}
+
+		.payment-method-radio {
+			--bs-border-color: #cbd5e1;
+			width: 18px;
+			height: 18px;
+		}
+
+		.payment-method-body {
+			font-size: 0.75rem;
+		}
+
+		.btn-check:checked+.payment-method-card {
+			--bs-border-color: var(--sg-red);
+			box-shadow: 0 0 0 1px var(--sg-red);
+		}
+
+		.btn-check:checked+.payment-method-card .payment-method-title {
+			color: var(--sg-red);
+		}
+
+		.btn-check:checked+.payment-method-card .payment-method-radio {
+			--bs-border-color: var(--sg-red);
+		}
+
+		.btn-check:checked+.payment-method-card .payment-method-radio::after {
+			content: '';
+			position: absolute;
+			inset: 3px;
+			border-radius: 50%;
+			background: var(--sg-red);
+		}
+
+		.btn-check:focus-visible+.payment-method-card {
+			outline: 2px solid var(--sg-red);
+			outline-offset: 2px;
+		}
+
+		/* --- MOBILE --- */
+		@media (max-width: 991px) {
+
+			/* Condition Builder */
+			.condition-group-header {
+				padding: 12px 16px;
+			}
+
+			.condition-group-header .group-title .group-icon {
+				width: 28px;
+				height: 28px;
+			}
+
+			.condition-group-header .group-title h6 {
+				font-size: 0.8rem;
+			}
+
+			.condition-group-header .group-title small {
+				font-size: 0.65rem;
+			}
+
+			/* Condition Rows */
+			.condition-row {
+				padding: 14px 16px;
+				flex-wrap: wrap;
+				gap: 12px;
+			}
+
+			.condition-row .row-number {
+				width: 24px;
+				height: 24px;
+				font-size: 0.7rem;
+			}
+
+			.condition-row .row-fields {
+				flex-direction: column;
+				width: 100%;
+				gap: 10px;
+			}
+
+			.condition-row .field-logic,
+			.condition-row .field-grade,
+			.condition-row .field-main {
+				width: 100%;
+				flex: none;
+			}
+
+			.condition-row .row-actions {
+				position: absolute;
+				top: 10px;
+				right: 10px;
+			}
+
+			.condition-row .btn-remove {
+				width: 28px;
+				height: 28px;
+			}
+
+			/* Connectors */
+			.section-connector {
+				padding: 16px 0;
+			}
+
+			.section-connector-select {
+				width: 100px;
+				font-size: 0.7rem;
+				padding: 8px 12px;
+				padding-right: 28px;
+			}
+
+			.section-connector-select-wrapper::after {
+				right: 10px;
+			}
+
+			.condition-connector {
+				padding: 0 16px;
+			}
+
+			.connector-pill {
+				width: 85px;
+				font-size: 0.65rem;
+				padding: 5px 10px;
+				padding-right: 22px;
+			}
+
+			.connector-pill-wrapper::after {
+				right: 18px;
+			}
+
+			/* Add Button */
+			.btn-add-condition {
+				padding: 10px;
+				font-size: 0.75rem;
+			}
+
+			/* Info */
+			.condition-info {
+				font-size: 0.7rem;
+				padding: 10px 16px;
+			}
+
+			/* CIDB Layout Mobile */
+			.cidb-row-bottom {
+				flex-direction: column;
+				gap: 10px;
+			}
+
+			.cidb-row-bottom .field-logic {
+				width: 100%;
+			}
+
+			/* Header Area */
+			.d-flex.justify-content-between.align-items-center.mb-4 {
+				flex-direction: column;
+				align-items: flex-start !important;
+				gap: 12px;
+			}
+
+			.d-flex.gap-3.align-items-center.bg-white.px-3.py-2.rounded-2.shadow-sm.border {
+				width: 100%;
+				flex-wrap: wrap;
+				gap: 8px !important;
+				padding: 10px !important;
+			}
+		}
+
+		@media (max-width: 576px) {
+			.condition-group-header .group-title small {
+				display: none;
+			}
+		}
+	</style>
 @endsection
 
 @section('content')
-    <!-- HEADER -->
-    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center mb-4">
-        <!-- Title -->
-        <div class="mb-3 mb-lg-0">
-            <h3 class="fw-bold text-dark m-0" style="letter-spacing: -0.5px;">Cipta Tender/ Sebut Harga Baharu</h3>
-            <p class="text-muted small m-0">Sila lengkapkan maklumat di bawah.</p>
-        </div>
+	<!-- HEADER -->
+	<div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center mb-4">
+		<!-- Title -->
+		<div class="mb-3 mb-lg-0">
+			<h3 class="fw-bold text-dark m-0" style="letter-spacing: -0.5px;">Cipta Tender/ Sebut Harga Baharu</h3>
+			<p class="text-muted small m-0">Sila lengkapkan maklumat di bawah.</p>
+		</div>
 
-        <div class="d-flex flex-wrap align-items-center gap-3 bg-white px-3 py-2 rounded-2 shadow-sm border w-lg-auto">
-            <!-- Item 1 -->
-            <div class="d-flex align-items-center gap-2">
-                <span class="badge bg-light text-dark border" id="kaedah-label">- Pilih Tender -</span>
-                <span class="small text-primary fw-bold text-muted" id="no-tender-display">-</span>
-            </div>
-            <!-- Divider (Desktop Only) -->
-            <div class="vr d-none d-lg-block text-muted opacity-25" style="height: 20px;"></div>
-            <!-- Item 2 -->
-            <div class="d-flex align-items-center gap-2">
-                <span class="badge bg-light text-dark border">PTJ</span>
-                <span id="ptj-display" class="small text-primary fw-bold text-truncate" style="max-width: 280px;">-</span>
-            </div>
-            <!-- Divider (Desktop Only) -->
-            <div class="vr d-none d-lg-block text-muted opacity-25" style="height: 20px;"></div>
-            <!-- Item 3 -->
-            <div class="d-flex align-items-center gap-2">
-                <span class="badge bg-light text-dark border">STATUS</span>
-                <span class="small text-muted fw-bold">Tiada</span>
-            </div>
-        </div>
-    </div>
+		<div class="d-flex flex-wrap align-items-center gap-3 bg-white px-3 py-2 rounded-2 shadow-sm border w-lg-auto">
+			<!-- Item 1 -->
+			<div class="d-flex align-items-center gap-2">
+				<span class="badge bg-light text-dark border" id="kaedah-label">- Pilih Tender -</span>
+				<span class="small text-primary fw-bold text-muted" id="no-tender-display">-</span>
+			</div>
+			<!-- Divider (Desktop Only) -->
+			<div class="vr d-none d-lg-block text-muted opacity-25" style="height: 20px;"></div>
+			<!-- Item 2 -->
+			<div class="d-flex align-items-center gap-2">
+				<span class="badge bg-light text-dark border">PTJ</span>
+				<span id="ptj-display" class="small text-primary fw-bold text-truncate" style="max-width: 280px;">-</span>
+			</div>
+			<!-- Divider (Desktop Only) -->
+			<div class="vr d-none d-lg-block text-muted opacity-25" style="height: 20px;"></div>
+			<!-- Item 3 -->
+			<div class="d-flex align-items-center gap-2">
+				<span class="badge bg-light text-dark border">STATUS</span>
+				<span class="small text-muted fw-bold">Tiada</span>
+			</div>
+		</div>
+	</div>
 
-    <!-- TIMELINE -->
-    <ul class="progress-wrapper" id="stepper-wrapper">
-        <li class="progress-step active" id="step1-indicator">
-            <button type="button" class="step-number">1</button>
-            <div class="step-label">Maklumat Umum</div>
-        </li>
-        <li class="progress-step" id="step2-indicator">
-            <button type="button" class="step-number">2</button>
-            <div class="step-label">Kod Bidang</div>
-        </li>
-    </ul>
+	<!-- TIMELINE -->
+	<ul class="progress-wrapper" id="stepper-wrapper">
+		<li class="progress-step active" id="step1-indicator">
+			<button type="button" class="step-number">1</button>
+			<div class="step-label">Maklumat Umum</div>
+		</li>
+		<li class="progress-step" id="step2-indicator">
+			<button type="button" class="step-number">2</button>
+			<div class="step-label">Kod Bidang</div>
+		</li>
+	</ul>
 
-    {{-- Borang yang sama digunakan untuk cipta dan kemaskini, supaya kedua-dua skrin
+	{{-- Borang yang sama digunakan untuk cipta dan kemaskini, supaya kedua-dua skrin
          mempunyai medan dan susun atur yang serupa. $tender hanya wujud pada laluan
          kemaskini, dan kehadirannya yang menentukan ke mana borang dihantar. --}}
-    <form id="createTenderForm"
-        action="{{ isset($tender) ? route('tenders.update', $tender->id) : route('storeCiptaTender') }}"
-        method="POST">
-        @csrf
-        @isset($tender)
-            @method('PUT')
-        @endisset
+	<form id="createTenderForm"
+		action="{{ isset($tender) ? route('tenders.update', $tender->id) : route('storeCiptaTender') }}" method="POST">
+		@csrf
+		@isset($tender)
+			@method('PUT')
+		@endisset
 
-        <div class="modern-card">
+		<div class="modern-card">
 
-            <!-- ======================= STEP 1: MAKLUMAT UMUM ======================= -->
-            <div id="step1-content">
-                <!-- Header -->
-                <div class="bg-light px-4 py-3 border-bottom d-flex align-items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-                        stroke="var(--sg-red)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                        <polyline points="14 2 14 8 20 8"></polyline>
-                        <line x1="16" y1="13" x2="8" y2="13"></line>
-                        <line x1="16" y1="17" x2="8" y2="17"></line>
-                        <polyline points="10 9 9 9 8 9"></polyline>
-                    </svg>
-                    <span class="fw-bold text-dark text-uppercase small">Maklumat Umum</span>
-                </div>
+			<!-- ======================= STEP 1: MAKLUMAT UMUM ======================= -->
+			<div id="step1-content">
+				<!-- Header -->
+				<div class="bg-light px-4 py-3 border-bottom d-flex align-items-center gap-2">
+					<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+						stroke="var(--sg-red)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+						<polyline points="14 2 14 8 20 8"></polyline>
+						<line x1="16" y1="13" x2="8" y2="13"></line>
+						<line x1="16" y1="17" x2="8" y2="17"></line>
+						<polyline points="10 9 9 9 8 9"></polyline>
+					</svg>
+					<span class="fw-bold text-dark text-uppercase small">Maklumat Umum</span>
+				</div>
 
-                <div class="p-4">
+				<div class="p-4">
+					<!-- ROW 1 -->
+					<div class="row g-3 mb-3">
+						<div class="col-md-6">
+							<label class="form-label">Kaedah Perolehan<span class="text-danger">*</span></label>
+							<select class="form-select" name="type" required>
+								<option value="" selected disabled>Pilih...</option>
+								@foreach ($kaedahPerolehan as $kaedahOlehan)
+									<option value="{{ $kaedahOlehan->id }}" {{ old('type') == $kaedahOlehan->id ? 'selected' : '' }}>
+										{{ $kaedahOlehan->name }}
+									</option>
+								@endforeach
+							</select>
+						</div>
+						<div class="col-md-6">
+							<label class="form-label">Kategori Jenis Perolehan<span class="text-danger">*</span></label>
+							<select class="form-select" name="kategori_perolehan" required>
+								<option value="" selected disabled>Pilih...</option>
+								@foreach ($kategoriPerolehan as $kategoriOlehan)
+									<option value="{{ $kategoriOlehan->id }}"
+										{{ old('kategori_perolehan') == $kategoriOlehan->id ? 'selected' : '' }}>
+										{{ $kategoriOlehan->name }}</option>
+								@endforeach
+							</select>
+						</div>
+					</div>
 
-                    <!-- Alert -->
-                    <div class="alert-selangor mb-4">
-                        <div class="alert-selangor-icon">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24"
-                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                stroke-linejoin="round">
-                                <path
-                                    d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z">
-                                </path>
-                                <line x1="12" y1="9" x2="12" y2="13"></line>
-                                <line x1="12" y1="17" x2="12.01" y2="17"></line>
-                            </svg>
-                        </div>
-                        <div class="small lh-sm">
-                            <strong>Perhatian</strong>
-                            Untuk perkhidmatan yang memerlukan bayaran secara progresif, sila pilih Jenis Pemenuhan sebagai
-                            <u>Bermasa (Bila Perlu)</u>.
-                        </div>
-                    </div>
+					<!-- ROW 2 -->
+					<div class="row mb-3">
+						<div class="col-md-12">
+							<label class="form-label">Tajuk Perolehan <span class="text-danger">*</span></label>
+							<textarea class="form-control" name="name" rows="2" placeholder="Masukkan tajuk tender/sebut harga..."
+							 required>{{ old('name') }}</textarea>
+						</div>
+					</div>
 
-                    <!-- ROW 1 -->
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label">Kaedah Perolehan<span class="text-danger">*</span></label>
-                            <select class="form-select" name="type" required>
-                                <option value="" selected disabled>Pilih...</option>
-                                @foreach ($kaedahPerolehan as $kaedahOlehan)
-                                    <option value="{{ $kaedahOlehan->id }}"
-                                        {{ old('type') == $kaedahOlehan->id ? 'selected' : '' }}>{{ $kaedahOlehan->name }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Kategori Jenis Perolehan<span class="text-danger">*</span></label>
-                            <select class="form-select" name="kategori_perolehan" required>
-                                <option value="" selected disabled>Pilih...</option>
-                                @foreach ($kategoriPerolehan as $kategoriOlehan)
-                                    <option value="{{ $kategoriOlehan->id }}"
-                                        {{ old('kategori_perolehan') == $kategoriOlehan->id ? 'selected' : '' }}>
-                                        {{ $kategoriOlehan->name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                    </div>
+					<!-- ROW 3 -->
+					<div class="row mb-4">
+						<div class="col-md-12">
+							<label class="form-label">Disediakan Untuk PTJ<span class="text-danger">*</span></label>
+							<select class="form-select" name="ptj_id" id="ptj-select" required>
+								<option value="" selected disabled>Pilih...</option>
+								@foreach ($organizations as $org)
+									<option value="{{ $org->id }}" {{ old('ptj_id') == $org->id ? 'selected' : '' }}>
+										{{ strtoupper($org->name) }}</option>
+								@endforeach
+							</select>
+						</div>
+					</div>
 
-                    <!-- ROW 2 -->
-                    <div class="row mb-3">
-                        <div class="col-md-12">
-                            <label class="form-label">Tajuk Perolehan <span class="text-danger">*</span></label>
-                            <textarea class="form-control" name="name" rows="2" placeholder="Masukkan tajuk tender/sebut harga..."
-                                required>{{ old('name') }}</textarea>
-                        </div>
-                    </div>
+					<!-- ROW 4 -->
+					<div class="row g-3 mb-4">
+						<div class="col-md-3">
+							<label class="form-label">No. Rujukan Fail<span class="text-danger">*</span></label>
+							<input type="text" class="form-control" name="ref_number"
+								value="{{ old('ref_number', $tender->ref_number ?? '') }}" required>
+						</div>
+						<div class="col-md-3">
+							<label class="form-label">No. Tender / Sebut Harga<span class="text-danger">*</span></label>
+							<input type="text" class="form-control fw-bold" name="no_tender" value="{{ old('no_tender') }}" required>
+						</div>
+						<div class="col-md-3">
+							<label class="form-label">Harga Indikatif Jabatan</label>
+							<div class="input-group">
+								<span class="input-group-text">RM</span>
+								<input type="text" class="form-control text-end amount-input" name="harga_indikatif"
+									value="{{ old('harga_indikatif') ? number_format(old('harga_indikatif'), 2) : '' }}" placeholder="0.00"
+									inputmode="decimal" autocomplete="off">
+							</div>
+						</div>
+						<div class="col-md-3">
+							<label class="form-label">Anggaran Jabatan <span class="text-danger">*</span></label>
+							<div class="input-group">
+								<span class="input-group-text text-dark">RM</span>
+								<input type="text" class="form-control text-end fw-bold amount-input" name="anggaran_jabatan"
+									value="{{ old('anggaran_jabatan') ? number_format(old('anggaran_jabatan'), 2) : '' }}" placeholder="0.00"
+									inputmode="decimal" autocomplete="off" required>
+							</div>
+						</div>
+					</div>
 
-                    <!-- ROW 3 -->
-                    <div class="row mb-4">
-                        <div class="col-md-12">
-                            <label class="form-label">Disediakan Untuk PTJ<span class="text-danger">*</span></label>
-                            <select class="form-select" name="ptj_id" id="ptj-select" required>
-                                <option value="" selected disabled>Pilih...</option>
-                                @foreach ($organizations as $org)
-                                    <option value="{{ $org->id }}" {{ old('ptj_id') == $org->id ? 'selected' : '' }}>
-                                        {{ strtoupper($org->name) }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                    </div>
+					<!-- ROW 4B — Wang Kos Prima & Wang Peruntukan Sementara (kategori Kerja sahaja) -->
+					<div class="row g-3 mb-4 d-none" id="wang_kerja_group">
+						<div class="col-md-6">
+							<label class="form-label">Wang Kos Prima</label>
+							<div class="input-group">
+								<span class="input-group-text">RM</span>
+								<input type="text" class="form-control text-end amount-input" name="wang_kos_prima"
+									value="{{ old('wang_kos_prima') ? number_format(old('wang_kos_prima'), 2) : '' }}" placeholder="0.00"
+									inputmode="decimal" autocomplete="off">
+							</div>
+						</div>
+						<div class="col-md-6">
+							<label class="form-label">Wang Peruntukan Sementara</label>
+							<div class="input-group">
+								<span class="input-group-text">RM</span>
+								<input type="text" class="form-control text-end amount-input" name="wang_peruntukan_sementara"
+									value="{{ old('wang_peruntukan_sementara') ? number_format(old('wang_peruntukan_sementara'), 2) : '' }}"
+									placeholder="0.00" inputmode="decimal" autocomplete="off">
+							</div>
+						</div>
+					</div>
 
-                    <!-- ROW 4 -->
-                    <div class="row g-3 mb-4">
-                        <div class="col-md-3">
-                            <label class="form-label">No. Rujukan Fail<span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" name="ref_number"
-                                value="{{ old('ref_number', $tender->ref_number ?? '') }}" required>
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label">No. Tender / Sebut Harga<span class="text-danger">*</span></label>
-                            <input type="text" class="form-control fw-bold" name="no_tender"
-                                value="{{ old('no_tender') }}" required>
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Harga Indikatif Jabatan</label>
-                            <div class="input-group">
-                                <span class="input-group-text">RM</span>
-                                <input type="text" class="form-control text-end amount-input" name="harga_indikatif"
-                                    value="{{ old('harga_indikatif') ? number_format(old('harga_indikatif'), 2) : '' }}"
-                                    placeholder="0.00" inputmode="decimal" autocomplete="off">
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Anggaran Jabatan <span class="text-danger">*</span></label>
-                            <div class="input-group">
-                                <span class="input-group-text text-dark">RM</span>
-                                <input type="text" class="form-control text-end fw-bold amount-input" name="anggaran_jabatan"
-                                    value="{{ old('anggaran_jabatan') ? number_format(old('anggaran_jabatan'), 2) : '' }}"
-                                    placeholder="0.00" inputmode="decimal" autocomplete="off" required>
-                            </div>
-                        </div>
-                    </div>
+					<!-- ROW 4C — Kaedah Bayaran / Perolehan Dokumen -->
+					<div class="row mb-4">
+						<div class="col-12">
+							<label class="form-label">Kaedah Bayaran / Perolehan Dokumen<span class="text-danger">*</span></label>
+							<div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3">
+								@php
+									$defaultKaedahId = $kaedahDokumen->firstWhere('code', 'online')?->id;
+									$selectedKaedahId = (string) old('kaedah_dokumen_id', $defaultKaedahId);
+								@endphp
+								@foreach ($kaedahDokumen as $kaedah)
+									<div class="col">
+										<input type="radio" class="btn-check kaedah-dokumen-radio" name="kaedah_dokumen_id"
+											id="kd_{{ $kaedah->code }}" value="{{ $kaedah->id }}" data-code="{{ $kaedah->code }}"
+											data-requires-lokasi="{{ in_array($kaedah->code, ['online', 'manual'], true) ? '1' : '0' }}"
+											@checked($selectedKaedahId === (string) $kaedah->id)>
+										<label class="payment-method-card d-block h-100 p-3 border rounded-3" for="kd_{{ $kaedah->code }}">
+											<span class="d-flex align-items-center gap-2 mb-2">
+												<span class="payment-method-radio rounded-circle border border-2 flex-shrink-0 position-relative"></span>
+												<span class="payment-method-title fw-bold small">{{ $kaedah->name }}</span>
+											</span>
+											<span class="payment-method-body d-block text-muted lh-base">{{ $kaedah->description }}
+												@if ($kaedah->attention)
+													<span class="d-block mt-2 fw-bold text-danger">{{ $kaedah->attention }}</span>
+												@endif
+											</span>
+										</label>
+									</div>
+								@endforeach
+							</div>
+						</div>
+					</div>
 
-                    <!-- ROW 4B — Wang Kos Prima & Wang Peruntukan Sementara (kategori Kerja sahaja) -->
-                    <div class="row g-3 mb-4 d-none" id="wang_kerja_group">
-                        <div class="col-md-6">
-                            <label class="form-label">Wang Kos Prima</label>
-                            <div class="input-group">
-                                <span class="input-group-text">RM</span>
-                                <input type="text" class="form-control text-end amount-input" name="wang_kos_prima"
-                                    value="{{ old('wang_kos_prima') ? number_format(old('wang_kos_prima'), 2) : '' }}"
-                                    placeholder="0.00" inputmode="decimal" autocomplete="off">
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Wang Peruntukan Sementara</label>
-                            <div class="input-group">
-                                <span class="input-group-text">RM</span>
-                                <input type="text" class="form-control text-end amount-input" name="wang_peruntukan_sementara"
-                                    value="{{ old('wang_peruntukan_sementara') ? number_format(old('wang_peruntukan_sementara'), 2) : '' }}"
-                                    placeholder="0.00" inputmode="decimal" autocomplete="off">
-                            </div>
-                        </div>
-                    </div>
+					{{-- Tempat Hantar (submission_location_address): only for Online + Manual (Iklan Sahaja) --}}
+					<div class="row mb-4 d-none" id="lokasi_penghantaran_tender_row">
+						<div class="col-12">
+							<label class="form-label" for="submission_location_address">
+								Tempat Hantar<span class="text-danger">*</span>
+							</label>
+							<textarea class="form-control" name="submission_location_address" id="submission_location_address" rows="3"
+							 placeholder="Contoh: Kaunter Tender, Pejabat SUK Selangor, Bangunan SSAAS, Shah Alam">{{ old('submission_location_address') }}</textarea>
+							<div class="form-text">Wajib diisi untuk kaedah Bayaran Dokumen Secara Online dan Pembelian Manual di Agensi.
+							</div>
+						</div>
+					</div>
 
-                    <!-- ROW 4C — Kaedah Bayaran / Perolehan Dokumen -->
-                    <div class="row mb-4">
-                        <div class="col-12">
-                            <label class="form-label">Kaedah Bayaran / Perolehan Dokumen<span
-                                    class="text-danger">*</span></label>
-                            <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3">
-                                @php
-                                    $defaultKaedahId = $kaedahDokumen->firstWhere('code', 'online')?->id;
-                                    $selectedKaedahId = (string) old('kaedah_dokumen_id', $defaultKaedahId);
-                                @endphp
-                                @foreach ($kaedahDokumen as $kaedah)
-                                    <div class="col">
-                                        <input type="radio" class="btn-check kaedah-dokumen-radio" name="kaedah_dokumen_id"
-                                            id="kd_{{ $kaedah->code }}" value="{{ $kaedah->id }}"
-                                            data-code="{{ $kaedah->code }}"
-                                            data-requires-lokasi="{{ in_array($kaedah->code, ['online', 'manual'], true) ? '1' : '0' }}"
-                                            @checked($selectedKaedahId === (string) $kaedah->id)>
-                                        <label class="payment-method-card d-block h-100 p-3 border rounded-3"
-                                            for="kd_{{ $kaedah->code }}">
-                                            <span class="d-flex align-items-center gap-2 mb-2">
-                                                <span
-                                                    class="payment-method-radio rounded-circle border border-2 flex-shrink-0 position-relative"></span>
-                                                <span class="payment-method-title fw-bold small">{{ $kaedah->name }}</span>
-                                            </span>
-                                            <span class="payment-method-body d-block text-muted lh-base">{{ $kaedah->description }}
-                                                @if ($kaedah->attention)
-                                                    <span class="d-block mt-2 fw-bold text-danger">{{ $kaedah->attention }}</span>
-                                                @endif
-                                            </span>
-                                        </label>
-                                    </div>
-                                @endforeach
-                            </div>
-                        </div>
-                    </div>
-
-                    {{-- Tempat Hantar (submission_location_address): only for Online + Manual (Iklan Sahaja) --}}
-                    <div class="row mb-4 d-none" id="lokasi_penghantaran_tender_row">
-                        <div class="col-12">
-                            <label class="form-label" for="submission_location_address">
-                                Tempat Hantar<span class="text-danger">*</span>
-                            </label>
-                            <textarea class="form-control" name="submission_location_address" id="submission_location_address"
-                                rows="3" placeholder="Contoh: Kaunter Tender, Pejabat SUK Selangor, Bangunan SSAAS, Shah Alam">{{ old('submission_location_address') }}</textarea>
-                            <div class="form-text">Wajib diisi untuk kaedah Bayaran Dokumen Secara Online dan Pembelian Manual di Agensi.</div>
-                        </div>
-                    </div>
-
-                    <!-- ROW 5 -->
-                    <div class="row mb-4 g-3">
-                        <div class="col-md-4">
-                            <label class="form-label">Tarikh Dicipta<span class="text-danger">*</span></label>
-                            <input type="text" class="form-control bg-light" name="tarikh_dicipta"
-                                value="{{ old('tarikh_dicipta', \Carbon\Carbon::today()->format('j M Y')) }}" required readonly>
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label">Harga Dokumen</label>
-                            <div class="input-group">
-                                <span class="input-group-text">RM</span>
-                                <input type="text" class="form-control text-end amount-input" name="price"
-                                    value="{{ old('price') ? number_format(old('price'), 2) : '' }}"
-                                    placeholder="0.00" inputmode="decimal" autocomplete="off">
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <!-- For Kerja -->
-                            <div id="jenis_tender_group" class="d-none">
-                                <label class="form-label">Jenis Tender / Sebut Harga<span
-                                        class="text-danger">*</span></label>
-                                <select class="form-select" name="jenis_tender" id="jenis_tender">
-                                    <option value="" selected disabled>Pilih...</option>
-                                    @foreach ($jenisTender as $jt)
-                                        <option value="{{ $jt->id }}"
-                                            {{ old('jenis_tender') == $jt->id ? 'selected' : '' }}>{{ $jt->name }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <!-- For Perkhidmatan / Bekalan -->
-                            <div id="jenis_kontrak_group" class="d-none">
-                                <label class="form-label">Jenis Kontrak<span class="text-danger">*</span></label>
-                                <select class="form-select" name="jenis_kontrak" id="jenis_kontrak">
-                                    {{-- Pilihan mesti datang dari ref_type_of_contracts: tenders.jenis_kontrak_id
+					<!-- ROW 5 -->
+					<div class="row mb-4 g-3">
+						<div class="col-md-4">
+							<label class="form-label">Tarikh Dicipta<span class="text-danger">*</span></label>
+							<input type="text" class="form-control bg-light" name="tarikh_dicipta"
+								value="{{ old('tarikh_dicipta', \Carbon\Carbon::today()->format('j M Y')) }}" required readonly>
+						</div>
+						<div class="col-md-4">
+							<label class="form-label">Harga Dokumen</label>
+							<div class="input-group">
+								<span class="input-group-text">RM</span>
+								<input type="text" class="form-control text-end amount-input" name="price"
+									value="{{ old('price') ? number_format(old('price'), 2) : '' }}" placeholder="0.00" inputmode="decimal"
+									autocomplete="off">
+							</div>
+						</div>
+						<div class="col-md-4">
+							<!-- For Kerja -->
+							<div id="jenis_tender_group" class="d-none">
+								<label class="form-label">Jenis Tender / Sebut Harga<span class="text-danger">*</span></label>
+								<select class="form-select" name="jenis_tender" id="jenis_tender">
+									<option value="" selected disabled>Pilih...</option>
+									@foreach ($jenisTender as $jt)
+										<option value="{{ $jt->id }}" {{ old('jenis_tender') == $jt->id ? 'selected' : '' }}>
+											{{ $jt->name }}
+										</option>
+									@endforeach
+								</select>
+							</div>
+							<!-- For Perkhidmatan / Bekalan -->
+							<div id="jenis_kontrak_group" class="d-none">
+								<label class="form-label">Jenis Kontrak<span class="text-danger">*</span></label>
+								<select class="form-select" name="jenis_kontrak" id="jenis_kontrak">
+									{{-- Pilihan mesti datang dari ref_type_of_contracts: tenders.jenis_kontrak_id
                                          ada foreign key ke jadual itu. Senarai yang dikodkan tegar dahulunya
                                          menawarkan 1/2/3 (Kementerian/Jabatan/Agensi) sedangkan jadual itu hanya
                                          mengandungi dua baris, jadi penyimpanan gagal dengan ralat 1452.
                                          Medan jirannya, jenis_tender, sudah menggunakan cara ini. --}}
-                                    <option value="" selected disabled>Pilih...</option>
-                                    @foreach ($jenisKontrak as $jk)
-                                        <option value="{{ $jk->id }}"
-                                            {{ old('jenis_kontrak') == $jk->id ? 'selected' : '' }}>{{ $jk->name }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
-                        </div>
-                    </div>
+									<option value="" selected disabled>Pilih...</option>
+									@foreach ($jenisKontrak as $jk)
+										<option value="{{ $jk->id }}" {{ old('jenis_kontrak') == $jk->id ? 'selected' : '' }}>
+											{{ $jk->name }}
+										</option>
+									@endforeach
+								</select>
+							</div>
+						</div>
+					</div>
 
-                    <hr class="border-light mb-4">
+					<hr class="border-light mb-4">
 
-                    <!-- ROW 6: 3 LAYOUT GRID -->
-                    <div class="row g-3">
+					<!-- ROW 6: 3 LAYOUT GRID -->
+					<div class="row g-3">
 
-                        <!-- 1. Peruntukan (Radio) -->
-                        <div class="col-lg-4">
-                            <div class="settings-grid-box">
-                                <label class="form-label mb-2">Sumber Peruntukan <span
-                                        class="text-danger">*</span></label>
-                                <div class="d-flex flex-column gap-2 mb-2">
-                                    <div class="segmented-control">
-                                        <input type="radio" name="sumber_peruntukan" id="sp_pem"
-                                            value="pembangunan"
-                                            {{ old('sumber_peruntukan', 'pembangunan') == 'pembangunan' ? 'checked' : '' }}>
-                                        <label for="sp_pem">Pembangunan</label>
+						<!-- 1. Peruntukan (Radio) -->
+						<div class="col-lg-4">
+							<div class="settings-grid-box">
+								<label class="form-label mb-2">Sumber Peruntukan <span class="text-danger">*</span></label>
+								<div class="d-flex flex-column gap-2 mb-2">
+									<div class="segmented-control">
+										<input type="radio" name="sumber_peruntukan" id="sp_pem" value="pembangunan"
+											{{ old('sumber_peruntukan', 'pembangunan') == 'pembangunan' ? 'checked' : '' }}>
+										<label for="sp_pem">Pembangunan</label>
 
-                                        <input type="radio" name="sumber_peruntukan" id="sp_meng" value="mengurus"
-                                            {{ old('sumber_peruntukan') == 'mengurus' ? 'checked' : '' }}>
-                                        <label for="sp_meng">Mengurus</label>
+										<input type="radio" name="sumber_peruntukan" id="sp_meng" value="mengurus"
+											{{ old('sumber_peruntukan') == 'mengurus' ? 'checked' : '' }}>
+										<label for="sp_meng">Mengurus</label>
 
-                                        <input type="radio" name="sumber_peruntukan" id="sp_lain" value="lain"
-                                            {{ old('sumber_peruntukan') == 'lain' ? 'checked' : '' }}>
-                                        <label for="sp_lain">Lain</label>
-                                    </div>
-                                    <textarea class="form-control d-none" id="sumber_lain_input" name="sumber_lain_text" rows="2"
-                                        placeholder="Nyatakan...">{{ old('sumber_lain_text') }}</textarea>
-                                </div>
-                                <div class="row">
-                                    <div class="col-12">
-                                        <!-- For Kerja -->
-                                        <div id="tempoh_siap_group" class="d-none">
-                                            <label class="form-label">Tempoh Siap Maksima<span
-                                                    class="text-danger">*</span></label>
-                                            <div class="input-group input-group-md">
-                                                <input type="number" class="form-control" name="tempoh_siap_val"
-                                                    value="{{ old('tempoh_siap_val') }}" placeholder="0" min="0" required>
-                                                <select class="form-select" name="tempoh_siap_unit"
-                                                    style="max-width: 110px;">
-                                                    <option value="3"
-                                                        {{ old('tempoh_siap_unit') == '3' ? 'selected' : '' }}>Hari
-                                                    </option>
-                                                    <option value="1"
-                                                        {{ old('tempoh_siap_unit', '1') == '1' ? 'selected' : '' }}>Minggu
-                                                    </option>
-                                                    <option value="2"
-                                                        {{ old('tempoh_siap_unit') == '2' ? 'selected' : '' }}>Bulan
-                                                    </option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <!-- For Perkhidmatan / Bekalan -->
-                                        <div id="tempoh_kontrak_group" class="d-none">
-                                            <label class="form-label">Tempoh Kontrak / Penyiapan<span
-                                                    class="text-danger">*</span></label>
-                                            <div class="input-group input-group-md">
-                                                <input type="number" class="form-control" name="tempoh_kontrak_bulan"
-                                                    value="{{ old('tempoh_kontrak_bulan') }}" placeholder="0"
-                                                    min="0" required>
-                                                <select class="form-select" name="tempoh_kontrak_unit"
-                                                    style="max-width: 110px;">
-                                                    <option value="hari"
-                                                        {{ old('tempoh_kontrak_unit') == 'hari' ? 'selected' : '' }}>Hari
-                                                    </option>
-                                                    <option value="minggu"
-                                                        {{ old('tempoh_kontrak_unit') == 'minggu' ? 'selected' : '' }}>Minggu
-                                                    </option>
-                                                    <option value="bulan"
-                                                        {{ old('tempoh_kontrak_unit', 'bulan') == 'bulan' ? 'selected' : '' }}>Bulan
-                                                    </option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+										<input type="radio" name="sumber_peruntukan" id="sp_lain" value="lain"
+											{{ old('sumber_peruntukan') == 'lain' ? 'checked' : '' }}>
+										<label for="sp_lain">Lain</label>
+									</div>
+									<textarea class="form-control d-none" id="sumber_lain_input" name="sumber_lain_text" rows="2"
+									 placeholder="Nyatakan...">{{ old('sumber_lain_text') }}</textarea>
+								</div>
+								<div class="row">
+									<div class="col-12">
+										<!-- For Kerja -->
+										<div id="tempoh_siap_group" class="d-none">
+											<label class="form-label">Tempoh Siap Maksima<span class="text-danger">*</span></label>
+											<div class="input-group input-group-md">
+												<input type="number" class="form-control" name="tempoh_siap_val" value="{{ old('tempoh_siap_val') }}"
+													placeholder="0" min="0" required>
+												<select class="form-select" name="tempoh_siap_unit" style="max-width: 110px;">
+													<option value="3" {{ old('tempoh_siap_unit') == '3' ? 'selected' : '' }}>Hari
+													</option>
+													<option value="1" {{ old('tempoh_siap_unit', '1') == '1' ? 'selected' : '' }}>Minggu
+													</option>
+													<option value="2" {{ old('tempoh_siap_unit') == '2' ? 'selected' : '' }}>Bulan
+													</option>
+												</select>
+											</div>
+										</div>
+										<!-- For Perkhidmatan / Bekalan -->
+										<div id="tempoh_kontrak_group" class="d-none">
+											<label class="form-label">Tempoh Kontrak / Penyiapan<span class="text-danger">*</span></label>
+											<div class="input-group input-group-md">
+												<input type="number" class="form-control" name="tempoh_kontrak_bulan"
+													value="{{ old('tempoh_kontrak_bulan') }}" placeholder="0" min="0" required>
+												<select class="form-select" name="tempoh_kontrak_unit" style="max-width: 110px;">
+													<option value="hari" {{ old('tempoh_kontrak_unit') == 'hari' ? 'selected' : '' }}>Hari
+													</option>
+													<option value="minggu" {{ old('tempoh_kontrak_unit') == 'minggu' ? 'selected' : '' }}>Minggu
+													</option>
+													<option value="bulan" {{ old('tempoh_kontrak_unit', 'bulan') == 'bulan' ? 'selected' : '' }}>Bulan
+													</option>
+												</select>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
 
-                        <!-- 2. Scope & Duration -->
-                        <div class="col-lg-4">
-                            <div class="settings-grid-box">
-                                <div class="row g-2">
-                                    <div class="col-12">
-                                        <label class="form-label">Kategori Perolehan<span
-                                                class="text-danger">*</span></label>
-                                        <select class="form-select form-select-sm" name="kategori_perolehan_detail"
-                                            id="kategori_perolehan_detail" required>
-                                            <option value="" selected disabled>Pilih...</option>
-                                            <!-- Options will be set dynamically by JavaScript -->
-                                        </select>
-                                    </div>
-                                    <div class="col-12">
-                                        <label class="form-label">No. Kontrak Sedia Ada <i>(Jika Ada)</i></label>
-                                        <input type="text" class="form-control fw-bold" name="no_kontrak"
-                                            value="{{ old('no_kontrak') }}">
-                                    </div>
-                                    <!-- Zon Toggle -->
-                                    <div class="col-12">
-                                        <label class="form-label">Zon/Lokasi</label>
-                                        <div class="segmented-control">
-                                            <input type="radio" name="zon_lokasi" id="z_y" value="1"
-                                                {{ old('zon_lokasi', '1') == '1' ? 'checked' : '' }}>
-                                            <label for="z_y">Ya</label>
-                                            <input type="radio" name="zon_lokasi" id="z_t" value="0"
-                                                {{ old('zon_lokasi', '1') == '0' ? 'checked' : '' }}>
-                                            <label for="z_t">Tidak</label>
-                                        </div>
-                                    </div>
-                                    <!-- Lokaliti -->
-                                    @php
-                                        $selectedLokalitiId = old('lokaliti_id');
-                                        $selectedLokaliti = collect($lokalitis ?? [])->firstWhere('id', (int) $selectedLokalitiId);
-                                        $isDaerahTerpilih = $selectedLokaliti
-                                            && strcasecmp(trim((string) $selectedLokaliti->name), 'Daerah Terpilih') === 0;
-                                        $showDaerahGroup = old('zon_lokasi', '1') == '1' && $isDaerahTerpilih;
-                                    @endphp
-                                    <div class="col-12 {{ old('zon_lokasi', '1') == '0' ? 'd-none' : '' }}" id="lokaliti-group">
-                                        <label class="form-label">Lokaliti Liputan</label>
-                                        <select class="form-select form-select-sm" name="lokaliti_id" id="lokaliti_id">
-                                            <option value="" selected disabled>Pilih...</option>
-                                            @foreach ($lokalitis as $lokaliti)
-                                                <option value="{{ $lokaliti->id }}"
-                                                    data-lokaliti-name="{{ strtolower(trim($lokaliti->name)) }}"
-                                                    {{ (string) old('lokaliti_id') === (string) $lokaliti->id ? 'selected' : '' }}>
-                                                    {{ $lokaliti->name }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                    {{-- Shown only for Lokaliti = Daerah Terpilih. Zon Terpilih has no ref table yet. --}}
-                                    <div class="col-12 {{ $showDaerahGroup ? '' : 'd-none' }}" id="daerah-group">
-                                        <label class="form-label">Daerah</label>
-                                        <select class="form-select form-select-sm" name="district_id" id="district_id_zon">
-                                            <option value="" selected disabled>Pilih Daerah...</option>
-                                            @foreach (\App\Vendor::$districts as $districtId => $districtName)
-                                                @continue((int) $districtId === \App\Vendor::DISTRICT_ALL_SELANGOR || (string) $districtId === '0')
-                                                <option value="{{ $districtId }}"
-                                                    {{ (string) old('district_id') === (string) $districtId ? 'selected' : '' }}>
-                                                    {{ $districtName }}
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+						<!-- 2. Scope & Duration -->
+						<div class="col-lg-4">
+							<div class="settings-grid-box">
+								<div class="row g-2">
+									<div class="col-12">
+										<label class="form-label">Kategori Perolehan<span class="text-danger">*</span></label>
+										<select class="form-select form-select-sm" name="kategori_perolehan_detail" id="kategori_perolehan_detail"
+											required>
+											<option value="" selected disabled>Pilih...</option>
+											<!-- Options will be set dynamically by JavaScript -->
+										</select>
+									</div>
+									<div class="col-12">
+										<label class="form-label">No. Kontrak Sedia Ada <i>(Jika Ada)</i></label>
+										<input type="text" class="form-control fw-bold" name="no_kontrak" value="{{ old('no_kontrak') }}">
+									</div>
+									<!-- Zon Toggle -->
+									<div class="col-12">
+										<label class="form-label">Zon/Lokasi</label>
+										<div class="segmented-control">
+											<input type="radio" name="zon_lokasi" id="z_y" value="1"
+												{{ old('zon_lokasi', '1') == '1' ? 'checked' : '' }}>
+											<label for="z_y">Ya</label>
+											<input type="radio" name="zon_lokasi" id="z_t" value="0"
+												{{ old('zon_lokasi', '1') == '0' ? 'checked' : '' }}>
+											<label for="z_t">Tidak</label>
+										</div>
+									</div>
+									<!-- Lokaliti -->
+									@php
+										$selectedLokalitiId = old('lokaliti_id');
+										$selectedLokaliti = collect($lokalitis ?? [])->firstWhere('id', (int) $selectedLokalitiId);
+										$isDaerahTerpilih =
+										    $selectedLokaliti && strcasecmp(trim((string) $selectedLokaliti->name), 'Daerah Terpilih') === 0;
+										$showDaerahGroup = old('zon_lokasi', '1') == '1' && $isDaerahTerpilih;
+									@endphp
+									<div class="col-12 {{ old('zon_lokasi', '1') == '0' ? 'd-none' : '' }}" id="lokaliti-group">
+										<label class="form-label">Lokaliti Liputan</label>
+										<select class="form-select form-select-sm" name="lokaliti_id" id="lokaliti_id">
+											<option value="" selected disabled>Pilih...</option>
+											@foreach ($lokalitis as $lokaliti)
+												<option value="{{ $lokaliti->id }}" data-lokaliti-name="{{ strtolower(trim($lokaliti->name)) }}"
+													{{ (string) old('lokaliti_id') === (string) $lokaliti->id ? 'selected' : '' }}>
+													{{ $lokaliti->name }}</option>
+											@endforeach
+										</select>
+									</div>
+									{{-- Shown only for Lokaliti = Daerah Terpilih. Zon Terpilih has no ref table yet. --}}
+									<div class="col-12 {{ $showDaerahGroup ? '' : 'd-none' }}" id="daerah-group">
+										<label class="form-label">Daerah</label>
+										<select class="form-select form-select-sm" name="district_id" id="district_id_zon">
+											<option value="" selected disabled>Pilih Daerah...</option>
+											@foreach (\App\Vendor::$districts as $districtId => $districtName)
+												@continue((int) $districtId === \App\Vendor::DISTRICT_ALL_SELANGOR || (string) $districtId === '0')
+												<option value="{{ $districtId }}"
+													{{ (string) old('district_id') === (string) $districtId ? 'selected' : '' }}>
+													{{ $districtName }}
+												</option>
+											@endforeach
+										</select>
+									</div>
+								</div>
+							</div>
+						</div>
 
-                        <!-- 3. Lokaliti, Zon, JK, etc. -->
-                        <div class="col-lg-4">
-                            <div class="settings-grid-box">
-                                <div class="row g-2">
-                                    <!-- JK Toggle -->
-                                    <div class="col-12" id="jawatankuasa_group">
-                                        <label class="form-label">Jawatankuasa Spesifikasi<span
-                                                class="text-danger">*</span></label>
-                                        <div class="segmented-control">
-                                            <input type="radio" name="jawatankuasa" id="jk_y" value="1"
-                                                {{ old('jawatankuasa') == '1' ? 'checked' : '' }}>
-                                            <label for="jk_y">Ya</label>
-                                            <input type="radio" name="jawatankuasa" id="jk_t" value="0"
-                                                {{ old('jawatankuasa', '0') == '0' ? 'checked' : '' }}>
-                                            <label for="jk_t">Tidak</label>
-                                        </div>
-                                    </div>
-                                    <!-- Lawatan Toggle -->
-                                    <div class="col-12">
-                                        <label class="form-label">Taklimat Tender/Lawatan Tapak<span
-                                                class="text-danger">*</span></label>
-                                        <div class="segmented-control">
-                                            <input type="radio" name="lawatan_tapak" id="lt_y" value="1"
-                                                {{ old('lawatan_tapak', '1') == '1' ? 'checked' : '' }}>
-                                            <label for="lt_y">Ada</label>
-                                            <input type="radio" name="lawatan_tapak" id="lt_t" value="0"
-                                                {{ old('lawatan_tapak', '1') == '0' ? 'checked' : '' }}>
-                                            <label for="lt_t">Tiada</label>
-                                        </div>
-                                    </div>
-                                    <!-- Fizikal Toggle -->
-                                    <div class="col-12">
-                                        <label class="form-label">Penghantaran Fizikal (Dokumen/ Sampel)<span class="text-danger">*</span></label>
-                                        <div class="segmented-control">
-                                            <input type="radio" name="fizikal" id="pf_y" value="1"
-                                                {{ old('fizikal') == '1' ? 'checked' : '' }}>
-                                            <label for="pf_y">Ya</label>
-                                            <input type="radio" name="fizikal" id="pf_t" value="0"
-                                                {{ old('fizikal', '0') == '0' ? 'checked' : '' }}>
-                                            <label for="pf_t">Tidak</label>
-                                        </div>
-                                    </div>
-                                    <!-- Terbuka Toggle -->
-                                    <div class="col-12">
-                                        <label class="form-label">Terbuka Kepada<span class="text-danger">*</span></label>
-                                        <div class="segmented-control">
-                                            <input type="radio" name="terbuka_kepada" id="tk_b"
-                                                value="bumiputera"
-                                                {{ old('terbuka_kepada') == 'bumiputera' ? 'checked' : '' }}>
-                                            <label for="tk_b">Bumiputera</label>
-                                            <input type="radio" name="terbuka_kepada" id="tk_s" value="semua"
-                                                {{ old('terbuka_kepada', 'semua') == 'semua' ? 'checked' : '' }}>
-                                            <label for="tk_s">Semua</label>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+						<!-- 3. Lokaliti, Zon, JK, etc. -->
+						<div class="col-lg-4">
+							<div class="settings-grid-box">
+								<div class="row g-2">
+									<!-- JK Toggle -->
+									<div class="col-12" id="jawatankuasa_group">
+										<label class="form-label">Jawatankuasa Spesifikasi<span class="text-danger">*</span></label>
+										<div class="segmented-control">
+											<input type="radio" name="jawatankuasa" id="jk_y" value="1"
+												{{ old('jawatankuasa') == '1' ? 'checked' : '' }}>
+											<label for="jk_y">Ya</label>
+											<input type="radio" name="jawatankuasa" id="jk_t" value="0"
+												{{ old('jawatankuasa', '0') == '0' ? 'checked' : '' }}>
+											<label for="jk_t">Tidak</label>
+										</div>
+									</div>
+									<!-- Lawatan Toggle -->
+									<div class="col-12">
+										<label class="form-label">Taklimat Tender/Lawatan Tapak<span class="text-danger">*</span></label>
+										<div class="segmented-control">
+											<input type="radio" name="lawatan_tapak" id="lt_y" value="1"
+												{{ old('lawatan_tapak', '1') == '1' ? 'checked' : '' }}>
+											<label for="lt_y">Ada</label>
+											<input type="radio" name="lawatan_tapak" id="lt_t" value="0"
+												{{ old('lawatan_tapak', '1') == '0' ? 'checked' : '' }}>
+											<label for="lt_t">Tiada</label>
+										</div>
+									</div>
+									<!-- Fizikal Toggle -->
+									<div class="col-12">
+										<label class="form-label">Penghantaran Fizikal (Dokumen/ Sampel)<span class="text-danger">*</span></label>
+										<div class="segmented-control">
+											<input type="radio" name="fizikal" id="pf_y" value="1"
+												{{ old('fizikal') == '1' ? 'checked' : '' }}>
+											<label for="pf_y">Ya</label>
+											<input type="radio" name="fizikal" id="pf_t" value="0"
+												{{ old('fizikal', '0') == '0' ? 'checked' : '' }}>
+											<label for="pf_t">Tidak</label>
+										</div>
+									</div>
+									<!-- Terbuka Toggle -->
+									<div class="col-12">
+										<label class="form-label">Terbuka Kepada<span class="text-danger">*</span></label>
+										<div class="segmented-control">
+											<input type="radio" name="terbuka_kepada" id="tk_b" value="bumiputera"
+												{{ old('terbuka_kepada') == 'bumiputera' ? 'checked' : '' }}>
+											<label for="tk_b">Bumiputera</label>
+											<input type="radio" name="terbuka_kepada" id="tk_s" value="semua"
+												{{ old('terbuka_kepada', 'semua') == 'semua' ? 'checked' : '' }}>
+											<label for="tk_s">Semua</label>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
 
-                    </div> <!-- End Settings Grid -->
+					</div> <!-- End Settings Grid -->
 
-                </div>
-            </div>
-            <!-- END STEP 1 -->
+				</div>
+			</div>
+			<!-- END STEP 1 -->
 
 
-            <!-- ======================= STEP 2: KOD BIDANG ======================= -->
-            <div id="step2-content" class="d-none">
-                <!-- Header -->
-                <div class="bg-light px-4 py-3 border-bottom d-flex align-items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
-                        fill="none" stroke="var(--sg-red)" stroke-width="2" stroke-linecap="round"
-                        stroke-linejoin="round">
-                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                    </svg>
-                    <span class="fw-bold text-dark text-uppercase small">Kod Bidang & Syarat</span>
-                </div>
+			<!-- ======================= STEP 2: KOD BIDANG ======================= -->
+			<div id="step2-content" class="d-none">
+				<!-- Header -->
+				<div class="bg-light px-4 py-3 border-bottom d-flex align-items-center gap-2">
+					<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+						stroke="var(--sg-red)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+						<path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+					</svg>
+					<span class="fw-bold text-dark text-uppercase small">Kod Bidang & Syarat</span>
+				</div>
 
-                <div class="p-4">
+				<div class="p-4">
 
-                    <div class="alert-selangor mb-4">
-                        <div class="alert-selangor-icon">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24"
-                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                stroke-linejoin="round">
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <line x1="12" y1="8" x2="12" y2="12"></line>
-                                <line x1="12" y1="16" x2="12.01" y2="16"></line>
-                            </svg>
-                        </div>
-                        <div class="small mt-1">
-                            Syarikat Selangor Sahaja atau Syarikat Selangor dan Lain-lain Negeri wajib di isi.
-                        </div>
-                    </div>
+					<div class="alert-selangor mb-4">
+						<div class="alert-selangor-icon">
+							<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"
+								stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+								<circle cx="12" cy="12" r="10"></circle>
+								<line x1="12" y1="8" x2="12" y2="12"></line>
+								<line x1="12" y1="16" x2="12.01" y2="16"></line>
+							</svg>
+						</div>
+						<div class="small mt-1">
+							Syarikat Selangor Sahaja atau Syarikat Selangor dan Lain-lain Negeri wajib di isi.
+						</div>
+					</div>
 
-                    <div class="condition-builder">
-                        <!-- MOF SECTION -->
-                        <div class="condition-group">
-                            <div class="condition-group-header">
-                                <div class="group-title">
-                                    <div class="group-icon">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
-                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                            stroke-linecap="round" stroke-linejoin="round">
-                                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
-                                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
-                                        </svg>
-                                    </div>
-                                    <div>
-                                        <h6>Kod Bidang MOF</h6>
-                                        <small>Kementerian Kewangan Malaysia</small>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="condition-group-body">
-                                <div id="mof-wrapper">
-                                    <!-- Initial Row -->
-                                    <div class="condition-row mof-row" data-index="0">
-                                        <div class="row-number">1</div>
-                                        <div class="row-fields">
-                                            <div class="field-logic">
-                                                <label class="form-label">Hubungan</label>
-                                                <div class="segmented-control">
-                                                    <input type="radio" name="mof[0][logic_mid]" id="mof0_or"
-                                                        value="OR"
-                                                        {{ old('mof.0.logic_mid', 'OR') == 'OR' ? 'checked' : '' }}>
-                                                    <label for="mof0_or">ATAU</label>
-                                                    <input type="radio" name="mof[0][logic_mid]" id="mof0_and"
-                                                        value="AND"
-                                                        {{ old('mof.0.logic_mid') == 'AND' ? 'checked' : '' }}>
-                                                    <label for="mof0_and">DAN</label>
-                                                </div>
-                                            </div>
-                                            <div class="field-main">
-                                                <label class="form-label">Kod Bidang</label>
-                                                <select class="selectize" name="mof[0][code][]" multiple>
-                                                    @foreach (App\Code::where('type', 'mof')->orderBy('code')->get() as $code)
-                                                        <option value="{{ $code->id }}"
-                                                            {{ is_array(old('mof.0.code')) && in_array($code->id, old('mof.0.code')) ? 'selected' : '' }}>
-                                                            {{ $code->label }}</option>
-                                                    @endforeach
-                                                </select>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="condition-info">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
-                                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                        stroke-linecap="round" stroke-linejoin="round">
-                                        <circle cx="12" cy="12" r="10"></circle>
-                                        <line x1="12" y1="16" x2="12" y2="12"></line>
-                                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                                    </svg>
-                                    Syarikat mesti mempunyai pendaftaran MOF yang sah dengan kod bidang yang dipilih
-                                </div>
-                            </div>
-                            <button type="button" class="btn-add-condition" id="btn-add-mof">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
-                                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                    stroke-linecap="round" stroke-linejoin="round">
-                                    <line x1="12" y1="5" x2="12" y2="19"></line>
-                                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                                </svg>
-                                Tambah Kod Bidang MOF
-                            </button>
-                        </div>
+					<div class="condition-builder">
+						<!-- MOF SECTION -->
+						<div class="condition-group">
+							<div class="condition-group-header">
+								<div class="group-title">
+									<div class="group-icon">
+										<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+											stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+											<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+											<path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+										</svg>
+									</div>
+									<div>
+										<h6>Kod Bidang MOF</h6>
+										<small>Kementerian Kewangan Malaysia</small>
+									</div>
+								</div>
+							</div>
+							<div class="condition-group-body">
+								<div id="mof-wrapper">
+									<!-- Initial Row -->
+									<div class="condition-row mof-row" data-index="0">
+										<div class="row-number">1</div>
+										<div class="row-fields">
+											<div class="field-logic">
+												<label class="form-label">Hubungan</label>
+												<div class="segmented-control">
+													<input type="radio" name="mof[0][logic_mid]" id="mof0_or" value="OR"
+														{{ old('mof.0.logic_mid', 'OR') == 'OR' ? 'checked' : '' }}>
+													<label for="mof0_or">ATAU</label>
+													<input type="radio" name="mof[0][logic_mid]" id="mof0_and" value="AND"
+														{{ old('mof.0.logic_mid') == 'AND' ? 'checked' : '' }}>
+													<label for="mof0_and">DAN</label>
+												</div>
+											</div>
+											<div class="field-main">
+												<label class="form-label">Kod Bidang</label>
+												<select class="selectize" name="mof[0][code][]" multiple>
+													@foreach (App\Code::where('type', 'mof')->orderBy('code')->get() as $code)
+														<option value="{{ $code->id }}"
+															{{ is_array(old('mof.0.code')) && in_array($code->id, old('mof.0.code')) ? 'selected' : '' }}>
+															{{ $code->label }}</option>
+													@endforeach
+												</select>
+											</div>
+										</div>
+									</div>
+								</div>
+								<div class="condition-info">
+									<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+										stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+										<circle cx="12" cy="12" r="10"></circle>
+										<line x1="12" y1="16" x2="12" y2="12"></line>
+										<line x1="12" y1="8" x2="12.01" y2="8"></line>
+									</svg>
+									Syarikat mesti mempunyai pendaftaran MOF yang sah dengan kod bidang yang dipilih
+								</div>
+							</div>
+							<button type="button" class="btn-add-condition" id="btn-add-mof">
+								<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+									stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+									<line x1="12" y1="5" x2="12" y2="19"></line>
+									<line x1="5" y1="12" x2="19" y2="12"></line>
+								</svg>
+								Tambah Kod Bidang MOF
+							</button>
+						</div>
 
-                        <!-- SECTION CONNECTOR -->
-                        <div class="position-relative w-100 py-5 d-flex justify-content-center align-items-center">
+						<!-- SECTION CONNECTOR -->
+						<div class="position-relative w-100 py-5 d-flex justify-content-center align-items-center">
 
-                            <!-- Vertical Line -->
-                            <div class="position-absolute h-100 border-start border-2 border-secondary opacity-25"
-                                style="left: 50%; transform: translateX(-50%); z-index: 0;">
-                            </div>
+							<!-- Vertical Line -->
+							<div class="position-absolute h-100 border-start border-2 border-secondary opacity-25"
+								style="left: 50%; transform: translateX(-50%); z-index: 0;">
+							</div>
 
-                            <!-- Connector Box -->
-                            <div class="col-12 col-md-6 position-relative z-1">
+							<!-- Connector Box -->
+							<div class="col-12 col-md-6 position-relative z-1">
 
-                                <div class="bg-white rounded-3 shadow-sm border" style="border-color: #e2e8f0;">
-                                    <!-- Top -->
-                                    <div class="d-flex align-items-center justify-content-between p-3 gap-3">
-                                        <!-- Left: Label & Icon -->
-                                        <div class="d-flex align-items-center">
-                                            <div class="d-flex align-items-center justify-content-center rounded-circle bg-light border text-secondary p-1"
-                                                style="width: 32px; height: 32px; flex-shrink: 0;">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
-                                                    viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71">
-                                                    </path>
-                                                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71">
-                                                    </path>
-                                                </svg>
-                                            </div>
-                                            <span class="fw-bold text-uppercase text-muted small ms-2 text-nowrap">
-                                                Hubungan
-                                            </span>
-                                        </div>
+								<div class="bg-white rounded-3 shadow-sm border" style="border-color: #e2e8f0;">
+									<!-- Top -->
+									<div class="d-flex align-items-center justify-content-between p-3 gap-3">
+										<!-- Left: Label & Icon -->
+										<div class="d-flex align-items-center">
+											<div
+												class="d-flex align-items-center justify-content-center rounded-circle bg-light border text-secondary p-1"
+												style="width: 32px; height: 32px; flex-shrink: 0;">
+												<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+													stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+													<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71">
+													</path>
+													<path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71">
+													</path>
+												</svg>
+											</div>
+											<span class="fw-bold text-uppercase text-muted small ms-2 text-nowrap">
+												Hubungan
+											</span>
+										</div>
 
-                                        <!-- Right: Dropdown -->
-                                        <div class="flex-grow-1">
-                                            <select name="section_logic"
-                                                class="form-select form-select-sm fw-bold text-dark border-secondary bg-light"
-                                                style="cursor: pointer;">
-                                                <option value="AND"
-                                                    {{ old('section_logic', 'AND') == 'AND' ? 'selected' : '' }}>DAN
-                                                </option>
-                                                <option value="OR"
-                                                    {{ old('section_logic') == 'OR' ? 'selected' : '' }}>ATAU</option>
-                                            </select>
-                                        </div>
-                                    </div>
+										<!-- Right: Dropdown -->
+										<div class="flex-grow-1">
+											<select name="section_logic" class="form-select form-select-sm fw-bold text-dark border-secondary bg-light"
+												style="cursor: pointer;">
+												<option value="AND" {{ old('section_logic', 'AND') == 'AND' ? 'selected' : '' }}>DAN
+												</option>
+												<option value="OR" {{ old('section_logic') == 'OR' ? 'selected' : '' }}>ATAU</option>
+											</select>
+										</div>
+									</div>
 
-                                    <!-- Bottom: Hint Text -->
-                                    <div
-                                        class="bg-light rounded-bottom-3 px-3 py-2 border-top d-flex align-items-start gap-2">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
-                                            viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"
-                                            stroke-linecap="round" stroke-linejoin="round" class="mt-1 flex-shrink-0">
-                                            <circle cx="12" cy="12" r="10"></circle>
-                                            <line x1="12" y1="16" x2="12" y2="12"></line>
-                                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                                        </svg>
-                                        <p class="m-0 text-muted lh-sm" style="font-size: 0.75rem;">
-                                            Pilih <strong>'DAN'</strong> jika syarikat wajib mematuhi kedua-dua kelayakan
-                                            (MOF &amp; CIDB) secara serentak.
-                                        </p>
-                                    </div>
+									<!-- Bottom: Hint Text -->
+									<div class="bg-light rounded-bottom-3 px-3 py-2 border-top d-flex align-items-start gap-2">
+										<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+											stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+											class="mt-1 flex-shrink-0">
+											<circle cx="12" cy="12" r="10"></circle>
+											<line x1="12" y1="16" x2="12" y2="12"></line>
+											<line x1="12" y1="8" x2="12.01" y2="8"></line>
+										</svg>
+										<p class="m-0 text-muted lh-sm" style="font-size: 0.75rem;">
+											Pilih <strong>'DAN'</strong> jika syarikat wajib mematuhi kedua-dua kelayakan
+											(MOF &amp; CIDB) secara serentak.
+										</p>
+									</div>
 
-                                </div>
-                            </div>
+								</div>
+							</div>
 
-                        </div>
+						</div>
 
-                        <!-- CIDB SECTION -->
-                        <div class="condition-group">
-                            <div class="condition-group-header">
-                                <div class="group-title">
-                                    <div class="group-icon">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
-                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                            stroke-linecap="round" stroke-linejoin="round">
-                                            <rect x="2" y="6" width="20" height="12" rx="2"></rect>
-                                            <path d="M12 12h.01"></path>
-                                            <path d="M17 12h.01"></path>
-                                            <path d="M7 12h.01"></path>
-                                        </svg>
-                                    </div>
-                                    <div>
-                                        <h6>Kod Bidang CIDB</h6>
-                                        <small>Lembaga Pembangunan Industri Pembinaan</small>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="condition-group-body">
-                                <div id="cidb-wrapper">
-                                    <!-- Initial Row -->
-                                    <div class="condition-row cidb-row" data-index="0">
-                                        <div class="row-number">1</div>
-                                        <div class="row-fields cidb-fields">
-                                            <!-- Row 1: Gred CIDB -->
-                                            <div class="cidb-row-top">
-                                                <div class="field-grade-full">
-                                                    <label class="form-label">Gred CIDB</label>
-                                                    {{-- name mesti berakhir dengan [] sebab ini select berbilang.
+						<!-- CIDB SECTION -->
+						<div class="condition-group">
+							<div class="condition-group-header">
+								<div class="group-title">
+									<div class="group-icon">
+										<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+											stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+											<rect x="2" y="6" width="20" height="12" rx="2"></rect>
+											<path d="M12 12h.01"></path>
+											<path d="M17 12h.01"></path>
+											<path d="M7 12h.01"></path>
+										</svg>
+									</div>
+									<div>
+										<h6>Kod Bidang CIDB</h6>
+										<small>Lembaga Pembangunan Industri Pembinaan</small>
+									</div>
+								</div>
+							</div>
+							<div class="condition-group-body">
+								<div id="cidb-wrapper">
+									<!-- Initial Row -->
+									<div class="condition-row cidb-row" data-index="0">
+										<div class="row-number">1</div>
+										<div class="row-fields cidb-fields">
+											<!-- Row 1: Gred CIDB -->
+											<div class="cidb-row-top">
+												<div class="field-grade-full">
+													<label class="form-label">Gred CIDB</label>
+													{{-- name mesti berakhir dengan [] sebab ini select berbilang.
                                                          Tanpa itu PHP hanya menyimpan gred terakhir sebagai rentetan,
                                                          bukan array — lalu TendersController::storeNew() menggugurkannya
                                                          (ia menyemak is_array) dan old() di bawah tidak memilih semula
                                                          apa-apa. Bandingkan mof[0][code][] dan cidb[0][spec][]. --}}
-                                                    <select class="selectize" name="cidb[0][grade][]" multiple>
-                                                        <option value="" selected disabled>Pilih Gred...</option>
-                                                        @foreach (App\Code::where('type', 'cidb-g')->orderBy('code')->get() as $code)
-                                                            <option value="{{ $code->id }}"
-                                                                {{ is_array(old('cidb.0.grade')) && in_array($code->id, old('cidb.0.grade')) ? 'selected' : '' }}>
-                                                                {{ $code->label }}</option>
-                                                        @endforeach
-                                                    </select>
-                                                </div>
-                                            </div>
-                                            <!-- Row 2: Pengkhususan -->
-                                            <div class="cidb-row-bottom">
-                                                <div class="field-logic">
-                                                    <label class="form-label">Hubungan</label>
-                                                    <div class="segmented-control">
-                                                        <input type="radio" name="cidb[0][logic_mid]" id="cidb0_and"
-                                                            value="AND"
-                                                            {{ old('cidb.0.logic_mid', 'AND') == 'AND' ? 'checked' : '' }}>
-                                                        <label for="cidb0_and">DAN</label>
-                                                        <input type="radio" name="cidb[0][logic_mid]" id="cidb0_or"
-                                                            value="OR"
-                                                            {{ old('cidb.0.logic_mid') == 'OR' ? 'checked' : '' }}>
-                                                        <label for="cidb0_or">ATAU</label>
-                                                    </div>
-                                                </div>
-                                                <div class="field-main">
-                                                    <label class="form-label">Pengkhususan</label>
-                                                    <select class="selectize" name="cidb[0][spec][]" multiple>
-                                                        @foreach (App\Code::where('type', 'cidb-c')->orderBy('code')->get() as $code)
-                                                            <option value="{{ $code->id }}"
-                                                                {{ is_array(old('cidb.0.spec')) && in_array($code->id, old('cidb.0.spec')) ? 'selected' : '' }}>
-                                                                {{ $code->label }}</option>
-                                                        @endforeach
-                                                    </select>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="condition-info">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
-                                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                        stroke-linecap="round" stroke-linejoin="round">
-                                        <circle cx="12" cy="12" r="10"></circle>
-                                        <line x1="12" y1="16" x2="12" y2="12"></line>
-                                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                                    </svg>
-                                    Untuk kerja pembinaan, syarikat mesti berdaftar dengan CIDB mengikut gred dan
-                                    pengkhususan
-                                </div>
-                            </div>
-                            <button type="button" class="btn-add-condition" id="btn-add-cidb">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
-                                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                    stroke-linecap="round" stroke-linejoin="round">
-                                    <line x1="12" y1="5" x2="12" y2="19"></line>
-                                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                                </svg>
-                                Tambah Pengkhususan
-                            </button>
-                        </div>
-                    </div>
+													<select class="selectize" name="cidb[0][grade][]" multiple>
+														<option value="" selected disabled>Pilih Gred...</option>
+														@foreach (App\Code::where('type', 'cidb-g')->orderBy('code')->get() as $code)
+															<option value="{{ $code->id }}"
+																{{ is_array(old('cidb.0.grade')) && in_array($code->id, old('cidb.0.grade')) ? 'selected' : '' }}>
+																{{ $code->label }}</option>
+														@endforeach
+													</select>
+												</div>
+											</div>
+											<!-- Row 2: Pengkhususan -->
+											<div class="cidb-row-bottom">
+												<div class="field-logic">
+													<label class="form-label">Hubungan</label>
+													<div class="segmented-control">
+														<input type="radio" name="cidb[0][logic_mid]" id="cidb0_and" value="AND"
+															{{ old('cidb.0.logic_mid', 'AND') == 'AND' ? 'checked' : '' }}>
+														<label for="cidb0_and">DAN</label>
+														<input type="radio" name="cidb[0][logic_mid]" id="cidb0_or" value="OR"
+															{{ old('cidb.0.logic_mid') == 'OR' ? 'checked' : '' }}>
+														<label for="cidb0_or">ATAU</label>
+													</div>
+												</div>
+												<div class="field-main">
+													<label class="form-label">Pengkhususan</label>
+													<select class="selectize" name="cidb[0][spec][]" multiple>
+														@foreach (App\Code::where('type', 'cidb-c')->orderBy('code')->get() as $code)
+															<option value="{{ $code->id }}"
+																{{ is_array(old('cidb.0.spec')) && in_array($code->id, old('cidb.0.spec')) ? 'selected' : '' }}>
+																{{ $code->label }}</option>
+														@endforeach
+													</select>
+												</div>
+											</div>
+										</div>
+									</div>
+								</div>
+								<div class="condition-info">
+									<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+										stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+										<circle cx="12" cy="12" r="10"></circle>
+										<line x1="12" y1="16" x2="12" y2="12"></line>
+										<line x1="12" y1="8" x2="12.01" y2="8"></line>
+									</svg>
+									Untuk kerja pembinaan, syarikat mesti berdaftar dengan CIDB mengikut gred dan
+									pengkhususan
+								</div>
+							</div>
+							<button type="button" class="btn-add-condition" id="btn-add-cidb">
+								<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+									stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+									<line x1="12" y1="5" x2="12" y2="19"></line>
+									<line x1="5" y1="12" x2="19" y2="12"></line>
+								</svg>
+								Tambah Pengkhususan
+							</button>
+						</div>
+					</div>
 
-                </div>
+				</div>
 
-            </div>
-            <!-- END STEP 2 -->
+			</div>
+			<!-- END STEP 2 -->
 
-            <!-- FOOTER -->
-            <div class="bg-light p-4 border-top d-flex justify-content-between align-items-center">
-                <button type="button" class="btn-form btn-form-secondary d-none" id="btn-back">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="19" y1="12" x2="5" y2="12"></line>
-                        <polyline points="12 19 5 12 12 5"></polyline>
-                    </svg>
-                    Kembali
-                </button>
+			<!-- FOOTER -->
+			<div class="bg-light p-4 border-top d-flex justify-content-between align-items-center">
+				<button type="button" class="btn-form btn-form-secondary d-none" id="btn-back">
+					<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
+						stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<line x1="19" y1="12" x2="5" y2="12"></line>
+						<polyline points="12 19 5 12 12 5"></polyline>
+					</svg>
+					Kembali
+				</button>
 
-                <div class="ms-auto d-flex gap-2">
-                    <button type="button" class="btn-form btn-form-primary" id="btn-next">
-                        Seterusnya
-                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <line x1="5" y1="12" x2="19" y2="12"></line>
-                            <polyline points="12 5 19 12 12 19"></polyline>
-                        </svg>
-                    </button>
+				<div class="ms-auto d-flex gap-2">
+					<button type="button" class="btn-form btn-form-primary" id="btn-next">
+						Seterusnya
+						<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
+							stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+							<line x1="5" y1="12" x2="19" y2="12"></line>
+							<polyline points="12 5 19 12 12 19"></polyline>
+						</svg>
+					</button>
 
-                    <button type="submit" class="btn-form btn-form-success d-none" id="btn-submit">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="20 6 9 17 4 12"></polyline>
-                        </svg>
-                        Hantar
-                    </button>
-                </div>
-            </div>
+					<button type="submit" class="btn-form btn-form-success d-none" id="btn-submit">
+						<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
+							stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+							<polyline points="20 6 9 17 4 12"></polyline>
+						</svg>
+						Hantar
+					</button>
+				</div>
+			</div>
 
-        </div>
-    </form>
+		</div>
+	</form>
 @endsection
 
 @section('scripts')
-    <script>
-        // --- DROPDOWN OPTIONS FOR DYNAMIC ROWS FOR SECTION 2 FORM ---
-        var mofOptions =
-            `@foreach (App\Code::where('type', 'mof')->orderBy('code')->get() as $code)<option value="{{ $code->id }}">{{ $code->label }}</option>@endforeach`;
-        var cidbSpecOptions =
-            `@foreach (App\Code::where('type', 'cidb-c')->orderBy('code')->get() as $code)<option value="{{ $code->id }}">{{ $code->label }}</option>@endforeach`;
+	<script>
+		// --- DROPDOWN OPTIONS FOR DYNAMIC ROWS FOR SECTION 2 FORM ---
+		var mofOptions =
+			`@foreach (App\Code::where('type', 'mof')->orderBy('code')->get() as $code)<option value="{{ $code->id }}">{{ $code->label }}</option>@endforeach`;
+		var cidbSpecOptions =
+			`@foreach (App\Code::where('type', 'cidb-c')->orderBy('code')->get() as $code)<option value="{{ $code->id }}">{{ $code->label }}</option>@endforeach`;
 
-        $(document).ready(function() {
-            const kategoriPerolehanDropdown = $('select[name="kategori_perolehan"]');
-            const kategoriDetailDropdown = $('select[name="kategori_perolehan_detail"]');
-            const oldKategoriDetail = '{{ old('kategori_perolehan_detail') }}';
+		$(document).ready(function() {
+			const kategoriPerolehanDropdown = $('select[name="kategori_perolehan"]');
+			const kategoriDetailDropdown = $('select[name="kategori_perolehan_detail"]');
+			const oldKategoriDetail = '{{ old('kategori_perolehan_detail') }}';
 
-            function updateKategoriPerolehanOptions() {
-                const selectedKategori = kategoriPerolehanDropdown.val();
-                kategoriDetailDropdown.empty();
-                kategoriDetailDropdown.append('<option value="" selected disabled>Pilih...</option>');
+			function updateKategoriPerolehanOptions() {
+				const selectedKategori = kategoriPerolehanDropdown.val();
+				kategoriDetailDropdown.empty();
+				kategoriDetailDropdown.append('<option value="" selected disabled>Pilih...</option>');
 
-                if (!selectedKategori) {
-                    return;
-                }
+				if (!selectedKategori) {
+					return;
+				}
 
-                $.ajax({
-                    url: '{{ route('getTypeOfPerolehanByKategori') }}',
-                    type: 'GET',
-                    data: {
-                        kategori_id: selectedKategori
-                    },
-                    success: function(data) {
-                        data.forEach(option => {
-                            kategoriDetailDropdown.append(
-                                `<option value="${option.id}">${option.name}</option>`);
-                        });
-                        if (oldKategoriDetail) {
-                            kategoriDetailDropdown.val(oldKategoriDetail);
-                        }
-                    },
-                    error: function(xhr, status, error) {
-                        console.error('Error fetching type of perolehan:', error);
-                    }
-                });
-            }
+				$.ajax({
+					url: '{{ route('getTypeOfPerolehanByKategori') }}',
+					type: 'GET',
+					data: {
+						kategori_id: selectedKategori
+					},
+					success: function(data) {
+						data.forEach(option => {
+							kategoriDetailDropdown.append(
+								`<option value="${option.id}">${option.name}</option>`);
+						});
+						if (oldKategoriDetail) {
+							kategoriDetailDropdown.val(oldKategoriDetail);
+						}
+					},
+					error: function(xhr, status, error) {
+						console.error('Error fetching type of perolehan:', error);
+					}
+				});
+			}
 
-            function updateJenisField() {
-                const selectedKategori = kategoriPerolehanDropdown.val();
-                const jenisTenderGroup = $('#jenis_tender_group');
-                const jenisKontrakGroup = $('#jenis_kontrak_group');
-                const jenisTenderSelect = $('#jenis_tender');
-                const jenisKontrakSelect = $('#jenis_kontrak');
+			function updateJenisField() {
+				const selectedKategori = kategoriPerolehanDropdown.val();
+				const jenisTenderGroup = $('#jenis_tender_group');
+				const jenisKontrakGroup = $('#jenis_kontrak_group');
+				const jenisTenderSelect = $('#jenis_tender');
+				const jenisKontrakSelect = $('#jenis_kontrak');
 
-                if (selectedKategori === '1' || selectedKategori === '2') {
-                    // Show Jenis Kontrak for old values (1 and 2), hide Jenis Tender
-                    jenisTenderGroup.addClass('d-none');
-                    jenisTenderSelect.removeAttr('required');
+				if (selectedKategori === '1' || selectedKategori === '2') {
+					// Show Jenis Kontrak for old values (1 and 2), hide Jenis Tender
+					jenisTenderGroup.addClass('d-none');
+					jenisTenderSelect.removeAttr('required');
 
-                    jenisKontrakGroup.removeClass('d-none');
-                    jenisKontrakSelect.attr('required', 'required');
-                } else {
-                    // Show Jenis Tender for other new values, hide Jenis Kontrak
-                    jenisTenderGroup.removeClass('d-none');
-                    jenisTenderSelect.attr('required', 'required');
+					jenisKontrakGroup.removeClass('d-none');
+					jenisKontrakSelect.attr('required', 'required');
+				} else {
+					// Show Jenis Tender for other new values, hide Jenis Kontrak
+					jenisTenderGroup.removeClass('d-none');
+					jenisTenderSelect.attr('required', 'required');
 
-                    jenisKontrakGroup.addClass('d-none');
-                    jenisKontrakSelect.removeAttr('required');
-                }
-            }
+					jenisKontrakGroup.addClass('d-none');
+					jenisKontrakSelect.removeAttr('required');
+				}
+			}
 
-            // Function to toggle between Tempoh Siap and Tempoh Kontrak
-            function updateTempohField() {
-                const selectedKategori = kategoriPerolehanDropdown.val();
-                const tempohSiapGroup = $('#tempoh_siap_group');
-                const tempohKontrakGroup = $('#tempoh_kontrak_group');
-                const tempohSiapInput = $('input[name="tempoh_siap_val"]');
-                const tempohSiapUnit = $('select[name="tempoh_siap_unit"]');
-                const tempohKontrakInput = $('input[name="tempoh_kontrak_bulan"]');
-                const tempohKontrakUnit = $('select[name="tempoh_kontrak_unit"]');
+			// Function to toggle between Tempoh Siap and Tempoh Kontrak
+			function updateTempohField() {
+				const selectedKategori = kategoriPerolehanDropdown.val();
+				const tempohSiapGroup = $('#tempoh_siap_group');
+				const tempohKontrakGroup = $('#tempoh_kontrak_group');
+				const tempohSiapInput = $('input[name="tempoh_siap_val"]');
+				const tempohSiapUnit = $('select[name="tempoh_siap_unit"]');
+				const tempohKontrakInput = $('input[name="tempoh_kontrak_bulan"]');
+				const tempohKontrakUnit = $('select[name="tempoh_kontrak_unit"]');
 
-                if (selectedKategori === '1' || selectedKategori === '2') {
-                    // Show Tempoh Kontrak for old values (1 and 2), hide Tempoh Siap
-                    tempohSiapGroup.addClass('d-none');
-                    tempohSiapInput.removeAttr('required');
-                    tempohSiapUnit.prop('disabled', true);
+				if (selectedKategori === '1' || selectedKategori === '2') {
+					// Show Tempoh Kontrak for old values (1 and 2), hide Tempoh Siap
+					tempohSiapGroup.addClass('d-none');
+					tempohSiapInput.removeAttr('required');
+					tempohSiapUnit.prop('disabled', true);
 
-                    tempohKontrakGroup.removeClass('d-none');
-                    tempohKontrakInput.attr('required', 'required');
-                    tempohKontrakUnit.prop('disabled', false);
-                } else {
-                    // Show Tempoh Siap for other new values, hide Tempoh Kontrak
-                    tempohSiapGroup.removeClass('d-none');
-                    tempohSiapInput.attr('required', 'required');
-                    tempohSiapUnit.prop('disabled', false);
+					tempohKontrakGroup.removeClass('d-none');
+					tempohKontrakInput.attr('required', 'required');
+					tempohKontrakUnit.prop('disabled', false);
+				} else {
+					// Show Tempoh Siap for other new values, hide Tempoh Kontrak
+					tempohSiapGroup.removeClass('d-none');
+					tempohSiapInput.attr('required', 'required');
+					tempohSiapUnit.prop('disabled', false);
 
-                    tempohKontrakGroup.addClass('d-none');
-                    tempohKontrakInput.removeAttr('required');
-                    tempohKontrakUnit.prop('disabled', true);
-                }
-            }
+					tempohKontrakGroup.addClass('d-none');
+					tempohKontrakInput.removeAttr('required');
+					tempohKontrakUnit.prop('disabled', true);
+				}
+			}
 
-            // Function to toggle Jawatankuasa Spesifikasi field
-            function updateJawatankuasaField() {
-                const selectedKategori = kategoriPerolehanDropdown.val();
-                const jawatankuasaGroup = $('#jawatankuasa_group');
-                const jawatankuasaInput = $('input[name="jawatankuasa"]');
+			// Function to toggle Jawatankuasa Spesifikasi field
+			function updateJawatankuasaField() {
+				const selectedKategori = kategoriPerolehanDropdown.val();
+				const jawatankuasaGroup = $('#jawatankuasa_group');
+				const jawatankuasaInput = $('input[name="jawatankuasa"]');
 
-                if (selectedKategori === '1' || selectedKategori === '2') {
-                    // Hide Jawatankuasa for old values (1 and 2)
-                    jawatankuasaGroup.addClass('d-none');
-                    jawatankuasaInput.removeAttr('required');
-                } else {
-                    // Show Jawatankuasa for other new values
-                    jawatankuasaGroup.removeClass('d-none');
-                    jawatankuasaInput.attr('required', 'required');
-                }
-            }
+				if (selectedKategori === '1' || selectedKategori === '2') {
+					// Hide Jawatankuasa for old values (1 and 2)
+					jawatankuasaGroup.addClass('d-none');
+					jawatankuasaInput.removeAttr('required');
+				} else {
+					// Show Jawatankuasa for other new values
+					jawatankuasaGroup.removeClass('d-none');
+					jawatankuasaInput.attr('required', 'required');
+				}
+			}
 
-            // Function to toggle Wang Kos Prima & Wang Peruntukan Sementara
-            // (hanya dipaparkan untuk Kategori Jenis Perolehan "Kerja")
-            function updateWangKerjaFields() {
-                const selectedText = (kategoriPerolehanDropdown.find('option:selected').text() || '')
-                    .trim()
-                    .toLowerCase();
-                const wangKerjaGroup = $('#wang_kerja_group');
+			// Function to toggle Wang Kos Prima & Wang Peruntukan Sementara
+			// (hanya dipaparkan untuk Kategori Jenis Perolehan "Kerja")
+			function updateWangKerjaFields() {
+				const selectedText = (kategoriPerolehanDropdown.find('option:selected').text() || '')
+					.trim()
+					.toLowerCase();
+				const wangKerjaGroup = $('#wang_kerja_group');
 
-                if (selectedText === 'kerja') {
-                    wangKerjaGroup.removeClass('d-none');
-                } else {
-                    wangKerjaGroup.addClass('d-none');
-                }
-            }
+				if (selectedText === 'kerja') {
+					wangKerjaGroup.removeClass('d-none');
+				} else {
+					wangKerjaGroup.addClass('d-none');
+				}
+			}
 
-            // Initial setup on page load
-            updateKategoriPerolehanOptions();
-            updateJenisField();
-            updateTempohField();
-            updateJawatankuasaField();
-            updateWangKerjaFields();
+			// Initial setup on page load
+			updateKategoriPerolehanOptions();
+			updateJenisField();
+			updateTempohField();
+			updateJawatankuasaField();
+			updateWangKerjaFields();
 
-            // Listen for changes
-            kategoriPerolehanDropdown.change(function() {
-                updateKategoriPerolehanOptions();
-                updateJenisField();
-                updateTempohField();
-                updateJawatankuasaField();
-                updateWangKerjaFields();
-            });
+			// Listen for changes
+			kategoriPerolehanDropdown.change(function() {
+				updateKategoriPerolehanOptions();
+				updateJenisField();
+				updateTempohField();
+				updateJawatankuasaField();
+				updateWangKerjaFields();
+			});
 
-            // --- SELECTIZE INITIALIZATION ---
-            $('#step2-content select.selectize').each(function() {
-                if (!this.selectize) {
-                    $(this).selectize();
-                }
-            });
+			// --- SELECTIZE INITIALIZATION ---
+			$('#step2-content select.selectize').each(function() {
+				if (!this.selectize) {
+					$(this).selectize();
+				}
+			});
 
-            // --- DATEPICKER INITIALIZATION ---
-            $('.datepicker').datepicker({
-                format: 'd M yyyy',
-                autoclose: true,
-                todayHighlight: true,
-                todayBtn: 'linked'
-            });
+			// --- DATEPICKER INITIALIZATION ---
+			$('.datepicker').datepicker({
+				format: 'd M yyyy',
+				autoclose: true,
+				todayHighlight: true,
+				todayBtn: 'linked'
+			});
 
-            // --- ZON/LOKASI + LOKALITI / DAERAH ---
-            function syncLokalitiDaerahFields() {
-                var zonOn = $('input[name="zon_lokasi"]:checked').val() === '1';
-                var $lokaliti = $('#lokaliti_id');
-                var $daerahGroup = $('#daerah-group');
-                var $daerahSelect = $('#district_id_zon');
+			// --- ZON/LOKASI + LOKALITI / DAERAH ---
+			function syncLokalitiDaerahFields() {
+				var zonOn = $('input[name="zon_lokasi"]:checked').val() === '1';
+				var $lokaliti = $('#lokaliti_id');
+				var $daerahGroup = $('#daerah-group');
+				var $daerahSelect = $('#district_id_zon');
 
-                if (zonOn) {
-                    $('#lokaliti-group').removeClass('d-none');
-                } else {
-                    $('#lokaliti-group').addClass('d-none');
-                    $lokaliti.val('');
-                    $daerahGroup.addClass('d-none');
-                    $daerahSelect.val('');
-                    return;
-                }
+				if (zonOn) {
+					$('#lokaliti-group').removeClass('d-none');
+				} else {
+					$('#lokaliti-group').addClass('d-none');
+					$lokaliti.val('');
+					$daerahGroup.addClass('d-none');
+					$daerahSelect.val('');
+					return;
+				}
 
-                var lokalitiName = ($lokaliti.find('option:selected').data('lokaliti-name') || '').toString().trim();
-                if (lokalitiName === 'daerah terpilih') {
-                    $daerahGroup.removeClass('d-none');
-                } else {
-                    // Zon Terpilih (or empty): no zone ref table — hide daerah, clear value.
-                    $daerahGroup.addClass('d-none');
-                    $daerahSelect.val('');
-                }
-            }
+				var lokalitiName = ($lokaliti.find('option:selected').data('lokaliti-name') || '').toString().trim();
+				if (lokalitiName === 'daerah terpilih') {
+					$daerahGroup.removeClass('d-none');
+				} else {
+					// Zon Terpilih (or empty): no zone ref table — hide daerah, clear value.
+					$daerahGroup.addClass('d-none');
+					$daerahSelect.val('');
+				}
+			}
 
-            $('input[name="zon_lokasi"]').change(syncLokalitiDaerahFields);
-            $('#lokaliti_id').on('change', syncLokalitiDaerahFields);
-            syncLokalitiDaerahFields();
+			$('input[name="zon_lokasi"]').change(syncLokalitiDaerahFields);
+			$('#lokaliti_id').on('change', syncLokalitiDaerahFields);
+			syncLokalitiDaerahFields();
 
-            // --- KAEDAH PEROLEHAN LABEL LISTENER ---
-            var kerjaKategoriOption = null;
+			// --- KAEDAH PEROLEHAN LABEL LISTENER ---
+			var kerjaKategoriOption = null;
 
-            function rememberKerjaOption() {
-                var currentKerja = kategoriPerolehanDropdown.find('option').filter(function() {
-                    return ($(this).text() || '').trim().toLowerCase() === 'kerja';
-                });
+			function rememberKerjaOption() {
+				var currentKerja = kategoriPerolehanDropdown.find('option').filter(function() {
+					return ($(this).text() || '').trim().toLowerCase() === 'kerja';
+				});
 
-                if (currentKerja.length) {
-                    kerjaKategoriOption = currentKerja;
-                }
-            }
+				if (currentKerja.length) {
+					kerjaKategoriOption = currentKerja;
+				}
+			}
 
-            function unlockKategoriPerolehan() {
-                kategoriPerolehanDropdown.prop('disabled', false);
-                $('#kategori_perolehan_locked').remove();
-            }
+			function unlockKategoriPerolehan() {
+				kategoriPerolehanDropdown.prop('disabled', false);
+				$('#kategori_perolehan_locked').remove();
+			}
 
-            function lockKategoriToKerja() {
-                if (!kerjaKategoriOption || !kerjaKategoriOption.length) {
-                    return;
-                }
+			function lockKategoriToKerja() {
+				if (!kerjaKategoriOption || !kerjaKategoriOption.length) {
+					return;
+				}
 
-                if (!kerjaKategoriOption.parent().length) {
-                    kategoriPerolehanDropdown.append(kerjaKategoriOption);
-                }
+				if (!kerjaKategoriOption.parent().length) {
+					kategoriPerolehanDropdown.append(kerjaKategoriOption);
+				}
 
-                var kerjaValue = String(kerjaKategoriOption.val());
-                if (String(kategoriPerolehanDropdown.val()) !== kerjaValue) {
-                    kategoriPerolehanDropdown.val(kerjaValue).trigger('change');
-                }
+				var kerjaValue = String(kerjaKategoriOption.val());
+				if (String(kategoriPerolehanDropdown.val()) !== kerjaValue) {
+					kategoriPerolehanDropdown.val(kerjaValue).trigger('change');
+				}
 
-                kategoriPerolehanDropdown.prop('disabled', true);
-                var locked = $('#kategori_perolehan_locked');
-                if (!locked.length) {
-                    locked = $('<input>', {
-                        type: 'hidden',
-                        id: 'kategori_perolehan_locked',
-                        name: 'kategori_perolehan'
-                    });
-                    kategoriPerolehanDropdown.after(locked);
-                }
-                locked.val(kerjaValue);
-            }
+				kategoriPerolehanDropdown.prop('disabled', true);
+				var locked = $('#kategori_perolehan_locked');
+				if (!locked.length) {
+					locked = $('<input>', {
+						type: 'hidden',
+						id: 'kategori_perolehan_locked',
+						name: 'kategori_perolehan'
+					});
+					kategoriPerolehanDropdown.after(locked);
+				}
+				locked.val(kerjaValue);
+			}
 
-            function syncKerjaOptionForKaedah() {
-                var kaedahText = ($('select[name="type"] option:selected').text() || '').trim().toLowerCase();
-                rememberKerjaOption();
+			function syncKerjaOptionForKaedah() {
+				var kaedahText = ($('select[name="type"] option:selected').text() || '').trim().toLowerCase();
+				rememberKerjaOption();
 
-                if (kaedahText === 'pembelian terus') {
-                    unlockKategoriPerolehan();
-                    if (kerjaKategoriOption && kerjaKategoriOption.parent().length) {
-                        if (String(kategoriPerolehanDropdown.val()) === String(kerjaKategoriOption.val())) {
-                            kategoriPerolehanDropdown.val('').trigger('change');
-                        }
-                        kerjaKategoriOption.detach();
-                    }
-                    return;
-                }
+				if (kaedahText === 'pembelian terus') {
+					unlockKategoriPerolehan();
+					if (kerjaKategoriOption && kerjaKategoriOption.parent().length) {
+						if (String(kategoriPerolehanDropdown.val()) === String(kerjaKategoriOption.val())) {
+							kategoriPerolehanDropdown.val('').trigger('change');
+						}
+						kerjaKategoriOption.detach();
+					}
+					return;
+				}
 
-                if (kaedahText === 'lantikan terus') {
-                    lockKategoriToKerja();
-                    return;
-                }
+				if (kaedahText === 'lantikan terus') {
+					lockKategoriToKerja();
+					return;
+				}
 
-                unlockKategoriPerolehan();
-                if (kerjaKategoriOption && !kerjaKategoriOption.parent().length) {
-                    kategoriPerolehanDropdown.append(kerjaKategoriOption);
-                }
-            }
+				unlockKategoriPerolehan();
+				if (kerjaKategoriOption && !kerjaKategoriOption.parent().length) {
+					kategoriPerolehanDropdown.append(kerjaKategoriOption);
+				}
+			}
 
-            $('select[name="type"]').change(function() {
-                var text = $(this).find('option:selected').text().toLowerCase();
-                var label = text.includes('sebut harga') ? 'NO. SEBUT HARGA' : 'NO. TENDER';
-                $('#kaedah-label').text(label);
-                syncKerjaOptionForKaedah();
-            });
+			$('select[name="type"]').change(function() {
+				var text = $(this).find('option:selected').text().toLowerCase();
+				var label = text.includes('sebut harga') ? 'NO. SEBUT HARGA' : 'NO. TENDER';
+				$('#kaedah-label').text(label);
+				syncKerjaOptionForKaedah();
+			});
 
-            syncKerjaOptionForKaedah();
+			syncKerjaOptionForKaedah();
 
-            // --- PTJ DROPDOWN LISTENER ---
-            $('#ptj-select').change(function() {
-                var selectedText = $(this).find('option:selected').text();
-                if (selectedText !== 'Pilih...') {
-                    $('#ptj-display').text(selectedText);
-                }
-            });
+			// --- PTJ DROPDOWN LISTENER ---
+			$('#ptj-select').change(function() {
+				var selectedText = $(this).find('option:selected').text();
+				if (selectedText !== 'Pilih...') {
+					$('#ptj-display').text(selectedText);
+				}
+			});
 
-            // --- NO. TENDER INPUT LISTENER ---
-            function updateNoTenderDisplay() {
-                var val = $('input[name="no_tender"]').val();
-                if (val && val.trim() !== '') {
-                    $('#no-tender-display').text(val);
-                } else {
-                    $('#no-tender-display').text('-');
-                }
-            }
+			// --- NO. TENDER INPUT LISTENER ---
+			function updateNoTenderDisplay() {
+				var val = $('input[name="no_tender"]').val();
+				if (val && val.trim() !== '') {
+					$('#no-tender-display').text(val);
+				} else {
+					$('#no-tender-display').text('-');
+				}
+			}
 
-            $('input[name="no_tender"]').on('input keyup', function() {
-                updateNoTenderDisplay();
-            });
+			$('input[name="no_tender"]').on('input keyup', function() {
+				updateNoTenderDisplay();
+			});
 
-            updateNoTenderDisplay();
+			updateNoTenderDisplay();
 
-            // --- WIZARD NAVIGATION ---
-            let currentStep = 1;
+			// --- WIZARD NAVIGATION ---
+			let currentStep = 1;
 
-            function updateWizardUI() {
-                if (currentStep === 1) {
-                    $('#step1-content').removeClass('d-none');
-                    $('#step2-content').addClass('d-none');
+			function updateWizardUI() {
+				if (currentStep === 1) {
+					$('#step1-content').removeClass('d-none');
+					$('#step2-content').addClass('d-none');
 
-                    $('#btn-back').addClass('d-none');
-                    $('#btn-next').removeClass('d-none');
-                    $('#btn-submit').addClass('d-none');
+					$('#btn-back').addClass('d-none');
+					$('#btn-next').removeClass('d-none');
+					$('#btn-submit').addClass('d-none');
 
-                    $('#step1-indicator').removeClass('done').addClass('active');
-                    $('#step2-indicator').removeClass('active');
-                } else {
-                    $('#step1-content').addClass('d-none');
-                    $('#step2-content').removeClass('d-none');
+					$('#step1-indicator').removeClass('done').addClass('active');
+					$('#step2-indicator').removeClass('active');
+				} else {
+					$('#step1-content').addClass('d-none');
+					$('#step2-content').removeClass('d-none');
 
-                    $('#btn-back').removeClass('d-none');
-                    $('#btn-next').addClass('d-none');
-                    $('#btn-submit').removeClass('d-none');
+					$('#btn-back').removeClass('d-none');
+					$('#btn-next').addClass('d-none');
+					$('#btn-submit').removeClass('d-none');
 
-                    $('#step1-indicator').removeClass('active').addClass('done');
-                    $('#step2-indicator').addClass('active');
-                }
-            }
+					$('#step1-indicator').removeClass('active').addClass('done');
+					$('#step2-indicator').addClass('active');
+				}
+			}
 
-            // Live clearing of is-invalid class when user inputs valid data
-            $('#step1-content').on('input change', 'input, select, textarea', function() {
-                if (this.checkValidity()) {
-                    $(this).removeClass('is-invalid');
-                }
-            });
+			// Live clearing of is-invalid class when user inputs valid data
+			$('#step1-content').on('input change', 'input, select, textarea', function() {
+				if (this.checkValidity()) {
+					$(this).removeClass('is-invalid');
+				}
+			});
 
-            $('#btn-next').click(function() {
-                // Validate Step 1 visible required fields before proceeding
-                var isValid = true;
-                $('#step1-content [required]:visible').each(function() {
-                    if (!this.checkValidity()) {
-                        $(this).addClass('is-invalid');
-                        isValid = false;
-                    } else {
-                        $(this).removeClass('is-invalid');
-                    }
-                });
+			$('#btn-next').click(function() {
+				// Validate Step 1 visible required fields before proceeding
+				var isValid = true;
+				$('#step1-content [required]:visible').each(function() {
+					if (!this.checkValidity()) {
+						$(this).addClass('is-invalid');
+						isValid = false;
+					} else {
+						$(this).removeClass('is-invalid');
+					}
+				});
 
-                if (!isValid) {
-                    // Focus on first invalid visible field
-                    $('#step1-content [required]:visible:invalid').first().focus();
-                    return;
-                }
+				if (!isValid) {
+					// Focus on first invalid visible field
+					$('#step1-content [required]:visible:invalid').first().focus();
+					return;
+				}
 
-                currentStep = 2;
-                updateWizardUI();
-                $('html, body').animate({
-                    scrollTop: $('#stepper-wrapper').offset().top - 20
-                }, 400);
-            });
+				currentStep = 2;
+				updateWizardUI();
+				$('html, body').animate({
+					scrollTop: $('#stepper-wrapper').offset().top - 20
+				}, 400);
+			});
 
-            $('#btn-back').click(function() {
-                currentStep = 1;
-                updateWizardUI();
-                // Scroll to timeline when click "Seterusnya"
-                $('html, body').animate({
-                    scrollTop: $('#stepper-wrapper').offset().top - 20
-                }, 400);
-            });
+			$('#btn-back').click(function() {
+				currentStep = 1;
+				updateWizardUI();
+				// Scroll to timeline when click "Seterusnya"
+				$('html, body').animate({
+					scrollTop: $('#stepper-wrapper').offset().top - 20
+				}, 400);
+			});
 
-            // --- TOGGLE LAIN-LAIN ---
-            $('input[name="sumber_peruntukan"]').change(function() {
-                if ($(this).val() === 'lain') {
-                    $('#sumber_lain_input').removeClass('d-none').attr('required', true).focus();
-                } else {
-                    $('#sumber_lain_input').addClass('d-none').removeAttr('required').val('');
-                }
-            });
+			// --- TOGGLE LAIN-LAIN ---
+			$('input[name="sumber_peruntukan"]').change(function() {
+				if ($(this).val() === 'lain') {
+					$('#sumber_lain_input').removeClass('d-none').attr('required', true).focus();
+				} else {
+					$('#sumber_lain_input').addClass('d-none').removeAttr('required').val('');
+				}
+			});
 
-            // --- DYNAMIC ROWS (for condition builder layout) ---
-            let mofCount = 1;
+			// --- DYNAMIC ROWS (for condition builder layout) ---
+			let mofCount = 1;
 
-            function updateMofRowNumbers() {
-                $('#mof-wrapper .condition-row').each(function(i) {
-                    $(this).find('.row-number').text(i + 1);
-                });
-            }
+			function updateMofRowNumbers() {
+				$('#mof-wrapper .condition-row').each(function(i) {
+					$(this).find('.row-number').text(i + 1);
+				});
+			}
 
-            $('#btn-add-mof').click(function() {
-                let index = mofCount++;
-                let rowNum = $('#mof-wrapper .condition-row').length + 1;
+			$('#btn-add-mof').click(function() {
+				let index = mofCount++;
+				let rowNum = $('#mof-wrapper .condition-row').length + 1;
 
-                // Row Connector
-                let connectorHtml = `
+				// Row Connector
+				let connectorHtml = `
                     <div class="condition-connector" id="mof-logic-${index}">
                         <div class="connector-pill-wrapper">
                             <select class="connector-pill" name="mof_logic_${index}">
@@ -1648,8 +1589,8 @@
                         </div>
                     </div>`;
 
-                // New Row
-                let rowHtml = `
+				// New Row
+				let rowHtml = `
                     <div class="condition-row mof-row" id="mof-row-${index}" data-index="${index}">
                         <div class="row-number">${rowNum}</div>
                         <div class="row-fields">
@@ -1676,33 +1617,33 @@
                         </div>
                     </div>`;
 
-                $('#mof-wrapper').append(connectorHtml + rowHtml);
-                $('#mof-row-' + index + ' select.selectize').each(function() {
-                    if (!this.selectize) $(this).selectize();
-                });
-            });
+				$('#mof-wrapper').append(connectorHtml + rowHtml);
+				$('#mof-row-' + index + ' select.selectize').each(function() {
+					if (!this.selectize) $(this).selectize();
+				});
+			});
 
-            window.removeMofRow = function(index) {
-                $('#mof-row-' + index).remove();
-                $('#mof-logic-' + index).remove();
-                updateMofRowNumbers();
-            };
+			window.removeMofRow = function(index) {
+				$('#mof-row-' + index).remove();
+				$('#mof-logic-' + index).remove();
+				updateMofRowNumbers();
+			};
 
-            // --- CIDB ---
-            let cidbCount = 1;
+			// --- CIDB ---
+			let cidbCount = 1;
 
-            function updateCidbRowNumbers() {
-                $('#cidb-wrapper .condition-row').each(function(i) {
-                    $(this).find('.row-number').text(i + 1);
-                });
-            }
+			function updateCidbRowNumbers() {
+				$('#cidb-wrapper .condition-row').each(function(i) {
+					$(this).find('.row-number').text(i + 1);
+				});
+			}
 
-            $('#btn-add-cidb').click(function() {
-                let index = cidbCount++;
-                let rowNum = $('#cidb-wrapper .condition-row').length + 1;
+			$('#btn-add-cidb').click(function() {
+				let index = cidbCount++;
+				let rowNum = $('#cidb-wrapper .condition-row').length + 1;
 
-                // Row Connector
-                let connectorHtml = `
+				// Row Connector
+				let connectorHtml = `
                     <div class="condition-connector" id="cidb-logic-${index}">
                         <div class="connector-pill-wrapper">
                             <select class="connector-pill" name="cidb_logic_${index}">
@@ -1712,7 +1653,7 @@
                         </div>
                     </div>`;
 
-                let rowHtml = `
+				let rowHtml = `
                     <div class="condition-row cidb-row" id="cidb-row-${index}" data-index="${index}">
                         <div class="row-number">${rowNum}</div>
                         <div class="row-fields cidb-fields">
@@ -1741,148 +1682,151 @@
                         </div>
                     </div>`;
 
-                $('#cidb-wrapper').append(connectorHtml + rowHtml);
-                $('#cidb-row-' + index + ' select.selectize').each(function() {
-                    if (!this.selectize) $(this).selectize();
-                });
-            });
+				$('#cidb-wrapper').append(connectorHtml + rowHtml);
+				$('#cidb-row-' + index + ' select.selectize').each(function() {
+					if (!this.selectize) $(this).selectize();
+				});
+			});
 
-            window.removeCidbRow = function(index) {
-                $('#cidb-row-' + index).remove();
-                $('#cidb-logic-' + index).remove();
-                updateCidbRowNumbers();
-            };
+			window.removeCidbRow = function(index) {
+				$('#cidb-row-' + index).remove();
+				$('#cidb-logic-' + index).remove();
+				updateCidbRowNumbers();
+			};
 
-            // --- Pulihkan blok kod kedua dan seterusnya ---
-            // Blok pertama dirender oleh Blade melalui old(), tetapi blok tambahan
-            // dicipta oleh JS, jadi ia tiada semasa halaman dimuatkan. Nilai dibaca
-            // daripada old() dan bukan terus daripada tender: apabila pengesahan
-            // gagal, withInput() meletakkan pilihan PENGGUNA pada kunci yang sama,
-            // jadi membaca old() mengekalkan apa yang mereka taip dan bukan
-            // menimpanya semula dengan nilai pangkalan data.
-            const savedMof = @json(old('mof', []));
-            const savedCidb = @json(old('cidb', []));
+			// --- Pulihkan blok kod kedua dan seterusnya ---
+			// Blok pertama dirender oleh Blade melalui old(), tetapi blok tambahan
+			// dicipta oleh JS, jadi ia tiada semasa halaman dimuatkan. Nilai dibaca
+			// daripada old() dan bukan terus daripada tender: apabila pengesahan
+			// gagal, withInput() meletakkan pilihan PENGGUNA pada kunci yang sama,
+			// jadi membaca old() mengekalkan apa yang mereka taip dan bukan
+			// menimpanya semula dengan nilai pangkalan data.
+			const savedMof = @json(old('mof', []));
+			const savedCidb = @json(old('cidb', []));
 
-            function applyCodeValues(selector, values) {
-                if (!values || !values.length) return;
+			function applyCodeValues(selector, values) {
+				if (!values || !values.length) return;
 
-                const $select = $(selector);
-                if (!$select.length) return;
+				const $select = $(selector);
+				if (!$select.length) return;
 
-                const asText = values.map(String);
-                const el = $select.get(0);
+				const asText = values.map(String);
+				const el = $select.get(0);
 
-                // Selectize menggantikan elemen asal, jadi .val() sahaja tidak
-                // mengemas kini paparan.
-                if (el && el.selectize) {
-                    el.selectize.setValue(asText, true);
-                } else {
-                    $select.val(asText);
-                }
-            }
+				// Selectize menggantikan elemen asal, jadi .val() sahaja tidak
+				// mengemas kini paparan.
+				if (el && el.selectize) {
+					el.selectize.setValue(asText, true);
+				} else {
+					$select.val(asText);
+				}
+			}
 
-            Object.keys(savedMof).forEach(function(key) {
-                const index = parseInt(key, 10);
-                if (isNaN(index) || index === 0) return;
+			Object.keys(savedMof).forEach(function(key) {
+				const index = parseInt(key, 10);
+				if (isNaN(index) || index === 0) return;
 
-                $('#btn-add-mof').click();
+				$('#btn-add-mof').click();
 
-                const group = savedMof[key] || {};
-                if (group.logic_mid) {
-                    $('input[name="mof[' + index + '][logic_mid]"][value="' + group.logic_mid + '"]')
-                        .prop('checked', true);
-                }
-                applyCodeValues('select[name="mof[' + index + '][code][]"]', group.code);
-            });
+				const group = savedMof[key] || {};
+				if (group.logic_mid) {
+					$('input[name="mof[' + index + '][logic_mid]"][value="' + group.logic_mid + '"]')
+						.prop('checked', true);
+				}
+				applyCodeValues('select[name="mof[' + index + '][code][]"]', group.code);
+			});
 
-            Object.keys(savedCidb).forEach(function(key) {
-                const index = parseInt(key, 10);
-                if (isNaN(index) || index === 0) return;
+			Object.keys(savedCidb).forEach(function(key) {
+				const index = parseInt(key, 10);
+				if (isNaN(index) || index === 0) return;
 
-                $('#btn-add-cidb').click();
+				$('#btn-add-cidb').click();
 
-                const group = savedCidb[key] || {};
-                if (group.logic_mid) {
-                    $('input[name="cidb[' + index + '][logic_mid]"][value="' + group.logic_mid + '"]')
-                        .prop('checked', true);
-                }
-                applyCodeValues('select[name="cidb[' + index + '][spec][]"]', group.spec);
-            });
+				const group = savedCidb[key] || {};
+				if (group.logic_mid) {
+					$('input[name="cidb[' + index + '][logic_mid]"][value="' + group.logic_mid + '"]')
+						.prop('checked', true);
+				}
+				applyCodeValues('select[name="cidb[' + index + '][spec][]"]', group.spec);
+			});
 
-            // Pemilih hubungan antara blok dicipta bersama blok di atas, jadi ia
-            // hanya boleh ditetapkan selepas blok tersebut wujud.
-            @foreach (array_keys(old('mof', [])) as $mofIndex)
-                @if ((int) $mofIndex > 0)
-                    $('select[name="mof_logic_{{ (int) $mofIndex }}"]')
-                        .val('{{ strtoupper(old('mof_logic_' . (int) $mofIndex, 'AND')) }}');
-                @endif
-            @endforeach
+			// Pemilih hubungan antara blok dicipta bersama blok di atas, jadi ia
+			// hanya boleh ditetapkan selepas blok tersebut wujud.
+			@foreach (array_keys(old('mof', [])) as $mofIndex)
+				@if ((int) $mofIndex > 0)
+					$('select[name="mof_logic_{{ (int) $mofIndex }}"]')
+						.val('{{ strtoupper(old('mof_logic_' . (int) $mofIndex, 'AND')) }}');
+				@endif
+			@endforeach
 
-            @foreach (array_keys(old('cidb', [])) as $cidbIndex)
-                @if ((int) $cidbIndex > 0)
-                    $('select[name="cidb_logic_{{ (int) $cidbIndex }}"]')
-                        .val('{{ strtoupper(old('cidb_logic_' . (int) $cidbIndex, 'OR')) }}');
-                @endif
-            @endforeach
-        });
+			@foreach (array_keys(old('cidb', [])) as $cidbIndex)
+				@if ((int) $cidbIndex > 0)
+					$('select[name="cidb_logic_{{ (int) $cidbIndex }}"]')
+						.val('{{ strtoupper(old('cidb_logic_' . (int) $cidbIndex, 'OR')) }}');
+				@endif
+			@endforeach
+		});
 
-        // ── Amount input — comma formatting ──────────────────────────────────────
-        function parseAmount(val) {
-            return parseFloat(String(val).replace(/,/g, '')) || 0;
-        }
+		// ── Amount input — comma formatting ──────────────────────────────────────
+		function parseAmount(val) {
+			return parseFloat(String(val).replace(/,/g, '')) || 0;
+		}
 
-        function formatAmount(n) {
-            return n.toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        }
+		function formatAmount(n) {
+			return n.toLocaleString('en-MY', {
+				minimumFractionDigits: 2,
+				maximumFractionDigits: 2
+			});
+		}
 
-        // On focus: strip commas so user can type freely
-        $(document).on('focus', '.amount-input', function () {
-            var raw = $(this).val().replace(/,/g, '');
-            $(this).val(raw === '0.00' || raw === '0' ? '' : raw);
-        });
+		// On focus: strip commas so user can type freely
+		$(document).on('focus', '.amount-input', function() {
+			var raw = $(this).val().replace(/,/g, '');
+			$(this).val(raw === '0.00' || raw === '0' ? '' : raw);
+		});
 
-        // On blur: format with commas
-        $(document).on('blur', '.amount-input', function () {
-            var val = $(this).val().trim();
-            if (val === '') return;
-            $(this).val(formatAmount(parseAmount(val)));
-        });
+		// On blur: format with commas
+		$(document).on('blur', '.amount-input', function() {
+			var val = $(this).val().trim();
+			if (val === '') return;
+			$(this).val(formatAmount(parseAmount(val)));
+		});
 
-        // While typing: only allow digits and a single decimal point
-        $(document).on('input', '.amount-input', function () {
-            var val = $(this).val();
-            // Remove anything that's not a digit or dot
-            val = val.replace(/[^\d.]/g, '');
-            // Only keep the first decimal point
-            var parts = val.split('.');
-            if (parts.length > 2) val = parts[0] + '.' + parts.slice(1).join('');
-            $(this).val(val);
-        });
+		// While typing: only allow digits and a single decimal point
+		$(document).on('input', '.amount-input', function() {
+			var val = $(this).val();
+			// Remove anything that's not a digit or dot
+			val = val.replace(/[^\d.]/g, '');
+			// Only keep the first decimal point
+			var parts = val.split('.');
+			if (parts.length > 2) val = parts[0] + '.' + parts.slice(1).join('');
+			$(this).val(val);
+		});
 
-        // On submit: strip commas so the backend receives a plain number
-        $('#createTenderForm').on('submit', function () {
-            $(this).find('.amount-input').each(function () {
-                $(this).val($(this).val().replace(/,/g, ''));
-            });
-        });
+		// On submit: strip commas so the backend receives a plain number
+		$('#createTenderForm').on('submit', function() {
+			$(this).find('.amount-input').each(function() {
+				$(this).val($(this).val().replace(/,/g, ''));
+			});
+		});
 
-        // Tempat Hantar — show/require only for online + manual kaedah
-        function syncLokasiPenghantaranField() {
-            var $checked = $('input.kaedah-dokumen-radio:checked');
-            var requires = $checked.data('requires-lokasi') == 1 || $checked.data('requires-lokasi') === '1';
-            var $row = $('#lokasi_penghantaran_tender_row');
-            var $input = $('#submission_location_address');
+		// Tempat Hantar — show/require only for online + manual kaedah
+		function syncLokasiPenghantaranField() {
+			var $checked = $('input.kaedah-dokumen-radio:checked');
+			var requires = $checked.data('requires-lokasi') == 1 || $checked.data('requires-lokasi') === '1';
+			var $row = $('#lokasi_penghantaran_tender_row');
+			var $input = $('#submission_location_address');
 
-            if (requires) {
-                $row.removeClass('d-none');
-                $input.prop('required', true);
-            } else {
-                $row.addClass('d-none');
-                $input.prop('required', false);
-            }
-        }
+			if (requires) {
+				$row.removeClass('d-none');
+				$input.prop('required', true);
+			} else {
+				$row.addClass('d-none');
+				$input.prop('required', false);
+			}
+		}
 
-        $(document).on('change', 'input.kaedah-dokumen-radio', syncLokasiPenghantaranField);
-        syncLokasiPenghantaranField();
-    </script>
+		$(document).on('change', 'input.kaedah-dokumen-radio', syncLokasiPenghantaranField);
+		syncLokasiPenghantaranField();
+	</script>
 @endsection
