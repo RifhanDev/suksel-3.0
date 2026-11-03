@@ -86,6 +86,8 @@
     </div>
 @elseif ($mode === 'vendor' && $vendorCanEdit && $action === 'download_only' && count($files) > 0)
     <p class="text-muted small mt-2 mb-0">Sila muat turun dokumen PTJ di atas.</p>
+@elseif ($action === 'serahan_tangan')
+    <p class="text-muted small mt-2 mb-0">Dokumen ini perlu diserahkan secara serahan tangan.</p>
 @elseif ($mode === 'admin')
     <p class="text-muted small mt-2 mb-0">Penyerahan petender akan dipaparkan selepas mereka memuat naik.</p>
 @endif

@@ -129,12 +129,21 @@
                         style="font-size: 0.67rem; letter-spacing: 0.5px;">PTJ</span>
                     <span class="fw-semibold text-dark" style="font-size: 0.875rem;">{{ optional($tender->tenderer)->name ?? '-' }}</span>
                 </div>
-                <div class="col-12 col-md-6 d-md-flex justify-content-md-end align-items-md-center">
-                    <span class="d-inline-flex align-items-center gap-2 px-3 py-2 rounded-2 fw-semibold"
-                        style="background: #fef9c3; color: #854d0e; font-size: 0.8rem; border: 1px solid #fde68a;">
-                        <span class="d-inline-block rounded-circle"
-                            style="width:7px;height:7px;background:#ca8a04;flex-shrink:0;"></span>
-                        {{ $specificationData ? ucfirst($specificationData['status'] ?? 'Draf') : 'Draf' }}
+                <div class="col-12 col-md-6 d-md-flex justify-content-md-end align-items-md-center gap-2 flex-wrap">
+                    <span id="spec-save-hint" class="text-muted small d-none" style="font-size:0.75rem;"></span>
+                    @php
+                        $specStatus = strtolower((string) data_get($specificationData, 'status', 'draft'));
+                        $specStatusLabel = $specStatus === 'completed' ? 'Selesai' : 'Draf';
+                        $specStatusStyle = $specStatus === 'completed'
+                            ? 'background:#dcfce7;color:#166534;border:1px solid #bbf7d0;'
+                            : 'background:#fef9c3;color:#854d0e;border:1px solid #fde68a;';
+                        $specStatusDot = $specStatus === 'completed' ? '#16a34a' : '#ca8a04';
+                    @endphp
+                    <span id="spec-status-badge" class="d-inline-flex align-items-center gap-2 px-3 py-2 rounded-2 fw-semibold"
+                        style="{{ $specStatusStyle }} font-size: 0.8rem;">
+                        <span id="spec-status-dot" class="d-inline-block rounded-circle"
+                            style="width:7px;height:7px;background:{{ $specStatusDot }};flex-shrink:0;"></span>
+                        <span id="spec-status-label">{{ $specStatusLabel }}</span>
                     </span>
                 </div>
             </div>
@@ -348,15 +357,16 @@
                                     Spesifikasi
                                 </div>
                             </th>
-                            <th class="text-center" style="width: 130px;">Kekerapan / Kuantiti</th>
-                            <th class="text-center" style="width: 130px;">Unit Ukuran</th>
-                            <th class="text-center" style="width: 200px;">Penetapan Skema</th>
-                            <th class="text-center" style="width: 160px;">Tindakan</th>
+                            <th class="text-center" style="width: 110px;">Kekerapan / Kuantiti</th>
+                            <th class="text-center" style="width: 110px;">Unit Ukuran</th>
+                            <th class="text-center" style="width: 130px;">Kadar Harga (RM)</th>
+                            <th class="text-center" style="width: 180px;">Penetapan Skema</th>
+                            <th class="text-center" style="width: 150px;">Tindakan</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr id="tbl-no-data">
-                            <td colspan="5" class="text-center text-muted py-4 small">Tiada Data</td>
+                            <td colspan="6" class="text-center text-muted py-4 small">Tiada Data</td>
                         </tr>
                     </tbody>
                 </table>
@@ -376,7 +386,14 @@
             Kembali
         </a>
         <div class="d-flex gap-2">
-            <button type="button" id="btn-selesai" class="btn-form btn-form-success">
+            @if (strtolower((string) data_get($specificationData, 'status', 'draft')) !== 'completed')
+            <button type="button" id="btn-draf" class="btn-form btn-form-primary">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                Simpan Draf
+            </button>
+            @endif
+            <button type="button" id="btn-selesai" class="btn-form btn-form-success"
+                @if (strtolower((string) data_get($specificationData, 'status', '')) === 'completed') disabled @endif>
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"></path></svg>
                 Selesai
             </button>
@@ -598,6 +615,7 @@
     <script type="text/javascript">
         var SPEC_CONFIG = {
             tenderUuid: @json($tender->uuid),
+            formBaseUrl: @json(route('spesifikasiForm', ['tenderUuid' => $tender->uuid])),
             storeUrl: @json(route('spesifikasiTeknikal.store')),
             showUrl: @json(route('spesifikasiTeknikal.show', ['uuid' => '__UUID__'])),
             updateUrl: @json(route('spesifikasiTeknikal.update', ['uuid' => '__UUID__'])),
@@ -607,6 +625,13 @@
             csrfToken: @json(csrf_token())
         };
         var PENDING_CHECKLIST_SPEC_KEY = 'technical-checklist:pending-spec:' + SPEC_CONFIG.tenderUuid;
+        // Short coalesce only — save runs when the user leaves a field, not while typing.
+        var AUTO_SAVE_DELAY_MS = 250;
+        var autoSaveTimer = null;
+        var isSavingSpec = false;
+        var pendingAutoSave = false;
+        var suppressAutoSave = false;
+        var lastDraftPayloadJson = null;
 
         function calculateChecklistSpecificationTotalScore(formData) {
             var total = 0;
@@ -632,9 +657,63 @@
             }
         }
 
-        // ── Shared button label ──────────────────────────────────────────────────────
+        // ── Shared button labels ─────────────────────────────────────────────────────
         var BTN_SELESAI_LABEL =
             '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"></path></svg> Selesai';
+        var BTN_DRAF_LABEL =
+            '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg> Simpan Draf';
+
+        function isSpecificationCompleted() {
+            return String((SPEC_CONFIG.existingData && SPEC_CONFIG.existingData.status) || '').toLowerCase() === 'completed';
+        }
+
+        function setSpecStatusBadge(status) {
+            var normalized = String(status || 'draft').toLowerCase();
+            var isCompleted = normalized === 'completed';
+            var $badge = $('#spec-status-badge');
+            var $dot = $('#spec-status-dot');
+            var $label = $('#spec-status-label');
+
+            if (!$badge.length) {
+                return;
+            }
+
+            if (isCompleted) {
+                $badge.css({ background: '#dcfce7', color: '#166534', border: '1px solid #bbf7d0' });
+                $dot.css('background', '#16a34a');
+                $label.text('Selesai');
+            } else {
+                $badge.css({ background: '#fef9c3', color: '#854d0e', border: '1px solid #fde68a' });
+                $dot.css('background', '#ca8a04');
+                $label.text('Draf');
+            }
+        }
+
+        function setSpecSaveHint(text, visible) {
+            var $hint = $('#spec-save-hint');
+            if (!$hint.length) {
+                return;
+            }
+            if (visible && text) {
+                $hint.text(text).removeClass('d-none');
+            } else {
+                $hint.addClass('d-none').text('');
+            }
+        }
+
+        function rememberExistingSpecification(saved) {
+            if (!saved || !saved.uuid) {
+                return;
+            }
+
+            SPEC_CONFIG.existingData = $.extend({}, SPEC_CONFIG.existingData || {}, saved);
+            setSpecStatusBadge(saved.status || 'draft');
+
+            var nextUrl = SPEC_CONFIG.formBaseUrl.replace(/\/$/, '') + '/' + encodeURIComponent(saved.uuid);
+            if (window.location.pathname !== nextUrl && window.history && window.history.replaceState) {
+                window.history.replaceState({}, '', nextUrl);
+            }
+        }
 
         // ── Toast notification helper ─────────────────────────────────────────────────
 
@@ -691,7 +770,7 @@
 
         $(document).ready(function() {
 
-            // ── Build item row (5 tds) ────────────────────────────────────────────────
+            // ── Build item row (6 tds) ────────────────────────────────────────────────
 
             function buildItemRow() {
                 return $(
@@ -700,7 +779,7 @@
                     '<textarea name="item_tajuk[]" class="form-control form-control-sm auto-resize" rows="1" placeholder="Tajuk item..." style="resize:none;overflow:hidden;min-height:32px;"></textarea>' +
                     '</td>' +
                     '<td class="text-center">' +
-                    '<input type="number" name="item_qty[]" class="form-control form-control-sm text-center" value="0" min="0" style="max-width:90px;margin:0 auto;">' +
+                    '<input type="number" name="item_qty[]" class="form-control form-control-sm text-center" value="0" min="0" step="any" style="max-width:90px;margin:0 auto;">' +
                     '</td>' +
                     '<td>' +
                     '<select name="item_unit[]" class="form-select form-select-sm">' +
@@ -710,6 +789,9 @@
                     '<option value="pax">Pax</option>' +
                     '<option value="hari">Hari</option>' +
                     '</select>' +
+                    '</td>' +
+                    '<td class="text-center">' +
+                    '<input type="number" name="item_kadar_harga[]" class="form-control form-control-sm text-end" value="" min="0" step="0.01" placeholder="0.00" style="max-width:110px;margin:0 auto;">' +
                     '</td>' +
                     '<td class="text-center text-muted small">-</td>' +
                     '<td class="text-center">' +
@@ -722,7 +804,7 @@
                 );
             }
 
-            // ── Build spec row (5 tds — col 1 has indented spec input, col 2-3 empty) ─
+            // ── Build spec row (6 tds — qty/unit/kadar empty on detail rows) ─────────
             // "Tambah Spesifikasi" is on item row only. Spec row only has "Hapus".
 
             function buildSpecRow() {
@@ -731,6 +813,7 @@
                     '<td style="padding-left:28px;">' +
                     '<textarea name="spec_penerangan[]" class="form-control form-control-sm auto-resize" rows="1" placeholder="Penerangan spesifikasi..." style="resize:none;overflow:hidden;min-height:32px;"></textarea>' +
                     '</td>' +
+                    '<td class="text-center text-muted small">-</td>' +
                     '<td class="text-center text-muted small">-</td>' +
                     '<td class="text-center text-muted small">-</td>' +
                     '<td>' +
@@ -801,7 +884,7 @@
                     $('#tbl-no-data').remove();
                 } else if ($('#tbl-no-data').length === 0) {
                     $('#dt_tmpltSpec tbody').append(
-                        '<tr id="tbl-no-data"><td colspan="5" class="text-center text-muted py-4 small">Tiada Data</td></tr>'
+                        '<tr id="tbl-no-data"><td colspan="6" class="text-center text-muted py-4 small">Tiada Data</td></tr>'
                         );
                 }
             }
@@ -826,7 +909,7 @@
 
             // ── Excel helpers ─────────────────────────────────────────────────────────
 
-            var HEADERS = ['Item', 'Spesifikasi', 'Kekerapan / Kuantiti', 'Unit Ukuran', 'Penetapan Skema'];
+            var HEADERS = ['Item', 'Spesifikasi', 'Kekerapan / Kuantiti', 'Unit Ukuran', 'Kadar Harga (RM)', 'Penetapan Skema'];
             var SKEMA_LABEL = {
                 '1': 'Text',
                 '2': 'Nombor',
@@ -855,6 +938,9 @@
                     },
                     {
                         width: 14
+                    },
+                    {
+                        width: 18
                     },
                     {
                         width: 18
@@ -891,16 +977,18 @@
                         var $item = $(this);
                         var $specs = getItemSpecs($item);
                         var itemStart = ws.rowCount + 1;
-                        var unitVal = $item.find('select').val();
+                        var unitVal = $item.find('select[name="item_unit[]"]').val();
                         var itemText = $item.find('td:first-child textarea').val() || '';
+                        var kadarVal = $item.find('input[name="item_kadar_harga[]"]').val();
 
                         // Item row — wrapText lets Excel wrap newlines; no explicit height
                         // so the user can double-click the row border in Excel to auto-fit.
                         var iRow = ws.addRow([
                             itemText,
                             '-',
-                            $item.find('input[type="number"]').val() || '0',
-                            unitVal ? $item.find('select option:selected').text() : '-',
+                            $item.find('input[name="item_qty[]"]').val() || '0',
+                            unitVal ? $item.find('select[name="item_unit[]"] option:selected').text() : '-',
+                            (kadarVal !== undefined && kadarVal !== null && String(kadarVal).trim() !== '') ? kadarVal : '-',
                             '-'
                         ]);
                         iRow.getCell(1).alignment = {
@@ -916,6 +1004,7 @@
                             var sRow = ws.addRow([
                                 '',
                                 specText,
+                                '-',
                                 '-',
                                 '-',
                                 SKEMA_LABEL[skemaVal] || ''
@@ -971,7 +1060,7 @@
                     }
 
                     // Sample item row
-                    var siRow = ws.addRow([sItemText, '-', '5', 'Lot', '-']);
+                    var siRow = ws.addRow([sItemText, '-', '5', 'Lot', '100.00', '-']);
                     siRow.getCell(1).alignment = {
                         wrapText: true,
                         vertical: 'top'
@@ -980,10 +1069,11 @@
                     siRow.getCell(1).note =
                         'Isi nama item di sini. NOTA: Padam baris [CONTOH] sebelum mengisi data sebenar.';
                     siRow.getCell(2).note = 'BIARKAN sebagai "-". Lajur ini tidak digunakan untuk baris Item.';
-                    siRow.getCell(5).note = 'BIARKAN sebagai "-". Lajur ini tidak digunakan untuk baris Item.';
+                    siRow.getCell(5).note = 'Masukkan kadar harga (RM) bagi item ini.';
+                    siRow.getCell(6).note = 'BIARKAN sebagai "-". Lajur ini tidak digunakan untuk baris Item.';
 
                     // Sample spec rows (each with 3 sub-points a/b/c on separate lines)
-                    var ss1Row = ws.addRow(['', sSpec1, '-', '-', 'Text']);
+                    var ss1Row = ws.addRow(['', sSpec1, '-', '-', '-', 'Text']);
                     ss1Row.getCell(2).alignment = {
                         wrapText: true,
                         vertical: 'top'
@@ -995,8 +1085,10 @@
                         'BIARKAN sebagai "-". Lajur ini tidak digunakan untuk baris Spesifikasi.';
                     ss1Row.getCell(4).note =
                         'BIARKAN sebagai "-". Lajur ini tidak digunakan untuk baris Spesifikasi.';
+                    ss1Row.getCell(5).note =
+                        'BIARKAN sebagai "-". Lajur ini tidak digunakan untuk baris Spesifikasi.';
 
-                    var ss2Row = ws.addRow(['', sSpec2, '-', '-', 'Nombor']);
+                    var ss2Row = ws.addRow(['', sSpec2, '-', '-', '-', 'Nombor']);
                     ss2Row.getCell(2).alignment = {
                         wrapText: true,
                         vertical: 'top'
@@ -1094,10 +1186,14 @@
                                 var $itemRow = buildItemRow();
                                 var qty = cellText(row, 3);
                                 var unitRaw = cellText(row, 4).toLowerCase();
-                                $itemRow.find('input[type="number"]').val(qty !== '-' ?
+                                var kadarRaw = cellText(row, 5);
+                                $itemRow.find('input[name="item_qty[]"]').val(qty !== '-' ?
                                     qty : '0');
-                                $itemRow.find('select').val(unitRaw !== '-' ? unitRaw :
+                                $itemRow.find('select[name="item_unit[]"]').val(unitRaw !== '-' ? unitRaw :
                                     '');
+                                $itemRow.find('input[name="item_kadar_harga[]"]').val(
+                                    (kadarRaw && kadarRaw !== '-') ? kadarRaw : ''
+                                );
                                 $('#dt_tmpltSpec tbody').append($itemRow);
                                 // Set value and trigger resize AFTER DOM insertion
                                 $itemRow.find('td:first-child textarea').val(itemText)
@@ -1107,7 +1203,11 @@
                             } else if (specText && specText !== '-' && $lastItemRow) {
                                 // Spec row — insert into DOM FIRST so scrollHeight is valid for resize
                                 var $specRow = buildSpecRow();
-                                var skemaKey = cellText(row, 5).toLowerCase();
+                                var skemaKey = cellText(row, 6).toLowerCase();
+                                if (!skemaKey) {
+                                    // Backward compatible with older 5-column templates.
+                                    skemaKey = cellText(row, 5).toLowerCase();
+                                }
                                 $specRow.find('.typeSelect').val(SKEMA_MAP[skemaKey] ||
                                     '');
                                 var $existing = getItemSpecs($lastItemRow);
@@ -1441,8 +1541,16 @@
 
                     var item = {
                         title: $item.find('td:first-child textarea').val().trim(),
-                        quantity: parseInt($item.find('input[type="number"]').val()) || 0,
-                        unit: $item.find('select').val() || null,
+                        quantity: parseFloat($item.find('input[name="item_qty[]"]').val()) || 0,
+                        unit: $item.find('select[name="item_unit[]"]').val() || null,
+                        kadar_harga: (function() {
+                            var raw = $.trim(String($item.find('input[name="item_kadar_harga[]"]').val() || ''));
+                            if (raw === '') {
+                                return null;
+                            }
+                            var parsed = parseFloat(raw.replace(/,/g, ''));
+                            return isNaN(parsed) ? null : parsed;
+                        })(),
                         sort_order: itemSortOrder,
                         details: []
                     };
@@ -1553,8 +1661,13 @@
                 items.forEach(function(item) {
                     var $itemRow = buildItemRow();
                     $itemRow.find('td:first-child textarea').val(item.title || '');
-                    $itemRow.find('input[type="number"]').val(item.quantity || 0);
-                    $itemRow.find('select').val(item.unit || '');
+                    $itemRow.find('input[name="item_qty[]"]').val(item.quantity || 0);
+                    $itemRow.find('select[name="item_unit[]"]').val(item.unit || '');
+                    $itemRow.find('input[name="item_kadar_harga[]"]').val(
+                        (item.kadar_harga !== null && item.kadar_harga !== undefined && item.kadar_harga !== '')
+                            ? item.kadar_harga
+                            : ''
+                    );
                     $('#dt_tmpltSpec tbody').append($itemRow);
                     // Trigger auto-resize
                     $itemRow.find('td:first-child textarea').trigger('input');
@@ -1606,7 +1719,11 @@
             // ── Restore data on page load if editing ────────────────────────────────
 
             if (SPEC_CONFIG.existingData) {
+                suppressAutoSave = true;
                 populateFormData(SPEC_CONFIG.existingData);
+                setSpecStatusBadge(SPEC_CONFIG.existingData.status || 'draft');
+                lastDraftPayloadJson = JSON.stringify($.extend({}, collectFormData(), { status: 'draft' }));
+                suppressAutoSave = false;
             }
 
             // ── Edit-icon: restore saved data when reopening modals ─────────────────
@@ -1650,11 +1767,195 @@
                 }
             });
 
+            function formatAjaxError(xhr, fallback) {
+                var lines = [fallback || 'Gagal menyimpan spesifikasi.'];
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    lines.push(xhr.responseJSON.message);
+                }
+                if (xhr.responseJSON && xhr.responseJSON.errors) {
+                    $.each(xhr.responseJSON.errors, function(field, messages) {
+                        lines.push('• ' + (Array.isArray(messages) ? messages[0] : messages));
+                    });
+                }
+                return lines.join('\n');
+            }
+
+            function cancelAutoSave() {
+                if (autoSaveTimer) {
+                    clearTimeout(autoSaveTimer);
+                    autoSaveTimer = null;
+                }
+                pendingAutoSave = false;
+            }
+
+            function scheduleAutoSave() {
+                if (suppressAutoSave || isSpecificationCompleted()) {
+                    return;
+                }
+
+                cancelAutoSave();
+                autoSaveTimer = setTimeout(function() {
+                    autoSaveTimer = null;
+                    saveSpecificationAsDraft({ silent: true, requireTitle: true });
+                }, AUTO_SAVE_DELAY_MS);
+            }
+
+            function saveSpecificationAsDraft(options) {
+                options = options || {};
+                var silent = !!options.silent;
+                var requireTitle = options.requireTitle !== false;
+                var $btn = $('#btn-draf');
+
+                if (isSpecificationCompleted()) {
+                    return $.Deferred().reject().promise();
+                }
+
+                var formData = collectFormData();
+                formData.status = 'draft';
+
+                if (requireTitle && !formData.title) {
+                    if (!silent) {
+                        showToast('Sila masukkan tajuk dokumen sebelum menyimpan draf.', 'warning');
+                        $('textarea[name="tajuk_dokumen"]').focus();
+                    }
+                    return $.Deferred().reject().promise();
+                }
+
+                // Autosave waits until there is a title or an existing document.
+                if (silent && !formData.title && !(SPEC_CONFIG.existingData && SPEC_CONFIG.existingData.uuid)) {
+                    return $.Deferred().reject().promise();
+                }
+
+                var payloadJson = JSON.stringify(formData);
+                if (silent && payloadJson === lastDraftPayloadJson) {
+                    return $.Deferred().resolve(SPEC_CONFIG.existingData || {}).promise();
+                }
+
+                if (isSavingSpec) {
+                    pendingAutoSave = true;
+                    return $.Deferred().reject().promise();
+                }
+
+                isSavingSpec = true;
+                cancelAutoSave();
+
+                if (!silent && $btn.length) {
+                    $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span> Menyimpan...');
+                } else {
+                    setSpecSaveHint('Menyimpan draf...', true);
+                }
+
+                var isEdit = SPEC_CONFIG.existingData && SPEC_CONFIG.existingData.uuid;
+                var saveUrl = isEdit
+                    ? SPEC_CONFIG.updateUrl.replace('__UUID__', SPEC_CONFIG.existingData.uuid)
+                    : SPEC_CONFIG.storeUrl;
+                var saveMethod = isEdit ? 'PUT' : 'POST';
+
+                return $.ajax({
+                    url: saveUrl,
+                    method: saveMethod,
+                    data: payloadJson,
+                    contentType: 'application/json',
+                    headers: { 'X-CSRF-TOKEN': SPEC_CONFIG.csrfToken }
+                }).done(function(response) {
+                    var saved = response.data || {};
+                    var specUuid = saved.uuid || (isEdit ? SPEC_CONFIG.existingData.uuid : null);
+
+                    if (!specUuid) {
+                        if (!silent) {
+                            showToast('Ralat: UUID spesifikasi tidak ditemui selepas simpan.');
+                        }
+                        setSpecSaveHint('', false);
+                        return;
+                    }
+
+                    rememberExistingSpecification($.extend({}, saved, { uuid: specUuid, status: saved.status || 'draft' }));
+                    lastDraftPayloadJson = payloadJson;
+
+                    queueChecklistSpecification({
+                        uuid: specUuid,
+                        title: saved.title || formData.title,
+                        total_score: saved.total_score !== null && saved.total_score !== undefined
+                            ? saved.total_score
+                            : calculateChecklistSpecificationTotalScore(formData),
+                        status: 'draft',
+                        item_type: saved.item_type || formData.item_type
+                    });
+
+                    if (silent) {
+                        setSpecSaveHint('Draf disimpan ' + new Date().toLocaleTimeString('ms-MY', { hour: '2-digit', minute: '2-digit' }), true);
+                    } else {
+                        setSpecSaveHint('Draf disimpan', true);
+                        showToast('Draf spesifikasi berjaya disimpan.', 'success');
+                    }
+                }).fail(function(xhr) {
+                    setSpecSaveHint('Gagal menyimpan draf', true);
+                    if (!silent) {
+                        showToast(formatAjaxError(xhr, 'Gagal menyimpan draf spesifikasi.'));
+                    } else {
+                        console.warn('Specification auto-save failed', xhr.status, xhr.responseJSON);
+                    }
+                }).always(function() {
+                    isSavingSpec = false;
+                    if (!silent && $btn.length) {
+                        $btn.prop('disabled', false).html(BTN_DRAF_LABEL);
+                    }
+                    if (pendingAutoSave) {
+                        pendingAutoSave = false;
+                        scheduleAutoSave();
+                    }
+                });
+            }
+
+            // ── Simpan Draf ─────────────────────────────────────────────────────────
+
+            $('#btn-draf').on('click', function() {
+                cancelAutoSave();
+                saveSpecificationAsDraft({ silent: false, requireTitle: true });
+            });
+
+            // ── Auto-save when leaving a field (not while typing) ───────────────────
+
+            // focusout bubbles (blur does not), so leaving tajuk / item / spec text fields
+            // triggers a draft save once the user moves to another field.
+            $(document).on(
+                'focusout',
+                'textarea[name="tajuk_dokumen"], #dt_tmpltSpec textarea, #dt_tmpltSpec input[type="number"], #dt_tmpltSpec input:not([type="radio"]):not([type="checkbox"]):not([type="file"]):not([type="hidden"])',
+                function() {
+                    scheduleAutoSave();
+                }
+            );
+
+            // Radios / selects commit on change (no typing blur needed).
+            $(document).on(
+                'change',
+                'input[name="jenisBarang"], input[name="wajaranSpesifikasi"], input[name="penghantaranFizikal"], #dt_tmpltSpec select',
+                function() {
+                    scheduleAutoSave();
+                }
+            );
+
+            $('#btn-modalText-simpan, #btn-modalNumber-simpan, #btn-modalYesNo-simpan').on('click', function() {
+                setTimeout(scheduleAutoSave, 50);
+            });
+
+            $('#dt_tmpltSpec').on('click', '.btn-hapus-item, .btn-hapus-spec, .btn-tambah-spec', function() {
+                setTimeout(scheduleAutoSave, 50);
+            });
+            $(document).on('click', '.add_btn_item', function() {
+                setTimeout(scheduleAutoSave, 50);
+            });
+
             // ── Selesai button handler ──────────────────────────────────────────────
 
             $('#btn-selesai').on('click', function() {
                 var $btn = $(this);
                 var formData = collectFormData();
+
+                if (isSpecificationCompleted()) {
+                    showToast('Spesifikasi ini telah selesai.', 'warning');
+                    return;
+                }
 
                 // Validation
                 if (!formData.title) {
@@ -1683,7 +1984,9 @@
                     callback: function(confirmed) {
                         if (!confirmed) return;
 
+                        cancelAutoSave();
                         $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span> Menyimpan...');
+                        $('#btn-draf').prop('disabled', true);
 
                         var isEdit  = SPEC_CONFIG.existingData && SPEC_CONFIG.existingData.uuid;
                         var saveUrl = isEdit
@@ -1703,9 +2006,11 @@
                                 if (!specUuid) {
                                     showToast('Ralat: UUID spesifikasi tidak ditemui selepas simpan.');
                                     $btn.prop('disabled', false).html(BTN_SELESAI_LABEL);
+                                    $('#btn-draf').prop('disabled', false);
                                     return;
                                 }
 
+                                rememberExistingSpecification($.extend({}, response.data || {}, { uuid: specUuid }));
                                 $btn.html('<span class="spinner-border spinner-border-sm me-1"></span> Menyelesaikan...');
 
                                 var completeUrl = SPEC_CONFIG.completeUrl.replace('__UUID__', specUuid);
@@ -1721,33 +2026,22 @@
                                             total_score: saved.total_score !== null && saved.total_score !== undefined
                                                 ? saved.total_score
                                                 : calculateChecklistSpecificationTotalScore(formData),
-                                            status: saved.status || 'completed',
+                                            status: 'completed',
                                             item_type: saved.item_type || formData.item_type
                                         });
                                         window.location.href = SPEC_CONFIG.backUrl;
                                     },
                                     error: function(xhr) {
-                                        var msg = 'Gagal menyelesaikan spesifikasi.';
-                                        if (xhr.responseJSON && xhr.responseJSON.message) {
-                                            msg += '\n' + xhr.responseJSON.message;
-                                        }
-                                        showToast(msg);
+                                        showToast(formatAjaxError(xhr, 'Gagal menyelesaikan spesifikasi.'));
                                         $btn.prop('disabled', false).html(BTN_SELESAI_LABEL);
+                                        $('#btn-draf').prop('disabled', false);
                                     }
                                 });
                             },
                             error: function(xhr) {
-                                var lines = ['Gagal menyimpan spesifikasi.'];
-                                if (xhr.responseJSON && xhr.responseJSON.message) {
-                                    lines.push(xhr.responseJSON.message);
-                                }
-                                if (xhr.responseJSON && xhr.responseJSON.errors) {
-                                    $.each(xhr.responseJSON.errors, function(field, messages) {
-                                        lines.push('• ' + (Array.isArray(messages) ? messages[0] : messages));
-                                    });
-                                }
-                                showToast(lines.join('\n'));
+                                showToast(formatAjaxError(xhr, 'Gagal menyimpan spesifikasi.'));
                                 $btn.prop('disabled', false).html(BTN_SELESAI_LABEL);
+                                $('#btn-draf').prop('disabled', false);
                             }
                         });
                     }

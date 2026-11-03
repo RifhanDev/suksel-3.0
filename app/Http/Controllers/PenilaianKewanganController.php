@@ -209,7 +209,7 @@ class PenilaianKewanganController extends Controller
                 $dokumenByVendor[$vendorId] = $tenderDokumen->items('vendor', $vendorId);
             }
 
-            $vendors = $participants->map(function ($participant) {
+            $vendors = $participants->map(function ($participant, int $idx) {
                 $harga = $participant->harga_tawaran_resolved;
 
                 // Resolve Bumiputera status
@@ -222,6 +222,7 @@ class PenilaianKewanganController extends Controller
                 $bumiputeraStatusLabel = $isBumi ? 'Bumiputera' : 'Bukan Bumiputera';
 
                 return [
+                    'bil'               => $idx + 1,
                     'vendor_id'         => (int) $participant->vendor_id,
                     'name'              => $participant->vendor?->name ?: ('Vendor #' . $participant->vendor_id),
                     'kod'               => $participant->kod_pembekal ?: null,
@@ -830,7 +831,8 @@ class PenilaianKewanganController extends Controller
             $totalSpec = 0.0;
             $hasPrices = false;
             foreach ($vResponses as $resp) {
-                $itemPrices = $resp->payload['item_prices'] ?? [];
+                $payload = is_string($resp->payload) ? json_decode($resp->payload, true) : (is_array($resp->payload) ? $resp->payload : []);
+                $itemPrices = $payload['item_prices'] ?? [];
                 if (is_array($itemPrices)) {
                     foreach ($itemPrices as $val) {
                         if (is_numeric($val) && (float) $val > 0) {
@@ -839,13 +841,28 @@ class PenilaianKewanganController extends Controller
                         }
                     }
                 }
+                if (! $hasPrices) {
+                    $possibleTotal = $payload['total'] ?? $payload['total_price'] ?? $payload['harga_tawaran'] ?? $payload['grand_total'] ?? null;
+                    if (is_numeric($possibleTotal) && (float) $possibleTotal > 0) {
+                        $totalSpec += (float) $possibleTotal;
+                        $hasPrices = true;
+                    }
+                }
             }
 
             $harga = null;
-            if ($hasPrices) {
+            if ($hasPrices && $totalSpec > 0) {
                 $harga = $totalSpec;
-            } elseif (filled($participant->harga_tawaran) && (float) $participant->harga_tawaran > 0) {
+            } elseif (filled($participant->harga_tawaran) && is_numeric($participant->harga_tawaran) && (float) $participant->harga_tawaran > 0) {
                 $harga = (float) $participant->harga_tawaran;
+            } elseif (isset($participant->price) && is_numeric($participant->price) && (float) $participant->price > 0) {
+                $harga = (float) $participant->price;
+            } elseif (isset($participant->amount) && is_numeric($participant->amount) && (float) $participant->amount > 0) {
+                $harga = (float) $participant->amount;
+            } elseif (isset($participant->bid_price) && is_numeric($participant->bid_price) && (float) $participant->bid_price > 0) {
+                $harga = (float) $participant->bid_price;
+            } elseif (isset($participant->tawaran_harga) && is_numeric($participant->tawaran_harga) && (float) $participant->tawaran_harga > 0) {
+                $harga = (float) $participant->tawaran_harga;
             }
 
             $participant->harga_tawaran_resolved = $harga !== null ? (float) $harga : null;
@@ -857,6 +874,12 @@ class PenilaianKewanganController extends Controller
             $pB = ($b->harga_tawaran_resolved !== null && $b->harga_tawaran_resolved > 0) ? (float) $b->harga_tawaran_resolved : PHP_FLOAT_MAX;
 
             if ($pA === $pB) {
+                $nameA = $a->vendor->name ?? $a->vendor->company_name ?? $a->name ?? '';
+                $nameB = $b->vendor->name ?? $b->vendor->company_name ?? $b->name ?? '';
+                $cmp = strcmp($nameA, $nameB);
+                if ($cmp !== 0) {
+                    return $cmp;
+                }
                 return $a->id <=> $b->id;
             }
 
@@ -1078,7 +1101,8 @@ class PenilaianKewanganController extends Controller
     }
 
     /**
-     * Petender list with their offered price, ordered as they appear in the tender.
+     * Petender list for Perkara 6 / Jadual 1: every vendor that joined the tender
+     * (participate=1), not only those who passed penilaian teknikal.
      *
      * Price precedence mirrors show(): the summed financial specification prices when the
      * petender filled them in, otherwise the recorded harga_tawaran — so the report and the
@@ -1100,15 +1124,35 @@ class PenilaianKewanganController extends Controller
             ->filter()
             ->all();
 
-        $participants = $this->resolveAndSortParticipantsByHargaTawaran($tender, null, $kewanganUuids);
+        // All joiners for Perihal Tender — keep kod_pembekal denominator (e.g. 5/13) intact.
+        $allJoined = $tender->participants()
+            ->with('vendor')
+            ->where('participate', 1)
+            ->orderBy('id')
+            ->get();
 
-        $total = $participants->count();
+        $participants = $this->resolveAndSortParticipantsByHargaTawaran($tender, $allJoined, $kewanganUuids);
 
-        return $participants->values()->map(function ($participant, int $idx) use ($total) {
+        $totalJoined = max(
+            $allJoined->count(),
+            $participants
+                ->pluck('kod_pembekal')
+                ->filter()
+                ->map(function ($kod) {
+                    if (preg_match('/\/(\d+)\s*$/', (string) $kod, $m)) {
+                        return (int) $m[1];
+                    }
+
+                    return 0;
+                })
+                ->max() ?: 0
+        );
+
+        return $participants->values()->map(function ($participant, int $idx) use ($totalJoined) {
             return [
                 'bil' => $idx + 1,
                 'vendor_id' => (int) $participant->vendor_id,
-                'no_petender' => $participant->kod_pembekal ?: (($idx + 1) . '/' . $total),
+                'no_petender' => $participant->kod_pembekal ?: (($idx + 1) . '/' . $totalJoined),
                 'nama' => $participant->vendor?->name ?: ('Vendor #' . $participant->vendor_id),
                 'harga' => $participant->harga_tawaran_resolved,
                 'harga_display' => $participant->harga_tawaran_fmt,
@@ -1988,7 +2032,11 @@ class PenilaianKewanganController extends Controller
             $pB = ($b['harga_tawaran'] !== null && $b['harga_tawaran'] > 0) ? (float) $b['harga_tawaran'] : PHP_FLOAT_MAX;
 
             if ($pA === $pB) {
-                return ($b['total_score'] ?? 0) <=> ($a['total_score'] ?? 0);
+                $cmpScore = ($b['total_score'] ?? 0) <=> ($a['total_score'] ?? 0);
+                if ($cmpScore !== 0) {
+                    return $cmpScore;
+                }
+                return strcmp($a['name'] ?? '', $b['name'] ?? '');
             }
 
             return $pA <=> $pB;
@@ -2013,7 +2061,11 @@ class PenilaianKewanganController extends Controller
             $pB = ($b['harga_tawaran'] !== null && $b['harga_tawaran'] > 0) ? (float) $b['harga_tawaran'] : PHP_FLOAT_MAX;
 
             if ($pA === $pB) {
-                return ($b['total_score'] ?? 0) <=> ($a['total_score'] ?? 0);
+                $cmpScore = ($b['total_score'] ?? 0) <=> ($a['total_score'] ?? 0);
+                if ($cmpScore !== 0) {
+                    return $cmpScore;
+                }
+                return strcmp($a['name'] ?? '', $b['name'] ?? '');
             }
 
             return $pA <=> $pB;
@@ -2596,6 +2648,7 @@ class PenilaianKewanganController extends Controller
                                 'title'         => $sItem->title,
                                 'quantity'      => $sItem->quantity,
                                 'unit'          => $sItem->unit,
+                                'kadar_harga'   => $sItem->kadar_harga,
                                 'response_type' => null,
                             ];
 
@@ -2612,6 +2665,7 @@ class PenilaianKewanganController extends Controller
                                     'title'         => $sDetail->description,
                                     'quantity'      => null,
                                     'unit'          => null,
+                                    'kadar_harga'   => null,
                                     'response_type' => $sDetail->response_type,
                                 ];
                             }
@@ -2842,17 +2896,48 @@ class PenilaianKewanganController extends Controller
             if ($step1Status === 'melepasi' && $step2Status === 'melepasi') {
                 $step3ItemsCount = count($kewanganUuids);
                 $step3EvaluatedCount = 0;
-                if ($step3ItemsCount > 0 && ! empty($semakPayload)) {
+                if ($step3ItemsCount > 0) {
                     foreach ($kewanganUuids as $uuid) {
                         $itemPayload = $semakPayload[$uuid] ?? null;
                         $vRow = collect($itemPayload['vendors'] ?? [])->firstWhere('vendor_id', $vId);
-                        if (! empty($vRow['step3_evaluated'])) {
+                        $evaluated = ! empty($vRow['step3_evaluated']);
+
+                        // Laporan cetak (and other callers) may pass a sparse payload without
+                        // vendors/step3_evaluated. Derive from DB the same way
+                        // mergeEvaluationsIntoPayload() does so Jadual 4 is not stuck on
+                        // "Belum Dinilai" after skor has been saved.
+                        if (! $evaluated) {
+                            $eval = $evaluations["{$vId}:{$uuid}"] ?? null;
+                            if ($eval) {
+                                $isProfil = ! empty($itemPayload['profil_petender_detail']);
+                                $modalJson = null;
+                                if (filled($eval->catatan)) {
+                                    $decoded = json_decode($eval->catatan, true);
+                                    if (is_array($decoded) && array_key_exists('skor_modal_berbayar', $decoded)) {
+                                        $modalJson = $decoded;
+                                        $isProfil = true;
+                                    }
+                                }
+
+                                if ($isProfil) {
+                                    $modal = $vRow['skor_modal_berbayar']
+                                        ?? ($modalJson['skor_modal_berbayar'] ?? null);
+                                    $evaluated = $modal !== null && $modal !== '';
+                                } else {
+                                    $evaluated = $eval->skor !== null
+                                        && ($eval->catatan_skor !== null || (float) $eval->skor > 0);
+                                }
+                            }
+                        }
+
+                        if ($evaluated) {
                             $step3EvaluatedCount++;
                         }
                     }
                 }
 
-                if ($step3ItemsCount > 0 && $step3EvaluatedCount < $step3ItemsCount) {
+                $step3Incomplete = $step3ItemsCount > 0 && $step3EvaluatedCount < $step3ItemsCount;
+                if ($step3Incomplete && ! $progress?->isStep3Confirmed()) {
                     $step3Status = 'belum_dinilai';
                 } elseif (isset($step3PassedMap[$vId])) {
                     $step3Status = 'melepasi';

@@ -168,7 +168,7 @@
 
     @php
         $tenderTempohVal = $tender->tempoh_siap_val ?? $tender->tempoh_kontrak_bulan ?? null;
-        $tenderTempohUnitRaw = $tender->tempoh_siap_unit ?? null;
+        $tenderTempohUnitRaw = $tender->tempoh_siap_unit ?? $tender->tempoh_kontrak_unit ?? null;
         $unitMap = [
             '1' => 'Minggu',
             '2' => 'Bulan',

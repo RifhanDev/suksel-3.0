@@ -77,6 +77,44 @@ class TendersController extends Controller
 				'tenders.tender_peringkat',
 				'tenders.kaedah_dokumen_id',
 			]);
+
+			if ($request->filled('filter_no_tender')) {
+				$filterNoTender = trim((string) $request->input('filter_no_tender'));
+				$tenders->where(function ($query) use ($filterNoTender) {
+					$query->where('tenders.no_tender', 'like', '%' . $filterNoTender . '%')
+						->orWhere('tenders.ref_number', 'like', '%' . $filterNoTender . '%');
+				});
+			}
+
+			if ($request->filled('filter_tajuk')) {
+				$filterTitle = trim((string) $request->input('filter_tajuk'));
+				$tenders->where('tenders.name', 'like', '%' . $filterTitle . '%');
+			}
+
+			if ($request->filled('filter_status')) {
+				$filterStatus = mb_strtolower(trim((string) $request->input('filter_status')));
+				if ($filterStatus === 'belum_disiarkan') {
+					$tenders->where(function ($query) {
+						$query->whereNull('tenders.approver_id')
+							->orWhere('tenders.approver_id', 0);
+					});
+				}
+			}
+
+			if ($request->filled('filter_tarikh')) {
+				try {
+					$filterDate = Carbon::createFromFormat('d/m/Y', (string) $request->input('filter_tarikh'))
+						->format('Y-m-d');
+
+					$tenders->where(function ($query) use ($filterDate) {
+						$query->whereDate('tenders.document_start_date', $filterDate)
+							->orWhereDate('tenders.submission_datetime', $filterDate);
+					});
+				} catch (\Throwable $th) {
+					// Ignore invalid date filter input and keep the query usable.
+				}
+			}
+
 			$tenders = $tenders->orderBy('created_at', 'desc');
 			$datatable = Datatables::of($tenders)
 				->filterColumn('name', function ($query, $keyword) {
@@ -125,18 +163,18 @@ class TendersController extends Controller
 				->addColumn('actions', function ($tender) {
 					return \App\Support\CommitteeAction::button($tender);
 				})
-			->removeColumn('id')
-			->removeColumn('ref_number')
-			->removeColumn('no_tender')
-			->removeColumn('organization_unit_id')
-			->removeColumn('invitation')
-			->removeColumn('publish_winner')
-			->removeColumn('briefing_required')
-			->removeColumn('briefing_datetime')
-			->removeColumn('briefing_address')
-			->removeColumn('publish_prices')
-			->removeColumn('tender_peringkat')
-			->removeColumn('kaedah_dokumen_id');
+				->removeColumn('id')
+				->removeColumn('ref_number')
+				->removeColumn('no_tender')
+				->removeColumn('organization_unit_id')
+				->removeColumn('invitation')
+				->removeColumn('publish_winner')
+				->removeColumn('briefing_required')
+				->removeColumn('briefing_datetime')
+				->removeColumn('briefing_address')
+				->removeColumn('publish_prices')
+				->removeColumn('tender_peringkat')
+				->removeColumn('kaedah_dokumen_id');
 
 			if (!auth()->check() || auth()->user()->hasRole('Vendor')) $datatable = $datatable->removeColumn('approver_id');
 
@@ -325,6 +363,12 @@ class TendersController extends Controller
 		if (!$user->hasRole('Admin') && !$user->can('Tender:execute')) {
 			return $this->_access_denied();
 		}
+
+		$request->validate([
+			'ref_number' => ['required', 'string', 'max:255'],
+		], [
+			'ref_number.required' => 'No. Rujukan Fail adalah wajib.',
+		]);
 
 		$payload = $request->all();
 		$payload['creator_id'] = $user->id;
@@ -571,7 +615,7 @@ class TendersController extends Controller
 
 			if ($request->filled('filter_status')) {
 				$filterStatus = mb_strtolower(trim((string) $request->input('filter_status')));
-				if ($filterStatus !== 'dalam process') {
+				if ($filterStatus !== 'dalam proses') {
 					$tenders->whereRaw('1 = 0');
 				}
 			}
@@ -749,21 +793,21 @@ class TendersController extends Controller
 								->orWhere('fcheader.status', '!=', 'submitted');
 						});
 				})
-				// Kerja — hide only when both spesifikasi & kewangan kerja are submitted
-				->orWhere(function ($q) {
-					$q->where('tenders.kategori_perolehan_id', 3)
-						->where(function ($inner) {
-							$inner->whereNull('skheader.status')
-								->orWhere('skheader.status', '!=', 'submitted')
-								->orWhereNull('kkheader.status')
-								->orWhere('kkheader.status', '!=', 'submitted');
-						});
-				})
-				// Other / unset category — keep visible
-				->orWhere(function ($q) {
-					$q->whereNull('tenders.kategori_perolehan_id')
-						->orWhereNotIn('tenders.kategori_perolehan_id', [1, 2, 3]);
-				});
+					// Kerja — hide only when both spesifikasi & kewangan kerja are submitted
+					->orWhere(function ($q) {
+						$q->where('tenders.kategori_perolehan_id', 3)
+							->where(function ($inner) {
+								$inner->whereNull('skheader.status')
+									->orWhere('skheader.status', '!=', 'submitted')
+									->orWhereNull('kkheader.status')
+									->orWhere('kkheader.status', '!=', 'submitted');
+							});
+					})
+					// Other / unset category — keep visible
+					->orWhere(function ($q) {
+						$q->whereNull('tenders.kategori_perolehan_id')
+							->orWhereNotIn('tenders.kategori_perolehan_id', [1, 2, 3]);
+					});
 			})
 			->orderBy('tenders.document_stop_date', 'desc')
 			->orderBy('tenders.id', 'desc');
@@ -907,8 +951,10 @@ class TendersController extends Controller
 			'tempoh_siap_val'           => $tender->tempoh_siap_val,
 			'tempoh_siap_unit'          => $tender->tempoh_siap_unit,
 			'tempoh_kontrak_bulan'      => $tender->tempoh_kontrak_bulan,
-			'zon_lokasi'                => $tender->zon_lokasi,
+			'tempoh_kontrak_unit'       => $tender->tempoh_kontrak_unit,
+			'zon_lokasi'                => $tender->zon_lokasi ? '1' : '0',
 			'lokaliti_id'               => $tender->lokaliti_id,
+			'district_id'               => $tender->district_id,
 			'jawatankuasa'              => $tender->jawatankuasa,
 			'lawatan_tapak'             => $tender->lawatan_tapak,
 			'terbuka_kepada'            => $tender->terbuka_kepada,
@@ -962,7 +1008,7 @@ class TendersController extends Controller
 		// Gred CIDB tidak berulang setiap blok — borang menyimpannya pada blok
 		// pertama sahaja, jadi ia diletakkan di situ walaupun tiada blok spec.
 		$grades = $tender->codes()->where('code_type', 'cidb-g')
-			->pluck('code_id')->map(fn ($id) => (int) $id)->all();
+			->pluck('code_id')->map(fn($id) => (int) $id)->all();
 
 		if ($grades !== []) {
 			$values['cidb'][0]['grade'] = $grades;
@@ -1027,6 +1073,12 @@ class TendersController extends Controller
 		if (!$tender->canUpdate()) {
 			return $this->_access_denied();
 		}
+
+		$request->validate([
+			'ref_number' => ['required', 'string', 'max:255'],
+		], [
+			'ref_number.required' => 'No. Rujukan Fail adalah wajib.',
+		]);
 
 		// Muatan disusun sama seperti storeNew(), kerana skrin kemaskini menghantar
 		// borang cipta tender yang sama. Penyusunan semula blok kod dikekalkan
@@ -1283,7 +1335,16 @@ class TendersController extends Controller
 			);
 		}
 
-		if ($tender->documentSalesClosed() || !$tender->isWithinVendorDokumenWindow()) {
+		if ($tender->documentSalesNotYetOpen()) {
+			$opens = $tender->documentSalesOpensAt();
+			$message = $opens
+				? 'Pembelian tender belum dibuka. Tarikh jual bermula pada ' . $opens->format('d/m/Y H:i') . '.'
+				: 'Pembelian tender belum dibuka.';
+
+			return redirect()->back()->with('error', $message);
+		}
+
+		if ($tender->documentSalesClosed()) {
 			return redirect()->back()->with('error', 'Pembelian tender telah tamat tempoh');
 		}
 
@@ -1297,13 +1358,14 @@ class TendersController extends Controller
 
 		// Wajib lawatan: wakil mesti hadir dan disahkan urusetia/agensi sebelum beli
 		// (dikecualikan untuk Iklan Sahaja — lawatan paparan sahaja).
-		if ($tender->allowsWakilLawatanRegistration()
+		if (
+			$tender->allowsWakilLawatanRegistration()
 			&& $tender->hasRequiredSiteVisits()
 			&& ! $tender->attendVisits($vendorId)
 		) {
 			return redirect('tenders/' . $tender->id)->with(
 				'error',
-				'Lawatan tapak wajib. Sila daftar wakil syarikat dan tunggu pengesahan kehadiran oleh urusetia/agensi sebelum membeli dokumen.'
+				'Lawatan tapak wajib. Sila daftar Penama Syarikat dan tunggu pengesahan kehadiran oleh urusetia/agensi sebelum membeli dokumen.'
 			);
 		}
 
@@ -1847,7 +1909,7 @@ class TendersController extends Controller
 
 		$tender     = Tender::with('siteVisits')->findOrFail($id);
 		$purchases  = $tender->participants;
-		$existingVendorIds = $purchases->pluck('vendor_id')->map(fn ($vendorId) => (int) $vendorId)->all();
+		$existingVendorIds = $purchases->pluck('vendor_id')->map(fn($vendorId) => (int) $vendorId)->all();
 
 		if (!$tender->canShowTabs())
 			return $this->_access_denied();

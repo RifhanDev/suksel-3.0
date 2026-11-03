@@ -467,7 +467,7 @@
                                 <label class="form-label">Kategori Perolehan <span class="text-danger">*</span></label>
                                 <select class="form-select" name="kategori_perolehan" required>
                                     <option value="" selected disabled>Pilih...</option>
-                                    @foreach (($kategoriPerolehan ?? \App\Models\Ref\RefKategoriJenisPerolehan::where('active', true)->get()) as $kategori)
+                                    @foreach (($kategoriPerolehan ?? \App\Models\Ref\RefKategoriJenisPerolehan::where('active', true)->whereRaw('LOWER(name) = ?', ['kerja'])->get()) as $kategori)
                                         <option value="{{ $kategori->id }}" {{ (string) $kategoriSelected === (string) $kategori->id ? 'selected' : '' }}>
                                             {{ $kategori->name }}
                                         </option>
@@ -601,12 +601,14 @@
                             </svg>
                         </div>
                         <div class="small mt-1">
-                            Ruangan Kod Bidang ini <span class="fw-bold text-danger text-uppercase">WAJIB</span> diisi oleh Pemilik Projek.
+                            Kod Bidang MOF adalah <span class="fw-bold text-uppercase">pilihan</span> (tidak wajib).
+                            Kod Bidang CIDB (Gred &amp; Pengkhususan) adalah
+                            <span class="fw-bold text-danger text-uppercase">WAJIB</span> diisi oleh Pemilik Projek.
                         </div>
                     </div>
 
                     <div class="condition-builder">
-                        <!-- MOF SECTION -->
+                        <!-- MOF SECTION (optional) -->
                         <div class="condition-group">
                             <div class="condition-group-header">
                                 <div class="group-title">
@@ -619,8 +621,8 @@
                                         </svg>
                                     </div>
                                     <div>
-                                        <h6>Kod Bidang MOF</h6>
-                                        <small>Kementerian Kewangan Malaysia</small>
+                                        <h6>Kod Bidang MOF <span class="text-muted fw-normal" style="font-size:0.75rem;">(Pilihan)</span></h6>
+                                        <small>Kementerian Kewangan Malaysia — tidak wajib</small>
                                     </div>
                                 </div>
                             </div>
@@ -661,7 +663,8 @@
                                         <line x1="12" y1="16" x2="12" y2="12"></line>
                                         <line x1="12" y1="8" x2="12.01" y2="8"></line>
                                     </svg>
-                                    Syarikat mesti mempunyai pendaftaran MOF yang sah dengan kod bidang yang dipilih
+                                    Jika diisi, syarikat mesti mempunyai pendaftaran MOF yang sah dengan kod bidang yang dipilih.
+                                    Boleh dibiarkan kosong.
                                 </div>
                             </div>
                             <button type="button" class="btn-add-condition" id="btn-add-mof">
@@ -735,8 +738,8 @@
                                         </svg>
                                     </div>
                                     <div>
-                                        <h6>Kod Bidang CIDB</h6>
-                                        <small>Lembaga Pembangunan Industri Pembinaan</small>
+                                        <h6>Kod Bidang CIDB <span class="text-danger fw-normal" style="font-size:0.75rem;">(Wajib)</span></h6>
+                                        <small>Lembaga Pembangunan Industri Pembinaan — wajib diisi</small>
                                     </div>
                                 </div>
                             </div>
@@ -747,8 +750,8 @@
                                         <div class="row-fields cidb-fields">
                                             <div class="cidb-row-top">
                                                 <div class="field-grade-full">
-                                                    <label class="form-label">Gred CIDB</label>
-                                                    <select class="selectize" name="cidb[0][grade]" multiple>
+                                                    <label class="form-label">Gred CIDB <span class="text-danger">*</span></label>
+                                                    <select class="selectize cidb-grade-select" name="cidb[0][grade][]" multiple>
                                                         <option value="" selected disabled>Pilih Gred...</option>
                                                         @foreach (App\Code::where('type', 'cidb-g')->orderBy('code')->get() as $code)
                                                             <option value="{{ $code->id }}"
@@ -771,8 +774,8 @@
                                                     </div>
                                                 </div>
                                                 <div class="field-main">
-                                                    <label class="form-label">Pengkhususan</label>
-                                                    <select class="selectize" name="cidb[0][spec][]" multiple>
+                                                    <label class="form-label">Pengkhususan <span class="text-danger">*</span></label>
+                                                    <select class="selectize cidb-spec-select" name="cidb[0][spec][]" multiple>
                                                         @foreach (App\Code::where('type', 'cidb-c')->orderBy('code')->get() as $code)
                                                             <option value="{{ $code->id }}"
                                                                 {{ in_array($code->id, (array) $cidb0Spec) ? 'selected' : '' }}>
@@ -792,7 +795,8 @@
                                         <line x1="12" y1="16" x2="12" y2="12"></line>
                                         <line x1="12" y1="8" x2="12.01" y2="8"></line>
                                     </svg>
-                                    Untuk kerja pembinaan, syarikat mesti berdaftar dengan CIDB mengikut gred dan pengkhususan
+                                    Wajib: pilih sekurang-kurangnya satu Gred CIDB dan satu Pengkhususan.
+                                    Syarikat mesti berdaftar dengan CIDB mengikut gred dan pengkhususan yang dipilih.
                                 </div>
                             </div>
                             <button type="button" class="btn-add-condition" id="btn-add-cidb">
@@ -1004,9 +1008,38 @@
                 }, 400);
             }
 
+            function countSelectizeValues(selector) {
+                var total = 0;
+                $(selector).each(function() {
+                    if (this.selectize) {
+                        total += (this.selectize.getValue() || []).filter(Boolean).length;
+                    } else {
+                        total += ($(this).val() || []).filter(Boolean).length;
+                    }
+                });
+                return total;
+            }
+
+            function validateCidbMandatory() {
+                var gradeCount = countSelectizeValues('#cidb-wrapper .cidb-grade-select, #cidb-wrapper select[name*="[grade]"]');
+                var specCount = countSelectizeValues('#cidb-wrapper .cidb-spec-select, #cidb-wrapper select[name*="[spec]"]');
+                if (gradeCount < 1 || specCount < 1) {
+                    return {
+                        ok: false,
+                        message: gradeCount < 1 && specCount < 1
+                            ? 'Sila pilih sekurang-kurangnya satu Gred CIDB dan satu Pengkhususan Kod Bidang CIDB.'
+                            : (gradeCount < 1
+                                ? 'Sila pilih sekurang-kurangnya satu Gred CIDB.'
+                                : 'Sila pilih sekurang-kurangnya satu Pengkhususan Kod Bidang CIDB.')
+                    };
+                }
+                return { ok: true };
+            }
+
             function validateStep(step) {
                 var isValid = true;
                 var $firstInvalid = null;
+                var message = 'Sila lengkapkan medan bertanda * sebelum meneruskan.';
                 $('#step' + step + '-content [required]').each(function() {
                     if (!this.checkValidity()) {
                         $(this).addClass('is-invalid');
@@ -1016,15 +1049,33 @@
                         $(this).removeClass('is-invalid');
                     }
                 });
+
+                if (step === 3) {
+                    var cidbCheck = validateCidbMandatory();
+                    if (!cidbCheck.ok) {
+                        isValid = false;
+                        message = cidbCheck.message;
+                        if (!$firstInvalid) {
+                            $firstInvalid = $('#cidb-wrapper select.selectize').first();
+                        }
+                    }
+                }
+
                 if (!isValid) {
                     currentStep = step;
                     updateWizardUI();
                     scrollToStepper();
-                    if ($firstInvalid) $firstInvalid.focus();
+                    if ($firstInvalid && $firstInvalid.length) {
+                        if ($firstInvalid[0].selectize) {
+                            $firstInvalid[0].selectize.focus();
+                        } else {
+                            $firstInvalid.focus();
+                        }
+                    }
                     Swal.fire({
                         icon: 'warning',
                         title: 'Maklumat tidak lengkap',
-                        text: 'Sila lengkapkan medan bertanda * sebelum meneruskan.',
+                        text: message,
                         confirmButtonColor: '#c41e3a'
                     });
                 }
@@ -1198,8 +1249,8 @@
                                     </div>
                                 </div>
                                 <div class="field-main">
-                                    <label class="form-label">Pengkhususan</label>
-                                    <select class="selectize" name="cidb[${index}][spec][]" multiple>
+                                    <label class="form-label">Pengkhususan <span class="text-danger">*</span></label>
+                                    <select class="selectize cidb-spec-select" name="cidb[${index}][spec][]" multiple>
                                         ${cidbSpecOptions}
                                     </select>
                                 </div>

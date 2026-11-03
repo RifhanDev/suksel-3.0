@@ -42,6 +42,11 @@
 				transform: rotate(360deg);
 			}
 		}
+
+		/* Keep No IC dropdown above tabs/cards/table overflow */
+		.selectize-dropdown {
+			z-index: 10050 !important;
+		}
 	</style>
 @endsection
 
@@ -374,7 +379,8 @@
 		const saveDraftUrl = @json(route('jawatankuasa.store'));
 		const hantarPemaklumanUrl = @json(route('jawatankuasa.hantarPemakluman'));
 		const supportedDraftJenis = @json($supportedDraftJenisData);
-		const localIcUsers = @json($localIcUsersData);
+		const localIcUsers = @json(collect($localIcUsersData)->values()->all());
+		const searchUsersUrl = @json(route('jawatankuasa.searchUsers'));
 
 		function handleAjaxError(xhr, fallbackMessage) {
 			let title = 'Ralat';
@@ -460,11 +466,39 @@
 				valueField: 'id',
 				labelField: 'ic_number',
 				searchField: ['ic_number', 'name', 'email'],
-				options: localIcUsers,
+				options: Array.isArray(localIcUsers) ? localIcUsers.slice() : [],
 				maxItems: 1,
 				create: false,
-				placeholder: 'Taip No IC...',
+				preload: false,
+				loadThrottle: 250,
+				placeholder: (Array.isArray(localIcUsers) && localIcUsers.length)
+					? 'Taip No IC / nama / emel...'
+					: 'Taip untuk cari pegawai...',
 				dropdownParent: 'body',
+				// Remote top-up: keep results visible (Selectize otherwise re-filters to score 0).
+				score: function(search) {
+					var scoreFn = this.getScoreFunction(search);
+					return function(item) {
+						return Math.max(scoreFn(item), 0.1);
+					};
+				},
+				load: function(query, callback) {
+					if (!query || String(query).trim().length < 2) {
+						return callback([]);
+					}
+					$.ajax({
+						url: searchUsersUrl,
+						type: 'GET',
+						dataType: 'json',
+						data: { q: query },
+						error: function() {
+							callback([]);
+						},
+						success: function(res) {
+							callback(Array.isArray(res) ? res : []);
+						}
+					});
+				},
 				render: {
 					option: function(item, escape) {
 						return '<div>' +
@@ -497,6 +531,37 @@
 						tr.find('td:eq(3) input').val('-');
 						tr.find('td:eq(4) input').val('-');
 						tr.find('td:eq(5) input').val('-');
+					}
+
+					// Block same user twice within this tab table (after fields are filled).
+					const selectize = this;
+					const selectedId = String(value);
+					const tbody = tr.closest('tbody').get(0);
+					if (!tbody) {
+						return;
+					}
+					let duplicate = false;
+					tbody.querySelectorAll('.ic-search-select').forEach(function(input) {
+						if (!input.selectize || input.selectize === selectize) {
+							return;
+						}
+						if (String(input.selectize.getValue() || '') === selectedId) {
+							duplicate = true;
+						}
+					});
+					if (duplicate) {
+						selectize.clear(true);
+						tr.find('td:eq(2) input').val('-');
+						tr.find('td:eq(3) input').val('-');
+						tr.find('td:eq(4) input').val('-');
+						tr.find('td:eq(5) input').val('-');
+						Swal.fire({
+							icon: 'warning',
+							title: 'Pengguna Telah Dipilih',
+							text: 'Pengguna ini telah dipilih dalam jadual ahli jawatankuasa ini. Sila pilih pengguna lain.',
+							confirmButtonText: 'Faham',
+							confirmButtonColor: '#1e293b'
+						});
 					}
 				}
 			});
@@ -668,12 +733,45 @@
 			return formData;
 		}
 
+		function findDuplicateUserTab() {
+			const panes = document.querySelectorAll('.committee-pane');
+			for (let i = 0; i < panes.length; i++) {
+				const tabPane = panes[i];
+				const seen = {};
+				const rows = tabPane.querySelectorAll('.committee-tbody tr');
+				for (let j = 0; j < rows.length; j++) {
+					const selectInput = rows[j].querySelector('.ic-search-select');
+					const selectize = selectInput ? selectInput.selectize : null;
+					const userId = selectize ? String(selectize.getValue() || '') : '';
+					if (!userId) {
+						continue;
+					}
+					if (seen[userId]) {
+						return tabPane.dataset.jenis || '';
+					}
+					seen[userId] = true;
+				}
+			}
+			return null;
+		}
+
 		function saveAllDrafts(triggerButton, successModal) {
 			if (!tenderUuid) {
 				Swal.fire({
 					icon: 'warning',
 					title: 'Maklumat Tidak Ditemui',
 					text: '{{ @$tender->procurement_label }} tidak ditemui. Sila buka semula halaman menggunakan pautan {{ strtolower(@$tender->procurement_label) }}.',
+					confirmButtonText: 'Faham',
+					confirmButtonColor: '#1e293b'
+				});
+				return;
+			}
+
+			if (findDuplicateUserTab() !== null) {
+				Swal.fire({
+					icon: 'warning',
+					title: 'Pengguna Berganda',
+					text: 'Setiap pengguna hanya boleh dilantik sekali dalam jawatankuasa yang sama.',
 					confirmButtonText: 'Faham',
 					confirmButtonColor: '#1e293b'
 				});

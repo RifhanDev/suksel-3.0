@@ -128,6 +128,10 @@
 
                     <?php $districts = [];
                     foreach (App\Vendor::$districts as $key => $val) {
+                        // Tender-rule only — not a vendor location.
+                        if ((int) $key === \App\Vendor::DISTRICT_ALL_SELANGOR) {
+                            continue;
+                        }
                         $districts[$key] = strtoupper($val);
                     } ?>
                     <?php if (isset($vendor)) {

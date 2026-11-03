@@ -1534,6 +1534,7 @@
 		});
 	</script>
 	<script src="{{ asset('js/prevent-double-submit.js') }}"></script>
+	<script src="{{ asset('js/restrict-upload-types.js') }}"></script>
 
 	@yield('scripts')
 

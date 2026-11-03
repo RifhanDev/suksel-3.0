@@ -396,13 +396,16 @@
                                         Spesifikasi <span class="text-danger">*</span>
                                     </div>
                                 </th>
-                                <th class="text-center align-middle py-3 px-3" style="width: 170px; background-color: #3b5998; color: #ffffff; border-color: #2d4578;">
+                                <th class="text-center align-middle py-3 px-3" style="width: 140px; background-color: #3b5998; color: #ffffff; border-color: #2d4578;">
                                     Kekerapan / Kuantiti <span class="text-danger">*</span>
                                 </th>
-                                <th class="text-center align-middle py-3 px-3" style="width: 170px; background-color: #3b5998; color: #ffffff; border-color: #2d4578;">
+                                <th class="text-center align-middle py-3 px-3" style="width: 130px; background-color: #3b5998; color: #ffffff; border-color: #2d4578;">
                                     Unit Ukuran <span class="text-danger">*</span>
                                 </th>
-                                <th class="text-center align-middle py-3 px-3" style="width: 220px; background-color: #3b5998; color: #ffffff; border-color: #2d4578;">
+                                <th class="text-center align-middle py-3 px-3" style="width: 150px; background-color: #3b5998; color: #ffffff; border-color: #2d4578;">
+                                    Kadar Harga (RM)
+                                </th>
+                                <th class="text-center align-middle py-3 px-3" style="width: 200px; background-color: #3b5998; color: #ffffff; border-color: #2d4578;">
                                     Penetapan Harga (RM) <span class="text-danger">*</span>
                                 </th>
                             </tr>
@@ -485,7 +488,7 @@ $(document).ready(function () {
     var $tbody = $('#tbl-spek-body');
 
     if (!items || items.length === 0) {
-        $tbody.append('<tr id="tbl-no-data"><td colspan="4" class="text-center text-muted py-4 small">Tiada Item Spesifikasi Dijumpai</td></tr>');
+        $tbody.append('<tr id="tbl-no-data"><td colspan="5" class="text-center text-muted py-4 small">Tiada Item Spesifikasi Dijumpai</td></tr>');
     } else {
         $.each(items, function (itemIdx, item) {
             var groupClass  = itemIdx % 2 === 1 ? ' group-alt' : '';
@@ -494,6 +497,9 @@ $(document).ready(function () {
             var hasDetails  = detailCount > 0;
             var totalRows   = 1 + detailCount;
             var savedHarga  = item.harga > 0 ? parseFloat(item.harga).toFixed(2) : '';
+            var kadarHarga  = (item.kadar_harga !== null && item.kadar_harga !== undefined && item.kadar_harga !== '')
+                ? Number(item.kadar_harga).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                : '—';
 
             // ── Parent item row — harga spans all rows ───────────────────
             var $itemRow = $(
@@ -508,6 +514,9 @@ $(document).ready(function () {
                     '</td>' +
                     '<td class="text-center align-middle">' +
                         '<span class="fw-semibold text-dark text-uppercase" style="font-size:0.8rem;">' + $('<span>').text(item.uom || '-').html() + '</span>' +
+                    '</td>' +
+                    '<td class="text-end align-middle">' +
+                        '<span class="fw-semibold text-dark" style="font-size:0.875rem;">' + kadarHarga + '</span>' +
                     '</td>' +
                     '<td class="text-center align-middle p-3" rowspan="' + totalRows + '">' +
                         '<input type="text" name="harga_item[]" class="form-control form-control-sm text-end amount-input harga-input py-2 fw-semibold" placeholder="0.00" data-item-idx="' + itemIdx + '" value="' + savedHarga + '" style="font-size:0.95rem;">' +
@@ -528,6 +537,7 @@ $(document).ready(function () {
                                 $('<span>').text(description).html().replace(/\n/g, '<br>') +
                             '</div>' +
                         '</td>' +
+                        '<td></td>' +
                         '<td></td>' +
                         '<td></td>' +
                     '</tr>'

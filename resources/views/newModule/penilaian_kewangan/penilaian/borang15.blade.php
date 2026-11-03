@@ -182,6 +182,22 @@
         )
     );
 
+    // Sort display vendors strictly by Harga Tawaran ascending (lowest price first)
+    usort($displayVendors, function ($a, $b) {
+        $pA = ($a['harga_num'] ?? 0) > 0 ? (float) $a['harga_num'] : (
+            (float) preg_replace('/[^0-9.]/', '', (string) ($a['harga_display'] ?? ($a['harga'] ?? ($a['harga_tawaran'] ?? 0))))
+        );
+        $pB = ($b['harga_num'] ?? 0) > 0 ? (float) $b['harga_num'] : (
+            (float) preg_replace('/[^0-9.]/', '', (string) ($b['harga_display'] ?? ($b['harga'] ?? ($b['harga_tawaran'] ?? 0))))
+        );
+        if ($pA <= 0) $pA = PHP_FLOAT_MAX;
+        if ($pB <= 0) $pB = PHP_FLOAT_MAX;
+        if ($pA === $pB) {
+            return strcmp($a['vendor_name'] ?? ($a['nama'] ?? ''), $b['vendor_name'] ?? ($b['nama'] ?? ''));
+        }
+        return $pA <=> $pB;
+    });
+
     $fallbackRows = [
         ['bil'=>1,'ruj'=>'27/53','vendor_id'=>101,'nama'=>'MZ PROBINA','gred'=>'G6','taraf'=>'BUMIPUTERA','lokasi'=>'0','harga'=>'4,798,852.00','bwam'=>'-18.24%','tempoh'=>'104','sempurna'=>'✓ Sempurna','dok'=>'Cukup','modal'=>'4,798,852.00','kerja'=>'Memuaskan','keputusan'=>'Lulus'],
         ['bil'=>2,'ruj'=>'34/53','vendor_id'=>102,'nama'=>'SIERRA AQUATECH SDN. BHD.','gred'=>'G6','taraf'=>'BUMIPUTERA','lokasi'=>'0','harga'=>'4,830,689.40','bwam'=>'-17.64%','tempoh'=>'104','sempurna'=>'✓ Sempurna','dok'=>'Cukup','modal'=>'4,830,689.40','kerja'=>'T.K.S','keputusan'=>'Lulus'],

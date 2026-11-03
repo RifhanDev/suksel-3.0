@@ -36,6 +36,9 @@
     var loading = document.getElementById('onlineFormLoading');
     var titleEl = document.getElementById('onlineFormModalLabel');
     var activeTrigger = null;
+    // Set when iframe reports a successful AJAX save so closing via X
+    // still refreshes Belum Selesai → Selesai on the checklist.
+    var formDirty = false;
 
     function showLoading() {
         if (loading) loading.classList.remove('d-none');
@@ -79,6 +82,7 @@
         if (!url) return;
 
         activeTrigger = trigger;
+        formDirty = false;
         titleEl.textContent = trigger.getAttribute('data-form-title') || 'Borang Atas Talian';
         showLoading();
         frame.src = url;
@@ -86,13 +90,16 @@
     }
 
     function closeOnlineFormModal(reload) {
+        var shouldReload = !!reload || formDirty;
+        var trigger = activeTrigger;
+        formDirty = false;
+        activeTrigger = null;
         modal.hide();
         frame.src = 'about:blank';
         hideLoading();
-        if (reload) {
-            reloadParentPage(activeTrigger);
+        if (shouldReload) {
+            reloadParentPage(trigger);
         }
-        activeTrigger = null;
     }
 
     document.addEventListener('click', function (e) {
@@ -109,6 +116,14 @@
     modalEl.addEventListener('hidden.bs.modal', function () {
         frame.src = 'about:blank';
         hideLoading();
+        // Closed via header X (not Tutup/Complete) — still reload if iframe saved data.
+        if (formDirty) {
+            var trigger = activeTrigger;
+            formDirty = false;
+            activeTrigger = null;
+            reloadParentPage(trigger);
+            return;
+        }
         activeTrigger = null;
     });
 
@@ -116,7 +131,9 @@
         if (e.origin !== window.location.origin || !e.data || typeof e.data !== 'object') {
             return;
         }
-        if (e.data.type === 'vendor-form-complete') {
+        if (e.data.type === 'vendor-form-dirty') {
+            formDirty = true;
+        } else if (e.data.type === 'vendor-form-complete') {
             closeOnlineFormModal(shouldReloadOnComplete(activeTrigger));
         } else if (e.data.type === 'vendor-form-close') {
             closeOnlineFormModal(!!e.data.reload);

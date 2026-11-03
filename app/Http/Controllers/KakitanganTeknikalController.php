@@ -81,7 +81,7 @@ class KakitanganTeknikalController extends Controller
             'jumlah_pengalaman'    => ['required', 'integer', 'min:0'],
             'sijil_professional'   => ['nullable', 'string', 'max:1000'],
             'kakitangan_dokumen'   => ['required', 'array', 'min:1'],
-            'kakitangan_dokumen.*' => ['file', 'max:10240', 'mimes:pdf,doc,docx,xls,xlsx,png,jpg,jpeg,zip,rar'],
+            'kakitangan_dokumen.*' => ['file', 'max:10240', \App\Support\AllowedAttachment::mimesRule()],
         ], [
             'nama_pegawai.required'       => 'Sila isi nama pegawai.',
             'tahap_pendidikan.required'   => 'Sila pilih tahap pendidikan tertinggi.',
@@ -190,7 +190,7 @@ class KakitanganTeknikalController extends Controller
             'jumlah_pengalaman'    => ['required', 'integer', 'min:0'],
             'sijil_professional'   => ['nullable', 'string', 'max:1000'],
             'kakitangan_dokumen'   => ['nullable', 'array'],
-            'kakitangan_dokumen.*' => ['file', 'max:10240', 'mimes:pdf,doc,docx,xls,xlsx,png,jpg,jpeg,zip,rar'],
+            'kakitangan_dokumen.*' => ['file', 'max:10240', \App\Support\AllowedAttachment::mimesRule()],
         ]);
 
         $newFilesCount = $request->hasFile('kakitangan_dokumen') ? count($request->file('kakitangan_dokumen')) : 0;
@@ -420,7 +420,7 @@ class KakitanganTeknikalController extends Controller
 
         $request->validate([
             'dokumen_umum'   => ['required', 'array', 'min:1'],
-            'dokumen_umum.*' => ['file', 'max:10240', 'mimes:pdf,doc,docx,xls,xlsx,png,jpg,jpeg,zip,rar'],
+            'dokumen_umum.*' => ['file', 'max:10240', \App\Support\AllowedAttachment::mimesRule()],
         ], [
             'dokumen_umum.required' => 'Sila muat naik sekurang-kurangnya satu dokumen sokongan.',
             'dokumen_umum.min'      => 'Sila muat naik sekurang-kurangnya satu dokumen sokongan.',

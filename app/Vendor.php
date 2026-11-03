@@ -1517,6 +1517,9 @@ class Vendor extends Model
 		'ZWD' => 'ZWD'
 	];
 
+	/** Tender-rule only: matches any Selangor daerah (1–9). Not a vendor location. */
+	public const DISTRICT_ALL_SELANGOR = 10;
+
 	public static $districts = [
 		1 => 'Sabak Bernam',
 		2 => 'Hulu Selangor',
@@ -1527,8 +1530,33 @@ class Vendor extends Model
 		7 => 'Kuala Langat',
 		8 => 'Hulu Langat',
 		9 => 'Sepang',
+		self::DISTRICT_ALL_SELANGOR => 'Seluruh Daerah Selangor',
 		'0' => 'Luar Negeri Selangor',
 	];
+
+	/** Physical Selangor daerah ids (excludes Luar Negeri and Seluruh Daerah). */
+	public static function selangorDistrictIds(): array
+	{
+		return [1, 2, 3, 4, 5, 6, 7, 8, 9];
+	}
+
+	public static function isAllSelangorDistrict($districtId): bool
+	{
+		return (int) $districtId === self::DISTRICT_ALL_SELANGOR;
+	}
+
+	/** Whether a vendor's daerah is allowed by a tender district-rule id list. */
+	public static function vendorMatchesDistrictRules($vendorDistrictId, array $allowedDistrictIds): bool
+	{
+		$vendorDistrictId = (int) $vendorDistrictId;
+		$normalized = array_map('intval', $allowedDistrictIds);
+
+		if (in_array(self::DISTRICT_ALL_SELANGOR, $normalized, true)) {
+			return in_array($vendorDistrictId, self::selangorDistrictIds(), true);
+		}
+
+		return in_array($vendorDistrictId, $normalized, true);
+	}
 
 	public static $states = [
 		1 => 'JOHOR',

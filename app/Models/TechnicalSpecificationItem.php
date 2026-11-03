@@ -13,11 +13,13 @@ class TechnicalSpecificationItem extends Model
         'title',
         'quantity',
         'unit',
+        'kadar_harga',
         'sort_order',
     ];
 
     protected $casts = [
         'quantity' => 'decimal:4',
+        'kadar_harga' => 'decimal:2',
     ];
 
     public function getRouteKeyName(): string

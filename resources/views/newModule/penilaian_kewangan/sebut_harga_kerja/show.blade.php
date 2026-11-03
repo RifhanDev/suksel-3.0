@@ -1604,14 +1604,20 @@ window.type2State = {
             v.step3?.status === 'memuaskan'
         );
 
-        // Sort by bid price (extract number)
+        // Sort by bid price ascending (lowest price first) with vendor name tiebreaker
         finalQualified.sort((a, b) => {
             const numA = (typeof a.harga_raw === 'number' && a.harga_raw > 0)
                 ? a.harga_raw
-                : parseFloat(String(a.harga_tawaran).replace(/[^\d.]/g, '') || 0);
+                : (parseFloat(String(a.harga_tawaran).replace(/[^\d.]/g, '') || 0) || Number.MAX_VALUE);
             const numB = (typeof b.harga_raw === 'number' && b.harga_raw > 0)
                 ? b.harga_raw
-                : parseFloat(String(b.harga_tawaran).replace(/[^\d.]/g, '') || 0);
+                : (parseFloat(String(b.harga_tawaran).replace(/[^\d.]/g, '') || 0) || Number.MAX_VALUE);
+            if (numA === numB) {
+                const nameA = (a.name || '').toLowerCase();
+                const nameB = (b.name || '').toLowerCase();
+                if (nameA !== nameB) return nameA.localeCompare(nameB);
+                return (a.id || 0) - (b.id || 0);
+            }
             return numA - numB;
         });
 

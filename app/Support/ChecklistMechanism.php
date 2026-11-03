@@ -14,6 +14,8 @@ final class ChecklistMechanism
 
     public const BORANG_ATAS_TALIAN = 'borang_atas_talian';
 
+    public const SERAHAN_TANGAN = 'serahan_tangan';
+
     /** source_type marking a checklist item as a specification row. */
     public const SOURCE_SPECIFICATION = 'specification_document';
 
@@ -32,6 +34,7 @@ final class ChecklistMechanism
             self::PETENDER_MUAT_NAIK => 'Petender Muat Naik',
             self::PTJ_MUAT_NAIK      => 'PTJ Muat Naik',
             self::BORANG_ATAS_TALIAN => 'Borang Atas Talian',
+            self::SERAHAN_TANGAN     => 'Serahan Tangan',
             default                  => '-',
         };
     }
