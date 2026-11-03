@@ -285,7 +285,7 @@
 
                 <!-- Tajuk Dokumen -->
                 <div class="col-12">
-                    <label class="form-label fw-semibold">Tajuk Dokumen <span class="text-danger">*</span></label>
+                    <label class="form-label fw-semibold">Tajuk Dokumen</label>
                     <textarea name="tajuk_dokumen" class="form-control form-control-sm" rows="3" readonly disabled>{{ $templateTitle }}</textarea>
                 </div>
 
@@ -303,7 +303,7 @@
 
                 <!-- Jenis Barang -->
                 <div class="col-12 col-md-6">
-                    <label class="form-label fw-semibold d-block">Jenis Barang <span class="text-danger">*</span></label>
+                    <label class="form-label fw-semibold d-block">Jenis Barang</label>
                     <div class="d-flex gap-3 mt-1">
                         <div class="form-check">
                             <input class="form-check-input" type="radio" name="jenisBarang" id="jenisBarang1" disabled @checked(!$isImportGoods)>
@@ -318,8 +318,7 @@
 
                 <!-- Wajaran Spesifikasi -->
                 <div class="col-12 col-md-6">
-                    <label class="form-label fw-semibold d-block">Wajaran Spesifikasi <span
-                            class="text-danger">*</span></label>
+                    <label class="form-label fw-semibold d-block">Wajaran Spesifikasi</label>
                     <div class="d-flex gap-3 mt-1">
                         <div class="form-check">
                             <input class="form-check-input" type="radio" name="wajaranSpesifikasi"
@@ -342,8 +341,7 @@
 
                 <!-- Penghantaran Fizikal -->
                 <div class="col-12 col-md-6">
-                    <label class="form-label fw-semibold d-block">Penghantaran Fizikal <span
-                            class="text-danger">*</span></label>
+                    <label class="form-label fw-semibold d-block">Penghantaran Fizikal</label>
                     <div class="d-flex gap-3 mt-1">
                         <div class="form-check">
                             <input class="form-check-input" type="radio" name="penghantaranFizikal"
@@ -380,7 +378,7 @@
                     </div>
                     <div>
                         <h3 class="content-card-title mb-0" style="font-size: 1rem;">Item Spesifikasi & Penetapan Harga</h3>
-                        <p class="text-muted mb-0" style="font-size: 0.78rem;">Masukkan harga bagi setiap item</p>
+                        <p class="text-muted mb-0" style="font-size: 0.78rem;">Masukkan kadar harga — penetapan harga dikira automatik (kuantiti × kadar)</p>
                     </div>
                 </div>
             </div>
@@ -391,22 +389,22 @@
                         <thead>
                             <tr style="background-color: #3b5998; color: #ffffff;">
                                 <th class="py-3 px-3 align-middle text-start" style="background-color: #3b5998; color: #ffffff; border-color: #2d4578;">
-                                    Item <span class="text-danger">*</span>
+                                    Item
                                     <div style="font-size: 0.72rem; font-weight: 600; text-transform: none; color: #e2e8f0; margin-top: 2px;">
-                                        Spesifikasi <span class="text-danger">*</span>
+                                        Spesifikasi
                                     </div>
                                 </th>
                                 <th class="text-center align-middle py-3 px-3" style="width: 140px; background-color: #3b5998; color: #ffffff; border-color: #2d4578;">
-                                    Kekerapan / Kuantiti <span class="text-danger">*</span>
+                                    Kekerapan / Kuantiti
                                 </th>
                                 <th class="text-center align-middle py-3 px-3" style="width: 130px; background-color: #3b5998; color: #ffffff; border-color: #2d4578;">
-                                    Unit Ukuran <span class="text-danger">*</span>
+                                    Unit Ukuran
                                 </th>
                                 <th class="text-center align-middle py-3 px-3" style="width: 150px; background-color: #3b5998; color: #ffffff; border-color: #2d4578;">
-                                    Kadar Harga (RM)
+                                    Kadar Harga (RM) <span class="text-danger">*</span>
                                 </th>
                                 <th class="text-center align-middle py-3 px-3" style="width: 200px; background-color: #3b5998; color: #ffffff; border-color: #2d4578;">
-                                    Penetapan Harga (RM) <span class="text-danger">*</span>
+                                    Penetapan Harga (RM)
                                 </th>
                             </tr>
                         </thead>
@@ -496,30 +494,37 @@ $(document).ready(function () {
             var detailCount = details.length;
             var hasDetails  = detailCount > 0;
             var totalRows   = 1 + detailCount;
-            var savedHarga  = item.harga > 0 ? parseFloat(item.harga).toFixed(2) : '';
-            var kadarHarga  = (item.kadar_harga !== null && item.kadar_harga !== undefined && item.kadar_harga !== '')
-                ? Number(item.kadar_harga).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-                : '—';
+            var kuantiti    = parseFloat(item.kuantiti) || 0;
+            var savedKadar  = (item.kadar_harga !== null && item.kadar_harga !== undefined && item.kadar_harga !== '')
+                ? parseFloat(item.kadar_harga)
+                : null;
+            var penetapanVal = '';
+            if (savedKadar !== null && !isNaN(savedKadar)) {
+                penetapanVal = (kuantiti * savedKadar).toFixed(2);
+            } else if (item.harga > 0) {
+                penetapanVal = parseFloat(item.harga).toFixed(2);
+            }
+            var kadarDisplay = savedKadar !== null && !isNaN(savedKadar) ? savedKadar.toFixed(2) : '';
 
-            // ── Parent item row — harga spans all rows ───────────────────
+            // ── Parent item row — penetapan harga is auto-calculated & read-only ──
             var $itemRow = $(
-                '<tr class="item-row' + groupClass + (hasDetails ? ' item-has-specs' : '') + '">' +
+                '<tr class="item-row' + groupClass + (hasDetails ? ' item-has-specs' : '') + '" data-kuantiti="' + kuantiti + '">' +
                     '<td class="p-3">' +
                         '<div class="p-2.5 rounded-2 border bg-white shadow-sm fw-semibold text-dark" style="font-size:0.875rem; line-height:1.45;">' +
                             $('<span>').text(item.title).html() +
                         '</div>' +
                     '</td>' +
                     '<td class="text-center align-middle">' +
-                        '<span class="fw-semibold text-dark" style="font-size:0.875rem;">' + item.kuantiti + '</span>' +
+                        '<span class="fw-semibold text-dark item-kuantiti" style="font-size:0.875rem;">' + item.kuantiti + '</span>' +
                     '</td>' +
                     '<td class="text-center align-middle">' +
                         '<span class="fw-semibold text-dark text-uppercase" style="font-size:0.8rem;">' + $('<span>').text(item.uom || '-').html() + '</span>' +
                     '</td>' +
-                    '<td class="text-end align-middle">' +
-                        '<span class="fw-semibold text-dark" style="font-size:0.875rem;">' + kadarHarga + '</span>' +
+                    '<td class="text-center align-middle p-3">' +
+                        '<input type="text" name="kadar_harga_item[]" class="form-control form-control-sm text-end amount-input kadar-input py-2 fw-semibold" placeholder="0.00" data-item-idx="' + itemIdx + '" value="' + kadarDisplay + '" required style="font-size:0.95rem;">' +
                     '</td>' +
                     '<td class="text-center align-middle p-3" rowspan="' + totalRows + '">' +
-                        '<input type="text" name="harga_item[]" class="form-control form-control-sm text-end amount-input harga-input py-2 fw-semibold" placeholder="0.00" data-item-idx="' + itemIdx + '" value="' + savedHarga + '" style="font-size:0.95rem;">' +
+                        '<input type="text" name="harga_item[]" class="form-control form-control-sm text-end harga-input py-2 fw-semibold bg-light" placeholder="0.00" data-item-idx="' + itemIdx + '" value="' + penetapanVal + '" readonly tabindex="-1" style="font-size:0.95rem; border-color:#cbd5e1; cursor:not-allowed;">' +
                     '</td>' +
                 '</tr>'
             );
@@ -547,13 +552,27 @@ $(document).ready(function () {
         });
     }
 
-    // ── Jumlah Harga calculation ─────────────────────────────────────────────
+    // ── Calculation helpers ──────────────────────────────────────────────────
     function parseAmount(val) {
         return parseFloat(String(val).replace(/,/g, '')) || 0;
     }
 
     function formatAmount(n) {
         return n.toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function updatePenetapanFromKadar($row) {
+        var kuantiti = parseAmount($row.attr('data-kuantiti'));
+        var kadarRaw = $.trim(String($row.find('.kadar-input').val() || ''));
+        var $harga   = $row.find('.harga-input');
+
+        if (kadarRaw === '') {
+            $harga.val('');
+            return;
+        }
+
+        var penetapan = kuantiti * parseAmount(kadarRaw);
+        $harga.val(formatAmount(penetapan));
     }
 
     function updateJumlahHarga() {
@@ -564,11 +583,34 @@ $(document).ready(function () {
         $('#jumlah-harga').text(formatAmount(total));
     }
 
-    updateJumlahHarga();
+    function recalculateAll() {
+        $('#tbl-spek-body tr.item-row').each(function () {
+            updatePenetapanFromKadar($(this));
+        });
+        updateJumlahHarga();
+    }
 
-    $tbody.on('input change', '.harga-input', function() {
+    recalculateAll();
+
+    $tbody.on('input change', '.kadar-input', function () {
+        updatePenetapanFromKadar($(this).closest('tr.item-row'));
         updateJumlahHarga();
     });
+
+    function validateKadarHarga() {
+        var missing = [];
+        $('#tbl-spek-body tr.item-row').each(function (i) {
+            var $kadar = $(this).find('.kadar-input');
+            var raw = $.trim(String($kadar.val() || ''));
+            if (raw === '' || parseAmount(raw) <= 0) {
+                missing.push(i + 1);
+                $kadar.addClass('is-invalid');
+            } else {
+                $kadar.removeClass('is-invalid');
+            }
+        });
+        return missing;
+    }
 
     function buildPayload() {
         var payload = { items: [] };
@@ -576,7 +618,14 @@ $(document).ready(function () {
             var idx   = $(this).find('.harga-input').data('item-idx');
             var uuid  = items[idx] ? items[idx].uuid : null;
             var harga = $(this).find('.harga-input').val().replace(/,/g, '');
-            if (uuid) { payload.items.push({ uuid: uuid, harga: parseFloat(harga) || 0 }); }
+            var kadar = $(this).find('.kadar-input').val().replace(/,/g, '');
+            if (uuid) {
+                payload.items.push({
+                    uuid: uuid,
+                    harga: parseFloat(harga) || 0,
+                    kadar_harga: kadar === '' ? null : (parseFloat(kadar) || 0)
+                });
+            }
         });
         payload.jumlah_harga = parseFloat($('#jumlah-harga').text().replace(/,/g, '')) || 0;
         payload._token = CSRF_TOKEN;
@@ -615,6 +664,19 @@ $(document).ready(function () {
     }
 
     $('#btn-simpan').on('click', function() {
+        var missing = validateKadarHarga();
+        if (missing.length) {
+            Swal.fire({
+                title: 'Ralat!',
+                text: 'Sila masukkan Kadar Harga bagi semua item.',
+                icon: 'error',
+                confirmButtonColor: '#1e293b',
+                confirmButtonText: 'Tutup'
+            });
+            return;
+        }
+
+        recalculateAll();
         blockUI('Menyimpan...');
         doSave(function() {
             showSuccess('Berjaya disimpan!');
@@ -622,6 +684,20 @@ $(document).ready(function () {
     });
 
     $('#btn-selesai').on('click', function() {
+        var missing = validateKadarHarga();
+        if (missing.length) {
+            Swal.fire({
+                title: 'Ralat!',
+                text: 'Sila masukkan Kadar Harga bagi semua item.',
+                icon: 'error',
+                confirmButtonColor: '#1e293b',
+                confirmButtonText: 'Tutup'
+            });
+            return;
+        }
+
+        recalculateAll();
+
         var totalInput      = parseAmount($('#jumlah-harga').text());
         var anggaranJabatan = parseAmount($('#anggaran-jabatan').val());
 
@@ -657,22 +733,29 @@ $(document).ready(function () {
         });
     });
 
-    // ── Amount input formatting ──────────────────────────────────────────────
-    $(document).on('focus', '.amount-input', function () {
+    // ── Amount input formatting (kadar harga only) ───────────────────────────
+    $(document).on('focus', '.kadar-input.amount-input', function () {
         var raw = $(this).val().replace(/,/g, '');
         if (parseFloat(raw) === 0) raw = '';
         $(this).val(raw);
     });
 
-    $(document).on('blur', '.amount-input', function () {
+    $(document).on('blur', '.kadar-input.amount-input', function () {
         var val = $(this).val();
-        if (val === '') return;
+        var $row = $(this).closest('tr.item-row');
+        if (val === '') {
+            updatePenetapanFromKadar($row);
+            updateJumlahHarga();
+            return;
+        }
         $(this).val(formatAmount(parseAmount(val)));
+        updatePenetapanFromKadar($row);
         updateJumlahHarga();
     });
 
-    $(document).on('input', '.amount-input', function () {
+    $(document).on('input', '.kadar-input.amount-input', function () {
         $(this).val($(this).val().replace(/[^\d.]/g, ''));
+        $(this).removeClass('is-invalid');
     });
 
 });
