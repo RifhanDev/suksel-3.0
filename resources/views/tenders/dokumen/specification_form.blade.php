@@ -380,6 +380,21 @@ $(document).ready(function () {
         });
     }
 
+    function updateBekalanTawaran($kadarInput) {
+        var qty = parseMoney($kadarInput.data('qty'));
+        var kadarRaw = $.trim(String($kadarInput.val() || ''));
+        var uuid = $kadarInput.data('item-uuid');
+        var $tawaran = $('.dokumen-spec-price[data-item-uuid="' + uuid + '"]');
+
+        if (kadarRaw === '') {
+            $tawaran.val('');
+            return;
+        }
+
+        var tawaran = Math.round((qty * parseMoney(kadarRaw)) * 100) / 100;
+        $tawaran.val(tawaran.toFixed(2));
+    }
+
     function updateSpecTotal() {
         var total = 0;
         if (IS_KERJA) {
@@ -392,6 +407,9 @@ $(document).ready(function () {
                 total += jumlah;
             });
         } else {
+            $('.dokumen-spec-kadar-bekalan').each(function () {
+                updateBekalanTawaran($(this));
+            });
             $('.dokumen-spec-price').each(function () {
                 total += parseMoney($(this).val());
             });
@@ -401,7 +419,8 @@ $(document).ready(function () {
 
     function collectResponses() {
         var data = { 
-            item_prices: {}, 
+            item_prices: {},
+            item_kadars: {},
             details: {},
             vendor_tempoh_siap_val: $('#vendor_tempoh_siap_val').val() || null,
             vendor_tempoh_siap_unit: $('#vendor_tempoh_siap_unit').val() || null
@@ -415,6 +434,13 @@ $(document).ready(function () {
                 }
             });
         } else {
+            $('.dokumen-spec-kadar-bekalan').each(function () {
+                updateBekalanTawaran($(this));
+                var uuid = $(this).data('item-uuid');
+                if (uuid) {
+                    data.item_kadars[uuid] = $(this).val() || '';
+                }
+            });
             $('.dokumen-spec-price').each(function () {
                 var uuid = $(this).data('item-uuid');
                 if (uuid) {
@@ -423,7 +449,6 @@ $(document).ready(function () {
             });
 
             $('.dokumen-spec-pematuhan').each(function () {
-                if (!IS_ADMIN_MODE) return;
                 var uuid = $(this).data('detail-uuid');
                 if (!uuid) return;
                 if (!data.details[uuid]) data.details[uuid] = {};
@@ -441,9 +466,18 @@ $(document).ready(function () {
         return data;
     }
 
-    $(document).on('input change', '.dokumen-spec-price, .dokumen-spec-kadar', updateSpecTotal);
-    $(document).on('input', '.dokumen-spec-kadar', function () {
+    $(document).on('input change', '.dokumen-spec-price, .dokumen-spec-kadar, .dokumen-spec-kadar-bekalan', updateSpecTotal);
+    $(document).on('input', '.dokumen-spec-kadar, .dokumen-spec-kadar-bekalan', function () {
         $(this).val(String($(this).val()).replace(/[^\d.]/g, ''));
+    });
+    $(document).on('blur', '.dokumen-spec-kadar-bekalan', function () {
+        var val = $.trim(String($(this).val() || ''));
+        if (val === '') {
+            updateSpecTotal();
+            return;
+        }
+        $(this).val(parseMoney(val).toFixed(2));
+        updateSpecTotal();
     });
     updateSpecTotal();
 

@@ -44,6 +44,23 @@
         $groups[] = $current;
     }
 
+    $itemKadars = [];
+    if (is_array($specData) && isset($specData['item_kadars']) && is_array($specData['item_kadars'])) {
+        $itemKadars = $specData['item_kadars'];
+    }
+
+    $formatQty = static function ($qty): string {
+        if ($qty === null || $qty === '') {
+            return '—';
+        }
+        $num = (float) $qty;
+        if ($num == 0.0 && (string) $qty !== '0' && (string) $qty !== '0.0') {
+            return '—';
+        }
+
+        return (string) (int) round($num);
+    };
+
     $initialTotal = 0.0;
     if ($isKerjaSpec) {
         foreach ($groups as $group) {
@@ -63,7 +80,22 @@
             }
         }
     } else {
-        $initialTotal = collect($itemPrices)->sum(fn ($value) => is_numeric($value) ? (float) $value : 0);
+        foreach ($groups as $group) {
+            $item = $group['item'];
+            $itemUuid = $item['item_uuid'] ?? '';
+            $qty = (float) ($item['quantity'] ?? 0);
+            $savedTawaran = ($itemUuid !== '' && isset($itemPrices[$itemUuid]) && $itemPrices[$itemUuid] !== '')
+                ? (float) str_replace(',', '', (string) $itemPrices[$itemUuid])
+                : 0.0;
+            $savedKadar = ($itemUuid !== '' && isset($itemKadars[$itemUuid]) && $itemKadars[$itemUuid] !== '')
+                ? (float) str_replace(',', '', (string) $itemKadars[$itemUuid])
+                : null;
+            if ($savedKadar !== null) {
+                $initialTotal += round($savedKadar * $qty, 2);
+            } else {
+                $initialTotal += $savedTawaran;
+            }
+        }
     }
 @endphp
 
@@ -181,7 +213,10 @@
                         @php
                             $specUuid = $detail['item_uuid'] ?? '';
                             $qty = (float) ($detail['kuantiti'] ?? $detail['quantity'] ?? 0);
-                            $qtyDisplay = $qty > 0 ? rtrim(rtrim(number_format($qty, 2, '.', ''), '0'), '.') : '';
+                            $qtyDisplay = $formatQty($detail['kuantiti'] ?? $detail['quantity'] ?? null);
+                            if ($qtyDisplay === '—') {
+                                $qtyDisplay = '';
+                            }
                             $vendorKadar = ($specUuid !== '' && array_key_exists($specUuid, $itemPrices) && $itemPrices[$specUuid] !== '')
                                 ? (string) $itemPrices[$specUuid]
                                 : '';
@@ -323,18 +358,40 @@
                         $details = $group['details'];
                         $itemUuid = $item['item_uuid'] ?? '';
                         $priceRowspan = max(1, count($details) + 1);
+                        $qty = (float) ($item['quantity'] ?? 0);
+                        $qtyDisplay = $formatQty($item['quantity'] ?? null);
                         $savedPrice = $itemUuid !== '' ? ($itemPrices[$itemUuid] ?? '') : '';
-                        $kadarHarga = $item['kadar_harga'] ?? null;
+                        $ptjKadar = $item['kadar_harga'] ?? null;
+                        $savedKadarRaw = ($itemUuid !== '' && isset($itemKadars[$itemUuid]) && $itemKadars[$itemUuid] !== '')
+                            ? (string) $itemKadars[$itemUuid]
+                            : '';
+                        // Prefer saved vendor kadar; else derive from prior tawaran/qty; never prefill PTJ indicative into vendor offer.
+                        if ($savedKadarRaw === '' && $savedPrice !== '' && $qty > 0) {
+                            $savedKadarRaw = (string) round(((float) str_replace(',', '', (string) $savedPrice)) / $qty, 2);
+                        }
+                        $tawaranVal = $savedKadarRaw !== ''
+                            ? round(((float) str_replace(',', '', $savedKadarRaw)) * $qty, 2)
+                            : (($savedPrice !== '') ? (float) str_replace(',', '', (string) $savedPrice) : null);
                     @endphp
-                    <tr class="spec-item-row">
+                    <tr class="spec-item-row" data-qty="{{ $qty }}">
                         <td>
                             <div class="spec-text-box">{{ $item['title'] ?? '-' }}</div>
                         </td>
-                        <td class="text-center align-middle">{{ $item['quantity'] ?? '—' }}</td>
+                        <td class="text-center align-middle">{{ $qtyDisplay }}</td>
                         <td class="text-center align-middle text-uppercase">{{ $item['unit'] ?? '—' }}</td>
                         <td class="text-end align-middle">
-                            @if ($kadarHarga !== null && $kadarHarga !== '')
-                                <span class="fw-semibold">{{ number_format((float) $kadarHarga, 2) }}</span>
+                            @if ($canEdit && $itemUuid !== '')
+                                <input type="text"
+                                    class="form-control form-control-sm text-end dokumen-spec-kadar-bekalan"
+                                    data-item-uuid="{{ $itemUuid }}"
+                                    data-qty="{{ $qty }}"
+                                    value="{{ $savedKadarRaw !== '' ? number_format((float) str_replace(',', '', $savedKadarRaw), 2, '.', '') : '' }}"
+                                    placeholder="0.00"
+                                    inputmode="decimal">
+                            @elseif ($savedKadarRaw !== '')
+                                <span class="fw-semibold">{{ number_format((float) str_replace(',', '', $savedKadarRaw), 2) }}</span>
+                            @elseif ($ptjKadar !== null && $ptjKadar !== '' && ! $canEdit)
+                                <span class="fw-semibold">{{ number_format((float) $ptjKadar, 2) }}</span>
                             @else
                                 <span class="text-muted">—</span>
                             @endif
@@ -343,13 +400,16 @@
                         <td class="text-center text-muted">—</td>
                         <td rowspan="{{ $priceRowspan }}" class="spec-price-cell align-middle text-end">
                             @if ($canEdit && $itemUuid !== '')
-                                <input type="number" step="0.01" min="0"
-                                    class="form-control form-control-sm dokumen-spec-price text-end"
+                                <input type="text"
+                                    class="form-control form-control-sm dokumen-spec-price text-end bg-light"
                                     data-item-uuid="{{ $itemUuid }}"
-                                    value="{{ $savedPrice }}"
-                                    placeholder="0.00">
-                            @elseif ($savedPrice !== '')
-                                <span class="fw-semibold">{{ number_format((float) $savedPrice, 2) }}</span>
+                                    value="{{ $tawaranVal !== null ? number_format($tawaranVal, 2, '.', '') : '' }}"
+                                    placeholder="0.00"
+                                    readonly
+                                    tabindex="-1"
+                                    style="cursor:not-allowed;border-color:#cbd5e1;">
+                            @elseif ($tawaranVal !== null)
+                                <span class="fw-semibold">{{ number_format($tawaranVal, 2) }}</span>
                             @else
                                 <span class="text-muted">—</span>
                             @endif
@@ -361,6 +421,17 @@
                             $savedDetail = $detailUuid !== '' ? ($detailResponses[$detailUuid] ?? []) : [];
                             $savedPematuhan = is_array($savedDetail) ? ($savedDetail['pematuhan'] ?? '') : '';
                             $savedCadangan = is_array($savedDetail) ? ($savedDetail['cadangan'] ?? '') : (string) $savedDetail;
+                            $pematuhanKey = match (strtolower(trim((string) $savedPematuhan))) {
+                                'yes', 'ya' => 'yes',
+                                'no', 'tidak' => 'no',
+                                default => '',
+                            };
+                            $pematuhanLabel = match ($pematuhanKey) {
+                                'yes' => 'Ya',
+                                'no' => 'Tidak',
+                                default => '',
+                            };
+                            $canEditDetailPematuhan = ($canEdit || $canEditPematuhan) && $detailUuid !== '';
                         @endphp
                         <tr class="spec-detail-row">
                             <td>
@@ -369,18 +440,19 @@
                             <td class="text-center text-muted">—</td>
                             <td class="text-center text-muted">—</td>
                             <td class="text-center text-muted">—</td>
-                            <td class="align-middle">
-                                @if ($canEditPematuhan && $detailUuid !== '')
+                            <td class="align-middle text-center">
+                                @if ($canEditDetailPematuhan)
                                     <select class="form-select form-select-sm dokumen-spec-pematuhan"
-                                        data-detail-uuid="{{ $detailUuid }}">
+                                        data-detail-uuid="{{ $detailUuid }}"
+                                        name="pematuhan[{{ $detailUuid }}]">
                                         <option value="">— Sila pilih —</option>
-                                        <option value="yes" @selected($savedPematuhan === 'yes')>Ya</option>
-                                        <option value="no" @selected($savedPematuhan === 'no')>Tidak</option>
+                                        <option value="yes" @selected($pematuhanKey === 'yes')>Ya</option>
+                                        <option value="no" @selected($pematuhanKey === 'no')>Tidak</option>
                                     </select>
-                                @elseif ($savedPematuhan !== '')
-                                    <span class="fw-semibold spec-pematuhan-readonly">{{ $savedPematuhan === 'yes' ? 'Ya' : 'Tidak' }}</span>
+                                @elseif ($pematuhanLabel !== '')
+                                    <span class="fw-semibold spec-pematuhan-readonly">{{ $pematuhanLabel }}</span>
                                 @else
-                                    <span class="text-muted small spec-pematuhan-readonly">Ya / Tidak</span>
+                                    <span class="text-muted">—</span>
                                 @endif
                             </td>
                             <td class="align-middle">
