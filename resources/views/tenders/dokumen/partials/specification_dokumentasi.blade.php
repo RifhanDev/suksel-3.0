@@ -110,7 +110,7 @@
                             <div class="spec-text-box spec-text-box-sub">{{ $detail['title'] ?? '-' }}</div>
                         </td>
                         <td class="text-center align-middle text-uppercase">{{ $detail['unit'] ?: '—' }}</td>
-                        <td class="text-center align-middle">{{ $qty > 0 ? rtrim(rtrim(number_format($qty, 2, '.', ''), '0'), '.') : '—' }}</td>
+                        <td class="text-center align-middle">{{ $qty > 0 ? (int) round($qty) : '—' }}</td>
                         @unless ($hideOfferedPrice)
                             <td class="text-center align-middle">
                                 @if ($kadar !== '')
@@ -170,7 +170,7 @@
                     <td>
                         <div class="spec-text-box">{{ $item['title'] ?? '-' }}</div>
                     </td>
-                    <td class="text-center align-middle">{{ $item['quantity'] ?? '—' }}</td>
+                    <td class="text-center align-middle">{{ isset($item['quantity']) && $item['quantity'] !== null && $item['quantity'] !== '' ? (int) round((float) $item['quantity']) : '—' }}</td>
                     <td class="text-center align-middle text-uppercase">{{ $item['unit'] ?? '—' }}</td>
                     <td class="text-end align-middle">
                         @if ($kadarHarga !== null && $kadarHarga !== '')

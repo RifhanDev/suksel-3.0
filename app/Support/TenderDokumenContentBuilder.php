@@ -11,6 +11,7 @@ use App\Models\SpesifikasiKerjaFile;
 use App\Models\StandardChecklistItem;
 use App\Models\TechnicalChecklistFile;
 use App\Models\TechnicalChecklistItem;
+use App\Models\TechnicalSpecificationDetail;
 use App\Models\TechnicalSpecificationDocument;
 use App\Models\TechnicalSpecificationItem;
 use App\Services\OnlineFormStatusService;
@@ -255,9 +256,23 @@ class TenderDokumenContentBuilder
             && is_array($apiOverlay['specification_rows'])
             && count(array_filter($apiOverlay['specification_rows'])) > 0
         ) {
+            $rows = array_values($apiOverlay['specification_rows']);
+            foreach ($rows as &$row) {
+                if (($row['kind'] ?? '') !== 'detail') {
+                    continue;
+                }
+                if (! empty($row['owner_pematuhan']) || ! empty($row['ya_tidak']) || ! empty($row['pematuhan'])) {
+                    continue;
+                }
+                if (($row['response_type'] ?? '') === 'yes_no') {
+                    $row['owner_pematuhan'] = 'yes';
+                }
+            }
+            unset($row);
+
             return [
                 'document_title' => $apiOverlay['document_title'] ?? $item->title,
-                'rows' => array_values($apiOverlay['specification_rows']),
+                'rows' => $rows,
             ];
         }
 
@@ -291,7 +306,7 @@ class TenderDokumenContentBuilder
 
         $document = TechnicalSpecificationDocument::query()->find($documentId);
         $items = TechnicalSpecificationItem::query()
-            ->with('details')
+            ->with(['details.scoreRules'])
             ->where('technical_specification_document_id', $documentId)
             ->orderBy('sort_order')
             ->orderBy('id')
@@ -326,6 +341,8 @@ class TenderDokumenContentBuilder
                     'unit' => null,
                     'kadar_harga' => null,
                     'response_type' => $detail->response_type,
+                    // Owner expected pematuhan (Ya/Tidak) — single value, not the skema type label.
+                    'owner_pematuhan' => $this->resolveOwnerPematuhan($detail),
                 ];
             }
         }
@@ -342,6 +359,38 @@ class TenderDokumenContentBuilder
                 'response_type' => null,
             ]],
         ];
+    }
+
+    /**
+     * Resolve owner's expected pematuhan as a single yes/no value (not the skema type label).
+     * Prefers the boolean score-rule answer with the higher score (typically Ya).
+     */
+    protected function resolveOwnerPematuhan(TechnicalSpecificationDetail $detail): ?string
+    {
+        if (($detail->response_type ?? '') !== 'yes_no') {
+            return null;
+        }
+
+        $rules = $detail->relationLoaded('scoreRules')
+            ? $detail->scoreRules
+            : $detail->scoreRules()->get();
+
+        $best = null;
+        $bestScore = null;
+        foreach ($rules as $rule) {
+            $answer = strtolower(trim((string) ($rule->answer_value ?? '')));
+            if (! in_array($answer, ['yes', 'no', 'ya', 'tidak'], true)) {
+                continue;
+            }
+            $score = (float) ($rule->score ?? 0);
+            if ($bestScore === null || $score > $bestScore) {
+                $bestScore = $score;
+                $best = in_array($answer, ['yes', 'ya'], true) ? 'yes' : 'no';
+            }
+        }
+
+        // Owner chose Ya/Tidak skema; default expected compliance is Ya when no skor rules saved.
+        return $best ?? 'yes';
     }
 
     /**
