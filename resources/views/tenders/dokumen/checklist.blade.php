@@ -83,8 +83,8 @@
                         <span class="badge-status {{ $dok['badge_class'] ?? 'badge-status-neutral' }}">
                             {{ $dok['tindakan'] ?? '-' }}
                         </span>
-                        @if ($mode === 'vendor' && $vendorCanEdit && ($dok['vendor_status'] ?? '') === 'submitted')
-                            <div class="mt-1">
+                        @if ($mode === 'vendor' && $vendorCanEdit)
+                            <div class="mt-1 dokumen-row-selesai-wrap {{ ($dok['vendor_status'] ?? '') === 'submitted' ? '' : 'd-none' }}">
                                 <span class="badge-status badge-status-success" style="font-size:0.65rem;">Selesai</span>
                             </div>
                         @endif
@@ -127,6 +127,22 @@
     (function () {
         if (window.__dokumenChecklistInit) return;
         window.__dokumenChecklistInit = true;
+
+        function setDokumenSelesai(fromEl, done) {
+            var detail = fromEl ? fromEl.closest('.dokumen-checklist-detail') : null;
+            if (!detail) return;
+
+            detail.querySelectorAll('.dokumen-vendor-selesai-badge').forEach(function (badge) {
+                badge.classList.toggle('d-none', !done);
+            });
+
+            var rowId = detail.id;
+            if (!rowId) return;
+            var toggleRow = document.querySelector('[data-dokumen-toggle="' + rowId + '"]');
+            if (!toggleRow) return;
+            var wrap = toggleRow.querySelector('.dokumen-row-selesai-wrap');
+            if (wrap) wrap.classList.toggle('d-none', !done);
+        }
 
         document.addEventListener('click', function (e) {
             if (e.target.closest('.dokumen-upload-zone, .dokumen-key-in-form, .dokumen-delete-file, .dokumen-spec-form, a, button, [data-online-form-modal], [data-vendor-form-modal]')) {
@@ -197,6 +213,7 @@
                     '<a href="' + f.url + '" target="_blank" class="small fw-semibold text-decoration-none flex-grow-1">' + f.name + '</a>' +
                     '<button type="button" class="btn btn-sm btn-link text-danger p-0 dokumen-delete-file" data-file-uuid="' + f.uuid + '">Buang</button>';
                 list.appendChild(li);
+                setDokumenSelesai(zone, true);
             })
             .catch(function (err) {
                 if (errEl) {
@@ -217,6 +234,7 @@
 
             var uuid = btn.getAttribute('data-file-uuid');
             var row = btn.closest('.dokumen-vendor-file-row');
+            var list = btn.closest('.dokumen-vendor-file-list');
             var deleteUrl = @json(url('tenders/dokumen-files')) + '/' + uuid;
 
             fetch(deleteUrl, {
@@ -231,6 +249,8 @@
             .then(function (res) {
                 if (!res.success) throw new Error(res.message || 'Gagal membuang fail.');
                 if (row) row.remove();
+                var remaining = list ? list.querySelectorAll('.dokumen-vendor-file-row').length : 0;
+                setDokumenSelesai(list || btn, remaining > 0);
             })
             .catch(function (err) { alert(err.message || 'Ralat.'); });
         });
@@ -268,6 +288,8 @@
                     throw new Error((res.json && res.json.message) || 'Gagal menyimpan.');
                 }
                 if (okEl) okEl.classList.remove('d-none');
+                var hasValue = !!(input && String(input.value || '').trim());
+                setDokumenSelesai(form, hasValue);
             })
             .catch(function (err) {
                 if (errEl) {

@@ -158,9 +158,7 @@ class KerjaDalamTanganController extends Controller
             ]);
 
             if ($this->isVendorFormMode()) {
-                $this->trackVendorFormSubmitted($tender, 'kerja_dalam_tangan', [
-                    'text' => count($items) . ' rekod kerja dalam tangan (disimpan tempatan)',
-                ]);
+                $this->trackKerjaDalamTanganVendorStatus($tender, $items);
 
                 return $this->vendorFormRedirect($request, $tender, 'Data disimpan secara tempatan. Penyegerakan STOS gagal.', 'warning');
             }
@@ -173,9 +171,7 @@ class KerjaDalamTanganController extends Controller
             $this->logStoreFailure($tenderUuid, $payload, $apiUrl, $response);
 
             if ($this->isVendorFormMode()) {
-                $this->trackVendorFormSubmitted($tender, 'kerja_dalam_tangan', [
-                    'text' => count($items) . ' rekod kerja dalam tangan (disimpan tempatan)',
-                ]);
+                $this->trackKerjaDalamTanganVendorStatus($tender, $items);
 
                 return $this->vendorFormRedirect($request, $tender, 'Data disimpan secara tempatan. Penyegerakan STOS gagal.', 'warning');
             }
@@ -251,9 +247,7 @@ class KerjaDalamTanganController extends Controller
 
         if (!empty($fileErrors)) {
             if ($this->isVendorFormMode()) {
-                $this->trackVendorFormSubmitted($tender, 'kerja_dalam_tangan', [
-                    'text' => count($items) . ' rekod kerja dalam tangan (sebahagian fail gagal)',
-                ]);
+                $this->trackKerjaDalamTanganVendorStatus($tender, $items);
 
                 return $this->vendorFormRedirect(
                     $request,
@@ -268,9 +262,7 @@ class KerjaDalamTanganController extends Controller
         }
 
         if ($this->isVendorFormMode()) {
-            $this->trackVendorFormSubmitted($tender, 'kerja_dalam_tangan', [
-                'text' => count($items) . ' rekod kerja dalam tangan',
-            ]);
+            $this->trackKerjaDalamTanganVendorStatus($tender, $items);
 
             return $this->vendorFormRedirect($request, $tender, 'Kerja dalam tangan berjaya disimpan.');
         }
@@ -380,6 +372,34 @@ class KerjaDalamTanganController extends Controller
             'items'    => $resolved['items'] ?? ($local['items'] ?? []),
             'dokumens' => $dokumens,
         ], $this->formViewVars($tender)));
+    }
+
+    /**
+     * Only mark Selesai when the vendor actually keyed in rows or uploaded files.
+     *
+     * @param  array<int, array<string, mixed>>  $items
+     */
+    private function trackKerjaDalamTanganVendorStatus(Tender $tender, array $items): void
+    {
+        $vendorId = $this->vendorId();
+        $hasDokumen = $vendorId
+            ? TenderKerjaDalamTanganDokumen::query()
+                ->where('tender_uuid', $tender->uuid)
+                ->where('vendor_id', $vendorId)
+                ->exists()
+            : false;
+
+        if (count($items) === 0 && ! $hasDokumen) {
+            $this->trackVendorFormDraft($tender, 'kerja_dalam_tangan', [
+                'text' => 'Tiada rekod kerja dalam tangan',
+            ]);
+
+            return;
+        }
+
+        $this->trackVendorFormSubmitted($tender, 'kerja_dalam_tangan', [
+            'text' => count($items) . ' rekod kerja dalam tangan',
+        ]);
     }
 
     private function findTender(string $uuid): ?Tender
