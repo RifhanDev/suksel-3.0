@@ -137,6 +137,7 @@
 						}
 					],
 					removeButtons: 'Flash,Iframe,Form,TextField,Checkbox,Radio,Textarea,Select,Button,ImageButton,HiddenField',
+					removePlugins: 'easyimage,cloudservices,exportpdf',
 					contentsCss: [CKEDITOR.getUrl('contents.css'), 'html { overflow-y: hidden; }'],
 				});
 			}
