@@ -100,6 +100,17 @@ class OnlineFormStatusService
             ->first();
 
         if ($record) {
+            // Demote false "Selesai" for Kerja Dalam Tangan only — old heal matched
+            // any tender-wide KDT row (PTJ template), not this vendor's submission.
+            if ($record->status === 'submitted'
+                && $formKey === 'kerja_dalam_tangan'
+                && ! $this->vendorHasSubmittedEvidence($tender, $vendorId, $formKey)
+            ) {
+                $this->markDraft($tender, $vendorId, $formKey);
+
+                return $this->formatStatus('draft');
+            }
+
             $formatted = $this->formatStatus($record->status);
             $formatted['summary'] = $record->summary['text'] ?? $record->summary['label'] ?? null;
 
@@ -143,19 +154,21 @@ class OnlineFormStatusService
      */
     protected function inferVendorSubmittedFromData(Tender $tender, int $vendorId, string $formKey): ?string
     {
-        $payload = app(VendorFormPayloadService::class)->get($tender, $vendorId, $formKey);
-        if (is_array($payload) && $payload !== []) {
-            $ignore = ['vendor_id', 'user_id', '_token', 'status'];
-            foreach ($payload as $key => $value) {
-                if (in_array($key, $ignore, true)) {
-                    continue;
-                }
-                if ($value === null || $value === '' || $value === []) {
-                    continue;
-                }
+        if (! $this->vendorHasSubmittedEvidence($tender, $vendorId, $formKey)) {
+            return null;
+        }
 
-                return OnlineFormRegistry::label($formKey) . ' disimpan';
-            }
+        return OnlineFormRegistry::label($formKey) . ' disimpan';
+    }
+
+    /**
+     * True when this vendor has real saved content for the form (not PTJ/template rows).
+     */
+    protected function vendorHasSubmittedEvidence(Tender $tender, int $vendorId, string $formKey): bool
+    {
+        $payload = app(VendorFormPayloadService::class)->get($tender, $vendorId, $formKey);
+        if ($this->payloadHasMeaningfulData($payload)) {
+            return true;
         }
 
         return match ($formKey) {
@@ -163,45 +176,62 @@ class OnlineFormStatusService
                 ->where('tender_id', $tender->id)
                 ->where('vendor_id', $vendorId)
                 ->where('status', 'submitted')
-                ->exists()
-                ? 'Lembaran imbangan disimpan'
-                : null,
+                ->exists(),
             'bon_saham' => BonSaham::query()
                 ->where('tender_id', $tender->id)
                 ->where('vendor_id', $vendorId)
                 ->where('status', 'submitted')
-                ->exists()
-                ? 'Bon atau saham disimpan'
-                : null,
+                ->exists(),
             'prestasi_kerja' => TenderPrestasiKerja::query()
                 ->where('tender_id', $tender->id)
                 ->where('vendor_id', $vendorId)
                 ->where('status', 'submitted')
-                ->exists()
-                ? 'Prestasi kerja disimpan'
-                : null,
+                ->exists(),
             'kakitangan_teknikal' => TenderKakitanganTeknikal::query()
                 ->where(function ($q) use ($tender) {
                     $q->where('tender_uuid', $tender->uuid)
                         ->orWhere('tender_uuid', (string) $tender->id);
                 })
                 ->where('vendor_id', $vendorId)
-                ->exists()
-                ? 'Senarai kakitangan teknikal disimpan'
-                : null,
+                ->exists(),
             'pengalaman_kerja' => TenderPengalamanKerja::query()
                 ->where('tender_uuid', $tender->uuid)
                 ->where('vendor_id', $vendorId)
-                ->exists()
-                ? 'Pengalaman kerja disimpan'
-                : null,
+                ->exists(),
             'kerja_dalam_tangan' => TenderKerjaDalamTangan::query()
                 ->where('tender_uuid', $tender->uuid)
+                ->where('vendor_id', $vendorId)
                 ->exists()
-                ? 'Kerja dalam tangan disimpan'
-                : null,
-            default => null,
+                || \App\Models\TenderKerjaDalamTanganDokumen::query()
+                    ->where('tender_uuid', $tender->uuid)
+                    ->where('vendor_id', $vendorId)
+                    ->exists(),
+            default => false,
         };
+    }
+
+    /**
+     * @param  array<string, mixed>|null  $payload
+     */
+    protected function payloadHasMeaningfulData(?array $payload): bool
+    {
+        if (! is_array($payload) || $payload === []) {
+            return false;
+        }
+
+        $ignore = ['vendor_id', 'user_id', '_token', 'status'];
+        foreach ($payload as $key => $value) {
+            if (in_array($key, $ignore, true)) {
+                continue;
+            }
+            if ($value === null || $value === '' || $value === []) {
+                continue;
+            }
+
+            return true;
+        }
+
+        return false;
     }
 
     /**

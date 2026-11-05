@@ -36,13 +36,12 @@
 
 @if (count($vendorFiles) > 0 || $showUpload)
     <div class="mt-2 pt-2 border-top">
-        <div class="d-flex align-items-center justify-content-between mb-1">
+        <div class="d-flex align-items-center justify-content-between mb-1 dokumen-vendor-status-wrap">
             <div class="text-muted" style="font-size:0.72rem;font-weight:600;">
                 {{ $mode === 'admin' ? 'Penyerahan Petender' : 'Dokumen Anda' }}
             </div>
-            @if ($mode === 'vendor' && ($dok['vendor_status'] ?? '') === 'submitted')
-                <span class="badge-status badge-status-success" style="font-size:0.68rem;">Selesai</span>
-            @endif
+            <span class="dokumen-vendor-selesai-badge badge-status badge-status-success {{ $mode === 'vendor' && ($dok['vendor_status'] ?? '') === 'submitted' ? '' : 'd-none' }}"
+                style="font-size:0.68rem;">Selesai</span>
         </div>
 
         <ul class="list-unstyled mb-0 dokumen-vendor-file-list" data-item-uuid="{{ $itemUuid }}">
