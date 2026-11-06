@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Fasa Peralihan STOS 3.0 | Sistem Tender Online Selangor</title>
+    <title>Fasa Peralihan STOS 3.0 | Sistem Perolehan Selangor</title>
 
     <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon/favicon-32x32.png') }}">
     <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('favicon/favicon-16x16.png') }}">
@@ -459,7 +459,7 @@
                     <span class="brand-line-top">Perolehan</span>
                     <span class="brand-line-btm">Selangor</span>
                 </div>
-                <p class="brand-tagline">Sistem Tender Online Selangor</p>
+                <p class="brand-tagline">Sistem Perolehan Selangor</p>
             </div>
         </div>
 
@@ -540,7 +540,7 @@
                 <span class="phase-tag">Fasa Peralihan STOS 3.0</span>
                 <h1>Sistem sedang dalam fasa peralihan</h1>
                 <p class="lead">
-                    Sistem Tender Online Selangor (STOS) sedang ditutup sementara bagi memberi laluan kepada proses
+                    Sistem Perolehan Selangor sedang ditutup sementara bagi memberi laluan kepada proses
                     peralihan ke sistem baharu.
                 </p>
 
@@ -551,7 +551,7 @@
                         <span class="calendar-year">2026</span>
                     </div>
                     <div>
-                        <p class="launch-label">Sistem Tender Online Selangor yang baharu dijadualkan mula beroperasi pada</p>
+                        <p class="launch-label">Sistem Perolehan Selangor yang baharu dijadualkan mula beroperasi pada</p>
                         <p class="launch-date">16 November 2026</p>
                     </div>
                 </div>
