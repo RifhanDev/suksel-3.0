@@ -144,7 +144,7 @@ class SpesifikasiTenderKerjaController extends Controller
         $uploadedFile = $request->file('file');
         $safeOriginalName = preg_replace('/[^A-Za-z0-9._-]/', '_', $uploadedFile->getClientOriginalName());
         $storedName = now()->format('YmdHis') . '_' . Str::uuid() . '_' . $safeOriginalName;
-        $path = $uploadedFile->storeAs('spesifikasi-kerja/' . $tender->uuid, $storedName, 'public');
+        $path = \App\Support\AttachmentStorage::storeAs($uploadedFile, 'spesifikasi-kerja/' . $tender->uuid, $storedName);
 
         $file = SpesifikasiKerjaFile::create([
             'uuid' => (string) Str::uuid(),
@@ -200,10 +200,9 @@ class SpesifikasiTenderKerjaController extends Controller
 
         if ($file && $file->path) {
             $path = ltrim((string) $file->path, '/');
-            if (Storage::disk('public')->exists($path)) {
-                return Storage::disk('public')->response($path, $file->original_name, [
-                    'Content-Disposition' => 'inline; filename="' . addslashes($file->original_name) . '"',
-                ]);
+            $stored = \App\Support\AttachmentStorage::responseOrNull($path, (string) $file->original_name, $file->mime_type);
+            if ($stored) {
+                return $stored;
             }
         }
 
@@ -236,8 +235,8 @@ class SpesifikasiTenderKerjaController extends Controller
 
         $file = SpesifikasiKerjaFile::where('uuid', $fileUuid)->first();
         if ($file) {
-            if ($file->path && Storage::disk('public')->exists($file->path)) {
-                Storage::disk('public')->delete($file->path);
+            if ($file->path && \App\Support\AttachmentStorage::exists($file->path)) {
+                \App\Support\AttachmentStorage::delete($file->path);
             }
             $file->delete();
 

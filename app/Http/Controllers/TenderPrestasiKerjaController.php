@@ -163,7 +163,7 @@ class TenderPrestasiKerjaController extends Controller
                         $storedName = date('YmdHis') . '_' . Str::uuid() . '_' . $safeOriginalName;
                         $vendorId = $this->vendorId();
                         $relativeDir = 'uploads/prestasi_kerja_semasa/' . $tender->uuid . ($vendorId ? '/' . $vendorId : '');
-                        $path = $file->storeAs($relativeDir, $storedName, 'public');
+                        $path = \App\Support\AttachmentStorage::storeAs($file, $relativeDir, $storedName);
 
                         TenderPrestasiKerjaDokumen::create([
                             'uuid'                     => (string) Str::uuid(),
@@ -263,8 +263,8 @@ class TenderPrestasiKerjaController extends Controller
             }
 
             // Delete file from storage (check both public disk and public_path for backward compatibility)
-            if ($dokumen->path && Storage::disk('public')->exists($dokumen->path)) {
-                Storage::disk('public')->delete($dokumen->path);
+            if ($dokumen->path && \App\Support\AttachmentStorage::exists($dokumen->path)) {
+                \App\Support\AttachmentStorage::delete($dokumen->path);
             }
             $absolutePath = public_path($dokumen->path);
             if (file_exists($absolutePath)) {

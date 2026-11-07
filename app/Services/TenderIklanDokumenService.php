@@ -135,7 +135,7 @@ class TenderIklanDokumenService
         }
 
         $filename = Str::uuid() . '.' . $extension;
-        $relative = $file->storeAs('tender-iklan-dokumen/' . $tenderId, $filename, 'local');
+        $relative = \App\Support\AttachmentStorage::storeAs($file, 'tender-iklan-dokumen/' . $tenderId, $filename, 'local');
 
         return [
             'original_name' => $file->getClientOriginalName(),

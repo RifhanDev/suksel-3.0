@@ -270,6 +270,11 @@ class VendorTenderDokumenController extends Controller
     private function serveCandidateFile(string $rawPath, string $name, ?string $mime = null)
     {
         $cleanPath = ltrim(str_replace(['\\', 'public/'], ['/', ''], $rawPath), '/');
+        $stored = \App\Support\AttachmentStorage::responseOrNull($cleanPath, $name, $mime);
+        if ($stored) {
+            return $stored;
+        }
+
         $candidates = [
             storage_path('app/public/' . $cleanPath),
             storage_path('app/' . $cleanPath),
@@ -498,6 +503,11 @@ class VendorTenderDokumenController extends Controller
             ->firstOrFail();
 
         $path = ltrim(str_replace('\\', '/', (string) $file->path), '/');
+        $stored = \App\Support\AttachmentStorage::responseOrNull($path, (string) $file->original_name, $file->mime_type);
+        if ($stored) {
+            return $stored;
+        }
+
         $absolute = storage_path('app/public/' . $path);
         $fileMime = $file->mime_type ?: 'application/octet-stream';
         $ext = strtolower(pathinfo((string) $file->original_name, PATHINFO_EXTENSION));

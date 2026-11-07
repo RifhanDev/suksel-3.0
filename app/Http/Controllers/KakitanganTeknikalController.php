@@ -120,7 +120,7 @@ class KakitanganTeknikalController extends Controller
                     }
                     $originalName = $file->getClientOriginalName();
                     $storedName   = Str::uuid() . '.' . $file->getClientOriginalExtension();
-                    $path         = $file->storeAs("kakitangan-teknikal/{$tender->uuid}" . ($vendorId ? "/{$vendorId}" : ''), $storedName, 'public');
+                    $path         = \App\Support\AttachmentStorage::storeAs($file, "kakitangan-teknikal/{$tender->uuid}" . ($vendorId ? "/{$vendorId}" : ''), $storedName);
 
                     TenderKakitanganTeknikalDokumen::create([
                         'uuid'            => (string) Str::uuid(),
@@ -226,7 +226,7 @@ class KakitanganTeknikalController extends Controller
                     }
                     $originalName = $file->getClientOriginalName();
                     $storedName   = Str::uuid() . '.' . $file->getClientOriginalExtension();
-                    $path         = $file->storeAs("kakitangan-teknikal/{$staff->tender_uuid}" . ($staff->vendor_id ? "/{$staff->vendor_id}" : ''), $storedName, 'public');
+                    $path         = \App\Support\AttachmentStorage::storeAs($file, "kakitangan-teknikal/{$staff->tender_uuid}" . ($staff->vendor_id ? "/{$staff->vendor_id}" : ''), $storedName);
 
                     TenderKakitanganTeknikalDokumen::create([
                         'uuid'            => (string) Str::uuid(),
@@ -294,8 +294,8 @@ class KakitanganTeknikalController extends Controller
         DB::beginTransaction();
         try {
             foreach ($staff->dokumens as $dokumen) {
-                if (Storage::disk('public')->exists($dokumen->path)) {
-                    Storage::disk('public')->delete($dokumen->path);
+                if (\App\Support\AttachmentStorage::exists($dokumen->path)) {
+                    \App\Support\AttachmentStorage::delete($dokumen->path);
                 }
                 $dokumen->delete();
             }
@@ -369,8 +369,8 @@ class KakitanganTeknikalController extends Controller
         }
 
         try {
-            if (Storage::disk('public')->exists($dokumen->path)) {
-                Storage::disk('public')->delete($dokumen->path);
+            if (\App\Support\AttachmentStorage::exists($dokumen->path)) {
+                \App\Support\AttachmentStorage::delete($dokumen->path);
             }
             $dokumen->delete();
 
@@ -438,7 +438,7 @@ class KakitanganTeknikalController extends Controller
                     }
                     $originalName = $file->getClientOriginalName();
                     $storedName   = Str::uuid() . '.' . $file->getClientOriginalExtension();
-                    $path         = $file->storeAs("kakitangan-teknikal/{$tender->uuid}" . ($vendorId ? "/{$vendorId}" : ''), $storedName, 'public');
+                    $path         = \App\Support\AttachmentStorage::storeAs($file, "kakitangan-teknikal/{$tender->uuid}" . ($vendorId ? "/{$vendorId}" : ''), $storedName);
 
                     $doc = TenderKakitanganTeknikalDokumen::create([
                         'uuid'            => (string) Str::uuid(),
