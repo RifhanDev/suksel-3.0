@@ -716,7 +716,7 @@ class Vendor extends Model
 		$data['uploadable_id']   = $this->id;
 		$data['cr_approved']     = $cr_approved;
 		Upload::where('name', $name)->delete();
-		$file->move($data['path'], $data['name']);
+		\App\Support\AttachmentStorage::moveUploadedFile($file, $data['path'], $data['name']);
 		$upload = new Upload;
 
 		$upload->fill($data);

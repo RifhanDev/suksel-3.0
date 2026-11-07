@@ -531,7 +531,7 @@ class CodeRequest extends Model
 					$upload['uploadable_type']  = 'App\CodeRequest';
 					$upload['uploadable_id']    = $request->id;
 
-					$file->move($upload['path'], $upload['name']);
+					\App\Support\AttachmentStorage::moveUploadedFile($file, $upload['path'], $upload['name']);
 
 					$new_upload = new Upload;
 					$new_upload->fill($upload);

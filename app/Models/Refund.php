@@ -277,7 +277,7 @@ class Refund extends Model
                     $upload['uploadable_type']  = 'App\Models\Refund';
                     $upload['uploadable_id']    = $request->id;
 
-                    $file->move($upload['path'], $upload['name']);
+                    \App\Support\AttachmentStorage::moveUploadedFile($file, $upload['path'], $upload['name']);
                     
                     $new_upload = Upload::where('name',$upload['name'])->where('uploadable_id',$request->id)->first();
 

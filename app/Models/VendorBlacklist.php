@@ -134,7 +134,7 @@ class VendorBlacklist extends Model
 				$upload['uploadable_type'] = 'App\VendorBlacklist';
 				$upload['uploadable_id']   = $blacklist->id;
 	
-				$file->move($upload['path'], $upload['name']);
+				\App\Support\AttachmentStorage::moveUploadedFile($file, $upload['path'], $upload['name']);
 	
 				$new_upload                = new Upload;
 				$new_upload->fill($upload);

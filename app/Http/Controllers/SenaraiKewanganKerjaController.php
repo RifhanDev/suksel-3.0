@@ -184,7 +184,7 @@ class SenaraiKewanganKerjaController extends Controller
         $uploadedFile = $request->file('file');
         $safeOriginalName = preg_replace('/[^A-Za-z0-9._-]/', '_', $uploadedFile->getClientOriginalName());
         $storedName = now()->format('YmdHis') . '_' . Str::uuid() . '_' . $safeOriginalName;
-        $path = $uploadedFile->storeAs('kewangan-kerja/' . $tender->uuid, $storedName, 'public');
+        $path = \App\Support\AttachmentStorage::storeAs($uploadedFile, 'kewangan-kerja/' . $tender->uuid, $storedName);
 
         $file = KewanganKerjaFile::create([
             'uuid' => (string) Str::uuid(),
@@ -233,8 +233,8 @@ class SenaraiKewanganKerjaController extends Controller
 
         $file = KewanganKerjaFile::where('uuid', $fileUuid)->first();
         if ($file) {
-            if ($file->path && Storage::disk('public')->exists($file->path)) {
-                Storage::disk('public')->delete($file->path);
+            if ($file->path && \App\Support\AttachmentStorage::exists($file->path)) {
+                \App\Support\AttachmentStorage::delete($file->path);
             }
             $file->delete();
 

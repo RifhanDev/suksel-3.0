@@ -1875,6 +1875,8 @@ class Tender extends Model
 					}
 				}
 
+				\App\Support\AttachmentStorage::pushPublicFile($upload['path'] . $upload['name']);
+
 				$new_upload = new Upload;
 				$new_upload->fill($upload);
 				$new_upload->save();

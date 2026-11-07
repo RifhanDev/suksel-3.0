@@ -184,8 +184,8 @@ class PenyataBankController extends Controller
             ->get();
 
         foreach ($orphans as $orphan) {
-            if ($orphan->path && Storage::disk('public')->exists($orphan->path)) {
-                Storage::disk('public')->delete($orphan->path);
+            if ($orphan->path && \App\Support\AttachmentStorage::exists($orphan->path)) {
+                \App\Support\AttachmentStorage::delete($orphan->path);
             }
             $orphan->delete();
         }
@@ -211,7 +211,7 @@ class PenyataBankController extends Controller
         $file = $request->file('file');
         $storedName = (string) Str::uuid() . '.' . $file->getClientOriginalExtension();
         $directory = 'uploads/penyata-bank/' . $tender->id . ($vendorId ? '/' . $vendorId : '');
-        $path = $file->storeAs($directory, $storedName, 'public');
+        $path = \App\Support\AttachmentStorage::storeAs($file, $directory, $storedName);
 
         $fileRecord = PenyataBankFile::create([
             'uuid'            => (string) Str::uuid(),
@@ -258,8 +258,8 @@ class PenyataBankController extends Controller
                 }
             }
 
-            if ($fileRecord->path && Storage::disk('public')->exists($fileRecord->path)) {
-                Storage::disk('public')->delete($fileRecord->path);
+            if ($fileRecord->path && \App\Support\AttachmentStorage::exists($fileRecord->path)) {
+                \App\Support\AttachmentStorage::delete($fileRecord->path);
             }
             $fileRecord->delete();
 
@@ -387,12 +387,12 @@ class PenyataBankController extends Controller
                         return strcasecmp($vf->original_name, $fileName) === 0 || strcasecmp($vf->stored_name, $fileName) === 0;
                     });
 
-                    if ($matchedCandidate && $matchedCandidate->path && Storage::disk('public')->exists($matchedCandidate->path)) {
+                    if ($matchedCandidate && $matchedCandidate->path && \App\Support\AttachmentStorage::exists($matchedCandidate->path)) {
                         $targetDir = 'uploads/penyata-bank/' . $tender->id . ($vendorId ? '/' . $vendorId : '');
                         $targetPath = $targetDir . '/' . basename($matchedCandidate->path);
 
-                        if (! Storage::disk('public')->exists($targetPath)) {
-                            Storage::disk('public')->copy($matchedCandidate->path, $targetPath);
+                        if (! \App\Support\AttachmentStorage::exists($targetPath)) {
+                            \App\Support\AttachmentStorage::copy($matchedCandidate->path, $targetPath);
                         }
 
                         $matched = PenyataBankFile::firstOrCreate([
