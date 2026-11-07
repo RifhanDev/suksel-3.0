@@ -217,6 +217,7 @@ Route::get('tenders', [TendersController::class, 'index'])->name('tenders.index'
 Route::get('tenders/{id}', [TendersController::class, 'show'])->name('tenders.show');
 Route::get('tenders/{id}/prices', [TendersController::class, 'prices'])->name('tenders.prices');
 Route::get('tenders/{tender_id}/files/{id}', [TendersController::class, 'file'])->name('tenders.files');
+Route::get('attachments/view', [\App\Http\Controllers\AttachmentController::class, 'stream'])->name('attachments.stream');
 Route::get('tenders/{id}/vendors', [TendersController::class, 'vendors'])->name('tenders.vendors');
 Route::post('tenders/{id}/exception', [TendersController::class, 'exception'])->name('tenders.exception');
 

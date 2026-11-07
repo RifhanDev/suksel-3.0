@@ -575,6 +575,16 @@ class TendersController extends Controller
 			}
 		}
 
+		$stored = \App\Support\AttachmentStorage::responseOrNull(
+			(string) $dokumen->path,
+			(string) ($dokumen->original_name ?: $dokumen->name),
+			$dokumen->mime ?? null,
+			true
+		);
+		if ($stored) {
+			return $stored;
+		}
+
 		if (! \Illuminate\Support\Facades\Storage::disk('local')->exists($dokumen->path)) {
 			abort(404);
 		}
@@ -1518,6 +1528,19 @@ class TendersController extends Controller
 		}
 
 		if (! $fullPath || ! is_file($fullPath)) {
+			$relative = \App\Support\AttachmentStorage::relativeForUpload((string) $file->path, (string) $file->name);
+			$downloadName = trim((string) ($file->label ?: $file->name));
+			$extension = pathinfo((string) $file->name, PATHINFO_EXTENSION);
+			if ($extension !== '' && pathinfo($downloadName, PATHINFO_EXTENSION) === '') {
+				$downloadName .= '.' . $extension;
+			}
+			$stored = $relative !== ''
+				? \App\Support\AttachmentStorage::responseOrNull($relative, $downloadName, $file->type ?: null, true)
+				: null;
+			if ($stored) {
+				return $stored;
+			}
+
 			abort(404, 'Fail tidak dijumpai.');
 		}
 

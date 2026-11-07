@@ -23,6 +23,11 @@ class StosStoredFile
         $dispositionType = $isPdf ? 'inline' : 'attachment';
         $disposition = self::contentDisposition($dispositionType, $name);
 
+        $remote = AttachmentStorage::responseOrNull($path, $name, $mime, $dispositionType === 'attachment');
+        if ($remote) {
+            return $remote;
+        }
+
         $resolved = self::resolveLocalFilePath($path);
         if ($resolved && is_file($resolved)) {
             $resolvedMime = (function_exists('mime_content_type') ? @mime_content_type($resolved) : null) ?: $mime;

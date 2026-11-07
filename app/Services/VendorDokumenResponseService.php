@@ -118,7 +118,7 @@ class VendorDokumenResponseService
 
         $storedName = Str::uuid() . '.' . $file->getClientOriginalExtension();
         $directory = "uploads/tender-dokumen/{$tender->id}/{$vendorId}/{$checklistItemUuid}";
-        $path = $file->storeAs($directory, $storedName, 'public');
+        $path = \App\Support\AttachmentStorage::storeAs($file, $directory, $storedName);
 
         return TenderVendorDokumenFile::query()->create([
             'uuid' => (string) Str::uuid(),
@@ -141,8 +141,8 @@ class VendorDokumenResponseService
             abort(403);
         }
 
-        if ($file->path && Storage::disk('public')->exists($file->path)) {
-            Storage::disk('public')->delete($file->path);
+        if ($file->path && \App\Support\AttachmentStorage::exists($file->path)) {
+            \App\Support\AttachmentStorage::delete($file->path);
         }
 
         $file->delete();

@@ -417,7 +417,7 @@ class PenyediaanIklanController extends Controller
             return [
                 'path' => $existingPath,
                 'original_name' => basename($existingPath),
-                'url' => asset($existingPath),
+                'url' => \App\Support\AttachmentStorage::browserUrl($existingPath),
             ];
         }
 
@@ -432,13 +432,13 @@ class PenyediaanIklanController extends Controller
         }
 
         $name = Str::uuid() . '.' . $file->getClientOriginalExtension();
-        $file->move($dir, $name);
+        \App\Support\AttachmentStorage::moveUploadedFile($file, $dir, $name);
         $relative = "uploads/penyediaan-iklan/{$tenderId}/kelulusan/{$name}";
 
         return [
             'path' => $relative,
             'original_name' => $file->getClientOriginalName(),
-            'url' => asset($relative),
+            'url' => \App\Support\AttachmentStorage::browserUrl($relative),
         ];
     }
 
@@ -502,13 +502,13 @@ class PenyediaanIklanController extends Controller
         }
 
         $name = Str::uuid() . '.' . $file->getClientOriginalExtension();
-        $file->move($dir, $name);
+        \App\Support\AttachmentStorage::moveUploadedFile($file, $dir, $name);
         $relative = "uploads/penyediaan-iklan/{$tenderId}/sokongan/{$name}";
 
         return [
             'path' => $relative,
             'original_name' => $file->getClientOriginalName(),
-            'url' => asset($relative),
+            'url' => \App\Support\AttachmentStorage::browserUrl($relative),
         ];
     }
 
