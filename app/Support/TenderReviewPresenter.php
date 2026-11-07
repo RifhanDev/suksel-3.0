@@ -119,13 +119,21 @@ class TenderReviewPresenter
     public function tempohKontrak(): string
     {
         if (!empty($this->tender->tempoh_kontrak_bulan)) {
-            return (int) $this->tender->tempoh_kontrak_bulan . ' Bulan';
+            $unit = match (strtolower(trim((string) ($this->tender->tempoh_kontrak_unit ?? 'bulan')))) {
+                'hari', '3' => 'Hari',
+                'minggu', '1' => 'Minggu',
+                'bulan', '2' => 'Bulan',
+                default => 'Bulan',
+            };
+
+            return (int) $this->tender->tempoh_kontrak_bulan . ' ' . $unit;
         }
 
         if (!empty($this->tender->tempoh_siap_val)) {
             $unit = match ((string) $this->tender->tempoh_siap_unit) {
-                '1' => 'Minggu',
-                '2' => 'Bulan',
+                '3', 'hari' => 'Hari',
+                '1', 'minggu' => 'Minggu',
+                '2', 'bulan' => 'Bulan',
                 default => '',
             };
 

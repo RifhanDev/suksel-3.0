@@ -184,17 +184,26 @@
         )
     );
 
-    // Compute rank by price ascending as fallback
-    $vendorPrices = [];
-    foreach ($displayVendors as $k => $v) {
-        $rawPrice = $v['harga_asal_num'] ?? (float) preg_replace('/[^0-9.]/', '', $v['harga_display'] ?? ($v['harga_asal'] ?? (isset($v['harga_tawaran']) ? $v['harga_tawaran'] : 0)));
-        $vendorPrices[$k] = $rawPrice;
-    }
-    asort($vendorPrices);
+    // Sort display vendors strictly by Harga Tawaran ascending (lowest price first)
+    usort($displayVendors, function ($a, $b) {
+        $pA = ($a['harga_asal_num'] ?? 0) > 0 ? (float) $a['harga_asal_num'] : (
+            (float) preg_replace('/[^0-9.]/', '', (string) ($a['harga_display'] ?? ($a['harga_asal'] ?? ($a['harga_tawaran'] ?? 0))))
+        );
+        $pB = ($b['harga_asal_num'] ?? 0) > 0 ? (float) $b['harga_asal_num'] : (
+            (float) preg_replace('/[^0-9.]/', '', (string) ($b['harga_display'] ?? ($b['harga_asal'] ?? ($b['harga_tawaran'] ?? 0))))
+        );
+        if ($pA <= 0) $pA = PHP_FLOAT_MAX;
+        if ($pB <= 0) $pB = PHP_FLOAT_MAX;
+        if ($pA === $pB) {
+            return strcmp($a['vendor_name'] ?? '', $b['vendor_name'] ?? '');
+        }
+        return $pA <=> $pB;
+    });
+
+    // Compute rank by price ascending
     $priceRanks = [];
-    $rankCounter = 1;
-    foreach ($vendorPrices as $k => $priceVal) {
-        $priceRanks[$k] = $rankCounter++;
+    foreach ($displayVendors as $k => $v) {
+        $priceRanks[$k] = $k + 1;
     }
 @endphp
 
@@ -312,7 +321,7 @@
                 <table class="table-borang3-modern align-middle mb-0">
                     <thead>
                         <tr>
-                            <th class="subhead-main text-start ps-3.5 py-3 align-middle" colspan="3" rowspan="3" style="width: 420px; background: #1e293b; color: #ffffff;">
+                            <th class="subhead-main text-start ps-3.5 py-3 align-middle" colspan="4" rowspan="3" style="width: 480px; background: #1e293b; color: #ffffff;">
                                 <div class="d-flex flex-column gap-1">
                                     <span class="text-white-50 small font-monospace text-uppercase" style="letter-spacing: 0.5px;">TENDER UNTUK :</span>
                                     <span class="fw-bold fs-6 text-white" style="line-height: 1.35;">{{ $tajuk_display ?? ($tender->tajuk_tender ?? 'PERKHIDMATAN MEMBEKAL DAN MENGHANTAR PERALATAN') }}</span>
@@ -332,6 +341,7 @@
                             <th class="subhead-level2 text-center py-2 font-monospace fw-bold" style="color: #ef733aff;">50.00</th>
                         </tr>
                         <tr style="background: #d7d7d9; color: #6d6d79ff;">
+                            <th style="width: 60px; background: #d7d7d9; color: #6d6d79ff;" class="text-center">Bil</th>
                             <th style="width: 170px; background: #d7d7d9; color: #6d6d79ff;" class="text-center">No. Rujukan. Tender</th>
                             <th style="width: 150px; background: #d7d7d9; color: #6d6d79ff;" class="text-end">Harga Tender Asal<br><span class="formula-tag">(RM)</span></th>
                             <th style="width: 140px; background: #d7d7d9; color: #6d6d79ff;" class="text-center">Status Petender</th>
@@ -351,6 +361,9 @@
                                 $kedudukan = (!empty($v['kedudukan']) && $v['kedudukan'] !== '-') ? $v['kedudukan'] : ($priceRanks[$idx] ?? ($idx + 1));
                             @endphp
                             <tr>
+                                <td class="text-center font-monospace fw-bold text-muted">
+                                    {{ $idx + 1 }}
+                                </td>
                                 <td class="text-center font-monospace fw-bold text-dark">
                                     {{ $kodPembekal }}
                                 </td>
@@ -382,7 +395,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="text-center py-4 text-muted">
+                                <td colspan="7" class="text-center py-4 text-muted">
                                     <div class="d-flex flex-column align-items-center gap-2">
                                         <i class="bi bi-exclamation-circle text-warning display-6"></i>
                                         <span class="fw-semibold">Tiada petender yang lulus Peringkat Pertama untuk Borang 14.</span>

@@ -462,6 +462,21 @@
                                 </tr>
                             </thead>
                             <tbody>
+                                @php
+                                    usort($passingVendors, function ($a, $b) {
+                                        $pA = ($a['hargaTawaran'] > 0) ? (float) $a['hargaTawaran'] : PHP_FLOAT_MAX;
+                                        $pB = ($b['hargaTawaran'] > 0) ? (float) $b['hargaTawaran'] : PHP_FLOAT_MAX;
+                                        if ($pA === $pB) {
+                                            $nameA = mb_strtolower(trim((string) ($a['vendorName'] ?? '')));
+                                            $nameB = mb_strtolower(trim((string) ($b['vendorName'] ?? '')));
+                                            if ($nameA !== $nameB) {
+                                                return strcmp($nameA, $nameB);
+                                            }
+                                            return ($a['vId'] ?? 0) <=> ($b['vId'] ?? 0);
+                                        }
+                                        return $pA <=> $pB;
+                                    });
+                                @endphp
                                 @forelse($passingVendors as $pIdx => $pV)
                                     <tr>
                                         <td class="text-center font-monospace fw-bold text-dark">{{ $pIdx + 1 }}</td>

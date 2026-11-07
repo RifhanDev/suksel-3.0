@@ -253,8 +253,17 @@ class VendorBlacklistsController extends Controller
 		if (!$blacklist->canShow() || !$blacklist->file)
 			$this->_access_denied();
 
-		header("Content-type: {$blacklist->file->type}");
-		readfile($blacklist->file->getPath());
+		$upload = $blacklist->file;
+		$relative = \App\Support\AttachmentStorage::relativeForUpload((string) $upload->path, (string) $upload->name);
+		$stored = $relative !== ''
+			? \App\Support\AttachmentStorage::responseOrNull($relative, (string) $upload->name, $upload->type ?: null, true)
+			: null;
+		if ($stored) {
+			return $stored;
+		}
+
+		header("Content-type: {$upload->type}");
+		readfile($upload->getPath());
 	}
 
 	/**

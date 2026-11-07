@@ -270,6 +270,11 @@ class VendorTenderDokumenController extends Controller
     private function serveCandidateFile(string $rawPath, string $name, ?string $mime = null)
     {
         $cleanPath = ltrim(str_replace(['\\', 'public/'], ['/', ''], $rawPath), '/');
+        $stored = \App\Support\AttachmentStorage::responseOrNull($cleanPath, $name, $mime);
+        if ($stored) {
+            return $stored;
+        }
+
         $candidates = [
             storage_path('app/public/' . $cleanPath),
             storage_path('app/' . $cleanPath),
@@ -443,9 +448,11 @@ class VendorTenderDokumenController extends Controller
             'vendor_id' => 'nullable|integer|min:1',
             'item_prices' => 'nullable|array',
             'item_prices.*' => 'nullable|string|max:5000',
+            'item_kadars' => 'nullable|array',
+            'item_kadars.*' => 'nullable|string|max:5000',
             'details' => 'nullable|array',
             'details.*' => 'nullable|array',
-            'details.*.pematuhan' => 'nullable|string|max:10',
+            'details.*.pematuhan' => 'nullable|string|in:yes,no,ya,tidak',
             'details.*.cadangan' => 'nullable|string|max:5000',
             'vendor_tempoh_siap_val' => $tempohValRule,
             'vendor_tempoh_siap_unit' => 'nullable|string|max:50',
@@ -496,6 +503,11 @@ class VendorTenderDokumenController extends Controller
             ->firstOrFail();
 
         $path = ltrim(str_replace('\\', '/', (string) $file->path), '/');
+        $stored = \App\Support\AttachmentStorage::responseOrNull($path, (string) $file->original_name, $file->mime_type);
+        if ($stored) {
+            return $stored;
+        }
+
         $absolute = storage_path('app/public/' . $path);
         $fileMime = $file->mime_type ?: 'application/octet-stream';
         $ext = strtolower(pathinfo((string) $file->original_name, PATHINFO_EXTENSION));

@@ -56,7 +56,7 @@ class TenderVendorDokumenFile extends Model
             return $resolved;
         }
 
-        if (Storage::disk('public')->exists($path)) {
+        if (! \App\Support\AttachmentStorage::isRemote() && \App\Support\AttachmentStorage::exists($path)) {
             return Storage::disk('public')->path($path);
         }
 

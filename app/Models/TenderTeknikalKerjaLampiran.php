@@ -39,7 +39,7 @@ class TenderTeknikalKerjaLampiran extends Model
 
     public function absolutePath(): ?string
     {
-        if (Storage::disk('public')->exists($this->path)) {
+        if (! \App\Support\AttachmentStorage::isRemote() && \App\Support\AttachmentStorage::exists($this->path)) {
             return Storage::disk('public')->path($this->path);
         }
 

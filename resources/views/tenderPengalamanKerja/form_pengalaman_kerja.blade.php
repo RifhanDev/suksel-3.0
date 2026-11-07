@@ -304,7 +304,7 @@
                     </div>
                     <span class="upload-zone-label">Klik disini untuk memuat naik</span>
                     <span class="upload-zone-sub">PDF, Word, Excel, Imej, ZIP — saiz maksimum 10 MB setiap fail</span>
-                    <input type="file" id="input-dokumen" name="dokumen_pengalaman[]" multiple hidden accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.zip,.rar">
+                    <input type="file" id="input-dokumen" name="dokumen_pengalaman[]" multiple hidden accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg">
                 </label>
 
                 <!-- New file chips (from FileUpload.init) -->

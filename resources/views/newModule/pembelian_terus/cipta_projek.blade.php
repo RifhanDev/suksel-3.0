@@ -450,14 +450,36 @@
                                 </div>
                             </div>
                             <!-- Lokaliti Liputan -->
+                            @php
+                                $ptLokalitis = \App\Models\Ref\RefLokaliti::where('active', true)->get();
+                                $ptLokalitiId = old('lokaliti_id', optional($p)->lokaliti_id);
+                                $ptSelectedLokaliti = $ptLokalitis->firstWhere('id', (int) $ptLokalitiId);
+                                $ptIsDaerahTerpilih = $ptSelectedLokaliti
+                                    && strcasecmp(trim((string) $ptSelectedLokaliti->name), 'Daerah Terpilih') === 0;
+                                $ptShowDaerah = $zonLokasi == '1' && $ptIsDaerahTerpilih;
+                            @endphp
                             <div class="mb-3 {{ $zonLokasi == '0' ? 'd-none' : '' }}" id="lokaliti-group">
                                 <label class="form-label">Lokaliti Liputan</label>
-                                <select class="form-select" name="lokaliti_id">
+                                <select class="form-select" name="lokaliti_id" id="lokaliti_id">
                                     <option value="" selected disabled>Pilih...</option>
-                                    @foreach (\App\Models\Ref\RefLokaliti::where('active', true)->get() as $lokaliti)
+                                    @foreach ($ptLokalitis as $lokaliti)
                                         <option value="{{ $lokaliti->id }}"
-                                            {{ old('lokaliti_id', optional($p)->lokaliti_id) == $lokaliti->id ? 'selected' : '' }}>
+                                            data-lokaliti-name="{{ strtolower(trim($lokaliti->name)) }}"
+                                            {{ (string) $ptLokalitiId === (string) $lokaliti->id ? 'selected' : '' }}>
                                             {{ $lokaliti->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="mb-3 {{ $ptShowDaerah ? '' : 'd-none' }}" id="daerah-group">
+                                <label class="form-label">Daerah</label>
+                                <select class="form-select" name="district_id" id="district_id_zon">
+                                    <option value="" selected disabled>Pilih Daerah...</option>
+                                    @foreach (\App\Vendor::$districts as $districtId => $districtName)
+                                        @continue((int) $districtId === \App\Vendor::DISTRICT_ALL_SELANGOR || (string) $districtId === '0')
+                                        <option value="{{ $districtId }}"
+                                            {{ (string) old('district_id', optional($p)->district_id) === (string) $districtId ? 'selected' : '' }}>
+                                            {{ $districtName }}
+                                        </option>
                                     @endforeach
                                 </select>
                             </div>
@@ -972,14 +994,35 @@
                 });
             }
 
-            // --- ZON/LOKASI TOGGLE ---
-            $('input[name="zon_lokasi"]').change(function() {
-                if ($(this).val() === '1') {
+            // --- ZON/LOKASI + LOKALITI / DAERAH ---
+            function syncLokalitiDaerahFields() {
+                var zonOn = $('input[name="zon_lokasi"]:checked').val() === '1';
+                var $lokaliti = $('#lokaliti_id');
+                var $daerahGroup = $('#daerah-group');
+                var $daerahSelect = $('#district_id_zon');
+
+                if (zonOn) {
                     $('#lokaliti-group').removeClass('d-none');
                 } else {
-                    $('#lokaliti-group').addClass('d-none').find('select').val('');
+                    $('#lokaliti-group').addClass('d-none');
+                    $lokaliti.val('');
+                    $daerahGroup.addClass('d-none');
+                    $daerahSelect.val('');
+                    return;
                 }
-            });
+
+                var lokalitiName = ($lokaliti.find('option:selected').data('lokaliti-name') || '').toString().trim();
+                if (lokalitiName === 'daerah terpilih') {
+                    $daerahGroup.removeClass('d-none');
+                } else {
+                    $daerahGroup.addClass('d-none');
+                    $daerahSelect.val('');
+                }
+            }
+
+            $('input[name="zon_lokasi"]').change(syncLokalitiDaerahFields);
+            $('#lokaliti_id').on('change', syncLokalitiDaerahFields);
+            syncLokalitiDaerahFields();
 
             // --- WIZARD NAVIGATION (3 steps) ---
             let currentStep = {{ $wizardStep }};

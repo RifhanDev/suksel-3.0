@@ -187,6 +187,17 @@
             'is_evaluated' => false,
         ],
     ];
+    $b12List = !empty($b12VendorSummary) ? array_values($b12VendorSummary) : array_values($b12List);
+    usort($b12List, function ($a, $b) {
+        $pA = (float) preg_replace('/[^0-9.]/', '', (string) ($a['harga_asal'] ?? 0));
+        $pB = (float) preg_replace('/[^0-9.]/', '', (string) ($b['harga_asal'] ?? 0));
+        if ($pA <= 0) $pA = PHP_FLOAT_MAX;
+        if ($pB <= 0) $pB = PHP_FLOAT_MAX;
+        if ($pA === $pB) {
+            return strcmp($a['vendor_name'] ?? '', $b['vendor_name'] ?? '');
+        }
+        return $pA <=> $pB;
+    });
     $tenderIdentifier = isset($tender) ? ($tender->uuid ?: $tender->id ?: ($tender_no ?? '')) : ($tender_no ?? '');
 @endphp
 

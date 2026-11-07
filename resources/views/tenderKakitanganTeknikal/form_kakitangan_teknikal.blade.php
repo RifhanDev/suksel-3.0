@@ -318,7 +318,7 @@
                     </div>
                     <span class="upload-zone-label d-block fw-semibold text-dark small mb-1">Klik di sini untuk memuat naik dokumen sokongan keseluruhan</span>
                     <span class="upload-zone-sub d-block text-muted" style="font-size:0.75rem;">PDF, Word, Excel, Imej — saiz maksimum 10 MB per fail (Boleh muat naik pelbagai fail)</span>
-                    <input type="file" id="general-input-dokumen" name="dokumen_umum[]" multiple hidden accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.zip,.rar">
+                    <input type="file" id="general-input-dokumen" name="dokumen_umum[]" multiple hidden accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg">
                 </label>
 
                 <!-- File list container for newly selected uploads -->
@@ -342,7 +342,10 @@
 
     <!-- ACTION BUTTONS -->
     <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-        @include('tenders.forms._vendor_form_kembali', ['kembaliUrl' => $kembaliUrl])
+        @include('tenders.forms._vendor_form_kembali', [
+            'kembaliUrl' => $kembaliUrl,
+            'reloadOnClose' => true,
+        ])
         <!-- <div class="d-flex gap-2">
             @if (!($viewOnly ?? false))
             <a href="{{ $kembaliUrl }}" class="btn-form btn-form-success text-decoration-none">
@@ -432,7 +435,7 @@
                                 </div>
                                 <span class="upload-zone-label d-block fw-semibold text-dark small mb-1">Klik di sini untuk memuat naik dokumen</span>
                                 <span class="upload-zone-sub d-block text-muted" style="font-size:0.75rem;">PDF, Word, Excel, Imej — saiz maksimum 10 MB per fail (Pilih pelbagai fail)</span>
-                                <input type="file" id="modal-input-dokumen" name="kakitangan_dokumen[]" multiple hidden accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.zip,.rar">
+                                <input type="file" id="modal-input-dokumen" name="kakitangan_dokumen[]" multiple hidden accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg">
                             </label>
 
                             <!-- File list container for new uploads -->
@@ -854,6 +857,10 @@ $(document).ready(function () {
                     $('#modal-kakitangan').modal('hide');
                     showToast(res.message, 'success');
                     renderOrUpdateRow(res.data);
+                    // Tell parent checklist to refresh status when this iframe closes.
+                    if (typeof vendorFormMarkDirty === 'function') {
+                        vendorFormMarkDirty();
+                    }
                 } else {
                     showToast(res.message || 'Gagal menyimpan data.', 'error');
                 }

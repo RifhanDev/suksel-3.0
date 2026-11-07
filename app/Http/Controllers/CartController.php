@@ -69,7 +69,17 @@ class CartController extends Controller
 			$amount  = Tender::whereIn('id', $items)->sum('price');
 		}
 
-		$expired = $tenders->first(fn ($tender) => $tender->documentSalesClosed() || ! $tender->isWithinVendorDokumenWindow());
+		$notYetOpen = $tenders->first(fn ($tender) => $tender->documentSalesNotYetOpen());
+		if ($notYetOpen) {
+			$opens = $notYetOpen->documentSalesOpensAt();
+			$message = $opens
+				? 'Pembelian tender belum dibuka (tarikh jual ' . $opens->format('d/m/Y') . '): ' . $notYetOpen->name
+				: 'Pembelian tender belum dibuka: ' . $notYetOpen->name;
+
+			return redirect('cart')->with('error', $message);
+		}
+
+		$expired = $tenders->first(fn ($tender) => $tender->documentSalesClosed());
 		if ($expired) {
 			return redirect('cart')->with('error', 'Pembelian tender telah tamat tempoh: ' . $expired->name);
 		}
@@ -106,7 +116,17 @@ class CartController extends Controller
 			$amount  = Tender::whereIn('id', $items)->sum('price');
 		}
 
-		$expired = $tenders->first(fn ($tender) => $tender->documentSalesClosed() || ! $tender->isWithinVendorDokumenWindow());
+		$notYetOpen = $tenders->first(fn ($tender) => $tender->documentSalesNotYetOpen());
+		if ($notYetOpen) {
+			$opens = $notYetOpen->documentSalesOpensAt();
+			$message = $opens
+				? 'Pembelian tender belum dibuka (tarikh jual ' . $opens->format('d/m/Y') . '): ' . $notYetOpen->name
+				: 'Pembelian tender belum dibuka: ' . $notYetOpen->name;
+
+			return redirect('cart')->with('error', $message);
+		}
+
+		$expired = $tenders->first(fn ($tender) => $tender->documentSalesClosed());
 		if ($expired) {
 			return redirect('cart')->with('error', 'Pembelian tender telah tamat tempoh: ' . $expired->name);
 		}

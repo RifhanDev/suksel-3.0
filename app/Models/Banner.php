@@ -88,7 +88,7 @@ class Banner extends Model
 				$upload['uploadable_type']  = 'App\Models\Banner';
 				$upload['uploadable_id']    = $banner->id;
 
-				$file->move($upload['path'], $upload['name']);
+				\App\Support\AttachmentStorage::moveUploadedFile($file, $upload['path'], $upload['name']);
 
 				$new_upload = new Upload;
 				$new_upload->fill($upload);

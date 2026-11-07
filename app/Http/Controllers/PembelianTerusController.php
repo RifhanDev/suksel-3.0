@@ -905,6 +905,7 @@ class PembelianTerusController extends Controller
             'tarikh' => isset($data['created_at']) ? Carbon::parse($data['created_at'])->format('d/m/Y') : '',
             'zon_lokasi' => ! empty($data['zon_lokasi']) ? '1' : '0',
             'lokaliti_id' => $data['lokaliti_id'] ?? null,
+            'district_id' => $data['district_id'] ?? null,
             'kategori_perolehan' => $data['kategori_perolehan_id'] ?? null,
             'sumber_peruntukan' => $data['sumber_peruntukan'] ?? 'pembangunan',
             'sumber_lain_text' => $data['sumber_lain_text'] ?? null,

@@ -428,8 +428,11 @@
                                 @endphp
                                 <tr>
                                     {{-- (a) Ruj. Petender --}}
-                                    <td class="text-center font-monospace fw-bold" style="background-color: #efeff0ff;">
-                                        {{ $ruj }}
+                                    <td class="text-center font-monospace" style="background-color: #efeff0ff;">
+                                        <div class="fw-bold text-dark">{{ $loop->iteration }}/{{ count($participants) }}</div>
+                                        @if(!empty($p->kod_pembekal))
+                                            <div class="text-muted extra-small font-monospace">({{ $p->kod_pembekal }})</div>
+                                        @endif
                                     </td>
 
                                     {{-- (b) Aset Semasa --}}
@@ -571,8 +574,11 @@
                                     $ruj = $p->kod_pembekal ?: ($loop->iteration . '/' . count($participants));
                                 @endphp
                                 <tr>
-                                    <td class="text-center font-monospace fw-bold" style="background-color: #efeff0ff;">
-                                        {{ $ruj }}
+                                    <td class="text-center font-monospace" style="background-color: #efeff0ff;">
+                                        <div class="fw-bold text-dark">{{ $loop->iteration }}/{{ count($participants) }}</div>
+                                        @if(!empty($p->kod_pembekal))
+                                            <div class="text-muted extra-small font-monospace">({{ $p->kod_pembekal }})</div>
+                                        @endif
                                     </td>
                                     <td class="text-end font-monospace">{{ number_format($vData['aset_tetap'] ?? 0, 2) }}</td>
                                     <td class="text-end font-monospace">{{ number_format($vData['aset_semasa'] ?? 0, 2) }}</td>
@@ -655,8 +661,11 @@
                                     $pbGrandTotal = $vData['pb_grand_total'] ?? 0;
                                 @endphp
                                 <tr>
-                                    <td class="text-center font-monospace fw-bold" style="background-color: #efeff0ff;">
-                                        {{ $ruj }}
+                                    <td class="text-center font-monospace" style="background-color: #efeff0ff;">
+                                        <div class="fw-bold text-dark">{{ $loop->iteration }}/{{ count($participants) }}</div>
+                                        @if(!empty($p->kod_pembekal))
+                                            <div class="text-muted extra-small font-monospace">({{ $p->kod_pembekal }})</div>
+                                        @endif
                                         @if($totalAccs > 4)
                                             <div class="mt-1">
                                                 <button type="button" class="btn btn-xs btn-outline-danger px-2 py-0.5 rounded-pill fw-semibold" style="font-size: 0.68rem;" onclick="openAllAkaunBankModal({{ $vId }})">
@@ -773,8 +782,11 @@
                                     $bsGrandTotal = $vData['bs_grand_total'] ?? 0;
                                 @endphp
                                 <tr>
-                                    <td class="text-center font-monospace fw-bold" style="background-color: #efeff0ff;">
-                                        {{ $ruj }}
+                                    <td class="text-center font-monospace" style="background-color: #efeff0ff;">
+                                        <div class="fw-bold text-dark">{{ $loop->iteration }}/{{ count($participants) }}</div>
+                                        @if(!empty($p->kod_pembekal))
+                                            <div class="text-muted extra-small font-monospace">({{ $p->kod_pembekal }})</div>
+                                        @endif
                                         @if($totalBs > 4)
                                             <div class="mt-1">
                                                 <button type="button" class="btn btn-xs btn-outline-danger px-2 py-0.5 rounded-pill fw-semibold" style="font-size: 0.68rem;" onclick="openAllBonSahamModal({{ $vId }})">

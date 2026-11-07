@@ -251,12 +251,15 @@ class SpecificationPricingController extends Controller
             $pItem = $pricingItemsBySpecItem->get($specItem->id);
 
             $items[] = [
-                'uuid'     => $pItem?->uuid ?? (string) Str::uuid(),
-                'title'    => $specItem->title,
-                'kuantiti' => (float) ($specItem->quantity ?? 0),
-                'uom'      => $specItem->unit ?? $specItem->uom ?? '-',
-                'harga'    => (float) ($pItem?->harga ?? 0),
-                'details'  => $details,
+                'uuid'        => $pItem?->uuid ?? (string) Str::uuid(),
+                'title'       => $specItem->title,
+                'kuantiti'    => (float) ($specItem->quantity ?? 0),
+                'uom'         => $specItem->unit ?? $specItem->uom ?? '-',
+                'kadar_harga' => isset($specItem->kadar_harga) && $specItem->kadar_harga !== null
+                    ? (float) $specItem->kadar_harga
+                    : null,
+                'harga'       => (float) ($pItem?->harga ?? 0),
+                'details'     => $details,
             ];
         }
 
@@ -328,10 +331,27 @@ class SpecificationPricingController extends Controller
                 if (!empty($data['items'])) {
                     foreach ($data['items'] as $itemData) {
                         if (!empty($itemData['uuid'])) {
-                            DB::table('specification_pricing_items')
+                            $pricingItem = DB::table('specification_pricing_items')
                                 ->where('uuid', $itemData['uuid'])
                                 ->where('specification_pricing_id', $pricingId)
+                                ->first();
+
+                            if (!$pricingItem) {
+                                continue;
+                            }
+
+                            DB::table('specification_pricing_items')
+                                ->where('id', $pricingItem->id)
                                 ->update(['harga' => $itemData['harga'] ?? 0, 'updated_at' => now()]);
+
+                            if (array_key_exists('kadar_harga', $itemData) && !empty($pricingItem->spec_item_id)) {
+                                DB::table('technical_specification_items')
+                                    ->where('id', $pricingItem->spec_item_id)
+                                    ->update([
+                                        'kadar_harga' => $itemData['kadar_harga'],
+                                        'updated_at'  => now(),
+                                    ]);
+                            }
                         }
                     }
                 }

@@ -81,7 +81,7 @@ class KakitanganTeknikalController extends Controller
             'jumlah_pengalaman'    => ['required', 'integer', 'min:0'],
             'sijil_professional'   => ['nullable', 'string', 'max:1000'],
             'kakitangan_dokumen'   => ['required', 'array', 'min:1'],
-            'kakitangan_dokumen.*' => ['file', 'max:10240', 'mimes:pdf,doc,docx,xls,xlsx,png,jpg,jpeg,zip,rar'],
+            'kakitangan_dokumen.*' => ['file', 'max:10240', \App\Support\AllowedAttachment::mimesRule()],
         ], [
             'nama_pegawai.required'       => 'Sila isi nama pegawai.',
             'tahap_pendidikan.required'   => 'Sila pilih tahap pendidikan tertinggi.',
@@ -120,7 +120,7 @@ class KakitanganTeknikalController extends Controller
                     }
                     $originalName = $file->getClientOriginalName();
                     $storedName   = Str::uuid() . '.' . $file->getClientOriginalExtension();
-                    $path         = $file->storeAs("kakitangan-teknikal/{$tender->uuid}" . ($vendorId ? "/{$vendorId}" : ''), $storedName, 'public');
+                    $path         = \App\Support\AttachmentStorage::storeAs($file, "kakitangan-teknikal/{$tender->uuid}" . ($vendorId ? "/{$vendorId}" : ''), $storedName);
 
                     TenderKakitanganTeknikalDokumen::create([
                         'uuid'            => (string) Str::uuid(),
@@ -190,7 +190,7 @@ class KakitanganTeknikalController extends Controller
             'jumlah_pengalaman'    => ['required', 'integer', 'min:0'],
             'sijil_professional'   => ['nullable', 'string', 'max:1000'],
             'kakitangan_dokumen'   => ['nullable', 'array'],
-            'kakitangan_dokumen.*' => ['file', 'max:10240', 'mimes:pdf,doc,docx,xls,xlsx,png,jpg,jpeg,zip,rar'],
+            'kakitangan_dokumen.*' => ['file', 'max:10240', \App\Support\AllowedAttachment::mimesRule()],
         ]);
 
         $newFilesCount = $request->hasFile('kakitangan_dokumen') ? count($request->file('kakitangan_dokumen')) : 0;
@@ -226,7 +226,7 @@ class KakitanganTeknikalController extends Controller
                     }
                     $originalName = $file->getClientOriginalName();
                     $storedName   = Str::uuid() . '.' . $file->getClientOriginalExtension();
-                    $path         = $file->storeAs("kakitangan-teknikal/{$staff->tender_uuid}" . ($staff->vendor_id ? "/{$staff->vendor_id}" : ''), $storedName, 'public');
+                    $path         = \App\Support\AttachmentStorage::storeAs($file, "kakitangan-teknikal/{$staff->tender_uuid}" . ($staff->vendor_id ? "/{$staff->vendor_id}" : ''), $storedName);
 
                     TenderKakitanganTeknikalDokumen::create([
                         'uuid'            => (string) Str::uuid(),
@@ -294,8 +294,8 @@ class KakitanganTeknikalController extends Controller
         DB::beginTransaction();
         try {
             foreach ($staff->dokumens as $dokumen) {
-                if (Storage::disk('public')->exists($dokumen->path)) {
-                    Storage::disk('public')->delete($dokumen->path);
+                if (\App\Support\AttachmentStorage::exists($dokumen->path)) {
+                    \App\Support\AttachmentStorage::delete($dokumen->path);
                 }
                 $dokumen->delete();
             }
@@ -369,8 +369,8 @@ class KakitanganTeknikalController extends Controller
         }
 
         try {
-            if (Storage::disk('public')->exists($dokumen->path)) {
-                Storage::disk('public')->delete($dokumen->path);
+            if (\App\Support\AttachmentStorage::exists($dokumen->path)) {
+                \App\Support\AttachmentStorage::delete($dokumen->path);
             }
             $dokumen->delete();
 
@@ -420,7 +420,7 @@ class KakitanganTeknikalController extends Controller
 
         $request->validate([
             'dokumen_umum'   => ['required', 'array', 'min:1'],
-            'dokumen_umum.*' => ['file', 'max:10240', 'mimes:pdf,doc,docx,xls,xlsx,png,jpg,jpeg,zip,rar'],
+            'dokumen_umum.*' => ['file', 'max:10240', \App\Support\AllowedAttachment::mimesRule()],
         ], [
             'dokumen_umum.required' => 'Sila muat naik sekurang-kurangnya satu dokumen sokongan.',
             'dokumen_umum.min'      => 'Sila muat naik sekurang-kurangnya satu dokumen sokongan.',
@@ -438,7 +438,7 @@ class KakitanganTeknikalController extends Controller
                     }
                     $originalName = $file->getClientOriginalName();
                     $storedName   = Str::uuid() . '.' . $file->getClientOriginalExtension();
-                    $path         = $file->storeAs("kakitangan-teknikal/{$tender->uuid}" . ($vendorId ? "/{$vendorId}" : ''), $storedName, 'public');
+                    $path         = \App\Support\AttachmentStorage::storeAs($file, "kakitangan-teknikal/{$tender->uuid}" . ($vendorId ? "/{$vendorId}" : ''), $storedName);
 
                     $doc = TenderKakitanganTeknikalDokumen::create([
                         'uuid'            => (string) Str::uuid(),

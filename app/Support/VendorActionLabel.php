@@ -25,6 +25,10 @@ class VendorActionLabel
             return 'Borang Atas Talian';
         }
 
+        if ($mechanism === 'serahan_tangan') {
+            return 'Serahan Tangan';
+        }
+
         return 'Muat Naik';
     }
 
@@ -34,6 +38,7 @@ class VendorActionLabel
             'Spesifikasi' => 'badge-status-info',
             'Borang Atas Talian' => 'badge-status-warning',
             'Muat Naik' => 'badge-status-success',
+            'Serahan Tangan' => 'badge-status-neutral',
             'Muat Turun', 'Muat Turun dan Muat Naik' => 'badge-status-neutral',
             default => 'badge-status-neutral',
         };

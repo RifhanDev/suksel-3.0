@@ -30,6 +30,10 @@ class TenderKerjaDalamTanganDokumen extends Model
 
     public function getUrlAttribute(): string
     {
+        if (\App\Support\AttachmentStorage::isRemote()) {
+            return route('attachments.stream', ['path' => ltrim((string) $this->path, '/')]);
+        }
+
         return Storage::disk('public')->url($this->path);
     }
 }

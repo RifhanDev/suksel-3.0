@@ -1,10 +1,13 @@
 @php
     $kembaliUrl = $kembaliUrl ?? ($returnUrl ?? '#');
     $btnClass = $btnClass ?? 'btn-form btn-form-secondary';
+    // When true, closing the iframe reloads the parent checklist so badges
+    // (Belum Selesai → Selesai) refresh after AJAX saves inside the form.
+    $reloadOnClose = (bool) ($reloadOnClose ?? false);
 @endphp
 
 @if ($modalEmbed ?? false)
-    <button type="button" class="{{ $btnClass }}" onclick="vendorFormClose(false)">
+    <button type="button" class="{{ $btnClass }}" onclick="vendorFormClose({{ $reloadOnClose ? 'true' : 'false' }})">
         <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <line x1="18" y1="6" x2="6" y2="18"></line>

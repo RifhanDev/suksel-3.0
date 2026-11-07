@@ -145,7 +145,7 @@ class JawatankuasaPerolehanController extends Controller
                             'kandungan' => $item->kandungan,
                             'file_name' => $file->file_original_name,
                             // Papar sahaja: buka fail terus (bukan muat turun paksa)
-                            'papar_url' => $file->file_path ? asset($file->file_path) : '#',
+                            'papar_url' => $file->file_path ? \App\Support\AttachmentStorage::browserUrl($file->file_path) : '#',
                         ];
                     })->all();
 
@@ -985,10 +985,10 @@ class JawatankuasaPerolehanController extends Controller
                 Rule::in(array_merge($emptyPad, $opts['kaedah_memuktamadkan_pembekal'])),
             ],
             'header.pemilihan_berdasarkan' => [
-                $forSubmit ? 'required' : 'nullable',
+                'nullable',
                 'string',
                 'max:255',
-                Rule::in(array_merge($emptyPad, $opts['pemilihan_berdasarkan'])),
+                Rule::in(array_merge([''], $opts['pemilihan_berdasarkan'])),
             ],
             'header.loi_loa_disediakan_oleh' => [
                 $forSubmit ? 'required' : 'nullable',
@@ -1271,7 +1271,7 @@ class JawatankuasaPerolehanController extends Controller
 
         $safeOriginal = preg_replace('/[^A-Za-z0-9._-]/', '_', $file->getClientOriginalName());
         $fileName = date('YmdHis') . '_' . $safeOriginal;
-        $file->move($absoluteDir, $fileName);
+        \App\Support\AttachmentStorage::moveUploadedFile($file, $absoluteDir, $fileName);
 
         return [
             'original_name' => $file->getClientOriginalName(),
@@ -1289,6 +1289,7 @@ class JawatankuasaPerolehanController extends Controller
         if (is_file($fullPath)) {
             @unlink($fullPath);
         }
+        \App\Support\AttachmentStorage::delete($relativePath);
     }
 
     private function nullableTrim($value): ?string

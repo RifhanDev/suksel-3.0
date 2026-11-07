@@ -113,7 +113,7 @@ class Banner extends Model
 					mkdir($upload['path'], 0755, true);
 				}
 
-				$file->move($upload['path'], $upload['name']);
+				\App\Support\AttachmentStorage::moveUploadedFile($file, $upload['path'], $upload['name']);
 
 				$new_upload = new Upload;
 				$new_upload->fill($upload);

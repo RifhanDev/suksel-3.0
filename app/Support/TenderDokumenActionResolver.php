@@ -22,6 +22,10 @@ class TenderDokumenActionResolver
             return 'online_form';
         }
 
+        if ($mechanism === 'serahan_tangan' || $vendorAction === 'serahan_tangan') {
+            return 'serahan_tangan';
+        }
+
         if ($vendorAction === 'kunci_masuk') {
             return 'key_in';
         }

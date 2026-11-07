@@ -216,7 +216,7 @@ class PengalamanKerjaController extends Controller
                     $safeOriginalName = preg_replace('/[^A-Za-z0-9._-]/', '_', $file->getClientOriginalName());
                     $storedName       = now()->format('YmdHis') . '_' . Str::uuid() . '_' . $safeOriginalName;
                     $folder           = 'uploads/pengalaman-kerja/' . $tenderUuid . ($vendorId ? '/' . $vendorId : '');
-                    $path             = $file->storeAs($folder, $storedName, 'public');
+                    $path             = \App\Support\AttachmentStorage::storeAs($file, $folder, $storedName);
 
                     if (! $path) {
                         $fileErrors[] = $file->getClientOriginalName() . ': gagal disimpan ke storan SUKSel 3.0.';
@@ -306,8 +306,8 @@ class PengalamanKerjaController extends Controller
                 }
             }
 
-            if ($dokumen->path && Storage::disk('public')->exists($dokumen->path)) {
-                Storage::disk('public')->delete($dokumen->path);
+            if ($dokumen->path && \App\Support\AttachmentStorage::exists($dokumen->path)) {
+                \App\Support\AttachmentStorage::delete($dokumen->path);
             }
             $tenderUuid = $dokumen->tender_uuid;
             $dokumen->delete();

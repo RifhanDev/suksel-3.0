@@ -540,7 +540,7 @@ class PenyediaanSuratSstController extends Controller
 
         $file = $request->file('file');
         $storedName = Str::uuid() . '.' . $file->getClientOriginalExtension();
-        $path = $file->storeAs("uploads/sst/{$tender->id}", $storedName, 'public');
+        $path = \App\Support\AttachmentStorage::storeAs($file, "uploads/sst/{$tender->id}", $storedName);
 
         return response()->json([
             'original_name' => $file->getClientOriginalName(),
@@ -554,6 +554,13 @@ class PenyediaanSuratSstController extends Controller
     public function muatTurunDokumen(Request $request, Tender $tender, string $storedName)
     {
         abort_unless(preg_match('/^[A-Za-z0-9._-]+$/', $storedName) === 1, 404, 'Fail tidak dijumpai.');
+
+        $relative = "uploads/sst/{$tender->id}/{$storedName}";
+        $namaFail = basename((string) $request->query('nama', $storedName));
+        $stored = \App\Support\AttachmentStorage::responseOrNull($relative, $namaFail, null, true);
+        if ($stored) {
+            return $stored;
+        }
 
         $absolutePath = storage_path("app/public/uploads/sst/{$tender->id}/{$storedName}");
 

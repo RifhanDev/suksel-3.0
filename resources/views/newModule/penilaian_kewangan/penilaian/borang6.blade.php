@@ -162,6 +162,14 @@
         : (str_contains(url()->previous(), '/penilaian-kewangan') ? url()->previous() : route('penilaianKewangan'));
 
     $passingVendors = $b6PassingVendors ?? [];
+    usort($passingVendors, function ($a, $b) {
+        $pA = ($a['harga_tawaran'] ?? 0) > 0 ? (float) $a['harga_tawaran'] : PHP_FLOAT_MAX;
+        $pB = ($b['harga_tawaran'] ?? 0) > 0 ? (float) $b['harga_tawaran'] : PHP_FLOAT_MAX;
+        if ($pA === $pB) {
+            return strcmp($a['vendor_name'] ?? '', $b['vendor_name'] ?? '');
+        }
+        return $pA <=> $pB;
+    });
 @endphp
 
 <div class="container-fluid px-0 py-2">

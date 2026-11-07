@@ -25,6 +25,11 @@ class Upload extends Model
 		'label',
 	];
 
+	public function getUrlAttribute($value)
+	{
+		return \App\Support\AttachmentStorage::urlForUploadModel($this) ?? $value;
+	}
+
 	public function getPath()
 	{
 		return $this->resolveAbsolutePath() ?? ($this->path . $this->name);
@@ -84,6 +89,11 @@ class Upload extends Model
 
 	public function getUrl()
 	{
+		$remote = \App\Support\AttachmentStorage::urlForUploadModel($this);
+		if ($remote) {
+			return $remote;
+		}
+
 		$fullPath = $this->resolveAbsolutePath();
 		$publicRoot = rtrim(str_replace('\\', '/', public_path()), '/');
 

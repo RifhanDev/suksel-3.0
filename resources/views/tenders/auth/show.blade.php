@@ -1276,7 +1276,9 @@
 							groups: ['about']
 						}
 					],
-					removeButtons: 'Flash,Iframe,Form,TextField,Checkbox,Radio,Textarea,Select,Button,ImageButton,HiddenField'
+					removeButtons: 'Flash,Iframe,Form,TextField,Checkbox,Radio,Textarea,Select,Button,ImageButton,HiddenField',
+					// Premium plugins need token URLs; unused here — disable to avoid console noise.
+					removePlugins: 'easyimage,cloudservices,exportpdf'
 				});
 			}
 		});

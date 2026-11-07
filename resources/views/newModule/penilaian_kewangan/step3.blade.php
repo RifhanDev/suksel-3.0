@@ -480,21 +480,22 @@
                     <table class="table align-middle mb-0" style="font-size: 0.85rem;">
                         <thead style="--bs-table-bg: #d7d7d9; --bs-table-color: #3f3f3f;">
                             <tr>
-                                <th class="py-2.5 px-3 text-uppercase fw-bold" style="width: 40%; font-size: 0.7rem; letter-spacing: 0.05em; background-color: #d7d7d9 !important; color: #3f3f3f !important;">Item / Spesifikasi</th>
-                                <th class="text-center py-2.5 px-3 text-uppercase fw-bold" style="width: 15%; font-size: 0.7rem; letter-spacing: 0.05em; background-color: #d7d7d9 !important; color: #3f3f3f !important;">Kekerapan / Kuantiti</th>
-                                <th class="text-center py-2.5 px-3 text-uppercase fw-bold" style="width: 15%; font-size: 0.7rem; letter-spacing: 0.05em; background-color: #d7d7d9 !important; color: #3f3f3f !important;">Unit / Ukuran</th>
+                                <th class="py-2.5 px-3 text-uppercase fw-bold" style="width: 32%; font-size: 0.7rem; letter-spacing: 0.05em; background-color: #d7d7d9 !important; color: #3f3f3f !important;">Item / Spesifikasi</th>
+                                <th class="text-center py-2.5 px-3 text-uppercase fw-bold" style="width: 12%; font-size: 0.7rem; letter-spacing: 0.05em; background-color: #d7d7d9 !important; color: #3f3f3f !important;">Kekerapan / Kuantiti</th>
+                                <th class="text-center py-2.5 px-3 text-uppercase fw-bold" style="width: 12%; font-size: 0.7rem; letter-spacing: 0.05em; background-color: #d7d7d9 !important; color: #3f3f3f !important;">Unit / Ukuran</th>
+                                <th class="text-end py-2.5 px-3 text-uppercase fw-bold" style="width: 14%; font-size: 0.7rem; letter-spacing: 0.05em; background-color: #d7d7d9 !important; color: #3f3f3f !important;">Kadar Harga (RM)</th>
                                 <th class="text-end py-2.5 px-3 text-uppercase fw-bold" style="width: 15%; font-size: 0.7rem; letter-spacing: 0.05em; background-color: #d7d7d9 !important; color: #3f3f3f !important;">Anggaran Jabatan (RM)</th>
                                 <th class="text-end py-2.5 px-3 text-uppercase fw-bold" style="width: 15%; font-size: 0.7rem; letter-spacing: 0.05em; background-color: #d7d7d9 !important; color: #3f3f3f !important;">Tawaran Harga (RM)</th>
                             </tr>
                         </thead>
                         <tbody id="step3VendorDetailTableBody">
                             <tr>
-                                <td colspan="5" class="text-center text-muted py-4"><i class="bi bi-arrow-repeat spin me-1"></i>Memuatkan maklumat spesifikasi...</td>
+                                <td colspan="6" class="text-center text-muted py-4"><i class="bi bi-arrow-repeat spin me-1"></i>Memuatkan maklumat spesifikasi...</td>
                             </tr>
                         </tbody>
                         <tfoot class="bg-light fw-bold">
                             <tr>
-                                <td colspan="3" class="text-center py-2.5 text-uppercase">JUMLAH</td>
+                                <td colspan="4" class="text-center py-2.5 text-uppercase">JUMLAH</td>
                                 <td id="step3TotalAnggaranJabatan" class="text-end px-3 py-2.5 text-dark font-monospace">RM 0.00</td>
                                 <td id="step3TotalTawaranHarga" class="text-end px-3 py-2.5 text-dark font-monospace">RM 0.00</td>
                             </tr>
@@ -1453,6 +1454,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (isNaN(vendorSubmittedHarga)) vendorSubmittedHarga = 0;
                     totalTawaran += vendorSubmittedHarga;
 
+                    const kadarHargaRaw = item.kadar_harga;
+                    const kadarHargaDisp = (kadarHargaRaw !== null && kadarHargaRaw !== undefined && kadarHargaRaw !== '')
+                        ? Number(kadarHargaRaw).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                        : '-';
+
                     const trItem = document.createElement('tr');
                     trItem.className = 'bg-light bg-opacity-50';
                     trItem.innerHTML = `
@@ -1462,6 +1468,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         </td>
                         <td class="text-center px-3 py-2.5 font-monospace">${qty}</td>
                         <td class="text-center px-3 py-2.5 text-uppercase font-monospace">${escapeHtml(unitStr)}</td>
+                        <td class="text-end px-3 py-2.5 font-monospace fw-medium">${kadarHargaDisp}</td>
                         <td class="text-end px-3 py-2.5 font-monospace fw-medium">${itemAnggaranTotal > 0 ? itemAnggaranTotal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '-'}</td>
                         <td class="text-end px-3 py-2.5 font-monospace fw-semibold text-dark">${vendorSubmittedHarga > 0 ? vendorSubmittedHarga.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '-'}</td>
                     `;
@@ -1470,7 +1477,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     group.details.forEach((dt, dIdx) => {
                         const trDetail = document.createElement('tr');
                         trDetail.innerHTML = `
-                            <td colspan="5" class="ps-4 py-2 text-secondary small">
+                            <td colspan="6" class="ps-4 py-2 text-secondary small">
                                 <div class="d-flex align-items-center gap-2">
                                     <i class="bi bi-arrow-return-right text-primary opacity-75"></i>
                                     <span class="fw-semibold text-dark me-1">${dt.bil || (gIdx + 1 + '.' + (dIdx + 1))}</span>

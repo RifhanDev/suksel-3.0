@@ -47,6 +47,10 @@ class SpesifikasiKerjaFile extends Model
             return '';
         }
 
+        if (\App\Support\AttachmentStorage::isRemote()) {
+            return route('attachments.stream', ['path' => $path]);
+        }
+
         $base = rtrim((string) config('services.stos_backend.url'), '/');
         if ($base !== '') {
             return $base . '/storage/' . $path;
