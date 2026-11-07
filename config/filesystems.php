@@ -71,8 +71,12 @@ return [
             'url' => env('AWS_URL'),
         ],
 
-        // Local and staging keep files on this app. Production uses the file server.
-        'attachments' => env('APP_ENV') === 'production'
+        // Keep files on this app until ATTACHMENT_REMOTE_ENABLED=true on production.
+        // Local/staging always stay local even if the flag is set by mistake.
+        'attachments' => (
+            env('APP_ENV') === 'production'
+            && filter_var(env('ATTACHMENT_REMOTE_ENABLED', false), FILTER_VALIDATE_BOOLEAN)
+        )
             ? [
                 'driver' => env('ATTACHMENT_DRIVER', 'ftp'),
                 'host' => env('ATTACHMENT_HOST', '172.16.2.147'),
