@@ -525,24 +525,41 @@
 
         {{-- Confirmation Box --}}
         <div class="confirmation-box">
-            <div class="row g-3 align-items-center">
-                <div class="col-12 col-md-8">
-                    <div class="form-check p-3 bg-white rounded-3 border mb-0">
-                        <input class="form-check-input ms-0 me-2" type="checkbox" id="chkSah" {{ !empty($readOnly) ? 'disabled checked' : '' }}>
-                        <label class="form-check-label fw-semibold text-dark small" for="chkSah">
-                            Saya mengesahkan keputusan &amp; pengesyoran penilaian tender ini telah disemak secara teliti.
-                        </label>
-                    </div>
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+                <div class="form-check p-3 bg-white rounded-3 border mb-0 flex-grow-1" style="min-width: 280px;">
+                    <input class="form-check-input ms-0 me-2" type="checkbox" id="chkSah" {{ !empty($readOnly) ? 'disabled checked' : '' }}>
+                    <label class="form-check-label fw-semibold text-dark small" for="chkSah">
+                        Saya mengesahkan keputusan &amp; pengesyoran penilaian tender ini telah disemak secara teliti.
+                    </label>
                 </div>
-                <div class="col-12 col-md-4 text-md-end">
-                    <div class="d-flex justify-content-md-end gap-2">
-                        <a href="{{ $backToTenderUrl }}" class="btn btn-outline-secondary px-4 rounded-3 fw-semibold">
-                            <i class="bi bi-x-circle me-1"></i>Batal
-                        </a>
-                        <button type="button" class="btn btn-submit-danger px-4 rounded-3" id="btnHantarB15" onclick="hantarB15()">
-                            <i class="bi bi-send me-1"></i>Hantar Keputusan Penilaian
+                <div class="d-flex flex-wrap align-items-center justify-content-end gap-2 ms-auto">
+                    @if(empty($readOnly))
+                        <button type="button" class="btn btn-outline-secondary px-4 rounded-3 fw-semibold d-inline-flex align-items-center gap-2 text-nowrap" id="btnSimpanB15" onclick="simpanPengesyoranB15()">
+                            <i class="bi bi-floppy"></i>
+                            <span>Simpan</span>
                         </button>
-                    </div>
+                    @endif
+                    @if(!empty($readOnly) || !empty($laporanRecord?->pengesyoran_justifikasi['recommended_vendor_ids']))
+                        <a href="{{ route('penilaianKewanganKerja.cetakLaporan', $tenderIdentifier) }}" target="_blank" class="btn btn-outline-secondary px-4 rounded-3 fw-semibold d-inline-flex align-items-center gap-2 text-nowrap">
+                            <i class="bi bi-printer"></i>
+                            <span>Laporan</span>
+                        </a>
+                    @else
+                        <span class="d-inline-block" tabindex="0" id="laporanTooltip" data-bs-toggle="tooltip" data-bs-placement="top" title="Sila tanda petender yang disyorkan dan tekan Simpan dahulu untuk menjana laporan.">
+                            <button type="button" class="btn btn-outline-secondary px-4 rounded-3 fw-semibold d-inline-flex align-items-center gap-2 text-nowrap" style="pointer-events: none;" disabled>
+                                <i class="bi bi-printer"></i>
+                                <span>Laporan</span>
+                            </button>
+                        </span>
+                    @endif
+                    <a href="{{ $backToTenderUrl }}" class="btn btn-outline-secondary px-4 rounded-3 fw-semibold d-inline-flex align-items-center gap-2 text-nowrap">
+                        <i class="bi bi-x-circle"></i>
+                        <span>Batal</span>
+                    </a>
+                    <button type="button" class="btn btn-submit-danger px-4 rounded-3 d-inline-flex align-items-center gap-2 text-nowrap" id="btnHantarB15" onclick="hantarB15()">
+                        <i class="bi bi-send"></i>
+                        <span>Hantar Keputusan Penilaian</span>
+                    </button>
                 </div>
             </div>
         </div>
@@ -610,6 +627,57 @@
             });
         });
     });
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const laporanTooltip = document.getElementById('laporanTooltip');
+        if (laporanTooltip) {
+            bootstrap.Tooltip.getOrCreateInstance(laporanTooltip);
+        }
+    });
+
+    function simpanPengesyoranB15() {
+        const selectedVendorIds = Array.from(document.querySelectorAll('.chk-pengesyoran:checked')).map(cb => cb.value);
+        if (selectedVendorIds.length === 0) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Pengesyoran Diperlukan',
+                html: '<p class="mb-1 text-secondary fs-6">Sila pilih <strong>sekurang-kurangnya satu petender</strong> yang disyorkan sebelum menyimpan.</p>',
+                confirmButtonText: 'Faham',
+                confirmButtonColor: '#dc2626'
+            });
+            return;
+        }
+
+        const btnSimpan = document.getElementById('btnSimpanB15');
+        btnSimpan.disabled = true;
+        btnSimpan.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Menyimpan...';
+
+        fetch('{{ route('penilaianKewanganKerja.borang15.simpanPengesyoran', $tenderIdentifier) }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ selected_vendors: selectedVendorIds })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                Swal.fire({ icon: 'success', title: 'Disimpan', text: data.message, confirmButtonColor: '#047857' })
+                    .then(() => window.location.reload());
+                return;
+            }
+            btnSimpan.disabled = false;
+            btnSimpan.innerHTML = '<i class="bi bi-floppy"></i><span>Simpan</span>';
+            Swal.fire({ icon: 'error', title: 'Ralat!', text: data.message || 'Gagal menyimpan pengesyoran.', confirmButtonColor: '#dc2626' });
+        })
+        .catch(() => {
+            btnSimpan.disabled = false;
+            btnSimpan.innerHTML = '<i class="bi bi-floppy"></i><span>Simpan</span>';
+            Swal.fire({ icon: 'error', title: 'Ralat Sistem!', text: 'Berlaku masalah semasa berhubung dengan pelayan.', confirmButtonColor: '#dc2626' });
+        });
+    }
 
     function hantarB15() {
         const checkedVendors = document.querySelectorAll('.chk-pengesyoran:checked');

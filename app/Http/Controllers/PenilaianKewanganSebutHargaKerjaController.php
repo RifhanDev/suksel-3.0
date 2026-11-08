@@ -6,9 +6,13 @@ use App\Http\Controllers\Concerns\AdvancesTenderProcessStatus;
 use App\Http\Controllers\Concerns\ResolvesTenderForProcess;
 use App\Http\Controllers\Concerns\RestrictsTenderByRole;
 use App\Models\BonSaham;
+use App\Models\Jawatankuasa;
+use App\Models\KewanganKerjaHeader;
 use App\Models\KewanganKerjaItem;
 use App\Models\LembaranImbangan;
 use App\Models\PenyataBank;
+use App\Models\PenyediaanIklan;
+use App\Models\PenyediaanMesyuaratMeeting;
 use App\Models\TenderKakitanganTeknikal;
 use App\Models\TenderKakitanganTeknikalDokumen;
 use App\Models\TenderKewanganEvaluation;
@@ -23,10 +27,12 @@ use App\Services\PenilaianKewanganWorkflowResolver;
 use App\Services\StosBackendClient;
 use App\Services\VendorDokumenResponseService;
 use App\Services\VendorFormPayloadService;
+use App\Support\ChecklistMechanism;
 use App\Support\PenilaianKewanganKerjaCalculator;
 use App\Support\TenderDokumenPresenter;
 use App\Support\TenderProcessStatus;
 use App\Tender;
+use App\TenderCode;
 use App\TenderVendor;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
@@ -1618,7 +1624,7 @@ class PenilaianKewanganSebutHargaKerjaController extends Controller
     }
 
     /**
-     * Preview or print the financial evaluation report.
+     * Printable Laporan Jawatankuasa Penilaian Sebut Harga.
      */
     public function cetakLaporan(string $tender_no)
     {
@@ -1627,9 +1633,335 @@ class PenilaianKewanganSebutHargaKerjaController extends Controller
             abort(404, 'Tender tidak ditemui.');
         }
 
-        // Redirect to show page with print trigger or draft preview
-        return redirect()->route('penilaianKewanganSebutHargaKerja.show', $tender->uuid ?: $tender->id)
-            ->with('info', 'Pratonton cetakan laporan.');
+        $this->assertCommitteeAppointment($tender, $this->financialCommitteeJenis);
+
+        $jpJenis = $this->resolveJpJenis($tender);
+
+        $mesyuarat = PenyediaanMesyuaratMeeting::query()
+            ->where('tender_id', $tender->id)
+            ->whereIn('jenis_jawatankuasa', $jpJenis)
+            ->where('status', 'Dihantar')
+            ->orderBy('tarikh_mesyuarat')
+            ->get();
+
+        // Only penyebut harga who submitted, lowest harga tawaran first, priced the same way as the evaluation screens.
+        $petender = $this->resolveAndSortParticipantsByHargaTawaran(
+            $tender,
+            TenderVendor::query()->with('vendor')->where('tender_id', $tender->id)->where('submitted', 1)->get()
+        );
+        $berharga = $petender->filter(fn ($p) => $p->harga_tawaran_resolved !== null)->values();
+        $cutOff = $this->loadCutOff($tender);
+        $refsCutOff = TenderVendor::submittedCutOffVendorRefs($tender->id);
+        // Penyebut harga ticked in the submitted cut-off, in harga tawaran order.
+        $terpilih = $petender->filter(fn ($p) => in_array($p->kod_pembekal, $refsCutOff, true))->values();
+        // Peringkat Kedua is Langkah 1: any document marked tidak sempurna fails, as in hantar().
+        $dokumenEval = TenderKewanganEvaluation::query()->where('tender_id', $tender->id)->get()->groupBy('vendor_id');
+        $peringkatKedua = $terpilih->map(function ($p, int $idx) use ($dokumenEval) {
+            $evals = $dokumenEval->get($p->vendor_id, collect());
+            $gagal = $evals->filter(fn ($e) => (int) $e->status_pematuhan === 0);
+
+            return [
+                'bil' => $idx + 1,
+                'vendor_id' => $p->vendor_id,
+                'kod_pembekal' => $p->kod_pembekal,
+                'lulus' => $evals->isNotEmpty() && $gagal->isEmpty(),
+                // Penyebut harga dropped before Kewangan (e.g. at Teknikal) have no evaluation, so their elimination reason shows.
+                'ulasan' => $gagal->pluck('catatan')->filter()->join('; ') ?: ($p->eliminated_reason ?: 'Gagal mematuhi satu atau lebih dokumen mandatori.'),
+            ];
+        });
+        $lulusKedua = $peringkatKedua->where('lulus', true);
+        $modalMinimum = (float) ($tender->anggaran_jabatan ?? $tender->harga_indikatif ?? $tender->price ?? 0) * PenilaianKewanganKerjaCalculator::DEFAULT_MIN_CAPITAL_PERCENT / 100;
+        $kewanganEval = TenderKewanganKerjaEvaluation::query()->where('tender_id', $tender->id)->where('borang_code', 'sh_kemampuan_kewangan')->get()->keyBy('vendor_id');
+        $peringkatKetiga = $lulusKedua->values()->map(function (array $row, int $idx) use ($kewanganEval, $modalMinimum) {
+            $eval = $kewanganEval->get($row['vendor_id']);
+
+            return [
+                'bil' => $idx + 1,
+                'vendor_id' => $row['vendor_id'],
+                'kod_pembekal' => $row['kod_pembekal'],
+                'lulus' => $eval?->status_pematuhan === 1,
+                'ulasan' => $eval?->catatan ?: 'Modal pusingan kurang daripada had minimum 1.5% (RM ' . number_format($modalMinimum, 2) . ').',
+            ];
+        });
+        $lulusKetiga = $peringkatKetiga->where('lulus', true);
+        $kerjaEval = TenderKewanganKerjaEvaluation::query()->where('tender_id', $tender->id)->where('borang_code', 'sh_penilaian_kerja')->get()->keyBy('vendor_id');
+        $peringkatKeempat = $lulusKetiga->values()->map(function (array $row, int $idx) use ($kerjaEval) {
+            $eval = $kerjaEval->get($row['vendor_id']);
+
+            return [
+                'bil' => $idx + 1,
+                'vendor_id' => $row['vendor_id'],
+                'kod_pembekal' => $row['kod_pembekal'],
+                'lulus' => $eval?->status_pematuhan === 1,
+                'ulasan' => $eval?->catatan ?: 'Penilaian kerja tidak memuaskan.',
+            ];
+        });
+        $lulusKeempat = $peringkatKeempat->where('lulus', true);
+        $disyorkan = $lulusKeempat->first();
+        $hargaDisyorkan = (float) ($petender->firstWhere('vendor_id', $disyorkan['vendor_id'] ?? null)?->harga_tawaran_resolved ?? 0);
+        $laporan = TenderKewanganLaporan::query()->where('tender_id', $tender->id)->first();
+
+        return $this->laporanAtauWord(view('newModule.penilaian_kewangan.sebut_harga_kerja.laporan_cetak', [
+            'tender' => $tender,
+            'noTender' => $tender->no_tender ?: ($tender->ref_number ?: '-'),
+            'latarBelakang' => $this->buildLatarBelakang($tender),
+            'jpMembers' => $this->loadJpMembers($tender, $jpJenis),
+            'bilanganMesyuarat' => $this->ejaBilangan($mesyuarat->count()),
+            'tarikhMesyuarat' => $mesyuarat
+                ->map(fn ($row) => $this->formatTarikhMalay(Carbon::parse($row->tarikh_mesyuarat)))
+                ->join(', ', ' dan ') ?: null,
+            'tarikhPemakluman' => $this->resolveTarikhPemakluman($tender, $jpJenis),
+            'gredCidb' => $this->loadGredCidb($tender),
+            'kodBidangCidb' => $this->flattenKodBidang($tender, 'cidb'),
+            'kodBidangMof' => $this->flattenKodBidang($tender, 'mof'),
+            // Matches canParticipate(): anything other than 'and' behaves as OR.
+            'mofCidbRule' => strtoupper((string) ($tender->mof_cidb_rule ?: 'or')) === 'AND' ? 'DAN' : 'ATAU',
+            // Kerja's Teknikal page is a spec and pricing table, so it shows as one fixed last row (analyst's call).
+            'senaraiDokumen' => $this->loadDokumenKewangan($tender)
+                ->map(fn ($item) => $item->title ?: '-')
+                ->push('Dokumen Spesifikasi')
+                ->map(fn (string $keterangan, int $idx) => [
+                    'bil' => $idx + 1,
+                    'keterangan' => $keterangan,
+                    'lampiran' => 'Lampiran ' . chr(65 + $idx),
+                ]),
+            'bilanganPetender' => ucwords($this->ejaBilangan($petender->count())),
+            'petenderTerendah' => $berharga->first(),
+            'petenderTertinggi' => $berharga->count() > 1 ? $berharga->last() : null,
+            'jadualHarga' => $petender->map(function ($p, int $idx) use ($cutOff) {
+                $bwam = $cutOff->get((string) $p->kod_pembekal)['pct_bwam'] ?? null;
+
+                return [
+                    'bil' => $idx + 1,
+                    'kod_pembekal' => $p->kod_pembekal ?: '-',
+                    'harga' => $p->harga_tawaran_resolved !== null ? number_format($p->harga_tawaran_resolved, 2) : '-',
+                    'bwam' => is_numeric($bwam) ? number_format($bwam * 100, 2) . '%' : ($bwam ?: '-'),
+                ];
+            }),
+            'bilanganLulusCutOff' => $this->ejaBilangan($cutOff->where('pct_bwam', '!==', 'FREAK')->count()),
+            'bilanganTerpilih' => $this->ejaBilangan($terpilih->count()),
+            'kodTerpilih' => $terpilih->pluck('kod_pembekal')->join(', ', ', dan ') ?: '-',
+            'peringkatKedua' => $peringkatKedua,
+            'bilanganLulusKedua' => $this->ejaBilangan($lulusKedua->count()),
+            'kodLulusKedua' => $lulusKedua->pluck('kod_pembekal')->join(', ', ', dan ') ?: '-',
+            'modalMinimum' => number_format($modalMinimum, 2),
+            'peringkatKetiga' => $peringkatKetiga,
+            'bilanganLulusKetiga' => $this->ejaBilangan($lulusKetiga->count()),
+            'kodLulusKetiga' => $lulusKetiga->pluck('kod_pembekal')->join(', ', ' dan ') ?: '-',
+            'peringkatKeempat' => $peringkatKeempat,
+            'bilanganLulusKeempat' => $this->ejaBilangan($lulusKeempat->count()),
+            'kodLulusKeempat' => $lulusKeempat->pluck('kod_pembekal')->join(', ', ' dan ') ?: '-',
+            'disyorkan' => $disyorkan ? [
+                'kod_pembekal' => $disyorkan['kod_pembekal'],
+                'harga' => number_format($hargaDisyorkan, 2),
+                'harga_perkataan' => $this->ejaRinggit($hargaDisyorkan),
+            ] : null,
+            'justifikasiSyor' => trim((string) $laporan?->catatan_peringkat1),
+            'syaratTambahan' => trim((string) $laporan?->catatan_peringkat3),
+            'tarikhPenilaian' => $laporan?->updated_at ? $this->formatTarikhMalay(Carbon::parse($laporan->updated_at)) : null,
+        ]), $tender);
+    }
+
+    /** ?format=word downloads the same report as a Word document. */
+    private function laporanAtauWord(\Illuminate\Contracts\View\View $laporan, Tender $tender)
+    {
+        if (request()->query('format') !== 'word') {
+            return $laporan;
+        }
+
+        $tajuk = 'Laporan Jawatankuasa Penilaian - ' . str_replace(['/', '\\'], '-', $tender->no_tender ?: ($tender->ref_number ?: (string) $tender->id));
+
+        return response(\App\Support\LaporanPenilaianWord::convert($laporan->render(), $tajuk))
+            ->header('Content-Type', 'application/vnd.ms-word; charset=utf-8')
+            ->header('Content-Disposition', 'attachment; filename="' . $tajuk . '.doc"');
+    }
+
+    /** Ringgit amount in Malay words, e.g. "Seratus Ribu Dan Sen Lima Puluh". */
+    private function ejaRinggit(float $amount): string
+    {
+        $eja = new \NumberFormatter('ms', \NumberFormatter::SPELLOUT);
+        $jumlahSen = (int) round($amount * 100);
+        $sen = $jumlahSen % 100;
+
+        return ucwords($eja->format(intdiv($jumlahSen, 100)) . ($sen > 0 ? ' dan sen ' . $eja->format($sen) : ''));
+    }
+
+    /** Malay number in words with its digits, e.g. "empat (4)". */
+    private function ejaBilangan(int $bilangan): string
+    {
+        return (new \NumberFormatter('ms', \NumberFormatter::SPELLOUT))->format($bilangan) . " ({$bilangan})";
+    }
+
+    /** STOS cut-off rows keyed by kod pembekal, without the AJ row; empty when STOS can't be reached. */
+    private function loadCutOff(Tender $tender): Collection
+    {
+        try {
+            $response = app(StosBackendClient::class)->getCutOffTender($tender->uuid);
+        } catch (\Throwable $e) {
+            return collect();
+        }
+
+        return collect($response->successful() ? $response->json('data.vendors_cutoff') : [])
+            ->reject(fn ($row) => ! empty($row['is_aj']))
+            ->keyBy(fn ($row) => (string) ($row['ruj'] ?? ''));
+    }
+
+    /** The Senarai Semak Kewangan Kerja documents; PTJ files the petender only downloads are left out, as in the Kewangan report. */
+    private function loadDokumenKewangan(Tender $tender): Collection
+    {
+        $header = KewanganKerjaHeader::query()
+            ->where('tender_id', $tender->id)
+            ->with('items')
+            ->first();
+
+        return collect($header?->items ?? [])
+            ->reject(fn ($item) => $item->mechanism === ChecklistMechanism::PTJ_MUAT_NAIK
+                && $item->vendor_action === ChecklistMechanism::VENDOR_ACTION_MUAT_TURUN)
+            ->values();
+    }
+
+    private function loadGredCidb(Tender $tender): Collection
+    {
+        return TenderCode::query()
+            ->with('code')
+            ->where('tender_id', $tender->id)
+            ->where('code_type', 'cidb-g')
+            ->orderBy('id')
+            ->get()
+            ->filter(fn (TenderCode $row) => $row->code)
+            ->map(fn (TenderCode $row) => $row->code->code)
+            ->values();
+    }
+
+    /** Each row carries the operator to the next: inner_rule within a group, join_rule between groups. */
+    private function flattenKodBidang(Tender $tender, string $codeType): Collection
+    {
+        $groups = TenderCode::query()
+            ->with('code')
+            ->where('tender_id', $tender->id)
+            ->where('code_type', $codeType)
+            ->orderBy('order')
+            ->orderBy('id')
+            ->get()
+            ->filter(fn (TenderCode $row) => $row->code)
+            ->groupBy('order')
+            ->values();
+
+        $rows = collect();
+
+        foreach ($groups as $groupIndex => $group) {
+            $items = $group->values();
+
+            foreach ($items as $itemIndex => $row) {
+                $isLastInGroup = $itemIndex === $items->count() - 1;
+                $isLastGroup = $groupIndex === $groups->count() - 1;
+
+                $operator = null;
+                if (! $isLastInGroup) {
+                    $operator = $row->inner_rule;
+                } elseif (! $isLastGroup) {
+                    $operator = $row->join_rule;
+                }
+
+                $rows->push([
+                    'kod' => $row->code->code,
+                    'keterangan' => preg_replace('/\s+/', ' ', trim((string) $row->code->name)),
+                    'operator' => $operator ? ($operator === 'and' ? 'DAN' : 'ATAU') : null,
+                ]);
+            }
+        }
+
+        return $rows;
+    }
+
+    /** 'fin' on 2-peringkat; 1-peringkat has no such tab and uses 'eval'/'harga'. */
+    private function resolveJpJenis(Tender $tender): array
+    {
+        $hasFin = Jawatankuasa::query()
+            ->where('tender_id', $tender->id)
+            ->where('jenis_jawatankuasa', 'fin')
+            ->whereNotNull('user_id')
+            ->exists();
+
+        return $hasFin ? ['fin'] : $this->financialCommitteeJenis;
+    }
+
+    private function loadJpMembers(Tender $tender, array $jenisList): Collection
+    {
+        $perananLabels = ['1' => 'Pengerusi', '2' => 'Setiausaha', '3' => 'Ahli'];
+
+        return Jawatankuasa::query()
+            ->with('user.organizationunit')
+            ->where('tender_id', $tender->id)
+            ->whereIn('jenis_jawatankuasa', $jenisList)
+            ->whereNotNull('user_id')
+            ->orderBy('peranan')
+            ->orderBy('id')
+            ->get()
+            ->filter(fn (Jawatankuasa $row) => $row->user)
+            ->values()
+            ->map(fn (Jawatankuasa $row) => [
+                'peranan_label' => $perananLabels[(string) $row->peranan] ?? 'Ahli',
+                'name' => $row->user->name,
+                'jawatan' => $row->user->jawatan ?: null,
+                'department' => $row->user->department ?: null,
+                'agensi' => optional($row->user->organizationunit)->name,
+                'tarikh_lantikan' => optional($row->dihantar_pemakluman_pada)->format('d.m.Y') ?: '-',
+            ]);
+    }
+
+    private function resolveTarikhPemakluman(Tender $tender, array $jenisList): ?string
+    {
+        $tarikh = Jawatankuasa::query()
+            ->where('tender_id', $tender->id)
+            ->whereIn('jenis_jawatankuasa', $jenisList)
+            ->whereNotNull('dihantar_pemakluman_pada')
+            ->min('dihantar_pemakluman_pada');
+
+        return $tarikh ? $this->formatTarikhMalay(Carbon::parse($tarikh)) : null;
+    }
+
+    /** @return array<string, mixed> */
+    private function buildLatarBelakang(Tender $tender): array
+    {
+        $iklanRecord = PenyediaanIklan::query()->where('tender_id', $tender->id)->first();
+        $iklanMeta = ($iklanRecord && is_array($iklanRecord->meta)) ? ($iklanRecord->meta['iklan'] ?? []) : [];
+        $tempohSahLaku = $iklanMeta['tempoh_sah_laku'] ?? null;
+        $tarikhSahLaku = ($tempohSahLaku && $tender->submission_datetime)
+            ? $this->formatTarikhMalay(Carbon::parse($tender->submission_datetime)->addDays((int) $tempohSahLaku))
+            : null;
+
+        $anggaran = $tender->anggaran_jabatan;
+        $jenis = ($tender->invitation || (int) $tender->jenis_tender_id === 3) ? 'Terhad' : 'Terbuka';
+        $bilanganDokumen = TenderVendor::query()->where('tender_id', $tender->id)->where('submitted', 1)->count();
+
+        return [
+            'agensi_pelaksana' => $tender->tenderer?->name ?: '-',
+            'kaedah_perolehan' => 'Sebut Harga ' . $jenis . ' Melalui Sistem Perolehan Selangor',
+            'anggaran_jabatan' => (float) $anggaran > 0 ? 'RM' . number_format((float) $anggaran, 2) : '-',
+            'tarikh_iklan' => $this->formatJulatTarikhMalay($tender->advertise_start_date, $tender->advertise_stop_date),
+            'tarikh_jual' => $this->formatJulatTarikhMalay($tender->document_start_date, $tender->document_stop_date),
+            'tarikh_tutup' => $tender->submission_datetime ? $this->formatTarikhMalay(Carbon::parse($tender->submission_datetime)) : '-',
+            'masa_tutup' => $tender->masa_tutup_display,
+            'tempoh_sah_laku' => $tarikhSahLaku ? $tempohSahLaku . ' hari selepas tarikh tutup sebut harga (' . $tarikhSahLaku . ')' : '-',
+            'bilangan_dokumen' => ucwords((new \NumberFormatter('ms', \NumberFormatter::SPELLOUT))->format($bilanganDokumen)) . " ({$bilanganDokumen})",
+        ];
+    }
+
+    private function formatJulatTarikhMalay($mula, $tamat): string
+    {
+        if (! $mula || ! $tamat) {
+            return '-';
+        }
+
+        return $this->formatTarikhMalay(Carbon::parse($mula)) . ' – ' . $this->formatTarikhMalay(Carbon::parse($tamat));
+    }
+
+    private function formatTarikhMalay(Carbon $date): string
+    {
+        $bulanMs = ['', 'Januari', 'Februari', 'Mac', 'April', 'Mei', 'Jun', 'Julai', 'Ogos', 'September', 'Oktober', 'November', 'Disember'];
+
+        return $date->day . ' ' . $bulanMs[$date->month] . ' ' . $date->year;
     }
 
     /**

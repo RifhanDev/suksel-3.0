@@ -505,10 +505,31 @@
                         Saya mengesahkan bahawa keputusan penilaian keseluruhan teknikal &amp; kewangan M&amp;E ini adalah muktamad dan betul.
                     </label>
                 </div>
-                <button type="button" id="btnSimpanMuktamad" class="btn btn-submit-danger px-4 py-2.5 rounded-3 d-inline-flex align-items-center gap-2" {{ $readOnly ? 'disabled' : '' }}>
-                    <i class="bi bi-check-all fs-5"></i>
-                    <span>Simpan Keputusan Muktamad</span>
-                </button>
+                <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                    @if(! $readOnly)
+                        <button type="button" id="btnSimpanKeputusan" class="btn btn-outline-secondary px-4 fw-semibold d-inline-flex align-items-center gap-2">
+                            <i class="bi bi-floppy"></i>
+                            <span>Simpan</span>
+                        </button>
+                    @endif
+                    @if($readOnly || array_key_exists('passing_vendor_ids', $laporanRecord?->pengesyoran_justifikasi ?? []))
+                        <a href="{{ route('penilaianKewanganKerja.cetakLaporan', $tenderIdentifier) }}" target="_blank" class="btn btn-outline-secondary px-4 fw-semibold d-inline-flex align-items-center gap-2">
+                            <i class="bi bi-printer"></i>
+                            <span>Laporan</span>
+                        </a>
+                    @else
+                        <span class="d-inline-block" tabindex="0" id="laporanTooltip" data-bs-toggle="tooltip" data-bs-placement="top" title="Sila tekan Simpan dahulu untuk menjana laporan.">
+                            <button type="button" class="btn btn-outline-secondary px-4 fw-semibold d-inline-flex align-items-center gap-2" style="pointer-events: none;" disabled>
+                                <i class="bi bi-printer"></i>
+                                <span>Laporan</span>
+                            </button>
+                        </span>
+                    @endif
+                    <button type="button" id="btnSimpanMuktamad" class="btn btn-submit-danger px-4 py-2.5 rounded-3 d-inline-flex align-items-center gap-2" {{ $readOnly ? 'disabled' : '' }}>
+                        <i class="bi bi-check-all fs-5"></i>
+                        <span>Simpan Keputusan Muktamad</span>
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -518,6 +539,46 @@
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const btnSimpanMuktamad = document.getElementById('btnSimpanMuktamad');
+        const btnSimpanKeputusan = document.getElementById('btnSimpanKeputusan');
+        const laporanTooltip = document.getElementById('laporanTooltip');
+
+        if (laporanTooltip) {
+            bootstrap.Tooltip.getOrCreateInstance(laporanTooltip);
+        }
+
+        if (btnSimpanKeputusan) {
+            btnSimpanKeputusan.addEventListener('click', function() {
+                btnSimpanKeputusan.disabled = true;
+                btnSimpanKeputusan.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Menyimpan...';
+
+                fetch('{{ route('penilaianKewanganKerja.kerjaKecil.simpanKeputusan', $tenderIdentifier) }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({})
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        Swal.fire({ icon: 'success', title: 'Disimpan', text: data.message, confirmButtonColor: '#047857' })
+                            .then(() => window.location.reload());
+                        return;
+                    }
+                    btnSimpanKeputusan.disabled = false;
+                    btnSimpanKeputusan.innerHTML = '<i class="bi bi-floppy"></i><span>Simpan</span>';
+                    Swal.fire({ icon: 'error', title: 'Ralat!', text: data.message });
+                })
+                .catch(() => {
+                    btnSimpanKeputusan.disabled = false;
+                    btnSimpanKeputusan.innerHTML = '<i class="bi bi-floppy"></i><span>Simpan</span>';
+                    Swal.fire({ icon: 'error', title: 'Ralat Sistem!', text: 'Masalah berhubung dengan pelayan.' });
+                });
+            });
+        }
+
         if (btnSimpanMuktamad) {
             btnSimpanMuktamad.addEventListener('click', function() {
                 const chkSah = document.getElementById('chkSah');

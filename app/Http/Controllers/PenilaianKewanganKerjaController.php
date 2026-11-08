@@ -5,13 +5,21 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Concerns\AdvancesTenderProcessStatus;
 use App\Http\Controllers\Concerns\ResolvesTenderForProcess;
 use App\Http\Controllers\Concerns\RestrictsTenderByRole;
+use App\Models\Jawatankuasa;
+use App\Models\KewanganKerjaHeader;
+use App\Models\PenyediaanIklan;
+use App\Models\PenyediaanMesyuaratMeeting;
 use App\Models\TenderKewanganKerjaEvaluation;
 use App\Models\TenderKewanganLaporan;
 use App\Models\TenderKewanganProgress;
 use App\Services\PenilaianKewanganWorkflowResolver;
+use App\Services\StosBackendClient;
+use App\Support\ChecklistMechanism;
 use App\Support\TenderProcessStatus;
 use App\Tender;
+use App\TenderCode;
 use App\TenderVendor;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -2082,7 +2090,8 @@ class PenilaianKewanganKerjaController extends Controller
             'b13VendorSummary',
             'b14VendorSummary',
             'b15VendorSummary',
-            'b15HeaderSummary'
+            'b15HeaderSummary',
+            'laporanRecord'
         ));
     }
 
@@ -3202,40 +3211,7 @@ class PenilaianKewanganKerjaController extends Controller
         if ($flowType === 'kerja_kecil_other') {
             DB::transaction(function () use ($tender) {
                 $eligibleParticipants = $this->loadEligibleTechnicalParticipants($tender);
-
-                $b1EvalsMap = TenderKewanganKerjaEvaluation::query()
-                    ->where('tender_id', $tender->id)
-                    ->where('borang_code', 'borang1')
-                    ->get()
-                    ->keyBy('vendor_id');
-
-                $b5Evals = TenderKewanganKerjaEvaluation::query()
-                    ->where('tender_id', $tender->id)
-                    ->where('borang_code', 'borang5')
-                    ->get()
-                    ->keyBy('vendor_id');
-
-                $passingVendorIds = [];
-                foreach ($eligibleParticipants as $p) {
-                    $vId = (int) $p->vendor_id;
-                    $eval1 = $b1EvalsMap->get($vId);
-                    if (! $eval1) {
-                        continue;
-                    }
-                    $payload1 = is_string($eval1->payload) ? json_decode($eval1->payload, true) : ($eval1->payload ?? []);
-                    $isSempurna1 = ((int) $eval1->status_pematuhan === 1) || (($payload1['keputusan_akhir'] ?? '') === 'Sempurna');
-                    if (! $isSempurna1) {
-                        continue;
-                    }
-
-                    $eval5 = $b5Evals->get($vId);
-                    $payload5 = $eval5 && is_string($eval5->payload) ? json_decode($eval5->payload, true) : ($eval5->payload ?? []);
-                    $isSempurna5 = ! $eval5 || ((int) $eval5->status_pematuhan === 1) || (($payload5['keputusan_akhir'] ?? '') === 'Sempurna');
-
-                    if ($isSempurna5) {
-                        $passingVendorIds[] = $vId;
-                    }
-                }
+                $passingVendorIds = $this->kiraPetenderLulusKerjaKecil($tender, $eligibleParticipants, false);
 
                 foreach ($eligibleParticipants as $tv) {
                     if (in_array((int) $tv->vendor_id, $passingVendorIds, true)) {
@@ -3385,26 +3361,7 @@ class PenilaianKewanganKerjaController extends Controller
         if ($flowType === 'kerja_kecil_me') {
             DB::transaction(function () use ($tender) {
                 $eligibleParticipants = $this->loadEligibleTechnicalParticipants($tender);
-
-                $b1EvalsMap = TenderKewanganKerjaEvaluation::query()
-                    ->where('tender_id', $tender->id)
-                    ->where('borang_code', 'borang1')
-                    ->get()
-                    ->keyBy('vendor_id');
-
-                $passingVendorIds = [];
-                foreach ($eligibleParticipants as $p) {
-                    $vId = (int) $p->vendor_id;
-                    $eval1 = $b1EvalsMap->get($vId);
-                    if (! $eval1) {
-                        continue;
-                    }
-                    $payload1 = is_string($eval1->payload) ? json_decode($eval1->payload, true) : ($eval1->payload ?? []);
-                    $isSempurna1 = ((int) $eval1->status_pematuhan === 1) || (($payload1['keputusan_akhir'] ?? '') === 'Sempurna');
-                    if ($isSempurna1) {
-                        $passingVendorIds[] = $vId;
-                    }
-                }
+                $passingVendorIds = $this->kiraPetenderLulusKerjaKecil($tender, $eligibleParticipants, true);
 
                 foreach ($eligibleParticipants as $tv) {
                     if (in_array((int) $tv->vendor_id, $passingVendorIds, true)) {
@@ -3867,6 +3824,131 @@ class PenilaianKewanganKerjaController extends Controller
     }
 
     /**
+     * AJAX: Save Borang 15's ticked petender as a draft so the Laporan can be printed before Hantar.
+     */
+    public function simpanPengesyoranBorang15(Request $request, string $tender_no): JsonResponse
+    {
+        $tender = $this->resolveTenderByIdentifier($tender_no);
+
+        if (! $tender) {
+            return response()->json(['message' => 'Tender tidak ditemui.'], 404);
+        }
+
+        if ((int) ($tender->status_process_id ?? 0) !== TenderProcessStatus::penilaianKewanganListStatus()) {
+            return response()->json(['message' => 'Penilaian ini telah dikunci atau selesai.'], 422);
+        }
+
+        $request->validate([
+            'selected_vendors' => 'required|array|min:1',
+        ], [
+            'selected_vendors.required' => 'Sila pilih sekurang-kurangnya satu petender yang disyorkan.',
+            'selected_vendors.min'      => 'Sila pilih sekurang-kurangnya satu petender yang disyorkan.',
+        ]);
+
+        $selectedVendorIds = array_map('intval', (array) $request->input('selected_vendors', []));
+        $eligibleVendorIds = $this->loadEligibleTechnicalParticipants($tender)->pluck('vendor_id')->map(fn ($id) => (int) $id)->toArray();
+        if (array_diff($selectedVendorIds, $eligibleVendorIds) !== []) {
+            return response()->json([
+                'message' => 'Petender yang dipilih tidak layak atau telah disingkirkan pada penilaian terdahulu.',
+            ], 422);
+        }
+
+        $this->simpanDrafLaporan($tender, ['recommended_vendor_ids' => $selectedVendorIds]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Pengesyoran telah disimpan. Laporan kini boleh dijana.',
+        ]);
+    }
+
+    /**
+     * AJAX: Save Borang 6 (selain M&E) or Borang 8 (M&E) result as a draft so the Laporan can be printed before Muktamad.
+     */
+    public function simpanKeputusanKerjaKecil(Request $request, string $tender_no): JsonResponse
+    {
+        $tender = $this->resolveTenderByIdentifier($tender_no);
+
+        if (! $tender) {
+            return response()->json(['message' => 'Tender tidak ditemui.'], 404);
+        }
+
+        if ((int) ($tender->status_process_id ?? 0) !== TenderProcessStatus::penilaianKewanganListStatus()) {
+            return response()->json(['message' => 'Penilaian ini telah dikunci atau selesai.'], 422);
+        }
+
+        $flowType = $tender->getKerjaClassification();
+        if (! in_array($flowType, ['kerja_kecil_me', 'kerja_kecil_other'], true)) {
+            return response()->json(['message' => 'Tender ini bukan Tender Kecil.'], 422);
+        }
+
+        $passingVendorIds = $this->kiraPetenderLulusKerjaKecil(
+            $tender,
+            $this->loadEligibleTechnicalParticipants($tender),
+            $flowType === 'kerja_kecil_me'
+        );
+        $this->simpanDrafLaporan($tender, ['passing_vendor_ids' => $passingVendorIds]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Keputusan penilaian telah disimpan. Laporan kini boleh dijana.',
+        ]);
+    }
+
+    private function simpanDrafLaporan(Tender $tender, array $pengesyoranJustifikasi): void
+    {
+        $laporan = TenderKewanganLaporan::query()->firstOrNew(['tender_id' => $tender->id]);
+        $laporan->fill([
+            'pengesyoran_justifikasi' => $pengesyoranJustifikasi,
+            'status'                  => 'draft',
+            'updated_by'              => Auth::id(),
+        ]);
+        if (! $laporan->exists) {
+            $laporan->created_by = Auth::id();
+        }
+        $laporan->updated_at = now();
+        $laporan->save();
+    }
+
+    /** Tender Kecil final pass rule: Borang 1 Sempurna, and on selain M&E also Borang 5 Sempurna or not evaluated. */
+    private function kiraPetenderLulusKerjaKecil(Tender $tender, Collection $participants, bool $isME): array
+    {
+        $evals = TenderKewanganKerjaEvaluation::query()
+            ->where('tender_id', $tender->id)
+            ->whereIn('borang_code', ['borang1', 'borang5'])
+            ->get();
+        $b1EvalsMap = $evals->where('borang_code', 'borang1')->keyBy('vendor_id');
+        $b5Evals = $evals->where('borang_code', 'borang5')->keyBy('vendor_id');
+
+        $passingVendorIds = [];
+        foreach ($participants as $p) {
+            $vId = (int) $p->vendor_id;
+            $eval1 = $b1EvalsMap->get($vId);
+            if (! $eval1) {
+                continue;
+            }
+            $payload1 = is_string($eval1->payload) ? json_decode($eval1->payload, true) : ($eval1->payload ?? []);
+            $isSempurna1 = ((int) $eval1->status_pematuhan === 1) || (($payload1['keputusan_akhir'] ?? '') === 'Sempurna');
+            if (! $isSempurna1) {
+                continue;
+            }
+            if ($isME) {
+                $passingVendorIds[] = $vId;
+                continue;
+            }
+
+            $eval5 = $b5Evals->get($vId);
+            $payload5 = $eval5 && is_string($eval5->payload) ? json_decode($eval5->payload, true) : ($eval5->payload ?? []);
+            $isSempurna5 = ! $eval5 || ((int) $eval5->status_pematuhan === 1) || (($payload5['keputusan_akhir'] ?? '') === 'Sempurna');
+
+            if ($isSempurna5) {
+                $passingVendorIds[] = $vId;
+            }
+        }
+
+        return $passingVendorIds;
+    }
+
+    /**
      * Compute sequential access control for Borangs based on flow type.
      */
     public function computeBorangAccessList(TenderKewanganProgress $progress, string $flowType = 'kerja_besar'): array
@@ -4155,6 +4237,416 @@ class PenilaianKewanganKerjaController extends Controller
             'message' => 'Laporan Penilaian Kewangan (Kerja) telah berjaya dihantar!',
             'redirect' => route('penilaianKewangan'),
         ]);
+    }
+
+    /**
+     * Printable Laporan Jawatankuasa Penilaian Tender (Tender Kecil selain M&E and M&E, and Tender Besar).
+     */
+    public function cetakLaporan(string $tender_no)
+    {
+        $tender = $this->resolveTenderByIdentifier($tender_no);
+
+        if (! $tender) {
+            abort(404, 'Tender tidak ditemui.');
+        }
+
+        $jpJenis = $this->resolveJpJenis($tender);
+
+        $mesyuarat = PenyediaanMesyuaratMeeting::query()
+            ->where('tender_id', $tender->id)
+            ->whereIn('jenis_jawatankuasa', $jpJenis)
+            ->where('status', 'Dihantar')
+            ->orderBy('tarikh_mesyuarat')
+            ->get();
+
+        // Only petender who submitted, lowest harga tawaran first, priced the same way as the evaluation screens.
+        $petender = $this->resolveAndSortParticipantsByHargaTawaran(
+            $tender,
+            TenderVendor::query()->with('vendor')->where('tender_id', $tender->id)->where('submitted', 1)->get()
+        );
+        $berharga = $petender->filter(fn ($p) => $p->harga_tawaran_resolved !== null)->values();
+        $cutOff = $this->loadCutOff($tender);
+        $refsCutOff = TenderVendor::submittedCutOffVendorRefs($tender->id);
+        // Petender ticked in the submitted cut-off, in harga tawaran order.
+        $terpilih = $petender->filter(fn ($p) => in_array($p->kod_pembekal, $refsCutOff, true))->values();
+        $laporan = TenderKewanganLaporan::query()->where('tender_id', $tender->id)->first();
+
+        $data = [
+            'tender' => $tender,
+            'noTender' => $tender->no_tender ?: ($tender->ref_number ?: '-'),
+            'latarBelakang' => $this->buildLatarBelakang($tender),
+            'jpMembers' => $this->loadJpMembers($tender, $jpJenis),
+            'tarikhPemakluman' => $this->resolveTarikhPemakluman($tender, $jpJenis),
+            'bilanganMesyuarat' => $this->ejaBilangan($mesyuarat->count()),
+            'tarikhMesyuarat' => $mesyuarat
+                ->map(fn ($row) => $this->formatTarikhMalay(Carbon::parse($row->tarikh_mesyuarat)))
+                ->join(', ', ' dan ') ?: null,
+            'gredCidb' => $this->loadGredCidb($tender),
+            'kodBidangCidb' => $this->flattenKodBidang($tender, 'cidb'),
+            'kodBidangMof' => $this->flattenKodBidang($tender, 'mof'),
+            // Matches canParticipate(): anything other than 'and' behaves as OR.
+            'mofCidbRule' => strtoupper((string) ($tender->mof_cidb_rule ?: 'or')) === 'AND' ? 'DAN' : 'ATAU',
+            // Kerja's Teknikal page is a spec and pricing table, so it shows as one fixed last row (analyst's call).
+            'senaraiDokumen' => $this->loadDokumenKewangan($tender)
+                ->map(fn ($item) => $item->title ?: '-')
+                ->push('Dokumen Spesifikasi')
+                ->map(fn (string $keterangan, int $idx) => [
+                    'bil' => $idx + 1,
+                    'keterangan' => $keterangan,
+                    'lampiran' => 'Lampiran ' . chr(65 + $idx),
+                ]),
+            'bilanganPetender' => ucwords($this->ejaBilangan($petender->count())),
+            'petenderTerendah' => $berharga->first(),
+            'petenderTertinggi' => $berharga->count() > 1 ? $berharga->last() : null,
+            'jadualHarga' => $petender->map(function ($p, int $idx) use ($cutOff) {
+                $bwam = $cutOff->get((string) $p->kod_pembekal)['pct_bwam'] ?? null;
+
+                return [
+                    'bil' => $idx + 1,
+                    'kod_pembekal' => $p->kod_pembekal ?: '-',
+                    'harga' => $p->harga_tawaran_resolved !== null ? number_format($p->harga_tawaran_resolved, 2) : '-',
+                    'bwam' => is_numeric($bwam) ? number_format($bwam * 100, 2) . '%' : ($bwam ?: '-'),
+                ];
+            }),
+            // Same figure Borang 2 checks against: 3% of harga indikatif.
+            'modalMinimum' => number_format((float) ($tender->harga_indikatif ?? 0) * 0.03, 2),
+            'bilanganLulusCutOff' => $this->ejaBilangan($cutOff->where('pct_bwam', '!==', 'FREAK')->count()),
+            'bilanganTerpilih' => $this->ejaBilangan($terpilih->count()),
+            'kodTerpilih' => $terpilih->pluck('kod_pembekal')->join(', ', ', dan ') ?: '-',
+            'tarikhPenilaian' => $laporan?->updated_at ? $this->formatTarikhMalay(Carbon::parse($laporan->updated_at)) : null,
+        ];
+
+        if ($tender->getKerjaClassification() === 'kerja_besar') {
+            return $this->laporanAtauWord(view('newModule.penilaian_kewangan.penilaian.kerja_besar.laporan_cetak', $data + $this->buildPenilaianTenderBesar($tender, $petender, $terpilih, $laporan)), $tender);
+        }
+
+        return $this->laporanAtauWord(view('newModule.penilaian_kewangan.penilaian.kerja_kecil.laporan_cetak', $data + $this->buildPenilaianTenderKecil($tender, $petender, $terpilih, $laporan)), $tender);
+    }
+
+    /** ?format=word downloads the same report as a Word document. */
+    private function laporanAtauWord(\Illuminate\Contracts\View\View $laporan, Tender $tender)
+    {
+        if (request()->query('format') !== 'word') {
+            return $laporan;
+        }
+
+        $tajuk = 'Laporan Jawatankuasa Penilaian - ' . str_replace(['/', '\\'], '-', $tender->no_tender ?: ($tender->ref_number ?: (string) $tender->id));
+
+        return response(\App\Support\LaporanPenilaianWord::convert($laporan->render(), $tajuk))
+            ->header('Content-Type', 'application/vnd.ms-word; charset=utf-8')
+            ->header('Content-Disposition', 'attachment; filename="' . $tajuk . '.doc"');
+    }
+
+    /** Tender Kecil: Peringkat Pertama is Borang 1, Peringkat Kedua is the pass list saved by Simpan or Muktamad. */
+    private function buildPenilaianTenderKecil(Tender $tender, Collection $petender, Collection $terpilih, ?TenderKewanganLaporan $laporan): array
+    {
+        $lulusDisimpan = $laporan?->pengesyoran_justifikasi['passing_vendor_ids'] ?? null;
+        $kelayakanAsas = TenderKewanganKerjaEvaluation::query()->where('tender_id', $tender->id)->where('borang_code', 'borang1')->get()->keyBy('vendor_id');
+        $peringkatPertama = $terpilih->map(function ($p, int $idx) use ($kelayakanAsas) {
+            $eval = $kelayakanAsas->get($p->vendor_id);
+
+            return [
+                'bil' => $idx + 1,
+                'vendor_id' => $p->vendor_id,
+                'kod_pembekal' => $p->kod_pembekal,
+                'lulus' => $this->isSempurna($eval),
+                'ulasan' => $this->sebabGagal($eval, fn ($k, $no) => "Kriteria {$no} (" . ($k['name'] ?? '-') . ')') ?: ($p->eliminated_reason ?: '-'),
+            ];
+        });
+        $lulusPertama = $peringkatPertama->where('lulus', true);
+        $teknikal = TenderKewanganKerjaEvaluation::query()->where('tender_id', $tender->id)->where('borang_code', 'borang7')->get()->keyBy('vendor_id');
+        $peringkatKedua = $terpilih->whereIn('vendor_id', $lulusPertama->pluck('vendor_id'))->values()->map(function ($p, int $idx) use ($teknikal, $lulusDisimpan) {
+            $b7 = $teknikal->get($p->vendor_id);
+
+            return [
+                'bil' => $idx + 1,
+                'vendor_id' => $p->vendor_id,
+                'kod_pembekal' => $p->kod_pembekal,
+                'lulus' => in_array((int) $p->vendor_id, (array) $lulusDisimpan, true),
+                'ulasan' => $lulusDisimpan === null ? 'Keputusan belum disimpan.' : ($p->eliminated_reason ?: 'Tidak melepasi penilaian Peringkat Kedua.'),
+                'lulus_teknikal' => $b7 && ($b7->status_pematuhan === 1 || ($b7->payload['keputusan'] ?? '') === 'Lulus'),
+                'ulasan_teknikal' => $b7?->catatan ?: 'Tidak lulus penilaian teknikal.',
+            ];
+        });
+        $lulusKedua = $peringkatKedua->where('lulus', true);
+        $disyorkan = $lulusKedua->first();
+
+        return [
+            'isME' => $tender->isKerjaKecilMe(),
+            'peringkatPertama' => $peringkatPertama,
+            'bilanganLulusPertama' => $this->ejaBilangan($lulusPertama->count()),
+            'kodLulusPertama' => $lulusPertama->pluck('kod_pembekal')->join(', ', ', dan ') ?: '-',
+            'peringkatKedua' => $peringkatKedua,
+            'bilanganLulusKedua' => $this->ejaBilangan($lulusKedua->count()),
+            'kodLulusKedua' => $lulusKedua->pluck('kod_pembekal')->join(', ', ' dan ') ?: '-',
+            'disyorkan' => $disyorkan ? $this->formatDisyorkan($petender->firstWhere('vendor_id', $disyorkan['vendor_id'])) : null,
+        ];
+    }
+
+    /** Tender Besar: Pertama is Borang 1 then 5, Kedua is Borang 12's result, Ketiga passes everyone left; 8.1 is the cheapest Borang 15 tick. */
+    private function buildPenilaianTenderBesar(Tender $tender, Collection $petender, Collection $terpilih, ?TenderKewanganLaporan $laporan): array
+    {
+        $evals = TenderKewanganKerjaEvaluation::query()->where('tender_id', $tender->id)->whereIn('borang_code', ['borang1', 'borang5'])->get();
+        $kelayakanAsas = $evals->where('borang_code', 'borang1')->keyBy('vendor_id');
+        $peringkatPertamaEval = $evals->where('borang_code', 'borang5')->keyBy('vendor_id');
+        $peringkatPertama = $terpilih->map(function ($p, int $idx) use ($kelayakanAsas, $peringkatPertamaEval) {
+            $b1 = $kelayakanAsas->get($p->vendor_id);
+            $b5 = $peringkatPertamaEval->get($p->vendor_id);
+            $ulasan = $this->isSempurna($b1)
+                ? $this->sebabGagal($b5, fn ($k) => $k['label'] ?? '-')
+                : $this->sebabGagal($b1, fn ($k, $no) => "Kriteria {$no} (" . ($k['name'] ?? '-') . ')');
+
+            return [
+                'bil' => $idx + 1,
+                'vendor_id' => $p->vendor_id,
+                'kod_pembekal' => $p->kod_pembekal,
+                'lulus' => $this->isSempurna($b1) && $this->isSempurna($b5),
+                'ulasan' => $ulasan ?: ($p->eliminated_reason ?: '-'),
+            ];
+        });
+        $lulusPertama = $peringkatPertama->where('lulus', true);
+
+        $borang12 = $this->getBorang($tender->uuid, 'borang12');
+        $keputusanBorang12 = collect($borang12 instanceof \Illuminate\View\View ? ($borang12->getData()['b12VendorSummary'] ?? []) : []);
+        $peringkatKedua = $lulusPertama->values()->map(function (array $row, int $idx) use ($keputusanBorang12) {
+            $b12 = $keputusanBorang12->get($row['vendor_id']);
+
+            return [
+                'bil' => $idx + 1,
+                'kod_pembekal' => $row['kod_pembekal'],
+                'lulus' => ($b12['keputusan'] ?? null) === 'LULUS',
+                'ulasan' => $b12 ? "Markah keseluruhan {$b12['markah']} kurang daripada 50." : 'Belum dinilai.',
+            ];
+        });
+        $lulusKedua = $peringkatKedua->where('lulus', true);
+        $ditanda = $petender->whereIn('vendor_id', (array) ($laporan?->pengesyoran_justifikasi['recommended_vendor_ids'] ?? []))->values();
+
+        return [
+            'peringkatPertama' => $peringkatPertama,
+            'bilanganLulusPertama' => $this->ejaBilangan($lulusPertama->count()),
+            'kodLulusPertama' => $lulusPertama->pluck('kod_pembekal')->join(', ', ', dan ') ?: '-',
+            'peringkatKedua' => $peringkatKedua,
+            'peringkatKetiga' => $lulusKedua->values()->map(fn (array $row, int $idx) => ['bil' => $idx + 1, 'kod_pembekal' => $row['kod_pembekal']]),
+            'bilanganLulusKedua' => $this->ejaBilangan($lulusKedua->count()),
+            'kodLulusKedua' => $lulusKedua->pluck('kod_pembekal')->join(', ', ' dan ') ?: '-',
+            'disyorkan' => $ditanda->isNotEmpty() ? $this->formatDisyorkan($ditanda->first()) : null,
+        ];
+    }
+
+    private function isSempurna(?TenderKewanganKerjaEvaluation $eval): bool
+    {
+        return $eval && ($eval->status_pematuhan === 1 || ($eval->payload['keputusan_akhir'] ?? '') === 'Sempurna');
+    }
+
+    /** Typed catatan of each failed kriteria, or its name when the catatan was left blank. */
+    private function sebabGagal(?TenderKewanganKerjaEvaluation $eval, callable $nama): string
+    {
+        return collect($eval?->payload['kriteria'] ?? [])
+            ->sortKeys()
+            ->filter(fn ($k) => in_array($k['status'] ?? '', ['Tidak Sempurna', 'Tidak'], true))
+            ->map(fn ($k, $kunci) => trim((string) ($k['catatan'] ?? '')) ?: $nama($k, $kunci))
+            ->join('; ');
+    }
+
+    private function formatDisyorkan(TenderVendor $p): array
+    {
+        $harga = (float) ($p->harga_tawaran_resolved ?? 0);
+
+        return [
+            'kod_pembekal' => $p->kod_pembekal,
+            'harga' => number_format($harga, 2),
+            'harga_perkataan' => $this->ejaRinggit($harga),
+        ];
+    }
+
+    /** Ringgit amount in Malay words, e.g. "Seratus Ribu Dan Sen Lima Puluh". */
+    private function ejaRinggit(float $amount): string
+    {
+        $eja = new \NumberFormatter('ms', \NumberFormatter::SPELLOUT);
+        $jumlahSen = (int) round($amount * 100);
+        $sen = $jumlahSen % 100;
+
+        return ucwords($eja->format(intdiv($jumlahSen, 100)) . ($sen > 0 ? ' dan sen ' . $eja->format($sen) : ''));
+    }
+
+    /** Malay number in words with its digits, e.g. "empat (4)". */
+    private function ejaBilangan(int $bilangan): string
+    {
+        return (new \NumberFormatter('ms', \NumberFormatter::SPELLOUT))->format($bilangan) . " ({$bilangan})";
+    }
+
+    /** STOS cut-off rows keyed by kod pembekal, without the AJ row; empty when STOS can't be reached. */
+    private function loadCutOff(Tender $tender): Collection
+    {
+        try {
+            $response = app(StosBackendClient::class)->getCutOffTender($tender->uuid);
+        } catch (\Throwable $e) {
+            return collect();
+        }
+
+        return collect($response->successful() ? $response->json('data.vendors_cutoff') : [])
+            ->reject(fn ($row) => ! empty($row['is_aj']))
+            ->keyBy(fn ($row) => (string) ($row['ruj'] ?? ''));
+    }
+
+    /** The Senarai Semak Kewangan Kerja documents; PTJ files the petender only downloads are left out, as in the Kewangan report. */
+    private function loadDokumenKewangan(Tender $tender): Collection
+    {
+        $header = KewanganKerjaHeader::query()
+            ->where('tender_id', $tender->id)
+            ->with('items')
+            ->first();
+
+        return collect($header?->items ?? [])
+            ->reject(fn ($item) => $item->mechanism === ChecklistMechanism::PTJ_MUAT_NAIK
+                && $item->vendor_action === ChecklistMechanism::VENDOR_ACTION_MUAT_TURUN)
+            ->values();
+    }
+
+    private function loadGredCidb(Tender $tender): Collection
+    {
+        return TenderCode::query()
+            ->with('code')
+            ->where('tender_id', $tender->id)
+            ->where('code_type', 'cidb-g')
+            ->orderBy('id')
+            ->get()
+            ->filter(fn (TenderCode $row) => $row->code)
+            ->map(fn (TenderCode $row) => $row->code->code)
+            ->values();
+    }
+
+    /** Each row carries the operator to the next: inner_rule within a group, join_rule between groups. */
+    private function flattenKodBidang(Tender $tender, string $codeType): Collection
+    {
+        $groups = TenderCode::query()
+            ->with('code')
+            ->where('tender_id', $tender->id)
+            ->where('code_type', $codeType)
+            ->orderBy('order')
+            ->orderBy('id')
+            ->get()
+            ->filter(fn (TenderCode $row) => $row->code)
+            ->groupBy('order')
+            ->values();
+
+        $rows = collect();
+
+        foreach ($groups as $groupIndex => $group) {
+            $items = $group->values();
+
+            foreach ($items as $itemIndex => $row) {
+                $isLastInGroup = $itemIndex === $items->count() - 1;
+                $isLastGroup = $groupIndex === $groups->count() - 1;
+
+                $operator = null;
+                if (! $isLastInGroup) {
+                    $operator = $row->inner_rule;
+                } elseif (! $isLastGroup) {
+                    $operator = $row->join_rule;
+                }
+
+                $rows->push([
+                    'kod' => $row->code->code,
+                    'keterangan' => preg_replace('/\s+/', ' ', trim((string) $row->code->name)),
+                    'operator' => $operator ? ($operator === 'and' ? 'DAN' : 'ATAU') : null,
+                ]);
+            }
+        }
+
+        return $rows;
+    }
+
+    /** 'fin' on 2-peringkat; 1-peringkat has no such tab and uses 'eval'/'harga'. */
+    private function resolveJpJenis(Tender $tender): array
+    {
+        $hasFin = Jawatankuasa::query()
+            ->where('tender_id', $tender->id)
+            ->where('jenis_jawatankuasa', 'fin')
+            ->whereNotNull('user_id')
+            ->exists();
+
+        return $hasFin ? ['fin'] : $this->committeeJenisForResolvedTenders;
+    }
+
+    private function loadJpMembers(Tender $tender, array $jenisList): Collection
+    {
+        $perananLabels = ['1' => 'Pengerusi', '2' => 'Setiausaha', '3' => 'Ahli'];
+
+        return Jawatankuasa::query()
+            ->with('user.organizationunit')
+            ->where('tender_id', $tender->id)
+            ->whereIn('jenis_jawatankuasa', $jenisList)
+            ->whereNotNull('user_id')
+            ->orderBy('peranan')
+            ->orderBy('id')
+            ->get()
+            ->filter(fn (Jawatankuasa $row) => $row->user)
+            ->values()
+            ->map(fn (Jawatankuasa $row) => [
+                'peranan_label' => $perananLabels[(string) $row->peranan] ?? 'Ahli',
+                'name' => $row->user->name,
+                'jawatan' => $row->user->jawatan ?: null,
+                'department' => $row->user->department ?: null,
+                'agensi' => optional($row->user->organizationunit)->name,
+                'tarikh_lantikan' => optional($row->dihantar_pemakluman_pada)->format('d.m.Y') ?: '-',
+            ]);
+    }
+
+    private function resolveTarikhPemakluman(Tender $tender, array $jenisList): ?string
+    {
+        $tarikh = Jawatankuasa::query()
+            ->where('tender_id', $tender->id)
+            ->whereIn('jenis_jawatankuasa', $jenisList)
+            ->whereNotNull('dihantar_pemakluman_pada')
+            ->min('dihantar_pemakluman_pada');
+
+        return $tarikh ? $this->formatTarikhMalay(Carbon::parse($tarikh)) : null;
+    }
+
+    /** @return array<string, mixed> */
+    private function buildLatarBelakang(Tender $tender): array
+    {
+        $iklanRecord = PenyediaanIklan::query()->where('tender_id', $tender->id)->first();
+        $iklanMeta = ($iklanRecord && is_array($iklanRecord->meta)) ? ($iklanRecord->meta['iklan'] ?? []) : [];
+        $tempohSahLaku = $iklanMeta['tempoh_sah_laku'] ?? null;
+        $tarikhSahLaku = ($tempohSahLaku && $tender->submission_datetime)
+            ? $this->formatTarikhMalay(Carbon::parse($tender->submission_datetime)->addDays((int) $tempohSahLaku))
+            : null;
+
+        $anggaran = $tender->anggaran_jabatan;
+        $jenis = ($tender->invitation || (int) $tender->jenis_tender_id === 3) ? 'Terhad' : 'Terbuka';
+        $unit = (string) $tender->tempoh_siap_unit === '2' ? 'Bulan' : 'Minggu';
+        $bilanganDokumen = TenderVendor::query()->where('tender_id', $tender->id)->where('submitted', 1)->count();
+
+        return [
+            'agensi_pelaksana' => $tender->tenderer?->name ?: '-',
+            'kaedah_perolehan' => 'Tender ' . $jenis . ' Melalui Sistem Tender Online Selangor',
+            'anggaran_jabatan' => (float) $anggaran > 0 ? 'RM' . number_format((float) $anggaran, 2) : '-',
+            'tempoh_siap' => $tender->tempoh_siap_val ? $tender->tempoh_siap_val . ' ' . $unit : '-',
+            'tarikh_iklan' => $this->formatJulatTarikhMalay($tender->advertise_start_date, $tender->advertise_stop_date),
+            'tarikh_jual' => $this->formatJulatTarikhMalay($tender->document_start_date, $tender->document_stop_date),
+            'tarikh_tutup' => $tender->submission_datetime ? $this->formatTarikhMalay(Carbon::parse($tender->submission_datetime)) : '-',
+            'masa_tutup' => $tender->masa_tutup_display,
+            'tempoh_sah_laku' => $tarikhSahLaku ? $tempohSahLaku . ' hari selepas tarikh tutup tender (' . $tarikhSahLaku . ')' : '-',
+            'bilangan_dokumen' => ucwords((new \NumberFormatter('ms', \NumberFormatter::SPELLOUT))->format($bilanganDokumen)) . " ({$bilanganDokumen})",
+        ];
+    }
+
+    private function formatJulatTarikhMalay($mula, $tamat): string
+    {
+        if (! $mula || ! $tamat) {
+            return '-';
+        }
+
+        return $this->formatTarikhMalay(Carbon::parse($mula)) . ' – ' . $this->formatTarikhMalay(Carbon::parse($tamat));
+    }
+
+    private function formatTarikhMalay(Carbon $date): string
+    {
+        $bulanMs = ['', 'Januari', 'Februari', 'Mac', 'April', 'Mei', 'Jun', 'Julai', 'Ogos', 'September', 'Oktober', 'November', 'Disember'];
+
+        return $date->day . ' ' . $bulanMs[$date->month] . ' ' . $date->year;
     }
 
     /**

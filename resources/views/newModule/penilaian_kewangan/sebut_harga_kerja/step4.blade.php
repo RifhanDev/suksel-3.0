@@ -253,13 +253,13 @@
                     <label class="form-label small text-secondary fw-semibold mb-2">
                         Ulasan Keseluruhan Kewangan & Keupayaan Kerja:
                     </label>
-                    <textarea class="form-control" id="laporanJustifikasiText" rows="5" placeholder="Nyatakan ulasan terperinci mengenai kelayakan petender dan syor perolehan...">Berdasarkan penilaian pematuhan dokumentasi, kedudukan modal pusingan, dan komitmen kerja semasa, petender yang disenaraikan telah membuktikan keupayaan kewangan serta teknikal yang mencukupi untuk melaksanakan skop kerja projek ini mengikut jadual yang ditetapkan tanpa risiko kegagalan.</textarea>
+                    <textarea class="form-control" id="laporanJustifikasiText" rows="5" placeholder="Nyatakan ulasan terperinci mengenai kelayakan petender dan syor perolehan...">Dengan ini, JPT mengesyorkan penyebut harga yang melepasi untuk melaksanakan projek ini untuk dibawa ke mesyuarat Jawatankuasa Sebut Harga berdasarkan justifikasi yang ditetapkan.</textarea>
                 </div>
                 <div>
                     <label class="form-label small text-secondary fw-semibold mb-2">
                         Syarat Tambahan / Arahan Khas (Jika Ada):
                     </label>
-                    <input type="text" class="form-control" id="laporanSyaratKhasInput" value="Petender disyorkan dikehendaki mengemukakan Bon Pelaksanaan dalam tempoh 14 hari selepas penerimaan Surat Setuju Terima (SST)." placeholder="Syarat-syarat khas...">
+                    <input type="text" class="form-control" id="laporanSyaratKhasInput" value="" placeholder="Syarat-syarat khas...">
                 </div>
             </div>
         </div>
@@ -307,9 +307,9 @@
             <span>Kembali ke Langkah 3 (Penilaian Kerja)</span>
         </button>
         <div class="d-flex flex-wrap align-items-center gap-2">
-            <button type="button" class="btn btn-outline-danger d-inline-flex align-items-center gap-1.5" id="btnCetakDrafLaporan">
+            <button type="button" class="btn btn-outline-secondary px-4 fw-semibold d-inline-flex align-items-center gap-2" id="btnCetakDrafLaporan">
                 <i class="bi bi-printer"></i>
-                <span>Cetak Draf Laporan (PDF)</span>
+                <span>Laporan</span>
             </button>
             <button type="button" class="btn btn-outline-secondary d-inline-flex align-items-center gap-1.5" id="btnSimpanDrafLaporan">
                 <i class="bi bi-floppy"></i>
