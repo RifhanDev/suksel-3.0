@@ -17,6 +17,8 @@ class KakitanganTeknikalController extends Controller
 {
     use HandlesTenderFormAccess, AuthorizesTenderFileAccess;
 
+    private const MAX_UPLOAD_KB = 25600;
+
     public function create(?string $tenderUuid = null)
     {
         if (! $tenderUuid) {
@@ -74,6 +76,12 @@ class KakitanganTeknikalController extends Controller
             return response()->json(['success' => false, 'message' => 'Tender tidak ditemui.'], 404);
         }
         $this->ensureTenderFormAccess($tender);
+        $this->ensureFormEditable();
+
+        $vendorId = $this->vendorId();
+        if ($this->isVendorFormMode() && ! $vendorId) {
+            abort(403, 'Akaun vendor tidak dikenal pasti.');
+        }
 
         $validated = $request->validate([
             'nama_pegawai'         => ['required', 'string', 'max:255'],
@@ -81,16 +89,16 @@ class KakitanganTeknikalController extends Controller
             'jumlah_pengalaman'    => ['required', 'integer', 'min:0'],
             'sijil_professional'   => ['nullable', 'string', 'max:1000'],
             'kakitangan_dokumen'   => ['required', 'array', 'min:1'],
-            'kakitangan_dokumen.*' => ['file', 'max:10240', \App\Support\AllowedAttachment::mimesRule()],
+            'kakitangan_dokumen.*' => ['file', 'max:' . self::MAX_UPLOAD_KB, \App\Support\AllowedAttachment::mimesRule()],
         ], [
             'nama_pegawai.required'       => 'Sila isi nama pegawai.',
             'tahap_pendidikan.required'   => 'Sila pilih tahap pendidikan tertinggi.',
             'jumlah_pengalaman.required'  => 'Sila isi jumlah pengalaman.',
             'kakitangan_dokumen.required' => 'Sila muat naik sekurang-kurangnya satu dokumen sokongan.',
             'kakitangan_dokumen.min'      => 'Sila muat naik sekurang-kurangnya satu dokumen sokongan.',
+            'kakitangan_dokumen.*.max'    => 'Setiap fail dokumen kakitangan tidak boleh melebihi 25 MB.',
         ]);
 
-        $vendorId = $this->resolveVendorId();
         $kategori = TenderKakitanganTeknikal::calculateKategori(
             $validated['tahap_pendidikan'],
             $validated['sijil_professional'] ?? null
@@ -109,7 +117,9 @@ class KakitanganTeknikalController extends Controller
                 'jumlah_pengalaman'  => (int) $validated['jumlah_pengalaman'],
                 'sijil_professional' => $validated['sijil_professional'] ?? null,
                 'kategori'           => $kategori,
-                'sort_order'         => TenderKakitanganTeknikal::where('tender_uuid', $tender->uuid)->count() + 1,
+                'sort_order'         => TenderKakitanganTeknikal::where('tender_uuid', $tender->uuid)
+                    ->where('vendor_id', $vendorId)
+                    ->count() + 1,
             ]);
 
             // Save uploaded files
@@ -120,7 +130,7 @@ class KakitanganTeknikalController extends Controller
                     }
                     $originalName = $file->getClientOriginalName();
                     $storedName   = Str::uuid() . '.' . $file->getClientOriginalExtension();
-                    $path         = $file->storeAs("kakitangan-teknikal/{$tender->uuid}" . ($vendorId ? "/{$vendorId}" : ''), $storedName, 'public');
+                    $path         = $file->storeAs("kakitangan-teknikal/{$tender->uuid}/{$vendorId}/staff/{$staffUuid}", $storedName, 'public');
 
                     TenderKakitanganTeknikalDokumen::create([
                         'uuid'            => (string) Str::uuid(),
@@ -177,9 +187,9 @@ class KakitanganTeknikalController extends Controller
         $this->ensureFormEditable();
 
         $user = auth()->user();
-        if ($user && ! $user->hasRole('Admin') && ! $user->can('tender:specification-management')) {
+        if ($this->isVendorFormMode()) {
             $vendorId = (int) ($user->vendor_id ?? 0);
-            if ($vendorId <= 0 || ($staff->vendor_id && (int) $staff->vendor_id !== $vendorId)) {
+            if ($vendorId <= 0 || (int) $staff->vendor_id !== $vendorId) {
                 abort(403, 'Akses tidak dibenarkan.');
             }
         }
@@ -190,7 +200,7 @@ class KakitanganTeknikalController extends Controller
             'jumlah_pengalaman'    => ['required', 'integer', 'min:0'],
             'sijil_professional'   => ['nullable', 'string', 'max:1000'],
             'kakitangan_dokumen'   => ['nullable', 'array'],
-            'kakitangan_dokumen.*' => ['file', 'max:10240', \App\Support\AllowedAttachment::mimesRule()],
+            'kakitangan_dokumen.*' => ['file', 'max:' . self::MAX_UPLOAD_KB, \App\Support\AllowedAttachment::mimesRule()],
         ]);
 
         $newFilesCount = $request->hasFile('kakitangan_dokumen') ? count($request->file('kakitangan_dokumen')) : 0;
@@ -226,7 +236,7 @@ class KakitanganTeknikalController extends Controller
                     }
                     $originalName = $file->getClientOriginalName();
                     $storedName   = Str::uuid() . '.' . $file->getClientOriginalExtension();
-                    $path         = $file->storeAs("kakitangan-teknikal/{$staff->tender_uuid}" . ($staff->vendor_id ? "/{$staff->vendor_id}" : ''), $storedName, 'public');
+                    $path         = $file->storeAs("kakitangan-teknikal/{$staff->tender_uuid}/{$staff->vendor_id}/staff/{$staff->uuid}", $storedName, 'public');
 
                     TenderKakitanganTeknikalDokumen::create([
                         'uuid'            => (string) Str::uuid(),
@@ -284,9 +294,9 @@ class KakitanganTeknikalController extends Controller
         $this->ensureFormEditable();
 
         $user = auth()->user();
-        if ($user && ! $user->hasRole('Admin') && ! $user->can('tender:specification-management')) {
+        if ($this->isVendorFormMode()) {
             $vendorId = (int) ($user->vendor_id ?? 0);
-            if ($vendorId <= 0 || ($staff->vendor_id && (int) $staff->vendor_id !== $vendorId)) {
+            if ($vendorId <= 0 || (int) $staff->vendor_id !== $vendorId) {
                 abort(403, 'Akses tidak dibenarkan.');
             }
         }
@@ -350,10 +360,20 @@ class KakitanganTeknikalController extends Controller
             $this->ensureFormEditable();
         }
 
-        if (! $user->hasRole('Admin') && ! $user->can('tender:specification-management')) {
+        if (! $this->userCanReviewTenderFiles($user, $tender)) {
             $vendorId = (int) ($user->vendor_id ?? 0);
-            if ($vendorId <= 0 || ($dokumen->vendor_id && (int) $dokumen->vendor_id !== $vendorId)) {
+            if ($vendorId <= 0 || (int) $dokumen->vendor_id !== $vendorId) {
                 abort(403, 'Akses tidak dibenarkan.');
+            }
+        }
+
+        if (! empty($dokumen->kakitangan_uuid)) {
+            $staff = TenderKakitanganTeknikal::where('uuid', $dokumen->kakitangan_uuid)
+                ->where('tender_uuid', $dokumen->tender_uuid)
+                ->where('vendor_id', $dokumen->vendor_id)
+                ->first();
+            if (! $staff) {
+                abort(404, 'Rekod kakitangan bagi dokumen ini tidak ditemui.');
             }
         }
 
@@ -400,7 +420,25 @@ class KakitanganTeknikalController extends Controller
             abort(404, 'Tender tidak dijumpai.');
         }
 
+        $user = auth()->user();
+        if ($user && ! $this->userCanReviewTenderFiles($user, $tender)) {
+            $vendorId = (int) ($user->vendor_id ?? 0);
+            if ($vendorId <= 0 || (int) $dokumen->vendor_id !== $vendorId) {
+                abort(403, 'Akses fail tidak dibenarkan.');
+            }
+        }
+
         $this->assertCanAccessTenderFile($tender, $dokumen->vendor_id ? (int) $dokumen->vendor_id : null);
+
+        if (! empty($dokumen->kakitangan_uuid)) {
+            $staffExists = TenderKakitanganTeknikal::where('uuid', $dokumen->kakitangan_uuid)
+                ->where('tender_uuid', $dokumen->tender_uuid)
+                ->where('vendor_id', $dokumen->vendor_id)
+                ->exists();
+            if (! $staffExists) {
+                abort(404, 'Rekod kakitangan bagi dokumen ini tidak ditemui.');
+            }
+        }
 
         return StosStoredFile::response([
             'path' => $dokumen->path,
@@ -418,15 +456,20 @@ class KakitanganTeknikalController extends Controller
         $this->ensureTenderFormAccess($tender);
         $this->ensureFormEditable();
 
+        $vendorId = $this->vendorId();
+        if ($this->isVendorFormMode() && ! $vendorId) {
+            abort(403, 'Akaun vendor tidak dikenal pasti.');
+        }
+
         $request->validate([
             'dokumen_umum'   => ['required', 'array', 'min:1'],
-            'dokumen_umum.*' => ['file', 'max:10240', \App\Support\AllowedAttachment::mimesRule()],
+            'dokumen_umum.*' => ['file', 'max:' . self::MAX_UPLOAD_KB, \App\Support\AllowedAttachment::mimesRule()],
         ], [
             'dokumen_umum.required' => 'Sila muat naik sekurang-kurangnya satu dokumen sokongan.',
             'dokumen_umum.min'      => 'Sila muat naik sekurang-kurangnya satu dokumen sokongan.',
+            'dokumen_umum.*.max'    => 'Setiap fail dokumen sokongan keseluruhan tidak boleh melebihi 25 MB.',
         ]);
 
-        $vendorId = $this->resolveVendorId();
         $savedFiles = [];
 
         DB::beginTransaction();
@@ -438,7 +481,7 @@ class KakitanganTeknikalController extends Controller
                     }
                     $originalName = $file->getClientOriginalName();
                     $storedName   = Str::uuid() . '.' . $file->getClientOriginalExtension();
-                    $path         = $file->storeAs("kakitangan-teknikal/{$tender->uuid}" . ($vendorId ? "/{$vendorId}" : ''), $storedName, 'public');
+                    $path         = $file->storeAs("kakitangan-teknikal/{$tender->uuid}/{$vendorId}/overall", $storedName, 'public');
 
                     $doc = TenderKakitanganTeknikalDokumen::create([
                         'uuid'            => (string) Str::uuid(),

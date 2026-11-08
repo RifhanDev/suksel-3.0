@@ -33,7 +33,7 @@ class StosTenderChecklistSync
 
         try {
             if ((int) ($tender->kategori_perolehan_id ?? 0) === 3) {
-                $this->syncSpesifikasiKerja($tender);
+                // Kerja specification headers and BQ documents are owned by SUKSel.
                 $this->syncKewanganKerja($tender);
 
                 return;
@@ -81,11 +81,13 @@ class StosTenderChecklistSync
                 'technical_checklist_header_id',
                 $header->id,
                 $data['items'] ?? [],
-                fn (array $item) => [
+                fn (array $item, ?TechnicalChecklistItem $existing = null) => [
                     'source_type' => $item['source_type'] ?? 'manual',
                     'title' => $item['title'] ?? '',
                     'mechanism' => $item['mechanism'] ?? null,
                     'vendor_action' => $item['vendor_action'] ?? null,
+                    'penghantaran_fizikal' => (int) $tender->penilaian_fizikal === 1
+                        && (bool) ($item['penghantaran_fizikal'] ?? $existing?->penghantaran_fizikal ?? false),
                     'score' => $item['score'] ?? 0,
                     'status' => $item['status'] ?? 'draft',
                     'sort_order' => $item['sort_order'] ?? 0,
@@ -127,11 +129,13 @@ class StosTenderChecklistSync
                 'financial_checklist_header_id',
                 $header->id,
                 $data['items'] ?? [],
-                fn (array $item) => [
+                fn (array $item, ?FinancialChecklistItem $existing = null) => [
                     'source_type' => $item['source_type'] ?? 'manual',
                     'title' => $item['title'] ?? '',
                     'mechanism' => $item['mechanism'] ?? null,
                     'vendor_action' => $item['vendor_action'] ?? null,
+                    'penghantaran_fizikal' => (int) $tender->penilaian_fizikal === 1
+                        && (bool) ($item['penghantaran_fizikal'] ?? $existing?->penghantaran_fizikal ?? false),
                     'score' => $item['score'] ?? 0,
                     'status' => $item['status'] ?? 'draft',
                     'sort_order' => $item['sort_order'] ?? 0,
@@ -292,6 +296,7 @@ class StosTenderChecklistSync
                     'title' => $item['title'] ?? '',
                     'mechanism' => $item['mechanism'] ?? null,
                     'vendor_action' => $item['vendor_action'] ?? null,
+                    'penghantaran_fizikal' => (int) $tender->penilaian_fizikal === 1 && (bool) ($item['penghantaran_fizikal'] ?? false),
                     'score' => $item['score'] ?? 0,
                     'status' => $item['status'] ?? 'draft',
                     'sort_order' => $item['sort_order'] ?? 0,
@@ -327,7 +332,7 @@ class StosTenderChecklistSync
                 $headerForeignKey => $headerId,
             ]);
 
-            $payload = $mapPayload($item);
+            $payload = $mapPayload($item, $record);
             $payload['sort_order'] = $payload['sort_order'] ?? $index;
 
             $record->fill($payload)->save();

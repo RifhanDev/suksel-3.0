@@ -342,6 +342,7 @@ Route::middleware(['auth'])->group(function () {
 	Route::get('/perincian-page', [PenyediaanMesyuaratController::class, 'show'])->name('perincianPage');
 	Route::post('/penyediaan-mesyuarat/simpan', [PenyediaanMesyuaratController::class, 'simpan'])->name('penyediaanMesyuarat.simpan');
 	Route::post('/penyediaan-mesyuarat/hantar', [PenyediaanMesyuaratController::class, 'hantar'])->name('penyediaanMesyuarat.hantar');
+	Route::post('/penyediaan-mesyuarat/kemaskini-ahli', [PenyediaanMesyuaratController::class, 'kemaskiniAhli'])->name('penyediaanMesyuarat.kemaskiniAhli');
 
 	Route::get('/index-jawatankuasa', [PenyediaanMesyuaratController::class, 'indexKehadiran'])->name('jawatankuasaMesyuarat');
 	Route::get('/jawatankuasa-page', [PenyediaanMesyuaratController::class, 'showKehadiran'])->name('jawatankuasaPage');

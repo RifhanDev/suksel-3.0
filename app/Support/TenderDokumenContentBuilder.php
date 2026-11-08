@@ -39,6 +39,20 @@ class TenderDokumenContentBuilder
         $sourceType = $item->source_type ?? 'manual';
         $mechanism = $item->mechanism ?? null;
         $vendorAction = $item->vendor_action ?? null;
+        $physicalSubmission = (bool) $item->penghantaran_fizikal;
+        if ($section === 'technical'
+            && $item instanceof TechnicalChecklistItem
+            && $sourceType === 'specification_document'
+            && $item->specificationDocument) {
+            $physicalSubmission = (bool) $item->specificationDocument->physical_submission;
+        }
+        if ((int) $this->tender->penilaian_fizikal !== 1
+            && ($mechanism === 'serahan_tangan' || $vendorAction === 'serahan_tangan')) {
+            // Older checklist rows may still contain the hand-delivery mechanism.
+            // Treat them as ordinary vendor uploads when this tender has it disabled.
+            $mechanism = 'petender_muat_naik';
+            $vendorAction = 'muat_naik';
+        }
         $action = TenderDokumenActionResolver::resolve($sourceType, $mechanism, $vendorAction);
         $label = VendorActionLabel::resolve($sourceType, $mechanism, $vendorAction);
 
@@ -52,6 +66,9 @@ class TenderDokumenContentBuilder
             'source_type' => $sourceType,
             'mechanism' => $mechanism,
             'vendor_action' => $vendorAction,
+            'penghantaran_fizikal' => in_array($section, ['technical', 'financial', 'kewangan_kerja'], true)
+                && (int) $this->tender->penilaian_fizikal === 1
+                && $physicalSubmission,
             'action' => $action,
             'tindakan' => $label,
             'badge_class' => VendorActionLabel::badgeClass($label),
@@ -137,6 +154,55 @@ class TenderDokumenContentBuilder
                 'files' => [],
                 'form' => null,
                 'note' => null,
+            ],
+        ];
+    }
+
+    /**
+     * Build the vendor checklist row for the officer's downloadable BQ template.
+     *
+     * @return array<string, mixed>
+     */
+    public function buildForBqTemplate(SpesifikasiKerjaHeader $header, SpesifikasiKerjaFile $template): array
+    {
+        $hash = sha1('suksel-bq-template:' . $header->uuid);
+        $variant = dechex((hexdec($hash[16]) & 0x3) | 0x8);
+        $itemUuid = substr($hash, 0, 8) . '-' . substr($hash, 8, 4) . '-5' . substr($hash, 13, 3)
+            . '-' . $variant . substr($hash, 17, 3) . '-' . substr($hash, 20, 12);
+
+        return [
+            'uuid' => $itemUuid,
+            'title' => 'Jadual Harga & Kuantiti',
+            'nama' => 'Jadual Harga & Kuantiti',
+            'section' => 'spesifikasi_kerja',
+            'source_type' => 'bq_template',
+            'mechanism' => null,
+            'vendor_action' => 'download_upload',
+            'action' => 'download_upload',
+            'tindakan' => 'Muat Turun & Muat Naik BQ',
+            'badge_class' => VendorActionLabel::badgeClass('Muat Turun & Muat Naik BQ'),
+            'source' => 'bq_template',
+            'status' => $header->status ?? 'draft',
+            'admin_content' => [
+                'type' => 'files',
+                'document_title' => 'Dokumen Bill of Quantities',
+                'note' => 'Muat turun templat, lengkapkan di luar sistem dan muat naik BQ yang telah siap.',
+                'files' => [[
+                    'uuid' => $template->uuid,
+                    'name' => $template->original_name,
+                    'url' => route('tenderChecklist.download', [
+                        'tender' => $this->tender->id,
+                        'section' => 'spesifikasi_kerja',
+                        'fileUuid' => $template->uuid,
+                    ]),
+                    'mime_type' => $template->mime_type,
+                    'size' => (int) $template->size,
+                ]],
+                'form' => null,
+                'bq_template_mode' => true,
+                'template_uuid' => $template->uuid,
+                'header_uuid' => $header->uuid,
+                'legacy_item_uuid' => $header->uuid,
             ],
         ];
     }

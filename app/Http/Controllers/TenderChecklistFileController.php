@@ -19,6 +19,14 @@ class TenderChecklistFileController extends Controller
         $this->assertCanAccessTenderFile($tender);
 
         $localFile = $this->findLocalFile($section, $fileUuid, $tender->id);
+        if ($section === 'spesifikasi_kerja') {
+            abort_unless($localFile, 404, 'Fail tidak dijumpai pada storan SUKSel.');
+
+            return \App\Support\SukselStoredFile::response(
+                (string) $localFile->path,
+                $localFile->original_name ?: 'Dokumen'
+            );
+        }
         if ($localFile) {
             $streamed = $this->streamLocalFileOrNull($localFile);
             if ($streamed) {

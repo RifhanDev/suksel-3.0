@@ -220,6 +220,9 @@
                             <th class="text-center" style="width: 110px;">Status</th>
                             <th class="text-center" style="width: 110px;">Dokumen</th>
                             <th class="text-center" style="width: 110px;">Tindakan</th>
+                            @if ($physicalSubmissionEnabled)
+                                <th class="text-center" style="min-width: 145px;">Serahan Tangan?</th>
+                            @endif
                         </tr>
                     </thead>
                     <tbody>
@@ -250,7 +253,7 @@
                         </tr>
                         <!-- EMPTY STATE ROW (shown when all rows deleted) -->
                         <tr id="tbl-empty-row">
-                            <td colspan="8" class="text-center text-muted py-4 small">Tiada Data</td>
+                            <td colspan="{{ $physicalSubmissionEnabled ? 9 : 8 }}" class="text-center text-muted py-4 small">Tiada Data</td>
                         </tr>
                     </tbody>
                     <tfoot>
@@ -264,7 +267,7 @@
                                     class="form-control form-control-sm text-center fw-bold" value="0" readonly
                                     style="max-width: 68px; margin: 0 auto; background: #fff; border-color: #e2e8f0;">
                             </td>
-                            <td colspan="3"></td>
+                            <td colspan="{{ $physicalSubmissionEnabled ? 4 : 3 }}"></td>
                         </tr>
                     </tfoot>
                 </table>
@@ -557,6 +560,7 @@
             var SPEC_INDEX_URL   = @json(route('spesifikasiTeknikal.index'));
             var SPEC_FORM_BASE   = @json(route('spesifikasiForm', ['tenderUuid' => $tender->uuid]));
             var CURRENT_TENDER_UUID = @json($tender->uuid);
+            var PHYSICAL_SUBMISSION_ENABLED = @json((int) $tender->penilaian_fizikal === 1);
             var PENDING_SPEC_STORAGE_KEY = 'technical-checklist:pending-spec:' + CURRENT_TENDER_UUID;
             var STORE_URL       = @json(route('senaraiTeknikal.store', $tender->uuid));
             var SUBMIT_URL      = @json(route('senaraiTeknikal.submit', $tender->uuid));
@@ -572,6 +576,12 @@
             var CHECKLIST_FILE_URL = @json($checklistFileUrl);
             function checklistFileUrl(fileUuid) {
                 return CHECKLIST_FILE_URL.replace('__FILE_UUID__', encodeURIComponent(fileUuid || ''));
+            }
+            function physicalSubmissionCell(value, locked, mechanism) {
+                if (!PHYSICAL_SUBMISSION_ENABLED) return '';
+                var handover = mechanism === 'serahan_tangan';
+                var checked = handover || value === true || value === 1 || value === '1';
+                return '<td class="text-center"><input type="checkbox" class="form-check-input physical-submission-check" aria-label="Serahan tangan diperlukan untuk item ini" title="Petender perlu menyerahkan item ini secara fizikal"' + (checked ? ' checked' : '') + (locked || handover ? ' disabled' : '') + '></td>';
             }
             var CSRF_TOKEN      = @json(csrf_token());
             var EXISTING_CHECKLIST = @json($checklistData);
@@ -769,7 +779,7 @@
                 return '<select name="mekanisma[]" class="form-select form-select-sm mekanisma-select" style="font-size:0.78rem;">' +
                     '<option value="petender_muat_naik"' + (selected === 'petender_muat_naik' ? ' selected' : '') + '>Petender Muat Naik</option>' +
                     '<option value="ptj_muat_naik"' + (selected === 'ptj_muat_naik' ? ' selected' : '') + '>PTJ Muat Naik</option>' +
-                    '<option value="serahan_tangan"' + (selected === 'serahan_tangan' ? ' selected' : '') + '>Serahan Tangan</option>' +
+                    (PHYSICAL_SUBMISSION_ENABLED ? '<option value="serahan_tangan"' + (selected === 'serahan_tangan' ? ' selected' : '') + '>Serahan Tangan</option>' : '') +
                     '</select>';
             }
 
@@ -812,6 +822,7 @@
                     '<td class="text-center"><span class="badge-status badge-status-warning">Draf</span></td>' +
                     '<td class="text-center rujukan-cell">' + buildDokumenCell(defaultMekanisma) + '</td>' +
                     '<td class="text-center tindakan-cell">' + buildTindakanCell(defaultMekanisma) + '</td>' +
+                    physicalSubmissionCell(false, false, defaultMekanisma) +
                     '</tr>'
                 );
                 if (title) {
@@ -863,6 +874,7 @@
                         '</svg>' +
                         '</a>' +
                     '</td>' +
+                    physicalSubmissionCell(spec.physical_submission, true) +
                     '</tr>'
                 );
             }
@@ -997,6 +1009,10 @@
                     } else {
                         vendorAction = 'muat_naik';
                     }
+                    if (!PHYSICAL_SUBMISSION_ENABLED && (mechanism === 'serahan_tangan' || vendorAction === 'serahan_tangan')) {
+                        mechanism = 'petender_muat_naik';
+                        vendorAction = 'muat_naik';
+                    }
 
                     items.push({
                         uuid:                        $tr.data('row-uuid') || null,
@@ -1008,6 +1024,7 @@
                         sort_order:                  idx,
                         standard_item_uuid:          $tr.data('standard-item-uuid') || null,
                         specification_document_uuid: $tr.find('input[name="specification_document_uuid[]"]').val() || null,
+                        penghantaran_fizikal:         PHYSICAL_SUBMISSION_ENABLED && $tr.find('.physical-submission-check').prop('checked') === true,
                     });
                     idx++;
                 });
@@ -1071,6 +1088,12 @@
                 }).forEach(function(item) {
                     var $row;
                     var mech = item.mechanism || 'petender_muat_naik';
+                    var vendorAction = item.vendor_action || '';
+                    if (!PHYSICAL_SUBMISSION_ENABLED && (mech === 'serahan_tangan' || vendorAction === 'serahan_tangan')) {
+                        mech = 'petender_muat_naik';
+                        item.mechanism = mech;
+                        item.vendor_action = 'muat_naik';
+                    }
 
                     if (item.source_type === 'specification_document') {
                         $row = buildSpecificationDocumentRow({
@@ -1078,6 +1101,7 @@
                             title:       item.title || '',
                             total_score: item.score,
                             status:      item.status || 'draft',
+                            physical_submission: item.penghantaran_fizikal || false,
                         });
                     } else if (item.source_type === 'borang_atas_talian') {
                         $row = buildBorangAtasTalianRow(
@@ -1086,6 +1110,7 @@
                             item.standard_item_uuid || null
                         );
                         $row.find('.skema-input').val(item.score || 0);
+                        $row.find('.physical-submission-check').prop('checked', !!item.penghantaran_fizikal);
                     } else {
                         if (item.source_type === 'standard') {
                             $row = buildStandardRow(item.title || '', item.standard_item_uuid || null);
@@ -1109,6 +1134,7 @@
                             });
                         }
                         $row.find('.skema-input').val(item.score || 0);
+                        $row.find('.physical-submission-check').prop('checked', !!item.penghantaran_fizikal);
                     }
 
                     $row.data('row-uuid', item.uuid).attr('data-row-uuid', item.uuid);
@@ -1210,6 +1236,8 @@
                 $row.find('.tindakan-pembekal').html(buildTindakanPembekalCell(val));
                 $row.find('.rujukan-cell').html(buildDokumenCell(val));
                 $row.find('.tindakan-cell').html(buildTindakanCell(val));
+                var physicalChecked = $row.find('.physical-submission-check').prop('checked') === true;
+                $row.find('.physical-submission-check').closest('td').replaceWith(physicalSubmissionCell(physicalChecked || val === 'serahan_tangan', false, val));
                 autoSave();
             });
 
@@ -1220,6 +1248,10 @@
 
             $('#tbl-teknikal').on('input change', '.skema-input', function() {
                 updateSkemaMaksima();
+                autoSave();
+            });
+
+            $('#tbl-teknikal').on('change', '.physical-submission-check:not(:disabled)', function() {
                 autoSave();
             });
 
@@ -1323,6 +1355,7 @@
                     '<td class="text-center"><span class="badge-status badge-status-warning">Draf</span></td>' +
                     '<td class="text-center text-muted small">—</td>' +
                     '<td class="text-center">' + buildBorangAtasTalianActionCell(routeUrl) + '</td>' +
+                    physicalSubmissionCell(false, false) +
                     '</tr>'
                 );
                 if (standardItemUuid) {
@@ -1346,6 +1379,7 @@
                     '<td class="text-center"><span class="badge-status badge-status-warning">Draf</span></td>' +
                     '<td class="text-center rujukan-cell">' + buildDokumenCell(defaultMekanisma) + '</td>' +
                     '<td class="text-center tindakan-cell">' + buildTindakanCell(defaultMekanisma) + '</td>' +
+                    physicalSubmissionCell(false, false, defaultMekanisma) +
                     '</tr>'
                 );
                 if (standardItemUuid) {

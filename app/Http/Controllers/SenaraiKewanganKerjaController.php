@@ -6,13 +6,16 @@ use App\Http\Controllers\Concerns\UpdatesTenderProcessAfterChecklistSubmit;
 use App\Models\KewanganKerjaFile;
 use App\Models\KewanganKerjaHeader;
 use App\Models\KewanganKerjaItem;
+use App\Models\PenyataBank;
 use App\Models\Tender;
 use App\Services\StosBackendClient;
 use App\Support\PenyediaanIklanNavigation;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class SenaraiKewanganKerjaController extends Controller
 {
@@ -104,6 +107,10 @@ class SenaraiKewanganKerjaController extends Controller
             'newModule.jawatankuasaSpesifikasi.senarai_kewangan_kerja',
             [
                 'tender' => $tender,
+                'physicalSubmissionEnabled' => (int) $tender->penilaian_fizikal === 1,
+                // Reuse the canonical procurement resolver without changing this controller's model.
+                'procurementLabel' => (new \App\Tender())->newFromBuilder($tender->getAttributes())->isSebutHargaKaedah()
+                    ? 'Sebut Harga' : 'Tender',
                 'checklistData' => $checklistData,
                 'standardItems' => $standardItems,
                 'afterSpecificationUrl' => PenyediaanIklanNavigation::afterSpecificationUrl($tender),
@@ -153,7 +160,7 @@ class SenaraiKewanganKerjaController extends Controller
         $this->ensureAccess();
 
         $request->validate([
-            'file' => ['required', 'file', 'max:10240'],
+            'file' => \App\Support\AllowedAttachment::rules(true, 25600),
             'file_type' => ['nullable', 'string', 'max:50'],
             'checklist_item_uuid' => ['nullable', 'string'],
         ]);
@@ -181,23 +188,34 @@ class SenaraiKewanganKerjaController extends Controller
             }
         }
 
-        $uploadedFile = $request->file('file');
-        $safeOriginalName = preg_replace('/[^A-Za-z0-9._-]/', '_', $uploadedFile->getClientOriginalName());
-        $storedName = now()->format('YmdHis') . '_' . Str::uuid() . '_' . $safeOriginalName;
-        $path = $uploadedFile->storeAs('kewangan-kerja/' . $tender->uuid, $storedName, 'public');
+        $file = DB::transaction(function () use ($item, $tender, $header, $request) {
+            if ($item) {
+                $item = KewanganKerjaItem::whereKey($item->id)->lockForUpdate()->firstOrFail();
+                if ($item->mechanism === 'ptj_muat_naik' && $item->files()->exists()) {
+                    throw ValidationException::withMessages([
+                        'file' => ['Setiap item PTJ Muat Naik hanya dibenarkan mempunyai satu dokumen. Padam dokumen sedia ada sebelum memuat naik yang baharu.'],
+                    ]);
+                }
+            }
 
-        $file = KewanganKerjaFile::create([
-            'uuid' => (string) Str::uuid(),
-            'kewangan_kerja_header_id' => $header->id,
-            'kewangan_kerja_item_id' => $item?->id,
-            'file_type' => $request->input('file_type') ?: 'support',
-            'original_name' => $uploadedFile->getClientOriginalName(),
-            'stored_name' => $storedName,
-            'path' => $path,
-            'mime_type' => $uploadedFile->getClientMimeType(),
-            'size' => $uploadedFile->getSize() ?: 0,
-            'uploaded_by' => auth()->id(),
-        ]);
+            $uploadedFile = $request->file('file');
+            $safeOriginalName = preg_replace('/[^A-Za-z0-9._-]/', '_', $uploadedFile->getClientOriginalName());
+            $storedName = now()->format('YmdHis') . '_' . Str::uuid() . '_' . $safeOriginalName;
+            $path = $uploadedFile->storeAs('kewangan-kerja/' . $tender->uuid, $storedName, 'public');
+
+            return KewanganKerjaFile::create([
+                'uuid' => (string) Str::uuid(),
+                'kewangan_kerja_header_id' => $header->id,
+                'kewangan_kerja_item_id' => $item?->id,
+                'file_type' => $request->input('file_type') ?: 'support',
+                'original_name' => $uploadedFile->getClientOriginalName(),
+                'stored_name' => $storedName,
+                'path' => $path,
+                'mime_type' => $uploadedFile->getClientMimeType(),
+                'size' => $uploadedFile->getSize() ?: 0,
+                'uploaded_by' => auth()->id(),
+            ]);
+        });
 
         $downloadUrl = route('tenderChecklist.download', [
             'tender' => $tender->id,
@@ -263,6 +281,8 @@ class SenaraiKewanganKerjaController extends Controller
 
     private function serializeLocalKewanganKerja(KewanganKerjaHeader $header, Tender $tender): array
     {
+        $penyataBankFormUpdated = $this->isPenyataBankFormUpdated($tender);
+
         return [
             'uuid' => $header->uuid,
             'tender_uuid' => $tender->uuid,
@@ -271,15 +291,28 @@ class SenaraiKewanganKerjaController extends Controller
             'passing_percentage' => (float) $header->passing_percentage,
             'status' => $header->status,
             'submitted_at' => optional($header->submitted_at)->toIso8601String(),
-            'items' => $header->items->map(function ($item) use ($tender) {
+            'items' => $header->items->map(function ($item) use ($tender, $penyataBankFormUpdated) {
+                $isPenyataBankItem = $item->title === 'Penyata Bulanan / Akaun Bank';
+                $mechanism = $item->mechanism;
+                $vendorAction = $item->vendor_action;
+                if ((int) $tender->penilaian_fizikal !== 1
+                    && ($mechanism === 'serahan_tangan' || $vendorAction === 'serahan_tangan')) {
+                    $mechanism = 'petender_muat_naik';
+                    $vendorAction = 'muat_naik';
+                }
+
                 return [
                     'uuid' => $item->uuid,
                     'source_type' => $item->source_type,
                     'title' => $item->title,
-                    'mechanism' => $item->mechanism,
-                    'vendor_action' => $item->vendor_action,
+                    'mechanism' => $mechanism,
+                    'vendor_action' => $vendorAction,
+                    'penghantaran_fizikal' => (int) $tender->penilaian_fizikal === 1 && (bool) $item->penghantaran_fizikal,
                     'score' => (float) $item->score,
-                    'status' => $item->status,
+                    'status' => $isPenyataBankItem
+                        ? ($penyataBankFormUpdated && (float) $item->score > 0 ? 'submitted' : 'draft')
+                        : $item->status,
+                    'form_updated' => $isPenyataBankItem ? $penyataBankFormUpdated : true,
                     'sort_order' => (int) $item->sort_order,
                     'standard_item_uuid' => null,
                     'files' => $item->files->map(fn ($f) => [
@@ -309,6 +342,15 @@ class SenaraiKewanganKerjaController extends Controller
                 ->values()
                 ->all(),
         ];
+    }
+
+    private function isPenyataBankFormUpdated(Tender $tender): bool
+    {
+        $penyata = PenyataBank::where('tender_id', $tender->id)->first();
+
+        return $penyata !== null
+            && $penyata->dari_bulan !== null
+            && $penyata->dari_tahun !== null;
     }
 
     // ── Private helpers ───────────────────────────────────────────────────────

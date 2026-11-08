@@ -235,9 +235,10 @@
                     <span class="badge-status badge-status-warning">Draf</span>
                 </div>
 
-                <!-- Penghantaran Fizikal -->
+                @if ((int) $tender->penilaian_fizikal === 1)
+                <!-- Serahan Tangan -->
                 <div class="col-12 col-md-6">
-                    <label class="form-label fw-semibold d-block">Penghantaran Fizikal <span
+                    <label class="form-label fw-semibold d-block">Serahan Tangan <span
                             class="text-danger">*</span></label>
                     <div class="d-flex gap-3 mt-1">
                         <div class="form-check">
@@ -252,6 +253,7 @@
                         </div>
                     </div>
                 </div>
+                @endif
 
             </div>
         </div>

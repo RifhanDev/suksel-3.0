@@ -694,6 +694,7 @@ class TendersController extends Controller
 				$q->where('t2p.tender_peringkat', '=', 2)
 					->orWhereNull('t2p.tender_peringkat');
 			})
+			->when($committeeTable === 'jawatankuasas', fn ($q) => $q->where("{$committeeTable}.is_current", true))
 			->whereIn("{$committeeTable}.jenis_jawatankuasa", ['spec', 'open', 'tech', 'fin'])
 			->groupBy("{$committeeTable}.tender_id")
 			->havingRaw("SUM(CASE WHEN {$committeeTable}.jenis_jawatankuasa = 'spec' AND {$committeeTable}.peranan = 1 AND {$committeeTable}.user_id IS NOT NULL THEN 1 ELSE 0 END) >= 1")
@@ -712,6 +713,7 @@ class TendersController extends Controller
 			->select("{$committeeTable}.tender_id")
 			->join('tenders as t1p', 't1p.id', '=', "{$committeeTable}.tender_id")
 			->where('t1p.tender_peringkat', '=', 1)
+			->when($committeeTable === 'jawatankuasas', fn ($q) => $q->where("{$committeeTable}.is_current", true))
 			->whereIn("{$committeeTable}.jenis_jawatankuasa", ['spec', 'open', 'eval'])
 			->groupBy("{$committeeTable}.tender_id")
 			->havingRaw("SUM(CASE WHEN {$committeeTable}.jenis_jawatankuasa = 'spec' AND {$committeeTable}.peranan = 1 AND {$committeeTable}.user_id IS NOT NULL THEN 1 ELSE 0 END) >= 1")
@@ -776,6 +778,8 @@ class TendersController extends Controller
 				'tenders.document_start_date',
 				'tenders.submission_datetime',
 				'kategori_perolehan.name as kategori_perolehan_name',
+				'tenders.kaedah_perolehan_id',
+				'tenders.type',
 				DB::raw("COALESCE(NULLIF(tenders.no_tender, ''), tenders.ref_number) as tender_number"),
 				'tcheader.status as checklist_status',
 				'fcheader.status as financial_status',
@@ -839,15 +843,16 @@ class TendersController extends Controller
 			$specificationUrl = !empty($tender->uuid) ? route('penyediaanSpekTender', $tender->uuid) : '#';
 			$financialUrl     = !empty($tender->uuid) ? route('senaraiKewanganKerja', $tender->uuid) : '#';
 
-			// Kewangan only unlocks after Spesifikasi is submitted
-			$kewangan = ($tender->spesifikasi_status === 'submitted')
-				? '<a href="' . e($financialUrl) . '" class="btn btn-sm btn-success">Kewangan</a>'
+			$documentLabel = $tender->isSebutHargaKaedah() ? 'Dokumen Sebut Harga' : 'Dokumen Tender';
+
+			// Document access only unlocks after Jadual Harga (Spesifikasi) is submitted.
+			$dokumenTender = ($tender->spesifikasi_status === 'submitted')
+				? '<a href="' . e($financialUrl) . '" class="btn btn-sm btn-success">' . e($documentLabel) . '</a>'
 				: '';
 
-			return '<div class="d-flex gap-1 justify-content-center">'
-				// . '<a href="' . e($specificationUrl) . '" class="btn btn-sm btn-info text-white">Spesifikasi</a>'
-				. '<a href="' . e($specificationUrl) . '" class="btn btn-sm btn-warning text-white">Teknikal</a>'
-				. $kewangan
+			return '<div class="d-flex gap-1 justify-content-center text-nowrap">'
+				. '<a href="' . e($specificationUrl) . '" class="btn btn-sm btn-warning text-white">Jadual Harga</a>'
+				. $dokumenTender
 				. '</div>';
 		}
 

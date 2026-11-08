@@ -62,7 +62,7 @@ class PenilaianKewanganSebutHargaKerjaController extends Controller
         }
 
         $query = $tender->participants()
-            ->with(['vendor'])
+            ->with(['vendor.cidbGrades.code', 'vendor.cidbGrades.children.code'])
             ->where('cancel_fg', 0)
             ->where(function ($q) {
                 $q->whereNull('eliminated_process_id')
@@ -75,6 +75,126 @@ class PenilaianKewanganSebutHargaKerjaController extends Controller
         $participants = $query->orderBy('id')->get();
 
         return $this->resolveAndSortParticipantsByHargaTawaran($tender, $participants);
+    }
+
+    /**
+     * Checklist items that require an officer decision in Step 1.
+     * Keep this source and filtering aligned with the checklist rendered by show().
+     */
+    protected function requiredStep1ChecklistIds(Tender $tender): array
+    {
+        $items = collect(TenderDokumenPresenter::for($tender)->items('admin'))
+            ->filter(function ($item) {
+                $action = strtolower(trim($item['tindakan'] ?? $item['mekanisma'] ?? $item['mechanism'] ?? ''));
+                return $action !== 'muat turun';
+            })
+            ->values()
+            ->map(fn ($item, $idx) => $item['uuid'] ?? ('doc-' . ($idx + 1)))
+            ->values();
+
+        if ($items->isEmpty()) {
+            $items = KewanganKerjaItem::query()
+                ->whereHas('header', fn ($q) => $q->where('tender_id', $tender->id))
+                ->where(function ($query) {
+                    $query->whereNull('mechanism')->orWhere('mechanism', '!=', 'ptj_muat_naik')
+                        ->orWhereNull('vendor_action')->orWhere('vendor_action', '!=', 'muat_turun');
+                })
+                ->orderBy('sort_order')
+                ->pluck('uuid');
+        }
+
+        return $items->filter()->unique()->values()->all();
+    }
+
+    /** All required Step 1 checklist decisions exist for every eligible vendor. */
+    protected function step1EvaluationsComplete(Tender $tender, Collection $participants, array $checklistIds): bool
+    {
+        if ($participants->isEmpty() || empty($checklistIds)) {
+            return false;
+        }
+
+        $vendorIds = $participants->pluck('vendor_id')->map(fn ($id) => (int) $id);
+        $evaluated = TenderKewanganEvaluation::query()
+            ->where('tender_id', $tender->id)
+            ->whereIn('vendor_id', $vendorIds)
+            ->whereIn('checklist_item_uuid', $checklistIds)
+            ->whereNotNull('status_pematuhan')
+            ->get(['vendor_id', 'checklist_item_uuid'])
+            ->groupBy('vendor_id');
+
+        return $participants->every(function ($participant) use ($evaluated, $checklistIds) {
+            return ($evaluated->get($participant->vendor_id, collect())
+                ->pluck('checklist_item_uuid')->unique()->count()) === count($checklistIds);
+        });
+    }
+
+    /** Return vendors who completed and passed every required Step 1 item. */
+    protected function step1PassedVendorIds(Tender $tender, Collection $participants, array $checklistIds): array
+    {
+        if ($participants->isEmpty() || empty($checklistIds)) {
+            return [];
+        }
+
+        $evaluations = TenderKewanganEvaluation::query()
+            ->where('tender_id', $tender->id)
+            ->whereIn('vendor_id', $participants->pluck('vendor_id'))
+            ->whereIn('checklist_item_uuid', $checklistIds)
+            ->get()
+            ->groupBy('vendor_id');
+
+        return $participants->filter(function ($participant) use ($evaluations, $checklistIds) {
+            $vendorEvaluations = $evaluations->get($participant->vendor_id, collect())
+                ->keyBy('checklist_item_uuid');
+
+            if ($vendorEvaluations->count() < count($checklistIds)) {
+                return false;
+            }
+
+            foreach ($checklistIds as $checklistId) {
+                $evaluation = $vendorEvaluations->get($checklistId);
+                if (! $evaluation || $evaluation->status_pematuhan === null || (int) $evaluation->status_pematuhan !== 1) {
+                    return false;
+                }
+            }
+
+            return true;
+        })->pluck('vendor_id')->map(fn ($id) => (int) $id)->values()->all();
+    }
+
+    /** Verify each passed vendor has saved an officer decision for the given step. */
+    protected function vendorStepEvaluationsComplete(Tender $tender, array $vendorIds, string $borangCode): bool
+    {
+        if (empty($vendorIds)) {
+            return true;
+        }
+
+        $evaluatedVendorIds = TenderKewanganKerjaEvaluation::query()
+            ->where('tender_id', $tender->id)
+            ->where('borang_code', $borangCode)
+            ->whereIn('vendor_id', $vendorIds)
+            ->whereNotNull('status_pematuhan')
+            ->pluck('vendor_id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        return count(array_unique($evaluatedVendorIds)) === count(array_unique(array_map('intval', $vendorIds)));
+    }
+
+    /** Return vendors with a saved passing decision for a Type 2 evaluation step. */
+    protected function stepPassedVendorIds(Tender $tender, array $vendorIds, string $borangCode): array
+    {
+        if (empty($vendorIds)) {
+            return [];
+        }
+
+        return TenderKewanganKerjaEvaluation::query()
+            ->where('tender_id', $tender->id)
+            ->where('borang_code', $borangCode)
+            ->whereIn('vendor_id', $vendorIds)
+            ->where('status_pematuhan', 1)
+            ->pluck('vendor_id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
     }
 
     /**
@@ -193,6 +313,7 @@ class PenilaianKewanganSebutHargaKerjaController extends Controller
                     'title'     => $title,
                     'mekanisma' => $mechanism,
                     'action'    => $action,
+                    'is_bq_template' => ! empty($item['admin_content']['bq_template_mode']),
                     'form_url'  => $formUrl,
                     'form_key'  => $formKey,
                     'required'  => true,
@@ -204,6 +325,10 @@ class PenilaianKewanganSebutHargaKerjaController extends Controller
         if (empty($checklistDocs)) {
             $dbItems = KewanganKerjaItem::query()
                 ->whereHas('header', fn ($q) => $q->where('tender_id', $tender->id))
+                ->where(function ($query) {
+                    $query->whereNull('mechanism')->orWhere('mechanism', '!=', 'ptj_muat_naik')
+                        ->orWhereNull('vendor_action')->orWhere('vendor_action', '!=', 'muat_turun');
+                })
                 ->orderBy('sort_order')
                 ->get();
 
@@ -286,8 +411,7 @@ class PenilaianKewanganSebutHargaKerjaController extends Controller
         // Batch load Penyata Bank Files to resolve physical file downloads
         $penyataBankFilesDb = $penyataBankDb ? \Illuminate\Support\Facades\DB::table('penyata_bank_files')
             ->where('penyata_bank_id', $penyataBankDb->id)
-            ->get()
-            ->keyBy('original_name') : collect();
+            ->get() : collect();
 
         // Batch load Bon & Saham
         $bonSahamDb = BonSaham::query()
@@ -342,10 +466,32 @@ class PenilaianKewanganSebutHargaKerjaController extends Controller
             $vendorName = $vendor->name ?? $vendor->company_name ?? ('Petender ' . $kod);
             $ssm = $vendor->registration_number ?? $vendor->ssm_number ?? $vendor->ssm ?? '-';
 
-            // CIDB Grade & Specialization
-            $cidbGrade = $vendor->cidb_grade ?? $vendor->gred_cidb ?? 'G3';
-            $cidbSpec = $vendor->cidb_specialization ?? 'CE21';
-            $cidbDisplay = "CIDB Gred {$cidbGrade} ({$cidbSpec})";
+            // Read CIDB grade and specializations from the vendor's registered CIDB codes.
+            $cidbGradeRows = $vendor?->cidbGrades ?? collect();
+            $cidbGradeDisplay = $cidbGradeRows
+                ->map(function ($grade) {
+                    $gradeCode = $grade->code->code ?? $grade->code->name ?? null;
+                    if (! $gradeCode) {
+                        return null;
+                    }
+
+                    $specializations = $grade->children
+                        ->map(fn ($child) => $child->code->code ?? null)
+                        ->filter()
+                        ->unique()
+                        ->sort()
+                        ->values();
+
+                    return $gradeCode . ($specializations->isNotEmpty()
+                        ? ' (' . $specializations->implode(', ') . ')'
+                        : '');
+                })
+                ->filter()
+                ->unique()
+                ->values();
+            $cidbDisplay = $cidbGradeDisplay->isNotEmpty()
+                ? 'CIDB Gred ' . $cidbGradeDisplay->implode('; ')
+                : 'CIDB Gred: Tiada Rekod';
 
             $hargaTawaran = $p->harga_tawaran_resolved ?? ((float) ($p->harga_tawaran ?? $p->bid_price ?? $p->price ?? 0));
             $hargaTawaranDisp = $p->harga_tawaran_fmt ?? ($hargaTawaran > 0 ? ('RM ' . number_format($hargaTawaran, 2)) : '-');
@@ -369,6 +515,9 @@ class PenilaianKewanganSebutHargaKerjaController extends Controller
                     'original_name' => $f->original_name,
                     'uuid'          => $f->uuid,
                     'size'          => $f->size,
+                    'mime_type'     => $f->mime_type,
+                    'is_pdf'        => strtolower((string) $f->mime_type) === 'application/pdf'
+                        || strtolower(pathinfo((string) $f->original_name, PATHINFO_EXTENSION)) === 'pdf',
                 ])->values()->all();
 
                 $firstFile = $filesGroup->first();
@@ -415,12 +564,15 @@ class PenilaianKewanganSebutHargaKerjaController extends Controller
                     $fileName = $doc['title'];
                 }
 
-                $statusVal = $evalRow ? (($evalRow->status_pematuhan === 1) ? 'sempurna' : 'tidak_sempurna') : 'sempurna';
+                $isEvaluated = $evalRow !== null && $evalRow->status_pematuhan !== null;
+                $statusVal = ! $isEvaluated
+                    ? null
+                    : (((int) $evalRow->status_pematuhan === 1) ? 'sempurna' : 'tidak_sempurna');
                 $noteVal = $evalRow?->catatan ?? '';
 
-                if ($evalRow) {
+                if ($isEvaluated) {
                     $evaluatedCount++;
-                    if ($evalRow->status_pematuhan === 0) {
+                    if ((int) $evalRow->status_pematuhan === 0) {
                         $hasAnyFail = true;
                     }
                 }
@@ -431,6 +583,7 @@ class PenilaianKewanganSebutHargaKerjaController extends Controller
 
                 $docsMap[$docUuid] = [
                     'status'    => $statusVal,
+                    'evaluated' => $isEvaluated,
                     'catatan'   => $noteVal,
                     'file_url'  => $fileUrl,
                     'file_name' => $fileName,
@@ -442,10 +595,15 @@ class PenilaianKewanganSebutHargaKerjaController extends Controller
                 ];
             }
 
-            $step1Status = $hasAnyFail ? 'tidak_sempurna' : 'sempurna';
-            $step1Catatan = $hasAnyFail
-                ? 'Gagal mematuhi satu atau lebih dokumen mandatori.'
-                : 'Semua dokumen mandatori lengkap dan teratur.';
+            $step1Complete = $evaluatedCount === count($checklistDocs) && count($checklistDocs) > 0;
+            $step1Status = ! $step1Complete
+                ? 'menunggu_penilaian'
+                : ($hasAnyFail ? 'tidak_sempurna' : 'sempurna');
+            $step1Catatan = ! $step1Complete
+                ? 'Penilaian dokumen mandatori masih belum lengkap.'
+                : ($hasAnyFail
+                    ? 'Gagal mematuhi satu atau lebih dokumen mandatori.'
+                    : 'Semua dokumen mandatori lengkap dan teratur.');
 
             // --- STEP 2: Kemampuan Kewangan Data ---
             $vPayloads = $formPayloads->get($vId, collect())->keyBy('form_key');
@@ -520,6 +678,22 @@ class PenilaianKewanganSebutHargaKerjaController extends Controller
                         $furl = $f['url'] ?? null;
                         $fuuid = $f['uuid'] ?? null;
 
+                        $matchedUuid = $fuuid
+                            ? $penyataBankFilesDb->first(fn ($candidate) => $candidate->uuid === $fuuid)
+                            : null;
+                        if ($matchedUuid) {
+                            $belongsToAccount = (int) $matchedUuid->vendor_id === (int) $vId
+                                && ($matchedUuid->account_uuid
+                                    ? $matchedUuid->account_uuid === ($acc['account_uuid'] ?? null)
+                                    : (int) ($matchedUuid->account_index ?? 0) === (int) $aIdx);
+                            if (! $belongsToAccount) {
+                                continue;
+                            }
+                            $fname = $matchedUuid->original_name ?: $fname;
+                            $fuuid = $matchedUuid->uuid;
+                            $furl = route('tenderDokumen.download', $fuuid);
+                        }
+
                         if (! $furl && $fuuid) {
                             $furl = route('tenderDokumen.download', $fuuid);
                         }
@@ -527,8 +701,19 @@ class PenilaianKewanganSebutHargaKerjaController extends Controller
                             $cleanPath = ltrim(str_replace(['\\', 'public/'], ['/', ''], (string) $f['path']), '/');
                             $furl = route('tenderDokumen.streamByPath', ['path' => $cleanPath, 'name' => $fname]);
                         }
-                        if (! $furl && isset($penyataBankFilesDb[$fname])) {
-                            $matched = $penyataBankFilesDb[$fname];
+                        if (! $furl) {
+                            $matched = $penyataBankFilesDb->first(function ($candidate) use ($fname, $vId, $acc, $aIdx) {
+                                $sameAccount = $candidate->account_uuid
+                                    ? $candidate->account_uuid === ($acc['account_uuid'] ?? null)
+                                    : (int) ($candidate->account_index ?? 0) === (int) $aIdx;
+                                return (int) $candidate->vendor_id === (int) $vId
+                                    && $sameAccount
+                                    && strcasecmp((string) $candidate->original_name, (string) $fname) === 0;
+                            });
+                        } else {
+                            $matched = null;
+                        }
+                        if ($matched) {
                             $fuuid = $matched->uuid;
                             $furl = route('tenderDokumen.download', $matched->uuid);
                         }
@@ -539,6 +724,9 @@ class PenilaianKewanganSebutHargaKerjaController extends Controller
                             'url'           => $furl,
                             'uuid'          => $fuuid,
                             'size'          => $f['size'] ?? null,
+                            'account_index' => $aIdx,
+                            'account_uuid'  => $acc['account_uuid'] ?? null,
+                            'account_label' => 'Akaun ' . ($aIdx + 1) . ' - ' . ($acc['bank_name'] ?? ('BANK ' . ($aIdx + 1))),
                         ];
                         $accFiles[] = $fileItem;
                         $bankFiles[] = $fileItem;
@@ -569,8 +757,15 @@ class PenilaianKewanganSebutHargaKerjaController extends Controller
                         if (! $furl && $fuuid) {
                             $furl = route('tenderDokumen.download', $fuuid);
                         }
-                        if (! $furl && isset($penyataBankFilesDb[$fname])) {
-                            $matched = $penyataBankFilesDb[$fname];
+                        if (! $furl) {
+                            $matched = $penyataBankFilesDb->first(fn ($candidate) =>
+                                (int) $candidate->vendor_id === (int) $vId
+                                && strcasecmp((string) $candidate->original_name, (string) $fname) === 0
+                            );
+                        } else {
+                            $matched = null;
+                        }
+                        if ($matched) {
                             $fuuid = $matched->uuid;
                             $furl = route('tenderDokumen.download', $matched->uuid);
                         }
@@ -654,10 +849,13 @@ class PenilaianKewanganSebutHargaKerjaController extends Controller
 
             // Step 2 Evaluation Record
             $s2Eval = $step2Evaluations->get($vId);
-            $s2Status = $s2Eval ? (($s2Eval->status_pematuhan === 1) ? 'memuaskan' : 'tidak_memuaskan') : ($kewanganMetrics['is_cukup_modal'] ? 'memuaskan' : 'tidak_memuaskan');
-            $s2Catatan = $s2Eval?->catatan ?? ($kewanganMetrics['is_cukup_modal']
-                ? "Modal pusingan dan aset cair mencukupi had minimum 1.5% ({$min_modal_display})."
-                : "Modal pusingan kurang daripada had minimum 1.5% ({$min_modal_display}).");
+            $s2Evaluated = $s2Eval !== null && $s2Eval->status_pematuhan !== null;
+            $s2Status = ! $s2Evaluated
+                ? null
+                : (((int) $s2Eval->status_pematuhan === 1) ? 'memuaskan' : 'tidak_memuaskan');
+            $s2Catatan = $s2Evaluated
+                ? ($s2Eval->catatan ?? '')
+                : '';
 
             // --- STEP 3: Penilaian Kerja Data ---
             // A. Kerja Semasa
@@ -747,8 +945,11 @@ class PenilaianKewanganSebutHargaKerjaController extends Controller
 
             // Step 3 Evaluation Record
             $s3Eval = $step3Evaluations->get($vId);
-            $s3Status = $s3Eval ? (($s3Eval->status_pematuhan === 1) ? 'memuaskan' : 'tidak_memuaskan') : 'memuaskan';
-            $s3Catatan = $s3Eval?->catatan ?? 'Beban kerja munasabah dan kakitangan teknikal mencukupi.';
+            $s3Evaluated = $s3Eval !== null && $s3Eval->status_pematuhan !== null;
+            $s3Status = ! $s3Evaluated
+                ? null
+                : (((int) $s3Eval->status_pematuhan === 1) ? 'memuaskan' : 'tidak_memuaskan');
+            $s3Catatan = $s3Evaluated ? ($s3Eval->catatan ?? '') : '';
 
             $vendors[] = [
                 'id'              => $vId,
@@ -933,6 +1134,17 @@ class PenilaianKewanganSebutHargaKerjaController extends Controller
         $tender = Tender::query()->findOrFail($request->input('tender_id'));
         $this->assertCommitteeAppointment($tender, $this->financialCommitteeJenis);
 
+        if ($request->boolean('confirmed')) {
+            $participants = $this->loadEligibleParticipants($tender);
+            $checklistIds = $this->requiredStep1ChecklistIds($tender);
+            if (! $this->step1EvaluationsComplete($tender, $participants, $checklistIds)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Sila lengkapkan penilaian bagi setiap dokumen untuk semua petender sebelum mengesahkan Langkah 1.',
+                ], 422);
+            }
+        }
+
         $progress = TenderKewanganProgress::query()->firstOrCreate(
             ['tender_id' => $tender->id],
             ['current_step' => 1]
@@ -1044,6 +1256,25 @@ class PenilaianKewanganSebutHargaKerjaController extends Controller
             ], 422);
         }
 
+        if ($request->boolean('confirmed')) {
+            $participants = $this->loadEligibleParticipants($tender);
+            $checklistIds = $this->requiredStep1ChecklistIds($tender);
+            if (! $this->step1EvaluationsComplete($tender, $participants, $checklistIds)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Langkah 1 mempunyai penilaian yang belum lengkap. Sila semak semua dokumen bagi setiap petender.',
+                ], 422);
+            }
+
+            $passedVendorIds = $this->step1PassedVendorIds($tender, $participants, $checklistIds);
+            if (! $this->vendorStepEvaluationsComplete($tender, $passedVendorIds, 'sh_kemampuan_kewangan')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Sila simpan keputusan kemampuan kewangan bagi setiap petender yang melepasi Langkah 1 sebelum mengesahkan Langkah 2.',
+                ], 422);
+            }
+        }
+
         $confirmed = $request->boolean('confirmed');
         if ($confirmed) {
             $progress->step2_confirmed_at = now();
@@ -1148,6 +1379,33 @@ class PenilaianKewanganSebutHargaKerjaController extends Controller
             ], 422);
         }
 
+        if ($request->boolean('confirmed')) {
+            $participants = $this->loadEligibleParticipants($tender);
+            $checklistIds = $this->requiredStep1ChecklistIds($tender);
+            if (! $this->step1EvaluationsComplete($tender, $participants, $checklistIds)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Langkah 1 mempunyai penilaian yang belum lengkap. Sila lengkapkan semakan dokumentasi dahulu.',
+                ], 422);
+            }
+
+            $step1PassedIds = $this->step1PassedVendorIds($tender, $participants, $checklistIds);
+            if (! $this->vendorStepEvaluationsComplete($tender, $step1PassedIds, 'sh_kemampuan_kewangan')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Langkah 2 mempunyai keputusan kemampuan kewangan yang belum disimpan.',
+                ], 422);
+            }
+
+            $step2PassedIds = $this->stepPassedVendorIds($tender, $step1PassedIds, 'sh_kemampuan_kewangan');
+            if (! $this->vendorStepEvaluationsComplete($tender, $step2PassedIds, 'sh_penilaian_kerja')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Sila simpan keputusan penilaian kerja bagi setiap petender yang melepasi Langkah 2 sebelum mengesahkan Langkah 3.',
+                ], 422);
+            }
+        }
+
         $confirmed = $request->boolean('confirmed');
         if ($confirmed) {
             $progress->step3_confirmed_at = now();
@@ -1233,6 +1491,31 @@ class PenilaianKewanganSebutHargaKerjaController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Sila lengkapkan dan sahkan semua Langkah 1, 2, dan 3 sebelum menghantar penilaian akhir.',
+            ], 422);
+        }
+
+        $participants = $this->loadEligibleParticipants($tender);
+        $checklistIds = $this->requiredStep1ChecklistIds($tender);
+        if (! $this->step1EvaluationsComplete($tender, $participants, $checklistIds)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Penilaian Langkah 1 belum lengkap untuk semua petender. Lengkapkan semua dokumen sebelum menghantar laporan.',
+            ], 422);
+        }
+
+        $step1PassedIds = $this->step1PassedVendorIds($tender, $participants, $checklistIds);
+        if (! $this->vendorStepEvaluationsComplete($tender, $step1PassedIds, 'sh_kemampuan_kewangan')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Keputusan Langkah 2 belum lengkap untuk semua petender yang melepasi Langkah 1.',
+            ], 422);
+        }
+
+        $step2PassedIds = $this->stepPassedVendorIds($tender, $step1PassedIds, 'sh_kemampuan_kewangan');
+        if (! $this->vendorStepEvaluationsComplete($tender, $step2PassedIds, 'sh_penilaian_kerja')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Keputusan Langkah 3 belum lengkap untuk semua petender yang melepasi Langkah 2.',
             ], 422);
         }
 

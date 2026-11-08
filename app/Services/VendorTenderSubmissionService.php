@@ -229,9 +229,20 @@ class VendorTenderSubmissionService
      */
     protected function isItemComplete(array $item): bool
     {
+        if (! empty($item['admin_content']['bq_template_mode'])) {
+            $offer = $item['vendor_content']['specification'] ?? [];
+            $hasBqFile = ! empty($item['vendor_content']['files']);
+
+            return $hasBqFile
+                && (float) ($offer['bq_total_tawaran'] ?? 0) > 0
+                && (int) ($offer['vendor_tempoh_siap_val'] ?? 0) > 0;
+        }
+
         $action = $item['action'] ?? '';
 
-        if ($action === 'download_only') {
+        // These actions are fulfilled outside the system (download-only or
+        // hand delivery), so neither should block the vendor's online submission.
+        if (in_array($action, ['download_only', 'serahan_tangan'], true)) {
             return true;
         }
 

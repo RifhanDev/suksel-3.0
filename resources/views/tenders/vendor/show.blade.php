@@ -3,6 +3,8 @@
 @section('styles')
 	<link href="{{ asset('css/components/button-components.css') }}" rel="stylesheet">
 	<link href="{{ asset('css/components/badges.css') }}" rel="stylesheet">
+	<link href="{{ asset('css/components/bq-upload-tokens.css') }}" rel="stylesheet">
+	<link href="{{ asset('css/components/bq-upload.css') }}" rel="stylesheet">
 	<style>
 		.vendor-tender-card {
 			background: #fff;
@@ -1593,12 +1595,28 @@
 	@endif
 
 	@if ($vendorHasPurchased && !$vendorSubmitted && !$tender->usesIklanDokumen())
+		<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 		<script>
 			$(function() {
 				var READINESS_URL = @json(route('tenders.vendorSubmission.readiness', $tender->id));
 				var SUBMIT_URL = @json(route('tenders.vendorSubmission.submit', $tender->id));
 				var TENDER_URL = @json(route('tenders.show', $tender->id));
 				var CSRF = @json(csrf_token());
+				var submissionDialog = window.Swal && typeof window.Swal.mixin === 'function'
+					? window.Swal.mixin({
+						buttonsStyling: false,
+						heightAuto: false,
+						scrollbarPadding: false,
+						showClass: { popup: 'bq-dialog-fade-in', backdrop: 'bq-backdrop-fade-in' },
+						hideClass: { popup: 'bq-dialog-fade-out', backdrop: 'bq-backdrop-fade-out' },
+						customClass: {
+							container: 'bq-dialog-container',
+							popup: 'bq-dialog',
+							confirmButton: 'bq-dialog-button',
+							cancelButton: 'bq-dialog-button bq-dialog-cancel'
+						}
+					})
+					: null;
 				var warningModal = document.getElementById('vendorSubmissionWarningModal');
 				var warningModalInstance = warningModal && typeof bootstrap !== 'undefined' ?
 					bootstrap.Modal.getOrCreateInstance(warningModal) :
@@ -1682,6 +1700,38 @@
 						});
 				}
 
+				function confirmSubmitTawaran() {
+					var title = 'Hantar tawaran?';
+					var message = 'Maklumat tidak boleh dikemaskini selepas ini.';
+
+					if (submissionDialog) {
+						return submissionDialog.fire({
+							title: title,
+							text: message,
+							icon: 'warning',
+							showCancelButton: true,
+							confirmButtonText: 'Ya, Hantar Tawaran',
+							cancelButtonText: 'Batal',
+							reverseButtons: true,
+							focusCancel: true
+						}).then(function(result) {
+							return result.isConfirmed;
+						});
+					}
+
+					if (typeof window.showConfirmModal === 'function') {
+						return window.showConfirmModal({
+							title: title,
+							message: message,
+							icon: 'warning',
+							confirmText: 'Ya, Hantar Tawaran',
+							cancelText: 'Batal'
+						});
+					}
+
+					return Promise.resolve(false);
+				}
+
 				$('#btn-vendor-submit-tawaran').on('click', function() {
 					var $btn = $(this);
 
@@ -1691,11 +1741,9 @@
 							return;
 						}
 
-						if (!confirm('Hantar tawaran? Maklumat tidak boleh dikemaskini selepas ini.')) {
-							return;
-						}
-
-						submitTawaran($btn);
+						confirmSubmitTawaran().then(function(isConfirmed) {
+							if (isConfirmed) submitTawaran($btn);
+						});
 					}).fail(function() {
 						alert('Gagal menyemak status tawaran. Sila cuba lagi.');
 					});

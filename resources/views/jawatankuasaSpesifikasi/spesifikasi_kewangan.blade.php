@@ -172,7 +172,8 @@
             $physicalSubmissionRaw = data_get($pricingData, 'spec_document.physical_submission', true);
         }
         $hasPhysicalSubmission = filter_var($physicalSubmissionRaw, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
-        $hasPhysicalSubmission = $hasPhysicalSubmission ?? (bool) $physicalSubmissionRaw;
+        $hasPhysicalSubmission = (bool) ($tender && (int) $tender->penilaian_fizikal === 1)
+            && (bool) ($hasPhysicalSubmission ?? $physicalSubmissionRaw);
         $templateStatus = data_get($templateData, 'document_status')
             ?: data_get($templateData, 'checklist_status')
             ?: data_get($pricingData, 'spec_document.status')
@@ -340,9 +341,10 @@
                     <span class="badge-status {{ $templateStatusClass }}">{{ $templateStatusLabel }}</span>
                 </div>
 
-                <!-- Penghantaran Fizikal -->
+                @if ($tender && (int) $tender->penilaian_fizikal === 1)
+                <!-- Serahan Tangan -->
                 <div class="col-12 col-md-6">
-                    <label class="form-label fw-semibold d-block">Penghantaran Fizikal <span
+                    <label class="form-label fw-semibold d-block">Serahan Tangan <span
                             class="text-danger">*</span></label>
                     <div class="d-flex gap-3 mt-1">
                         <div class="form-check">
@@ -357,6 +359,7 @@
                         </div>
                     </div>
                 </div>
+                @endif
 
             </div>
         </div>

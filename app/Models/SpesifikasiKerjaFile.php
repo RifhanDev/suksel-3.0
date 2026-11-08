@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Facades\Storage;
 
 class SpesifikasiKerjaFile extends Model
 {
@@ -47,11 +46,10 @@ class SpesifikasiKerjaFile extends Model
             return '';
         }
 
-        $base = rtrim((string) config('services.stos_backend.url'), '/');
-        if ($base !== '') {
-            return $base . '/storage/' . $path;
-        }
-
-        return Storage::disk('public')->url($path);
+        return route('tenderChecklist.download', [
+            'tender' => $this->header->tender_id,
+            'section' => 'spesifikasi_kerja',
+            'fileUuid' => $this->uuid,
+        ]);
     }
 }

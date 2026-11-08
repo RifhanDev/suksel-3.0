@@ -15,6 +15,7 @@ class TechnicalChecklistItem extends Model
         'title',
         'mechanism',
         'vendor_action',
+        'penghantaran_fizikal',
         'score',
         'status',
         'sort_order',
@@ -27,6 +28,7 @@ class TechnicalChecklistItem extends Model
 
     protected $casts = [
         'score' => 'decimal:2',
+        'penghantaran_fizikal' => 'boolean',
     ];
 
     public function getRouteKeyName(): string
@@ -42,5 +44,10 @@ class TechnicalChecklistItem extends Model
     public function files(): HasMany
     {
         return $this->hasMany(TechnicalChecklistFile::class);
+    }
+
+    public function specificationDocument(): BelongsTo
+    {
+        return $this->belongsTo(TechnicalSpecificationDocument::class, 'specification_document_id');
     }
 }

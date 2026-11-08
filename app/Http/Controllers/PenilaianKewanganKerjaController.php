@@ -329,6 +329,10 @@ class PenilaianKewanganKerjaController extends Controller
 
         // Enrich vendorSummary with extra data for Borang 1 Kriteria modal
         if ($borang_code === 'borang1') {
+            $bqTemplateItem = collect(\App\Support\TenderDokumenPresenter::for($tender)->items('admin'))
+                ->first(fn (array $item) => ! empty($item['admin_content']['bq_template_mode']));
+            $bqTemplateUuid = $bqTemplateItem['uuid'] ?? null;
+
             $borangTenderItem = \App\Models\KewanganKerjaItem::whereHas('header', fn ($q) => $q->where('tender_id', $tender->id))
                 ->where('title', 'like', '%Borang Tender%')->first();
             $suratAkuanItem = \App\Models\KewanganKerjaItem::whereHas('header', fn ($q) => $q->where('tender_id', $tender->id))
@@ -366,6 +370,12 @@ class PenilaianKewanganKerjaController extends Controller
                 $vId = $p->vendor_id;
                 $vFiles = $vFilesGroup->get($vId, collect());
                 $vResps = $vResponsesGroup->get($vId, collect());
+                $bqFile = $bqTemplateUuid ? $vFiles->firstWhere('checklist_item_uuid', $bqTemplateUuid) : null;
+                $bqFileExtension = strtolower(pathinfo((string) ($bqFile?->original_name ?? ''), PATHINFO_EXTENSION));
+                $bqIsPdf = $bqFile && (
+                    strtolower((string) ($bqFile->mime_type ?? '')) === 'application/pdf'
+                    || $bqFileExtension === 'pdf'
+                );
 
                 // 1 & 2. Borang Tender File
                 $btFile = $borangTenderItem ? $vFiles->firstWhere('checklist_item_uuid', $borangTenderItem->uuid) : null;
@@ -408,6 +418,9 @@ class PenilaianKewanganKerjaController extends Controller
                     $vendorSummary[$vId]['extra_kriteria'] = [
                         'borang_tender_url'       => $borangTenderUrl,
                         'surat_akuan_url'          => $suratAkuanUrl,
+                        'bq_url'                   => $bqFile ? route('tenderDokumen.download', $bqFile->uuid) : null,
+                        'bq_file_name'             => $bqFile?->original_name,
+                        'bq_is_pdf'                => (bool) $bqIsPdf,
                         'harga_tawaran_formatted'  => $hargaTawaranFormatted,
                         'tempoh_siap_pembekal'     => $tempohSiapPembekalStr,
                         'tempoh_siap_tender'       => $tempohSiapTenderStr,
@@ -674,10 +687,12 @@ class PenilaianKewanganKerjaController extends Controller
             $pbPayload = $b3PenyataBankPayloads->get($vId)?->payload ?? [];
 
             $pbAccounts = [];
-            if ($pbObj && !empty($pbObj->accounts) && is_array($pbObj->accounts)) {
-                $pbAccounts = $pbObj->accounts;
-            } elseif (!empty($pbPayload['accounts']) && is_array($pbPayload['accounts'])) {
+            // Vendor-scoped submission contains the actual bank names and monthly
+            // balances; tender-level configuration is only a fallback for legacy data.
+            if (!empty($pbPayload['accounts']) && is_array($pbPayload['accounts'])) {
                 $pbAccounts = $pbPayload['accounts'];
+            } elseif ($pbObj && !empty($pbObj->accounts) && is_array($pbObj->accounts)) {
+                $pbAccounts = $pbObj->accounts;
             } elseif ($pbObj && $pbObj->bulans->count() > 0) {
                 $pbAccounts = [[
                     'bank_name' => 'BANK 1',
@@ -709,11 +724,29 @@ class PenilaianKewanganKerjaController extends Controller
                 $accTotal = array_sum($mAmounts);
                 $pbGrandTotal += $accTotal;
 
+                $accountFiles = [];
+                $rawAccountFiles = is_array($acc['files'] ?? null) ? $acc['files'] : [];
+                foreach ($rawAccountFiles as $file) {
+                    if (! is_array($file)) {
+                        continue;
+                    }
+                    $fileUuid = (string) ($file['uuid'] ?? '');
+                    if ($fileUuid === '') {
+                        continue;
+                    }
+                    $accountFiles[] = [
+                        'uuid' => $fileUuid,
+                        'name' => $file['original_name'] ?? $file['name'] ?? 'Penyata Bank',
+                        'url' => route('tenderDokumen.download', $fileUuid),
+                    ];
+                }
+
                 $formattedPbAccounts[] = [
                     'account_no' => $acc['account_no'] ?? ($idx + 1),
                     'bank_name' => strtoupper($bankName),
                     'monthly_amounts' => $mAmounts,
                     'total' => $accTotal,
+                    'files' => $accountFiles,
                 ];
             }
 
@@ -749,8 +782,9 @@ class PenilaianKewanganKerjaController extends Controller
             $asetCairI = $wangDalamTanganG + $bonSahamH;
             $borangCA1KreditJ = $bakiKredit;
 
-            // Total Available Capital (k) = (f) + (g) + (h) + (i) + (j)
-            $jumlahModalK = $purata3BulanF + $wangDalamTanganG + $bonSahamH + $asetCairI + $borangCA1KreditJ;
+            // Aset Cair (i) is the subtotal (g) + (h); count it once in K.
+            // Total Available Capital (k) = (f) + (i) + (j)
+            $jumlahModalK = $purata3BulanF + $asetCairI + $borangCA1KreditJ;
 
             // Minimum Capital Required = 3% of Builder's Work Value / Harga Indikatif Tender
             $hargaIndikatif = (float) ($tender->harga_indikatif ?? 0);

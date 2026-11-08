@@ -34,6 +34,7 @@
                             <tr>
                                 <th class="text-center text-uppercase fw-bold py-2.5" style="width: 100px; font-size: 0.72rem; letter-spacing: 0.05em; background-color: #1e293b !important; color: #fff !important;">Kod</th>
                                 <th class="text-start text-uppercase fw-bold py-2.5" style="width: 250px; font-size: 0.72rem; letter-spacing: 0.05em; background-color: #1e293b !important; color: #fff !important;">Nama Petender</th>
+                                <th id="modalHargaTawaranHeader" class="d-none text-end text-uppercase fw-bold py-2.5" style="width: 170px; font-size: 0.72rem; letter-spacing: 0.05em; background-color: #1e293b !important; color: #fff !important;">Harga Tawaran (RM)</th>
                                 <th class="text-start text-uppercase fw-bold py-2.5" style="font-size: 0.72rem; letter-spacing: 0.05em; background-color: #1e293b !important; color: #fff !important;">Dokumen / Penyerahan</th>
                                 <th class="text-center text-uppercase fw-bold py-2.5" style="width: 130px; font-size: 0.72rem; letter-spacing: 0.05em; background-color: #1e293b !important; color: #fff !important;">Penyerahan</th>
                                 <th class="text-center text-uppercase fw-bold py-2.5" style="width: 180px; font-size: 0.72rem; letter-spacing: 0.05em; background-color: #1e293b !important; color: #fff !important;">Keputusan Pematuhan</th>

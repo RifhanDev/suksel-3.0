@@ -60,6 +60,36 @@ class FinancialChecklistController extends Controller
             }
         }
 
+        $technicalPhysicalFlags = \Illuminate\Support\Facades\DB::table('technical_checklist_items as tci')
+            ->join('technical_checklist_headers as tch', 'tch.id', '=', 'tci.technical_checklist_header_id')
+            ->leftJoin('technical_specification_documents as tsd', 'tsd.id', '=', 'tci.specification_document_id')
+            ->where('tch.tender_id', $tender->id)
+            ->select('tci.uuid', 'tsd.uuid as document_uuid', 'tci.penghantaran_fizikal', 'tsd.physical_submission')
+            ->get()
+            ->keyBy('uuid');
+        foreach ($technicalPhysicalFlags as $technicalFlag) {
+            if (!empty($technicalFlag->document_uuid)) {
+                $technicalPhysicalFlags[$technicalFlag->document_uuid] = $technicalFlag;
+            }
+        }
+        $financialPhysicalFlags = FinancialChecklistItem::query()
+            ->whereHas('header', fn ($query) => $query->where('tender_id', $tender->id))
+            ->pluck('penghantaran_fizikal', 'uuid');
+
+        if (!empty($checklistData['items'])) {
+            foreach ($checklistData['items'] as &$item) {
+                $isSpecification = ($item['source_type'] ?? '') === 'specification_document'
+                    || ($item['mechanism'] ?? '') === 'spesifikasi';
+                $linkedTechnical = $technicalPhysicalFlags[$item['technical_item_uuid'] ?? $item['specification_document_uuid'] ?? ''] ?? null;
+                $value = $isSpecification
+                    ? ($linkedTechnical?->physical_submission ?? false)
+                    : ($financialPhysicalFlags[$item['uuid'] ?? ''] ?? $item['penghantaran_fizikal'] ?? false);
+                $item['penghantaran_fizikal'] = (int) $tender->penilaian_fizikal === 1 && (bool) $value;
+                if ($isSpecification) $item['physical_submission_locked'] = true;
+            }
+            unset($item);
+        }
+
         if (!empty($checklistData['items']) && is_array($checklistData['items'])) {
             $dbTechScores = \Illuminate\Support\Facades\DB::table('technical_checklist_items as tci')
                 ->join('technical_checklist_headers as tch', 'tch.id', '=', 'tci.technical_checklist_header_id')
@@ -203,8 +233,24 @@ class FinancialChecklistController extends Controller
                 ->all();
         }
 
+        // Specification rows use the existing physical-submission setting from
+        // their linked technical specification document.
+        if (!empty($checklistData['items'])) {
+            foreach ($checklistData['items'] as &$item) {
+                $isSpecification = ($item['source_type'] ?? '') === 'specification_document'
+                    || ($item['mechanism'] ?? '') === 'spesifikasi';
+                if (!$isSpecification) continue;
+                $linkedTechnical = $technicalPhysicalFlags[$item['technical_item_uuid'] ?? $item['specification_document_uuid'] ?? ''] ?? null;
+                $item['penghantaran_fizikal'] = (int) $tender->penilaian_fizikal === 1
+                    && (bool) ($linkedTechnical?->physical_submission ?? $item['penghantaran_fizikal'] ?? false);
+                $item['physical_submission_locked'] = true;
+            }
+            unset($item);
+        }
+
         return view('jawatankuasaSpesifikasi.senarai_kewangan_bekalan', [
             'tender' => $tender,
+            'physicalSubmissionEnabled' => (int) $tender->penilaian_fizikal === 1,
             'checklistData' => $checklistData,
             'standardItems' => $standardItems,
             'afterSpecificationUrl' => PenyediaanIklanNavigation::afterSpecificationUrl($tender),
@@ -216,6 +262,36 @@ class FinancialChecklistController extends Controller
         $this->ensureAccess();
 
         $response = $this->api()->post($this->url('financial-checklists/' . $tenderUuid), $request->except('_token'));
+
+        if ($response->successful() && $request->has('items')) {
+            $tender = Tender::where('uuid', $tenderUuid)->firstOrFail();
+            $apiItems = $response->json('data.items', []);
+            $header = FinancialChecklistHeader::where('tender_id', $tender->id)->first();
+            $needsLocalSync = !$header;
+            foreach ($apiItems as $savedItem) {
+                if (!is_array($savedItem)) continue;
+                if ($header && !empty($savedItem['uuid']) && !FinancialChecklistItem::where('financial_checklist_header_id', $header->id)->where('uuid', $savedItem['uuid'])->exists()) {
+                    $needsLocalSync = true;
+                    break;
+                }
+            }
+            if ($needsLocalSync) {
+                app(\App\Services\StosTenderChecklistSync::class)->syncForTender($tender);
+                $header = FinancialChecklistHeader::where('tender_id', $tender->id)->first();
+            }
+            if ($header) {
+                foreach ((array) $request->input('items', []) as $index => $item) {
+                    if (!is_array($item)) continue;
+                    $isSpecification = ($item['source_type'] ?? '') === 'specification_document'
+                        || ($item['mechanism'] ?? '') === 'spesifikasi';
+                    $uuid = $item['uuid'] ?? ($apiItems[$index]['uuid'] ?? null);
+                    if ($isSpecification || !$uuid || !array_key_exists('penghantaran_fizikal', $item)) continue;
+                    FinancialChecklistItem::where('financial_checklist_header_id', $header->id)
+                        ->where('uuid', $uuid)
+                        ->update(['penghantaran_fizikal' => (int) $tender->penilaian_fizikal === 1 && (bool) $item['penghantaran_fizikal']]);
+                }
+            }
+        }
 
         return response()->json($response->json(), $response->status());
     }
@@ -366,6 +442,7 @@ class FinancialChecklistController extends Controller
                     'title' => $item->title,
                     'mechanism' => $item->mechanism,
                     'vendor_action' => $item->vendor_action,
+                    'penghantaran_fizikal' => (bool) $item->penghantaran_fizikal,
                     'score' => (float) $item->score,
                     'status' => $item->status,
                     'sort_order' => (int) $item->sort_order,

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Tender;
 use App\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
 class Jawatankuasa extends Model
@@ -76,12 +77,26 @@ class Jawatankuasa extends Model
         'dokumen_sokongan_nama',
         'dokumen_sokongan_path',
         'dihantar_pemakluman_pada',
+        'is_current',
     ];
 
     protected $casts = [
         'tarikh_mesyuarat' => 'date',
         'dihantar_pemakluman_pada' => 'datetime',
+        'is_current' => 'boolean',
     ];
+
+    protected static function booted(): void
+    {
+        static::addGlobalScope('current', function (Builder $query) {
+            $query->where($query->getModel()->qualifyColumn('is_current'), true);
+        });
+    }
+
+    public function scopeWithInactive(Builder $query): Builder
+    {
+        return $query->withoutGlobalScope('current');
+    }
 
     public function tender()
     {

@@ -258,9 +258,10 @@
                     <span class="badge-status badge-status-warning">Draf</span>
                 </div>
 
-                <!-- Penghantaran Fizikal -->
+                @if ((int) $tender->penilaian_fizikal === 1)
+                <!-- Serahan Tangan -->
                 <div class="col-12 col-md-6">
-                    <label class="form-label fw-semibold d-block">Penghantaran Fizikal <span
+                    <label class="form-label fw-semibold d-block">Serahan Tangan <span
                             class="text-danger">*</span></label>
                     <div class="d-flex gap-3 mt-1">
                         <div class="form-check">
@@ -275,6 +276,7 @@
                         </div>
                     </div>
                 </div>
+                @endif
 
             </div>
         </div>
@@ -615,6 +617,7 @@
     <script type="text/javascript">
         var SPEC_CONFIG = {
             tenderUuid: @json($tender->uuid),
+            physicalSubmissionEnabled: @json((int) $tender->penilaian_fizikal === 1),
             formBaseUrl: @json(route('spesifikasiForm', ['tenderUuid' => $tender->uuid])),
             storeUrl: @json(route('spesifikasiTeknikal.store')),
             showUrl: @json(route('spesifikasiTeknikal.show', ['uuid' => '__UUID__'])),
@@ -1529,7 +1532,7 @@
                     specification_type: $('input[name="jenis_spesifikasi"]').val(),
                     goods_type: $('input[name="jenisBarang"]:checked').closest('.form-check').find('label').text().trim().toLowerCase(),
                     weighting_type: $('input[name="wajaranSpesifikasi"]:checked').closest('.form-check').find('label').text().trim().toLowerCase() === 'secara terus' ? 'direct' : 'priority',
-                    physical_submission: $('input[name="penghantaranFizikal"]:checked').closest('.form-check').find('label').text().trim().toLowerCase() === 'ya',
+                    physical_submission: SPEC_CONFIG.physicalSubmissionEnabled && $('input[name="penghantaranFizikal"]:checked').closest('.form-check').find('label').text().trim().toLowerCase() === 'ya',
                     items: []
                 };
 

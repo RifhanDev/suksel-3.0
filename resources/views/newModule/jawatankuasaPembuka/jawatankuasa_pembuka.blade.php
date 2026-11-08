@@ -283,7 +283,7 @@
 		<div class="progress-wrapper mb-4">
 			<div class="progress-step active" id="step-nav-1" onclick="goToStep(1)">
 				<div class="step-number">1</div>
-				<div class="step-label text-uppercase">Peringkat Pematuhan Teknikal</div>
+				<div class="step-label text-uppercase">{{ ($isKerjaBqReview ?? false) ? 'Semakan Jadual Harga & Kuantiti' : 'Peringkat Pematuhan Teknikal' }}</div>
 			</div>
 			<div class="progress-step" id="step-nav-2" onclick="goToStep(2)">
 				<div class="step-number">2</div>
@@ -296,7 +296,7 @@
 		</div>
 
 		{{-- ===================================================
-		     STEP 1: Pematuhan Teknikal
+		     STEP 1: Pematuhan Teknikal / Jadual Harga & Kuantiti
 		=================================================== --}}
 		<div id="step-content-1" class="step-content-item">
 			<div class="d-flex align-items-center gap-3 mb-4 pb-3 border-bottom">
@@ -308,8 +308,12 @@
 					</svg>
 				</div>
 				<div>
-					<h4 class="fw-bold text-dark mb-1" style="font-size: 1.05rem; letter-spacing: -0.2px;">Pematuhan Cadangan Teknikal</h4>
-					<p class="text-muted mb-0" style="font-size: 0.78rem;">Sila semak dan sahkan pematuhan teknikal bagi setiap pembekal.</p>
+					<h4 class="fw-bold text-dark mb-1" style="font-size: 1.05rem; letter-spacing: -0.2px;">{{ ($isKerjaBqReview ?? false) ? 'Semakan Jadual Harga & Kuantiti' : 'Pematuhan Cadangan Teknikal' }}</h4>
+					<p class="text-muted mb-0" style="font-size: 0.78rem;">
+						{{ ($isKerjaBqReview ?? false)
+							? 'Sila semak dokumen Jadual Harga & Kuantiti yang dikemukakan oleh setiap petender.'
+							: 'Sila semak dan sahkan pematuhan teknikal bagi setiap pembekal.' }}
+					</p>
 				</div>
 			</div>
 
@@ -364,7 +368,9 @@
 						</tr>
 					@empty
 						<tr>
-							<td colspan="5" class="text-center text-muted py-4">Tiada dokumen teknikal untuk tender ini.</td>
+							<td colspan="5" class="text-center text-muted py-4">
+								{{ ($isKerjaBqReview ?? false) ? 'Tiada Jadual Harga & Kuantiti untuk tender ini.' : 'Tiada dokumen teknikal untuk tender ini.' }}
+							</td>
 						</tr>
 					@endforelse
 				</tbody>
@@ -952,6 +958,7 @@
 	function renderSemakRows(item) {
 		const $body = $('#modalSemakBody');
 		$body.empty();
+		const isHandDelivery = ['serahan_tangan', 'serahan tangan'].includes(String(item?.action || item?.mechanism || item?.mekanisma || '').trim().toLowerCase());
 
 		const vendors = item?.vendors || [];
 		if (!vendors.length) {
@@ -960,17 +967,24 @@
 		}
 
 		vendors.forEach(function (vendor) {
-			const statusClass = vendor.status === 'submitted' ? 'badge-status-success' : 'badge-status-warning';
+			const statusClass = isHandDelivery
+				? (vendor.status_pematuhan === 1 ? 'badge-status-success' : (vendor.status_pematuhan === 0 ? 'badge-status-danger' : 'badge-status-warning'))
+				: (vendor.status === 'submitted' ? 'badge-status-success' : 'badge-status-warning');
+			const statusLabel = isHandDelivery
+				? (vendor.status_pematuhan === 1 ? 'Hantar' : (vendor.status_pematuhan === 0 ? 'Tidak Dihantar' : 'Menunggu Pengesahan'))
+				: vendor.status_label;
 
 			// data-url instead of href so clicks run through the reservation check.
 			const LIHAT_LINK_CLASS = 'text-primary text-decoration-none d-inline-flex align-items-center gap-1 btn-semak-lihat';
 
 			// Nothing submitted: still claimable so Tiada can be recorded.
-			let docHtml = '<span class="small text-muted d-block fst-italic">' + escapeHtml(vendor.summary || 'Tiada dokumen dimuat naik') + '</span>' +
+			let docHtml = isHandDelivery
+				? '<span class="small text-muted d-block">Sila rujuk penghantaran fizikal dari petender</span>'
+				: '<span class="small text-muted d-block fst-italic">' + escapeHtml(vendor.summary || 'Tiada dokumen dimuat naik') + '</span>' +
 				'<a href="#" data-vendor-id="' + vendor.vendor_id + '" class="' + LIHAT_LINK_CLASS + '">' +
 				'<i class="bi bi-pencil-square"></i>Mula Menilai</a>';
 
-			if (Array.isArray(vendor.files) && vendor.files.length) {
+			if (!isHandDelivery && Array.isArray(vendor.files) && vendor.files.length) {
 				docHtml = '<div class="d-flex flex-wrap gap-2">' + vendor.files.map(function (file, idx) {
 					const fileName = file.name || 'Dokumen';
 					const ext = (fileName.split('.').pop() || '').trim().toLowerCase();
@@ -989,7 +1003,7 @@
 						'data-vendor-id="' + vendor.vendor_id + '" class="' + LIHAT_LINK_CLASS + '" title="' + escapeHtml(fileName) + '">' +
 						'<i class="bi ' + iconClass + '"></i>' + label + '</a>';
 				}).join('') + '</div>';
-			} else if (vendor.form_url) {
+			} else if (!isHandDelivery && vendor.form_url) {
 				const isSpec = (item?.action === 'view_specification');
 				const label  = isSpec ? 'Lihat Spesifikasi' : 'Lihat Borang';
 				// use clean shared partial for spec preview
@@ -1028,8 +1042,8 @@
 			const selectHtml =
 				'<select class="form-select shadow-none border-2 small semak-pematuhan" data-vendor-id="' + vendor.vendor_id + '" disabled>' +
 					'<option value="" ' + (savedStatus === null || savedStatus === undefined ? 'selected' : '') + ' disabled>-- Pilih --</option>' +
-					'<option value="1" ' + (savedStatus === 1 ? 'selected' : '') + '>Ada</option>' +
-					'<option value="0" ' + (savedStatus === 0 ? 'selected' : '') + '>Tiada</option>' +
+					'<option value="1" ' + (savedStatus === 1 ? 'selected' : '') + '>' + (isHandDelivery ? 'Telah Diterima' : 'Ada') + '</option>' +
+					'<option value="0" ' + (savedStatus === 0 ? 'selected' : '') + '>' + (isHandDelivery ? 'Tidak Diterima' : 'Tiada') + '</option>' +
 				'</select>';
 
 			const catatanHtml =
@@ -1044,10 +1058,10 @@
 				: '<span class="fst-italic small text-muted">Kod Pembekal Belum Dijana</span>';
 
 			$body.append(
-				'<tr data-vendor-id="' + vendor.vendor_id + '">' +
+				'<tr data-vendor-id="' + vendor.vendor_id + '" data-hand-delivery="' + (isHandDelivery ? '1' : '0') + '">' +
 					'<td class="text-center fw-bold bg-light" data-vendor-id="' + vendor.vendor_id + '">' + kodDisplay + '</td>' +
 					'<td>' + docHtml + '<div class="semak-lock-note"></div></td>' +
-					'<td class="text-center"><span class="badge-status ' + statusClass + '">' + escapeHtml(vendor.status_label) + '</span></td>' +
+					'<td class="text-center"><span class="badge-status ' + statusClass + ' semak-status-penyerahan-badge">' + escapeHtml(statusLabel) + '</span></td>' +
 					'<td class="text-center">' + selectHtml + pematuhanBadgeHtml + '</td>' +
 					'<td>' + catatanHtml + catatanTextHtml + '</td>' +
 				'</tr>'
@@ -1079,6 +1093,7 @@
 
 			const evaluation  = ROW_EVALUATIONS[vendorId];
 			const isEvaluated = evaluation && evaluation.status_pematuhan !== null;
+			const isHandDelivery = $row.data('hand-delivery') === 1 || $row.data('hand-delivery') === '1';
 
 			$row.removeClass('row-locked-other row-locked-mine');
 
@@ -1105,6 +1120,15 @@
 				$row.addClass('row-locked-other');
 				$note.html('<span class="lock-note lock-note-other"><i class="bi bi-lock-fill"></i>Sedang dinilai oleh ' +
 					escapeHtml(lock ? lock.user_name : 'pengguna lain') + '</span>');
+			} else if (isEvaluated && isHandDelivery) {
+				// For hand delivery, the status selector itself is the entry point
+				// for taking or reopening the evaluation lock.
+				$select.prop('disabled', false).removeClass('d-none');
+				$catatan.prop('disabled', true).removeClass('d-none');
+				$badge.addClass('d-none');
+				$catatanText.addClass('d-none');
+				$links.removeClass('disabled').attr('aria-disabled', 'false');
+				$note.html('<span class="lock-note lock-note-free"><i class="bi bi-pencil-square"></i>Pilih status untuk mengemas kini penilaian</span>');
 			} else if (isEvaluated) {
 				// Recorded result — badge, not a disabled form control.
 				$select.addClass('d-none');
@@ -1112,7 +1136,9 @@
 				$badge.removeClass('d-none')
 					.attr('class', 'badge-status semak-pematuhan-badge ' +
 						(evaluation.status_pematuhan === 1 ? 'badge-status-success' : 'badge-status-danger'))
-					.text(evaluation.status_pematuhan === 1 ? 'Ada' : 'Tiada');
+					.text($row.data('hand-delivery')
+						? (evaluation.status_pematuhan === 1 ? 'Telah Diterima' : 'Tidak Diterima')
+						: (evaluation.status_pematuhan === 1 ? 'Ada' : 'Tiada'));
 				$catatanText.removeClass('d-none')
 					.text(evaluation.catatan || '—')
 					.toggleClass('text-muted', !evaluation.catatan);
@@ -1125,7 +1151,7 @@
 				}
 			} else {
 				// free, not yet evaluated — must claim the row before judging it
-				$select.prop('disabled', true).removeClass('d-none');
+				$select.prop('disabled', !isHandDelivery).removeClass('d-none');
 				$catatan.prop('disabled', true).removeClass('d-none');
 				$badge.addClass('d-none');
 				$catatanText.addClass('d-none');
@@ -1133,13 +1159,81 @@
 
 				const hasDoc = $links.filter('[data-url]').length > 0;
 				$note.html('<span class="lock-note lock-note-free"><i class="bi bi-eye"></i>' +
-					(hasDoc ? 'Buka dokumen untuk menilai' : 'Tiada dokumen — klik Mula Menilai') + '</span>');
+					(isHandDelivery ? 'Pilih status penerimaan untuk menilai' : (hasDoc ? 'Buka dokumen untuk menilai' : 'Tiada dokumen — klik Mula Menilai')) + '</span>');
 			}
 		});
 
 		// Nothing to save unless this user is holding at least one row.
 		$('#btnSavePematuhan').prop('disabled', lockingActive() && heldByMe === 0);
 	}
+
+	// Serahan Tangan has no file link to start an evaluation. Clicking its
+	// compliance selector therefore takes (or reopens) the same per-row lock.
+	$(document).on('click', '.semak-pematuhan', function (e) {
+		const $select = $(this);
+		const $row = $select.closest('tr[data-vendor-id]');
+		if ($row.data('hand-delivery') !== 1 && $row.data('hand-delivery') !== '1') return;
+		if (!lockingActive()) return;
+
+		const vendorId = $row.data('vendor-id');
+		const state = lockState(activeItemUuid, vendorId);
+		if (state === 'mine') return;
+
+		e.preventDefault();
+		if (state === 'other') {
+			const lock = findLock(activeItemUuid, vendorId);
+			Swal.fire({
+				icon: 'info',
+				title: 'Sedang Dinilai',
+				text: 'Pembekal ini sedang dinilai oleh ' + (lock ? lock.user_name : 'ahli lain') + '.',
+				confirmButtonColor: '#1e293b'
+			});
+			return;
+		}
+
+		const existing = ROW_EVALUATIONS[vendorId];
+		const alreadyEvaluated = existing && existing.status_pematuhan !== null;
+		Swal.fire({
+			title: alreadyEvaluated ? 'Petender Ini Telah Disemak' : 'Sahkan Penerimaan Dokumen?',
+			text: alreadyEvaluated
+				? 'Penilaian terdahulu akan dibuka untuk dikemas kini.'
+				: 'Anda akan mula merekodkan status penerimaan dokumen fizikal.',
+			icon: 'question',
+			showCancelButton: true,
+			confirmButtonText: alreadyEvaluated ? 'Ya, Kemas Kini' : 'Ya, Mula Menilai',
+			cancelButtonText: 'Batal',
+			confirmButtonColor: '#1e293b',
+			cancelButtonColor: '#94a3b8'
+		}).then(function (result) {
+			if (!result.isConfirmed) return;
+
+			$.post(SESI_LOCK_URL, {
+				_token: CSRF_TOKEN,
+				tender: TENDER_IDENTIFIER,
+				checklist_item_uuid: activeItemUuid,
+				vendor_id: vendorId,
+				item_title: SEMAK_PAYLOAD[activeItemUuid]?.title || ''
+			}).done(function () {
+				SESI.locks = (SESI.locks || []).filter(function (lock) {
+					return !(lock.checklist_item_uuid === activeItemUuid && Number(lock.vendor_id) === Number(vendorId));
+				});
+				SESI.locks.push({
+					checklist_item_uuid: activeItemUuid,
+					vendor_id: Number(vendorId),
+					user_id: Number(SESI.user_id),
+					user_name: 'Anda'
+				});
+				applyLockStates();
+				$select.trigger('focus');
+			}).fail(function (xhr) {
+				const message = xhr.status === 409
+					? 'Pembekal ini baru sahaja diambil oleh ahli lain. Sila cuba semula.'
+					: (xhr.responseJSON?.message || 'Gagal memulakan penilaian.');
+				Swal.fire('Tidak Dapat Menilai', message, 'warning');
+				refreshLocks();
+			});
+		});
+	});
 
 	/**
 	 * "Lihat" inside the semak modal. Opening a document reserves that row, so the
@@ -1204,13 +1298,17 @@
 		// evaluation — say so plainly, and name who did it.
 		const existing = ROW_EVALUATIONS[vendorId];
 		const alreadyEvaluated = existing && existing.status_pematuhan !== null;
+		const handDeliveryItem = ['serahan_tangan', 'serahan tangan'].includes(String(SEMAK_PAYLOAD[itemUuid]?.action || '').trim().toLowerCase());
+		const existingStatusLabel = handDeliveryItem
+			? (existing?.status_pematuhan === 1 ? 'Telah Diterima' : 'Tidak Diterima')
+			: (existing?.status_pematuhan === 1 ? 'Ada' : 'Tiada');
 
 		const prompt = alreadyEvaluated
 			? {
 				title: 'Petender Ini Telah Disemak',
 				html: 'Dokumen petender ini telah disemak' +
 					(existing.evaluator_name ? ' oleh <strong>' + escapeHtml(existing.evaluator_name) + '</strong>' : '') +
-					' dengan status <strong>' + (existing.status_pematuhan === 1 ? 'Ada' : 'Tiada') + '</strong>.' +
+					' dengan status <strong>' + existingStatusLabel + '</strong>.' +
 					'<br><br>Adakah anda mahu membuka semula dokumen ini untuk <strong>mengemas kini</strong> penilaian tersebut?',
 				confirmText: 'Ya, Kemas Kini'
 			}
@@ -1485,7 +1583,10 @@
 		});
 
 		if (hasError) {
-			Swal.fire('Ralat Validasi', 'Catatan wajib diisi jika Status Pematuhan = Tiada.', 'warning');
+			const handDeliveryItem = ['serahan_tangan', 'serahan tangan'].includes(String(SEMAK_PAYLOAD[activeItemUuid]?.action || '').trim().toLowerCase());
+			Swal.fire('Ralat Validasi', handDeliveryItem
+				? 'Catatan wajib diisi jika Status Pematuhan = Tidak Diterima.'
+				: 'Catatan wajib diisi jika Status Pematuhan = Tiada.', 'warning');
 			return;
 		}
 

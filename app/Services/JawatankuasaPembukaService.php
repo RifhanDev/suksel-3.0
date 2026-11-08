@@ -136,8 +136,13 @@ class JawatankuasaPembukaService
                     ->firstWhere('vendor_id', $vendorId);
 
                 $submitted = ($vendorRow['status'] ?? '') === 'submitted';
+                $action = strtolower(trim((string) ($payload['action'] ?? $payload['mekanisma'] ?? '')));
+                $isHandDelivery = in_array($action, ['serahan_tangan', 'serahan tangan'], true);
+                $handDeliveryReviewed = $isHandDelivery && $eval !== null && $eval->status_pematuhan !== null;
 
-                if (! $submitted) {
+                // Physical delivery has no vendor-side upload status. A saved
+                // Pembuka receipt decision is the record of whether it arrived.
+                if (! $submitted && ! $handDeliveryReviewed) {
                     $reasons[] = "Tiada penyerahan bagi \"{$itemTitle}\".";
                 }
 

@@ -2129,6 +2129,11 @@
             $('#modalStep2NamaPembekal').text(nama || '-');
             $('#modalButiranCadanganKewanganTajukStep2').text($('#modalCadanganKewanganTajukStep2').text() || $('#modalDocTitle').text() || 'Penyata Bank Terkini (3 Bulan Terakhir) Syarikat');
 
+            const vPayloadData = (typeof VENDOR_FORM_PAYLOADS !== 'undefined' && VENDOR_FORM_PAYLOADS[activeStep2VendorId])
+                ? VENDOR_FORM_PAYLOADS[activeStep2VendorId]
+                : {};
+            const vendorAccounts = Array.isArray(vPayloadData.accounts) ? vPayloadData.accounts : [];
+
             // Render Section 1: Dokumen Sokongan Petender (STRICTLY this vendor only)
             const $dokTbody = $('#modalStep2DokumenSemakSilangTableBody');
             if ($dokTbody.length) {
@@ -2136,9 +2141,19 @@
 
                 const vIdStr = String(activeStep2VendorId || '');
                 const vIdNum = parseInt(activeStep2VendorId, 10);
-                let vendorFiles = [];
+                let accountFiles = [];
+                vendorAccounts.forEach((account, accountIndex) => {
+                    const bankName = String(account.bank_name || account.bank_institusi || account.bank || '').trim();
+                    (Array.isArray(account.files) ? account.files : []).forEach(file => {
+                        if (!file) return;
+                        accountFiles.push(Object.assign({}, file, {
+                            account_label: 'Akaun ' + (accountIndex + 1) + (bankName ? ' - ' + bankName : '')
+                        }));
+                    });
+                });
+                let vendorFiles = accountFiles;
 
-                if (typeof PENYATA_DOKUMEN_BY_VENDOR !== 'undefined') {
+                if (!vendorFiles.length && typeof PENYATA_DOKUMEN_BY_VENDOR !== 'undefined') {
                     const scoped = PENYATA_DOKUMEN_BY_VENDOR[vIdStr]
                         || PENYATA_DOKUMEN_BY_VENDOR[vIdNum]
                         || [];
@@ -2189,7 +2204,10 @@
                                 '<td class="px-3 py-2.5">' +
                                     '<div class="d-flex align-items-center gap-2">' +
                                         '<i class="bi ' + (isPdf ? 'bi-file-earmark-pdf text-danger' : 'bi-file-earmark-text text-primary') + ' fs-6 me-1"></i>' +
-                                        '<span class="fw-medium text-dark">' + escapeHtml(fileName) + '</span>' +
+                                        '<div>' +
+                                            (f.account_label ? '<span class="d-block text-muted small">' + escapeHtml(f.account_label) + '</span>' : '') +
+                                            '<span class="fw-medium text-dark">' + escapeHtml(fileName) + '</span>' +
+                                        '</div>' +
                                     '</div>' +
                                 '</td>' +
                                 '<td class="text-center px-3 py-2.5">' + actionBtn + '</td>' +
@@ -2217,9 +2235,20 @@
                     { bulan: 8, tahun: 2025, nama: 'Bulan 8 (Ogos 2025)', jumlah: 200000 }
                 ];
 
-            const vPayloadData = (typeof VENDOR_FORM_PAYLOADS !== 'undefined' && VENDOR_FORM_PAYLOADS[activeStep2VendorId])
-                ? VENDOR_FORM_PAYLOADS[activeStep2VendorId]
-                : {};
+            const $bankNameWrap = $('#modalStep2BankNames');
+            const $bankNameList = $('#modalStep2BankNameList').empty();
+            if (vendorAccounts.length) {
+                vendorAccounts.forEach((account, accountIndex) => {
+                    const bankName = String(account.bank_name || account.bank_institusi || account.bank || '').trim();
+                    $('<span>')
+                        .addClass('badge bg-white text-dark border px-3 py-2 fw-semibold')
+                        .text('Akaun ' + (accountIndex + 1) + ': ' + (bankName || 'Nama bank belum dinyatakan'))
+                        .appendTo($bankNameList);
+                });
+                $bankNameWrap.removeClass('d-none');
+            } else {
+                $bankNameWrap.addClass('d-none');
+            }
 
             const itemObj = SEMAK_PAYLOAD[activeStep2Uuid];
             const vRow = itemObj?.vendors?.find(v => v.vendor_id == activeStep2VendorId);

@@ -348,6 +348,12 @@
                         <span>Sila masukkan amaun RM bagi setiap bulan. Jumlah, purata, dan skor akan dikira secara automatik.</span>
                     </div>
 
+                    <div id="modalStep2BankNames" class="rounded-3 border bg-light-subtle p-3 mb-3 d-none">
+                        <div class="small text-muted fw-semibold text-uppercase mb-2" style="letter-spacing:0.04em;">Nama Bank Mengikut Akaun</div>
+                        <div id="modalStep2BankNameList" class="d-flex flex-wrap gap-2"></div>
+                        <div class="small text-muted mt-2">Amaun bulanan di bawah ialah jumlah gabungan daripada semua akaun petender.</div>
+                    </div>
+
                     <div class="table-responsive rounded-3 border bg-white mb-3">
                         <table class="table table-hover align-middle mb-0" style="font-size: 0.85rem;">
                             <thead class="bg-light text-center">

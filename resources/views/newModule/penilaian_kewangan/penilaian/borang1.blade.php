@@ -810,6 +810,7 @@
                         headerHtml += `<th class="text-center text-uppercase fw-bold py-2" style="width: 190px; font-size: 0.7rem; letter-spacing: 0.05em; background-color: #d7d7d9 !important; color: #3f3f3f !important;">Dokumen Borang Tender</th>`;
                     } else if (currentKriteriaId === 3) {
                         headerHtml += `<th class="text-center text-uppercase fw-bold py-2" style="width: 150px; font-size: 0.7rem; letter-spacing: 0.05em; background-color: #d7d7d9 !important; color: #3f3f3f !important;">Harga Tawaran</th>`;
+                        headerHtml += `<th class="text-center text-uppercase fw-bold py-2" style="width: 170px; font-size: 0.7rem; letter-spacing: 0.05em; background-color: #d7d7d9 !important; color: #3f3f3f !important;">BQ / Jadual Harga</th>`;
                         headerHtml += `<th class="text-center text-uppercase fw-bold py-2" style="width: 130px; font-size: 0.7rem; letter-spacing: 0.05em; background-color: #d7d7d9 !important; color: #3f3f3f !important;">Tempoh Siap</th>`;
                     } else if (currentKriteriaId === 4) {
                         headerHtml += `<th class="text-center text-uppercase fw-bold py-2" style="width: 130px; font-size: 0.7rem; letter-spacing: 0.05em; background-color: #d7d7d9 !important; color: #3f3f3f !important;">Tamat Aktif CIDB</th>`;
@@ -857,6 +858,21 @@
                         tdHarga.className = 'text-center fw-bold text-dark font-monospace';
                         tdHarga.textContent = extra.harga_tawaran_formatted || '-';
                         tr.appendChild(tdHarga);
+
+                        const tdBq = document.createElement('td');
+                        tdBq.className = 'text-center';
+                        if (extra.bq_url) {
+                            const bqLink = document.createElement('a');
+                            bqLink.href = extra.bq_url;
+                            bqLink.target = '_blank';
+                            bqLink.rel = 'noopener noreferrer';
+                            bqLink.className = 'btn btn-sm btn-outline-danger fw-semibold px-2.5 py-1';
+                            bqLink.innerHTML = `<i class="bi ${extra.bq_is_pdf ? 'bi-file-earmark-pdf' : 'bi-file-earmark-arrow-down'} me-1"></i>${extra.bq_is_pdf ? 'Lihat PDF' : 'Muat Turun BQ'}`;
+                            tdBq.appendChild(bqLink);
+                        } else {
+                            tdBq.innerHTML = '<span class="text-muted small">Tiada BQ</span>';
+                        }
+                        tr.appendChild(tdBq);
 
                         const tdTempoh = document.createElement('td');
                         tdTempoh.className = 'text-center fw-semibold text-dark';

@@ -24,9 +24,11 @@ class TenderProcessStatusService
         $this->advanceTo($tender, TenderProcessStatus::PELANTIKAN_JAWATANKUASA);
     }
 
-    public function syncAfterChecklistSubmit(Tender $tender): void
+    public function syncAfterChecklistSubmit(Tender $tender, bool $syncRemote = true): void
     {
-        $this->checklistSync->syncForTender($tender);
+        if ($syncRemote) {
+            $this->checklistSync->syncForTender($tender);
+        }
         $tender->refresh();
 
         if ($this->isTechnicalSpecificationComplete($tender)) {
