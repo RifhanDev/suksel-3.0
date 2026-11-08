@@ -295,6 +295,11 @@ class VendorTenderDokumenController extends Controller
     private function serveCandidateFile(string $rawPath, string $name, ?string $mime = null)
     {
         $cleanPath = ltrim(str_replace(['\\', 'public/'], ['/', ''], $rawPath), '/');
+        $stored = \App\Support\AttachmentStorage::responseOrNull($cleanPath, $name, $mime);
+        if ($stored) {
+            return $stored;
+        }
+
         $candidates = [
             storage_path('app/public/' . $cleanPath),
             storage_path('app/' . $cleanPath),
@@ -472,9 +477,11 @@ class VendorTenderDokumenController extends Controller
             'item_prices' => 'nullable|array',
             'item_prices.*' => 'nullable|string|max:5000',
             'bq_total_tawaran' => [$isBqTemplate && ! $isAdmin ? 'required' : 'nullable', 'numeric', 'min:0.01', 'max:999999999999.99'],
+            'item_kadars' => 'nullable|array',
+            'item_kadars.*' => 'nullable|string|max:5000',
             'details' => 'nullable|array',
             'details.*' => 'nullable|array',
-            'details.*.pematuhan' => 'nullable|string|max:10',
+            'details.*.pematuhan' => 'nullable|string|in:yes,no,ya,tidak',
             'details.*.cadangan' => 'nullable|string|max:5000',
             'vendor_tempoh_siap_val' => $tempohValRule,
             'vendor_tempoh_siap_unit' => $isBqTemplate && ! $isAdmin
@@ -532,7 +539,48 @@ class VendorTenderDokumenController extends Controller
             ->whereHas('header', fn ($q) => $q->where('tender_id', $tender->id))
             ->firstOrFail();
 
-        return \App\Support\SukselStoredFile::response((string) $file->path, $file->original_name ?: 'Dokumen BQ');
+        $path = ltrim(str_replace('\\', '/', (string) $file->path), '/');
+        $stored = \App\Support\AttachmentStorage::responseOrNull($path, (string) $file->original_name, $file->mime_type);
+        if ($stored) {
+            return $stored;
+        }
+
+        $absolute = storage_path('app/public/' . $path);
+        $fileMime = $file->mime_type ?: 'application/octet-stream';
+        $ext = strtolower(pathinfo((string) $file->original_name, PATHINFO_EXTENSION));
+        $isPdf = ($ext === 'pdf' || str_contains(strtolower($fileMime), 'pdf'));
+        $disposition = $isPdf ? 'inline' : 'attachment';
+
+        if (is_file($absolute)) {
+            $effectiveMime = $file->mime_type ?: (function_exists('mime_content_type') ? @mime_content_type($absolute) : null) ?: $fileMime;
+            return response()->file($absolute, [
+                'Content-Type' => $effectiveMime,
+                'Content-Disposition' => $disposition . '; filename="' . addslashes($file->original_name) . '"',
+            ]);
+        }
+
+        $stosPath = rtrim((string) config('services.stos_backend.storage_path'), '/') . '/' . $path;
+        if ($stosPath !== '/' . $path && is_file($stosPath)) {
+            $effectiveMime = $file->mime_type ?: (function_exists('mime_content_type') ? @mime_content_type($stosPath) : null) ?: $fileMime;
+            return response()->file($stosPath, [
+                'Content-Type' => $effectiveMime,
+                'Content-Disposition' => $disposition . '; filename="' . addslashes($file->original_name) . '"',
+            ]);
+        }
+
+        $remote = rtrim((string) config('services.stos_backend.url'), '/') . '/storage/' . $path;
+        $api = \App\Services\StosBackendClient::http()
+            ->withHeaders(['Accept' => '*/*'])
+            ->get($remote);
+
+        if (! $api->successful()) {
+            abort(404, 'Fail tidak dijumpai.');
+        }
+
+        return response($api->body(), 200, [
+            'Content-Type' => $file->mime_type ?: ($api->header('Content-Type') ?: 'application/octet-stream'),
+            'Content-Disposition' => $disposition . '; filename="' . addslashes($file->original_name) . '"',
+        ]);
     }
     /**
      * A member appointed only to the technical committee never sees offered prices.

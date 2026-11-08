@@ -298,6 +298,16 @@ class PerakuanJabatanController extends Controller
         $item = $file->item;
         abort_unless($item && $item->header, 404);
 
+        $stored = \App\Support\AttachmentStorage::responseOrNull(
+            (string) $file->file_path,
+            (string) $file->file_original_name,
+            null,
+            true
+        );
+        if ($stored) {
+            return $stored;
+        }
+
         $path = public_path($file->file_path);
         abort_unless(is_file($path), 404);
 
@@ -990,7 +1000,7 @@ class PerakuanJabatanController extends Controller
         }
         $safeOriginal = preg_replace('/[^A-Za-z0-9._-]/', '_', $file->getClientOriginalName());
         $fileName = date('YmdHis') . '_' . $safeOriginal;
-        $file->move($absoluteDir, $fileName);
+        \App\Support\AttachmentStorage::moveUploadedFile($file, $absoluteDir, $fileName);
         $relative = $relativeDir . '/' . $fileName;
 
         $item->files()->create([
@@ -1005,5 +1015,6 @@ class PerakuanJabatanController extends Controller
         if (is_file($full)) {
             @unlink($full);
         }
+        \App\Support\AttachmentStorage::delete($relativePath);
     }
 }

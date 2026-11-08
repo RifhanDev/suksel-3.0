@@ -1400,6 +1400,15 @@ class PenilaianTeknikalController extends Controller
     public function downloadLampiranKerja(TenderTeknikalKerjaLampiran $lampiran)
     {
         $absolutePath = $lampiran->absolutePath();
+        $stored = \App\Support\AttachmentStorage::responseOrNull(
+            (string) $lampiran->path,
+            (string) ($lampiran->display_name ?: $lampiran->original_name),
+            $lampiran->mime_type,
+            true
+        );
+        if ($stored) {
+            return $stored;
+        }
         if (! $absolutePath || ! is_file($absolutePath)) {
             abort(404, 'Fail tidak dijumpai.');
         }

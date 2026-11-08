@@ -92,7 +92,7 @@ class TeknikalKerjaEvaluationService
     {
         $storedName = Str::uuid() . '.' . $file->getClientOriginalExtension();
         $directory = "uploads/penilaian-teknikal-kerja/{$tender->id}/lampiran";
-        $path = $file->storeAs($directory, $storedName, 'public');
+        $path = \App\Support\AttachmentStorage::storeAs($file, $directory, $storedName);
 
         return TenderTeknikalKerjaLampiran::query()->create([
             'uuid' => (string) Str::uuid(),
@@ -117,8 +117,8 @@ class TeknikalKerjaEvaluationService
 
     public function deleteLampiran(TenderTeknikalKerjaLampiran $lampiran): void
     {
-        if ($lampiran->path && Storage::disk('public')->exists($lampiran->path)) {
-            Storage::disk('public')->delete($lampiran->path);
+        if ($lampiran->path && \App\Support\AttachmentStorage::exists($lampiran->path)) {
+            \App\Support\AttachmentStorage::delete($lampiran->path);
         }
 
         $lampiran->delete();

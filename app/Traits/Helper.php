@@ -538,9 +538,13 @@ trait Helper
         }
     }
 
-    public function generateEligible($tender_id)
+    public function generateEligible($tender_id, int $email = 1)
     {
         $tender = Tender::find($tender_id);
+
+        if (!$tender) {
+            return;
+        }
 
         $vendor_ids = [];
 
@@ -553,8 +557,6 @@ trait Helper
                 $mof_vendor_ids = Vendor::whereIn('id', $mof_vendor_ids)->where('mof_bumi', 1)->pluck('id');
             }
         }
-
-        // dd($mof_vendor_ids);
 
         $cidb_vendor_ids = [];
         if (count($tender->cidb_grades) > 0) {
@@ -578,8 +580,6 @@ trait Helper
                 $cidb_vendor_ids = Vendor::whereIn('id', $cidb_vendor_ids)->where('cidb_bumi', 1)->pluck('id');
             }
         }
-
-        // dd($cidb_vendor_ids);
 
         if (count($tender->cidb_codes) > 0) {
             $ids_cidb = $tender->getCodes('cidb');
@@ -636,7 +636,6 @@ trait Helper
 
             $district_list_rules = json_decode($tender->district_list_rule ?? "[]");
 
-            $vendor_ids_tmp = [];
             if (count($district_list_rules) > 0) {
                 $by_district = [];
                 $by_state    = [];
@@ -662,27 +661,42 @@ trait Helper
             }
         }
 
-        // dd($vendor_ids);
+        if (!is_array($vendor_ids)) {
+            $vendor_ids = $vendor_ids->toArray();
+        }
 
+        $vendor_ids = array_values(array_unique(array_filter($vendor_ids)));
 
-        if (count($vendor_ids) > 0) {
-            foreach ($vendor_ids as $id) {
-                $vendor = Vendor::find($id);
+        if (count($vendor_ids) === 0) {
+            return;
+        }
 
-                if (empty($vendor)) {
+        // Bulk insert missing eligibles (avoids N+1 Vendor::find / first() per vendor).
+        $now = now();
+        foreach (array_chunk($vendor_ids, 500) as $chunk) {
+            $existing = TenderEligible::where('tender_id', $tender->id)
+                ->whereIn('vendor_id', $chunk)
+                ->pluck('vendor_id')
+                ->all();
+            $existingLookup = array_flip($existing);
+
+            $rows = [];
+            foreach ($chunk as $vendorId) {
+                if (isset($existingLookup[$vendorId])) {
                     continue;
                 }
 
-                $eligible = TenderEligible::where('vendor_id', $id)->where('tender_id', $tender->id)->first();
+                $rows[] = [
+                    'tender_id'  => $tender->id,
+                    'vendor_id'  => $vendorId,
+                    'email'      => $email,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ];
+            }
 
-                if (!$eligible) {
-                    $eligible = new TenderEligible([
-                        'tender_id' => $tender->id,
-                        'vendor_id' => $id,
-                        'email' => 1
-                    ]);
-                    $eligible->save();
-                }
+            if (!empty($rows)) {
+                TenderEligible::insert($rows);
             }
         }
     }

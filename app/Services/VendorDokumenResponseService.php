@@ -118,7 +118,7 @@ class VendorDokumenResponseService
 
         $storedName = Str::uuid() . '.' . $file->getClientOriginalExtension();
         $directory = "uploads/tender-dokumen/{$tender->id}/{$vendorId}/{$checklistItemUuid}";
-        $path = $file->storeAs($directory, $storedName, 'public');
+        $path = \App\Support\AttachmentStorage::storeAs($file, $directory, $storedName);
 
         return TenderVendorDokumenFile::query()->create([
             'uuid' => (string) Str::uuid(),
@@ -141,8 +141,8 @@ class VendorDokumenResponseService
             abort(403);
         }
 
-        if ($file->path && Storage::disk('public')->exists($file->path)) {
-            Storage::disk('public')->delete($file->path);
+        if ($file->path && \App\Support\AttachmentStorage::exists($file->path)) {
+            \App\Support\AttachmentStorage::delete($file->path);
         }
 
         $file->delete();
@@ -180,17 +180,20 @@ class VendorDokumenResponseService
     }
 
     /**
-     * @return array{item_prices: array<string, string>, details: array<string, array{pematuhan?: string, cadangan?: string}>}
+     * @return array{item_prices: array<string, string>, item_kadars: array<string, string>, details: array<string, array{pematuhan?: string, cadangan?: string}>}
      */
     public function normalizeSpecificationPayload(?array $payload): array
     {
         if (! is_array($payload)) {
-            return ['item_prices' => [], 'details' => []];
+            return ['item_prices' => [], 'item_kadars' => [], 'details' => []];
         }
 
-        if (isset($payload['item_prices']) || isset($payload['details']) || isset($payload['bq_total_tawaran']) || isset($payload['vendor_tempoh_siap_val'])) {
+        if (isset($payload['item_prices']) || isset($payload['item_kadars']) || isset($payload['details']) || isset($payload['vendor_tempoh_siap_val'])) {
             return [
                 'item_prices' => collect($payload['item_prices'] ?? [])
+                    ->mapWithKeys(fn ($value, $key) => [trim((string) $key) => is_string($value) ? trim($value) : (string) $value])
+                    ->all(),
+                'item_kadars' => collect($payload['item_kadars'] ?? [])
                     ->mapWithKeys(fn ($value, $key) => [trim((string) $key) => is_string($value) ? trim($value) : (string) $value])
                     ->all(),
                 'details' => collect($payload['details'] ?? [])
@@ -201,7 +204,7 @@ class VendorDokumenResponseService
                         }
 
                         return [$key => [
-                            'pematuhan' => trim((string) ($value['pematuhan'] ?? '')),
+                            'pematuhan' => $this->normalizePematuhanValue($value['pematuhan'] ?? ''),
                             'cadangan' => trim((string) ($value['cadangan'] ?? '')),
                         ]];
                     })
@@ -224,13 +227,25 @@ class VendorDokumenResponseService
                     continue;
                 }
                 $value = is_string($value) ? trim($value) : (string) $value;
-                $details[$uuid] = in_array($value, ['yes', 'no'], true)
-                    ? ['pematuhan' => $value, 'cadangan' => '']
+                $normalized = $this->normalizePematuhanValue($value);
+                $details[$uuid] = $normalized !== ''
+                    ? ['pematuhan' => $normalized, 'cadangan' => '']
                     : ['pematuhan' => '', 'cadangan' => $value];
             }
         }
 
-        return ['item_prices' => [], 'details' => $details];
+        return ['item_prices' => [], 'item_kadars' => [], 'details' => $details];
+    }
+
+    protected function normalizePematuhanValue(mixed $value): string
+    {
+        $raw = strtolower(trim((string) $value));
+
+        return match ($raw) {
+            'yes', 'ya' => 'yes',
+            'no', 'tidak' => 'no',
+            default => '',
+        };
     }
 
     /**
@@ -268,6 +283,15 @@ class VendorDokumenResponseService
             $itemPrices[$itemUuid] = trim((string) $value);
         }
 
+        $itemKadars = [];
+        foreach ($normalized['item_kadars'] as $itemUuid => $value) {
+            $itemUuid = trim((string) $itemUuid);
+            if ($itemUuid === '') {
+                continue;
+            }
+            $itemKadars[$itemUuid] = trim((string) $value);
+        }
+
         if ($section === 'spesifikasi_kerja') {
             $itemPrices = $this->filterKerjaVendorItemPrices($tender, $itemPrices);
         }
@@ -285,23 +309,25 @@ class VendorDokumenResponseService
         }
 
         if ($adminSave) {
-            // Admin/Jawatankuasa may only update pematuhan — never vendor offers (item_prices).
+            // Admin/Jawatankuasa may only update pematuhan — never vendor offers (item_prices / item_kadars).
             $mergedDetails = $existing['details'];
             foreach ($details as $detailUuid => $fields) {
                 if (! isset($mergedDetails[$detailUuid])) {
                     $mergedDetails[$detailUuid] = ['pematuhan' => '', 'cadangan' => ''];
                 }
-                $mergedDetails[$detailUuid]['pematuhan'] = $fields['pematuhan'];
+                $mergedDetails[$detailUuid]['pematuhan'] = $this->normalizePematuhanValue($fields['pematuhan'] ?? '');
             }
             $details = $mergedDetails;
             $itemPrices = $existing['item_prices'];
+            $itemKadars = $existing['item_kadars'] ?? [];
         } else {
-            // Vendor updates cadangan / item_prices; keep any existing pematuhan from admin.
+            // Vendor updates pematuhan, cadangan, item_prices, and item_kadars.
             $mergedDetails = $existing['details'];
             foreach ($details as $detailUuid => $fields) {
                 if (! isset($mergedDetails[$detailUuid])) {
                     $mergedDetails[$detailUuid] = ['pematuhan' => '', 'cadangan' => ''];
                 }
+                $mergedDetails[$detailUuid]['pematuhan'] = $this->normalizePematuhanValue($fields['pematuhan'] ?? '');
                 $mergedDetails[$detailUuid]['cadangan'] = $fields['cadangan'];
             }
             $details = $mergedDetails;
@@ -318,12 +344,14 @@ class VendorDokumenResponseService
         }
 
         $hasValue = collect($itemPrices)->contains(fn ($value) => $value !== '')
+            || collect($itemKadars)->contains(fn ($value) => $value !== '')
             || collect($details)->contains(fn ($fields) => ($fields['pematuhan'] ?? '') !== '' || ($fields['cadangan'] ?? '') !== '')
             || ($bqTotal !== null && $bqTotal > 0)
             || ($tempohVal !== null);
 
         $payloadToSave = [
             'item_prices'             => $itemPrices,
+            'item_kadars'             => $itemKadars,
             'details'                 => $details,
             'bq_total_tawaran'        => $bqTotal,
             'vendor_tempoh_siap_val'  => $tempohVal,

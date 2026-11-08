@@ -188,15 +188,10 @@ class SenaraiKewanganKerjaController extends Controller
             }
         }
 
-        $file = DB::transaction(function () use ($item, $tender, $header, $request) {
-            if ($item) {
-                $item = KewanganKerjaItem::whereKey($item->id)->lockForUpdate()->firstOrFail();
-                if ($item->mechanism === 'ptj_muat_naik' && $item->files()->exists()) {
-                    throw ValidationException::withMessages([
-                        'file' => ['Setiap item PTJ Muat Naik hanya dibenarkan mempunyai satu dokumen. Padam dokumen sedia ada sebelum memuat naik yang baharu.'],
-                    ]);
-                }
-            }
+        $uploadedFile = $request->file('file');
+        $safeOriginalName = preg_replace('/[^A-Za-z0-9._-]/', '_', $uploadedFile->getClientOriginalName());
+        $storedName = now()->format('YmdHis') . '_' . Str::uuid() . '_' . $safeOriginalName;
+        $path = \App\Support\AttachmentStorage::storeAs($uploadedFile, 'kewangan-kerja/' . $tender->uuid, $storedName);
 
             $uploadedFile = $request->file('file');
             $safeOriginalName = preg_replace('/[^A-Za-z0-9._-]/', '_', $uploadedFile->getClientOriginalName());
@@ -251,8 +246,8 @@ class SenaraiKewanganKerjaController extends Controller
 
         $file = KewanganKerjaFile::where('uuid', $fileUuid)->first();
         if ($file) {
-            if ($file->path && Storage::disk('public')->exists($file->path)) {
-                Storage::disk('public')->delete($file->path);
+            if ($file->path && \App\Support\AttachmentStorage::exists($file->path)) {
+                \App\Support\AttachmentStorage::delete($file->path);
             }
             $file->delete();
 

@@ -226,8 +226,8 @@ class PenyataBankController extends Controller
             ->get();
 
         foreach ($orphans as $orphan) {
-            if ($orphan->path && Storage::disk('public')->exists($orphan->path)) {
-                Storage::disk('public')->delete($orphan->path);
+            if ($orphan->path && \App\Support\AttachmentStorage::exists($orphan->path)) {
+                \App\Support\AttachmentStorage::delete($orphan->path);
             }
             $orphan->delete();
         }
@@ -344,8 +344,7 @@ class PenyataBankController extends Controller
         $file = $request->file('file');
         $storedName = (string) Str::uuid() . '.' . $file->getClientOriginalExtension();
         $directory = 'uploads/penyata-bank/' . $tender->id . ($vendorId ? '/' . $vendorId : '');
-        $directory .= '/accounts/' . $request->input('account_uuid');
-        $path = $file->storeAs($directory, $storedName, 'public');
+        $path = \App\Support\AttachmentStorage::storeAs($file, $directory, $storedName);
 
         $fileRecord = PenyataBankFile::create([
             'uuid'            => (string) Str::uuid(),
@@ -409,8 +408,8 @@ class PenyataBankController extends Controller
                 );
             }
 
-            if ($fileRecord->path && Storage::disk('public')->exists($fileRecord->path)) {
-                Storage::disk('public')->delete($fileRecord->path);
+            if ($fileRecord->path && \App\Support\AttachmentStorage::exists($fileRecord->path)) {
+                \App\Support\AttachmentStorage::delete($fileRecord->path);
             }
             $fileRecord->delete();
 
@@ -563,12 +562,49 @@ class PenyataBankController extends Controller
                     continue;
                 }
 
-                if (! $record && $fileName !== '') {
-                    $record = $existingFiles->first(function ($candidate) use ($fileName, $accountUuid, $accountIndex) {
-                        $sameAccount = $candidate->account_uuid
-                            ? $candidate->account_uuid === $accountUuid
-                            : (int) ($candidate->account_index ?? 0) === (int) $accountIndex;
-                        return $sameAccount && strcasecmp($candidate->original_name, $fileName) === 0;
+                // 2. UUID missing: search in PenyataBankFile for this tender & vendor
+                $matched = $existingFiles->first(function ($ef) use ($fileName) {
+                    return strcasecmp($ef->original_name, $fileName) === 0 || strcasecmp($ef->stored_name, $fileName) === 0;
+                });
+
+                // 3. If not in this tender, search other PenyataBankFile records for this vendor
+                if (! $matched && $vendorPbFiles->isNotEmpty()) {
+                    $matchedCandidate = $vendorPbFiles->first(function ($vf) use ($fileName) {
+                        return strcasecmp($vf->original_name, $fileName) === 0 || strcasecmp($vf->stored_name, $fileName) === 0;
+                    });
+
+                    if ($matchedCandidate && $matchedCandidate->path && \App\Support\AttachmentStorage::exists($matchedCandidate->path)) {
+                        $targetDir = 'uploads/penyata-bank/' . $tender->id . ($vendorId ? '/' . $vendorId : '');
+                        $targetPath = $targetDir . '/' . basename($matchedCandidate->path);
+
+                        if (! \App\Support\AttachmentStorage::exists($targetPath)) {
+                            \App\Support\AttachmentStorage::copy($matchedCandidate->path, $targetPath);
+                        }
+
+                        $matched = PenyataBankFile::firstOrCreate([
+                            'penyata_bank_id' => $penyata->id,
+                            'vendor_id'       => $vendorId,
+                            'original_name'   => $fileName ?: $matchedCandidate->original_name,
+                        ], [
+                            'uuid'            => (string) Str::uuid(),
+                            'file_type'       => 'support',
+                            'stored_name'     => basename($targetPath),
+                            'path'            => $targetPath,
+                            'mime_type'       => $matchedCandidate->mime_type ?: 'application/pdf',
+                            'size'            => $file['size'] ?? $matchedCandidate->size ?? 0,
+                            'uploaded_by'     => $matchedCandidate->uploaded_by,
+                        ]);
+
+                        $existingFiles->push($matched);
+                    } elseif ($matchedCandidate) {
+                        $matched = $matchedCandidate;
+                    }
+                }
+
+                // 4. Check TenderVendorDokumenFile
+                if (! $matched && $vendorDokumenFiles->isNotEmpty()) {
+                    $matched = $vendorDokumenFiles->first(function ($df) use ($fileName) {
+                        return strcasecmp($df->original_name, $fileName) === 0;
                     });
                 }
 

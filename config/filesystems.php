@@ -71,6 +71,32 @@ return [
             'url' => env('AWS_URL'),
         ],
 
+        // Keep files on this app until ATTACHMENT_REMOTE_ENABLED=true on production.
+        // Local/staging always stay local even if the flag is set by mistake.
+        'attachments' => (
+            env('APP_ENV') === 'production'
+            && filter_var(env('ATTACHMENT_REMOTE_ENABLED', false), FILTER_VALIDATE_BOOLEAN)
+        )
+            ? [
+                'driver' => env('ATTACHMENT_DRIVER', 'ftp'),
+                'host' => env('ATTACHMENT_HOST', '172.16.2.147'),
+                'username' => env('ATTACHMENT_USERNAME'),
+                'password' => env('ATTACHMENT_PASSWORD'),
+                'port' => (int) env('ATTACHMENT_PORT', 21),
+                'root' => env('ATTACHMENT_ROOT', '/perolehan-attachment'),
+                'passive' => filter_var(env('ATTACHMENT_PASSIVE', true), FILTER_VALIDATE_BOOLEAN),
+                'ssl' => filter_var(env('ATTACHMENT_SSL', false), FILTER_VALIDATE_BOOLEAN),
+                'timeout' => (int) env('ATTACHMENT_TIMEOUT', 30),
+                'throw' => false,
+            ]
+            : [
+                'driver' => 'local',
+                'root' => storage_path('app/public'),
+                'url' => env('APP_URL').'/storage',
+                'visibility' => 'public',
+                'throw' => false,
+            ],
+
     ],
 
 ];

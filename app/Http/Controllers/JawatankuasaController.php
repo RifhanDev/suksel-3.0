@@ -312,7 +312,7 @@ class JawatankuasaController extends Controller
                 mkdir($absoluteDir, 0755, true);
             }
 
-            $file->move($absoluteDir, $fileName);
+            \App\Support\AttachmentStorage::moveUploadedFile($file, $absoluteDir, $fileName);
             $docName = $file->getClientOriginalName();
             $docPath = $relativeDir . '/' . $fileName;
         }

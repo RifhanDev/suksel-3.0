@@ -44,7 +44,7 @@
 
 @if (count($vendorFiles) > 0 || $showUpload)
     <div class="mt-2 pt-2 border-top">
-        <div class="d-flex align-items-center justify-content-between mb-1">
+        <div class="d-flex align-items-center justify-content-between mb-1 dokumen-vendor-status-wrap">
             <div class="text-muted" style="font-size:0.72rem;font-weight:600;">
                 {{ $mode === 'admin' ? 'Penyerahan Petender' : 'Dokumen Anda' }}
             </div>

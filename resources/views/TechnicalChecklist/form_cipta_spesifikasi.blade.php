@@ -361,14 +361,13 @@
                             </th>
                             <th class="text-center" style="width: 110px;">Kekerapan / Kuantiti</th>
                             <th class="text-center" style="width: 110px;">Unit Ukuran</th>
-                            <th class="text-center" style="width: 130px;">Kadar Harga (RM)</th>
                             <th class="text-center" style="width: 180px;">Penetapan Skema</th>
                             <th class="text-center" style="width: 150px;">Tindakan</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr id="tbl-no-data">
-                            <td colspan="6" class="text-center text-muted py-4 small">Tiada Data</td>
+                            <td colspan="5" class="text-center text-muted py-4 small">Tiada Data</td>
                         </tr>
                     </tbody>
                 </table>
@@ -773,7 +772,7 @@
 
         $(document).ready(function() {
 
-            // ── Build item row (6 tds) ────────────────────────────────────────────────
+            // ── Build item row (5 tds) ────────────────────────────────────────────────
 
             function buildItemRow() {
                 return $(
@@ -793,9 +792,6 @@
                     '<option value="hari">Hari</option>' +
                     '</select>' +
                     '</td>' +
-                    '<td class="text-center">' +
-                    '<input type="number" name="item_kadar_harga[]" class="form-control form-control-sm text-end" value="" min="0" step="0.01" placeholder="0.00" style="max-width:110px;margin:0 auto;">' +
-                    '</td>' +
                     '<td class="text-center text-muted small">-</td>' +
                     '<td class="text-center">' +
                     '<div class="d-flex flex-column gap-1 align-items-stretch">' +
@@ -807,7 +803,7 @@
                 );
             }
 
-            // ── Build spec row (6 tds — qty/unit/kadar empty on detail rows) ─────────
+            // ── Build spec row (5 tds — qty/unit empty on detail rows) ───────────────
             // "Tambah Spesifikasi" is on item row only. Spec row only has "Hapus".
 
             function buildSpecRow() {
@@ -816,7 +812,6 @@
                     '<td style="padding-left:28px;">' +
                     '<textarea name="spec_penerangan[]" class="form-control form-control-sm auto-resize" rows="1" placeholder="Penerangan spesifikasi..." style="resize:none;overflow:hidden;min-height:32px;"></textarea>' +
                     '</td>' +
-                    '<td class="text-center text-muted small">-</td>' +
                     '<td class="text-center text-muted small">-</td>' +
                     '<td class="text-center text-muted small">-</td>' +
                     '<td>' +
@@ -887,7 +882,7 @@
                     $('#tbl-no-data').remove();
                 } else if ($('#tbl-no-data').length === 0) {
                     $('#dt_tmpltSpec tbody').append(
-                        '<tr id="tbl-no-data"><td colspan="6" class="text-center text-muted py-4 small">Tiada Data</td></tr>'
+                        '<tr id="tbl-no-data"><td colspan="5" class="text-center text-muted py-4 small">Tiada Data</td></tr>'
                         );
                 }
             }
@@ -912,7 +907,7 @@
 
             // ── Excel helpers ─────────────────────────────────────────────────────────
 
-            var HEADERS = ['Item', 'Spesifikasi', 'Kekerapan / Kuantiti', 'Unit Ukuran', 'Kadar Harga (RM)', 'Penetapan Skema'];
+            var HEADERS = ['Item', 'Spesifikasi', 'Kekerapan / Kuantiti', 'Unit Ukuran', 'Penetapan Skema'];
             var SKEMA_LABEL = {
                 '1': 'Text',
                 '2': 'Nombor',
@@ -941,9 +936,6 @@
                     },
                     {
                         width: 14
-                    },
-                    {
-                        width: 18
                     },
                     {
                         width: 18
@@ -982,7 +974,6 @@
                         var itemStart = ws.rowCount + 1;
                         var unitVal = $item.find('select[name="item_unit[]"]').val();
                         var itemText = $item.find('td:first-child textarea').val() || '';
-                        var kadarVal = $item.find('input[name="item_kadar_harga[]"]').val();
 
                         // Item row — wrapText lets Excel wrap newlines; no explicit height
                         // so the user can double-click the row border in Excel to auto-fit.
@@ -991,7 +982,6 @@
                             '-',
                             $item.find('input[name="item_qty[]"]').val() || '0',
                             unitVal ? $item.find('select[name="item_unit[]"] option:selected').text() : '-',
-                            (kadarVal !== undefined && kadarVal !== null && String(kadarVal).trim() !== '') ? kadarVal : '-',
                             '-'
                         ]);
                         iRow.getCell(1).alignment = {
@@ -1007,7 +997,6 @@
                             var sRow = ws.addRow([
                                 '',
                                 specText,
-                                '-',
                                 '-',
                                 '-',
                                 SKEMA_LABEL[skemaVal] || ''
@@ -1063,7 +1052,7 @@
                     }
 
                     // Sample item row
-                    var siRow = ws.addRow([sItemText, '-', '5', 'Lot', '100.00', '-']);
+                    var siRow = ws.addRow([sItemText, '-', '5', 'Lot', '-']);
                     siRow.getCell(1).alignment = {
                         wrapText: true,
                         vertical: 'top'
@@ -1072,11 +1061,10 @@
                     siRow.getCell(1).note =
                         'Isi nama item di sini. NOTA: Padam baris [CONTOH] sebelum mengisi data sebenar.';
                     siRow.getCell(2).note = 'BIARKAN sebagai "-". Lajur ini tidak digunakan untuk baris Item.';
-                    siRow.getCell(5).note = 'Masukkan kadar harga (RM) bagi item ini.';
-                    siRow.getCell(6).note = 'BIARKAN sebagai "-". Lajur ini tidak digunakan untuk baris Item.';
+                    siRow.getCell(5).note = 'BIARKAN sebagai "-". Lajur ini tidak digunakan untuk baris Item.';
 
                     // Sample spec rows (each with 3 sub-points a/b/c on separate lines)
-                    var ss1Row = ws.addRow(['', sSpec1, '-', '-', '-', 'Text']);
+                    var ss1Row = ws.addRow(['', sSpec1, '-', '-', 'Text']);
                     ss1Row.getCell(2).alignment = {
                         wrapText: true,
                         vertical: 'top'
@@ -1089,9 +1077,9 @@
                     ss1Row.getCell(4).note =
                         'BIARKAN sebagai "-". Lajur ini tidak digunakan untuk baris Spesifikasi.';
                     ss1Row.getCell(5).note =
-                        'BIARKAN sebagai "-". Lajur ini tidak digunakan untuk baris Spesifikasi.';
+                        'Pilih jenis penetapan skema: Text / Nombor / Ya/Tidak.';
 
-                    var ss2Row = ws.addRow(['', sSpec2, '-', '-', '-', 'Nombor']);
+                    var ss2Row = ws.addRow(['', sSpec2, '-', '-', 'Nombor']);
                     ss2Row.getCell(2).alignment = {
                         wrapText: true,
                         vertical: 'top'
@@ -1189,14 +1177,10 @@
                                 var $itemRow = buildItemRow();
                                 var qty = cellText(row, 3);
                                 var unitRaw = cellText(row, 4).toLowerCase();
-                                var kadarRaw = cellText(row, 5);
                                 $itemRow.find('input[name="item_qty[]"]').val(qty !== '-' ?
                                     qty : '0');
                                 $itemRow.find('select[name="item_unit[]"]').val(unitRaw !== '-' ? unitRaw :
                                     '');
-                                $itemRow.find('input[name="item_kadar_harga[]"]').val(
-                                    (kadarRaw && kadarRaw !== '-') ? kadarRaw : ''
-                                );
                                 $('#dt_tmpltSpec tbody').append($itemRow);
                                 // Set value and trigger resize AFTER DOM insertion
                                 $itemRow.find('td:first-child textarea').val(itemText)
@@ -1206,10 +1190,10 @@
                             } else if (specText && specText !== '-' && $lastItemRow) {
                                 // Spec row — insert into DOM FIRST so scrollHeight is valid for resize
                                 var $specRow = buildSpecRow();
-                                var skemaKey = cellText(row, 6).toLowerCase();
-                                if (!skemaKey) {
-                                    // Backward compatible with older 5-column templates.
-                                    skemaKey = cellText(row, 5).toLowerCase();
+                                // New template: skema in col 5. Older templates with Kadar Harga: skema in col 6.
+                                var skemaKey = cellText(row, 5).toLowerCase();
+                                if (!SKEMA_MAP[skemaKey]) {
+                                    skemaKey = cellText(row, 6).toLowerCase();
                                 }
                                 $specRow.find('.typeSelect').val(SKEMA_MAP[skemaKey] ||
                                     '');
@@ -1546,14 +1530,6 @@
                         title: $item.find('td:first-child textarea').val().trim(),
                         quantity: parseFloat($item.find('input[name="item_qty[]"]').val()) || 0,
                         unit: $item.find('select[name="item_unit[]"]').val() || null,
-                        kadar_harga: (function() {
-                            var raw = $.trim(String($item.find('input[name="item_kadar_harga[]"]').val() || ''));
-                            if (raw === '') {
-                                return null;
-                            }
-                            var parsed = parseFloat(raw.replace(/,/g, ''));
-                            return isNaN(parsed) ? null : parsed;
-                        })(),
                         sort_order: itemSortOrder,
                         details: []
                     };
@@ -1666,11 +1642,6 @@
                     $itemRow.find('td:first-child textarea').val(item.title || '');
                     $itemRow.find('input[name="item_qty[]"]').val(item.quantity || 0);
                     $itemRow.find('select[name="item_unit[]"]').val(item.unit || '');
-                    $itemRow.find('input[name="item_kadar_harga[]"]').val(
-                        (item.kadar_harga !== null && item.kadar_harga !== undefined && item.kadar_harga !== '')
-                            ? item.kadar_harga
-                            : ''
-                    );
                     $('#dt_tmpltSpec tbody').append($itemRow);
                     // Trigger auto-resize
                     $itemRow.find('td:first-child textarea').trigger('input');

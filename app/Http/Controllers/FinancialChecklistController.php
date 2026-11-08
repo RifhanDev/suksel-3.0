@@ -344,7 +344,7 @@ class FinancialChecklistController extends Controller
         $uploadedFile = $request->file('file');
         $safeOriginalName = preg_replace('/[^A-Za-z0-9._-]/', '_', $uploadedFile->getClientOriginalName());
         $storedName = now()->format('YmdHis') . '_' . Str::uuid() . '_' . $safeOriginalName;
-        $path = $uploadedFile->storeAs('financial-checklists/' . $tender->uuid, $storedName, 'public');
+        $path = \App\Support\AttachmentStorage::storeAs($uploadedFile, 'financial-checklists/' . $tender->uuid, $storedName);
 
         $file = FinancialChecklistFile::create([
             'uuid' => (string) Str::uuid(),
@@ -372,8 +372,8 @@ class FinancialChecklistController extends Controller
 
         $file = FinancialChecklistFile::where('uuid', $fileUuid)->first();
         if ($file) {
-            if ($file->path && Storage::disk('public')->exists($file->path)) {
-                Storage::disk('public')->delete($file->path);
+            if ($file->path && \App\Support\AttachmentStorage::exists($file->path)) {
+                \App\Support\AttachmentStorage::delete($file->path);
             }
             $file->delete();
 
@@ -408,7 +408,9 @@ class FinancialChecklistController extends Controller
                 'section' => 'financial',
                 'fileUuid' => $file->uuid,
             ])
-            : Storage::disk('public')->url($file->path);
+            : (\App\Support\AttachmentStorage::isRemote()
+                ? route('attachments.stream', ['path' => ltrim((string) $file->path, '/')])
+                : Storage::disk('public')->url($file->path));
 
         return [
             'uuid' => $file->uuid,

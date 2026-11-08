@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Approval;
 use App\Gateway;
 use App\Jobs\GenerateEligible;
+use App\Jobs\SendTenderInviteEmails;
 use App\Models\ExceptionTender;
 use App\Models\OrganizationUnit;
 use App\Models\Ref\RefKaedahDokumen;
@@ -572,6 +573,16 @@ class TendersController extends Controller
 			if ($vendorId < 1 || ! $tender->hasParticipate($vendorId)) {
 				return $this->_access_denied();
 			}
+		}
+
+		$stored = \App\Support\AttachmentStorage::responseOrNull(
+			(string) $dokumen->path,
+			(string) ($dokumen->original_name ?: $dokumen->name),
+			$dokumen->mime ?? null,
+			true
+		);
+		if ($stored) {
+			return $stored;
 		}
 
 		if (! \Illuminate\Support\Facades\Storage::disk('local')->exists($dokumen->path)) {
@@ -1522,6 +1533,19 @@ class TendersController extends Controller
 		}
 
 		if (! $fullPath || ! is_file($fullPath)) {
+			$relative = \App\Support\AttachmentStorage::relativeForUpload((string) $file->path, (string) $file->name);
+			$downloadName = trim((string) ($file->label ?: $file->name));
+			$extension = pathinfo((string) $file->name, PATHINFO_EXTENSION);
+			if ($extension !== '' && pathinfo($downloadName, PATHINFO_EXTENSION) === '') {
+				$downloadName .= '.' . $extension;
+			}
+			$stored = $relative !== ''
+				? \App\Support\AttachmentStorage::responseOrNull($relative, $downloadName, $file->type ?: null, true)
+				: null;
+			if ($stored) {
+				return $stored;
+			}
+
 			abort(404, 'Fail tidak dijumpai.');
 		}
 
@@ -2100,26 +2124,12 @@ class TendersController extends Controller
 
 		$tender->save();
 
-		$tender_ids = [];
-
+		// Heavy post-publish work runs after the HTTP response so the gateway
+		// does not 504 while eligible vendors / invite emails are processed.
 		if (($tender->invitation == 1) && (!$request->get('email'))) {
-
-			foreach ($tender->invites as $invite) {
-				$vendor = $invite->vendor;
-
-				/*
-					Mail::send('tenders.emails.invite', ['tender' => $tender, 'vendor' => $vendor], function($message) use($vendor) {
-					$message->to(trim($vendor->user->email));
-					$message->subject('Sistem Tender Online Selangor: Jemputan Tender');
-					});
-				*/
-
-				$to			= trim($vendor->user->email);
-				$subject 	= 'Sistem Tender Online Selangor: Jemputan Tender';
-				$send_status = $this->sendMail("html", $to, $subject, "", "tenders.emails.invite", ['tender' => $tender, 'vendor' => $vendor]);
-			}
+			SendTenderInviteEmails::dispatch($tender->id)->afterResponse();
 		} else {
-			$this->generateEligible($tender->id);
+			GenerateEligible::dispatch($tender->id, 1)->afterResponse();
 		}
 
 		TenderHistory::log($tender->id, 'publish');

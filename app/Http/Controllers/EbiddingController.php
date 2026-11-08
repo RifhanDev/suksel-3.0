@@ -179,7 +179,7 @@ class EbiddingController extends Controller
                         return [
                             'id' => 'pj-' . $f->id,
                             'name' => $f->file_original_name,
-                            'url' => $f->file_path ? asset($f->file_path) : '#',
+                            'url' => $f->file_path ? \App\Support\AttachmentStorage::browserUrl($f->file_path) : '#',
                             'source' => 'perakuan',
                             'can_delete' => false,
                         ];
@@ -189,7 +189,7 @@ class EbiddingController extends Controller
                         return [
                             'id' => (int) $f->id,
                             'name' => $f->file_original_name,
-                            'url' => $f->file_path ? asset($f->file_path) : '#',
+                            'url' => $f->file_path ? \App\Support\AttachmentStorage::browserUrl($f->file_path) : '#',
                             'source' => 'ebidding',
                             'can_delete' => true,
                         ];
@@ -250,7 +250,7 @@ class EbiddingController extends Controller
                     'kedudukan_penilaian' => (string) ($petender->kedudukan_penilaian ?? ''),
                     'status_mof' => (string) ($petender->status_mof ?? ''),
                     'tindakan_disiplin' => (string) ($petender->tindakan_disiplin ?? ''),
-                    'lembaga_pengarah_url' => $petender->lembaga_pengarah_file_path ? asset($petender->lembaga_pengarah_file_path) : null,
+                    'lembaga_pengarah_url' => $petender->lembaga_pengarah_file_path ? \App\Support\AttachmentStorage::browserUrl($petender->lembaga_pengarah_file_path) : null,
                     'kaedah_sulp' => 'Bidaan',
                     'harga_bidaan' => $bidaan !== null ? $bidaan : $hargaTawaran,
                     'is_new_bid' => $isNewBid,
@@ -832,7 +832,7 @@ class EbiddingController extends Controller
         }
         $safeOriginal = preg_replace('/[^A-Za-z0-9._-]/', '_', $file->getClientOriginalName());
         $fileName = date('YmdHis') . '_' . $safeOriginal;
-        $file->move($absoluteDir, $fileName);
+        \App\Support\AttachmentStorage::moveUploadedFile($file, $absoluteDir, $fileName);
         $relative = $relativeDir . '/' . $fileName;
 
         $item->files()->create([
@@ -850,6 +850,7 @@ class EbiddingController extends Controller
         if (is_file($full)) {
             @unlink($full);
         }
+        \App\Support\AttachmentStorage::delete($relativePath);
     }
 
     private function validateJadualBidaan(Request $request, bool $forStart): array

@@ -176,10 +176,11 @@ class TenderChecklistFileController extends Controller
         $path = ltrim((string) ($file->path ?? ''), '/');
         $name = (string) ($file->original_name ?? 'Dokumen');
 
-        if ($path !== '' && Storage::disk('public')->exists($path)) {
-            return Storage::disk('public')->response($path, $name, [
-                'Content-Disposition' => 'inline; filename="' . addslashes($name) . '"',
-            ]);
+        if ($path !== '') {
+            $stored = \App\Support\AttachmentStorage::responseOrNull($path, $name, $file->mime_type ?? null);
+            if ($stored) {
+                return $stored;
+            }
         }
 
         if ($path !== '') {
@@ -195,8 +196,9 @@ class TenderChecklistFileController extends Controller
             if ($resolvedPath && is_file($resolvedPath)) {
                 try {
                     $cleanPath = ltrim(str_replace('public/', '', $path), '/');
-                    if (! Storage::disk('public')->exists($cleanPath)) {
-                        Storage::disk('public')->put($cleanPath, file_get_contents($resolvedPath));
+                    $disk = \App\Support\AttachmentStorage::diskName();
+                    if (! Storage::disk($disk)->exists($cleanPath)) {
+                        Storage::disk($disk)->put($cleanPath, file_get_contents($resolvedPath));
                     }
                 } catch (\Throwable) {
                 }

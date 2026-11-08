@@ -295,7 +295,7 @@
                                 </th>
                                 <th class="text-center" style="width: 110px;">Kekerapan / Kuantiti</th>
                                 <th class="text-center" style="width: 110px;">Unit Ukuran</th>
-                                <th class="text-center" style="width: 130px;">Kadar Harga (RM)</th>
+                                <th class="text-center" style="width: 130px;">Kadar Harga (RM) <span class="text-danger">*</span></th>
                                 <th class="text-center" style="width: 180px;">Penetapan Harga (RM)</th>
                             </tr>
                         </thead>
@@ -373,11 +373,16 @@ $(document).ready(function () {
         var hasSpecsClass = specCount > 0 ? ' item-has-specs' : '';
 
         // ── Item row ──
-        var kadarHarga = (item.kadar_harga !== null && item.kadar_harga !== undefined && item.kadar_harga !== '')
-            ? Number(item.kadar_harga).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-            : '—';
+        var kuantiti = parseFloat(item.kuantiti) || 0;
+        var savedKadarNum = (item.kadar_harga !== null && item.kadar_harga !== undefined && item.kadar_harga !== '')
+            ? Number(item.kadar_harga)
+            : null;
+        var savedKadar = savedKadarNum !== null && !isNaN(savedKadarNum) ? savedKadarNum.toFixed(2) : '';
+        var penetapanVal = savedKadarNum !== null && !isNaN(savedKadarNum)
+            ? (kuantiti * savedKadarNum).toFixed(2)
+            : '';
         var $itemRow = $(
-            '<tr class="item-row' + groupClass + hasSpecsClass + '">' +
+            '<tr class="item-row' + groupClass + hasSpecsClass + '" data-kuantiti="' + kuantiti + '">' +
                 '<td style="padding-left:32px;">' +
                     '<span class="fw-semibold" style="font-size:0.85rem;">' + $('<span>').text(item.nama).html() + '</span>' +
                 '</td>' +
@@ -387,11 +392,11 @@ $(document).ready(function () {
                 '<td class="text-center">' +
                     '<span class="small text-muted">' + $('<span>').text(item.uom).html() + '</span>' +
                 '</td>' +
-                '<td class="text-end">' +
-                    '<span class="fw-semibold" style="font-size:0.85rem;">' + kadarHarga + '</span>' +
+                '<td class="text-center">' +
+                    '<input type="text" name="kadar_harga_item[]" class="form-control form-control-sm text-end amount-input kadar-input" placeholder="0.00" data-item-idx="' + itemIdx + '" value="' + savedKadar + '" required>' +
                 '</td>' +
                 '<td class="text-center" rowspan="' + totalRows + '" style="vertical-align:middle;">' +
-                    '<input type="text" name="harga_item[]" class="form-control form-control-sm text-end amount-input harga-input" placeholder="0.00" data-item-idx="' + itemIdx + '">' +
+                    '<input type="text" name="harga_item[]" class="form-control form-control-sm text-end harga-input bg-light" placeholder="0.00" data-item-idx="' + itemIdx + '" value="' + penetapanVal + '" readonly tabindex="-1" style="cursor:not-allowed;">' +
                 '</td>' +
             '</tr>'
         );
@@ -416,13 +421,26 @@ $(document).ready(function () {
         });
     });
 
-    // ── Jumlah Harga calculation ─────────────────────────────────────────────
+    // ── Calculation helpers ──────────────────────────────────────────────────
     function parseAmount(val) {
         return parseFloat(String(val).replace(/,/g, '')) || 0;
     }
 
     function formatAmount(n) {
         return n.toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function updatePenetapanFromKadar($row) {
+        var kuantiti = parseAmount($row.attr('data-kuantiti'));
+        var kadarRaw = $.trim(String($row.find('.kadar-input').val() || ''));
+        var $harga   = $row.find('.harga-input');
+
+        if (kadarRaw === '') {
+            $harga.val('');
+            return;
+        }
+
+        $harga.val(formatAmount(kuantiti * parseAmount(kadarRaw)));
     }
 
     function updateJumlahHarga() {
@@ -433,29 +451,61 @@ $(document).ready(function () {
         $('#jumlah-harga').text(formatAmount(total));
     }
 
-    $tbody.on('input change', '.harga-input', updateJumlahHarga);
+    function recalculateAll() {
+        $('#tbl-spek-body tr.item-row').each(function () {
+            updatePenetapanFromKadar($(this));
+        });
+        updateJumlahHarga();
+    }
 
-    // ── Amount input formatting ──────────────────────────────────────────────
-    $(document).on('focus', '.amount-input', function () {
+    recalculateAll();
+
+    $tbody.on('input change', '.kadar-input', function () {
+        updatePenetapanFromKadar($(this).closest('tr.item-row'));
+        updateJumlahHarga();
+    });
+
+    // ── Amount input formatting (kadar harga only) ───────────────────────────
+    $(document).on('focus', '.kadar-input.amount-input', function () {
         var raw = $(this).val().replace(/,/g, '');
         if (parseFloat(raw) === 0) raw = '';
         $(this).val(raw);
     });
 
-    $(document).on('blur', '.amount-input', function () {
+    $(document).on('blur', '.kadar-input.amount-input', function () {
         var val = $(this).val();
-        if (val === '') return;
-        $(this).val(formatAmount(parseAmount(val)));
+        var $row = $(this).closest('tr.item-row');
+        if (val !== '') {
+            $(this).val(formatAmount(parseAmount(val)));
+        }
+        updatePenetapanFromKadar($row);
         updateJumlahHarga();
     });
 
-    $(document).on('input', '.amount-input', function () {
+    $(document).on('input', '.kadar-input.amount-input', function () {
         $(this).val($(this).val().replace(/[^\d.]/g, ''));
     });
 
-    // ── Form submit — strip commas ───────────────────────────────────────────
-    $('#form-spek-kewangan').on('submit', function () {
-        $(this).find('.amount-input').each(function () {
+    // ── Form submit — strip commas + require kadar ───────────────────────────
+    $('#form-spek-kewangan').on('submit', function (e) {
+        var missing = false;
+        $(this).find('.kadar-input').each(function () {
+            var raw = $.trim(String($(this).val() || ''));
+            if (raw === '' || parseAmount(raw) <= 0) {
+                missing = true;
+                $(this).addClass('is-invalid');
+            } else {
+                $(this).removeClass('is-invalid');
+            }
+        });
+        if (missing) {
+            e.preventDefault();
+            alert('Sila masukkan Kadar Harga bagi semua item.');
+            return;
+        }
+
+        recalculateAll();
+        $(this).find('.kadar-input, .harga-input').each(function () {
             $(this).val($(this).val().replace(/,/g, ''));
         });
     });

@@ -157,8 +157,7 @@ class SpesifikasiTenderKerjaController extends Controller
         $uploadedFile = $request->file('file');
         $safeOriginalName = preg_replace('/[^A-Za-z0-9._-]/', '_', $uploadedFile->getClientOriginalName());
         $storedName = now()->format('YmdHis') . '_' . Str::uuid() . '_' . $safeOriginalName;
-        $path = $uploadedFile->storeAs('spesifikasi-kerja/' . $tender->uuid, $storedName, 'public');
-        abort_unless($path, 500, 'Pelayan SUKSel gagal menyimpan fail. Sila cuba lagi atau hubungi pentadbir.');
+        $path = \App\Support\AttachmentStorage::storeAs($uploadedFile, 'spesifikasi-kerja/' . $tender->uuid, $storedName);
 
         try {
             $file = SpesifikasiKerjaFile::create([
@@ -231,7 +230,13 @@ class SpesifikasiTenderKerjaController extends Controller
             ->whereHas('header', fn ($query) => $query->where('tender_id', $tender->id))
             ->first();
 
-        abort_unless($file, 404, 'Fail tidak dijumpai pada storan SUKSel.');
+        if ($file && $file->path) {
+            $path = ltrim((string) $file->path, '/');
+            $stored = \App\Support\AttachmentStorage::responseOrNull($path, (string) $file->original_name, $file->mime_type);
+            if ($stored) {
+                return $stored;
+            }
+        }
 
         return \App\Support\SukselStoredFile::response((string) $file->path, $file->original_name);
     }
@@ -246,11 +251,8 @@ class SpesifikasiTenderKerjaController extends Controller
             ->whereHas('header', fn ($query) => $query->whereHas('tender', fn ($tenderQuery) => $tenderQuery->where('kategori_perolehan_id', 3)))
             ->first();
         if ($file) {
-            if ($file->file_type === 'bq_template' && $file->header?->status === 'submitted') {
-                return response()->json(['success' => false, 'message' => 'Templat yang telah dihantar tidak boleh dipadam.'], 422);
-            }
-            if ($file->path && Storage::disk('public')->exists($file->path)) {
-                abort_unless(Storage::disk('public')->delete($file->path), 500, 'Fail tidak dapat dipadam dari storan SUKSel. Sila cuba lagi.');
+            if ($file->path && \App\Support\AttachmentStorage::exists($file->path)) {
+                \App\Support\AttachmentStorage::delete($file->path);
             }
             $file->delete();
 
