@@ -464,7 +464,7 @@ trait Helper
 
     public function trigger_mail_server($unique_id)
     {
-        $mail_server_url = env('MAIL_SERVER') . "/" . $unique_id;
+        $mail_server_url = config('services.mail_server.url') . "/" . $unique_id;
 
         try {
             $response = Http::withoutVerifying()->get($mail_server_url);
