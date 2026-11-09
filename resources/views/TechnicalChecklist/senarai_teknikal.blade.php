@@ -874,7 +874,7 @@
                         '</svg>' +
                         '</a>' +
                     '</td>' +
-                    physicalSubmissionCell(spec.physical_submission, true) +
+                    physicalSubmissionCell(spec.penghantaran_fizikal, false) +
                     '</tr>'
                 );
             }
@@ -1101,7 +1101,7 @@
                             title:       item.title || '',
                             total_score: item.score,
                             status:      item.status || 'draft',
-                            physical_submission: item.penghantaran_fizikal || false,
+                            penghantaran_fizikal: item.penghantaran_fizikal || false,
                         });
                     } else if (item.source_type === 'borang_atas_talian') {
                         $row = buildBorangAtasTalianRow(

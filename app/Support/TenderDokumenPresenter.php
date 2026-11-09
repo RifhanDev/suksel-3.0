@@ -226,7 +226,6 @@ class TenderDokumenPresenter
     {
         $technical = TechnicalChecklistItem::query()
             ->whereHas('header', fn ($query) => $query->where('tender_id', $this->tender->id))
-            ->with('specificationDocument')
             ->orderBy('sort_order')
             ->orderBy('id')
             ->get()

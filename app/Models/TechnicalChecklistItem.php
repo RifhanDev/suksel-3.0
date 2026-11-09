@@ -46,8 +46,4 @@ class TechnicalChecklistItem extends Model
         return $this->hasMany(TechnicalChecklistFile::class);
     }
 
-    public function specificationDocument(): BelongsTo
-    {
-        return $this->belongsTo(TechnicalSpecificationDocument::class, 'specification_document_id');
-    }
 }

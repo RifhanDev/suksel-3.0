@@ -53,7 +53,7 @@ class TechnicalChecklistController extends Controller
         // Local DB fallback for checklistData if API failed or returned empty
         if (! $checklistData) {
             $header = TechnicalChecklistHeader::where('tender_id', $tender->id)
-                ->with(['items.files', 'items.specificationDocument', 'files'])
+                ->with(['items.files', 'files'])
                 ->first();
 
             if ($header) {
@@ -66,16 +66,13 @@ class TechnicalChecklistController extends Controller
                 ->join('technical_checklist_headers as tch', 'tch.id', '=', 'tci.technical_checklist_header_id')
                 ->leftJoin('technical_specification_documents as tsd', 'tsd.id', '=', 'tci.specification_document_id')
                 ->where('tch.tender_id', $tender->id)
-                ->select('tci.uuid', 'tci.source_type', 'tci.penghantaran_fizikal', 'tsd.physical_submission')
+                ->select('tci.uuid', 'tci.source_type', 'tci.penghantaran_fizikal')
                 ->get()
                 ->keyBy('uuid');
             foreach ($checklistData['items'] as &$item) {
                 $flag = $localFlags[$item['uuid'] ?? ''] ?? null;
-                $isSpecification = ($item['source_type'] ?? '') === 'specification_document';
                 $item['penghantaran_fizikal'] = (int) $tender->penilaian_fizikal === 1
-                    && (bool) ($isSpecification
-                        ? ($flag?->physical_submission ?? $item['penghantaran_fizikal'] ?? false)
-                        : ($flag?->penghantaran_fizikal ?? $item['penghantaran_fizikal'] ?? false));
+                    && (bool) ($flag?->penghantaran_fizikal ?? $item['penghantaran_fizikal'] ?? false);
             }
             unset($item);
         }
@@ -303,9 +300,7 @@ class TechnicalChecklistController extends Controller
                     'mechanism' => $mechanism,
                     'vendor_action' => $vendorAction,
                     'penghantaran_fizikal' => (int) $tender->penilaian_fizikal === 1
-                        && (bool) (($item->source_type === 'specification_document' && $item->specificationDocument)
-                            ? $item->specificationDocument->physical_submission
-                            : ($item->penghantaran_fizikal ?? false)),
+                        && (bool) ($item->penghantaran_fizikal ?? false),
                     'score' => (float) $item->score,
                     'status' => $item->status,
                     'sort_order' => (int) $item->sort_order,

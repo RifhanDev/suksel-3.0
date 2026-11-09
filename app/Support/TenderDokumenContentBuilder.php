@@ -41,12 +41,6 @@ class TenderDokumenContentBuilder
         $mechanism = $item->mechanism ?? null;
         $vendorAction = $item->vendor_action ?? null;
         $physicalSubmission = (bool) $item->penghantaran_fizikal;
-        if ($section === 'technical'
-            && $item instanceof TechnicalChecklistItem
-            && $sourceType === 'specification_document'
-            && $item->specificationDocument) {
-            $physicalSubmission = (bool) $item->specificationDocument->physical_submission;
-        }
         if ((int) $this->tender->penilaian_fizikal !== 1
             && ($mechanism === 'serahan_tangan' || $vendorAction === 'serahan_tangan')) {
             // Older checklist rows may still contain the hand-delivery mechanism.
