@@ -2042,7 +2042,7 @@ class TendersController extends Controller
 
 		$vendor = Vendor::find($data['exception_id']);
 
-		if (empty($vendor) || !$vendor->canParticipate()) {
+		if (empty($vendor) || ! $vendor->canParticipateInTenders()) {
 			return redirect('tenders/' . $tender->id . '/vendors')->with('error', 'Syarikat dipilih tidak layak untuk diberi kebenaran khas.');
 		}
 
@@ -2514,7 +2514,7 @@ class TendersController extends Controller
 
 		$vendor = Vendor::find($exception->vendor->id);
 
-		if (empty($vendor) || !$vendor->canParticipate()) {
+		if (empty($vendor) || ! $vendor->canParticipateInTenders()) {
 			return redirect('tenders/' . $tender->id . '/exceptions')->with('error', 'Syarikat dipilih tidak layak untuk diberi kebenaran khas.');
 		}
 
