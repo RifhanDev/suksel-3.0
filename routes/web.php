@@ -550,8 +550,8 @@ Route::view('/syarat-tender', 'newModule.syarikatPembekal.syarat_tender')->name(
 Route::view('/kod-bidang', 'newModule.syarikatPembekal.kod_bidang')->name('kodBidang');
 
 // Dummy Controller 
-Route::get('/tender/cipta', [DummyController::class, 'create'])->name('tender.create');
-Route::post('/tender/store', [DummyController::class, 'store'])->name('tender.store');
+Route::get('/tender/cipta', [DummyController::class, 'create'])->name('tender.dummy.create');
+Route::post('/tender/store', [DummyController::class, 'store'])->name('tender.dummy.store');
 Route::get('/tender/bekalan', [DummyController::class, 'bekalan'])->name('tender.bekalan');
 Route::get('/tender/kerja', [DummyController::class, 'kerja'])->name('tender.kerja');
 Route::get('/tender/status/{status}', [DummyController::class, 'viewByStatus'])->name('tender.status');
