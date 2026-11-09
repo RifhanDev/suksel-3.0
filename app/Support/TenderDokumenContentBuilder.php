@@ -559,7 +559,7 @@ class TenderDokumenContentBuilder
             return url('/' . $normalized);
         }
 
-        if (\Illuminate\Support\Facades\\App\Support\AttachmentStorage::exists($normalized)) {
+        if (\App\Support\AttachmentStorage::exists($normalized)) {
             return url('/storage/' . $normalized);
         }
 
