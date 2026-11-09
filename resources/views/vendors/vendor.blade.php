@@ -438,6 +438,7 @@
                 <div class="card border shadow-sm rounded-3 overflow-hidden mb-4">
                     <div class="card-header bg-light py-3 border-bottom d-flex justify-content-between align-items-center gap-3">
                         <div class="fw-bold text-secondary">Lembaga Pembangunan Industri Pembinaan (CIDB)</div>
+                        {{-- Hidden until CIDB integration is ready
                         <div class="d-flex align-items-center gap-2 flex-wrap justify-content-end">
                             @include('components.vendor-cidb-meta', [
                                 'vendor' => $vendor,
@@ -448,6 +449,7 @@
                                 'scrollToComparison' => session('cidb_integrated') && (int) session('cidb_integrated_vendor_id') === (int) $vendor->id,
                             ])
                         </div>
+                        --}}
                     </div>
                     <div class="card-body p-4">
                         @if (session('success') && session('cidb_integrated'))
