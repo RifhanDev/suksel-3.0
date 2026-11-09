@@ -46,22 +46,25 @@ class SmtpMailController extends Controller
 
             foreach ($results as $rows) {
 
-                $enc_id = $this->encryptString($rows->id);
+                $enc_id = $this->encryptString((string) $rows->id);
 
                 $actions    = [];
-                $actions[] = SmtpMails::canShow() ? "<a class='btn btn-sm btn-primary rounded-8 px-3' href='" . route('mail-manager.smtp-setting.show', ['smtp_setting' => $enc_id]) . "'>Papar</a>" : '';
-                $actions[] = SmtpMails::canUpdate() ? "<a class='btn btn-sm btn-warning rounded-8 px-3' href='" . route('mail-manager.smtp-setting.edit', ['smtp_setting' => $enc_id]) . "'>Kemaskini</a>" : '';
-                // $actions[] = SmtpMails::canDelete() ? "<button class='btn btn-sm btn-danger rounded-8 px-3' onclick='deleteSmtpMail(".'"'.$enc_id.'"'.")'>Padam</button>" : '';
+                // encryptString() returns false when openssl fails; route() would throw on it.
+                if ($enc_id !== false && $enc_id !== '') {
+                    $actions[] = SmtpMails::canShow() ? "<a class='btn btn-sm btn-primary rounded-8 px-3' href='" . route('mail-manager.smtp-setting.show', ['smtp_setting' => $enc_id]) . "'>Papar</a>" : '';
+                    $actions[] = SmtpMails::canUpdate() ? "<a class='btn btn-sm btn-warning rounded-8 px-3' href='" . route('mail-manager.smtp-setting.edit', ['smtp_setting' => $enc_id]) . "'>Kemaskini</a>" : '';
+                    // $actions[] = SmtpMails::canDelete() ? "<button class='btn btn-sm btn-danger rounded-8 px-3' onclick='deleteSmtpMail(".'"'.$enc_id.'"'.")'>Padam</button>" : '';
+                }
 
                 $action_column = '<div class="d-flex gap-2 justify-content-center">' . implode('', $actions) . '</div>';
 
                 $datatable_data[] = array(
-                    "created_at"            => $rows->created_at->format('d-m-Y'),
+                    "created_at"            => optional($rows->created_at)->format('d-m-Y'),
                     "mail_server"           => $rows->mail_server,
                     "mail_port"             => $rows->mail_port,
                     "mail_username"         => $rows->mail_username,
                     "mail_message_ratelimit" => $rows->mail_message_ratelimit,
-                    "actions"               => '', // boleh ditambah semula kemudian dengan pengendalian parameter yang lebih selamat
+                    "actions"               => $action_column,
                 );
             }
 
