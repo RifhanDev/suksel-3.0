@@ -5,6 +5,14 @@
     $section = $dok['section'] ?? '';
     $tenderId = $tender->id ?? null;
     $showUpload = $mode === 'vendor' && $vendorCanEdit && in_array($action, ['vendor_upload', 'download_upload'], true);
+    $bqTemplateMode = ! empty($content['bq_template_mode']);
+    $bqOffer = $dok['vendor_content']['specification'] ?? [];
+    $bqTempohUnit = match (strtolower(trim((string) ($tender->tempoh_siap_unit ?? 'bulan')))) {
+        'hari', '3' => 'hari',
+        'minggu', '1' => 'minggu',
+        'bulan', '2' => 'bulan',
+        default => 'bulan',
+    };
     $showKeyInArea = false;
 @endphp
 
@@ -40,8 +48,13 @@
             <div class="text-muted" style="font-size:0.72rem;font-weight:600;">
                 {{ $mode === 'admin' ? 'Penyerahan Petender' : 'Dokumen Anda' }}
             </div>
-            <span class="dokumen-vendor-selesai-badge badge-status badge-status-success {{ $mode === 'vendor' && ($dok['vendor_status'] ?? '') === 'submitted' ? '' : 'd-none' }}"
-                style="font-size:0.68rem;">Selesai</span>
+            @if ($mode === 'vendor' && $vendorCanEdit && $bqTemplateMode)
+                <span class="badge-status badge-status-success bq-vendor-detail-status {{ ($dok['vendor_status'] ?? '') === 'submitted' ? '' : 'd-none' }}" style="font-size:0.68rem;">Selesai</span>
+            @elseif ($mode === 'vendor' && $vendorCanEdit && $action === 'download_upload')
+                <span class="badge-status badge-status-success file-vendor-detail-status {{ ($dok['vendor_status'] ?? '') === 'submitted' ? '' : 'd-none' }}" style="font-size:0.68rem;">Selesai</span>
+            @elseif ($mode === 'vendor' && ($dok['vendor_status'] ?? '') === 'submitted')
+                <span class="badge-status badge-status-success" style="font-size:0.68rem;">Selesai</span>
+            @endif
         </div>
 
         <ul class="list-unstyled mb-0 dokumen-vendor-file-list" data-item-uuid="{{ $itemUuid }}">
@@ -64,7 +77,7 @@
         </ul>
 
         @if ($showUpload)
-            <div class="dokumen-upload-zone mt-2"
+            <div class="dokumen-upload-zone mt-2 {{ $action === 'download_upload' && count($vendorFiles) > 0 ? 'd-none' : '' }}" data-single-file="{{ $action === 'download_upload' ? '1' : '0' }}"
                 data-upload-url="{{ route('tenderDokumen.upload', ['tender' => $tenderId, 'itemUuid' => $itemUuid]) }}"
                 data-section="{{ $section }}"
                 data-csrf="{{ csrf_token() }}">
@@ -77,9 +90,39 @@
                         <line x1="12" y1="3" x2="12" y2="15"></line>
                     </svg>
                     <div class="fw-semibold">Muat Naik Dokumen</div>
-                    <div class="mt-1">PDF, Word, Excel atau imej (maks. 10MB)</div>
+                    <div class="mt-1">PDF, Word, Excel atau imej (maks. 10MB{{ $action === 'download_upload' ? ', satu fail sahaja' : '' }})</div>
                 </label>
                 <div class="text-danger small mt-1 d-none dokumen-upload-error"></div>
+            </div>
+        @endif
+
+        @if ($mode === 'vendor' && $vendorCanEdit && $bqTemplateMode)
+            <div class="mt-3 pt-3 border-top bq-offer-form"
+                data-save-url="{{ route('tenderDokumen.saveSpecification', ['tender' => $tenderId, 'itemUuid' => $itemUuid]) }}"
+                data-section="{{ $section }}"
+                data-csrf="{{ csrf_token() }}">
+                <div class="fw-semibold small mb-2">Maklumat Tawaran</div>
+                <div class="row g-2">
+                    <div class="col-12 col-md-6">
+                        <label class="form-label small mb-1" for="bq-total-{{ $itemUuid }}">Jumlah Harga Tawaran (RM)</label>
+                        <input id="bq-total-{{ $itemUuid }}" type="number" min="0.01" step="0.01" required
+                            class="form-control form-control-sm bq-total-input"
+                            value="{{ $bqOffer['bq_total_tawaran'] ?? '' }}" placeholder="Contoh: 125000.00">
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <label class="form-label small mb-1" for="bq-tempoh-{{ $itemUuid }}">Tempoh Siap Yang Ditawarkan</label>
+                        <div class="input-group input-group-sm">
+                            <input id="bq-tempoh-{{ $itemUuid }}" type="number" min="1" step="1" required
+                                class="form-control bq-tempoh-input" value="{{ $bqOffer['vendor_tempoh_siap_val'] ?? '' }}" placeholder="Contoh: 90">
+                            <span class="input-group-text">{{ ucfirst($bqTempohUnit) }}</span>
+                            <input type="hidden" class="bq-tempoh-unit" value="{{ $bqTempohUnit }}">
+                        </div>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-primary mt-2 bq-offer-save">Simpan Maklumat Tawaran</button>
+                <span class="small text-success ms-2 d-none bq-offer-success">Maklumat berjaya disimpan.</span>
+                <div class="small text-danger mt-1 d-none bq-offer-error"></div>
+                <div class="small text-muted mt-2">Maklumat ini digunakan untuk penilaian kewangan. Nilai dalam dokumen BQ tidak dibaca secara automatik.</div>
             </div>
         @endif
     </div>

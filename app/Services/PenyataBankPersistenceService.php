@@ -150,6 +150,7 @@ class PenyataBankPersistenceService
                 $vendorAccount = $vendorAccounts[$index] ?? [];
 
                 return array_merge($tenderAccount, [
+                    'bank_name' => $vendorAccount['bank_name'] ?? $tenderAccount['bank_name'] ?? null,
                     'bulans' => $this->mergeBulans(
                         $tenderAccount['bulans'] ?? [],
                         $vendorAccount['bulans'] ?? []
@@ -186,7 +187,11 @@ class PenyataBankPersistenceService
     {
         $accounts = $record->accounts;
 
-        $dbFiles = $record->files->map(function ($f) {
+        // Vendor statements are private to that vendor and account. They must
+        // never be merged into the tender-level configuration payload.
+        $dbFiles = $record->files
+            ->whereNull('vendor_id')
+            ->map(function ($f) {
             $cleanPath = ltrim(str_replace('public/', '', $f->path ?? ''), '/');
             return [
                 'uuid'          => $f->uuid,
@@ -277,6 +282,7 @@ class PenyataBankPersistenceService
                 'dari_tahun' => isset($account['dari_tahun']) ? (int) $account['dari_tahun'] : null,
                 'hingga_bulan' => isset($account['hingga_bulan']) ? (int) $account['hingga_bulan'] : null,
                 'hingga_tahun' => isset($account['hingga_tahun']) ? (int) $account['hingga_tahun'] : null,
+                'bank_name' => isset($account['bank_name']) ? trim((string) $account['bank_name']) : null,
                 'bulans' => array_values($account['bulans'] ?? []),
                 'jumlah_keseluruhan' => (float) ($account['jumlah_keseluruhan'] ?? 0),
                 'purata' => (float) ($account['purata'] ?? 0),

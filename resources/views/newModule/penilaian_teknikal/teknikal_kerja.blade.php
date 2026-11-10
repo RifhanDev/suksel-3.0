@@ -140,8 +140,9 @@
                     <thead class="table-primary">
                         <tr>
                             <th style="width: 10%;">Bil.</th>
-                            <th style="width: 40%;">Rujukan Petender</th>
-                            <th style="width: 20%;">Harga Asal Tender (RM)</th>
+                            <th style="width: 30%;">Rujukan Petender</th>
+                            <th style="width: 20%;">BQ / Jadual Harga</th>
+                            <th style="width: 20%;">Harga Tawaran (RM)</th>
                             <th style="width: 20%;">Status</th>
                         </tr>
                     </thead>
@@ -149,7 +150,24 @@
                         @forelse ($borangTeknikalRows as $index => $row)
                             <tr data-vendor-id="{{ $row['vendor_id'] }}">
                                 <td class="text-center">{{ $index + 1 }}</td>
-                                <td>{{ $row['rujukan'] ?? '-' }}</td>
+                                <td>
+                                    <div>{{ $row['rujukan'] ?? '-' }}</div>
+                                </td>
+                                <td>
+                                    @if (!empty($row['bq_files']))
+                                        <div class="d-flex flex-column align-items-start gap-1 mt-1">
+                                            @foreach ($row['bq_files'] as $bqFile)
+                                                <a href="{{ $bqFile['url'] }}" target="_blank" rel="noopener noreferrer"
+                                                    class="small text-primary text-decoration-none d-inline-flex align-items-center gap-1">
+                                                    <i class="bi bi-file-earmark-text"></i>
+                                                    {{ $bqFile['name'] ?: 'Lihat BQ' }}
+                                                </a>
+                                            @endforeach
+                                        </div>
+                                    @else
+                                        <span class="text-muted">-</span>
+                                    @endif
+                                </td>
                                 <td class="text-end">{{ $row['harga'] !== null ? number_format($row['harga'], 2) : '-' }}</td>
                                 <td class="text-center">
                                     <select class="form-select status-petender" name="status_petender_{{ $row['vendor_id'] }}" data-vendor-id="{{ $row['vendor_id'] }}" aria-label="Status" @disabled($readOnly ?? false)>
@@ -161,7 +179,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="4" class="text-center text-muted py-4">Tiada pembekal disenarai pendek untuk tender ini.</td>
+                                <td colspan="5" class="text-center text-muted py-4">Tiada pembekal disenarai pendek untuk tender ini.</td>
                             </tr>
                         @endforelse
                     </tbody>

@@ -655,6 +655,9 @@ class Tender extends Model
 				->select('tender_id')
 				->where('user_id', $user->id)
 				->whereIn('jenis_jawatankuasa', $jenis);
+			if ($committeeTable === 'jawatankuasas') {
+				$sub->where('is_current', true);
+			}
 		});
 	}
 
@@ -1934,6 +1937,7 @@ class Tender extends Model
 
 		$jawatankuasas = DB::table($tableName)
 			->where('tender_id', $this->id)
+			->when($tableName === 'jawatankuasas', fn ($query) => $query->where('is_current', true))
 			->whereIn('jenis_jawatankuasa', $requiredJenis)
 			->whereNotNull('user_id')
 			->get(['jenis_jawatankuasa', 'peranan', 'user_id', 'dihantar_pemakluman_pada']);
@@ -1971,6 +1975,7 @@ class Tender extends Model
 		$tableName = DB::getSchemaBuilder()->hasTable('jawatankuasas') ? 'jawatankuasas' : 'jawatankuasa';
 		return DB::table($tableName)
 			->where('tender_id', $this->id)
+			->when($tableName === 'jawatankuasas', fn ($query) => $query->where('is_current', true))
 			->whereNotNull('user_id')
 			->exists();
 	}

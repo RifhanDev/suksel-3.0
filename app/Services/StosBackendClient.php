@@ -110,6 +110,11 @@ class StosBackendClient
         return $this->post('/api/tenders/' . $tenderId . '/penyediaan-mesyuarat/submit', $payload);
     }
 
+    public function syncPenyediaanMesyuaratAttendees(int $tenderId, string $jenis): Response
+    {
+        return $this->post('/api/tenders/' . $tenderId . '/penyediaan-mesyuarat/' . rawurlencode($jenis) . '/sync-attendees');
+    }
+
     public function submitJawatankuasaSpesifikasiPemakluman(int $tenderId, array $payload): Response
     {
         if (! $this->isConfigured()) {

@@ -175,7 +175,7 @@
 										<line x1="12" y1="16" x2="12" y2="12"></line>
 										<line x1="12" y1="8" x2="12.01" y2="8"></line>
 									</svg>
-									<span>Sila masukkan sekurang-kurangnya <strong>1 Pengerusi</strong>, <strong>2 Ahli</strong> atau <strong>1 Setiausaha</strong>.</span>
+									<span>Syarat minimum {{ $tabLabels[$tab] ?? 'jawatankuasa ini' }} ialah <strong>1 Pengerusi</strong> dan <strong>{{ $tab === 'open' ? 1 : 2 }} Ahli</strong>. Setiausaha tidak diwajibkan.</span>
 								</div>
 
 								<!-- Table toolbar -->

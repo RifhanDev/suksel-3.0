@@ -2,22 +2,17 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Concerns\UpdatesTenderProcessAfterChecklistSubmit;
 use App\Models\SpesifikasiKerjaFile;
 use App\Models\SpesifikasiKerjaHeader;
 use App\Models\SpesifikasiKerjaItem;
 use App\Models\Tender;
-use App\Services\StosBackendClient;
-use App\Support\StosStoredFile;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class SpesifikasiTenderKerjaController extends Controller
 {
-    use UpdatesTenderProcessAfterChecklistSubmit;
+
     /**
      * Display the Penyediaan Spesifikasi Tender page with existing data.
      */
@@ -31,38 +26,11 @@ class SpesifikasiTenderKerjaController extends Controller
             ->where('tenders.uuid', $tenderUuid)
             ->firstOrFail();
 
-        $checklistData = null;
+        $header = SpesifikasiKerjaHeader::where('tender_id', $tender->id)
+            ->with(['items.files', 'items.specs.files', 'files'])
+            ->first();
 
-        try {
-            $apiUrl   = $this->url('spesifikasi-kerja/' . $tenderUuid);
-            $response = $this->api()->get($apiUrl);
-
-            if ($response->successful()) {
-                $checklistData = $response->json('data');
-            } else {
-                Log::warning('SpesifikasiTenderKerjaController@index: API request failed', [
-                    'tender_uuid' => $tenderUuid,
-                    'api_url'     => $apiUrl,
-                    'status'      => $response->status(),
-                    'body'        => $response->body(),
-                ]);
-            }
-        } catch (\Throwable $e) {
-            Log::warning('SpesifikasiTenderKerjaController@index: STOS API connection failed', [
-                'tender_uuid' => $tenderUuid,
-                'error'       => $e->getMessage(),
-            ]);
-        }
-
-        if (! $checklistData) {
-            $header = SpesifikasiKerjaHeader::where('tender_id', $tender->id)
-                ->with(['items.files', 'items.specs.files', 'files'])
-                ->first();
-
-            if ($header) {
-                $checklistData = $this->serializeLocalSpesifikasi($header, $tender);
-            }
-        }
+        $checklistData = $header ? $this->serializeLocalSpesifikasi($header, $tender) : null;
 
         return view(
             'newModule.jawatankuasaSpesifikasi.form_penyediaan_spesifikasi_tender',
@@ -70,40 +38,57 @@ class SpesifikasiTenderKerjaController extends Controller
         );
     }
 
-    /**
-     * Save (draft) the specification items — proxied to backend API.
-     */
+    /** Save the local BQ draft without forwarding documents or state to STOS. */
     public function store(Request $request, string $tenderUuid)
     {
-        $this->ensureAccess();
-
-        $response = $this->api()->post(
-            $this->url('spesifikasi-kerja/' . $tenderUuid),
-            $request->except('_token')
-        );
-
-        return response()->json($response->json(), $response->status());
+        return $this->saveLocalTemplate($tenderUuid, false);
     }
 
-    /**
-     * Submit the specification — proxied to backend API.
-     */
     public function submit(Request $request, string $tenderUuid)
     {
-        $this->ensureAccess();
+        $response = $this->saveLocalTemplate($tenderUuid, true);
+        $tender = \App\Tender::where('uuid', $tenderUuid)->firstOrFail();
+        app(\App\Services\TenderProcessStatusService::class)->syncAfterChecklistSubmit($tender, false);
 
-        $response = $this->api()->post(
-            $this->url('spesifikasi-kerja/' . $tenderUuid . '/submit'),
-            $request->except('_token')
-        );
-
-        if ($response->successful()) {
-            $this->refreshTenderProcessAfterChecklistSubmit($tenderUuid);
-        }
-
-        return response()->json($response->json(), $response->status());
+        return $response;
     }
 
+    private function saveLocalTemplate(string $tenderUuid, bool $submit)
+    {
+        $this->ensureAccess();
+        $tender = Tender::where('uuid', $tenderUuid)->firstOrFail();
+        abort_unless((int) $tender->kategori_perolehan_id === 3, 404);
+
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($tender, $submit) {
+            $header = SpesifikasiKerjaHeader::where('tender_id', $tender->id)->lockForUpdate()->first();
+            if (! $header) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'file' => 'Muat naik templat BQ sebelum menyimpan atau menghantar.',
+                ]);
+            }
+            abort_if($header->status === 'submitted', 422, 'Templat yang telah dihantar tidak boleh diubah.');
+            $template = $header->files()->whereNull('spesifikasi_kerja_item_id')
+                ->whereIn('file_type', ['bq_template', 'bq'])->latest('id')->first();
+            if (! $template || ! \App\Support\SukselStoredFile::exists((string) $template->path)) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'file' => 'Templat BQ tidak dijumpai pada storan SUKSel. Sila muat naik dokumen sebelum meneruskan.',
+                ]);
+            }
+            $header->status = $submit ? 'submitted' : 'draft';
+            $header->updated_by = auth()->id();
+            if ($submit) {
+                $header->submitted_at = now();
+                $header->submitted_by = auth()->id();
+            }
+            $header->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => $submit ? 'Spesifikasi tender berjaya dihantar.' : 'Draf berjaya disimpan.',
+                'data' => $this->serializeLocalSpesifikasi($header->load(['files', 'items.files', 'items.specs.files']), $tender),
+            ]);
+        });
+    }
     /**
      * Upload a per-item supporting document — stored directly on SUKSel 3.0 server storage.
      */
@@ -111,14 +96,37 @@ class SpesifikasiTenderKerjaController extends Controller
     {
         $this->ensureAccess();
 
+        $upload = $request->file('file');
+        if ($upload && ! $upload->isValid()) {
+            $message = match ($upload->getError()) {
+                UPLOAD_ERR_INI_SIZE => 'Saiz fail melebihi had muat naik pelayan (' . ini_get('upload_max_filesize') . '). Sila kecilkan fail atau hubungi pentadbir.',
+                UPLOAD_ERR_FORM_SIZE => 'Saiz fail melebihi had muat naik borang.',
+                UPLOAD_ERR_PARTIAL => 'Fail hanya dimuat naik sebahagian. Sila semak sambungan dan cuba lagi.',
+                UPLOAD_ERR_NO_FILE => 'Tiada fail diterima. Sila pilih dokumen dan cuba lagi.',
+                UPLOAD_ERR_NO_TMP_DIR => 'Pelayan tidak mempunyai folder sementara untuk muat naik. Sila hubungi pentadbir.',
+                UPLOAD_ERR_CANT_WRITE => 'Pelayan gagal menyimpan fail muat naik. Sila hubungi pentadbir.',
+                UPLOAD_ERR_EXTENSION => 'Muat naik dihentikan oleh konfigurasi pelayan. Sila hubungi pentadbir.',
+                default => 'Muat naik tidak lengkap. Sila pilih semula dokumen dan cuba lagi.',
+            };
+
+            return response()->json(['success' => false, 'message' => $message, 'errors' => ['file' => [$message]]], 422);
+        }
+
         $request->validate([
-            'file' => ['required', 'file', 'max:10240'],
-            'file_type' => ['nullable', 'string', 'max:50'],
+            'file' => \App\Support\AllowedAttachment::rules(maxKb: 25600),
+            'file_type' => ['nullable', 'string', 'in:support,bq,bq_template'],
             'checklist_item_uuid' => ['nullable', 'string'],
             'spesifikasi_kerja_item_uuid' => ['nullable', 'string'],
+        ], [
+            'file.required' => 'Tiada fail diterima. Sila pilih dokumen untuk dimuat naik.',
+            'file.file' => 'Dokumen tidak sah. Sila pilih fail yang boleh dibaca dan cuba lagi.',
+            'file.max' => 'Saiz fail melebihi had 25 MB.',
+            'file.mimes' => \App\Support\AllowedAttachment::MESSAGE,
+            'file.uploaded' => 'Fail tidak dapat diterima oleh pelayan. Sila pilih semula dokumen atau hubungi pentadbir.',
         ]);
 
         $tender = Tender::where('uuid', $tenderUuid)->firstOrFail();
+        abort_unless((int) $tender->kategori_perolehan_id === 3, 404);
 
         $header = SpesifikasiKerjaHeader::firstOrCreate(
             ['tender_id' => $tender->id],
@@ -129,6 +137,11 @@ class SpesifikasiTenderKerjaController extends Controller
             ]
         );
 
+        $fileType = $request->input('file_type') ?: 'support';
+        if ($fileType === 'bq_template' && $header->status === 'submitted') {
+            return response()->json(['success' => false, 'message' => 'Templat yang telah dihantar tidak boleh diganti.'], 422);
+        }
+
         $itemUuid = $request->input('checklist_item_uuid') ?: $request->input('spesifikasi_kerja_item_uuid');
         $item = null;
         if (!empty($itemUuid)) {
@@ -137,7 +150,7 @@ class SpesifikasiTenderKerjaController extends Controller
                 ->first();
 
             if (!$item) {
-                $item = SpesifikasiKerjaItem::where('uuid', $itemUuid)->first();
+                abort(422, 'Item spesifikasi tidak dijumpai untuk tender ini.');
             }
         }
 
@@ -146,18 +159,37 @@ class SpesifikasiTenderKerjaController extends Controller
         $storedName = now()->format('YmdHis') . '_' . Str::uuid() . '_' . $safeOriginalName;
         $path = \App\Support\AttachmentStorage::storeAs($uploadedFile, 'spesifikasi-kerja/' . $tender->uuid, $storedName);
 
-        $file = SpesifikasiKerjaFile::create([
+        try {
+            $file = SpesifikasiKerjaFile::create([
             'uuid' => (string) Str::uuid(),
             'spesifikasi_kerja_header_id' => $header->id,
             'spesifikasi_kerja_item_id' => $item?->id,
-            'file_type' => $request->input('file_type') ?: 'support',
+            'file_type' => $fileType,
             'original_name' => $uploadedFile->getClientOriginalName(),
             'stored_name' => $storedName,
             'path' => $path,
             'mime_type' => $uploadedFile->getClientMimeType(),
             'size' => $uploadedFile->getSize() ?: 0,
             'uploaded_by' => auth()->id(),
-        ]);
+            ]);
+        } catch (\Throwable $e) {
+            Storage::disk('public')->delete($path);
+            throw $e;
+        }
+
+        if ($fileType === 'bq_template') {
+            $previousTemplates = $header->files()
+                ->whereNull('spesifikasi_kerja_item_id')
+                ->where('file_type', 'bq_template')
+                ->where('id', '!=', $file->id)
+                ->get();
+            foreach ($previousTemplates as $previous) {
+                if ($previous->path && Storage::disk('public')->exists($previous->path)) {
+                    Storage::disk('public')->delete($previous->path);
+                }
+                $previous->delete();
+            }
+        }
 
         $downloadUrl = route('penyediaanSpekTender.downloadFile', [
             'tenderUuid' => $tender->uuid,
@@ -206,26 +238,8 @@ class SpesifikasiTenderKerjaController extends Controller
             }
         }
 
-        if (! $file) {
-            $file = $this->findRemoteSpecificationFile($tenderUuid, $fileUuid);
-        }
-
-        if (! $file) {
-            abort(404, 'Fail tidak dijumpai.');
-        }
-
-        $name = is_array($file) ? ($file['original_name'] ?? 'Dokumen') : $file->original_name;
-        $path = is_array($file) ? ($file['path'] ?? null) : $file->path;
-        $mime = is_array($file) ? ($file['mime_type'] ?? null) : $file->mime_type;
-
-        return StosStoredFile::response([
-            'original_name' => $name ?: 'Dokumen',
-            'path' => $path,
-            'mime_type' => $mime,
-            'download_api' => 'spesifikasi-kerja-files/' . $fileUuid . '/download',
-        ]);
+        return \App\Support\SukselStoredFile::response((string) $file->path, $file->original_name);
     }
-
     /**
      * Delete an uploaded file — deleted directly on SUKSel 3.0 server storage.
      */
@@ -233,7 +247,9 @@ class SpesifikasiTenderKerjaController extends Controller
     {
         $this->ensureAccess();
 
-        $file = SpesifikasiKerjaFile::where('uuid', $fileUuid)->first();
+        $file = SpesifikasiKerjaFile::where('uuid', $fileUuid)
+            ->whereHas('header', fn ($query) => $query->whereHas('tender', fn ($tenderQuery) => $tenderQuery->where('kategori_perolehan_id', 3)))
+            ->first();
         if ($file) {
             if ($file->path && \App\Support\AttachmentStorage::exists($file->path)) {
                 \App\Support\AttachmentStorage::delete($file->path);
@@ -246,23 +262,8 @@ class SpesifikasiTenderKerjaController extends Controller
             ]);
         }
 
-        try {
-            $response = $this->api()->delete(
-                $this->url('spesifikasi-kerja-files/' . $fileUuid)
-            );
-            if ($response->successful()) {
-                return response()->json($response->json(), $response->status());
-            }
-        } catch (\Throwable $e) {
-            Log::warning('SpesifikasiTenderKerjaController@deleteFile: STOS API fallback failed', ['error' => $e->getMessage()]);
-        }
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Fail dipadam.',
-        ]);
+        abort(404, 'Fail tidak dijumpai pada storan SUKSel.');
     }
-
     private function serializeLocalSpesifikasi(SpesifikasiKerjaHeader $header, Tender $tender): array
     {
         return [
@@ -318,6 +319,7 @@ class SpesifikasiTenderKerjaController extends Controller
             })->values()->all(),
             'files' => $header->files
                 ->filter(fn ($file) => $file->spesifikasi_kerja_item_id === null)
+                ->filter(fn ($file) => in_array($file->file_type, ['bq_template', 'bq', 'support'], true))
                 ->map(fn ($f) => [
                     'uuid' => $f->uuid,
                     'file_type' => $f->file_type,
@@ -326,6 +328,7 @@ class SpesifikasiTenderKerjaController extends Controller
                     'path' => $f->path,
                     'mime_type' => $f->mime_type,
                     'size' => (int) $f->size,
+                    'created_at' => $f->created_at?->toIso8601String(),
                     'url' => route('penyediaanSpekTender.downloadFile', ['tenderUuid' => $tender->uuid, 'fileUuid' => $f->uuid]),
                 ])
                 ->values()
@@ -344,58 +347,4 @@ class SpesifikasiTenderKerjaController extends Controller
         }
     }
 
-    private function api()
-    {
-        return Http::withoutVerifying()->timeout(30)->withHeaders([
-            'X-Api-Key' => config('services.stos_backend.api_key'),
-            'Accept'    => 'application/json',
-        ]);
-    }
-
-    private function url(string $path): string
-    {
-        return config('services.stos_backend.url') . '/api/' . $path;
-    }
-
-    /**
-     * @return array<string, mixed>|null
-     */
-    private function findRemoteSpecificationFile(string $tenderUuid, string $fileUuid): ?array
-    {
-        $response = $this->api()->get($this->url('spesifikasi-kerja/' . $tenderUuid));
-        if (! $response->successful()) {
-            return null;
-        }
-
-        $data = $response->json('data') ?? [];
-        $files = $data['files'] ?? [];
-
-        foreach ($data['items'] ?? [] as $item) {
-            if (! is_array($item)) {
-                continue;
-            }
-
-            foreach ($item['files'] ?? [] as $file) {
-                $files[] = $file;
-            }
-
-            foreach ($item['specs'] ?? [] as $spec) {
-                if (! is_array($spec)) {
-                    continue;
-                }
-
-                foreach ($spec['files'] ?? [] as $file) {
-                    $files[] = $file;
-                }
-            }
-        }
-
-        foreach ($files as $file) {
-            if (is_array($file) && ($file['uuid'] ?? '') === $fileUuid) {
-                return $file;
-            }
-        }
-
-        return null;
-    }
 }

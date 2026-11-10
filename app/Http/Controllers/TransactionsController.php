@@ -729,7 +729,7 @@ class TransactionsController extends Controller
 
 	private function dispatch_fpx_requery_jobs()
 	{
-		$queueLimit = env('FPX_JOBS_LIMIT') ?? 50;
+		$queueLimit = config('services.fpx.jobs_limit');
 
 		$get_processed_pending_fpx = Transaction::where('status', 'pending')->where('fpx_job_status', 1)->select('id');
 		$total_processed_pending_fpx = $get_processed_pending_fpx->count();

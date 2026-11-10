@@ -209,6 +209,9 @@ class VendorDokumenResponseService
                         ]];
                     })
                     ->all(),
+                'bq_total_tawaran' => isset($payload['bq_total_tawaran']) && $payload['bq_total_tawaran'] !== ''
+                    ? (float) $payload['bq_total_tawaran']
+                    : null,
                 'vendor_tempoh_siap_val'  => isset($payload['vendor_tempoh_siap_val']) && $payload['vendor_tempoh_siap_val'] !== '' && $payload['vendor_tempoh_siap_val'] !== null ? (int) $payload['vendor_tempoh_siap_val'] : null,
                 'vendor_tempoh_siap_unit' => isset($payload['vendor_tempoh_siap_unit']) && $payload['vendor_tempoh_siap_unit'] !== '' ? trim((string) $payload['vendor_tempoh_siap_unit']) : null,
             ];
@@ -332,6 +335,9 @@ class VendorDokumenResponseService
 
         $tempohVal = isset($data['vendor_tempoh_siap_val']) && $data['vendor_tempoh_siap_val'] !== '' && $data['vendor_tempoh_siap_val'] !== null ? (int) $data['vendor_tempoh_siap_val'] : ($existing['vendor_tempoh_siap_val'] ?? null);
         $tempohUnit = isset($data['vendor_tempoh_siap_unit']) && $data['vendor_tempoh_siap_unit'] !== '' ? trim((string) $data['vendor_tempoh_siap_unit']) : ($existing['vendor_tempoh_siap_unit'] ?? null);
+        $bqTotal = isset($data['bq_total_tawaran']) && $data['bq_total_tawaran'] !== ''
+            ? (float) $data['bq_total_tawaran']
+            : ($existing['bq_total_tawaran'] ?? null);
 
         if (! $record->exists) {
             $record->uuid = (string) Str::uuid();
@@ -340,12 +346,14 @@ class VendorDokumenResponseService
         $hasValue = collect($itemPrices)->contains(fn ($value) => $value !== '')
             || collect($itemKadars)->contains(fn ($value) => $value !== '')
             || collect($details)->contains(fn ($fields) => ($fields['pematuhan'] ?? '') !== '' || ($fields['cadangan'] ?? '') !== '')
+            || ($bqTotal !== null && $bqTotal > 0)
             || ($tempohVal !== null);
 
         $payloadToSave = [
             'item_prices'             => $itemPrices,
             'item_kadars'             => $itemKadars,
             'details'                 => $details,
+            'bq_total_tawaran'        => $bqTotal,
             'vendor_tempoh_siap_val'  => $tempohVal,
             'vendor_tempoh_siap_unit' => $tempohUnit,
         ];
@@ -465,6 +473,15 @@ class VendorDokumenResponseService
     {
         $total = $this->calculateSpecificationTotal($tender, $itemPrices, 'spesifikasi_kerja');
 
+        $participant = $tender->participants()->where('vendor_id', $vendorId)->first();
+        if ($participant) {
+            $participant->harga_tawaran = $total;
+            $participant->save();
+        }
+    }
+
+    public function syncHargaTawaranFromBq(Tender $tender, int $vendorId, float $total): void
+    {
         $participant = $tender->participants()->where('vendor_id', $vendorId)->first();
         if ($participant) {
             $participant->harga_tawaran = $total;

@@ -464,7 +464,7 @@
 				@endif
 			</div>
 			<div class="kv-row" style="border-bottom:none;">
-				<span class="kv-label">Penghantaran Fizikal</span>
+				<span class="kv-label">Serahan Tangan</span>
 				@if ($review->isYes($tender->penilaian_fizikal))
 					<span class="kv-value kv-yes">Ya</span>
 				@else

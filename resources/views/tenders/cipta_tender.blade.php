@@ -867,7 +867,7 @@
 									</div>
 									<!-- Fizikal Toggle -->
 									<div class="col-12">
-										<label class="form-label">Penghantaran Fizikal (Dokumen/ Sampel)<span class="text-danger">*</span></label>
+										<label class="form-label">Serahan Tangan (Dokumen/ Sampel)<span class="text-danger">*</span></label>
 										<div class="segmented-control">
 											<input type="radio" name="fizikal" id="pf_y" value="1"
 												{{ old('fizikal') == '1' ? 'checked' : '' }}>

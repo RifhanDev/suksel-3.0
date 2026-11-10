@@ -65,19 +65,41 @@
                 </table>
             </div>
 
-            {{-- Breakdown Status Per Petender Card --}}
-            <div class="card border border-light-subtle rounded-3 shadow-none bg-light p-3 mb-4">
-                <div class="d-flex align-items-center justify-content-between mb-3">
-                    <div class="d-flex align-items-center gap-2">
-                        <i class="bi bi-people-fill text-danger fs-5"></i>
-                        <h6 class="fw-bold mb-0 text-dark">Status Pematuhan Mengikut Petender (Ringkasan Semasa)</h6>
+            {{-- Ringkasan Status Pematuhan Mengikut Petender --}}
+            <section class="rounded-3 border bg-white shadow-sm mb-4 overflow-hidden" aria-labelledby="step1VendorStatusTitle">
+                <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 p-3 p-md-4 bg-light border-bottom">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="d-inline-flex align-items-center justify-content-center rounded-3 bg-danger-subtle text-danger flex-shrink-0" style="width: 44px; height: 44px;">
+                            <i class="bi bi-people-fill fs-5"></i>
+                        </div>
+                        <div>
+                            <h6 class="fw-bold mb-1 text-dark" id="step1VendorStatusTitle">Status Pematuhan Mengikut Petender</h6>
+                            <p class="text-secondary small mb-0">Ringkasan semasa bagi semakan dokumen mandatori.</p>
+                        </div>
                     </div>
-                    <span class="badge bg-secondary font-monospace" id="step1SummaryCountBadge">5 Petender</span>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge bg-white text-secondary border rounded-pill px-3 py-2 font-monospace" id="step1SummaryCountBadge">0 Petender</span>
+                        <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill px-3 py-2" id="step1StatusPendingCount">0 Menunggu Penilaian</span>
+                        <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-2" id="step1StatusPassCount">0 Sempurna</span>
+                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-3 py-2" id="step1StatusFailCount">0 Tidak Sempurna</span>
+                    </div>
                 </div>
-                <div class="row g-2" id="step1VendorStatusGrid">
-                    {{-- Rendered by JS --}}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="text-center text-uppercase small fw-bold text-secondary px-3" style="width: 72px;">Bil.</th>
+                                <th class="text-uppercase small fw-bold text-secondary px-3">Petender</th>
+                                <th class="text-uppercase small fw-bold text-secondary px-3">Maklumat CIDB</th>
+                                <th class="text-center text-uppercase small fw-bold text-secondary px-3" style="width: 190px;">Status Pematuhan</th>
+                            </tr>
+                        </thead>
+                        <tbody id="step1VendorStatusTableBody">
+                            {{-- Rendered by JS --}}
+                        </tbody>
+                    </table>
                 </div>
-            </div>
+            </section>
 
             {{-- Footer Action --}}
             <div class="d-flex justify-content-end align-items-center gap-2 pt-2 border-top">
@@ -109,6 +131,9 @@
                 </h6>
                 <span class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1 rounded-pill" id="totalStep1MelepasiBadge">
                     0 Petender Melepasi
+                </span>
+                <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2.5 py-1 rounded-pill" id="totalStep1PendingBadge">
+                    0 Menunggu Penilaian
                 </span>
             </div>
 

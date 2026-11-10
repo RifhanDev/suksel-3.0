@@ -47,6 +47,20 @@ class VendorTenderDokumenController extends Controller
             ]);
         }
 
+        if ($item['action'] === 'download_upload') {
+            $hasExistingFile = TenderVendorDokumenFile::query()
+                ->where('tender_id', $tender->id)
+                ->where('vendor_id', $vendorId)
+                ->where('checklist_item_uuid', $itemUuid)
+                ->exists();
+
+            if ($hasExistingFile) {
+                throw ValidationException::withMessages([
+                    'file' => 'Hanya satu dokumen boleh dimuat naik untuk item ini. Buang dokumen sedia ada sebelum memuat naik dokumen lain.',
+                ]);
+            }
+        }
+
         $file = $this->responses->uploadFile(
             $tender,
             $vendorId,
@@ -112,7 +126,18 @@ class VendorTenderDokumenController extends Controller
             }
 
             $tender = Tender::query()->findOrFail($file->tender_id);
+            $bqTemplateItem = collect(TenderDokumenPresenter::for($tender)->items('admin'))
+                ->first(fn (array $item) => ($item['uuid'] ?? '') === $file->checklist_item_uuid
+                    && ! empty($item['admin_content']['bq_template_mode']));
+            if ($bqTemplateItem
+                && (int) ($tender->kategori_perolehan_id ?? 0) !== 3
+                && $this->viewerIsTechnicalCommitteeOnly($tender)) {
+                abort(403, 'Dokumen BQ yang mengandungi harga tidak boleh diakses oleh Jawatankuasa Teknikal sahaja.');
+            }
             $this->assertCanAccessTenderFile($tender, (int) $file->vendor_id);
+            if ($file->section === 'spesifikasi_kerja') {
+                return \App\Support\SukselStoredFile::response((string) $file->path, $file->original_name ?: 'Dokumen BQ');
+            }
 
             return $this->streamStoredDokumenFile(
                 path: (string) $file->path,
@@ -362,7 +387,9 @@ class VendorTenderDokumenController extends Controller
         $item = $this->ensureSpecificationRows($tender, $item);
 
         if (($item['action'] ?? '') !== 'view_specification') {
-            abort(404, 'Item dokumen spesifikasi tidak dijumpai.');
+            if (empty($item['admin_content']['bq_template_mode'])) {
+                abort(404, 'Item dokumen spesifikasi tidak dijumpai.');
+            }
         }
 
         if ($vendorId) {
@@ -431,7 +458,8 @@ class VendorTenderDokumenController extends Controller
 
         $item = $this->findChecklistItem($tender, $itemUuid, 'vendor', $vendorId);
 
-        if (($item['action'] ?? '') !== 'view_specification') {
+        $isBqTemplate = ! empty($item['admin_content']['bq_template_mode']);
+        if (! $isBqTemplate && ($item['action'] ?? '') !== 'view_specification') {
             throw ValidationException::withMessages([
                 'item' => 'Item ini tidak memerlukan maklum balas spesifikasi.',
             ]);
@@ -448,6 +476,7 @@ class VendorTenderDokumenController extends Controller
             'vendor_id' => 'nullable|integer|min:1',
             'item_prices' => 'nullable|array',
             'item_prices.*' => 'nullable|string|max:5000',
+            'bq_total_tawaran' => [$isBqTemplate && ! $isAdmin ? 'required' : 'nullable', 'numeric', 'min:0.01', 'max:999999999999.99'],
             'item_kadars' => 'nullable|array',
             'item_kadars.*' => 'nullable|string|max:5000',
             'details' => 'nullable|array',
@@ -455,7 +484,9 @@ class VendorTenderDokumenController extends Controller
             'details.*.pematuhan' => 'nullable|string|in:yes,no,ya,tidak',
             'details.*.cadangan' => 'nullable|string|max:5000',
             'vendor_tempoh_siap_val' => $tempohValRule,
-            'vendor_tempoh_siap_unit' => 'nullable|string|max:50',
+            'vendor_tempoh_siap_unit' => $isBqTemplate && ! $isAdmin
+                ? 'required|string|in:hari,minggu,bulan'
+                : 'nullable|string|max:50',
         ]);
 
         if ($data['section'] !== $item['section']) {
@@ -473,7 +504,13 @@ class VendorTenderDokumenController extends Controller
             $isAdmin
         );
 
-        if (! $isAdmin && $data['section'] === 'spesifikasi_kerja') {
+        if ($isBqTemplate && ! $isAdmin) {
+            $this->responses->syncHargaTawaranFromBq(
+                $tender,
+                $vendorId,
+                (float) $data['bq_total_tawaran']
+            );
+        } elseif (! $isAdmin && $data['section'] === 'spesifikasi_kerja') {
             // Vendor offer only — SpesifikasiKerjaItem.kadar (PTJ) is never modified.
             $this->responses->syncHargaTawaranFromSpecification(
                 $tender,
@@ -545,7 +582,6 @@ class VendorTenderDokumenController extends Controller
             'Content-Disposition' => $disposition . '; filename="' . addslashes($file->original_name) . '"',
         ]);
     }
-
     /**
      * A member appointed only to the technical committee never sees offered prices.
      * Combined (eval/harga), opening, and financial committees still can, unless

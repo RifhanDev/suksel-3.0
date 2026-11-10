@@ -559,6 +559,109 @@ window.type2State = {
         }
     },
 
+    isStep1Complete() {
+        return this.vendors.length > 0 && this.checklistDocs.length > 0 &&
+            this.checklistDocs.every(doc => this.vendors.every(v => {
+                const evaluation = v.step1?.docs?.[doc.id];
+                return evaluation && evaluation.status !== null && evaluation.status !== undefined;
+            }));
+    },
+
+    getStep1PassedVendors() {
+        return this.vendors.filter(v => v.step1?.status === 'sempurna');
+    },
+
+    isStep2Complete() {
+        return this.getStep1PassedVendors().every(v =>
+            v.step2?.status === 'memuaskan' || v.step2?.status === 'tidak_memuaskan'
+        );
+    },
+
+    getStep2PassedVendors() {
+        return this.getStep1PassedVendors().filter(v => v.step2?.status === 'memuaskan');
+    },
+
+    isStep3Complete() {
+        return this.getStep2PassedVendors().every(v =>
+            v.step3?.status === 'memuaskan' || v.step3?.status === 'tidak_memuaskan'
+        );
+    },
+
+    async persistStepConfirmation(step, checkbox) {
+        const requirements = {
+            1: { complete: () => this.isStep1Complete(), route: this.routes.sahkanLangkah1, label: 'semua dokumen untuk setiap petender' },
+            2: { complete: () => this.isStep2Complete(), route: this.routes.sahkanLangkah2, label: 'keputusan kemampuan kewangan bagi semua petender yang layak' },
+            3: { complete: () => this.isStep3Complete(), route: this.routes.sahkanLangkah3, label: 'keputusan penilaian kerja bagi semua petender yang layak' }
+        }[step];
+        if (!requirements) return;
+
+        const requestedState = checkbox.checked;
+        const previousConfirmationStates = [this.step1Confirmed, this.step2Confirmed, this.step3Confirmed];
+        if (requestedState && !requirements.complete()) {
+            checkbox.checked = false;
+            Swal.fire({
+                icon: 'warning',
+                title: 'Penilaian Belum Lengkap',
+                text: `Sila lengkapkan ${requirements.label} sebelum mengesahkan langkah ini.`,
+                confirmButtonColor: '#dc2626'
+            });
+            return;
+        }
+
+        if (!requestedState) {
+            this[`step${step}Confirmed`] = false;
+            if (step === 1) {
+                this.step2Confirmed = false;
+                this.step3Confirmed = false;
+                const confirmStep2 = document.getElementById('confirmLayakStep2');
+                const confirmStep3 = document.getElementById('confirmLayakStep3');
+                if (confirmStep2) confirmStep2.checked = false;
+                if (confirmStep3) confirmStep3.checked = false;
+            } else if (step === 2) {
+                this.step3Confirmed = false;
+                const confirmStep3 = document.getElementById('confirmLayakStep3');
+                if (confirmStep3) confirmStep3.checked = false;
+            }
+            this.updateStepperLocks();
+        }
+
+        checkbox.disabled = true;
+        try {
+            const response = await fetch(requirements.route, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': this.csrfToken,
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ tender_id: this.tenderId, confirmed: requestedState })
+            });
+            const data = await response.json();
+            if (!response.ok || data.success === false) {
+                throw new Error(data.message || 'Pengesahan tidak berjaya disimpan.');
+            }
+
+            this[`step${step}Confirmed`] = requestedState;
+            this.updateStepperLocks();
+        } catch (error) {
+            checkbox.checked = !requestedState;
+            [this.step1Confirmed, this.step2Confirmed, this.step3Confirmed] = previousConfirmationStates;
+            const confirmStep2 = document.getElementById('confirmLayakStep2');
+            const confirmStep3 = document.getElementById('confirmLayakStep3');
+            if (confirmStep2) confirmStep2.checked = this.step2Confirmed;
+            if (confirmStep3) confirmStep3.checked = this.step3Confirmed;
+            this.updateStepperLocks();
+            Swal.fire({
+                icon: 'warning',
+                title: 'Pengesahan Tidak Berjaya',
+                text: error.message || 'Sila cuba lagi.',
+                confirmButtonColor: '#dc2626'
+            });
+        } finally {
+            checkbox.disabled = false;
+        }
+    },
+
     bindEvents() {
         const self = this;
 
@@ -575,32 +678,38 @@ window.type2State = {
             if (!btn) return;
 
             btn.addEventListener('show.bs.tab', (e) => {
-                if (t.step > 1 && !self.step1Confirmed) {
+                if (t.step > 1 && (!self.step1Confirmed || !self.isStep1Complete())) {
                     e.preventDefault();
                     Swal.fire({
                         icon: 'warning',
-                        title: 'Langkah Terkunci',
-                        text: 'Sila sahkan Langkah 1 (Pematuhan Dokumentasi) terlebih dahulu.',
+                        title: self.isStep1Complete() ? 'Langkah Terkunci' : 'Penilaian Belum Lengkap',
+                        text: !self.isStep1Complete()
+                            ? 'Sila lengkapkan penilaian semua dokumen untuk setiap petender sebelum membuka langkah seterusnya.'
+                            : 'Sila sahkan Langkah 1 (Pematuhan Dokumentasi) terlebih dahulu.',
                         confirmButtonColor: '#dc2626'
                     });
                     return false;
                 }
-                if (t.step > 2 && !self.step2Confirmed) {
+                if (t.step > 2 && (!self.step2Confirmed || !self.isStep2Complete())) {
                     e.preventDefault();
                     Swal.fire({
                         icon: 'warning',
-                        title: 'Langkah Terkunci',
-                        text: 'Sila sahkan Langkah 2 (Kemampuan Kewangan) terlebih dahulu.',
+                        title: self.isStep2Complete() ? 'Langkah Terkunci' : 'Penilaian Belum Lengkap',
+                        text: !self.isStep2Complete()
+                            ? 'Sila simpan keputusan kemampuan kewangan bagi semua petender yang layak sebelum membuka langkah seterusnya.'
+                            : 'Sila sahkan Langkah 2 (Kemampuan Kewangan) terlebih dahulu.',
                         confirmButtonColor: '#dc2626'
                     });
                     return false;
                 }
-                if (t.step > 3 && !self.step3Confirmed) {
+                if (t.step > 3 && (!self.step3Confirmed || !self.isStep3Complete())) {
                     e.preventDefault();
                     Swal.fire({
                         icon: 'warning',
-                        title: 'Langkah Terkunci',
-                        text: 'Sila sahkan Langkah 3 (Penilaian Kerja) terlebih dahulu.',
+                        title: self.isStep3Complete() ? 'Langkah Terkunci' : 'Penilaian Belum Lengkap',
+                        text: !self.isStep3Complete()
+                            ? 'Sila simpan keputusan penilaian kerja bagi semua petender yang layak sebelum membuka laporan.'
+                            : 'Sila sahkan Langkah 3 (Penilaian Kerja) terlebih dahulu.',
                         confirmButtonColor: '#dc2626'
                     });
                     return false;
@@ -608,9 +717,9 @@ window.type2State = {
             });
 
             btn.addEventListener('click', (e) => {
-                if ((t.step > 1 && !self.step1Confirmed) ||
-                    (t.step > 2 && !self.step2Confirmed) ||
-                    (t.step > 3 && !self.step3Confirmed)) {
+                if ((t.step > 1 && (!self.step1Confirmed || !self.isStep1Complete())) ||
+                    (t.step > 2 && (!self.step2Confirmed || !self.isStep2Complete())) ||
+                    (t.step > 3 && (!self.step3Confirmed || !self.isStep3Complete()))) {
                     e.preventDefault();
                     e.stopPropagation();
                     self.switchStep(t.step);
@@ -626,34 +735,18 @@ window.type2State = {
 
         // Step 1 confirm checkbox
         document.getElementById('confirmLayakStep1')?.addEventListener('change', function() {
-            const isChecked = this.checked;
-            self.step1Confirmed = isChecked;
-            self.updateStepperLocks();
-
-            // Persist step 1 confirmation to backend
-            if (self.routes.sahkanLangkah1) {
-                fetch(self.routes.sahkanLangkah1, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': self.csrfToken,
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        tender_id: self.tenderId,
-                        confirmed: isChecked
-                    })
-                }).catch(err => console.error('Error confirming step 1:', err));
-            }
+            self.persistStepConfirmation(1, this);
         });
 
         // Step 1 next button
         document.getElementById('btnNextStep1')?.addEventListener('click', () => {
-            if (!self.step1Confirmed) {
+            if (!self.isStep1Complete() || !self.step1Confirmed) {
                 Swal.fire({
                     icon: 'warning',
-                    title: 'Pengesahan Diperlukan',
-                    text: 'Sila tandakan kotak pengesahan semakan dokumentasi sebelum meneruskan ke Langkah 2.',
+                    title: 'Penilaian Belum Lengkap',
+                    text: !self.isStep1Complete()
+                        ? 'Sila lengkapkan penilaian semua dokumen untuk setiap petender sebelum meneruskan ke Langkah 2.'
+                        : 'Sila tandakan kotak pengesahan semakan dokumentasi sebelum meneruskan ke Langkah 2.',
                     confirmButtonColor: '#dc2626'
                 });
                 return;
@@ -664,32 +757,17 @@ window.type2State = {
         // Step 2 buttons
         document.getElementById('btnPrevStep2')?.addEventListener('click', () => self.switchStep(1));
         document.getElementById('confirmLayakStep2')?.addEventListener('change', function() {
-            const isChecked = this.checked;
-            self.step2Confirmed = isChecked;
-            self.updateStepperLocks();
-
-            if (self.routes.sahkanLangkah2) {
-                fetch(self.routes.sahkanLangkah2, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': self.csrfToken,
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        tender_id: self.tenderId,
-                        confirmed: isChecked
-                    })
-                }).catch(err => console.error('Error confirming step 2:', err));
-            }
+            self.persistStepConfirmation(2, this);
         });
 
         document.getElementById('btnNextStep2')?.addEventListener('click', () => {
-            if (!self.step2Confirmed) {
+            if (!self.isStep2Complete() || !self.step2Confirmed) {
                 Swal.fire({
                     icon: 'warning',
-                    title: 'Pengesahan Diperlukan',
-                    text: 'Sila tandakan kotak pengesahan kemampuan kewangan sebelum meneruskan ke Langkah 3.',
+                    title: 'Penilaian Belum Lengkap',
+                    text: !self.isStep2Complete()
+                        ? 'Sila simpan keputusan kemampuan kewangan bagi setiap petender yang layak sebelum meneruskan ke Langkah 3.'
+                        : 'Sila tandakan kotak pengesahan kemampuan kewangan sebelum meneruskan ke Langkah 3.',
                     confirmButtonColor: '#dc2626'
                 });
                 return;
@@ -700,32 +778,17 @@ window.type2State = {
         // Step 3 buttons
         document.getElementById('btnPrevStep3')?.addEventListener('click', () => self.switchStep(2));
         document.getElementById('confirmLayakStep3')?.addEventListener('change', function() {
-            const isChecked = this.checked;
-            self.step3Confirmed = isChecked;
-            self.updateStepperLocks();
-
-            if (self.routes.sahkanLangkah3) {
-                fetch(self.routes.sahkanLangkah3, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': self.csrfToken,
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        tender_id: self.tenderId,
-                        confirmed: isChecked
-                    })
-                }).catch(err => console.error('Error confirming step 3:', err));
-            }
+            self.persistStepConfirmation(3, this);
         });
 
         document.getElementById('btnNextStep3')?.addEventListener('click', () => {
-            if (!self.step3Confirmed) {
+            if (!self.isStep3Complete() || !self.step3Confirmed) {
                 Swal.fire({
                     icon: 'warning',
-                    title: 'Pengesahan Diperlukan',
-                    text: 'Sila tandakan kotak pengesahan penilaian kerja sebelum meneruskan ke Penyediaan Laporan.',
+                    title: 'Penilaian Belum Lengkap',
+                    text: !self.isStep3Complete()
+                        ? 'Sila simpan keputusan penilaian kerja bagi setiap petender yang layak sebelum meneruskan ke laporan.'
+                        : 'Sila tandakan kotak pengesahan penilaian kerja sebelum meneruskan ke Penyediaan Laporan.',
                     confirmButtonColor: '#dc2626'
                 });
                 return;
@@ -847,7 +910,7 @@ window.type2State = {
         });
 
         // Modal Action: Simpan Semakan Dokumen Checklist
-        document.getElementById('btnSimpanSemakanDokumen')?.addEventListener('click', () => {
+        document.getElementById('btnSimpanSemakanDokumen')?.addEventListener('click', async () => {
             if (!self.activeDocId) return;
 
             const decisions = [];
@@ -857,54 +920,73 @@ window.type2State = {
                 const selectEl = document.getElementById(`modalDocSelect_${v.id}`);
                 const noteEl = document.getElementById(`modalDocNote_${v.id}`);
                 if (selectEl && noteEl) {
-                    const statusVal = selectEl.value;
-                    const noteVal = noteEl.value;
-
-                    if (!v.step1.docs[self.activeDocId]) {
-                        v.step1.docs[self.activeDocId] = {};
-                    }
-                    v.step1.docs[self.activeDocId].status = statusVal;
-                    v.step1.docs[self.activeDocId].catatan = noteVal;
-
                     decisions.push({
                         vendor_id: v.id,
-                        status: statusVal,
-                        catatan: noteVal
+                        status: selectEl.value,
+                        catatan: noteEl.value
                     });
-
-                    // Re-evaluate vendor's overall step 1 status
-                    const hasFail = Object.values(v.step1.docs).some(d => d.status === 'tidak_sempurna');
-                    v.step1.status = hasFail ? 'tidak_sempurna' : 'sempurna';
-                    v.step1.catatan = hasFail
-                        ? 'Gagal mematuhi satu atau lebih dokumen mandatori.'
-                        : 'Semua dokumen mandatori lengkap dan teratur.';
                 }
             });
 
-            // Close modal
-            const modalEl = document.getElementById('modalSemakanDokumenKerja');
-            const modalInstance = bootstrap.Modal.getInstance(modalEl);
-            modalInstance?.hide();
-
-            self.renderAll();
+            if (decisions.length !== self.vendors.length || decisions.some(row => !row.status)) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Penilaian Belum Lengkap',
+                    text: 'Sila pilih keputusan bagi setiap petender sebelum menyimpan.',
+                    confirmButtonColor: '#dc2626'
+                });
+                return;
+            }
 
             // Save to database via AJAX
             if (self.routes.simpanDokumen) {
-                fetch(self.routes.simpanDokumen, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': self.csrfToken,
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        tender_id: self.tenderId,
-                        doc_id: self.activeDocId,
-                        decisions: decisions
-                    })
-                })
-                .then(res => res.json())
-                .then(data => {
+                const button = document.getElementById('btnSimpanSemakanDokumen');
+                if (button) button.disabled = true;
+                try {
+                    const response = await fetch(self.routes.simpanDokumen, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': self.csrfToken,
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            tender_id: self.tenderId,
+                            doc_id: self.activeDocId,
+                            decisions: decisions
+                        })
+                    });
+                    const data = await response.json();
+                    if (!response.ok || data.success === false) {
+                        throw new Error(data.message || 'Penilaian dokumen gagal disimpan.');
+                    }
+
+                    decisions.forEach(row => {
+                        const vendor = self.vendors.find(v => Number(v.id) === Number(row.vendor_id));
+                        if (!vendor) return;
+                        vendor.step1.docs[self.activeDocId] = {
+                            ...vendor.step1.docs[self.activeDocId],
+                            status: row.status,
+                            evaluated: true,
+                            catatan: row.catatan
+                        };
+                        const docs = Object.values(vendor.step1.docs);
+                        const allEvaluated = self.checklistDocs.length > 0 && self.checklistDocs.every(doc => {
+                            const evaluation = vendor.step1.docs[doc.id];
+                            return evaluation && evaluation.status !== null && evaluation.status !== undefined;
+                        });
+                        const hasFail = docs.some(doc => doc.status === 'tidak_sempurna');
+                        vendor.step1.status = !allEvaluated
+                            ? 'menunggu_penilaian'
+                            : (hasFail ? 'tidak_sempurna' : 'sempurna');
+                        vendor.step1.catatan = !allEvaluated
+                            ? 'Penilaian dokumen mandatori masih belum lengkap.'
+                            : (hasFail ? 'Gagal mematuhi satu atau lebih dokumen mandatori.' : 'Semua dokumen mandatori lengkap dan teratur.');
+                    });
+
+                    const modalEl = document.getElementById('modalSemakanDokumenKerja');
+                    bootstrap.Modal.getInstance(modalEl)?.hide();
+                    self.renderAll();
                     Swal.fire({
                         icon: 'success',
                         title: 'Disimpan',
@@ -913,57 +995,59 @@ window.type2State = {
                         timer: 1500,
                         showConfirmButton: false
                     });
-                })
-                .catch(() => {
+                } catch (error) {
                     Swal.fire({
-                        icon: 'success',
-                        title: 'Disimpan (Tempatan)',
-                        text: 'Penilaian dokumen semakan telah dikemaskini.',
+                        icon: 'error',
+                        title: 'Gagal Menyimpan',
+                        text: error.message || 'Penilaian dokumen gagal disimpan. Sila cuba lagi.',
                         confirmButtonColor: '#dc2626',
-                        timer: 1500,
-                        showConfirmButton: false
                     });
-                });
+                } finally {
+                    if (button) button.disabled = false;
+                }
             }
         });
 
         // Modal Action: Simpan Keputusan Kemampuan Kewangan
-        document.getElementById('btnSimpanKemampuanKewangan')?.addEventListener('click', () => {
+        document.getElementById('btnSimpanKemampuanKewangan')?.addEventListener('click', async () => {
             if (!self.activeVendorId) return;
             const vendor = self.vendors.find(v => v.id === self.activeVendorId);
             if (!vendor) return;
 
-            const decision = document.getElementById('modalKewanganDecisionSelect')?.value || 'memuaskan';
+            const decision = document.getElementById('modalKewanganDecisionSelect')?.value || '';
             const catatan = document.getElementById('modalKewanganCatatanInput')?.value || '';
-
-            vendor.step2.status = decision;
-            vendor.step2.catatan = catatan;
-
-            const modalEl = document.getElementById('modalKemampuanKewanganVendor');
-            const modalInstance = bootstrap.Modal.getInstance(modalEl);
-            modalInstance?.hide();
-
-            self.renderAll();
+            if (!decision) {
+                Swal.fire({ icon: 'warning', title: 'Keputusan Diperlukan', text: 'Sila pilih keputusan kemampuan kewangan.', confirmButtonColor: '#dc2626' });
+                return;
+            }
 
             // Save to database via AJAX
             if (self.routes.simpanKewangan) {
-                fetch(self.routes.simpanKewangan, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': self.csrfToken,
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        tender_id: self.tenderId,
-                        vendor_id: self.activeVendorId,
-                        decision: decision,
-                        catatan: catatan,
-                        payload: vendor.step2.metrics || {}
-                    })
-                })
-                .then(res => res.json())
-                .then(data => {
+                const button = document.getElementById('btnSimpanKemampuanKewangan');
+                if (button) button.disabled = true;
+                try {
+                    const response = await fetch(self.routes.simpanKewangan, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': self.csrfToken,
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            tender_id: self.tenderId,
+                            vendor_id: self.activeVendorId,
+                            decision: decision,
+                            catatan: catatan,
+                            payload: vendor.step2.metrics || {}
+                        })
+                    });
+                    const data = await response.json();
+                    if (!response.ok || data.success === false) throw new Error(data.message || 'Keputusan gagal disimpan.');
+
+                    vendor.step2.status = decision;
+                    vendor.step2.catatan = catatan;
+                    bootstrap.Modal.getInstance(document.getElementById('modalKemampuanKewanganVendor'))?.hide();
+                    self.renderAll();
                     Swal.fire({
                         icon: 'success',
                         title: 'Disimpan',
@@ -972,54 +1056,58 @@ window.type2State = {
                         timer: 1500,
                         showConfirmButton: false
                     });
-                })
-                .catch(() => {
-                    Swal.fire({ icon: 'success', title: 'Disimpan', text: 'Keputusan telah dikemaskini.', timer: 1500, showConfirmButton: false });
-                });
+                } catch (error) {
+                    Swal.fire({ icon: 'error', title: 'Gagal Menyimpan', text: error.message || 'Keputusan gagal disimpan. Sila cuba lagi.', confirmButtonColor: '#dc2626' });
+                } finally {
+                    if (button) button.disabled = false;
+                }
             }
         });
 
         // Modal Action: Simpan Penilaian Kerja
-        document.getElementById('btnSimpanPenilaianKerja')?.addEventListener('click', () => {
+        document.getElementById('btnSimpanPenilaianKerja')?.addEventListener('click', async () => {
             if (!self.activeVendorId) return;
             const vendor = self.vendors.find(v => v.id === self.activeVendorId);
             if (!vendor) return;
 
-            const decision = document.getElementById('modalKerjaDecisionSelect')?.value || 'memuaskan';
+            const decision = document.getElementById('modalKerjaDecisionSelect')?.value || '';
             const catatan = document.getElementById('modalKerjaCatatanInput')?.value || '';
-
-            vendor.step3.status = decision;
-            vendor.step3.catatan = catatan;
-
-            const modalEl = document.getElementById('modalPenilaianKerjaVendor');
-            const modalInstance = bootstrap.Modal.getInstance(modalEl);
-            modalInstance?.hide();
-
-            self.renderAll();
+            if (!decision) {
+                Swal.fire({ icon: 'warning', title: 'Keputusan Diperlukan', text: 'Sila pilih keputusan penilaian kerja.', confirmButtonColor: '#dc2626' });
+                return;
+            }
 
             // Save to database via AJAX
             if (self.routes.simpanKerja) {
-                fetch(self.routes.simpanKerja, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': self.csrfToken,
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        tender_id: self.tenderId,
-                        vendor_id: self.activeVendorId,
-                        decision: decision,
-                        catatan: catatan,
-                        payload: {
-                            baki_kerja: vendor.step3.baki_kerja,
-                            projek_terbesar: vendor.step3.projek_terbesar,
-                            kakitangan: vendor.step3.kakitangan
-                        }
-                    })
-                })
-                .then(res => res.json())
-                .then(data => {
+                const button = document.getElementById('btnSimpanPenilaianKerja');
+                if (button) button.disabled = true;
+                try {
+                    const response = await fetch(self.routes.simpanKerja, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': self.csrfToken,
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            tender_id: self.tenderId,
+                            vendor_id: self.activeVendorId,
+                            decision: decision,
+                            catatan: catatan,
+                            payload: {
+                                baki_kerja: vendor.step3.baki_kerja,
+                                projek_terbesar: vendor.step3.projek_terbesar,
+                                kakitangan: vendor.step3.kakitangan
+                            }
+                        })
+                    });
+                    const data = await response.json();
+                    if (!response.ok || data.success === false) throw new Error(data.message || 'Keputusan gagal disimpan.');
+
+                    vendor.step3.status = decision;
+                    vendor.step3.catatan = catatan;
+                    bootstrap.Modal.getInstance(document.getElementById('modalPenilaianKerjaVendor'))?.hide();
+                    self.renderAll();
                     Swal.fire({
                         icon: 'success',
                         title: 'Disimpan',
@@ -1028,38 +1116,45 @@ window.type2State = {
                         timer: 1500,
                         showConfirmButton: false
                     });
-                })
-                .catch(() => {
-                    Swal.fire({ icon: 'success', title: 'Disimpan', text: 'Keputusan telah dikemaskini.', timer: 1500, showConfirmButton: false });
-                });
+                } catch (error) {
+                    Swal.fire({ icon: 'error', title: 'Gagal Menyimpan', text: error.message || 'Keputusan gagal disimpan. Sila cuba lagi.', confirmButtonColor: '#dc2626' });
+                } finally {
+                    if (button) button.disabled = false;
+                }
             }
         });
     },
 
     switchStep(stepNum) {
-        if (stepNum > 1 && !this.step1Confirmed) {
+        if (stepNum > 1 && (!this.step1Confirmed || !this.isStep1Complete())) {
             Swal.fire({
-                icon: 'info',
-                title: 'Langkah Terkunci',
-                text: 'Sila sahkan Langkah 1 (Pematuhan Dokumentasi) terlebih dahulu.',
+                icon: 'warning',
+                title: this.isStep1Complete() ? 'Langkah Terkunci' : 'Penilaian Belum Lengkap',
+                text: !this.isStep1Complete()
+                    ? 'Sila lengkapkan penilaian semua dokumen untuk setiap petender sebelum meneruskan.'
+                    : 'Sila sahkan Langkah 1 (Pematuhan Dokumentasi) terlebih dahulu.',
                 confirmButtonColor: '#dc2626'
             });
             return;
         }
-        if (stepNum > 2 && !this.step2Confirmed) {
+        if (stepNum > 2 && (!this.step2Confirmed || !this.isStep2Complete())) {
             Swal.fire({
-                icon: 'info',
-                title: 'Langkah Terkunci',
-                text: 'Sila sahkan Langkah 2 (Kemampuan Kewangan) terlebih dahulu.',
+                icon: 'warning',
+                title: this.isStep2Complete() ? 'Langkah Terkunci' : 'Penilaian Belum Lengkap',
+                text: !this.isStep2Complete()
+                    ? 'Sila simpan keputusan kemampuan kewangan bagi semua petender yang layak sebelum meneruskan.'
+                    : 'Sila sahkan Langkah 2 (Kemampuan Kewangan) terlebih dahulu.',
                 confirmButtonColor: '#dc2626'
             });
             return;
         }
-        if (stepNum > 3 && !this.step3Confirmed) {
+        if (stepNum > 3 && (!this.step3Confirmed || !this.isStep3Complete())) {
             Swal.fire({
-                icon: 'info',
-                title: 'Langkah Terkunci',
-                text: 'Sila sahkan Langkah 3 (Penilaian Kerja) terlebih dahulu.',
+                icon: 'warning',
+                title: this.isStep3Complete() ? 'Langkah Terkunci' : 'Penilaian Belum Lengkap',
+                text: !this.isStep3Complete()
+                    ? 'Sila simpan keputusan penilaian kerja bagi semua petender yang layak sebelum membuka laporan.'
+                    : 'Sila sahkan Langkah 3 (Penilaian Kerja) terlebih dahulu.',
                 confirmButtonColor: '#dc2626'
             });
             return;
@@ -1087,7 +1182,39 @@ window.type2State = {
         const step3Btn = document.getElementById('penilaian-tab');
         const step4Btn = document.getElementById('laporan-tab');
 
-        if (this.step1Confirmed) {
+        if (!this.isStep1Complete()) {
+            this.step1Confirmed = false;
+            const confirmStep1 = document.getElementById('confirmLayakStep1');
+            if (confirmStep1) confirmStep1.checked = false;
+        }
+        if (!this.isStep2Complete()) {
+            this.step2Confirmed = false;
+            const confirmStep2 = document.getElementById('confirmLayakStep2');
+            if (confirmStep2) confirmStep2.checked = false;
+        }
+        if (!this.isStep3Complete()) {
+            this.step3Confirmed = false;
+            const confirmStep3 = document.getElementById('confirmLayakStep3');
+            if (confirmStep3) confirmStep3.checked = false;
+        }
+        if (!this.step1Confirmed) {
+            this.step2Confirmed = false;
+            this.step3Confirmed = false;
+            const confirmStep2 = document.getElementById('confirmLayakStep2');
+            const confirmStep3 = document.getElementById('confirmLayakStep3');
+            if (confirmStep2) confirmStep2.checked = false;
+            if (confirmStep3) confirmStep3.checked = false;
+        } else if (!this.step2Confirmed) {
+            this.step3Confirmed = false;
+            const confirmStep3 = document.getElementById('confirmLayakStep3');
+            if (confirmStep3) confirmStep3.checked = false;
+        }
+
+        const canOpenStep2 = this.step1Confirmed && this.isStep1Complete();
+        const canOpenStep3 = canOpenStep2 && this.step2Confirmed && this.isStep2Complete();
+        const canOpenStep4 = canOpenStep3 && this.step3Confirmed && this.isStep3Complete();
+
+        if (canOpenStep2) {
             step2Nav?.classList.remove('locked');
             if (step2Btn) {
                 step2Btn.removeAttribute('aria-disabled');
@@ -1106,7 +1233,7 @@ window.type2State = {
             this.step2Confirmed = false;
         }
 
-        if (this.step1Confirmed && this.step2Confirmed) {
+        if (canOpenStep3) {
             step3Nav?.classList.remove('locked');
             if (step3Btn) {
                 step3Btn.removeAttribute('aria-disabled');
@@ -1125,7 +1252,7 @@ window.type2State = {
             this.step3Confirmed = false;
         }
 
-        if (this.step1Confirmed && this.step2Confirmed && this.step3Confirmed) {
+        if (canOpenStep4) {
             step4Nav?.classList.remove('locked');
             if (step4Btn) {
                 step4Btn.removeAttribute('aria-disabled');
@@ -1179,9 +1306,13 @@ window.type2State = {
 
         this.checklistDocs.forEach((doc, idx) => {
             let complyCount = 0;
+            let evaluatedCount = 0;
             self.vendors.forEach(v => {
-                if (v.step1?.docs?.[doc.id]?.status === 'sempurna') complyCount++;
+                const status = v.step1?.docs?.[doc.id]?.status;
+                if (status !== null && status !== undefined) evaluatedCount++;
+                if (status === 'sempurna') complyCount++;
             });
+            const itemComplete = self.vendors.length > 0 && evaluatedCount === self.vendors.length;
 
             const tr = document.createElement('tr');
             tr.innerHTML = `
@@ -1197,10 +1328,11 @@ window.type2State = {
                     </span>
                 </td>
                 <td class="py-3 px-3 text-center">
-                    <div class="d-inline-flex align-items-center gap-1.5">
-                        <span class="badge ${complyCount === self.vendors.length ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-warning-subtle text-warning border border-warning-subtle'} px-2.5 py-1 rounded-pill font-monospace" style="font-size: 0.75rem;">
-                            ${complyCount} / ${self.vendors.length} Mematuhi
+                    <div class="d-flex flex-column align-items-center gap-1">
+                        <span class="badge ${itemComplete ? (complyCount === self.vendors.length ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-danger-subtle text-danger border border-danger-subtle') : 'bg-warning-subtle text-warning border border-warning-subtle'} px-2.5 py-1 rounded-pill" style="font-size: 0.75rem;">
+                            ${itemComplete ? (complyCount === self.vendors.length ? 'Selesai · Mematuhi' : `Selesai · ${self.vendors.length - complyCount} Tidak Mematuhi`) : 'Menunggu Penilaian'}
                         </span>
+                        <span class="text-muted extra-small font-monospace">${evaluatedCount}/${self.vendors.length} Dinilai</span>
                     </div>
                 </td>
                 <td class="py-3 px-3 text-center">
@@ -1212,38 +1344,80 @@ window.type2State = {
             tbody.appendChild(tr);
         });
 
-        // Render Vendor Status Grid Breakdown
-        const grid = document.getElementById('step1VendorStatusGrid');
-        if (grid) {
-            grid.innerHTML = '';
-            this.vendors.forEach(v => {
-                const isPass = v.step1?.status === 'sempurna';
-                const col = document.createElement('div');
-                col.className = 'col-12 col-md-6 col-lg-4';
-                col.innerHTML = `
-                    <div class="p-2.5 rounded-2 border bg-white d-flex align-items-center justify-content-between">
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="badge bg-dark font-monospace">${v.kod}</span>
-                            <div class="text-truncate" style="max-width: 170px;">
-                                <div class="fw-semibold text-dark extra-small text-truncate" title="${v.name}">${v.name}</div>
-                                <div class="text-muted" style="font-size: 0.68rem;">${v.cidb}</div>
-                            </div>
-                        </div>
-                        <span class="badge ${isPass ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger'} extra-small px-2 py-1 rounded-pill">
-                            <i class="bi ${isPass ? 'bi-check-circle' : 'bi-x-circle'} me-1"></i>${isPass ? 'Sempurna' : 'Tidak Sempurna'}
-                        </span>
-                    </div>
-                `;
-                grid.appendChild(col);
-            });
+        // Render vendor compliance status as a compact list table.
+        const statusTableBody = document.getElementById('step1VendorStatusTableBody');
+        const statusCountBadge = document.getElementById('step1SummaryCountBadge');
+        const passCountBadge = document.getElementById('step1StatusPassCount');
+        const failCountBadge = document.getElementById('step1StatusFailCount');
+        const pendingCountBadge = document.getElementById('step1StatusPendingCount');
+        if (statusTableBody) {
+            statusTableBody.innerHTML = '';
+            const passCount = this.vendors.filter(v => v.step1?.status === 'sempurna').length;
+            const failCount = this.vendors.filter(v => v.step1?.status === 'tidak_sempurna').length;
+            const pendingCount = this.vendors.length - passCount - failCount;
+
+            if (statusCountBadge) statusCountBadge.textContent = `${this.vendors.length} Petender`;
+            if (passCountBadge) passCountBadge.textContent = `${passCount} Sempurna`;
+            if (failCountBadge) failCountBadge.textContent = `${failCount} Tidak Sempurna`;
+            if (pendingCountBadge) pendingCountBadge.textContent = `${pendingCount} Menunggu Penilaian`;
+
+            if (this.vendors.length === 0) {
+                statusTableBody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-4">Tiada maklumat petender untuk dipaparkan.</td></tr>';
+            } else {
+                this.vendors.forEach((v, idx) => {
+                    const status = v.step1?.status;
+                    const isPass = status === 'sempurna';
+                    const isFail = status === 'tidak_sempurna';
+                    const tr = document.createElement('tr');
+
+                    const bilCell = document.createElement('td');
+                    bilCell.className = 'text-center text-muted fw-semibold px-3';
+                    bilCell.textContent = String(idx + 1);
+
+                    const vendorCell = document.createElement('td');
+                    vendorCell.className = 'px-3';
+                    const vendorInfo = document.createElement('div');
+                    vendorInfo.className = 'd-flex align-items-center gap-2';
+                    const vendorCode = document.createElement('span');
+                    vendorCode.className = 'badge bg-dark-subtle text-dark border font-monospace';
+                    vendorCode.textContent = v.kod || '-';
+                    const vendorName = document.createElement('span');
+                    vendorName.className = 'fw-semibold text-dark';
+                    vendorName.textContent = v.name || 'Nama petender tidak tersedia';
+                    vendorInfo.append(vendorCode, vendorName);
+                    vendorCell.appendChild(vendorInfo);
+
+                    const cidbCell = document.createElement('td');
+                    cidbCell.className = 'px-3 text-secondary small';
+                    cidbCell.textContent = v.cidb || '-';
+
+                    const statusCell = document.createElement('td');
+                    statusCell.className = 'text-center px-3';
+                    const statusBadge = document.createElement('span');
+                    statusBadge.className = isPass
+                        ? 'badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-2'
+                        : (isFail
+                            ? 'badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-3 py-2'
+                            : 'badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill px-3 py-2');
+                    const statusIcon = document.createElement('i');
+                    statusIcon.className = `bi ${isPass ? 'bi-check-circle-fill' : (isFail ? 'bi-x-circle-fill' : 'bi-hourglass-split')} me-1`;
+                    statusBadge.append(statusIcon, document.createTextNode(isPass ? 'Sempurna' : (isFail ? 'Tidak Sempurna' : 'Menunggu Penilaian')));
+                    statusCell.appendChild(statusBadge);
+
+                    tr.append(bilCell, vendorCell, cidbCell, statusCell);
+                    statusTableBody.appendChild(tr);
+                });
+            }
         }
 
         // Render Step 1 Rumusan Tables
         const melepasiVendors = this.vendors.filter(v => v.step1?.status === 'sempurna');
-        const tidakMelepasiVendors = this.vendors.filter(v => v.step1?.status !== 'sempurna');
+        const tidakMelepasiVendors = this.vendors.filter(v => v.step1?.status === 'tidak_sempurna');
 
         const badgePass = document.getElementById('totalStep1MelepasiBadge');
         if (badgePass) badgePass.textContent = `${melepasiVendors.length} Petender Melepasi`;
+        const badgePending = document.getElementById('totalStep1PendingBadge');
+        if (badgePending) badgePending.textContent = `${this.vendors.filter(v => v.step1?.status === 'menunggu_penilaian').length} Menunggu Penilaian`;
 
         const badgeFail = document.getElementById('totalStep1TidakMelepasiBadge');
         if (badgeFail) badgeFail.textContent = `${tidakMelepasiVendors.length} Petender Disingkirkan`;
@@ -1266,7 +1440,7 @@ window.type2State = {
                             <div class="extra-small text-muted">${v.cidb}</div>
                         </td>
                         <td class="text-center py-2.5 px-3">
-                            <span class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1 rounded-pill">
+                        <span class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1 rounded-pill">
                                 <i class="bi bi-check-all me-1"></i>Sempurna (${self.checklistDocs.length}/${self.checklistDocs.length} Dokumen)
                             </span>
                         </td>
@@ -1318,6 +1492,18 @@ window.type2State = {
         const countText = document.getElementById('step2QualifiedCountText');
         if (countText) countText.textContent = `${qualifiedVendors.length} Petender`;
 
+        const step2PassCount = qualifiedVendors.filter(v => v.step2?.status === 'memuaskan').length;
+        const step2FailCount = qualifiedVendors.filter(v => v.step2?.status === 'tidak_memuaskan').length;
+        const step2PendingCount = qualifiedVendors.length - step2PassCount - step2FailCount;
+        const step2CountBadge = document.getElementById('step2VendorCountBadge');
+        const step2PassBadge = document.getElementById('step2PassCountBadge');
+        const step2FailBadge = document.getElementById('step2FailCountBadge');
+        const step2PendingBadge = document.getElementById('step2PendingCountBadge');
+        if (step2CountBadge) step2CountBadge.textContent = `${qualifiedVendors.length} Petender`;
+        if (step2PassBadge) step2PassBadge.textContent = `${step2PassCount} Memuaskan`;
+        if (step2FailBadge) step2FailBadge.textContent = `${step2FailCount} Tidak Memuaskan`;
+        if (step2PendingBadge) step2PendingBadge.textContent = `${step2PendingCount} Menunggu Penilaian`;
+
         const tbody = document.getElementById('step2VendorTableBody');
         if (!tbody) return;
 
@@ -1329,6 +1515,7 @@ window.type2State = {
 
         qualifiedVendors.forEach((v, idx) => {
             const isPass = v.step2?.status === 'memuaskan';
+            const isFail = v.step2?.status === 'tidak_memuaskan';
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td class="text-center py-3 px-3">
@@ -1342,8 +1529,8 @@ window.type2State = {
                 <td class="text-end py-3 px-3 font-monospace fw-bold text-dark">${v.step2?.modal_pusingan || 'RM 0.00'}</td>
                 <td class="text-end py-3 px-3 font-monospace fw-semibold text-secondary">${v.step2?.purata_bank || 'RM 0.00'}</td>
                 <td class="text-center py-3 px-3">
-                    <span class="badge ${isPass ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-danger-subtle text-danger border border-danger-subtle'} px-2.5 py-1 rounded-pill">
-                        <i class="bi ${isPass ? 'bi-check-circle' : 'bi-x-circle'} me-1"></i>${isPass ? 'Memuaskan' : 'Tidak Memuaskan'}
+                    <span class="badge ${isPass ? 'bg-success-subtle text-success border border-success-subtle' : (isFail ? 'bg-danger-subtle text-danger border border-danger-subtle' : 'bg-warning-subtle text-warning border border-warning-subtle')} px-2.5 py-1 rounded-pill">
+                        <i class="bi ${isPass ? 'bi-check-circle' : (isFail ? 'bi-x-circle' : 'bi-hourglass-split')} me-1"></i>${isPass ? 'Memuaskan' : (isFail ? 'Tidak Memuaskan' : 'Menunggu Penilaian')}
                     </span>
                 </td>
                 <td class="text-center py-3 px-3">
@@ -1357,10 +1544,12 @@ window.type2State = {
 
         // Step 2 Rumusan
         const memuaskanVendors = qualifiedVendors.filter(v => v.step2?.status === 'memuaskan');
-        const tidakMemuaskanVendors = qualifiedVendors.filter(v => v.step2?.status !== 'memuaskan');
+        const tidakMemuaskanVendors = qualifiedVendors.filter(v => v.step2?.status === 'tidak_memuaskan');
 
         const bMemuaskan = document.getElementById('totalStep2MemuaskanBadge');
         if (bMemuaskan) bMemuaskan.textContent = `${memuaskanVendors.length} Petender Memuaskan`;
+        const bPending = document.getElementById('totalStep2PendingBadge');
+        if (bPending) bPending.textContent = `${qualifiedVendors.filter(v => !v.step2?.status).length} Menunggu Penilaian`;
 
         const bTidak = document.getElementById('totalStep2TidakMemuaskanBadge');
         if (bTidak) bTidak.textContent = `${tidakMemuaskanVendors.length} Petender Tidak Memuaskan`;
@@ -1417,6 +1606,17 @@ window.type2State = {
     // ==========================================
     renderStep3() {
         const step2Qualified = this.vendors.filter(v => v.step1?.status === 'sempurna' && v.step2?.status === 'memuaskan');
+        const step3PassCount = step2Qualified.filter(v => v.step3?.status === 'memuaskan').length;
+        const step3FailCount = step2Qualified.filter(v => v.step3?.status === 'tidak_memuaskan').length;
+        const step3PendingCount = step2Qualified.length - step3PassCount - step3FailCount;
+        const step3CountBadge = document.getElementById('step3VendorCountBadge');
+        const step3PassBadge = document.getElementById('step3PassCountBadge');
+        const step3FailBadge = document.getElementById('step3FailCountBadge');
+        const step3PendingBadge = document.getElementById('step3PendingCountBadge');
+        if (step3CountBadge) step3CountBadge.textContent = `${step2Qualified.length} Petender`;
+        if (step3PassBadge) step3PassBadge.textContent = `${step3PassCount} Memuaskan`;
+        if (step3FailBadge) step3FailBadge.textContent = `${step3FailCount} Tidak Memuaskan`;
+        if (step3PendingBadge) step3PendingBadge.textContent = `${step3PendingCount} Menunggu Penilaian`;
         const tbody = document.getElementById('step3VendorTableBody');
         if (!tbody) return;
 
@@ -1428,6 +1628,7 @@ window.type2State = {
 
         step2Qualified.forEach((v, idx) => {
             const isPass = v.step3?.status === 'memuaskan';
+            const isFail = v.step3?.status === 'tidak_memuaskan';
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td class="text-center py-3 px-3">
@@ -1441,8 +1642,8 @@ window.type2State = {
                 <td class="text-end py-3 px-3 font-monospace fw-bold text-dark">${v.step3?.baki_kerja || 'RM 0.00'}</td>
                 <td class="text-end py-3 px-3 font-monospace text-secondary">${v.step3?.projek_terbesar || 'RM 0.00'}</td>
                 <td class="text-center py-3 px-3">
-                    <span class="badge ${isPass ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-danger-subtle text-danger border border-danger-subtle'} px-2.5 py-1 rounded-pill">
-                        <i class="bi ${isPass ? 'bi-check-circle' : 'bi-x-circle'} me-1"></i>${isPass ? 'Memuaskan' : 'Tidak Memuaskan'}
+                    <span class="badge ${isPass ? 'bg-success-subtle text-success border border-success-subtle' : (isFail ? 'bg-danger-subtle text-danger border border-danger-subtle' : 'bg-warning-subtle text-warning border border-warning-subtle')} px-2.5 py-1 rounded-pill">
+                        <i class="bi ${isPass ? 'bi-check-circle' : (isFail ? 'bi-x-circle' : 'bi-hourglass-split')} me-1"></i>${isPass ? 'Memuaskan' : (isFail ? 'Tidak Memuaskan' : 'Menunggu Penilaian')}
                     </span>
                 </td>
                 <td class="text-center py-3 px-3">
@@ -1456,10 +1657,12 @@ window.type2State = {
 
         // Step 3 Rumusan
         const memuaskanVendors = step2Qualified.filter(v => v.step3?.status === 'memuaskan');
-        const tidakMemuaskanVendors = step2Qualified.filter(v => v.step3?.status !== 'memuaskan');
+        const tidakMemuaskanVendors = step2Qualified.filter(v => v.step3?.status === 'tidak_memuaskan');
 
         const bMemuaskan = document.getElementById('totalStep3MemuaskanBadge');
         if (bMemuaskan) bMemuaskan.textContent = `${memuaskanVendors.length} Petender Memuaskan`;
+        const bPending = document.getElementById('totalStep3PendingBadge');
+        if (bPending) bPending.textContent = `${step2Qualified.filter(v => !v.step3?.status).length} Menunggu Penilaian`;
 
         const bTidak = document.getElementById('totalStep3TidakMemuaskanBadge');
         if (bTidak) bTidak.textContent = `${tidakMemuaskanVendors.length} Petender Tidak Memuaskan`;
@@ -1520,19 +1723,20 @@ window.type2State = {
             tbA.innerHTML = '';
             this.vendors.forEach((v, idx) => {
                 const isPass = v.step1?.status === 'sempurna';
+                const isFail = v.step1?.status === 'tidak_sempurna';
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td class="text-center py-2 px-3 font-monospace">${idx + 1}</td>
                     <td class="text-center py-2 px-3 font-monospace fw-bold">${v.kod}</td>
                     <td class="py-2 px-3 fw-semibold text-dark">${v.name}</td>
                     <td class="text-center py-2 px-3">
-                        <span class="badge ${isPass ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger'} px-2 py-0.5 rounded-pill">
-                            ${isPass ? `${this.checklistDocs.length}/${this.checklistDocs.length} Dokumen Sempurna` : 'Dokumen Tidak Lengkap'}
+                        <span class="badge ${isPass ? 'bg-success-subtle text-success' : (isFail ? 'bg-danger-subtle text-danger' : 'bg-warning-subtle text-warning')} px-2 py-0.5 rounded-pill">
+                            ${isPass ? `${this.checklistDocs.length}/${this.checklistDocs.length} Dokumen Sempurna` : (isFail ? 'Dokumen Tidak Lengkap' : 'Menunggu Penilaian')}
                         </span>
                     </td>
                     <td class="text-center py-2 px-3">
-                        <span class="badge ${isPass ? 'bg-success' : 'bg-danger'} px-2 py-0.5 rounded-pill text-white">
-                            ${isPass ? 'Melepasi Saringan' : 'Disingkirkan'}
+                        <span class="badge ${isPass ? 'bg-success' : (isFail ? 'bg-danger' : 'bg-warning text-dark')} px-2 py-0.5 rounded-pill ${isPass || isFail ? 'text-white' : ''}">
+                            ${isPass ? 'Melepasi Saringan' : (isFail ? 'Disingkirkan' : 'Menunggu Penilaian')}
                         </span>
                     </td>
                     <td class="py-2 px-3 small text-secondary">${v.step1?.catatan || '-'}</td>
@@ -1544,13 +1748,14 @@ window.type2State = {
         // Section B
         const step1Passed = this.vendors.filter(v => v.step1?.status === 'sempurna');
         const bSecB = document.getElementById('step4SecBBadge');
-        if (bSecB) bSecB.textContent = `${step1Passed.length} Petender Dinilai`;
+        if (bSecB) bSecB.textContent = `${step1Passed.length} Petender Layak Dinilai`;
 
         const tbB = document.getElementById('step4TableSecBBody');
         if (tbB) {
             tbB.innerHTML = '';
             step1Passed.forEach((v, idx) => {
                 const isPass = v.step2?.status === 'memuaskan';
+                const isFail = v.step2?.status === 'tidak_memuaskan';
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td class="text-center py-2 px-3 font-monospace">${idx + 1}</td>
@@ -1559,8 +1764,8 @@ window.type2State = {
                     <td class="text-end py-2 px-3 font-monospace fw-bold">${v.step2?.modal_pusingan || 'RM 0.00'}</td>
                     <td class="text-end py-2 px-3 font-monospace text-secondary">${v.step2?.purata_bank || 'RM 0.00'}</td>
                     <td class="text-center py-2 px-3">
-                        <span class="badge ${isPass ? 'bg-success' : 'bg-danger'} px-2 py-0.5 rounded-pill text-white">
-                            ${isPass ? 'Memuaskan' : 'Tidak Memuaskan'}
+                        <span class="badge ${isPass ? 'bg-success' : (isFail ? 'bg-danger' : 'bg-warning text-dark')} px-2 py-0.5 rounded-pill ${isPass || isFail ? 'text-white' : ''}">
+                            ${isPass ? 'Memuaskan' : (isFail ? 'Tidak Memuaskan' : 'Menunggu Penilaian')}
                         </span>
                     </td>
                     <td class="py-2 px-3 small text-secondary">${v.step2?.catatan || '-'}</td>
@@ -1572,13 +1777,14 @@ window.type2State = {
         // Section C
         const step2Passed = this.vendors.filter(v => v.step1?.status === 'sempurna' && v.step2?.status === 'memuaskan');
         const bSecC = document.getElementById('step4SecCBadge');
-        if (bSecC) bSecC.textContent = `${step2Passed.length} Petender Dinilai`;
+        if (bSecC) bSecC.textContent = `${step2Passed.length} Petender Layak Dinilai`;
 
         const tbC = document.getElementById('step4TableSecCBody');
         if (tbC) {
             tbC.innerHTML = '';
             step2Passed.forEach((v, idx) => {
                 const isPass = v.step3?.status === 'memuaskan';
+                const isFail = v.step3?.status === 'tidak_memuaskan';
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td class="text-center py-2 px-3 font-monospace">${idx + 1}</td>
@@ -1587,8 +1793,8 @@ window.type2State = {
                     <td class="text-end py-2 px-3 font-monospace fw-bold">${v.step3?.baki_kerja || 'RM 0.00'}</td>
                     <td class="text-center py-2 px-3 font-monospace">${v.step3?.kakitangan || '0'}</td>
                     <td class="text-center py-2 px-3">
-                        <span class="badge ${isPass ? 'bg-success' : 'bg-danger'} px-2 py-0.5 rounded-pill text-white">
-                            ${isPass ? 'Memuaskan' : 'Tidak Memuaskan'}
+                        <span class="badge ${isPass ? 'bg-success' : (isFail ? 'bg-danger' : 'bg-warning text-dark')} px-2 py-0.5 rounded-pill ${isPass || isFail ? 'text-white' : ''}">
+                            ${isPass ? 'Memuaskan' : (isFail ? 'Tidak Memuaskan' : 'Menunggu Penilaian')}
                         </span>
                     </td>
                     <td class="py-2 px-3 small text-secondary">${v.step3?.catatan || '-'}</td>
@@ -1679,13 +1885,14 @@ window.type2State = {
 
         document.getElementById('modalDocTitle').textContent = doc.title;
         document.getElementById('modalDocMekanisma').textContent = doc.mekanisma;
+        document.getElementById('modalHargaTawaranHeader')?.classList.toggle('d-none', !doc.is_bq_template);
 
         const tbody = document.getElementById('modalSemakanDokumenBody');
         if (!tbody) return;
 
         tbody.innerHTML = '';
         this.vendors.forEach(v => {
-            const vDoc = v.step1?.docs?.[docId] || { status: 'sempurna', catatan: '', has_file: false, file_url: null, form_url: null, is_form: false, is_spec: false, files: [] };
+            const vDoc = v.step1?.docs?.[docId] || { status: null, evaluated: false, catatan: '', has_file: false, file_url: null, form_url: null, is_form: false, is_spec: false, files: [] };
             const previewUrl = vDoc.file_url || vDoc.form_url || '';
             const isSpec = (doc.action === 'view_specification') || (doc.mekanisma === 'Spesifikasi') || vDoc.is_spec;
             const isOnlineForm = vDoc.is_form || (doc.action === 'online_form') || (doc.mekanisma && doc.mekanisma.toLowerCase().includes('borang'));
@@ -1705,7 +1912,27 @@ window.type2State = {
 
             // Build files display for this vendor (isolated to v.id)
             let filesHtml = '';
-            if (files.length > 1) {
+            const bqPdfFiles = doc.is_bq_template ? files.filter(f => {
+                    const fName = f.name || '';
+                    const fExt = (fName.split('.').pop() || '').toLowerCase();
+                    return f.is_pdf || fExt === 'pdf' || (f.mime_type || '').toLowerCase() === 'application/pdf';
+                }) : [];
+
+            if (bqPdfFiles.length > 0) {
+                filesHtml = `
+                    <div class="d-flex flex-column gap-1.5 py-1">
+                        ${bqPdfFiles.map((f, fIdx) => {
+                            const fName = f.name || ('BQ ' + (fIdx + 1) + '.pdf');
+                            return `
+                                <button type="button" class="btn btn-sm btn-outline-danger px-2 py-1 fw-semibold d-inline-flex align-items-center gap-1 align-self-start btn-preview-file-action" data-title="${this.escapeAttr(doc.title + ' - ' + v.name + ' - ' + fName)}" data-url="${this.escapeAttr(f.url || '')}">
+                                    <i class="bi bi-file-earmark-pdf"></i>
+                                    <span>Lihat PDF</span>
+                                </button>
+                            `;
+                        }).join('')}
+                    </div>
+                `;
+            } else if (files.length > 1) {
                 filesHtml = `
                     <div class="d-flex flex-column gap-1.5 py-1">
                         <span class="badge bg-secondary-subtle text-secondary border px-1.5 py-0.5 rounded-1 extra-small align-self-start">
@@ -1775,6 +2002,7 @@ window.type2State = {
                     <div>${v.name}</div>
                     <div class="extra-small text-muted">${v.cidb}</div>
                 </td>
+                ${doc.is_bq_template ? `<td class="text-end py-2.5 font-monospace fw-semibold text-dark">${this.escapeAttr(v.harga_tawaran || '-')}</td>` : ''}
                 <td class="py-2.5">
                     ${filesHtml}
                 </td>
@@ -1784,7 +2012,8 @@ window.type2State = {
                     </span>
                 </td>
                 <td class="py-2.5 text-center">
-                    <select class="form-select form-select-sm fw-bold ${vDoc.status === 'sempurna' ? 'text-success' : 'text-danger'}" id="modalDocSelect_${v.id}" onchange="this.className='form-select form-select-sm fw-bold ' + (this.value==='sempurna'?'text-success':'text-danger')">
+                    <select class="form-select form-select-sm fw-bold ${vDoc.status === 'sempurna' ? 'text-success' : (vDoc.status === 'tidak_sempurna' ? 'text-danger' : 'text-secondary')}" id="modalDocSelect_${v.id}" onchange="this.className='form-select form-select-sm fw-bold ' + (this.value==='sempurna'?'text-success':(this.value==='tidak_sempurna'?'text-danger':'text-secondary'))">
+                        <option value="" ${!vDoc.status ? 'selected' : ''}>-- Sila Nilai --</option>
                         <option value="sempurna" ${vDoc.status === 'sempurna' ? 'selected' : ''}>Sempurna</option>
                         <option value="tidak_sempurna" ${vDoc.status === 'tidak_sempurna' ? 'selected' : ''}>Tidak Sempurna</option>
                     </select>
@@ -1816,27 +2045,42 @@ window.type2State = {
 
         document.getElementById('mkModalPusingan').textContent = s2.modal_pusingan || 'RM 0.00';
         document.getElementById('mkPurataBank').textContent = s2.purata_bank || 'RM 0.00';
-        document.getElementById('mkWangTangan').textContent = s2.wang_tangan || 'RM 0.00';
-        document.getElementById('mkJumlahModal').textContent = s2.jumlah_modal || 'RM 0.00';
+        document.getElementById('mkWangTangan').textContent = metrics.aset_cair_disp || 'RM 0.00';
+        document.getElementById('mkJumlahModal').textContent = s2.surplus || 'RM 0.00';
 
         const minModEl = document.getElementById('modalKewanganMinModal');
         if (minModEl) minModEl.textContent = s2.modal_minimum || 'RM 7,500.00';
 
         const statusKecukupanEl = document.getElementById('mkStatusKecukupan');
+        const minCapitalPercent = Number(metrics.peratus_modal_minimum ?? 1.5);
         if (statusKecukupanEl) {
             const isPass = s2.is_cukup_modal ?? true;
+            const passMethod = Number(metrics.modal_pusingan || 0) >= Number(metrics.modal_minimum || 0)
+                ? 'Modal Pusingan'
+                : 'Modal Tersedia';
             statusKecukupanEl.className = isPass ? 'extra-small text-success fw-semibold' : 'extra-small text-danger fw-semibold';
             statusKecukupanEl.innerHTML = isPass
-                ? '<i class="bi bi-check-circle-fill me-1"></i>Mencukupi Had Min (1.5%)'
-                : '<i class="bi bi-x-circle-fill me-1"></i>Kurang Had Min (1.5%)';
+                ? `<i class="bi bi-check-circle-fill me-1"></i>Memenuhi syarat ${minCapitalPercent}% melalui ${passMethod}`
+                : `<i class="bi bi-x-circle-fill me-1"></i>Belum memenuhi syarat ${minCapitalPercent}%`;
         }
 
         // Tab 1 Breakdown Table
         document.getElementById('mkRowModalPusingan').textContent = s2.modal_pusingan || 'RM 0.00';
         document.getElementById('mkRowPurataBank').textContent = s2.purata_bank || 'RM 0.00';
         document.getElementById('mkRowWangTangan').textContent = s2.wang_tangan || 'RM 0.00';
+        document.getElementById('mkRowBonSaham').textContent = metrics.bon_saham_total_disp || 'RM 0.00';
+        document.getElementById('mkRowAsetCair').textContent = metrics.aset_cair_disp || 'RM 0.00';
         document.getElementById('mkRowKredit').textContent = metrics.baki_kredit ? ('RM ' + Number(metrics.baki_kredit).toLocaleString(undefined, {minimumFractionDigits: 2})) : 'RM 0.00';
         document.getElementById('mkRowJumlahTerkumpul').textContent = s2.jumlah_modal || 'RM 0.00';
+        document.getElementById('mkRowMudahCair').textContent = s2.surplus || 'RM 0.00';
+        const minimumStatusEl = document.getElementById('mkRowStatusMinimum');
+        if (minimumStatusEl) {
+            const isPass = Number(metrics.jumlah_modal || 0) >= Number(metrics.modal_minimum || 0);
+            minimumStatusEl.className = isPass ? 'text-center text-success' : 'text-center text-danger';
+            minimumStatusEl.innerHTML = isPass
+                ? '<i class="bi bi-check-circle-fill me-1"></i>K melepasi minimum'
+                : '<i class="bi bi-x-circle-fill me-1"></i>K di bawah minimum';
+        }
 
         // Tab 2 Lembaran Imbangan
         document.getElementById('mkAsetTetap').textContent = 'RM ' + Number(metrics.aset_tetap || 0).toLocaleString(undefined, {minimumFractionDigits: 2});
@@ -1845,8 +2089,27 @@ window.type2State = {
         document.getElementById('mkLiabilitiTetap').textContent = 'RM ' + Number(metrics.liabiliti_tetap || 0).toLocaleString(undefined, {minimumFractionDigits: 2});
         document.getElementById('mkWangTunai').textContent = 'RM ' + Number(metrics.wang_tunai || 0).toLocaleString(undefined, {minimumFractionDigits: 2});
 
-        const ratio = (metrics.liabiliti_semasa > 0) ? (metrics.aset_semasa / metrics.liabiliti_semasa).toFixed(2) : '2.45';
-        document.getElementById('mkCurrentRatio').textContent = ratio;
+        const currentAssets = Number(metrics.aset_semasa || 0);
+        const currentLiabilities = Number(metrics.liabiliti_semasa || 0);
+        const ratioValueEl = document.getElementById('mkCurrentRatio');
+        const ratioStatusEl = document.getElementById('mkCurrentRatioStatus');
+        if (currentLiabilities > 0) {
+            const ratioValue = currentAssets / currentLiabilities;
+            if (ratioValueEl) ratioValueEl.textContent = ratioValue.toFixed(2);
+            if (ratioStatusEl) {
+                const isHealthyRatio = ratioValue >= 1;
+                ratioStatusEl.className = isHealthyRatio ? 'text-success small' : 'text-danger small';
+                ratioStatusEl.innerHTML = isHealthyRatio
+                    ? '<i class="bi bi-check-circle me-1"></i>Aset semasa sekurang-kurangnya menyamai liabiliti'
+                    : '<i class="bi bi-exclamation-circle me-1"></i>Aset semasa lebih rendah daripada liabiliti';
+            }
+        } else {
+            if (ratioValueEl) ratioValueEl.textContent = 'N/A';
+            if (ratioStatusEl) {
+                ratioStatusEl.className = 'text-muted small';
+                ratioStatusEl.textContent = 'Tidak dapat dikira tanpa liabiliti semasa';
+            }
+        }
 
         // Tab 3 Penyata Bank Accounts
         const bankBody = document.getElementById('mkBankBody');
@@ -1854,7 +2117,7 @@ window.type2State = {
             bankBody.innerHTML = '';
             const pbAccounts = metrics.pb_accounts || s2.penyata_bank?.accounts || [];
             if (pbAccounts.length === 0) {
-                bankBody.innerHTML = `<tr><td colspan="6" class="text-center text-muted py-3">Tiada maklumat akaun bank dilaporkan.</td></tr>`;
+                bankBody.innerHTML = `<tr><td colspan="5" class="text-center text-muted py-3">Tiada maklumat akaun bank dilaporkan.</td></tr>`;
             } else {
                 pbAccounts.forEach((acc, aIdx) => {
                     const tr = document.createElement('tr');
@@ -1868,13 +2131,13 @@ window.type2State = {
                     const purata = Number(acc.purata !== undefined ? acc.purata : ((m0 + m1 + m2) / 3));
 
                     tr.innerHTML = `
-                        <td class="fw-semibold text-dark">${acc.bank_name || ('Bank ' + (aIdx + 1))}</td>
-                        <td class="font-monospace text-center">${acc.account_no || ('Akaun ' + (aIdx + 1))}</td>
+                        <td class="fw-semibold text-dark"></td>
                         <td class="text-end font-monospace">RM ${m0.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                         <td class="text-end font-monospace">RM ${m1.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                         <td class="text-end font-monospace">RM ${m2.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                         <td class="text-end font-monospace fw-bold text-dark">RM ${purata.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                     `;
+                    tr.children[0].textContent = acc.bank_name || ('Bank ' + (aIdx + 1));
                     bankBody.appendChild(tr);
                 });
             }
@@ -1885,40 +2148,56 @@ window.type2State = {
         const bankBadge = document.getElementById('mkBankFilesBadge');
         const bFiles = s2.bank_files || [];
 
-        if (bankBadge) bankBadge.textContent = `${bFiles.length} Fail Dimuat Naik`;
+        if (bankBadge) bankBadge.innerHTML = `<i class="bi bi-files me-1"></i>${bFiles.length} Fail`;
         if (bankContainer) {
             bankContainer.innerHTML = '';
             if (bFiles.length === 0) {
                 bankContainer.innerHTML = `
-                    <div class="p-3 text-center text-muted extra-small fst-italic bg-white rounded-2 border">
-                        <i class="bi bi-exclamation-circle me-1"></i>Tiada fail fizikal penyata bank dimuat naik oleh petender ini.
+                    <div class="d-flex flex-column align-items-center justify-content-center text-center rounded-3 border bg-white px-3 py-4" style="border-style: dashed !important;">
+                        <span class="d-inline-flex align-items-center justify-content-center rounded-circle bg-light text-secondary mb-2" style="width: 42px; height: 42px;"><i class="bi bi-file-earmark-x fs-5"></i></span>
+                        <span class="small fw-semibold text-dark">Tiada dokumen dimuat naik</span>
+                        <span class="text-muted extra-small mt-1">Petender ini tidak mengemukakan fail fizikal penyata bank.</span>
                     </div>
                 `;
             } else {
                 bFiles.forEach((bf, bfIdx) => {
                     const fileItem = document.createElement('div');
-                    fileItem.className = 'p-2.5 rounded-2 border bg-white d-flex align-items-center justify-content-between shadow-sm';
-                    const fTitle = `${v.name} - ${bf.name || ('Penyata Bank ' + (bfIdx + 1))}`;
+                    fileItem.className = 'mk-bank-file-item p-2 d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3';
+                    const fileName = bf.name || ('Penyata Bank ' + (bfIdx + 1));
+                    const fTitle = `${v.name} - ${bf.account_label ? (bf.account_label + ' - ') : ''}${fileName}`;
                     const hasUrl = Boolean(bf.url && bf.url !== '#');
 
-                    fileItem.innerHTML = `
-                        <div class="d-flex align-items-center gap-2 text-truncate me-2">
-                            <i class="bi bi-file-earmark-pdf text-danger fs-5 flex-shrink-0"></i>
-                            <div class="text-truncate">
-                                <span class="small fw-semibold text-dark text-truncate d-block" title="${this.escapeAttr(bf.name)}">${bf.name || ('Penyata Bank ' + (bfIdx + 1))}</span>
-                                <span class="text-muted extra-small">${bf.size ? (Math.round(bf.size / 1024) + ' KB') : 'Dokumen Penyata Bank (Disahkan)'}</span>
-                            </div>
-                        </div>
-                        ${hasUrl ? `
-                            <button type="button" class="btn btn-xs btn-outline-danger px-2.5 py-1 rounded-2 flex-shrink-0 btn-preview-file-action" data-title="${this.escapeAttr(fTitle)}" data-url="${this.escapeAttr(bf.url)}">
-                                <i class="bi bi-eye me-1"></i>Prebiu Dokumen
-                            </button>
-                        ` : `
-                            <button type="button" class="btn btn-xs btn-outline-secondary px-2.5 py-1 rounded-2 flex-shrink-0" onclick="alert('Fail ini tidak mempunyai URL fail yang sah.')">
-                                <i class="bi bi-dash-circle me-1"></i>Tiada URL
-                            </button>
-                        `}
-                    `;
+                    const detailWrap = document.createElement('div');
+                    detailWrap.className = 'd-flex align-items-center gap-3 text-truncate';
+                    const icon = document.createElement('i');
+                    icon.className = 'mk-bank-file-icon d-inline-flex align-items-center justify-content-center bi bi-file-earmark-pdf fs-5 flex-shrink-0';
+                    const details = document.createElement('div');
+                    details.className = 'text-truncate';
+                    const name = document.createElement('span');
+                    name.className = 'small fw-semibold text-dark text-truncate d-block';
+                    name.title = fileName;
+                    name.textContent = fileName;
+                    const accountLabel = document.createElement('span');
+                    accountLabel.className = 'text-muted extra-small d-block mt-1';
+                    accountLabel.textContent = bf.account_label || (bf.size ? (Math.round(bf.size / 1024) + ' KB') : 'Dokumen Penyata Bank');
+                    details.append(name, accountLabel);
+                    detailWrap.append(icon, details);
+                    fileItem.appendChild(detailWrap);
+
+                    const action = document.createElement('button');
+                    action.type = 'button';
+                    action.className = hasUrl
+                        ? 'btn btn-sm btn-outline-danger px-3 rounded-3 flex-shrink-0 btn-preview-file-action'
+                        : 'btn btn-sm btn-outline-secondary px-3 rounded-3 flex-shrink-0';
+                    if (hasUrl) {
+                        action.dataset.title = fTitle;
+                        action.dataset.url = bf.url;
+                        action.innerHTML = '<i class="bi bi-eye me-1"></i>Lihat Dokumen';
+                    } else {
+                        action.innerHTML = '<i class="bi bi-dash-circle me-1"></i>Tiada URL';
+                        action.addEventListener('click', () => alert('Fail ini tidak mempunyai URL fail yang sah.'));
+                    }
+                    fileItem.appendChild(action);
                     bankContainer.appendChild(fileItem);
                 });
             }
@@ -1946,7 +2225,7 @@ window.type2State = {
 
         // Decision controls
         const selectEl = document.getElementById('modalKewanganDecisionSelect');
-        if (selectEl) selectEl.value = s2.status || 'memuaskan';
+        if (selectEl) selectEl.value = s2.status || '';
 
         const noteEl = document.getElementById('modalKewanganCatatanInput');
         if (noteEl) noteEl.value = s2.catatan || '';
@@ -2114,7 +2393,7 @@ window.type2State = {
 
         // Decision controls
         const selectEl = document.getElementById('modalKerjaDecisionSelect');
-        if (selectEl) selectEl.value = s3.status || 'memuaskan';
+        if (selectEl) selectEl.value = s3.status || '';
 
         const noteEl = document.getElementById('modalKerjaCatatanInput');
         if (noteEl) noteEl.value = s3.catatan || '';

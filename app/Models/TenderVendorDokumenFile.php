@@ -51,6 +51,11 @@ class TenderVendorDokumenFile extends Model
             return null;
         }
 
+        if ($this->section === 'spesifikasi_kerja') {
+            return \App\Support\SukselStoredFile::exists($path)
+                ? Storage::disk('public')->path($path)
+                : null;
+        }
         $resolved = StosStoredFile::resolveLocalFilePath($path);
         if ($resolved && is_file($resolved)) {
             return $resolved;

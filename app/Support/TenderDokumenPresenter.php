@@ -116,6 +116,17 @@ class TenderDokumenPresenter
      */
     protected function resolveVendorItemStatus(array $item, array $vendorResponses, array $vendorFormStatuses): string
     {
+        if (! empty($item['admin_content']['bq_template_mode'])) {
+            $response = $vendorResponses[$item['uuid'] ?? ''] ?? [];
+            $offer = $response['specification'] ?? [];
+
+            return ! empty($response['files'])
+                && (float) ($offer['bq_total_tawaran'] ?? 0) > 0
+                && (int) ($offer['vendor_tempoh_siap_val'] ?? 0) > 0
+                    ? 'submitted'
+                    : 'draft';
+        }
+
         if (($item['action'] ?? '') === 'online_form') {
             $formKey = $item['admin_content']['form']['form_key'] ?? null;
             if ($formKey && ($vendorFormStatuses[$formKey]['status'] ?? '') === 'submitted') {
@@ -169,11 +180,28 @@ class TenderDokumenPresenter
 
         $header = SpesifikasiKerjaHeader::query()
             ->where('tender_id', $this->tender->id)
-            ->with(['items' => fn ($query) => $query->orderBy('sort_order')->orderBy('id'), 'items.specs.files'])
+            ->with(['items' => fn ($query) => $query->orderBy('sort_order')->orderBy('id'), 'items.specs.files', 'files'])
             ->first();
 
-        if ($header && $header->items->isNotEmpty()) {
-            $spesifikasi[] = $this->contentBuilder->buildForSpesifikasiKerjaHeader($header, $header->items);
+        if ($header) {
+            $template = $header->files
+                ->whereNull('spesifikasi_kerja_item_id')
+                ->where('file_type', 'bq_template')
+                ->sortByDesc('created_at')
+                ->first();
+
+            if ($template) {
+                $spesifikasi[] = $this->contentBuilder->buildForBqTemplate($header, $template);
+            }
+
+            // eBidding still needs item UUIDs and line prices to build its bid rows.
+            // Keep its existing online specification response alongside the BQ upload.
+            if ($header->items->isNotEmpty() && ($this->tender->is_ebidding ?? false)) {
+                $spesifikasi[] = $this->contentBuilder->buildForSpesifikasiKerjaHeader($header, $header->items);
+            } elseif (! $template && $header->items->isNotEmpty()) {
+                // Historical specifications keep their existing vendor workflow.
+                $spesifikasi[] = $this->contentBuilder->buildForSpesifikasiKerjaHeader($header, $header->items);
+            }
         }
 
         $kewangan = KewanganKerjaItem::query()

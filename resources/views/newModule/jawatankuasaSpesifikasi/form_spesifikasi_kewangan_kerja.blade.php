@@ -229,9 +229,9 @@
                     <span class="badge-status badge-status-warning">Draf</span>
                 </div>
 
-                <!-- Penghantaran Fizikal -->
+                <!-- Serahan Tangan -->
                 <div class="col-12 col-md-6">
-                    <label class="form-label fw-semibold d-block">Penghantaran Fizikal <span
+                    <label class="form-label fw-semibold d-block">Serahan Tangan <span
                             class="text-danger">*</span></label>
                     <div class="d-flex gap-3 mt-1">
                         <div class="form-check">

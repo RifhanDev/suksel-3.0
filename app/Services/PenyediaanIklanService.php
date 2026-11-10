@@ -208,6 +208,10 @@ class PenyediaanIklanService
             $record = PenyediaanIklan::query()->firstOrNew(['tender_id' => $tender->id]);
             $record->meta = $payload;
 
+            // Keep tenders.allow_exception in sync on every draft/hantar save.
+            // Vendor/agency screens read that column (canException), not meta.iklan.
+            $this->syncKebenaranKhasToTender($tender, $payload);
+
             if ($submit) {
                 $record->submitted_at = now();
                 $this->applyPayloadToTender($tender, $payload);
@@ -217,6 +221,24 @@ class PenyediaanIklanService
 
             return $record;
         });
+    }
+
+    /**
+     * Persist the "Kebenaran Khas" checkbox onto tenders.allow_exception.
+     *
+     * @param  array<string, mixed>  $payload
+     */
+    protected function syncKebenaranKhasToTender(Tender $tender, array $payload): void
+    {
+        $iklan = $payload['iklan'] ?? [];
+        if (! array_key_exists('kebenaran_khas', $iklan)) {
+            return;
+        }
+
+        Tender::query()->where('id', $tender->id)->update([
+            'allow_exception' => ! empty($iklan['kebenaran_khas']) ? 1 : 0,
+        ]);
+        $tender->allow_exception = ! empty($iklan['kebenaran_khas']) ? 1 : 0;
     }
 
     /**
@@ -404,6 +426,9 @@ class PenyediaanIklanService
             'only_bumiputera' => array_key_exists('only_bumiputera', $syarat) ? (int) (bool) $syarat['only_bumiputera'] : null,
             'invitation' => array_key_exists('invitation', $syarat) ? (int) (bool) $syarat['invitation'] : null,
             'only_advertise' => array_key_exists('only_advertise', $syarat) ? (int) (bool) $syarat['only_advertise'] : null,
+            'allow_exception' => array_key_exists('kebenaran_khas', $iklan)
+                ? (int) (bool) $iklan['kebenaran_khas']
+                : null,
         ], fn ($value) => $value !== null && $value !== '');
 
         if (! empty($syarat['district_list_rule'])) {

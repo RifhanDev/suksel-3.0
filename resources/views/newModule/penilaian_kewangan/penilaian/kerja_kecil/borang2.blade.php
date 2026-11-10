@@ -381,10 +381,10 @@
                                     Wang Dalam Tangan Semasa<br><span class="formula-tag">Nilai Positif (g)</span>
                                 </th>
                                 <th rowspan="2" class="subhead-level2">
-                                    Jumlah Modal<br><span class="formula-tag">(k)=(f)+(g)+(h)+(i)+(j)</span>
+                                    Jumlah Modal<br><span class="formula-tag">(k)=(f)+(i)+(j)</span>
                                 </th>
                                 <th rowspan="2" class="subhead-level2">
-                                    Mudah Cair Boleh Guna<br><span class="formula-tag">(m)=(j)-(k)</span>
+                                    Mudah Cair Boleh Guna<br><span class="formula-tag">(m)=(k)-(Modal Minimum)</span>
                                 </th>
 
                                 {{-- Modal Minimum Diperlukan --}}
@@ -398,10 +398,10 @@
                                     Borang CA 1 (Kredit)<br><span class="formula-tag">(j)</span>
                                 </th>
                                 <th rowspan="2" class="subhead-level2">
-                                    Jumlah Modal<br><span class="formula-tag">(k)=(f)+(g)+(h)+(i)+(j)</span>
+                                    Jumlah Modal<br><span class="formula-tag">(k)=(f)+(i)+(j)</span>
                                 </th>
                                 <th rowspan="2" class="subhead-level2">
-                                    Mudah Cair Boleh Guna<br><span class="formula-tag">(m)=(j)-(k)</span>
+                                    Mudah Cair Boleh Guna<br><span class="formula-tag">(m)=(k)-(Modal Minimum)</span>
                                 </th>
                             </tr>
 
@@ -695,6 +695,13 @@
                                         <td class="text-center small fw-semibold text-secondary">
                                             @if($acc)
                                                 {!! nl2br(e($acc['bank_name'])) !!}
+                                                @foreach($acc['files'] ?? [] as $statementFile)
+                                                    @if(!empty($statementFile['uuid']))
+                                                        <a class="d-block small fw-normal mt-1" target="_blank" rel="noopener noreferrer" href="{{ route('tenderDokumen.download', $statementFile['uuid']) }}">
+                                                            <i class="bi bi-paperclip me-1"></i>{{ $statementFile['name'] ?? 'Papar penyata bank' }}
+                                                        </a>
+                                                    @endif
+                                                @endforeach
                                             @else
                                                 -
                                             @endif
@@ -841,6 +848,7 @@
                                 <th><span id="mLabel2">Bulan 2</span> (RM)</th>
                                 <th><span id="mLabel3">Bulan 3</span> (RM)</th>
                                 <th>Jumlah Akaun (RM)</th>
+                                <th>Dokumen Penyata</th>
                             </tr>
                         </thead>
                         <tbody id="allAkaunBankTableBody">
@@ -848,7 +856,7 @@
                         </tbody>
                         <tfoot class="table-light fw-bold">
                             <tr>
-                                <td colspan="5" class="text-end">Jumlah Besar (RM):</td>
+                                <td colspan="6" class="text-end">Jumlah Besar (RM):</td>
                                 <td class="text-end font-monospace text-dark" id="allAkaunBankGrandTotal">0.00</td>
                             </tr>
                         </tfoot>
@@ -1044,12 +1052,26 @@
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td class="text-center font-monospace">${idx + 1}</td>
-                <td class="fw-semibold text-dark">${acc.bank_name || '-'}</td>
+                <td class="fw-semibold text-dark"></td>
                 <td class="text-end font-monospace">${m1Amt.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                 <td class="text-end font-monospace">${m2Amt.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                 <td class="text-end font-monospace">${m3Amt.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                 <td class="text-end font-monospace fw-bold text-dark">${accTot.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
             `;
+            tr.children[1].textContent = acc.bank_name || '-';
+            const filesCell = document.createElement('td');
+            (Array.isArray(acc.files) ? acc.files : []).forEach(file => {
+                if (!file || !file.uuid) return;
+                const link = document.createElement('a');
+                link.href = '/tenders/dokumen-files/' + encodeURIComponent(file.uuid) + '/download';
+                link.target = '_blank';
+                link.rel = 'noopener noreferrer';
+                link.className = 'd-block';
+                link.textContent = file.name || 'Papar penyata bank';
+                filesCell.appendChild(link);
+            });
+            if (!filesCell.childElementCount) filesCell.textContent = '-';
+            tr.appendChild(filesCell);
             tbody.appendChild(tr);
         });
 

@@ -26,7 +26,7 @@ class PrintViewToWord
     }
 
     /** Everything paged.js would have paginated. */
-    private static function body(string $printHtml): string
+    public static function body(string $printHtml): string
     {
         preg_match('/<template[^>]*data-ref="pagedjs-content"[^>]*>(.*?)<\/template>/s', $printHtml, $matches);
 
@@ -38,7 +38,7 @@ class PrintViewToWord
      * escapes turned into line breaks, or an empty string when the box is a counter
      * expression rather than plain text.
      */
-    private static function marginBox(string $printHtml, string $position): string
+    public static function marginBox(string $printHtml, string $position): string
     {
         if (! preg_match('/@' . preg_quote($position, '/') . '\s*\{(.*?)\}/s', $printHtml, $block)) {
             return '';

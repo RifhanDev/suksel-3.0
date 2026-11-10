@@ -345,6 +345,7 @@ Route::middleware(['auth'])->group(function () {
 	Route::get('/perincian-page', [PenyediaanMesyuaratController::class, 'show'])->name('perincianPage');
 	Route::post('/penyediaan-mesyuarat/simpan', [PenyediaanMesyuaratController::class, 'simpan'])->name('penyediaanMesyuarat.simpan');
 	Route::post('/penyediaan-mesyuarat/hantar', [PenyediaanMesyuaratController::class, 'hantar'])->name('penyediaanMesyuarat.hantar');
+	Route::post('/penyediaan-mesyuarat/kemaskini-ahli', [PenyediaanMesyuaratController::class, 'kemaskiniAhli'])->name('penyediaanMesyuarat.kemaskiniAhli');
 
 	Route::get('/index-jawatankuasa', [PenyediaanMesyuaratController::class, 'indexKehadiran'])->name('jawatankuasaMesyuarat');
 	Route::get('/jawatankuasa-page', [PenyediaanMesyuaratController::class, 'showKehadiran'])->name('jawatankuasaPage');
@@ -502,10 +503,13 @@ Route::middleware(['auth'])->group(function () {
 	Route::post('/penilaian-kewangan-kerja/{tender_no}/borang/borang13/simpan-muktamad', [PenilaianKewanganKerjaController::class, 'simpanBorang13Muktamad'])->name('penilaianKewanganKerja.borang13.simpanMuktamad')->where('tender_no', '.*');
 	Route::post('/penilaian-kewangan-kerja/{tender_no}/borang/borang14/simpan-muktamad', [PenilaianKewanganKerjaController::class, 'simpanBorang14Muktamad'])->name('penilaianKewanganKerja.borang14.simpanMuktamad')->where('tender_no', '.*');
 	Route::post('/penilaian-kewangan-kerja/{tender_no}/borang/borang15/simpan-muktamad', [PenilaianKewanganKerjaController::class, 'simpanBorang15Muktamad'])->middleware('2fa.penilaian:kewangan')->name('penilaianKewanganKerja.borang15.simpanMuktamad')->where('tender_no', '.*');
+	Route::post('/penilaian-kewangan-kerja/{tender_no}/borang/borang15/simpan-pengesyoran', [PenilaianKewanganKerjaController::class, 'simpanPengesyoranBorang15'])->name('penilaianKewanganKerja.borang15.simpanPengesyoran')->where('tender_no', '.*');
+	Route::post('/penilaian-kewangan-kerja/{tender_no}/kerja-kecil/simpan-keputusan', [PenilaianKewanganKerjaController::class, 'simpanKeputusanKerjaKecil'])->name('penilaianKewanganKerja.kerjaKecil.simpanKeputusan')->where('tender_no', '.*');
 	Route::get('/penilaian-kewangan-kerja/{tender_no}/borang/{borang_code}', [PenilaianKewanganKerjaController::class, 'getBorang'])->name('penilaianKewanganKerja.borang.show')->where('tender_no', '.*');
 	Route::post('/penilaian-kewangan-kerja/{tender_no}/borang/{borang_code}/simpan', [PenilaianKewanganKerjaController::class, 'simpanBorang'])->name('penilaianKewanganKerja.borang.simpan')->where('tender_no', '.*');
 	Route::post('/penilaian-kewangan-kerja/{tender_no}/pengesahan-peringkat', [PenilaianKewanganKerjaController::class, 'sahkanPeringkat'])->name('penilaianKewanganKerja.sahkanPeringkat')->where('tender_no', '.*');
 	Route::post('/penilaian-kewangan-kerja/{tender_no}/hantar', [PenilaianKewanganKerjaController::class, 'hantar'])->middleware('2fa.penilaian:kewangan')->name('penilaianKewanganKerja.hantar')->where('tender_no', '.*');
+	Route::get('/penilaian-kewangan-kerja/{tender_no}/laporan/cetak', [PenilaianKewanganKerjaController::class, 'cetakLaporan'])->name('penilaianKewanganKerja.cetakLaporan')->where('tender_no', '.*');
 	Route::get('/penilaian-kewangan-kerja/{tender_no}', [PenilaianKewanganKerjaController::class, 'show'])->name('penilaianKewanganKerja.show')->where('tender_no', '.*');
 });
 
@@ -546,8 +550,8 @@ Route::view('/syarat-tender', 'newModule.syarikatPembekal.syarat_tender')->name(
 Route::view('/kod-bidang', 'newModule.syarikatPembekal.kod_bidang')->name('kodBidang');
 
 // Dummy Controller 
-Route::get('/tender/cipta', [DummyController::class, 'create'])->name('tender.create');
-Route::post('/tender/store', [DummyController::class, 'store'])->name('tender.store');
+Route::get('/tender/cipta', [DummyController::class, 'create'])->name('tender.dummy.create');
+Route::post('/tender/store', [DummyController::class, 'store'])->name('tender.dummy.store');
 Route::get('/tender/bekalan', [DummyController::class, 'bekalan'])->name('tender.bekalan');
 Route::get('/tender/kerja', [DummyController::class, 'kerja'])->name('tender.kerja');
 Route::get('/tender/status/{status}', [DummyController::class, 'viewByStatus'])->name('tender.status');

@@ -164,7 +164,7 @@
 			$("#button_cancel").html("TUTUP");
 			$("#button_confirm").html("TERUSKAN");
 			$('#button_confirm').attr('type', "submit");
-			$('#myPopupForm').attr('action', '{{ env('MAIL_SAMPLER') }}');
+			$('#myPopupForm').attr('action', '{{ config('services.mail_server.sampler_url') }}');
 			$('#myPopupForm').attr('method', "POST");
 
 			$("#modal_body").empty();

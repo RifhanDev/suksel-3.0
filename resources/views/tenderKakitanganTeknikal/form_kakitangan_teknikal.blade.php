@@ -317,7 +317,7 @@
                         </svg>
                     </div>
                     <span class="upload-zone-label d-block fw-semibold text-dark small mb-1">Klik di sini untuk memuat naik dokumen sokongan keseluruhan</span>
-                    <span class="upload-zone-sub d-block text-muted" style="font-size:0.75rem;">PDF, Word, Excel, Imej — saiz maksimum 10 MB per fail (Boleh muat naik pelbagai fail)</span>
+                    <span class="upload-zone-sub d-block text-muted" style="font-size:0.75rem;">PDF, Word, Excel, Imej — saiz maksimum 25 MB per fail (Boleh muat naik pelbagai fail)</span>
                     <input type="file" id="general-input-dokumen" name="dokumen_umum[]" multiple hidden accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg">
                 </label>
 
@@ -434,7 +434,7 @@
                                     </svg>
                                 </div>
                                 <span class="upload-zone-label d-block fw-semibold text-dark small mb-1">Klik di sini untuk memuat naik dokumen</span>
-                                <span class="upload-zone-sub d-block text-muted" style="font-size:0.75rem;">PDF, Word, Excel, Imej — saiz maksimum 10 MB per fail (Pilih pelbagai fail)</span>
+                                <span class="upload-zone-sub d-block text-muted" style="font-size:0.75rem;">PDF, Word, Excel, Imej — saiz maksimum 25 MB per fail (Pilih pelbagai fail)</span>
                                 <input type="file" id="modal-input-dokumen" name="kakitangan_dokumen[]" multiple hidden accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg">
                             </label>
 
@@ -591,13 +591,27 @@ $(document).ready(function () {
         FileUpload.init({
             zoneId     : 'modal-upload-zone',
             inputId    : 'modal-input-dokumen',
-            chipListId : 'modal-file-chip-list'
+            chipListId : 'modal-file-chip-list',
+            maxFileSize: 25 * 1024 * 1024,
+            allowedExtensions: ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'png', 'jpg', 'jpeg'],
+            onInvalidFile: function (file, reason) {
+                showToast(reason === 'size'
+                    ? file.name + ' melebihi had 25 MB.'
+                    : 'Jenis fail ' + file.name + ' tidak dibenarkan.', 'warning');
+            }
         });
         if ($('#general-upload-zone').length > 0) {
             FileUpload.init({
                 zoneId     : 'general-upload-zone',
                 inputId    : 'general-input-dokumen',
-                chipListId : 'general-file-chip-list'
+                chipListId : 'general-file-chip-list',
+                maxFileSize: 25 * 1024 * 1024,
+                allowedExtensions: ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'png', 'jpg', 'jpeg'],
+                onInvalidFile: function (file, reason) {
+                    showToast(reason === 'size'
+                        ? file.name + ' melebihi had 25 MB.'
+                        : 'Jenis fail ' + file.name + ' tidak dibenarkan.', 'warning');
+                }
             });
         }
     }
@@ -627,8 +641,12 @@ $(document).ready(function () {
                 $btn.prop('disabled', false).removeClass('opacity-75');
                 if (res.success && res.files) {
                     showToast(res.message, 'success');
-                    $('#general-input-dokumen').val('');
-                    $('#general-file-chip-list').empty();
+                    if (typeof FileUpload !== 'undefined' && typeof FileUpload.reset === 'function') {
+                        FileUpload.reset('general-input-dokumen');
+                    } else {
+                        $('#general-input-dokumen').val('');
+                        $('#general-file-chip-list').empty();
+                    }
 
                     var $container = $('#general-existing-files');
                     if ($container.find('label').length === 0) {
@@ -649,7 +667,11 @@ $(document).ready(function () {
             },
             error: function (xhr) {
                 $btn.prop('disabled', false).removeClass('opacity-75');
-                var msg = xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : 'Gagal memuat naik dokumen.';
+                var response = xhr.responseJSON || {};
+                var errors = response.errors || {};
+                var msg = Object.keys(errors).map(function (key) {
+                    return Array.isArray(errors[key]) ? errors[key][0] : null;
+                }).filter(Boolean)[0] || response.message || 'Gagal memuat naik dokumen.';
                 showToast(msg, 'error');
             }
         });

@@ -74,6 +74,14 @@
         </div>
 
         <div class="content-card-body p-4">
+            {{-- Kemaskini Ahli disembunyikan sementara; fungsi dikekalkan untuk diaktifkan semula kemudian.
+            <div class="d-flex justify-content-end mb-3">
+                <button type="button" class="btn btn-sm btn-outline-primary btn-kemaskini-ahli"
+                    data-ui-tab="{{ $uiTab }}" data-jenis="{{ $jenis }}" data-label="{{ $label }}">
+                    Kemaskini Ahli
+                </button>
+            </div>
+            --}}
             <div class="row mb-3">
                 <div class="col-sm-6">
                     <label class="form-label small fw-bold text-secondary text-uppercase mb-1">Status Mesyuarat</label>

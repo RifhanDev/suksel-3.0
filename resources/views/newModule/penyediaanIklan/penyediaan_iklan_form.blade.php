@@ -338,6 +338,10 @@
 		$iklan = $meta['iklan'] ?? [];
 		$syarat = $iklan['syarat'] ?? [];
 
+		$kebenaranKhas = array_key_exists('kebenaran_khas', $iklan)
+			? ! empty($iklan['kebenaran_khas'])
+			: (bool) ($tender->allow_exception ?? false);
+
 		$onlySelangor = $syarat['only_selangor'] ?? ($tender->only_selangor ?? null);
 		$onlyBumiputera = array_key_exists('only_bumiputera', $syarat)
 		    ? $syarat['only_bumiputera']
@@ -438,7 +442,7 @@
 				<div class="col-12 mt-1">
 					<label class="form-label fw-semibold">Kebenaran Khas</label>
 					<label class="kebenaran-check-card">
-						<input type="checkbox" name="kebenaran_khas" value="1" @checked(!empty($iklan['kebenaran_khas']))>
+						<input type="checkbox" name="kebenaran_khas" value="1" @checked($kebenaranKhas)>
 						<div>
 							<div class="kc-label">Tandakan jika tender ini memerlukan kebenaran khas</div>
 						</div>

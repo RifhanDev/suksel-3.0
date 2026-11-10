@@ -96,30 +96,8 @@ class JawatankuasaPembukaController extends Controller
             $dokumenByVendor[$vendorId] = $tenderDokumen->items('vendor', $vendorId);
         }
 
-        $checklistItems  = $tenderDokumen->items('admin');
-        $isNotMuatTurun  = fn (array $item) => strtolower(trim($item['tindakan'] ?? $item['mekanisma'] ?? '')) !== 'muat turun';
-        $isExcludedKewangan = function (array $item) {
-            $tindakan   = strtolower(trim($item['tindakan'] ?? ''));
-            $mekanisma  = strtolower(trim($item['mechanism'] ?? $item['mekanisma'] ?? ''));
-            $sourceType = strtolower(trim($item['source_type'] ?? ''));
-
-            return $tindakan === 'muat turun'
-                || $mekanisma === 'muat turun'
-                || $tindakan === 'spesifikasi'
-                || $mekanisma === 'spesifikasi'
-                || in_array($sourceType, ['specification', 'specification_document'], true);
-        };
-
-        $teknikalItems   = collect($checklistItems)
-            ->filter(fn (array $item) => in_array($item['source'] ?? $item['section'] ?? '', ['technical', 'spesifikasi_kerja'], true))
-            ->filter($isNotMuatTurun)
-            ->values()
-            ->all();
-        $kewanganItems   = collect($checklistItems)
-            ->filter(fn (array $item) => in_array($item['source'] ?? $item['section'] ?? '', ['financial', 'kewangan_kerja'], true))
-            ->reject($isExcludedKewangan)
-            ->values()
-            ->all();
+        $checklistItems = $tenderDokumen->items('admin');
+        ['technical' => $teknikalItems, 'financial' => $kewanganItems] = $this->resolvePembukaChecklistItems($tender, $checklistItems);
 
         $vendors = $participants->map(function ($participant) {
             return [
@@ -141,6 +119,7 @@ class JawatankuasaPembukaController extends Controller
             'tenderDokumen' => $tenderDokumen,
             'teknikalItems' => $teknikalItems,
             'kewanganItems' => $kewanganItems,
+            'isKerjaBqReview' => $this->usesJadualHargaKuantitiReview($tender),
             'vendors'       => $vendors,
             'dokumenByVendor' => $dokumenByVendor,
             'semakPayload'  => $semakPayload,
@@ -166,7 +145,7 @@ class JawatankuasaPembukaController extends Controller
 
         foreach ($request->input('rows') as $row) {
             if ((int) ($row['status_pematuhan'] ?? null) === 0 && trim((string) ($row['catatan'] ?? '')) === '') {
-                return response()->json(['message' => 'Catatan wajib diisi apabila Status Pematuhan = Tiada.'], 422);
+                return response()->json(['message' => 'Catatan wajib diisi apabila Status Pematuhan = Tiada atau Tidak Diterima.'], 422);
             }
         }
 
@@ -215,27 +194,7 @@ class JawatankuasaPembukaController extends Controller
         }
 
         $checklistItems = $tenderDokumen->items('admin');
-        $isNotMuatTurun = fn (array $i) => strtolower(trim($i['tindakan'] ?? $i['mekanisma'] ?? '')) !== 'muat turun';
-        $isExcludedKewangan = function (array $item) {
-            $tindakan   = strtolower(trim($item['tindakan'] ?? ''));
-            $mekanisma  = strtolower(trim($item['mechanism'] ?? $item['mekanisma'] ?? ''));
-            $sourceType = strtolower(trim($item['source_type'] ?? ''));
-
-            return $tindakan === 'muat turun'
-                || $mekanisma === 'muat turun'
-                || $tindakan === 'spesifikasi'
-                || $mekanisma === 'spesifikasi'
-                || in_array($sourceType, ['specification', 'specification_document'], true);
-        };
-
-        $teknikalItems  = collect($checklistItems)
-            ->filter(fn (array $i) => in_array($i['source'] ?? $i['section'] ?? '', ['technical', 'spesifikasi_kerja'], true))
-            ->filter($isNotMuatTurun)
-            ->values()->all();
-        $kewanganItems  = collect($checklistItems)
-            ->filter(fn (array $i) => in_array($i['source'] ?? $i['section'] ?? '', ['financial', 'kewangan_kerja'], true))
-            ->reject($isExcludedKewangan)
-            ->values()->all();
+        ['technical' => $teknikalItems, 'financial' => $kewanganItems] = $this->resolvePembukaChecklistItems($tender, $checklistItems);
 
         $vendors = $this->mapParticipatingVendorsForQualification($tender, $participants);
 
@@ -342,27 +301,7 @@ class JawatankuasaPembukaController extends Controller
         }
 
         $checklistItems = $tenderDokumen->items('admin');
-        $isNotMuatTurun = fn (array $i) => strtolower(trim($i['tindakan'] ?? $i['mekanisma'] ?? '')) !== 'muat turun';
-        $isExcludedKewangan = function (array $item) {
-            $tindakan   = strtolower(trim($item['tindakan'] ?? ''));
-            $mekanisma  = strtolower(trim($item['mechanism'] ?? $item['mekanisma'] ?? ''));
-            $sourceType = strtolower(trim($item['source_type'] ?? ''));
-
-            return $tindakan === 'muat turun'
-                || $mekanisma === 'muat turun'
-                || $tindakan === 'spesifikasi'
-                || $mekanisma === 'spesifikasi'
-                || in_array($sourceType, ['specification', 'specification_document'], true);
-        };
-
-        $teknikalItems  = collect($checklistItems)
-            ->filter(fn (array $i) => in_array($i['source'] ?? $i['section'] ?? '', ['technical', 'spesifikasi_kerja'], true))
-            ->filter($isNotMuatTurun)
-            ->values()->all();
-        $kewanganItems  = collect($checklistItems)
-            ->filter(fn (array $i) => in_array($i['source'] ?? $i['section'] ?? '', ['financial', 'kewangan_kerja'], true))
-            ->reject($isExcludedKewangan)
-            ->values()->all();
+        ['technical' => $teknikalItems, 'financial' => $kewanganItems] = $this->resolvePembukaChecklistItems($tender, $checklistItems);
 
         $vendors = $this->mapParticipatingVendorsForQualification($tender, $participants);
 
@@ -478,6 +417,64 @@ class JawatankuasaPembukaController extends Controller
         }
 
         return ['label' => 'Telah Dinilai', 'badge' => 'badge-status-success'];
+    }
+
+    /**
+     * Semakan Jadual Harga & Kuantiti replaces technical compliance only for
+     * non-eBidding tenders under the Kerja category.
+     */
+    protected function usesJadualHargaKuantitiReview(Tender $tender): bool
+    {
+        return (int) ($tender->kategori_perolehan_id ?? 0) === 3
+            && ! (bool) ($tender->is_ebidding ?? false);
+    }
+
+    /**
+     * Resolve the two Pembuka review lists consistently for page display,
+     * qualification refresh, and final submission.
+     *
+     * @param  array<int, array<string, mixed>>  $checklistItems
+     * @return array{technical: array<int, array<string, mixed>>, financial: array<int, array<string, mixed>>}
+     */
+    protected function resolvePembukaChecklistItems(Tender $tender, array $checklistItems): array
+    {
+        $isJadualHargaKuantitiReview = $this->usesJadualHargaKuantitiReview($tender);
+        $isNotMuatTurun = fn (array $item) => strtolower(trim($item['tindakan'] ?? $item['mekanisma'] ?? '')) !== 'muat turun';
+        $isExcludedKewangan = function (array $item) {
+            $tindakan = strtolower(trim($item['tindakan'] ?? ''));
+            $mekanisma = strtolower(trim($item['mechanism'] ?? $item['mekanisma'] ?? ''));
+            $sourceType = strtolower(trim($item['source_type'] ?? ''));
+
+            return $tindakan === 'muat turun'
+                || $mekanisma === 'muat turun'
+                || $tindakan === 'spesifikasi'
+                || $mekanisma === 'spesifikasi'
+                || in_array($sourceType, ['specification', 'specification_document'], true);
+        };
+
+        $technicalItems = collect($checklistItems)
+            ->filter(function (array $item) use ($isJadualHargaKuantitiReview) {
+                if ($isJadualHargaKuantitiReview) {
+                    return ($item['source_type'] ?? '') === 'bq_template'
+                        && ! empty($item['admin_content']['bq_template_mode']);
+                }
+
+                return in_array($item['source'] ?? $item['section'] ?? '', ['technical', 'spesifikasi_kerja'], true);
+            })
+            ->filter($isNotMuatTurun)
+            ->values()
+            ->all();
+
+        $financialItems = collect($checklistItems)
+            ->filter(fn (array $item) => in_array($item['source'] ?? $item['section'] ?? '', ['financial', 'kewangan_kerja'], true))
+            ->reject($isExcludedKewangan)
+            ->values()
+            ->all();
+
+        return [
+            'technical' => $technicalItems,
+            'financial' => $financialItems,
+        ];
     }
 
     /**

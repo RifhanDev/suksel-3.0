@@ -7,11 +7,14 @@ use App\Models\Jawatankuasa;
 use App\Services\StosBackendClient;
 use App\Support\TenderProcessStatus;
 use App\Tender;
+use App\User;
 use App\Traits\Helper;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class PenyediaanMesyuaratController extends Controller
 {
@@ -28,9 +31,8 @@ class PenyediaanMesyuaratController extends Controller
     ];
 
     /**
-     * Fasa mesyuarat masih berjalan sepanjang status ini — mesyuarat setiap
-     * jawatankuasa tidak serentak, jadi tender kekal dalam senarai sehingga
-     * semua tab jemputan dihantar.
+     * Kekalkan tender dalam senarai Perincian Mesyuarat sepanjang status 6 hingga
+     * 10 supaya pegawai boleh membuat perubahan sehingga fasa ini berakhir.
      */
     private const MESYUARAT_PHASE_STATUSES = [
         TenderProcessStatus::HANTAR_DOKUMEN_SYARIKAT,
@@ -150,6 +152,258 @@ class PenyediaanMesyuaratController extends Controller
         return $this->persist($request, true);
     }
 
+    public function kemaskiniAhli(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $tender = $this->resolveTender($request->input('tender'));
+        if (! $tender) {
+            return response()->json(['message' => 'Tender tidak ditemui.'], 404);
+        }
+
+        if (! in_array((int) $tender->status_process_id, self::MESYUARAT_PHASE_STATUSES, true)) {
+            return response()->json(['message' => 'Kemaskini ahli jawatankuasa tidak dibenarkan pada peringkat tender ini.'], 422);
+        }
+
+        $jenisYangLayak = $this->tabJenisForTender($tender);
+        $validated = $request->validate([
+            'tender' => ['required', 'string', Rule::in([$tender->uuid])],
+            'jenis_jawatankuasa' => ['required', Rule::in($jenisYangLayak)],
+            'rows' => ['required', 'array'],
+            'rows.*.user_id' => ['required', 'integer', 'distinct', 'exists:users,id'],
+            'rows.*.p_p' => ['required', Rule::in(['0', '1'])],
+            'rows.*.peranan' => ['required', Rule::in(['1', '2', '3'])],
+        ]);
+
+        $jenis = $validated['jenis_jawatankuasa'];
+        $rows = collect($validated['rows'])->map(fn ($row) => [
+            'user_id' => (int) $row['user_id'],
+            'p_p' => (string) $row['p_p'],
+            'peranan' => (string) $row['peranan'],
+        ]);
+        $required = Jawatankuasa::minimumRequirements()[$jenis] ?? ['pengerusi' => 1, 'ahli' => 2];
+        $pengerusiCount = $rows->where('peranan', Jawatankuasa::PERANAN_PENGERUSI)->count();
+        $ahliCount = $rows->where('peranan', Jawatankuasa::PERANAN_AHLI)->count();
+        if (! Jawatankuasa::satisfiesRequirement($jenis, $pengerusiCount, $ahliCount)) {
+            throw ValidationException::withMessages([
+                'rows' => ["Jawatankuasa memerlukan sekurang-kurangnya {$required['pengerusi']} Pengerusi dan {$required['ahli']} Ahli."],
+            ]);
+        }
+
+        $users = User::query()
+            ->whereNull('vendor_id')
+            ->whereNotNull('ic_number')
+            ->where('ic_number', '!=', '')
+            ->whereNotNull('email')
+            ->where('email', '!=', '')
+            ->whereIn('id', $rows->pluck('user_id'))
+            ->get()
+            ->keyBy('id');
+        if ($users->count() !== $rows->count() || $users->contains(fn (User $user) => ! filter_var($user->email, FILTER_VALIDATE_EMAIL))) {
+            throw ValidationException::withMessages([
+                'rows' => ['Pilih akaun pegawai yang mempunyai nombor kad pengenalan dan alamat e-mel yang sah.'],
+            ]);
+        }
+
+        $storedJenis = $this->jenisForMemberQuery($jenis);
+        $current = Jawatankuasa::with('user')
+            ->where('tender_id', $tender->id)
+            ->whereIn('jenis_jawatankuasa', $storedJenis)
+            ->whereNotNull('user_id')
+            ->orderBy('id')
+            ->get();
+        $currentByUser = $current->keyBy('user_id');
+        $meta = Jawatankuasa::withInactive()
+            ->where('tender_id', $tender->id)
+            ->whereIn('jenis_jawatankuasa', $storedJenis)
+            ->orderByDesc('id')
+            ->first();
+
+        $affected = [];
+        $keptUserIds = [];
+        DB::transaction(function () use ($rows, $users, $currentByUser, $current, $tender, $jenis, $meta, &$affected, &$keptUserIds) {
+            foreach ($rows as $row) {
+                $userId = $row['user_id'];
+                $keptUserIds[] = $userId;
+                $user = $users->get($userId);
+                $existing = $currentByUser->get($userId);
+
+                if ($existing) {
+                    $changed = (string) $existing->peranan !== $row['peranan'] || (string) $existing->p_p !== $row['p_p'];
+                    if ($changed || ! $existing->dihantar_pemakluman_pada) {
+                        $affected[] = [
+                            'action' => 'updated',
+                            'jawatankuasa_id' => $existing->id,
+                            'to' => $user?->email,
+                            'name' => $user?->name ?? '-',
+                            'old_peranan' => (string) $existing->peranan,
+                            'old_p_p' => (string) $existing->p_p,
+                            'peranan' => $row['peranan'],
+                            'p_p' => $row['p_p'],
+                        ];
+                    }
+                    if ($changed) {
+                        $existing->update(['is_current' => false]);
+                        $replacement = Jawatankuasa::query()->create([
+                            'tender_id' => $tender->id,
+                            'jenis_jawatankuasa' => $existing->jenis_jawatankuasa,
+                            'p_p' => $row['p_p'],
+                            'peranan' => $row['peranan'],
+                            'user_id' => $userId,
+                            'catatan' => $existing->catatan,
+                            'dokumen_sokongan_nama' => $existing->dokumen_sokongan_nama,
+                            'dokumen_sokongan_path' => $existing->dokumen_sokongan_path,
+                            'dihantar_pemakluman_pada' => null,
+                            'is_current' => true,
+                        ]);
+                        $affected[array_key_last($affected)]['jawatankuasa_id'] = $replacement->id;
+                        $affected[array_key_last($affected)]['rollback'] = [
+                            'deactivate_id' => $replacement->id,
+                            'activate_id' => $existing->id,
+                        ];
+                    }
+                    continue;
+                }
+
+                $newMember = Jawatankuasa::query()->create([
+                    'tender_id' => $tender->id,
+                    'jenis_jawatankuasa' => $jenis,
+                    'p_p' => $row['p_p'],
+                    'peranan' => $row['peranan'],
+                    'user_id' => $userId,
+                    'catatan' => $meta?->catatan,
+                    'dokumen_sokongan_nama' => $meta?->dokumen_sokongan_nama,
+                    'dokumen_sokongan_path' => $meta?->dokumen_sokongan_path,
+                    'dihantar_pemakluman_pada' => null,
+                    'is_current' => true,
+                ]);
+                $affected[] = [
+                    'action' => 'added',
+                    'jawatankuasa_id' => $newMember->id,
+                    'rollback' => ['deactivate_id' => $newMember->id],
+                    'to' => $user?->email,
+                    'name' => $user?->name ?? '-',
+                    'peranan' => $row['peranan'],
+                    'p_p' => $row['p_p'],
+                ];
+            }
+
+            foreach ($current as $member) {
+                if (in_array((int) $member->user_id, $keptUserIds, true)) {
+                    continue;
+                }
+                $affected[] = [
+                    'action' => 'removed',
+                    'jawatankuasa_id' => $member->id,
+                    'rollback' => ['activate_id' => $member->id],
+                    'to' => $member->user?->email,
+                    'name' => $member->user?->name ?? '-',
+                    'old_peranan' => (string) $member->peranan,
+                    'old_p_p' => (string) $member->p_p,
+                    'peranan' => null,
+                    'p_p' => null,
+                ];
+                $member->update(['is_current' => false]);
+            }
+        });
+
+        $jenisLabel = self::JENIS_LABELS[$jenis] ?? $jenis;
+        $perananLabels = ['1' => 'Pengerusi', '2' => 'Setiausaha', '3' => 'Ahli'];
+        $notified = 0;
+        $failedChanges = [];
+        foreach ($affected as $change) {
+            if (empty($change['to'])) {
+                $failedChanges[] = $change;
+                continue;
+            }
+            $viewData = [
+                'tender' => $tender,
+                'jenisLabel' => $jenisLabel,
+                'recipientName' => $change['name'],
+                'action' => $change['action'],
+                'oldRole' => $perananLabels[$change['old_peranan'] ?? ''] ?? null,
+                'newRole' => $perananLabels[$change['peranan'] ?? ''] ?? null,
+                'oldPp' => isset($change['old_p_p']) ? ($change['old_p_p'] === '1' ? 'Ya' : 'Tidak') : null,
+                'newPp' => isset($change['p_p']) ? ($change['p_p'] === '1' ? 'Ya' : 'Tidak') : null,
+            ];
+            $subject = 'Kemaskini keahlian ' . $jenisLabel . ' - ' . ($tender->no_tender ?: $tender->ref_number ?: 'Tender');
+            $result = $this->createEmailQueue(
+                view('emails.pemakluman_kemaskini_jawatankuasa', $viewData)->render(),
+                $change['to'],
+                $subject
+            );
+            if ($this->emailSendSucceeded($result)) {
+                $notified++;
+                if (! empty($change['jawatankuasa_id'])) {
+                    Jawatankuasa::query()->whereKey($change['jawatankuasa_id'])
+                        ->update(['dihantar_pemakluman_pada' => Carbon::now()]);
+                }
+            } else {
+                $failedChanges[] = $change;
+            }
+        }
+
+        if ($failedChanges) {
+            DB::transaction(function () use ($failedChanges) {
+                foreach ($failedChanges as $change) {
+                    $rollback = $change['rollback'] ?? [];
+                    if (! empty($rollback['deactivate_id'])) {
+                        Jawatankuasa::withInactive()->whereKey($rollback['deactivate_id'])
+                            ->update(['is_current' => false]);
+                    }
+                    if (! empty($rollback['activate_id'])) {
+                        Jawatankuasa::withInactive()->whereKey($rollback['activate_id'])
+                            ->update(['is_current' => true]);
+                    }
+                }
+            });
+        }
+
+        $syncMessage = null;
+        if ($this->stos->isConfigured()) {
+            try {
+                $sync = $this->stos->syncPenyediaanMesyuaratAttendees($tender->id, $jenis);
+                if (! $sync->successful()) {
+                    $syncMessage = 'Senarai kehadiran belum dapat diselaraskan. Sila muat semula atau hubungi pentadbir.';
+                    Log::error('Meeting attendee snapshot sync failed after committee update', [
+                        'tender_id' => $tender->id,
+                        'jenis_jawatankuasa' => $jenis,
+                        'status' => $sync->status(),
+                        'body' => $sync->json(),
+                    ]);
+                }
+            } catch (\Throwable $e) {
+                $syncMessage = 'Senarai kehadiran belum dapat diselaraskan. Sila muat semula atau hubungi pentadbir.';
+                Log::error('Meeting attendee snapshot sync exception after committee update', [
+                    'tender_id' => $tender->id,
+                    'jenis_jawatankuasa' => $jenis,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        } else {
+            $syncMessage = 'STOS backend tidak dikonfigurasi; jemputan mesyuarat sedia ada tidak dikemaskini.';
+        }
+
+        $savedChanges = count($affected) - count($failedChanges);
+        if (! $affected) {
+            $message = 'Tiada perubahan keahlian dikesan.';
+        } else {
+            $message = 'Perubahan ahli berjaya disimpan untuk ' . $savedChanges . ' ahli; emel berjaya dimasukkan ke giliran untuk ' . $notified . ' ahli.';
+            if ($failedChanges) {
+                $message .= ' Perubahan bagi ' . count($failedChanges) . ' ahli dibatalkan kerana emel pemakluman gagal dimasukkan ke giliran.';
+            }
+        }
+        if ($syncMessage) {
+            $message .= ' ' . $syncMessage;
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => $message,
+            'notified' => $notified,
+            'changes' => $savedChanges,
+            'partial' => (bool) ($failedChanges || $syncMessage),
+        ]);
+    }
+
     public function simpanKehadiran(Request $request)
     {
         $tender = $this->resolveTender($request->input('tender'));
@@ -170,7 +424,7 @@ class PenyediaanMesyuaratController extends Controller
             'penyediaan_mesyuarat_id' => ['required', 'integer'],
             'untuk_kelulusan' => ['nullable', 'boolean'],
             'attendance' => ['required', 'array', 'min:1'],
-            'attendance.*.jawatankuasa_id' => ['required', 'integer'],
+            'attendance.*.meeting_attendee_id' => ['required', 'integer'],
             'attendance.*.hadir' => ['nullable', 'boolean'],
         ]);
 
@@ -294,15 +548,13 @@ class PenyediaanMesyuaratController extends Controller
     }
 
     /**
-     * Senarai Penyediaan Mesyuarat: tender dalam fasa mesyuarat yang MASIH ada
-     * tab jemputan belum dihantar. Tender keluar dari senarai hanya bila semua
-     * tab (ikut peringkat) sudah dihantar.
+     * Senarai Penyediaan Mesyuarat kekal tersedia sepanjang fasa status mesyuarat,
+     * walaupun semua tab jemputan sudah dihantar, supaya pegawai boleh membuat
+     * perubahan sehingga tender bergerak ke fasa seterusnya.
      */
     protected function listTendersForMesyuarat(?Request $request = null): \Illuminate\Support\Collection
     {
-        return $this->listTendersInMesyuaratPhase($request, function ($query) {
-            $query->whereRaw($this->submittedTabCountSql() . ' < ' . $this->requiredTabCountSql());
-        });
+        return $this->listTendersInMesyuaratPhase($request);
     }
 
     /**
@@ -316,13 +568,15 @@ class PenyediaanMesyuaratController extends Controller
         });
     }
 
-    protected function listTendersInMesyuaratPhase(?Request $request, callable $applyScope): \Illuminate\Support\Collection
+    protected function listTendersInMesyuaratPhase(?Request $request, ?callable $applyScope = null): \Illuminate\Support\Collection
     {
         $query = Tender::query()
             ->with('tenderer')
             ->whereIn('status_process_id', self::MESYUARAT_PHASE_STATUSES);
 
-        $applyScope($query);
+        if ($applyScope !== null) {
+            $applyScope($query);
+        }
 
         if ($request?->filled('no_tender')) {
             $term = $request->input('no_tender');
@@ -389,15 +643,6 @@ class PenyediaanMesyuaratController extends Controller
                  OR (COALESCE(tenders.tender_peringkat, 2) <> 1 AND pm.jenis_jawatankuasa IN ('open', 'tech', 'fin'))
               )
         )";
-    }
-
-    /**
-     * Bilangan tab yang WAJIB dihantar: 1 peringkat = 2 tab (open, eval),
-     * 2 peringkat = 3 tab (open, tech, fin). NULL dianggap 2 peringkat.
-     */
-    private function requiredTabCountSql(): string
-    {
-        return "CASE WHEN COALESCE(tenders.tender_peringkat, 2) = 1 THEN 2 ELSE 3 END";
     }
 
     protected function fetchKehadiranFromApi(int $tenderId, ?int $meetingId): array

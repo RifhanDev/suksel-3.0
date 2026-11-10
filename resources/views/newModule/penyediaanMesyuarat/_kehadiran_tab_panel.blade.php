@@ -72,7 +72,7 @@
                     </thead>
                     <tbody class="kehadiran-member-body" data-ui-tab="{{ $uiTab }}">
                         @forelse($members as $member)
-                            <tr data-jawatankuasa-id="{{ $member['id'] }}">
+                            <tr data-meeting-attendee-id="{{ $member['meeting_attendee_id'] }}">
                                 <td class="text-center">{{ $member['ic_number'] ?? '-' }}</td>
                                 <td>{{ $member['name'] ?? '-' }}</td>
                                 <td>{{ $member['jawatan'] ?? '-' }}</td>
@@ -87,7 +87,7 @@
                                 <td class="text-center">
                                     <div class="form-check d-flex justify-content-center mb-0">
                                         <input class="form-check-input hadir-checkbox" type="checkbox"
-                                            value="{{ $member['id'] }}"
+                                            value="{{ $member['meeting_attendee_id'] }}"
                                             @checked(!empty($member['hadir']))>
                                     </div>
                                 </td>
