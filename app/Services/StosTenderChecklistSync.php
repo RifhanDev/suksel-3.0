@@ -13,6 +13,8 @@ use App\Models\TechnicalChecklistHeader;
 use App\Models\TechnicalChecklistItem;
 use App\Models\TechnicalSpecificationDocument;
 use App\Tender;
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -25,10 +27,67 @@ class StosTenderChecklistSync
 {
     public function __construct(protected StosBackendClient $stos) {}
 
+    // Page views use a short timeout so a slow STOS cannot hold the page (and
+    // its php-fpm worker) for long. STOS runs on the same php-fpm pool, so
+    // workers stuck waiting on it starve STOS itself and every page times out.
+    protected const VIEW_TIMEOUT_SECONDS = 5;
+
+    // A tender viewed again within this window skips the sync.
+    protected const VIEW_THROTTLE_SECONDS = 60;
+
+    // After a failed sync, page views skip STOS for this long.
+    protected const VIEW_BACKOFF_SECONDS = 60;
+
     public function syncForTender(Tender $tender): void
+    {
+        $this->runSync($tender);
+    }
+
+    /**
+     * Sync for a page view. The local data is usually current, so this is a
+     * refresh, not something the page must wait for: at most one sync per tender
+     * per minute, a short timeout, and none at all for a minute after STOS
+     * fails. Saving a checklist still calls syncForTender() and always syncs.
+     */
+    public function syncForTenderOnView(Tender $tender): void
     {
         if (! $this->stos->isConfigured() || empty($tender->uuid)) {
             return;
+        }
+
+        // The default store is array (per request); these flags must be shared
+        // across php-fpm workers.
+        $cache = Cache::store('file');
+
+        if ($cache->has('stos-sync:backoff')) {
+            return;
+        }
+
+        if (! $cache->add('stos-sync:tender:' . $tender->id, true, self::VIEW_THROTTLE_SECONDS)) {
+            return;
+        }
+
+        $client = $this->stos;
+        $this->stos = $client->withTimeout(self::VIEW_TIMEOUT_SECONDS);
+
+        try {
+            if (! $this->runSync($tender)) {
+                $cache->put('stos-sync:backoff', true, self::VIEW_BACKOFF_SECONDS);
+            }
+        } finally {
+            $this->stos = $client;
+        }
+    }
+
+    /**
+     * Returns false only when STOS could not be reached (timeout or refused
+     * connection). Other errors, such as bad data on one tender, still return
+     * true so they do not pause the sync for every user.
+     */
+    protected function runSync(Tender $tender): bool
+    {
+        if (! $this->stos->isConfigured() || empty($tender->uuid)) {
+            return true;
         }
 
         try {
@@ -36,17 +95,29 @@ class StosTenderChecklistSync
                 // Kerja specification headers and BQ documents are owned by SUKSel.
                 $this->syncKewanganKerja($tender);
 
-                return;
+                return true;
             }
 
             $this->syncTechnicalChecklist($tender);
             $this->syncFinancialChecklist($tender);
+
+            return true;
+        } catch (ConnectionException $e) {
+            Log::warning('StosTenderChecklistSync failed: STOS unreachable', [
+                'tender_id' => $tender->id,
+                'uuid' => $tender->uuid,
+                'error' => $e->getMessage(),
+            ]);
+
+            return false;
         } catch (\Throwable $e) {
             Log::warning('StosTenderChecklistSync failed', [
                 'tender_id' => $tender->id,
                 'uuid' => $tender->uuid,
                 'error' => $e->getMessage(),
             ]);
+
+            return true;
         }
     }
 

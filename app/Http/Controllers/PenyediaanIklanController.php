@@ -99,7 +99,7 @@ class PenyediaanIklanController extends Controller
         }
 
         $tender->load(['tenderer', 'codes.code', 'creator.organizationunit', 'officer.organizationunit', 'siteVisits', 'kaedahDokumen', 'iklanDokumens']);
-        $this->checklistSync->syncForTender($tender);
+        $this->checklistSync->syncForTenderOnView($tender);
         $tenderReview = TenderReviewPresenter::for($tender);
         $tenderDokumen = TenderDokumenPresenter::for($tender);
         $pegawaiPilihan = $this->pegawaiPilihanForTender($tender);

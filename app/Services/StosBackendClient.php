@@ -38,9 +38,23 @@ class StosBackendClient
         $this->apiKey = config('services.stos_backend.api_key');
     }
 
+    protected ?int $timeoutSeconds = null;
+
     public function isConfigured(): bool
     {
         return $this->baseUrl !== '' && ! empty($this->apiKey);
+    }
+
+    /**
+     * A copy of this client with a shorter timeout, for calls made while a user
+     * waits on a page load.
+     */
+    public function withTimeout(int $seconds): static
+    {
+        $clone = clone $this;
+        $clone->timeoutSeconds = $seconds;
+
+        return $clone;
     }
 
     public function get(string $path, array $query = []): Response
@@ -660,6 +674,10 @@ class StosBackendClient
         $url = $this->baseUrl . '/' . ltrim($path, '/');
 
         $client = self::http();
+
+        if ($this->timeoutSeconds !== null) {
+            $client = $client->timeout($this->timeoutSeconds)->connectTimeout(min(3, $this->timeoutSeconds));
+        }
 
         try {
             if ($method === 'get') {

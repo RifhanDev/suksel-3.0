@@ -486,7 +486,7 @@ class TendersController extends Controller
 	public function show(Request $request, $id)
 	{
 		$tender = Tender::with('codes')->with('siteVisits', 'creator', 'officer', 'kaedahDokumen', 'iklanDokumens')->findOrFail($id);
-		app(\App\Services\StosTenderChecklistSync::class)->syncForTender($tender);
+		app(\App\Services\StosTenderChecklistSync::class)->syncForTenderOnView($tender);
 		app(\App\Services\PenyediaanIklanService::class)->ensureMejaTerkawalSyncedForTender($tender);
 		$pegawaiDisplay = \App\Support\TenderPegawaiPresenter::for($tender);
 		$tenderDokumen = \App\Support\TenderDokumenPresenter::for($tender);
