@@ -258,25 +258,27 @@
                     <span class="badge-status badge-status-warning">Draf</span>
                 </div>
 
+                {{--
                 @if ((int) $tender->penilaian_fizikal === 1)
-                <!-- Serahan Tangan -->
-                <div class="col-12 col-md-6">
-                    <label class="form-label fw-semibold d-block">Serahan Tangan <span
-                            class="text-danger">*</span></label>
-                    <div class="d-flex gap-3 mt-1">
-                        <div class="form-check">
-                            <input class="form-check-input" type="radio" name="penghantaranFizikal"
-                                id="penghantaranFizikal1" checked>
-                            <label class="form-check-label" for="penghantaranFizikal1">Ya</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="radio" name="penghantaranFizikal"
-                                id="penghantaranFizikal2">
-                            <label class="form-check-label" for="penghantaranFizikal2">Tidak</label>
+                    <!-- Serahan Tangan is configured per checklist item in Senarai Semak Teknikal. -->
+                    <div class="col-12 col-md-6">
+                        <label class="form-label fw-semibold d-block">Serahan Tangan
+                            <span class="text-danger">*</span></label>
+                        <div class="d-flex gap-3 mt-1">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="penghantaranFizikal"
+                                    id="penghantaranFizikal1" checked>
+                                <label class="form-check-label" for="penghantaranFizikal1">Ya</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="penghantaranFizikal"
+                                    id="penghantaranFizikal2">
+                                <label class="form-check-label" for="penghantaranFizikal2">Tidak</label>
+                            </div>
                         </div>
                     </div>
-                </div>
                 @endif
+                --}}
 
             </div>
         </div>
@@ -616,7 +618,6 @@
     <script type="text/javascript">
         var SPEC_CONFIG = {
             tenderUuid: @json($tender->uuid),
-            physicalSubmissionEnabled: @json((int) $tender->penilaian_fizikal === 1),
             formBaseUrl: @json(route('spesifikasiForm', ['tenderUuid' => $tender->uuid])),
             storeUrl: @json(route('spesifikasiTeknikal.store')),
             showUrl: @json(route('spesifikasiTeknikal.show', ['uuid' => '__UUID__'])),
@@ -1516,7 +1517,6 @@
                     specification_type: $('input[name="jenis_spesifikasi"]').val(),
                     goods_type: $('input[name="jenisBarang"]:checked').closest('.form-check').find('label').text().trim().toLowerCase(),
                     weighting_type: $('input[name="wajaranSpesifikasi"]:checked').closest('.form-check').find('label').text().trim().toLowerCase() === 'secara terus' ? 'direct' : 'priority',
-                    physical_submission: SPEC_CONFIG.physicalSubmissionEnabled && $('input[name="penghantaranFizikal"]:checked').closest('.form-check').find('label').text().trim().toLowerCase() === 'ya',
                     items: []
                 };
 
@@ -1622,13 +1622,6 @@
                     $('#wajaranSpesifikasi2').prop('checked', true);
                 } else {
                     $('#wajaranSpesifikasi1').prop('checked', true);
-                }
-
-                // Physical submission radio
-                if (specData.physical_submission === false || specData.physical_submission === 0) {
-                    $('#penghantaranFizikal2').prop('checked', true);
-                } else {
-                    $('#penghantaranFizikal1').prop('checked', true);
                 }
 
                 // Build items + specs
@@ -1903,7 +1896,7 @@
             // Radios / selects commit on change (no typing blur needed).
             $(document).on(
                 'change',
-                'input[name="jenisBarang"], input[name="wajaranSpesifikasi"], input[name="penghantaranFizikal"], #dt_tmpltSpec select',
+                'input[name="jenisBarang"], input[name="wajaranSpesifikasi"], #dt_tmpltSpec select',
                 function() {
                     scheduleAutoSave();
                 }

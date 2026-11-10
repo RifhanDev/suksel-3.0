@@ -494,10 +494,12 @@
             var IS_SUBMITTED    = @json(($checklistData['status'] ?? null) === 'submitted');
             var PHYSICAL_SUBMISSION_ENABLED = @json($physicalSubmissionEnabled);
 
-            function physicalSubmissionCell(value, locked, mechanism) {
+            function physicalSubmissionCell(value, locked, mechanism, isSpecification) {
                 if (!PHYSICAL_SUBMISSION_ENABLED) return '';
-                var handover = mechanism === 'serahan_tangan';
-                var checked = handover || value === true || value === 1 || value === '1';
+                var handover = !isSpecification && mechanism === 'serahan_tangan';
+                var checked = isSpecification
+                    ? (value === true || value === 1 || value === '1')
+                    : (handover || value === true || value === 1 || value === '1');
                 return '<td class="text-center"><input type="checkbox" class="form-check-input physical-submission-check" aria-label="Serahan tangan diperlukan untuk item ini" title="Petender perlu menyerahkan item ini secara fizikal"' + (checked ? ' checked' : '') + (locked || handover ? ' disabled' : '') + '></td>';
             }
 
@@ -639,7 +641,7 @@
                         EDIT_ICON +
                         '</a>' +
                     '</td>' +
-                    physicalSubmissionCell(data.penghantaran_fizikal, data.physicalSubmissionLocked || isSpec, data.mechanism) +
+                    physicalSubmissionCell(data.penghantaran_fizikal, data.physicalSubmissionLocked || isSpec, data.mechanism, isSpec) +
                     '</tr>'
                 );
             }

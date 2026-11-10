@@ -64,10 +64,12 @@ class FinancialChecklistController extends Controller
             ->join('technical_checklist_headers as tch', 'tch.id', '=', 'tci.technical_checklist_header_id')
             ->leftJoin('technical_specification_documents as tsd', 'tsd.id', '=', 'tci.specification_document_id')
             ->where('tch.tender_id', $tender->id)
-            ->select('tci.uuid', 'tsd.uuid as document_uuid', 'tci.penghantaran_fizikal', 'tsd.physical_submission')
+            ->select('tci.uuid', 'tsd.uuid as document_uuid', 'tci.penghantaran_fizikal')
             ->get()
             ->keyBy('uuid');
         foreach ($technicalPhysicalFlags as $technicalFlag) {
+            // Specification rows must mirror the saved technical checklist checkbox exactly.
+            $technicalFlag->penghantaran_fizikal = in_array($technicalFlag->penghantaran_fizikal, [true, 1, '1'], true);
             if (!empty($technicalFlag->document_uuid)) {
                 $technicalPhysicalFlags[$technicalFlag->document_uuid] = $technicalFlag;
             }
@@ -82,7 +84,7 @@ class FinancialChecklistController extends Controller
                     || ($item['mechanism'] ?? '') === 'spesifikasi';
                 $linkedTechnical = $technicalPhysicalFlags[$item['technical_item_uuid'] ?? $item['specification_document_uuid'] ?? ''] ?? null;
                 $value = $isSpecification
-                    ? ($linkedTechnical?->physical_submission ?? false)
+                    ? ($linkedTechnical?->penghantaran_fizikal ?? false)
                     : ($financialPhysicalFlags[$item['uuid'] ?? ''] ?? $item['penghantaran_fizikal'] ?? false);
                 $item['penghantaran_fizikal'] = (int) $tender->penilaian_fizikal === 1 && (bool) $value;
                 if ($isSpecification) $item['physical_submission_locked'] = true;
@@ -233,8 +235,8 @@ class FinancialChecklistController extends Controller
                 ->all();
         }
 
-        // Specification rows use the existing physical-submission setting from
-        // their linked technical specification document.
+        // Specification rows mirror the Serahan Tangan flag on their linked
+        // technical checklist item.
         if (!empty($checklistData['items'])) {
             foreach ($checklistData['items'] as &$item) {
                 $isSpecification = ($item['source_type'] ?? '') === 'specification_document'
@@ -242,7 +244,7 @@ class FinancialChecklistController extends Controller
                 if (!$isSpecification) continue;
                 $linkedTechnical = $technicalPhysicalFlags[$item['technical_item_uuid'] ?? $item['specification_document_uuid'] ?? ''] ?? null;
                 $item['penghantaran_fizikal'] = (int) $tender->penilaian_fizikal === 1
-                    && (bool) ($linkedTechnical?->physical_submission ?? $item['penghantaran_fizikal'] ?? false);
+                    && (bool) ($linkedTechnical?->penghantaran_fizikal ?? $item['penghantaran_fizikal'] ?? false);
                 $item['physical_submission_locked'] = true;
             }
             unset($item);
