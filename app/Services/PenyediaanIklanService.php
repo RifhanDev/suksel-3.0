@@ -3,12 +3,14 @@
 namespace App\Services;
 
 use App\Models\PenyediaanIklan;
+use App\Support\AttachmentStorage;
 use App\Support\TenderProcessStatus;
 use App\Tender;
 use App\Upload;
 use App\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -500,8 +502,8 @@ class PenyediaanIklanService
                 $nama = $doc['original_name'] ?? 'Dokumen';
             }
 
-            $sourcePath = public_path($doc['path'] ?? '');
-            if (! is_file($sourcePath)) {
+            $sourcePath = $this->resolveLocalSourcePath((string) ($doc['path'] ?? ''));
+            if ($sourcePath === null) {
                 continue;
             }
 
@@ -577,10 +579,23 @@ class PenyediaanIklanService
         $fullPath = $destDir . $filename;
         $mime = mime_content_type($fullPath) ?: 'application/octet-stream';
 
+        if ($mime === 'application/pdf' && method_exists($tender, 'setWatermark')) {
+            try {
+                $tender->setWatermark($fullPath, public_path('images/etender-dokumen-watermark.png'));
+            } catch (\Throwable) {
+                // Non-fatal: dokumen tetap disimpan tanpa watermark.
+            }
+        }
+
+        $size = (int) (@filesize($fullPath) ?: 0);
+
+        // Push to NAS (perolehan_attachment) on production; no-op locally/staging.
+        AttachmentStorage::pushPublicFile($fullPath);
+
         $upload = new Upload();
         $upload->fill([
             'name' => $filename,
-            'size' => filesize($fullPath),
+            'size' => $size,
             'type' => $mime,
             'public' => 1,
             'label' => $label,
@@ -592,19 +607,19 @@ class PenyediaanIklanService
         ]);
         $upload->save();
 
-        if ($mime === 'application/pdf' && method_exists($tender, 'setWatermark')) {
-            try {
-                $tender->setWatermark($fullPath, public_path('images/etender-dokumen-watermark.png'));
-            } catch (\Throwable) {
-                // Non-fatal: dokumen tetap disimpan tanpa watermark.
-            }
-        }
-
         return $upload;
     }
 
     protected function deleteTenderUpload(Upload $upload): void
     {
+        $relative = AttachmentStorage::relativeForUpload(
+            (string) ($upload->path ?? ''),
+            (string) ($upload->name ?? '')
+        );
+        if ($relative !== '') {
+            AttachmentStorage::delete($relative);
+        }
+
         $dir = method_exists($upload, 'resolveAbsolutePath') && $upload->resolveAbsolutePath()
             ? dirname($upload->resolveAbsolutePath())
             : rtrim((string) $upload->path, '/');
@@ -623,6 +638,46 @@ class PenyediaanIklanService
         }
 
         $upload->delete();
+    }
+
+    /**
+     * Resolve a document path from public disk or NAS (baru / lama).
+     */
+    protected function resolveLocalSourcePath(string $path): ?string
+    {
+        $relative = AttachmentStorage::normalize($path);
+        if ($relative === '') {
+            return null;
+        }
+
+        $public = public_path($relative);
+        if (is_file($public)) {
+            return $public;
+        }
+
+        $located = AttachmentStorage::locate($relative);
+        if ($located === null) {
+            return null;
+        }
+
+        try {
+            $contents = Storage::disk($located['disk'])->get($located['path']);
+        } catch (\Throwable) {
+            return null;
+        }
+
+        if ($contents === null || $contents === false) {
+            return null;
+        }
+
+        $tmp = tempnam(sys_get_temp_dir(), 'meja_');
+        if ($tmp === false) {
+            return null;
+        }
+
+        file_put_contents($tmp, $contents);
+
+        return $tmp;
     }
 
     /**
