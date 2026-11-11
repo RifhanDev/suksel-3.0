@@ -7,7 +7,6 @@ use App\Models\SpesifikasiKerjaHeader;
 use App\Models\SpesifikasiKerjaItem;
 use App\Models\Tender;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class SpesifikasiTenderKerjaController extends Controller
@@ -69,7 +68,7 @@ class SpesifikasiTenderKerjaController extends Controller
             abort_if($header->status === 'submitted', 422, 'Templat yang telah dihantar tidak boleh diubah.');
             $template = $header->files()->whereNull('spesifikasi_kerja_item_id')
                 ->whereIn('file_type', ['bq_template', 'bq'])->latest('id')->first();
-            if (! $template || ! \App\Support\SukselStoredFile::exists((string) $template->path)) {
+            if (! $template || ! \App\Support\AttachmentStorage::exists((string) $template->path)) {
                 throw \Illuminate\Validation\ValidationException::withMessages([
                     'file' => 'Templat BQ tidak dijumpai pada storan SUKSel. Sila muat naik dokumen sebelum meneruskan.',
                 ]);
@@ -173,7 +172,7 @@ class SpesifikasiTenderKerjaController extends Controller
             'uploaded_by' => auth()->id(),
             ]);
         } catch (\Throwable $e) {
-            Storage::disk('public')->delete($path);
+            \App\Support\AttachmentStorage::delete((string) $path);
             throw $e;
         }
 
@@ -184,8 +183,8 @@ class SpesifikasiTenderKerjaController extends Controller
                 ->where('id', '!=', $file->id)
                 ->get();
             foreach ($previousTemplates as $previous) {
-                if ($previous->path && Storage::disk('public')->exists($previous->path)) {
-                    Storage::disk('public')->delete($previous->path);
+                if ($previous->path) {
+                    \App\Support\AttachmentStorage::delete((string) $previous->path);
                 }
                 $previous->delete();
             }

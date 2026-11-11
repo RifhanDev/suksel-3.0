@@ -52,9 +52,14 @@ class TenderVendorDokumenFile extends Model
         }
 
         if ($this->section === 'spesifikasi_kerja') {
-            return \App\Support\SukselStoredFile::exists($path)
-                ? Storage::disk('public')->path($path)
-                : null;
+            if (! \App\Support\AttachmentStorage::exists($path)) {
+                return null;
+            }
+            if (! \App\Support\AttachmentStorage::isRemote()) {
+                return Storage::disk('public')->path($path);
+            }
+
+            return null;
         }
         $resolved = StosStoredFile::resolveLocalFilePath($path);
         if ($resolved && is_file($resolved)) {

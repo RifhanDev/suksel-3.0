@@ -244,7 +244,22 @@ class Upload extends Model
 		
 		self::deleting(function ($data)
 		{
-			File::deleteDirectory($data->path);
+			$relative = \App\Support\AttachmentStorage::relativeForUpload(
+				(string) ($data->path ?? ''),
+				(string) ($data->name ?? '')
+			);
+			if ($relative !== '') {
+				\App\Support\AttachmentStorage::delete($relative);
+			}
+
+			$dir = rtrim((string) ($data->path ?? ''), '/');
+			if ($dir !== '' && ! str_starts_with($dir, '/') && ! preg_match('/^[A-Za-z]:/', $dir)) {
+				$dir = public_path($dir);
+			}
+			if ($dir !== '' && is_dir($dir)) {
+				File::deleteDirectory($dir);
+			}
+
 			return true;
 		});
 	}
