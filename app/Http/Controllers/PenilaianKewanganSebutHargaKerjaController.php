@@ -57,26 +57,50 @@ class PenilaianKewanganSebutHargaKerjaController extends Controller
     }
 
     /**
-     * Vendors who legitimately qualified from Penilaian Teknikal and preceding processes.
-     * Excludes vendors eliminated at status_process_id = 8 (Pembuka) or 10 (Teknikal),
-     * and filters by submitted Cut Off selection if applicable.
+     * Vendors selected at the submitted Cut Off stage who passed Penilaian Teknikal.
+     * TenderVendor::kod_pembekal remains the designated tender-specific vendor code.
      */
-    protected function loadEligibleParticipants(?Tender $tender): Collection
+    protected function loadEligibleParticipants(?Tender $tender, ?bool $includeFinanciallyEliminated = null): Collection
     {
         if (! $tender) {
             return collect();
         }
 
+        $includeFinanciallyEliminated ??= (int) ($tender->status_process_id ?? 0)
+            > TenderProcessStatus::penilaianKewanganListStatus();
+
+        $cutOffRefs = TenderVendor::submittedCutOffVendorRefs($tender->id);
+        if ($cutOffRefs === []) {
+            return collect();
+        }
+
+        $numericRefs = array_values(array_filter($cutOffRefs, fn ($ref) => ctype_digit($ref)));
         $query = $tender->participants()
             ->with(['vendor.cidbGrades.code', 'vendor.cidbGrades.children.code'])
-            ->where('cancel_fg', 0)
-            ->where(function ($q) {
-                $q->whereNull('eliminated_process_id')
-                  ->orWhereNotIn('eliminated_process_id', [
-                      TenderProcessStatus::PENILAIAN_PEMBUKA,
-                      TenderProcessStatus::PENILAIAN_TEKNIKAL,
-                  ]);
+            ->where('participate', 1)
+            ->where('submitted', 1)
+            ->where(function ($q) use ($cutOffRefs, $numericRefs) {
+                $q->whereIn('kod_pembekal', $cutOffRefs);
+
+                if ($numericRefs !== []) {
+                    $q->orWhereIn('vendor_id', array_map('intval', $numericRefs));
+                }
+
+                $q->orWhereHas('vendor', fn ($vendor) => $vendor->whereIn('registration', $cutOffRefs));
             });
+
+        if ($includeFinanciallyEliminated) {
+            // Keep vendors eliminated during/after financial evaluation in the history view.
+            $query->where(function ($q) {
+                $q->whereNull('eliminated_process_id')
+                    ->orWhere('eliminated_process_id', '>', TenderProcessStatus::PENILAIAN_TEKNIKAL);
+            })->where(function ($q) {
+                $q->where('cancel_fg', 0)
+                    ->orWhere('eliminated_process_id', '>', TenderProcessStatus::PENILAIAN_TEKNIKAL);
+            });
+        } else {
+            $query->where('cancel_fg', 0)->whereNull('eliminated_process_id');
+        }
 
         $participants = $query->orderBy('id')->get();
 
@@ -240,6 +264,14 @@ class PenilaianKewanganSebutHargaKerjaController extends Controller
             return redirect()->route('penilaianKewangan.show', $tender->uuid ?: $tender->id);
         }
 
+        $currentStatus = (int) ($tender->status_process_id ?? 0);
+        if ($currentStatus < TenderProcessStatus::penilaianKewanganListStatus() || $currentStatus > TenderProcessStatus::SELESAI) {
+            return redirect()->route('penilaianKewangan')
+                ->with('error', 'Rekod Penilaian Kewangan Sebut Harga Kerja hanya boleh dilihat dari status 10 hingga tender selesai.');
+        }
+
+        $readOnly = $currentStatus > TenderProcessStatus::penilaianKewanganListStatus();
+
         // 1. Tender Display Metadata
         $no_tender_display = $tender->no_tender ?: $tender->ref_number ?: (string) $tender->id;
         $tajuk_display = $tender->name ?? '-';
@@ -247,9 +279,7 @@ class PenilaianKewanganSebutHargaKerjaController extends Controller
         $tempoh_sah_laku = 90;
         $submissionDate = $tender->submission_datetime ? Carbon::parse($tender->submission_datetime) : null;
         $sah_laku_tamat = $submissionDate ? $submissionDate->copy()->addDays($tempoh_sah_laku)->format('d/m/Y') : '-';
-        $status_label = ((int) $tender->status_process_id === TenderProcessStatus::penilaianKewanganListStatus())
-            ? 'Menunggu Penilaian Kewangan & Kerja'
-            : TenderProcessStatus::label($tender->status_process_id);
+        $status_label = $readOnly ? 'Selesai Penilaian' : 'Menunggu Penilaian Kewangan & Kerja';
 
         $anggaranVal = (float) ($tender->anggaran_jabatan ?? $tender->harga_indikatif ?? $tender->price ?? 500000);
         $anggaran_display = 'RM ' . number_format($anggaranVal, 2);
@@ -260,7 +290,7 @@ class PenilaianKewanganSebutHargaKerjaController extends Controller
         $min_modal_display = 'RM ' . number_format($minCapitalRequired, 2);
 
         // 2. Workflow Progress State
-        $progress = TenderKewanganProgress::query()->firstOrCreate(
+        $progress = TenderKewanganProgress::query()->firstOrNew(
             ['tender_id' => $tender->id],
             ['current_step' => 1]
         );
@@ -461,14 +491,11 @@ class PenilaianKewanganSebutHargaKerjaController extends Controller
 
         // Construct unified vendor array
         $vendors = [];
-        $totalVendors = $participants->count();
-
         foreach ($participants as $idx => $p) {
             $vId = $p->vendor_id;
             $vendor = $p->vendor;
 
-            $kod = $p->kod_pembekal ?: ('V' . ($idx + 1));
-            $kodDisplay = $p->kod_pembekal ?: (($idx + 1) . '/' . $totalVendors);
+            $kod = $p->kod_pembekal ?: '-';
             $vendorName = $vendor->name ?? $vendor->company_name ?? ('Petender ' . $kod);
             $ssm = $vendor->registration_number ?? $vendor->ssm_number ?? $vendor->ssm ?? '-';
 
@@ -921,6 +948,7 @@ class PenilaianKewanganSebutHargaKerjaController extends Controller
                 'dokumens'           => $s->dokumens->map(fn ($d) => [
                     'original_name' => $d->original_name,
                     'file_url'      => $d->url,
+                    'mime_type'     => $d->mime_type,
                 ])->toArray(),
             ])->toArray();
 
@@ -944,6 +972,7 @@ class PenilaianKewanganSebutHargaKerjaController extends Controller
             $genDocsRaw = $genDocsCollection->map(fn ($d) => [
                 'original_name' => $d->original_name,
                 'file_url'      => $d->url,
+                'mime_type'     => $d->mime_type,
             ])->toArray();
 
             $kakitanganMetrics = $this->calculator->summarizeKakitanganTeknikal($staffRaw);
@@ -961,7 +990,7 @@ class PenilaianKewanganSebutHargaKerjaController extends Controller
                 'id'              => $vId,
                 'bil'             => $idx + 1,
                 'rank'            => $idx + 1,
-                'kod'             => $kodDisplay,
+                'kod'             => $kod,
                 'kod_pembekal'    => $kod,
                 'name'            => $vendorName,
                 'ssm'             => $ssm,
@@ -1009,6 +1038,7 @@ class PenilaianKewanganSebutHargaKerjaController extends Controller
 
         // Unified payload for Blade hydration
         $type2Data = [
+            'readOnly' => $readOnly,
             'tender' => [
                 'id'                => $tender->id,
                 'uuid'              => $tender->uuid,
@@ -1063,6 +1093,18 @@ class PenilaianKewanganSebutHargaKerjaController extends Controller
         ));
     }
 
+    private function ensureFinancialEvaluationEditable(Tender $tender): ?JsonResponse
+    {
+        if ((int) ($tender->status_process_id ?? 0) === TenderProcessStatus::penilaianKewanganListStatus()) {
+            return null;
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Penilaian Kewangan telah selesai. Rekod ini hanya boleh dilihat dan tidak boleh dikemaskini.',
+        ], 422);
+    }
+
     /**
      * Save Step 1 checklist evaluations for one or all vendors.
      */
@@ -1079,6 +1121,15 @@ class PenilaianKewanganSebutHargaKerjaController extends Controller
 
         $tender = Tender::query()->findOrFail($request->input('tender_id'));
         $this->assertCommitteeAppointment($tender, $this->financialCommitteeJenis);
+        if ($locked = $this->ensureFinancialEvaluationEditable($tender)) return $locked;
+
+        $progress = TenderKewanganProgress::query()->where('tender_id', $tender->id)->first();
+        if ($progress?->isStep1Confirmed()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Langkah 1 telah disahkan dan dikunci. Penilaian dokumen tidak boleh diubah lagi.',
+            ], 422);
+        }
 
         $docId = $request->input('doc_id');
         $userId = Auth::id();
@@ -1139,6 +1190,7 @@ class PenilaianKewanganSebutHargaKerjaController extends Controller
 
         $tender = Tender::query()->findOrFail($request->input('tender_id'));
         $this->assertCommitteeAppointment($tender, $this->financialCommitteeJenis);
+        if ($locked = $this->ensureFinancialEvaluationEditable($tender)) return $locked;
 
         if ($request->boolean('confirmed')) {
             $participants = $this->loadEligibleParticipants($tender);
@@ -1157,6 +1209,13 @@ class PenilaianKewanganSebutHargaKerjaController extends Controller
         );
 
         $confirmed = $request->boolean('confirmed');
+        if (! $confirmed && $progress->isStep1Confirmed()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Langkah 1 telah disahkan dan dikunci.',
+            ], 422);
+        }
+
         if ($confirmed) {
             $progress->step1_confirmed_at = now();
             $progress->step1_confirmed_by = Auth::id();
@@ -1193,6 +1252,7 @@ class PenilaianKewanganSebutHargaKerjaController extends Controller
 
         $tender = Tender::query()->findOrFail($request->input('tender_id'));
         $this->assertCommitteeAppointment($tender, $this->financialCommitteeJenis);
+        if ($locked = $this->ensureFinancialEvaluationEditable($tender)) return $locked;
 
         $vendorId = (int) $request->input('vendor_id');
         $isDisqualified = TenderVendor::query()
@@ -1211,6 +1271,31 @@ class PenilaianKewanganSebutHargaKerjaController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Petender ini tidak layak untuk dinilai dalam Penilaian Kewangan kerana telah disingkirkan pada peringkat terdahulu.',
+            ], 422);
+        }
+
+        $progress = TenderKewanganProgress::query()->where('tender_id', $tender->id)->first();
+        if (! $progress || ! $progress->isStep1Confirmed()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Sila sahkan Langkah 1 sebelum menyimpan penilaian kemampuan kewangan.',
+            ], 422);
+        }
+
+        $participants = $this->loadEligibleParticipants($tender);
+        $checklistIds = $this->requiredStep1ChecklistIds($tender);
+        $step1PassedVendorIds = $this->step1PassedVendorIds($tender, $participants, $checklistIds);
+        if (! in_array($vendorId, $step1PassedVendorIds, true)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Petender ini tidak melepasi Langkah 1 dan tidak boleh dinilai dalam kemampuan kewangan.',
+            ], 422);
+        }
+
+        if ($progress?->isStep2Confirmed()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Langkah 2 telah disahkan dan dikunci. Penilaian kemampuan kewangan tidak boleh diubah lagi.',
             ], 422);
         }
 
@@ -1249,6 +1334,7 @@ class PenilaianKewanganSebutHargaKerjaController extends Controller
 
         $tender = Tender::query()->findOrFail($request->input('tender_id'));
         $this->assertCommitteeAppointment($tender, $this->financialCommitteeJenis);
+        if ($locked = $this->ensureFinancialEvaluationEditable($tender)) return $locked;
 
         $progress = TenderKewanganProgress::query()->firstOrCreate(
             ['tender_id' => $tender->id],
@@ -1259,6 +1345,13 @@ class PenilaianKewanganSebutHargaKerjaController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Sila sahkan Langkah 1 terlebih dahulu.',
+            ], 422);
+        }
+
+        if (! $request->boolean('confirmed') && $progress->isStep2Confirmed()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Langkah 2 telah disahkan dan dikunci.',
             ], 422);
         }
 
@@ -1316,6 +1409,7 @@ class PenilaianKewanganSebutHargaKerjaController extends Controller
 
         $tender = Tender::query()->findOrFail($request->input('tender_id'));
         $this->assertCommitteeAppointment($tender, $this->financialCommitteeJenis);
+        if ($locked = $this->ensureFinancialEvaluationEditable($tender)) return $locked;
 
         $vendorId = (int) $request->input('vendor_id');
         $isDisqualified = TenderVendor::query()
@@ -1334,6 +1428,32 @@ class PenilaianKewanganSebutHargaKerjaController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Petender ini tidak layak untuk dinilai dalam Penilaian Kewangan kerana telah disingkirkan pada peringkat terdahulu.',
+            ], 422);
+        }
+
+        $progress = TenderKewanganProgress::query()->where('tender_id', $tender->id)->first();
+        if (! $progress || ! $progress->isStep2Confirmed()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Sila sahkan Langkah 2 sebelum menyimpan penilaian kerja.',
+            ], 422);
+        }
+
+        $participants = $this->loadEligibleParticipants($tender);
+        $checklistIds = $this->requiredStep1ChecklistIds($tender);
+        $step1PassedVendorIds = $this->step1PassedVendorIds($tender, $participants, $checklistIds);
+        $step2PassedVendorIds = $this->stepPassedVendorIds($tender, $step1PassedVendorIds, 'sh_kemampuan_kewangan');
+        if (! in_array($vendorId, $step2PassedVendorIds, true)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Petender ini tidak melepasi Langkah 2 dan tidak boleh dinilai dalam penilaian kerja.',
+            ], 422);
+        }
+
+        if ($progress?->isStep3Confirmed()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Langkah 3 telah disahkan dan dikunci. Penilaian kerja tidak boleh diubah lagi.',
             ], 422);
         }
 
@@ -1372,6 +1492,7 @@ class PenilaianKewanganSebutHargaKerjaController extends Controller
 
         $tender = Tender::query()->findOrFail($request->input('tender_id'));
         $this->assertCommitteeAppointment($tender, $this->financialCommitteeJenis);
+        if ($locked = $this->ensureFinancialEvaluationEditable($tender)) return $locked;
 
         $progress = TenderKewanganProgress::query()->firstOrCreate(
             ['tender_id' => $tender->id],
@@ -1382,6 +1503,13 @@ class PenilaianKewanganSebutHargaKerjaController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Sila sahkan Langkah 2 terlebih dahulu.',
+            ], 422);
+        }
+
+        if (! $request->boolean('confirmed') && $progress->isStep3Confirmed()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Langkah 3 telah disahkan dan dikunci.',
             ], 422);
         }
 
@@ -1445,6 +1573,7 @@ class PenilaianKewanganSebutHargaKerjaController extends Controller
 
         $tender = Tender::query()->findOrFail($request->input('tender_id'));
         $this->assertCommitteeAppointment($tender, $this->financialCommitteeJenis);
+        if ($locked = $this->ensureFinancialEvaluationEditable($tender)) return $locked;
 
         $userId = Auth::id();
 

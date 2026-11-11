@@ -87,7 +87,7 @@ class PenilaianKewanganKerjaController extends Controller
             }
         }
 
-        $progress = TenderKewanganProgress::query()->firstOrCreate(
+        $progress = TenderKewanganProgress::query()->firstOrNew(
             ['tender_id' => $tender->id],
             ['current_step' => 1]
         );
@@ -162,7 +162,7 @@ class PenilaianKewanganKerjaController extends Controller
             ? $tender->getKerjaClassification()
             : 'kerja_besar';
 
-        $progress = TenderKewanganProgress::query()->firstOrCreate(
+        $progress = TenderKewanganProgress::query()->firstOrNew(
             ['tender_id' => $tender->id],
             ['current_step' => 1]
         );
@@ -4135,6 +4135,10 @@ class PenilaianKewanganKerjaController extends Controller
             return response()->json(['message' => 'Tender tidak ditemui.'], 404);
         }
 
+        if ((int) ($tender->status_process_id ?? 0) !== TenderProcessStatus::penilaianKewanganListStatus()) {
+            return response()->json(['success' => false, 'message' => 'Penilaian ini telah dikunci atau selesai.'], 422);
+        }
+
         $peringkat = (int) $request->input('peringkat', 1);
 
         $progress = TenderKewanganProgress::query()->firstOrCreate(
@@ -4786,6 +4790,10 @@ class PenilaianKewanganKerjaController extends Controller
 
             if (! $tender) {
                 return response()->json(['success' => false, 'message' => 'Tender tidak ditemui.'], 404);
+            }
+
+            if ((int) ($tender->status_process_id ?? 0) !== TenderProcessStatus::penilaianKewanganListStatus()) {
+                return response()->json(['success' => false, 'message' => 'Penilaian ini telah dikunci atau selesai.'], 422);
             }
 
             $validated = $request->validate([

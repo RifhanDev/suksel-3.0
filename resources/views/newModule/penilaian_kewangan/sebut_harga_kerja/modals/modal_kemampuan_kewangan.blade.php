@@ -170,14 +170,14 @@
                             </div>
                             <div class="col-6 col-md-3">
                                 <div class="mk-metric-card p-3 rounded-3 border bg-light">
-                                    <div class="text-muted extra-small text-uppercase fw-bold">Aset Cair (G + H)</div>
+                                    <div class="text-muted extra-small text-uppercase fw-bold">Aset Cair</div>
                                     <div class="fs-6 fw-bold text-dark font-monospace" id="mkWangTangan">RM 0.00</div>
                                     <div class="extra-small text-muted">Tunai dalam tangan + bon / saham</div>
                                 </div>
                             </div>
                             <div class="col-6 col-md-3">
                                 <div class="mk-metric-card p-3 rounded-3 border bg-danger-subtle border-danger-subtle">
-                                    <div class="text-danger extra-small text-uppercase fw-bold">Mudah Cair Boleh Guna (M)</div>
+                                    <div class="text-danger extra-small text-uppercase fw-bold">Mudah Cair Boleh Guna</div>
                                     <div class="fs-6 fw-bold text-danger font-monospace" id="mkJumlahModal">RM 0.00</div>
                                     <div class="extra-small text-success fw-semibold" id="mkStatusKecukupan">
                                         <i class="bi bi-check-circle-fill me-1"></i>Mencukupi Had Minimum
@@ -198,42 +198,42 @@
                                 </thead>
                                 <tbody>
                                     <tr>
-                                        <td class="fw-medium">Aset Semasa (b) - Liabiliti Semasa (c)</td>
+                                        <td class="fw-medium">Aset Semasa - Liabiliti Semasa</td>
                                         <td class="text-end font-monospace" id="mkRowModalPusingan">RM 0.00</td>
                                         <td class="text-center text-muted">Lembaran Imbangan</td>
                                     </tr>
                                     <tr>
-                                        <td class="fw-medium">Purata Baki 3 Bulan Penyata Bank (f)</td>
+                                        <td class="fw-medium">Purata Baki 3 Bulan Penyata Bank</td>
                                         <td class="text-end font-monospace" id="mkRowPurataBank">RM 0.00</td>
                                         <td class="text-center text-muted">Penyata Akaun Bank</td>
                                     </tr>
                                     <tr>
-                                        <td class="fw-medium">Wang Dalam Tangan (g)</td>
+                                        <td class="fw-medium">Wang Dalam Tangan</td>
                                         <td class="text-end font-monospace" id="mkRowWangTangan">RM 0.00</td>
                                         <td class="text-center text-muted">Lembaran Imbangan</td>
                                     </tr>
                                     <tr>
-                                        <td class="fw-medium">Bon / Deposit Tetap / Saham (h)</td>
+                                        <td class="fw-medium">Bon / Deposit Tetap / Saham</td>
                                         <td class="text-end font-monospace" id="mkRowBonSaham">RM 0.00</td>
                                         <td class="text-center text-muted">Borang CA 2 / Sijil Saham</td>
                                     </tr>
                                     <tr>
-                                        <td class="fw-medium">Aset Cair (i) = (g) + (h)</td>
+                                        <td class="fw-medium">Aset Cair</td>
                                         <td class="text-end font-monospace fw-semibold" id="mkRowAsetCair">RM 0.00</td>
-                                        <td class="text-center text-muted">Jumlah g + h</td>
+                                        <td class="text-center text-muted">Jumlah</td>
                                     </tr>
                                     <tr>
-                                        <td class="fw-medium">Kemudahan Kredit Diluluskan (j)</td>
+                                        <td class="fw-medium">Kemudahan Kredit Diluluskan</td>
                                         <td class="text-end font-monospace" id="mkRowKredit">RM 0.00</td>
                                         <td class="text-center text-muted">Surat Bank / Borang CA 1</td>
                                     </tr>
                                     <tr class="table-light fw-bold">
-                                        <td>JUMLAH MODAL TERKUMPUL (k) = (f) + (i) + (j)</td>
+                                        <td>JUMLAH MODAL TERKUMPUL</td>
                                         <td class="text-end text-danger font-monospace" id="mkRowJumlahTerkumpul">RM 0.00</td>
                                         <td class="text-center text-muted">Purata bank + aset cair + kredit</td>
                                     </tr>
                                     <tr class="fw-semibold">
-                                        <td>Mudah Cair Boleh Guna (m) = (k) - Modal Minimum</td>
+                                        <td>Mudah Cair Boleh Guna</td>
                                         <td class="text-end font-monospace" id="mkRowMudahCair">RM 0.00</td>
                                         <td class="text-center" id="mkRowStatusMinimum">-</td>
                                     </tr>

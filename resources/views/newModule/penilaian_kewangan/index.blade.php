@@ -170,6 +170,12 @@
         gap: 0.375rem;
     }
 
+    .status-pill-complete {
+        background: #ecfdf5;
+        color: #047857;
+        border-color: #a7f3d0;
+    }
+
     .status-pill-process .pulse-dot {
         width: 6px;
         height: 6px;
@@ -177,6 +183,12 @@
         border-radius: 50%;
         box-shadow: 0 0 0 0 rgba(217, 119, 6, 0.4);
         animation: pulse-ring 1.8s infinite;
+    }
+
+    .status-pill-complete .pulse-dot {
+        background-color: #10b981;
+        box-shadow: none;
+        animation: none;
     }
 
     @keyframes pulse-ring {
@@ -294,7 +306,7 @@
                 <select name="status" class="form-select form-select-modern" id="searchStatus">
                     <option value="">Semua Status</option>
                     <option value="Dalam Proses" {{ request('status') == 'Dalam Proses' ? 'selected' : '' }}>Dalam Proses</option>
-                    <option value="Selesai" {{ request('status') == 'Selesai' ? 'selected' : '' }}>Selesai</option>
+                    <option value="Selesai Penilaian" {{ request('status') == 'Selesai Penilaian' ? 'selected' : '' }}>Selesai Penilaian</option>
                 </select>
             </div>
 
@@ -376,7 +388,7 @@
                             </span>
                         </td>
                         <td class="text-center">
-                            <span class="status-pill-process">
+                            <span class="status-pill-process {{ !empty($item['read_only']) ? 'status-pill-complete' : '' }}">
                                 <span class="pulse-dot"></span>
                                 {{ $item['status_label'] ?? 'Dalam Proses' }}
                             </span>
@@ -384,7 +396,7 @@
                         <td class="text-center">
                             @if($hasShowUrl)
                                 <a href="{{ $item['show_url'] }}" class="action-btn-kewangan" onclick="event.stopPropagation();">
-                                    <span>Nilai</span>
+                                    <span>{{ $item['action_label'] ?? 'Nilai' }}</span>
                                     <i class="bi bi-chevron-right small"></i>
                                 </a>
                             @elseif($workflow === 'sebut_harga_kerja')
@@ -406,7 +418,7 @@
                                     <i class="bi bi-inbox fs-1 text-muted"></i>
                                 </div>
                                 <h6 class="fw-bold text-secondary mb-1">Tiada Tender Dijumpai</h6>
-                                <p class="text-muted small mb-3">Tiada rekod tender dengan status penilaian kewangan (<code>status_process_id = 10</code>) pada masa ini.</p>
+                                <p class="text-muted small mb-3">Tiada rekod tender dengan status penilaian kewangan hingga tender selesai (status 10 hingga 16) pada masa ini.</p>
                                 @if (request()->hasAny(['no_tender', 'tajuk', 'status', 'tarikh']))
                                     <a href="{{ route('penilaianKewangan') }}" class="btn btn-sm btn-outline-danger">
                                         <i class="bi bi-arrow-counterclockwise me-1"></i>Set Semula Carian
