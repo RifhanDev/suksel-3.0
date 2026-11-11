@@ -32,7 +32,7 @@
             </div>
 
             {{-- Info Alert --}}
-            <div class="rounded-3 px-3 py-2.5 d-inline-flex align-items-center gap-2 mb-3 w-100" style="background:#eff6ff; border:1px solid #bfdbfe; font-size:0.825rem; color:#1e40af;">
+            <div class="rounded-3 p-3 d-inline-flex align-items-center gap-2 mb-3 w-100" style="background:#eff6ff; border:1px solid #bfdbfe; font-size:0.825rem; line-height:1.5; color:#1e40af;">
                 <i class="bi bi-info-circle-fill text-primary fs-5 flex-shrink-0"></i>
                 <div>
                     <span class="fw-bold">Panduan Penilai:</span>
