@@ -13,7 +13,8 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('refunds', function (Blueprint $table) {
+                if (! Schema::hasTable('refunds')) {
+Schema::create('refunds', function (Blueprint $table) {
             $table->id();
             $table->integer('transaction_id')->nullable();
             $table->string('number')->nullable();
@@ -33,6 +34,7 @@ return new class extends Migration
             $table->integer('user_id')->nullable();
             $table->timestamps();
         });
+        }
     }
 
     /**

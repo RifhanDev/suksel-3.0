@@ -8,7 +8,8 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('tender_ssts', function (Blueprint $table) {
+                if (! Schema::hasTable('tender_ssts')) {
+Schema::create('tender_ssts', function (Blueprint $table) {
             $table->id();
             $table->uuid('uuid')->unique();
             $table->unsignedInteger('tender_id');
@@ -51,6 +52,7 @@ return new class extends Migration
             $table->foreign('tender_id', 'tender_ssts_tender_fk')
                 ->references('id')->on('tenders')->cascadeOnDelete();
         });
+        }
     }
 
     public function down(): void

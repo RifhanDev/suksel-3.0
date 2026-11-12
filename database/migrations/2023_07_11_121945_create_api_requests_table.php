@@ -13,7 +13,8 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('api_requests', function (Blueprint $table) {
+                if (! Schema::hasTable('api_requests')) {
+Schema::create('api_requests', function (Blueprint $table) {
             $table->id();
             $table->integer('organization_unit_id')->nullable();
             $table->string('token')->nullable();
@@ -21,6 +22,7 @@ return new class extends Migration
             $table->text('parameter')->nullable();
             $table->timestamps();
         });
+        }
     }
 
     /**

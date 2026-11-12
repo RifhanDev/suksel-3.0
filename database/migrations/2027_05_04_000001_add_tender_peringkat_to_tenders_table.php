@@ -13,9 +13,13 @@ class AddTenderPeringkatToTendersTable extends Migration
      */
     public function up()
     {
-        Schema::table('tenders', function (Blueprint $table) {
+                if (Schema::hasTable('tenders')) {
+Schema::table('tenders', function (Blueprint $table) {
+            if (! Schema::hasColumn('tenders', 'tender_peringkat')) {
             $table->unsignedTinyInteger('tender_peringkat')->nullable()->after('id');
+            }
         });
+        }
     }
 
     /**

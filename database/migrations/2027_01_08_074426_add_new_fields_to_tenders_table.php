@@ -13,41 +13,84 @@ class AddNewFieldsToTendersTable extends Migration
      */
     public function up()
     {
-        Schema::table('tenders', function (Blueprint $table) 
+                if (Schema::hasTable('tenders')) {
+Schema::table('tenders', function (Blueprint $table) 
         {
+            if (! Schema::hasColumn('tenders', 'kaedah_perolehan_id')) {
             $table->unsignedBigInteger('kaedah_perolehan_id')->nullable()->after('type');
+            }
+            if (! Schema::hasColumn('tenders', 'kategori_perolehan_id')) {
             $table->unsignedBigInteger('kategori_perolehan_id')->nullable()->after('kaedah_perolehan_id');
+            }
+            if (! Schema::hasColumn('tenders', 'kategori_perolehan_detail_id')) {
             $table->unsignedBigInteger('kategori_perolehan_detail_id')->nullable()->after('kategori_perolehan_id');
+            }
+            if (! Schema::hasColumn('tenders', 'jenis_tender_id')) {
             $table->unsignedBigInteger('jenis_tender_id')->nullable()->after('kategori_perolehan_detail_id');
+            }
+            if (! Schema::hasColumn('tenders', 'jenis_kontrak_id')) {
             $table->unsignedBigInteger('jenis_kontrak_id')->nullable()->after('jenis_tender_id');
+            }
+            if (! Schema::hasColumn('tenders', 'lokaliti_id')) {
             $table->unsignedBigInteger('lokaliti_id')->nullable()->after('jenis_kontrak_id');
+            }
 
             // Text fields
+            if (! Schema::hasColumn('tenders', 'no_tender')) {
             $table->string('no_tender')->nullable()->after('ref_number');
+            }
+            if (! Schema::hasColumn('tenders', 'no_kontrak')) {
             $table->string('no_kontrak')->nullable()->after('no_tender');
+            }
+            if (! Schema::hasColumn('tenders', 'sumber_lain_text')) {
             $table->text('sumber_lain_text')->nullable()->after('tender_rules');
+            }
 
             // Decimal fields for pricing
+            if (! Schema::hasColumn('tenders', 'harga_indikatif')) {
             $table->decimal('harga_indikatif', 15, 2)->nullable()->after('price');
+            }
+            if (! Schema::hasColumn('tenders', 'anggaran_jabatan')) {
             $table->decimal('anggaran_jabatan', 15, 2)->nullable()->after('harga_indikatif');
+            }
 
             // Date field
+            if (! Schema::hasColumn('tenders', 'tarikh_dicipta')) {
             $table->date('tarikh_dicipta')->nullable()->after('submission_datetime');
+            }
 
             // Enum and string fields
+            if (! Schema::hasColumn('tenders', 'sumber_peruntukan')) {
             $table->enum('sumber_peruntukan', ['pembangunan', 'mengurus', 'lain'])->nullable()->after('type');
+            }
+            if (! Schema::hasColumn('tenders', 'terbuka_kepada')) {
             $table->enum('terbuka_kepada', ['bumiputera', 'semua'])->default('semua')->after('only_bumiputera');
+            }
 
             // Integer fields for periods
+            if (! Schema::hasColumn('tenders', 'tempoh_siap_val')) {
             $table->integer('tempoh_siap_val')->nullable()->after('sumber_lain_text');
+            }
+            if (! Schema::hasColumn('tenders', 'tempoh_siap_unit')) {
             $table->string('tempoh_siap_unit')->nullable()->after('tempoh_siap_val');
+            }
+            if (! Schema::hasColumn('tenders', 'tempoh_kontrak_bulan')) {
             $table->integer('tempoh_kontrak_bulan')->nullable()->after('tempoh_siap_unit');
+            }
 
             // Boolean fields
+            if (! Schema::hasColumn('tenders', 'zon_lokasi')) {
             $table->boolean('zon_lokasi')->default(false)->after('district_list_rule');
+            }
+            if (! Schema::hasColumn('tenders', 'jawatankuasa')) {
             $table->boolean('jawatankuasa')->default(false)->after('zon_lokasi');
+            }
+            if (! Schema::hasColumn('tenders', 'lawatan_tapak')) {
             $table->boolean('lawatan_tapak')->default(false)->after('jawatankuasa');
+            }
+            if (! Schema::hasColumn('tenders', 'penilaian_fizikal')) {
             $table->boolean('penilaian_fizikal')->default(false)->after('lawatan_tapak');
+            }
 
             // Add foreign key constraints
             $table->foreign('kaedah_perolehan_id')->references('id')->on('ref_kaedah_perolehans')->onDelete('set null')->onUpdate('cascade');
@@ -57,6 +100,7 @@ class AddNewFieldsToTendersTable extends Migration
             $table->foreign('jenis_kontrak_id')->references('id')->on('ref_type_of_contracts')->onDelete('set null')->onUpdate('cascade');
             $table->foreign('lokaliti_id')->references('id')->on('ref_lokalitis')->onDelete('set null')->onUpdate('cascade');
         });
+        }
     }
 
     /**

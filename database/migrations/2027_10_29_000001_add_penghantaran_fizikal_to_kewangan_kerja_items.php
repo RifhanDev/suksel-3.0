@@ -10,9 +10,13 @@ return new class extends Migration
     {
         // Both applications may use the same database.
         if (! Schema::hasColumn('kewangan_kerja_items', 'penghantaran_fizikal')) {
-            Schema::table('kewangan_kerja_items', function (Blueprint $table) {
+                        if (Schema::hasTable('kewangan_kerja_items')) {
+Schema::table('kewangan_kerja_items', function (Blueprint $table) {
+                if (! Schema::hasColumn('kewangan_kerja_items', 'penghantaran_fizikal')) {
                 $table->boolean('penghantaran_fizikal')->default(false);
+                }
             });
+            }
         }
     }
 

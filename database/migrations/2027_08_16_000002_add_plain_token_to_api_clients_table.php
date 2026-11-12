@@ -14,7 +14,9 @@ return new class extends Migration
 
         if (! Schema::hasColumn('api_clients', 'plain_token')) {
             Schema::table('api_clients', function (Blueprint $table) {
+                if (! Schema::hasColumn('api_clients', 'plain_token')) {
                 $table->text('plain_token')->nullable()->after('status');
+                }
             });
         }
     }

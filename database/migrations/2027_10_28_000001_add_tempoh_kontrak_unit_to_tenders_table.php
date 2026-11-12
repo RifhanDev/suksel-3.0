@@ -14,7 +14,9 @@ return new class extends Migration
 
         if (! Schema::hasColumn('tenders', 'tempoh_kontrak_unit')) {
             Schema::table('tenders', function (Blueprint $table) {
+                if (! Schema::hasColumn('tenders', 'tempoh_kontrak_unit')) {
                 $table->string('tempoh_kontrak_unit', 20)->nullable()->after('tempoh_kontrak_bulan');
+                }
             });
         }
     }

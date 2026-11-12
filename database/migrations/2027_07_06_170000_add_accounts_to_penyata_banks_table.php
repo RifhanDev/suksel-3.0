@@ -8,9 +8,13 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('penyata_banks', function (Blueprint $table) {
+                if (Schema::hasTable('penyata_banks')) {
+Schema::table('penyata_banks', function (Blueprint $table) {
+            if (! Schema::hasColumn('penyata_banks', 'accounts')) {
             $table->json('accounts')->nullable()->after('jenis_skor_purata');
+            }
         });
+        }
     }
 
     public function down(): void

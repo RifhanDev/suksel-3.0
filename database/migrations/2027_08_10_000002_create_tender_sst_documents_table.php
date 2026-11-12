@@ -10,7 +10,8 @@ return new class extends Migration
     {
         // Only the extra documents a user uploads. The five system documents
         // (SST, Lampiran B/C, etc.) are generated on demand, so none are stored here.
-        Schema::create('tender_sst_documents', function (Blueprint $table) {
+                if (! Schema::hasTable('tender_sst_documents')) {
+Schema::create('tender_sst_documents', function (Blueprint $table) {
             $table->id();
             $table->uuid('uuid')->unique();
             $table->unsignedBigInteger('tender_sst_id');
@@ -29,6 +30,7 @@ return new class extends Migration
             $table->foreign('tender_sst_id', 'tender_sst_documents_sst_fk')
                 ->references('id')->on('tender_ssts')->cascadeOnDelete();
         });
+        }
     }
 
     public function down(): void

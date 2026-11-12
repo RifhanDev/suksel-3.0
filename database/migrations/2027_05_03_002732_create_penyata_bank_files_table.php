@@ -8,7 +8,8 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('penyata_bank_files', function (Blueprint $table) {
+                if (! Schema::hasTable('penyata_bank_files')) {
+Schema::create('penyata_bank_files', function (Blueprint $table) {
             $table->id();
             $table->uuid('uuid')->unique();
             $table->foreignId('penyata_bank_id')->index()->constrained('penyata_banks')->cascadeOnDelete();
@@ -22,6 +23,7 @@ return new class extends Migration
             $table->foreign('uploaded_by')->references('id')->on('users')->nullOnDelete();
             $table->timestamps();
         });
+        }
     }
 
     public function down(): void

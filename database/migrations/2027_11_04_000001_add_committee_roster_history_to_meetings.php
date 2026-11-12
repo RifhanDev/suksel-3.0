@@ -12,7 +12,9 @@ return new class extends Migration
     {
         if (Schema::hasTable('jawatankuasas') && ! Schema::hasColumn('jawatankuasas', 'is_current')) {
             Schema::table('jawatankuasas', function (Blueprint $table) {
+                if (! Schema::hasColumn('jawatankuasas', 'is_current')) {
                 $table->boolean('is_current')->default(true)->index();
+                }
             });
         }
 

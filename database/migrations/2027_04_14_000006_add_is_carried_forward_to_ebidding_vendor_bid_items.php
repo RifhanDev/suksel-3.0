@@ -17,7 +17,9 @@ return new class extends Migration
         }
 
         Schema::table('ebidding_vendor_bid_items', function (Blueprint $table) {
+            if (! Schema::hasColumn('ebidding_vendor_bid_items', 'is_carried_forward')) {
             $table->boolean('is_carried_forward')->default(false)->after('bid_price');
+            }
         });
     }
 

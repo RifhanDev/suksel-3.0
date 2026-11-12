@@ -13,12 +13,14 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('refund_reference_numbers', function (Blueprint $table) {
+                if (! Schema::hasTable('refund_reference_numbers')) {
+Schema::create('refund_reference_numbers', function (Blueprint $table) {
             $table->id();
             $table->integer('year');
             $table->integer('number')->default(1);
             $table->timestamps();
         });
+        }
     }
 
     /**

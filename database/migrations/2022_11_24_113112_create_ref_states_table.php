@@ -13,7 +13,8 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('ref_states', function (Blueprint $table) {
+                if (! Schema::hasTable('ref_states')) {
+Schema::create('ref_states', function (Blueprint $table) {
             $table->integer("id", true);
             $table->string("description");
             $table->integer("display_status")->default(1);
@@ -23,6 +24,7 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
         });
+        }
 
         $state_array =  array(
             [

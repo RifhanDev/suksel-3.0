@@ -15,7 +15,9 @@ return new class extends Migration
     {
         if (Schema::hasTable('code_requests')) {
             Schema::table('code_requests', function (Blueprint $table) {
+                if (! Schema::hasColumn('code_requests', 'rejection_template_id')) {
                 $table->string('rejection_template_id')->default(null)->nullable()->after('rejection_reason');
+                }
             });
         }
     }

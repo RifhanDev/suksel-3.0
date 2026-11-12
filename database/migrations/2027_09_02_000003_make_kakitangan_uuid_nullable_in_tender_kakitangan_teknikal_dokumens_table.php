@@ -10,9 +10,13 @@ return new class extends Migration
     public function up(): void
     {
         try {
-            Schema::table('tender_kakitangan_teknikal_dokumens', function (Blueprint $table) {
+                        if (Schema::hasTable('tender_kakitangan_teknikal_dokumens')) {
+Schema::table('tender_kakitangan_teknikal_dokumens', function (Blueprint $table) {
+                if (! Schema::hasColumn('tender_kakitangan_teknikal_dokumens', 'kakitangan_uuid')) {
                 $table->string('kakitangan_uuid', 36)->nullable()->change();
+                }
             });
+            }
         } catch (\Throwable $e) {
             DB::statement("ALTER TABLE `tender_kakitangan_teknikal_dokumens` MODIFY `kakitangan_uuid` VARCHAR(36) NULL;");
         }
@@ -22,7 +26,9 @@ return new class extends Migration
     {
         try {
             Schema::table('tender_kakitangan_teknikal_dokumens', function (Blueprint $table) {
+                if (! Schema::hasColumn('tender_kakitangan_teknikal_dokumens', 'kakitangan_uuid')) {
                 $table->string('kakitangan_uuid', 36)->nullable(false)->change();
+                }
             });
         } catch (\Throwable $e) {
             DB::statement("ALTER TABLE `tender_kakitangan_teknikal_dokumens` MODIFY `kakitangan_uuid` VARCHAR(36) NOT NULL;");

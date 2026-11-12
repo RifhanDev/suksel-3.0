@@ -14,7 +14,9 @@ return new class extends Migration
 
         if (! Schema::hasColumn('perakuan_jabatan_pengesyoran_pembekals', 'pengesahan_bidaan')) {
             Schema::table('perakuan_jabatan_pengesyoran_pembekals', function (Blueprint $table) {
+                if (! Schema::hasColumn('perakuan_jabatan_pengesyoran_pembekals', 'pengesahan_bidaan')) {
                 $table->boolean('pengesahan_bidaan')->default(false)->after('sahkan_petender_layak');
+                }
             });
         }
     }

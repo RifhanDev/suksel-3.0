@@ -8,7 +8,8 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('tender_kewangan_progress', function (Blueprint $table) {
+                if (! Schema::hasTable('tender_kewangan_progress')) {
+Schema::create('tender_kewangan_progress', function (Blueprint $table) {
             $table->id();
             $table->unsignedInteger('tender_id')->unique();
             $table->tinyInteger('current_step')->unsigned()->default(1)->comment('1=Pematuhan, 2=Penyata Bank, 3=Spesifikasi, 4=Laporan');
@@ -40,6 +41,7 @@ return new class extends Migration
                 ->on('users')
                 ->onDelete('set null');
         });
+        }
     }
 
     public function down(): void

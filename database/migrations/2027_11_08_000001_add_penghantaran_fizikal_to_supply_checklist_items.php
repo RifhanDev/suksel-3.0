@@ -10,13 +10,17 @@ return new class extends Migration
     {
         if (Schema::hasTable('technical_checklist_items') && ! Schema::hasColumn('technical_checklist_items', 'penghantaran_fizikal')) {
             Schema::table('technical_checklist_items', function (Blueprint $table) {
+                if (! Schema::hasColumn('technical_checklist_items', 'penghantaran_fizikal')) {
                 $table->boolean('penghantaran_fizikal')->default(false);
+                }
             });
         }
 
         if (Schema::hasTable('financial_checklist_items') && ! Schema::hasColumn('financial_checklist_items', 'penghantaran_fizikal')) {
             Schema::table('financial_checklist_items', function (Blueprint $table) {
+                if (! Schema::hasColumn('financial_checklist_items', 'penghantaran_fizikal')) {
                 $table->boolean('penghantaran_fizikal')->default(false);
+                }
             });
         }
     }

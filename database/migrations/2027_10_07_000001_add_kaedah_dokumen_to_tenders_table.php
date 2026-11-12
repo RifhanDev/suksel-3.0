@@ -13,7 +13,9 @@ return new class extends Migration
         }
 
         Schema::table('tenders', function (Blueprint $table) {
+            if (! Schema::hasColumn('tenders', 'kaedah_dokumen')) {
             $table->string('kaedah_dokumen', 32)->nullable()->after('only_advertise');
+            }
         });
     }
 
