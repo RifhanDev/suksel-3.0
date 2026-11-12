@@ -268,9 +268,10 @@
 					Pilih Kaedah Pembayaran
 				</h5>
 
-				@if (config('app.debug'))
+				@if (config('app.env') !== 'production')
 					<form action="{{ action('RegistrationController@storePayment') }}" method="POST">
 						@csrf
+						<input type="hidden" name="method" value="bypass">
 						<button type="submit" class="payment-option-btn text-dark shadow-none border-success">
 							<div class="d-flex align-items-center gap-3">
 								<div class="payment-icon-box text-success">
