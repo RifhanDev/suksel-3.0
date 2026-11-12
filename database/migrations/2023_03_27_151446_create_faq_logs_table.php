@@ -13,7 +13,8 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('faq_logs', function (Blueprint $table) {
+                if (! Schema::hasTable('faq_logs')) {
+Schema::create('faq_logs', function (Blueprint $table) {
             $table->id();
             $table->integer('faq_category_id');
             $table->integer('faq_id');
@@ -24,6 +25,7 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
         });
+        }
     }
 
     /**

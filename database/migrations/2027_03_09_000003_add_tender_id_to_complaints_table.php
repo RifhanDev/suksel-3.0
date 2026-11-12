@@ -11,9 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('complaints', function (Blueprint $table) {
+                if (Schema::hasTable('complaints')) {
+Schema::table('complaints', function (Blueprint $table) {
+            if (! Schema::hasColumn('complaints', 'tender_id')) {
             $table->unsignedBigInteger('tender_id')->nullable()->after('module');
+            }
         });
+        }
     }
 
     /**

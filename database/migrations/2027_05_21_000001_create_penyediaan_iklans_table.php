@@ -8,7 +8,8 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('penyediaan_iklans', function (Blueprint $table) {
+                if (! Schema::hasTable('penyediaan_iklans')) {
+Schema::create('penyediaan_iklans', function (Blueprint $table) {
             $table->id();
             $table->unsignedInteger('tender_id')->unique();
             $table->json('meta')->nullable();
@@ -20,6 +21,7 @@ return new class extends Migration
                 ->on('tenders')
                 ->cascadeOnDelete();
         });
+        }
     }
 
     public function down(): void

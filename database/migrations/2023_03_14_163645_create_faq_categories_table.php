@@ -13,7 +13,8 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('faq_categories', function (Blueprint $table) {
+                if (! Schema::hasTable('faq_categories')) {
+Schema::create('faq_categories', function (Blueprint $table) {
             $table->id();
             $table->string('name');
             $table->integer('show_none_btn')->default(1);
@@ -23,6 +24,7 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
         });
+        }
     }
 
     /**

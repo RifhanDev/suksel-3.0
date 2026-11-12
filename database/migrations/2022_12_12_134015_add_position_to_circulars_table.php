@@ -13,9 +13,13 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::table('circulars', function (Blueprint $table) {
+                if (Schema::hasTable('circulars')) {
+Schema::table('circulars', function (Blueprint $table) {
+            if (! Schema::hasColumn('circulars', 'position')) {
             $table->integer('position')->nullable()->after('title');
+            }
         });
+        }
     }
 
     /**

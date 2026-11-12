@@ -8,7 +8,8 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('penyata_banks', function (Blueprint $table) {
+                if (! Schema::hasTable('penyata_banks')) {
+Schema::create('penyata_banks', function (Blueprint $table) {
             $table->id();
             $table->uuid('uuid')->unique();
             $table->unsignedInteger('tender_id')->unique();
@@ -27,6 +28,7 @@ return new class extends Migration
             $table->foreign('updated_by')->references('id')->on('users')->nullOnDelete();
             $table->timestamps();
         });
+        }
     }
 
     public function down(): void

@@ -11,7 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('vendor_sub_users', function (Blueprint $table) {
+                if (! Schema::hasTable('vendor_sub_users')) {
+Schema::create('vendor_sub_users', function (Blueprint $table) {
             $table->id();
             $table->bigInteger('vendor_id')->index();
             $table->string('username')->nullable();
@@ -24,6 +25,7 @@ return new class extends Migration
             $table->string('password');
             $table->timestamps();
         });
+        }
     }
 
     /**

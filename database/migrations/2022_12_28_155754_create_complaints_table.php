@@ -13,7 +13,8 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('complaints', function (Blueprint $table) {
+                if (! Schema::hasTable('complaints')) {
+Schema::create('complaints', function (Blueprint $table) {
             $table->id();
             $table->string('email');
             $table->string('subject');
@@ -21,6 +22,7 @@ return new class extends Migration
             $table->integer('status')->default(0);
             $table->timestamps();
         });
+        }
     }
 
     /**

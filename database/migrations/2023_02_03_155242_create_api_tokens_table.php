@@ -13,13 +13,15 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('api_tokens', function (Blueprint $table) {
+                if (! Schema::hasTable('api_tokens')) {
+Schema::create('api_tokens', function (Blueprint $table) {
             $table->id();
             $table->integer('organization_unit_id');
             $table->string('token');
             $table->integer('status')->default(1);
             $table->timestamps();
         });
+        }
     }
 
     /**

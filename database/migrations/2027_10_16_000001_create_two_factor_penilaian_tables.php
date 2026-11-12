@@ -93,9 +93,13 @@ return new class extends Migration
 
         // Time step of the last accepted TOTP code, so each code works only once (login + penilaian).
         if (!Schema::hasColumn('two_factor_auths', 'last_used_step')) {
-            Schema::table('two_factor_auths', function (Blueprint $table) {
+                        if (Schema::hasTable('two_factor_auths')) {
+Schema::table('two_factor_auths', function (Blueprint $table) {
+                if (! Schema::hasColumn('two_factor_auths', 'last_used_step')) {
                 $table->unsignedInteger('last_used_step')->nullable()->after('locked_until');
+                }
             });
+            }
         }
     }
 

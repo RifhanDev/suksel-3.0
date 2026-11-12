@@ -8,7 +8,8 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('tender_kerja_dalam_tangans', function (Blueprint $table) {
+                if (! Schema::hasTable('tender_kerja_dalam_tangans')) {
+Schema::create('tender_kerja_dalam_tangans', function (Blueprint $table) {
             $table->id();
             $table->string('uuid', 36)->unique();
             $table->string('tender_uuid')->index();
@@ -19,6 +20,7 @@ return new class extends Migration
             $table->smallInteger('sort_order')->unsigned()->default(0);
             $table->timestamps();
         });
+        }
     }
 
     public function down(): void

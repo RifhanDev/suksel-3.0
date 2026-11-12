@@ -13,7 +13,8 @@ class CreateCutOffSelectionsTable extends Migration
      */
     public function up()
     {
-        Schema::create('cut_off_selections', function (Blueprint $table) {
+                if (! Schema::hasTable('cut_off_selections')) {
+Schema::create('cut_off_selections', function (Blueprint $table) {
             $table->id();
             $table->uuid('uuid')->unique();
             $table->unsignedInteger('tender_id')->unique(); // satu rekod aktif per tender
@@ -40,6 +41,7 @@ class CreateCutOffSelectionsTable extends Migration
 
             $table->foreign('tender_id')->references('id')->on('tenders')->cascadeOnDelete();
         });
+        }
     }
 
     /**

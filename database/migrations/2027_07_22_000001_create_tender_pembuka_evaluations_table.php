@@ -8,7 +8,8 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('tender_pembuka_evaluations', function (Blueprint $table) {
+                if (! Schema::hasTable('tender_pembuka_evaluations')) {
+Schema::create('tender_pembuka_evaluations', function (Blueprint $table) {
             $table->id();
             $table->unsignedInteger('tender_id')->index();
             $table->unsignedBigInteger('vendor_id')->index();
@@ -31,6 +32,7 @@ return new class extends Migration
                 ->on('tenders')
                 ->cascadeOnDelete();
         });
+        }
     }
 
     public function down(): void

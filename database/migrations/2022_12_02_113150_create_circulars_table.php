@@ -13,13 +13,15 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('circulars', function (Blueprint $table) {
+                if (! Schema::hasTable('circulars')) {
+Schema::create('circulars', function (Blueprint $table) {
             $table->id();
             $table->string('title');
             $table->string('pdf_link',2083)->nullable();
             $table->integer('published')->default(0);
             $table->timestamps();
         });
+        }
     }
 
     /**

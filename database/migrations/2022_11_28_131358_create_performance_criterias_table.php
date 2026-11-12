@@ -13,7 +13,8 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('performance_criterias', function (Blueprint $table) {
+                if (! Schema::hasTable('performance_criterias')) {
+Schema::create('performance_criterias', function (Blueprint $table) {
             $table -> id();
             $table -> double('scale_1') -> nullable();
             $table -> double('scale_2') -> nullable();
@@ -32,6 +33,7 @@ return new class extends Migration
             // FK
             $table -> foreignId('petender_performance_id') -> constrained('petender_performances') -> cascadeOnDelete();
         });
+        }
     }
 
     /**

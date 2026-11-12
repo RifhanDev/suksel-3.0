@@ -8,7 +8,8 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('specification_pricings', function (Blueprint $table) {
+                if (! Schema::hasTable('specification_pricings')) {
+Schema::create('specification_pricings', function (Blueprint $table) {
             $table->id();
             $table->uuid('uuid')->unique();
             $table->foreignId('technical_checklist_item_id')->unique()->constrained('technical_checklist_items')->cascadeOnDelete();
@@ -21,6 +22,7 @@ return new class extends Migration
             $table->foreign('updated_by')->references('id')->on('users')->nullOnDelete();
             $table->timestamps();
         });
+        }
     }
 
     public function down(): void

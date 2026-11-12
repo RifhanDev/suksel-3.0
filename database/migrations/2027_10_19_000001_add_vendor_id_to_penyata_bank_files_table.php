@@ -11,7 +11,9 @@ return new class extends Migration
     {
         if (Schema::hasTable('penyata_bank_files') && ! Schema::hasColumn('penyata_bank_files', 'vendor_id')) {
             Schema::table('penyata_bank_files', function (Blueprint $table) {
+                if (! Schema::hasColumn('penyata_bank_files', 'vendor_id')) {
                 $table->unsignedBigInteger('vendor_id')->nullable()->after('penyata_bank_id')->index();
+                }
             });
 
             // Backfill vendor_id from path or uploaded_by user

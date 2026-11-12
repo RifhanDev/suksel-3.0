@@ -10,7 +10,8 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('pembelian_terus_items', function (Blueprint $table) {
+                if (! Schema::hasTable('pembelian_terus_items')) {
+Schema::create('pembelian_terus_items', function (Blueprint $table) {
             $table->id();
             SchemaCompat::referenceColumn($table, 'tender_id', 'tenders');
             $table->string('nama_item');
@@ -21,8 +22,10 @@ return new class extends Migration
 
             $table->foreign('tender_id')->references('id')->on('tenders')->onDelete('cascade');
         });
+        }
 
-        Schema::create('pembelian_terus_offers', function (Blueprint $table) {
+                if (! Schema::hasTable('pembelian_terus_offers')) {
+Schema::create('pembelian_terus_offers', function (Blueprint $table) {
             $table->id();
             SchemaCompat::referenceColumn($table, 'tender_id', 'tenders');
             SchemaCompat::referenceColumn($table, 'vendor_id', 'vendors');
@@ -41,8 +44,10 @@ return new class extends Migration
             $table->unique(['tender_id', 'vendor_id']);
             $table->foreign('tender_id')->references('id')->on('tenders')->onDelete('cascade');
         });
+        }
 
-        Schema::create('pembelian_terus_offer_items', function (Blueprint $table) {
+                if (! Schema::hasTable('pembelian_terus_offer_items')) {
+Schema::create('pembelian_terus_offer_items', function (Blueprint $table) {
             $table->id();
             SchemaCompat::referenceColumn($table, 'offer_id', 'pembelian_terus_offers');
             SchemaCompat::referenceColumn($table, 'item_id', 'pembelian_terus_items');
@@ -57,8 +62,10 @@ return new class extends Migration
             $table->foreign('offer_id')->references('id')->on('pembelian_terus_offers')->onDelete('cascade');
             $table->foreign('item_id')->references('id')->on('pembelian_terus_items')->onDelete('cascade');
         });
+        }
 
-        Schema::create('pembelian_terus_documents', function (Blueprint $table) {
+                if (! Schema::hasTable('pembelian_terus_documents')) {
+Schema::create('pembelian_terus_documents', function (Blueprint $table) {
             $table->id();
             SchemaCompat::referenceColumn($table, 'tender_id', 'tenders');
             $table->enum('doc_type', ['jpict', 'minit_bebas', 'surat_setuju_terima', 'lain']);
@@ -69,6 +76,7 @@ return new class extends Migration
 
             $table->foreign('tender_id')->references('id')->on('tenders')->onDelete('cascade');
         });
+        }
 
         // Seed Kaedah Perolehan if missing
         $exists = DB::table('ref_kaedah_perolehans')

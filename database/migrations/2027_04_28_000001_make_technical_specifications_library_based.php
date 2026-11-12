@@ -12,10 +12,12 @@ return new class extends Migration
     public function up(): void
     {
         if (Schema::hasColumn('technical_specification_documents', 'tender_id')) {
-            Schema::table('technical_specification_documents', function (Blueprint $table) {
+                        if (Schema::hasTable('technical_specification_documents')) {
+Schema::table('technical_specification_documents', function (Blueprint $table) {
                 $table->dropForeign('tsd_tender_fk');
                 $table->dropColumn('tender_id');
             });
+            }
         }
     }
 
@@ -26,7 +28,9 @@ return new class extends Migration
     {
         if (!Schema::hasColumn('technical_specification_documents', 'tender_id')) {
             Schema::table('technical_specification_documents', function (Blueprint $table) {
+                if (! Schema::hasColumn('technical_specification_documents', 'tender_id')) {
                 $table->unsignedInteger('tender_id')->nullable()->after('uuid');
+                }
                 $table->index('tender_id', 'technical_specification_documents_tender_id_index');
                 $table->foreign('tender_id', 'tsd_tender_fk')
                     ->references('id')

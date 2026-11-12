@@ -8,7 +8,8 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('profil_petenders', function (Blueprint $table) {
+                if (! Schema::hasTable('profil_petenders')) {
+Schema::create('profil_petenders', function (Blueprint $table) {
             $table->id();
             $table->uuid('uuid')->unique();
             $table->unsignedInteger('tender_id')->unique();
@@ -40,6 +41,7 @@ return new class extends Migration
             $table->foreign('updated_by')->references('id')->on('users')->nullOnDelete();
             $table->timestamps();
         });
+        }
     }
 
     public function down(): void

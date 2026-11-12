@@ -11,7 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('standard_checklist_items', function (Blueprint $table) {
+                if (! Schema::hasTable('standard_checklist_items')) {
+Schema::create('standard_checklist_items', function (Blueprint $table) {
             $table->id();
             $table->uuid('uuid')->unique();
             $table->string('category', 50)->default('technical')->index();
@@ -36,6 +37,7 @@ return new class extends Migration
                 ->on('users')
                 ->nullOnDelete();
         });
+        }
     }
 
     /**

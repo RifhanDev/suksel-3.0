@@ -15,7 +15,9 @@ return new class extends Migration
     {
         if (Schema::hasTable('tenders')) {
             Schema::table('tenders', function (Blueprint $table) {
+                if (! Schema::hasColumn('tenders', 'district_list_rule')) {
                 $table->text('district_list_rule')->nullable()->after('mof_cidb_rule');
+                }
             });
         }
     }

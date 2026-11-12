@@ -15,7 +15,9 @@ return new class extends Migration
     {
         if (Schema::hasTable('vendors')) {
             Schema::table('vendors', function (Blueprint $table) {
+                if (! Schema::hasColumn('vendors', 'rejection_template_id')) {
                 $table->string('rejection_template_id')->default(null)->nullable()->after('rejection_reason');
+                }
             });
         }
     }

@@ -8,7 +8,8 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('specification_pricing_items', function (Blueprint $table) {
+                if (! Schema::hasTable('specification_pricing_items')) {
+Schema::create('specification_pricing_items', function (Blueprint $table) {
             $table->id();
             $table->uuid('uuid')->unique();
             $table->foreignId('specification_pricing_id')->index()->constrained('specification_pricings')->cascadeOnDelete();
@@ -20,6 +21,7 @@ return new class extends Migration
             $table->unsignedSmallInteger('sort_order')->default(0);
             $table->timestamps();
         });
+        }
     }
 
     public function down(): void
