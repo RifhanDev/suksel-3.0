@@ -809,6 +809,9 @@ class HomeController extends Controller
 		}
 
 		$gateway    = Gateway::whereType($method)->whereDefault(1)->whereActive(1)->first();
+		if (! $gateway || ! $gateway->isReady()) {
+			return redirect()->back()->with('error', 'Pembayaran dalam talian belum tersedia buat masa ini. Sila cuba lagi kemudian.');
+		}
 
 		$transaction = $vendor->transactions()->save(new Transaction([
 			'type'                  => 'subscription',

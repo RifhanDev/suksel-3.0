@@ -126,4 +126,16 @@ class Gateway extends Model
 	{
 		return $this->belongsTo('App\OrganizationUnit', 'organization_unit_id');
 	}
+
+	// FPX can only sign a payment when the merchant code has both ids and the exchange key file is on the server.
+	public function isReady(): bool
+	{
+		if ($this->type !== 'fpx') {
+			return true;
+		}
+
+		$ids = explode('|', (string) $this->merchant_code);
+
+		return count($ids) === 2 && trim($ids[1]) !== '' && is_file(base_path('fpx/' . trim($ids[0]) . '.key'));
+	}
 }
