@@ -182,6 +182,10 @@ class CartController extends Controller
 			}
 
 			if (empty($gateway)) $gateway = Gateway::whereType($type)->whereDefault(1)->whereActive(1)->first();
+
+			if ($type !== 'direct' && (empty($gateway) || ! $gateway->isReady())) {
+				return redirect()->back()->with('error', 'Pembayaran dalam talian belum tersedia buat masa ini. Sila cuba lagi kemudian.');
+			}
 		} else {
 			$method = 'direct';
 		}
