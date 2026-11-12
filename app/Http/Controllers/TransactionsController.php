@@ -110,15 +110,29 @@ class TransactionsController extends Controller
 				$recordsFiltered = $recordsTotal;
 			}
 
+			$sortColumns = [
+				'created_at' => 'transactions.created_at',
+				'vendors.name' => 'vendors.name',
+				'number' => 'transactions.number',
+				'type' => 'transactions.type',
+				'amount' => 'transactions.amount',
+				'status' => 'transactions.status',
+			];
+			$sortName = (string) $request->input('columns.' . $request->input('order.0.column') . '.name');
+			if (isset($sortColumns[$sortName])) {
+				$transactions->reorder($sortColumns[$sortName], $request->input('order.0.dir') === 'asc' ? 'asc' : 'desc');
+			}
+
 			$results = $transactions->offset($start)->limit($length)->get();
 
 			$datatable_data = [];
+			$statusBadges = ['success' => 'success', 'pending' => 'warning', 'pending_authorization' => 'info', 'failed' => 'danger', 'declined' => 'danger'];
 			foreach ($results as $rows) {
 
 				$actions  = [];
-				$actions[] = $rows->canShow() ? link_to_route('transactions.show', 'Papar', $rows->id, ['class' => 'btn btn-xs bg-primary']) : '';
-				$actions[] = $rows->canUpdate() ? link_to_route('transactions.edit', 'Kemaskini', $rows->id, ['class' => 'btn btn-xs btn-warning']) : '';
-				$action_column = '<div class ="btn-group">' . implode(' ', $actions) . '</div>';
+				$actions[] = $rows->canShow() ? link_to_route('transactions.show', 'Papar', $rows->id, ['class' => 'btn btn-sm btn-primary rounded-8 px-3 text-nowrap']) : '';
+				$actions[] = $rows->canUpdate() ? link_to_route('transactions.edit', 'Kemaskini', $rows->id, ['class' => 'btn btn-sm btn-warning rounded-8 px-3 text-nowrap']) : '';
+				$action_column = '<div class="d-flex gap-2 justify-content-center flex-nowrap">' . implode('', $actions) . '</div>';
 
 				$year = date('d-m-Y', strtotime($rows->created_at));
 				$new_receipt = '';
@@ -139,10 +153,10 @@ class TransactionsController extends Controller
 					"number" => $rows->number,
 					"gateway_reference" => $rows->gateway_reference,
 					"no_resit" => $new_receipt,
-					"type" => $rows->type,
-					"method" => $rows->method,
-					"amount" => $rows->amount,
-					"status" => $rows->status,
+					"type" => Transaction::$types[$rows->type] ?? $rows->type,
+					"method" => strtoupper((string) $rows->method),
+					"amount" => 'RM ' . number_format((float) $rows->amount, 2),
+					"status" => '<span class="badge-status badge-status-' . ($statusBadges[$rows->status] ?? 'neutral') . '">' . e(Transaction::$statuses[$rows->status] ?? $rows->status) . '</span>',
 					"actions" => $action_column,
 				);
 			}

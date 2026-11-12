@@ -2,6 +2,28 @@
 
 @section('styles')
 	<link href="{{ asset('css/dashboard-cards.css') }}" rel="stylesheet">
+	<style>
+		/* 10 columns: slightly tighter cells so Tindakan fits without a sideways scroll */
+		table.dataTable.DT-index thead th,
+		table.dataTable.DT-index tbody td {
+			padding-left: 8px;
+			padding-right: 8px;
+		}
+
+		.DT-index .txn-company {
+			max-width: 240px;
+			display: -webkit-box;
+			-webkit-line-clamp: 2;
+			-webkit-box-orient: vertical;
+			overflow: hidden;
+		}
+
+		.DT-index .txn-sub {
+			font-size: 0.75rem;
+			color: #64748b;
+			white-space: nowrap;
+		}
+	</style>
 @endsection
 
 @section('content')
@@ -56,16 +78,13 @@
 					class="DT-index table table-hover align-middle mb-0 w-100">
 					<thead class="bg-light">
 						<tr>
-							<th class="text-uppercase text-muted small fw-bold py-3 ps-4">Tarikh & Masa</th>
-							<th class="text-uppercase text-muted small fw-bold py-3">Nama Syarikat</th>
-							<th class="text-uppercase text-muted small fw-bold py-3">No Transaksi</th>
-							<th class="text-uppercase text-muted small fw-bold py-3">No Rujukan Gateway</th>
-							<th class="text-uppercase text-muted small fw-bold py-3">No Resit</th>
-							<th class="text-uppercase text-muted small fw-bold py-3">Jenis</th>
-							<th class="text-uppercase text-muted small fw-bold py-3">Saluran</th>
-							<th class="text-uppercase text-muted small fw-bold py-3">Jumlah</th>
-							<th class="text-uppercase text-muted small fw-bold py-3">Status</th>
-							<th class="text-uppercase text-muted small fw-bold py-3 pe-4">Tindakan</th>
+							<th class="text-uppercase text-muted small fw-bold py-3 ps-3">Tarikh</th>
+							<th class="text-uppercase text-muted small fw-bold py-3">Syarikat</th>
+							<th class="text-uppercase text-muted small fw-bold py-3">No. Transaksi / Rujukan</th>
+							<th class="text-uppercase text-muted small fw-bold py-3">Jenis / Saluran</th>
+							<th class="text-uppercase text-end text-muted small fw-bold py-3">Jumlah</th>
+							<th class="text-uppercase text-center text-muted small fw-bold py-3">Status</th>
+							<th class="text-uppercase text-center text-muted small fw-bold py-3 pe-4">Tindakan</th>
 						</tr>
 					</thead>
 					<tbody></tbody>
@@ -264,6 +283,7 @@
 	<script type="text/javascript">
 		var target = $('.DT-index');
 		var path = target.data('path');
+		var esc = function(v) { return $('<div>').text(v || '').html(); };
 
 		let table = $('.DT-index').DataTable({
 			processing: true,
@@ -271,46 +291,57 @@
 			ajax: path,
 			columns: [{
 					data: 'created_at',
-					name: 'created_at'
+					name: 'created_at',
+					className: 'text-nowrap ps-3',
+					render: function(data) {
+						var parts = (data || '').split(' ');
+						return '<div class="fw-semibold text-dark">' + esc(parts[0]) + '</div><div class="txn-sub">' + esc(parts[1]) + '</div>';
+					}
 				},
 				{
 					data: 'name',
-					name: 'vendors.name'
+					name: 'vendors.name',
+					render: function(data) {
+						return '<div class="txn-company fw-semibold text-dark" title="' + esc(data) + '">' + esc(data) + '</div>';
+					}
 				},
 				{
 					data: 'number',
-					name: 'number'
-				},
-				{
-					data: 'gateway_reference',
-					name: 'gateway_reference'
-				},
-				{
-					data: 'no_resit',
-					name: 'no_resit'
+					name: 'number',
+					render: function(data, type, row) {
+						var html = '<div class="fw-semibold text-dark text-nowrap">' + esc(data) + '</div>';
+						if (row.gateway_reference) html += '<div class="txn-sub">Gateway: ' + esc(row.gateway_reference) + '</div>';
+						if (row.no_resit) html += '<div class="txn-sub">Resit: ' + esc(row.no_resit) + '</div>';
+						return html;
+					}
 				},
 				{
 					data: 'type',
-					name: 'type'
-				},
-				{
-					data: 'method',
-					name: 'method'
+					name: 'type',
+					render: function(data, type, row) {
+						return '<div class="text-dark text-nowrap">' + esc(data) + '</div><div class="txn-sub">' + esc(row.method) + '</div>';
+					}
 				},
 				{
 					data: 'amount',
-					name: 'amount'
+					name: 'amount',
+					className: 'text-end text-nowrap fw-semibold'
 				},
 				{
 					data: 'status',
-					name: 'status'
+					name: 'status',
+					className: 'text-center text-nowrap'
 				},
 				{
 					data: 'actions',
-					name: 'actions'
+					name: 'actions',
+					orderable: false,
+					searchable: false,
+					className: 'text-center'
 				},
 			],
 			stateSave: true,
+			autoWidth: false,
 			language: {
 				"url": "{{ asset('custom_library/dataTables/lang/ms.json') }}"
 			},
