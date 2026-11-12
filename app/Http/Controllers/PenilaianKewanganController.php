@@ -52,7 +52,10 @@ class PenilaianKewanganController extends Controller
     public function index(Request $request)
     {
         $query = $this->applyCommitteeAppointment(
-            Tender::query()->where('status_process_id', TenderProcessStatus::penilaianKewanganListStatus()),
+            Tender::query()->whereBetween('status_process_id', [
+                TenderProcessStatus::penilaianKewanganListStatus(),
+                TenderProcessStatus::SELESAI,
+            ]),
             $this->financialCommitteeJenis
         );
 
@@ -71,6 +74,12 @@ class PenilaianKewanganController extends Controller
 
         if ($request->filled('tarikh')) {
             $query->whereDate('submission_datetime', $request->input('tarikh'));
+        }
+
+        if ($request->input('status') === 'Dalam Proses') {
+            $query->where('status_process_id', TenderProcessStatus::penilaianKewanganListStatus());
+        } elseif ($request->input('status') === 'Selesai Penilaian') {
+            $query->where('status_process_id', '>', TenderProcessStatus::penilaianKewanganListStatus());
         }
 
         $totalCount = (clone $query)->count();
@@ -104,6 +113,7 @@ class PenilaianKewanganController extends Controller
 
             $noTender = $tender->no_tender ?: $tender->ref_number ?: (string) $tender->id;
             $actionMeta = $resolver->resolveActionMeta($tender);
+            $isCompleted = (int) $tender->status_process_id > TenderProcessStatus::penilaianKewanganListStatus();
 
             return [
                 'id'           => $tender->id,
@@ -111,7 +121,9 @@ class PenilaianKewanganController extends Controller
                 'no_tender'    => $noTender,
                 'tajuk'        => $tender->name ?: '-',
                 'tarikh'       => $submissionDate ? $submissionDate->format('d/m/Y') : '-',
-                'status_label' => 'Dalam Proses',
+                'status_label' => $isCompleted ? 'Selesai Penilaian' : 'Dalam Proses',
+                'action_label' => $isCompleted ? 'Lihat' : 'Nilai',
+                'read_only'    => $isCompleted,
                 'show_url'     => $actionMeta['show_url'],
                 'workflow'     => $actionMeta['workflow'],
                 'action_meta'  => $actionMeta,
@@ -141,7 +153,7 @@ class PenilaianKewanganController extends Controller
 
         $this->assertCommitteeAppointment($tender, $this->financialCommitteeJenis);
 
-        $progress = TenderKewanganProgress::query()->firstOrCreate(
+        $progress = TenderKewanganProgress::query()->firstOrNew(
             ['tender_id' => $tender->id],
             ['current_step' => 1]
         );

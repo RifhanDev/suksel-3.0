@@ -86,7 +86,7 @@ class AttachmentStorage
 
     public static function exists(string $path): bool
     {
-        return self::locateDisk($path) !== null || self::publicFile($path) !== null;
+        return self::locate($path) !== null || self::publicFile($path) !== null;
     }
 
     public static function delete(?string $path): void
@@ -96,12 +96,14 @@ class AttachmentStorage
             return;
         }
 
-        foreach (['attachments', 'public', 'local'] as $disk) {
-            try {
-                if (Storage::disk($disk)->exists($path)) {
-                    Storage::disk($disk)->delete($path);
+        foreach (self::candidatePaths($path) as $candidate) {
+            foreach (['attachments', 'attachments_legacy', 'public', 'local'] as $disk) {
+                try {
+                    if (Storage::disk($disk)->exists($candidate)) {
+                        Storage::disk($disk)->delete($candidate);
+                    }
+                } catch (\Throwable) {
                 }
-            } catch (\Throwable) {
             }
         }
 
@@ -115,43 +117,88 @@ class AttachmentStorage
     {
         $from = self::normalize($from);
         $to = self::normalize($to);
-        $source = self::locateDisk($from);
-        if ($from === '' || $to === '' || $source === null) {
+        $located = self::locate($from);
+        if ($from === '' || $to === '' || $located === null) {
             return;
         }
 
+        [$sourceDisk, $sourcePath] = [$located['disk'], $located['path']];
+
         if (self::isRemote()) {
-            if ($source === 'attachments') {
+            if ($sourceDisk === 'attachments' && $sourcePath === $from) {
                 Storage::disk('attachments')->copy($from, $to);
 
                 return;
             }
 
-            Storage::disk('attachments')->put($to, Storage::disk($source)->get($from));
+            Storage::disk('attachments')->put($to, Storage::disk($sourceDisk)->get($sourcePath));
 
             return;
         }
 
-        Storage::disk($source)->copy($from, $to);
+        Storage::disk($sourceDisk)->copy($sourcePath, $to);
     }
 
-    public static function locateDisk(string $path): ?string
+    /**
+     * Prefer new NAS root (perolehan_attachment), then legacy uploads (2.0 / old years).
+     *
+     * @return array{disk: string, path: string}|null
+     */
+    public static function locate(string $path): ?array
     {
         $path = self::normalize($path);
         if ($path === '') {
             return null;
         }
 
-        foreach (array_unique([self::diskName(), 'attachments', 'public', 'local']) as $disk) {
-            try {
-                if (Storage::disk($disk)->exists($path)) {
-                    return $disk;
+        $disks = array_values(array_unique([
+            self::diskName(),
+            'attachments',
+            'attachments_legacy',
+            'public',
+            'local',
+        ]));
+
+        foreach ($disks as $disk) {
+            foreach (self::candidatePaths($path) as $candidate) {
+                try {
+                    if (Storage::disk($disk)->exists($candidate)) {
+                        return ['disk' => $disk, 'path' => $candidate];
+                    }
+                } catch (\Throwable) {
                 }
-            } catch (\Throwable) {
             }
         }
 
         return null;
+    }
+
+    public static function locateDisk(string $path): ?string
+    {
+        return self::locate($path)['disk'] ?? null;
+    }
+
+    /**
+     * Path variants so legacy root `/data/laravel/uploads` can resolve both
+     * `uploads/hash/file` and `hash/file` styles from older records.
+     *
+     * @return list<string>
+     */
+    protected static function candidatePaths(string $path): array
+    {
+        $path = self::normalize($path);
+        if ($path === '') {
+            return [];
+        }
+
+        $candidates = [$path];
+        if (str_starts_with($path, 'uploads/')) {
+            $candidates[] = substr($path, strlen('uploads/'));
+        } else {
+            $candidates[] = 'uploads/' . $path;
+        }
+
+        return array_values(array_unique(array_filter($candidates)));
     }
 
     /**
@@ -171,9 +218,9 @@ class AttachmentStorage
             $headers['Content-Type'] = $mime;
         }
 
-        $disk = self::locateDisk($path);
-        if ($disk !== null) {
-            return Storage::disk($disk)->response($path, $name, $headers, $disposition);
+        $located = self::locate($path);
+        if ($located !== null) {
+            return Storage::disk($located['disk'])->response($located['path'], $name, $headers, $disposition);
         }
 
         $publicFile = self::publicFile($path);
@@ -270,9 +317,14 @@ class AttachmentStorage
             return null;
         }
 
-        $candidate = public_path($path);
+        foreach (self::candidatePaths($path) as $candidate) {
+            $absolute = public_path($candidate);
+            if (is_file($absolute)) {
+                return $absolute;
+            }
+        }
 
-        return is_file($candidate) ? $candidate : null;
+        return null;
     }
 
     protected static function shouldInline(string $name, ?string $mime): bool

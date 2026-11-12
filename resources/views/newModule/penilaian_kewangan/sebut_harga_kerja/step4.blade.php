@@ -1,5 +1,6 @@
 {{-- LANGKAH 4: PENYEDIAAN LAPORAN (SEBUT HARGA KERJA) --}}
 {{-- Ringkasan Menyeluruh (Tanpa sub-tab Kewangan/Rumusan) --}}
+@php($type2ReadOnly = (bool) ($type2Data['readOnly'] ?? false))
 <style>
     #laporan .report-hero {
         background: linear-gradient(135deg, #fff 0%, #fff7f7 100%);
@@ -91,7 +92,7 @@
         </div>
         <div class="d-flex align-items-center gap-2 flex-shrink-0">
             <span class="badge bg-white text-danger border border-danger-subtle px-3 py-2 rounded-pill fw-semibold shadow-sm">
-                <i class="bi bi-shield-check me-1"></i>Sebut Harga Kerja (Type 2)
+                <i class="bi bi-shield-check me-1"></i>Sebut Harga Kerja
             </span>
         </div>
     </div>
@@ -253,13 +254,13 @@
                     <label class="form-label small text-secondary fw-semibold mb-2">
                         Ulasan Keseluruhan Kewangan & Keupayaan Kerja:
                     </label>
-                    <textarea class="form-control" id="laporanJustifikasiText" rows="5" placeholder="Nyatakan ulasan terperinci mengenai kelayakan petender dan syor perolehan...">Dengan ini, JPT mengesyorkan penyebut harga yang melepasi untuk melaksanakan projek ini untuk dibawa ke mesyuarat Jawatankuasa Sebut Harga berdasarkan justifikasi yang ditetapkan.</textarea>
+                    <textarea class="form-control" id="laporanJustifikasiText" rows="5" placeholder="Nyatakan ulasan terperinci mengenai kelayakan petender dan syor perolehan..." {{ $type2ReadOnly ? 'readonly' : '' }}>Dengan ini, JPT mengesyorkan penyebut harga yang melepasi untuk melaksanakan projek ini untuk dibawa ke mesyuarat Jawatankuasa Sebut Harga berdasarkan justifikasi yang ditetapkan.</textarea>
                 </div>
                 <div>
                     <label class="form-label small text-secondary fw-semibold mb-2">
                         Syarat Tambahan / Arahan Khas (Jika Ada):
                     </label>
-                    <input type="text" class="form-control" id="laporanSyaratKhasInput" value="" placeholder="Syarat-syarat khas...">
+                    <input type="text" class="form-control" id="laporanSyaratKhasInput" value="" placeholder="Syarat-syarat khas..." {{ $type2ReadOnly ? 'readonly' : '' }}>
                 </div>
             </div>
         </div>
@@ -276,7 +277,7 @@
                 </div>
                 <div class="p-3 rounded-3 bg-light border mb-3">
                     <div class="form-check">
-                        <input class="form-check-input" type="checkbox" id="perakuanPegawaiPenilai" name="perakuan_pegawai_penilai">
+                        <input class="form-check-input" type="checkbox" id="perakuanPegawaiPenilai" name="perakuan_pegawai_penilai" {{ $type2ReadOnly ? 'disabled' : '' }}>
                         <label class="form-check-label extra-small fw-semibold text-dark" for="perakuanPegawaiPenilai" style="line-height: 1.4;">
                             Saya dengan ini memperakui bahawa penilaian ini telah dilaksanakan secara bebas, telus dan saksama mengikut Arahan Perbendaharaan dan Pekeliling Perolehan Kerajaan Negeri Selangor yang berkuatkuasa.
                         </label>
@@ -311,14 +312,16 @@
                 <i class="bi bi-printer"></i>
                 <span>Laporan</span>
             </button>
-            <button type="button" class="btn btn-outline-secondary d-inline-flex align-items-center gap-1.5" id="btnSimpanDrafLaporan">
-                <i class="bi bi-floppy"></i>
-                <span>Simpan Draf</span>
-            </button>
-            <button type="button" class="btn btn-success d-inline-flex align-items-center gap-1.5 px-3 py-2 fw-bold" id="btnHantarPenilaianAkhir">
-                <i class="bi bi-send-check-fill"></i>
-                <span>Hantar Penilaian Kewangan</span>
-            </button>
+            @unless($type2ReadOnly)
+                <button type="button" class="btn btn-outline-secondary d-inline-flex align-items-center gap-1.5" id="btnSimpanDrafLaporan">
+                    <i class="bi bi-floppy"></i>
+                    <span>Simpan Draf</span>
+                </button>
+                <button type="button" class="btn btn-success d-inline-flex align-items-center gap-1.5 px-3 py-2 fw-bold" id="btnHantarPenilaianAkhir">
+                    <i class="bi bi-send-check-fill"></i>
+                    <span>Hantar Penilaian Kewangan</span>
+                </button>
+            @endunless
         </div>
     </div>
 

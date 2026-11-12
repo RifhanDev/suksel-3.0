@@ -241,7 +241,7 @@ class RegistrationController extends Controller
         // so updating those columns directly is a no-op. We must create a real
         // subscription — mirroring the live gateway callback — for the account to
         // count as paid and pass the registration gate.
-        if (config('app.debug')) {
+        if ($request->method === 'bypass' && config('app.env') !== 'production') {
             if ($vendor->subscriptions()->count() === 0) {
                 $cached_data = [
                     'start_date' => date('Y-m-d'),

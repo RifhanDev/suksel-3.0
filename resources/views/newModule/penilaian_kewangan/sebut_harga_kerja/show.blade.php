@@ -417,6 +417,13 @@
         </div>
     </div>
 
+    @if(!empty($type2Data['readOnly']))
+        <div class="alert alert-secondary d-flex align-items-center gap-2 mb-3" role="status">
+            <i class="bi bi-lock-fill"></i>
+            <span><strong>Mod Paparan Sahaja:</strong> Penilaian kewangan telah selesai. Rekod ini tidak boleh dikemaskini.</span>
+        </div>
+    @endif
+
     {{-- Main Process Card with 4-Step Stepper --}}
     <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
         <div class="card-body p-4">
@@ -505,6 +512,7 @@ window.type2State = {
     tenderId: backendPayload?.tender?.id || {{ $tender->id ?? 1 }},
     csrfToken: '{{ csrf_token() }}',
     routes: backendPayload?.routes || {},
+    readOnly: Boolean(backendPayload?.readOnly),
 
     currentStep: backendPayload?.progress?.currentStep || 1,
     step1Confirmed: Boolean(backendPayload?.progress?.step1Confirmed),
@@ -537,6 +545,22 @@ window.type2State = {
         this.bindEvents();
         this.updateStepperLocks();
         this.renderAll();
+
+        // Resume at the saved step, but never open beyond the steps currently unlocked.
+        const maxOpenStep = this.step3Confirmed && this.isStep3Complete()
+            ? 4
+            : (this.step2Confirmed && this.isStep2Complete()
+                ? 3
+                : (this.step1Confirmed && this.isStep1Complete() ? 2 : 1));
+        const initialStep = Math.min(Math.max(Number(this.currentStep) || 1, 1), maxOpenStep);
+        const tabIds = ['pematuhan-tab', 'penyata-bank-tab', 'penilaian-tab', 'laporan-tab'];
+        const initialTab = document.getElementById(tabIds[initialStep - 1]);
+
+        if (initialTab) {
+            this.currentStep = initialStep;
+            const tab = bootstrap.Tab.getInstance(initialTab) || new bootstrap.Tab(initialTab);
+            tab.show();
+        }
     },
 
     syncCheckboxesWithBackend() {
@@ -658,7 +682,7 @@ window.type2State = {
                 confirmButtonColor: '#dc2626'
             });
         } finally {
-            checkbox.disabled = false;
+            checkbox.disabled = this[`step${step}Confirmed`];
         }
     },
 
@@ -1214,6 +1238,13 @@ window.type2State = {
         const canOpenStep3 = canOpenStep2 && this.step2Confirmed && this.isStep2Complete();
         const canOpenStep4 = canOpenStep3 && this.step3Confirmed && this.isStep3Complete();
 
+        const confirmStep1 = document.getElementById('confirmLayakStep1');
+        const confirmStep2 = document.getElementById('confirmLayakStep2');
+        const confirmStep3 = document.getElementById('confirmLayakStep3');
+        if (confirmStep1) confirmStep1.disabled = this.readOnly || this.step1Confirmed;
+        if (confirmStep2) confirmStep2.disabled = this.readOnly || this.step2Confirmed;
+        if (confirmStep3) confirmStep3.disabled = this.readOnly || this.step3Confirmed;
+
         if (canOpenStep2) {
             step2Nav?.classList.remove('locked');
             if (step2Btn) {
@@ -1337,7 +1368,7 @@ window.type2State = {
                 </td>
                 <td class="py-3 px-3 text-center">
                     <button type="button" class="btn btn-sm btn-outline-danger px-3 py-1 fw-bold rounded-2" onclick="window.type2State.openModalSemakanDokumen('${doc.id}')">
-                        <i class="bi bi-pencil-square me-1"></i>Menilai
+                        <i class="bi ${(self.readOnly || self.step1Confirmed) ? 'bi-eye' : 'bi-pencil-square'} me-1"></i>${(self.readOnly || self.step1Confirmed) ? 'Lihat' : 'Menilai'}
                     </button>
                 </td>
             `;
@@ -1535,7 +1566,7 @@ window.type2State = {
                 </td>
                 <td class="text-center py-3 px-3">
                     <button type="button" class="btn btn-sm btn-outline-danger px-3 py-1 fw-bold rounded-2" onclick="window.type2State.openModalKemampuanKewangan(${v.id})">
-                        <i class="bi bi-calculator me-1"></i>Nilai Kewangan
+                        <i class="bi ${(this.readOnly || this.step2Confirmed) ? 'bi-eye' : 'bi-calculator'} me-1"></i>${(this.readOnly || this.step2Confirmed) ? 'Lihat Penilaian' : 'Nilai Kewangan'}
                     </button>
                 </td>
             `;
@@ -1648,7 +1679,7 @@ window.type2State = {
                 </td>
                 <td class="text-center py-3 px-3">
                     <button type="button" class="btn btn-sm btn-outline-danger px-3 py-1 fw-bold rounded-2" onclick="window.type2State.openModalPenilaianKerja(${v.id})">
-                        <i class="bi bi-cone-striped me-1"></i>Nilai Kerja
+                        <i class="bi ${(this.readOnly || this.step3Confirmed) ? 'bi-eye' : 'bi-cone-striped'} me-1"></i>${(this.readOnly || this.step3Confirmed) ? 'Lihat Penilaian' : 'Nilai Kerja'}
                     </button>
                 </td>
             `;
@@ -1882,6 +1913,7 @@ window.type2State = {
         this.activeDocId = docId;
         const doc = this.checklistDocs.find(d => d.id === docId);
         if (!doc) return;
+        const isLocked = this.readOnly || this.step1Confirmed;
 
         document.getElementById('modalDocTitle').textContent = doc.title;
         document.getElementById('modalDocMekanisma').textContent = doc.mekanisma;
@@ -2012,20 +2044,22 @@ window.type2State = {
                     </span>
                 </td>
                 <td class="py-2.5 text-center">
-                    <select class="form-select form-select-sm fw-bold ${vDoc.status === 'sempurna' ? 'text-success' : (vDoc.status === 'tidak_sempurna' ? 'text-danger' : 'text-secondary')}" id="modalDocSelect_${v.id}" onchange="this.className='form-select form-select-sm fw-bold ' + (this.value==='sempurna'?'text-success':(this.value==='tidak_sempurna'?'text-danger':'text-secondary'))">
+                    <select class="form-select form-select-sm fw-bold ${vDoc.status === 'sempurna' ? 'text-success' : (vDoc.status === 'tidak_sempurna' ? 'text-danger' : 'text-secondary')}" id="modalDocSelect_${v.id}" ${isLocked ? 'disabled' : ''} onchange="this.className='form-select form-select-sm fw-bold ' + (this.value==='sempurna'?'text-success':(this.value==='tidak_sempurna'?'text-danger':'text-secondary'))">
                         <option value="" ${!vDoc.status ? 'selected' : ''}>-- Sila Nilai --</option>
                         <option value="sempurna" ${vDoc.status === 'sempurna' ? 'selected' : ''}>Sempurna</option>
                         <option value="tidak_sempurna" ${vDoc.status === 'tidak_sempurna' ? 'selected' : ''}>Tidak Sempurna</option>
                     </select>
                 </td>
                 <td class="py-2.5">
-                    <input type="text" class="form-control form-control-sm" id="modalDocNote_${v.id}" value="${vDoc.catatan || ''}" placeholder="Catatan semakan...">
+                    <input type="text" class="form-control form-control-sm" id="modalDocNote_${v.id}" value="${vDoc.catatan || ''}" placeholder="Catatan semakan..." ${isLocked ? 'readonly' : ''}>
                 </td>
             `;
             tbody.appendChild(tr);
         });
 
         const modalEl = document.getElementById('modalSemakanDokumenKerja');
+        const saveButton = document.getElementById('btnSimpanSemakanDokumen');
+        if (saveButton) saveButton.classList.toggle('d-none', isLocked);
         const modalObj = bootstrap.Modal.getOrCreateInstance(modalEl);
         modalObj.show();
     },
@@ -2225,10 +2259,18 @@ window.type2State = {
 
         // Decision controls
         const selectEl = document.getElementById('modalKewanganDecisionSelect');
-        if (selectEl) selectEl.value = s2.status || '';
+        if (selectEl) {
+            selectEl.value = s2.status || '';
+            selectEl.disabled = this.readOnly || this.step2Confirmed;
+        }
 
         const noteEl = document.getElementById('modalKewanganCatatanInput');
-        if (noteEl) noteEl.value = s2.catatan || '';
+        if (noteEl) {
+            noteEl.value = s2.catatan || '';
+            noteEl.readOnly = this.readOnly || this.step2Confirmed;
+        }
+
+        document.getElementById('btnSimpanKemampuanKewangan')?.classList.toggle('d-none', this.readOnly || this.step2Confirmed);
 
         const modalEl = document.getElementById('modalKemampuanKewanganVendor');
         const modalObj = new bootstrap.Modal(modalEl);
@@ -2310,7 +2352,7 @@ window.type2State = {
                     let docButtonHtml = '<span class="text-muted">-</span>';
                     if (it.cpc_url) {
                         docButtonHtml = `
-                            <button type="button" class="btn btn-xs btn-outline-danger py-0 px-2 rounded-pill" onclick="window.previewDocument('Sijil CPC - ${it.tajuk}', '${it.cpc_url}')" title="Lihat Sijil CPC">
+                            <button type="button" class="btn btn-xs btn-outline-danger py-0 px-2 rounded-pill btn-staff-document-action" data-title="${this.escapeAttr('Sijil CPC - ' + it.tajuk)}" data-url="${this.escapeAttr(it.cpc_url)}" title="Lihat Sijil CPC">
                                 <i class="bi bi-file-earmark-pdf me-1"></i>CPC
                             </button>
                         `;
@@ -2346,7 +2388,7 @@ window.type2State = {
                     let docBtn = '<span class="text-muted">-</span>';
                     if (it.dokumens && it.dokumens.length > 0) {
                         docBtn = it.dokumens.map(d => `
-                            <button type="button" class="btn btn-xs btn-outline-danger py-0 px-2 rounded-pill me-1" onclick="window.previewDocument('Sijil ${it.nama_pegawai} (${d.original_name})', '${d.file_url}')" title="${d.original_name}">
+                            <button type="button" class="btn btn-xs btn-outline-danger py-0 px-2 rounded-pill me-1 btn-staff-document-action" data-title="${this.escapeAttr('Sijil ' + it.nama_pegawai + ' (' + d.original_name + ')')}" data-url="${this.escapeAttr(d.file_url)}" data-mime-type="${this.escapeAttr(d.mime_type || '')}" title="${this.escapeAttr(d.original_name)}">
                                 <i class="bi bi-file-earmark-pdf me-1"></i>Prebiu
                             </button>
                         `).join('');
@@ -2385,7 +2427,7 @@ window.type2State = {
                     btn.type = 'button';
                     btn.className = 'btn btn-xs btn-outline-secondary d-inline-flex align-items-center gap-1 rounded-2 px-2.5 py-1 text-dark bg-white border shadow-sm';
                     btn.innerHTML = `<i class="bi bi-file-earmark-pdf text-danger"></i><span class="small text-truncate" style="max-width: 250px;">${gd.original_name}</span>`;
-                    btn.onclick = () => window.previewDocument(gd.original_name, gd.file_url);
+                    btn.onclick = () => window.previewDocument(gd.original_name, gd.file_url, gd.mime_type);
                     genDocsContainer.appendChild(btn);
                 });
             }
@@ -2393,10 +2435,18 @@ window.type2State = {
 
         // Decision controls
         const selectEl = document.getElementById('modalKerjaDecisionSelect');
-        if (selectEl) selectEl.value = s3.status || '';
+        if (selectEl) {
+            selectEl.value = s3.status || '';
+            selectEl.disabled = this.readOnly || this.step3Confirmed;
+        }
 
         const noteEl = document.getElementById('modalKerjaCatatanInput');
-        if (noteEl) noteEl.value = s3.catatan || '';
+        if (noteEl) {
+            noteEl.value = s3.catatan || '';
+            noteEl.readOnly = this.readOnly || this.step3Confirmed;
+        }
+
+        document.getElementById('btnSimpanPenilaianKerja')?.classList.toggle('d-none', this.readOnly || this.step3Confirmed);
 
         const modalEl = document.getElementById('modalPenilaianKerjaVendor');
         const modalObj = new bootstrap.Modal(modalEl);
@@ -2405,7 +2455,7 @@ window.type2State = {
 };
 
 // Document Preview Modal Helper
-window.previewDocument = function(title, url) {
+window.previewDocument = function(title, url, mimeType = '') {
     if (!url || url === '#' || url === 'null') {
         if (typeof Swal !== 'undefined') {
             Swal.fire({
@@ -2463,11 +2513,12 @@ window.previewDocument = function(title, url) {
 
     const urlPath = resolvedUrl.split(/[#?]/)[0];
     const extension = urlPath.split('.').pop().trim().toLowerCase();
-    const extFromTitle = (title || '').split('.').pop().trim().toLowerCase();
+    const titleExtensionMatch = String(title || '').match(/\.([a-z0-9]+)(?:$|[?#)\s])/i);
+    const extFromTitle = titleExtensionMatch ? titleExtensionMatch[1].toLowerCase() : '';
     const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp'];
     const filenamePortion = urlPath.substring(urlPath.lastIndexOf('/') + 1);
     const isDownloadRoute = /\/download\/?$/.test(urlPath) || urlPath.includes('/dokumen-files/') || urlPath.includes('/checklist-files/') || urlPath.includes('/stos-form-files/');
-    const isPdf = extension === 'pdf' || extFromTitle === 'pdf' || resolvedUrl.toLowerCase().includes('.pdf');
+    const isPdf = extension === 'pdf' || /\.pdf(?:$|[?#)\s])/i.test(title || '') || /pdf/i.test(mimeType || '') || resolvedUrl.toLowerCase().includes('.pdf');
     const isImage = imageExtensions.includes(extension) || imageExtensions.includes(extFromTitle);
     const isProbablyPage = !isDownloadRoute && (!filenamePortion.includes('.') || filenamePortion.endsWith('.html') || resolvedUrl.includes('modal=1') || resolvedUrl.includes('mode=view') || resolvedUrl.includes('form') || resolvedUrl.includes('borang'));
 
@@ -2520,6 +2571,17 @@ window.previewDocument = function(title, url) {
 
 // Event delegation for preview clicks across all modals
 document.addEventListener('click', function(e) {
+    const staffDocumentBtn = e.target.closest('.btn-staff-document-action');
+    if (staffDocumentBtn) {
+        e.preventDefault();
+        window.previewDocument(
+            staffDocumentBtn.dataset.title,
+            staffDocumentBtn.dataset.url,
+            staffDocumentBtn.dataset.mimeType || ''
+        );
+        return;
+    }
+
     const actionBtn = e.target.closest('.btn-preview-file-action');
     if (actionBtn) {
         e.preventDefault();
