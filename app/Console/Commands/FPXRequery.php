@@ -94,17 +94,11 @@ class FPXRequery extends Command
                 continue;
             }
             $response = $response->getBody()->getContents();
-            $response = explode('&', $response);
-            $data     = [];
+            $data = \App\Models\Fpx::parseResponseBody($response);
 
-            Log::info($response);
+            Log::info($data);
 
-            if(count($response) > 1) {
-                foreach($response as $resp) {
-                    $resp = explode('=', $resp);
-                    $data[$resp[0]] = $resp[1];
-                }
-
+            if(count($data) > 1) {
                 ksort($data);
 
                 // This loop runs unattended every minute. A signature failure here is

@@ -281,6 +281,26 @@ class Fpx
 	}
 
 	/**
+	 * Parse a PayNet message body (AE/AC/AR) into field => value.
+	 *
+	 * The body is application/x-www-form-urlencoded and often ends with '&'
+	 * or a blank segment. The old `explode('=')` then `$part[1]` throws
+	 * "Undefined array key 1" on PHP 8, which Laravel turns into the generic
+	 * 500 page on Data FPX. Values are urldecoded because PayNet signs the
+	 * decoded field values, not the encoded wire form.
+	 *
+	 * @return array<string, string>
+	 */
+	public static function parseResponseBody(string $raw): array
+	{
+		$pairs = self::explodeToPairs(trim($raw), '&');
+
+		return array_map(static function ($value) {
+			return urldecode($value);
+		}, $pairs);
+	}
+
+	/**
 	 * Splits a delimited string into key => value pairs.
 	 *
 	 * Used for both layers of PayNet's RetrieveBankList response: the outer
