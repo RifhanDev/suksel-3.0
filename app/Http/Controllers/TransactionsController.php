@@ -595,10 +595,17 @@ class TransactionsController extends Controller
 			return view('transactions.fpx_query', ['error' => 'Gagal untuk berhubung dengan sistem FPX.']);
 		}
 
-		$data = Fpx::parseResponseBody((string) $response->getBody());
+		$response = (string) $response->getBody();
+		$response = explode('&', $response);
+		$data     = [];
 
-		if (count($data) < 2) {
+		if (count($response) < 2) {
 			return view('transactions.fpx_query', ['error' => 'Gagal untuk berhubung dengan sistem FPX.']);
+		}
+
+		foreach ($response as $resp) {
+			$resp           = explode('=', $resp);
+			$data[$resp[0]] = $resp[1];
 		}
 
 		ksort($data);
@@ -658,10 +665,17 @@ class TransactionsController extends Controller
 			return redirect('transactions/' . $id)->with('error', 'Gagal untuk berhubung dengan sistem FPX.');
 		}
 
-		$data = Fpx::parseResponseBody($response->getBody()->getContents());
+		$response = $response->getBody()->getContents();
+		$response = explode('&', $response);
+		$data     = [];
 
-		if (count($data) < 2) {
+		if (count($response) < 2) {
 			return redirect('transactions/' . $id)->with('error', 'Gagal untuk berhubung dengan sistem FPX.');
+		}
+
+		foreach ($response as $resp) {
+			$resp           = explode('=', $resp);
+			$data[$resp[0]] = $resp[1];
 		}
 
 		ksort($data);
@@ -816,13 +830,22 @@ class TransactionsController extends Controller
 		}
 
 		$response_output = $response->getBody()->getContents();
-		$data = Fpx::parseResponseBody($response_output);
+		$response_output2 = explode('&', $response_output);
+		$data     = [];
 
-		if (count($data) < 2) {
-			return response()->json([
+		if (count($response_output2) < 2) {
+
+			$response = array(
 				'status' => 'Gagal untuk berhubung dengan sistem FPX.',
-				'response' => $response_output,
-			]);
+				'response' => $response->getBody()->getContents()
+			);
+
+			return response()->json($response);
+		}
+
+		foreach ($response_output2 as $resp) {
+			$resp           = explode('=', $resp);
+			$data[$resp[0]] = $resp[1];
 		}
 
 		ksort($data);
