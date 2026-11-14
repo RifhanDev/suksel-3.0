@@ -9,6 +9,7 @@ use App\Models\TenderVendorDokumenResponse;
 use App\Services\JawatankuasaPembukaService;
 use App\Services\VendorDokumenResponseService;
 use App\Support\TenderDokumenPresenter;
+use App\Support\TenderListingFilters;
 use App\Support\TenderProcessStatus;
 use App\Tender;
 use Carbon\Carbon;
@@ -32,14 +33,26 @@ class JawatankuasaPembukaController extends Controller
     // Index – list tenders awaiting Pembuka evaluation
     // ─────────────────────────────────────────────────────────────────
 
-    public function index()
+    public function index(Request $request)
     {
-        $tenders = $this->applyCommitteeAppointment(
-                Tender::query()
-                    ->with('tenderer')
-                    ->where('status_process_id', TenderProcessStatus::penilaianPembukaListStatus()),
-                'open'
-            )
+        $query = $this->applyCommitteeAppointment(
+            Tender::query()
+                ->with('tenderer')
+                ->where('status_process_id', TenderProcessStatus::penilaianPembukaListStatus()),
+            'open'
+        );
+
+        TenderListingFilters::apply($query, $request);
+
+        if ($request->filled('status')) {
+            if ($request->input('status') === 'penilaian_pembuka') {
+                $query->where('tenders.status_process_id', TenderProcessStatus::penilaianPembukaListStatus());
+            } else {
+                $query->whereRaw('1 = 0');
+            }
+        }
+
+        $tenders = $query
             ->orderByDesc('id')
             ->get()
             ->map(function (Tender $tender) {

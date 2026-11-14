@@ -25,6 +25,14 @@ trait ResolvesTenderForProcess
                 ->first();
         }
 
+        $user = auth()->user();
+        if ($tender && $user && !$user->hasRole('Admin')) {
+            if (!$user->organization_unit_id
+                || (int) $tender->organization_unit_id !== (int) $user->organization_unit_id) {
+                abort(403, 'Tender ini bukan milik agensi anda.');
+            }
+        }
+
         if ($tender && method_exists($this, 'assertCommitteeAppointment') && !empty($this->committeeJenisForResolvedTenders ?? null)) {
             $this->assertCommitteeAppointment($tender, $this->committeeJenisForResolvedTenders);
         }

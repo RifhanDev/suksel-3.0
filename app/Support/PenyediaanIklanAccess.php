@@ -16,6 +16,11 @@ final class PenyediaanIklanAccess
 {
     public static function seesAll(?User $user): bool
     {
+        return $user !== null && $user->hasRole('Admin');
+    }
+
+    public static function canList(?User $user): bool
+    {
         return $user !== null && $user->canAccessMenu('Advertisement:list');
     }
 
@@ -32,7 +37,7 @@ final class PenyediaanIklanAccess
 
     public static function canOpenMenu(?User $user): bool
     {
-        return self::seesAll($user) || self::isPemilikProjek($user);
+        return self::seesAll($user) || self::canList($user) || self::isPemilikProjek($user);
     }
 
     public static function canManage(?User $user, Tender $tender): bool
@@ -49,6 +54,11 @@ final class PenyediaanIklanAccess
             return true;
         }
 
+        if (self::canList($user)) {
+            return $user->organization_unit_id
+                && (int) $tender->organization_unit_id === (int) $user->organization_unit_id;
+        }
+
         if (! self::isPemilikProjek($user)) {
             return false;
         }
@@ -57,16 +67,23 @@ final class PenyediaanIklanAccess
             return false;
         }
 
-        if ($user->organization_unit_id) {
-            return (int) $tender->organization_unit_id === (int) $user->organization_unit_id;
-        }
-
-        return (int) $tender->creator_id === (int) $user->id;
+        return $user->organization_unit_id
+            && (int) $tender->organization_unit_id === (int) $user->organization_unit_id;
     }
 
     public static function scopeVisible(Builder $query, ?User $user): void
     {
         if ($user === null || self::seesAll($user)) {
+            return;
+        }
+
+        if (self::canList($user)) {
+            if ($user->organization_unit_id) {
+                $query->where('organization_unit_id', $user->organization_unit_id);
+            } else {
+                $query->whereRaw('1 = 0');
+            }
+
             return;
         }
 
@@ -78,10 +95,8 @@ final class PenyediaanIklanAccess
 
         if ($user->organization_unit_id) {
             $query->where('organization_unit_id', $user->organization_unit_id);
-
-            return;
+        } else {
+            $query->whereRaw('1 = 0');
         }
-
-        $query->where('creator_id', $user->id);
     }
 }

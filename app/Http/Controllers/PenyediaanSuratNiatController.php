@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\RestrictsTenderByRole;
+use App\Support\TenderListingFilters;
 use App\Support\TenderProcessStatus;
 use App\Tender;
+use Illuminate\Http\Request;
 
 /**
  * Senarai tender pada peringkat Penyediaan Surat Niat.
@@ -16,16 +19,29 @@ use App\Tender;
  */
 class PenyediaanSuratNiatController extends Controller
 {
+    use RestrictsTenderByRole;
+
     public function __construct()
     {
         $this->menuMiddleware('LetterOfIntent:list');
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        $tenders = Tender::query()
-            ->where('status_process_id', TenderProcessStatus::penyediaanSuratNiatListStatus())
-            ->orderByDesc('id')
+        $query = $this->applyOwnAgencyScope(Tender::query())
+            ->where('status_process_id', TenderProcessStatus::penyediaanSuratNiatListStatus());
+
+        TenderListingFilters::apply($query, $request);
+
+        if ($request->filled('status')) {
+            if ($request->input('status') === 'penyediaan_surat_niat') {
+                $query->where('tenders.status_process_id', TenderProcessStatus::penyediaanSuratNiatListStatus());
+            } else {
+                $query->whereRaw('1 = 0');
+            }
+        }
+
+        $tenders = $query->orderByDesc('tenders.id')
             ->get()
             ->map(fn (Tender $tender) => $this->mapTenderAdvertRow($tender, 'penyediaanSuratNiat'))
             ->values()
