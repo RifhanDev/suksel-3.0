@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\RestrictsTenderByRole;
 use App\Http\Controllers\Concerns\UpdatesTenderProcessAfterChecklistSubmit;
 use App\Models\TechnicalChecklistFile;
 use App\Models\TechnicalChecklistHeader;
@@ -16,6 +17,20 @@ use Illuminate\Support\Str;
 class TechnicalChecklistController extends Controller
 {
     use UpdatesTenderProcessAfterChecklistSubmit;
+	use RestrictsTenderByRole;
+
+	public function __construct()
+	{
+		$this->middleware(function ($request, $next) {
+			$tenderUuid = $request->route('tenderUuid');
+			if ($tenderUuid) {
+				$this->assertOwnAgency(\App\Tender::query()->where('uuid', $tenderUuid)->first());
+			}
+
+			return $next($request);
+		});
+	}
+
     public function index(string $tenderUuid)
     {
         $this->ensureSpecificationAccess();
@@ -219,6 +234,9 @@ class TechnicalChecklistController extends Controller
 
         $file = TechnicalChecklistFile::where('uuid', $fileUuid)->first();
         if ($file) {
+            $tenderId = $file->header?->tender_id ?? $file->item?->header?->tender_id;
+            $this->assertOwnAgency($tenderId ? \App\Tender::query()->find($tenderId) : null);
+
             if ($file->path && \App\Support\AttachmentStorage::exists($file->path)) {
                 \App\Support\AttachmentStorage::delete($file->path);
             }
@@ -231,6 +249,9 @@ class TechnicalChecklistController extends Controller
         }
 
         // Backward compatibility fallback if row only exists on STOS API
+        if (!auth()->user()?->hasRole('Admin')) {
+            abort(403, 'PTJ fail ini tidak dapat disahkan.');
+        }
         try {
             $response = $this->api()->delete($this->url('technical-checklist-files/' . $fileUuid));
             if ($response->successful()) {

@@ -53,8 +53,9 @@ class TendersController extends Controller
 
 			$tenders = Tender::orderBy('submission_datetime', 'desc');
 
-			if (auth()->check() && !auth()->user()->ability(['Admin', 'Front Desk'], []) && auth()->user()->organization_unit_id)
-				$tenders = $tenders->where('organization_unit_id', auth()->user()->organization_unit_id);
+			if (auth()->check() && !auth()->user()->hasRole('Vendor')) {
+				$tenders = $this->applyOwnAgencyScope($tenders);
+			}
 
 			if (!auth()->check() || auth()->user()->hasRole('Vendor'))
 				$tenders = $tenders->forPublic()->published()->advertised()->open();
@@ -104,16 +105,27 @@ class TendersController extends Controller
 			}
 
 			if ($request->filled('filter_tarikh')) {
-				try {
-					$filterDate = Carbon::createFromFormat('d/m/Y', (string) $request->input('filter_tarikh'))
-						->format('Y-m-d');
+				$inputDate = trim((string) $request->input('filter_tarikh'));
+				$filterDate = null;
+				foreach (['d/m/Y', 'Y-m-d'] as $dateFormat) {
+					try {
+						$parsedDate = Carbon::createFromFormat('!' . $dateFormat, $inputDate);
+						if ($parsedDate && $parsedDate->format($dateFormat) === $inputDate) {
+							$filterDate = $parsedDate->format('Y-m-d');
+							break;
+						}
+					} catch (\Throwable $th) {
+						// Try the next accepted date format.
+					}
+				}
 
+				if ($filterDate !== null) {
 					$tenders->where(function ($query) use ($filterDate) {
 						$query->whereDate('tenders.document_start_date', $filterDate)
 							->orWhereDate('tenders.submission_datetime', $filterDate);
 					});
-				} catch (\Throwable $th) {
-					// Ignore invalid date filter input and keep the query usable.
+				} else {
+					$tenders->whereRaw('1 = 0');
 				}
 			}
 
@@ -514,6 +526,9 @@ class TendersController extends Controller
 	public function show(Request $request, $id)
 	{
 		$tender = Tender::with('codes')->with('siteVisits', 'creator', 'officer', 'kaedahDokumen', 'iklanDokumens')->findOrFail($id);
+		if (auth()->check() && !auth()->user()->hasRole('Vendor')) {
+			$this->assertOwnAgency($tender);
+		}
 		app(\App\Services\StosTenderChecklistSync::class)->syncForTenderOnView($tender);
 		app(\App\Services\PenyediaanIklanService::class)->ensureMejaTerkawalSyncedForTender($tender);
 		$pegawaiDisplay = \App\Support\TenderPegawaiPresenter::for($tender);
@@ -2425,6 +2440,45 @@ class TendersController extends Controller
 
 	public function __construct()
 	{
+		$this->middleware(function ($request, $next) {
+			$user = auth()->user();
+			if (!$user || $user->hasRole('Admin') || $user->hasRole('Vendor')) {
+				return $next($request);
+			}
+
+			$identifier = $request->route('tender_id')
+				?? $request->route('tender')
+				?? $request->input('tender_id')
+				?? $request->query('tender_id');
+
+			$route = $request->route();
+			if ($identifier === null && str_contains((string) ($route?->uri() ?? ''), 'tender')) {
+				$identifier = $request->route('id');
+			}
+
+			if ($identifier instanceof Tender) {
+				$tender = $identifier;
+			} elseif ($identifier !== null && $identifier !== '') {
+				$query = Tender::query();
+				$tender = is_numeric($identifier)
+					? $query->find((int) $identifier)
+					: $query->where('uuid', $identifier)
+						->orWhere('no_tender', $identifier)
+						->orWhere('ref_number', $identifier)
+						->first();
+
+				$this->assertOwnAgency($tender);
+			} else {
+				$tender = null;
+			}
+
+			if ($tender) {
+				$this->assertOwnAgency($tender);
+			}
+
+			return $next($request);
+		});
+
 		// parent::__construct();
 		// view()->share('controller', 'Tender');
 		// 	Config::set('former::TwitterBootstrap3.labelWidths', [

@@ -124,7 +124,7 @@
             <div class="row g-2 align-items-end">
 
                 <div class="col-12 col-lg-2">
-					<label for="filter_no_tender" class="form-label small fw-bold text-secondary text-uppercase mb-1">No. Tender</label>
+					<label for="filter_no_tender" class="form-label small fw-bold text-secondary text-uppercase mb-1">No. Tender/Sebut Harga</label>
                     <input type="text" id="filter_no_tender" class="form-control form-control-sm" placeholder="Cth: JPS/01">
                 </div>
 
@@ -356,17 +356,31 @@
             });
 
             // ── Filter ─────────────────────────────────────────────────────
-            $('#btn_apply_filter').on('click', function () {
+            function reloadTenderFilters() {
                 if (window.tendersDT) {
-                    window.tendersDT.ajax.reload();
+                    // A new filter may have fewer results than the current page.
+                    window.tendersDT.ajax.reload(null, true);
                 }
+            }
+
+            $('#btn_apply_filter').off('click.tenderFilters').on('click.tenderFilters', function () {
+                reloadTenderFilters();
             });
 
-            $('#btn_reset_filter').on('click', function () {
-                $('#filter_no_tender, #filter_tajuk, #filter_tarikh').val('');
+            $('#btn_reset_filter').off('click.tenderFilters').on('click.tenderFilters', function () {
+                $('#filter_no_tender, #filter_tajuk').val('');
                 $('#filter_status').val('');
-                if (window.tendersDT) {
-                    window.tendersDT.ajax.reload();
+                $('#filter_tarikh').val('');
+                if ($.fn.datepicker) {
+                    $('#filter_tarikh').datepicker('clearDates');
+                }
+                reloadTenderFilters();
+            });
+
+            $('#filter_no_tender, #filter_tajuk').off('keydown.tenderFilters').on('keydown.tenderFilters', function (event) {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    reloadTenderFilters();
                 }
             });
 

@@ -11,6 +11,7 @@ use App\Services\TenderIklanDokumenService;
 use App\Support\PenyediaanIklanAccess;
 use App\Support\TenderProcessStatus;
 use App\Support\TenderDokumenPresenter;
+use App\Support\TenderListingFilters;
 use App\Support\TenderReviewPresenter;
 use App\Tender;
 use App\User;
@@ -38,7 +39,7 @@ class PenyediaanIklanController extends Controller
         });
     }
 
-    public function index()
+    public function index(Request $request)
     {
         $query = Tender::query()
             ->where('status_process_id', TenderProcessStatus::penyediaanIklanListStatus())
@@ -46,6 +47,16 @@ class PenyediaanIklanController extends Controller
             ->orderByDesc('id');
 
         PenyediaanIklanAccess::scopeVisible($query, auth()->user());
+
+        TenderListingFilters::apply($query, $request);
+
+        if ($request->filled('status')) {
+            if ($request->input('status') === 'penyediaan_iklan') {
+                $query->where('tenders.status_process_id', TenderProcessStatus::penyediaanIklanListStatus());
+            } else {
+                $query->whereRaw('1 = 0');
+            }
+        }
 
         $tenders = $query
             ->get()

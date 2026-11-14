@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\RestrictsTenderByRole;
 use App\Http\Controllers\Concerns\AdvancesTenderProcessStatus;
 use App\Models\JawatankuasaPerolehanPemilihanPetender;
 use App\Models\PerakuanJabatanPengesyoranPembekal;
@@ -16,6 +17,7 @@ use Illuminate\Support\Facades\Log;
 class SuratNiatController extends Controller
 {
     use AdvancesTenderProcessStatus;
+    use RestrictsTenderByRole;
 
     private const FAKTOR_OPTIONS = [
         'harga_tawaran' => 'Harga tawaran',
@@ -32,11 +34,21 @@ class SuratNiatController extends Controller
         // senarai sudah dilindungi; tanpa baris ini halaman butiran dan semua
         // endpoint tindakan di bawah terdedah kepada mana-mana pengguna log masuk.
         $this->menuMiddleware('LetterOfIntent:list');
+
+        $this->middleware(function ($request, $next) {
+            $tenderId = $request->route('tender');
+            if ($tenderId !== null && is_numeric($tenderId)) {
+                $this->assertOwnAgency(Tender::query()->find((int) $tenderId));
+            }
+
+            return $next($request);
+        });
     }
 
     public function show(int $tender)
     {
         $tenderModel = Tender::find($tender);
+        $this->assertOwnAgency($tenderModel);
         $pembekals = $this->fetchPembekals($tender);
 
         return view('newModule.penyediaanSuratNiat.penyediaanSuratNiat', [
@@ -49,6 +61,8 @@ class SuratNiatController extends Controller
 
     public function pembekals(int $tender)
     {
+        $this->assertOwnAgency(Tender::query()->find($tender));
+
         return response()->json([
             'success' => true,
             'data' => $this->fetchPembekals($tender),
@@ -57,6 +71,8 @@ class SuratNiatController extends Controller
 
     public function savePembekals(Request $request, int $tender)
     {
+        $this->assertOwnAgency(Tender::query()->find($tender));
+
         try {
             $response = $this->stos->saveSuratNiatPembekals($tender, [
                 'pembekal' => $request->input('pembekal', []),
@@ -72,6 +88,8 @@ class SuratNiatController extends Controller
 
     public function suratList(int $tender)
     {
+        $this->assertOwnAgency(Tender::query()->find($tender));
+
         try {
             $response = $this->stos->listSuratNiat($tender);
 
@@ -83,6 +101,8 @@ class SuratNiatController extends Controller
 
     public function generateSurat(Request $request, int $tender)
     {
+        $this->assertOwnAgency(Tender::query()->find($tender));
+
         try {
             $payload = $request->only(['pembekal_id', 'tujuan', 'faktor', 'faktor_lain', 'tempoh_maklumbalas_hari']);
             $payload['generated_by'] = auth()->id();
@@ -99,6 +119,8 @@ class SuratNiatController extends Controller
 
     public function updateSurat(Request $request, int $id)
     {
+        $this->assertSuratOwnAgency($id);
+
         try {
             $payload = $request->only(['tujuan', 'faktor', 'faktor_lain', 'tempoh_maklumbalas_hari']);
             $response = $this->stos->updateSuratNiat($id, $payload);
@@ -111,6 +133,8 @@ class SuratNiatController extends Controller
 
     public function deleteSurat(int $id)
     {
+        $this->assertSuratOwnAgency($id);
+
         try {
             $response = $this->stos->deleteSuratNiat($id);
 
@@ -122,6 +146,8 @@ class SuratNiatController extends Controller
 
     public function download(int $id)
     {
+        $this->assertSuratOwnAgency($id);
+
         try {
             $response = $this->stos->downloadSuratNiat($id);
 
@@ -141,6 +167,8 @@ class SuratNiatController extends Controller
 
     public function hantar(int $tender)
     {
+        $this->assertOwnAgency(Tender::query()->find($tender));
+
         try {
             $response = $this->stos->hantarSuratNiat($tender);
 
@@ -236,6 +264,18 @@ class SuratNiatController extends Controller
                 'catatan' => $saved['catatan'] ?? $participation->surat_niat_catatan,
             ];
         })->values()->all();
+    }
+
+    private function assertSuratOwnAgency(int $suratId): void
+    {
+        $response = $this->stos->getSuratNiatAccessInfo($suratId);
+
+        if (!$response->successful()) {
+            abort($response->status() === 404 ? 404 : 502, 'Surat Niat tidak ditemui.');
+        }
+
+        $tenderId = (int) $response->json('data.tender_id');
+        $this->assertOwnAgency(Tender::query()->find($tenderId));
     }
 
     /**

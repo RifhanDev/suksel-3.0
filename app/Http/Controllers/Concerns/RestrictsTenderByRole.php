@@ -15,10 +15,9 @@ trait RestrictsTenderByRole
             return false;
         }
 
-        return $user->hasRole('Admin')
-            || $user->hasRole('Agency Admin')
-            || $user->hasRole('Admin UPEN')
-            || $user->hasRole('Admin PWN');
+        // Admin is the application's system-wide administrator. Other roles may
+        // have elevated workflow permissions, but do not inherit cross-PTJ access.
+        return $user->hasRole('Admin');
     }
 
     protected function userIsAgencyCommittee($user = null): bool
@@ -44,6 +43,8 @@ trait RestrictsTenderByRole
 
     protected function applyCommitteeAppointment($query, string|array $jenis)
     {
+        $query = $this->applyOwnAgencyScope($query);
+
         if (!$this->shouldScopeCommitteeTenders()) {
             return $query;
         }
@@ -53,6 +54,8 @@ trait RestrictsTenderByRole
 
     protected function assertCommitteeAppointment(?Tender $tender, string|array $jenis): void
     {
+        $this->assertOwnAgency($tender);
+
         if (!$this->shouldScopeCommitteeTenders()) {
             return;
         }
@@ -64,7 +67,30 @@ trait RestrictsTenderByRole
 
     protected function filterTendersByAppointment(iterable $tenders, string|array $jenis): Collection
     {
-        $items = collect($tenders);
+        $user = auth()->user();
+        $items = collect($tenders)->filter(function ($tender) use ($user) {
+            if (!$user || $user->hasRole('Admin')) {
+                return true;
+            }
+
+            $organizationUnitId = is_array($tender)
+                ? ($tender['organization_unit_id'] ?? null)
+                : ($tender->organization_unit_id ?? null);
+
+            if ($organizationUnitId === null) {
+                $tenderId = is_array($tender)
+                    ? ($tender['id'] ?? null)
+                    : ($tender->id ?? null);
+                if ($tenderId) {
+                    $organizationUnitId = Tender::query()
+                        ->whereKey($tenderId)
+                        ->value('organization_unit_id');
+                }
+            }
+
+            return $user->organization_unit_id
+                && (int) $organizationUnitId === (int) $user->organization_unit_id;
+        });
 
         if (!$this->shouldScopeCommitteeTenders()) {
             return $items->values();
@@ -151,7 +177,7 @@ trait RestrictsTenderByRole
     {
         $user = auth()->user();
 
-        if (!$user || !$this->userIsAgencyLogin($user)) {
+        if (!$user || $user->hasRole('Admin')) {
             return $query;
         }
 
@@ -168,11 +194,12 @@ trait RestrictsTenderByRole
     {
         $user = auth()->user();
 
-        if (!$user || !$this->userIsAgencyLogin($user)) {
+        if (!$user || $user->hasRole('Admin')) {
             return;
         }
 
-        if (!$tender || (int) $tender->organization_unit_id !== (int) $user->organization_unit_id) {
+        if (!$tender || !$user->organization_unit_id
+            || (int) $tender->organization_unit_id !== (int) $user->organization_unit_id) {
             abort(403, 'Tender ini bukan milik agensi anda.');
         }
     }

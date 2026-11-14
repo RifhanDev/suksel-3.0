@@ -24,6 +24,22 @@ trait HandlesTenderFormAccess
             return;
         }
 
+        $staffRoles = [
+            'Agency Admin', 'Agency User', 'Agency Finance', 'Agency Urusetia',
+            'Agency Jawatankuasa', 'Jawatankuasa', 'Agency Lembaga Perolehan',
+            'Agency Ketua Jabatan', 'Admin UPEN', 'Admin PWN', 'Admin Kewangan',
+            'Front Desk',
+        ];
+        $vendorOnly = $user->hasRole('Vendor')
+            && !$user->hasRole($staffRoles)
+            && !$user->can('tender:specification-management')
+            && !$user->can('Tender:specification-management');
+
+        if (!$vendorOnly && (!$user->organization_unit_id
+            || (int) $tender->organization_unit_id !== (int) $user->organization_unit_id)) {
+            abort(403, 'Tender ini bukan milik agensi anda.');
+        }
+
         if ($user->hasRole('Agency Jawatankuasa') || $user->hasRole('Jawatankuasa')) {
             $legacy = $tender instanceof \App\Tender
                 ? $tender

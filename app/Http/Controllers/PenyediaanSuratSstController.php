@@ -3,11 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\AdvancesTenderProcessStatus;
+use App\Http\Controllers\Concerns\RestrictsTenderByRole;
 use App\Http\Controllers\Concerns\ResolvesTenderForProcess;
 use App\Models\Ref\RefTypeOfContract;
 use App\Models\TenderVendorDokumenResponse;
 use App\Services\StosBackendClient;
 use App\Support\TenderProcessStatus;
+use App\Support\TenderListingFilters;
 use App\Tender;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
@@ -19,6 +21,7 @@ use Illuminate\Support\Str;
 class PenyediaanSuratSstController extends Controller
 {
     use AdvancesTenderProcessStatus;
+    use RestrictsTenderByRole;
     use ResolvesTenderForProcess;
 
     /** Kategori perolehan 1/2 = bekalan/perkhidmatan, 3 = kerja. */
@@ -28,18 +31,56 @@ class PenyediaanSuratSstController extends Controller
         private StosBackendClient $stos,
     ) {
         $this->menuMiddleware('SST:list');
+
+        $this->middleware(function ($request, $next) {
+            $tender = $request->route('tender');
+
+            if ($tender instanceof Tender) {
+                $this->assertOwnAgency($tender);
+            } else {
+                $identifier = $tender ?? $request->query('tender') ?? $request->input('tender');
+                if (!empty($identifier)) {
+                    $model = is_numeric($identifier)
+                        ? Tender::query()->find((int) $identifier)
+                        : Tender::query()->where('uuid', $identifier)->orWhere('no_tender', $identifier)->orWhere('ref_number', $identifier)->first();
+                    $this->assertOwnAgency($model);
+                }
+            }
+
+            return $next($request);
+        });
     }
 
-    public function index()
+    public function index(Request $request)
     {
 
         // Tenders that have been sent on stay listed so their status is still visible.
         $pending = TenderProcessStatus::penyediaanSuratSstListStatus();
         $sent = TenderProcessStatus::sstSentStatuses();
 
-        $tenders = Tender::query()
-            ->whereIn('status_process_id', array_merge([$pending], $sent))
-            ->orderByDesc('id')
+        $tenders = $this->applyOwnAgencyScope(Tender::query())
+            ->whereIn('status_process_id', array_merge([$pending], $sent));
+
+        TenderListingFilters::apply($tenders, $request);
+
+        if ($request->filled('status')) {
+            switch ($request->input('status')) {
+                case 'belum_dihantar':
+                    $tenders->where('tenders.status_process_id', $pending);
+                    break;
+                case 'dihantar':
+                    $tenders->where('tenders.status_process_id', TenderProcessStatus::PENYEDIAAN_SURAT_SST);
+                    break;
+                case 'selesai':
+                    $tenders->where('tenders.status_process_id', TenderProcessStatus::SELESAI);
+                    break;
+                default:
+                    $tenders->whereRaw('1 = 0');
+                    break;
+            }
+        }
+
+        $tenders = $tenders->orderByDesc('tenders.id')
             ->get()
             ->map(function (Tender $tender) use ($sent) {
                 $row = $this->mapTenderAdvertRow($tender, 'penyediaanSST');

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\AdvancesTenderProcessStatus;
+use App\Http\Controllers\Concerns\RestrictsTenderByRole;
 use App\Models\Jawatankuasa;
 use App\Services\StosBackendClient;
 use App\Support\TenderProcessStatus;
@@ -19,6 +20,7 @@ use Illuminate\Validation\ValidationException;
 class PenyediaanMesyuaratController extends Controller
 {
     use AdvancesTenderProcessStatus;
+    use RestrictsTenderByRole;
     use Helper;
 
     private const JENIS_LABELS = [
@@ -59,9 +61,9 @@ class PenyediaanMesyuaratController extends Controller
         return view('newModule.penyediaanMesyuarat.index_perincian', compact('tenders'));
     }
 
-    public function indexKehadiran()
+    public function indexKehadiran(Request $request)
     {
-        $tenders = $this->listTendersForKehadiran();
+        $tenders = $this->listTendersForKehadiran($request);
 
         return view('newModule.penyediaanMesyuarat.index_jawatankuasa', compact('tenders'));
     }
@@ -108,6 +110,7 @@ class PenyediaanMesyuaratController extends Controller
         $tender = Tender::with('tenderer')
             ->where('uuid', $request->query('tender'))
             ->firstOrFail();
+        $this->assertOwnAgency($tender);
 
         $visibleJenis = $this->resolveVisibleJenis($tender);
 
@@ -570,7 +573,7 @@ class PenyediaanMesyuaratController extends Controller
 
     protected function listTendersInMesyuaratPhase(?Request $request, ?callable $applyScope = null): \Illuminate\Support\Collection
     {
-        $query = Tender::query()
+        $query = $this->applyOwnAgencyScope(Tender::query())
             ->with('tenderer')
             ->whereIn('status_process_id', self::MESYUARAT_PHASE_STATUSES);
 
@@ -596,11 +599,17 @@ class PenyediaanMesyuaratController extends Controller
 
         if ($request?->filled('tarikh')) {
             try {
-                $date = Carbon::createFromFormat('d/m/Y', $request->input('tarikh'))->format('Y-m-d');
+                $inputDate = trim((string) $request->input('tarikh'));
+                $parsedDate = Carbon::createFromFormat('!d/m/Y', $inputDate);
+                if (!$parsedDate || $parsedDate->format('d/m/Y') !== $inputDate) {
+                    throw new \InvalidArgumentException('Tarikh tidak sah.');
+                }
+
+                $date = $parsedDate->format('Y-m-d');
                 $query->whereDate('advertise_start_date', '<=', $date)
                     ->whereDate('advertise_stop_date', '>=', $date);
             } catch (\Exception $e) {
-                // ignore invalid date
+                $query->whereRaw('1 = 0');
             }
         }
 
@@ -836,7 +845,10 @@ class PenyediaanMesyuaratController extends Controller
             $query->where('uuid', $identifier);
         }
 
-        return $query->firstOrFail();
+        $tender = $query->firstOrFail();
+        $this->assertOwnAgency($tender);
+
+        return $tender;
     }
 
     private function buildUiTabs(array $visibleJenis): array
@@ -903,10 +915,14 @@ class PenyediaanMesyuaratController extends Controller
             return null;
         }
 
-        if (is_numeric($identifier)) {
-            return Tender::query()->where('id', (int) $identifier)->first();
+        $tender = is_numeric($identifier)
+            ? Tender::query()->where('id', (int) $identifier)->first()
+            : Tender::query()->where('uuid', $identifier)->first();
+
+        if ($tender) {
+            $this->assertOwnAgency($tender);
         }
 
-        return Tender::query()->where('uuid', $identifier)->first();
+        return $tender;
     }
 }

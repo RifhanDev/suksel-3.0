@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\RestrictsTenderByRole;
 use App\Models\SpesifikasiKerjaFile;
 use App\Models\SpesifikasiKerjaHeader;
 use App\Models\SpesifikasiKerjaItem;
@@ -11,6 +12,20 @@ use Illuminate\Support\Str;
 
 class SpesifikasiTenderKerjaController extends Controller
 {
+	use RestrictsTenderByRole;
+
+	public function __construct()
+	{
+		$this->middleware(function ($request, $next) {
+			$tenderUuid = $request->route('tenderUuid');
+			if ($tenderUuid) {
+				$this->assertOwnAgency(\App\Tender::query()->where('uuid', $tenderUuid)->first());
+			}
+
+			return $next($request);
+		});
+	}
+
 
     /**
      * Display the Penyediaan Spesifikasi Tender page with existing data.
@@ -223,6 +238,7 @@ class SpesifikasiTenderKerjaController extends Controller
         $this->ensureAccess();
 
         $tender = Tender::query()->where('uuid', $tenderUuid)->firstOrFail();
+        $this->assertOwnAgency(\App\Tender::query()->find($tender->id));
 
         $file = SpesifikasiKerjaFile::query()
             ->where('uuid', $fileUuid)
@@ -250,6 +266,9 @@ class SpesifikasiTenderKerjaController extends Controller
             ->whereHas('header', fn ($query) => $query->whereHas('tender', fn ($tenderQuery) => $tenderQuery->where('kategori_perolehan_id', 3)))
             ->first();
         if ($file) {
+            $tenderId = $file->header?->tender_id;
+            $this->assertOwnAgency($tenderId ? \App\Tender::query()->find($tenderId) : null);
+
             if ($file->path && \App\Support\AttachmentStorage::exists($file->path)) {
                 \App\Support\AttachmentStorage::delete($file->path);
             }

@@ -515,6 +515,11 @@ class StosBackendClient
         return $this->get('/api/surat-niat/' . $tenderId . '/surat');
     }
 
+    public function getSuratNiatAccessInfo(int $suratId): Response
+    {
+        return $this->get('/api/surat-niat/surat/' . $suratId . '/access');
+    }
+
     public function generateSuratNiat(int $tenderId, array $payload): Response
     {
         return $this->post('/api/surat-niat/' . $tenderId . '/surat', $payload);

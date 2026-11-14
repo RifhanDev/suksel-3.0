@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\RestrictsTenderByRole;
 use App\Http\Controllers\Concerns\UpdatesTenderProcessAfterChecklistSubmit;
 use App\Models\KewanganKerjaFile;
 use App\Models\KewanganKerjaHeader;
@@ -20,6 +21,19 @@ use Illuminate\Validation\ValidationException;
 class SenaraiKewanganKerjaController extends Controller
 {
     use UpdatesTenderProcessAfterChecklistSubmit;
+	use RestrictsTenderByRole;
+
+	public function __construct()
+	{
+		$this->middleware(function ($request, $next) {
+			$tenderUuid = $request->route('tenderUuid');
+			if ($tenderUuid) {
+				$this->assertOwnAgency(\App\Tender::query()->where('uuid', $tenderUuid)->first());
+			}
+
+			return $next($request);
+		});
+	}
     /**
      * Display the Senarai Kewangan Kerja page with existing checklist data.
      */
@@ -251,6 +265,9 @@ class SenaraiKewanganKerjaController extends Controller
 
         $file = KewanganKerjaFile::where('uuid', $fileUuid)->first();
         if ($file) {
+            $tenderId = $file->header?->tender_id ?? $file->item?->header?->tender_id;
+            $this->assertOwnAgency($tenderId ? \App\Tender::query()->find($tenderId) : null);
+
             if ($file->path && \App\Support\AttachmentStorage::exists($file->path)) {
                 \App\Support\AttachmentStorage::delete($file->path);
             }
@@ -260,6 +277,10 @@ class SenaraiKewanganKerjaController extends Controller
                 'success' => true,
                 'message' => 'Fail berjaya dipadam dari storan SUKSel 3.0.',
             ]);
+        }
+
+        if (!auth()->user()?->hasRole('Admin')) {
+            abort(403, 'PTJ fail ini tidak dapat disahkan.');
         }
 
         try {

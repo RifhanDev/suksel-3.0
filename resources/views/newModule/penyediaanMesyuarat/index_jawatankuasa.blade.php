@@ -53,6 +53,35 @@
         <div class="alert alert-danger">{{ session('error') }}</div>
     @endif
 
+    <form method="get" action="{{ route('jawatankuasaMesyuarat') }}" class="card border shadow-sm mb-3 rounded-3">
+        <div class="card-body p-3">
+            <div class="row g-2 align-items-end">
+                <div class="col-12 col-lg-2">
+                    <label for="filter_no_tender" class="form-label small fw-bold text-secondary text-uppercase mb-1">No. Tender / Sebut Harga</label>
+                    <input type="text" name="no_tender" id="filter_no_tender" class="form-control form-control-sm" placeholder="Cth: JPS/01" value="{{ request('no_tender') }}">
+                </div>
+                <div class="col-12 col-lg-4">
+                    <label for="filter_tajuk" class="form-label small fw-bold text-secondary text-uppercase mb-1">Tajuk Perolehan</label>
+                    <input type="text" name="tajuk" id="filter_tajuk" class="form-control form-control-sm" placeholder="Cari tajuk projek..." value="{{ request('tajuk') }}">
+                </div>
+                <div class="col-6 col-lg-2">
+                    <label for="filter_status" class="form-label small fw-bold text-secondary text-uppercase mb-1">Status</label>
+                    <input type="text" name="status" id="filter_status" class="form-control form-control-sm" placeholder="Cth: Dalam Proses" value="{{ request('status') }}">
+                </div>
+                <div class="col-6 col-lg-2">
+                    <label for="filter_tarikh" class="form-label small fw-bold text-secondary text-uppercase mb-1">Tarikh Jual</label>
+                    <input type="text" name="tarikh" id="filter_tarikh" class="form-control form-control-sm datepicker" placeholder="dd/mm/yyyy" value="{{ request('tarikh') }}">
+                </div>
+                <div class="col-12 col-lg-2">
+                    <div class="d-flex gap-2">
+                        <a href="{{ route('jawatankuasaMesyuarat') }}" class="btn btn-sm btn-light border w-100">Reset</a>
+                        <button type="submit" class="btn btn-sm btn-selangor w-100">Tapis</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+
     <div class="stats-card mb-4">
         <div class="stats-card-header">
             <h3 class="stats-card-title">Senarai Tender / Sebut Harga</h3>
@@ -96,4 +125,17 @@
             </div>
         </div>
     </div>
+@endsection
+
+@section('scripts')
+    <script>
+        $(function () {
+            $('.datepicker').datepicker({
+                format: 'dd/mm/yyyy',
+                autoclose: true,
+                todayHighlight: true,
+                clearBtn: true
+            });
+        });
+    </script>
 @endsection
