@@ -10,14 +10,26 @@ use Illuminate\Support\Facades\Validator;
 use App\OrganizationUnit;
 use App\TenderVendor;
 
+use App\Http\Controllers\Concerns\AuthorizesReportAccess;
+
 class ReportAgencyDailyController extends Controller
 {
+	use AuthorizesReportAccess;
+
 	public function index() {
+		if ($denied = $this->denyUnlessReport('Report:view:agency_daily', 'Report:view:agency_daily:organization_unit_id')) {
+			return $denied;
+		}
+
       $select_ou = OrganizationUnit::orderBy('name')->pluck('name', 'id');
       return view('reports.agency.daily.index', compact('select_ou'));
    }
 
    public function view(Request $request) {
+		if ($denied = $this->denyUnlessReport('Report:view:agency_daily', 'Report:view:agency_daily:organization_unit_id')) {
+			return $denied;
+		}
+
 
 		$ou     = auth()->user()->hasRole('Admin') ? $request->input('ou', null) : auth()->user()->organization_unit_id;
 		$date   = $request->input('date', null);
@@ -50,6 +62,10 @@ class ReportAgencyDailyController extends Controller
    }
 
    protected function excel(Request $request) {
+		if ($denied = $this->denyUnlessReport('Report:view:agency_daily', 'Report:view:agency_daily:organization_unit_id')) {
+			return $denied;
+		}
+
         	$ou     = auth()->user()->hasRole('Admin') ? $request->input('ou', null) : auth()->user()->organization_unit_id;
         	$date   = $request->input('date', null);
         	$time   = $request->input('time', null);

@@ -10,9 +10,17 @@ use App\Transaction;
 use App\TenderVendor;
 use App\Subscription;
 
+use App\Http\Controllers\Concerns\AuthorizesReportAccess;
+
 class ReportRevenueController extends Controller
 {
+	use AuthorizesReportAccess;
+
 	public function index() {
+		if ($denied = $this->denyUnlessReport('Report:view:revenue_yearly')) {
+			return $denied;
+		}
+
 		$select_year = [];
 		//$start_year  = Carbon::parse(Transaction::orderBy('created_at')->first()->created_at)->format('Y');
 		$start_year		= 2006;
@@ -104,6 +112,10 @@ class ReportRevenueController extends Controller
 	}
 	
 	public function excel(Request $request) {
+		if ($denied = $this->denyUnlessReport('Report:view:revenue_yearly')) {
+			return $denied;
+		}
+
 
 		$fields = $request->input('fields', []);
 		$years  = $request->input('years', []);
@@ -114,6 +126,10 @@ class ReportRevenueController extends Controller
 	}
 	
 	public function view(Request $request) {
+		if ($denied = $this->denyUnlessReport('Report:view:revenue_yearly')) {
+			return $denied;
+		}
+
 
 		$fields     = [];
 		$year_start = $request->input('year_start', null);

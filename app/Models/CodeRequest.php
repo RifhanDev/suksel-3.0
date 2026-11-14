@@ -124,7 +124,8 @@ class CodeRequest extends Model
      	if(auth()->check()) {
          $user = auth()->user();
 
-         if($user->ability(['Admin', 'Registration Assessor'], ['CodeRequest:list'])) {
+         // Agency Admin: view-only (PAPAR). Kelulusan stays Admin / Assessor.
+         if($user->ability(['Admin', 'Registration Assessor', 'Agency Admin'], ['CodeRequest:list'])) {
              	return true;
          } elseif($user->hasRole('Vendor') && $user->vendor_id == request()->vendor) {
              	return true;
@@ -163,7 +164,8 @@ class CodeRequest extends Model
      if(auth()->check()) {
          $user = auth()->user();
 
-         if($user->ability(['Admin', 'Registration Assessor'], ['CodeRequest:show'])) {
+         // Agency Admin: PAPAR only — not Lulus/Tolak (see canProcess).
+         if($user->ability(['Admin', 'Registration Assessor', 'Agency Admin'], ['CodeRequest:show'])) {
              	return true;
          } elseif($user->hasRole('Vendor') && $user->vendor_id == request()->vendor) {
              	return true;

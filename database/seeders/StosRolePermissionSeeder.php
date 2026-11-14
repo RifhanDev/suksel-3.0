@@ -335,8 +335,19 @@ class StosRolePermissionSeeder extends Seeder
             ],
             [
                 'role' => 'Agency Admin',
-                // Pemilik projek steps only — Pemilihan Syarikat is Admin + Agency Ketua Jabatan.
-                'permissions' => $pemilikProjek,
+                // Cipta Tender/Sebut Harga + pemilik projek steps + LAPORAN.
+                // Pemilihan Syarikat stays Admin + Agency Ketua Jabatan.
+                'permissions' => array_values(array_unique(array_merge(
+                    [
+                        'Tender:execute',
+                        'Tender:list',
+                        'Blacklist:index',
+                        'Transaction:list',
+                        'Transaction:show',
+                    ],
+                    \App\Support\ReportAccess::AGENCY_ADMIN_PERMISSIONS,
+                    $pemilikProjek
+                ))),
             ],
             [
                 'role' => 'Agency Ketua Jabatan',

@@ -11,9 +11,17 @@ use App\Exports\AgencyAllMonthly;
 use Illuminate\Support\Facades\Validator;
 use App\Transaction;
 
+use App\Http\Controllers\Concerns\AuthorizesReportAccess;
+
 class ReportAgencyAllController extends Controller
 {
+	use AuthorizesReportAccess;
+
 	public function index() {
+		if ($denied = $this->denyUnlessReport('Report:view:agency_transaction')) {
+			return $denied;
+		}
+
 		$select_type    = ['yearly' => 'Tahunan', 'monthly' => 'Bulanan' ];
 		$select_year    = [];
 		
@@ -28,6 +36,10 @@ class ReportAgencyAllController extends Controller
 	}
 
    public function view(Request $request) {
+		if ($denied = $this->denyUnlessReport('Report:view:agency_transaction')) {
+			return $denied;
+		}
+
 
 		$type       = $request->input('type', null);
 		$year_start = $request->input('year_start', null);
@@ -58,6 +70,10 @@ class ReportAgencyAllController extends Controller
    }
 
    public function excel(Request $request) {
+		if ($denied = $this->denyUnlessReport('Report:view:agency_transaction')) {
+			return $denied;
+		}
+
         	$type       = $request->input('type', null);
         	$year_start = $request->input('year_start', null);
         	$year_end   = $request->input('year_end', null);

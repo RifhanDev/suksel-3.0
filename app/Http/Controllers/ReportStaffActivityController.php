@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\AuthorizesReportAccess;
 use App\User;
 use App\Models\CodeRequest;
 use Illuminate\Http\Request;
@@ -10,6 +11,8 @@ use App\Models\VendorHistory;
 
 class ReportStaffActivityController extends Controller
 {
+    use AuthorizesReportAccess;
+
     protected $exclude_roles = [
         'Vendor'
     ];
@@ -40,16 +43,16 @@ class ReportStaffActivityController extends Controller
 
     public function index()
     {
-        if (!auth()->check() || !auth()->user()->ability(['Admin'], ['Report:view:staff_activity'])) {
-            return $this->_access_denied();
+        if ($denied = $this->denyUnlessReport('Report:view:staff_activity')) {
+            return $denied;
         }
         return view('reports.staff.activity.index');
     }
 
     public function view(Request $request)
     {
-        if (!auth()->check() || !auth()->user()->ability(['Admin'], ['Report:view:staff_activity'])) {
-            return $this->_access_denied();
+        if ($denied = $this->denyUnlessReport('Report:view:staff_activity')) {
+            return $denied;
         }
         $type = $request->type;
         $year = $request->year;
