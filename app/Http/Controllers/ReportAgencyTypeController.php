@@ -12,9 +12,17 @@ use Illuminate\Support\Facades\Validator;
 use App\OrganizationType;
 use App\Transaction;
 
+use App\Http\Controllers\Concerns\AuthorizesReportAccess;
+
 class ReportAgencyTypeController extends Controller
 {
+	use AuthorizesReportAccess;
+
 	public function index() {
+		if ($denied = $this->denyUnlessReport('Report:view:agency_type')) {
+			return $denied;
+		}
+
       $select_ou_type = OrganizationType::orderBy('name', 'asc')->pluck('name', 'id');
       $select_type    = ['yearly' => 'Tahunan', 'monthly' => 'Bulanan' ];
       $select_year    = [];
@@ -29,6 +37,10 @@ class ReportAgencyTypeController extends Controller
   	}
 
    public function excel() {
+		if ($denied = $this->denyUnlessReport('Report:view:agency_type')) {
+			return $denied;
+		}
+
 		$ou_type    = $request->input('ou_type', null);
 		$type       = $request->input('type', null);
 		$year_start = $request->input('year_start', null);
@@ -38,6 +50,10 @@ class ReportAgencyTypeController extends Controller
    }
 
    public function view(Request $request) {
+		if ($denied = $this->denyUnlessReport('Report:view:agency_type')) {
+			return $denied;
+		}
+
 
 		$ou_type    = $request->input('ou_type', null);
 		$type       = $request->input('type', null);

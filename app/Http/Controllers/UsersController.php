@@ -7,6 +7,7 @@ use Datatables;
 use Illuminate\Support\Facades\Validator;
 use Hash;
 use Mail;
+use App\Role;
 use App\User;
 use App\UserHistory;
 use App\Mail\ConfirmRegistration;
@@ -39,8 +40,11 @@ class UsersController extends Controller
 			return $this->_access_denied();
 		}
 		if ($request->ajax()) {
-			$users = User::with('roles', 'agency', 'vendor')->has('roles', '=', 0)->orWhereHas('roles', function ($q) {
-				$q->where('name', '!=', 'Vendor');
+			// Group role filter so agency scope cannot be bypassed by orWhereHas.
+			$users = User::with('roles', 'agency', 'vendor')->where(function ($query) {
+				$query->has('roles', '=', 0)->orWhereHas('roles', function ($q) {
+					$q->where('name', '!=', 'Vendor');
+				});
 			});
 
 			if (!auth()->user()->hasRole('Admin')) {
@@ -179,7 +183,7 @@ class UsersController extends Controller
 		if (!$user->save()) {
 			return $this->_validation_error($user);
 		}
-		$user->roles()->sync($data['roles']);
+		$user->roles()->sync($this->filterAssignableRoleIds($data['roles']));
 
 		try {
 			Mail::to($user)->send(new UserAccountInvite($user));
@@ -296,7 +300,7 @@ class UsersController extends Controller
 			}
 			$user->fill($data);
 			$user->save();
-			$data['roles'] = isset($data['roles']) ? $data['roles'] : [];
+			$data['roles'] = $this->filterAssignableRoleIds($data['roles'] ?? []);
 			$user->roles()->sync($data['roles']);
 			if ($request->ajax()) {
 				return $user;
@@ -492,11 +496,11 @@ class UsersController extends Controller
 
 	public function histories(Request $request, $id)
 	{
-		if (!User::canList()) {
+		$view_user = User::findOrFail($id);
+
+		if (! User::canList() || ! $view_user->canShow()) {
 			return $this->_access_denied();
 		}
-
-		$view_user = User::findOrFail($id);
 
 		if ($request->ajax()) {
 
@@ -616,12 +620,12 @@ class UsersController extends Controller
 
 	public function approval(Request $request, $id)
 	{
-		$currentUser = User::find($id);
+		$currentUser = User::findOrFail($id);
 
 		if ($request->ajax()) {
 			return $this->_ajax_denied();
 		}
-		if (!auth()->user()->canApprove()) {
+		if (! auth()->user()->canApprove() || ! $currentUser->canShow()) {
 			return $this->_access_denied();
 		}
 
@@ -641,6 +645,10 @@ class UsersController extends Controller
 		$user = User::findOrFail($id);
 		$data = $request->all();
 
+		if (! auth()->user()->canApprove() || ! $user->canShow()) {
+			return $this->_access_denied();
+		}
+
 		if (!auth()->user()->hasRole('Admin')) {
 			$data['organization_unit_id'] = auth()->user()->organization_unit_id;
 		}
@@ -651,10 +659,6 @@ class UsersController extends Controller
 
 		$data['remark'] = $data['approved'] == 1 ? $data['remark_txt'] : $data['remark_dropdown'];
 		$data['approver_id'] = auth()->id();
-
-		if (!auth()->user()->canApprove()) {
-			return $this->_access_denied();
-		}
 
 		User::setRules('storeApproval');
 		$user->fill($data);
@@ -669,7 +673,7 @@ class UsersController extends Controller
 			$user->save();
 		}
 
-		$data['roles'] = isset($data['roles']) ? $data['roles'] : [];
+		$data['roles'] = $this->filterAssignableRoleIds($data['roles'] ?? []);
 		$user->roles()->sync($data['roles']);
 
 		if ($request->ajax()) {
@@ -853,5 +857,24 @@ class UsersController extends Controller
 			);
 		}
 		return response()->json($response);
+	}
+
+	/**
+	 * Agency Admin may only assign roles exposed by Role::availableRoles().
+	 *
+	 * @param  array<int, mixed>  $roleIds
+	 * @return array<int, int>
+	 */
+	protected function filterAssignableRoleIds(array $roleIds): array
+	{
+		$roleIds = array_values(array_filter(array_map('intval', $roleIds)));
+
+		if (auth()->user()->hasRole('Admin')) {
+			return $roleIds;
+		}
+
+		$allowedIds = Role::availableRoles()->pluck('id')->map(fn ($id) => (int) $id)->all();
+
+		return array_values(array_intersect($roleIds, $allowedIds));
 	}
 }

@@ -8,8 +8,12 @@ use Excel;
 use App\Exports\VendorStatus;
 use App\Vendor;
 
+use App\Http\Controllers\Concerns\AuthorizesReportAccess;
+
 class ReportVendorStatusController extends Controller
 {
+	use AuthorizesReportAccess;
+
 	protected $statuses = [
 		'daftar_belum_lulus'    => 'Daftar Belum Lulus',
 		'lulus_belum_bayar'     => 'Lulus Belum Bayar',
@@ -29,6 +33,10 @@ class ReportVendorStatusController extends Controller
 	];
 	
 	public function index() {
+		if ($denied = $this->denyUnlessReport('Report:view:vendor_status')) {
+			return $denied;
+		}
+
 		// $query      = DB::select('SELECT * FROM `vendor_snapshot`');
 		// $data       = $query[0];
 		// $statuses   = $this->statuses;
@@ -90,6 +98,10 @@ class ReportVendorStatusController extends Controller
 	}
 
 	public function excel($name) {
+		if ($denied = $this->denyUnlessReport('Report:view:vendor_status')) {
+			return $denied;
+		}
+
 		$status = $this->statuses[$name];
 		$date_label = $this->date_labels[$name];
 		switch ($name) {
@@ -127,6 +139,10 @@ class ReportVendorStatusController extends Controller
 	}
 
    public function csv($name) {
+		if ($denied = $this->denyUnlessReport('Report:view:vendor_status')) {
+			return $denied;
+		}
+
               
         	if(!array_key_exists($name, $this->statuses)) {
             $title = 'Senarai Syarikat Mengikut Status';

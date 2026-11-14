@@ -10,13 +10,22 @@ use Illuminate\Support\Facades\Validator;
 use App\Transaction;
 use App\Gateway;
 
+use App\Http\Controllers\Concerns\AuthorizesReportAccess;
+
 class ReportGatewayDailyController extends Controller
 {
+	use AuthorizesReportAccess;
+
 	public function index() {
+		if ($denied = $this->denyUnlessReport('Report:view:gateway_daily', 'Report:view:gateway_daily:organization_unit_id')) {
+			return $denied;
+		}
+
      	$gateways = Gateway::with('agency');
 
-		if(auth()->user()->can('Report:view:gateway_daily:organization_unit_id'))
-			$gateways   = $gateways->where('organization_unit_id', auth()->user()->organization_unit_id);
+		if (! auth()->user()->hasRole('Admin')) {
+			$gateways = $gateways->where('organization_unit_id', auth()->user()->organization_unit_id);
+		}
 	
 		$gateways = $gateways->where('type', '!=', 'lock')->get();
 		
@@ -35,8 +44,9 @@ class ReportGatewayDailyController extends Controller
 			
 			$mids   = Gateway::groupBy('merchant_code')->where('merchant_code', '!=', '');
 			
-			if(auth()->user()->can('Report:view:gateway_daily:organization_unit_id'))
-				$mids   = $mids->where('organization_unit_id', auth()->user()->organization_unit_id);
+			if (! auth()->user()->hasRole('Admin')) {
+				$mids = $mids->where('organization_unit_id', auth()->user()->organization_unit_id);
+			}
 		
 			$mids   = $mids->get();
 		
@@ -53,6 +63,10 @@ class ReportGatewayDailyController extends Controller
    }
 
    public function view(Request $request) {
+		if ($denied = $this->denyUnlessReport('Report:view:gateway_daily', 'Report:view:gateway_daily:organization_unit_id')) {
+			return $denied;
+		}
+
 
 		$gateway_id = $request->input('gateway_id', null);
 		$date       = $request->input('date', null);
@@ -85,12 +99,21 @@ class ReportGatewayDailyController extends Controller
 			$gateway = Gateway::find($gateway_id);
 		}
 
+		if ($gateway && ! auth()->user()->hasRole('Admin')
+			&& (int) $gateway->organization_unit_id !== (int) auth()->user()->organization_unit_id) {
+			return $this->_access_denied();
+		}
+
 		list($transactions, $amount) = $this->query($gateway_id, $date, $time, $type);
 		
 		return view('reports.gateway.daily.view', compact('gateway', 'date', 'time', 'transactions', 'amount', 'type'));
 	}
 
 	protected function excel(Request $request) {
+		if ($denied = $this->denyUnlessReport('Report:view:gateway_daily', 'Report:view:gateway_daily:organization_unit_id')) {
+			return $denied;
+		}
+
 			$gateway_id = $request->input('gateway_id', null);
 			$date       = $request->input('date', null);
 			$time       = $request->input('time', null);

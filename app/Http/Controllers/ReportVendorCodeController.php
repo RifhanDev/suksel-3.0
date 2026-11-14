@@ -9,14 +9,26 @@ use App\Vendor;
 use App\Code;
 use App\VendorCode;
 
+use App\Http\Controllers\Concerns\AuthorizesReportAccess;
+
 class ReportVendorCodeController extends Controller
 {
+	use AuthorizesReportAccess;
+
 	public function index() {
+		if ($denied = $this->denyUnlessReport('Report:view:vendor_code')) {
+			return $denied;
+		}
+
 
       return view('reports.vendor.code.index');
    }
 
    public function excel(Request $request) {
+		if ($denied = $this->denyUnlessReport('Report:view:vendor_code')) {
+			return $denied;
+		}
+
 
      	$mof_codes  = $request->input('mof_codes', []);
      	$mof_empty  = false;
@@ -133,6 +145,10 @@ class ReportVendorCodeController extends Controller
    }
 
    public function view(Request $request) {
+		if ($denied = $this->denyUnlessReport('Report:view:vendor_code')) {
+			return $denied;
+		}
+
      
 		$mof_codes  = $request->input('mof_codes', []);
 		$mof_empty  = false;
