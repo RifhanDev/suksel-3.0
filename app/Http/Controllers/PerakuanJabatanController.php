@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\AdvancesTenderProcessStatus;
+use App\Http\Controllers\Concerns\RestrictsTenderByRole;
 use App\Models\EbiddingJadualBidaan;
 use App\Models\EbiddingVendorBidItem;
 use App\Models\PerakuanJabatanKertasTaklimat;
@@ -28,10 +29,34 @@ use Illuminate\Validation\ValidationException;
 class PerakuanJabatanController extends Controller
 {
     use AdvancesTenderProcessStatus;
+    use RestrictsTenderByRole;
 
     public function __construct()
     {
         $this->menuMiddleware('DepartmentCertification:list');
+
+        $this->middleware(function ($request, $next) {
+            $tender = $request->route('tender');
+            if ($tender instanceof Tender) {
+                $this->assertOwnAgency($tender);
+            }
+
+            $id = $request->route('id');
+            if ($id !== null && $id !== '' && is_numeric($id)) {
+                $model = Tender::query()->find($id);
+                if ($model) {
+                    $this->assertOwnAgency($model);
+                }
+            }
+
+            $file = $request->route('file');
+            if ($file instanceof PerakuanJabatanKertasTaklimatItemFile) {
+                $file->loadMissing('item.header.tender');
+                $this->assertOwnAgency($file->item?->header?->tender);
+            }
+
+            return $next($request);
+        });
     }
 
     /**
@@ -39,8 +64,9 @@ class PerakuanJabatanController extends Controller
      */
     public function index()
     {
-        $tenders = Tender::query()
-            ->where('status_process_id', TenderProcessStatus::perakuanJabatanListStatus())
+        $tenders = $this->applyOwnAgencyScope(
+            Tender::query()->where('status_process_id', TenderProcessStatus::perakuanJabatanListStatus())
+        )
             ->orderByDesc('id')
             ->get([
                 'id',
