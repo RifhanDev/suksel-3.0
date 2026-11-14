@@ -571,9 +571,9 @@
             <div class="laporan-subitem">
                 <span class="laporan-subitem-no">6.2</span>
                 @if ($petenderTerendah && $petenderTertinggi)
-                    <span>Berdasarkan kepada Jadual Sebut Harga, Penyebut Harga <strong>Bil. {{ $petenderTerendah->kod_pembekal ?: '-' }} menawarkan harga terendah, iaitu RM{{ number_format($petenderTerendah->harga_tawaran_resolved, 2) }}</strong> manakala Penyebut Harga <strong>Bil. {{ $petenderTertinggi->kod_pembekal ?: '-' }} menawarkan harga tertinggi, iaitu RM{{ number_format($petenderTertinggi->harga_tawaran_resolved, 2) }}</strong> dan Jadual Sebut Harga seperti di <strong>Jadual 4</strong>:</span>
+                    <span>Berdasarkan kepada Jadual Sebut Harga, penyebut harga dengan Kod Pembekal <strong>{{ $petenderTerendah->kod_pembekal ?: '-' }} menawarkan harga terendah, iaitu RM{{ number_format($petenderTerendah->harga_tawaran_resolved, 2) }}</strong> manakala penyebut harga dengan Kod Pembekal <strong>{{ $petenderTertinggi->kod_pembekal ?: '-' }} menawarkan harga tertinggi, iaitu RM{{ number_format($petenderTertinggi->harga_tawaran_resolved, 2) }}</strong> dan Jadual Sebut Harga seperti di <strong>Jadual 4</strong>:</span>
                 @elseif ($petenderTerendah)
-                    <span>Berdasarkan kepada Jadual Sebut Harga, Penyebut Harga <strong>Bil. {{ $petenderTerendah->kod_pembekal ?: '-' }} menawarkan harga, iaitu RM{{ number_format($petenderTerendah->harga_tawaran_resolved, 2) }}</strong> dan Jadual Sebut Harga seperti di <strong>Jadual 4</strong>:</span>
+                    <span>Berdasarkan kepada Jadual Sebut Harga, penyebut harga dengan Kod Pembekal <strong>{{ $petenderTerendah->kod_pembekal ?: '-' }} menawarkan harga, iaitu RM{{ number_format($petenderTerendah->harga_tawaran_resolved, 2) }}</strong> dan Jadual Sebut Harga seperti di <strong>Jadual 4</strong>:</span>
                 @else
                     <span>Jadual Sebut Harga adalah seperti di <strong>Jadual 4</strong>:</span>
                 @endif
@@ -582,8 +582,7 @@
         <table class="laporan-table">
             <thead>
                 <tr>
-                    <th style="width:15%;">Bil.</th>
-                    <th style="width:40%;">No. Penyebut Harga</th>
+                    <th style="width:55%;">Kod Pembekal</th>
                     <th style="width:45%;">Harga Tawaran (RM)</th>
                 </tr>
             </thead>
@@ -591,13 +590,12 @@
                 @forelse ($jadualHarga as $row)
                     <tr>
                         {{-- Widths repeat here because a table split across pages loses its thead. --}}
-                        <td class="col-bil" style="width:15%;">{{ $row['bil'] }}.</td>
-                        <td class="col-bil" style="width:40%;">{{ $row['kod_pembekal'] }}</td>
+                        <td class="col-bil" style="width:55%;">{{ $row['kod_pembekal'] }}</td>
                         <td class="col-harga" style="width:45%;">{{ $row['harga'] }}</td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="3" class="col-bil">Tiada penyebut harga yang menghantar dokumen.</td>
+                        <td colspan="2" class="col-bil">Tiada penyebut harga yang menghantar dokumen.</td>
                     </tr>
                 @endforelse
             </tbody>
@@ -637,8 +635,7 @@
         <table class="laporan-table">
             <thead>
                 <tr>
-                    <th style="width:10%;">Bil.</th>
-                    <th style="width:30%;">No. Penyebut Harga</th>
+                    <th style="width:40%;">Kod Pembekal</th>
                     <th style="width:35%;">Harga Tawaran (RM)</th>
                     <th style="width:25%;">BWAM%</th>
                 </tr>
@@ -646,14 +643,13 @@
             <tbody>
                 @forelse ($jadualHarga as $row)
                     <tr>
-                        <td class="col-bil" style="width:10%;">{{ $row['bil'] }}.</td>
-                        <td class="col-bil" style="width:30%;">{{ $row['kod_pembekal'] }}</td>
+                        <td class="col-bil" style="width:40%;">{{ $row['kod_pembekal'] }}</td>
                         <td class="col-harga" style="width:35%;">{{ $row['harga'] }}</td>
                         <td class="col-bil" style="width:25%;">{{ $row['bwam'] }}</td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="4" class="col-bil">Tiada penyebut harga yang menghantar dokumen.</td>
+                        <td colspan="3" class="col-bil">Tiada penyebut harga yang menghantar dokumen.</td>
                     </tr>
                 @endforelse
             </tbody>
@@ -677,8 +673,7 @@
         <table class="laporan-table avoid-break">
             <thead>
                 <tr>
-                    <th style="width:8%;">Bil.</th>
-                    <th style="width:22%;">No. Penyebut Harga</th>
+                    <th style="width:30%;">Kod Pembekal</th>
                     <th style="width:22%;">Keputusan (Lulus/ Gagal)</th>
                     <th style="width:48%;">Ulasan</th>
                 </tr>
@@ -686,14 +681,13 @@
             <tbody>
                 @forelse ($peringkatKedua as $row)
                     <tr>
-                        <td class="col-bil">{{ $row['bil'] }}.</td>
                         <td class="col-bil">{{ $row['kod_pembekal'] }}</td>
                         <td class="col-bil">{{ $row['lulus'] ? 'LULUS' : 'GAGAL' }}</td>
                         <td class="col-bil">{{ $row['lulus'] ? 'Layak Ke Peringkat Ketiga' : $row['ulasan'] }}</td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="4" class="col-bil">Tiada penyebut harga dipilih di peringkat cut-off.</td>
+                        <td colspan="3" class="col-bil">Tiada penyebut harga dipilih di peringkat cut-off.</td>
                     </tr>
                 @endforelse
             </tbody>
@@ -713,8 +707,7 @@
         <table class="laporan-table avoid-break">
             <thead>
                 <tr>
-                    <th style="width:8%;">Bil.</th>
-                    <th style="width:22%;">No. Penyebut Harga</th>
+                    <th style="width:30%;">Kod Pembekal</th>
                     <th style="width:22%;">Lulus/ Gagal</th>
                     <th style="width:48%;">Ulasan</th>
                 </tr>
@@ -722,14 +715,13 @@
             <tbody>
                 @forelse ($peringkatKetiga as $row)
                     <tr>
-                        <td class="col-bil">{{ $row['bil'] }}.</td>
                         <td class="col-bil">{{ $row['kod_pembekal'] }}</td>
                         <td class="col-bil">{{ $row['lulus'] ? 'LULUS' : 'GAGAL' }}</td>
                         <td class="col-bil">{{ $row['lulus'] ? 'Layak Ke Peringkat Keempat' : $row['ulasan'] }}</td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="4" class="col-bil">Tiada penyebut harga yang layak ke peringkat ini.</td>
+                        <td colspan="3" class="col-bil">Tiada penyebut harga yang layak ke peringkat ini.</td>
                     </tr>
                 @endforelse
             </tbody>
@@ -749,8 +741,7 @@
         <table class="laporan-table avoid-break">
             <thead>
                 <tr>
-                    <th style="width:8%;">Bil.</th>
-                    <th style="width:22%;">No. Penyebut Harga</th>
+                    <th style="width:30%;">Kod Pembekal</th>
                     <th style="width:22%;">Lulus/ Gagal</th>
                     <th style="width:48%;">Ulasan</th>
                 </tr>
@@ -758,14 +749,13 @@
             <tbody>
                 @forelse ($peringkatKeempat as $row)
                     <tr>
-                        <td class="col-bil">{{ $row['bil'] }}.</td>
                         <td class="col-bil">{{ $row['kod_pembekal'] }}</td>
                         <td class="col-bil">{{ $row['lulus'] ? 'LULUS' : 'GAGAL' }}</td>
                         <td class="col-bil">{{ $row['lulus'] ? 'Layak Ke Peringkat Pengesyoran' : $row['ulasan'] }}</td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="4" class="col-bil">Tiada penyebut harga yang layak ke peringkat ini.</td>
+                        <td colspan="3" class="col-bil">Tiada penyebut harga yang layak ke peringkat ini.</td>
                     </tr>
                 @endforelse
             </tbody>

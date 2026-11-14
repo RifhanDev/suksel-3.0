@@ -239,11 +239,11 @@ class OrganizationUnitsController extends Controller
 					$string[] = '<small><strong>' . e($tender->displayNoTender()) . '</strong></small>';
 					if(!auth()->check())
 					{
-						$string[] = link_to_route('tender.show', $tender->name, $tender->id, ['class' => 'table-tender-title']);
+						$string[] = link_to_route('tender.show', e($tender->name), $tender->id, ['class' => 'table-tender-title']);
 					}
 					else
 					{
-						$string[] = link_to_route('tender.show', $tender->name, $tender->id, ['class' => 'table-tender-title']);
+						$string[] = link_to_route('tender.show', e($tender->name), $tender->id, ['class' => 'table-tender-title']);
 					}
 					// $string[] = link_to_route('tender.show', $tender->name, $tender->id, ['class' => 'table-tender-title']);
 
@@ -252,7 +252,7 @@ class OrganizationUnitsController extends Controller
 						$string[] = '';
 						$string[] = '<span class="glyphicon glyphicon-bullhorn"></span> <b><u><small>Kehadiran Taklimat Diwajibkan</small></u></b>';
 						$string[] = Carbon::parse($tender->briefing_datetime)->format('j M Y H:i');
-						$string[] = nl2br($tender->briefing_address);
+						$string[] = nl2br(e($tender->briefing_address));
 					}
 
 					if (count($tender->siteVisits) > 0)
@@ -263,7 +263,8 @@ class OrganizationUnitsController extends Controller
 						foreach ($tender->siteVisits->sortBy('id') as $visit) {
 							$string[] = '';
 							$string[] = Carbon::parse($visit->datetime)->format('j M Y H:i');
-							$string[] = nl2br($visit->address);
+							$visitAddress = html_entity_decode((string) $visit->address, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+							$string[] = nl2br(e($visitAddress));
 
 							if ($visit->required) {
 								$string[] = '<small><span class="glyphicon glyphicon-ok"></span> Wajib Hadir</small>';
@@ -484,13 +485,13 @@ class OrganizationUnitsController extends Controller
 				->editColumn('name', function ($tender) {
 					$string   = [];
 					$string[] = '<small><strong>' . e($tender->displayNoTender()) . '</strong></small>';
-					$string[] = link_to_route('tender.show', $tender->name, $tender->id, ['class' => 'table-tender-title']);
+					$string[] = link_to_route('tender.show', e($tender->name), $tender->id, ['class' => 'table-tender-title']);
 
 					if ($tender->briefing_required) {
 						$string[] = '';
 						$string[] = '<span class="glyphicon glyphicon-bullhorn"></span> <b><u><small>Kehadiran Taklimat Diwajibkan</small></u></b>';
 						$string[] = Carbon::parse($tender->briefing_datetime)->format('j M Y H:i');
-						$string[] = nl2br($tender->briefing_address);
+						$string[] = nl2br(e($tender->briefing_address));
 					}
 
 					if (count($tender->siteVisits) > 0) {
@@ -500,7 +501,8 @@ class OrganizationUnitsController extends Controller
 						foreach ($tender->siteVisits->sortBy('id') as $visit) {
 							$string[] = '';
 							$string[] = Carbon::parse($visit->datetime)->format('j M Y H:i');
-							$string[] = nl2br($visit->address);
+							$visitAddress = html_entity_decode((string) $visit->address, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+							$string[] = nl2br(e($visitAddress));
 
 							if ($visit->required) {
 								$string[] = '<small><span class="glyphicon glyphicon-ok"></span> Wajib Hadir</small>';

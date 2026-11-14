@@ -346,7 +346,6 @@
                 <table class="table table-modern-b1 align-middle">
                     <thead>
                         <tr>
-                            <th style="width: 70px;" class="text-center">#</th>
                             <th><i class="bi bi-person-vcard text-danger me-1"></i> Kod Pembekal</th>
                             <th style="width: 180px;" class="text-center">Status Semakan</th>
                             <th style="width: 200px;" class="text-center"><i class="bi bi-sliders text-danger me-1"></i> Tindakan Semakan</th>
@@ -357,11 +356,10 @@
                             @php
                                 $vId = $p->vendor_id;
                                 $vData = $b4DataMap[$vId] ?? [];
-                                $kod = $vData['kod_pembekal'] ?? ($p->kod_pembekal ?: ($loop->iteration . '/' . count($participants)));
+                                $kod = $vData['kod_pembekal'] ?? ($p->kod_pembekal ?: '—');
                                 $isEval = $vData['is_evaluated'] ?? false;
                             @endphp
                             <tr>
-                                <td class="text-center text-muted fw-bold small">{{ $loop->iteration }}</td>
                                 <td>
                                     <div class="d-flex align-items-center gap-2.5">
                                         <div class="bg-danger bg-opacity-10 text-danger p-2 rounded-2 d-inline-flex align-items-center justify-content-center" style="width:32px; height:32px; margin-right:10px">
@@ -564,7 +562,7 @@
         const vData = window.b4VendorData[vendorId];
         if (!vData) return;
 
-        document.getElementById('modalKodPembekalBadge').textContent = 'Kod Pembekal: ' + vData.kod_pembekal + ' (' + vData.vendor_name + ')';
+        document.getElementById('modalKodPembekalBadge').textContent = 'Kod Pembekal: ' + (vData.kod_pembekal || '—') + ' (' + vData.vendor_name + ')';
 
         const items = (vData.items && vData.items.length > 0) ? vData.items : [{
             nama: '-', no_kontrak: '-', harga: 0, tarikh_tapak: '-', tempoh: 0,

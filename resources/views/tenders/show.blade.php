@@ -445,6 +445,13 @@
 								</tr>
 							@endif
 
+							@if ($tender->hasDaerahLiputanProjek())
+								<tr>
+									<th class="col-xs-3">Daerah Liputan Projek</th>
+									<td>{{ $tender->getDaerahLiputanProjek() }}</td>
+								</tr>
+							@endif
+
 							<tr>
 								<th class="col-xs-3">Harga Dokumen</th>
 								<td>RM {{ number_format($tender->price, 2) }}</td>

@@ -363,7 +363,7 @@
                         <thead>
                             <tr>
                                 <th rowspan="3" style="width: 100px;">
-                                    Ruj. Petender<br><span class="formula-tag">(a)</span>
+                                    Kod Pembekal<br><span class="formula-tag">(a)</span>
                                 </th>
                                 <th colspan="8" class="subhead-main">
                                     ANALISA KECUKUPAN MODAL
@@ -425,7 +425,7 @@
                                 @php
                                     $vId = $p->vendor_id;
                                     $vData = $b3DataMap[$vId] ?? [];
-                                    $ruj = $p->kod_pembekal ?: ($loop->iteration . '/' . count($participants));
+                                    $ruj = $p->kod_pembekal ?: '-';
                                     $mudahCair = $vData['mudah_cair_m'] ?? 0;
                                     $ca1Kredit = $vData['ca1_kredit_j'] ?? 0;
                                 @endphp
@@ -553,7 +553,7 @@
                                 </th>
                             </tr>
                             <tr>
-                                <th class="subhead-main" style="width: 100px;">Ruj. Petender</th>
+                                <th class="subhead-main" style="width: 100px;">Kod Pembekal</th>
                                 <th class="subhead-level2">Aset Tetap</th>
                                 <th class="subhead-level2">Aset Semasa</th>
                                 <th class="subhead-level2">Liabiliti Semasa</th>
@@ -571,7 +571,7 @@
                                 @php
                                     $vId = $p->vendor_id;
                                     $vData = $b3DataMap[$vId] ?? [];
-                                    $ruj = $p->kod_pembekal ?: ($loop->iteration . '/' . count($participants));
+                                    $ruj = $p->kod_pembekal ?: '-';
                                 @endphp
                                 <tr>
                                     <td class="text-center font-monospace fw-bold" style="background-color: #efeff0ff;">
@@ -652,7 +652,7 @@
                                 @php
                                     $vId = $p->vendor_id;
                                     $vData = $b3DataMap[$vId] ?? [];
-                                    $ruj = $p->kod_pembekal ?: ($loop->iteration . '/' . count($participants));
+                                    $ruj = $p->kod_pembekal ?: '-';
                                     $pbAccs = $vData['pb_accounts'] ?? [];
                                     $totalAccs = count($pbAccs);
                                     $pbGrandTotal = $vData['pb_grand_total'] ?? 0;
@@ -750,7 +750,7 @@
                                 <th colspan="10">MAKLUMAT BON & SAHAM</th>
                             </tr>
                             <tr>
-                                <th class="subhead-main" style="width: 100px;">Ruj. Petender</th>
+                                <th class="subhead-main" style="width: 100px;">Kod Pembekal</th>
 
                                 <th class="subhead-level2">Akaun 1</th>
                                 <th class="subhead-level2">Bank</th>
@@ -777,7 +777,7 @@
                                 @php
                                     $vId = $p->vendor_id;
                                     $vData = $b3DataMap[$vId] ?? [];
-                                    $ruj = $p->kod_pembekal ?: ($loop->iteration . '/' . count($participants));
+                                    $ruj = $p->kod_pembekal ?: '-';
                                     $bsAccs = $vData['bs_accounts'] ?? [];
                                     $totalBs = count($bsAccs);
                                     $bsGrandTotal = $vData['bs_grand_total'] ?? 0;

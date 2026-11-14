@@ -487,8 +487,8 @@
                 <table class="table table-modern-b10 align-middle mb-0">
                     <thead>
                         <tr>
-                            <th style="width: 60px;" class="text-center">BIL</th>
-                            <th><i class="bi bi-person-vcard text-danger me-1"></i> KOD PEMBEKAL</th>
+                            <th style="width: 150px;" class="text-center">KOD PEMBEKAL</th>
+                            <th><i class="bi bi-person-vcard text-danger me-1"></i> PETENDER</th>
                             <th class="text-center"><i class="bi bi-person-badge text-danger me-1"></i> KAKITANGAN TEKNIKAL</th>
                             <th style="width: 180px;" class="text-center"><i class="bi bi-sliders text-danger me-1"></i> TINDAKAN</th>
                         </tr>
@@ -496,14 +496,13 @@
                     <tbody>
                         @forelse($vendorsData as $vId => $v)
                             <tr>
-                                <td class="text-center text-muted font-monospace fw-bold">{{ $loop->iteration }}</td>
+                                <td class="text-center text-muted font-monospace fw-bold">{{ $v['kod_pembekal'] ?? '—' }}</td>
                                 <td>
                                     <div class="d-flex align-items-center gap-2.5">
                                         <div class="bg-danger bg-opacity-10 text-danger p-2 rounded-2 d-inline-flex align-items-center justify-content-center" style="width:32px; height:32px;">
                                             <i class="bi bi-building"></i>
                                         </div>
                                         <div>
-                                            <span class="fw-bold font-monospace text-dark d-block" style="font-size: 0.9rem;">{{ $v['kod_pembekal'] ?? (is_array($v) ? ($v['kod'] ?? $vId) : $vId) }}</span>
                                             @if(!empty($v['vendor_name']))
                                                 <span class="small text-muted">{{ $v['vendor_name'] }}</span>
                                             @endif
@@ -1054,7 +1053,7 @@
     function openB10DetailModal(vendorId) {
         currentB10VendorId = vendorId;
         const vData = b10VendorDataMap[vendorId] || {};
-        const kodText = vData.kod_pembekal || (typeof vData === 'object' ? (vData.kod || vendorId) : vendorId);
+        const kodText = vData.kod_pembekal || '—';
 
         const refBadge = document.getElementById('b10ModalRefBadge');
         if (refBadge) {
@@ -1349,8 +1348,25 @@
         }
     }
 
-    function simpanPenilaianModalB10() {
-        if (currentB10VendorId) {
+    async function simpanPenilaianModalB10() {
+        if (!currentB10VendorId) return;
+
+        const modalSaveButton = document.querySelector('#b10DetailModal .btn-simpan');
+        if (modalSaveButton) modalSaveButton.disabled = true;
+
+        try {
+            const response = await fetch('{{ route("penilaianKewanganKerja.borang.simpan", ["tender_no" => $tenderIdentifier, "borang_code" => "borang10"]) }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ vendor_id: currentB10VendorId, status_pematuhan: 1, payload: { reviewed: true } })
+            });
+            const result = await response.json();
+            if (!response.ok || !result.success) throw new Error(result.message || 'Gagal menyimpan penilaian petender.');
+
             const btn = document.getElementById('btnActionB10_' + currentB10VendorId);
             if (btn) {
                 btn.className = 'btn-action-dinilai';
@@ -1359,16 +1375,16 @@
             if (b10VendorDataMap[currentB10VendorId]) {
                 b10VendorDataMap[currentB10VendorId].is_evaluated = true;
             }
-        }
 
-        const modalEl = document.getElementById('b10DetailModal');
-        if (modalEl) {
-            const modal = bootstrap.Modal.getInstance(modalEl);
+            const modal = bootstrap.Modal.getInstance(document.getElementById('b10DetailModal'));
             if (modal) modal.hide();
+            checkB10CompletionState();
+            showSuccessModal();
+        } catch (error) {
+            Swal.fire({ icon: 'error', title: 'Ralat', text: error.message || 'Gagal menyimpan penilaian.' });
+        } finally {
+            if (modalSaveButton) modalSaveButton.disabled = false;
         }
-
-        checkB10CompletionState();
-        showSuccessModal();
     }
 
     function checkB10CompletionState() {
@@ -1380,7 +1396,9 @@
             btn.disabled = true;
             return;
         }
-        btn.disabled = false;
+        const allEvaluated = Object.values(b10VendorDataMap).every(v => v && v.is_evaluated === true);
+        const chk = document.getElementById('chkSahB10');
+        btn.disabled = !allEvaluated || !chk || !chk.checked;
     }
 
     function simpanB10Main() {

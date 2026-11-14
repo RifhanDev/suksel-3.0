@@ -296,7 +296,7 @@
                         @forelse($participants as $idx => $p)
                             @php
                                 $vId = $p->vendor_id;
-                                $kodPembekal = $p->kod_pembekal ?: ($p->ref_number ?: ('V' . str_pad($idx + 1, 3, '0', STR_PAD_LEFT)));
+                                $kodPembekal = $p->kod_pembekal ?: '-';
                                 $vendorName = $p->vendor->name ?? $p->vendor->company_name ?? $p->name ?? ('Petender ' . ($idx + 1));
                                 $rocNo = $p->vendor->registration ?? $p->vendor->registration_no ?? $p->vendor->roc_no ?? $p->vendor->ic_no ?? null;
 
@@ -452,8 +452,7 @@
                         <table class="table table-borang-modern align-middle mb-0">
                             <thead>
                                 <tr>
-                                    <th style="width: 60px;" class="text-center">BIL</th>
-                                    <th style="width: 140px;" class="text-center">KOD PETENDER</th>
+                                    <th style="width: 140px;" class="text-center">KOD PEMBEKAL</th>
                                     <th class="text-start ps-3">NAMA SYARIKAT</th>
                                     <th style="width: 170px;" class="text-end pe-3">HARGA TAWARAN (RM)</th>
                                     <th style="width: 130px;" class="text-center">TEMPOH TAWARAN</th>
@@ -479,7 +478,6 @@
                                 @endphp
                                 @forelse($passingVendors as $pIdx => $pV)
                                     <tr>
-                                        <td class="text-center font-monospace fw-bold text-dark">{{ $pIdx + 1 }}</td>
                                         <td class="text-center font-monospace fw-bold text-dark">{{ $pV['kodPembekal'] }}</td>
                                         <td class="ps-3">
                                             <div class="fw-bold text-dark">{{ $pV['vendorName'] }}</div>
@@ -504,7 +502,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="7" class="text-center py-4 text-muted">
+                                        <td colspan="6" class="text-center py-4 text-muted">
                                             <div class="d-flex flex-column align-items-center gap-2">
                                                 <i class="bi bi-info-circle text-secondary display-6"></i>
                                                 <span class="fw-semibold">Tiada petender yang layak / lulus penilaian pada peringkat ini.</span>

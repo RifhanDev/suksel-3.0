@@ -147,7 +147,7 @@
                         <table class="table table-hover align-middle mb-0 w-100">
                             <thead class="bg-light">
                                 <tr>
-                                    <th class="py-2.5 px-3 text-center text-uppercase text-secondary fw-bold" style="width: 15%; font-size: 0.725rem; letter-spacing: 0.5px;">BIL</th>
+                                    <th class="py-2.5 px-3 text-center text-uppercase text-secondary fw-bold" style="width: 15%; font-size: 0.725rem; letter-spacing: 0.5px;">KOD PEMBEKAL</th>
                                     <th class="py-2.5 px-3 text-start text-uppercase text-secondary fw-bold" style="width: 85%; font-size: 0.725rem; letter-spacing: 0.5px;">ULASAN</th>
                                 </tr>
                             </thead>
@@ -190,7 +190,7 @@
                         <table class="table table-hover align-middle mb-0 w-100">
                             <thead class="bg-light">
                                 <tr>
-                                    <th class="py-2.5 px-3 text-center text-uppercase text-secondary fw-bold" style="width: 15%; font-size: 0.725rem; letter-spacing: 0.5px;">BIL</th>
+                                    <th class="py-2.5 px-3 text-center text-uppercase text-secondary fw-bold" style="width: 15%; font-size: 0.725rem; letter-spacing: 0.5px;">KOD PEMBEKAL</th>
                                     <th class="py-2.5 px-3 text-start text-uppercase text-secondary fw-bold" style="width: 85%; font-size: 0.725rem; letter-spacing: 0.5px;">ULASAN</th>
                                 </tr>
                             </thead>
@@ -245,7 +245,7 @@
                     <table class="table align-middle mb-0" style="font-size: 0.85rem;">
                         <thead style="--bs-table-bg: #d7d7d9; --bs-table-color: #3f3f3f;">
                             <tr>
-                                <th class="text-center text-uppercase fw-bold py-2" style="width: 15%; font-size: 0.7rem; letter-spacing: 0.05em; background-color: #d7d7d9 !important; color: #3f3f3f !important;">Bil</th>
+                                <th class="text-center text-uppercase fw-bold py-2" style="width: 15%; font-size: 0.7rem; letter-spacing: 0.05em; background-color: #d7d7d9 !important; color: #3f3f3f !important;">Kod Pembekal</th>
                                 <th class="text-center text-uppercase fw-bold py-2" style="width: 22%; font-size: 0.7rem; letter-spacing: 0.05em; background-color: #d7d7d9 !important; color: #3f3f3f !important;">Jumlah Skor</th>
                                 <th class="text-center text-uppercase fw-bold py-2" style="width: 28%; font-size: 0.7rem; letter-spacing: 0.05em; background-color: #d7d7d9 !important; color: #3f3f3f !important;">Status Penilaian</th>
                                 <th class="text-center text-uppercase fw-bold py-2" style="width: 35%; font-size: 0.7rem; letter-spacing: 0.05em; background-color: #d7d7d9 !important; color: #3f3f3f !important;">Tindakan</th>
@@ -298,7 +298,7 @@
                     <div class="row g-3 align-items-center">
                         <div class="col-md-3 border-end border-slate-200">
                             <span class="d-block text-uppercase text-muted fw-semibold" style="font-size: 0.65rem; letter-spacing: 0.05em;">Kod Pembekal</span>
-                            <span id="modalStep2KodPembekal" class="fw-bold text-dark fs-6">1/2</span>
+                            <span id="modalStep2KodPembekal" class="fw-bold text-dark fs-6">-</span>
                         </div>
                         <div class="col-md-4 border-end border-slate-200">
                             <span class="d-block text-uppercase text-muted fw-semibold" style="font-size: 0.65rem; letter-spacing: 0.05em;">Nama Pembekal</span>

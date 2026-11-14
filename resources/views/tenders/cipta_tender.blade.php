@@ -436,6 +436,78 @@
 				display: none;
 			}
 		}
+
+		.submission-loading-overlay {
+			position: fixed;
+			inset: 0;
+			z-index: 3000;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			padding: 1.25rem;
+			background: rgba(15, 23, 42, 0.56);
+			backdrop-filter: blur(3px);
+			opacity: 0;
+			visibility: hidden;
+			pointer-events: none;
+			transition: opacity 120ms ease, visibility 120ms ease;
+		}
+
+		.submission-loading-overlay.is-active {
+			opacity: 1;
+			visibility: visible;
+			pointer-events: auto;
+			cursor: wait;
+		}
+
+		body.submission-in-progress {
+			overflow: hidden !important;
+		}
+
+		.submission-loading-card {
+			width: min(100%, 32rem);
+			padding: clamp(1.5rem, 5vw, 2.5rem);
+			border-radius: 1rem;
+			background: #fff;
+			box-shadow: 0 24px 70px rgba(15, 23, 42, 0.28);
+			text-align: center;
+		}
+
+		.submission-loading-card h2 {
+			margin: 1.25rem 0 0.65rem;
+			color: #1f2937;
+			font-size: clamp(1.1rem, 4vw, 1.35rem);
+			font-weight: 700;
+		}
+
+		.submission-loading-card p {
+			margin: 0.5rem 0 0;
+			color: #475569;
+			line-height: 1.55;
+		}
+
+		.submission-loading-card .submission-loading-note {
+			color: #64748b;
+			font-size: 0.9rem;
+		}
+
+		.submission-spinner {
+			width: 3rem;
+			height: 3rem;
+			margin: 0 auto;
+			border: 4px solid #fee2e2;
+			border-top-color: var(--sg-red, #b4233b);
+			border-radius: 50%;
+			animation: submission-spin 800ms linear infinite;
+		}
+
+		@keyframes submission-spin {
+			to { transform: rotate(360deg); }
+		}
+
+		@media (prefers-reduced-motion: reduce) {
+			.submission-spinner { animation-duration: 1.8s; }
+		}
 	</style>
 @endsection
 
@@ -486,9 +558,12 @@
 	{{-- Borang yang sama digunakan untuk cipta dan kemaskini, supaya kedua-dua skrin
          mempunyai medan dan susun atur yang serupa. $tender hanya wujud pada laluan
          kemaskini, dan kehadirannya yang menentukan ke mana borang dihantar. --}}
-	<form id="createTenderForm"
+	<form id="createTenderForm" data-creating="{{ isset($tender) ? 'false' : 'true' }}"
 		action="{{ isset($tender) ? route('tenders.update', $tender->id) : route('storeCiptaTender') }}" method="POST">
 		@csrf
+		@unless(isset($tender))
+			<input type="hidden" name="submission_key" value="{{ old('submission_key', (string) \Illuminate\Support\Str::uuid()) }}">
+		@endunless
 		@isset($tender)
 			@method('PUT')
 		@endisset
@@ -550,13 +625,23 @@
 					<div class="row mb-4">
 						<div class="col-md-12">
 							<label class="form-label">Disediakan Untuk PTJ<span class="text-danger">*</span></label>
-							<select class="form-select" name="ptj_id" id="ptj-select" required>
-								<option value="" selected disabled>Pilih...</option>
+							@php
+								$currentUser = auth()->user();
+								$isGlobalAdmin = $currentUser->hasRole('Admin');
+								$userPtjId = $currentUser->organization_unit_id;
+								$defaultPtjId = isset($tender) ? $tender->organization_unit_id : $userPtjId;
+								$selectedPtjId = $isGlobalAdmin ? (old('ptj_id') ?: $defaultPtjId) : $defaultPtjId;
+							@endphp
+							<select class="form-select" id="ptj-select" @if ($isGlobalAdmin) name="ptj_id" required @else disabled @endif>
+								<option value="" {{ empty($selectedPtjId) ? 'selected' : '' }} disabled>Pilih...</option>
 								@foreach ($organizations as $org)
-									<option value="{{ $org->id }}" {{ old('ptj_id') == $org->id ? 'selected' : '' }}>
+									<option value="{{ $org->id }}" {{ (string) $selectedPtjId === (string) $org->id ? 'selected' : '' }}>
 										{{ strtoupper($org->name) }}</option>
 								@endforeach
 							</select>
+							@if (!$isGlobalAdmin)
+								<input type="hidden" name="ptj_id" value="{{ $selectedPtjId }}">
+							@endif
 						</div>
 					</div>
 
@@ -792,46 +877,51 @@
 									<div class="col-12">
 										<label class="form-label">Zon/Lokasi</label>
 										<div class="segmented-control">
+											@php
+												$selectedZonLokasi = old('zon_lokasi', isset($tender) ? ($tender->zon_lokasi ? '1' : '0') : '1');
+											@endphp
 											<input type="radio" name="zon_lokasi" id="z_y" value="1"
-												{{ old('zon_lokasi', '1') == '1' ? 'checked' : '' }}>
+												{{ $selectedZonLokasi == '1' ? 'checked' : '' }}>
 											<label for="z_y">Ya</label>
 											<input type="radio" name="zon_lokasi" id="z_t" value="0"
-												{{ old('zon_lokasi', '1') == '0' ? 'checked' : '' }}>
+												{{ $selectedZonLokasi == '0' ? 'checked' : '' }}>
 											<label for="z_t">Tidak</label>
 										</div>
 									</div>
 									<!-- Lokaliti -->
 									@php
-										$selectedLokalitiId = old('lokaliti_id');
+										$selectedLokalitiId = old('lokaliti_id', isset($tender) ? $tender->lokaliti_id : null);
+										$selectedCoverageDistrictIds = array_map('strval', (array) old('coverage_district_ids', []));
 										$selectedLokaliti = collect($lokalitis ?? [])->firstWhere('id', (int) $selectedLokalitiId);
 										$isDaerahTerpilih =
 										    $selectedLokaliti && strcasecmp(trim((string) $selectedLokaliti->name), 'Daerah Terpilih') === 0;
-										$showDaerahGroup = old('zon_lokasi', '1') == '1' && $isDaerahTerpilih;
+										$showDaerahGroup = $selectedZonLokasi == '1' && $isDaerahTerpilih;
 									@endphp
-									<div class="col-12 {{ old('zon_lokasi', '1') == '0' ? 'd-none' : '' }}" id="lokaliti-group">
+									<div class="col-12 {{ $selectedZonLokasi == '0' ? 'd-none' : '' }}" id="lokaliti-group">
 										<label class="form-label">Lokaliti Liputan</label>
-										<select class="form-select form-select-sm" name="lokaliti_id" id="lokaliti_id">
-											<option value="" selected disabled>Pilih...</option>
+										<select class="form-select form-select-sm" name="lokaliti_id" id="lokaliti_id"
+											{{ $selectedZonLokasi == '1' ? 'required' : '' }}>
+											<option value="" {{ empty($selectedLokalitiId) ? 'selected' : '' }} disabled>Pilih...</option>
 											@foreach ($lokalitis as $lokaliti)
+												@continue(strcasecmp(trim((string) $lokaliti->name), 'Zon Terpilih') === 0)
 												<option value="{{ $lokaliti->id }}" data-lokaliti-name="{{ strtolower(trim($lokaliti->name)) }}"
-													{{ (string) old('lokaliti_id') === (string) $lokaliti->id ? 'selected' : '' }}>
+													{{ (string) $selectedLokalitiId === (string) $lokaliti->id ? 'selected' : '' }}>
 													{{ $lokaliti->name }}</option>
 											@endforeach
 										</select>
 									</div>
-									{{-- Shown only for Lokaliti = Daerah Terpilih. Zon Terpilih has no ref table yet. --}}
 									<div class="col-12 {{ $showDaerahGroup ? '' : 'd-none' }}" id="daerah-group">
-										<label class="form-label">Daerah</label>
-										<select class="form-select form-select-sm" name="district_id" id="district_id_zon">
-											<option value="" selected disabled>Pilih Daerah...</option>
-											@foreach (\App\Vendor::$districts as $districtId => $districtName)
-												@continue((int) $districtId === \App\Vendor::DISTRICT_ALL_SELANGOR || (string) $districtId === '0')
+										<label class="form-label">Daerah Liputan</label>
+										<select class="form-select form-select-sm" name="coverage_district_ids[]" id="district_id_zon"
+											multiple {{ $showDaerahGroup ? 'required' : '' }} aria-describedby="daerah-hint">
+											@foreach (\App\Vendor::selangorDistrictIds() as $districtId)
 												<option value="{{ $districtId }}"
-													{{ (string) old('district_id') === (string) $districtId ? 'selected' : '' }}>
-													{{ $districtName }}
+													{{ in_array((string) $districtId, $selectedCoverageDistrictIds, true) ? 'selected' : '' }}>
+													{{ \App\Vendor::$districts[$districtId] }}
 												</option>
 											@endforeach
 										</select>
+										<small id="daerah-hint" class="text-muted">Pilih satu atau lebih daerah liputan projek.</small>
 									</div>
 								</div>
 							</div>
@@ -1175,6 +1265,14 @@
 
 		</div>
 	</form>
+	<div id="submission-loading-overlay" class="submission-loading-overlay" role="alert" aria-live="assertive" aria-hidden="true" tabindex="-1">
+		<div class="submission-loading-card">
+			<div class="submission-spinner" aria-hidden="true"></div>
+			<h2>Sedang Memproses Permohonan...</h2>
+			<p>Sila tunggu sebentar. Permohonan Tender/Sebut Harga anda sedang dihantar dan didaftarkan ke dalam sistem.</p>
+			<p class="submission-loading-note">Sila jangan tutup atau refresh halaman ini sehingga proses selesai.</p>
+		</div>
+	</div>
 @endsection
 
 @section('scripts')
@@ -1186,6 +1284,42 @@
 			`@foreach (App\Code::where('type', 'cidb-c')->orderBy('code')->get() as $code)<option value="{{ $code->id }}">{{ $code->label }}</option>@endforeach`;
 
 		$(document).ready(function() {
+			let tenderSubmissionInProgress = false;
+			const $tenderForm = $('#createTenderForm');
+			const $submissionOverlay = $('#submission-loading-overlay');
+
+			$tenderForm.on('submit', function(event) {
+				if ($tenderForm.data('creating') !== true && $tenderForm.data('creating') !== 'true') {
+					return;
+				}
+
+				if (tenderSubmissionInProgress) {
+					event.preventDefault();
+					return;
+				}
+
+				tenderSubmissionInProgress = true;
+				$('#btn-submit').prop('disabled', true).attr('aria-disabled', 'true');
+				$submissionOverlay.addClass('is-active').attr('aria-hidden', 'false');
+				$('body').addClass('submission-in-progress');
+				$submissionOverlay.trigger('focus');
+			});
+
+			$(document).on('keydown.tenderSubmission', function(event) {
+				if (tenderSubmissionInProgress) {
+					event.preventDefault();
+					event.stopImmediatePropagation();
+				}
+			});
+
+			// Clear the lock if the browser restores this page from its back-forward cache.
+			$(window).on('pageshow', function() {
+				tenderSubmissionInProgress = false;
+				$('#btn-submit').prop('disabled', false).removeAttr('aria-disabled');
+				$submissionOverlay.removeClass('is-active').attr('aria-hidden', 'true');
+				$('body').removeClass('submission-in-progress');
+			});
+
 			const kategoriPerolehanDropdown = $('select[name="kategori_perolehan"]');
 			const kategoriDetailDropdown = $('select[name="kategori_perolehan_detail"]');
 			const oldKategoriDetail = '{{ old('kategori_perolehan_detail') }}';
@@ -1329,6 +1463,12 @@
 					$(this).selectize();
 				}
 			});
+			if ($('#district_id_zon').length && !$('#district_id_zon')[0].selectize) {
+				$('#district_id_zon').selectize({
+					plugins: ['remove_button'],
+					placeholder: 'Pilih satu atau lebih daerah...'
+				});
+			}
 
 			// --- DATEPICKER INITIALIZATION ---
 			$('.datepicker').datepicker({
@@ -1344,24 +1484,36 @@
 				var $lokaliti = $('#lokaliti_id');
 				var $daerahGroup = $('#daerah-group');
 				var $daerahSelect = $('#district_id_zon');
+				var clearDaerah = function() {
+					if ($daerahSelect[0] && $daerahSelect[0].selectize) {
+						$daerahSelect[0].selectize.clear(true);
+					} else {
+						$daerahSelect.val([]);
+					}
+				};
 
 				if (zonOn) {
 					$('#lokaliti-group').removeClass('d-none');
+					$lokaliti.prop('required', true);
 				} else {
 					$('#lokaliti-group').addClass('d-none');
 					$lokaliti.val('');
+					$lokaliti.prop('required', false);
 					$daerahGroup.addClass('d-none');
-					$daerahSelect.val('');
+					$daerahSelect.prop('required', false);
+					clearDaerah();
 					return;
 				}
 
 				var lokalitiName = ($lokaliti.find('option:selected').data('lokaliti-name') || '').toString().trim();
 				if (lokalitiName === 'daerah terpilih') {
 					$daerahGroup.removeClass('d-none');
+					$daerahSelect.prop('required', true);
 				} else {
-					// Zon Terpilih (or empty): no zone ref table — hide daerah, clear value.
+					// No selected locality: hide the district list and clear stale values.
 					$daerahGroup.addClass('d-none');
-					$daerahSelect.val('');
+					$daerahSelect.prop('required', false);
+					clearDaerah();
 				}
 			}
 

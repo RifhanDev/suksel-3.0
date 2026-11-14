@@ -101,8 +101,7 @@
                 <table class="table table-hover align-middle mb-0 w-100">
                     <thead class="table-light">
                         <tr>
-                            <th class="text-center text-uppercase small fw-bold text-secondary px-3" style="width: 72px;">Bil.</th>
-                            <th class="text-center text-uppercase small fw-bold text-secondary px-3" style="width: 120px;">Kod Petender</th>
+                            <th class="text-center text-uppercase small fw-bold text-secondary px-3" style="width: 120px;">Kod Pembekal</th>
                             <th class="text-uppercase small fw-bold text-secondary px-3">Petender & CIDB</th>
                             <th class="text-end text-uppercase small fw-bold text-secondary px-3">Modal Pusingan (RM)</th>
                             <th class="text-end text-uppercase small fw-bold text-secondary px-3">Purata Penyata Bank (RM)</th>
@@ -159,8 +158,7 @@
                         <table class="table table-hover align-middle mb-0 w-100">
                             <thead style="background-color: #1e293b;">
                                 <tr>
-                                    <th class="py-2.5 px-3 text-center text-uppercase text-white fw-bold" style="width: 7%; font-size: 0.725rem; letter-spacing: 0.5px; background-color: #1e293b !important;">BIL</th>
-                                    <th class="py-2.5 px-3 text-center text-uppercase text-white fw-bold" style="width: 12%; font-size: 0.725rem; letter-spacing: 0.5px; background-color: #1e293b !important;">KOD</th>
+                                    <th class="py-2.5 px-3 text-center text-uppercase text-white fw-bold" style="width: 12%; font-size: 0.725rem; letter-spacing: 0.5px; background-color: #1e293b !important;">KOD PEMBEKAL</th>
                                     <th class="py-2.5 px-3 text-start text-uppercase text-white fw-bold" style="width: 28%; font-size: 0.725rem; letter-spacing: 0.5px; background-color: #1e293b !important;">NAMA PEMBEKAL</th>
                                     <th class="py-2.5 px-3 text-end text-uppercase text-white fw-bold" style="width: 15%; font-size: 0.725rem; letter-spacing: 0.5px; background-color: #1e293b !important;">MODAL PUSINGAN (RM)</th>
                                     <th class="py-2.5 px-3 text-end text-uppercase text-white fw-bold" style="width: 15%; font-size: 0.725rem; letter-spacing: 0.5px; background-color: #1e293b !important;">PURATA BANK (RM)</th>
@@ -204,8 +202,7 @@
                         <table class="table table-hover align-middle mb-0 w-100">
                             <thead style="background-color: #1e293b;">
                                 <tr>
-                                    <th class="py-2.5 px-3 text-center text-uppercase text-white fw-bold" style="width: 7%; font-size: 0.725rem; letter-spacing: 0.5px; background-color: #1e293b !important;">BIL</th>
-                                    <th class="py-2.5 px-3 text-center text-uppercase text-white fw-bold" style="width: 12%; font-size: 0.725rem; letter-spacing: 0.5px; background-color: #1e293b !important;">KOD</th>
+                                    <th class="py-2.5 px-3 text-center text-uppercase text-white fw-bold" style="width: 12%; font-size: 0.725rem; letter-spacing: 0.5px; background-color: #1e293b !important;">KOD PEMBEKAL</th>
                                     <th class="py-2.5 px-3 text-start text-uppercase text-white fw-bold" style="width: 28%; font-size: 0.725rem; letter-spacing: 0.5px; background-color: #1e293b !important;">NAMA PEMBEKAL</th>
                                     <th class="py-2.5 px-3 text-end text-uppercase text-white fw-bold" style="width: 15%; font-size: 0.725rem; letter-spacing: 0.5px; background-color: #1e293b !important;">MODAL PUSINGAN (RM)</th>
                                     <th class="py-2.5 px-3 text-end text-uppercase text-white fw-bold" style="width: 15%; font-size: 0.725rem; letter-spacing: 0.5px; background-color: #1e293b !important;">PURATA BANK (RM)</th>

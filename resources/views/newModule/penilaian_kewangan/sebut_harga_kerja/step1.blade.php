@@ -88,7 +88,7 @@
                     <table class="table table-hover align-middle mb-0">
                         <thead class="table-light">
                             <tr>
-                                <th class="text-center text-uppercase small fw-bold text-secondary px-3" style="width: 72px;">Bil.</th>
+                                <th class="text-center text-uppercase small fw-bold text-secondary px-3" style="width: 72px;">Kod Pembekal</th>
                                 <th class="text-uppercase small fw-bold text-secondary px-3">Petender</th>
                                 <th class="text-uppercase small fw-bold text-secondary px-3">Maklumat CIDB</th>
                                 <th class="text-center text-uppercase small fw-bold text-secondary px-3" style="width: 190px;">Status Pematuhan</th>
@@ -143,8 +143,7 @@
                         <table class="table table-hover align-middle mb-0 w-100">
                             <thead style="background-color: #1e293b;">
                                 <tr>
-                                    <th class="py-2.5 px-3 text-center text-uppercase text-white fw-bold" style="width: 8%; font-size: 0.725rem; letter-spacing: 0.5px; background-color: #1e293b !important;">BIL</th>
-                                    <th class="py-2.5 px-3 text-start text-uppercase text-white fw-bold" style="width: 15%; font-size: 0.725rem; letter-spacing: 0.5px; background-color: #1e293b !important;">KOD PETENDER</th>
+                                    <th class="py-2.5 px-3 text-start text-uppercase text-white fw-bold" style="width: 15%; font-size: 0.725rem; letter-spacing: 0.5px; background-color: #1e293b !important;">KOD PEMBEKAL</th>
                                     <th class="py-2.5 px-3 text-start text-uppercase text-white fw-bold" style="width: 35%; font-size: 0.725rem; letter-spacing: 0.5px; background-color: #1e293b !important;">NAMA PETENDER</th>
                                     <th class="py-2.5 px-3 text-center text-uppercase text-white fw-bold" style="width: 18%; font-size: 0.725rem; letter-spacing: 0.5px; background-color: #1e293b !important;">STATUS DOKUMEN</th>
                                     <th class="py-2.5 px-3 text-start text-uppercase text-white fw-bold" style="font-size: 0.725rem; letter-spacing: 0.5px; background-color: #1e293b !important;">ULASAN / CATATAN</th>
@@ -187,8 +186,7 @@
                         <table class="table table-hover align-middle mb-0 w-100">
                             <thead style="background-color: #1e293b;">
                                 <tr>
-                                    <th class="py-2.5 px-3 text-center text-uppercase text-white fw-bold" style="width: 8%; font-size: 0.725rem; letter-spacing: 0.5px; background-color: #1e293b !important;">BIL</th>
-                                    <th class="py-2.5 px-3 text-start text-uppercase text-white fw-bold" style="width: 15%; font-size: 0.725rem; letter-spacing: 0.5px; background-color: #1e293b !important;">KOD PETENDER</th>
+                                    <th class="py-2.5 px-3 text-start text-uppercase text-white fw-bold" style="width: 15%; font-size: 0.725rem; letter-spacing: 0.5px; background-color: #1e293b !important;">KOD PEMBEKAL</th>
                                     <th class="py-2.5 px-3 text-start text-uppercase text-white fw-bold" style="width: 32%; font-size: 0.725rem; letter-spacing: 0.5px; background-color: #1e293b !important;">NAMA PETENDER</th>
                                     <th class="py-2.5 px-3 text-start text-uppercase text-white fw-bold" style="width: 25%; font-size: 0.725rem; letter-spacing: 0.5px; background-color: #1e293b !important;">DOKUMEN TIDAK MEMATUHI</th>
                                     <th class="py-2.5 px-3 text-start text-uppercase text-white fw-bold" style="font-size: 0.725rem; letter-spacing: 0.5px; background-color: #1e293b !important;">SEBAB / CATATAN</th>
