@@ -80,14 +80,12 @@ return [
             && filter_var(env('ATTACHMENT_REMOTE_ENABLED', false), FILTER_VALIDATE_BOOLEAN)
         )
             ? [
-                'driver' => env('ATTACHMENT_DRIVER', 'ftp'),
+                'driver' => env('ATTACHMENT_DRIVER', 'sftp'),
                 'host' => env('ATTACHMENT_HOST', '172.16.2.147'),
                 'username' => env('ATTACHMENT_USERNAME'),
                 'password' => env('ATTACHMENT_PASSWORD'),
-                'port' => (int) env('ATTACHMENT_PORT', 21),
+                'port' => (int) env('ATTACHMENT_PORT', 8822),
                 'root' => env('ATTACHMENT_ROOT', '/data/laravel/perolehan_attachment'),
-                'passive' => filter_var(env('ATTACHMENT_PASSIVE', true), FILTER_VALIDATE_BOOLEAN),
-                'ssl' => filter_var(env('ATTACHMENT_SSL', false), FILTER_VALIDATE_BOOLEAN),
                 'timeout' => (int) env('ATTACHMENT_TIMEOUT', 30),
                 'throw' => false,
             ]
@@ -104,14 +102,12 @@ return [
             && filter_var(env('ATTACHMENT_REMOTE_ENABLED', false), FILTER_VALIDATE_BOOLEAN)
         )
             ? [
-                'driver' => env('ATTACHMENT_DRIVER', 'ftp'),
+                'driver' => env('ATTACHMENT_DRIVER', 'sftp'),
                 'host' => env('ATTACHMENT_HOST', '172.16.2.147'),
                 'username' => env('ATTACHMENT_USERNAME'),
                 'password' => env('ATTACHMENT_PASSWORD'),
-                'port' => (int) env('ATTACHMENT_PORT', 21),
+                'port' => (int) env('ATTACHMENT_PORT', 8822),
                 'root' => env('ATTACHMENT_LEGACY_ROOT', '/data/laravel/uploads'),
-                'passive' => filter_var(env('ATTACHMENT_PASSIVE', true), FILTER_VALIDATE_BOOLEAN),
-                'ssl' => filter_var(env('ATTACHMENT_SSL', false), FILTER_VALIDATE_BOOLEAN),
                 'timeout' => (int) env('ATTACHMENT_TIMEOUT', 30),
                 'throw' => false,
             ]
