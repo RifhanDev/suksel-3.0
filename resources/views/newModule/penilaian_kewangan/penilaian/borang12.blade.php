@@ -151,43 +151,7 @@
         : (str_contains(url()->previous(), '/penilaian-kewangan') ? url()->previous() : route('penilaianKewangan'));
     $readOnly = $readOnly ?? false;
 
-    // Build or fallback vendor summary for Borang 12
-    $b12List = $b12VendorSummary ?? [
-        1 => [
-            'vendor_id'    => 1,
-            'kod_pembekal' => 'V001',
-            'vendor_name'  => 'Syarikat Bina Jaya Sdn Bhd',
-            'status_bumi'  => 'Bumiputera',
-            'status_pb'    => 'PB',
-            'harga_asal'   => 'RM 1,250,000.00',
-            'markah'       => '73.50',
-            'keputusan'    => 'LULUS',
-            'is_evaluated' => true,
-        ],
-        2 => [
-            'vendor_id'    => 2,
-            'kod_pembekal' => 'V002',
-            'vendor_name'  => 'Pembinaan Utama Sdn Bhd',
-            'status_bumi'  => 'Bukan Bumiputera',
-            'status_pb'    => 'PBP',
-            'harga_asal'   => 'RM 1,400,000.00',
-            'markah'       => '80.00',
-            'keputusan'    => 'LULUS',
-            'is_evaluated' => true,
-        ],
-        3 => [
-            'vendor_id'    => 3,
-            'kod_pembekal' => 'V003',
-            'vendor_name'  => 'Perusahaan Gagah Budi Enterprise',
-            'status_bumi'  => 'Bumiputera',
-            'status_pb'    => 'PB',
-            'harga_asal'   => 'RM 1,650,000.00',
-            'markah'       => '40.00',
-            'keputusan'    => 'GAGAL',
-            'is_evaluated' => false,
-        ],
-    ];
-    $b12List = !empty($b12VendorSummary) ? array_values($b12VendorSummary) : array_values($b12List);
+    $b12List = array_values($b12VendorSummary ?? []);
     usort($b12List, function ($a, $b) {
         $pA = (float) preg_replace('/[^0-9.]/', '', (string) ($a['harga_asal'] ?? 0));
         $pB = (float) preg_replace('/[^0-9.]/', '', (string) ($b['harga_asal'] ?? 0));
@@ -315,8 +279,8 @@
                 <table class="table table-hover align-middle mb-0 table-borang12-modern">
                     <thead>
                         <tr>
-                            <th rowspan="3" style="width: 5%; text-align: center;">BIL</th>
-                            <th rowspan="3" style="width: 15%; text-align: center;">RUJUKAN PETENDER</th>
+                            <th rowspan="3" style="width: 15%; text-align: center;">KOD PEMBEKAL</th>
+                            <th rowspan="3" style="width: 18%; text-align: center;">NAMA PETENDER</th>
                             <th rowspan="3" style="width: 18%; text-align: center;">STATUS PETENDER<br><span class="text-white-50 small">(Bumiputera / Bukan Bumiputera)</span></th>
                             <th rowspan="3" style="width: 18%; text-align: right;" class="pe-3">HARGA ASAL TENDER (RM)</th>
                             <th rowspan="3" style="width: 18%; text-align: center;">MARKAH KESELURUHAN PENILAIAN KEUPAYAAN PETENDER<br><span class="text-white-50 small">(Dari Borang 11)</span></th>
@@ -335,7 +299,7 @@
                         @forelse($b12List as $index => $v)
                             @php
                                 $vId = $v['vendor_id'] ?? $loop->iteration;
-                                $kodText = $v['kod_pembekal'] ?? ('V' . str_pad($vId, 3, '0', STR_PAD_LEFT));
+                                $kodText = $v['kod_pembekal'] ?? '—';
                                 $statusBumi = $v['status_bumi'] ?? 'Bumiputera';
                                 $statusPb = $v['status_pb'] ?? 'PB';
                                 $hargaAsal = $v['harga_asal'] ?? 'RM 1,250,000.00';
@@ -343,8 +307,8 @@
                                 $keputusan = $v['keputusan'] ?? 'LULUS';
                             @endphp
                             <tr>
-                                <td class="text-center font-monospace fw-bold">{{ $loop->iteration }}</td>
                                 <td class="text-center font-monospace fw-bold text-primary">{{ $kodText }}</td>
+                                <td class="fw-semibold">{{ $v['vendor_name'] ?? '—' }}</td>
                                 <td class="text-center">
                                     @if($statusBumi === 'Bumiputera')
                                         <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2.5 py-1 rounded-pill fw-semibold">
@@ -372,7 +336,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="text-center py-4 text-muted">Tiada petender ditemui.</td>
+                                <td colspan="7" class="text-center py-4 text-muted">Tiada petender ditemui.</td>
                             </tr>
                         @endforelse
                     </tbody>

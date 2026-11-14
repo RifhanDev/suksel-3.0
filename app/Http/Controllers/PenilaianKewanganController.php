@@ -1164,7 +1164,7 @@ class PenilaianKewanganController extends Controller
             return [
                 'bil' => $idx + 1,
                 'vendor_id' => (int) $participant->vendor_id,
-                'no_petender' => $participant->kod_pembekal ?: (($idx + 1) . '/' . $totalJoined),
+                'no_petender' => $participant->kod_pembekal ?: '-',
                 'nama' => $participant->vendor?->name ?: ('Vendor #' . $participant->vendor_id),
                 'harga' => $participant->harga_tawaran_resolved,
                 'harga_display' => $participant->harga_tawaran_fmt,
@@ -1428,7 +1428,11 @@ class PenilaianKewanganController extends Controller
             'tender'               => 'required|string',
             'vendor_id'            => 'required|integer',
             'checklist_item_uuid'  => 'required|uuid',
+            'step'                 => 'nullable|integer|between:1,3',
             'status_pematuhan'     => 'required',
+            'skor'                 => 'nullable|numeric|min:0',
+            'skor_modal_berbayar'  => 'nullable|numeric|min:0',
+            'skor_modal_dibenarkan'=> 'nullable|numeric|min:0',
             'catatan'              => 'nullable|string|max:2000',
         ]);
 
@@ -1469,9 +1473,6 @@ class PenilaianKewanganController extends Controller
         $stepParam = (int) $request->input('step', 0);
         $checkUuid = (string) $request->input('checklist_item_uuid');
 
-        $isStep3Item = ($stepParam === 3);
-        $isStep2Item = ($stepParam === 2);
-
         $sections = $this->resolveTenderChecklistSections($tender);
         $kewanganUuids = $sections['kewanganUuids'];
         $penyataUuids  = $sections['penyataUuids'];
@@ -1495,8 +1496,29 @@ class PenilaianKewanganController extends Controller
 
         $allPenyataUuids = array_unique(array_merge($penyataUuids, $stdPenyataUuids, $finPenyataUuids));
 
-        if (! $isStep2Item && ! $isStep3Item) {
-            $isStep2Item = in_array($checkUuid, $allPenyataUuids, true);
+        if ($stepParam === 0) {
+            // Older Step 1 requests do not include a step number.
+            $stepParam = in_array($checkUuid, $allPenyataUuids, true) ? 2 : 1;
+        }
+
+        if ($stepParam === 1 && ! in_array($checkUuid, $kewanganUuids, true)) {
+            return response()->json(['message' => 'Item ini bukan item penilaian Pematuhan Dokumentasi.'], 422);
+        }
+        if ($stepParam === 2 && ! in_array($checkUuid, $penyataUuids, true)) {
+            return response()->json(['message' => 'Item ini bukan item penilaian Penyata Bulanan Bank.'], 422);
+        }
+        if ($stepParam === 3 && ! in_array($checkUuid, $kewanganUuids, true)) {
+            return response()->json(['message' => 'Item ini bukan item penilaian Spesifikasi Kewangan.'], 422);
+        }
+
+        $isStep3Item = ($stepParam === 3);
+        $isStep2Item = ($stepParam === 2);
+
+        if ($isStep2Item && ! $progress->isStep1Confirmed()) {
+            return response()->json(['message' => 'Langkah 1 perlu disahkan sebelum penilaian Langkah 2.'], 422);
+        }
+        if ($isStep3Item && ! $progress->isStep2Confirmed()) {
+            return response()->json(['message' => 'Langkah 2 perlu disahkan sebelum penilaian Langkah 3.'], 422);
         }
 
         if ($isStep2Item) {
@@ -1580,17 +1602,31 @@ class PenilaianKewanganController extends Controller
         if ($isModalScore) {
             $skorBerbayar = (float) $request->input('skor_modal_berbayar', 0);
             $skorDibenarkan = (float) $request->input('skor_modal_dibenarkan', 0);
-            $maxBerbayar = (float) $request->input('max_modal_berbayar', 0);
-            $maxDibenarkan = (float) $request->input('max_modal_dibenarkan', 0);
+            $step3Item = collect($sections['kewanganItems'])->firstWhere('uuid', $checkUuid);
+            $profilePayload = $step3Item
+                ? $this->buildSemakPayload($tender, [], [$step3Item], [], [])
+                : [];
+            $profileLimits = $profilePayload[$checkUuid]['profil_petender_detail'] ?? null;
 
-            if ($maxBerbayar > 0 && $skorBerbayar > $maxBerbayar) {
+            if (! $isStep3Item || ! $profileLimits) {
+                return response()->json(['message' => 'Item ini tidak menggunakan pemarkahan Profil Petender yang sah.'], 422);
+            }
+
+            $maxBerbayar = (float) ($profileLimits['max_modal_berbayar'] ?? 0);
+            $maxDibenarkan = (float) ($profileLimits['max_modal_dibenarkan'] ?? 0);
+
+            if (($maxBerbayar + $maxDibenarkan) <= 0) {
+                return response()->json(['message' => 'Konfigurasi had skor Profil Petender belum lengkap.'], 422);
+            }
+
+            if ($skorBerbayar > $maxBerbayar) {
                 $fmtMax = ($maxBerbayar == (int) $maxBerbayar) ? (string) (int) $maxBerbayar : number_format($maxBerbayar, 2);
                 return response()->json([
                     'message' => "Skor Modal Berbayar tidak boleh melebihi skor maksimum ({$fmtMax})."
                 ], 422);
             }
 
-            if ($maxDibenarkan > 0 && $skorDibenarkan > $maxDibenarkan) {
+            if ($skorDibenarkan > $maxDibenarkan) {
                 $fmtMax = ($maxDibenarkan == (int) $maxDibenarkan) ? (string) (int) $maxDibenarkan : number_format($maxDibenarkan, 2);
                 return response()->json([
                     'message' => "Skor Modal Dibenarkan tidak boleh melebihi skor maksimum ({$fmtMax})."
@@ -1625,14 +1661,14 @@ class PenilaianKewanganController extends Controller
         ];
 
         // Langkah 1, Langkah 2, and Langkah 3 write to the same row, so each step updates its relevant columns.
-        if ((int) $request->input('step') === 3) {
+        if ($stepParam === 3) {
             $fields['skor'] = $skorInput;
             $fields['catatan_skor'] = (string) ($request->input('catatan') ?? '');
 
             if ($isModalScore) {
                 $fields['catatan'] = $catatanSave;
             }
-        } elseif ((int) $request->input('step') === 2) {
+        } elseif ($stepParam === 2) {
             $fields['skor'] = $skorInput;
             $fields['catatan'] = $catatanSave;
         } else {
@@ -1756,6 +1792,12 @@ class PenilaianKewanganController extends Controller
 
             if ($stepNum === 1) {
                 if ($confirmed) {
+                    if (count($kewanganUuids) === 0) {
+                        return response()->json([
+                            'message' => 'Tiada item Pematuhan Dokumentasi dikonfigurasikan untuk penilaian ini.'
+                        ], 422);
+                    }
+
                     $eligibleParticipants = $this->loadEligibleTechnicalParticipants($tender);
 
                     if ($eligibleParticipants->isNotEmpty() && count($kewanganUuids) > 0) {
@@ -1796,6 +1838,12 @@ class PenilaianKewanganController extends Controller
                 }
 
                 if ($confirmed) {
+                    if (count($penyataUuids) === 0) {
+                        return response()->json([
+                            'message' => 'Tiada item Penyata Bulanan Bank dikonfigurasikan untuk penilaian ini.'
+                        ], 422);
+                    }
+
                     $step1PassedVendorIds = $this->getStep1PassedVendorIds($tender, $kewanganUuids);
 
                     if (count($step1PassedVendorIds) > 0 && count($penyataUuids) > 0) {
@@ -1836,6 +1884,29 @@ class PenilaianKewanganController extends Controller
                 }
 
                 if ($confirmed) {
+                    if (count($kewanganUuids) === 0) {
+                        return response()->json([
+                            'message' => 'Tiada item Spesifikasi Kewangan dikonfigurasikan untuk penilaian ini.'
+                        ], 422);
+                    }
+
+                    $step2PassedVendorIds = $this->getStep2PassedVendorIds($tender, $kewanganUuids, $penyataUuids);
+                    $step3ItemsPayload = $this->buildSemakPayload($tender, [], $kewanganItems, [], []);
+                    $evaluations = $this->loadEvaluations($tender);
+
+                    foreach ($step2PassedVendorIds as $vendorId) {
+                        foreach ($kewanganUuids as $uuid) {
+                            $evaluation = $evaluations["{$vendorId}:{$uuid}"] ?? null;
+                            $isProfilItem = ! empty($step3ItemsPayload[$uuid]['profil_petender_detail']);
+
+                            if (! $this->isStep3EvaluationComplete($evaluation, $isProfilItem)) {
+                                return response()->json([
+                                    'message' => 'Semua pembekal yang melepasi Langkah 2 mesti dinilai untuk setiap item Spesifikasi Kewangan sebelum pengesahan Langkah 3.'
+                                ], 422);
+                            }
+                        }
+                    }
+
                     $allStepItems = array_merge($kewanganItems, $penyataBankItems);
                     $participants = $this->loadEligibleTechnicalParticipants($tender);
 
@@ -1846,7 +1917,6 @@ class PenilaianKewanganController extends Controller
                     ])->all();
 
                     $semakPayload = $this->buildSemakPayload($tender, [], $allStepItems, [], $vendors);
-                    $evaluations  = $this->loadEvaluations($tender);
                     $semakPayload = $this->mergeEvaluationsIntoPayload($semakPayload, $evaluations);
 
                     $rumusan3 = $this->calculateStep3Rumusan($tender, $semakPayload);
@@ -1941,6 +2011,43 @@ class PenilaianKewanganController extends Controller
     }
 
     /**
+     * Return the current Step 3 summary from persisted financial evaluations.
+     */
+    public function rumusanStep3(string $tender_no): JsonResponse
+    {
+        $tender = Tender::query()
+            ->where(function ($q) use ($tender_no) {
+                $q->where('no_tender', $tender_no)
+                    ->orWhere('ref_number', $tender_no)
+                    ->orWhere('uuid', $tender_no);
+                if (is_numeric($tender_no)) {
+                    $q->orWhere('id', (int) $tender_no);
+                }
+            })
+            ->first();
+
+        if (! $tender) {
+            abort(404, 'Tender tidak ditemui.');
+        }
+
+        $this->assertCommitteeAppointment($tender, $this->financialCommitteeJenis);
+
+        $workflow = app(PenilaianKewanganWorkflowResolver::class)->classify($tender);
+        if ($workflow !== PenilaianKewanganWorkflowResolver::WORKFLOW_NORMAL) {
+            abort(404, 'Rumusan ini tidak tersedia untuk aliran penilaian ini.');
+        }
+
+        $sections = $this->resolveTenderChecklistSections($tender);
+        $allStepItems = array_merge($sections['kewanganItems'], $sections['penyataBankItems']);
+
+        // Only item score ceilings are needed here; vendors and their evaluations
+        // are read from the database by calculateStep3Rumusan().
+        $semakPayload = $this->buildSemakPayload($tender, [], $allStepItems, [], []);
+
+        return response()->json($this->calculateStep3Rumusan($tender, $semakPayload));
+    }
+
+    /**
      * Calculate Step 3 Rumusan (Vendor total scores, passing threshold comparison, ranking, and pass/fail status).
      *
      * @param  \App\Tender  $tender
@@ -1962,6 +2069,35 @@ class PenilaianKewanganController extends Controller
         $kewanganUuids    = $sections['kewanganUuids'];
         $penyataUuids     = $sections['penyataUuids'];
 
+        $profilItemUuids = collect($kewanganItems)
+            ->filter(function (array $item) {
+                $title = strtolower(trim($item['title'] ?? $item['nama'] ?? ''));
+                $formKey = strtolower(trim($item['admin_content']['form']['form_key'] ?? ''));
+
+                return ($item['action'] ?? '') === 'online_form'
+                    || $formKey === 'profil_petender'
+                    || str_contains($title, 'profil petender');
+            })
+            ->pluck('uuid')
+            ->filter()
+            ->values()
+            ->all();
+
+        $profilMaxScore = 0.0;
+        if ($profilItemUuids !== []) {
+            $profilConfigId = DB::table('profil_petenders')
+                ->where('tender_id', $tender->id)
+                ->value('id');
+            if ($profilConfigId) {
+                $profilScoringItems = DB::table('profil_petender_scoring_items')
+                    ->where('profil_petender_id', $profilConfigId)
+                    ->get()
+                    ->groupBy('jenis_skor');
+                $profilMaxScore = (float) ($profilScoringItems->get('modal_berbayar', collect())->max(fn ($item) => (float) ($item->skema ?? 0)) ?? 0)
+                    + (float) ($profilScoringItems->get('modal_dibenarkan', collect())->max(fn ($item) => (float) ($item->skema ?? 0)) ?? 0);
+            }
+        }
+
         $step2PassedVendorIds = $this->getStep2PassedVendorIds($tender, $kewanganUuids, $penyataUuids);
 
         $eligibleParticipants = $this->resolveAndSortParticipantsByHargaTawaran($tender, null, $kewanganUuids)
@@ -1971,7 +2107,10 @@ class PenilaianKewanganController extends Controller
         if (! empty($semakPayload)) {
             foreach ($semakPayload as $uuid => $itemPayload) {
                 if (! in_array($uuid, $penyataUuids, true)) {
-                    $totalMaxScore += (float) ($itemPayload['max_score'] ?? 0);
+                    $itemMaxScore = in_array($uuid, $profilItemUuids, true) && $profilMaxScore > 0
+                        ? $profilMaxScore
+                        : (float) ($itemPayload['max_score'] ?? 0);
+                    $totalMaxScore += $itemMaxScore;
                 }
             }
         }
@@ -1992,7 +2131,7 @@ class PenilaianKewanganController extends Controller
         foreach ($eligibleParticipants as $participant) {
             $vId = (int) $participant->vendor_id;
             $vendorName = $participant->vendor?->name ?: ('Vendor #' . $vId);
-            $vendorKod = $participant->kod_pembekal ?: ($participant->vendor?->kod_pembekal ?? '-');
+            $vendorKod = $participant->kod_pembekal ?: '-';
 
             $vendorTotalScore = 0.0;
 
@@ -2158,6 +2297,27 @@ class PenilaianKewanganController extends Controller
         unset($payload);
 
         return $semakPayload;
+    }
+
+    /**
+     * Determine whether the saved record represents a complete Step 3 score.
+     */
+    protected function isStep3EvaluationComplete(?TenderKewanganEvaluation $evaluation, bool $isProfilItem): bool
+    {
+        if (! $evaluation) {
+            return false;
+        }
+
+        if ($isProfilItem) {
+            $details = json_decode((string) $evaluation->catatan, true);
+
+            return is_array($details)
+                && array_key_exists('skor_modal_berbayar', $details)
+                && $details['skor_modal_berbayar'] !== null;
+        }
+
+        return $evaluation->skor !== null
+            && ($evaluation->catatan_skor !== null || (float) $evaluation->skor > 0);
     }
 
     /**
@@ -2794,6 +2954,12 @@ class PenilaianKewanganController extends Controller
                 $maxBerbayar = $modalBerbayarCollection->max(fn ($i) => (float) ($i->skema ?? 0)) ?: 0.0;
                 $maxDibenarkan = $modalDibenarkanCollection->max(fn ($i) => (float) ($i->skema ?? 0)) ?: 0.0;
 
+                // The report denominator must match the two configured profile score ceilings.
+                $profileMaxScore = $maxBerbayar + $maxDibenarkan;
+                if ($profileMaxScore > 0) {
+                    $maxScore = $profileMaxScore;
+                }
+
                 $profilPetenderDetail = [
                     'config'                 => $profilPetenderConfig,
                     'modal_berbayar_items'   => $modalBerbayarCollection->values()->all(),
@@ -2851,7 +3017,7 @@ class PenilaianKewanganController extends Controller
 
         foreach ($participants as $p) {
             $vId = (int) $p->vendor_id;
-            $kod = $p->kod_pembekal ?: ($p->vendor?->kod_pembekal ?? ('Vendor #' . $vId));
+            $kod = $p->kod_pembekal ?: '-';
             $name = $p->vendor?->name ?: ('Vendor #' . $vId);
 
             // Step 1: Pematuhan Dokumentasi

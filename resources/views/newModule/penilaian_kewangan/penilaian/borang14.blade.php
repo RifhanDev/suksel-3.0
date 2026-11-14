@@ -341,8 +341,8 @@
                             <th class="subhead-level2 text-center py-2 font-monospace fw-bold" style="color: #ef733aff;">50.00</th>
                         </tr>
                         <tr style="background: #d7d7d9; color: #6d6d79ff;">
-                            <th style="width: 60px; background: #d7d7d9; color: #6d6d79ff;" class="text-center">Bil</th>
-                            <th style="width: 170px; background: #d7d7d9; color: #6d6d79ff;" class="text-center">No. Rujukan. Tender</th>
+                            <th style="width: 170px; background: #d7d7d9; color: #6d6d79ff;" class="text-center">Kod Pembekal</th>
+                            <th style="width: 220px; background: #d7d7d9; color: #6d6d79ff;" class="text-center">Nama Petender</th>
                             <th style="width: 150px; background: #d7d7d9; color: #6d6d79ff;" class="text-end">Harga Tender Asal<br><span class="formula-tag">(RM)</span></th>
                             <th style="width: 140px; background: #d7d7d9; color: #6d6d79ff;" class="text-center">Status Petender</th>
                             <th style="width: 260px; background: #d7d7d9; color: #6d6d79ff;" class="text-center">Markah Keseluruhan Penilaian Keupayaan Terlaras<br><span class="formula-tag">(Dari Borang 13)</span></th>
@@ -356,16 +356,16 @@
                                 $vId = $v['vendor_id'] ?? ($v['id'] ?? ($idx + 1));
                                 $statusBumi = $v['status_bumi'] ?? ($b12VendorSummary[$vId]['status_bumi'] ?? ($b8VendorSummary[$vId]['status_bumi'] ?? (($vId % 2 != 0) ? 'Bumiputera' : 'Bukan Bumiputera')));
                                 $markahTerlaras = $v['markah_terlaras'] ?? ($b13VendorSummary[$vId]['markah_terlaras'] ?? '0.00');
-                                $kodPembekal = $v['kod_pembekal'] ?? ('45/' . str_pad($idx+1, 2, '0', STR_PAD_LEFT));
+                                $kodPembekal = $v['kod_pembekal'] ?? '—';
                                 $hargaDisplay = $v['harga_display'] ?? ($v['harga_asal'] ?? (isset($v['harga_tawaran']) ? 'RM ' . number_format($v['harga_tawaran'], 2) : 'RM 0.00'));
                                 $kedudukan = (!empty($v['kedudukan']) && $v['kedudukan'] !== '-') ? $v['kedudukan'] : ($priceRanks[$idx] ?? ($idx + 1));
                             @endphp
                             <tr>
                                 <td class="text-center font-monospace fw-bold text-muted">
-                                    {{ $idx + 1 }}
+                                    {{ $kodPembekal }}
                                 </td>
                                 <td class="text-center font-monospace fw-bold text-dark">
-                                    {{ $kodPembekal }}
+                                    {{ $v['vendor_name'] ?? '—' }}
                                 </td>
                                 <td class="text-end font-monospace text-dark fw-semibold">
                                     {{ $hargaDisplay }}

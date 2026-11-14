@@ -4,7 +4,7 @@
         <a class="nav-link active" data-bs-toggle="tab" href="#kewangan-3" role="tab" aria-selected="true">Kewangan</a>
     </li>
     <li class="nav-item waves-effect waves-light">
-        <a class="nav-link" data-bs-toggle="tab" href="#rumusan-3" role="tab" aria-selected="false">Rumusan</a>
+        <a class="nav-link" id="rumusan-3-tab" data-bs-toggle="tab" href="#rumusan-3" role="tab" aria-selected="false">Rumusan</a>
     </li>
 </ul>
 
@@ -237,7 +237,7 @@
                             <div class="d-flex align-items-center gap-2">
                                 <label class="form-label mb-0 small text-secondary fw-medium">Penanda Aras:</label>
                                 <div class="input-group input-group-sm" style="width: 90px;">
-                                    <input type="text" class="form-control text-center font-monospace fw-bold bg-white" value="{{ (float)$r3Data['passing_percentage'] == (int)$r3Data['passing_percentage'] ? (int)$r3Data['passing_percentage'] : number_format((float)$r3Data['passing_percentage'], 2) }}" readonly aria-label="Penanda aras tahap lulus">
+                                    <input type="text" id="step3PassingPercentage" class="form-control text-center font-monospace fw-bold bg-white" value="{{ (float)$r3Data['passing_percentage'] == (int)$r3Data['passing_percentage'] ? (int)$r3Data['passing_percentage'] : number_format((float)$r3Data['passing_percentage'], 2) }}" readonly aria-label="Penanda aras tahap lulus">
                                     <span class="input-group-text bg-white fw-bold">%</span>
                                 </div>
                             </div>
@@ -367,7 +367,7 @@
                             @endphp
                             @forelse($step3EligibleVendors as $idx => $v)
                                 @php
-                                    $kodDisplay = $v['kod'] ?: (($idx + 1) . '/' . $step3EligibleVendors->count());
+                                    $kodDisplay = $v['kod'] ?: '-';
                                     $bumiStatus = $v['bumiputera_status'] ?? ($v['is_bumiputera'] ? 'Bumiputera' : 'Bukan Bumiputera');
                                     $hargaDisplay = isset($v['harga_tawaran']) && $v['harga_tawaran'] > 0
                                         ? number_format((float)$v['harga_tawaran'], 2)
@@ -1075,22 +1075,9 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentStep3VendorId = null;
 
     function getStep2PassedVendorIdsClient() {
-        if (typeof STEP2_PASSED_VENDOR_IDS !== 'undefined' && Array.isArray(STEP2_PASSED_VENDOR_IDS)) {
-            const penyataUuids = (typeof PENYATA_BANK_UUIDS !== 'undefined' && Array.isArray(PENYATA_BANK_UUIDS)) ? PENYATA_BANK_UUIDS : [];
-            const step1Uuids = Object.keys(SEMAK_PAYLOAD || {}).filter(u => !penyataUuids.includes(u));
-
-            return STEP2_PASSED_VENDOR_IDS.filter(vid => {
-                for (const u of [...step1Uuids, ...penyataUuids]) {
-                    const itemObj = SEMAK_PAYLOAD?.[u];
-                    const v = (itemObj?.vendors || []).find(x => parseInt(x.vendor_id) === vid);
-                    if (v && (v.status_pematuhan === 'tidak_mematuhi' || v.status_pematuhan === 0 || v.status_pematuhan === '0')) {
-                        return false;
-                    }
-                }
-                return true;
-            });
-        }
-        return [];
+        return typeof window.getStep2PassedVendorIdsClient === 'function'
+            ? window.getStep2PassedVendorIdsClient()
+            : [];
     }
 
     function getFailedVendorIdsStep3() {
@@ -1184,7 +1171,13 @@ document.addEventListener('DOMContentLoaded', function() {
         if (tr) {
             const tdStatus = tr.querySelector('.status-penilaian');
             if (tdStatus) {
-                if (isSelesai) {
+                if (totalEligible === 0) {
+                    tdStatus.innerHTML = `
+                        <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-20 px-2.5 py-1.5 rounded-pill">
+                            <i class="bi bi-dash-circle me-1"></i>Tiada Petender Layak
+                        </span>
+                    `;
+                } else if (isSelesai) {
                     tdStatus.innerHTML = `
                         <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-20 px-2.5 py-1.5 rounded-pill">
                             <i class="bi bi-check-circle me-1"></i>Selesai
@@ -1199,6 +1192,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
         }
+    }
+
+    window.refreshStep3ChecklistStatuses = function() {
+        Object.keys(SEMAK_PAYLOAD || {}).forEach(uuid => updateMainTableStatusPenilaian(uuid));
+    };
+
+    const step3OuterTab = document.getElementById('penilaian-tab');
+    if (step3OuterTab) {
+        step3OuterTab.addEventListener('shown.bs.tab', () => window.refreshStep3ChecklistStatuses());
     }
 
     function renderStep3VendorTableModal(itemUuid) {
@@ -1240,7 +1242,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         tbody.innerHTML = '';
         eligibleVendors.forEach((v, idx) => {
-            const kodDisplay = v.kod ? v.kod : ((idx + 1) + '/' + eligibleVendors.length);
+            const kodDisplay = v.kod || '-';
             const bumiStatus = v.bumiputera_status || (v.is_bumiputera ? 'Bumiputera' : 'Bukan Bumiputera');
             const hargaFmt = v.harga_tawaran_fmt || (v.harga_tawaran ? parseFloat(v.harga_tawaran).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '-');
 
@@ -1703,7 +1705,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         tbody.innerHTML = '';
         eligibleVendors.forEach((v, idx) => {
-            const kodDisplay = v.kod ? v.kod : ((idx + 1) + '/' + eligibleVendors.length);
+            const kodDisplay = v.kod || '-';
 
             const isEvaluated = !!(v.step3_evaluated || (v.skor_modal_berbayar !== null && v.skor_modal_berbayar !== undefined && v.skor_modal_berbayar !== ''));
             let skorBerbayarDisplay = '-';
@@ -2137,7 +2139,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         tbody.innerHTML = '';
         eligibleVendors.forEach((v, idx) => {
-            const kodDisplay = v.kod ? v.kod : ((idx + 1) + '/' + eligibleVendors.length);
+            const kodDisplay = v.kod || '-';
 
             // Document Display Logic
             let docHtml = '<span class="text-muted small">Tiada Fail</span>';
@@ -2187,9 +2189,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Save Evaluation (Simpan Penilaian) Handler for Muat Naik
     const btnSimpanMuatNaik = document.getElementById('btnSimpanPenilaianMuatNaikStep3');
+    let isSavingMuatNaik = false;
     if (btnSimpanMuatNaik) {
         btnSimpanMuatNaik.addEventListener('click', function() {
-            if (!currentStep3ItemUuid || typeof SEMAK_PAYLOAD === 'undefined') return;
+            if (isSavingMuatNaik || !currentStep3ItemUuid || typeof SEMAK_PAYLOAD === 'undefined') return;
 
             const itemObj = SEMAK_PAYLOAD[currentStep3ItemUuid];
             if (!itemObj) return;
@@ -2203,6 +2206,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const maxScore = parseFloat(itemObj.max_score || 10);
             const tenderId = '{{ $tender->id }}';
 
+            isSavingMuatNaik = true;
+            btnSimpanMuatNaik.disabled = true;
             let savedCount = 0;
             let hasError = false;
 
@@ -2214,6 +2219,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     $.ajax({
                         url: '{{ route("penilaianKewangan.simpanPematuhan") }}',
                         method: 'POST',
+                        timeout: 60000,
                         data: {
                             _token: '{{ csrf_token() }}',
                             tender: tenderId,
@@ -2246,7 +2252,9 @@ document.addEventListener('DOMContentLoaded', function() {
             });
 
             function finishMuatNaikSave() {
-                if (muatNaikModal) {
+                isSavingMuatNaik = false;
+                btnSimpanMuatNaik.disabled = false;
+                if (!hasError && muatNaikModal) {
                     muatNaikModal.hide();
                 }
                 const savedItemUuid = currentStep3ItemUuid;
@@ -2255,7 +2263,17 @@ document.addEventListener('DOMContentLoaded', function() {
                     renderStep3MuatNaikVendorTableModal(savedItemUuid);
                 });
 
-                if (!hasError && typeof Swal !== 'undefined') {
+                if (hasError && typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        title: 'Sebahagian Penilaian Gagal Disimpan',
+                        text: 'Ada skor yang tidak berjaya disimpan. Semak semula petender yang belum dinilai dan cuba simpan sekali lagi.',
+                        icon: 'error',
+                        confirmButtonText: 'Tutup',
+                        confirmButtonColor: '#1e293b'
+                    });
+                } else if (hasError) {
+                    alert('Ada skor yang tidak berjaya disimpan. Semak semula petender yang belum dinilai dan cuba simpan sekali lagi.');
+                } else if (typeof Swal !== 'undefined') {
                     Swal.fire({
                         title: 'Berjaya!',
                         text: 'Penilaian muat naik kewangan telah disimpan.',
@@ -2263,7 +2281,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         confirmButtonText: 'OK',
                         confirmButtonColor: '#1e293b'
                     });
-                } else if (!hasError) {
+                } else {
                     alert('Penilaian muat naik kewangan telah disimpan.');
                 }
             }

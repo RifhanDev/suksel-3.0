@@ -403,7 +403,7 @@
                 <table class="table table-modern-b1 align-middle">
                     <thead>
                         <tr>
-                            <th style="width: 100px;" class="text-center">Bil</th>
+                            <th style="width: 140px;" class="text-center">Kod Pembekal</th>
                             <th style="width: 220px;" class="text-center">Keputusan Semakan</th>
                             <th>Catatan & Ulasan Semakan <span class="text-danger">*</span></th>
                         </tr>
@@ -411,7 +411,7 @@
                     <tbody>
                         @foreach($b5VendorSummary as $vId => $vData)
                             <tr>
-                                <td class="text-center fw-bold text-muted">{{ $loop->iteration }}/{{ count($b5VendorSummary) }}</td>
+                                <td class="text-center fw-bold text-muted font-monospace">{{ $vData['kod_pembekal'] ?: '—' }}</td>
                                 <td class="text-center">
                                     @if($vData['final_status'] === 'Sempurna')
                                         <span class="status-badge-sempurna">
@@ -429,7 +429,7 @@
                                 </td>
                                 <td>
                                     <div class="fw-bold text-dark mb-1" style="font-size: 0.88rem;">
-                                        {{ $vData['vendor_name'] }} <span class="text-muted font-monospace small">({{ $vData['kod_pembekal'] }})</span>
+                                        {{ $vData['vendor_name'] }}
                                     </div>
                                     <input type="text" class="form-control form-control-modern vendor-summary-catatan" data-vendor-id="{{ $vId }}" value="{{ $vData['catatan'] }}" placeholder="Isi catatan..." {{ $readOnly ? 'readonly' : '' }}>
                                     @if(!empty($vData['failed_reasons']))
@@ -516,7 +516,7 @@
                     <table class="table align-middle mb-0" style="font-size: 0.85rem;">
                         <thead style="--bs-table-bg: #d7d7d9; --bs-table-color: #3f3f3f;">
                             <tr>
-                                <th class="text-center text-uppercase fw-bold py-2" style="width: 80px; font-size: 0.7rem; letter-spacing: 0.05em; background-color: #d7d7d9 !important; color: #3f3f3f !important;">Bil</th>
+                                <th class="text-center text-uppercase fw-bold py-2" style="width: 120px; font-size: 0.7rem; letter-spacing: 0.05em; background-color: #d7d7d9 !important; color: #3f3f3f !important;">Kod Pembekal</th>
                                 <th class="text-uppercase fw-bold py-2" style="font-size: 0.7rem; letter-spacing: 0.05em; background-color: #d7d7d9 !important; color: #3f3f3f !important;">Maklumat Dokumen / Syarikat</th>
                                 <th class="text-center text-uppercase fw-bold py-2" style="width: 220px; font-size: 0.7rem; letter-spacing: 0.05em; background-color: #d7d7d9 !important; color: #3f3f3f !important;">Status Kesempurnaan</th>
                                 <th class="text-uppercase fw-bold py-2" style="width: 280px; font-size: 0.7rem; letter-spacing: 0.05em; background-color: #d7d7d9 !important; color: #3f3f3f !important;">Catatan</th>
@@ -610,9 +610,7 @@
         tbody.innerHTML = '';
 
         const vendorIds = Object.keys(b5VendorSummaryData);
-        const total = vendorIds.length;
-
-        vendorIds.forEach((vId, idx) => {
+        vendorIds.forEach((vId) => {
             const vData = b5VendorSummaryData[vId];
             const kData = (vData.kriteria_data && vData.kriteria_data[cCode]) ? vData.kriteria_data[cCode] : {};
             const suggestedData = (vData.suggested_kriteria && vData.suggested_kriteria[cCode]) ? vData.suggested_kriteria[cCode] : {};
@@ -622,7 +620,7 @@
 
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td class="text-center fw-bold text-muted" style="background-color: #efeff0ff; color: #3f3f3fff;">${idx + 1}/${total}</td>
+                <td class="text-center fw-bold text-muted font-monospace" style="background-color: #efeff0ff; color: #3f3f3fff;">${vData.kod_pembekal || '—'}</td>
                 <td>
                     <div class="d-flex align-items-center gap-3 py-1">
                         <div class="bg-danger bg-opacity-10 text-danger p-2.5 rounded-3 d-inline-flex align-items-center justify-content-center flex-shrink-0" style="width:40px; height:40px;">
@@ -630,7 +628,6 @@
                         </div>
                         <div>
                             <div class="fw-bold text-dark mb-0.5" style="font-size: 0.88rem;">${vData.vendor_name}</div>
-                            <span class="text-muted font-monospace small">${vData.kod_pembekal}</span>
                         </div>
                     </div>
                 </td>

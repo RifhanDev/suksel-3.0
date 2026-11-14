@@ -618,12 +618,12 @@
         @if ($petenderTerendah && $petenderTertinggi && $petenderTerendah['vendor_id'] !== $petenderTertinggi['vendor_id'])
             <div class="laporan-subitem">
                 <span class="laporan-subitem-no">6.2</span>
-                <span>Berdasarkan kepada Jadual Tender, Petender <strong>Bil. {{ $petenderTerendah['no_petender'] }}</strong> menawarkan harga terendah iaitu, <strong>RM{{ $petenderTerendah['harga_display'] }}</strong> manakala petender <strong>Bil. {{ $petenderTertinggi['no_petender'] }}</strong> menawarkan harga tertinggi iaitu <strong>RM{{ $petenderTertinggi['harga_display'] }}</strong>; dan</span>
+                <span>Berdasarkan kepada Jadual Tender, petender dengan Kod Pembekal <strong>{{ $petenderTerendah['no_petender'] }}</strong> menawarkan harga terendah iaitu, <strong>RM{{ $petenderTerendah['harga_display'] }}</strong> manakala petender dengan Kod Pembekal <strong>{{ $petenderTertinggi['no_petender'] }}</strong> menawarkan harga tertinggi iaitu <strong>RM{{ $petenderTertinggi['harga_display'] }}</strong>; dan</span>
             </div>
         @elseif ($petenderTerendah)
             <div class="laporan-subitem">
                 <span class="laporan-subitem-no">6.2</span>
-                <span>Berdasarkan kepada Jadual Tender, Petender <strong>Bil. {{ $petenderTerendah['no_petender'] }}</strong> menawarkan harga iaitu, <strong>RM{{ $petenderTerendah['harga_display'] }}</strong>; dan</span>
+                <span>Berdasarkan kepada Jadual Tender, petender dengan Kod Pembekal <strong>{{ $petenderTerendah['no_petender'] }}</strong> menawarkan harga iaitu, <strong>RM{{ $petenderTerendah['harga_display'] }}</strong>; dan</span>
             </div>
         @endif
         <div class="laporan-subitem keep-with-next">
@@ -633,21 +633,19 @@
         <table class="laporan-table avoid-break">
             <thead>
                 <tr>
-                    <th style="width:15%;">Bil.</th>
-                    <th style="width:40%;">No. Petender</th>
+                    <th style="width:55%;">Kod Pembekal</th>
                     <th style="width:45%;">Harga Tawaran (RM)</th>
                 </tr>
             </thead>
             <tbody>
                 @forelse ($petenderHarga as $row)
                     <tr>
-                        <td class="col-bil">{{ $row['bil'] }}.</td>
                         <td class="col-bil">{{ $row['no_petender'] }}</td>
                         <td class="col-harga">{{ $row['harga_display'] }}</td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="3" class="col-bil">Tiada petender direkodkan.</td>
+                        <td colspan="2" class="col-bil">Tiada petender direkodkan.</td>
                     </tr>
                 @endforelse
             </tbody>
@@ -680,8 +678,7 @@
         <table class="laporan-table">
             <thead>
                 <tr>
-                    <th style="width:8%;">Bil.</th>
-                    <th style="width:14%;">No. Petender</th>
+                    <th style="width:22%;">Kod Pembekal</th>
                     <th style="width:20%;">Keputusan (Lulus/ Gagal)</th>
                     <th style="width:58%;">Ulasan</th>
                 </tr>
@@ -689,14 +686,13 @@
             <tbody>
                 @forelse ($jadual2 as $row)
                     <tr>
-                        <td class="col-bil">{{ $row['bil'] }}.</td>
                         <td class="col-bil">{{ $row['no_petender'] }}</td>
                         <td class="col-bil">{{ $row['keputusan'] }}</td>
                         <td class="col-bil">{{ $row['ulasan'] }}</td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="4" class="col-bil">Tiada petender dinilai.</td>
+                        <td colspan="3" class="col-bil">Tiada petender dinilai.</td>
                     </tr>
                 @endforelse
             </tbody>
@@ -714,8 +710,7 @@
         <table class="laporan-table avoid-break">
             <thead>
                 <tr>
-                    <th style="width:8%;">Bil.</th>
-                    <th style="width:16%;">No. Petender</th>
+                    <th style="width:24%;">Kod Pembekal</th>
                     <th style="width:24%;">Keputusan (Lulus/ Gagal)</th>
                     <th style="width:52%;">Ulasan</th>
                 </tr>
@@ -723,14 +718,13 @@
             <tbody>
                 @forelse ($jadual3 as $row)
                     <tr>
-                        <td class="col-bil">{{ $row['bil'] }}.</td>
                         <td class="col-bil">{{ $row['no_petender'] }}</td>
                         <td class="col-bil">{{ $row['keputusan'] }}</td>
                         <td class="col-bil">{{ $row['ulasan'] }}</td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="4" class="col-bil">Tiada petender layak ke peringkat ini.</td>
+                        <td colspan="3" class="col-bil">Tiada petender layak ke peringkat ini.</td>
                     </tr>
                 @endforelse
             </tbody>
@@ -748,8 +742,7 @@
         <table class="laporan-table">
             <thead>
                 <tr>
-                    <th style="width:8%;">Bil.</th>
-                    <th style="width:14%;">No. Petender</th>
+                    <th style="width:22%;">Kod Pembekal</th>
                     <th style="width:18%;">Jumlah Tawaran Harga (RM)</th>
                     <th style="width:18%;">Keputusan (Lulus/ Gagal)</th>
                     <th style="width:42%;">Ulasan</th>
@@ -758,7 +751,6 @@
             <tbody>
                 @forelse ($jadual4 as $row)
                     <tr>
-                        <td class="col-bil">{{ $row['bil'] }}.</td>
                         <td class="col-bil">{{ $row['no_petender'] }}</td>
                         <td class="col-harga">{{ $row['harga_display'] }}</td>
                         <td class="col-bil">{{ $row['keputusan'] }}</td>
@@ -766,7 +758,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="5" class="col-bil">Tiada petender layak ke peringkat ini.</td>
+                        <td colspan="4" class="col-bil">Tiada petender layak ke peringkat ini.</td>
                     </tr>
                 @endforelse
             </tbody>
@@ -780,7 +772,7 @@
             <div class="laporan-heading">8. Pengesyoran</div>
             <div class="laporan-subitem">
                 <span class="laporan-subitem-no">8.1</span>
-                <span>Dengan ini, JPH mengesyorkan <strong>petender bil. {{ $petenderDisyorkan['no_petender'] ?? '-' }} LAYAK DIPERTIMBANGKAN</strong> untuk melaksanakan <strong>{{ $tender->name ?? '-' }} - No. Tender: {{ $noTender }};</strong> untuk pertimbangan dan kelulusan Lembaga Perolehan Tender Negeri Selangor berdasarkan kepada justifikasi seperti berikut:</span>
+                <span>Dengan ini, JPH mengesyorkan <strong>petender dengan Kod Pembekal {{ $petenderDisyorkan['no_petender'] ?? '-' }} LAYAK DIPERTIMBANGKAN</strong> untuk melaksanakan <strong>{{ $tender->name ?? '-' }} - No. Tender: {{ $noTender }};</strong> untuk pertimbangan dan kelulusan Lembaga Perolehan Tender Negeri Selangor berdasarkan kepada justifikasi seperti berikut:</span>
             </div>
         </div>
         @forelse ($pengesyoranJustifikasi as $index => $justifikasi)
@@ -802,8 +794,7 @@
             <table class="laporan-table avoid-break">
                 <thead>
                     <tr>
-                        <th style="width:8%;">Bil.</th>
-                        <th style="width:16%;">No. Petender</th>
+                        <th style="width:24%;">Kod Pembekal</th>
                         <th style="width:22%;">Jumlah Tawaran Harga (RM)</th>
                         <th style="width:14%;">BWAJ %</th>
                         <th style="width:40%;">Ulasan</th>
@@ -812,7 +803,6 @@
                 <tbody>
                     @foreach ($petenderLayakLain as $row)
                         <tr>
-                            <td class="col-bil">{{ $row['bil'] }}.</td>
                             <td class="col-bil">{{ $row['no_petender'] }}</td>
                             <td class="col-harga">{{ $row['harga_display'] }}</td>
                             <td class="col-bil">{{ $row['bwaj_display'] }}</td>
