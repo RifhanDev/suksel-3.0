@@ -722,7 +722,48 @@ class PerakuanJabatanController extends Controller
             $query->whereIn('vendor_id', $lulusIds);
         }
 
-        return $query->orderBy('id')->get();
+        return $this->rejectPengesyoranWithoutOffer($tender, $query->orderBy('id')->get());
+    }
+
+    /**
+     * A company that bought the document but never became a petender
+     * (no kod_pembekal) and has no offer price must not appear in
+     * Pengesyoran Pembekal. A real bid still keeps the row.
+     *
+     * @param  \Illuminate\Support\Collection<int, mixed>  $participants
+     * @return \Illuminate\Support\Collection<int, mixed>
+     */
+    private function rejectPengesyoranWithoutOffer(Tender $tender, $participants)
+    {
+        if ($participants->isEmpty()) {
+            return $participants;
+        }
+
+        $bidderIds = [];
+        if ((bool) ($tender->is_ebidding ?? false)) {
+            $bidderIds = EbiddingVendorBidItem::query()
+                ->where('tender_id', $tender->id)
+                ->whereIn('vendor_id', $participants->pluck('vendor_id'))
+                ->whereNotNull('submitted_at')
+                ->where('bid_price', '>', 0)
+                ->pluck('vendor_id')
+                ->map(fn ($id) => (int) $id)
+                ->all();
+        }
+
+        return $participants->reject(function ($participant) use ($bidderIds) {
+            if (filled($participant->kod_pembekal)) {
+                return false;
+            }
+
+            if (in_array((int) $participant->vendor_id, $bidderIds, true)) {
+                return false;
+            }
+
+            $harga = $participant->harga_tawaran ?? $participant->price ?? $participant->amount ?? null;
+
+            return $harga === null || $harga === '' || (float) $harga <= 0;
+        })->values();
     }
 
     /**
