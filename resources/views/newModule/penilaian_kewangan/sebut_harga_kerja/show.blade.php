@@ -1395,27 +1395,24 @@ window.type2State = {
             if (this.vendors.length === 0) {
                 statusTableBody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-4">Tiada maklumat petender untuk dipaparkan.</td></tr>';
             } else {
-                this.vendors.forEach((v, idx) => {
+                this.vendors.forEach(v => {
                     const status = v.step1?.status;
                     const isPass = status === 'sempurna';
                     const isFail = status === 'tidak_sempurna';
                     const tr = document.createElement('tr');
 
-                    const bilCell = document.createElement('td');
-                    bilCell.className = 'text-center text-muted fw-semibold px-3';
-                    bilCell.textContent = String(idx + 1);
+                    const kodCell = document.createElement('td');
+                    kodCell.className = 'text-center text-muted fw-semibold px-3 font-monospace';
+                    kodCell.textContent = v.kod || '-';
 
                     const vendorCell = document.createElement('td');
                     vendorCell.className = 'px-3';
                     const vendorInfo = document.createElement('div');
                     vendorInfo.className = 'd-flex align-items-center gap-2';
-                    const vendorCode = document.createElement('span');
-                    vendorCode.className = 'badge bg-dark-subtle text-dark border font-monospace';
-                    vendorCode.textContent = v.kod || '-';
                     const vendorName = document.createElement('span');
                     vendorName.className = 'fw-semibold text-dark';
                     vendorName.textContent = v.name || 'Nama petender tidak tersedia';
-                    vendorInfo.append(vendorCode, vendorName);
+                    vendorInfo.append(vendorName);
                     vendorCell.appendChild(vendorInfo);
 
                     const cidbCell = document.createElement('td');
@@ -1435,7 +1432,7 @@ window.type2State = {
                     statusBadge.append(statusIcon, document.createTextNode(isPass ? 'Sempurna' : (isFail ? 'Tidak Sempurna' : 'Menunggu Penilaian')));
                     statusCell.appendChild(statusBadge);
 
-                    tr.append(bilCell, vendorCell, cidbCell, statusCell);
+                    tr.append(kodCell, vendorCell, cidbCell, statusCell);
                     statusTableBody.appendChild(tr);
                 });
             }
@@ -1457,14 +1454,11 @@ window.type2State = {
         if (tbMelepasi) {
             tbMelepasi.innerHTML = '';
             if (melepasiVendors.length === 0) {
-                tbMelepasi.innerHTML = `<tr><td colspan="5" class="text-center text-muted py-3">Tiada petender melepasi.</td></tr>`;
+                tbMelepasi.innerHTML = `<tr><td colspan="4" class="text-center text-muted py-3">Tiada petender melepasi.</td></tr>`;
             } else {
-                melepasiVendors.forEach((v, idx) => {
+                melepasiVendors.forEach(v => {
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
-                        <td class="text-center py-2.5 px-3">
-                            <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 rounded-pill font-monospace">${idx + 1}</span>
-                        </td>
                         <td class="text-center py-2.5 px-3 font-monospace fw-bold text-dark">${v.kod}</td>
                         <td class="py-2.5 px-3">
                             <div class="fw-bold text-dark">${v.name}</div>
@@ -1486,18 +1480,15 @@ window.type2State = {
         if (tbTidak) {
             tbTidak.innerHTML = '';
             if (tidakMelepasiVendors.length === 0) {
-                tbTidak.innerHTML = `<tr><td colspan="5" class="text-center text-muted py-3">Tiada petender disingkirkan di fasa ini.</td></tr>`;
+                tbTidak.innerHTML = `<tr><td colspan="4" class="text-center text-muted py-3">Tiada petender disingkirkan di fasa ini.</td></tr>`;
             } else {
-                tidakMelepasiVendors.forEach((v, idx) => {
+                tidakMelepasiVendors.forEach(v => {
                     const tr = document.createElement('tr');
                     const failedDocNames = Object.entries(v.step1?.docs || {})
                         .filter(([dId, dData]) => dData.status === 'tidak_sempurna')
                         .map(([dId]) => self.checklistDocs.find(d => d.id === dId)?.title || dId);
 
                     tr.innerHTML = `
-                        <td class="text-center py-2.5 px-3">
-                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1 rounded-pill font-monospace">${idx + 1}</span>
-                        </td>
                         <td class="text-center py-2.5 px-3 font-monospace fw-bold text-dark">${v.kod}</td>
                         <td class="py-2.5 px-3">
                             <div class="fw-bold text-dark">${v.name}</div>
@@ -1540,18 +1531,15 @@ window.type2State = {
 
         tbody.innerHTML = '';
         if (qualifiedVendors.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="7" class="text-center text-muted py-4">Tiada petender yang layak daripada Langkah 1.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted py-4">Tiada petender yang layak daripada Langkah 1.</td></tr>`;
             return;
         }
 
-        qualifiedVendors.forEach((v, idx) => {
+        qualifiedVendors.forEach(v => {
             const isPass = v.step2?.status === 'memuaskan';
             const isFail = v.step2?.status === 'tidak_memuaskan';
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td class="text-center py-3 px-3">
-                    <span class="badge bg-light text-dark border px-2 py-1 rounded-pill font-monospace">${idx + 1}</span>
-                </td>
                 <td class="text-center py-3 px-3 font-monospace fw-bold text-dark">${v.kod}</td>
                 <td class="py-3 px-3">
                     <div class="fw-bold text-dark">${v.name}</div>
@@ -1589,14 +1577,11 @@ window.type2State = {
         if (tbMemuaskan) {
             tbMemuaskan.innerHTML = '';
             if (memuaskanVendors.length === 0) {
-                tbMemuaskan.innerHTML = `<tr><td colspan="6" class="text-center text-muted py-3">Tiada petender memuaskan.</td></tr>`;
+                tbMemuaskan.innerHTML = `<tr><td colspan="5" class="text-center text-muted py-3">Tiada petender memuaskan.</td></tr>`;
             } else {
-                memuaskanVendors.forEach((v, idx) => {
+                memuaskanVendors.forEach(v => {
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
-                        <td class="text-center py-2.5 px-3">
-                            <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 rounded-pill font-monospace">${idx + 1}</span>
-                        </td>
                         <td class="text-center py-2.5 px-3 font-monospace fw-bold text-dark">${v.kod}</td>
                         <td class="py-2.5 px-3 fw-bold text-dark">${v.name}</td>
                         <td class="text-end py-2.5 px-3 font-monospace fw-bold text-dark">${v.step2?.modal_pusingan || 'RM 0.00'}</td>
@@ -1612,14 +1597,11 @@ window.type2State = {
         if (tbTidak) {
             tbTidak.innerHTML = '';
             if (tidakMemuaskanVendors.length === 0) {
-                tbTidak.innerHTML = `<tr><td colspan="6" class="text-center text-muted py-3">Tiada petender ditolak di fasa ini.</td></tr>`;
+                tbTidak.innerHTML = `<tr><td colspan="5" class="text-center text-muted py-3">Tiada petender ditolak di fasa ini.</td></tr>`;
             } else {
-                tidakMemuaskanVendors.forEach((v, idx) => {
+                tidakMemuaskanVendors.forEach(v => {
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
-                        <td class="text-center py-2.5 px-3">
-                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1 rounded-pill font-monospace">${idx + 1}</span>
-                        </td>
                         <td class="text-center py-2.5 px-3 font-monospace fw-bold text-dark">${v.kod}</td>
                         <td class="py-2.5 px-3 fw-bold text-dark">${v.name}</td>
                         <td class="text-end py-2.5 px-3 font-monospace text-danger">${v.step2?.modal_pusingan || 'RM 0.00'}</td>
@@ -1653,18 +1635,15 @@ window.type2State = {
 
         tbody.innerHTML = '';
         if (step2Qualified.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="7" class="text-center text-muted py-4">Tiada petender yang layak daripada Langkah 2.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted py-4">Tiada petender yang layak daripada Langkah 2.</td></tr>`;
             return;
         }
 
-        step2Qualified.forEach((v, idx) => {
+        step2Qualified.forEach(v => {
             const isPass = v.step3?.status === 'memuaskan';
             const isFail = v.step3?.status === 'tidak_memuaskan';
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td class="text-center py-3 px-3">
-                    <span class="badge bg-light text-dark border px-2 py-1 rounded-pill font-monospace">${idx + 1}</span>
-                </td>
                 <td class="text-center py-3 px-3 font-monospace fw-bold text-dark">${v.kod}</td>
                 <td class="py-3 px-3">
                     <div class="fw-bold text-dark">${v.name}</div>
@@ -1702,14 +1681,11 @@ window.type2State = {
         if (tbMemuaskan) {
             tbMemuaskan.innerHTML = '';
             if (memuaskanVendors.length === 0) {
-                tbMemuaskan.innerHTML = `<tr><td colspan="6" class="text-center text-muted py-3">Tiada petender memuaskan.</td></tr>`;
+                tbMemuaskan.innerHTML = `<tr><td colspan="5" class="text-center text-muted py-3">Tiada petender memuaskan.</td></tr>`;
             } else {
-                memuaskanVendors.forEach((v, idx) => {
+                memuaskanVendors.forEach(v => {
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
-                        <td class="text-center py-2.5 px-3">
-                            <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 rounded-pill font-monospace">${idx + 1}</span>
-                        </td>
                         <td class="text-center py-2.5 px-3 font-monospace fw-bold text-dark">${v.kod}</td>
                         <td class="py-2.5 px-3 fw-bold text-dark">${v.name}</td>
                         <td class="text-end py-2.5 px-3 font-monospace fw-bold text-dark">${v.step3?.baki_kerja || 'RM 0.00'}</td>
@@ -1725,14 +1701,11 @@ window.type2State = {
         if (tbTidak) {
             tbTidak.innerHTML = '';
             if (tidakMemuaskanVendors.length === 0) {
-                tbTidak.innerHTML = `<tr><td colspan="5" class="text-center text-muted py-3">Tiada petender ditolak di fasa ini.</td></tr>`;
+                tbTidak.innerHTML = `<tr><td colspan="4" class="text-center text-muted py-3">Tiada petender ditolak di fasa ini.</td></tr>`;
             } else {
-                tidakMemuaskanVendors.forEach((v, idx) => {
+                tidakMemuaskanVendors.forEach(v => {
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
-                        <td class="text-center py-2.5 px-3">
-                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1 rounded-pill font-monospace">${idx + 1}</span>
-                        </td>
                         <td class="text-center py-2.5 px-3 font-monospace fw-bold text-dark">${v.kod}</td>
                         <td class="py-2.5 px-3 fw-bold text-dark">${v.name}</td>
                         <td class="text-end py-2.5 px-3 font-monospace text-danger">${v.step3?.baki_kerja || 'RM 0.00'}</td>
@@ -1748,16 +1721,39 @@ window.type2State = {
     // RENDER STEP 4: CONSOLIDATED REPORT
     // ==========================================
     renderStep4() {
+        const totalVendors = this.vendors.length;
+        const finalQualifiedCount = this.vendors.filter(v =>
+            v.step1?.status === 'sempurna' &&
+            v.step2?.status === 'memuaskan' &&
+            v.step3?.status === 'memuaskan'
+        ).length;
+        const disqualifiedCount = this.vendors.filter(v =>
+            v.step1?.status === 'tidak_sempurna' ||
+            v.step2?.status === 'tidak_memuaskan' ||
+            v.step3?.status === 'tidak_memuaskan'
+        ).length;
+        const pendingCount = Math.max(0, totalVendors - finalQualifiedCount - disqualifiedCount);
+
+        const summaryCounts = {
+            step4SummaryTotalVendors: totalVendors,
+            step4SummaryQualifiedVendors: finalQualifiedCount,
+            step4SummaryDisqualifiedVendors: disqualifiedCount,
+            step4SummaryPendingVendors: pendingCount,
+        };
+        Object.entries(summaryCounts).forEach(([elementId, count]) => {
+            const element = document.getElementById(elementId);
+            if (element) element.textContent = String(count);
+        });
+
         // Section A
         const tbA = document.getElementById('step4TableSecABody');
         if (tbA) {
             tbA.innerHTML = '';
-            this.vendors.forEach((v, idx) => {
+            this.vendors.forEach(v => {
                 const isPass = v.step1?.status === 'sempurna';
                 const isFail = v.step1?.status === 'tidak_sempurna';
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td class="text-center py-2 px-3 font-monospace">${idx + 1}</td>
                     <td class="text-center py-2 px-3 font-monospace fw-bold">${v.kod}</td>
                     <td class="py-2 px-3 fw-semibold text-dark">${v.name}</td>
                     <td class="text-center py-2 px-3">
@@ -1784,12 +1780,11 @@ window.type2State = {
         const tbB = document.getElementById('step4TableSecBBody');
         if (tbB) {
             tbB.innerHTML = '';
-            step1Passed.forEach((v, idx) => {
+            step1Passed.forEach(v => {
                 const isPass = v.step2?.status === 'memuaskan';
                 const isFail = v.step2?.status === 'tidak_memuaskan';
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td class="text-center py-2 px-3 font-monospace">${idx + 1}</td>
                     <td class="text-center py-2 px-3 font-monospace fw-bold">${v.kod}</td>
                     <td class="py-2 px-3 fw-semibold text-dark">${v.name}</td>
                     <td class="text-end py-2 px-3 font-monospace fw-bold">${v.step2?.modal_pusingan || 'RM 0.00'}</td>
@@ -1813,12 +1808,11 @@ window.type2State = {
         const tbC = document.getElementById('step4TableSecCBody');
         if (tbC) {
             tbC.innerHTML = '';
-            step2Passed.forEach((v, idx) => {
+            step2Passed.forEach(v => {
                 const isPass = v.step3?.status === 'memuaskan';
                 const isFail = v.step3?.status === 'tidak_memuaskan';
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td class="text-center py-2 px-3 font-monospace">${idx + 1}</td>
                     <td class="text-center py-2 px-3 font-monospace fw-bold">${v.kod}</td>
                     <td class="py-2 px-3 fw-semibold text-dark">${v.name}</td>
                     <td class="text-end py-2 px-3 font-monospace fw-bold">${v.step3?.baki_kerja || 'RM 0.00'}</td>

@@ -108,20 +108,21 @@ class HomeController extends Controller
 				})
 				->editColumn('name', function ($tender) {
 					$string   = [];
-					$string[] = '<strong><u>' . $tender->tenderer->name . '</u></strong>';
+					$agencyName = html_entity_decode((string) $tender->tenderer->name, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+					$string[] = '<strong><u>' . e($agencyName) . '</u></strong>';
 					$string[] = '<small><strong>' . e($tender->displayNoTender()) . '</strong></small>';
 					$detailUrl = match ($tender->type) {
 						'pembelian_terus' => route('pembelianTerus.detailProject', $tender->id),
 						'lantikan_terus' => route('sebutHargaTerus.show', $tender->id),
 						default => route('tenders.show', $tender->id),
 					};
-					$string[] = '<a class="table-tender-title" href="' . $detailUrl . '">' . $tender->name . '</a>';
+					$string[] = '<a class="table-tender-title" href="' . e($detailUrl) . '">' . e($tender->name) . '</a>';
 
 					if ($tender->briefing_required) {
 						$string[] = '';
 						$string[] = '<span class="glyphicon glyphicon-bullhorn"></span> <b><u><small>Kehadiran Taklimat Diwajibkan</small></u></b>';
 						$string[] = Carbon::parse($tender->briefing_datetime)->format('j M Y H:i');
-						$string[] = nl2br($tender->briefing_address);
+						$string[] = nl2br(e($tender->briefing_address));
 					}
 
 					if (count($tender->siteVisits) > 0) {
@@ -131,7 +132,8 @@ class HomeController extends Controller
 						foreach ($tender->siteVisits->sortBy('id') as $visit) {
 							$string[] = '';
 							$string[] = Carbon::parse($visit->datetime)->format('j M Y H:i');
-							$string[] = nl2br($visit->address);
+							$visitAddress = html_entity_decode((string) $visit->address, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+							$string[] = nl2br(e($visitAddress));
 
 							if ($visit->required) {
 								$string[] = '<small><span class="glyphicon glyphicon-ok"></span> Wajib Hadir</small>';
@@ -290,13 +292,14 @@ class HomeController extends Controller
 
 				->editColumn('name', function ($tender) {
 					$string     = [];
-					$string[]   = '<a href="' . action('TendersController@vendors', $tender->id) . '">';
+					$string[]   = '<a href="' . e(action('TendersController@vendors', $tender->id)) . '">';
 					$string[]   = '<strong>' . e($tender->displayNoTender()) . '</strong><br>';
-					$string[]   = $tender->name . '</a>';
+					$string[]   = e($tender->name) . '</a>';
 					return implode('', $string);
 				})
 				->editColumn('organization_unit_id', function ($tender) {
-					return $tender->tenderer->name;
+					$agencyName = html_entity_decode((string) $tender->tenderer->name, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+					return e($agencyName);
 				})
 				->editColumn('submission_datetime', function ($tender) {
 					return Carbon::parse($tender->submission_datetime)->format('j M Y');
@@ -356,13 +359,14 @@ class HomeController extends Controller
 				})
 				->editColumn('name', function ($tender) {
 					$string     = [];
-					$string[]   = '<a href="' . action('TendersController@vendors', [$tender->id, 'show' => 'winner']) . '">';
+					$string[]   = '<a href="' . e(action('TendersController@vendors', [$tender->id, 'show' => 'winner'])) . '">';
 					$string[]   = '<strong>' . e($tender->displayNoTender()) . '</strong><br>';
-					$string[]   = $tender->name . '</a>';
+					$string[]   = e($tender->name) . '</a>';
 					return implode('', $string);
 				})
 				->editColumn('organization_unit_id', function ($tender) {
-					return $tender->tenderer->name;
+					$agencyName = html_entity_decode((string) $tender->tenderer->name, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+					return e($agencyName);
 				})
 				->editColumn('submission_datetime', function ($tender) {
 					return Carbon::parse($tender->submission_datetime)->format('j M Y');
@@ -563,9 +567,9 @@ class HomeController extends Controller
 					$string   = [];
 					$string[] = '<small><strong>' . e($tender->displayNoTender()) . '</strong></small>';
 					if (!auth()->check()) {
-						$string[] = link_to_route('tenders.show', $tender->name, $tender->id, ['class' => 'table-tender-title']);
+						$string[] = link_to_route('tenders.show', e($tender->name), $tender->id, ['class' => 'table-tender-title']);
 					} else {
-						$string[] = link_to_route('tender.show', $tender->name, $tender->id, ['class' => 'table-tender-title']);
+						$string[] = link_to_route('tender.show', e($tender->name), $tender->id, ['class' => 'table-tender-title']);
 					}
 					// $string[] = link_to_route('tender.show', $tender->name, $tender->id, ['class' => 'table-tender-title']);
 

@@ -35,8 +35,7 @@
                     <table class="table table-hover align-middle mb-0 w-100" style="font-size: 0.85rem;">
                         <thead class="bg-light">
                             <tr>
-                                <th class="py-2.5 px-3 text-center text-uppercase text-secondary fw-bold" style="width: 6%; font-size: 0.725rem; letter-spacing: 0.5px;">BIL</th>
-                                <th class="py-2.5 px-3 text-start text-uppercase text-secondary fw-bold" style="width: 26%; font-size: 0.725rem; letter-spacing: 0.5px;">KOD / NAMA PEMBEKAL</th>
+                                <th class="py-2.5 px-3 text-start text-uppercase text-secondary fw-bold" style="width: 26%; font-size: 0.725rem; letter-spacing: 0.5px;">KOD PEMBEKAL / NAMA PEMBEKAL</th>
                                 <th class="py-2.5 px-3 text-center text-uppercase text-secondary fw-bold" style="width: 18%; font-size: 0.725rem; letter-spacing: 0.5px;">PEMATUHAN DOKUMENTASI</th>
                                 <th class="py-2.5 px-3 text-center text-uppercase text-secondary fw-bold" style="width: 18%; font-size: 0.725rem; letter-spacing: 0.5px;">PENYATA BULANAN BANK</th>
                                 <th class="py-2.5 px-3 text-center text-uppercase text-secondary fw-bold" style="width: 18%; font-size: 0.725rem; letter-spacing: 0.5px;">SPESIFIKASI KEWANGAN</th>
@@ -46,12 +45,9 @@
                         <tbody>
                             @forelse($rumusanLaporanData ?? [] as $idx => $r)
                                 <tr>
-                                    <td class="text-center py-3 font-monospace fw-bold">{{ $idx + 1 }}</td>
                                     <td class="text-start py-3">
+                                        <div class="font-monospace fw-bold">{{ $r['kod'] ?? '-' }}</div>
                                         <div class="fw-bold text-dark">{{ $r['name'] }}</div>
-                                        @if(!empty($r['kod']))
-                                            <div class="small text-muted font-monospace">{{ $r['kod'] }}</div>
-                                        @endif
                                     </td>
                                     <td class="text-center py-3">
                                         @if($r['step1_status'] === 'melepasi')
@@ -94,7 +90,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="6" class="text-center text-muted py-4">Tiada rekod pembekal dijumpai.</td>
+                                    <td colspan="5" class="text-center text-muted py-4">Tiada rekod pembekal dijumpai.</td>
                                 </tr>
                             @endforelse
                         </tbody>
@@ -125,21 +121,19 @@
                             <table class="table table-hover align-middle mb-0 w-100" style="font-size: 0.85rem;">
                                 <thead class="bg-light">
                                     <tr>
-                                        <th class="py-2.5 px-3 text-center text-uppercase text-secondary fw-bold" style="width: 8%; font-size: 0.725rem; letter-spacing: 0.5px;">BIL</th>
-                                        <th class="py-2.5 px-3 text-center text-uppercase text-secondary fw-bold" style="width: 15%; font-size: 0.725rem; letter-spacing: 0.5px;">NO. PETENDER</th>
+                                        <th class="py-2.5 px-3 text-center text-uppercase text-secondary fw-bold" style="width: 15%; font-size: 0.725rem; letter-spacing: 0.5px;">KOD PEMBEKAL</th>
                                         <th class="py-2.5 px-3 text-start text-uppercase text-secondary fw-bold" style="width: 77%; font-size: 0.725rem; letter-spacing: 0.5px;">ULASAN</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @forelse($pembekalMelepasi ?? [] as $i => $p)
                                         <tr>
-                                            <td class="text-center py-2.5 font-monospace fw-bold">{{ $i + 1 }}</td>
                                             <td class="text-center py-2.5 font-monospace fw-bold">{{ $p['kod'] ?? '-' }}</td>
                                             <td class="text-start py-2.5">{{ $p['ulasan'] ?? 'Mematuhi semua syarat pematuhan dokumentasi.' }}</td>
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="3" class="text-center text-muted py-3" style="font-size: 0.875rem;">
+                                            <td colspan="2" class="text-center text-muted py-3" style="font-size: 0.875rem;">
                                                 <i class="bi bi-inbox me-1 fs-5"></i>Tiada rekod pembekal melepasi dijumpai.
                                             </td>
                                         </tr>
@@ -158,21 +152,19 @@
                             <table class="table table-hover align-middle mb-0 w-100" style="font-size: 0.85rem;">
                                 <thead class="bg-light">
                                     <tr>
-                                        <th class="py-2.5 px-3 text-center text-uppercase text-secondary fw-bold" style="width: 8%; font-size: 0.725rem; letter-spacing: 0.5px;">BIL</th>
-                                        <th class="py-2.5 px-3 text-center text-uppercase text-secondary fw-bold" style="width: 15%; font-size: 0.725rem; letter-spacing: 0.5px;">NO. PETENDER</th>
+                                        <th class="py-2.5 px-3 text-center text-uppercase text-secondary fw-bold" style="width: 15%; font-size: 0.725rem; letter-spacing: 0.5px;">KOD PEMBEKAL</th>
                                         <th class="py-2.5 px-3 text-start text-uppercase text-secondary fw-bold" style="width: 77%; font-size: 0.725rem; letter-spacing: 0.5px;">ULASAN</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @forelse($pembekalTidakMelepasi ?? [] as $i => $p)
                                         <tr>
-                                            <td class="text-center py-2.5 font-monospace fw-bold text-danger">{{ $i + 1 }}</td>
                                             <td class="text-center py-2.5 font-monospace fw-bold text-danger">{{ $p['kod'] ?? '-' }}</td>
                                             <td class="text-start py-2.5">{{ $p['ulasan'] ?? '-' }}</td>
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="3" class="text-center text-muted py-3" style="font-size: 0.875rem;">
+                                            <td colspan="2" class="text-center text-muted py-3" style="font-size: 0.875rem;">
                                                 <i class="bi bi-inbox me-1 fs-5"></i>Tiada rekod dijumpai.
                                             </td>
                                         </tr>
@@ -214,21 +206,19 @@
                             <table class="table table-hover align-middle mb-0 w-100" style="font-size: 0.85rem;">
                                 <thead class="bg-light">
                                     <tr>
-                                        <th class="py-2.5 px-3 text-center text-uppercase text-secondary fw-bold" style="width: 8%; font-size: 0.725rem; letter-spacing: 0.5px;">BIL</th>
-                                        <th class="py-2.5 px-3 text-center text-uppercase text-secondary fw-bold" style="width: 15%; font-size: 0.725rem; letter-spacing: 0.5px;">NO. PETENDER</th>
+                                        <th class="py-2.5 px-3 text-center text-uppercase text-secondary fw-bold" style="width: 15%; font-size: 0.725rem; letter-spacing: 0.5px;">KOD PEMBEKAL</th>
                                         <th class="py-2.5 px-3 text-start text-uppercase text-secondary fw-bold" style="width: 77%; font-size: 0.725rem; letter-spacing: 0.5px;">ULASAN</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @forelse($step2Melepasi as $i => $p)
                                         <tr>
-                                            <td class="text-center py-2.5 font-monospace fw-bold">{{ $i + 1 }}</td>
                                             <td class="text-center py-2.5 font-monospace fw-bold">{{ $p['kod'] ?? '-' }}</td>
                                             <td class="text-start py-2.5">Penyata bank lengkap dan mematuhi kriteria kelayakan.</td>
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="3" class="text-center text-muted py-3" style="font-size: 0.875rem;">
+                                            <td colspan="2" class="text-center text-muted py-3" style="font-size: 0.875rem;">
                                                 <i class="bi bi-inbox me-1 fs-5"></i>Tiada rekod pembekal melepasi dijumpai.
                                             </td>
                                         </tr>
@@ -247,21 +237,19 @@
                             <table class="table table-hover align-middle mb-0 w-100" style="font-size: 0.85rem;">
                                 <thead class="bg-light">
                                     <tr>
-                                        <th class="py-2.5 px-3 text-center text-uppercase text-secondary fw-bold" style="width: 8%; font-size: 0.725rem; letter-spacing: 0.5px;">BIL</th>
-                                        <th class="py-2.5 px-3 text-center text-uppercase text-secondary fw-bold" style="width: 15%; font-size: 0.725rem; letter-spacing: 0.5px;">NO. PETENDER</th>
+                                        <th class="py-2.5 px-3 text-center text-uppercase text-secondary fw-bold" style="width: 15%; font-size: 0.725rem; letter-spacing: 0.5px;">KOD PEMBEKAL</th>
                                         <th class="py-2.5 px-3 text-start text-uppercase text-secondary fw-bold" style="width: 77%; font-size: 0.725rem; letter-spacing: 0.5px;">ULASAN</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @forelse($step2TidakMelepasi as $i => $p)
                                         <tr>
-                                            <td class="text-center py-2.5 font-monospace fw-bold text-danger">{{ $i + 1 }}</td>
                                             <td class="text-center py-2.5 font-monospace fw-bold text-danger">{{ $p['kod'] ?? '-' }}</td>
                                             <td class="text-start py-2.5">Tidak mematuhi kriteria kelayakan penyata bulanan bank.</td>
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="3" class="text-center text-muted py-3" style="font-size: 0.875rem;">
+                                            <td colspan="2" class="text-center text-muted py-3" style="font-size: 0.875rem;">
                                                 <i class="bi bi-inbox me-1 fs-5"></i>Tiada rekod dijumpai.
                                             </td>
                                         </tr>

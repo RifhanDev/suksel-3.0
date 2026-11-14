@@ -286,8 +286,8 @@
                 <table class="table table-modern-b1 align-middle">
                     <thead>
                         <tr>
-                            <th style="width: 80px;" class="text-center">Bil</th>
-                            <th style="width: 320px;"><i class="bi bi-person-vcard text-danger me-1"></i> Rujukan Petender (Kod Pembekal)</th>
+                            <th style="width: 160px;" class="text-center">Kod Pembekal</th>
+                            <th style="width: 320px;"><i class="bi bi-person-vcard text-danger me-1"></i> Petender</th>
                             <th class="text-end pe-4"><i class="bi bi-currency-dollar text-danger me-1"></i> Harga Tender Asal (RM)</th>
                         </tr>
                     </thead>
@@ -295,7 +295,7 @@
                         @forelse($passingVendors as $r)
                             <tr>
                                 <td class="text-center font-monospace fw-bold" style="background-color: #efeff0ff; color: #3f3f3fff;">
-                                    {{ $loop->iteration }}
+                                    {{ $r['kod_pembekal'] ?: '—' }}
                                 </td>
                                 <td>
                                     <div class="d-flex align-items-center gap-2.5">
@@ -303,7 +303,6 @@
                                             <i class="bi bi-building"></i>
                                         </div>
                                         <div>
-                                            <span class="fw-bold font-monospace text-dark d-block" style="font-size: 0.9rem;">{{ $r['kod_pembekal'] }}</span>
                                             @if(!empty($r['vendor_name']))
                                                 <span class="small text-muted">{{ $r['vendor_name'] }}</span>
                                             @endif

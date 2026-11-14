@@ -22,6 +22,59 @@ class Tender extends Model
 	use Helper;
 	use RevisionableTrait;
 
+	/**
+	 * Tender identifiers and addresses are plain text. Some older records were
+	 * stored with one or more layers of HTML entities, so decode when read; Blade/DataTables must
+	 * still escape these values when writing them into HTML.
+	 */
+	public function getNameAttribute($value)
+	{
+		return $this->decodePlainTextAttribute($value);
+	}
+
+	public function getRefNumberAttribute($value)
+	{
+		return $this->decodePlainTextAttribute($value);
+	}
+
+	public function getNoTenderAttribute($value)
+	{
+		return $this->decodePlainTextAttribute($value);
+	}
+
+	public function getNoKontrakAttribute($value)
+	{
+		return $this->decodePlainTextAttribute($value);
+	}
+
+	public function getBriefingAddressAttribute($value)
+	{
+		return $this->decodePlainTextAttribute($value);
+	}
+
+	public function getSubmissionLocationAddressAttribute($value)
+	{
+		return $this->decodePlainTextAttribute($value);
+	}
+
+	private function decodePlainTextAttribute($value)
+	{
+		if (!is_string($value) || $value === '') {
+			return $value;
+		}
+
+		$decoded = $value;
+		for ($i = 0; $i < 5; $i++) {
+			$next = html_entity_decode($decoded, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+			if ($next === $decoded) {
+				break;
+			}
+			$decoded = $next;
+		}
+
+		return $decoded;
+	}
+
 	static $types = [
 		'tender'          => 'Tender',
 		'quotation'       => 'Sebut Harga',
@@ -2027,6 +2080,32 @@ class Tender extends Model
 		}
 
 		return $response;
+	}
+
+	public function hasDaerahLiputanProjek(): bool
+	{
+		if (! $this->zon_lokasi || empty($this->lokaliti_id)) {
+			return false;
+		}
+
+		return DB::table('ref_lokalitis')
+			->where('id', $this->lokaliti_id)
+			->whereRaw('LOWER(TRIM(name)) = ?', ['daerah terpilih'])
+			->exists();
+	}
+
+	public function getDaerahLiputanProjek(): string
+	{
+		$districtIds = DB::table('tender_lokaliti_districts')
+			->where('tender_id', $this->id)
+			->orderBy('district_id')
+			->pluck('district_id')
+			->map(fn ($districtId) => (int) $districtId)
+			->all();
+
+		$names = array_map(fn (int $districtId) => \App\Vendor::$districts[$districtId] ?? null, $districtIds);
+
+		return implode(', ', array_filter($names)) ?: '-';
 	}
 
 	public function getNegeriList()

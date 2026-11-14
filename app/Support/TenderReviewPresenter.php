@@ -166,6 +166,11 @@ class TenderReviewPresenter
         return $this->refName(RefLokaliti::class, $this->tender->lokaliti_id) ?? '-';
     }
 
+    public function daerahLiputan(): string
+    {
+        return $this->tender->getDaerahLiputanProjek();
+    }
+
     public function terbukaKepada(): string
     {
         return match (strtolower((string) ($this->tender->terbuka_kepada ?? ''))) {

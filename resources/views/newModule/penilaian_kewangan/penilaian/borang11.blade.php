@@ -234,39 +234,7 @@
         : (str_contains(url()->previous(), '/penilaian-kewangan') ? url()->previous() : route('penilaianKewangan'));
     $readOnly = $readOnly ?? false;
 
-    // Build or fallback vendor summary for Borang 11b
-    $b11List = $b11VendorSummary ?? [
-        1 => [
-            'vendor_id'    => 1,
-            'kod_pembekal' => 'V001',
-            'vendor_name'  => 'Syarikat Bina Jaya Sdn Bhd',
-            'is_evaluated' => true,
-            'kewangan_mark' => '25.00',
-            'teknikal_mark' => '48.50',
-            'jumlah_mark'  => '73.50',
-            'keputusan'    => 'LULUS',
-        ],
-        2 => [
-            'vendor_id'    => 2,
-            'kod_pembekal' => 'V002',
-            'vendor_name'  => 'Pembinaan Utama Sdn Bhd',
-            'is_evaluated' => true,
-            'kewangan_mark' => '28.00',
-            'teknikal_mark' => '52.00',
-            'jumlah_mark'  => '80.00',
-            'keputusan'    => 'LULUS',
-        ],
-        3 => [
-            'vendor_id'    => 3,
-            'kod_pembekal' => 'V003',
-            'vendor_name'  => 'Perusahaan Gagah Budi Enterprise',
-            'is_evaluated' => false,
-            'kewangan_mark' => '15.00',
-            'teknikal_mark' => '25.00',
-            'jumlah_mark'  => '40.00',
-            'keputusan'    => 'GAGAL',
-        ],
-    ];
+    $b11List = $b11VendorSummary ?? [];
     $tenderIdentifier = isset($tender) ? ($tender->uuid ?: $tender->id ?: ($tender_no ?? '')) : ($tender_no ?? '');
 @endphp
 
@@ -384,8 +352,7 @@
                 <table class="table table-hover align-middle mb-0 table-modern-b10">
                     <thead>
                         <tr>
-                            <th style="width: 5%; text-align: center;">BIL</th>
-                            <th style="width: 15%; text-align: center;">KOD PETENDER</th>
+                            <th style="width: 15%; text-align: center;">KOD PEMBEKAL</th>
                             <th style="width: 35%;">NAMA PETENDER</th>
                             <th style="width: 15%; text-align: center;">STATUS PENILAIAN</th>
                             <th style="width: 15%; text-align: center;">STATUS KELAYAKAN</th>
@@ -396,13 +363,12 @@
                         @forelse($b11List as $index => $v)
                             @php
                                 $vId = $v['vendor_id'] ?? $loop->iteration;
-                                $kodText = $v['kod_pembekal'] ?? ('V' . str_pad($vId, 3, '0', STR_PAD_LEFT));
+                                $kodText = $v['kod_pembekal'] ?? '—';
                                 $vName = $v['vendor_name'] ?? ('Syarikat Petender ' . $vId);
                                 $isEvaluated = $v['is_evaluated'] ?? false;
                                 $keputusan = $v['keputusan'] ?? 'LULUS';
                             @endphp
                             <tr>
-                                <td class="text-center font-monospace fw-bold">{{ $loop->iteration }}</td>
                                 <td class="text-center font-monospace fw-bold text-primary">{{ $kodText }}</td>
                                 <td class="fw-bold text-dark">{{ $vName }}</td>
                                 <td class="text-center" id="statusContainerB11_{{ $vId }}">
@@ -435,7 +401,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="text-center py-4 text-muted">Tiada petender ditemui.</td>
+                                <td colspan="5" class="text-center py-4 text-muted">Tiada petender ditemui.</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -487,7 +453,7 @@
                 </div>
                 <div class="d-flex align-items-center gap-2">
                     <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-3 py-1.5 rounded-pill font-monospace" id="b11ModalRefBadge">
-                        NO. RUJUKAN PETENDER : V001
+                        NO. RUJUKAN PETENDER : —
                     </span>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
@@ -709,7 +675,7 @@
     function openB11DetailModal(vendorId) {
         currentB11VendorId = vendorId;
         const vData = b11VendorDataMap[vendorId] || {};
-        const kodText = vData.kod_pembekal || (typeof vData === 'object' ? (vData.kod || vendorId) : vendorId);
+        const kodText = vData.kod_pembekal || '—';
 
         const refBadge = document.getElementById('b11ModalRefBadge');
         if (refBadge) {
@@ -867,8 +833,25 @@
         modal.show();
     }
 
-    function simpanPenilaianModalB11() {
-        if (currentB11VendorId) {
+    async function simpanPenilaianModalB11() {
+        if (!currentB11VendorId) return;
+
+        const modalSaveButton = document.querySelector('#b11DetailModal .btn-simpan');
+        if (modalSaveButton) modalSaveButton.disabled = true;
+
+        try {
+            const response = await fetch('{{ route("penilaianKewanganKerja.borang.simpan", ["tender_no" => $tenderIdentifier, "borang_code" => "borang11"]) }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ vendor_id: currentB11VendorId, status_pematuhan: 1, payload: { reviewed: true } })
+            });
+            const result = await response.json();
+            if (!response.ok || !result.success) throw new Error(result.message || 'Gagal menyimpan penilaian petender.');
+
             const btn = document.getElementById('btnActionB11_' + currentB11VendorId);
             if (btn) {
                 btn.className = 'btn-action-dinilai';
@@ -883,15 +866,16 @@
             if (b11VendorDataMap[currentB11VendorId]) {
                 b11VendorDataMap[currentB11VendorId].is_evaluated = true;
             }
-        }
 
-        const modalEl = document.getElementById('b11DetailModal');
-        if (modalEl) {
-            const modal = bootstrap.Modal.getInstance(modalEl);
+            const modal = bootstrap.Modal.getInstance(document.getElementById('b11DetailModal'));
             if (modal) modal.hide();
+            checkB11CompletionState();
+            showSuccessModal('Maklumat penilaian keupayaan petender (Borang 11b) telah disahkan.');
+        } catch (error) {
+            Swal.fire({ icon: 'error', title: 'Ralat', text: error.message || 'Gagal menyimpan penilaian.' });
+        } finally {
+            if (modalSaveButton) modalSaveButton.disabled = false;
         }
-
-        showSuccessModal('Maklumat penilaian keupayaan petender (Borang 11b) telah disahkan.');
     }
 
     function checkB11CompletionState() {
@@ -903,7 +887,9 @@
             btn.disabled = true;
             return;
         }
-        btn.disabled = false;
+        const allEvaluated = Object.values(b11VendorDataMap).every(v => v && v.is_evaluated === true);
+        const chk = document.getElementById('chkSahB11');
+        btn.disabled = !allEvaluated || !chk || !chk.checked;
     }
 
     function simpanB11Main() {

@@ -198,18 +198,7 @@
         return $pA <=> $pB;
     });
 
-    $fallbackRows = [
-        ['bil'=>1,'ruj'=>'27/53','vendor_id'=>101,'nama'=>'MZ PROBINA','gred'=>'G6','taraf'=>'BUMIPUTERA','lokasi'=>'0','harga'=>'4,798,852.00','bwam'=>'-18.24%','tempoh'=>'104','sempurna'=>'✓ Sempurna','dok'=>'Cukup','modal'=>'4,798,852.00','kerja'=>'Memuaskan','keputusan'=>'Lulus'],
-        ['bil'=>2,'ruj'=>'34/53','vendor_id'=>102,'nama'=>'SIERRA AQUATECH SDN. BHD.','gred'=>'G6','taraf'=>'BUMIPUTERA','lokasi'=>'0','harga'=>'4,830,689.40','bwam'=>'-17.64%','tempoh'=>'104','sempurna'=>'✓ Sempurna','dok'=>'Cukup','modal'=>'4,830,689.40','kerja'=>'T.K.S','keputusan'=>'Lulus'],
-        ['bil'=>3,'ruj'=>'24/53','vendor_id'=>103,'nama'=>'RMS BINJAYA SDN. BHD.','gred'=>'G6','taraf'=>'BUMIPUTERA','lokasi'=>'0','harga'=>'4,864,594.40','bwam'=>'-17.00%','tempoh'=>'104','sempurna'=>'✓ Sempurna','dok'=>'Cukup','modal'=>'4,864,594.40','kerja'=>'Memuaskan','keputusan'=>'Lulus'],
-        ['bil'=>4,'ruj'=>'37/53','vendor_id'=>104,'nama'=>'ZEFHILL (M) SDN. BHD.','gred'=>'G6','taraf'=>'BUMIPUTERA','lokasi'=>'0','harga'=>'4,956,328.00','bwam'=>'-15.28%','tempoh'=>'104','sempurna'=>'✓ Sempurna','dok'=>'Cukup','modal'=>'4,956,328.00','kerja'=>'-','keputusan'=>'Lulus'],
-        ['bil'=>5,'ruj'=>'30/53','vendor_id'=>105,'nama'=>'YAKIN TELUS SDN. BHD.','gred'=>'G6','taraf'=>'BUMIPUTERA','lokasi'=>'0','harga'=>'4,980,824.00','bwam'=>'-14.82%','tempoh'=>'104','sempurna'=>'✓ Sempurna','dok'=>'Cukup','modal'=>'4,980,824.00','kerja'=>'T.K.S','keputusan'=>'Lulus'],
-        ['bil'=>6,'ruj'=>'32/53','vendor_id'=>106,'nama'=>'ARMADA KASIH SDN. BHD.','gred'=>'G6','taraf'=>'BUMIPUTERA','lokasi'=>'0','harga'=>'5,010,773.00','bwam'=>'-14.25%','tempoh'=>'104','sempurna'=>'✓ Sempurna','dok'=>'Cukup','modal'=>'5,010,773.00','kerja'=>'T.K.S','keputusan'=>'Lulus'],
-        ['bil'=>7,'ruj'=>'2/53','vendor_id'=>107,'nama'=>'UER VENTURES SDN. BHD.','gred'=>'G6','taraf'=>'BUMIPUTERA','lokasi'=>'0','harga'=>'5,018,400.10','bwam'=>'-14.11%','tempoh'=>'104','sempurna'=>'✓ Sempurna','dok'=>'Cukup','modal'=>'5,018,400.10','kerja'=>'Memuaskan','keputusan'=>'Lulus'],
-        ['bil'=>8,'ruj'=>'7/53','vendor_id'=>108,'nama'=>'JUJUR PERANGSANG SDN. BHD.','gred'=>'G6','taraf'=>'BUMIPUTERA','lokasi'=>'0','harga'=>'5,050,444.00','bwam'=>'-13.51%','tempoh'=>'104','sempurna'=>'✓ Sempurna','dok'=>'Cukup','modal'=>'5,050,444.00','kerja'=>'T.K.S','keputusan'=>'Lulus'],
-    ];
-
-    $renderList = count($displayVendors) > 0 ? $displayVendors : $fallbackRows;
+    $renderList = $displayVendors;
 @endphp
 
 <div class="container-fluid px-0 py-2">
@@ -425,8 +414,8 @@
                     </colgroup>
                     <thead>
                         <tr>
-                            <th class="text-center">BIL</th>
-                            <th class="text-start ps-2">RUJUKAN TENDER</th>
+                            <th class="text-center">KOD PEMBEKAL</th>
+                            <th class="text-start ps-2">NAMA PETENDER</th>
                             <th class="text-center">GRED</th>
                             <th class="text-center">TARAF</th>
                             <th class="text-center">LOKASI</th>
@@ -445,17 +434,16 @@
                         @foreach($renderList as $idx => $r)
                             @php
                                 $vId = $r['vendor_id'] ?? ($r['id'] ?? ($idx + 1));
-                                $kodPembekal = $r['kod_pembekal'] ?? ($r['ruj'] ?? ('45/' . str_pad($idx+1, 2, '0', STR_PAD_LEFT)));
+                                $kodPembekal = $r['kod_pembekal'] ?? '—';
                                 $vendorName = $r['vendor_name'] ?? ($r['nama'] ?? 'SYARIKAT PETENDER');
                                 $hargaDisp = $r['harga_display'] ?? ($r['harga'] ?? (isset($r['harga_tawaran']) ? 'RM ' . number_format($r['harga_tawaran'], 2) : 'RM 0.00'));
                                 $isChecked = !empty($r['is_recommended']);
                             @endphp
                             <tr>
                                 <td class="text-center font-monospace fw-bold" style="background-color: #f8fafc; color: #475569; font-size: 0.75rem;">
-                                    {{ $idx + 1 }}
+                                    {{ $kodPembekal }}
                                 </td>
                                 <td class="ps-2">
-                                    <div class="fw-bold font-monospace text-danger" style="font-size: 0.775rem;">{{ $kodPembekal }}</div>
                                     <div class="fw-bold text-dark" style="font-size: 0.775rem; line-height: 1.2;">{{ $vendorName }}</div>
                                 </td>
                                 <td class="text-center font-monospace">

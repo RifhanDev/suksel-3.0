@@ -351,8 +351,8 @@
                 <table class="table table-modern-b1 align-middle mb-0">
                     <thead>
                         <tr>
-                            <th style="width: 60px;" class="text-center">BIL</th>
-                            <th><i class="bi bi-person-vcard text-danger me-1"></i> KOD PEMBEKAL</th>
+                            <th style="width: 150px;" class="text-center">KOD PEMBEKAL</th>
+                            <th><i class="bi bi-person-vcard text-danger me-1"></i> PETENDER</th>
                             <th class="text-end"><i class="bi bi-check-circle text-danger me-1"></i> JUMLAH KERJA DISIAPKAN (RM)</th>
                             <th class="text-end"><i class="bi bi-calendar-check text-danger me-1"></i> JUMLAH TAHUNAN BAKI KERJA (NTBK) (RM)</th>
                             <th class="text-end"><i class="bi bi-cash-stack text-danger me-1"></i> NILAI BAKI KERJA (NBK) (RM)</th>
@@ -362,14 +362,13 @@
                     <tbody>
                         @forelse($vendorsData as $vId => $v)
                             <tr>
-                                <td class="text-center text-muted font-monospace fw-bold">{{ $loop->iteration }}</td>
+                                <td class="text-center text-muted font-monospace fw-bold">{{ $v['kod_pembekal'] ?: '—' }}</td>
                                 <td>
                                     <div class="d-flex align-items-center gap-2.5">
                                         <div class="bg-danger bg-opacity-10 text-danger p-2 rounded-2 d-inline-flex align-items-center justify-content-center" style="width:32px; height:32px;">
                                             <i class="bi bi-building"></i>
                                         </div>
                                         <div>
-                                            <span class="fw-bold font-monospace text-dark d-block" style="font-size: 0.9rem;">{{ $v['kod_pembekal'] }}</span>
                                             @if(!empty($v['vendor_name']))
                                                 <span class="small text-muted">{{ $v['vendor_name'] }}</span>
                                             @endif
@@ -736,7 +735,7 @@
         const vData = b7VendorDataMap[vId];
         if (!vData) return;
 
-        const kodLabel = 'NO. RUJUKAN PETENDER : ' + vData.kod_pembekal;
+        const kodLabel = 'NO. RUJUKAN PETENDER : ' + (vData.kod_pembekal || '—');
         document.getElementById('modalKodPetenderBadge').innerText = kodLabel;
         document.getElementById('modalRefHeaderTitle').innerText = kodLabel;
 

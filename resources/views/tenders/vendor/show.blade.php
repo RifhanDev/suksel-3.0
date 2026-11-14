@@ -796,6 +796,12 @@
 									<td><span class="badge bg-info">SELURUH SELANGOR</span></td>
 								</tr>
 							@endif
+							@if ($tender->hasDaerahLiputanProjek())
+								<tr>
+									<th>Daerah Liputan Projek</th>
+									<td>{{ $tender->getDaerahLiputanProjek() }}</td>
+								</tr>
+							@endif
 							<tr>
 								<th>Harga Dokumen</th>
 								<td><strong>RM {{ number_format($tender->price, 2) }}</strong></td>

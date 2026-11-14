@@ -27,6 +27,7 @@ use Carbon\Carbon;
 use DB;
 use Datatables;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Hash;
 use App\Services\StosBackendClient;
 use App\Support\TenderProcessStatus;
@@ -124,15 +125,16 @@ class TendersController extends Controller
 				})
 				->editColumn('name', function ($tender) {
 					$string   = [];
-					$string[] = (auth()->check() && !auth()->user()->hasRole('Vendor') && $tender->invitation ? '<i class="fa fa-lock"></i> ' : '') . "<strong><u>" . $tender->tenderer->name . "</u></strong>";
+				$agencyName = html_entity_decode((string) $tender->tenderer->name, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+				$string[] = (auth()->check() && !auth()->user()->hasRole('Vendor') && $tender->invitation ? '<i class="fa fa-lock"></i> ' : '') . "<strong><u>" . e($agencyName) . "</u></strong>";
 					$string[] = "<small>" . e($tender->displayNoTender()) . "</small>";
-					$string[] = "<a class=\"table-tender-title\" href=" . action('TendersController@show', $tender->id) . ">" . $tender->name . "</a>";;
+				$string[] = "<a class=\"table-tender-title\" href=\"" . e(action('TendersController@show', $tender->id)) . "\">" . e($tender->name) . "</a>";
 
 					if ($tender->briefing_required) {
 						$string[] = '';
 						$string[] = '<span class="glyphicon glyphicon-bullhorn"></span> <b><u><small>Kehadiran Taklimat Diwajibkan</small></u></b>';
 						$string[] = Carbon::parse($tender->briefing_datetime)->format('j M Y H:i');
-						$string[] = nl2br($tender->briefing_address);
+						$string[] = nl2br(e($tender->briefing_address));
 					}
 
 					if (count($tender->siteVisits) > 0) {
@@ -142,7 +144,8 @@ class TendersController extends Controller
 						foreach ($tender->siteVisits->sortBy('id') as $visit) {
 							$string[] = '';
 							$string[] = \Carbon\Carbon::parse($visit->datetime)->format('j M Y H:i');
-							$string[] = nl2br($visit->address);
+							$visitAddress = html_entity_decode((string) $visit->address, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+							$string[] = nl2br(e($visitAddress));
 
 							if ($visit->required) {
 								$string[] = '<small><span class="glyphicon glyphicon-ok"></span> Wajib Hadir</small>';
@@ -365,13 +368,38 @@ class TendersController extends Controller
 			return $this->_access_denied();
 		}
 
-		$request->validate([
+		$rules = [
 			'ref_number' => ['required', 'string', 'max:255'],
-		], [
+			'submission_key' => ['required', 'uuid'],
+		];
+		if ((string) $request->input('zon_lokasi', '0') === '1') {
+			$rules += [
+				'lokaliti_id' => ['required', 'integer', 'exists:ref_lokalitis,id'],
+				'coverage_district_ids' => ['required', 'array', 'min:1'],
+				'coverage_district_ids.*' => ['required', 'integer', 'distinct', Rule::in(Vendor::selangorDistrictIds())],
+			];
+		}
+
+		$request->validate($rules, [
 			'ref_number.required' => 'No. Rujukan Fail adalah wajib.',
+			'submission_key.required' => 'Kunci penghantaran tidak sah. Sila muat semula borang.',
+			'lokaliti_id.required' => 'Sila pilih Lokaliti Liputan.',
+			'coverage_district_ids.required' => 'Sila pilih sekurang-kurangnya satu daerah liputan.',
 		]);
 
+		if ((string) $request->input('zon_lokasi', '0') === '1') {
+			$lokalitiName = \App\Models\Ref\RefLokaliti::whereKey($request->input('lokaliti_id'))->value('name');
+			if (strcasecmp(trim((string) $lokalitiName), 'Daerah Terpilih') !== 0) {
+				return redirect()->back()->withInput()->withErrors([
+					'lokaliti_id' => 'Lokaliti Liputan yang sah ialah Daerah Terpilih.',
+				]);
+			}
+		}
+
+		$idempotencyKey = $request->input('submission_key');
+
 		$payload = $request->all();
+		unset($payload['_token'], $payload['submission_key']);
 		$payload['creator_id'] = $user->id;
 
 		if (isset($payload['ptj_id']) && auth()->user()->hasRole('Admin')) {
@@ -404,7 +432,7 @@ class TendersController extends Controller
 		$errorCheck = false;
 		try {
 			$stosClient = app(StosBackendClient::class);
-			$response = $stosClient->createTender($payload);
+			$response = $stosClient->createTender($payload, $idempotencyKey);
 
 			if ($response->successful()) {
 				$data = $response->json();
@@ -970,7 +998,12 @@ class TendersController extends Controller
 			'tempoh_kontrak_unit'       => $tender->tempoh_kontrak_unit,
 			'zon_lokasi'                => $tender->zon_lokasi ? '1' : '0',
 			'lokaliti_id'               => $tender->lokaliti_id,
-			'district_id'               => $tender->district_id,
+			'coverage_district_ids'     => DB::table('tender_lokaliti_districts')
+				->where('tender_id', $tender->id)
+				->orderBy('district_id')
+				->pluck('district_id')
+				->map(fn ($districtId) => (string) $districtId)
+				->all(),
 			'jawatankuasa'              => $tender->jawatankuasa,
 			'lawatan_tapak'             => $tender->lawatan_tapak,
 			'terbuka_kepada'            => $tender->terbuka_kepada,

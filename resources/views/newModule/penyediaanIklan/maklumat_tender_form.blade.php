@@ -455,6 +455,12 @@
 				<span class="kv-label">Lokaliti Liputan</span>
 				<span class="kv-value">{{ $review->lokaliti() }}</span>
 			</div>
+			@if ($review->lokaliti() === 'Daerah Terpilih')
+				<div class="kv-row">
+					<span class="kv-label">Daerah Liputan Projek</span>
+					<span class="kv-value">{{ $review->daerahLiputan() }}</span>
+				</div>
+			@endif
 			<div class="kv-row">
 				<span class="kv-label">Zon / Lokasi</span>
 				@if ($review->isYes($tender->zon_lokasi))
