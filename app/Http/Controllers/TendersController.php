@@ -319,7 +319,7 @@ class TendersController extends Controller
 
 		$user = auth()->user();
 
-		if (!$user->hasRole('Admin') && !$user->can('Tender:execute')) {
+		if (! $this->canCreateTenderOrSebutHarga($user)) {
 			return $this->_access_denied();
 		}
 
@@ -361,7 +361,7 @@ class TendersController extends Controller
 
 		$user = auth()->user();
 
-		if (!$user->hasRole('Admin') && !$user->can('Tender:execute')) {
+		if (! $this->canCreateTenderOrSebutHarga($user)) {
 			return $this->_access_denied();
 		}
 
@@ -1701,6 +1701,20 @@ class TendersController extends Controller
 	}
 
 	/**
+	 * Admin, Agency Admin, and holders of Tender:execute may create Tender/Sebut Harga.
+	 */
+	protected function canCreateTenderOrSebutHarga($user): bool
+	{
+		if ($user === null) {
+			return false;
+		}
+
+		return $user->hasRole('Admin')
+			|| $user->hasRole('Agency Admin')
+			|| $user->can('Tender:execute');
+	}
+
+	/**
 	 * Iklan-only kaedah never reach SST, so admin, urusetia, and pemilik projek
 	 * may close them from Maklumat Syarikat. Other kaedah stay on the SST path.
 	 */
@@ -1714,7 +1728,9 @@ class TendersController extends Controller
 			return true;
 		}
 
-		$pemilik = $user->hasRole('Agency User') || $user->can('Tender:execute');
+		$pemilik = $user->hasRole('Agency User')
+			|| $user->hasRole('Agency Admin')
+			|| $user->can('Tender:execute');
 		if (! $pemilik) {
 			return false;
 		}

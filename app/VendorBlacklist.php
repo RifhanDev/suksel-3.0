@@ -33,11 +33,16 @@ class VendorBlacklist extends Model
    );
 
    public static function canList() {
-     	if(auth()->check() && auth()->user()->can('Blacklist:index')) {
-         return true;
-     	} else {
+     	if (! auth()->check()) {
          return false;
      	}
+
+     	$user = auth()->user();
+
+     	// Agency Admin may open Senarai Hitam (view). Mutate stays permission-gated.
+     	return $user->can('Blacklist:index')
+         || $user->hasRole('Admin')
+         || $user->hasRole('Agency Admin');
    }
 
    public function canShow() {

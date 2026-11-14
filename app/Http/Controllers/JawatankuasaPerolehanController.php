@@ -47,7 +47,9 @@ class JawatankuasaPerolehanController extends Controller
     public function index()
     {
         $tenders = $this->applyLembagaDecisionScope(
-            Tender::query()->where('status_process_id', TenderProcessStatus::jawatankuasaPerolehanListStatus())
+            $this->applyOwnAgencyScope(
+                Tender::query()->where('status_process_id', TenderProcessStatus::jawatankuasaPerolehanListStatus())
+            )
         )
             ->orderByDesc('id')
             ->get([
@@ -365,12 +367,16 @@ class JawatankuasaPerolehanController extends Controller
     /** Proxy printable teknikal report for JP Paparan Kertas Taklimat (MeetingDecision role). */
     public function muatTurunLaporanTeknikal(Tender $tender)
     {
+        $this->assertOwnAgency($tender);
+
         return app(PenilaianTeknikalController::class)->cetakLaporan($tender);
     }
 
     /** Proxy printable kewangan report for JP Paparan Kertas Taklimat (MeetingDecision role). */
     public function muatTurunLaporanKewangan(Tender $tender)
     {
+        $this->assertOwnAgency($tender);
+
         $identifier = $tender->uuid ?: ($tender->no_tender ?: ($tender->ref_number ?: (string) $tender->id));
 
         return app(PenilaianKewanganController::class)->cetakLaporan($identifier, false);
@@ -1263,6 +1269,7 @@ class JawatankuasaPerolehanController extends Controller
         }
 
         if ($tender) {
+            $this->assertOwnAgency($tender);
             $this->assertLembagaDecisionAccess($tender);
         }
 

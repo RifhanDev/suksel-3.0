@@ -1096,7 +1096,7 @@ class HomeController extends Controller
 
 	public function versionHistories()
 	{
-		if (!auth()->user()->can('System:histories')) {
+		if (! VersionHistory::canList()) {
 			return $this->_access_denied();
 		}
 

@@ -25,7 +25,9 @@ final class PenyediaanIklanAccess
             return false;
         }
 
-        return $user->hasRole('Agency User') || $user->can('Tender:execute');
+        return $user->hasRole('Agency User')
+            || $user->hasRole('Agency Admin')
+            || $user->can('Tender:execute');
     }
 
     public static function canOpenMenu(?User $user): bool

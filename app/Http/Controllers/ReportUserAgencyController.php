@@ -10,9 +10,17 @@ use App\Role;
 use App\User;
 use App\OrganizationUnit;
 
+use App\Http\Controllers\Concerns\AuthorizesReportAccess;
+
 class ReportUserAgencyController extends Controller
 {
+	use AuthorizesReportAccess;
+
 	public function index() {
+		if ($denied = $this->denyUnlessReport('Report:view:user_agency', 'Report:view:user_agency:organization_unit_id')) {
+			return $denied;
+		}
+
 		$select_roles    = Role::where('name', '!=', 'Vendor')->orderBy('name', 'asc')->pluck('name', 'id');
 		$select_agencies = OrganizationUnit::orderBy('name', 'asc')->pluck('name', 'id');
 		return view('reports.user.agency.index', compact('select_roles', 'select_agencies'));
@@ -20,6 +28,10 @@ class ReportUserAgencyController extends Controller
 
 
    public function view(Request $request) {
+		if ($denied = $this->denyUnlessReport('Report:view:user_agency', 'Report:view:user_agency:organization_unit_id')) {
+			return $denied;
+		}
+
 
 		$roles  = $request->input('roles[]', []);
 		$agency = auth()->user()->hasRole('Admin') ? $request->input('agency', null) : auth()->user()->organization_unit_id;
@@ -47,6 +59,10 @@ class ReportUserAgencyController extends Controller
    }
 
    public function excel(Request $request) {
+		if ($denied = $this->denyUnlessReport('Report:view:user_agency', 'Report:view:user_agency:organization_unit_id')) {
+			return $denied;
+		}
+
      	$roles  = $request->input('roles[]', []);
      	$agency = auth()->user()->hasRole('Admin') ? $request->input('agency', null) : auth()->user()->organization_unit_id;
 

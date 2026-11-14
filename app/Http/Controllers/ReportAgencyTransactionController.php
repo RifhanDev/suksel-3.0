@@ -11,9 +11,17 @@ use App\TenderVendor;
 use App\OrganizationUnit;
 use App\Transaction;
 
+use App\Http\Controllers\Concerns\AuthorizesReportAccess;
+
 class ReportAgencyTransactionController extends Controller
 {
+	use AuthorizesReportAccess;
+
 	public function index() {
+		if ($denied = $this->denyUnlessReport('Report:view:agency_tender', 'Report:view:agency_tender:organization_unit_id')) {
+			return $denied;
+		}
+
 		$select_ou      = OrganizationUnit::orderBy('name')->pluck('name', 'id');
 		$select_year    = [];
 		//$start_year     = Carbon::parse(Transaction::orderBy('created_at')->first()->created_at)->format('Y');
@@ -30,6 +38,10 @@ class ReportAgencyTransactionController extends Controller
    }
 
    public function excel(Request $request) {
+		if ($denied = $this->denyUnlessReport('Report:view:agency_tender', 'Report:view:agency_tender:organization_unit_id')) {
+			return $denied;
+		}
+
 
 			$year   = $request->input('year', null);
 			$month  = $request->input('month', null);
@@ -74,6 +86,10 @@ class ReportAgencyTransactionController extends Controller
     }
 
    public function view(Request $request) {
+		if ($denied = $this->denyUnlessReport('Report:view:agency_tender', 'Report:view:agency_tender:organization_unit_id')) {
+			return $denied;
+		}
+
 
 		$year  = $request->input('year', null);
 		$month = $request->input('month', null);
@@ -138,6 +154,10 @@ class ReportAgencyTransactionController extends Controller
    }
 
    public function receipts(Request $request) {
+		if ($denied = $this->denyUnlessReport('Report:view:agency_tender', 'Report:view:agency_tender:organization_unit_id')) {
+			return $denied;
+		}
+
 
 		$year  = $request->input('year', null);
 		$month = $request->input('month', null);

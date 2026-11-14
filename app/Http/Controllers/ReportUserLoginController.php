@@ -8,9 +8,17 @@ use App\Exports\UserLogin;
 use App\User;
 use App\UserHistory;
 
+use App\Http\Controllers\Concerns\AuthorizesReportAccess;
+
 class ReportUserLoginController extends Controller
 {
+	use AuthorizesReportAccess;
+
 	public function index() {
+		if ($denied = $this->denyUnlessReport('Report:view:user_login')) {
+			return $denied;
+		}
+
      	$select_users = User::whereHas('roles', function($query) {
          return $query->whereNotIn('name', ['Vendor']);
      	})->get();
@@ -19,6 +27,10 @@ class ReportUserLoginController extends Controller
    }
 
    public function view(Request $request) {
+		if ($denied = $this->denyUnlessReport('Report:view:user_login')) {
+			return $denied;
+		}
+
         
      	$user_id    = $request->input('user_id');
      	$user       = User::findOrFail($user_id);
@@ -30,6 +42,10 @@ class ReportUserLoginController extends Controller
    }
 
    public function excel(Request $request) {
+		if ($denied = $this->denyUnlessReport('Report:view:user_login')) {
+			return $denied;
+		}
+
 
      	$user_id    = $request->input('user_id');
      	$user       = User::findOrFail($user_id);
