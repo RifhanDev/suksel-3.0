@@ -109,4 +109,71 @@ trait RestrictsTenderByRole
             abort(403, 'Tender ini di luar bidang kuasa lembaga anda.');
         }
     }
+
+    /**
+     * Agency logins only see tenders that belong to their own organization unit.
+     * Central admins, the state lembaga, and vendors are left unscoped.
+     */
+    protected function userIsAgencyLogin($user = null): bool
+    {
+        $user ??= auth()->user();
+
+        if (!$user) {
+            return false;
+        }
+
+        if ($user->hasRole('Admin')
+            || $user->hasRole('Admin UPEN')
+            || $user->hasRole('Admin PWN')
+            || $user->hasRole('Admin Kewangan')
+            || $user->hasRole('Front Desk')
+            || $user->hasRole('Lembaga Perolehan Negeri Selangor')) {
+            return false;
+        }
+
+        foreach ([
+            'Agency Admin',
+            'Agency User',
+            'Agency Urusetia',
+            'Agency Jawatankuasa',
+            'Agency Lembaga Perolehan',
+            'Agency Ketua Jabatan',
+        ] as $role) {
+            if ($user->hasRole($role)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    protected function applyOwnAgencyScope($query)
+    {
+        $user = auth()->user();
+
+        if (!$user || !$this->userIsAgencyLogin($user)) {
+            return $query;
+        }
+
+        $column = $query->getModel()->getTable() . '.organization_unit_id';
+
+        if (!$user->organization_unit_id) {
+            return $query->where($column, 0);
+        }
+
+        return $query->where($column, $user->organization_unit_id);
+    }
+
+    protected function assertOwnAgency(?Tender $tender): void
+    {
+        $user = auth()->user();
+
+        if (!$user || !$this->userIsAgencyLogin($user)) {
+            return;
+        }
+
+        if (!$tender || (int) $tender->organization_unit_id !== (int) $user->organization_unit_id) {
+            abort(403, 'Tender ini bukan milik agensi anda.');
+        }
+    }
 }
