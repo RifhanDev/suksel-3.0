@@ -580,11 +580,7 @@
 										<td>{{ $upload->size }}</td>
 										<td>{{ $upload->type }}</td>
 										<td>
-											@if (method_exists($upload, 'fileIsAvailable') ? $upload->fileIsAvailable() : true)
-												<a href="{{ $upload->url }}" class="btn btn-primary btn-xs" download>Muat Turun</a>
-											@else
-												<span class="text-muted small">Fail tiada di NAS</span>
-											@endif
+											<a href="{{ $upload->url }}" class="btn btn-primary btn-xs" download>Muat Turun</a>
 										</td>
 									</tr>
 								@endforeach
@@ -612,12 +608,8 @@
 												<td>{{ $upload->size }}</td>
 												<td>{{ $upload->type }}</td>
 												<td>
-													@if (method_exists($upload, 'fileIsAvailable') ? $upload->fileIsAvailable() : true)
-														<a href="{{ $upload->url }}" class="btn btn-primary btn-xs" download>Muat
-															Turun</a>
-													@else
-														<span class="text-muted small">Fail tiada di NAS</span>
-													@endif
+													<a href="{{ $upload->url }}" class="btn btn-primary btn-xs" download>Muat
+														Turun</a>
 												</td>
 											</tr>
 										@endforeach
