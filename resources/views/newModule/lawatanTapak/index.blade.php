@@ -134,7 +134,7 @@
 			</div>
 			@if ($tenders->hasPages())
 				<div class="d-flex justify-content-end px-3 py-3">
-					{{ $tenders->links() }}
+					{{ $tenders->links('pagination::bootstrap-5') }}
 				</div>
 			@endif
 		</div>
