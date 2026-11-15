@@ -74,9 +74,13 @@ html { -webkit-text-size-adjust:none; -ms-text-size-adjust: none;}
             <div style="line-height: 24px;">
               <font face="Arial, Helvetica, sans-serif" size="4" color="#57697e" style="font-size: 15px;">
               <span style="font-family: Arial, Helvetica, sans-serif; font-size: 15px; color: #57697e;">
-                Adalah dimaklumkan bahawa anda telah dilantik sebagai <strong>{{ $perananLabel }}</strong> dalam <strong>{{ $jenisLabel }}</strong> bagi {{ isset($tender) ? strtolower($tender->procurement_label) : 'tender' }} berikut:<br><br>
+                @php($kaedah = $kaedahLabel ?? (isset($tender) ? $tender->procurement_label : 'Tender'))
+                Adalah dimaklumkan bahawa anda telah dilantik sebagai <strong>{{ $perananLabel }}</strong> dalam <strong>{{ $jenisLabel }}</strong> bagi {{ strtolower($kaedah) }} berikut:<br><br>
 
-                <strong>No {{ isset($tender) ? $tender->procurement_label : 'Tender' }}:</strong> {{ $tenderRefNumber }}<br>
+                @isset($tender)
+                <strong>Nama Perolehan:</strong> {{ $tender->name }}<br>
+                @endisset
+                <strong>No. {{ $kaedah }}:</strong> {{ $tenderRefNumber }}<br>
                 <strong>PTJ:</strong> {{ $tenderPtj }}<br><br>
 
                 Sila log masuk ke sistem untuk maklumat lanjut.<br><br>
