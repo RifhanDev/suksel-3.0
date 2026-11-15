@@ -14,6 +14,7 @@ use App\Vendor;
 use Carbon\Carbon;
 use Hash;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Mail;
@@ -29,81 +30,99 @@ class RegistrationController extends Controller
 
     public function storeRegister(Request $request)
     {
-        $user = new User;
-
-        $ssm_valid = Vendor::whereRaw("(UPPER(REGEXP_REPLACE(registration , '[^[:alnum:]]+', ''))) = '" . $this->removeCharacter($request->company_no) . "'")->count();
-        if ($ssm_valid > 0) {
-            return redirect('register')->withInput()->with('error', 'No Syarikat "' . $request->company_no . '" telah didaftarkan.');
-        }
-
-        if (Vendor::hasRegistered($request->company_no)) {
-            return redirect('register')->withInput()->with('error', 'No Syarikat "' . $request->company_no . '" telah didaftarkan.');
-        }
+        $email = trim((string) $request->email);
+        $companyNo = trim((string) $request->company_no);
 
         $validator = Validator::make($request->all(), User::$_rules['changePassword']);
 
         if ($validator->fails()) {
             $error_msg = trans('auth.alerts.wrong_password_reset');
-            return redirect('register')->withErrors($validator)->withInput()->with('error', $error_msg);
-        } else {
 
-            $validation = Validator::make($request->all(), [
-                'email' => 'required|email|unique:users,email',
+            return redirect('register')->withErrors($validator)->withInput()->with('error', $error_msg);
+        }
+
+        $validation = Validator::make(['email' => $email], [
+            'email' => 'required|email',
+        ]);
+
+        if ($validation->fails()) {
+            return redirect('register')->withErrors($validation)->withInput()->with('error', $validation->errors()->first('email'));
+        }
+
+        $existingUser = User::query()
+            ->where('email', $email)
+            ->orWhere('username', $email)
+            ->first();
+        $canResume = $this->unfinishedCompanyRegistration($existingUser);
+
+        if (! $canResume) {
+            $unique = Validator::make(['email' => $email], [
+                'email' => 'unique:users,email',
             ]);
 
-            if ($validation->fails()) {
-                $error_msg = trans('auth.alerts.duplicated_credentials');
-                return redirect('register')->withErrors($validation)->withInput()->with('error', $error_msg);
-            } else {
-                $name                    = explode(' ', $request->name);
-                $user->name              = $request->name;
-                $user->email             = $request->email;
-                $user->username          = $request->email;
-                $user->password          = Hash::make($request->password);
-                $user->password_changed_at = now(); // chosen by the vendor themselves
-                $user->confirmation_code = md5(uniqid(mt_rand(), true));
-
-                if ($user->save()) {
-                    $vendor = new Vendor;
-                    $vendor->registration = $request->company_no;
-                    $vendor->name = $request->company_name;
-                    $vendor->organization_unit_id = config('app.global_cart_ou');
-                    $vendor->officer_name = $request->name;
-                    $vendor->officer_email = $request->email;
-
-                    if ($vendor->save()) {
-                        User::$rules = [];
-                        $user->vendor()->associate($vendor);
-                        $user->save();
-                        $user->roles()->sync([Role::where('name', 'Vendor')->first()->id]);
-
-                        // Send email verification
-                        $to = trim($user->email);
-                        $subject = 'Sahkan Alamat Emel - Sistem Tender Online Selangor';
-                        $send_status = $this->sendMail("html", $to, $subject, "", "auth.emails.confirm", ['emailUser' => $user, 'user_name' => $user->name, 'confirmation_code' => $user->confirmation_code]);
-
-                        if ($send_status === 'Email send to queue' || $send_status === 'Email sent via Laravel mailer') {
-                            $notice = 'Akaun anda telah didaftarkan. Sila semak email untuk pengesahan akaun.';
-                        } else {
-                            Log::error('Registration confirmation email failed', [
-                                'user_id' => $user->id,
-                                'email' => $to,
-                                'reason' => $send_status,
-                            ]);
-                            $notice = 'Akaun anda telah didaftarkan tetapi emel pengesahan gagal dihantar. Sila hubungi pentadbir sistem.';
-                        }
-
-                        return redirect('/')->with('notice', $notice);
-                    }
-
-                    $error = $vendor->errors()->all(':message')[0];
-                } else {
-                    $error = $user->errors()->all(':message')[0];
-                }
+            if ($unique->fails()) {
+                return redirect('register')
+                    ->withErrors($unique)
+                    ->withInput()
+                    ->with('error', trans('auth.alerts.duplicated_credentials'));
             }
         }
 
-        return redirect('register')->withInput($request->except('password'))->with('error', $error);
+        $exceptVendorId = ($canResume && $existingUser->vendor_id) ? (int) $existingUser->vendor_id : null;
+
+        if ($this->companyRegistrationTaken($companyNo, $exceptVendorId)) {
+            return redirect('register')->withInput()->with('error', 'No Syarikat "' . $companyNo . '" telah didaftarkan.');
+        }
+
+        try {
+            $user = DB::transaction(function () use ($request, $existingUser, $canResume, $email, $companyNo) {
+                $user = $canResume ? $existingUser : new User;
+                $user->name = $request->name;
+                $user->email = $email;
+                $user->username = $email;
+                $user->password = Hash::make($request->password);
+                $user->password_changed_at = now();
+                $user->confirmation_code = md5(uniqid((string) mt_rand(), true));
+                $user->confirmed = 0;
+                User::$rules = [];
+                $user->save();
+
+                $vendor = $user->vendor ?: new Vendor;
+                $vendor->registration = $companyNo;
+                $vendor->name = $request->company_name;
+                $vendor->organization_unit_id = config('app.global_cart_ou');
+                $vendor->officer_name = $request->name;
+                $vendor->officer_email = $email;
+                $vendor->officer_designation = $vendor->officer_designation ?: '';
+                $vendor->officer_tel = $vendor->officer_tel ?: '';
+                $vendor->save();
+
+                $user->vendor()->associate($vendor);
+                $user->save();
+
+                $role = Role::where('name', 'Vendor')->first();
+                if (! $role) {
+                    throw new \RuntimeException('Peranan Vendor tidak dijumpai.');
+                }
+                $user->roles()->sync([$role->id]);
+
+                return $user;
+            });
+        } catch (\Throwable $e) {
+            Log::error('Company registration failed', [
+                'email' => $email,
+                'company_no' => $companyNo,
+                'error' => $e->getMessage(),
+            ]);
+
+            return redirect('register')
+                ->withInput($request->except('password'))
+                ->with('error', 'Pendaftaran tidak berjaya. Sila cuba sekali lagi. Jika masalah berterusan, hubungi pentadbir sistem.');
+        }
+
+        $notice = $this->sendRegistrationConfirmation($user);
+
+        return redirect('/')->with('notice', $notice);
     }
 
     public function company()
@@ -410,5 +429,70 @@ class RegistrationController extends Controller
 
             return redirect('register-user')->withInput($request->except('password'))->with('error', $error);
         }
+    }
+
+    /**
+     * A failed first attempt used to keep the user row after the company row
+     * failed, so the next submit only saw "email already used". That unfinished
+     * account can be submitted again. A confirmed account cannot.
+     */
+    private function unfinishedCompanyRegistration(?User $user): bool
+    {
+        if (! $user || (int) $user->confirmed === 1) {
+            return false;
+        }
+
+        $vendor = $user->vendor;
+        if (! $vendor) {
+            return true;
+        }
+
+        return ! $vendor->completed
+            && $vendor->approval_1_id === null
+            && ! $vendor->registration_paid;
+    }
+
+    private function companyRegistrationTaken(string $companyNo, ?int $exceptVendorId = null): bool
+    {
+        $normalized = Vendor::query()->whereRaw(
+            "(UPPER(REGEXP_REPLACE(registration , '[^[:alnum:]]+', ''))) = ?",
+            [$this->removeCharacter($companyNo)]
+        );
+        $exact = Vendor::query()->where('registration', $companyNo);
+
+        if ($exceptVendorId) {
+            $normalized->where('id', '!=', $exceptVendorId);
+            $exact->where('id', '!=', $exceptVendorId);
+        }
+
+        return $normalized->exists() || $exact->exists();
+    }
+
+    private function sendRegistrationConfirmation(User $user): string
+    {
+        $to = trim((string) $user->email);
+        $subject = 'Sahkan Alamat Emel - Sistem Tender Online Selangor';
+
+        try {
+            $sendStatus = $this->sendMail('html', $to, $subject, '', 'auth.emails.confirm', [
+                'emailUser' => $user,
+                'user_name' => $user->name,
+                'confirmation_code' => $user->confirmation_code,
+            ]);
+        } catch (\Throwable $e) {
+            $sendStatus = $e->getMessage();
+        }
+
+        if ($sendStatus === 'Email send to queue' || $sendStatus === 'Email sent via Laravel mailer') {
+            return 'Akaun anda telah didaftarkan. Sila semak email untuk pengesahan akaun.';
+        }
+
+        Log::error('Registration confirmation email failed', [
+            'user_id' => $user->id,
+            'email' => $to,
+            'reason' => $sendStatus,
+        ]);
+
+        return 'Akaun anda telah didaftarkan tetapi emel pengesahan gagal dihantar. Sila hubungi pentadbir sistem.';
     }
 }
