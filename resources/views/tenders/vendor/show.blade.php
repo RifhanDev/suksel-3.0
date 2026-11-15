@@ -1205,12 +1205,8 @@
 													<td>{{ $upload->size }}</td>
 													<td>{{ $upload->type }}</td>
 													<td class="pe-4 text-center">
-														@if (method_exists($upload, 'fileIsAvailable') ? $upload->fileIsAvailable() : true)
-															<a href="{{ route('tenders.files', [$tender->id, $upload->id]) }}" class="btn btn-sm btn-primary rounded-8 px-3"
-																download>Muat Turun</a>
-														@else
-															<span class="text-muted small">Fail tiada di NAS</span>
-														@endif
+														<a href="{{ route('tenders.files', [$tender->id, $upload->id]) }}" class="btn btn-sm btn-primary rounded-8 px-3"
+															download>Muat Turun</a>
 													</td>
 												</tr>
 											@endforeach

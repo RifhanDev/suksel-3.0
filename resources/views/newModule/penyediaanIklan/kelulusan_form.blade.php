@@ -88,13 +88,12 @@
                             <div class="file-info-display" @if(!$dokumen) style="display:none;" @endif>
                                 @php
                                     $docName = $dokumen['original_name'] ?? basename((string) ($dokumen['path'] ?? '')) ?: 'Dokumen';
-                                    $docAvailable = ! empty($dokumen['available']) || (! empty($dokumen['url']) && ($dokumen['url'] ?? '#') !== '#');
+                                    $docUrl = (string) ($dokumen['url'] ?? '');
                                 @endphp
-                                @if ($docAvailable)
-                                    <a class="file-name-text" href="{{ $dokumen['url'] }}" target="_blank" title="{{ $docName }}">{{ $docName }}</a>
+                                @if ($docUrl !== '' && $docUrl !== '#')
+                                    <a class="file-name-text" href="{{ $docUrl }}" target="_blank" title="{{ $docName }}">{{ $docName }}</a>
                                 @else
-                                    <span class="file-name-text text-muted" title="Fail tidak dijumpai di pelayan storan">{{ $docName }}</span>
-                                    <small class="d-block text-danger" style="font-size:10px;line-height:1.2;">Fail tiada di NAS</small>
+                                    <span class="file-name-text" title="{{ $docName }}">{{ $docName }}</span>
                                 @endif
                                 <button type="button" class="btn-remove-file" title="Buang fail">&times;</button>
                             </div>
