@@ -11,6 +11,7 @@ use App\Services\TenderIklanDokumenService;
 use App\Support\PenyediaanIklanAccess;
 use App\Support\TenderProcessStatus;
 use App\Support\TenderDokumenPresenter;
+use App\Support\TenderListingFilters;
 use App\Support\TenderReviewPresenter;
 use App\Tender;
 use App\User;
@@ -38,7 +39,7 @@ class PenyediaanIklanController extends Controller
         });
     }
 
-    public function index()
+    public function index(Request $request)
     {
         $query = Tender::query()
             ->where('status_process_id', TenderProcessStatus::penyediaanIklanListStatus())
@@ -46,6 +47,16 @@ class PenyediaanIklanController extends Controller
             ->orderByDesc('id');
 
         PenyediaanIklanAccess::scopeVisible($query, auth()->user());
+
+        TenderListingFilters::apply($query, $request);
+
+        if ($request->filled('status')) {
+            if ($request->input('status') === 'penyediaan_iklan') {
+                $query->where('tenders.status_process_id', TenderProcessStatus::penyediaanIklanListStatus());
+            } else {
+                $query->whereRaw('1 = 0');
+            }
+        }
 
         $tenders = $query
             ->get()
@@ -427,7 +438,8 @@ class PenyediaanIklanController extends Controller
     protected function storeKelulusanUpload(UploadedFile $file, int $tenderId): array
     {
         $dir = public_path("uploads/penyediaan-iklan/{$tenderId}/kelulusan");
-        if (! is_dir($dir)) {
+        // Local disk only — remote/SFTP writes via AttachmentStorage and must not mkdir here.
+        if (! \App\Support\AttachmentStorage::isRemote() && ! is_dir($dir)) {
             mkdir($dir, 0755, true);
         }
 
@@ -497,7 +509,8 @@ class PenyediaanIklanController extends Controller
     protected function storeMejaTerkawalFile(UploadedFile $file, int $tenderId): array
     {
         $dir = public_path("uploads/penyediaan-iklan/{$tenderId}/sokongan");
-        if (! is_dir($dir)) {
+        // Local disk only — remote/SFTP writes via AttachmentStorage and must not mkdir here.
+        if (! \App\Support\AttachmentStorage::isRemote() && ! is_dir($dir)) {
             mkdir($dir, 0755, true);
         }
 

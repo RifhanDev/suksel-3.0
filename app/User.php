@@ -315,31 +315,37 @@ class User extends Authenticatable
 
 	/**
 	 * ACL
+	 *
+	 * Agency Admin may manage users in the same agency (list/create/edit/
+	 * activity/password/activate-deactivate/approve). Login-as stays Admin-only.
 	 */
 
 	public static function canList()
 	{
-		return (auth()->user() && auth()->user()->ability(['Admin'], ['User:list']));
+		return auth()->check()
+			&& auth()->user()->ability(['Admin', 'Agency Admin'], ['User:list']);
 	}
 
 	public static function canCreate()
 	{
-		return (auth()->user() && auth()->user()->ability(['Admin'], ['User:create']));
+		return auth()->check()
+			&& auth()->user()->ability(['Admin', 'Agency Admin'], ['User:create']);
 	}
 
 	public function canShow()
 	{
-		return (auth()->user() && auth()->user()->ability(['Admin'], ['User:show']));
+		return $this->authCanManageUser(['Admin', 'Agency Admin'], ['User:show']);
 	}
 
 	public function canUpdate()
 	{
-		return (auth()->user() && auth()->user()->ability(['Admin'], ['User:edit']));
+		return $this->authCanManageUser(['Admin', 'Agency Admin'], ['User:edit']);
 	}
 
 	public function canApprove()
 	{
-		return (auth()->user() && auth()->user()->ability(['Admin'], ['User:approve']));
+		return auth()->check()
+			&& auth()->user()->ability(['Admin', 'Agency Admin'], ['User:approve']);
 	}
 
 	public function isPendingAgencyApproval(): bool
@@ -375,17 +381,37 @@ class User extends Authenticatable
 
 	public function canSetPassword()
 	{
-		return (auth()->user() && auth()->user()->ability(['Admin'], ['User:set_password']));
+		return $this->authCanManageUser(['Admin', 'Agency Admin'], ['User:set_password']);
 	}
 
 	public function canSetConfirmation()
 	{
-		return (auth()->user() && auth()->user()->ability(['Admin'], ['User:set_confirmation']));
+		return $this->authCanManageUser(['Admin', 'Agency Admin'], ['User:set_confirmation']);
 	}
 
 	public function canLogin()
 	{
-		return (auth()->user() && auth()->user()->ability(['Admin'], ['User:login']));
+		return auth()->check()
+			&& auth()->user()->ability(['Admin'], ['User:login']);
+	}
+
+	/**
+	 * Admin: any user. Agency Admin: same organization_unit only.
+	 *
+	 * @param  array<int, string>  $roles
+	 * @param  array<int, string>  $permissions
+	 */
+	protected function authCanManageUser(array $roles, array $permissions): bool
+	{
+		if (! auth()->check() || ! auth()->user()->ability($roles, $permissions)) {
+			return false;
+		}
+
+		if (auth()->user()->hasRole('Admin')) {
+			return true;
+		}
+
+		return (int) auth()->user()->organization_unit_id === (int) $this->organization_unit_id;
 	}
 
 	public function vendor()

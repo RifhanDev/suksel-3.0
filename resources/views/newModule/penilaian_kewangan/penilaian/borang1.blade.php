@@ -427,7 +427,7 @@
                 <table class="table table-modern-b1 align-middle" id="section2VendorTable">
                     <thead>
                         <tr>
-                            <th style="width: 80px;" class="text-center">Bil</th>
+                            <th style="width: 120px;" class="text-center">Kod Pembekal</th>
                             <th style="width: 260px;">Maklumat Petender</th>
                             <th style="width: 200px;" class="text-center">Keputusan Semakan</th>
                             <th>Sebab / Catatan Semakan</th>
@@ -436,10 +436,9 @@
                     <tbody>
                         @foreach($vendorSummary as $vId => $vSum)
                             <tr data-vendor-id="{{ $vId }}">
-                                <td class="text-center fw-bold text-muted">{{ $loop->iteration }}/{{ count($vendorSummary) }}</td>
+                                <td class="text-center fw-bold text-muted font-monospace">{{ $vSum['kod_pembekal'] ?: '—' }}</td>
                                 <td>
                                     <div class="fw-bold text-dark mb-0.5">{{ $vSum['vendor_name'] }}</div>
-                                    <div class="font-monospace extra-small text-muted">{{ $vSum['kod_pembekal'] }}</div>
                                 </td>
                                 <td class="text-center">
                                     @if($vSum['final_status'] === 'Sempurna')
@@ -542,7 +541,7 @@
                     <table class="table align-middle mb-0" id="modalVendorTable" style="font-size: 0.85rem;">
                         <thead style="--bs-table-bg: #d7d7d9; --bs-table-color: #3f3f3f;">
                             <tr>
-                                <th class="text-center text-uppercase fw-bold py-2" style="width: 80px; font-size: 0.7rem; letter-spacing: 0.05em; background-color: #d7d7d9 !important; color: #3f3f3f !important;">Bil</th>
+                                <th class="text-center text-uppercase fw-bold py-2" style="width: 120px; font-size: 0.7rem; letter-spacing: 0.05em; background-color: #d7d7d9 !important; color: #3f3f3f !important;">Kod Pembekal</th>
                                 <th class="text-uppercase fw-bold py-2" style="font-size: 0.7rem; letter-spacing: 0.05em; background-color: #d7d7d9 !important; color: #3f3f3f !important;">Maklumat Dokumen / Syarikat</th>
                                 <th class="text-center text-uppercase fw-bold py-2" style="width: 220px; font-size: 0.7rem; letter-spacing: 0.05em; background-color: #d7d7d9 !important; color: #3f3f3f !important;">Status Kesempurnaan</th>
                                 <th class="text-uppercase fw-bold py-2" style="width: 280px; font-size: 0.7rem; letter-spacing: 0.05em; background-color: #d7d7d9 !important; color: #3f3f3f !important;">Catatan</th>
@@ -556,7 +555,7 @@
                                     $kData = $vSum['kriteria_data'] ?? [];
                                 @endphp
                                 <tr data-vendor-id="{{ $vId }}">
-                                    <td class="text-center fw-bold text-muted" style="background-color: #efeff0ff; color: #3f3f3fff;">{{ $idx + 1 }}/{{ count($participants) }}</td>
+                                    <td class="text-center fw-bold text-muted font-monospace" style="background-color: #efeff0ff; color: #3f3f3fff;">{{ $p->kod_pembekal ?: '—' }}</td>
                                     <td>
                                         <div class="d-flex align-items-center gap-3 py-1">
                                             <div class="bg-danger bg-opacity-10 text-danger p-2.5 rounded-3 d-inline-flex align-items-center justify-content-center flex-shrink-0" style="width:40px; height:40px;">
@@ -564,7 +563,6 @@
                                             </div>
                                             <div>
                                                 <div class="fw-bold text-dark mb-0.5" style="font-size: 0.88rem;">{{ $p->vendor->name ?? $p->vendor->company_name ?? ('Syarikat Petender ' . $vId) }}</div>
-                                                <span class="font-monospace text-muted small" style="font-size: 0.78rem;">{{ $p->kod_pembekal ?: ('V' . str_pad($p->id, 3, '0', STR_PAD_LEFT)) }}</span>
                                             </div>
                                         </div>
                                     </td>
@@ -802,7 +800,7 @@
                 const theadTr = document.querySelector('#modalVendorTable thead tr');
                 if (theadTr) {
                     let headerHtml = `
-                        <th class="text-center text-uppercase fw-bold py-2" style="width: 70px; font-size: 0.7rem; letter-spacing: 0.05em; background-color: #d7d7d9 !important; color: #3f3f3f !important;">Bil</th>
+                        <th class="text-center text-uppercase fw-bold py-2" style="width: 120px; font-size: 0.7rem; letter-spacing: 0.05em; background-color: #d7d7d9 !important; color: #3f3f3f !important;">Kod Pembekal</th>
                         <th class="text-uppercase fw-bold py-2" style="font-size: 0.7rem; letter-spacing: 0.05em; background-color: #d7d7d9 !important; color: #3f3f3f !important;">Maklumat Dokumen / Syarikat</th>
                     `;
 
@@ -838,7 +836,7 @@
                     const extra = vSum.extra_kriteria || {};
                     const item = kData[currentKriteriaId] || kData[String(currentKriteriaId)] || {};
 
-                    // Remove columns after Bil (0) and Syarikat (1)
+                    // Keep the tender-specific supplier code and vendor information columns.
                     while (tr.children.length > 2) {
                         tr.removeChild(tr.lastChild);
                     }

@@ -360,7 +360,7 @@
                         <thead>
                             <tr>
                                 <th rowspan="3" style="width: 100px;">
-                                    Ruj. Petender<br><span class="formula-tag">(a)</span>
+                                    Kod Pembekal<br><span class="formula-tag">(a)</span>
                                 </th>
                                 <th colspan="8" class="subhead-main">
                                     ANALISA KECUKUPAN MODAL
@@ -422,17 +422,14 @@
                                 @php
                                     $vId = $p->vendor_id;
                                     $vData = $b3DataMap[$vId] ?? [];
-                                    $ruj = $p->kod_pembekal ?: ($loop->iteration . '/' . count($participants));
+                                    $ruj = $p->kod_pembekal ?: '—';
                                     $mudahCair = $vData['mudah_cair_m'] ?? 0;
                                     $ca1Kredit = $vData['ca1_kredit_j'] ?? 0;
                                 @endphp
                                 <tr>
                                     {{-- (a) Ruj. Petender --}}
                                     <td class="text-center font-monospace" style="background-color: #efeff0ff;">
-                                        <div class="fw-bold text-dark">{{ $loop->iteration }}/{{ count($participants) }}</div>
-                                        @if(!empty($p->kod_pembekal))
-                                            <div class="text-muted extra-small font-monospace">({{ $p->kod_pembekal }})</div>
-                                        @endif
+                                        <div class="fw-bold text-dark">{{ $ruj }}</div>
                                     </td>
 
                                     {{-- (b) Aset Semasa --}}
@@ -553,7 +550,7 @@
                                 </th>
                             </tr>
                             <tr>
-                                <th class="subhead-main" style="width: 100px;">Ruj. Petender</th>
+                                <th class="subhead-main" style="width: 130px;">Kod Pembekal</th>
                                 <th class="subhead-level2">Aset Tetap</th>
                                 <th class="subhead-level2">Aset Semasa</th>
                                 <th class="subhead-level2">Liabiliti Semasa</th>
@@ -571,14 +568,11 @@
                                 @php
                                     $vId = $p->vendor_id;
                                     $vData = $b3DataMap[$vId] ?? [];
-                                    $ruj = $p->kod_pembekal ?: ($loop->iteration . '/' . count($participants));
+                                    $ruj = $p->kod_pembekal ?: '—';
                                 @endphp
                                 <tr>
                                     <td class="text-center font-monospace" style="background-color: #efeff0ff;">
-                                        <div class="fw-bold text-dark">{{ $loop->iteration }}/{{ count($participants) }}</div>
-                                        @if(!empty($p->kod_pembekal))
-                                            <div class="text-muted extra-small font-monospace">({{ $p->kod_pembekal }})</div>
-                                        @endif
+                                        <div class="fw-bold text-dark">{{ $ruj }}</div>
                                     </td>
                                     <td class="text-end font-monospace">{{ number_format($vData['aset_tetap'] ?? 0, 2) }}</td>
                                     <td class="text-end font-monospace">{{ number_format($vData['aset_semasa'] ?? 0, 2) }}</td>
@@ -626,7 +620,7 @@
                                 <th colspan="11">MAKLUMAT BAKI AKAUN BANK BAGI 3 BULAN LEPAS</th>
                             </tr>
                             <tr>
-                                <th class="subhead-main" style="width: 100px;">Ruj.<br>Petender</th>
+                                <th class="subhead-main" style="width: 130px;">Kod Pembekal</th>
                                 <th class="subhead-level2" style="width: 90px;">Bulan</th>
 
                                 <th class="subhead-level2">Akaun 1</th>
@@ -655,17 +649,14 @@
                                 @php
                                     $vId = $p->vendor_id;
                                     $vData = $b3DataMap[$vId] ?? [];
-                                    $ruj = $p->kod_pembekal ?: ($loop->iteration . '/' . count($participants));
+                                    $ruj = $p->kod_pembekal ?: '—';
                                     $pbAccs = $vData['pb_accounts'] ?? [];
                                     $totalAccs = count($pbAccs);
                                     $pbGrandTotal = $vData['pb_grand_total'] ?? 0;
                                 @endphp
                                 <tr>
                                     <td class="text-center font-monospace" style="background-color: #efeff0ff;">
-                                        <div class="fw-bold text-dark">{{ $loop->iteration }}/{{ count($participants) }}</div>
-                                        @if(!empty($p->kod_pembekal))
-                                            <div class="text-muted extra-small font-monospace">({{ $p->kod_pembekal }})</div>
-                                        @endif
+                                        <div class="fw-bold text-dark">{{ $ruj }}</div>
                                         @if($totalAccs > 4)
                                             <div class="mt-1">
                                                 <button type="button" class="btn btn-xs btn-outline-danger px-2 py-0.5 rounded-pill fw-semibold" style="font-size: 0.68rem;" onclick="openAllAkaunBankModal({{ $vId }})">
@@ -756,7 +747,7 @@
                                 <th colspan="10">MAKLUMAT BON & SAHAM</th>
                             </tr>
                             <tr>
-                                <th class="subhead-main" style="width: 100px;">Ruj. Petender</th>
+                                <th class="subhead-main" style="width: 130px;">Kod Pembekal</th>
 
                                 <th class="subhead-level2">Akaun 1</th>
                                 <th class="subhead-level2">Bank</th>
@@ -783,17 +774,14 @@
                                 @php
                                     $vId = $p->vendor_id;
                                     $vData = $b3DataMap[$vId] ?? [];
-                                    $ruj = $p->kod_pembekal ?: ($loop->iteration . '/' . count($participants));
+                                    $ruj = $p->kod_pembekal ?: '—';
                                     $bsAccs = $vData['bs_accounts'] ?? [];
                                     $totalBs = count($bsAccs);
                                     $bsGrandTotal = $vData['bs_grand_total'] ?? 0;
                                 @endphp
                                 <tr>
                                     <td class="text-center font-monospace" style="background-color: #efeff0ff;">
-                                        <div class="fw-bold text-dark">{{ $loop->iteration }}/{{ count($participants) }}</div>
-                                        @if(!empty($p->kod_pembekal))
-                                            <div class="text-muted extra-small font-monospace">({{ $p->kod_pembekal }})</div>
-                                        @endif
+                                        <div class="fw-bold text-dark">{{ $ruj }}</div>
                                         @if($totalBs > 4)
                                             <div class="mt-1">
                                                 <button type="button" class="btn btn-xs btn-outline-danger px-2 py-0.5 rounded-pill fw-semibold" style="font-size: 0.68rem;" onclick="openAllBonSahamModal({{ $vId }})">
@@ -1091,7 +1079,7 @@
 
         const title = document.getElementById('allAkaunBankModalTitle');
         if (title) {
-            title.innerHTML = `<i class="bi bi-bank me-2 text-primary"></i>Kesemua Akaun Bank - Ruj: ${vData.kod_pembekal} (${vData.vendor_name})`;
+            title.innerHTML = `<i class="bi bi-bank me-2 text-primary"></i>Kesemua Akaun Bank - Ruj: ${vData.kod_pembekal || '—'} (${vData.vendor_name})`;
         }
 
         const m1 = document.getElementById('mLabel1');
@@ -1152,7 +1140,7 @@
 
         const title = document.getElementById('allBonSahamModalTitle');
         if (title) {
-            title.innerHTML = `<i class="bi bi-cash-coin me-2 text-primary"></i>Kesemua Rekod Bon & Saham - Ruj: ${vData.kod_pembekal} (${vData.vendor_name})`;
+            title.innerHTML = `<i class="bi bi-cash-coin me-2 text-primary"></i>Kesemua Rekod Bon & Saham - Ruj: ${vData.kod_pembekal || '—'} (${vData.vendor_name})`;
         }
 
         const tbody = document.getElementById('allBonSahamTableBody');

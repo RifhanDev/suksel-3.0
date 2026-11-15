@@ -72,9 +72,12 @@ class StosBackendClient
         return $this->request('put', $path, ['json' => $payload]);
     }
 
-    public function createTender(array $payload): Response
+    public function createTender(array $payload, string $idempotencyKey): Response
     {
-        return $this->post('/api/tenders', $payload);
+        return $this->request('post', '/api/tenders', [
+            'json' => $payload,
+            'headers' => ['Idempotency-Key' => $idempotencyKey],
+        ]);
     }
 
     public function updateTender(int $tenderId, array $payload): Response
@@ -512,6 +515,11 @@ class StosBackendClient
         return $this->get('/api/surat-niat/' . $tenderId . '/surat');
     }
 
+    public function getSuratNiatAccessInfo(int $suratId): Response
+    {
+        return $this->get('/api/surat-niat/surat/' . $suratId . '/access');
+    }
+
     public function generateSuratNiat(int $tenderId, array $payload): Response
     {
         return $this->post('/api/surat-niat/' . $tenderId . '/surat', $payload);
@@ -674,6 +682,10 @@ class StosBackendClient
         $url = $this->baseUrl . '/' . ltrim($path, '/');
 
         $client = self::http();
+
+        if (! empty($options['headers'])) {
+            $client = $client->withHeaders($options['headers']);
+        }
 
         if ($this->timeoutSeconds !== null) {
             $client = $client->timeout($this->timeoutSeconds)->connectTimeout(min(3, $this->timeoutSeconds));

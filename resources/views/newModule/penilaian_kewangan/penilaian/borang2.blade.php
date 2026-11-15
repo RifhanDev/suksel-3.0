@@ -424,7 +424,7 @@
                 <table class="table table-modern-b2 align-middle">
                     <thead>
                         <tr>
-                            <th style="width: 80px;" class="text-center">Bil</th>
+                            <th style="width: 120px;" class="text-center">Kod Pembekal</th>
                             <th style="width: 260px;">Maklumat Petender</th>
                             <th style="width: 200px;" class="text-center">Keputusan Semakan</th>
                             <th>Ulasan / Catatan Kecukupan</th>
@@ -433,10 +433,9 @@
                     <tbody>
                         @foreach($b2VendorSummary as $vId => $vSum)
                             <tr id="b2VendorRow_{{ $vId }}">
-                                <td class="text-center fw-bold text-muted">{{ $loop->iteration }}/{{ count($b2VendorSummary) }}</td>
+                                <td class="text-center fw-bold text-muted font-monospace">{{ $vSum['kod_pembekal'] ?: '—' }}</td>
                                 <td>
                                     <div class="fw-bold text-dark mb-0.5">{{ $vSum['vendor_name'] }}</div>
-                                    <div class="font-monospace extra-small text-muted">{{ $vSum['kod_pembekal'] }}</div>
                                 </td>
                                 <td class="text-center b2-vendor-status-col">
                                     @if($vSum['is_cukup'])
@@ -542,7 +541,7 @@
                         <table class="table align-middle mb-0" id="modalVendorTableB2" style="font-size: 0.85rem;">
                             <thead style="--bs-table-bg: #d7d7d9; --bs-table-color: #3f3f3f;">
                                 <tr>
-                                    <th class="text-center text-uppercase fw-bold py-2" style="width: 80px; font-size: 0.7rem; letter-spacing: 0.05em; background-color: #d7d7d9 !important; color: #3f3f3f !important;">Bil</th>
+                                    <th class="text-center text-uppercase fw-bold py-2" style="width: 120px; font-size: 0.7rem; letter-spacing: 0.05em; background-color: #d7d7d9 !important; color: #3f3f3f !important;">Kod Pembekal</th>
                                     <th class="text-uppercase fw-bold py-2" style="font-size: 0.7rem; letter-spacing: 0.05em; background-color: #d7d7d9 !important; color: #3f3f3f !important;">Dokumen / Syarikat Petender</th>
                                     <th class="text-center text-uppercase fw-bold py-2" style="width: 190px; font-size: 0.7rem; letter-spacing: 0.05em; background-color: #d7d7d9 !important; color: #3f3f3f !important;">Dikemukakan</th>
                                     <th id="thDiaudit" class="text-center text-uppercase fw-bold py-2" style="width: 190px; font-size: 0.7rem; letter-spacing: 0.05em; background-color: #d7d7d9 !important; color: #3f3f3f !important;">Diaudit</th>
@@ -557,7 +556,7 @@
                                         $docsData = $vSum['docs_data'] ?? [];
                                     @endphp
                                     <tr data-vendor-id="{{ $vId }}">
-                                        <td class="text-center fw-bold text-muted" style="background-color: #efeff0ff; color: #3f3f3fff;">{{ $idx + 1 }}/{{ count($participants) }}</td>
+                                        <td class="text-center fw-bold text-muted font-monospace" style="background-color: #efeff0ff; color: #3f3f3fff;">{{ $p->kod_pembekal ?: '—' }}</td>
                                         <td>
                                             <div class="d-flex align-items-center gap-3 py-1">
                                                 <div class="bg-danger bg-opacity-10 text-danger p-2.5 rounded-3 d-inline-flex align-items-center justify-content-center flex-shrink-0" style="width:40px; height:40px;">

@@ -9,14 +9,26 @@ use App\Exports\UserActive;
 use App\User;
 use App\OrganizationUnit;
 
+use App\Http\Controllers\Concerns\AuthorizesReportAccess;
+
 class ReportUserActiveController extends Controller
 {
+	use AuthorizesReportAccess;
+
 	public function index() {
+		if ($denied = $this->denyUnlessReport('Report:view:user_agency', 'Report:view:user_agency:organization_unit_id', 'Report:view:user_active:organization_unit_id')) {
+			return $denied;
+		}
+
       $select_agencies = ['all' => 'Semua'] + OrganizationUnit::orderBy('name', 'asc')->pluck('name', 'id')->toArray();
       return view('reports.user.active.index', compact('select_agencies'));
    }
 
    public function view(Request $request) {
+		if ($denied = $this->denyUnlessReport('Report:view:user_agency', 'Report:view:user_agency:organization_unit_id', 'Report:view:user_active:organization_unit_id')) {
+			return $denied;
+		}
+
 
         	$inputAgency   = $request->input('agency', []);
         	$agencyOpts = array_merge(['all'] + OrganizationUnit::pluck('id')->toArray());
@@ -51,6 +63,10 @@ class ReportUserActiveController extends Controller
    }
 
    public function excel(Request $request) {
+		if ($denied = $this->denyUnlessReport('Report:view:user_agency', 'Report:view:user_agency:organization_unit_id', 'Report:view:user_active:organization_unit_id')) {
+			return $denied;
+		}
+
 
 		$agency = auth()->user()->hasRole('Admin') ? $request->input('agency', null) : auth()->user()->organization_unit_id;
 		

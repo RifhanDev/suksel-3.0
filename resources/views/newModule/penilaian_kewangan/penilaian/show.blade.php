@@ -335,10 +335,13 @@
         echo '          <i class="bi ' . ($unlocked ? $iconClass : ($isKerjaKecilPlaceholder ? 'bi-clock-history' : 'bi-lock-fill')) . '"></i>';
         echo '        </div>';
 
-        if ($completed) {
-            echo '        <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2 py-1"><i class="bi bi-check-circle-fill me-1"></i>SELESAI</span>';
-        } elseif ($unlocked) {
-            echo '        <span class="borang-badge bg-danger bg-opacity-10 text-danger">' . e($badgeLabel) . '</span>';
+        if ($unlocked) {
+            echo '        <div class="d-flex align-items-center gap-2">';
+            echo '          <span class="borang-badge bg-danger bg-opacity-10 text-danger">' . e($badgeLabel) . '</span>';
+            if ($completed) {
+                echo '          <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2 py-1"><i class="bi bi-check-circle-fill me-1"></i>SELESAI</span>';
+            }
+            echo '        </div>';
         } elseif ($isKerjaKecilPlaceholder) {
             echo '        <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 px-2 py-1"><i class="bi bi-tools me-1"></i>FASA HADAPAN</span>';
         } else {

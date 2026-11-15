@@ -122,8 +122,7 @@
             <table class="table table-hover align-middle mb-0 w-100 report-table">
                 <thead>
                     <tr>
-                        <th class="py-2.5 px-3 text-center text-uppercase text-white fw-bold" style="width: 6%; font-size: 0.72rem; letter-spacing: 0.5px; background-color: #1e293b !important;">BIL</th>
-                        <th class="py-2.5 px-3 text-center text-uppercase text-white fw-bold" style="width: 12%; font-size: 0.72rem; letter-spacing: 0.5px; background-color: #1e293b !important;">KOD</th>
+                        <th class="py-2.5 px-3 text-center text-uppercase text-white fw-bold" style="width: 12%; font-size: 0.72rem; letter-spacing: 0.5px; background-color: #1e293b !important;">KOD PEMBEKAL</th>
                         <th class="py-2.5 px-3 text-start text-uppercase text-white fw-bold" style="width: 32%; font-size: 0.72rem; letter-spacing: 0.5px; background-color: #1e293b !important;">NAMA PETENDER</th>
                         <th class="py-2.5 px-3 text-center text-uppercase text-white fw-bold" style="width: 18%; font-size: 0.72rem; letter-spacing: 0.5px; background-color: #1e293b !important;">STATUS DOKUMEN</th>
                         <th class="py-2.5 px-3 text-center text-uppercase text-white fw-bold" style="width: 16%; font-size: 0.72rem; letter-spacing: 0.5px; background-color: #1e293b !important;">KEPUTUSAN SARINGAN</th>
@@ -153,8 +152,7 @@
             <table class="table table-hover align-middle mb-0 w-100 report-table">
                 <thead>
                     <tr>
-                        <th class="py-2.5 px-3 text-center text-uppercase text-white fw-bold" style="width: 6%; font-size: 0.72rem; letter-spacing: 0.5px; background-color: #1e293b !important;">BIL</th>
-                        <th class="py-2.5 px-3 text-center text-uppercase text-white fw-bold" style="width: 12%; font-size: 0.72rem; letter-spacing: 0.5px; background-color: #1e293b !important;">KOD</th>
+                        <th class="py-2.5 px-3 text-center text-uppercase text-white fw-bold" style="width: 12%; font-size: 0.72rem; letter-spacing: 0.5px; background-color: #1e293b !important;">KOD PEMBEKAL</th>
                         <th class="py-2.5 px-3 text-start text-uppercase text-white fw-bold" style="width: 28%; font-size: 0.72rem; letter-spacing: 0.5px; background-color: #1e293b !important;">NAMA PETENDER</th>
                         <th class="py-2.5 px-3 text-end text-uppercase text-white fw-bold" style="width: 14%; font-size: 0.72rem; letter-spacing: 0.5px; background-color: #1e293b !important;">MODAL PUSINGAN (RM)</th>
                         <th class="py-2.5 px-3 text-end text-uppercase text-white fw-bold" style="width: 14%; font-size: 0.72rem; letter-spacing: 0.5px; background-color: #1e293b !important;">PURATA BANK (RM)</th>
@@ -185,8 +183,7 @@
             <table class="table table-hover align-middle mb-0 w-100 report-table">
                 <thead>
                     <tr>
-                        <th class="py-2.5 px-3 text-center text-uppercase text-white fw-bold" style="width: 6%; font-size: 0.72rem; letter-spacing: 0.5px; background-color: #1e293b !important;">BIL</th>
-                        <th class="py-2.5 px-3 text-center text-uppercase text-white fw-bold" style="width: 12%; font-size: 0.72rem; letter-spacing: 0.5px; background-color: #1e293b !important;">KOD</th>
+                        <th class="py-2.5 px-3 text-center text-uppercase text-white fw-bold" style="width: 12%; font-size: 0.72rem; letter-spacing: 0.5px; background-color: #1e293b !important;">KOD PEMBEKAL</th>
                         <th class="py-2.5 px-3 text-start text-uppercase text-white fw-bold" style="width: 28%; font-size: 0.72rem; letter-spacing: 0.5px; background-color: #1e293b !important;">NAMA PETENDER</th>
                         <th class="py-2.5 px-3 text-end text-uppercase text-white fw-bold" style="width: 14%; font-size: 0.72rem; letter-spacing: 0.5px; background-color: #1e293b !important;">BAKI KERJA (RM)</th>
                         <th class="py-2.5 px-3 text-center text-uppercase text-white fw-bold" style="width: 12%; font-size: 0.72rem; letter-spacing: 0.5px; background-color: #1e293b !important;">KAKITANGAN</th>
@@ -220,7 +217,7 @@
                     <thead class="table-light">
                         <tr>
                             <th class="py-3 px-3 text-center fw-bold text-dark text-uppercase" style="width: 8%; font-size: 0.75rem;">KEDUDUKAN</th>
-                            <th class="py-3 px-3 text-center fw-bold text-dark text-uppercase" style="width: 12%; font-size: 0.75rem;">KOD</th>
+                            <th class="py-3 px-3 text-center fw-bold text-dark text-uppercase" style="width: 12%; font-size: 0.75rem;">KOD PEMBEKAL</th>
                             <th class="py-3 px-3 text-start fw-bold text-dark text-uppercase" style="width: 28%; font-size: 0.75rem;">NAMA PETENDER & CIDB</th>
                             <th class="py-3 px-3 text-end fw-bold text-dark text-uppercase" style="width: 16%; font-size: 0.75rem;">HARGA TAWARAN (RM)</th>
                             <th class="py-3 px-3 text-center fw-bold text-dark text-uppercase" style="width: 14%; font-size: 0.75rem;">TEMPOH SIAP</th>
@@ -275,26 +272,43 @@
                         <p class="text-secondary small mb-0">Sahkan semakan sebelum menghantar laporan.</p>
                     </div>
                 </div>
-                <div class="p-3 rounded-3 bg-light border mb-3">
+                <div class="border rounded-3 p-2 mb-2">
+                    <h6 class="small text-uppercase text-secondary fw-bold mb-2">
+                        <i class="bi bi-clipboard2-check me-2"></i>Ringkasan Penilaian
+                    </h6>
+                    <div class="row g-1">
+                        <div class="col-6">
+                            <div class="rounded-3 bg-light p-2 h-100">
+                                <span class="d-block small text-secondary">Jumlah Petender</span>
+                                <span id="step4SummaryTotalVendors" class="d-block fs-5 fw-bold text-dark">-</span>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="rounded-3 bg-success bg-opacity-10 p-2 h-100">
+                                <span class="d-block small text-secondary">Layak Semua Peringkat</span>
+                                <span id="step4SummaryQualifiedVendors" class="d-block fs-5 fw-bold text-success">-</span>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="rounded-3 bg-danger bg-opacity-10 p-2 h-100">
+                                <span class="d-block small text-secondary">Tidak Layak</span>
+                                <span id="step4SummaryDisqualifiedVendors" class="d-block fs-5 fw-bold text-danger">-</span>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="rounded-3 bg-warning bg-opacity-10 p-2 h-100">
+                                <span class="d-block small text-secondary">Belum Selesai</span>
+                                <span id="step4SummaryPendingVendors" class="d-block fs-5 fw-bold text-dark">-</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-3 rounded-3 bg-light border">
                     <div class="form-check">
                         <input class="form-check-input" type="checkbox" id="perakuanPegawaiPenilai" name="perakuan_pegawai_penilai" {{ $type2ReadOnly ? 'disabled' : '' }}>
                         <label class="form-check-label extra-small fw-semibold text-dark" for="perakuanPegawaiPenilai" style="line-height: 1.4;">
                             Saya dengan ini memperakui bahawa penilaian ini telah dilaksanakan secara bebas, telus dan saksama mengikut Arahan Perbendaharaan dan Pekeliling Perolehan Kerajaan Negeri Selangor yang berkuatkuasa.
                         </label>
-                    </div>
-                </div>
-                <div class="small">
-                    <div class="d-flex justify-content-between py-1 border-bottom">
-                        <span class="text-muted">Pegawai Penilai:</span>
-                        <span class="fw-semibold text-dark">AHMAD HAZMI BIN ISMAIL</span>
-                    </div>
-                    <div class="d-flex justify-content-between py-1 border-bottom">
-                        <span class="text-muted">Jawatan:</span>
-                        <span class="fw-semibold text-dark">Pegawai Kewangan W41</span>
-                    </div>
-                    <div class="d-flex justify-content-between py-1">
-                        <span class="text-muted">Tarikh Penilaian:</span>
-                        <span class="fw-semibold font-monospace text-dark">{{ date('d/m/Y') }}</span>
                     </div>
                 </div>
             </div>

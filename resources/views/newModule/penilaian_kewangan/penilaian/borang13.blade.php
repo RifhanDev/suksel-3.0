@@ -151,43 +151,7 @@
         : (str_contains(url()->previous(), '/penilaian-kewangan') ? url()->previous() : route('penilaianKewangan'));
     $readOnly = $readOnly ?? false;
 
-    // Build or fallback vendor summary for Borang 13
-    $b13List = $b13VendorSummary ?? [
-        1 => [
-            'vendor_id'       => 1,
-            'kod_pembekal'    => 'V001',
-            'vendor_name'     => 'Syarikat Bina Jaya Sdn Bhd',
-            'harga_asal'      => 'RM 1,250,000.00',
-            'baki_kerja'      => 'RM 0.00',
-            'markah_b12'      => '73.50',
-            'frpk'            => '1.00',
-            'markah_terlaras' => '73.50',
-            'is_evaluated'    => true,
-        ],
-        2 => [
-            'vendor_id'       => 2,
-            'kod_pembekal'    => 'V002',
-            'vendor_name'     => 'Pembinaan Utama Sdn Bhd',
-            'harga_asal'      => 'RM 1,400,000.00',
-            'baki_kerja'      => 'RM 450,000.00',
-            'markah_b12'      => '80.00',
-            'frpk'            => '1.00',
-            'markah_terlaras' => '80.00',
-            'is_evaluated'    => true,
-        ],
-        3 => [
-            'vendor_id'       => 3,
-            'kod_pembekal'    => 'V003',
-            'vendor_name'     => 'Perusahaan Gagah Budi Enterprise',
-            'harga_asal'      => 'RM 1,650,000.00',
-            'baki_kerja'      => 'RM 0.00',
-            'markah_b12'      => '40.00',
-            'frpk'            => '1.00',
-            'markah_terlaras' => '40.00',
-            'is_evaluated'    => false,
-        ],
-    ];
-    $b13List = !empty($b13VendorSummary) ? array_values($b13VendorSummary) : array_values($b13List);
+    $b13List = array_values($b13VendorSummary ?? []);
     usort($b13List, function ($a, $b) {
         $pA = (float) preg_replace('/[^0-9.]/', '', (string) ($a['harga_asal'] ?? 0));
         $pB = (float) preg_replace('/[^0-9.]/', '', (string) ($b['harga_asal'] ?? 0));
@@ -315,8 +279,8 @@
                 <table class="table table-hover align-middle mb-0 table-borang13-modern">
                     <thead>
                         <tr>
-                            <th style="width: 5%; text-align: center;">BIL</th>
-                            <th style="width: 15%; text-align: center;">NO. RUJUKAN PETENDER<br><span class="text-white-50 small">(a)</span></th>
+                            <th style="width: 15%; text-align: center;">KOD PEMBEKAL</th>
+                            <th style="width: 18%; text-align: center;">NAMA PETENDER</th>
                             <th style="width: 18%; text-align: right;" class="pe-3">HARGA TENDER ASAL (RM)<br><span class="text-white-50 small">(b)</span></th>
                             <th style="width: 20%; text-align: right;" class="pe-3">NILAI BAKI KERJA DALAM TANGAN<br><span class="text-white-50 small">(Dari Borang 7) (c)</span></th>
                             <th style="width: 16%; text-align: center;">MARKAH KESELURUHAN<br><span class="text-white-50 small">(Dari Borang 12) (d)</span></th>
@@ -328,7 +292,7 @@
                         @forelse($b13List as $index => $v)
                             @php
                                 $vId = $v['vendor_id'] ?? $loop->iteration;
-                                $kodText = $v['kod_pembekal'] ?? ('V' . str_pad($vId, 3, '0', STR_PAD_LEFT));
+                                $kodText = $v['kod_pembekal'] ?? '—';
                                 $hargaAsal = $v['harga_asal'] ?? 'RM 1,250,000.00';
                                 $bakiKerja = $v['baki_kerja'] ?? 'RM 0.00';
                                 $markahB12 = $v['markah_b12'] ?? '73.50';
@@ -336,8 +300,8 @@
                                 $markahTerlaras = $v['markah_terlaras'] ?? '73.50';
                             @endphp
                             <tr>
-                                <td class="text-center font-monospace fw-bold">{{ $loop->iteration }}</td>
                                 <td class="text-center font-monospace fw-bold text-primary">{{ $kodText }}</td>
+                                <td class="fw-semibold">{{ $v['vendor_name'] ?? '—' }}</td>
                                 <td class="text-end font-monospace fw-semibold pe-3 text-dark">{{ $hargaAsal }}</td>
                                 <td class="text-end font-monospace fw-semibold pe-3 text-dark">{{ $bakiKerja }}</td>
                                 <td class="text-center font-monospace fw-bold text-secondary">{{ $markahB12 }}</td>

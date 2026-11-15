@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\RestrictsTenderByRole;
 use App\Models\EbiddingKertasTaklimat;
 use App\Models\EbiddingKertasTaklimatItem;
 use App\Models\EbiddingKertasTaklimatItemFile;
@@ -34,6 +35,8 @@ use Illuminate\Validation\ValidationException;
 
 class EbiddingController extends Controller
 {
+    use RestrictsTenderByRole;
+
     private const STAGE_AGENCY_ADMIN = 1;
     private const STAGE_VENDOR = 2;
     private const STAGE_AGENCY_ADMIN_REVIEW = 3;
@@ -74,6 +77,14 @@ class EbiddingController extends Controller
                 return $denied;
             }
 
+            $id = $request->route('id');
+            if ($id !== null && $id !== '' && is_numeric($id)) {
+                $tender = Tender::query()->find($id);
+                if ($tender) {
+                    $this->assertOwnAgency($tender);
+                }
+            }
+
             return $next($request);
         });
     }
@@ -84,7 +95,7 @@ class EbiddingController extends Controller
      */
     public function index()
     {
-        $rows = Tender::query()
+        $rows = $this->applyOwnAgencyScope(Tender::query())
             ->where('is_ebidding', true)
             ->where(function ($query) {
                 $query->whereIn('ebidding_process_stage_id', self::EBIDDING_ALLOWED_STAGES)

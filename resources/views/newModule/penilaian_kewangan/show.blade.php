@@ -699,22 +699,17 @@
                                             <table class="table table-hover align-middle mb-0 w-100">
                                                 <thead class="bg-light">
                                                     <tr>
-                                                        <th class="py-2.5 px-3 text-center text-uppercase text-secondary fw-bold" style="width: 8%; font-size: 0.725rem; letter-spacing: 0.5px;">BIL</th>
+                                                        <th class="py-2.5 px-3 text-center text-uppercase text-secondary fw-bold" style="width: 8%; font-size: 0.725rem; letter-spacing: 0.5px;">KOD PEMBEKAL</th>
                                                         <th class="py-2.5 px-3 text-start text-uppercase text-secondary fw-bold" style="width: 35%; font-size: 0.725rem; letter-spacing: 0.5px;">NAMA PEMBEKAL</th>
                                                         <th class="py-2.5 px-3 text-start text-uppercase text-secondary fw-bold" style="font-size: 0.725rem; letter-spacing: 0.5px;">ULASAN</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody id="step1RumusanMelepasiTableBody">
-                                                    @forelse($pembekalMelepasi ?? [] as $i => $p)
+                                                    @forelse($pembekalMelepasi ?? [] as $p)
                                                         <tr>
-                                                            <td class="text-center py-3 px-3">
-                                                                <span class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1.5 rounded-pill font-monospace fw-bold">{{ $i + 1 }}</span>
-                                                            </td>
+                                                            <td class="text-center py-3 px-3 font-monospace fw-bold">{{ $p['kod'] ?? '-' }}</td>
                                                             <td class="py-3 px-3 fw-semibold text-dark">
                                                                 <div>{{ $p['name'] }}</div>
-                                                                @if(!empty($p['kod']))
-                                                                    <div class="small text-muted font-monospace">{{ $p['kod'] }}</div>
-                                                                @endif
                                                             </td>
                                                             <td class="py-3 px-3 fw-medium text-dark">{{ $p['ulasan'] }}</td>
                                                         </tr>
@@ -753,22 +748,17 @@
                                             <table class="table table-hover align-middle mb-0 w-100">
                                                 <thead class="bg-light">
                                                     <tr>
-                                                        <th class="py-2.5 px-3 text-center text-uppercase text-secondary fw-bold" style="width: 8%; font-size: 0.725rem; letter-spacing: 0.5px;">BIL</th>
+                                                        <th class="py-2.5 px-3 text-center text-uppercase text-secondary fw-bold" style="width: 8%; font-size: 0.725rem; letter-spacing: 0.5px;">KOD PEMBEKAL</th>
                                                         <th class="py-2.5 px-3 text-start text-uppercase text-secondary fw-bold" style="width: 35%; font-size: 0.725rem; letter-spacing: 0.5px;">NAMA PEMBEKAL</th>
                                                         <th class="py-2.5 px-3 text-start text-uppercase text-secondary fw-bold" style="font-size: 0.725rem; letter-spacing: 0.5px;">SEBAB / ULASAN</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody id="step1RumusanTidakMelepasiTableBody">
-                                                    @forelse($pembekalTidakMelepasi ?? [] as $i => $p)
+                                                    @forelse($pembekalTidakMelepasi ?? [] as $p)
                                                         <tr>
-                                                            <td class="text-center py-3 px-3">
-                                                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2.5 py-1.5 rounded-pill font-monospace fw-bold">{{ $i + 1 }}</span>
-                                                            </td>
+                                                            <td class="text-center py-3 px-3 font-monospace fw-bold">{{ $p['kod'] ?? '-' }}</td>
                                                             <td class="py-3 px-3 fw-semibold text-dark">
                                                                 <div>{{ $p['name'] }}</div>
-                                                                @if(!empty($p['kod']))
-                                                                    <div class="small text-muted font-monospace">{{ $p['kod'] }}</div>
-                                                                @endif
                                                             </td>
                                                             <td class="py-3 px-3 fw-medium text-danger">{{ $p['ulasan'] }}</td>
                                                         </tr>
@@ -797,24 +787,19 @@
                                                 <table class="table table-hover align-middle mb-0 w-100">
                                                     <thead class="bg-light">
                                                         <tr>
-                                                            <th class="py-2.5 px-3 text-center text-uppercase text-secondary fw-bold" style="width: 8%; font-size: 0.725rem; letter-spacing: 0.5px;">BIL</th>
+                                                            <th class="py-2.5 px-3 text-center text-uppercase text-secondary fw-bold" style="width: 8%; font-size: 0.725rem; letter-spacing: 0.5px;">KOD PEMBEKAL</th>
                                                             <th class="py-2.5 px-3 text-start text-uppercase text-secondary fw-bold" style="width: 30%; font-size: 0.725rem; letter-spacing: 0.5px;">NAMA PEMBEKAL</th>
                                                             <th class="py-2.5 px-3 text-center text-uppercase text-secondary fw-bold" style="width: 20%; font-size: 0.725rem; letter-spacing: 0.5px;">KEMAJUAN</th>
                                                             <th class="py-2.5 px-3 text-start text-uppercase text-secondary fw-bold" style="font-size: 0.725rem; letter-spacing: 0.5px;">STATUS</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody id="step1RumusanBelumDinilaiTableBody">
-                                                        @foreach($pembekalBelumDinilai ?? [] as $i => $p)
+                                                        @foreach($pembekalBelumDinilai ?? [] as $p)
                                                             @php $pct = $p['total'] > 0 ? round(($p['evaluated'] / $p['total']) * 100) : 0; @endphp
                                                             <tr>
-                                                                <td class="text-center py-3 px-3">
-                                                                    <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2.5 py-1.5 rounded-pill font-monospace fw-bold">{{ $i + 1 }}</span>
-                                                                </td>
+                                                                <td class="text-center py-3 px-3 font-monospace fw-bold">{{ $p['kod'] ?? '-' }}</td>
                                                                 <td class="py-3 px-3 fw-semibold text-dark">
                                                                     <div>{{ $p['name'] }}</div>
-                                                                    @if(!empty($p['kod']))
-                                                                        <div class="small text-muted font-monospace">{{ $p['kod'] }}</div>
-                                                                    @endif
                                                                 </td>
                                                                 <td class="py-3 px-3 text-center">
                                                                     <div class="progress rounded-pill" style="height: 8px;">
@@ -1177,7 +1162,6 @@
     const DOKUMEN_BY_VENDOR = @json($dokumenByVendor ?? []);
     const PENYATA_DOKUMEN_BY_VENDOR = @json($penyataDokumenByVendor ?? []);
     const STEP1_PASSED_VENDOR_IDS = @json(array_values($step1PassedVendorIds ?? []));
-    const STEP2_PASSED_VENDOR_IDS = @json(array_values($step2PassedVendorIds ?? []));
 
     let activeStep2Uuid = PENYATA_BANK_UUIDS[0] || null;
     let activeStep2VendorId = null;
@@ -1188,6 +1172,49 @@
         step3: {{ $progress?->isStep3Confirmed() ? 'true' : 'false' }}
     };
     let dbCurrentStep = {{ (int) ($progress?->current_step ?? 1) }};
+
+    window.getStep2PassedVendorIdsClient = function() {
+        const itemUuids = Object.keys(SEMAK_PAYLOAD || {});
+        const step1Uuids = itemUuids.filter(uuid => !PENYATA_BANK_UUIDS.includes(uuid));
+        const step2Uuids = PENYATA_BANK_UUIDS || [];
+        const vendorIds = new Set();
+
+        itemUuids.forEach(uuid => {
+            (SEMAK_PAYLOAD[uuid]?.vendors || []).forEach(vendor => {
+                const vendorId = parseInt(vendor.vendor_id, 10);
+                if (vendorId > 0) vendorIds.add(vendorId);
+            });
+        });
+
+        const isPassed = (vendorId, uuids, confirmed) => {
+            for (const uuid of uuids) {
+                const vendor = (SEMAK_PAYLOAD[uuid]?.vendors || []).find(row => parseInt(row.vendor_id, 10) === vendorId);
+                const status = vendor?.status_pematuhan;
+                if (status === 'tidak_mematuhi' || status === 0 || status === '0') return false;
+                if (status === null || status === undefined || status === '') {
+                    if (!confirmed) return false;
+                } else if (!(status === 'mematuhi' || status === 1 || status === '1') && !confirmed) {
+                    return false;
+                }
+            }
+            return true;
+        };
+
+        return Array.from(vendorIds).filter(vendorId =>
+            isPassed(vendorId, step1Uuids, dbConfirmed.step1)
+            && isPassed(vendorId, step2Uuids, dbConfirmed.step2)
+        );
+    };
+
+    window.areAllStep3VendorsEvaluated = function() {
+        const eligibleIds = window.getStep2PassedVendorIdsClient();
+        const step3Uuids = Object.keys(SEMAK_PAYLOAD || {}).filter(uuid => !PENYATA_BANK_UUIDS.includes(uuid));
+
+        return eligibleIds.every(vendorId => step3Uuids.every(uuid => {
+            const vendor = (SEMAK_PAYLOAD[uuid]?.vendors || []).find(row => parseInt(row.vendor_id, 10) === vendorId);
+            return !!vendor?.step3_evaluated;
+        }));
+    };
 
     function escapeHtml(value) {
         return String(value || '')
@@ -1288,11 +1315,102 @@
     document.addEventListener('DOMContentLoaded', () => {
 
         const KEMASKINI_LANGKAH_URL = "{{ route('penilaianKewangan.kemaskiniLangkah') }}";
+        const RUMUSAN_STEP3_URL = @json(route('penilaianKewangan.rumusanStep3', $tender->uuid ?: $tender->id));
         const TENDER_IDENTIFIER = "{{ $tender_no }}";
         const CSRF_TOKEN = "{{ csrf_token() }}";
 
         const steps = document.querySelectorAll('.progress-step');
         const tabs = document.querySelectorAll('.step-number');
+
+        const rumusanStep3Tab = document.getElementById('rumusan-3-tab');
+        let rumusanStep3Request = null;
+
+        function setRumusanTableMessage(tableBody, message, columnCount) {
+            if (!tableBody) return;
+            const row = document.createElement('tr');
+            const cell = document.createElement('td');
+            cell.className = 'text-center text-muted py-4';
+            cell.colSpan = columnCount;
+            cell.textContent = message;
+            row.appendChild(cell);
+            tableBody.replaceChildren(row);
+        }
+
+        function refreshStep3Rumusan() {
+            if (rumusanStep3Request) rumusanStep3Request.abort();
+
+            const passingBody = document.getElementById('step3RumusanMelepasiTableBody');
+            const failingBody = document.getElementById('step3RumusanTidakMelepasiTableBody');
+            setRumusanTableMessage(passingBody, 'Memuatkan rumusan...', 4);
+            setRumusanTableMessage(failingBody, 'Memuatkan rumusan...', 3);
+
+            rumusanStep3Request = $.ajax({ url: RUMUSAN_STEP3_URL, method: 'GET', dataType: 'json' })
+                .done(data => {
+                    const renderRows = (body, vendors, isPassing) => {
+                        if (!body) return;
+                        body.replaceChildren();
+                        if (!vendors || vendors.length === 0) {
+                            setRumusanTableMessage(
+                                body,
+                                isPassing ? 'Tiada pembekal melepasi penanda aras kewangan setakat ini.' : 'Tiada rekod dijumpai.',
+                                isPassing ? 4 : 3
+                            );
+                            return;
+                        }
+
+                        vendors.forEach(vendor => {
+                            const row = document.createElement('tr');
+                            const addCell = (value, className) => {
+                                const cell = document.createElement('td');
+                                cell.className = className;
+                                cell.textContent = value == null ? '' : String(value);
+                                row.appendChild(cell);
+                                return cell;
+                            };
+
+                            if (isPassing) {
+                                const rankCell = addCell('', 'text-center py-3');
+                                const rank = document.createElement('span');
+                                rank.className = 'badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-20 px-3 py-1.5 rounded-pill font-monospace fw-bold fs-6';
+                                rank.textContent = vendor.kedudukan == null ? '' : String(vendor.kedudukan);
+                                rankCell.appendChild(rank);
+                                addCell(vendor.kod, 'text-center py-3 font-monospace fw-bold text-dark');
+                                addCell(vendor.score_fmt, 'text-center py-3 font-monospace fw-bold text-primary fs-6');
+                                const statusCell = addCell('', 'text-center py-3');
+                                const status = document.createElement('span');
+                                status.className = 'badge bg-success bg-opacity-10 text-success border border-success border-opacity-20 px-3 py-1.5 rounded-pill';
+                                status.textContent = vendor.status_label || '';
+                                statusCell.appendChild(status);
+                            } else {
+                                addCell(vendor.kod, 'text-center py-3 font-monospace fw-bold text-dark');
+                                addCell(vendor.score_fmt, 'text-center py-3 font-monospace fw-bold text-danger fs-6');
+                                addCell(vendor.catatan, 'text-start py-3 small text-secondary');
+                            }
+                            body.appendChild(row);
+                        });
+                    };
+
+                    renderRows(passingBody, data.pembekal_melepasi, true);
+                    renderRows(failingBody, data.pembekal_tidak_melepasi, false);
+                    document.getElementById('step3TotalMelepasiText').textContent = `${data.count_melepasi} pembekal melepasi`;
+                    document.getElementById('step3MelepasiBadgeCount').textContent = data.count_melepasi;
+                    document.getElementById('step3TotalTidakMelepasiText').textContent = `${data.count_tidak_melepasi} pembekal tidak melepasi`;
+                    document.getElementById('step3TidakMelepasiBadgeCount').textContent = data.count_tidak_melepasi;
+                    const passingPercentage = Number(data.passing_percentage);
+                    document.getElementById('step3PassingPercentage').value = Number.isInteger(passingPercentage)
+                        ? String(passingPercentage)
+                        : passingPercentage.toFixed(2);
+                })
+                .fail((xhr, status) => {
+                    if (status === 'abort') return;
+                    setRumusanTableMessage(passingBody, 'Rumusan gagal dimuatkan. Buka semula tab Rumusan untuk mencuba lagi.', 4);
+                    setRumusanTableMessage(failingBody, 'Rumusan gagal dimuatkan. Buka semula tab Rumusan untuk mencuba lagi.', 3);
+                });
+        }
+
+        if (rumusanStep3Tab) {
+            rumusanStep3Tab.addEventListener('shown.bs.tab', refreshStep3Rumusan);
+        }
 
         const tabList = [
             { id: 'pematuhan-tab', target: '#pematuhan', checkboxId: 'confirmLayakStep1', stepNum: 1, name: 'Langkah 1 (Pematuhan Dokumentasi)', index: 0 },
@@ -1393,16 +1511,15 @@
         }
 
         function areAllStep2VendorsEvaluated() {
-            const uuidToUse = activeStep2Uuid || (PENYATA_BANK_UUIDS && PENYATA_BANK_UUIDS[0]) || '';
-            const itemObj = SEMAK_PAYLOAD[uuidToUse] || Object.values(SEMAK_PAYLOAD).find(item => PENYATA_BANK_UUIDS.includes(item?.uuid));
-            const rawVendors = itemObj?.vendors || [];
             const passedStep1Ids = getStep1PassedVendorIdsClient();
-            const eligibleVendors = rawVendors.filter(v => passedStep1Ids.includes(parseInt(v.vendor_id)));
 
-            if (!eligibleVendors.length) return true;
-
-            const unevaluated = eligibleVendors.filter(v => v.status_pematuhan === null || v.status_pematuhan === '' || v.status_pematuhan === undefined);
-            return unevaluated.length === 0;
+            return (PENYATA_BANK_UUIDS || []).every(uuid => {
+                const rawVendors = SEMAK_PAYLOAD[uuid]?.vendors || [];
+                const eligibleVendors = rawVendors.filter(v => passedStep1Ids.includes(parseInt(v.vendor_id)));
+                return eligibleVendors.every(v =>
+                    v.status_pematuhan !== null && v.status_pematuhan !== '' && v.status_pematuhan !== undefined
+                );
+            });
         }
 
         window.saveConfirmedStates = async function(stepNum, confirmedVal) {
@@ -1433,6 +1550,19 @@
                     });
                     return false;
                 }
+            }
+            if (stepNum === 3 && confirmedVal && typeof window.areAllStep3VendorsEvaluated === 'function'
+                && !window.areAllStep3VendorsEvaluated()) {
+                const cb = document.getElementById('confirmLayakStep3');
+                if (cb) cb.checked = false;
+                Swal.fire({
+                    title: 'Penilaian Belum Selesai',
+                    text: 'Semua pembekal yang melepasi Langkah 2 mesti dinilai untuk setiap item Spesifikasi Kewangan sebelum pengesahan dibuat.',
+                    icon: 'warning',
+                    confirmButtonText: 'Faham',
+                    confirmButtonColor: '#1e293b'
+                });
+                return false;
             }
 
             try {
@@ -1552,6 +1682,9 @@
 
             tabBtn.addEventListener('shown.bs.tab', () => {
                 updateStepper(index);
+                if (index === 2 && typeof window.refreshStep3ChecklistStatuses === 'function') {
+                    window.refreshStep3ChecklistStatuses();
+                }
                 $.ajax({
                     url: KEMASKINI_LANGKAH_URL,
                     method: 'POST',
@@ -1800,7 +1933,7 @@
             })();
 
             eligibleVendors.forEach((v, idx) => {
-                const kodDisplay = v.kod ? escapeHtml(v.kod) : ((idx + 1) + '/' + eligibleVendors.length);
+                const kodDisplay = v.kod ? escapeHtml(v.kod) : '-';
                 const isEvaluated = (v.status_pematuhan !== null && v.status_pematuhan !== '' && v.status_pematuhan !== undefined);
 
                 const statusBadge = isEvaluated
@@ -1867,17 +2000,13 @@
 
             // Render Melepasi Table
             if (melepasiList.length > 0) {
-                melepasiList.forEach((v, idx) => {
-                    const kodDisplay = v.kod ? ('<div class="small text-muted font-monospace">' + escapeHtml(v.kod) + '</div>') : '';
+                melepasiList.forEach(v => {
                     const ulasanTxt = v.catatan ? escapeHtml(v.catatan) : 'Mematuhi semua syarat penilaian penyata bulanan bank.';
                     $melepasiTbody.append(
                         '<tr>' +
-                            '<td class="text-center py-3 px-3">' +
-                                '<span class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1.5 rounded-pill font-monospace fw-bold">' + (idx + 1) + '</span>' +
-                            '</td>' +
+                            '<td class="text-center py-3 px-3 font-monospace fw-bold">' + escapeHtml(v.kod || '-') + '</td>' +
                             '<td class="py-3 px-3 fw-semibold text-dark">' +
                                 '<div>' + escapeHtml(v.name || '') + '</div>' +
-                                kodDisplay +
                                 '<div class="small text-muted font-normal mt-1">' + ulasanTxt + '</div>' +
                             '</td>' +
                         '</tr>'
@@ -1889,17 +2018,13 @@
 
             // Render Tidak Melepasi Table
             if (tidakMelepasiList.length > 0) {
-                tidakMelepasiList.forEach((v, idx) => {
-                    const kodDisplay = v.kod ? ('<div class="small text-muted font-monospace">' + escapeHtml(v.kod) + '</div>') : '';
+                tidakMelepasiList.forEach(v => {
                     const ulasanTxt = v.catatan ? escapeHtml(v.catatan) : 'Tidak mematuhi syarat penilaian penyata bulanan bank.';
                     $tidakMelepasiTbody.append(
                         '<tr>' +
-                            '<td class="text-center py-3 px-3">' +
-                                '<span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2.5 py-1.5 rounded-pill font-monospace fw-bold">' + (idx + 1) + '</span>' +
-                            '</td>' +
+                            '<td class="text-center py-3 px-3 font-monospace fw-bold">' + escapeHtml(v.kod || '-') + '</td>' +
                             '<td class="py-3 px-3 fw-semibold text-dark">' +
                                 '<div>' + escapeHtml(v.name || '') + '</div>' +
-                                kodDisplay +
                                 '<div class="small text-danger font-medium mt-1">' + ulasanTxt + '</div>' +
                             '</td>' +
                         '</tr>'
@@ -1998,12 +2123,11 @@
 
             // Render Melepasi Table
             if (melepasiList.length > 0) {
-                melepasiList.forEach((p, i) => {
-                    const kodDisplay = p.kod ? ('<div class="small text-muted font-monospace">' + escapeHtml(p.kod) + '</div>') : '';
+                melepasiList.forEach(p => {
                     $melepasiTbody.append(
                         '<tr>' +
-                            '<td class="text-center py-3 px-3"><span class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1.5 rounded-pill font-monospace fw-bold">' + (i + 1) + '</span></td>' +
-                            '<td class="py-3 px-3 fw-semibold text-dark"><div>' + escapeHtml(p.name || '') + '</div>' + kodDisplay + '</td>' +
+                            '<td class="text-center py-3 px-3 font-monospace fw-bold">' + escapeHtml(p.kod || '-') + '</td>' +
+                            '<td class="py-3 px-3 fw-semibold text-dark"><div>' + escapeHtml(p.name || '') + '</div></td>' +
                             '<td class="py-3 px-3 fw-medium text-dark">' + escapeHtml(p.ulasan) + '</td>' +
                         '</tr>'
                     );
@@ -2014,12 +2138,11 @@
 
             // Render Tidak Melepasi Table
             if (tidakMelepasiList.length > 0) {
-                tidakMelepasiList.forEach((p, i) => {
-                    const kodDisplay = p.kod ? ('<div class="small text-muted font-monospace">' + escapeHtml(p.kod) + '</div>') : '';
+                tidakMelepasiList.forEach(p => {
                     $tidakMelepasiTbody.append(
                         '<tr>' +
-                            '<td class="text-center py-3 px-3"><span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2.5 py-1.5 rounded-pill font-monospace fw-bold">' + (i + 1) + '</span></td>' +
-                            '<td class="py-3 px-3 fw-semibold text-dark"><div>' + escapeHtml(p.name || '') + '</div>' + kodDisplay + '</td>' +
+                            '<td class="text-center py-3 px-3 font-monospace fw-bold">' + escapeHtml(p.kod || '-') + '</td>' +
+                            '<td class="py-3 px-3 fw-semibold text-dark"><div>' + escapeHtml(p.name || '') + '</div></td>' +
                             '<td class="py-3 px-3 fw-medium text-danger">' + escapeHtml(p.ulasan) + '</td>' +
                         '</tr>'
                     );
@@ -2035,13 +2158,12 @@
                     if ($belumDinilaiText.length) {
                         $belumDinilaiText.text(belumDinilaiList.length + ' pembekal masih menunggu penilaian lengkap');
                     }
-                    belumDinilaiList.forEach((p, i) => {
-                        const kodDisplay = p.kod ? ('<div class="small text-muted font-monospace">' + escapeHtml(p.kod) + '</div>') : '';
+                    belumDinilaiList.forEach(p => {
                         const pct = p.total > 0 ? Math.round((p.evaluated / p.total) * 100) : 0;
                         $belumDinilaiTbody.append(
                             '<tr>' +
-                                '<td class="text-center py-3 px-3"><span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2.5 py-1.5 rounded-pill font-monospace fw-bold">' + (i + 1) + '</span></td>' +
-                                '<td class="py-3 px-3 fw-semibold text-dark"><div>' + escapeHtml(p.name || '') + '</div>' + kodDisplay + '</td>' +
+                                '<td class="text-center py-3 px-3 font-monospace fw-bold">' + escapeHtml(p.kod || '-') + '</td>' +
+                                '<td class="py-3 px-3 fw-semibold text-dark"><div>' + escapeHtml(p.name || '') + '</div></td>' +
                                 '<td class="py-3 px-3 text-center">' +
                                     '<div class="progress rounded-pill" style="height: 8px;">' +
                                         '<div class="progress-bar bg-warning" role="progressbar" style="width: ' + pct + '%;" aria-valuenow="' + pct + '" aria-valuemin="0" aria-valuemax="100"></div>' +
@@ -2737,6 +2859,17 @@
 
         // Stepper progression from Rumusan-3 (Step 3 -> Step 4)
         if (paneId === 'rumusan-3') {
+            if (typeof window.areAllStep3VendorsEvaluated === 'function' && !window.areAllStep3VendorsEvaluated()) {
+                Swal.fire({
+                    title: 'Penilaian Belum Selesai',
+                    text: 'Semua pembekal yang melepasi Langkah 2 mesti dinilai untuk setiap item Spesifikasi Kewangan sebelum meneruskan.',
+                    icon: 'warning',
+                    confirmButtonText: 'Faham',
+                    confirmButtonColor: '#1e293b'
+                });
+                return;
+            }
+
             const confirmCheckbox = document.getElementById('confirmLayakStep3');
             if (!confirmCheckbox || !confirmCheckbox.checked) {
                 Swal.fire({
