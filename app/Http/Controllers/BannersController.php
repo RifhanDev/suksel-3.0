@@ -47,7 +47,10 @@ class BannersController extends Controller
 					$actions[] = link_to_route('banners.edit', 'Kemaskini', $banner->id, ['class' => 'btn btn-sm btn-warning rounded-8 px-3']);
 
 					if ($banner->file) {
-						$actions[] = '<a href="' . $banner->file->url . '/' . $banner->file->name . '" class="btn btn-sm btn-info rounded-8 px-3" target="_blank">Lihat</a>';
+						$fileUrl = method_exists($banner->file, 'fileUrl')
+							? $banner->file->fileUrl()
+							: ($banner->file->url . '/' . $banner->file->name);
+						$actions[] = '<a href="' . e($fileUrl) . '" class="btn btn-sm btn-info rounded-8 px-3" target="_blank">Lihat</a>';
 					}
 
 					if ($banner->published) {

@@ -37,7 +37,7 @@
 						Senarai Pekeliling
 					</a>
 					@if ($circular->file)
-						<a href="{{ $circular->file->url . '/' . $circular->file->name }}" target="_blank"
+						<a href="{{ method_exists($circular->file, 'fileUrl') ? $circular->file->fileUrl() : ($circular->file->url . '/' . $circular->file->name) }}" target="_blank"
 							class="btn-form btn-form-secondary">
 							<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
 								stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

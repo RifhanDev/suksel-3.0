@@ -30,6 +30,30 @@ class Upload extends Model
 		return \App\Support\AttachmentStorage::urlForUploadModel($this) ?? $value;
 	}
 
+	/**
+	 * Full browser URL for the file itself.
+	 * Older views used url (directory) + '/' + name; on NAS urlForUploadModel
+	 * already returns a complete stream URL, so concatenating name again breaks banners.
+	 */
+	public function fileUrl(): string
+	{
+		$relative = \App\Support\AttachmentStorage::relativeForUpload(
+			(string) ($this->path ?? ''),
+			(string) ($this->name ?? '')
+		);
+		if ($relative !== '') {
+			return \App\Support\AttachmentStorage::browserUrl($relative);
+		}
+
+		$base = rtrim((string) ($this->attributes['url'] ?? ''), '/');
+		$name = ltrim((string) ($this->name ?? ''), '/');
+		if ($base !== '' && $name !== '') {
+			return $base . '/' . $name;
+		}
+
+		return $base !== '' ? $base : '#';
+	}
+
 	/** Filename for UI — always from DB, even if the NAS file is missing. */
 	public function displayName(): string
 	{
@@ -315,10 +339,6 @@ class Upload extends Model
 	}
 	
 	public function previewUrl() {
-	
-	}
-	
-	public function fileUrl() {
 	
 	}
 }

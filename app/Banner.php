@@ -108,8 +108,8 @@ class Banner extends Model
 				$upload['uploadable_type']  = 'App\Banner';
 				$upload['uploadable_id']    = $banner->id;
 
-				// Create directory if it doesn't exist
-				if (!file_exists($upload['path'])) {
+				// Local disk only — remote/SFTP writes via AttachmentStorage.
+				if (! \App\Support\AttachmentStorage::isRemote() && ! is_dir($upload['path'])) {
 					mkdir($upload['path'], 0755, true);
 				}
 
