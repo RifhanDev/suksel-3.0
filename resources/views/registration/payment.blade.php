@@ -229,7 +229,7 @@
 			<div class="price-card">
 				<div class="price-header">
 					<div class="small text-uppercase fw-bold opacity-75 mb-2" style="letter-spacing: 1px;">Yuran Langganan</div>
-					<h1 class="price-amount"><span class="price-currency">RM</span>100</h1>
+					<h1 class="price-amount"><span class="price-currency">RM</span>{{ number_format((float) config('app.vendor_registration_fee', 0.10), 2) }}</h1>
 				</div>
 				<div class="price-body">
 					<div class="d-flex align-items-center justify-content-center mb-4">

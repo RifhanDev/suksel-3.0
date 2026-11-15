@@ -310,7 +310,7 @@ class RegistrationController extends Controller
             'status' => 'pending',
             'user_id' => $user->id,
             'organization_unit_id' => isset($gateway) ? $gateway->organization_unit_id : Config::get('app.global_cart_ou'),
-            'amount' => 100,
+            'amount' => config('app.vendor_registration_fee', 0.10),
             'ip' => request()->ip(),
             'gateway_id' => isset($gateway) ? $gateway->id : null,
             'cached_data' => serialize($cached_data)
