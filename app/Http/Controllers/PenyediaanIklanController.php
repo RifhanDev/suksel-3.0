@@ -427,7 +427,8 @@ class PenyediaanIklanController extends Controller
     protected function storeKelulusanUpload(UploadedFile $file, int $tenderId): array
     {
         $dir = public_path("uploads/penyediaan-iklan/{$tenderId}/kelulusan");
-        if (! is_dir($dir)) {
+        // Local disk only — remote/SFTP writes via AttachmentStorage and must not mkdir here.
+        if (! \App\Support\AttachmentStorage::isRemote() && ! is_dir($dir)) {
             mkdir($dir, 0755, true);
         }
 
@@ -497,7 +498,8 @@ class PenyediaanIklanController extends Controller
     protected function storeMejaTerkawalFile(UploadedFile $file, int $tenderId): array
     {
         $dir = public_path("uploads/penyediaan-iklan/{$tenderId}/sokongan");
-        if (! is_dir($dir)) {
+        // Local disk only — remote/SFTP writes via AttachmentStorage and must not mkdir here.
+        if (! \App\Support\AttachmentStorage::isRemote() && ! is_dir($dir)) {
             mkdir($dir, 0755, true);
         }
 
