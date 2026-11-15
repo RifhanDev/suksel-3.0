@@ -64,11 +64,15 @@ class PenyediaanIklan extends Model
                 $row['is_fixed'] = true;
             }
 
-            // Always rebuild stream/asset URL from path so remote/local toggle stays correct.
+            // Rebuild URL from path; keep DB/original name even when the NAS file is missing.
             if (is_array($row['dokumen'] ?? null) && ! empty($row['dokumen']['path'])) {
-                $row['dokumen']['url'] = \App\Support\AttachmentStorage::browserUrl(
-                    (string) $row['dokumen']['path']
-                );
+                $path = (string) $row['dokumen']['path'];
+                if (empty($row['dokumen']['original_name'])) {
+                    $row['dokumen']['original_name'] = basename($path);
+                }
+                $url = \App\Support\AttachmentStorage::browserUrlIfExists($path);
+                $row['dokumen']['available'] = $url !== null;
+                $row['dokumen']['url'] = $url ?? '#';
             }
 
             $normalized[] = $row;

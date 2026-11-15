@@ -569,11 +569,15 @@
 							<tbody>
 								@foreach ($tender->tableFiles as $upload)
 									<tr>
-										<td>{{ $upload->label }}</td>
+										<td>{{ method_exists($upload, 'displayName') ? $upload->displayName() : ($upload->label ?: $upload->name) }}</td>
 										<td>{{ $upload->size }}</td>
 										<td>{{ $upload->type }}</td>
 										<td>
-											<a href="{{ $upload->url }}" class="btn btn-primary btn-xs" download>Muat Turun</a>
+											@if (method_exists($upload, 'fileIsAvailable') ? $upload->fileIsAvailable() : true)
+												<a href="{{ $upload->url }}" class="btn btn-primary btn-xs" download>Muat Turun</a>
+											@else
+												<span class="text-muted small">Fail tiada di NAS</span>
+											@endif
 										</td>
 									</tr>
 								@endforeach
@@ -597,12 +601,16 @@
 									<tbody>
 										@foreach ($tender->tenderFiles as $upload)
 											<tr>
-												<td>{{ $upload->label }}</td>
+												<td>{{ method_exists($upload, 'displayName') ? $upload->displayName() : ($upload->label ?: $upload->name) }}</td>
 												<td>{{ $upload->size }}</td>
 												<td>{{ $upload->type }}</td>
 												<td>
-													<a href="{{ $upload->url }}" class="btn btn-primary btn-xs" download>Muat
-														Turun</a>
+													@if (method_exists($upload, 'fileIsAvailable') ? $upload->fileIsAvailable() : true)
+														<a href="{{ $upload->url }}" class="btn btn-primary btn-xs" download>Muat
+															Turun</a>
+													@else
+														<span class="text-muted small">Fail tiada di NAS</span>
+													@endif
 												</td>
 											</tr>
 										@endforeach
