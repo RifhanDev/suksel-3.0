@@ -60,7 +60,7 @@ html { -webkit-text-size-adjust:none; -ms-text-size-adjust: none;}
         <div style="line-height: 30px;">
           <font face="Arial, Helvetica, sans-serif" size="5" color="#4db3a4" style="font-size: 17px;">
           <span style="font-family: Arial, Helvetica, sans-serif; font-size: 17px; color: #4db3a4;">
-            YBhg. {{ $emailUser->name }},
+            YBhg. {{ $recipientName }},
           </span></font>
         </div>
         <div style="height: 20px; line-height: 20px; font-size: 10px;">&nbsp;</div>
@@ -72,10 +72,10 @@ html { -webkit-text-size-adjust:none; -ms-text-size-adjust: none;}
             <div style="line-height: 24px;">
               <font face="Arial, Helvetica, sans-serif" size="4" color="#57697e" style="font-size: 15px;">
               <span style="font-family: Arial, Helvetica, sans-serif; font-size: 15px; color: #57697e;">
-                Anda dijemput hadir ke mesyuarat sebagai <strong>{{ $perananLabel }}</strong> dalam <strong>{{ $jenisLabel }}</strong> bagi tender / sebut harga berikut:<br><br>
+                Anda dijemput hadir ke mesyuarat sebagai <strong>{{ $perananLabel }}</strong> dalam <strong>{{ $jenisLabel }}</strong> bagi {{ strtolower($kaedahLabel) }} berikut:<br><br>
 
-                <strong>Nama:</strong> {{ $tenderName }}<br>
-                <strong>No. Tender:</strong> {{ $tenderRefNumber }}<br>
+                <strong>Nama Perolehan:</strong> {{ $tenderName }}<br>
+                <strong>No. {{ $kaedahLabel }}:</strong> {{ $tenderRefNumber }}<br>
                 <strong>PTJ:</strong> {{ $tenderPtj }}<br><br>
 
                 <strong>Perincian Mesyuarat:</strong><br>
