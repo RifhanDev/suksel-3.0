@@ -64,6 +64,13 @@ class PenyediaanIklan extends Model
                 $row['is_fixed'] = true;
             }
 
+            // Always rebuild stream/asset URL from path so remote/local toggle stays correct.
+            if (is_array($row['dokumen'] ?? null) && ! empty($row['dokumen']['path'])) {
+                $row['dokumen']['url'] = \App\Support\AttachmentStorage::browserUrl(
+                    (string) $row['dokumen']['path']
+                );
+            }
+
             $normalized[] = $row;
         }
 
