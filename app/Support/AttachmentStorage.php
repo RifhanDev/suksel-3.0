@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -45,18 +46,82 @@ class AttachmentStorage
      */
     public static function moveUploadedFile(UploadedFile $file, string $directory, string $name): void
     {
+        $relative = self::normalize(trim(self::relativeFromAbsolute($directory), '/') . '/' . $name);
+        if ($relative === '') {
+            throw new \RuntimeException('Gagal menyimpan lampiran ke pelayan fail.');
+        }
+
         if (! self::isRemote()) {
-            if (! is_dir($directory)) {
-                mkdir($directory, 0755, true);
-            }
-            $file->move($directory, $name);
+            self::writePublicBytes($relative, self::uploadedBytes($file));
 
             return;
         }
 
-        $relativeDir = trim(self::relativeFromAbsolute($directory), '/');
-        $stored = $file->storeAs($relativeDir, $name, 'attachments');
-        if ($stored === false) {
+        $bytes = self::uploadedBytes($file);
+        self::putRemoteBytes($relative, $bytes);
+
+        // Some NAS stat calls return false immediately after a successful write.
+        // Keep a public copy so the page can still open the file, and so a later
+        // request can copy it onto the NAS again.
+        if (self::locate($relative) === null) {
+            self::writePublicBytes($relative, $bytes);
+            Log::warning('Attachment written but not visible on NAS stat', ['path' => $relative]);
+        }
+    }
+
+    /**
+     * @throws \RuntimeException
+     */
+    protected static function uploadedBytes(UploadedFile $file): string
+    {
+        $real = $file->getRealPath();
+        if ($real === false || ! is_file($real)) {
+            throw new \RuntimeException('Gagal membaca fail yang dimuat naik.');
+        }
+
+        $bytes = file_get_contents($real);
+        if ($bytes === false) {
+            throw new \RuntimeException('Gagal membaca fail yang dimuat naik.');
+        }
+
+        return $bytes;
+    }
+
+    /**
+     * Write to the new NAS root and the legacy uploads root.
+     */
+    protected static function putRemoteBytes(string $relative, string $bytes): void
+    {
+        $ok = Storage::disk('attachments')->put($relative, $bytes);
+        if ($ok === false) {
+            throw new \RuntimeException('Gagal menyimpan lampiran ke pelayan fail.');
+        }
+
+        $legacy = str_starts_with($relative, 'uploads/')
+            ? substr($relative, strlen('uploads/'))
+            : $relative;
+
+        try {
+            if ($legacy !== '' && $legacy !== $relative) {
+                Storage::disk('attachments_legacy')->put($legacy, $bytes);
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Legacy NAS copy failed', [
+                'path' => $legacy,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    protected static function writePublicBytes(string $relative, string $bytes): void
+    {
+        $absolute = public_path($relative);
+        $dir = dirname($absolute);
+        if (! is_dir($dir) && ! @mkdir($dir, 0755, true) && ! is_dir($dir)) {
+            throw new \RuntimeException('Gagal menyimpan lampiran ke pelayan fail.');
+        }
+
+        if (file_put_contents($absolute, $bytes) === false) {
             throw new \RuntimeException('Gagal menyimpan lampiran ke pelayan fail.');
         }
     }
@@ -257,8 +322,27 @@ class AttachmentStorage
     public static function browserUrlIfExists(string $relative): ?string
     {
         $relative = self::normalize($relative);
-        if ($relative === '' || self::locate($relative) === null) {
+        if ($relative === '' || ! self::exists($relative)) {
             return null;
+        }
+
+        // File is on the app server (public/uploads) but the NAS stat missed it.
+        // Copy it up so the next open reads it from the file server.
+        if (self::isRemote() && self::locate($relative) === null) {
+            $public = self::publicFile($relative);
+            if ($public) {
+                try {
+                    $bytes = file_get_contents($public);
+                    if ($bytes !== false) {
+                        self::putRemoteBytes($relative, $bytes);
+                    }
+                } catch (\Throwable $e) {
+                    Log::warning('Could not copy public attachment onto NAS', [
+                        'path' => $relative,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
         }
 
         return self::browserUrl($relative);
