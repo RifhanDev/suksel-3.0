@@ -3,7 +3,6 @@
 @section('styles')
 	<link href="{{ asset('css/dashboard-cards.css') }}" rel="stylesheet">
 	<style>
-		/* 10 columns: slightly tighter cells so Tindakan fits without a sideways scroll */
 		table.dataTable.DT-index thead th,
 		table.dataTable.DT-index tbody td {
 			padding-left: 8px;

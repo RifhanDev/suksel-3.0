@@ -534,7 +534,7 @@ class PenyediaanMesyuaratController extends Controller
             }
 
             $result = $this->createEmailQueue(
-                $recipient['content'] ?? '',
+                view('emails.jemputan_mesyuarat', $recipient['view_data'])->render(),
                 $to,
                 $recipient['subject'] ?? '',
                 $recipient['attachments'] ?? []
